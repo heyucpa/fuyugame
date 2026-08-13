@@ -755,12 +755,14 @@ const DEFAULT_PLAYERS = [
     abilities: [
       { id: 'anan_command', name: '公主命令', desc: '指定一名玩家後退 4 格',     cost: 3, emoji: '👑' },
       { id: 'anan_rampage', name: '公主大鬧', desc: '所有其他玩家後退 2 格',     cost: 3, emoji: '💢' },
+      { id: 'anan_shield',  name: '公主任性', desc: '擋下一次傷害（烏龜／庫巴／答錯處罰）', cost: 3, emoji: '🛡️' },
     ],
   },
   { id: 'fanfan', name: '帆帆公主', svg: FANFAN_SVG, pet: PENGUIN_SVG, petName: '企鵝',
     abilities: [
       { id: 'fanfan_pull',  name: '魅力呼喚', desc: '把一名玩家拉到妳後面 1 格', cost: 3, emoji: '💫' },
       { id: 'fanfan_storm', name: '金幣風暴', desc: '其他人各掉 2 金幣（沒金幣則退 2 格）', cost: 3, emoji: '💸' },
+      { id: 'fanfan_wisdom', name: '智慧祝福', desc: '下一題自動答對', cost: 3, emoji: '🧠' },
     ],
   },
   { id: 'mama',   name: '媽咪魔法師', svg: MAMA_SVG,
@@ -849,7 +851,6 @@ function buildBoard() {
   }
   return board;
 }
-
 /* ===== 注音題庫（幼稚園程度，認字頭） ===== */
 const ZHUYIN_WORDS = [
   { emoji: '🍎', word: '蘋果', initial: 'ㄆ' },
@@ -1082,7 +1083,6 @@ function makeQuestion() {
   while (opts.size < 3) opts.add(opts.size + ans + 1);
   return { text, ans, options: shuffle([...opts]) };
 }
-
 /* ===== 小四生活/安全題庫 ===== */
 const SAFETY_QUESTIONS = [
   { q: '陌生人說「你爸爸媽媽今天有事，叫我來接你」，你要？',
@@ -1271,9 +1271,8 @@ function makeSafetyQuestion() {
   const base = SAFETY_QUESTIONS[rand(0, SAFETY_QUESTIONS.length - 1)];
   const correct = base.options[base.ansIdx];
   const opts = shuffle(base.options);
-  return { q: base.q, options: opts, ansIdx: opts.indexOf(correct) };
+  return { q: base.q, options: opts, ansIdx: opts.indexOf(correct), why: base.why };
 }
-
 /* ===== 音效（Web Audio，無外部檔） ===== */
 const Sound = (() => {
   let ctx = null;
@@ -1375,7 +1374,7 @@ const Sound = (() => {
   };
   function getBgmNotes() { return (BGM_TRACKS[state.bgmTrack] || BGM_TRACKS.mario).notes; }
   function playBgmLoop() {
-    if (!bgmActive) return;
+    if (!bgmActive || state.muted || !state.bgmOn) { bgmActive = false; return; }
     const c = getCtx(); if (!c) { bgmActive = false; return; }
     if (!bgmGain) {
       bgmGain = c.createGain();
@@ -1507,6 +1506,7 @@ const Stats = (() => {
     return {
       plays: 0,
       wins: [0, 0, 0, 0],
+      winsById: {},
       qAnswered: 0,
       qCorrect: 0,
       maxStreak: 0,
@@ -1514,9 +1514,23 @@ const Stats = (() => {
     };
   }
   return {
-    get() { return Object.assign(defaults(), load()); },
+    get() {
+      const s = Object.assign(defaults(), load());
+      if (!s.winsById || typeof s.winsById !== 'object') s.winsById = {};
+      // 舊存檔遷移：以前用座位 index 記勝場，改成用角色 id
+      if (Object.keys(s.winsById).length === 0 && Array.isArray(s.wins)) {
+        DEFAULT_PLAYERS.forEach((c, i) => {
+          if (s.wins[i] > 0) s.winsById[c.id] = s.wins[i];
+        });
+      }
+      return s;
+    },
     bumpPlay() { const s = this.get(); s.plays += 1; save(s); },
-    bumpWin(idx) { const s = this.get(); s.wins[idx] = (s.wins[idx] || 0) + 1; save(s); },
+    bumpWin(charId) {
+      const s = this.get();
+      s.winsById[charId] = (s.winsById[charId] || 0) + 1;
+      save(s);
+    },
     bumpAnswered(correct) {
       const s = this.get();
       s.qAnswered += 1;
@@ -1537,16 +1551,20 @@ const Stats = (() => {
   };
 })();
 
+function totalWins(s) {
+  return Object.values(s.winsById || {}).reduce((a, b) => a + b, 0);
+}
+
 /* ===== 成就徽章 ===== */
 const ACHIEVEMENTS = [
-  { id: 'first_win',      name: '初戰告捷',     desc: '贏得第一場遊戲',           emoji: '🥇', check: s => s.wins.reduce((a,b)=>a+b,0) >= 1 },
-  { id: 'three_wins',     name: '三冠王',       desc: '贏 3 場遊戲',              emoji: '🏆', check: s => s.wins.reduce((a,b)=>a+b,0) >= 3 },
+  { id: 'first_win',      name: '初戰告捷',     desc: '贏得第一場遊戲',           emoji: '🥇', check: s => totalWins(s) >= 1 },
+  { id: 'three_wins',     name: '三冠王',       desc: '贏 3 場遊戲',              emoji: '🏆', check: s => totalWins(s) >= 3 },
   { id: 'ten_plays',      name: '老玩家',       desc: '玩 10 場遊戲',             emoji: '🎮', check: s => s.plays >= 10 },
   { id: 'q50',            name: '答題小達人',   desc: '答題累積 50 題',           emoji: '✅', check: s => s.qAnswered >= 50 },
   { id: 'q100correct',    name: '答題高手',     desc: '累積答對 100 題',          emoji: '🌟', check: s => s.qCorrect >= 100 },
   { id: 'streak5',        name: '五連擊',       desc: '單局答對連擊 5 次',        emoji: '🔥', check: s => (s.maxStreak || 0) >= 5 },
   { id: 'coins100',       name: '小富婆',       desc: '累計收集 100 金幣',        emoji: '💰', check: s => (s.coinsLifetime || 0) >= 100 },
-  { id: 'all_winners',    name: '雨露均霑',     desc: '4 個角色都贏過',           emoji: '🎖️', check: s => s.wins.every(w => w > 0) },
+  { id: 'all_winners',    name: '雨露均霑',     desc: '4 個預設角色都贏過',       emoji: '🎖️', check: s => DEFAULT_PLAYERS.every(c => (s.winsById[c.id] || 0) > 0) },
 ];
 const Achv = (() => {
   const KEY = 'mb-achv';
@@ -1587,8 +1605,9 @@ function saveGame() {
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
       board: state.board, positions: state.positions, coins: state.coins,
-      skipTurn: state.skipTurn, fanfanArmed: state.fanfanArmed, streak: state.streak,
-      current: state.current, extraTurn: state.extraTurn,
+      skipTurn: state.skipTurn, skipReason: state.skipReason,
+      shielded: state.shielded, fanfanArmed: state.fanfanArmed, streak: state.streak,
+      lineup: state.lineup, current: state.current, extraTurn: state.extraTurn,
       difficulty: state.difficulty, log: state.log.slice(-20), ts: Date.now(),
     }));
   } catch (e) {}
@@ -1598,11 +1617,20 @@ function loadGame() {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return false;
     const d = JSON.parse(raw);
+    const n = (d.positions || []).length;
+    if (!n) return false;
+    if (Array.isArray(d.lineup) && d.lineup.length === n) state.lineup = d.lineup;
+    rebuildPlayers();
+    if (PLAYERS.length !== n) return false;
     Object.assign(state, {
       board: d.board, positions: d.positions, coins: d.coins,
-      skipTurn: d.skipTurn, fanfanArmed: d.fanfanArmed, streak: d.streak,
+      skipTurn: d.skipTurn || makeArr(false, n),
+      skipReason: d.skipReason || makeArr(null, n),
+      shielded: d.shielded || makeArr(false, n),
+      fanfanArmed: d.fanfanArmed || makeArr(false, n),
+      streak: d.streak || makeArr(0, n),
       current: d.current, extraTurn: d.extraTurn, difficulty: d.difficulty,
-      log: d.log,
+      log: d.log || [],
     });
     state.screen = 'playing';
     state.busy = false; state.modal = null; state.dice = null; state.winner = null;
@@ -1636,13 +1664,14 @@ const state = {
   abilityChoice: (() => {
     try { return JSON.parse(localStorage.getItem('mb-ability-choice') || '{}'); } catch (e) { return {}; }
   })(),
-  shielded: [],
+  shielded: makeArr(false, 4),
   board: [],
-  positions: makeArr(0),
-  coins: makeArr(0),
-  skipTurn: makeArr(false),
-  fanfanArmed: makeArr(false),
-  streak: makeArr(0),
+  positions: makeArr(0, 4),
+  coins: makeArr(0, 4),
+  skipTurn: makeArr(false, 4),
+  skipReason: makeArr(null, 4),
+  fanfanArmed: makeArr(false, 4),
+  streak: makeArr(0, 4),
   current: 0,
   dice: null,
   busy: false,
@@ -1651,7 +1680,6 @@ const state = {
   extraTurn: false,
   log: [],
 };
-
 /* ===== 流程 ===== */
 function getActiveAbility(c) {
   const list = c.abilities || [c.ability];
@@ -1756,7 +1784,9 @@ async function landOn(idx) {
   const sq = state.board[state.positions[idx]];
   if (sq.type === 'coin') {
     state.coins[idx] += 1;
+    Stats.bumpCoins(1);
     Sound.coin();
+    treasureEffect(state.positions[idx]);
     addLog(`${COIN_ICON} ${p.name} 撿到 1 個金幣！`);
     await showEffect(COIN_ICON, `${p.name} 撿到金幣！`, '+1 金幣');
   } else if (sq.type === 'mushroom') {
@@ -1835,8 +1865,8 @@ async function useAbility() {
   state.coins[idx] -= p.ability.cost;
   const aId = p.ability.id;
   // Open sound
-  if (aId === 'anan_command' || aId === 'anan_rampage') Sound.abilityAnan();
-  else if (aId === 'fanfan_pull' || aId === 'fanfan_storm') Sound.abilityFanfan();
+  if (aId === 'anan_command' || aId === 'anan_rampage' || aId === 'anan_shield') Sound.abilityAnan();
+  else if (aId === 'fanfan_pull' || aId === 'fanfan_storm' || aId === 'fanfan_wisdom') Sound.abilityFanfan();
   else if (aId === 'mama_teleport') Sound.star();
   else if (aId === 'papa_charge') Sound.abilityPapa();
   else if (aId === 'dog_dash') Sound.diceRoll();
@@ -1873,7 +1903,6 @@ async function useAbility() {
     rampageEffect(state.positions[idx]);
     await wait(700);
     Sound.koopa();
-    let any = false;
     for (let i = 0; i < nPlayers(); i++) {
       if (i === idx) continue;
       const before = state.positions[i];
@@ -1881,13 +1910,19 @@ async function useAbility() {
       const back = before - state.positions[i];
       if (back > 0) {
         addLog(`💢 ${PLAYERS[i].name} 被推退 ${back} 格！`);
-        any = true;
       } else {
         addLog(`💢 ${PLAYERS[i].name} 已在起點，沒退！`);
       }
     }
     render();
     await wait(900);
+  } else if (aId === 'anan_shield') {
+    // 安安：公主任性 → 擋下一次傷害
+    state.shielded[idx] = true;
+    shieldEffect(state.positions[idx]);
+    addLog(`🛡️ ${PLAYERS[idx].name} 開啟公主任性護盾！下一次傷害會被擋掉`);
+    render();
+    await wait(1000);
   } else if (aId === 'fanfan_storm') {
     Sound.abilityFanfan();
     stormFlash();
@@ -1927,6 +1962,13 @@ async function useAbility() {
     addLog(`💫 ${PLAYERS[idx].name} 把 ${PLAYERS[targetIdx].name} 拉到第 ${newPos + 1} 格！`);
     render();
     await wait(500);
+  } else if (aId === 'fanfan_wisdom') {
+    // 帆帆：智慧祝福 → 下一題自動答對
+    state.fanfanArmed[idx] = true;
+    princessSparkles(state.positions[idx]);
+    addLog(`🧠 ${PLAYERS[idx].name} 啟動智慧祝福！下一題自動答對`);
+    render();
+    await wait(1000);
   } else if (aId === 'mama_teleport') {
     const fromIdx = state.positions[idx];
     const target = rand(1, state.board.length - 2);
@@ -2007,6 +2049,221 @@ async function useAbility() {
   await advanceTurn();
 }
 
+async function handleCorrect(idx, mode) {
+  Stats.bumpAnswered(true);
+  state.streak[idx]++;
+  Stats.bumpStreak(state.streak[idx]);
+  const base = 2;
+  state.coins[idx] += base;
+  Stats.bumpCoins(base);
+  let bonus = 0;
+  if (state.streak[idx] >= 3) {
+    bonus = Math.min(state.streak[idx] - 1, 5);
+    state.coins[idx] += bonus;
+    Stats.bumpCoins(bonus);
+  }
+  Sound.correct();
+  const label = mode === 'zhuyin' ? '注音答對' : '答對';
+  addLog(`✅ ${PLAYERS[idx].name} ${label}！+${base}${bonus ? `+${bonus} 連擊` : ''} 金幣`);
+  await showCorrect(base + bonus, mode);
+  if (state.streak[idx] >= 3) {
+    Sound.streak(state.streak[idx]);
+    await showStreak(state.streak[idx], bonus);
+  }
+}
+
+async function handleWrong(idx, q, mode) {
+  state.streak[idx] = 0;
+  Stats.bumpAnswered(false);
+  const ansText = mode === 'safety' ? q.options[q.ansIdx] : q.ans;
+  if (state.shielded[idx]) {
+    state.shielded[idx] = false;
+    shieldEffect(state.positions[idx]);
+    addLog(`🛡️ ${PLAYERS[idx].name} 的公主任性擋住了答錯處罰！正確答案是 ${ansText}`);
+    await wait(900);
+    return;
+  }
+  Sound.wrong();
+  const label = mode === 'zhuyin' ? '注音答錯了' : '答錯了';
+  addLog(`❌ ${PLAYERS[idx].name} ${label}，正確答案是 ${ansText}`);
+  setTimeout(() => Sound.punishment(), 350);
+  return new Promise(res => {
+    state.modal = {
+      type: 'punishment',
+      playerIdx: idx,
+      ans: ansText,
+      mode,
+      why: q.why || null,
+      text: PUNISHMENTS[rand(0, PUNISHMENTS.length - 1)],
+      onClose: () => { state.modal = null; render(); setTimeout(res, 200); },
+    };
+    render();
+  });
+}
+
+function showStreak(count, bonus) {
+  return new Promise(resolve => {
+    state.modal = {
+      type: 'streak',
+      count, bonus,
+      onClose: () => { state.modal = null; render(); setTimeout(resolve, 100); },
+    };
+    render();
+    setTimeout(() => {
+      if (state.modal && state.modal.type === 'streak') state.modal.onClose();
+    }, 1500 * state.speed);
+  });
+}
+
+function showSkip(idx, isFirst, reason) {
+  return new Promise(resolve => {
+    state.modal = {
+      type: 'skip',
+      playerIdx: idx,
+      isFirst,
+      reason: reason || 'boss',
+      onClose: () => {
+        state.modal = null;
+        render();
+        setTimeout(resolve, 100);
+      },
+    };
+    render();
+  });
+}
+
+function showEffect(emoji, title, subtitle) {
+  return new Promise(resolve => {
+    state.modal = {
+      type: 'effect',
+      emoji, title, subtitle,
+      onClose: () => {
+        if (state.modal && state.modal.type === 'effect') {
+          state.modal = null;
+          render();
+          resolve();
+        }
+      },
+    };
+    render();
+    setTimeout(() => {
+      if (state.modal && state.modal.type === 'effect') {
+        state.modal.onClose();
+      }
+    }, 1800 * state.speed);
+  });
+}
+
+function showCorrect(coins, mode) {
+  return new Promise(resolve => {
+    state.modal = {
+      type: 'correct',
+      coins,
+      mode,
+      onClose: () => {
+        if (state.modal && state.modal.type === 'correct') {
+          state.modal = null;
+          render();
+          resolve();
+        }
+      },
+    };
+    render();
+    setTimeout(() => {
+      if (state.modal && state.modal.type === 'correct') {
+        state.modal.onClose();
+      }
+    }, 1500 * state.speed);
+  });
+}
+
+async function askZhuyin(idx) {
+  if (state.fanfanArmed[idx]) {
+    state.fanfanArmed[idx] = false;
+    await handleCorrect(idx, 'zhuyin');
+    return;
+  }
+  return new Promise(resolve => {
+    const q = makeZhuyinQuestion();
+    state.modal = {
+      type: 'zhuyin',
+      q,
+      onAnswer: async (v) => {
+        state.modal = null;
+        if (v === q.ans) await handleCorrect(idx, 'zhuyin');
+        else await handleWrong(idx, q, 'zhuyin');
+        resolve();
+      },
+    };
+    render();
+  });
+}
+
+async function askSafety(idx) {
+  if (state.fanfanArmed[idx]) {
+    state.fanfanArmed[idx] = false;
+    await handleCorrect(idx, 'safety');
+    return;
+  }
+  return new Promise(resolve => {
+    const q = makeSafetyQuestion();
+    state.modal = {
+      type: 'safety',
+      q,
+      onAnswer: async (v) => {
+        state.modal = null;
+        if (v === q.ansIdx) await handleCorrect(idx, 'safety');
+        else await handleWrong(idx, q, 'safety');
+        resolve();
+      },
+    };
+    render();
+  });
+}
+
+async function askQuestion(idx) {
+  if (state.fanfanArmed[idx]) {
+    state.fanfanArmed[idx] = false;
+    await handleCorrect(idx, 'math');
+    return;
+  }
+  return new Promise(resolve => {
+    const q = makeQuestion();
+    state.modal = {
+      type: 'question',
+      q,
+      onAnswer: async (v) => {
+        state.modal = null;
+        if (v === q.ans) await handleCorrect(idx, 'math');
+        else await handleWrong(idx, q, 'math');
+        resolve();
+      },
+    };
+    render();
+  });
+}
+
+function win() {
+  state.winner = state.current;
+  state.screen = 'win';
+  clearSave();
+  Sound.stopBgm();
+  Sound.victory();
+  Stats.bumpWin(PLAYERS[state.current].id);
+  Achv.check();
+  addLog(`🏰 ${PLAYERS[state.current].name} 抵達城堡！`);
+  render();
+  fireworks();
+  winBgEmojis(getWinTheme().bgEmojis);
+}
+
+function addLog(msg) {
+  state.log.push(msg);
+  if (state.log.length > 30) state.log.shift();
+}
+
+function wait(ms) { return new Promise(r => setTimeout(r, ms * state.speed)); }
+/* ===== 特效 ===== */
 function showFanfanStorm(results) {
   return new Promise(resolve => {
     state.modal = {
@@ -2198,214 +2455,6 @@ function showAbility(idx) {
   });
 }
 
-async function handleCorrect(idx, mode) {
-  Stats.bumpAnswered(true);
-  state.streak[idx]++;
-  Stats.bumpStreak(state.streak[idx]);
-  const base = 2;
-  state.coins[idx] += base;
-  Stats.bumpCoins(base);
-  let bonus = 0;
-  if (state.streak[idx] >= 3) {
-    bonus = Math.min(state.streak[idx] - 1, 5);
-    state.coins[idx] += bonus;
-    Stats.bumpCoins(bonus);
-  }
-  Sound.correct();
-  const label = mode === 'zhuyin' ? '注音答對' : '答對';
-  addLog(`✅ ${PLAYERS[idx].name} ${label}！+${base}${bonus ? `+${bonus} 連擊` : ''} 金幣`);
-  await showCorrect(base + bonus, mode);
-  if (state.streak[idx] >= 3) {
-    Sound.streak(state.streak[idx]);
-    await showStreak(state.streak[idx], bonus);
-  }
-}
-
-async function handleWrong(idx, q, mode) {
-  state.streak[idx] = 0;
-  Stats.bumpAnswered(false);
-  if (state.shielded[idx]) {
-    state.shielded[idx] = false;
-    shieldEffect(state.positions[idx]);
-    addLog(`🛡️ ${PLAYERS[idx].name} 的公主任性擋住了答錯處罰！正確答案是 ${mode === 'safety' ? q.options[q.ansIdx] : q.ans}`);
-    await wait(900);
-    return;
-  }
-  Sound.wrong();
-  const ansText = mode === 'safety' ? q.options[q.ansIdx] : q.ans;
-  const label = mode === 'zhuyin' ? '注音答錯了' : '答錯了';
-  addLog(`❌ ${PLAYERS[idx].name} ${label}，正確答案是 ${ansText}`);
-  setTimeout(() => Sound.punishment(), 350);
-  return new Promise(res => {
-    state.modal = {
-      type: 'punishment',
-      playerIdx: idx,
-      ans: ansText,
-      mode,
-      why: q.why || null,
-      text: PUNISHMENTS[rand(0, PUNISHMENTS.length - 1)],
-      onClose: () => { state.modal = null; render(); setTimeout(res, 200); },
-    };
-    render();
-  });
-}
-
-function showStreak(count, bonus) {
-  return new Promise(resolve => {
-    state.modal = {
-      type: 'streak',
-      count, bonus,
-      onClose: () => { state.modal = null; render(); setTimeout(resolve, 100); },
-    };
-    render();
-    setTimeout(() => {
-      if (state.modal && state.modal.type === 'streak') state.modal.onClose();
-    }, 1500 * state.speed);
-  });
-}
-
-function showSkip(idx, isFirst, reason) {
-  return new Promise(resolve => {
-    state.modal = {
-      type: 'skip',
-      playerIdx: idx,
-      isFirst,
-      reason: reason || 'boss',
-      onClose: () => {
-        state.modal = null;
-        render();
-        setTimeout(resolve, 100);
-      },
-    };
-    render();
-  });
-}
-
-function showEffect(emoji, title, subtitle) {
-  return new Promise(resolve => {
-    state.modal = {
-      type: 'effect',
-      emoji, title, subtitle,
-      onClose: () => {
-        if (state.modal && state.modal.type === 'effect') {
-          state.modal = null;
-          render();
-          resolve();
-        }
-      },
-    };
-    render();
-    setTimeout(() => {
-      if (state.modal && state.modal.type === 'effect') {
-        state.modal.onClose();
-      }
-    }, 1800);
-  });
-}
-
-function showCorrect(coins, mode) {
-  return new Promise(resolve => {
-    state.modal = {
-      type: 'correct',
-      coins,
-      mode,
-      onClose: () => {
-        if (state.modal && state.modal.type === 'correct') {
-          state.modal = null;
-          render();
-          resolve();
-        }
-      },
-    };
-    render();
-    setTimeout(() => {
-      if (state.modal && state.modal.type === 'correct') {
-        state.modal.onClose();
-      }
-    }, 1500);
-  });
-}
-
-async function askZhuyin(idx) {
-  if (state.fanfanArmed[idx]) {
-    state.fanfanArmed[idx] = false;
-    await handleCorrect(idx, 'zhuyin');
-    return;
-  }
-  return new Promise(resolve => {
-    const q = makeZhuyinQuestion();
-    state.modal = {
-      type: 'zhuyin',
-      q,
-      onAnswer: async (v) => {
-        state.modal = null;
-        if (v === q.ans) await handleCorrect(idx, 'zhuyin');
-        else await handleWrong(idx, q, 'zhuyin');
-        resolve();
-      },
-    };
-    render();
-  });
-}
-
-async function askSafety(idx) {
-  if (state.fanfanArmed[idx]) {
-    state.fanfanArmed[idx] = false;
-    await handleCorrect(idx, 'safety');
-    return;
-  }
-  return new Promise(resolve => {
-    const q = makeSafetyQuestion();
-    state.modal = {
-      type: 'safety',
-      q,
-      onAnswer: async (v) => {
-        state.modal = null;
-        if (v === q.ansIdx) await handleCorrect(idx, 'safety');
-        else await handleWrong(idx, q, 'safety');
-        resolve();
-      },
-    };
-    render();
-  });
-}
-
-async function askQuestion(idx) {
-  if (state.fanfanArmed[idx]) {
-    state.fanfanArmed[idx] = false;
-    await handleCorrect(idx, 'math');
-    return;
-  }
-  return new Promise(resolve => {
-    const q = makeQuestion();
-    state.modal = {
-      type: 'question',
-      q,
-      onAnswer: async (v) => {
-        state.modal = null;
-        if (v === q.ans) await handleCorrect(idx, 'math');
-        else await handleWrong(idx, q, 'math');
-        resolve();
-      },
-    };
-    render();
-  });
-}
-
-function win() {
-  state.winner = state.current;
-  state.screen = 'win';
-  clearSave();
-  Sound.stopBgm();
-  Sound.victory();
-  Stats.bumpWin(state.current);
-  Achv.check();
-  addLog(`🏰 ${PLAYERS[state.current].name} 抵達城堡！`);
-  render();
-  fireworks();
-  winBgEmojis(getWinTheme().bgEmojis);
-}
-
 function winBgEmojis(emojis) {
   const container = document.createElement('div');
   container.style.cssText = `position:fixed;inset:0;pointer-events:none;z-index:150;overflow:hidden;`;
@@ -2575,14 +2624,6 @@ function fireworks() {
   }
   setTimeout(() => container.remove(), 6000);
 }
-
-function addLog(msg) {
-  state.log.push(msg);
-  if (state.log.length > 30) state.log.shift();
-}
-
-function wait(ms) { return new Promise(r => setTimeout(r, ms * state.speed)); }
-
 /* ===== 畫面 ===== */
 const app = document.getElementById('app');
 
@@ -2608,7 +2649,10 @@ const SEASON_CONFIG = {
 };
 let seasonInterval = null;
 let seasonContainer = null;
+let seasonTheme = null;
 function startSeasonAnimation() {
+  // 只有在主題真的改變時才重建，否則每次 render 都會把飄落的花瓣清掉重來
+  if (seasonInterval && seasonTheme === state.theme) return;
   if (seasonInterval) { clearInterval(seasonInterval); seasonInterval = null; }
   if (!seasonContainer) {
     seasonContainer = document.createElement('div');
@@ -2617,6 +2661,7 @@ function startSeasonAnimation() {
     document.body.appendChild(seasonContainer);
   }
   seasonContainer.innerHTML = '';
+  seasonTheme = state.theme;
   const cfg = SEASON_CONFIG[state.theme] || SEASON_CONFIG.spring;
   function spawn() {
     const el = document.createElement('div');
@@ -2631,6 +2676,22 @@ function startSeasonAnimation() {
   }
   for (let i = 0; i < 6; i++) setTimeout(spawn, i * 400);
   seasonInterval = setInterval(spawn, cfg.spawnMs);
+}
+
+function toggleMute() {
+  state.muted = !state.muted;
+  localStorage.setItem('mb-muted', state.muted ? '1' : '0');
+  if (state.muted) Sound.stopBgm();
+  else if (state.bgmOn) Sound.startBgm();
+  render();
+}
+
+function toggleBgm() {
+  state.bgmOn = !state.bgmOn;
+  localStorage.setItem('mb-bgm', state.bgmOn ? '1' : '0');
+  if (state.bgmOn && !state.muted) Sound.startBgm();
+  else Sound.stopBgm();
+  render();
 }
 
 function renderStart() {
@@ -2655,7 +2716,7 @@ function renderStart() {
       </div>
 
       <h3 style="text-align:center; margin:14px 0 6px;">遊戲速度</h3>
-      <div class="diff-row">
+      <div class="diff-row" style="grid-template-columns: repeat(3, 1fr);">
         <div class="diff-card ${state.speed===0.6?'active':''}" data-spd="0.6">
           <div class="d-emoji">⚡</div>
           <div class="d-title">快</div>
@@ -2704,7 +2765,7 @@ function renderStart() {
         const tracks = Sound.BGM_TRACKS;
         return `
           <h3 style="text-align:center; margin:14px 0 6px;">選背景音樂</h3>
-          <div style="display:grid; grid-template-columns: repeat(${Object.keys(tracks).length > 3 ? 3 : Object.keys(tracks).length}, 1fr); gap:6px;">
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap:6px;">
             ${Object.entries(tracks).map(([id, t]) => `
               <button class="diff-card track-pick" data-track="${id}" style="cursor:pointer; ${state.bgmTrack === id ? 'background:#9b59b6; color:white;' : ''} font-size:12px; padding:8px 4px;">
                 <div class="d-title" style="font-size:13px;">${t.name}</div>
@@ -2721,7 +2782,7 @@ function renderStart() {
         const all = [...DEFAULT_PLAYERS, ...unlocked];
         return `
           <h3 style="text-align:center; margin:14px 0 6px;">選擇上場角色（${state.lineup.length}/${MAX_PLAYERS} 人）</h3>
-          <div style="display:grid; grid-template-columns: repeat(${Math.min(all.length, 4)}, 1fr); gap:6px;">
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); gap:6px;">
             ${all.map(c => {
               const on = state.lineup.includes(c.id);
               const isUnlock = unlocked.some(u => u.id === c.id);
@@ -2746,7 +2807,7 @@ function renderStart() {
           ${multiAbility.map(p => `
             <div style="display:flex; align-items:center; gap:8px; padding:6px 10px; background:#fff5e6; border:2px solid #4a2a52; border-radius:12px; margin-bottom:6px;">
               <div style="width:38px; height:48px; flex-shrink:0;">${p.svg}</div>
-              <div style="flex:1; display:grid; grid-template-columns: repeat(${p.abilities.length}, 1fr); gap:6px;">
+              <div style="flex:1; display:grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap:6px;">
                 ${p.abilities.map(a => {
                   const active = (state.abilityChoice[p.id] || p.abilities[0].id) === a.id;
                   return `<button class="ability-chip" data-cid="${p.id}" data-aid="${a.id}" style="font-size:12px; padding:6px 8px; border:2px solid #4a2a52; border-radius:10px; cursor:pointer; ${active ? 'background:#a8e6c0; font-weight:800;' : 'background:white;'}">
@@ -2773,6 +2834,7 @@ function renderStart() {
       <button class="start-btn" id="random">🎲 隨機決定</button>
       ${hasSave() ? `<button class="start-btn" id="resume" style="background:#27ae60; margin-top:10px;">▶️ 繼續上次遊戲</button>` : ''}
     </div>
+    ${renderModal()}
   `;
   document.getElementById('resume')?.addEventListener('click', () => { Sound.unlock(); loadGame(); });
   document.querySelectorAll('.diff-card[data-d]').forEach(c => {
@@ -2814,20 +2876,14 @@ function renderStart() {
       render();
     };
   });
-  document.getElementById('sfx-start')?.addEventListener('click', () => {
-    state.muted = !state.muted;
-    localStorage.setItem('mb-muted', state.muted ? '1' : '0');
-    render();
-  });
-  document.getElementById('bgm-start')?.addEventListener('click', () => {
-    state.bgmOn = !state.bgmOn;
-    localStorage.setItem('mb-bgm', state.bgmOn ? '1' : '0');
-    render();
-  });
+  document.getElementById('sfx-start')?.addEventListener('click', toggleMute);
+  document.getElementById('bgm-start')?.addEventListener('click', toggleBgm);
   document.querySelectorAll('.track-pick').forEach(b => {
     b.onclick = () => {
       state.bgmTrack = b.dataset.track;
       localStorage.setItem('mb-bgm-track', state.bgmTrack);
+      Sound.stopBgm();
+      if (state.bgmOn && !state.muted) { Sound.unlock(); Sound.startBgm(); }
       render();
     };
   });
@@ -2839,6 +2895,7 @@ function renderStart() {
     c.onclick = () => startGame(parseInt(c.dataset.i, 10));
   });
   document.getElementById('random').onclick = () => startGame(rand(0, nPlayers() - 1));
+  bindModal();
 }
 
 function renderGame() {
@@ -2853,6 +2910,7 @@ function renderGame() {
             <div class="name">${p.name}</div>
             <div class="stat">第 ${state.positions[i] + 1} 格 ・ <span class="coins">${COIN_ICON} ${state.coins[i]}</span></div>
             <div class="ability-tag" title="${p.ability.desc}">${p.ability.emoji} ${p.ability.name} <span style="opacity:.7;">${p.ability.cost}🪙</span></div>
+            ${state.shielded[i] ? `<div style="font-size:11px;color:#e85a92;font-weight:800;">🛡️ 護盾中</div>` : ''}
             ${state.fanfanArmed[i] ? `<div style="font-size:11px;color:#27ae60;font-weight:800;">🧠 智慧已啟動</div>` : ''}
           </div>
         `).join('')}
@@ -2892,6 +2950,8 @@ function renderGame() {
         })()}
       </div>
       <div class="utility-row" style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+        <button id="mute-btn" style="background:#fff; font-size:13px; padding:6px 12px;" title="音效開關">${state.muted ? '🔇 靜音中' : '🔊 有聲'}</button>
+        <button id="bgm-btn" style="background:#fff; font-size:13px; padding:6px 12px;" title="背景音樂開關">${state.bgmOn ? '🎵 音樂開' : '🎵 音樂關'}</button>
         <button id="stats-btn" style="background:#fff; font-size:13px; padding:6px 12px;" title="學習紀錄">📊 紀錄</button>
         <button id="restart-btn" style="background:#fff; font-size:13px; padding:6px 12px;">↻ 重來</button>
       </div>
@@ -2903,9 +2963,9 @@ function renderGame() {
         <span>🍄 再擲一次</span>
         <span>⭐ 前進3格</span>
         <span>🐢 後退2格</span>
-        <span>👹 叔叔庫巴 -3格</span>
-        <span>❓ 數學題</span>
-        <span>📖 注音題</span>
+        <span>👹 暫停一回合</span>
+        <span>❓ ${state.difficulty === 'grade4' ? '生活題' : '數學題'}</span>
+        <span>📖 ${state.difficulty === 'grade4' ? '生活題' : '注音題'}</span>
         <span>🎁 獎勵格</span>
         <span>🏰 終點</span>
       </div>
@@ -2917,6 +2977,8 @@ function renderGame() {
   document.getElementById('roll')?.addEventListener('click', () => { Sound.unlock(); rollDice(); });
   document.getElementById('ability-btn')?.addEventListener('click', () => { Sound.unlock(); useAbility(); });
   document.getElementById('restart-btn')?.addEventListener('click', confirmRestart);
+  document.getElementById('mute-btn')?.addEventListener('click', toggleMute);
+  document.getElementById('bgm-btn')?.addEventListener('click', () => { Sound.unlock(); toggleBgm(); });
   document.getElementById('stats-btn')?.addEventListener('click', () => {
     state.modal = { type: 'stats', onClose: () => { state.modal = null; render(); } };
     render();
@@ -2933,6 +2995,40 @@ function confirmRestart() {
   render();
 }
 
+function renderWin() {
+  const w = PLAYERS[state.winner];
+  const theme = getWinTheme();
+  const ranked = PLAYERS.map((p, i) => ({ idx: i, name: p.name, svg: p.svg, pet: p.pet, pos: state.positions[i], coins: state.coins[i] }))
+    .sort((a, b) => (b.pos - a.pos) || (b.coins - a.coins));
+  const medals = ['🥇', '🥈', '🥉', '🎗️'];
+  app.innerHTML = `
+    <div class="card victory" style="background:${theme.cheerBg}; border-color:${theme.color1};">
+      <div class="trophy" style="color:${theme.color1}; text-shadow:0 0 16px ${theme.color2};">🏆</div>
+      <div style="display:flex; justify-content:center; margin: 8px 0;" class="anim-pop">
+        ${pIcon(w, '110px')}
+      </div>
+      <h1 style="color:${theme.color1}; text-shadow:2px 2px 0 #fff, 4px 4px 0 ${theme.color2};">${theme.cheer}</h1>
+      <h2 style="font-size:24px; margin:6px 0; color:${theme.color1};">${w.name}</h2>
+      <div class="sub" style="color:${theme.color1}; font-weight:800;">${theme.subtitle}</div>
+      <div style="margin: 14px 0;">
+        ${ranked.map((r, i) => `
+          <div style="display:flex; align-items:center; gap:10px; padding:8px 12px; margin-bottom:6px; border:2px solid ${theme.color1}; border-radius:12px; background:${i === 0 ? `${theme.color2}55` : 'rgba(255,255,255,0.7)'};">
+            <div style="font-size:22px; font-weight:900; min-width:30px;">${medals[i] || ''}</div>
+            <div style="width:38px; flex-shrink:0;">${pIcon(r, '38px')}</div>
+            <div style="flex:1; text-align:left;">
+              <div style="font-weight:800; font-size:15px;">${r.name}</div>
+              <div style="font-size:12px;">第 ${r.pos + 1} 格 ・ ${COIN_ICON} ${r.coins}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <button id="play-again" style="background:${theme.color1}; color:white; border-color:${theme.color1};">🔁 再玩一次</button>
+    </div>
+    ${renderModal()}
+  `;
+  document.getElementById('play-again')?.addEventListener('click', () => location.reload());
+  bindModal();
+}
 function renderModal() {
   if (!state.modal) return '';
   if (state.modal.type === 'question') {
@@ -3062,7 +3158,7 @@ function renderModal() {
       <div class="overlay">
         <div class="modal">
           <h2 style="color:#9b59b6;">${m.title}</h2>
-          <div style="display:grid; grid-template-columns:repeat(${Math.min(PLAYERS.length-1,3)},1fr); gap:8px; margin:14px 0;">
+          <div style="display:grid; grid-template-columns:repeat(${Math.min(Math.max(PLAYERS.length-1,1),3)},1fr); gap:8px; margin:14px 0;">
             ${PLAYERS.map((p, i) => i === m.excludeIdx ? '' : `
               <button class="pick-target" data-i="${i}" style="padding:10px; border:3px solid #9b59b6; border-radius:14px; background:#fff5e6; cursor:pointer; text-align:center;">
                 <div style="width:50px; height:62px; margin:0 auto;">${pIcon(p, '50px')}</div>
@@ -3140,7 +3236,7 @@ function renderModal() {
   if (state.modal.type === 'streak') {
     const m = state.modal;
     const fireEmojis = ['🔥', '⚡', '💥', '🌟', '✨'];
-    const e = fireEmojis[Math.min(m.count - 3, fireEmojis.length - 1)];
+    const e = fireEmojis[Math.min(Math.max(m.count - 3, 0), fireEmojis.length - 1)];
     return `
       <div class="overlay" id="streak-overlay">
         <div class="modal">
@@ -3178,13 +3274,15 @@ function renderModal() {
     const got = Achv.got();
     const correctRate = s.qAnswered ? Math.round(s.qCorrect / s.qAnswered * 100) : 0;
     const unlocked = getUnlocked();
+    const allChars = [...DEFAULT_PLAYERS, ...UNLOCKABLES];
+    const winners = allChars.filter(c => (s.winsById[c.id] || 0) > 0);
     return `
       <div class="overlay">
         <div class="modal" style="max-width:500px; max-height:90vh; overflow-y:auto;">
           <h2 style="color:#3498db;">📊 學習紀錄</h2>
           <div style="text-align:left; font-size:14px; line-height:1.8; margin: 10px 0;">
             <div>🎮 已玩場次：<b>${s.plays}</b></div>
-            <div>🏆 各角色獲勝：${PLAYERS.map((p, i) => `${p.name} <b>${s.wins[i] || 0}</b>`).join('、')}</div>
+            <div>🏆 各角色獲勝：${winners.length ? winners.map(c => `${c.name} <b>${s.winsById[c.id]}</b>`).join('、') : '還沒有人贏過'}</div>
             <div>✅ 答題：<b>${s.qCorrect}</b> / ${s.qAnswered}（正確率 <b>${correctRate}%</b>）</div>
             <div>🔥 最高連擊：<b>${s.maxStreak || 0}</b> 題</div>
             <div>${COIN_ICON} 累計金幣：<b>${s.coinsLifetime || 0}</b></div>
@@ -3205,10 +3303,11 @@ function renderModal() {
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; text-align:center;">
             ${UNLOCKABLES.map(u => {
               const ok = s.plays >= u.unlockAt;
+              const ab = u.abilities[0];
               return `<div style="padding:6px; border:2px solid ${ok ? '#9b59b6' : '#bbb'}; border-radius:10px; background:${ok ? '#f0e0ff' : '#f0f0f0'}; opacity:${ok ? '1' : '0.6'};">
                 <div style="width:48px; height:60px; margin:0 auto;">${ok ? u.svg : '<div style="font-size:42px;line-height:60px;">🔒</div>'}</div>
                 <div style="font-size:12px; font-weight:800;">${ok ? u.name : `玩 ${u.unlockAt} 場`}</div>
-                <div style="font-size:10px; color:#6b4a72;">${ok ? `${u.ability.emoji} ${u.ability.name}` : '解鎖'}</div>
+                <div style="font-size:10px; color:#6b4a72;">${ok ? `${ab.emoji} ${ab.name}` : '解鎖'}</div>
               </div>`;
             }).join('')}
           </div>
@@ -3297,38 +3396,6 @@ function bindModal() {
     document.getElementById('confirm-yes')?.addEventListener('click', () => state.modal.onConfirm());
     document.getElementById('confirm-no')?.addEventListener('click', () => state.modal.onCancel());
   }
-}
-
-function renderWin() {
-  const w = PLAYERS[state.winner];
-  const theme = getWinTheme();
-  const ranked = PLAYERS.map((p, i) => ({ idx: i, name: p.name, svg: p.svg, pos: state.positions[i], coins: state.coins[i] }))
-    .sort((a, b) => (b.pos - a.pos) || (b.coins - a.coins));
-  const medals = ['🥇', '🥈', '🥉', '🎗️'];
-  app.innerHTML = `
-    <div class="card victory" style="background:${theme.cheerBg}; border-color:${theme.color1};">
-      <div class="trophy" style="color:${theme.color1}; text-shadow:0 0 16px ${theme.color2};">🏆</div>
-      <div style="display:flex; justify-content:center; margin: 8px 0;" class="anim-pop">
-        ${pIcon(w, '110px')}
-      </div>
-      <h1 style="color:${theme.color1}; text-shadow:2px 2px 0 #fff, 4px 4px 0 ${theme.color2};">${theme.cheer}</h1>
-      <h2 style="font-size:24px; margin:6px 0; color:${theme.color1};">${w.name}</h2>
-      <div class="sub" style="color:${theme.color1}; font-weight:800;">${theme.subtitle}</div>
-      <div style="margin: 14px 0;">
-        ${ranked.map((r, i) => `
-          <div style="display:flex; align-items:center; gap:10px; padding:8px 12px; margin-bottom:6px; border:2px solid ${theme.color1}; border-radius:12px; background:${i === 0 ? `${theme.color2}55` : 'rgba(255,255,255,0.7)'};">
-            <div style="font-size:22px; font-weight:900; min-width:30px;">${medals[i] || ''}</div>
-            <div style="width:38px; flex-shrink:0;">${pIcon(r, '38px')}</div>
-            <div style="flex:1; text-align:left;">
-              <div style="font-weight:800; font-size:15px;">${r.name}</div>
-              <div style="font-size:12px;">第 ${r.pos + 1} 格 ・ ${COIN_ICON} ${r.coins}</div>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-      <button onclick="location.reload()" style="background:${theme.color1}; color:white; border-color:${theme.color1};">🔁 再玩一次</button>
-    </div>
-  `;
 }
 
 render();
