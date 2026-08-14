@@ -1049,6 +1049,7 @@ let nodeId = null;   // 目前節點
 let path = [];       // [{text, label}]
 let ending = null;
 let improved = false;
+let lastId = null;   // 上一個玩過的，隨機時避開它
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 // 旁白允許 <br> 與 <b>，其餘標籤跳脫
@@ -1087,6 +1088,7 @@ function renderMenu() {
             </button>`;
         }).join('')}
       </div>
+      <button id="rand" style="width:100%; margin-top:12px; background:#6b4a9e; color:#fff;">🎲 隨機挑一個</button>
       <div class="row" style="margin-top:14px;">
         <button class="mini" id="mute">${Sfx.isMuted() ? '🔇 靜音中' : '🔊 有聲'}</button>
         <button class="mini" id="reset">🗑️ 清除紀錄</button>
@@ -1100,6 +1102,7 @@ function renderMenu() {
   document.querySelectorAll('.pick').forEach(b => {
     b.onclick = () => { Sfx.unlock(); Sfx.tap(); startScenario(b.dataset.id); };
   });
+  document.getElementById('rand').onclick = () => { Sfx.unlock(); Sfx.tap(); startRandom(); };
   document.getElementById('mute').onclick = () => { Sfx.toggle(); render(); };
   document.getElementById('back').onclick = () => { location.href = './index.html'; };
   document.getElementById('reset').onclick = () => {
@@ -1107,9 +1110,17 @@ function renderMenu() {
   };
 }
 
+// 隨機挑一個，但避開剛剛玩過的那個（不然常常連抽到同一個）
+function startRandom() {
+  const pool = SCENARIOS.filter(s => s.id !== lastId);
+  const list = pool.length ? pool : SCENARIOS;
+  startScenario(list[Math.floor(Math.random() * list.length)].id);
+}
+
 function startScenario(id) {
   cur = SCENARIOS.find(s => s.id === id);
   if (!cur) return;
+  lastId = id;
   nodeId = null;      // null = 顯示開場白
   path = [];
   ending = null;
@@ -1214,11 +1225,13 @@ function renderEnding() {
       </div>
       <div class="row">
         <button id="again" style="background:#6b4a9e; color:#fff;">🔁 再走一次</button>
+        <button id="rand">🎲 隨機下一個</button>
         <button id="menu" style="background:#fff;">🎭 選別的故事</button>
       </div>
     </div>
   `;
   document.getElementById('again').onclick = () => { Sfx.tap(); startScenario(cur.id); };
+  document.getElementById('rand').onclick = () => { Sfx.tap(); startRandom(); };
   document.getElementById('menu').onclick = () => { Sfx.tap(); view = 'menu'; render(); };
 }
 
