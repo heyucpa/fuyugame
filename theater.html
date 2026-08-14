@@ -1073,6 +1073,7 @@ function renderMenu() {
       <div style="text-align:center; font-size:13px; font-weight:800; color:#6b4a9e; margin-bottom:6px;">
         完美通關 ${done} / ${SCENARIOS.length}
       </div>
+      <button id="rand" style="width:100%; margin:8px 0 4px; background:#6b4a9e; color:#fff;">🎲 隨機挑一個</button>
       <div class="pick-grid">
         ${SCENARIOS.map(s => {
           const g = p[s.id];
@@ -1088,7 +1089,6 @@ function renderMenu() {
             </button>`;
         }).join('')}
       </div>
-      <button id="rand" style="width:100%; margin-top:12px; background:#6b4a9e; color:#fff;">🎲 隨機挑一個</button>
       <div class="row" style="margin-top:14px;">
         <button class="mini" id="mute">${Sfx.isMuted() ? '🔇 靜音中' : '🔊 有聲'}</button>
         <button class="mini" id="reset">🗑️ 清除紀錄</button>
