@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>安安帆帆情境劇場 🎭</title>
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="情境劇場" />
+<meta name="theme-color" content="#6b4a9e" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; padding: 16px;
+    font-family: "Comic Sans MS", "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif;
+    background: linear-gradient(180deg, #efe4ff 0%, #ffe8f4 55%, #dceaff 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    color: #33224a;
+  }
+  .app { max-width: 620px; margin: 0 auto; position: relative; z-index: 2; }
+  .card {
+    background: #fff;
+    border: 4px solid #33224a;
+    border-radius: 22px;
+    padding: 18px;
+    box-shadow: 0 6px 0 rgba(0,0,0,.14), 0 10px 24px rgba(0,0,0,.16);
+  }
+  h1 {
+    margin: 0 0 4px; text-align: center; font-size: 27px; color: #6b4a9e;
+    text-shadow: 2px 2px 0 #fff, 4px 4px 0 #33224a;
+  }
+  .sub { text-align: center; color: #6b5a7e; margin-bottom: 14px; font-size: 14px; }
+  button {
+    font-family: inherit; cursor: pointer;
+    border: 3px solid #33224a; border-radius: 14px;
+    padding: 10px 20px; font-size: 17px; font-weight: 800;
+    background: #ffd23f; color: #33224a;
+    box-shadow: 0 4px 0 rgba(0,0,0,.15);
+  }
+  button:hover:not(:disabled) { transform: translateY(-2px); }
+  button:active:not(:disabled) { transform: translateY(2px); }
+  button:focus-visible { outline: 4px solid #ffaa00; outline-offset: 2px; }
+
+  /* 劇本選單 */
+  .pick-grid { display: grid; gap: 10px; margin-top: 12px; }
+  .pick {
+    display: flex; align-items: center; gap: 12px; text-align: left; width: 100%;
+    background: #faf5ff; border: 3px solid #33224a; border-radius: 16px; padding: 12px 14px;
+  }
+  .pick:hover { background: #eadcff; }
+  .pick .ico { font-size: 40px; line-height: 1; flex-shrink: 0; }
+  .pick .t { font-size: 18px; font-weight: 900; }
+  .pick .g { font-size: 12px; color: #6b5a7e; font-weight: 700; margin-top: 2px; }
+  .pick .done { margin-left: auto; font-size: 26px; flex-shrink: 0; }
+
+  /* 故事 */
+  .stage {
+    background: #faf5ff; border: 3px solid #33224a; border-radius: 18px;
+    padding: 18px 16px; margin: 12px 0;
+  }
+  .stage .big { font-size: 62px; line-height: 1; text-align: center; margin-bottom: 8px; }
+  .narr { font-size: 17px; line-height: 1.85; }
+  .hint {
+    margin-top: 10px; font-size: 13px; font-weight: 700; color: #6b4a9e;
+    background: #fff3c4; border-radius: 10px; padding: 8px 12px; border: 2px dashed #c9a000;
+  }
+  .choices { display: grid; gap: 9px; }
+  .choice {
+    width: 100%; text-align: left; background: #fff; font-size: 16px; font-weight: 700;
+    padding: 13px 15px; line-height: 1.5; border-radius: 14px;
+  }
+  .choice:hover { background: #ffe9a8; }
+  .steps {
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    margin-bottom: 4px;
+  }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #cbbce0; }
+  .dot.on { background: #6b4a9e; transform: scale(1.35); }
+
+  /* 結局 */
+  .result { text-align: center; }
+  .result .face { font-size: 76px; line-height: 1; }
+  .badge {
+    display: inline-block; padding: 5px 16px; border-radius: 999px;
+    font-weight: 900; font-size: 15px; border: 3px solid #33224a; margin-top: 6px;
+  }
+  .lesson {
+    text-align: left; font-size: 15px; line-height: 1.85;
+    background: #e8f8e6; border: 3px dashed #27ae60; border-radius: 16px;
+    padding: 14px 16px; margin: 14px 0;
+  }
+  .lesson b { color: #1e7d46; }
+  .replay { text-align: left; margin: 12px 0; }
+  .replay h3 { font-size: 15px; margin: 0 0 8px; color: #6b4a9e; }
+  .step-row {
+    display: flex; gap: 9px; align-items: flex-start;
+    font-size: 13px; line-height: 1.6; padding: 7px 0;
+    border-bottom: 1px dashed #cbbce0;
+  }
+  .step-row:last-child { border-bottom: none; }
+  .step-n {
+    flex-shrink: 0; width: 21px; height: 21px; border-radius: 50%;
+    background: #6b4a9e; color: #fff; font-size: 12px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .row { display: flex; gap: 9px; justify-content: center; flex-wrap: wrap; margin-top: 6px; }
+  .mini { font-size: 13px; padding: 7px 13px; background: #fff; }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .anim { animation: fadeUp .3s ease-out; }
+  @keyframes pop { 0% { transform: scale(.6);} 50% { transform: scale(1.15);} 100% { transform: scale(1);} }
+  .pop { animation: pop .45s ease-out; }
+  @media (prefers-reduced-motion: reduce) { .anim, .pop { animation: none; } }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script>
+/* ===== 劇本 =====
+   每個 node：narration（旁白）+ choices（選擇）
+   choices 的 to 指向下一個 node 或 ending
+   ending 的 grade：best / good / escape / bad
+*/
+const SCENARIOS = [
+  /* ---------- 1. 放學路上 ---------- */
+  {
+    id: 'road', emoji: '🚗', title: '放學路上',
+    tag: '陌生人・誘拐',
+    intro: '今天媽媽說會晚一點下班，你自己走路回家。走到轉角時，一台銀色的車慢慢開到你旁邊……',
+    start: 'n1',
+    nodes: {
+      n1: {
+        text: '車窗降下來，一個沒看過的叔叔笑著說：<br><br>「妹妹，你媽媽今天臨時有事，叫我來接你回家喔。」',
+        choices: [
+          { label: '上車，媽媽可能真的有事', to: 'incar' },
+          { label: '往後退幾步，說「我先打電話問媽媽」', to: 'call' },
+          { label: '站在原地問他是誰', to: 'talk' },
+        ],
+      },
+      call: {
+        text: '你退了兩步，拿出手機。<br><br>叔叔的笑容不見了：「不用打啦！你媽在忙沒空接，快上車，很趕！」',
+        hint: '他為什麼那麼急著不讓你打電話？',
+        choices: [
+          { label: '他這麼急，應該是真的，上車', to: 'incar' },
+          { label: '轉身往前面亮亮的便利商店跑，邊跑邊打', to: 'best' },
+          { label: '站在原地繼續打電話', to: 'grab' },
+        ],
+      },
+      talk: {
+        text: '「我是你媽媽的同事啊，你不記得我了嗎？上次還去過你家呢。」<br><br>他打開車門走下車，一步一步靠近你。',
+        choices: [
+          { label: '再想想他是不是真的見過', to: 'grab' },
+          { label: '立刻轉身跑向對面的便利商店', to: 'good' },
+        ],
+      },
+      grab: {
+        text: '他已經走到你面前，伸手要抓你的手臂。',
+        choices: [
+          { label: '大喊「我不認識你！」用力甩開往人多的地方跑', to: 'escape' },
+          { label: '嚇到說不出話', to: 'bad' },
+        ],
+      },
+      incar: {
+        text: '你上了車。車子開動了。<br><br>但是……這不是回家的路。你想開門，門鎖住了。',
+        choices: [
+          { label: '大力拍窗戶讓外面的人看到', to: 'escape' },
+          { label: '安靜坐著不敢說話', to: 'bad' },
+        ],
+      },
+    },
+    endings: {
+      best: { grade: 'best', title: '完美判斷', emoji: '🌟',
+        text: '你一邊跑進便利商店一邊打給媽媽。媽媽在電話那頭嚇了一跳——她根本沒有請任何人來接你。<br><br>店員讓你待在櫃台旁邊，並且幫你報了警。',
+        lesson: '真正的家人不會請你不認識的人來接你。而且你做對了最關鍵的一步：<b>往人多、有店員、有燈光的地方移動</b>。壞人最怕的就是有人看著。' },
+      good: { grade: 'good', title: '安全脫身', emoji: '👍',
+        text: '你轉身就跑進便利商店，請店員打電話給媽媽。那台車看到你進店裡，很快就開走了。',
+        lesson: '你做對了最重要的事——<b>離開現場</b>。下次可以更早開始移動：陌生人一開口要載你，就不需要再多聊了，聊天只會讓他有機會靠近。' },
+      escape: { grade: 'escape', title: '驚險逃脫', emoji: '😮‍💨',
+        text: '你用盡力氣大喊，路上的人全都轉頭看過來。他鬆手跳上車就跑了。<br><br>有位阿姨陪你打電話給媽媽。',
+        lesson: '你很勇敢。記住一個技巧：喊「<b>我不認識他！</b>」比喊「救命」更有用——因為路人聽到「救命」可能以為是爸媽在管小孩，聽到「我不認識他」才知道要幫忙。' },
+      bad: { grade: 'bad', title: '再試一次',
+        text: '故事到這裡停下來了。<br><br>還好這只是練習——真實世界裡，這種時候會很難再有選擇的機會。',
+        lesson: '不敢出聲是很自然的反應，但這正是要先練習的原因。<b>你永遠有權利大聲拒絕大人</b>，就算他看起來很兇、很急、很生氣。回去再走一次，找找哪裡可以做不一樣的決定。' },
+    },
+  },
+
+  /* ---------- 2. 網路上的新朋友 ---------- */
+  {
+    id: 'online', emoji: '💬', title: '網路上的新朋友',
+    tag: '網路・個資',
+    intro: '你在遊戲裡認識了一個玩得很好的隊友。他每天都陪你打，還送你稀有道具，你們變成了好朋友。',
+    start: 'n1',
+    nodes: {
+      n1: {
+        text: '玩了兩個禮拜之後，他私訊你：<br><br>「我們這麼熟了，你幾年級啊？讀哪一間學校？我可能就住你家附近耶！」',
+        choices: [
+          { label: '告訴他，他人很好又送我東西', to: 'told' },
+          { label: '說「我不方便講這個」，繼續玩遊戲就好', to: 'refuse' },
+          { label: '不回答，去問爸媽該怎麼辦', to: 'best' },
+        ],
+      },
+      refuse: {
+        text: '「幹嘛這樣～我們是朋友耶，朋友之間有什麼不能講的？」<br><br>「你是不是不把我當朋友？我送你那麼多東西欸。」',
+        hint: '真正的朋友會因為你保護自己就生氣嗎？',
+        choices: [
+          { label: '覺得不好意思，還是告訴他', to: 'told' },
+          { label: '「朋友不會這樣逼人」，封鎖他並告訴爸媽', to: 'best' },
+        ],
+      },
+      told: {
+        text: '你告訴他之後，他變得更熱情了。<br><br>過幾天他說：「傳一張你的照片給我看看嘛，我想知道我朋友長什麼樣子。我先傳我的。」',
+        choices: [
+          { label: '傳一張，只是照片而已', to: 'photo' },
+          { label: '拒絕，並把對話拿給爸媽看', to: 'good' },
+        ],
+      },
+      photo: {
+        text: '你傳了。他馬上又說：<br><br>「這禮拜六我在你學校附近，出來見面好不好？不要跟你爸媽講，講了就不好玩了。」',
+        hint: '為什麼他要你瞞著爸媽？',
+        choices: [
+          { label: '偷偷去看看，反正是白天', to: 'bad' },
+          { label: '這句話很怪，馬上去告訴爸媽', to: 'escape' },
+        ],
+      },
+    },
+    endings: {
+      best: { grade: 'best', title: '完美判斷', emoji: '🌟',
+        text: '你把對話拿給爸媽看。爸媽說你做得非常好，並幫你把他封鎖、向遊戲檢舉。<br><br>後來才知道，他用一樣的方式加了很多小孩。',
+        lesson: '網路上的人可能不是他說的那個人。<b>會先送你東西、再跟你要個資的，是很典型的手法</b>——他送的東西是投資，不是友情。' },
+      good: { grade: 'good', title: '及時停下', emoji: '👍',
+        text: '你拒絕了他，並把對話給爸媽看。爸媽幫你處理掉這個帳號。',
+        lesson: '你在關鍵的一步停下來了，很好。不過學校名稱已經給出去了——<b>個資一旦說出口就收不回來</b>，這是下次可以更早守住的地方。' },
+      escape: { grade: 'escape', title: '踩到煞車', emoji: '😮‍💨',
+        text: '「不要跟你爸媽講」這句話讓你覺得怪怪的，你把整段對話拿給媽媽看。<br><br>媽媽臉色發白，立刻報警處理。',
+        lesson: '你抓到了最重要的警訊。記住這一條就夠了：<b>任何要求你「不要告訴爸媽」的人，都是危險的人</b>。正當的事情不需要瞞著家人。' },
+      bad: { grade: 'bad', title: '再試一次',
+        text: '故事到這裡停下來了。<br><br>還好這只是練習。真實世界裡，每年都有小孩因為赴約而受傷。',
+        lesson: '照片、學校、見面——這三步是連在一起的。<b>越早停下來越容易</b>。回去找找看，哪一句話你當時就覺得怪怪的？那個感覺是對的。' },
+    },
+  },
+
+  /* ---------- 3. 班上的事 ---------- */
+  {
+    id: 'bully', emoji: '😔', title: '班上的事',
+    tag: '霸凌・友誼',
+    intro: '這學期班上有個轉學生叫小柔，比較安靜。最近你發現，有幾個同學開始故意不理她。',
+    start: 'n1',
+    nodes: {
+      n1: {
+        text: '下課時，班上最有人緣的同學走過來跟你說：<br><br>「我們都不跟小柔玩喔，你也不要跟她玩，不然我們就不跟你好。」',
+        choices: [
+          { label: '答應，不然我也會被排擠', to: 'join' },
+          { label: '「我不想這樣做」，繼續正常跟小柔相處', to: 'refuse' },
+          { label: '表面答應，私下還是跟小柔講話', to: 'secret' },
+        ],
+      },
+      refuse: {
+        text: '你照常跟小柔說話。<br><br>結果隔天，你發現自己也被列進「不要理」的名單，連原本的好朋友也不太敢跟你講話了。',
+        hint: '這時候一個人扛很辛苦，有誰可以幫你？',
+        choices: [
+          { label: '撐不住了，還是加入他們', to: 'join' },
+          { label: '把整件事告訴老師和爸媽', to: 'best' },
+          { label: '自己忍著，什麼都不說', to: 'alone' },
+        ],
+      },
+      secret: {
+        text: '你在別人看不到的時候才跟小柔說話。<br><br>有一天小柔小聲問你：「為什麼你在大家面前都裝作不認識我？」',
+        choices: [
+          { label: '跟她道歉，並決定公開站在她那邊', to: 'refuse' },
+          { label: '不知道怎麼回答，就走開了', to: 'alone' },
+        ],
+      },
+      join: {
+        text: '你跟著大家不理小柔。<br><br>一個禮拜後，小柔開始請假不來上學。老師在班上問：「有沒有人知道小柔發生什麼事？」<br><br>教室裡沒有人說話。',
+        choices: [
+          { label: '舉手把事情說出來', to: 'escape' },
+          { label: '低頭不說話', to: 'bad' },
+        ],
+      },
+      alone: {
+        text: '你什麼都沒說，自己難過了好幾個禮拜。<br><br>某天媽媽問你：「你最近怎麼都不太講話？」',
+        choices: [
+          { label: '把整件事告訴媽媽', to: 'escape' },
+          { label: '說「沒事」', to: 'bad' },
+        ],
+      },
+    },
+    endings: {
+      best: { grade: 'best', title: '最勇敢的選擇', emoji: '🌟',
+        text: '老師知道後在班上處理了這件事，也找了帶頭的同學談。<br><br>幾個禮拜後，小柔在你旁邊坐下說：「謝謝你那時候還跟我講話。」',
+        lesson: '拒絕加入排擠，是全班最難的一件事，你做到了。而且你沒有硬撐——<b>找大人幫忙不是告狀，是因為霸凌本來就不該讓小孩自己解決</b>。' },
+      escape: { grade: 'escape', title: '來得及的勇氣', emoji: '😮‍💨',
+        text: '你說出來之後，老師才知道發生什麼事。小柔後來回來上學了，雖然花了一段時間才願意相信同學。',
+        lesson: '你最後說出來了，這很重要。但小柔已經受了幾個禮拜的傷。<b>越早說，傷害越小</b>——被排擠的人最需要的，是有人願意先開口。' },
+      bad: { grade: 'bad', title: '再試一次',
+        text: '沒有人說話，事情就這樣過去了。小柔後來轉學了。<br><br>你偶爾會想起她，心裡有點怪怪的。',
+        lesson: '「大家都這樣做」是最難抵抗的壓力，會沉默是很正常的。但沉默的人越多，被排擠的人就越孤單。<b>你不用當英雄，只要告訴一個大人就好</b>。再走一次試試看。' },
+    },
+  },
+
+  /* ---------- 4. 地震來了 ---------- */
+  {
+    id: 'quake', emoji: '🌏', title: '地震來了',
+    tag: '防災・應變',
+    intro: '第三節數學課，你正在寫習題。突然，桌子開始輕輕搖晃……',
+    start: 'n1',
+    nodes: {
+      n1: {
+        text: '搖晃越來越大，天花板的燈在晃，櫃子上的東西掉下來了。<br><br>有同學尖叫著站起來要往門口衝。',
+        choices: [
+          { label: '跟著衝出教室', to: 'run' },
+          { label: '趴下、鑽到桌子底下、抓住桌腳', to: 'under' },
+          { label: '站在窗戶邊看外面發生什麼事', to: 'window' },
+        ],
+      },
+      under: {
+        text: '你趴下鑽進桌子底下，兩手抓緊桌腳。<br><br>你聽到旁邊「砰」一聲——櫃子倒下來了，剛好砸在剛剛有人站著的位置。<br><br>搖晃慢慢停了。',
+        choices: [
+          { label: '馬上跑出教室', to: 'after_run' },
+          { label: '等老師指示，再一起疏散', to: 'after_order' },
+        ],
+      },
+      run: {
+        text: '你在搖晃中跑向門口，但地板一直在動，你差點跌倒。<br><br>門口擠滿了同學，大家推來推去。這時候上面有東西掉下來。',
+        choices: [
+          { label: '就近趴下、護住頭', to: 'escape' },
+          { label: '用力擠出去', to: 'bad' },
+        ],
+      },
+      window: {
+        text: '玻璃窗劇烈震動，發出很大的聲音，看起來快要裂開了。',
+        choices: [
+          { label: '趕快離開窗邊、鑽到桌下', to: 'under' },
+          { label: '繼續看', to: 'bad' },
+        ],
+      },
+      after_order: {
+        text: '老師清點人數後，要大家排隊疏散。<br><br>走到樓梯口時，有同學說：「搭電梯比較快啦！」',
+        choices: [
+          { label: '走樓梯', to: 'best' },
+          { label: '搭電梯', to: 'lift' },
+        ],
+      },
+      after_run: {
+        text: '你自己先衝了出去，老師在後面喊你的名字。<br><br>走廊上有些掉落物，你差點踩到玻璃。',
+        choices: [
+          { label: '停下來等老師和同學一起走', to: 'escape' },
+          { label: '繼續自己跑', to: 'bad' },
+        ],
+      },
+      lift: {
+        text: '你按了電梯。門開了，你走進去。<br><br>電梯到一半，餘震來了——燈光一閃，電梯停住了。',
+        choices: [
+          { label: '按緊急鈴，待在裡面等救援', to: 'escape' },
+          { label: '用力扒門想爬出去', to: 'bad' },
+        ],
+      },
+    },
+    endings: {
+      best: { grade: 'best', title: '教科書等級', emoji: '🌟',
+        text: '全班安全抵達操場集合，老師點名確認每個人都在。<br><br>回教室時你看到，剛剛那個倒下來的櫃子壓扁了兩張椅子。',
+        lesson: '你做對了整套：<b>趴下、掩護、穩住</b> → 聽指示 → <b>走樓梯不搭電梯</b>。地震時跑動最危險，因為掉落物比地震本身傷到更多人。' },
+      escape: { grade: 'escape', title: '及時修正', emoji: '😮‍💨',
+        text: '雖然中間有點驚險，但你最後做了正確的判斷，平安脫離危險。',
+        lesson: '能在慌亂中改變決定很不容易。記住這三個字就好：<b>趴、掩、穩</b>。地震時第一秒不要跑，先保護頭。' },
+      bad: { grade: 'bad', title: '再試一次',
+        text: '故事到這裡停下來了。<br><br>地震中受傷的人，大多不是被地震本身傷到，而是被掉落物、推擠、或慌亂中的錯誤決定。',
+        lesson: '慌張是本能，但可以靠練習改掉。回去再走一次，記住：<b>搖的時候不要跑，停了再照指示走樓梯</b>。' },
+    },
+  },
+
+  /* ---------- 5. 一個人在家 ---------- */
+  {
+    id: 'home', emoji: '🏠', title: '一個人在家',
+    tag: '居家安全',
+    intro: '爸媽出門買東西，說半小時就回來。家裡只有你一個人。',
+    start: 'n1',
+    nodes: {
+      n1: {
+        text: '你正在看電視，門鈴響了。<br><br>從貓眼看出去，是一個穿制服的先生，手上拿著工具箱。<br><br>「你好，我是來檢查瓦斯的。」',
+        choices: [
+          { label: '開門讓他進來檢查', to: 'opened' },
+          { label: '隔著門說「爸媽在忙，請你改天再來」', to: 'refuse' },
+          { label: '說「我爸媽不在家」請他等一下', to: 'toldalone' },
+        ],
+      },
+      refuse: {
+        text: '「我今天一定要檢查完欸，你先開門一下就好，很快。」<br><br>他又按了兩次門鈴。',
+        hint: '真正的維修人員會跟大人預約，還是臨時來找小孩開門？',
+        choices: [
+          { label: '他好像很堅持，開門好了', to: 'opened' },
+          { label: '不開門，打電話給爸媽', to: 'best' },
+        ],
+      },
+      toldalone: {
+        text: '你說完之後，他的語氣變了：<br><br>「喔～那你自己在家喔？沒關係，你開門我進去等他們就好。」',
+        choices: [
+          { label: '開門讓他進來等', to: 'opened' },
+          { label: '不對勁，馬上打電話給爸媽', to: 'escape' },
+        ],
+      },
+      opened: {
+        text: '你開了門。他走進客廳，眼睛一直看著櫃子和抽屜，沒有去看瓦斯。',
+        choices: [
+          { label: '假裝打電話給爸媽說他們快到家了', to: 'escape' },
+          { label: '安靜站在旁邊看他做事', to: 'bad' },
+        ],
+      },
+    },
+    endings: {
+      best: { grade: 'best', title: '守得很好', emoji: '🌟',
+        text: '你沒有開門，打電話給爸爸。爸爸說：「我們沒有約任何人來檢查瓦斯。」<br><br>爸爸馬上趕回家，那個人早就走了。',
+        lesson: '真正的維修人員一定會<b>先跟大人預約</b>，不會臨時跑來要小孩開門。你也做對了另一件事：<b>沒有讓他知道你一個人在家</b>。' },
+      escape: { grade: 'escape', title: '機警脫身', emoji: '😮‍💨',
+        text: '你大聲說：「爸爸？你到樓下了喔？好，我等你。」<br><br>他聽到後說「那我改天再來」就快步離開了。',
+        lesson: '你反應很快。記住這個技巧：<b>讓對方以為大人隨時會出現</b>。同時也記得——一開始就不要說「我自己在家」，那句話最危險。' },
+      bad: { grade: 'bad', title: '再試一次',
+        text: '故事到這裡停下來了。',
+        lesson: '兩個重點：<b>不認識的人一律不開門</b>，而且<b>絕對不要說自己一個人在家</b>。可以說「爸媽在洗澡，等一下回你」。回去再走一次。' },
+    },
+  },
+
+  /* ---------- 6. 手機裡的訊息 ---------- */
+  {
+    id: 'scam', emoji: '📱', title: '手機裡的訊息',
+    tag: '詐騙・金錢',
+    intro: '你用平板玩遊戲的時候，跳出一則通知。',
+    start: 'n1',
+    nodes: {
+      n1: {
+        text: '「🎉 恭喜！你是本遊戲第 100000 位玩家！<br>點擊領取 10000 鑽石，限時 3 分鐘！」<br><br>下面有個閃亮亮的按鈕，還有倒數計時。',
+        choices: [
+          { label: '快點！只剩兩分鐘了', to: 'clicked' },
+          { label: '我又沒參加抽獎，關掉不理它', to: 'best' },
+          { label: '先去問爸媽', to: 'best' },
+        ],
+      },
+      clicked: {
+        text: '網頁打開了，要你填：<br><br>姓名、年齡、電話、還有「家長的信用卡號（僅供驗證身分，不會扣款）」',
+        hint: '為什麼領獎品需要信用卡？',
+        choices: [
+          { label: '只是驗證而已，去拿媽媽的卡來填', to: 'card' },
+          { label: '要信用卡很奇怪，關掉並告訴爸媽', to: 'escape' },
+          { label: '只填姓名和電話，卡號不填', to: 'partial' },
+        ],
+      },
+      partial: {
+        text: '隔天開始，一直有陌生電話打來找你。<br><br>其中一通說：「小妹妹，你上次登記的獎品要寄給你，但要先付運費 500 元喔。」',
+        choices: [
+          { label: '跟媽媽要 500 元', to: 'bad' },
+          { label: '掛掉電話，把事情告訴爸媽', to: 'escape' },
+        ],
+      },
+      card: {
+        text: '你填完送出了。畫面顯示「領取成功，請等待發放」。<br><br>但是遊戲裡什麼都沒有增加。<br><br>三天後，媽媽收到簡訊：信用卡被刷了 28,000 元。',
+        choices: [
+          { label: '害怕，先不要跟媽媽說', to: 'bad' },
+          { label: '馬上告訴媽媽整件事', to: 'escape' },
+        ],
+      },
+    },
+    endings: {
+      best: { grade: 'best', title: '完全沒上鉤', emoji: '🌟',
+        text: '你直接關掉了。<br><br>後來爸爸跟你說，同事的小孩點了一樣的東西，家裡被刷了好幾萬。',
+        lesson: '記住這一句就好：<b>沒有參加的抽獎，不會中獎</b>。倒數計時是故意讓你來不及思考的設計。真的不確定可以請大人打 <b>165</b> 反詐騙專線查證。' },
+      escape: { grade: 'escape', title: '及時煞車', emoji: '😮‍💨',
+        text: '你發現不對勁，馬上告訴爸媽。爸媽打電話去銀行處理，把損失降到最低。',
+        lesson: '你做對了最重要的事——<b>馬上告訴大人</b>。被騙了不是你的錯，但拖越久越難處理。真正該覺得丟臉的是騙人的人，不是被騙的小孩。' },
+      bad: { grade: 'bad', title: '再試一次',
+        text: '故事到這裡停下來了。<br><br>因為不敢說，事情拖了很久才被發現。',
+        lesson: '<b>被騙的時候不敢講，是騙子最希望你做的事</b>。他們就是靠你的害怕爭取時間。回去再走一次——而且記住，任何時候跟爸媽說都不嫌晚。' },
+    },
+  },
+];
+
+/* ===== 音效（Web Audio，無外部檔） ===== */
+const Sfx = (() => {
+  let ctx = null;
+  let muted = localStorage.getItem('theater-muted') === '1';
+  function get() {
+    if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+  function tone(f, d, v = 0.16, type = 'sine', delay = 0) {
+    if (muted) return;
+    const c = get(); if (!c) return;
+    const t = c.currentTime + delay;
+    const o = c.createOscillator(), g = c.createGain();
+    o.connect(g).connect(c.destination);
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(v, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.001, t + d);
+    o.start(t); o.stop(t + d + 0.02);
+  }
+  return {
+    unlock() { get(); },
+    isMuted() { return muted; },
+    toggle() { muted = !muted; localStorage.setItem('theater-muted', muted ? '1' : '0'); return muted; },
+    tap() { tone(680, 0.07, 0.12, 'triangle'); },
+    page() { tone(520, 0.09, 0.1, 'sine'); tone(700, 0.1, 0.09, 'sine', 0.07); },
+    best() { [523, 659, 784, 1046, 1318].forEach((n, i) => tone(n, 0.16, 0.16, 'triangle', i * 0.09)); },
+    good() { [523, 784, 1046].forEach((n, i) => tone(n, 0.14, 0.15, 'triangle', i * 0.09)); },
+    escape() { [440, 660, 880].forEach((n, i) => tone(n, 0.13, 0.14, 'sine', i * 0.1)); },
+    bad() { tone(300, 0.25, 0.15, 'sawtooth'); tone(200, 0.35, 0.13, 'sawtooth', 0.2); },
+  };
+})();
+
+/* ===== 進度存檔 ===== */
+const SAVE = 'theater-progress';
+const RANK = { bad: 1, escape: 2, good: 3, best: 4 };
+const GRADE_META = {
+  best:   { label: '完美', color: '#1e7d46', bg: '#b7f0c2' },
+  good:   { label: '不錯', color: '#1f6fa8', bg: '#c5e4ff' },
+  escape: { label: '驚險', color: '#b06a00', bg: '#ffe6a8' },
+  bad:    { label: '再試', color: '#a33', bg: '#ffd0d0' },
+};
+function loadProgress() {
+  try { return JSON.parse(localStorage.getItem(SAVE)) || {}; } catch (e) { return {}; }
+}
+function recordResult(id, grade) {
+  const p = loadProgress();
+  if (!p[id] || RANK[grade] > RANK[p[id]]) {
+    p[id] = grade;
+    try { localStorage.setItem(SAVE, JSON.stringify(p)); } catch (e) {}
+    return true;   // 這次比以前好
+  }
+  return false;
+}
+
+/* ===== 狀態 ===== */
+const app = document.getElementById('app');
+let view = 'menu';
+let cur = null;      // 目前劇本
+let nodeId = null;   // 目前節點
+let path = [];       // [{text, label}]
+let ending = null;
+let improved = false;
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// 旁白允許 <br> 與 <b>，其餘標籤跳脫
+const narrate = s => esc(s).replace(/&lt;(\/?(?:br|b))&gt;/g, '<$1>');
+const plain = s => String(s).replace(/<[^>]*>/g, '');
+
+function render() {
+  if (view === 'menu') renderMenu();
+  else if (view === 'story') renderStory();
+  else renderEnding();
+  window.scrollTo(0, 0);
+}
+
+function renderMenu() {
+  const p = loadProgress();
+  const done = SCENARIOS.filter(s => p[s.id] === 'best').length;
+  app.innerHTML = `
+    <div class="card anim">
+      <h1>🎭 情境劇場</h1>
+      <div class="sub">你的每一個選擇，都會改變故事的結局</div>
+      <div style="text-align:center; font-size:13px; font-weight:800; color:#6b4a9e; margin-bottom:6px;">
+        完美通關 ${done} / ${SCENARIOS.length}
+      </div>
+      <div class="pick-grid">
+        ${SCENARIOS.map(s => {
+          const g = p[s.id];
+          const m = g ? GRADE_META[g] : null;
+          return `
+            <button class="pick" data-id="${esc(s.id)}">
+              <span class="ico">${s.emoji}</span>
+              <span style="flex:1; min-width:0;">
+                <span class="t">${esc(s.title)}</span>
+                <span class="g">${esc(s.tag)}</span>
+              </span>
+              ${m ? `<span class="done" title="${m.label}">${g === 'best' ? '🌟' : g === 'good' ? '👍' : g === 'escape' ? '😮‍💨' : '🔁'}</span>` : '<span class="done" style="opacity:.25;">▶️</span>'}
+            </button>`;
+        }).join('')}
+      </div>
+      <div class="row" style="margin-top:14px;">
+        <button class="mini" id="mute">${Sfx.isMuted() ? '🔇 靜音中' : '🔊 有聲'}</button>
+        <button class="mini" id="reset">🗑️ 清除紀錄</button>
+        <button class="mini" id="back">🎲 回骰子遊戲</button>
+      </div>
+      <p style="text-align:center; font-size:12px; color:#6b5a7e; margin:12px 0 0; line-height:1.7;">
+        沒有「輸」這件事 —— 走到不好的結局也會告訴你為什麼，<br>再走一次就好。
+      </p>
+    </div>
+  `;
+  document.querySelectorAll('.pick').forEach(b => {
+    b.onclick = () => { Sfx.unlock(); Sfx.tap(); startScenario(b.dataset.id); };
+  });
+  document.getElementById('mute').onclick = () => { Sfx.toggle(); render(); };
+  document.getElementById('back').onclick = () => { location.href = './index.html'; };
+  document.getElementById('reset').onclick = () => {
+    if (confirm('要清除所有通關紀錄嗎？')) { localStorage.removeItem(SAVE); render(); }
+  };
+}
+
+function startScenario(id) {
+  cur = SCENARIOS.find(s => s.id === id);
+  if (!cur) return;
+  nodeId = null;      // null = 顯示開場白
+  path = [];
+  ending = null;
+  view = 'story';
+  render();
+}
+
+function renderStory() {
+  // 開場白
+  if (nodeId === null) {
+    app.innerHTML = `
+      <div class="card anim">
+        <h1>${cur.emoji} ${esc(cur.title)}</h1>
+        <div class="sub">${esc(cur.tag)}</div>
+        <div class="stage">
+          <div class="narr">${narrate(cur.intro)}</div>
+        </div>
+        <div class="choices">
+          <button class="choice" id="go" style="text-align:center; background:#6b4a9e; color:#fff;">開始 ▶</button>
+        </div>
+        <div class="row"><button class="mini" id="quit">← 選別的故事</button></div>
+      </div>
+    `;
+    document.getElementById('go').onclick = () => { Sfx.page(); nodeId = cur.start; render(); };
+    document.getElementById('quit').onclick = () => { view = 'menu'; render(); };
+    return;
+  }
+
+  const n = cur.nodes[nodeId];
+  const depth = path.length;
+  app.innerHTML = `
+    <div class="card anim">
+      <div class="steps">
+        ${Array.from({ length: Math.max(depth + 1, 3) }, (_, i) =>
+          `<span class="dot ${i <= depth ? 'on' : ''}"></span>`).join('')}
+      </div>
+      <div style="text-align:center; font-size:13px; font-weight:800; color:#6b4a9e;">
+        ${cur.emoji} ${esc(cur.title)}
+      </div>
+      <div class="stage">
+        <div class="narr">${narrate(n.text)}</div>
+        ${n.hint ? `<div class="hint">🤔 ${narrate(n.hint)}</div>` : ''}
+      </div>
+      <div style="font-size:14px; font-weight:800; color:#6b4a9e; margin-bottom:7px;">你要怎麼做？</div>
+      <div class="choices">
+        ${n.choices.map((c, i) => `<button class="choice" data-i="${i}">${esc(c.label)}</button>`).join('')}
+      </div>
+      <div class="row"><button class="mini" id="quit">← 離開這個故事</button></div>
+    </div>
+  `;
+  document.querySelectorAll('.choice').forEach(b => {
+    b.onclick = () => choose(parseInt(b.dataset.i, 10));
+  });
+  document.getElementById('quit').onclick = () => { view = 'menu'; render(); };
+}
+
+function choose(i) {
+  const n = cur.nodes[nodeId];
+  const c = n.choices[i];
+  path.push({ text: plain(n.text), label: c.label });
+  const nxt = c.to;
+  if (cur.nodes[nxt]) {
+    Sfx.page();
+    nodeId = nxt;
+    render();
+  } else if (cur.endings[nxt]) {
+    ending = cur.endings[nxt];
+    improved = recordResult(cur.id, ending.grade);
+    ({ best: Sfx.best, good: Sfx.good, escape: Sfx.escape, bad: Sfx.bad }[ending.grade] || Sfx.good)();
+    view = 'end';
+    render();
+  } else {
+    console.error('找不到目標節點:', nxt);
+  }
+}
+
+function renderEnding() {
+  const m = GRADE_META[ending.grade];
+  app.innerHTML = `
+    <div class="card">
+      <div class="result">
+        <div class="face pop">${ending.emoji || '🔁'}</div>
+        <h1 style="font-size:24px;">${esc(ending.title)}</h1>
+        <span class="badge" style="background:${m.bg}; color:${m.color};">${m.label}結局</span>
+        ${improved && ending.grade !== 'bad' ? `<div style="font-weight:900; color:#c9a000; margin-top:8px;">🎉 比上次更好了！</div>` : ''}
+      </div>
+      <div class="stage" style="margin-top:14px;">
+        <div class="narr">${narrate(ending.text)}</div>
+      </div>
+      <div class="lesson">
+        <div style="font-weight:900; margin-bottom:5px; color:#1e7d46;">💡 學到了什麼</div>
+        ${narrate(ending.lesson)}
+      </div>
+      <div class="replay">
+        <h3>📖 回顧你的選擇</h3>
+        ${path.map((p, i) => `
+          <div class="step-row">
+            <span class="step-n">${i + 1}</span>
+            <span><span style="color:#6b5a7e;">${esc(p.text.slice(0, 26))}${p.text.length > 26 ? '…' : ''}</span><br>
+            <b style="color:#6b4a9e;">→ ${esc(p.label)}</b></span>
+          </div>`).join('')}
+      </div>
+      <div class="row">
+        <button id="again" style="background:#6b4a9e; color:#fff;">🔁 再走一次</button>
+        <button id="menu" style="background:#fff;">🎭 選別的故事</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('again').onclick = () => { Sfx.tap(); startScenario(cur.id); };
+  document.getElementById('menu').onclick = () => { Sfx.tap(); view = 'menu'; render(); };
+}
+
+render();
+</script>
+</body>
+</html>

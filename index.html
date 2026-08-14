@@ -3017,10 +3017,12 @@ function renderStart() {
       </div>
       <button class="start-btn" id="random">🎲 隨機決定</button>
       ${hasSave() ? `<button class="start-btn" id="resume" style="background:#27ae60; margin-top:10px;">▶️ 繼續上次遊戲</button>` : ''}
+      <button class="start-btn" id="theater" style="background:#6b4a9e; margin-top:10px;">🎭 情境劇場（故事選擇遊戲）</button>
     </div>
     ${renderModal()}
   `;
   document.getElementById('resume')?.addEventListener('click', () => { Sound.unlock(); loadGame(); });
+  document.getElementById('theater')?.addEventListener('click', () => { location.href = './theater.html'; });
   document.querySelectorAll('.diff-card[data-d]').forEach(c => {
     c.onclick = () => { state.difficulty = c.dataset.d; render(); };
   });
