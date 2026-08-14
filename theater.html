@@ -1818,6 +1818,9 @@ function sceneFor(scenarioId, grade) {
 const Sfx = (() => {
   let ctx = null;
   let muted = localStorage.getItem('theater-muted') === '1';
+  let bgmOn = localStorage.getItem('theater-bgm') !== '0';
+  let trackId = localStorage.getItem('theater-track') || 'fairy';
+  let bgmTimer = null, bgmGain = null, bgmAlive = false;
   function get() {
     if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
     if (ctx.state === 'suspended') ctx.resume();
@@ -1835,10 +1838,71 @@ const Sfx = (() => {
     g.gain.exponentialRampToValueAtTime(0.001, t + d);
     o.start(t); o.stop(t + d + 0.02);
   }
+  /* 背景音樂：輕柔、音量壓低，不要蓋過讀故事 */
+  const TRACKS = {
+    fairy: { name: '🏰 童話圓舞曲', notes: [
+      [523,.45],[659,.22],[784,.22],[880,.45],[784,.22],[659,.22],
+      [698,.45],[880,.22],[1047,.22],[880,.45],[784,.22],[659,.22],
+      [587,.45],[698,.22],[880,.22],[784,.45],[659,.22],[587,.22],
+      [523,.9],[0,.5] ] },
+    forest: { name: '🌿 森林散步', notes: [
+      [440,.32],[523,.32],[587,.32],[523,.32],[440,.64],
+      [392,.32],[440,.32],[523,.32],[587,.32],[659,.64],
+      [587,.32],[523,.32],[440,.32],[392,.32],[349,.9],[0,.5] ] },
+    starry: { name: '⭐ 星星搖籃曲', notes: [
+      [523,.4],[523,.4],[587,.4],[523,.4],[698,.8],[659,.8],
+      [523,.4],[523,.4],[587,.4],[523,.4],[784,.8],[698,.8],
+      [523,.4],[523,.4],[1047,.4],[880,.4],[698,.4],[659,.4],[587,.9],
+      [932,.4],[880,.4],[698,.4],[784,.4],[698,.9],[0,.5] ] },
+  };
+  function loop() {
+    if (!bgmAlive || muted || !bgmOn) { bgmAlive = false; return; }
+    const c = get(); if (!c) { bgmAlive = false; return; }
+    if (!bgmGain) { bgmGain = c.createGain(); bgmGain.gain.value = 0.055; bgmGain.connect(c.destination); }
+    const notes = (TRACKS[trackId] || TRACKS.fairy).notes;
+    let t = c.currentTime + 0.05;
+    notes.forEach(([f, d]) => {
+      if (f > 0) {
+        const o = c.createOscillator(), g = c.createGain();
+        o.connect(g); g.connect(bgmGain);
+        o.type = 'triangle'; o.frequency.setValueAtTime(f, t);
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.6, t + 0.04);
+        g.gain.exponentialRampToValueAtTime(0.001, t + d * 0.92);
+        o.start(t); o.stop(t + d + 0.03);
+      }
+      t += d;
+    });
+    const total = notes.reduce((a, n) => a + n[1], 0);
+    bgmTimer = setTimeout(loop, (total - 0.05) * 1000);
+  }
+  function startBgm() { if (muted || !bgmOn || bgmAlive) return; bgmAlive = true; loop(); }
+  function stopBgm() { bgmAlive = false; if (bgmTimer) { clearTimeout(bgmTimer); bgmTimer = null; } }
+
   return {
-    unlock() { get(); },
+    unlock() { get(); startBgm(); },
     isMuted() { return muted; },
-    toggle() { muted = !muted; localStorage.setItem('theater-muted', muted ? '1' : '0'); return muted; },
+    toggle() {
+      muted = !muted;
+      localStorage.setItem('theater-muted', muted ? '1' : '0');
+      if (muted) stopBgm(); else startBgm();
+      return muted;
+    },
+    isBgmOn() { return bgmOn; },
+    toggleBgm() {
+      bgmOn = !bgmOn;
+      localStorage.setItem('theater-bgm', bgmOn ? '1' : '0');
+      if (bgmOn) { get(); startBgm(); } else stopBgm();
+      return bgmOn;
+    },
+    trackName() { return (TRACKS[trackId] || TRACKS.fairy).name; },
+    nextTrack() {
+      const ids = Object.keys(TRACKS);
+      trackId = ids[(ids.indexOf(trackId) + 1) % ids.length];
+      localStorage.setItem('theater-track', trackId);
+      stopBgm(); get(); startBgm();
+      return TRACKS[trackId].name;
+    },
     tap() { tone(680, 0.07, 0.12, 'triangle'); },
     page() { tone(520, 0.09, 0.1, 'sine'); tone(700, 0.1, 0.09, 'sine', 0.07); },
     best() { [523, 659, 784, 1046, 1318].forEach((n, i) => tone(n, 0.16, 0.16, 'triangle', i * 0.09)); },
@@ -1920,6 +1984,7 @@ function renderMenu() {
       </div>
       <div class="row" style="margin-top:14px;">
         <button class="mini" id="mute">${Sfx.isMuted() ? '🔇 靜音中' : '🔊 有聲'}</button>
+        <button class="mini" id="music">${Sfx.isBgmOn() ? Sfx.trackName() : '🎵 音樂關'}</button>
         <button class="mini" id="reset">🗑️ 清除紀錄</button>
         <button class="mini" id="back">🎲 回骰子遊戲</button>
       </div>
@@ -1933,6 +1998,12 @@ function renderMenu() {
   });
   document.getElementById('rand').onclick = () => { Sfx.unlock(); Sfx.tap(); startRandom(); };
   document.getElementById('mute').onclick = () => { Sfx.toggle(); render(); };
+  // 音樂鍵：關著就打開，開著就換下一首
+  document.getElementById('music').onclick = () => {
+    if (!Sfx.isBgmOn()) Sfx.toggleBgm(); else Sfx.nextTrack();
+    render();
+  };
+  document.getElementById('music').oncontextmenu = e => { e.preventDefault(); Sfx.toggleBgm(); render(); };
   document.getElementById('back').onclick = () => { location.href = './index.html'; };
   document.getElementById('reset').onclick = () => {
     if (confirm('要清除所有通關紀錄嗎？')) { localStorage.removeItem(SAVE); render(); }
@@ -1970,10 +2041,14 @@ function renderStory() {
         <div class="choices">
           <button class="choice" id="go" style="text-align:center; background:#6b4a9e; color:#fff;">開始 ▶</button>
         </div>
-        <div class="row"><button class="mini" id="quit">← 選別的故事</button></div>
+        <div class="row">
+          <button class="mini" id="music2">${Sfx.isBgmOn() ? '🎵 音樂開' : '🎵 音樂關'}</button>
+          <button class="mini" id="quit">← 選別的故事</button>
+        </div>
       </div>
     `;
     document.getElementById('go').onclick = () => { Sfx.page(); nodeId = cur.start; render(); };
+    document.getElementById('music2').onclick = () => { Sfx.toggleBgm(); render(); };
     document.getElementById('quit').onclick = () => { view = 'menu'; render(); };
     return;
   }
@@ -2001,12 +2076,16 @@ function renderStory() {
           </div>
         </div>
       </div>
-      <div class="row"><button class="mini" id="quit">← 離開這個故事</button></div>
+      <div class="row">
+        <button class="mini" id="music2">${Sfx.isBgmOn() ? '🎵 音樂開' : '🎵 音樂關'}</button>
+        <button class="mini" id="quit">← 離開這個故事</button>
+      </div>
     </div>
   `;
   document.querySelectorAll('.choice').forEach(b => {
     b.onclick = () => choose(parseInt(b.dataset.i, 10));
   });
+  document.getElementById('music2')?.addEventListener('click', () => { Sfx.toggleBgm(); render(); });
   document.getElementById('quit').onclick = () => { view = 'menu'; render(); };
 }
 
@@ -2065,12 +2144,20 @@ function renderEnding() {
         <button id="rand">🎲 隨機下一個</button>
         <button id="menu" style="background:#fff;">🎭 選別的故事</button>
       </div>
+      <div class="row" style="margin-top:8px;">
+        <button class="mini" id="music2">${Sfx.isBgmOn() ? '🎵 音樂開' : '🎵 音樂關'}</button>
+      </div>
     </div>
   `;
   document.getElementById('again').onclick = () => { Sfx.tap(); startScenario(cur.id); };
   document.getElementById('rand').onclick = () => { Sfx.tap(); startRandom(); };
   document.getElementById('menu').onclick = () => { Sfx.tap(); view = 'menu'; render(); };
+  document.getElementById('music2')?.addEventListener('click', () => { Sfx.toggleBgm(); render(); });
 }
+
+// 瀏覽器規定要有使用者動作才能播放聲音，第一次碰畫面就解鎖並開始音樂
+['pointerdown', 'keydown'].forEach(ev =>
+  document.addEventListener(ev, () => Sfx.unlock(), { once: true }));
 
 render();
 </script>
