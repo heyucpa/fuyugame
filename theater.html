@@ -136,6 +136,30 @@
   .wing { animation: wing-flap .7s ease-in-out infinite; transform-box: fill-box; transform-origin: 100% 60%; }
   .fly { animation: fly-drift 3.2s ease-in-out infinite; }
   .dangle { animation: dangle 1.6s ease-in-out infinite; }
+  @keyframes claw-push { 0%,100% { transform: translateX(0); } 50% { transform: translateX(7px); } }
+  @keyframes clash { 0%,100% { opacity: .5; transform: scale(.85); } 50% { opacity: 1; transform: scale(1.15); } }
+  @keyframes pull-in { 0%,100% { transform: translateX(0); } 50% { transform: translateX(-6px); } }
+  @keyframes swirl { to { transform: rotate(360deg); } }
+  @keyframes tilt { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(-3deg); } }
+  @keyframes shake-bits { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+  @keyframes crouch { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+  @keyframes fade-danger { 0%,100% { opacity: .3; } 50% { opacity: .7; } }
+  @keyframes ring { 0%,100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+  @keyframes snore { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+  @keyframes zzz { 0% { opacity: 0; transform: translateY(4px); } 40% { opacity: 1; } 100% { opacity: 0; transform: translateY(-10px); } }
+  .clawPush { animation: claw-push 1.3s ease-in-out infinite; }
+  .clash { animation: clash .8s ease-in-out infinite; }
+  .pull { animation: pull-in 1.6s ease-in-out infinite; }
+  .swirl { animation: swirl 6s linear infinite; }
+  .tilt { animation: tilt 2.4s ease-in-out infinite; }
+  .shakeBits circle { animation: shake-bits .5s ease-in-out infinite; }
+  .shakeBits circle:nth-child(2) { animation-delay: .18s; }
+  .crouch { animation: crouch 2s ease-in-out infinite; }
+  .fadeDanger { animation: fade-danger 1.8s ease-in-out infinite; }
+  .ring { animation: ring .9s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+  .snore { animation: snore 2.6s ease-in-out infinite; }
+  .zzz text { animation: zzz 2.4s ease-out infinite; }
+  .zzz text:nth-child(2) { animation-delay: 1.2s; }
   .badge {
     display: inline-block; padding: 5px 16px; border-radius: 999px;
     font-weight: 900; font-size: 15px; border: 3px solid #33224a; margin-top: 6px;
@@ -1345,6 +1369,451 @@ const SCENE = {
     '</svg>',
 };
 
+/* ===== 組合式插圖：零件庫 =====
+   每張結局圖 = 佈景 + 人物 + 效果
+   人物以「腳底為原點」的區域座標繪製，再用 transform 擺到定位
+*/
+
+// 女孩：pose = stand / cheer / run / reachR / reachL / hang / shout / sit
+const GIRL = (x, y, s, o) => {
+  o = o || {};
+  const mood = o.mood || 'happy', dress = o.dress || '#ff8fb8', pose = o.pose || 'stand';
+  let arms = '', legs = '', bottom = 0;
+  if (pose === 'cheer')       arms = LIMB(-8, -26, -21, -47, 6) + LIMB(8, -26, 21, -47, 6);
+  else if (pose === 'run')  { arms = LIMB(-8, -26, -19, -14, 6) + LIMB(8, -26, 21, -38, 6);
+                              legs = LIMB(-3, -6, -15, -10, 6) + LIMB(4, -6, 9, 2, 6); bottom = -6; }
+  else if (pose === 'reachR') arms = LIMB(-9, -26, -14, -12, 6) + LIMB(8, -26, 27, -31, 6);
+  else if (pose === 'reachL') arms = LIMB(9, -26, 14, -12, 6) + LIMB(-8, -26, -27, -31, 6);
+  else if (pose === 'hang')  { arms = LIMB(-8, -30, -17, -19, 5) + LIMB(8, -30, 17, -19, 5);
+                              legs = LIMB(-5, -2, -8, 10, 5) + LIMB(5, -2, 8, 10, 5); bottom = -2; }
+  else if (pose === 'sit')   { arms = LIMB(-9, -26, -18, -18, 6) + LIMB(9, -26, 18, -18, 6);
+                              legs = LIMB(-5, -4, -16, 0, 6) + LIMB(5, -4, 16, 0, 6); bottom = -4; }
+  else                        arms = LIMB(-9, -26, -14, -12, 6) + LIMB(9, -26, 14, -12, 6);
+  const head = pose === 'shout'
+    ? '<circle cx="0" cy="-46" r="13" fill="#fde2c5" stroke="#33224a" stroke-width="1.6"/>' +
+      '<path d="M-13 -50 q0 -16 13 -16 q13 0 13 16 q-4 -7 -13 -7 q-9 0 -13 7 Z" fill="#5d3a1f"/>' +
+      '<circle cx="-5" cy="-48" r="1.7" fill="#33224a"/><circle cx="5" cy="-48" r="1.7" fill="#33224a"/>' +
+      '<ellipse cx="0" cy="-38" rx="5" ry="6" fill="#33224a"/>'
+    : GIRL_FACE(0, -46, 13, mood);
+  return '<g transform="translate(' + x + ',' + y + ') scale(' + s + ')">' + arms +
+    '<path d="M-13 ' + bottom + ' L-8 -34 L8 -34 L13 ' + bottom + ' Z" fill="' + dress +
+    '" stroke="#33224a" stroke-width="1.6" stroke-linejoin="round"/>' + legs + head +
+    (o.crown ? CROWN(0, -58, 11) : '') + '</g>';
+};
+
+// 大人：kind = mom / dad / man / teacher
+const ADULT = (x, y, s, o) => {
+  o = o || {};
+  const c = o.color || '#9b59b6', hair = o.hair || '#3a2510';
+  const arms = o.pose === 'reachL' ? LIMB(-10, -30, -30, -24, 6)
+             : o.pose === 'reachR' ? LIMB(10, -30, 30, -24, 6)
+             : LIMB(-11, -30, -16, -14, 6) + LIMB(11, -30, 16, -14, 6);
+  return '<g transform="translate(' + x + ',' + y + ') scale(' + s + ')">' +
+    (o.cape ? '<g class="cape" style="transform-origin:0px -40px"><path d="M-10 -40 q-24 24 -16 40 q16 -10 28 -6 Z" fill="#e74c3c" stroke="#33224a" stroke-width="1.5" stroke-linejoin="round"/></g>' : '') +
+    arms +
+    '<path d="M-14 0 L-10 -42 L10 -42 L14 0 Z" fill="' + c + '" stroke="#33224a" stroke-width="1.7" stroke-linejoin="round"/>' +
+    '<circle cx="0" cy="-54" r="13" fill="#fde2c5" stroke="#33224a" stroke-width="1.7"/>' +
+    '<path d="M-13 -56 q-1 -18 13 -18 q14 0 13 18 q-3 -8 -13 -8 q-10 0 -13 8 Z" fill="' + hair + '"/>' +
+    '<circle cx="-5" cy="-55" r="1.6" fill="#33224a"/><circle cx="5" cy="-55" r="1.6" fill="#33224a"/>' +
+    '<path d="M-5 -48 q5 4 10 0" stroke="#33224a" stroke-width="1.6" fill="none" stroke-linecap="round"/>' +
+    (o.beard ? '<path d="M-8 -47 q8 5 16 0 q-3 7 -8 7 q-5 0 -8 -7 Z" fill="' + hair + '"/>' : '') +
+    '</g>';
+};
+
+// 佈景：背景色 + 地面
+const BG = (sky, ground) =>
+  '<rect width="200" height="130" fill="' + sky + '"/>' +
+  '<rect x="0" y="118" width="200" height="12" fill="' + (ground || '#a8e6c0') + '"/>';
+
+/* ---- 道具 ---- */
+// 大手機（網路／詐騙類）
+const PHONE = (x, y, s) =>
+  '<g transform="translate(' + x + ',' + y + ') scale(' + s + ')">' +
+  '<rect x="-26" y="-42" width="52" height="84" rx="8" fill="#33224a"/>' +
+  '<rect x="-22" y="-37" width="44" height="70" rx="3" fill="#cfe6ff"/>' +
+  '<circle cx="0" cy="37" r="3.5" fill="#6b5a7e"/></g>';
+
+// 制服大人（救生員／消防員／店員／警察）
+const HELPER = (x, y, s, color, hat) =>
+  '<g transform="translate(' + x + ',' + y + ') scale(' + s + ')">' +
+  '<path d="M-11 40 L-8 -6 L8 -6 L11 40 Z" fill="' + color + '" stroke="#33224a" stroke-width="1.6" stroke-linejoin="round"/>' +
+  '<circle cx="0" cy="-18" r="12" fill="#fde2c5" stroke="#33224a" stroke-width="1.6"/>' +
+  (hat
+    ? '<path d="M-14 -24 q0 -12 14 -12 q14 0 14 12 Z" fill="' + color + '" stroke="#33224a" stroke-width="1.5" stroke-linejoin="round"/>' +
+      '<rect x="-16" y="-25" width="32" height="4" rx="2" fill="' + color + '" stroke="#33224a" stroke-width="1.2"/>'
+    : '<path d="M-12 -20 q-1 -16 12 -16 q13 0 12 16 q-3 -7 -12 -7 q-9 0 -12 7 Z" fill="#3a2510"/>') +
+  '<circle cx="-4" cy="-19" r="1.5" fill="#33224a"/><circle cx="4" cy="-19" r="1.5" fill="#33224a"/>' +
+  '<path d="M-5 -13 q5 4 10 0" stroke="#33224a" stroke-width="1.6" fill="none" stroke-linecap="round"/></g>';
+
+const CAR = (x, y, s, flip) =>
+  '<g transform="translate(' + x + ',' + y + ') scale(' + (s * (flip ? -1 : 1)) + ',' + s + ')">' +
+  '<path d="M-34 0 L-30 -14 L-10 -22 L14 -22 L30 -12 L34 0 Z" fill="#b9c3cc" stroke="#33224a" stroke-width="1.8" stroke-linejoin="round"/>' +
+  '<path d="M-24 -14 L-8 -19 L-8 -14 Z M-2 -19 L12 -19 L24 -13 L-2 -13 Z" fill="#cfe6ff"/>' +
+  '<circle cx="-18" cy="1" r="6" fill="#33224a"/><circle cx="18" cy="1" r="6" fill="#33224a"/>' +
+  '</g>';
+const DESK = (x, y, s) =>
+  '<g transform="translate(' + x + ',' + y + ') scale(' + s + ')">' +
+  '<rect x="-52" y="-52" width="104" height="8" rx="2" fill="#e0a76a" stroke="#33224a" stroke-width="1.8"/>' +
+  '<rect x="-46" y="-44" width="7" height="44" fill="#c98f52" stroke="#33224a" stroke-width="1.5"/>' +
+  '<rect x="39" y="-44" width="7" height="44" fill="#c98f52" stroke="#33224a" stroke-width="1.5"/></g>';
+const BOARD = (x, y) =>
+  '<rect x="' + x + '" y="' + y + '" width="76" height="42" rx="3" fill="#3f6b53" stroke="#33224a" stroke-width="2"/>' +
+  '<path d="M' + (x + 10) + ' ' + (y + 16) + ' h40 M' + (x + 10) + ' ' + (y + 27) + ' h26" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".8"/>';
+const WATER = (y) =>
+  '<rect x="0" y="' + y + '" width="200" height="' + (130 - y) + '" fill="#7fc1ed"/>' +
+  '<path d="M0 ' + y + ' q14 -5 28 0 q14 5 28 0 q14 -5 28 0 q14 5 28 0 q14 -5 28 0 q14 5 28 0 q14 -5 28 0 v10 H0 Z" fill="#a8d8f5"/>';
+const FLAME = (x, y, s) =>
+  '<g transform="translate(' + x + ',' + y + ') scale(' + s + ')" class="fadeDanger">' +
+  '<path d="M0 0 q4 -20 12 -26 q-2 10 6 14 q6 -8 2 -18 q14 12 10 30 Z" fill="#ff8c42"/>' +
+  '<path d="M6 0 q2 -12 8 -16 q-1 7 3 9 q3 -5 1 -11 q9 8 6 18 Z" fill="#ffd23f"/></g>';
+const SHELF = (x, y, s) =>
+  '<g transform="translate(' + x + ',' + y + ') scale(' + s + ')">' +
+  '<rect x="-24" y="-60" width="48" height="60" fill="#d9c8a8" stroke="#33224a" stroke-width="1.8"/>' +
+  '<path d="M-24 -42 h48 M-24 -24 h48" stroke="#33224a" stroke-width="1.5"/>' +
+  '<rect x="-18" y="-56" width="10" height="12" fill="#ff8fb8"/><rect x="-4" y="-56" width="10" height="12" fill="#7fc1ed"/>' +
+  '<rect x="-18" y="-38" width="10" height="12" fill="#ffd23f"/><rect x="2" y="-38" width="12" height="12" fill="#a8e6c0"/></g>';
+const DOOR = (x, y, s) =>
+  '<g transform="translate(' + x + ',' + y + ') scale(' + s + ')">' +
+  '<rect x="-35" y="-104" width="70" height="104" rx="4" fill="#c98f52" stroke="#33224a" stroke-width="2.4"/>' +
+  '<rect x="-27" y="-94" width="54" height="36" rx="3" fill="#b57c43"/>' +
+  '<circle cx="-25" cy="-46" r="4.5" fill="#ffd23f" stroke="#33224a" stroke-width="1.6"/>' +
+  '<circle cx="0" cy="-76" r="5" fill="#33224a"/><circle cx="0" cy="-76" r="2" fill="#8fd0ff"/></g>';
+const SPEECH = (x, y, txt) =>
+  '<g class="clash"><path d="M' + x + ' ' + y + ' q22 0 22 13 q0 13 -22 13 q-4 6 -10 7 q3 -5 2 -8 q-14 -3 -14 -12 q0 -13 22 -13 Z" fill="#fff" stroke="#33224a" stroke-width="1.6"/>' +
+  '<text x="' + (x + 8) + '" y="' + (y + 18) + '" font-size="13">' + txt + '</text></g>';
+const EMO = (x, y, e, size, cls) =>
+  '<text x="' + x + '" y="' + y + '" font-size="' + (size || 15) + '"' + (cls ? ' class="' + cls + '"' : '') + '>' + e + '</text>';
+const SVG = (label, body) =>
+  '<svg viewBox="0 0 200 130" role="img" aria-label="' + label + '">' + body + '</svg>';
+
+// 常用的「安全了」與「被抓走」收尾
+const SUNBURST = (cx, cy) =>
+  '<g class="rays" style="transform-origin:' + cx + 'px ' + cy + 'px">' +
+  Array.from({ length: 12 }, (_, i) =>
+    '<path d="M' + cx + ' ' + cy + ' L' + (cx - 6) + ' -40 L' + (cx + 6) + ' -40 Z" fill="#ffe9a8" opacity=".75" transform="rotate(' + (i * 30) + ' ' + cx + ' ' + cy + ')"/>').join('') +
+  '</g>';
+const CAUGHT = (gx, gy) =>
+  '<g class="fly"><g style="transform-origin:' + gx + 'px ' + (gy - 34) + 'px">' + DRAGON(gx, gy - 34, 0.95, 1) + '</g>' +
+  '<g class="dangle" style="transform-origin:' + (gx - 8) + 'px ' + (gy - 20) + 'px">' +
+  '<path d="M' + (gx - 8) + ' ' + (gy - 24) + ' L' + (gx - 8) + ' ' + (gy - 12) + '" stroke="#2a6b4f" stroke-width="3.2" stroke-linecap="round"/>' +
+  GIRL(gx - 8, gy + 30, 0.72, { pose: 'hang', mood: 'flat' }) + '</g></g>';
+
+/* ===== 每個結局的專屬畫面（前 8 個劇本） ===== */
+const STORE = (x) =>
+  '<rect x="' + x + '" y="14" width="86" height="18" rx="4" fill="#27ae60" stroke="#33224a" stroke-width="1.8"/>' +
+  '<text x="' + (x + 43) + '" y="27" font-size="10" fill="#fff" text-anchor="middle" font-weight="bold">OPEN 24H</text>' +
+  '<rect x="' + (x + 6) + '" y="36" width="74" height="82" fill="#eafaf1" stroke="#33224a" stroke-width="1.6"/>';
+
+const ART_SCENES = {
+  /* ---------- 1. 放學路上 ---------- */
+  'road.best': SVG('小女生在便利商店裡打電話給媽媽，車子開走了',
+    BG('#fff6e6', '#c8c0b0') + STORE(96) + CAR(24, 112, 0.8, true) + EMO(6, 92, '💨', 14) +
+    GIRL(133, 116, 0.95, { pose: 'reachR' }) + '<rect x="150" y="60" width="9" height="16" rx="3" fill="#33224a"/>' +
+    EMO(160, 56, '📞', 14, 'zzz') + SUNBURST(133, 70)),
+  'road.good': SVG('小女生跑進便利商店，店員出來看',
+    BG('#fff6e6', '#c8c0b0') + STORE(90) + CAR(30, 112, 0.8, true) +
+    HELPER(120, 76, 0.82, '#27ae60', true) + GIRL(150, 116, 0.9, { pose: 'run' }) + EMO(168, 60, '💨', 14)),
+  'road.escape': SVG('小女生大喊，路人回頭看，車子開走了',
+    BG('#fff6e6', '#c8c0b0') +
+    '<g opacity=".5" fill="#6b5a7e"><circle cx="26" cy="66" r="9"/><rect x="18" y="76" width="16" height="42" rx="4"/>' +
+    '<circle cx="52" cy="72" r="8"/><rect x="45" y="81" width="14" height="37" rx="4"/></g>' +
+    CAR(168, 112, 0.8, false) + EMO(186, 88, '💨', 13) +
+    GIRL(102, 118, 1, { pose: 'shout' }) +
+    '<g class="dash" stroke="#e85a92" stroke-width="3" fill="none" stroke-linecap="round">' +
+    '<path d="M122 58 q8 8 0 16"/><path d="M130 52 q13 14 0 28"/><path d="M138 46 q19 20 0 40"/></g>'),
+  'road.bad': SVG('車子把小女生載走了',
+    BG('#e6e2f5', '#8f83b3') + '<circle cx="168" cy="26" r="12" fill="#fff3b0"/>' + CAUGHT(74, 96)),
+
+  /* ---------- 2. 網路上的新朋友 ---------- */
+  'online.best': SVG('小女生把手機拿給媽媽看',
+    BG('#f3f0ff', '#c9bfe0') + SUNBURST(100, 66) +
+    ADULT(72, 118, 0.92, { color: '#9b59b6', pose: 'reachR' }) +
+    GIRL(128, 118, 0.92, { pose: 'reachL' }) +
+    '<rect x="94" y="76" width="14" height="24" rx="4" fill="#33224a"/>' + EMO(140, 46, '✨', 15, 'twinkle')),
+  'online.good': SVG('把對方封鎖了，畫面上出現禁止符號',
+    BG('#eefaf0') + PHONE(138, 64, 1.1) + EMO(120, 76, '🚫', 30, 'clash') +
+    GIRL(62, 118, 0.95, { pose: 'reachR' }) + EMO(30, 50, '✨', 14, 'twinkle')),
+  'online.escape': SVG('小女生舉起盾牌，擋下從手機伸出來的爪子',
+    BG('#e9fbf0') + PHONE(163, 62, 0.95) +
+    '<g class="clawPush"><path d="M152 58 q-16 6 -26 6" stroke="#4caf7d" stroke-width="9" stroke-linecap="round"/>' +
+    '<path d="M128 64 l-8 -5 M128 64 l-8 5 M128 64 l-9 0" stroke="#2a6b4f" stroke-width="3" stroke-linecap="round"/></g>' +
+    EMO(104, 52, '💥', 20, 'clash') +
+    '<g class="bob">' + GIRL(76, 118, 0.98, { pose: 'reachR' }) +
+    '<path d="M110 44 L126 50 L126 74 q0 12 -16 18 q-16 -6 -16 -18 L94 50 Z" fill="#7fc1ed" stroke="#33224a" stroke-width="2" stroke-linejoin="round"/>' +
+    '<path d="M110 52 L110 82 M100 62 L120 62" stroke="#fff" stroke-width="3" stroke-linecap="round"/></g>'),
+  'online.bad': SVG('手機螢幕裡伸出爪子，把小女生往裡面拖',
+    BG('#e6e2f5', '#8f83b3') + PHONE(140, 64, 1.15) +
+    '<g class="swirl" style="transform-origin:140px 64px"><path d="M140 34 q26 30 0 60 q-26 -30 0 -60" fill="#7ed6a5" opacity=".55"/></g>' +
+    '<g class="pull"><path d="M124 66 q-22 2 -34 2" stroke="#4caf7d" stroke-width="10" stroke-linecap="round"/>' +
+    '<path d="M92 68 l-9 -6 M92 68 l-9 6" stroke="#2a6b4f" stroke-width="3.4" stroke-linecap="round"/>' +
+    '<g class="dangle" style="transform-origin:74px 70px">' + GIRL(72, 106, 0.82, { pose: 'hang', mood: 'flat' }) +
+    EMO(46, 56, '💦', 13) + '</g></g>'),
+
+  /* ---------- 3. 班上的事 ---------- */
+  'bully.best': SVG('兩個女生手牽手站在一起，其他同學在後面',
+    BG('#fff0f6') + BOARD(12, 16) +
+    '<g opacity=".35" fill="#b6a7d6"><circle cx="176" cy="74" r="9"/><rect x="168" y="84" width="16" height="34" rx="4"/></g>' +
+    GIRL(78, 118, 0.95, { pose: 'reachR' }) + GIRL(124, 118, 0.95, { pose: 'reachL', dress: '#7fc1ed' }) +
+    '<g class="hearts">' + EMO(92, 42, '💖', 16) + EMO(72, 34, '💕', 12) + EMO(116, 34, '💗', 12) + '</g>'),
+  'bully.escape': SVG('老師蹲下來，認真聽小女生說話',
+    BG('#f2f7ff', '#c8dcf0') + BOARD(14, 16) +
+    ADULT(66, 116, 0.78, { color: '#5e8f78' }) + GIRL(126, 118, 0.92, { pose: 'reachL' }) +
+    SPEECH(140, 40, '💬')),
+  'bully.bad': SVG('放學後的空教室，只剩一張空位子',
+    BG('#e6e2f5', '#8f83b3') + BOARD(14, 16) +
+    '<g opacity=".5">' + DESK(70, 112, 0.5) + DESK(140, 112, 0.5) + '</g>' +
+    GIRL(100, 118, 0.9, { pose: 'sit', mood: 'flat' }) + EMO(128, 60, '💭', 18, 'zzz')),
+
+  /* ---------- 4. 地震來了 ---------- */
+  'quake.best': SVG('小女生躲在桌子底下抓住桌腳，旁邊的櫃子倒下來了',
+    BG('#fff6e6', '#d8c3a0') +
+    '<g class="tilt" style="transform-origin:34px 118px"><rect x="6" y="72" width="30" height="46" rx="2" fill="#c49a6c" stroke="#33224a" stroke-width="1.6" transform="rotate(-22 34 118)"/></g>' +
+    '<g class="shakeBits" fill="#c49a6c"><circle cx="52" cy="112" r="3"/><circle cx="60" cy="116" r="2.2"/></g>' +
+    DESK(128, 118, 1) + '<g class="crouch">' + GIRL(120, 118, 0.72, { pose: 'reachL' }) + '</g>' + EMO(150, 100, '👌', 15)),
+  'quake.escape': SVG('全班排隊走樓梯疏散到操場',
+    BG('#eafaf1') +
+    '<path d="M0 118 L40 118 L40 96 L80 96 L80 74 L120 74 L120 52 L160 52" stroke="#b6a7d6" stroke-width="10" fill="none"/>' +
+    ADULT(150, 52, 0.62, { color: '#5e8f78' }) + GIRL(112, 74, 0.6) + GIRL(74, 96, 0.6, { dress: '#7fc1ed' }) +
+    GIRL(36, 118, 0.6, { dress: '#ffd23f' }) + EMO(166, 30, '🏫', 16)),
+  'quake.bad': SVG('地震時站在窗邊，東西掉下來了',
+    BG('#e6e2f5', '#8f83b3') + '<rect x="130" y="24" width="52" height="60" fill="#cfe6ff" stroke="#33224a" stroke-width="2"/>' +
+    '<g class="shakeBits" fill="#c49a6c"><circle cx="96" cy="40" r="5"/><circle cx="112" cy="28" r="4"/><circle cx="80" cy="30" r="3.4"/></g>' +
+    GIRL(100, 118, 0.95, { pose: 'hang', mood: 'flat' }) + EMO(64, 52, '💦', 14)),
+
+  /* ---------- 5. 一個人在家 ---------- */
+  'home.best': SVG('小女生沒有開門，隔著門打電話給爸媽',
+    BG('#fff6e6', '#d8c3a0') + DOOR(135, 118, 1) +
+    '<g class="fadeDanger"><path d="M176 118 q6 -34 14 -34 q8 0 14 34 Z" fill="#6b5a7e" opacity=".45"/></g>' +
+    GIRL(54, 118, 0.98, { pose: 'reachR' }) + '<rect x="70" y="60" width="9" height="16" rx="3" fill="#33224a"/>' +
+    EMO(80, 48, '📞', 14, 'zzz')),
+  'home.escape': SVG('小女生大聲說爸爸快到家了，門外的人離開了',
+    BG('#fff6e6', '#d8c3a0') + DOOR(135, 118, 1) +
+    '<g class="dragonMiss" opacity=".5"><path d="M180 118 q6 -32 12 -32 q7 0 12 32 Z" fill="#6b5a7e"/></g>' + EMO(186, 74, '💨', 13) +
+    GIRL(56, 118, 0.98, { pose: 'shout' }) + SPEECH(84, 40, '📢')),
+  'home.bad': SVG('門被打開了，惡龍在門口',
+    BG('#e6e2f5', '#8f83b3') +
+    '<g transform="translate(140,118) scale(1)"><rect x="-35" y="-104" width="70" height="104" rx="4" fill="#3d3357" stroke="#33224a" stroke-width="2.4"/></g>' +
+    '<g class="snore" style="transform-origin:140px 84px">' + DRAGON(140, 84, 0.8, -1) + '</g>' +
+    GIRL(58, 118, 0.92, { pose: 'hang', mood: 'flat' }) + EMO(28, 56, '💦', 14)),
+
+  /* ---------- 6. 手機裡的訊息 ---------- */
+  'scam.best': SVG('小女生把假中獎的視窗關掉，比出讚',
+    BG('#eefaf0') + PHONE(148, 64, 1.05) + EMO(130, 78, '🚫', 28, 'clash') +
+    GIRL(66, 118, 1, { pose: 'reachR' }) + EMO(96, 62, '👍', 20, 'bob') + SUNBURST(66, 66)),
+  'scam.escape': SVG('小女生把平板拿給媽媽看，媽媽打電話查證',
+    BG('#f3f0ff', '#c9bfe0') + ADULT(70, 118, 0.92, { color: '#9b59b6', pose: 'reachR' }) +
+    GIRL(130, 118, 0.92, { pose: 'reachL' }) + '<rect x="94" y="74" width="16" height="26" rx="4" fill="#33224a"/>' +
+    EMO(140, 44, '165', 13) + EMO(28, 48, '📞', 14, 'zzz')),
+  'scam.bad': SVG('信用卡被刷走，錢飛出手機',
+    BG('#e6e2f5', '#8f83b3') + PHONE(140, 60, 1.05) +
+    '<g class="hearts">' + EMO(96, 46, '💸', 18) + EMO(74, 34, '💸', 15) + EMO(112, 30, '💸', 14) + '</g>' +
+    GIRL(58, 118, 0.92, { pose: 'hang', mood: 'flat' }) + EMO(26, 58, '💦', 14)),
+
+  /* ---------- 7. 廚房起火了 ---------- */
+  'fire.best': SVG('開窗通風並關掉瓦斯，消防員來檢查',
+    BG('#eafaf1') + '<rect x="10" y="24" width="52" height="46" fill="#cfe6ff" stroke="#33224a" stroke-width="2"/>' +
+    '<path d="M14 28 h20 M14 40 h14" stroke="#fff" stroke-width="3" stroke-linecap="round"/>' +
+    HELPER(96, 78, 1, '#e74c3c', true) + '<path d="M107 84 L126 92" stroke="#fde2c5" stroke-width="6" stroke-linecap="round"/>' +
+    GIRL(140, 118, 0.92) + EMO(168, 46, '✨', 15, 'twinkle')),
+  'fire.escape': SVG('小女生退到門口大聲叫媽媽，火被撲滅了',
+    BG('#fff4e0', '#d8c3a0') + FLAME(26, 118, 0.7) +
+    '<rect x="60" y="70" width="46" height="8" rx="2" fill="#9aa4ad" stroke="#33224a" stroke-width="1.6"/>' +
+    ADULT(84, 118, 0.86, { color: '#9b59b6', pose: 'reachL' }) +
+    GIRL(150, 118, 0.95, { pose: 'shout' }) + SPEECH(120, 36, '📢')),
+  'fire.bad': SVG('往油鍋潑水，火焰竄得更大',
+    BG('#3d3357', '#5a4a72') + FLAME(88, 112, 1.5) + FLAME(120, 116, 1.1) +
+    '<rect x="70" y="76" width="46" height="8" rx="2" fill="#9aa4ad" stroke="#33224a" stroke-width="1.6"/>' +
+    GIRL(40, 118, 0.9, { pose: 'hang', mood: 'flat' }) + EMO(12, 56, '💦', 14)),
+
+  /* ---------- 8. 泳池邊 ---------- */
+  'pool.best': SVG('小女生大喊救生員，並把浮板丟給同學',
+    BG('#e8f6ff', '#dbe8f0') + WATER(84) +
+    '<circle cx="128" cy="92" r="11" fill="none" stroke="#ff5a4a" stroke-width="5" class="bob"/>' +
+    HELPER(170, 84, 0.86, '#e74c3c', false) +
+    GIRL(56, 84, 0.95, { pose: 'shout' }) +
+    '<g class="dash" stroke="#e85a92" stroke-width="3" fill="none" stroke-linecap="round"><path d="M74 44 q8 8 0 16"/><path d="M82 38 q13 14 0 28"/></g>'),
+  'pool.good': SVG('小女生跑去找大人幫忙',
+    BG('#e8f6ff', '#dbe8f0') + WATER(96) + HELPER(158, 96, 0.86, '#e74c3c', false) +
+    GIRL(76, 96, 0.95, { pose: 'run' }) + EMO(96, 46, '💨', 14) + EMO(178, 60, '❗', 16, 'clash')),
+  'pool.escape': SVG('小女生放鬆浮起來，把頭仰高呼吸',
+    BG('#e8f6ff') + WATER(60) +
+    '<g class="bob"><ellipse cx="100" cy="72" rx="30" ry="9" fill="#a8d8f5"/>' +
+    GIRL_FACE(100, 62, 13, 'happy') +
+    LIMB(84, 74, 66, 68, 6) + LIMB(116, 74, 134, 68, 6) + '</g>' +
+    EMO(150, 44, '😮‍💨', 16)),
+  'pool.bad': SVG('在深水區沉下去了',
+    BG('#cfe6ff') + WATER(28) +
+    '<g class="fly">' + GIRL(100, 108, 0.9, { pose: 'hang', mood: 'flat' }) + '</g>' +
+    '<g class="puff" fill="#fff" opacity=".7"><circle cx="118" cy="60" r="5"/><circle cx="128" cy="46" r="3.6"/><circle cx="136" cy="34" r="2.6"/></g>'),
+};
+
+/* ===== 每個結局的專屬畫面（後 8 個劇本） ===== */
+Object.assign(ART_SCENES, {
+  /* ---------- 9. 賣場走失 ---------- */
+  'lost.best': SVG('服務台廣播後，媽媽跑過來抱住小女生',
+    BG('#eafaf1') +
+    '<rect x="8" y="82" width="74" height="36" rx="3" fill="#d9c8a8" stroke="#33224a" stroke-width="1.8"/>' +
+    '<text x="45" y="76" font-size="11" fill="#6b4a9e" text-anchor="middle" font-weight="bold">服務台</text>' +
+    EMO(30, 52, '📢', 16, 'ring') +
+    ADULT(112, 118, 0.88, { color: '#9b59b6', pose: 'reachR' }) + GIRL(156, 118, 0.8, { pose: 'reachL' }) +
+    '<g class="hearts">' + EMO(128, 46, '💖', 15) + '</g>'),
+  'lost.good': SVG('小女生待在原地等，媽媽自己找回來了',
+    BG('#eafaf1') + SHELF(150, 118, 0.9) + SHELF(30, 118, 0.9) +
+    ADULT(72, 118, 0.88, { color: '#9b59b6', pose: 'reachR' }) + GIRL(112, 118, 0.85) +
+    EMO(94, 40, '💕', 15, 'twinkle')),
+  'lost.escape': SVG('小女生甩開陌生人的手，跑回人多的地方',
+    BG('#eafaf1') + SHELF(24, 118, 0.85) +
+    '<g class="dragonMiss" opacity=".75" style="transform-origin:66px 90px">' +
+    ADULT(66, 118, 0.86, { color: '#8a8f96', pose: 'reachR' }) + '</g>' +
+    GIRL(132, 118, 0.95, { pose: 'run' }) + EMO(154, 52, '💨', 14) +
+    '<rect x="160" y="84" width="34" height="34" rx="3" fill="#d9c8a8" stroke="#33224a" stroke-width="1.6"/>'),
+  'lost.bad': SVG('跟著陌生人走進沒有人的通道',
+    BG('#e6e2f5', '#8f83b3') +
+    '<path d="M60 30 L140 30 L164 118 L36 118 Z" fill="#544a70"/>' +
+    ADULT(84, 112, 0.78, { color: '#6b5a7e', pose: 'reachR' }) +
+    GIRL(116, 112, 0.7, { pose: 'hang', mood: 'flat' }) + EMO(136, 62, '💦', 13)),
+
+  /* ---------- 10. 同學的請求 ---------- */
+  'money.best': SVG('小女生抱著存錢筒，推開伸過來要錢的手',
+    BG('#fffbe6') +
+    '<g class="clawPush">' +
+    '<path d="M198 78 h-38" stroke="#c9a98a" stroke-width="11" stroke-linecap="round"/>' +
+    '<ellipse cx="152" cy="78" rx="12" ry="10" fill="#e0bfa0" stroke="#33224a" stroke-width="1.5"/>' +
+    '<path d="M141 72 h-9 M140 78 h-11 M141 84 h-9" stroke="#e0bfa0" stroke-width="5" stroke-linecap="round"/>' +
+    '<path d="M141 72 h-9 M140 78 h-11 M141 84 h-9" stroke="#33224a" stroke-width="0.9" fill="none" opacity=".5"/>' +
+    '</g>' +
+    EMO(120, 66, '🚫', 18, 'clash') +
+    '<g class="bob">' + GIRL(72, 118, 0.98, { pose: 'reachR' }) +
+    '<ellipse cx="96" cy="100" rx="19" ry="14" fill="#ffb7d8" stroke="#33224a" stroke-width="1.8"/>' +
+    '<circle cx="106" cy="97" r="1.8" fill="#33224a"/>' +
+    '<path d="M90 87 h12" stroke="#33224a" stroke-width="2.4" stroke-linecap="round"/>' +
+    '<path d="M84 112 l0 5 M104 112 l0 5" stroke="#33224a" stroke-width="2.6" stroke-linecap="round"/>' +
+    EMO(88, 80, '🪙', 13) + '</g>'),
+  'money.escape': SVG('小女生把事情老實告訴媽媽',
+    BG('#f3f0ff', '#c9bfe0') + ADULT(70, 118, 0.92, { color: '#9b59b6', pose: 'reachR' }) +
+    GIRL(128, 118, 0.92, { pose: 'reachL' }) + SPEECH(140, 38, '💬') + EMO(30, 46, '💕', 14, 'twinkle')),
+  'money.bad': SVG('空空的錢包，小女生低著頭',
+    BG('#e6e2f5', '#8f83b3') +
+    '<g class="bob"><rect x="112" y="60" width="46" height="32" rx="4" fill="#8a6a4a" stroke="#33224a" stroke-width="1.8"/>' +
+    '<path d="M112 72 h46" stroke="#33224a" stroke-width="1.5"/></g>' +
+    '<g class="hearts">' + EMO(124, 46, '💸', 15) + EMO(146, 40, '💸', 13) + '</g>' +
+    GIRL(60, 118, 0.92, { pose: 'hang', mood: 'flat' })),
+
+  /* ---------- 11. 考試那天 ---------- */
+  'exam.best': SVG('小女生舉起自己努力考到的考卷',
+    BG('#eefaf0') + BOARD(12, 14) +
+    '<g class="bob"><g transform="rotate(-7 142 62)">' +
+    '<rect x="116" y="30" width="52" height="64" rx="3" fill="#fff" stroke="#33224a" stroke-width="2"/>' +
+    '<path d="M124 44 h22 M124 52 h30" stroke="#c8c8d8" stroke-width="2.4" stroke-linecap="round"/>' +
+    '<text x="142" y="86" font-size="24" fill="#e85a92" text-anchor="middle" font-weight="bold">100</text></g></g>' +
+    GIRL(84, 118, 0.98, { pose: 'reachR' }) + EMO(40, 44, '✨', 15, 'twinkle')),
+  'exam.escape': SVG('小女生舉手向老師承認，老師點點頭',
+    BG('#f2f7ff', '#c8dcf0') + BOARD(14, 16) +
+    ADULT(150, 118, 0.9, { color: '#5e8f78' }) + GIRL(90, 118, 0.95, { pose: 'cheer' }) +
+    SPEECH(104, 34, '🙋')),
+  'exam.bad': SVG('老師打電話給爸媽，事情變得更大',
+    BG('#e6e2f5', '#8f83b3') + BOARD(14, 16) +
+    ADULT(146, 118, 0.88, { color: '#5e8f78', pose: 'reachL' }) +
+    '<rect x="120" y="56" width="10" height="18" rx="3" fill="#33224a"/>' + EMO(104, 46, '📞', 14, 'ring') +
+    GIRL(58, 118, 0.9, { pose: 'hang', mood: 'flat' })),
+
+  /* ---------- 12. 不能說的秘密 ---------- */
+  'secret.best': SVG('媽媽緊緊抱住小女生說這不是你的錯',
+    BG('#fff0f6') + SUNBURST(100, 68) +
+    ADULT(86, 118, 0.95, { color: '#9b59b6', pose: 'reachR' }) +
+    GIRL(124, 118, 0.8, { pose: 'reachL' }) +
+    '<g class="hearts">' + EMO(96, 40, '💖', 17) + EMO(76, 32, '💕', 13) + EMO(120, 30, '💗', 13) + '</g>'),
+  'secret.escape': SVG('爸爸媽媽站在小女生兩邊，支持她',
+    BG('#f3f0ff', '#c9bfe0') +
+    ADULT(52, 118, 0.92, { color: '#9aa4ad', pose: 'reachR', beard: 1, cape: 1 }) +
+    ADULT(150, 118, 0.92, { color: '#9b59b6', pose: 'reachL' }) +
+    GIRL(101, 118, 0.82) + EMO(88, 36, '💖', 15, 'twinkle') + EMO(112, 30, '💕', 12, 'twinkle')),
+  'secret.bad': SVG('小女生一個人把事情放在心裡，旁邊有 113 的提示',
+    BG('#e6e2f5', '#8f83b3') +
+    GIRL(84, 118, 0.95, { pose: 'sit', mood: 'flat' }) +
+    '<g class="zzz">' + EMO(122, 62, '💭', 20) + '</g>' +
+    '<g class="bob"><rect x="132" y="72" width="52" height="26" rx="6" fill="#fff" stroke="#33224a" stroke-width="1.8"/>' +
+    '<text x="158" y="90" font-size="15" fill="#e85a92" text-anchor="middle" font-weight="bold">113</text></g>'),
+
+  /* ---------- 13. 自稱警察的電話 ---------- */
+  'fakecop.best': SVG('小女生掛掉電話，改打給媽媽，爸爸好好的在上班',
+    BG('#eefaf0') + SUNBURST(70, 66) +
+    GIRL(70, 118, 0.98, { pose: 'reachR' }) + '<rect x="88" y="58" width="10" height="18" rx="3" fill="#33224a"/>' +
+    EMO(100, 46, '📞', 14, 'zzz') +
+    '<g class="bob"><rect x="126" y="56" width="56" height="40" rx="5" fill="#fff" stroke="#33224a" stroke-width="1.8"/>' +
+    '<text x="154" y="74" font-size="11" fill="#6b4a9e" text-anchor="middle" font-weight="bold">爸爸</text>' +
+    '<text x="154" y="88" font-size="11" fill="#27ae60" text-anchor="middle" font-weight="bold">沒事 ✓</text></g>'),
+  'fakecop.escape': SVG('爸爸媽媽報警處理這通詐騙電話',
+    BG('#f2f7ff', '#c8dcf0') + HELPER(150, 118, 0.88, '#3f6bb5', true) +
+    ADULT(60, 118, 0.9, { color: '#9b59b6', pose: 'reachR' }) + GIRL(104, 118, 0.82) +
+    EMO(30, 44, '110', 13) + EMO(172, 48, '🚔', 16, 'bob')),
+  'fakecop.bad': SVG('把家裡的錢放在門口，被拿走了',
+    BG('#e6e2f5', '#8f83b3') + DOOR(150, 118, 0.9) +
+    '<g class="fly"><rect x="96" y="92" width="30" height="20" rx="3" fill="#8a6a4a" stroke="#33224a" stroke-width="1.6"/>' +
+    EMO(100, 82, '💸', 15) + '</g>' +
+    GIRL(50, 118, 0.9, { pose: 'hang', mood: 'flat' }) + EMO(22, 58, '💦', 13)),
+
+  /* ---------- 14. 便宜的遊戲點數 ---------- */
+  'shop.best': SVG('小女生把假特價的頁面關掉',
+    BG('#eefaf0') + PHONE(150, 64, 1.05) + EMO(132, 78, '🚫', 26, 'clash') +
+    GIRL(64, 118, 1, { pose: 'reachR' }) + EMO(94, 60, '👍', 20, 'bob') + SUNBURST(64, 66)),
+  'shop.escape': SVG('媽媽帶小女生打 165 報案',
+    BG('#f3f0ff', '#c9bfe0') + ADULT(68, 118, 0.92, { color: '#9b59b6', pose: 'reachR' }) +
+    GIRL(126, 118, 0.9, { pose: 'reachL' }) +
+    '<g class="bob"><rect x="140" y="42" width="52" height="26" rx="6" fill="#fff" stroke="#33224a" stroke-width="1.8"/>' +
+    '<text x="166" y="60" font-size="15" fill="#e85a92" text-anchor="middle" font-weight="bold">165</text></g>'),
+  'shop.bad': SVG('一直匯錢出去，對方消失了',
+    BG('#e6e2f5', '#8f83b3') + PHONE(146, 62, 1.0) +
+    '<g class="hearts">' + EMO(104, 48, '💸', 17) + EMO(84, 36, '💸', 14) + EMO(122, 32, '💸', 13) + '</g>' +
+    GIRL(56, 118, 0.92, { pose: 'hang', mood: 'flat' }) + EMO(24, 58, '💦', 14)),
+
+  /* ---------- 15. 好朋友傳來的訊息 ---------- */
+  'imposter.best': SVG('打電話確認後發現是假的，兩個好朋友都沒被騙',
+    BG('#eefaf0') + SUNBURST(100, 66) +
+    GIRL(72, 118, 0.92, { pose: 'reachR' }) + GIRL(128, 118, 0.92, { pose: 'reachL', dress: '#7fc1ed' }) +
+    '<rect x="94" y="70" width="12" height="20" rx="4" fill="#33224a"/>' +
+    EMO(96, 42, '📞', 15, 'ring') + EMO(150, 42, '✨', 14, 'twinkle')),
+  'imposter.escape': SVG('把事情告訴老師，老師提醒全班',
+    BG('#f2f7ff', '#c8dcf0') + BOARD(14, 16) +
+    ADULT(60, 118, 0.9, { color: '#5e8f78', pose: 'reachR' }) + GIRL(116, 118, 0.9, { pose: 'reachL' }) +
+    SPEECH(132, 36, '📢') + EMO(166, 96, '👥', 16)),
+  'imposter.bad': SVG('點數卡序號被拿走，對方不見了',
+    BG('#e6e2f5', '#8f83b3') + PHONE(146, 62, 1.0) +
+    '<g class="fly"><rect x="88" y="52" width="34" height="22" rx="3" fill="#ffd23f" stroke="#33224a" stroke-width="1.6"/>' +
+    '<path d="M92 62 h26" stroke="#33224a" stroke-width="1.6"/></g>' +
+    GIRL(56, 118, 0.92, { pose: 'hang', mood: 'flat' }) + EMO(24, 58, '💦', 14)),
+
+  /* ---------- 16. 去買早餐 ---------- */
+  'breakfast.best': SVG('早餐店老闆讓小女生待在店裡，打電話請媽媽來接',
+    BG('#fff6e6', '#c8c0b0') + STORE(96) + HELPER(126, 108, 0.8, '#e8a33f', true) +
+    GIRL(160, 118, 0.88) + EMO(60, 46, '🥟', 20, 'bob') + EMO(112, 52, '📞', 14, 'ring') + SUNBURST(160, 70)),
+  'breakfast.good': SVG('小女生沒有回家，轉進便利商店請店員幫忙',
+    BG('#fff6e6', '#c8c0b0') + STORE(88) + HELPER(118, 78, 0.82, '#27ae60', true) +
+    GIRL(154, 118, 0.9, { pose: 'run' }) +
+    '<g class="dragonMiss" opacity=".45"><path d="M22 118 q6 -34 13 -34 q7 0 13 34 Z" fill="#6b5a7e"/></g>' +
+    EMO(40, 60, '👣', 14)),
+  'breakfast.escape': SVG('小女生大喊，路人回頭，跟蹤的人跑掉了',
+    BG('#fff6e6', '#c8c0b0') +
+    '<g opacity=".5" fill="#6b5a7e"><circle cx="26" cy="66" r="9"/><rect x="18" y="76" width="16" height="42" rx="4"/>' +
+    '<circle cx="52" cy="72" r="8"/><rect x="45" y="81" width="14" height="37" rx="4"/></g>' +
+    '<g class="dragonMiss" opacity=".8"><path d="M164 118 L168 84 L182 84 L186 118 Z" fill="#8a8f96" stroke="#33224a" stroke-width="1.5" stroke-linejoin="round"/>' +
+    '<circle cx="175" cy="74" r="10" fill="#c9a98a" stroke="#33224a" stroke-width="1.5"/></g>' + EMO(186, 68, '💨', 12) +
+    GIRL(102, 118, 1, { pose: 'shout' }) +
+    '<g class="dash" stroke="#e85a92" stroke-width="3" fill="none" stroke-linecap="round">' +
+    '<path d="M122 58 q8 8 0 16"/><path d="M130 52 q13 14 0 28"/><path d="M138 46 q19 20 0 40"/></g>'),
+  'breakfast.bad': SVG('被跟到家門口，對方看著門牌',
+    BG('#e6e2f5', '#8f83b3') + DOOR(58, 118, 0.9) +
+    '<rect x="86" y="30" width="30" height="16" rx="3" fill="#fff" stroke="#33224a" stroke-width="1.6"/>' +
+    '<text x="101" y="42" font-size="10" fill="#33224a" text-anchor="middle" font-weight="bold">12</text>' +
+    '<g class="snore" style="transform-origin:158px 90px">' + DRAGON(158, 90, 0.78, -1) + '</g>' +
+    GIRL(30, 118, 0.8, { pose: 'hang', mood: 'flat' }) + EMO(118, 60, '👀', 15, 'clash')),
+});
+
+/* 依「劇本.結局」挑圖，找不到就退回該等級的通用圖 */
+function sceneFor(scenarioId, grade) {
+  return ART_SCENES[scenarioId + '.' + grade] || SCENE[grade] || SCENE.escape;
+}
+
 /* ===== 音效（Web Audio，無外部檔） ===== */
 const Sfx = (() => {
   let ctx = null;
@@ -1567,7 +2036,7 @@ function renderEnding() {
     <div class="card">
       <div class="endgrid">
         <div class="result">
-          <div class="scene pop">${SCENE[ending.grade] || SCENE.escape}</div>
+          <div class="scene pop">${sceneFor(cur.id, ending.grade)}</div>
           <h1>${esc(ending.title)}</h1>
           <span class="badge" style="background:${m.bg}; color:${m.color};">${m.label}結局</span>
           ${improved && ending.grade !== 'bad' ? `<div style="font-weight:900; color:#c9a000; margin-top:8px;">🎉 比上次更好了！</div>` : ''}
