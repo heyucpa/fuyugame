@@ -1234,6 +1234,83 @@ const SCENARIOS = [
         lesson: '這一題其實只有一句話：<b>不知道來源的東西，一顆也不要吃</b>。<br><br>如果已經吃了、覺得不舒服，最重要的是<b>馬上告訴大人，越快越好</b>——晚一分鐘就多一分危險。<br><br>回去再走一次，找找哪裡可以早一點拒絕、早一點開口。' },
     },
   },
+  /* ---------- 18. 等不到爸媽 ---------- */
+  {
+    id: 'gate', emoji: '🏫', title: '等不到爸媽',
+    tag: '走失・求助',
+    intro: '放學鐘響了，你在校門口等媽媽來接。<br><br>同學一個一個被接走，警衛伯伯也開始收東西。天色慢慢暗下來……媽媽還是沒有出現。',
+    start: 'n1',
+    nodes: {
+      n1: {
+        text: '你等了快半小時。今天沒有帶手機。<br><br>校門口只剩下你一個人了。',
+        hint: '等不到人的時候，哪裡是最安全的地方？',
+        choices: [
+          { label: '自己走路回家，反正路不遠', to: 'walkhome' },
+          { label: '回學校裡面找老師或警衛，借電話打給媽媽', to: 'school' },
+          { label: '再等一下下，媽媽應該快到了', to: 'wait' },
+        ],
+      },
+      wait: {
+        text: '又過了十分鐘，天更暗了。<br><br>一台車在你面前停下來，一位阿姨搖下車窗：<br><br>「妹妹，你在等媽媽喔？外面這麼暗很危險，阿姨載你回家好不好？」',
+        hint: '她說「外面很危險」是真的——但上她的車就會比較安全嗎？',
+        choices: [
+          { label: '她說得對，外面好暗，上車', to: 'incar' },
+          { label: '「謝謝，我要回學校等」，轉身走進校門', to: 'school' },
+          { label: '說「不用了」，繼續站在原地等', to: 'alone' },
+        ],
+      },
+      school: {
+        text: '你走回校門裡，警衛伯伯還在。<br><br>「怎麼還沒回家？來，用辦公室的電話打給媽媽。」<br><br>電話一接通，媽媽的聲音都在抖：<br><br>「對不起！媽媽的車在路上拋錨了，一直聯絡不上你們老師……」',
+        choices: [
+          { label: '在警衛室裡等媽媽來接', to: 'best' },
+          { label: '「那我自己走回家好了，你不用趕」', to: 'walkhome' },
+        ],
+      },
+      walkhome: {
+        text: '你自己走回家。<br><br>走到一半天已經全黑了，有一段路沒有路燈。<br><br>你發現……後面好像有腳步聲。',
+        choices: [
+          { label: '加快腳步，趕快走回家', to: 'followed' },
+          { label: '轉進前面亮亮的便利商店，請店員幫忙打電話', to: 'escape' },
+        ],
+      },
+      alone: {
+        text: '你一個人站在暗暗的校門口。<br><br>剛剛那台車開走了——但過了一會兒，它又繞回來，停在對面。',
+        choices: [
+          { label: '假裝沒看到，繼續站在這裡等', to: 'incar' },
+          { label: '趕快跑回學校裡面找警衛', to: 'escape' },
+          { label: '剛好有老師騎車要出校門，跑過去請老師幫忙', to: 'good' },
+        ],
+      },
+      followed: {
+        text: '腳步聲越來越近了。',
+        choices: [
+          { label: '回頭大喊「你是誰！」並往有燈的地方跑', to: 'escape' },
+          { label: '不敢回頭，低著頭一直走', to: 'bad' },
+        ],
+      },
+      incar: {
+        text: '你上了車。<br><br>車子開了一段路，你發現……這不是回家的方向。',
+        choices: [
+          { label: '大力拍窗戶讓外面的人看到', to: 'escape' },
+          { label: '安靜坐著不敢說話', to: 'bad' },
+        ],
+      },
+    },
+    endings: {
+      best: { grade: 'best', title: '滿分的處理', emoji: '🌟',
+        text: '你在警衛室裡吃著伯伯給的餅乾，二十分鐘後媽媽衝進來把你抱得好緊。<br><br>「對不起、對不起……」<br><br>「沒關係啊，」你說：「我知道要在學校等你。」',
+        lesson: '等不到人的時候，<b>最安全的地方就是回到學校裡面</b>——那裡有老師、有警衛、有電話，而且<b>爸媽一定會回來這裡找你</b>。<br><br>學校不會走掉，你也不要走掉。<br><br>另外：<b>爸媽遲到不是你的錯</b>，你不需要自己想辦法解決，只要待在安全的地方等就好。' },
+      good: { grade: 'good', title: '抓住了求助的機會', emoji: '👍',
+        text: '老師停下車，帶你回辦公室打電話，還陪你一起等到媽媽來。',
+        lesson: '你抓住了求助的機會，很好。<br><br>不過在校門口一個人站著的那段時間，其實是最危險的——<b>落單的小孩最容易被盯上</b>。<br><br>下次可以更早一步：<b>等不到人就直接走回學校裡面</b>，不要在門外等。' },
+      escape: { grade: 'escape', title: '及時轉彎', emoji: '😮‍💨',
+        text: '你及時進到有人、有燈的地方，順利聯絡上家人。<br><br>媽媽趕來的時候，你的手還在發抖。',
+        lesson: '你做對了關鍵那一步——<b>往有人、有燈的地方移動</b>。<br><br>但最好的做法是一開始就不要離開學校。<b>天黑之後一個人在外面走，是最危險的狀態</b>。<br><br>記得跟爸媽約好一個「等不到人就去這裡」的地點，以後就不用臨時煩惱。' },
+      bad: { grade: 'bad', title: '再試一次',
+        text: '故事到這裡停下來了。',
+        lesson: '一個人在天黑的路上走，正是壞人最希望看到的狀況。<br><br>記住一句話就好：<b>等不到爸媽，就回學校</b>。<br><br>學校不會走掉，爸媽一定會回來找你——你只要待在有大人的地方就好。<br><br>回去再走一次，找找看哪裡可以早一點回頭。' },
+    },
+  },
 ];
 
 /* ===== 結局插圖（inline SVG，動畫在 CSS） ===== */
@@ -1753,6 +1830,67 @@ Object.assign(ART_SCENES, {
     GIRL(72, 118, 0.95, { pose: 'sit', mood: 'flat' }) +
     EMO(44, 58, '💦', 14) +
     '<g class="zzz">' + EMO(104, 56, '💭', 18) + '</g>'),
+});
+
+/* ===== 第 18 個劇本：等不到爸媽 ===== */
+// 校門（含「學校」牌子）
+const GATE = (x, y, s) =>
+  '<g transform="translate(' + x + ',' + y + ') scale(' + s + ')">' +
+  '<rect x="-46" y="-70" width="9" height="70" fill="#b6a7d6" stroke="#33224a" stroke-width="1.8"/>' +
+  '<rect x="37" y="-70" width="9" height="70" fill="#b6a7d6" stroke="#33224a" stroke-width="1.8"/>' +
+  '<rect x="-50" y="-84" width="100" height="16" rx="4" fill="#5e8f78" stroke="#33224a" stroke-width="1.8"/>' +
+  '<text x="0" y="-72" font-size="11" fill="#fff" text-anchor="middle" font-weight="bold">學校</text>' +
+  '<path d="M-37 -56 v56 M-26 -56 v56 M-15 -56 v56 M-4 -56 v56" stroke="#cbbce0" stroke-width="2.4"/>' +
+  '</g>';
+// 警衛室
+const GUARDBOX = (x, y, s) =>
+  '<g transform="translate(' + x + ',' + y + ') scale(' + s + ')">' +
+  '<rect x="-34" y="-56" width="68" height="56" rx="3" fill="#fff6e6" stroke="#33224a" stroke-width="2"/>' +
+  '<path d="M-40 -56 L0 -76 L40 -56 Z" fill="#c98f52" stroke="#33224a" stroke-width="2" stroke-linejoin="round"/>' +
+  '<rect x="-26" y="-46" width="52" height="26" rx="2" fill="#cfe6ff" stroke="#33224a" stroke-width="1.5"/>' +
+  '<text x="0" y="-8" font-size="10" fill="#6b4a9e" text-anchor="middle" font-weight="bold">警衛室</text>' +
+  '</g>';
+const STREETLAMP = (x, y, s, on) =>
+  '<g transform="translate(' + x + ',' + y + ') scale(' + s + ')">' +
+  '<rect x="-2" y="-64" width="4" height="64" fill="#6b5a7e"/>' +
+  '<path d="M-10 -68 h20 l-4 8 h-12 Z" fill="#6b5a7e" stroke="#33224a" stroke-width="1.2"/>' +
+  (on ? '<path d="M-34 0 L-7 -58 L7 -58 L34 0 Z" fill="#fff3b0" opacity=".22"/>' : '') +
+  '</g>';
+
+Object.assign(ART_SCENES, {
+  // 🌟 回學校，在警衛室等到媽媽
+  'gate.best': SVG('小女生在警衛室裡等到媽媽，媽媽衝進來抱住她',
+    BG('#eefaf0') + SUNBURST(64, 66) + GUARDBOX(56, 118, 0.95) +
+    HELPER(24, 108, 0.62, '#3f6bb5', true) +
+    ADULT(150, 118, 0.9, { color: '#9b59b6', pose: 'reachL' }) +
+    GIRL(112, 118, 0.82, { pose: 'reachR' }) +
+    '<g class="hearts">' + EMO(122, 44, '💖', 16) + EMO(142, 34, '💕', 12) + '</g>'),
+
+  // 👍 在門口攔到剛好要出校門的老師
+  'gate.good': SVG('小女生跑向剛好要出校門的老師求助',
+    BG('#f2f7ff', '#c8dcf0') + GATE(70, 118, 0.95) +
+    ADULT(148, 118, 0.9, { color: '#5e8f78', pose: 'reachL' }) +
+    GIRL(106, 118, 0.9, { pose: 'reachR' }) +
+    SPEECH(112, 30, '🙋') + EMO(178, 46, '🕕', 15, 'ring')),
+
+  // 😮‍💨 走到一半轉進亮亮的便利商店
+  'gate.escape': SVG('天黑了，小女生轉進亮著燈的便利商店請店員幫忙',
+    BG('#3d3357', '#5a4a72') + STREETLAMP(28, 118, 1, true) +
+    '<rect x="96" y="14" width="96" height="18" rx="4" fill="#27ae60" stroke="#33224a" stroke-width="1.8"/>' +
+    '<text x="144" y="27" font-size="10" fill="#fff" text-anchor="middle" font-weight="bold">OPEN 24H</text>' +
+    '<rect x="102" y="36" width="84" height="82" fill="#fffce8" stroke="#33224a" stroke-width="1.6"/>' +
+    HELPER(122, 108, 0.72, '#27ae60', true) +
+    GIRL(160, 118, 0.88, { pose: 'reachL' }) +
+    EMO(66, 60, '💨', 14)),
+
+  // 🔁 一個人走在沒有路燈的暗路上
+  'gate.bad': SVG('天黑後一個人走在沒有路燈的路上',
+    BG('#2e2745', '#463d63') +
+    '<circle cx="170" cy="24" r="11" fill="#fff3b0" opacity=".8"/>' +
+    STREETLAMP(40, 118, 1, false) + STREETLAMP(168, 118, 0.9, false) +
+    GIRL(86, 118, 0.92, { pose: 'stand', mood: 'flat' }) +
+    '<g class="dragonMiss" opacity=".55"><path d="M132 118 q7 -38 15 -38 q8 0 15 38 Z" fill="#1a1630"/></g>' +
+    EMO(56, 58, '💦', 13) + EMO(112, 52, '👣', 14, 'dash')),
 });
 
 /* ===== 每個結局的專屬畫面（後 8 個劇本） ===== */
