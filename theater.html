@@ -170,6 +170,12 @@
     padding: 14px 16px; margin: 14px 0;
   }
   .lesson b { color: #1e7d46; }
+  .talkbox {
+    text-align: left; font-size: 15px; line-height: 1.8;
+    background: #fff3c4; border: 3px dashed #c9a000; border-radius: 16px;
+    padding: 13px 16px; margin: 12px 0;
+  }
+  .talkbox-h { font-weight: 900; color: #a07a00; margin-bottom: 5px; }
   .replay { text-align: left; margin: 12px 0; }
   .replay h3 { font-size: 15px; margin: 0 0 8px; color: #6b4a9e; }
   .step-row {
@@ -247,6 +253,7 @@ const SCENARIOS = [
     id: 'road', emoji: '🚗', title: '放學路上',
     tag: '陌生人・誘拐',
     intro: '今天媽媽說會晚一點下班，你自己走路回家。走到轉角時，一台銀色的車慢慢開到你旁邊……',
+    talk: '我們家要不要設一個「暗號」？如果真的有人說是爸媽派來接你的，你會問他什麼？',
     start: 'n1',
     nodes: {
       n1: {
@@ -309,6 +316,7 @@ const SCENARIOS = [
     id: 'online', emoji: '💬', title: '網路上的新朋友',
     tag: '網路・個資',
     intro: '你在遊戲裡認識了一個玩得很好的隊友。他每天都陪你打，還送你稀有道具，你們變成了好朋友。',
+    talk: '你在網路上有哪些朋友？他們有沒有問過你什麼問題？',
     start: 'n1',
     nodes: {
       n1: {
@@ -364,6 +372,7 @@ const SCENARIOS = [
     id: 'bully', emoji: '😔', title: '班上的事',
     tag: '霸凌・友誼',
     intro: '這學期班上有個轉學生叫小柔，比較安靜。最近你發現，有幾個同學開始故意不理她。',
+    talk: '你們班上有沒有人被排擠？如果有，你想怎麼幫他？',
     start: 'n1',
     nodes: {
       n1: {
@@ -423,6 +432,7 @@ const SCENARIOS = [
     id: 'quake', emoji: '🌏', title: '地震來了',
     tag: '防災・應變',
     intro: '第三節數學課，你正在寫習題。突然，桌子開始輕輕搖晃……',
+    talk: '我們家地震的時候要躲在哪裡？在學校的話呢？',
     start: 'n1',
     nodes: {
       n1: {
@@ -494,6 +504,7 @@ const SCENARIOS = [
     id: 'home', emoji: '🏠', title: '一個人在家',
     tag: '居家安全',
     intro: '爸媽出門買東西，說半小時就回來。家裡只有你一個人。',
+    talk: '一個人在家的時候，誰按門鈴你才可以開？我們現在講好。',
     start: 'n1',
     nodes: {
       n1: {
@@ -545,6 +556,7 @@ const SCENARIOS = [
     id: 'scam', emoji: '📱', title: '手機裡的訊息',
     tag: '詐騙・金錢',
     intro: '你用平板玩遊戲的時候，跳出一則通知。',
+    talk: '你的平板上有沒有跳出過奇怪的訊息？當時你怎麼做？',
     start: 'n1',
     nodes: {
       n1: {
@@ -596,6 +608,7 @@ const SCENARIOS = [
     id: 'fire', emoji: '🔥', title: '廚房起火了',
     tag: '防災・居家',
     intro: '媽媽在廚房煮菜，接到電話走進房間講。你在客廳看電視，突然聞到一股怪怪的味道……',
+    talk: '我們家的滅火器和瓦斯總開關在哪裡？要不要現在一起去看？',
     start: 'n1',
     nodes: {
       n1: {
@@ -655,6 +668,7 @@ const SCENARIOS = [
     id: 'pool', emoji: '🏊', title: '泳池邊',
     tag: '水域安全',
     intro: '暑假你跟同學去游泳池。你只會一點點狗爬式，不太敢去深水區。',
+    talk: '你會游泳嗎？看到有人溺水，你要先做的三件事是什麼？',
     start: 'n1',
     nodes: {
       n1: {
@@ -716,6 +730,7 @@ const SCENARIOS = [
     id: 'lost', emoji: '🛒', title: '賣場走失',
     tag: '走失・陌生人',
     intro: '週末跟媽媽去大賣場。你看到玩具區有新出的模型，停下來看了一下下……',
+    talk: '如果在賣場走散了，我們約好在哪裡碰面？',
     start: 'n1',
     nodes: {
       n1: {
@@ -785,6 +800,7 @@ const SCENARIOS = [
     id: 'money', emoji: '💰', title: '同學的請求',
     tag: '金錢・同儕壓力',
     intro: '班上有個同學小豪，最近常常跟你借錢。他已經欠你 200 元了，一次都沒有還過。',
+    talk: '你有沒有借過同學錢？他還了嗎？下次要怎麼說比較好？',
     start: 'n1',
     nodes: {
       n1: {
@@ -851,6 +867,7 @@ const SCENARIOS = [
     id: 'exam', emoji: '📝', title: '考試那天',
     tag: '誠實・自我要求',
     intro: '明天要考社會，但你昨天忘記讀了，只草草看了一點點。',
+    talk: '考不好的時候，你會想跟爸媽說嗎？為什麼？',
     start: 'n1',
     nodes: {
       n1: {
@@ -901,6 +918,7 @@ const SCENARIOS = [
     id: 'secret', emoji: '🤫', title: '不能說的秘密',
     tag: '身體自主・求助',
     intro: '有一個你認識的大人，最近對你特別好，常常買東西送你，還說你是他最喜歡的小孩。',
+    talk: '有沒有人叫你不要告訴爸媽什麼事？不管是什麼時候的事都可以說。',
     start: 'n1',
     nodes: {
       n1: {
@@ -944,6 +962,7 @@ const SCENARIOS = [
     id: 'fakecop', emoji: '🚔', title: '自稱警察的電話',
     tag: '假警察・詐騙',
     intro: '下午只有你一個人在家寫功課。這時候，家裡的電話響了。',
+    talk: '如果有人打電話說爸爸出事了，你第一件要做的事是什麼？',
     start: 'n1',
     nodes: {
       n1: {
@@ -1003,6 +1022,7 @@ const SCENARIOS = [
     id: 'shop', emoji: '🛍️', title: '便宜的遊戲點數',
     tag: '購物詐騙・金錢',
     intro: '你很想要遊戲裡的一個造型，要 800 元，但你的零用錢只有 300。',
+    talk: '你最想買的東西是什麼？我們可以怎麼一起存錢？',
     start: 'n1',
     nodes: {
       n1: {
@@ -1055,6 +1075,7 @@ const SCENARIOS = [
     id: 'imposter', emoji: '👤', title: '好朋友傳來的訊息',
     tag: '假冒身分・盜帳號',
     intro: '晚上你正在寫功課，好朋友小美傳訊息來了。',
+    talk: '如果好朋友傳訊息跟你借錢，你要怎麼確認那真的是他？',
     start: 'n1',
     nodes: {
       n1: {
@@ -1106,6 +1127,7 @@ const SCENARIOS = [
     id: 'breakfast', emoji: '🍳', title: '去買早餐',
     tag: '陌生人・被跟蹤',
     intro: '週末早上，媽媽給你 50 元，請你自己走到巷口的早餐店買蛋餅。<br><br>走路只要三分鐘，你跟媽媽走過很多次了。',
+    talk: '從我們家到早餐店，路上哪幾家店是可以進去求助的？',
     start: 'n1',
     nodes: {
       n1: {
@@ -1183,6 +1205,7 @@ const SCENARIOS = [
     id: 'candy', emoji: '🍬', title: '同學給的糖果',
     tag: '來路不明・拒絕',
     intro: '下課時間，同學小宇神秘兮兮地把你拉到走廊角落，從口袋裡拿出一小包東西。',
+    talk: '除了同學給的糖果，還有哪些東西是不能吃的？',
     start: 'n1',
     nodes: {
       n1: {
@@ -1239,6 +1262,7 @@ const SCENARIOS = [
     id: 'gate', emoji: '🏫', title: '等不到爸媽',
     tag: '走失・求助',
     intro: '放學鐘響了，你在校門口等媽媽來接。<br><br>同學一個一個被接走，警衛伯伯也開始收東西。天色慢慢暗下來……媽媽還是沒有出現。',
+    talk: '如果放學等不到我們，你要去哪裡等？我們現在就約好。',
     start: 'n1',
     nodes: {
       n1: {
@@ -1309,6 +1333,79 @@ const SCENARIOS = [
       bad: { grade: 'bad', title: '再試一次',
         text: '故事到這裡停下來了。',
         lesson: '一個人在天黑的路上走，正是壞人最希望看到的狀況。<br><br>記住一句話就好：<b>等不到爸媽，就回學校</b>。<br><br>學校不會走掉，爸媽一定會回來找你——你只要待在有大人的地方就好。<br><br>回去再走一次，找找看哪裡可以早一點回頭。' },
+    },
+  },
+  /* ---------- 19. 教室裡的危險 ---------- */
+  {
+    id: 'knife', emoji: '🚨', title: '教室裡的危險',
+    tag: '緊急應變・保護自己',
+    intro: '下課時間，教室後面突然大聲吵了起來。<br><br>你回頭看——一個同學情緒非常激動，手上抓著美工刀，對著另一個同學大吼。',
+    talk: '你們教室的門在哪個方向？如果要跑，你會往哪裡跑？',
+    start: 'n1',
+    nodes: {
+      n1: {
+        text: '教室裡有人尖叫，有人站起來看熱鬧，還有人拿出手機要拍。',
+        hint: '這種時候，你唯一該做的事是什麼？',
+        choices: [
+          { label: '也站起來看看發生什麼事', to: 'watch' },
+          { label: '立刻低身離開座位，往教室門口移動', to: 'leave' },
+          { label: '走過去大聲叫他冷靜、勸架', to: 'stop' },
+        ],
+      },
+      leave: {
+        text: '你彎低身體、貼著牆邊快步走出教室。<br><br>走廊上還有其他班的同學在走動，有人探頭想看裡面。',
+        choices: [
+          { label: '站在走廊上看裡面的狀況', to: 'corridor' },
+          { label: '邊跑邊大喊「快叫老師！」，往辦公室跑', to: 'best' },
+        ],
+      },
+      watch: {
+        text: '你站起來，其他同學也圍了過來。<br><br>人越擠越多，教室門口被擋住了。那個同學越來越激動。',
+        choices: [
+          { label: '趕快蹲低，從人群旁邊繞去門口', to: 'leave' },
+          { label: '拿手機出來拍下來', to: 'film' },
+        ],
+      },
+      film: {
+        text: '你舉起手機。<br><br>他注意到了，轉過頭朝你這個方向走過來。',
+        choices: [
+          { label: '手機丟下，立刻往門口跑', to: 'escape' },
+          { label: '愣在原地不敢動', to: 'hide' },
+        ],
+      },
+      stop: {
+        text: '你走過去說「不要這樣」。<br><br>他情緒更激動，手用力揮過來——你嚇得往後退，撞到了桌子。',
+        choices: [
+          { label: '趕快爬起來往門口跑', to: 'escape' },
+          { label: '嚇到站在原地不敢動', to: 'hide' },
+        ],
+      },
+      corridor: {
+        text: '你站在走廊上看。<br><br>裡面越來越亂，突然有人從門口衝了出來，走廊上一片混亂。',
+        choices: [
+          { label: '跟著人群往樓梯跑，離開這一層樓', to: 'escape' },
+          { label: '繼續站著看', to: 'hide' },
+        ],
+      },
+      hide: {
+        text: '你來不及出去了。<br><br>旁邊剛好有一間空教室。',
+        hint: '躲的時候，最重要的是「有沒有門擋著」。',
+        choices: [
+          { label: '進去關上門、用桌椅頂住門把，手機轉靜音，安靜等', to: 'escape' },
+          { label: '躲回自己教室的桌子底下不動', to: 'bad' },
+        ],
+      },
+    },
+    endings: {
+      best: { grade: 'best', title: '第一時間就離開', emoji: '🌟',
+        text: '你一路跑到辦公室大喊。老師們立刻衝過去，警衛也趕到，很快就把狀況控制住了。<br><br>後來老師跟你說：<br><br>「你做得很好——第一時間離開，然後來找我們。這就是最正確的做法。」<br><br>那個同學後來也有大人在幫他。',
+        lesson: '遇到有人拿危險的東西，順序永遠是：<b>先逃、再躲，最後才是保護自己</b>。<br><br><b>不要圍觀、不要拍照、不要上前勸架</b>——那是大人和警察的工作，不是小孩的工作。<br><br>逃的時候<b>什麼都不要拿</b>：書包、水壺、作業都不重要，人出去最重要。<br><br>跑出去之後要做的事：<b>找老師、找警衛，或請大人打 110</b>。' },
+      escape: { grade: 'escape', title: '你保護好自己了', emoji: '😮‍💨',
+        text: '你及時脫離了現場。<br><br>老師和警衛趕到，狀況被控制住，沒有人受重傷。<br><br>你的心跳到現在還很快。',
+        lesson: '你保護好自己了，這就是最重要的事。<br><br>記住三個字的順序：<b>跑、躲、擋</b>。<br>能跑就跑；跑不掉就躲，躲的時候要<b>關門、用桌椅頂住、手機轉靜音、不要出聲</b>；真的被堵住，才用書包護住身體和頭。<br><br>下次可以更早一步：<b>吵起來的第一秒就往門口移動</b>，不要停下來看發生什麼事。' },
+      bad: { grade: 'bad', title: '再試一次',
+        text: '故事到這裡停下來了。',
+        lesson: '「站起來看熱鬧」和「嚇到愣住」是最常見的兩種反應，也是最危險的兩種。<br><br>記住：<b>第一秒就離開</b>。你不需要知道發生了什麼事，也不需要幫忙處理——<b>你唯一的工作是讓自己安全</b>。<br><br>另外，躲在桌子底下不是好選擇，因為<b>沒有門擋著</b>。有門、能鎖能頂住的空間才安全。<br><br>回去再走一次。' },
     },
   },
 ];
@@ -1893,6 +1990,42 @@ Object.assign(ART_SCENES, {
     EMO(56, 58, '💦', 13) + EMO(112, 52, '👣', 14, 'dash')),
 });
 
+/* ===== 第 19 個劇本：教室裡的危險 ===== */
+// 危險狀況以「💢 騷動」表示，不畫武器、不畫傷害
+Object.assign(ART_SCENES, {
+  'knife.best': SVG('小女生跑到辦公室求救，老師們立刻趕過去',
+    BG('#eefaf0') + SUNBURST(58, 66) +
+    '<rect x="112" y="40" width="80" height="78" rx="3" fill="#fff6e6" stroke="#33224a" stroke-width="1.8"/>' +
+    '<text x="152" y="56" font-size="10" fill="#6b4a9e" text-anchor="middle" font-weight="bold">辦公室</text>' +
+    ADULT(134, 118, 0.82, { color: '#5e8f78', pose: 'reachL' }) +
+    ADULT(172, 118, 0.82, { color: '#3f6bb5' }) +
+    GIRL(58, 118, 0.95, { pose: 'shout' }) +
+    '<g class="dash" stroke="#e85a92" stroke-width="3" fill="none" stroke-linecap="round">' +
+    '<path d="M78 60 q8 8 0 16"/><path d="M86 54 q13 14 0 28"/></g>' +
+    EMO(20, 50, '💨', 14)),
+
+  'knife.escape': SVG('小女生躲進空教室，關門並用椅子頂住，安靜等待',
+    BG('#f2f7ff', '#c8dcf0') +
+    '<rect x="96" y="10" width="98" height="108" fill="#dfe8f5" stroke="#33224a" stroke-width="2"/>' +
+    '<rect x="86" y="18" width="12" height="100" rx="2" fill="#c98f52" stroke="#33224a" stroke-width="2"/>' +
+    '<circle cx="92" cy="70" r="3.4" fill="#ffd23f" stroke="#33224a" stroke-width="1.4"/>' +
+    '<g class="tilt" style="transform-origin:110px 118px">' +
+    '<rect x="102" y="78" width="20" height="8" rx="2" fill="#e0a76a" stroke="#33224a" stroke-width="1.5"/>' +
+    '<rect x="104" y="86" width="5" height="32" fill="#c98f52" stroke="#33224a" stroke-width="1.3"/>' +
+    '<rect x="116" y="86" width="5" height="32" fill="#c98f52" stroke="#33224a" stroke-width="1.3"/></g>' +
+    GIRL(154, 118, 0.9, { pose: 'sit' }) +
+    EMO(168, 56, '🤫', 18, 'bob') +
+    '<g class="fadeDanger">' + EMO(20, 66, '💢', 20) + '</g>'),
+
+  'knife.bad': SVG('躲在教室桌子底下，但門是開著的',
+    BG('#e6e2f5', '#8f83b3') + BOARD(112, 16) +
+    DESK(70, 118, 0.95) +
+    '<g class="crouch">' + GIRL(62, 118, 0.7, { pose: 'sit', mood: 'flat' }) + '</g>' +
+    '<rect x="160" y="20" width="10" height="98" rx="2" fill="#c98f52" stroke="#33224a" stroke-width="2"/>' +
+    '<g class="fadeDanger">' + EMO(174, 70, '💢', 22) + '</g>' +
+    EMO(36, 60, '💦', 14)),
+});
+
 /* ===== 每個結局的專屬畫面（後 8 個劇本） ===== */
 Object.assign(ART_SCENES, {
   /* ---------- 9. 賣場走失 ---------- */
@@ -2373,6 +2506,10 @@ function renderEnding() {
           <div class="lesson">
             <div style="font-weight:900; margin-bottom:5px; color:#1e7d46;">💡 學到了什麼</div>
             ${narrate(ending.lesson)}
+          </div>
+          <div class="talkbox">
+            <div class="talkbox-h">💬 跟爸爸媽媽討論</div>
+            <div>${narrate(cur.talk || '把這個故事講給爸爸媽媽聽，問問看他們會怎麼做？')}</div>
           </div>
           <div class="replay">
             <h3>📖 回顧你的選擇</h3>
