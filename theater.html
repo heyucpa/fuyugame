@@ -65,6 +65,17 @@
   .pick .g { font-size: 12px; color: #6b5a7e; font-weight: 700; margin-top: 2px; display: block; }
   .pick .done { margin-left: auto; font-size: 26px; flex-shrink: 0; }
 
+  /* 玩家列 */
+  .whorow {
+    display: flex; align-items: center; gap: 8px; width: 100%;
+    background: #faf5ff; border: 3px solid #33224a; border-radius: 14px;
+    padding: 7px 12px; margin-bottom: 8px; font-size: 14px;
+  }
+  .whoemo { font-size: 22px; line-height: 1; }
+  .whoname { font-weight: 900; }
+  .whoswap { margin-left: auto; font-size: 12px; color: #6b4a9e; font-weight: 800; }
+  .who-pick.on { background: #eadcff; border-color: #6b4a9e; }
+
   /* 故事 */
   .stage {
     background: #faf5ff; border: 3px solid #33224a; border-radius: 18px;
@@ -80,6 +91,17 @@
   .choice {
     width: 100%; text-align: left; background: #fff; font-size: 16px; font-weight: 700;
     padding: 13px 15px; line-height: 1.5; border-radius: 14px;
+    position: relative;
+  }
+  /* 走過的選項變灰，但還是可以再選 */
+  .choice.seen {
+    background: #efedf4; color: #877f9c; border-color: #a9a2bd;
+    box-shadow: 0 4px 0 rgba(0,0,0,.07);
+  }
+  .seenmark {
+    display: inline-block; margin-left: 8px; font-size: 11px; font-weight: 800;
+    color: #6b5a8e; background: #ded8ea; border-radius: 8px; padding: 2px 7px;
+    vertical-align: middle;
   }
   .steps {
     display: flex; align-items: center; justify-content: center; gap: 5px;
@@ -1743,6 +1765,10 @@ const ADULT = (x, y, s, o) => {
     '</g>';
 };
 
+// 爸爸／媽媽的固定樣式（爸爸沿用骰子遊戲「爸比戰士」的紅披風，孩子認得出來）
+const DAD = (x, y, s, pose) => ADULT(x, y, s, { color: '#9aa4ad', beard: 1, cape: 1, pose: pose });
+const MOM = (x, y, s, pose) => ADULT(x, y, s, { color: '#9b59b6', pose: pose });
+
 // 佈景：背景色 + 地面
 const BG = (sky, ground) =>
   '<rect width="200" height="130" fill="' + sky + '"/>' +
@@ -1848,9 +1874,9 @@ const ART_SCENES = {
     BG('#e6e2f5', '#8f83b3') + '<circle cx="168" cy="26" r="12" fill="#fff3b0"/>' + CAUGHT(74, 96)),
 
   /* ---------- 2. 網路上的新朋友 ---------- */
-  'online.best': SVG('小女生把手機拿給媽媽看',
+  'online.best': SVG('小女生把手機拿給爸爸看',
     BG('#f3f0ff', '#c9bfe0') + SUNBURST(100, 66) +
-    ADULT(72, 118, 0.92, { color: '#9b59b6', pose: 'reachR' }) +
+    DAD(72, 118, 0.92, 'reachR') +
     GIRL(128, 118, 0.92, { pose: 'reachL' }) +
     '<rect x="94" y="76" width="14" height="24" rx="4" fill="#33224a"/>' + EMO(140, 46, '✨', 15, 'twinkle')),
   'online.good': SVG('把對方封鎖了，畫面上出現禁止符號',
@@ -1923,9 +1949,9 @@ const ART_SCENES = {
   'scam.best': SVG('小女生把假中獎的視窗關掉，比出讚',
     BG('#eefaf0') + PHONE(148, 64, 1.05) + EMO(130, 78, '🚫', 28, 'clash') +
     GIRL(66, 118, 1, { pose: 'reachR' }) + EMO(96, 62, '👍', 20, 'bob') + SUNBURST(66, 66)),
-  'scam.escape': SVG('小女生把平板拿給媽媽看，媽媽打電話查證',
-    BG('#f3f0ff', '#c9bfe0') + ADULT(70, 118, 0.92, { color: '#9b59b6', pose: 'reachR' }) +
-    GIRL(130, 118, 0.92, { pose: 'reachL' }) + '<rect x="94" y="74" width="16" height="26" rx="4" fill="#33224a"/>' +
+  'scam.escape': SVG('小女生把平板拿給爸爸媽媽看，他們打電話查證',
+    BG('#f3f0ff', '#c9bfe0') + DAD(38, 118, 0.86, 'reachR') + MOM(82, 118, 0.9, 'reachR') +
+    GIRL(136, 118, 0.9, { pose: 'reachL' }) + '<rect x="94" y="74" width="16" height="26" rx="4" fill="#33224a"/>' +
     EMO(140, 44, '165', 13) + EMO(28, 48, '📞', 14, 'zzz')),
   'scam.bad': SVG('信用卡被刷走，錢飛出手機',
     BG('#e6e2f5', '#8f83b3') + PHONE(140, 60, 1.05) +
@@ -2152,10 +2178,10 @@ Object.assign(ART_SCENES, {
   // 🌟 打電話確認後在道館等到媽媽
   'dojo.best': SVG('姊妹倆在跆拳道館裡等到媽媽，教練陪著她們',
     DOJO() + SUNBURST(112, 62) +
-    HELPER(30, 100, 0.78, '#33224a', false) +
-    ADULT(160, 100, 0.82, { color: '#9b59b6', pose: 'reachL' }) +
-    DOBOK(96, 100, 0.86, '#e85a92', { pose: 'reachR' }) +
-    DOBOK(126, 100, 0.66, '#ffd23f', { pose: 'reachL' }) +
+    DAD(24, 100, 0.76, 'reachR') +
+    ADULT(174, 100, 0.78, { color: '#9b59b6', pose: 'reachL' }) +
+    DOBOK(84, 100, 0.8, '#e85a92', { pose: 'reachR' }) +
+    DOBOK(126, 100, 0.62, '#ffd23f', { pose: 'reachL' }) +
     '<g class="hearts">' + EMO(104, 36, '💖', 16) + EMO(130, 26, '💕', 12) + '</g>'),
 
   // 👍 沒下樓，但沒跟教練說，自己在角落等
@@ -2199,9 +2225,9 @@ Object.assign(ART_SCENES, {
     EMO(30, 52, '📢', 16, 'ring') +
     ADULT(112, 118, 0.88, { color: '#9b59b6', pose: 'reachR' }) + GIRL(156, 118, 0.8, { pose: 'reachL' }) +
     '<g class="hearts">' + EMO(128, 46, '💖', 15) + '</g>'),
-  'lost.good': SVG('小女生待在原地等，媽媽自己找回來了',
+  'lost.good': SVG('小女生待在原地等，爸爸自己找回來了',
     BG('#eafaf1') + SHELF(150, 118, 0.9) + SHELF(30, 118, 0.9) +
-    ADULT(72, 118, 0.88, { color: '#9b59b6', pose: 'reachR' }) + GIRL(112, 118, 0.85) +
+    DAD(72, 118, 0.88, 'reachR') + GIRL(112, 118, 0.85) +
     EMO(94, 40, '💕', 15, 'twinkle')),
   'lost.escape': SVG('小女生甩開陌生人的手，跑回人多的地方',
     BG('#eafaf1') + SHELF(24, 118, 0.85) +
@@ -2231,8 +2257,8 @@ Object.assign(ART_SCENES, {
     '<path d="M90 87 h12" stroke="#33224a" stroke-width="2.4" stroke-linecap="round"/>' +
     '<path d="M84 112 l0 5 M104 112 l0 5" stroke="#33224a" stroke-width="2.6" stroke-linecap="round"/>' +
     EMO(88, 80, '🪙', 13) + '</g>'),
-  'money.escape': SVG('小女生把事情老實告訴媽媽',
-    BG('#f3f0ff', '#c9bfe0') + ADULT(70, 118, 0.92, { color: '#9b59b6', pose: 'reachR' }) +
+  'money.escape': SVG('小女生把事情老實告訴爸爸',
+    BG('#f3f0ff', '#c9bfe0') + DAD(70, 118, 0.92, 'reachR') +
     GIRL(128, 118, 0.92, { pose: 'reachL' }) + SPEECH(140, 38, '💬') + EMO(30, 46, '💕', 14, 'twinkle')),
   'money.bad': SVG('空空的錢包，小女生低著頭',
     BG('#e6e2f5', '#8f83b3') +
@@ -2267,8 +2293,7 @@ Object.assign(ART_SCENES, {
     '<g class="hearts">' + EMO(96, 40, '💖', 17) + EMO(76, 32, '💕', 13) + EMO(120, 30, '💗', 13) + '</g>'),
   'secret.escape': SVG('爸爸媽媽站在小女生兩邊，支持她',
     BG('#f3f0ff', '#c9bfe0') +
-    ADULT(52, 118, 0.92, { color: '#9aa4ad', pose: 'reachR', beard: 1, cape: 1 }) +
-    ADULT(150, 118, 0.92, { color: '#9b59b6', pose: 'reachL' }) +
+    DAD(52, 118, 0.92, 'reachR') + MOM(150, 118, 0.92, 'reachL') +
     GIRL(101, 118, 0.82) + EMO(88, 36, '💖', 15, 'twinkle') + EMO(112, 30, '💕', 12, 'twinkle')),
   'secret.bad': SVG('小女生一個人把事情放在心裡，旁邊有 113 的提示',
     BG('#e6e2f5', '#8f83b3') +
@@ -2299,9 +2324,9 @@ Object.assign(ART_SCENES, {
   'shop.best': SVG('小女生把假特價的頁面關掉',
     BG('#eefaf0') + PHONE(150, 64, 1.05) + EMO(132, 78, '🚫', 26, 'clash') +
     GIRL(64, 118, 1, { pose: 'reachR' }) + EMO(94, 60, '👍', 20, 'bob') + SUNBURST(64, 66)),
-  'shop.escape': SVG('媽媽帶小女生打 165 報案',
-    BG('#f3f0ff', '#c9bfe0') + ADULT(68, 118, 0.92, { color: '#9b59b6', pose: 'reachR' }) +
-    GIRL(126, 118, 0.9, { pose: 'reachL' }) +
+  'shop.escape': SVG('爸爸媽媽帶小女生打 165 報案',
+    BG('#f3f0ff', '#c9bfe0') + DAD(40, 118, 0.86, 'reachR') + MOM(84, 118, 0.9, 'reachR') +
+    GIRL(132, 118, 0.88, { pose: 'reachL' }) +
     '<g class="bob"><rect x="140" y="42" width="52" height="26" rx="6" fill="#fff" stroke="#33224a" stroke-width="1.8"/>' +
     '<text x="166" y="60" font-size="15" fill="#e85a92" text-anchor="middle" font-weight="bold">165</text></g>'),
   'shop.bad': SVG('一直匯錢出去，對方消失了',
@@ -2454,9 +2479,44 @@ const Sfx = (() => {
   };
 })();
 
-/* ===== 進度存檔 ===== */
-const SAVE = 'theater-progress';
+/* ===== 玩家與進度存檔（每個玩家各自一份） ===== */
+const OLD_SAVE = 'theater-progress';           // 舊版單人存檔，會自動搬給第一個玩家
+const PKEY = 'theater-players', CKEY = 'theater-who';
 const RANK = { bad: 1, escape: 2, good: 3, best: 4 };
+
+function defaultPlayers() {
+  return [{ id: 'p1', name: '帆帆', emoji: '⭐' }, { id: 'p2', name: '安安', emoji: '🌸' }];
+}
+function players() {
+  try {
+    const p = JSON.parse(localStorage.getItem(PKEY));
+    if (Array.isArray(p) && p.length) return p;
+  } catch (e) {}
+  const d = defaultPlayers();
+  try { localStorage.setItem(PKEY, JSON.stringify(d)); } catch (e) {}
+  return d;
+}
+function savePlayers(list) { try { localStorage.setItem(PKEY, JSON.stringify(list)); } catch (e) {} }
+function whoId() {
+  const id = localStorage.getItem(CKEY);
+  const list = players();
+  return list.some(p => p.id === id) ? id : list[0].id;
+}
+function who() { return players().find(p => p.id === whoId()) || players()[0]; }
+function setWho(id) { try { localStorage.setItem(CKEY, id); } catch (e) {} }
+
+const pKey = k => 'theater-' + k + ':' + whoId();
+// 舊的單人存檔搬給第一個玩家，只做一次
+(function migrate() {
+  try {
+    const old = localStorage.getItem(OLD_SAVE);
+    const first = players()[0].id;
+    if (old && !localStorage.getItem('theater-progress:' + first)) {
+      localStorage.setItem('theater-progress:' + first, old);
+      localStorage.removeItem(OLD_SAVE);
+    }
+  } catch (e) {}
+})();
 const GRADE_META = {
   best:   { label: '完美', color: '#1e7d46', bg: '#b7f0c2' },
   good:   { label: '不錯', color: '#1f6fa8', bg: '#c5e4ff' },
@@ -2464,16 +2524,29 @@ const GRADE_META = {
   bad:    { label: '再試', color: '#a33', bg: '#ffd0d0' },
 };
 function loadProgress() {
-  try { return JSON.parse(localStorage.getItem(SAVE)) || {}; } catch (e) { return {}; }
+  try { return JSON.parse(localStorage.getItem(pKey('progress'))) || {}; } catch (e) { return {}; }
 }
 function recordResult(id, grade) {
   const p = loadProgress();
   if (!p[id] || RANK[grade] > RANK[p[id]]) {
     p[id] = grade;
-    try { localStorage.setItem(SAVE, JSON.stringify(p)); } catch (e) {}
+    try { localStorage.setItem(pKey('progress'), JSON.stringify(p)); } catch (e) {}
     return true;   // 這次比以前好
   }
   return false;
+}
+
+/* 選過的選項：記下來，之後再玩會變灰，方便找還沒走過的分支 */
+function loadSeen() {
+  try { return JSON.parse(localStorage.getItem(pKey('seen'))) || {}; } catch (e) { return {}; }
+}
+function markSeen(scenarioId, nodeId, idx) {
+  const v = loadSeen();
+  v[scenarioId + '|' + nodeId + '|' + idx] = 1;
+  try { localStorage.setItem(pKey('seen'), JSON.stringify(v)); } catch (e) {}
+}
+function isSeen(scenarioId, nodeId, idx) {
+  return !!loadSeen()[scenarioId + '|' + nodeId + '|' + idx];
 }
 
 /* ===== 狀態 ===== */
@@ -2493,9 +2566,68 @@ const plain = s => String(s).replace(/<[^>]*>/g, '');
 
 function render() {
   if (view === 'menu') renderMenu();
+  else if (view === 'who') renderWho();
   else if (view === 'story') renderStory();
   else renderEnding();
   window.scrollTo(0, 0);
+}
+
+/* 換人玩：每個人的通關紀錄與「走過的選項」各自分開 */
+function renderWho() {
+  const list = players(), me = whoId();
+  app.innerHTML = `
+    <div class="card anim">
+      <h1>👥 誰要玩？</h1>
+      <div class="sub">每個人的紀錄是分開的，不會互相蓋掉</div>
+      <div class="pick-grid">
+        ${list.map(p => {
+          let done = 0;
+          try {
+            const pr = JSON.parse(localStorage.getItem('theater-progress:' + p.id)) || {};
+            done = SCENARIOS.filter(s => pr[s.id] === 'best').length;
+          } catch (e) {}
+          return `
+            <button class="pick who-pick${p.id === me ? ' on' : ''}" data-id="${esc(p.id)}">
+              <span class="ico">${p.emoji}</span>
+              <span style="flex:1; min-width:0;">
+                <span class="t">${esc(p.name)}</span>
+                <span class="g">完美通關 ${done} / ${SCENARIOS.length}</span>
+              </span>
+              ${p.id === me ? '<span class="done">✅</span>' : '<span class="done" style="opacity:.25;">▶️</span>'}
+            </button>`;
+        }).join('')}
+      </div>
+      <button id="addwho" style="width:100%; margin-top:10px; background:#a8e6c0;">＋ 新增一個玩家</button>
+      ${list.length > 1 ? `<button id="delwho" class="mini" style="margin-top:8px;">🗑️ 刪掉目前這個玩家</button>` : ''}
+      <div class="row" style="margin-top:12px;">
+        <button class="mini" id="whoback">← 回劇本選單</button>
+      </div>
+    </div>
+  `;
+  document.querySelectorAll('.who-pick').forEach(b => {
+    b.onclick = () => { Sfx.tap(); setWho(b.dataset.id); view = 'menu'; render(); };
+  });
+  document.getElementById('addwho').onclick = () => {
+    const name = (prompt('新玩家的名字？') || '').trim().slice(0, 8);
+    if (!name) return;
+    const emojis = ['🐨', '🐧', '🦊', '🐯', '🦄', '🐼', '🐰', '🐱'];
+    const list2 = players();
+    list2.push({ id: 'p' + Date.now(), name, emoji: emojis[list2.length % emojis.length] });
+    savePlayers(list2);
+    setWho(list2[list2.length - 1].id);
+    view = 'menu'; render();
+  };
+  document.getElementById('delwho')?.addEventListener('click', () => {
+    const m = who();
+    if (!confirm('要刪掉「' + m.name + '」和他的所有紀錄嗎？')) return;
+    localStorage.removeItem('theater-progress:' + m.id);
+    localStorage.removeItem('theater-seen:' + m.id);
+    const rest = players().filter(p => p.id !== m.id);
+    savePlayers(rest);
+    setWho(rest[0].id);
+    render();
+  });
+  document.getElementById('whoback').onclick = () => { view = 'menu'; render(); };
 }
 
 function renderMenu() {
@@ -2503,6 +2635,11 @@ function renderMenu() {
   const done = SCENARIOS.filter(s => p[s.id] === 'best').length;
   app.innerHTML = `
     <div class="card anim">
+      <button id="whobtn" class="whorow">
+        <span class="whoemo">${who().emoji}</span>
+        <span class="whoname">${esc(who().name)} 的劇場</span>
+        <span class="whoswap">換人 ⇄</span>
+      </button>
       <h1>🎭 情境劇場</h1>
       <div class="sub">你的每一個選擇，都會改變故事的結局</div>
       <div style="text-align:center; font-size:13px; font-weight:800; color:#6b4a9e; margin-bottom:6px;">
@@ -2538,6 +2675,7 @@ function renderMenu() {
   document.querySelectorAll('.pick').forEach(b => {
     b.onclick = () => { Sfx.unlock(); Sfx.tap(); startScenario(b.dataset.id); };
   });
+  document.getElementById('whobtn').onclick = () => { Sfx.tap(); view = 'who'; render(); };
   document.getElementById('rand').onclick = () => { Sfx.unlock(); Sfx.tap(); startRandom(); };
   document.getElementById('mute').onclick = () => { Sfx.toggle(); render(); };
   // 音樂鍵：關著就打開，開著就換下一首
@@ -2548,7 +2686,11 @@ function renderMenu() {
   document.getElementById('music').oncontextmenu = e => { e.preventDefault(); Sfx.toggleBgm(); render(); };
   document.getElementById('back').onclick = () => { location.href = './index.html'; };
   document.getElementById('reset').onclick = () => {
-    if (confirm('要清除所有通關紀錄嗎？')) { localStorage.removeItem(SAVE); render(); }
+    if (confirm('要清除「' + who().name + '」的所有紀錄嗎？')) {
+      localStorage.removeItem(pKey('progress'));
+      localStorage.removeItem(pKey('seen'));
+      render();
+    }
   };
 }
 
@@ -2614,7 +2756,10 @@ function renderStory() {
         <div>
           <div style="font-size:14px; font-weight:800; color:#6b4a9e; margin-bottom:7px;">你要怎麼做？</div>
           <div class="choices">
-            ${n.choices.map((c, i) => `<button class="choice" data-i="${i}">${esc(c.label)}</button>`).join('')}
+            ${n.choices.map((c, i) => {
+              const seen = isSeen(cur.id, nodeId, i);
+              return `<button class="choice${seen ? ' seen' : ''}" data-i="${i}">${esc(c.label)}${seen ? '<span class="seenmark">走過了</span>' : ''}</button>`;
+            }).join('')}
           </div>
         </div>
       </div>
@@ -2634,6 +2779,7 @@ function renderStory() {
 function choose(i) {
   const n = cur.nodes[nodeId];
   const c = n.choices[i];
+  markSeen(cur.id, nodeId, i);
   path.push({ text: plain(n.text), label: c.label });
   const nxt = c.to;
   if (cur.nodes[nxt]) {
