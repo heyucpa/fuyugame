@@ -275,9 +275,26 @@ const SCENARIOS = [
     id: 'road', emoji: '🚗', title: '放學路上',
     tag: '陌生人・誘拐',
     intro: '今天媽媽說會晚一點下班，你自己走路回家。走到轉角時，一台銀色的車慢慢開到你旁邊……',
-    talk: '我們家要不要設一個「暗號」？如果真的有人說是爸媽派來接你的，你會問他什麼？',
+    talk: '我們家要不要設一個「暗號」？如果真的有人說是爸媽派來接你的，你會問他什麼？<br><br>如果對方真的知道媽媽的名字、我們住哪附近，甚至你以前好像看過他，你會怎麼確認他是不是真的可以帶你走？',
     start: 'n1',
     nodes: {
+      gatewalk: {
+        text: '你跟他說：「我不上車喔，我自己走。」<br><br>叔叔笑著說：「可以啊，那我陪你走回學校，總可以吧？」<br><br>他把車停在路邊，走在你旁邊。<br><br>走了一小段，他忽然說：<br><br>「學校不用去了啦，你媽媽就在前面的咖啡店，我帶你過去。」<br><br>他伸手指向另一條巷子。',
+        hint: '你雖然沒有上車，但他已經跟你走在一起，而且正在帶你離開原本的路線。',
+        choices: [
+          { label: '不跟他轉進巷子，立刻跑進附近有人的店家', to: 'good' },
+          { label: '都走到這裡了，去咖啡店門口看看就好', to: 'gateclose' },
+          { label: '停下來說「我要先打給媽媽」，同時跟他拉開距離', to: 'call' },
+        ],
+      },
+      gateclose: {
+        text: '你想：「我又沒有上車，只是去門口看看。」<br><br>但走到巷口時，你發現前面根本沒有咖啡店。<br><br>你回頭時，那個叔叔已經站得離你很近。',
+        hint: '沒有上車，不代表已經安全了。',
+        choices: [
+          { label: '大喊「我不認識你！」，往大馬路和有人店家的方向跑', to: 'escape' },
+          { label: '先問他咖啡店到底在哪裡', to: 'bad' },
+        ],
+      },
       after: {
         text: '你在店裡打電話，媽媽說馬上到。<br><br>這時候——那台車又繞回來了，停在店門口。他隔著玻璃看著你。',
         hint: '他還沒放棄。你現在在店裡，是安全的。',
@@ -317,6 +334,7 @@ const SCENARIOS = [
           { label: '再想想他是不是真的見過', to: 'grab' },
           { label: '立刻轉身跑向對面的便利商店', to: 'good' },
           { label: '問他「那你說我媽媽叫什麼名字」', to: 'name' },
+          { label: '我不上車，但可以跟他走到校門口看看', to: 'gatewalk' },
         ],
       },
       grab: {
@@ -358,9 +376,26 @@ const SCENARIOS = [
     id: 'online', emoji: '💬', title: '網路上的新朋友',
     tag: '網路・個資',
     intro: '你在遊戲裡認識了一個玩得很好的隊友。他每天都陪你打，還送你稀有道具，你們變成了好朋友。',
-    talk: '你在網路上有哪些朋友？他們有沒有問過你什麼問題？',
+    talk: '你在網路上有哪些朋友？他們有沒有問過你什麼問題？<br><br>如果你沒有告訴網友姓名和地址，只告訴他住哪一區、幾年級、幾點放學，你覺得他有可能慢慢猜出你是誰嗎？',
     start: 'n1',
     nodes: {
+      bits: {
+        text: '你沒有說姓名，也沒有說學校，只告訴他大概住在哪一區。<br><br>他回：<br><br>「真的假的！我也常去那邊耶。」<br><br>過了一下，他又問：<br><br>「你們學校附近是不是有一間便利商店？旁邊還有飲料店？」',
+        hint: '他沒有直接問學校名字，而是開始慢慢縮小範圍。',
+        choices: [
+          { label: '只回答他猜對還是猜錯，又沒有說學校名字', to: 'bits2' },
+          { label: '越問越細了，不回答，把對話拿給爸媽看', to: 'good' },
+          { label: '不聊學校了，換別的話題', to: 'bits2' },
+        ],
+      },
+      bits2: {
+        text: '接下來幾天，他真的沒有再問學校。<br><br>但聊天時，他偶爾會問：<br><br>「你今天幾點放學？」<br>「星期三是不是比較早？」<br>「你平常自己走回家嗎？」<br><br>每一題看起來都只是普通聊天。',
+        hint: '單獨看每一題，好像都沒有說出姓名或地址。',
+        choices: [
+          { label: '這些又不是姓名和地址，聊一下沒關係', to: 'told' },
+          { label: '每一題都不嚴重，但加起來怪怪的，停止回答並告訴爸媽', to: 'after' },
+        ],
+      },
       after: {
         text: '你把他封鎖了。<br><br>但隔天，一個新帳號加你好友，頭貼一樣：<br><br>「你為什麼封鎖我？我們不是朋友嗎？我做錯什麼了？」',
         hint: '他換了帳號，代表他很在意找到你。',
@@ -383,6 +418,7 @@ const SCENARIOS = [
           { label: '告訴他，他人很好又送我東西', to: 'told' },
           { label: '說「我不方便講這個」，繼續玩遊戲就好', to: 'refuse' },
           { label: '不回答，去問爸媽該怎麼辦', to: 'after' },
+          { label: '學校不能講，但只說我是台中某區的小四生應該沒關係', to: 'bits' },
         ],
       },
       refuse: {
@@ -416,10 +452,10 @@ const SCENARIOS = [
         lesson: '你封鎖他這一步很對。<br><br>但<b>只要你回一個字，他就知道這個帳號有效</b>——對他來說那就是「還有機會」。<br><br><b>對這種人最有效的回應是「完全不回應」</b>，而且每一個新帳號都要讓爸媽知道。' },
       best: { grade: 'best', title: '完美判斷', emoji: '🌟',
         text: '你把對話拿給爸媽看。爸媽說你做得非常好，並幫你把他封鎖、向遊戲檢舉。<br><br>後來才知道，他用一樣的方式加了很多小孩。',
-        lesson: '網路上的人可能不是他說的那個人。<b>會先送你東西、再跟你要個資的，是很典型的手法</b>——他送的東西是投資，不是友情。' },
+        lesson: '網路上的人可能不是他說的那個人。<b>會先送你東西、再跟你要個資的，是很典型的手法</b>——他送的東西是投資，不是友情。<br><br>還有一件事：<b>姓名和地址不是唯一的個資</b>。住哪一區、幾年級、幾點放學、學校附近有什麼店——這些零碎的事情拼起來，一樣可以慢慢找到你。' },
       good: { grade: 'good', title: '及時停下', emoji: '👍',
         text: '你拒絕了他，並把對話給爸媽看。爸媽幫你處理掉這個帳號。',
-        lesson: '你在關鍵的一步停下來了，很好。不過學校名稱已經給出去了——<b>個資一旦說出口就收不回來</b>，這是下次可以更早守住的地方。' },
+        lesson: '你在關鍵的一步停下來了，很好。不過學校名稱已經給出去了——<b>個資一旦說出口就收不回來</b>，這是下次可以更早守住的地方。<br><br>而且<b>個資不是只有姓名和地址</b>：住哪一區、幾點放學、學校附近有什麼店，拼起來一樣找得到你。' },
       escape: { grade: 'escape', title: '踩到煞車', emoji: '😮‍💨',
         text: '「不要跟你爸媽講」這句話讓你覺得怪怪的，你把整段對話拿給媽媽看。<br><br>媽媽臉色發白，立刻報警處理。',
         lesson: '你抓到了最重要的警訊。記住這一條就夠了：<b>任何要求你「不要告訴爸媽」的人，都是危險的人</b>。正當的事情不需要瞞著家人。' },
@@ -433,41 +469,61 @@ const SCENARIOS = [
   {
     id: 'bully', emoji: '😔', title: '班上的事',
     tag: '霸凌・友誼',
+    // 後果卡模式：結局不評等級、不比較、不說哪個是「完美」
+    mode: 'consequence',
     intro: '這學期班上有個轉學生叫小柔，比較安靜。最近你發現，有幾個同學開始故意不理她。',
-    talk: '你們班上有沒有人被排擠？如果有，你想怎麼幫他？',
+    talk: '你們班上有沒有人被排擠？如果有，你想怎麼幫他？<br><br>如果你知道幫同學可能會讓自己也被討厭，你覺得自己會怎麼做？有沒有一種方法是不需要你一個人扛？',
     start: 'n1',
     nodes: {
+      groupchat: {
+        text: '你在班群裡打：<br><br>「你們這樣排擠小柔就是霸凌！很過分！」<br><br>很快有人回：<br><br>「關你什麼事？」<br>「正義魔人。」<br><br>接著有人開始拿你的照片和貼圖開玩笑。<br><br>原本只有小柔被攻擊，現在你也被拉進去了。',
+        hint: '想幫朋友沒有錯，但一個人跟整群人在群組裡吵，可能讓事情越來越大。',
+        choices: [
+          { label: '他們太過分了，在群組裡繼續跟他們吵到底', to: 'chatfight' },
+          { label: '停止回覆，把對話截圖留下來，找老師和爸媽處理', to: 'after' },
+        ],
+      },
+      honest: {
+        text: '你小聲說：<br><br>「對不起，我不是討厭你。我只是很怕他們也不跟我玩。」<br><br>小柔安靜了一下：<br><br>「我知道……我也很怕。」<br><br>你突然發現，你們兩個其實都不知道下一步該怎麼辦。',
+        hint: '兩個都很害怕的小孩，需要的可能不是更勇敢，而是一個大人。',
+        choices: [
+          { label: '我們一起去找老師或輔導老師', to: 'after' },
+          { label: '至少我們兩個互相陪就好了，先不要讓大人知道', to: 'good' },
+        ],
+      },
       after: {
         text: '老師處理了這件事。<br><br>但下課時，帶頭的那個同學在走廊擋住你：<br><br>「告狀精。以後沒有人要跟你玩。」',
         hint: '你做對的事，不會因為有人罵你就變成錯的。',
         choices: [
-          { label: '不理他，照常去找小柔玩', to: 'best' },
-          { label: '怕被討厭，開始躲著小柔', to: 'slip' },
+          { label: '其實很害怕，但先離開他，之後把這句話也告訴老師', to: 'best' },
+          { label: '老師已經處理過一次了，不想再講，自己忍', to: 'slip' },
+          { label: '很生氣，回他：「難怪大家都討厭你！」', to: 'retaliate' },
         ],
       },
       n1: {
-        text: '下課時，班上最有人緣的同學走過來跟你說：<br><br>「我們都不跟小柔玩喔，你也不要跟她玩，不然我們就不跟你好。」',
+        text: '下課時，班上最有人緣的同學走過來說：<br><br>「我們最近都不想跟小柔玩。」<br><br>「她很愛跟老師講事情，而且上次分組也是她害我們輸。」<br><br>「你如果一直跟她玩，以後分組就不要來找我們。」',
         choices: [
-          { label: '答應，不然我也會被排擠', to: 'join' },
-          { label: '「我不想這樣做」，繼續正常跟小柔相處', to: 'refuse' },
-          { label: '表面答應，私下還是跟小柔講話', to: 'secret' },
+          { label: '我不想自己也沒朋友，所以先不要跟小柔玩，過一陣子再說', to: 'join' },
+          { label: '「你們不想跟她玩是你們的事，但我想跟誰玩是我的事」', to: 'refuse' },
+          { label: '我不想跟著排擠，但也不想得罪大家，所以沒人的時候再跟小柔說話', to: 'secret' },
         ],
       },
       refuse: {
         text: '你照常跟小柔說話。<br><br>結果隔天，你發現自己也被列進「不要理」的名單，連原本的好朋友也不太敢跟你講話了。',
         hint: '這時候一個人扛很辛苦，有誰可以幫你？',
         choices: [
-          { label: '撐不住了，還是加入他們', to: 'join' },
-          { label: '把整件事告訴老師和爸媽', to: 'after' },
-          { label: '繼續陪著小柔，但不想告狀，所以不跟大人說', to: 'good' },
-          { label: '自己忍著，什麼都不說', to: 'alone' },
+          { label: '直接在班群說：「你們這樣是在霸凌，很過分！」', to: 'groupchat' },
+          { label: '把發生的事情告訴老師和爸媽，請大人一起處理', to: 'after' },
+          { label: '繼續陪小柔，我們兩個互相陪就好了', to: 'good' },
+          { label: '不想把事情鬧大，先忍幾天看看', to: 'alone' },
         ],
       },
       secret: {
         text: '你在別人看不到的時候才跟小柔說話。<br><br>有一天小柔小聲問你：「為什麼你在大家面前都裝作不認識我？」',
         choices: [
-          { label: '跟她道歉，並決定公開站在她那邊', to: 'refuse' },
-          { label: '不知道怎麼回答，就走開了', to: 'alone' },
+          { label: '「對不起，我其實是怕自己也被排擠」', to: 'honest' },
+          { label: '跟她道歉，決定以後不再躲著她', to: 'refuse' },
+          { label: '不知道怎麼回答，就走開', to: 'alone' },
         ],
       },
       join: {
@@ -486,19 +542,25 @@ const SCENARIOS = [
       },
     },
     endings: {
-      slip: { grade: 'good', title: '第一關守住了', emoji: '👍',
+      chatfight: { grade: 'escape', title: '事情越吵越大', emoji: '💬',
+        text: '你一直在群組裡跟大家爭論。<br><br>後來訊息越來越多，有人開始罵小柔，也有人開始罵你。<br><br>你原本是想幫她，但最後你們兩個都很難受。',
+        lesson: '願意站出來幫朋友是很勇敢的。<br><br>但<b>勇敢不一定是自己跟所有人吵到底</b>。<br><br>當事情變成一群人持續攻擊一個人的時候，<b>保留訊息、停止互罵，再找可信任的大人一起處理</b>，通常更能真正幫到自己和朋友。' },
+      retaliate: { grade: 'escape', title: '你也說出了傷人的話', emoji: '💬',
+        text: '你一生氣就回罵了他。<br><br>他也馬上罵回來，兩個人的聲音越來越大。<br><br>老師走過來時，只看到你們兩個正在互相吵架。',
+        lesson: '被威脅、被排擠的時候會生氣，很正常。<br><br>但<b>回一句傷人的話，常常會讓原本很清楚的事情變得更難處理</b>。<br><br>可以生氣，也可以離開現場，再把發生的事情告訴可信任的大人。' },
+      slip: { grade: 'good', title: '你開始躲著小柔', emoji: '💬',
         text: '你開始躲著小柔。<br><br>她沒有問你為什麼，只是又變回一個人吃飯。',
         lesson: '你告訴老師這一步，是全班最難的一件事。<br><br>但<b>被說「告狀精」的時候退縮，等於把小柔又還回去了</b>。<br><br>記住：<b>會罵你告狀的人，正是最怕被大人知道的人</b>。他罵你，代表你做對了。' },
-      good: { grade: 'good', title: '你沒有跟著大家', emoji: '👍',
+      good: { grade: 'good', title: '你沒有跟著大家', emoji: '💬',
         text: '你一直跟小柔說話、陪她吃午餐。<br><br>排擠沒有停下來，但小柔小聲跟你說：「還好有你。」<br><br>學期末，她還是轉學了。',
         lesson: '你做了全班最難的一件事——<b>沒有跟著大家</b>。對小柔來說，你可能是那段日子裡唯一的光。<br><br>但排擠沒有停，因為<b>只有大人能真正處理</b>。下次再多做一步：告訴老師。<br><br><b>說出來不是告狀，是因為這件事本來就不該讓小孩自己扛。</b>' },
-      best: { grade: 'best', title: '最勇敢的選擇', emoji: '🌟',
+      best: { grade: 'best', title: '你找到了可以一起幫忙的大人', emoji: '💬',
         text: '老師知道後在班上處理了這件事，也找了帶頭的同學談。<br><br>幾個禮拜後，小柔在你旁邊坐下說：「謝謝你那時候還跟我講話。」',
         lesson: '拒絕加入排擠，是全班最難的一件事，你做到了。而且你沒有硬撐——<b>找大人幫忙不是告狀，是因為霸凌本來就不該讓小孩自己解決</b>。' },
-      escape: { grade: 'escape', title: '來得及的勇氣', emoji: '😮‍💨',
+      escape: { grade: 'escape', title: '你最後說了出來', emoji: '💬',
         text: '你說出來之後，老師才知道發生什麼事。小柔後來回來上學了，雖然花了一段時間才願意相信同學。',
         lesson: '你最後說出來了，這很重要。但小柔已經受了幾個禮拜的傷。<b>越早說，傷害越小</b>——被排擠的人最需要的，是有人願意先開口。' },
-      bad: { grade: 'bad', title: '再試一次',
+      bad: { grade: 'bad', title: '事情就這樣過去了', emoji: '💬',
         text: '沒有人說話，事情就這樣過去了。小柔後來轉學了。<br><br>你偶爾會想起她，心裡有點怪怪的。',
         lesson: '「大家都這樣做」是最難抵抗的壓力，會沉默是很正常的。但沉默的人越多，被排擠的人就越孤單。<b>你不用當英雄，只要告訴一個大人就好</b>。再走一次試試看。' },
     },
@@ -2839,6 +2901,49 @@ Object.assign(ART_SCENES, {
     HOLD1() + AGAIN('慢慢說就好')),
 });
 
+/* ===== bully 後果卡模式：兩個新結局的插圖 =====
+   不用 HOLD1/AGAIN 的「守住／沒守住」語彙，因為這兩張不是在評分，
+   而是在呈現「你這樣選之後，事情變成什麼樣子」
+*/
+// 一長串快速跳出的班群訊息（只有色塊，不寫具體字，避免變成罵人範本）
+const CHATLINES = (x, y, w) =>
+  Array.from({ length: 6 }, (_, i) => {
+    const right = i % 2 === 1, bw = w * (0.5 + ((i * 37) % 40) / 100);
+    return '<rect x="' + (right ? x + w - bw : x) + '" y="' + (y + i * 11) + '" width="' + bw +
+      '" height="8" rx="4" fill="' + (right ? '#ffc9c9' : '#e2dcee') + '" stroke="#8a7fa8" stroke-width="0.7"/>';
+  }).join('');
+
+Object.assign(ART_SCENES, {
+  // 💬 在班群裡吵到底 —— 兩個人都被捲進去
+  'bully.chatfight': SVG('班群訊息一直跳出來，小女生皺著眉看著手機',
+    BG('#f2f7ff', '#c8dcf0') +
+    '<g transform="translate(142,66)"><rect x="-34" y="-52" width="68" height="106" rx="10" fill="#33224a"/>' +
+    '<rect x="-29" y="-45" width="58" height="92" rx="3" fill="#f7f4ff"/>' +
+    '<rect x="-29" y="-45" width="58" height="13" rx="3" fill="#cbbce0"/>' +
+    '<text x="0" y="-35.5" font-size="8" fill="#33224a" text-anchor="middle" font-weight="bold">班群</text></g>' +
+    CHATLINES(116, 40, 52) +
+    '<g class="fadeDanger"><circle cx="122" cy="104" r="6.5" fill="#7fc1ed" stroke="#33224a" stroke-width="1.2"/>' +
+    '<rect x="132" y="99" width="34" height="10" rx="5" fill="#ffc9c9" stroke="#8a7fa8" stroke-width="0.7"/>' +
+    '<text x="149" y="106.5" font-size="7" fill="#8a7fa8" text-anchor="middle" font-weight="bold">小柔</text></g>' +
+    GIRL(52, 118, 0.96, { pose: 'sit', mood: 'flat' }) +
+    EMO(76, 58, '💢', 16, 'clash') + EMO(20, 68, '💧', 13)),
+
+  // 💬 回罵回去 —— 老師只看到兩個人在吵
+  'bully.retaliate': SVG('走廊上兩個學生隔著距離生氣對話，老師從遠處走過來',
+    BG('#f2f7ff', '#c8dcf0') +
+    '<rect x="0" y="30" width="200" height="8" fill="#b6a7d6"/>' +
+    '<rect x="14" y="38" width="7" height="80" fill="#cbbce0"/>' +
+    '<rect x="186" y="38" width="7" height="80" fill="#cbbce0"/>' +
+    '<g class="fadeDanger">' + ADULT(178, 118, 0.6, { color: '#5e8f78', pose: 'reachL' }) +
+    EMO(160, 62, '👀', 12) + '</g>' +
+    GIRL(56, 118, 0.92, { pose: 'shout' }) +
+    BOY(114, 118, 0.88) +
+    '<g class="clash">' +
+    '<path d="M78 60 l10 6 l-9 4 l11 6" stroke="#e74c3c" stroke-width="2.6" fill="none" stroke-linecap="round"/>' +
+    '<path d="M98 60 l-10 6 l9 4 l-11 6" stroke="#e74c3c" stroke-width="2.6" fill="none" stroke-linecap="round"/></g>' +
+    EMO(34, 58, '💢', 14) + EMO(128, 56, '💢', 14)),
+});
+
 /* ===== 每個結局的專屬畫面（後 8 個劇本） ===== */
 Object.assign(ART_SCENES, {
   /* ---------- 9. 賣場走失 ---------- */
@@ -3149,6 +3254,20 @@ const GRADE_META = {
   escape: { label: '驚險', color: '#b06a00', bg: '#ffe6a8' },
   bad:    { label: '再試', color: '#a33', bg: '#ffd0d0' },
 };
+/* 後果卡模式：這類劇本沒有「比較好」的結局，只有「這樣選會發生什麼」。
+   所以不打等級、不比較、不跳「比上次更好了」，只記錄走過哪些結果。 */
+const isCons = sc => !!(sc && sc.mode === 'consequence');
+
+function loadEnds() {
+  try { return JSON.parse(localStorage.getItem(pKey('ends'))) || {}; } catch (e) { return {}; }
+}
+function recordEnding(id, key) {
+  const e = loadEnds();
+  (e[id] = e[id] || {})[key] = 1;
+  try { localStorage.setItem(pKey('ends'), JSON.stringify(e)); } catch (e2) {}
+}
+function endsSeen(id) { return Object.keys(loadEnds()[id] || {}).length; }
+
 function loadProgress() {
   try { return JSON.parse(localStorage.getItem(pKey('progress'))) || {}; } catch (e) { return {}; }
 }
@@ -3259,7 +3378,8 @@ function renderWho() {
 
 function renderMenu() {
   const p = loadProgress();
-  const done = SCENARIOS.filter(s => p[s.id] === 'best').length;
+  const graded = SCENARIOS.filter(s => !isCons(s));
+  const done = graded.filter(s => p[s.id] === 'best').length;
   app.innerHTML = `
     <div class="card anim">
       <button id="whobtn" class="whorow">
@@ -3270,12 +3390,14 @@ function renderMenu() {
       <h1>🎭 情境劇場</h1>
       <div class="sub">你的每一個選擇，都會改變故事的結局</div>
       <div style="text-align:center; font-size:13px; font-weight:800; color:#6b4a9e; margin-bottom:6px;">
-        完美通關 ${done} / ${SCENARIOS.length}
+        完美通關 ${done} / ${graded.length}
       </div>
       <button id="rand" style="width:100%; margin:8px 0 4px; background:#6b4a9e; color:#fff;">🎲 隨機挑一個</button>
       <div class="pick-grid">
         ${SCENARIOS.map(s => {
-          const g = p[s.id];
+          const cons = isCons(s);
+          const seen = cons ? endsSeen(s.id) : 0;
+          const g = cons ? null : p[s.id];
           const m = g ? GRADE_META[g] : null;
           return `
             <button class="pick" data-id="${esc(s.id)}">
@@ -3284,7 +3406,12 @@ function renderMenu() {
                 <span class="t">${esc(s.title)}</span>
                 <span class="g">${esc(s.tag)}</span>
               </span>
-              ${m ? `<span class="done" title="${m.label}">${g === 'best' ? '🌟' : g === 'good' ? '👍' : g === 'escape' ? '😮‍💨' : '🔁'}</span>` : '<span class="done" style="opacity:.25;">▶️</span>'}
+              ${cons
+                ? (seen
+                    ? `<span class="done" title="走過 ${seen} / ${Object.keys(s.endings).length} 種結果" style="font-size:13px; font-weight:900; color:#6b4a9e;">${seen}/${Object.keys(s.endings).length}</span>`
+                    : '<span class="done" style="opacity:.25;">▶️</span>')
+                : m ? `<span class="done" title="${m.label}">${g === 'best' ? '🌟' : g === 'good' ? '👍' : g === 'escape' ? '😮‍💨' : '🔁'}</span>`
+                    : '<span class="done" style="opacity:.25;">▶️</span>'}
             </button>`;
         }).join('')}
       </div>
@@ -3318,6 +3445,7 @@ function renderMenu() {
     if (confirm('要清除「' + who().name + '」的所有紀錄嗎？')) {
       localStorage.removeItem(pKey('progress'));
       localStorage.removeItem(pKey('seen'));
+      localStorage.removeItem(pKey('ends'));
       render();
     }
   };
@@ -3419,8 +3547,14 @@ function choose(i) {
   } else if (cur.endings[nxt]) {
     ending = cur.endings[nxt];
     endingKey = nxt;
-    improved = recordResult(cur.id, ending.grade);
-    ({ best: Sfx.best, good: Sfx.good, escape: Sfx.escape, bad: Sfx.bad }[ending.grade] || Sfx.good)();
+    if (isCons(cur)) {
+      recordEnding(cur.id, nxt);
+      improved = false;
+      Sfx.good();                       // 中性的收尾音，不用高低分暗示好壞
+    } else {
+      improved = recordResult(cur.id, ending.grade);
+      ({ best: Sfx.best, good: Sfx.good, escape: Sfx.escape, bad: Sfx.bad }[ending.grade] || Sfx.good)();
+    }
     view = 'end';
     render();
   } else {
@@ -3429,6 +3563,7 @@ function choose(i) {
 }
 
 function renderEnding() {
+  const cons = isCons(cur);
   const m = GRADE_META[ending.grade];
   app.innerHTML = `
     <div class="card">
@@ -3436,15 +3571,18 @@ function renderEnding() {
         <div class="result">
           <div class="scene pop">${sceneFor(cur.id, endingKey, ending.grade)}</div>
           <h1>${esc(ending.title)}</h1>
-          <span class="badge" style="background:${m.bg}; color:${m.color};">${m.label}結局</span>
-          ${improved && ending.grade !== 'bad' ? `<div style="font-weight:900; color:#c9a000; margin-top:8px;">🎉 比上次更好了！</div>` : ''}
+          ${cons
+            ? `<span class="badge" style="background:#eee6f8; color:#6b4a9e;">💬 這個選擇的結果</span>`
+            : `<span class="badge" style="background:${m.bg}; color:${m.color};">${m.label}結局</span>`}
+          ${!cons && improved && ending.grade !== 'bad' ? `<div style="font-weight:900; color:#c9a000; margin-top:8px;">🎉 比上次更好了！</div>` : ''}
+          ${cons ? `<div style="font-size:12px; color:#6b5a7e; margin-top:8px; line-height:1.6;">這個故事沒有滿分答案。<br>你走過 ${endsSeen(cur.id)} / ${Object.keys(cur.endings).length} 種結果。</div>` : ''}
         </div>
         <div>
           <div class="stage" style="margin-top:0;">
             <div class="narr">${narrate(ending.text)}</div>
           </div>
           <div class="lesson">
-            <div style="font-weight:900; margin-bottom:5px; color:#1e7d46;">💡 學到了什麼</div>
+            <div style="font-weight:900; margin-bottom:5px; color:#1e7d46;">${cons ? '🤔 想一想' : '💡 學到了什麼'}</div>
             ${narrate(ending.lesson)}
           </div>
           <div class="talkbox">
