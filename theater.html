@@ -1526,24 +1526,16 @@ const SCENARIOS = [
   /* ---------- 20. 跆拳道館下課 ---------- */
   {
     id: 'dojo', emoji: '🥋', title: '跆拳道館下課',
-    tag: '姊妹同行・電梯',
-    talk: '如果我遲到了，你們要在哪裡等？可不可以自己下樓？我們現在就講好。',
-    intro: '週六早上，你和妹妹在跆拳道館上完兩小時的課。<br><br>道館在一棟公寓的四樓，開車回家只要十分鐘。<br><br>其他同學都被接走了，教練在收拾器材。媽媽還是沒有出現。',
+    tag: '姊妹同行・樓梯間',
+    talk: '如果我遲到了，你們要在道館等還是下樓？樓梯間可以停留嗎？我們現在就講好。',
+    intro: '週六早上，你和妹妹在跆拳道館上完兩小時的課。<br><br>道館在四樓，藍色招牌的那一棟，<b>沒有電梯，要走樓梯上下</b>。一樓隔壁是紅招牌的拉麵店。<br><br>其他同學都被接走了，教練在收拾器材。媽媽還是沒有出現。',
     start: 'n1',
     nodes: {
-      blocked: {
-        text: '妹妹的手還沒碰到按鈕，就被他用身體擋住了。<br><br>「等一下就到了啦。」他笑著說。<br><br>妹妹嚇得快哭出來，緊緊抓著你的衣角。',
-        hint: '電梯裡最重要的兩個東西：緊急鈴，還有你的聲音。',
-        choices: [
-          { label: '抱住妹妹，什麼都不敢做', to: 'basement' },
-          { label: '大喊「開門！救命！」用力拍門，同時去按緊急鈴', to: 'escape' },
-        ],
-      },
       n1: {
-        text: '牆上的鐘已經超過平常的時間二十分鐘了。<br><br>妹妹拉著你的衣角：「姊姊，我肚子餓，我們回家啦。」',
+        text: '牆上的鐘已經超過平常的時間二十分鐘了。<br><br>妹妹拉著你的衣角：「姊姊，我肚子餓，我們下去等啦。」',
         hint: '你今天不只要照顧自己，還要照顧妹妹。',
         choices: [
-          { label: '牽妹妹下樓，到大門口等媽媽', to: 'downstairs' },
+          { label: '牽妹妹走樓梯下樓，到一樓門口等媽媽', to: 'downstairs' },
           { label: '跟教練說媽媽還沒來，借電話打給她', to: 'coach' },
           { label: '在道館角落坐著等，不要吵教練', to: 'stay' },
         ],
@@ -1551,48 +1543,57 @@ const SCENARIOS = [
       stay: {
         text: '你們坐在道館角落。教練在裡面整理器材，沒注意到你們還沒走。<br><br>又過了二十分鐘，妹妹開始不耐煩：<br><br>「姊姊，我們自己下去找媽媽好不好？」',
         choices: [
-          { label: '好吧，牽妹妹下樓', to: 'downstairs' },
+          { label: '好吧，牽妹妹走樓梯下去', to: 'downstairs' },
           { label: '去跟教練說，請他幫忙打電話', to: 'coach' },
           { label: '再等一下，媽媽一定會上來', to: 'good' },
         ],
       },
       coach: {
-        text: '教練把手機借你。媽媽一接通就急著說：<br><br>「對不起！媽媽塞在車陣裡，再十五分鐘就到。<br>你們<b>千萬不要下樓</b>，在道館裡等我，好不好？」<br><br>教練說：「沒問題，你們在這裡等，我陪你們。」',
+        text: '教練把手機借你。媽媽一接通就急著說：<br><br>「對不起！媽媽塞在車陣裡，再十五分鐘就到。<br>你們<b>不要自己走樓梯下來</b>，在道館等我，好不好？」<br><br>教練說：「沒問題，你們在這裡等，我陪你們。」',
         choices: [
           { label: '跟妹妹在道館裡等媽媽', to: 'best' },
           { label: '「不好意思麻煩教練」，還是帶妹妹下樓等', to: 'downstairs' },
         ],
       },
       downstairs: {
-        text: '你按了電梯。<br><br>「叮」——門打開了，裡面已經站著一個叔叔。<br><br>他笑笑說：「要下樓喔？進來啊，我幫你們按。」',
-        hint: '電梯是一個關起來、外面完全看不到的小空間。',
+        text: '你牽著妹妹走樓梯。<br><br>週六早上整棟樓好安靜，只有你們兩個的腳步聲在樓梯間迴盪。<br><br>走到三樓轉角時——一個叔叔從下面走上來，停在你們前面。',
+        hint: '樓梯間是封閉的：外面看不到裡面，轉角前後也看不到。',
         choices: [
-          { label: '牽妹妹走進去', to: 'inlift' },
-          { label: '「我們等下一班」，牽著妹妹往後退', to: 'waitlift' },
-          { label: '妹妹已經先跑進去了，只好跟著進去', to: 'inlift' },
+          { label: '側身讓他過去，繼續往下走', to: 'pass' },
+          { label: '停下來，等他先走上去', to: 'waitman' },
+          { label: '立刻轉頭，拉著妹妹跑回四樓道館', to: 'escape' },
         ],
       },
-      waitlift: {
-        text: '電梯門關上了。你牽緊妹妹的手站在原地。<br><br>過了一會兒，那個叔叔竟然從樓梯間走了上來，站到你們旁邊。<br><br>「怎麼還沒下去啊？」',
+      waitman: {
+        text: '他也停下來了。<br><br>他靠在牆邊看著你們，沒有要繼續上樓的意思。<br><br>妹妹拉拉你的手，小小聲說：「姊姊……我們回去好不好？」',
+        hint: '妹妹的直覺是對的。你也覺得怪怪的，對不對？',
         choices: [
-          { label: '大聲喊「教練！」，拉著妹妹跑回道館', to: 'escape' },
-          { label: '假裝沒聽到，繼續等電梯', to: 'grab' },
+          { label: '拉著妹妹跑回四樓道館', to: 'escape' },
+          { label: '再等一下，他可能只是在休息', to: 'grab' },
         ],
       },
-      inlift: {
-        text: '電梯開始往下。<br><br>到了二樓，他突然伸手按了「地下停車場」。<br><br>妹妹小聲說：「姊姊……這不是一樓耶。」',
+      pass: {
+        text: '你們側身從他旁邊走過去。<br><br>但他沒有繼續往上走——<br><br>他轉過身，跟在你們後面一起下樓。腳步聲越來越近。',
         choices: [
-          { label: '立刻把每一層樓的按鈕都按下去，並按緊急鈴', to: 'escape' },
-          { label: '妹妹伸手要按開門鍵', to: 'blocked' },
-          { label: '不敢說話，站著不動', to: 'basement' },
+          { label: '加快腳步衝到一樓，跑進亮著燈的拉麵店', to: 'escape' },
+          { label: '回頭問他要去幾樓', to: 'askman' },
+          { label: '不敢出聲，繼續安靜往下走', to: 'grab' },
+        ],
+      },
+      askman: {
+        text: '「叔叔你要去幾樓？」<br><br>「跟你們一樣啊。」他笑笑地說，又往前走了一步。',
+        hint: '他沒有真的回答你。',
+        choices: [
+          { label: '拉著妹妹衝下樓，跑進一樓的拉麵店', to: 'escape' },
+          { label: '愣住不知道該怎麼辦', to: 'grab' },
         ],
       },
       grab: {
-        text: '他走過來，一手抓住你的手臂，另一手伸向妹妹。<br><br>你學過跆拳道。',
+        text: '他伸手抓住你的手臂，另一手伸向妹妹。<br><br>你學過跆拳道。',
         hint: '你學的東西，是用來「掙脫」還是用來「打贏」？',
         choices: [
           { label: '站好，跟他打', to: 'fight' },
-          { label: '用力扭手掙脫，大喊「我不認識他！」，抓著妹妹往道館跑', to: 'escape' },
+          { label: '用力扭手掙脫，大喊「我不認識他！」，抓著妹妹往樓下拉麵店跑', to: 'escape' },
         ],
       },
       fight: {
@@ -1602,27 +1603,20 @@ const SCENARIOS = [
           { label: '繼續跟他打', to: 'bad' },
         ],
       },
-      basement: {
-        text: '電梯到了地下停車場，門開了。<br><br>這裡很暗，一個人都沒有。',
-        choices: [
-          { label: '拉著妹妹衝出電梯往車道口跑，邊跑邊大叫', to: 'escape' },
-          { label: '跟著他走出電梯', to: 'bad' },
-        ],
-      },
     },
     endings: {
       best: { grade: 'best', title: '姊姊做得非常好', emoji: '🌟',
         text: '你們在道館裡玩護具玩到媽媽衝進來。<br><br>「對不起對不起——」媽媽一把抱住你們兩個。<br><br>教練笑著說：<br><br>「姊姊做得很好，知道要待在有大人的地方，還先打電話確認。」',
-        lesson: '等不到人的時候，<b>待在有大人的地方</b>——道館、警衛室、有店員的店裡，<b>不要下樓到門口等</b>。<br><br>帶著妹妹的時候更是這樣：<b>兩個人待在有大人的地方，是最安全的組合</b>；一移動，就變成兩個落單的小孩。<br><br>還有——<b>你不需要自己想辦法，開口拜託大人不是麻煩別人</b>。' },
+        lesson: '等不到人的時候，<b>待在有大人的地方</b>——不要自己走樓梯下樓。<br><br><b>樓梯間是整棟樓最危險的地方</b>：封閉、假日沒人經過、沒有監視器，而且轉角前後都看不到。<br><br>帶著妹妹的時候更是這樣：<b>兩個人待在有大人的地方，是最安全的組合</b>；一走進樓梯間，就變成兩個沒人看得到的小孩。<br><br>還有——<b>開口拜託大人不是麻煩別人</b>。' },
       good: { grade: 'good', title: '待在裡面是對的', emoji: '👍',
         text: '你們一直待在道館，媽媽終於上來了，一路說著對不起。',
-        lesson: '你沒有下樓、沒有讓自己和妹妹落單，這個選擇是對的。<br><br>不過可以再更好一點：<b>主動跟教練說一聲</b>。<br><br>大人如果不知道你還在等，就沒辦法照顧你們。<b>說出來不是添麻煩，是讓自己被看見</b>。' },
+        lesson: '你沒有下樓、沒有讓自己和妹妹走進樓梯間，這個選擇是對的。<br><br>不過可以再更好一點：<b>主動跟教練說一聲</b>。<br><br>大人如果不知道你還在等，就沒辦法照顧你們。<b>說出來不是添麻煩，是讓自己被看見</b>。' },
       escape: { grade: 'escape', title: '你保護了妹妹', emoji: '😮‍💨',
-        text: '你和妹妹都平安。教練和其他家長很快趕到，那個人早就跑了。<br><br>媽媽抱著你們兩個，手一直在抖。',
-        lesson: '你不只保護了自己，還保護了妹妹——<b>而且你沒有丟下她</b>。<br><br><b>關於跆拳道，這一點最重要：</b>你學的是用來<b>掙脫和逃跑</b>的，不是用來跟大人打贏的。大人比你高、比你重，正面對打贏不了。<br><b>你的目標永遠是「脫身」，不是「贏」。</b><br><br>電梯裡的自救：<b>把每一層樓的按鈕都按下去</b>（門會一直開）、<b>按緊急鈴</b>、站在按鈕旁邊。<br><br>喊叫的時候喊「<b>我不認識他！</b>」比喊「救命」有用——路人才知道不是家長在管小孩。' },
+        text: '你和妹妹都平安。<br><br>拉麵店的老闆讓你們坐在店裡，還幫你們打了電話。教練也衝下樓來。<br><br>媽媽抱著你們兩個，手一直在抖。',
+        lesson: '你不只保護了自己，還保護了妹妹——<b>而且你沒有丟下她</b>。<br><br><b>在樓梯間覺得怪怪的，就往「有人的地方」移動：</b><br>四樓有教練、一樓有拉麵店。<b>往有人的方向，不要往空的方向</b>。<br><br>而且——<b>回頭往上跑回道館，常常比硬闖下樓更安全</b>，因為上面有你認識的大人。<br><br><b>關於跆拳道：</b>你學的是用來<b>掙脫和逃跑</b>的，不是用來跟大人打贏的。大人比你高、比你重，正面對打贏不了。<b>你的目標永遠是「脫身」，不是「贏」。</b><br><br>喊叫的時候喊「<b>我不認識他！</b>」比喊「救命」有用。' },
       bad: { grade: 'bad', title: '再試一次',
         text: '故事到這裡停下來了。',
-        lesson: '有兩個地方可以再走一次看看：<br><br>第一，<b>不要下樓</b>。等不到人就待在道館，讓教練知道。<br><br>第二，<b>不要跟陌生人搭同一部電梯</b>，等下一班就好，多等一分鐘不會怎麼樣。<br><br>最後想跟姊姊說一句話：<b>你不用當英雄，也不用自己解決問題</b>。<br>你只要做一件事——<b>帶著妹妹，待在有大人的地方</b>。' },
+        lesson: '有兩個地方可以再走一次看看：<br><br>第一，<b>不要自己走樓梯下樓</b>。等不到人就待在道館，讓教練知道。<br><br>第二，<b>在樓梯間覺得不對勁，就馬上往回跑</b>。往上跑回道館不丟臉——多爬三層樓梯而已。<br><br>最後想跟姊姊說一句話：<b>你不用當英雄，也不用自己解決問題</b>。<br>你只要做一件事——<b>帶著妹妹，待在有大人的地方</b>。' },
     },
   },
 ];
@@ -2265,16 +2259,20 @@ const DOJO = () =>
   '<text x="40" y="30" font-size="12" fill="#fff" text-anchor="middle" font-weight="bold">跆拳道</text>' +
   '<circle cx="176" cy="36" r="13" fill="#e74c3c" stroke="#33224a" stroke-width="1.6"/>' +
   '<circle cx="176" cy="36" r="6" fill="#fff"/>';
-// 電梯門
-const LIFT = (x, y, s, open) =>
-  '<g transform="translate(' + x + ',' + y + ') scale(' + s + ')">' +
-  '<rect x="-34" y="-92" width="68" height="92" fill="#9aa4ad" stroke="#33224a" stroke-width="2.2"/>' +
-  (open
-    ? '<rect x="-26" y="-86" width="52" height="86" fill="#4a4258"/>'
-    : '<rect x="-26" y="-86" width="52" height="86" fill="#cfd6dc"/><path d="M0 -86 v86" stroke="#33224a" stroke-width="2"/>') +
-  '<rect x="36" y="-70" width="12" height="24" rx="3" fill="#e8e2d0" stroke="#33224a" stroke-width="1.4"/>' +
-  '<circle cx="42" cy="-63" r="2.6" fill="#ffd23f"/><circle cx="42" cy="-54" r="2.6" fill="#cfd6dc"/>' +
+// 樓梯間（往下的階梯 + 扶手 + 轉角）
+const STAIRS = (x, y, s2, dark) =>
+  '<g transform="translate(' + x + ',' + y + ') scale(' + s2 + ')">' +
+  '<rect x="-52" y="-96" width="104" height="96" fill="' + (dark ? '#3b3352' : '#dfd7ea') + '"/>' +
+  Array.from({ length: 5 }, (_, i) =>
+    '<rect x="' + (-52 + i * 12) + '" y="' + (-40 + i * 12) + '" width="' + (104 - i * 12) + '" height="12" ' +
+    'fill="' + (dark ? '#4c4368' : '#c9bfdd') + '" stroke="' + (dark ? '#2a2440' : '#a99ac9') + '" stroke-width="1.2"/>').join('') +
+  '<path d="M-52 -84 L14 -20" stroke="' + (dark ? '#6b5a8e' : '#9b8ec0') + '" stroke-width="4" stroke-linecap="round"/>' +
   '</g>';
+// 一樓的拉麵店（紅招牌）
+const RAMEN = (x, y) =>
+  '<rect x="' + x + '" y="' + y + '" width="86" height="20" rx="4" fill="#e74c3c" stroke="#33224a" stroke-width="1.8"/>' +
+  '<text x="' + (x + 43) + '" y="' + (y + 15) + '" font-size="11" fill="#fff" text-anchor="middle" font-weight="bold">🍜 拉麵</text>' +
+  '<rect x="' + (x + 6) + '" y="' + (y + 24) + '" width="74" height="70" fill="#fffce8" stroke="#33224a" stroke-width="1.6"/>';
 
 Object.assign(ART_SCENES, {
   // 🌟 打電話確認後在道館等到媽媽
@@ -2296,25 +2294,22 @@ Object.assign(ART_SCENES, {
     EMO(76, 44, '🕐', 15, 'ring')),
 
   // 😮‍💨 掙脫並帶著妹妹跑回道館
-  'dojo.escape': SVG('姊姊拉著妹妹的手大喊著跑回道館，沒有丟下妹妹',
-    BG('#fff4e0', '#c8c0b0') + LIFT(168, 118, 0.95, false) +
-    '<g class="dragonMiss" opacity=".7" style="transform-origin:132px 80px">' +
-    ADULT(132, 118, 0.86, { color: '#8a8f96', pose: 'reachL' }) + '</g>' +
-    '<rect x="4" y="18" width="52" height="20" rx="3" fill="#3f6b53" stroke="#33224a" stroke-width="1.6"/>' +
-    '<text x="30" y="32" font-size="10" fill="#fff" text-anchor="middle" font-weight="bold">跆拳道</text>' +
-    DOBOK(66, 118, 0.92, '#e85a92', { pose: 'shout' }) +
-    DOBOK(94, 118, 0.7, '#ffd23f', { pose: 'reachL' }) +
+  'dojo.escape': SVG('姊姊拉著妹妹跑進一樓的拉麵店，老闆出來看',
+    BG('#fff4e0', '#c8c0b0') + STAIRS(172, 118, 0.9, false) + RAMEN(6, 14) +
+    '<g class="dragonMiss" opacity=".6" style="transform-origin:146px 80px">' +
+    ADULT(146, 118, 0.82, { color: '#8a8f96', pose: 'reachL' }) + '</g>' +
+    HELPER(52, 108, 0.7, '#e74c3c', true) +
+    DOBOK(96, 118, 0.9, '#e85a92', { pose: 'shout' }) +
+    DOBOK(122, 118, 0.68, '#ffd23f', { pose: 'reachL' }) +
     '<g class="dash" stroke="#e85a92" stroke-width="3" fill="none" stroke-linecap="round">' +
-    '<path d="M44 58 q-8 8 0 16"/><path d="M36 52 q-13 14 0 28"/></g>' +
-    EMO(14, 62, '💨', 14)),
+    '<path d="M76 58 q-8 8 0 16"/><path d="M68 52 q-13 14 0 28"/></g>' +
+    EMO(28, 62, '💨', 14)),
 
   // 🔁 電梯門關上，往下走
-  'dojo.bad': SVG('姊妹倆進了電梯，電梯往地下室走',
-    BG('#2e2745', '#463d63') + LIFT(100, 118, 1.25, false) +
-    '<g class="bob">' +
-    '<rect x="66" y="20" width="68" height="16" rx="4" fill="#33224a" stroke="#6b5a7e" stroke-width="1.4"/>' +
-    '<text x="100" y="33" font-size="11" fill="#ff8c42" text-anchor="middle" font-weight="bold">B1 ▼</text></g>' +
-    EMO(28, 74, '💦', 16) + EMO(158, 70, '💢', 18, 'fadeDanger')),
+  'dojo.bad': SVG('空蕩蕩的樓梯間，只剩下往下的階梯',
+    BG('#2e2745', '#463d63') + STAIRS(104, 118, 1.15, true) +
+    '<g class="bob"><text x="100" y="30" font-size="12" fill="#8a7fb0" text-anchor="middle" font-weight="bold">3F ▼ 2F ▼ 1F</text></g>' +
+    EMO(24, 78, '💦', 16) + EMO(170, 66, '💢', 18, 'fadeDanger')),
 });
 
 /* ===== 新增的「👍 不錯」結局插圖：做對了主要的事，但少了一步 =====
