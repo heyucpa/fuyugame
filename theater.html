@@ -2873,6 +2873,7 @@ function renderMenu() {
         <button class="mini" id="mute">${Sfx.isMuted() ? '🔇 靜音中' : '🔊 有聲'}</button>
         <button class="mini" id="music">${Sfx.isBgmOn() ? Sfx.trackName() : '🎵 音樂關'}</button>
         <button class="mini" id="reset">🗑️ 清除紀錄</button>
+        <button class="mini" id="map">🗺️ 分支圖</button>
         <button class="mini" id="back">🎲 回骰子遊戲</button>
       </div>
       <p style="text-align:center; font-size:12px; color:#6b5a7e; margin:12px 0 0; line-height:1.7;">
@@ -2892,6 +2893,7 @@ function renderMenu() {
     render();
   };
   document.getElementById('music').oncontextmenu = e => { e.preventDefault(); Sfx.toggleBgm(); render(); };
+  document.getElementById('map').onclick = () => { location.href = './map.html'; };
   document.getElementById('back').onclick = () => { location.href = './index.html'; };
   document.getElementById('reset').onclick = () => {
     if (confirm('要清除「' + who().name + '」的所有紀錄嗎？')) {
