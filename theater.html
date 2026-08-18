@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#6b4a9e" />
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
-<meta name="build" content="2026.08.18-96faf7" />
+<meta name="build" content="2026.08.18-1e415b" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -686,7 +686,7 @@ const SCENARIOS = [
     },
     endings: {
       // 評級校正：重新進入已知有餘震風險的建築 → 驚險
-      slip: { grade: 'escape', title: '第一關守住了', emoji: '👍',
+      slip: { grade: 'escape', title: '餘震來的時候，你在教室裡', emoji: '😮‍💨',
         text: '你們跑回教室。<br><br>才拿到書包，地板又開始搖——餘震來了，你們趕快躲到桌子底下。',
         lesson: '你疏散的部分做得很標準。<br><br>但<b>地震之後可能還會有餘震</b>，而且建築物、櫃子或掉落物也可能已經受損。<br><br><b>書包、水壺、作業，沒有一樣比你重要。</b>要回去拿東西，一定要等大人說可以。' },
       good: { grade: 'good', title: '躲得很好', emoji: '👍',
@@ -923,7 +923,7 @@ const SCENARIOS = [
     },
     endings: {
       // 評級校正：讓大人重新進入尚未確認安全的屋子 → 驚險
-      slip: { grade: 'escape', title: '第一關守住了', emoji: '👍',
+      slip: { grade: 'escape', title: '媽媽又回到屋子裡', emoji: '😮‍💨',
         text: '媽媽上樓了。<br><br>你在樓下等的那三分鐘，覺得好久好久。<br><br>還好什麼事都沒發生。',
         lesson: '你叫大人、離開屋子、到樓下等，這些都做對了。<br><br>但<b>「還沒確認安全之前，誰都不可以回去」</b>——包括大人。<br><br>瓦斯是看不見的，屋子裡還有多少沒有人知道。<b>小孩也可以提醒大人，而且應該提醒。</b>' },
       good: { grade: 'good', title: '火的部分做對了', emoji: '👍',
@@ -997,7 +997,7 @@ const SCENARIOS = [
     },
     endings: {
       // 評級校正：答應掩蓋需要大人處理的安全事件 → 驚險
-      slip: { grade: 'escape', title: '第一關守住了', emoji: '👍',
+      slip: { grade: 'escape', title: '沒有人知道他溺過水', emoji: '😮‍💨',
         text: '你答應了。<br><br>回家路上他一直咳，晚上還發燒，家人才知道他下午溺過水。',
         lesson: '你救人的方式完全正確——沒有自己下水。<br><br>但<b>嗆到水的人不能保密</b>：肺裡進了水，有時候幾小時後才會出問題，大人必須知道才能觀察。<br><br><b>會讓人受傷的秘密，不能答應保守。</b>' },
       best: { grade: 'best', title: '教科書等級', emoji: '🌟',
@@ -1500,7 +1500,7 @@ const SCENARIOS = [
     },
     endings: {
       // 評級校正：自己沒損失，但把詐騙擴散出去，三個同學實際受騙 → 驚險
-      slip: { grade: 'escape', title: '第一關守住了', emoji: '👍',
+      slip: { grade: 'escape', title: '你把它分享出去了', emoji: '😮‍💨',
         text: '你分享到班上群組。<br><br>兩天後，有三個同學跟你說他們買了，錢都不見了。',
         lesson: '你自己沒有買，這一點很好。<br><br>但<b>「免費」的代價就是你的名字</b>——你一分享，同學就會覺得「這是我朋友推薦的，應該可以信」。<br><br><b>騙子要的不是你的錢，是你的信任去騙別人。</b>' },
       good: { grade: 'good', title: '一毛都沒損失', emoji: '👍',
@@ -1578,7 +1578,7 @@ const SCENARIOS = [
     },
     endings: {
       // 評級校正：第二次仍照做，實際造成金錢損失 → 驚險
-      slip: { grade: 'escape', title: '第一關守住了', emoji: '👍',
+      slip: { grade: 'escape', title: '你還是買了點數卡', emoji: '😮‍💨',
         text: '你買了。<br><br>隔天問那個同學，他一臉困惑：「我沒有傳給你啊。」',
         lesson: '你上次識破了，很厲害。<br><br>但<b>同一招會換不同的人再來一次</b>——因為它有效。<br><br>把它變成一個永遠的規矩就好：<b>只要提到錢或點數卡，一律先打電話給本人</b>。不用判斷像不像，直接打就對了。' },
       good: { grade: 'good', title: '你沒有被騙', emoji: '👍',
@@ -2865,11 +2865,19 @@ Object.assign(ART_SCENES, {
 /* ===== 「第一關守住了」slip 結局插圖 =====
    共同語彙：左上角綠色徽章＝第 1 次你守住了；右上角虛線框＝第 2 次還沒守住
 */
-const HOLD1 = () =>
-  '<g><rect x="6" y="5" width="74" height="21" rx="10.5" fill="#b7f0c2" stroke="#1e7d46" stroke-width="1.8"/>' +
-  '<path d="M15 15 l4 4.5 l8 -9" fill="none" stroke="#1e7d46" stroke-width="2.6" ' +
-  'stroke-linecap="round" stroke-linejoin="round"/>' +
-  '<text x="52" y="19.5" font-size="10.5" fill="#1e7d46" text-anchor="middle" font-weight="bold">第1次守住</text></g>';
+// tone 預設是綠色（第一關守住、後面只是少一步）；
+// 傳 'warn' 用琥珀色——那幾篇第二次真的出事了，不該用慶祝的綠勾
+const HOLD1 = (tone) => {
+  const warn = tone === 'warn';
+  const bg = warn ? '#ffeec2' : '#b7f0c2';
+  const fg = warn ? '#a07a00' : '#1e7d46';
+  return '<g><rect x="6" y="5" width="74" height="21" rx="10.5" fill="' + bg +
+    '" stroke="' + fg + '" stroke-width="1.8"/>' +
+    '<path d="M15 15 l4 4.5 l8 -9" fill="none" stroke="' + fg + '" stroke-width="2.6" ' +
+    'stroke-linecap="round" stroke-linejoin="round"/>' +
+    '<text x="52" y="19.5" font-size="10.5" fill="' + fg +
+    '" text-anchor="middle" font-weight="bold">第1次做對</text></g>';
+};
 
 const AGAIN = (label) =>
   '<g class="fadeDanger"><rect x="106" y="5" width="88" height="36" rx="9" fill="#fff7e2" ' +
@@ -2926,7 +2934,7 @@ Object.assign(ART_SCENES, {
     GIRL(122, 118, 0.7, { pose: 'sit', dress: '#7fc1ed', mood: 'flat' }) +
     EMO(146, 112, '🎒', 13) +
     '<g class="fadeDanger">' + EMO(14, 66, '〰️', 18) + EMO(174, 66, '〰️', 18) + '</g>' +
-    HOLD1() + AGAIN('要等老師說可以')),
+    HOLD1('warn') + AGAIN('要等老師說可以')),
 
   // 🏠 沒開門，但隔著門大喊
   'home.slip': SVG('小女生隔著門大喊，門外的腳步聲慢慢走掉',
@@ -2956,7 +2964,7 @@ Object.assign(ART_SCENES, {
     '<circle cx="173" cy="64" r="4" fill="#a8e6c0"/></g>' +
     '<g class="fadeDanger">' + MOM(128, 118, 0.6) + '</g>' +
     GIRL(48, 118, 0.9, { mood: 'flat' }) + EMO(72, 80, '🕐', 15) +
-    HOLD1() + AGAIN('大人也要等')),
+    HOLD1('warn') + AGAIN('大人也要等')),
 
   // 🏊 救人對了，但答應保密
   'pool.slip': SVG('岸邊，嗆到水的同學要小女生不要跟大人講',
@@ -2966,7 +2974,7 @@ Object.assign(ART_SCENES, {
     GIRL(62, 122, 0.88, { mood: 'flat' }) +
     GIRL(114, 122, 0.84, { pose: 'sit', dress: '#7fc1ed', mood: 'flat' }) +
     EMO(136, 100, '💧', 12) + EMO(140, 78, '🤫', 16) +
-    HOLD1() + AGAIN('還是要說')),
+    HOLD1('warn') + AGAIN('還是要說')),
 
   // 💰 讓大人知道了，但又借他錢
   'money.slip': SVG('小女生又借錢給同學，錢一去不回',
@@ -3012,7 +3020,7 @@ Object.assign(ART_SCENES, {
     GIRL(96, 118, 0.86, { mood: 'flat' }) +
     '<g class="fadeDanger">' + GIRL(140, 118, 0.7, { dress: '#a8e6c0', mood: 'flat' }) +
     BOY(166, 118, 0.66, '#b6a7d6') + EMO(128, 66, '💸', 13) + EMO(180, 60, '💸', 12) + '</g>' +
-    HOLD1() + AGAIN('別幫忙分享')),
+    HOLD1('warn') + AGAIN('別幫忙分享')),
 
   // 👤 上次識破了，這次還是買了點數卡
   'imposter.slip': SVG('小女生買了點數卡，本人卻說我沒有傳給你',
@@ -3022,7 +3030,7 @@ Object.assign(ART_SCENES, {
     '<text x="141" y="92" font-size="8" fill="#33224a" text-anchor="middle" font-weight="bold">點數卡</text>' +
     GIRL(56, 118, 0.9, { pose: 'reachR', mood: 'flat' }) +
     '<g class="fadeDanger">' + BOY(180, 118, 0.7, '#7fc1ed') + EMO(166, 58, '❓', 14) + '</g>' +
-    HOLD1() + AGAIN('先打電話確認')),
+    HOLD1('warn') + AGAIN('先打電話確認')),
 
   // 🍳 求助對了，但沒指認
   'breakfast.slip': SVG('老闆送小女生回家，那個人還站在對面看著',
@@ -3934,7 +3942,7 @@ function renderEnding() {
           ${cons
             ? `<span class="badge" style="background:#eee6f8; color:#6b4a9e;">💬 這個選擇的結果</span>`
             : `<span class="badge" style="background:${m.bg}; color:${m.color};">${m.label}結局</span>`}
-          ${!cons && improved && ending.grade !== 'bad' ? `<div style="font-weight:900; color:#c9a000; margin-top:8px;">🎉 比上次更好了！</div>` : ''}
+          ${!cons && improved && isGoodGrade(ending.grade) ? `<div style="font-weight:900; color:#c9a000; margin-top:8px;">🎉 比上次更好了！</div>` : ''}
           <div style="font-size:12px; color:#6b5a7e; margin-top:8px; line-height:1.6;">
             ${cons ? '這個故事沒有滿分答案。<br>' : ''}你走過 ${endsSeen(cur.id)} / ${Object.keys(cur.endings).length} 種結局${endsSeen(cur.id) < Object.keys(cur.endings).length ? '，再走一次看看別條路' : '，全部都看過了 🎉'}。
           </div>
