@@ -10,6 +10,9 @@
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="情境劇場" />
 <meta name="theme-color" content="#6b4a9e" />
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta name="build" content="2026.08.18-137b1d" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -3497,6 +3500,8 @@ function isSeen(nodeId, idx) { return !!runSeen[nodeId + '|' + idx]; }
 
 /* ===== 狀態 ===== */
 const app = document.getElementById('app');
+// 版本號由 build.sh 在打包時填進 <meta name="build">
+const BUILD = (document.querySelector('meta[name="build"]') || {}).content || '?';
 let view = 'menu';
 let cur = null;      // 目前劇本
 let nodeId = null;   // 目前節點
@@ -3639,6 +3644,12 @@ function renderMenu() {
         <span class="lg lg-new">還沒選</span>
         <span class="lg lg-done">這次選過了</span>
       </div>
+      <p style="text-align:center; margin:14px 0 0;">
+        <button id="ver" style="background:none; border:0; box-shadow:none; padding:4px;
+          font-size:11px; color:#a99ac9; font-weight:600; text-decoration:underline;">
+          版本 ${esc(BUILD)}　·　點一下檢查更新
+        </button>
+      </p>
     </div>
   `;
   document.querySelectorAll('.pick').forEach(b => {
@@ -3654,6 +3665,10 @@ function renderMenu() {
   };
   document.getElementById('music').oncontextmenu = e => { e.preventDefault(); Sfx.toggleBgm(); render(); };
   document.getElementById('check').onclick = () => { Sfx.tap(); view = 'check'; render(); };
+  document.getElementById('ver').onclick = () => {
+    // 換一個查詢字串，瀏覽器就不會拿舊的快取
+    location.href = location.pathname + '?v=' + Math.floor(Date.now() / 1000);
+  };
   document.getElementById('map').onclick = () => { location.href = './map.html'; };
   document.getElementById('back').onclick = () => { location.href = './index.html'; };
   document.getElementById('reset').onclick = () => {
