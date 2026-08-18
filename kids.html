@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>小小冒險 🌈</title>
+<meta name="theme-color" content="#ff8fb8" />
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
+<meta name="build" content="2026.08.18-693917" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjZmY4ZmI4Ii8+PHRleHQgeD0iNTAiIHk9IjcyIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn4yIPC90ZXh0Pjwvc3ZnPg==" />
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; padding: 14px calc(14px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left));
+    font-family: "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif;
+    background: linear-gradient(180deg, #fff0f6 0%, #eaf6ff 100%);
+    color: #33224a; min-height: 100vh; -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: 560px; margin: 0 auto; }
+
+  button { font-family: inherit; cursor: pointer; border: 4px solid #33224a; border-radius: 20px;
+           background: #fff; color: #33224a; box-shadow: 0 5px 0 rgba(51,34,74,.22); }
+  button:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(51,34,74,.22); }
+
+  /* ── 首頁 ── */
+  h1 { font-size: 30px; text-align: center; margin: 6px 0 2px; color: #d1477f; }
+  .sub { text-align: center; font-size: 15px; color: #6b5a7e; margin-bottom: 16px; }
+  .pickbtn {
+    width: 100%; display: flex; align-items: center; gap: 14px;
+    padding: 18px 16px; margin-bottom: 12px; font-size: 22px; font-weight: 900;
+  }
+  .pickbtn .ico { font-size: 40px; line-height: 1; }
+
+  /* ── 遊戲畫面 ── */
+  .card { background: #fff; border: 5px solid #33224a; border-radius: 26px; padding: 14px; }
+  .art { width: 100%; border-radius: 18px; overflow: hidden; display: block; background: #f7f4ff; }
+  .art svg { width: 100%; display: block; }
+
+  .sayrow { display: flex; align-items: center; gap: 10px; margin: 14px 2px 4px; }
+  .say { flex: 1; font-size: 22px; font-weight: 800; line-height: 1.6; }
+  .spk { flex: 0 0 auto; font-size: 26px; padding: 8px 12px; border-radius: 16px; background: #ffe9a8; }
+
+  .picks { display: grid; gap: 12px; margin-top: 12px; }
+  .pick2 {
+    width: 100%; display: flex; align-items: center; gap: 14px;
+    padding: 16px; font-size: 21px; font-weight: 900; text-align: left; line-height: 1.4;
+  }
+  .pick2 .big { font-size: 46px; line-height: 1; flex: 0 0 auto; }
+  .pick2.good:active { background: #d8f7e0; }
+
+  /* ── 選錯了：不是失敗，是看一下會怎樣 ── */
+  .oops .art { background: #fff4f4; }
+  .again {
+    width: 100%; margin-top: 14px; padding: 18px; font-size: 24px; font-weight: 900;
+    background: #ffd23f;
+  }
+  /* ── 完成 ── */
+  .win .art { background: #eafaf1; }
+  .stars { text-align: center; font-size: 44px; letter-spacing: 8px; margin: 10px 0 0; }
+  .row { display: flex; gap: 10px; margin-top: 14px; }
+  .row button { flex: 1; padding: 15px; font-size: 19px; font-weight: 900; }
+
+  .steps { display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; }
+  .dot { width: 16px; height: 16px; border-radius: 50%; background: #e2dcee; border: 3px solid #cbbce0; }
+  .dot.on { background: #ff8fb8; border-color: #d1477f; }
+  .dot.done { background: #7cc9a0; border-color: #1e7d46; }
+
+  .foot { text-align: center; font-size: 12px; color: #a99ac9; margin-top: 16px; }
+  .foot button { background: none; border: 0; box-shadow: none; color: #a99ac9;
+                 font-size: 12px; text-decoration: underline; padding: 4px; }
+
+  @media (min-width: 700px) {
+    .say { font-size: 25px; }
+    .pick2 { font-size: 24px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+  @keyframes pop { from { transform: scale(.94); opacity: 0; } to { transform: none; opacity: 1; } }
+  .anim { animation: pop .24s ease-out; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+
+/* ===== 妹妹版：每篇 3 步，每步 2 個選項，不看字也能玩 =====
+   say    = 這一格的旁白（會唸出來，也給大人照著念）
+   choices= 兩個選項；big 是大圖示，label 是字（不認得字也沒關係）
+   ok:true  → 走到下一步
+   ok:false → 看一下會發生什麼，然後回到同一題再選一次（不會卡住、不會失敗）
+*/
+const KIDS = [
+  {
+    id: 'room', emoji: '🏫', title: '找不到教室',
+    forParent: '練習：在學校迷路時，去找穿制服的大人，並且說得出自己是哪一班。',
+    steps: [
+      {
+        say: '下課回來，走廊看起來都一樣。你找不到自己的教室了。',
+        art: 'room1',
+        choices: [
+          { big: '😢', label: '站在原地哭', ok: false, art: 'room1x',
+            oops: '大家都走光了，你還是不知道教室在哪裡。' },
+          { big: '🙋', label: '去找大人幫忙', ok: true },
+        ],
+      },
+      {
+        say: '走廊上有一位老師。',
+        art: 'room2',
+        choices: [
+          { big: '🙊', label: '不敢說話，低頭走開', ok: false, art: 'room2x',
+            oops: '老師走掉了。你又是一個人了。' },
+          { big: '🗣️', label: '跟老師說「我找不到教室」', ok: true },
+        ],
+      },
+      {
+        say: '老師問你：「你是幾年幾班呀？」',
+        art: 'room3',
+        choices: [
+          { big: '🤷', label: '搖搖頭，我不知道', ok: false, art: 'room3x',
+            oops: '老師要一間一間找，花了好久好久。' },
+          { big: '🪪', label: '給老師看名牌', ok: true },
+        ],
+      },
+    ],
+    win: { art: 'roomwin', say: '老師牽著你回到教室，同學都在裡面。你做得很好！' },
+  },
+
+  {
+    id: 'candy', emoji: '🍬', title: '有人給你糖果',
+    forParent: '練習：不拿不認識的人給的東西、不跟他走、事後要告訴大人。',
+    steps: [
+      {
+        say: '放學了。一個不認識的叔叔拿糖果給你。',
+        art: 'candy1',
+        choices: [
+          { big: '😋', label: '接過來吃', ok: false, art: 'candy1x',
+            oops: '吃了不知道是什麼的東西，肚子好不舒服。' },
+          { big: '🙅', label: '搖頭，快步走開', ok: true },
+        ],
+      },
+      {
+        say: '他跟過來說：「我車上還有很多，跟我來拿。」',
+        art: 'candy2',
+        choices: [
+          { big: '🚗', label: '跟他去車子那裡', ok: false, art: 'candy2x',
+            oops: '車子開走了，就沒有人知道你在哪裡了。' },
+          { big: '🏃', label: '跑回學校找老師', ok: true },
+        ],
+      },
+      {
+        say: '老師問你：「怎麼跑得這麼喘呀？」',
+        art: 'candy3',
+        choices: [
+          { big: '🤐', label: '說「沒事」', ok: false, art: 'candy3x',
+            oops: '沒有人知道那個叔叔的事，他明天可能還會來。' },
+          { big: '🗣️', label: '告訴老師剛剛的事', ok: true },
+        ],
+      },
+    ],
+    win: { art: 'candywin', say: '老師陪你一起等媽媽來。你做得很好！' },
+  },
+];
+
+/* ===== 結局插圖（inline SVG，動畫在 CSS） ===== */
+
+// 共用零件
+const GIRL_FACE = (cx, cy, r, mood) => {
+  const eyes = mood === 'happy'
+    ? '<path d="M' + (cx - r * .42) + ' ' + (cy - r * .1) + ' q ' + (r * .18) + ' ' + (-r * .28) + ' ' + (r * .36) + ' 0" stroke="#33224a" stroke-width="1.6" fill="none" stroke-linecap="round"/>' +
+      '<path d="M' + (cx + r * .06) + ' ' + (cy - r * .1) + ' q ' + (r * .18) + ' ' + (-r * .28) + ' ' + (r * .36) + ' 0" stroke="#33224a" stroke-width="1.6" fill="none" stroke-linecap="round"/>'
+    : '<circle cx="' + (cx - r * .34) + '" cy="' + (cy - r * .12) + '" r="' + (r * .13) + '" fill="#33224a"/>' +
+      '<circle cx="' + (cx + r * .34) + '" cy="' + (cy - r * .12) + '" r="' + (r * .13) + '" fill="#33224a"/>';
+  const mouth = mood === 'flat'
+    ? '<path d="M' + (cx - r * .22) + ' ' + (cy + r * .42) + ' h ' + (r * .44) + '" stroke="#33224a" stroke-width="1.6" fill="none" stroke-linecap="round"/>'
+    : mood === 'sad'   // 妹妹版要看得出難過，嘴角往下
+    ? '<path d="M' + (cx - r * .26) + ' ' + (cy + r * .52) + ' q ' + (r * .26) + ' ' + (-r * .34) + ' ' + (r * .52) + ' 0" stroke="#33224a" stroke-width="1.8" fill="none" stroke-linecap="round"/>'
+    : '<path d="M' + (cx - r * .26) + ' ' + (cy + r * .3) + ' q ' + (r * .26) + ' ' + (r * .34) + ' ' + (r * .52) + ' 0" stroke="#33224a" stroke-width="1.8" fill="none" stroke-linecap="round"/>';
+  return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="#fde2c5" stroke="#33224a" stroke-width="1.6"/>' +
+    '<path d="M' + (cx - r) + ' ' + (cy - r * .25) + ' q 0 ' + (-r * 1.2) + ' ' + r + ' ' + (-r * 1.2) + ' q ' + r + ' 0 ' + r + ' ' + (r * 1.2) + ' q ' + (-r * .3) + ' ' + (-r * .55) + ' ' + (-r) + ' ' + (-r * .55) + ' q ' + (-r * .7) + ' 0 ' + (-r) + ' ' + (r * .55) + ' Z" fill="#5d3a1f"/>' +
+    eyes +
+    '<circle cx="' + (cx - r * .62) + '" cy="' + (cy + r * .2) + '" r="' + (r * .16) + '" fill="#ff8fb8" opacity=".7"/>' +
+    '<circle cx="' + (cx + r * .62) + '" cy="' + (cy + r * .2) + '" r="' + (r * .16) + '" fill="#ff8fb8" opacity=".7"/>' +
+    mouth;
+};
+
+const CROWN = (cx, y, w) =>
+  '<path d="M' + (cx - w) + ' ' + y + ' L' + (cx - w * .55) + ' ' + (y - w * .9) + ' L' + cx + ' ' + (y - w * .3) +
+  ' L' + (cx + w * .55) + ' ' + (y - w * .9) + ' L' + (cx + w) + ' ' + y + ' Z" fill="#ffd23f" stroke="#33224a" stroke-width="1.4" stroke-linejoin="round"/>' +
+  '<circle cx="' + cx + '" cy="' + (y - w * .42) + '" r="' + (w * .17) + '" fill="#ff5a8a"/>';
+
+const CASTLE = (x, y, s, fill) =>
+  '<g fill="' + fill + '">' +
+  '<rect x="' + x + '" y="' + (y - 26 * s) + '" width="' + (12 * s) + '" height="' + (26 * s) + '"/>' +
+  '<rect x="' + (x + 16 * s) + '" y="' + (y - 34 * s) + '" width="' + (14 * s) + '" height="' + (34 * s) + '"/>' +
+  '<rect x="' + (x + 34 * s) + '" y="' + (y - 24 * s) + '" width="' + (12 * s) + '" height="' + (24 * s) + '"/>' +
+  '<path d="M' + x + ' ' + (y - 26 * s) + ' l' + (6 * s) + ' ' + (-8 * s) + ' l' + (6 * s) + ' ' + (8 * s) + ' Z"/>' +
+  '<path d="M' + (x + 16 * s) + ' ' + (y - 34 * s) + ' l' + (7 * s) + ' ' + (-10 * s) + ' l' + (7 * s) + ' ' + (10 * s) + ' Z"/>' +
+  '<path d="M' + (x + 34 * s) + ' ' + (y - 24 * s) + ' l' + (6 * s) + ' ' + (-8 * s) + ' l' + (6 * s) + ' ' + (8 * s) + ' Z"/>' +
+  '</g>';
+
+// 惡龍（卡通、不恐怖）：dir = 1 朝右, -1 朝左
+const DRAGON = (x, y, s, dir) => {
+  const f = 'transform="translate(' + x + ',' + y + ') scale(' + (s * dir) + ',' + s + ')"';
+  return '<g ' + f + '>' +
+    // 尾巴
+    '<path d="M-2 6 q-22 4 -30 -8 q10 8 26 0 Z" fill="#4caf7d" stroke="#2a6b4f" stroke-width="1.4" stroke-linejoin="round"/>' +
+    // 尾鰭
+    '<path d="M-31 -2 l-9 -7 l3 8 l-8 4 l10 2 Z" fill="#ffd23f" stroke="#2a6b4f" stroke-width="1.3" stroke-linejoin="round"/>' +
+    // 背刺
+    '<path d="M-14 -10 l3 -7 l4 6 l4 -8 l4 7 l4 -6 l3 6 Z" fill="#ffd23f" stroke="#2a6b4f" stroke-width="1.3" stroke-linejoin="round"/>' +
+    // 翅膀（會拍動）
+    '<g class="wing"><path d="M-4 -8 q-16 -26 -34 -20 q10 6 12 16 q-8 -2 -12 2 q14 10 34 8 Z" fill="#7ed6a5" stroke="#2a6b4f" stroke-width="1.4" stroke-linejoin="round"/></g>' +
+    // 身體
+    '<ellipse cx="0" cy="4" rx="20" ry="15" fill="#4caf7d" stroke="#2a6b4f" stroke-width="1.6"/>' +
+    '<ellipse cx="2" cy="8" rx="12" ry="9" fill="#bff0d4"/>' +
+    // 頭
+    '<circle cx="17" cy="-9" r="12" fill="#4caf7d" stroke="#2a6b4f" stroke-width="1.6"/>' +
+    '<path d="M26 -5 q10 1 11 5 q-9 3 -13 -1 Z" fill="#4caf7d" stroke="#2a6b4f" stroke-width="1.4" stroke-linejoin="round"/>' +
+    // 角
+    '<path d="M13 -19 l-3 -8 l7 5 Z" fill="#ffd23f" stroke="#2a6b4f" stroke-width="1.2" stroke-linejoin="round"/>' +
+    '<path d="M21 -20 l2 -8 l4 7 Z" fill="#ffd23f" stroke="#2a6b4f" stroke-width="1.2" stroke-linejoin="round"/>' +
+    // 眼睛（斜斜的，有點壞但不兇）
+    '<ellipse cx="19" cy="-11" rx="3.4" ry="3.8" fill="#fff"/>' +
+    '<circle cx="20" cy="-10.5" r="1.9" fill="#33224a"/>' +
+    '<path d="M15 -16 l8 3" stroke="#2a6b4f" stroke-width="1.6" stroke-linecap="round"/>' +
+    // 牙齒
+    '<path d="M24 -3 l2 3 l2 -3 Z" fill="#fff"/>' +
+    // 腳
+    '<path d="M-8 17 l0 5 l7 0" stroke="#2a6b4f" stroke-width="2.4" fill="none" stroke-linecap="round"/>' +
+    '<path d="M6 18 l0 4 l7 0" stroke="#2a6b4f" stroke-width="2.4" fill="none" stroke-linecap="round"/>' +
+    '</g>';
+};
+
+// 膚色的手腳畫在淺色背景上會看不見，先描一層深色外框
+const LIMB = (x1, y1, x2, y2, w) =>
+  '<path d="M' + x1 + ' ' + y1 + ' L' + x2 + ' ' + y2 + '" stroke="#33224a" stroke-width="' + (w + 2.6) + '" stroke-linecap="round"/>' +
+  '<path d="M' + x1 + ' ' + y1 + ' L' + x2 + ' ' + y2 + '" stroke="#fde2c5" stroke-width="' + w + '" stroke-linecap="round"/>';
+
+const SCENE = {
+  /* 🌟 完美：加冕，站在陽光裡 */
+  best:
+    '<svg viewBox="0 0 200 130" role="img" aria-label="小女生戴著皇冠，在陽光下舉起雙手歡呼">' +
+    '<g class="rays" style="transform-origin:100px 62px">' +
+    Array.from({ length: 12 }, (_, i) =>
+      '<path d="M100 62 L94 -40 L106 -40 Z" fill="#ffe9a8" opacity=".8" transform="rotate(' + (i * 30) + ' 100 62)"/>').join('') +
+    '</g>' +
+    '<circle cx="100" cy="62" r="46" fill="#fff8dc" opacity=".75"/>' +
+    CASTLE(58, 118, 1, '#d9c8f0') +
+    '<rect x="0" y="118" width="200" height="12" fill="#a8e6c0"/>' +
+    '<g class="bob">' +
+    // 手臂舉高
+    LIMB(92, 86, 74, 56, 7) + LIMB(108, 86, 126, 56, 7) +
+    // 裙子
+    '<path d="M86 118 L92 82 L108 82 L114 118 Z" fill="#ff8fb8" stroke="#33224a" stroke-width="1.6" stroke-linejoin="round"/>' +
+    '<path d="M100 92 q-4 5 0 9 q4 -4 0 -9" fill="#fff"/>' +
+    GIRL_FACE(100, 66, 15, 'happy') +
+    CROWN(100, 52, 11) +
+    '</g>' +
+    '<g class="twinkle">' +
+    '<text x="36" y="34" font-size="16">✨</text><text x="152" y="46" font-size="14">⭐</text>' +
+    '<text x="30" y="88" font-size="13">💛</text><text x="160" y="96" font-size="15">✨</text>' +
+    '</g></svg>',
+
+  /* 👍 不錯：爸爸媽媽來接（爸爸帥氣登場） */
+  good:
+    '<svg viewBox="0 0 200 130" role="img" aria-label="小女生牽著帥氣的爸爸和媽媽的手">' +
+    '<circle cx="100" cy="58" r="52" fill="#e8f6ff"/>' +
+    '<rect x="0" y="118" width="200" height="12" fill="#a8e6c0"/>' +
+    // 爸爸（左）：飄動的紅披風 + 佩劍
+    '<g class="sway">' +
+    '<g class="cape" style="transform-origin:52px 62px">' +
+    '<path d="M40 60 q-22 22 -14 52 q16 -12 30 -8 Z" fill="#e74c3c" stroke="#33224a" stroke-width="1.5" stroke-linejoin="round"/>' +
+    '</g>' +
+    '<path d="M60 92 L74 100" stroke="#fde2c5" stroke-width="6" stroke-linecap="round"/>' +
+    '<path d="M42 118 L46 76 L62 76 L66 118 Z" fill="#9aa4ad" stroke="#33224a" stroke-width="1.6" stroke-linejoin="round"/>' +
+    '<path d="M46 82 h16" stroke="#33224a" stroke-width="1.4"/>' +
+    // 佩劍
+    '<path d="M64 92 L74 116" stroke="#cfd6dc" stroke-width="3.4" stroke-linecap="round"/>' +
+    '<path d="M61 90 l8 4" stroke="#ffd23f" stroke-width="3" stroke-linecap="round"/>' +
+    '<circle cx="54" cy="62" r="12" fill="#fde2c5" stroke="#33224a" stroke-width="1.6"/>' +
+    '<path d="M42 60 q0 -14 12 -14 q12 0 12 14 q-4 -6 -12 -6 q-8 0 -12 6 Z" fill="#3a2510"/>' +
+    '<circle cx="50" cy="61" r="1.5" fill="#33224a"/><circle cx="58" cy="61" r="1.5" fill="#33224a"/>' +
+    '<path d="M49 68 q5 4 10 0" stroke="#33224a" stroke-width="1.6" fill="none" stroke-linecap="round"/>' +
+    '<text x="30" y="46" font-size="13" class="sparkle">✨</text>' +
+    '</g>' +
+    // 媽媽（右）
+    '<g class="sway2">' +
+    '<path d="M140 92 L126 100" stroke="#fde2c5" stroke-width="6" stroke-linecap="round"/>' +
+    '<path d="M134 118 L138 78 L154 78 L158 118 Z" fill="#9b59b6" stroke="#33224a" stroke-width="1.6" stroke-linejoin="round"/>' +
+    '<circle cx="146" cy="64" r="12" fill="#fde2c5" stroke="#33224a" stroke-width="1.6"/>' +
+    '<path d="M133 66 q-1 -18 13 -18 q14 0 13 18 q-3 -8 -13 -8 q-10 0 -13 8 Z" fill="#3a2510"/>' +
+    '<circle cx="142" cy="63" r="1.5" fill="#33224a"/><circle cx="150" cy="63" r="1.5" fill="#33224a"/>' +
+    '<path d="M141 70 q5 4 10 0" stroke="#33224a" stroke-width="1.6" fill="none" stroke-linecap="round"/>' +
+    '</g>' +
+    // 女孩（中，被牽著）
+    '<g class="bob">' +
+    '<path d="M88 100 L76 100" stroke="#fde2c5" stroke-width="5" stroke-linecap="round"/>' +
+    '<path d="M112 100 L124 100" stroke="#fde2c5" stroke-width="5" stroke-linecap="round"/>' +
+    '<path d="M88 118 L92 94 L108 94 L112 118 Z" fill="#ff8fb8" stroke="#33224a" stroke-width="1.6" stroke-linejoin="round"/>' +
+    GIRL_FACE(100, 84, 11, 'happy') +
+    '</g>' +
+    '<g class="hearts"><text x="86" y="40" font-size="14">💖</text><text x="112" y="30" font-size="12">💕</text><text x="70" y="26" font-size="11">💗</text></g>' +
+    '</svg>',
+
+  /* 😮‍💨 驚險：從惡龍手中跑掉 */
+  escape:
+    '<svg viewBox="0 0 200 130" role="img" aria-label="小女生成功從惡龍旁邊跑走">' +
+    '<circle cx="100" cy="58" r="54" fill="#fff2e0"/>' +
+    '<rect x="0" y="118" width="200" height="12" fill="#a8e6c0"/>' +
+    // 惡龍在左後方（撲空）
+    '<g class="dragonMiss" style="transform-origin:52px 70px">' + DRAGON(52, 74, 0.92, 1) + '</g>' +
+    // 速度線
+    '<g class="dash" stroke="#ff8c42" stroke-width="3" stroke-linecap="round" opacity=".8">' +
+    '<path d="M96 66 h-18"/><path d="M100 80 h-26"/><path d="M98 94 h-16"/></g>' +
+    // 女孩奔跑（右）：裙襬提高，腿在地面之上，才看得出來是在跑
+    '<g class="run">' +
+    LIMB(142, 88, 129, 97, 6) +
+    LIMB(156, 88, 171, 75, 6) +
+    '<path d="M140 106 L143 82 L157 82 L160 106 Z" fill="#ff8fb8" stroke="#33224a" stroke-width="1.6" stroke-linejoin="round"/>' +
+    LIMB(146, 104, 136, 117, 6) +
+    LIMB(154, 104, 166, 112, 6) +
+    GIRL_FACE(150, 68, 13, 'wide') +
+    '<text x="166" y="50" font-size="13">💨</text>' +
+    '</g>' +
+    '<g class="puff" fill="#d8cbb8" opacity=".75">' +
+    '<circle cx="128" cy="122" r="6"/><circle cx="116" cy="124" r="4.5"/><circle cx="106" cy="125" r="3.5"/></g>' +
+    '</svg>',
+
+  /* 🔁 再試一次：被惡龍抓去城堡（卡通化，不恐怖） */
+  bad:
+    '<svg viewBox="0 0 200 130" role="img" aria-label="惡龍抓著小女生飛向遠方的城堡">' +
+    '<rect width="200" height="130" fill="#e6e2f5"/>' +
+    '<circle cx="168" cy="26" r="13" fill="#fff3b0"/>' +
+    '<g fill="#fff" opacity=".9"><circle cx="30" cy="22" r="1.8"/><circle cx="58" cy="14" r="1.4"/><circle cx="120" cy="18" r="1.6"/><circle cx="88" cy="30" r="1.2"/></g>' +
+    // 遠方城堡
+    CASTLE(132, 118, 1.0, '#a99ac9') +
+    '<rect x="0" y="118" width="200" height="12" fill="#8f83b3"/>' +
+    // 惡龍抓著女孩飛行
+    '<g class="fly">' +
+    '<g style="transform-origin:74px 44px">' + DRAGON(74, 44, 1.0, 1) + '</g>' +
+    // 女孩被拎在爪子下（表情是無奈，不是恐懼）
+    '<g class="dangle" style="transform-origin:66px 62px">' +
+    '<path d="M64 56 L64 72" stroke="#2a6b4f" stroke-width="3.4" stroke-linecap="round"/>' +'<path d="M60 70 q4 6 8 0" stroke="#2a6b4f" stroke-width="3" fill="none" stroke-linecap="round"/>' +
+    LIMB(61, 79, 53, 91, 5) +
+    LIMB(71, 79, 79, 91, 5) +
+    '<path d="M58 96 L61 74 L71 74 L74 96 Z" fill="#ff8fb8" stroke="#33224a" stroke-width="1.5" stroke-linejoin="round"/>' +
+    LIMB(63, 95, 60, 108, 5) +
+    LIMB(70, 95, 73, 108, 5) +
+    GIRL_FACE(66, 66, 10, 'flat') +
+    '<text x="80" y="58" font-size="12">💦</text>' +
+    '</g></g>' +
+    '</svg>',
+};
+
+/* ===== 組合式插圖：零件庫 =====
+   每張結局圖 = 佈景 + 人物 + 效果
+   人物以「腳底為原點」的區域座標繪製，再用 transform 擺到定位
+*/
+
+// 女孩：pose = stand / cheer / run / reachR / reachL / hang / shout / sit
+const GIRL = (x, y, s, o) => {
+  o = o || {};
+  const mood = o.mood || 'happy', dress = o.dress || '#ff8fb8', pose = o.pose || 'stand';
+  let arms = '', legs = '', bottom = 0;
+  if (pose === 'cheer')       arms = LIMB(-8, -26, -21, -47, 6) + LIMB(8, -26, 21, -47, 6);
+  else if (pose === 'run')  { arms = LIMB(-8, -26, -19, -14, 6) + LIMB(8, -26, 21, -38, 6);
+                              legs = LIMB(-3, -6, -15, -10, 6) + LIMB(4, -6, 9, 2, 6); bottom = -6; }
+  else if (pose === 'reachR') arms = LIMB(-9, -26, -14, -12, 6) + LIMB(8, -26, 27, -31, 6);
+  else if (pose === 'reachL') arms = LIMB(9, -26, 14, -12, 6) + LIMB(-8, -26, -27, -31, 6);
+  else if (pose === 'hang')  { arms = LIMB(-8, -30, -17, -19, 5) + LIMB(8, -30, 17, -19, 5);
+                              legs = LIMB(-5, -2, -8, 10, 5) + LIMB(5, -2, 8, 10, 5); bottom = -2; }
+  else if (pose === 'sit')   { arms = LIMB(-9, -26, -18, -18, 6) + LIMB(9, -26, 18, -18, 6);
+                              legs = LIMB(-5, -4, -16, 0, 6) + LIMB(5, -4, 16, 0, 6); bottom = -4; }
+  else                        arms = LIMB(-9, -26, -14, -12, 6) + LIMB(9, -26, 14, -12, 6);
+  const head = pose === 'shout'
+    ? '<circle cx="0" cy="-46" r="13" fill="#fde2c5" stroke="#33224a" stroke-width="1.6"/>' +
+      '<path d="M-13 -50 q0 -16 13 -16 q13 0 13 16 q-4 -7 -13 -7 q-9 0 -13 7 Z" fill="#5d3a1f"/>' +
+      '<circle cx="-5" cy="-48" r="1.7" fill="#33224a"/><circle cx="5" cy="-48" r="1.7" fill="#33224a"/>' +
+      '<ellipse cx="0" cy="-38" rx="5" ry="6" fill="#33224a"/>'
+    : GIRL_FACE(0, -46, 13, mood);
+  return '<g transform="translate(' + x + ',' + y + ') scale(' + s + ')">' + arms +
+    '<path d="M-13 ' + bottom + ' L-8 -34 L8 -34 L13 ' + bottom + ' Z" fill="' + dress +
+    '" stroke="#33224a" stroke-width="1.6" stroke-linejoin="round"/>' + legs + head +
+    (o.crown ? CROWN(0, -58, 11) : '') + '</g>';
+};
+
+// 大人：kind = mom / dad / man / teacher
+const ADULT = (x, y, s, o) => {
+  o = o || {};
+  const c = o.color || '#9b59b6', hair = o.hair || '#3a2510';
+  const arms = o.pose === 'reachL' ? LIMB(-10, -30, -30, -24, 6)
+             : o.pose === 'reachR' ? LIMB(10, -30, 30, -24, 6)
+             : LIMB(-11, -30, -16, -14, 6) + LIMB(11, -30, 16, -14, 6);
+  return '<g transform="translate(' + x + ',' + y + ') scale(' + s + ')">' +
+    (o.cape ? '<g class="cape" style="transform-origin:0px -40px"><path d="M-10 -40 q-24 24 -16 40 q16 -10 28 -6 Z" fill="#e74c3c" stroke="#33224a" stroke-width="1.5" stroke-linejoin="round"/></g>' : '') +
+    arms +
+    '<path d="M-14 0 L-10 -42 L10 -42 L14 0 Z" fill="' + c + '" stroke="#33224a" stroke-width="1.7" stroke-linejoin="round"/>' +
+    '<circle cx="0" cy="-54" r="13" fill="#fde2c5" stroke="#33224a" stroke-width="1.7"/>' +
+    '<path d="M-13 -56 q-1 -18 13 -18 q14 0 13 18 q-3 -8 -13 -8 q-10 0 -13 8 Z" fill="' + hair + '"/>' +
+    '<circle cx="-5" cy="-55" r="1.6" fill="#33224a"/><circle cx="5" cy="-55" r="1.6" fill="#33224a"/>' +
+    '<path d="M-5 -48 q5 4 10 0" stroke="#33224a" stroke-width="1.6" fill="none" stroke-linecap="round"/>' +
+    (o.beard ? '<path d="M-8 -47 q8 5 16 0 q-3 7 -8 7 q-5 0 -8 -7 Z" fill="' + hair + '"/>' : '') +
+    '</g>';
+};
+
+// 爸爸／媽媽的固定樣式（爸爸沿用骰子遊戲「爸比戰士」的紅披風，孩子認得出來）
+const DAD = (x, y, s, pose) => ADULT(x, y, s, { color: '#9aa4ad', beard: 1, cape: 1, pose: pose });
+const MOM = (x, y, s, pose) => ADULT(x, y, s, { color: '#9b59b6', pose: pose });
+
+// 佈景：背景色 + 地面
+const BG = (sky, ground) =>
+  '<rect width="200" height="130" fill="' + sky + '"/>' +
+  '<rect x="0" y="118" width="200" height="12" fill="' + (ground || '#a8e6c0') + '"/>';
+
+/* ---- 道具 ---- */
+// 大手機（網路／詐騙類）
+const PHONE = (x, y, s) =>
+  '<g transform="translate(' + x + ',' + y + ') scale(' + s + ')">' +
+  '<rect x="-26" y="-42" width="52" height="84" rx="8" fill="#33224a"/>' +
+  '<rect x="-22" y="-37" width="44" height="70" rx="3" fill="#cfe6ff"/>' +
+  '<circle cx="0" cy="37" r="3.5" fill="#6b5a7e"/></g>';
+
+// 制服大人（救生員／消防員／店員／警察）
+const HELPER = (x, y, s, color, hat) =>
+  '<g transform="translate(' + x + ',' + y + ') scale(' + s + ')">' +
+  '<path d="M-11 40 L-8 -6 L8 -6 L11 40 Z" fill="' + color + '" stroke="#33224a" stroke-width="1.6" stroke-linejoin="round"/>' +
+  '<circle cx="0" cy="-18" r="12" fill="#fde2c5" stroke="#33224a" stroke-width="1.6"/>' +
+  (hat
+    ? '<path d="M-14 -24 q0 -12 14 -12 q14 0 14 12 Z" fill="' + color + '" stroke="#33224a" stroke-width="1.5" stroke-linejoin="round"/>' +
+      '<rect x="-16" y="-25" width="32" height="4" rx="2" fill="' + color + '" stroke="#33224a" stroke-width="1.2"/>'
+    : '<path d="M-12 -20 q-1 -16 12 -16 q13 0 12 16 q-3 -7 -12 -7 q-9 0 -12 7 Z" fill="#3a2510"/>') +
+  '<circle cx="-4" cy="-19" r="1.5" fill="#33224a"/><circle cx="4" cy="-19" r="1.5" fill="#33224a"/>' +
+  '<path d="M-5 -13 q5 4 10 0" stroke="#33224a" stroke-width="1.6" fill="none" stroke-linecap="round"/></g>';
+
+const CAR = (x, y, s, flip) =>
+  '<g transform="translate(' + x + ',' + y + ') scale(' + (s * (flip ? -1 : 1)) + ',' + s + ')">' +
+  '<path d="M-34 0 L-30 -14 L-10 -22 L14 -22 L30 -12 L34 0 Z" fill="#b9c3cc" stroke="#33224a" stroke-width="1.8" stroke-linejoin="round"/>' +
+  '<path d="M-24 -14 L-8 -19 L-8 -14 Z M-2 -19 L12 -19 L24 -13 L-2 -13 Z" fill="#cfe6ff"/>' +
+  '<circle cx="-18" cy="1" r="6" fill="#33224a"/><circle cx="18" cy="1" r="6" fill="#33224a"/>' +
+  '</g>';
+const DESK = (x, y, s) =>
+  '<g transform="translate(' + x + ',' + y + ') scale(' + s + ')">' +
+  '<rect x="-52" y="-52" width="104" height="8" rx="2" fill="#e0a76a" stroke="#33224a" stroke-width="1.8"/>' +
+  '<rect x="-46" y="-44" width="7" height="44" fill="#c98f52" stroke="#33224a" stroke-width="1.5"/>' +
+  '<rect x="39" y="-44" width="7" height="44" fill="#c98f52" stroke="#33224a" stroke-width="1.5"/></g>';
+const BOARD = (x, y) =>
+  '<rect x="' + x + '" y="' + y + '" width="76" height="42" rx="3" fill="#3f6b53" stroke="#33224a" stroke-width="2"/>' +
+  '<path d="M' + (x + 10) + ' ' + (y + 16) + ' h40 M' + (x + 10) + ' ' + (y + 27) + ' h26" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".8"/>';
+const WATER = (y) =>
+  '<rect x="0" y="' + y + '" width="200" height="' + (130 - y) + '" fill="#7fc1ed"/>' +
+  '<path d="M0 ' + y + ' q14 -5 28 0 q14 5 28 0 q14 -5 28 0 q14 5 28 0 q14 -5 28 0 q14 5 28 0 q14 -5 28 0 v10 H0 Z" fill="#a8d8f5"/>';
+const FLAME = (x, y, s) =>
+  '<g transform="translate(' + x + ',' + y + ') scale(' + s + ')" class="fadeDanger">' +
+  '<path d="M0 0 q4 -20 12 -26 q-2 10 6 14 q6 -8 2 -18 q14 12 10 30 Z" fill="#ff8c42"/>' +
+  '<path d="M6 0 q2 -12 8 -16 q-1 7 3 9 q3 -5 1 -11 q9 8 6 18 Z" fill="#ffd23f"/></g>';
+const SHELF = (x, y, s) =>
+  '<g transform="translate(' + x + ',' + y + ') scale(' + s + ')">' +
+  '<rect x="-24" y="-60" width="48" height="60" fill="#d9c8a8" stroke="#33224a" stroke-width="1.8"/>' +
+  '<path d="M-24 -42 h48 M-24 -24 h48" stroke="#33224a" stroke-width="1.5"/>' +
+  '<rect x="-18" y="-56" width="10" height="12" fill="#ff8fb8"/><rect x="-4" y="-56" width="10" height="12" fill="#7fc1ed"/>' +
+  '<rect x="-18" y="-38" width="10" height="12" fill="#ffd23f"/><rect x="2" y="-38" width="12" height="12" fill="#a8e6c0"/></g>';
+const DOOR = (x, y, s) =>
+  '<g transform="translate(' + x + ',' + y + ') scale(' + s + ')">' +
+  '<rect x="-35" y="-104" width="70" height="104" rx="4" fill="#c98f52" stroke="#33224a" stroke-width="2.4"/>' +
+  '<rect x="-27" y="-94" width="54" height="36" rx="3" fill="#b57c43"/>' +
+  '<circle cx="-25" cy="-46" r="4.5" fill="#ffd23f" stroke="#33224a" stroke-width="1.6"/>' +
+  '<circle cx="0" cy="-76" r="5" fill="#33224a"/><circle cx="0" cy="-76" r="2" fill="#8fd0ff"/></g>';
+const SPEECH = (x, y, txt) =>
+  '<g class="clash"><path d="M' + x + ' ' + y + ' q22 0 22 13 q0 13 -22 13 q-4 6 -10 7 q3 -5 2 -8 q-14 -3 -14 -12 q0 -13 22 -13 Z" fill="#fff" stroke="#33224a" stroke-width="1.6"/>' +
+  '<text x="' + (x + 8) + '" y="' + (y + 18) + '" font-size="13">' + txt + '</text></g>';
+const EMO = (x, y, e, size, cls) =>
+  '<text x="' + x + '" y="' + y + '" font-size="' + (size || 15) + '"' + (cls ? ' class="' + cls + '"' : '') + '>' + e + '</text>';
+const SVG = (label, body) =>
+  '<svg viewBox="0 0 200 130" role="img" aria-label="' + label + '">' + body + '</svg>';
+
+// 常用的「安全了」與「被抓走」收尾
+const SUNBURST = (cx, cy) =>
+  '<g class="rays" style="transform-origin:' + cx + 'px ' + cy + 'px">' +
+  Array.from({ length: 12 }, (_, i) =>
+    '<path d="M' + cx + ' ' + cy + ' L' + (cx - 6) + ' -40 L' + (cx + 6) + ' -40 Z" fill="#ffe9a8" opacity=".75" transform="rotate(' + (i * 30) + ' ' + cx + ' ' + cy + ')"/>').join('') +
+  '</g>';
+const CAUGHT = (gx, gy) =>
+  '<g class="fly"><g style="transform-origin:' + gx + 'px ' + (gy - 34) + 'px">' + DRAGON(gx, gy - 34, 0.95, 1) + '</g>' +
+  '<g class="dangle" style="transform-origin:' + (gx - 8) + 'px ' + (gy - 20) + 'px">' +
+  '<path d="M' + (gx - 8) + ' ' + (gy - 24) + ' L' + (gx - 8) + ' ' + (gy - 12) + '" stroke="#2a6b4f" stroke-width="3.2" stroke-linecap="round"/>' +
+  GIRL(gx - 8, gy + 30, 0.72, { pose: 'hang', mood: 'flat' }) + '</g></g>';
+const ART_SCENES = {};
+
+/* ===== 妹妹版插圖：人物畫大、東西畫少，六歲要一眼看懂 ===== */
+
+// 一排一模一樣的門（走廊）
+const DOORS = (y, n, from) =>
+  Array.from({ length: n }, (_, i) => {
+    const x = from + i * 46;
+    return '<rect x="' + x + '" y="' + y + '" width="34" height="52" rx="3" fill="#c98f52" stroke="#33224a" stroke-width="2.2"/>' +
+      '<rect x="' + (x + 5) + '" y="' + (y + 5) + '" width="24" height="18" rx="2" fill="#b57c43"/>' +
+      '<circle cx="' + (x + 28) + '" cy="' + (y + 36) + '" r="2.6" fill="#ffd23f" stroke="#33224a" stroke-width="1.2"/>';
+  }).join('');
+
+// 走廊背景
+const HALL = () =>
+  '<rect width="200" height="130" fill="#f2f7ff"/>' +
+  '<rect x="0" y="106" width="200" height="24" fill="#c8dcf0"/>' +
+  '<rect x="0" y="102" width="200" height="5" fill="#a9c4dd"/>';
+
+// 名牌（掛在胸前）
+const TAG = (x, y) =>
+  '<rect x="' + x + '" y="' + y + '" width="22" height="15" rx="3" fill="#fff" stroke="#33224a" stroke-width="1.6"/>' +
+  '<path d="M' + (x + 4) + ' ' + (y + 5) + ' h14 M' + (x + 4) + ' ' + (y + 10) + ' h9" stroke="#8a7fa8" stroke-width="1.6" stroke-linecap="round"/>';
+
+// 老師（綠衣大人）
+const TEACHER = (x, y, s, pose) => ADULT(x, y, s, { color: '#5e8f78', pose: pose });
+
+Object.assign(ART_SCENES, {
+  /* ───────── 🏫 找不到教室 ───────── */
+  room1: SVG('走廊上有很多一模一樣的門，小女生站在中間不知道要走哪一間',
+    HALL() + DOORS(50, 4, 8) +
+    GIRL(168, 106, 1.2, { mood: 'flat' }) +
+    '<g class="bob">' + EMO(96, 44, '❓', 34) + '</g>'),
+
+  room1x: SVG('走廊空了，小女生一個人蹲著哭',
+    HALL() + DOORS(50, 4, 8) +
+    GIRL(150, 108, 1.25, { pose: 'sit', mood: 'sad' }) +
+    EMO(112, 74, '💧', 22) + EMO(184, 70, '💧', 18)),
+
+  room2: SVG('走廊上一位老師走過來',
+    HALL() + DOORS(50, 3, 8) +
+    GIRL(58, 106, 1.1, { mood: 'flat' }) +
+    TEACHER(150, 106, 1.15, 'reachL') +
+    EMO(104, 44, '👀', 22)),
+
+  room2x: SVG('老師走遠了，小女生低著頭',
+    HALL() + DOORS(50, 3, 8) +
+    GIRL(52, 106, 1.15, { mood: 'sad' }) +
+    '<g class="fadeDanger">' + TEACHER(178, 106, 0.85) + EMO(150, 60, '👣', 18) + '</g>' +
+    EMO(88, 62, '💧', 20)),
+
+  room3: SVG('老師彎下來問小女生，小女生胸前有名牌',
+    HALL() + DOORS(50, 2, 8) +
+    TEACHER(150, 106, 1.15, 'reachL') +
+    GIRL(66, 106, 1.15) + TAG(56, 76) +
+    EMO(104, 40, '💬', 24)),
+
+  room3x: SVG('老師一間一間開門找，時鐘的指針轉了好久',
+    HALL() + DOORS(50, 4, 8) +
+    TEACHER(24, 106, 1.0, 'reachR') +
+    GIRL(112, 106, 1.05, { mood: 'sad' }) +
+    '<circle cx="172" cy="34" r="18" fill="#fff" stroke="#33224a" stroke-width="2.4"/>' +
+    '<path d="M172 34 v-11 M172 34 l9 6" stroke="#33224a" stroke-width="2.6" stroke-linecap="round"/>' +
+    EMO(60, 60, '💨', 18)),
+
+  roomwin: SVG('老師牽著小女生回到教室，同學都在裡面',
+    '<rect width="200" height="130" fill="#eafaf1"/>' +
+    '<rect x="0" y="106" width="200" height="24" fill="#bfe6cf"/>' + SUNBURST(100, 56) +
+    '<rect x="118" y="30" width="78" height="76" rx="4" fill="#fff" stroke="#33224a" stroke-width="2.6"/>' +
+    BOARD(126, 38) +
+    GIRL(150, 100, 0.62, { dress: '#7fc1ed' }) + GIRL(176, 100, 0.62, { dress: '#ffd23f' }) +
+    TEACHER(34, 106, 1.1, 'reachR') +
+    GIRL(84, 106, 1.15, { pose: 'cheer' }) +
+    '<g class="hearts">' + EMO(60, 44, '💖', 20) + EMO(96, 32, '✨', 18) + '</g>'),
+
+  /* ───────── 🍬 有人給你糖果 ───────── */
+  candy1: SVG('校門口，一個不認識的叔叔拿糖果給小女生',
+    BG('#fff4e0', '#c8c0b0') +
+    '<rect x="0" y="26" width="34" height="80" fill="#e0a76a" stroke="#33224a" stroke-width="2.2"/>' +
+    '<rect x="0" y="18" width="46" height="12" rx="3" fill="#c98f52" stroke="#33224a" stroke-width="2"/>' +
+    ADULT(150, 106, 1.2, { color: '#8a8f96', pose: 'reachL' }) +
+    GIRL(74, 106, 1.15, { mood: 'flat' }) +
+    '<g class="bob">' + EMO(100, 62, '🍬', 30) + '</g>'),
+
+  candy1x: SVG('小女生肚子痛，抱著肚子蹲下來',
+    BG('#fff0f0', '#e6c8c8') +
+    GIRL(100, 110, 1.4, { pose: 'sit', mood: 'sad' }) +
+    '<g class="fadeDanger">' + EMO(34, 62, '💫', 26) + EMO(154, 54, '💫', 22) + '</g>'),
+
+  candy2: SVG('叔叔指著旁邊的車子，要小女生跟他過去',
+    BG('#fff4e0', '#c8c0b0') +
+    CAR(160, 104, 1.05) +
+    ADULT(96, 106, 1.2, { color: '#8a8f96', pose: 'reachR' }) +
+    GIRL(38, 106, 1.15, { mood: 'flat' }) +
+    EMO(120, 40, '👉', 24)),
+
+  candy2x: SVG('車子開走了，路上空空的沒有人',
+    BG('#e6e2f5', '#8f83b3') +
+    '<g class="fadeDanger">' + CAR(168, 100, 0.85) + '</g>' +
+    '<g class="dash" stroke="#8a7fa8" stroke-width="4" fill="none" stroke-linecap="round">' +
+    '<path d="M96 94 h20"/><path d="M84 102 h26"/><path d="M100 86 h14"/></g>' +
+    EMO(30, 62, '❓', 30, 'bob')),
+
+  candy3: SVG('回到學校，老師彎下來問小女生',
+    HALL() +
+    TEACHER(148, 106, 1.2, 'reachL') +
+    GIRL(64, 106, 1.15, { mood: 'flat' }) +
+    EMO(20, 96, '💨', 22) + EMO(104, 38, '💬', 26)),
+
+  candy3x: SVG('隔天那個叔叔又站在校門口，沒有人知道',
+    BG('#fff4e0', '#c8c0b0') +
+    '<rect x="0" y="26" width="34" height="80" fill="#e0a76a" stroke="#33224a" stroke-width="2.2"/>' +
+    '<rect x="0" y="18" width="46" height="12" rx="3" fill="#c98f52" stroke="#33224a" stroke-width="2"/>' +
+    '<g class="fadeDanger">' + ADULT(150, 106, 1.15, { color: '#8a8f96' }) +
+    EMO(120, 46, '🍬', 22) + '</g>' +
+    GIRL(66, 106, 0.9, { dress: '#a8e6c0', mood: 'flat' }) +
+    GIRL(96, 106, 0.9, { dress: '#7fc1ed', mood: 'flat' })),
+
+  candywin: SVG('老師陪小女生等媽媽，媽媽來了',
+    '<rect width="200" height="130" fill="#eafaf1"/>' +
+    '<rect x="0" y="106" width="200" height="24" fill="#bfe6cf"/>' + SUNBURST(100, 56) +
+    TEACHER(38, 106, 1.05, 'reachR') +
+    GIRL(90, 106, 1.15, { pose: 'cheer' }) +
+    MOM(152, 106, 1.15, 'reachL') +
+    '<g class="hearts">' + EMO(112, 42, '💖', 22) + EMO(70, 34, '✨', 18) + '</g>'),
+});
+
+/* ===== 妹妹版：3 步、每步 2 個選項、選錯不會失敗 ===== */
+const app = document.getElementById('app');
+const BUILD = (document.querySelector('meta[name="build"]') || {}).content || '?';
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const art = k => ART_SCENES[k] || SCENE.escape;
+
+let view = 'menu';   // menu / play / oops / win
+let cur = null;      // 目前劇本
+let step = 0;        // 第幾步
+let oops = null;     // 選錯時要看的那一格
+
+function render() {
+  if (view === 'menu') renderMenu();
+  else if (view === 'oops') renderOops();
+  else if (view === 'win') renderWin();
+  else renderStep();
+  window.scrollTo(0, 0);
+}
+
+function dots(n, total) {
+  return '<div class="steps">' + Array.from({ length: total }, (_, i) =>
+    `<div class="dot ${i < n ? 'done' : i === n ? 'on' : ''}"></div>`).join('') + '</div>';
+}
+
+function renderMenu() {
+  app.innerHTML = `
+    <div class="anim">
+      <h1>🌈 小小冒險</h1>
+      <div class="sub">選一個故事，看看你會怎麼做</div>
+      ${KIDS.map(s => `
+        <button class="pickbtn" data-id="${esc(s.id)}">
+          <span class="ico">${s.emoji}</span><span>${esc(s.title)}</span>
+        </button>`).join('')}
+      <p class="foot">
+        給大人看的：每篇 3 步，選錯不會失敗，會看到發生什麼事再選一次。<br>
+        ${KIDS.map(s => s.emoji + ' ' + esc(s.forParent)).join('<br>')}
+        <br><button id="ver">版本 ${esc(BUILD)}　·　點一下檢查更新</button>
+      </p>
+    </div>`;
+  document.querySelectorAll('.pickbtn').forEach(b => {
+    b.onclick = () => { cur = KIDS.find(s => s.id === b.dataset.id); step = 0; view = 'play'; render(); };
+  });
+  document.getElementById('ver').onclick = () => {
+    location.href = location.pathname + '?v=' + Math.floor(Date.now() / 1000);
+  };
+}
+
+function renderStep() {
+  const st = cur.steps[step];
+  app.innerHTML = `
+    <div class="anim">
+      ${dots(step, cur.steps.length)}
+      <div class="card">
+        <div class="art">${art(st.art)}</div>
+        <div class="sayrow"><div class="say">${esc(st.say)}</div></div>
+        <div class="picks">
+          ${st.choices.map((c, i) => `
+            <button class="pick2${c.ok ? ' good' : ''}" data-i="${i}">
+              <span class="big">${c.big}</span><span>${esc(c.label)}</span>
+            </button>`).join('')}
+        </div>
+      </div>
+      <div class="row">
+        <button id="back">← 回去選故事</button>
+      </div>
+    </div>`;
+  document.querySelectorAll('.pick2').forEach(b => {
+    b.onclick = () => pick(parseInt(b.dataset.i, 10));
+  });
+  document.getElementById('back').onclick = () => { view = 'menu'; render(); };
+}
+
+function pick(i) {
+  const c = cur.steps[step].choices[i];
+  if (c.ok) {
+    step++;
+    view = step >= cur.steps.length ? 'win' : 'play';
+  } else {
+    oops = c;            // 先看一下會發生什麼，再回到同一題
+    view = 'oops';
+  }
+  render();
+}
+
+/* 選錯了：不說「你錯了」，只給她看接下來會怎樣，然後再選一次 */
+function renderOops() {
+  app.innerHTML = `
+    <div class="anim oops">
+      ${dots(step, cur.steps.length)}
+      <div class="card">
+        <div class="art">${art(oops.art)}</div>
+        <div class="sayrow"><div class="say">${esc(oops.oops)}</div></div>
+        <button class="again" id="retry">🔄 再選一次</button>
+      </div>
+    </div>`;
+  document.getElementById('retry').onclick = () => { view = 'play'; render(); };
+}
+
+function renderWin() {
+  app.innerHTML = `
+    <div class="anim win">
+      ${dots(cur.steps.length, cur.steps.length)}
+      <div class="card">
+        <div class="art">${art(cur.win.art)}</div>
+        <div class="stars">⭐⭐⭐</div>
+        <div class="sayrow"><div class="say">${esc(cur.win.say)}</div></div>
+      </div>
+      <div class="row">
+        <button id="again2">🔁 再玩一次</button>
+        <button id="menu">🌈 別的故事</button>
+      </div>
+    </div>`;
+  document.getElementById('again2').onclick = () => { step = 0; view = 'play'; render(); };
+  document.getElementById('menu').onclick = () => { view = 'menu'; render(); };
+}
+
+render();
+</script>
+</body>
+</html>
