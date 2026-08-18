@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#6b4a9e" />
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
-<meta name="build" content="2026.08.18-a59c58" />
+<meta name="build" content="2026.08.18-64c6ae" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -110,16 +110,6 @@
   .seenmark { color: #6b5a8e; background: #ded8ea; }
   .pastmark { color: #8a7fa8; background: #efeaf7; }
   /* 揭曉之前，先讓她自己押一個判斷 */
-  /* 押判斷的時候連圖也要蓋住 —— 結局插圖本身就會洩漏答案 */
-  .cover {
-    aspect-ratio: 200 / 130; width: 100%; border-radius: 14px;
-    background: repeating-linear-gradient(45deg, #efedf4, #efedf4 12px, #e6e2f0 12px, #e6e2f0 24px);
-    border: 3px dashed #a99ac9; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 6px;
-  }
-  .cover .q { font-size: 40px; opacity: .55; }
-  .cover .c { font-size: 12.5px; font-weight: 800; color: #8a7fa8; }
-
   .guess { text-align: center; margin-top: 14px; }
   .guess-q { font-size: 17px; font-weight: 900; color: #6b4a9e; margin-bottom: 4px; }
   .guess-s { font-size: 12.5px; color: #8a7fa8; margin-bottom: 12px; line-height: 1.7; }
@@ -3842,15 +3832,12 @@ function choose(i) {
 function renderGuess() {
   app.innerHTML = `
     <div class="card anim">
-      <div class="result">
-        <div class="cover"><div class="q">🖼️</div><div class="c">先猜猜看，再看圖片</div></div>
-      </div>
-      <div class="stage" style="margin-top:12px;">
+      <div class="stage" style="margin-top:0;">
         <div class="narr">${narrate(ending.text)}</div>
       </div>
       <div class="guess">
         <div class="guess-q">你覺得這個選擇，結果好嗎？</div>
-        <div class="guess-s">先自己想一想再看答案。<br>猜錯不會扣分——猜錯的那幾題，才是最值得跟爸媽聊的。</div>
+        <div class="guess-s">先自己想一想，答完就會看到結果和圖片。<br>猜錯不會扣分——猜錯的那幾題，才是最值得跟爸媽聊的。</div>
         <div class="guess-btns">
           <button id="g-good">🙂 我覺得應該不錯</button>
           <button id="g-bad">😟 好像不太好</button>
