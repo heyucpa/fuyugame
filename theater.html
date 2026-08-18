@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#6b4a9e" />
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
-<meta name="build" content="2026.08.18-64c6ae" />
+<meta name="build" content="2026.08.18-96faf7" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -3465,6 +3465,11 @@ function recordPredict(id, key, p, grade) {
   try { localStorage.setItem(pKey('predict'), JSON.stringify(d)); } catch (e) {}
 }
 const isGoodGrade = g => g === 'best' || g === 'good';
+/* 先猜再看 / 直接看答案 —— 每個玩家可以各自決定 */
+function guessOn() { return localStorage.getItem(pKey('guess')) !== 'off'; }
+function toggleGuess() {
+  try { localStorage.setItem(pKey('guess'), guessOn() ? 'off' : 'on'); } catch (e) {}
+}
 // 回傳 'hit'（猜對）/ 'over'（以為不錯，其實不是）/ 'under'（以為不好，其實不錯）
 function predictOutcome(p, g) {
   if (p === 'idk') return 'idk';
@@ -3655,6 +3660,7 @@ function renderMenu() {
         <button class="mini" id="mute">${Sfx.isMuted() ? '🔇 靜音中' : '🔊 有聲'}</button>
         <button class="mini" id="music">${Sfx.isBgmOn() ? Sfx.trackName() : '🎵 音樂關'}</button>
         <button class="mini" id="reset">🗑️ 清除紀錄</button>
+        <button class="mini" id="guessmode">${guessOn() ? '🤔 先猜再看' : '⚡ 直接看答案'}</button>
         <button class="mini" id="check">📊 判斷紀錄</button>
         <button class="mini" id="map">🗺️ 分支圖</button>
         <button class="mini" id="back">🎲 回骰子遊戲</button>
@@ -3688,6 +3694,7 @@ function renderMenu() {
     render();
   };
   document.getElementById('music').oncontextmenu = e => { e.preventDefault(); Sfx.toggleBgm(); render(); };
+  document.getElementById('guessmode').onclick = () => { Sfx.tap(); toggleGuess(); render(); };
   document.getElementById('check').onclick = () => { Sfx.tap(); view = 'check'; render(); };
   document.getElementById('ver').onclick = () => {
     // 換一個查詢字串，瀏覽器就不會拿舊的快取
@@ -3812,7 +3819,7 @@ function choose(i) {
     endingKey = nxt;
     const firstTime = !(loadEnds()[cur.id] || {})[nxt];
     recordEnding(cur.id, nxt);
-    predicting = firstTime && !isCons(cur);
+    predicting = firstTime && !isCons(cur) && guessOn();
     if (isCons(cur)) {
       improved = false;
       Sfx.good();                       // 中性的收尾音，不用高低分暗示好壞
@@ -3891,6 +3898,10 @@ function renderCheck() {
         <div style="font-size:13px; color:#6b5a7e; line-height:1.8;">
           第一次走到一個新結局的時候，遊戲會先問她覺得結果好不好，之後才揭曉。<br>
           玩過幾篇再回來看。</div></div>` : ''}
+      ${!guessOn() ? `<div class="chk"><h3>⚡ 現在是「直接看答案」</h3>
+        <div style="font-size:13px; color:#6b5a7e; line-height:1.8;">
+          這個模式不會問她的判斷，所以不會累積新紀錄。<br>
+          想再收集的話，回首頁把它切回「🤔 先猜再看」。</div></div>` : ''}
       ${over.length ? `<div class="chk">
         <h3>😮 她以為不錯，結果不是（${over.length}）</h3>
         <div style="font-size:12.5px; color:#6b5a7e; margin-bottom:6px;">這幾題最值得聊——她的判斷跟實際結果不一樣。</div>
