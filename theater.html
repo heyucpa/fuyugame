@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <link rel="manifest" href="data:application/json;charset=utf-8;base64,ewogICJuYW1lIjogIuWuieWuieW4huW4hueDhuWig+WKh+WgtCIsCiAgInNob3J0X25hbWUiOiAi5oOF5aKD5Ymn5aC0IiwKICAic3RhcnRfdXJsIjogIi4vdGhlYXRlci5odG1sIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZWZlNGZmIiwKICAidGhlbWVfY29sb3IiOiAiIzZiNGE5ZSIKfQo=" />
 <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj48cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgcng9IjQwIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iOTAiIHk9IjEyNSIgZm9udC1zaXplPSIxMDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiPvCfjq08L3RleHQ+PC9zdmc+" />
-<title>安安帆帆情境劇場 🎭</title>
+<title>情境劇場 🎭</title>
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="情境劇場" />
 <meta name="theme-color" content="#6b4a9e" />
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
-<meta name="build" content="2026.08.18-1e415b" />
+<meta name="build" content="2026.08.18-b07382" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -648,8 +648,10 @@ const SCENARIOS = [
       },
       run: {
         text: '你在搖晃中跑向門口，但地板一直在動，你差點跌倒。<br><br>門口擠滿了同學，大家推來推去。這時候上面有東西掉下來。',
+        hint: '在推擠的人群裡趴下去很危險。先離開人群，或是退回去找有掩護的地方。',
         choices: [
-          { label: '就近趴下、護住頭', to: 'escape' },
+          { label: '閃到旁邊離開推擠的人群，趴低、護住頭和脖子', to: 'escape' },
+          { label: '轉頭退回教室，鑽進最近的桌子底下', to: 'under' },
           { label: '用力擠出去', to: 'bad' },
         ],
       },
@@ -1503,7 +1505,7 @@ const SCENARIOS = [
       slip: { grade: 'escape', title: '你把它分享出去了', emoji: '😮‍💨',
         text: '你分享到班上群組。<br><br>兩天後，有三個同學跟你說他們買了，錢都不見了。',
         lesson: '你自己沒有買，這一點很好。<br><br>但<b>「免費」的代價就是你的名字</b>——你一分享，同學就會覺得「這是我朋友推薦的，應該可以信」。<br><br><b>騙子要的不是你的錢，是你的信任去騙別人。</b>' },
-      good: { grade: 'good', title: '一毛都沒損失', emoji: '👍',
+      good: { grade: 'good', title: '你自己沒買', emoji: '👍',
         text: '你沒有買，錢好好的留在自己口袋。<br><br>過幾天，同學說他買了，錢匯出去之後對方就消失了。',
         lesson: '你看穿了，很厲害。<br><br>如果你覺得這個賣家怪怪的，也可以再多做一步：<b>把訊息拿給爸媽或其他可信任的大人看</b>。<br><br>大人可以幫忙判斷，也能提醒其他人小心。' },
       best: { grade: 'best', title: '一毛都沒損失', emoji: '🌟',
@@ -3410,7 +3412,7 @@ const PKEY = 'theater-players', CKEY = 'theater-who';
 const RANK = { bad: 1, escape: 2, good: 3, best: 4 };
 
 function defaultPlayers() {
-  return [{ id: 'p1', name: '帆帆', emoji: '⭐' }, { id: 'p2', name: '安安', emoji: '🌸' }];
+  return [{ id: 'p1', name: '姊姊', emoji: '⭐' }, { id: 'p2', name: '妹妹', emoji: '🌸' }];
 }
 function players() {
   try {
