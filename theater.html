@@ -93,16 +93,19 @@
     padding: 13px 15px; line-height: 1.5; border-radius: 14px;
     position: relative;
   }
-  /* 走過的選項變灰，但還是可以再選 */
+  /* 這條後面已經沒有新東西了 → 變灰 */
   .choice.seen {
     background: #efedf4; color: #877f9c; border-color: #a9a2bd;
     box-shadow: 0 4px 0 rgba(0,0,0,.07);
   }
-  .seenmark {
+  /* 按過了，但後面還有沒看過的結局 → 不變灰，改成提示還有幾種 */
+  .choice.partial { background: #fffaf0; }
+  .seenmark, .leftmark {
     display: inline-block; margin-left: 8px; font-size: 11px; font-weight: 800;
-    color: #6b5a8e; background: #ded8ea; border-radius: 8px; padding: 2px 7px;
-    vertical-align: middle;
+    border-radius: 8px; padding: 2px 7px; vertical-align: middle; white-space: nowrap;
   }
+  .seenmark { color: #6b5a8e; background: #ded8ea; }
+  .leftmark { color: #a07a00; background: #ffeec2; }
   .steps {
     display: flex; align-items: center; justify-content: center; gap: 5px;
     margin-bottom: 4px;
@@ -3381,6 +3384,23 @@ function recordEnding(id, key) {
 }
 function endsSeen(id) { return Object.keys(loadEnds()[id] || {}).length; }
 
+/* 這個選項後面（含更後面的分支）總共會通到哪些結局。
+   用來判斷「按過了」到底是真的走完了，還是後面其實還有沒看過的路。 */
+const _behind = {};
+function endsBehind(sc, target) {
+  const cache = _behind[sc.id] || (_behind[sc.id] = {});
+  if (cache[target]) return cache[target];
+  const out = {}, seen = {}, stack = [target];
+  while (stack.length) {
+    const k = stack.pop();
+    if (seen[k]) continue;
+    seen[k] = 1;
+    if (sc.endings[k]) { out[k] = 1; continue; }
+    if (sc.nodes[k]) sc.nodes[k].choices.forEach(c => stack.push(c.to));
+  }
+  return (cache[target] = Object.keys(out));
+}
+
 function loadProgress() {
   try { return JSON.parse(localStorage.getItem(pKey('progress'))) || {}; } catch (e) { return {}; }
 }
@@ -3628,8 +3648,15 @@ function renderStory() {
           <div style="font-size:14px; font-weight:800; color:#6b4a9e; margin-bottom:7px;">你要怎麼做？</div>
           <div class="choices">
             ${n.choices.map((c, i) => {
-              const seen = isSeen(cur.id, nodeId, i);
-              return `<button class="choice${seen ? ' seen' : ''}" data-i="${i}">${esc(c.label)}${seen ? '<span class="seenmark">走過了</span>' : ''}</button>`;
+              const doneEnds = loadEnds()[cur.id] || {};
+              const left = endsBehind(cur, c.to).filter(k => !doneEnds[k]).length;
+              const taken = isSeen(cur.id, nodeId, i);
+              // 後面沒有新東西了才變灰；按過但後面還有的，改成告訴她還剩幾種
+              const cls = left === 0 ? ' seen' : (taken ? ' partial' : '');
+              const mark = left === 0 ? '<span class="seenmark">這條走完了</span>'
+                         : taken ? `<span class="leftmark">還有 ${left} 種結局</span>`
+                         : '';
+              return `<button class="choice${cls}" data-i="${i}">${esc(c.label)}${mark}</button>`;
             }).join('')}
           </div>
         </div>
@@ -3660,8 +3687,8 @@ function choose(i) {
   } else if (cur.endings[nxt]) {
     ending = cur.endings[nxt];
     endingKey = nxt;
+    recordEnding(cur.id, nxt);
     if (isCons(cur)) {
-      recordEnding(cur.id, nxt);
       improved = false;
       Sfx.good();                       // 中性的收尾音，不用高低分暗示好壞
     } else {
@@ -3688,7 +3715,9 @@ function renderEnding() {
             ? `<span class="badge" style="background:#eee6f8; color:#6b4a9e;">💬 這個選擇的結果</span>`
             : `<span class="badge" style="background:${m.bg}; color:${m.color};">${m.label}結局</span>`}
           ${!cons && improved && ending.grade !== 'bad' ? `<div style="font-weight:900; color:#c9a000; margin-top:8px;">🎉 比上次更好了！</div>` : ''}
-          ${cons ? `<div style="font-size:12px; color:#6b5a7e; margin-top:8px; line-height:1.6;">這個故事沒有滿分答案。<br>你走過 ${endsSeen(cur.id)} / ${Object.keys(cur.endings).length} 種結果。</div>` : ''}
+          <div style="font-size:12px; color:#6b5a7e; margin-top:8px; line-height:1.6;">
+            ${cons ? '這個故事沒有滿分答案。<br>' : ''}你走過 ${endsSeen(cur.id)} / ${Object.keys(cur.endings).length} 種結局${endsSeen(cur.id) < Object.keys(cur.endings).length ? '，再走一次看看別條路' : '，全部都看過了 🎉'}。
+          </div>
         </div>
         <div>
           <div class="stage" style="margin-top:0;">
