@@ -106,6 +106,37 @@
   }
   .seenmark { color: #6b5a8e; background: #ded8ea; }
   .leftmark { color: #a07a00; background: #ffeec2; }
+  /* 揭曉之前，先讓她自己押一個判斷 */
+  /* 押判斷的時候連圖也要蓋住 —— 結局插圖本身就會洩漏答案 */
+  .cover {
+    aspect-ratio: 200 / 130; width: 100%; border-radius: 14px;
+    background: repeating-linear-gradient(45deg, #efedf4, #efedf4 12px, #e6e2f0 12px, #e6e2f0 24px);
+    border: 3px dashed #a99ac9; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 6px;
+  }
+  .cover .q { font-size: 40px; opacity: .55; }
+  .cover .c { font-size: 12.5px; font-weight: 800; color: #8a7fa8; }
+
+  .guess { text-align: center; margin-top: 14px; }
+  .guess-q { font-size: 17px; font-weight: 900; color: #6b4a9e; margin-bottom: 4px; }
+  .guess-s { font-size: 12.5px; color: #8a7fa8; margin-bottom: 12px; line-height: 1.7; }
+  .guess-btns { display: grid; gap: 9px; max-width: 420px; margin: 0 auto; }
+  .guess-btns button { width: 100%; font-size: 16px; font-weight: 800; padding: 14px 16px; }
+  #g-good { background: #b7f0c2; }
+  #g-bad  { background: #ffd0d0; }
+  #g-idk  { background: #fff; }
+
+  /* 判斷紀錄 */
+  .chk { background: #fff; border: 3px solid #33224a; border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
+  .chk h3 { margin: 0 0 8px; font-size: 15px; color: #6b4a9e; }
+  .chk-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-top: 1px solid #eee6f8; font-size: 13.5px; }
+  .chk-row:first-of-type { border-top: 0; }
+  .chk-row .w { flex: 1; min-width: 0; }
+  .chk-tag { font-size: 11px; font-weight: 800; border-radius: 8px; padding: 2px 8px; white-space: nowrap; }
+  .chk-num { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; }
+  .chk-num div { background: #fff; border: 2px solid #cbbce0; border-radius: 10px; padding: 6px 14px; font-size: 12.5px; font-weight: 700; }
+  .chk-num b { color: #6b4a9e; font-size: 17px; }
+
   /* 心理安全框：提醒孩子這是在練習少數狀況，不是說世界很可怕 */
   .safeframe {
     background: #eafaf1; border: 2px solid #7cc9a0; border-radius: 12px;
@@ -3447,6 +3478,25 @@ function endsBehind(sc, target) {
   return (cache[target] = Object.keys(out));
 }
 
+/* 揭曉之前先讓她押一個判斷。只在第一次走到某個結局時問，重玩不再打斷。
+   後果卡模式（沒有對錯）不問。 */
+function loadPredict() {
+  try { return JSON.parse(localStorage.getItem(pKey('predict'))) || {}; } catch (e) { return {}; }
+}
+function recordPredict(id, key, p, grade) {
+  const d = loadPredict();
+  (d[id] = d[id] || {})[key] = { p: p, g: grade };
+  try { localStorage.setItem(pKey('predict'), JSON.stringify(d)); } catch (e) {}
+}
+const isGoodGrade = g => g === 'best' || g === 'good';
+// 回傳 'hit'（猜對）/ 'over'（以為不錯，其實不是）/ 'under'（以為不好，其實不錯）
+function predictOutcome(p, g) {
+  if (p === 'idk') return 'idk';
+  const good = isGoodGrade(g);
+  if (p === 'good') return good ? 'hit' : 'over';
+  return good ? 'under' : 'hit';
+}
+
 function loadProgress() {
   try { return JSON.parse(localStorage.getItem(pKey('progress'))) || {}; } catch (e) { return {}; }
 }
@@ -3481,6 +3531,7 @@ let nodeId = null;   // 目前節點
 let path = [];       // [{text, label}]
 let ending = null;
 let endingKey = null;
+let predicting = false;   // 結局揭曉前，正在等她押判斷
 let improved = false;
 let lastId = null;   // 上一個玩過的，隨機時避開它
 
@@ -3491,6 +3542,7 @@ const plain = s => String(s).replace(/<[^>]*>/g, '');
 
 function render() {
   if (view === 'menu') renderMenu();
+  else if (view === 'check') renderCheck();
   else if (view === 'who') renderWho();
   else if (view === 'story') renderStory();
   else renderEnding();
@@ -3602,6 +3654,7 @@ function renderMenu() {
         <button class="mini" id="mute">${Sfx.isMuted() ? '🔇 靜音中' : '🔊 有聲'}</button>
         <button class="mini" id="music">${Sfx.isBgmOn() ? Sfx.trackName() : '🎵 音樂關'}</button>
         <button class="mini" id="reset">🗑️ 清除紀錄</button>
+        <button class="mini" id="check">📊 判斷紀錄</button>
         <button class="mini" id="map">🗺️ 分支圖</button>
         <button class="mini" id="back">🎲 回骰子遊戲</button>
       </div>
@@ -3628,6 +3681,7 @@ function renderMenu() {
     render();
   };
   document.getElementById('music').oncontextmenu = e => { e.preventDefault(); Sfx.toggleBgm(); render(); };
+  document.getElementById('check').onclick = () => { Sfx.tap(); view = 'check'; render(); };
   document.getElementById('map').onclick = () => { location.href = './map.html'; };
   document.getElementById('back').onclick = () => { location.href = './index.html'; };
   document.getElementById('reset').onclick = () => {
@@ -3635,6 +3689,7 @@ function renderMenu() {
       localStorage.removeItem(pKey('progress'));
       localStorage.removeItem(pKey('seen'));
       localStorage.removeItem(pKey('ends'));
+      localStorage.removeItem(pKey('predict'));
       render();
     }
   };
@@ -3655,6 +3710,7 @@ function startScenario(id) {
   path = [];
   ending = null;
   endingKey = null;
+  predicting = false;
   view = 'story';
   render();
 }
@@ -3743,13 +3799,17 @@ function choose(i) {
   } else if (cur.endings[nxt]) {
     ending = cur.endings[nxt];
     endingKey = nxt;
+    const firstTime = !(loadEnds()[cur.id] || {})[nxt];
     recordEnding(cur.id, nxt);
+    predicting = firstTime && !isCons(cur);
     if (isCons(cur)) {
       improved = false;
       Sfx.good();                       // 中性的收尾音，不用高低分暗示好壞
     } else {
       improved = recordResult(cur.id, ending.grade);
-      ({ best: Sfx.best, good: Sfx.good, escape: Sfx.escape, bad: Sfx.bad }[ending.grade] || Sfx.good)();
+      // 還在等她押判斷的時候，不能用音效先洩漏答案
+      if (predicting) Sfx.page();
+      else ({ best: Sfx.best, good: Sfx.good, escape: Sfx.escape, bad: Sfx.bad }[ending.grade] || Sfx.good)();
     }
     view = 'end';
     render();
@@ -3758,7 +3818,92 @@ function choose(i) {
   }
 }
 
+function renderGuess() {
+  app.innerHTML = `
+    <div class="card anim">
+      <div class="result">
+        <div class="cover"><div class="q">🖼️</div><div class="c">先猜猜看，再看圖片</div></div>
+      </div>
+      <div class="stage" style="margin-top:12px;">
+        <div class="narr">${narrate(ending.text)}</div>
+      </div>
+      <div class="guess">
+        <div class="guess-q">你覺得這個選擇，結果好嗎？</div>
+        <div class="guess-s">先自己想一想再看答案。<br>猜錯不會扣分——猜錯的那幾題，才是最值得跟爸媽聊的。</div>
+        <div class="guess-btns">
+          <button id="g-good">🙂 我覺得應該不錯</button>
+          <button id="g-bad">😟 好像不太好</button>
+          <button id="g-idk">🤔 我不確定</button>
+        </div>
+      </div>
+    </div>
+  `;
+  const pick = p => {
+    recordPredict(cur.id, endingKey, p, ending.grade);
+    predicting = false;
+    ({ best: Sfx.best, good: Sfx.good, escape: Sfx.escape, bad: Sfx.bad }[ending.grade] || Sfx.good)();
+    render();
+  };
+  document.getElementById('g-good').onclick = () => pick('good');
+  document.getElementById('g-bad').onclick = () => pick('bad');
+  document.getElementById('g-idk').onclick = () => pick('idk');
+}
+
+/* 判斷紀錄：她以為對、結果不是的題目 —— 給爸媽看的 */
+function renderCheck() {
+  const d = loadPredict();
+  const rows = [];
+  SCENARIOS.forEach(sc => Object.keys(d[sc.id] || {}).forEach(k => {
+    const r = d[sc.id][k], e = sc.endings[k];
+    if (!e) return;
+    rows.push({ sc: sc, e: e, key: k, p: r.p, out: predictOutcome(r.p, r.g) });
+  }));
+  const over = rows.filter(r => r.out === 'over');
+  const under = rows.filter(r => r.out === 'under');
+  const hit = rows.filter(r => r.out === 'hit');
+  const idk = rows.filter(r => r.out === 'idk');
+  const m = g => GRADE_META[g];
+  const line = r => `
+    <div class="chk-row">
+      <span>${r.sc.emoji}</span>
+      <span class="w"><b style="color:#6b4a9e;">${esc(r.sc.title)}</b><br>
+        <span style="color:#6b5a7e; font-size:12px;">${esc(r.e.title)}</span></span>
+      <span class="chk-tag" style="background:${m(r.e.grade).bg}; color:${m(r.e.grade).color};">${m(r.e.grade).label}</span>
+    </div>`;
+  app.innerHTML = `
+    <div class="card anim">
+      <h1>📊 判斷紀錄</h1>
+      <div class="sub">${esc(who().name)} 走到每個結局之前，先猜了結果好不好</div>
+      <div class="chk-num" style="margin-top:12px;">
+        <div>猜過 <b>${rows.length}</b> 次</div>
+        <div>猜對 <b>${hit.length}</b></div>
+        <div>不確定 <b>${idk.length}</b></div>
+      </div>
+      ${rows.length === 0 ? `<div class="chk"><h3>還沒有紀錄</h3>
+        <div style="font-size:13px; color:#6b5a7e; line-height:1.8;">
+          第一次走到一個新結局的時候，遊戲會先問她覺得結果好不好，之後才揭曉。<br>
+          玩過幾篇再回來看。</div></div>` : ''}
+      ${over.length ? `<div class="chk">
+        <h3>😮 她以為不錯，結果不是（${over.length}）</h3>
+        <div style="font-size:12.5px; color:#6b5a7e; margin-bottom:6px;">這幾題最值得聊——她的判斷跟實際結果不一樣。</div>
+        ${over.map(line).join('')}</div>` : ''}
+      ${under.length ? `<div class="chk">
+        <h3>🙂 她以為不好，其實不錯（${under.length}）</h3>
+        <div style="font-size:12.5px; color:#6b5a7e; margin-bottom:6px;">她做對了但不太有把握，可以肯定她一下。</div>
+        ${under.map(line).join('')}</div>` : ''}
+      ${idk.length ? `<div class="chk">
+        <h3>🤔 她說不確定（${idk.length}）</h3>
+        ${idk.map(line).join('')}</div>` : ''}
+      <div class="row" style="margin-top:12px;">
+        <button id="chk-back" style="background:#6b4a9e; color:#fff;">← 回首頁</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('chk-back').onclick = () => { Sfx.tap(); view = 'menu'; render(); };
+}
+
 function renderEnding() {
+  if (predicting) return renderGuess();
   const cons = isCons(cur);
   const m = GRADE_META[ending.grade];
   app.innerHTML = `
