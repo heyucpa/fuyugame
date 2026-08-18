@@ -93,7 +93,7 @@
     padding: 13px 15px; line-height: 1.5; border-radius: 14px;
     position: relative;
   }
-  /* 這條後面已經沒有新東西了 → 變灰 */
+  /* 按過、而且後面已經沒有沒看過的結局了 → 變灰 */
   .choice.seen {
     background: #efedf4; color: #877f9c; border-color: #a9a2bd;
     box-shadow: 0 4px 0 rgba(0,0,0,.07);
@@ -3665,7 +3665,7 @@ function renderMenu() {
       <div class="legend">
         <span class="lg lg-new">還沒走過</span>
         <span class="lg lg-partial">還有 2 種結局</span>
-        <span class="lg lg-done">這條走完了</span>
+        <span class="lg lg-done">走過了</span>
       </div>
     </div>
   `;
@@ -3763,11 +3763,13 @@ function renderStory() {
               const doneEnds = loadEnds()[cur.id] || {};
               const left = endsBehind(cur, c.to).filter(k => !doneEnds[k]).length;
               const taken = isSeen(cur.id, nodeId, i);
-              // 後面沒有新東西了才變灰；按過但後面還有的，改成告訴她還剩幾種
-              const cls = left === 0 ? ' seen' : (taken ? ' partial' : '');
-              const mark = left === 0 ? '<span class="seenmark">這條走完了</span>'
-                         : taken ? `<span class="leftmark">還有 ${left} 種結局</span>`
-                         : '';
+              // 只有「她真的按過」的選項才做記號。沒按過的一律保持全新的樣子，
+              // 就算後面的結局早就從別條路看過也一樣。
+              // 按過之後：後面還有沒看過的結局 → 提示還剩幾種；沒有了才變灰。
+              const cls = !taken ? '' : (left === 0 ? ' seen' : ' partial');
+              const mark = !taken ? ''
+                         : left === 0 ? '<span class="seenmark">走過了</span>'
+                         : `<span class="leftmark">還有 ${left} 種結局</span>`;
               return `<button class="choice${cls}" data-i="${i}">${esc(c.label)}${mark}</button>`;
             }).join('')}
           </div>
