@@ -3457,6 +3457,38 @@ function recordEnding(id, key) {
 }
 function endsSeen(id) { return Object.keys(loadEnds()[id] || {}).length; }
 
+/* 揭曉之前先讓她押一個判斷。只在第一次走到某個結局時問，重玩不再打斷。
+   後果卡模式（沒有對錯）不問。 */
+function loadPredict() {
+  try { return JSON.parse(localStorage.getItem(pKey('predict'))) || {}; } catch (e) { return {}; }
+}
+function recordPredict(id, key, p, grade) {
+  const d = loadPredict();
+  (d[id] = d[id] || {})[key] = { p: p, g: grade };
+  try { localStorage.setItem(pKey('predict'), JSON.stringify(d)); } catch (e) {}
+}
+const isGoodGrade = g => g === 'best' || g === 'good';
+// 回傳 'hit'（猜對）/ 'over'（以為不錯，其實不是）/ 'under'（以為不好，其實不錯）
+function predictOutcome(p, g) {
+  if (p === 'idk') return 'idk';
+  const good = isGoodGrade(g);
+  if (p === 'good') return good ? 'hit' : 'over';
+  return good ? 'under' : 'hit';
+}
+
+function loadProgress() {
+  try { return JSON.parse(localStorage.getItem(pKey('progress'))) || {}; } catch (e) { return {}; }
+}
+function recordResult(id, grade) {
+  const p = loadProgress();
+  if (!p[id] || RANK[grade] > RANK[p[id]]) {
+    p[id] = grade;
+    try { localStorage.setItem(pKey('progress'), JSON.stringify(p)); } catch (e) {}
+    return true;   // 這次比以前好
+  }
+  return false;
+}
+
 /* 選過的選項：只記「這一輪」。重新開始這個故事就全部恢復白色。
    （不寫進 localStorage，換一輪就沒了） */
 let runSeen = {};
