@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#6b4a9e" />
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
-<meta name="build" content="2026.08.18-137b1d" />
+<meta name="build" content="2026.08.18-698d2b" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -101,11 +101,14 @@
     background: #efedf4; color: #877f9c; border-color: #a9a2bd;
     box-shadow: 0 4px 0 rgba(0,0,0,.07);
   }
-  .seenmark {
+  /* 以前玩的時候按過（不是這一輪）→ 淡一點，還是很好按 */
+  .choice.past { background: #f7f5fb; color: #6b5a7e; }
+  .seenmark, .pastmark {
     display: inline-block; margin-left: 8px; font-size: 11px; font-weight: 800;
     border-radius: 8px; padding: 2px 7px; vertical-align: middle; white-space: nowrap;
   }
   .seenmark { color: #6b5a8e; background: #ded8ea; }
+  .pastmark { color: #8a7fa8; background: #efeaf7; }
   /* 揭曉之前，先讓她自己押一個判斷 */
   /* 押判斷的時候連圖也要蓋住 —— 結局插圖本身就會洩漏答案 */
   .cover {
@@ -156,6 +159,7 @@
     padding: 4px 10px; border: 2px solid #33224a;
   }
   .lg-new     { background: #fff;    color: #33224a; }
+  .lg-past    { background: #f7f5fb; color: #8a7fa8; }
   .lg-done    { background: #efedf4; color: #877f9c; border-color: #a9a2bd; }
 
   .steps {
@@ -3492,11 +3496,24 @@ function recordResult(id, grade) {
   return false;
 }
 
-/* 選過的選項：只記「這一輪」。重新開始這個故事就全部恢復白色。
-   （不寫進 localStorage，換一輪就沒了） */
+/* 選過的選項分兩種：
+   - 這一輪按的  → runSeen，放記憶體，重新開始這個故事就清空
+   - 以前按過的  → localStorage，跨場次留著，方便她找還沒挖過的分支
+   兩種都只在「她真的按下去」的時候才記，不會因為結局從別條路看過就變灰。 */
 let runSeen = {};
-function markSeen(nodeId, idx) { runSeen[nodeId + '|' + idx] = 1; }
-function isSeen(nodeId, idx) { return !!runSeen[nodeId + '|' + idx]; }
+function loadSeen() {
+  try { return JSON.parse(localStorage.getItem(pKey('seen'))) || {}; } catch (e) { return {}; }
+}
+function markSeen(scenarioId, nodeId, idx) {
+  runSeen[nodeId + '|' + idx] = 1;
+  const v = loadSeen();
+  v[scenarioId + '|' + nodeId + '|' + idx] = 1;
+  try { localStorage.setItem(pKey('seen'), JSON.stringify(v)); } catch (e) {}
+}
+function seenNow(nodeId, idx) { return !!runSeen[nodeId + '|' + idx]; }
+function seenBefore(scenarioId, nodeId, idx) {
+  return !!loadSeen()[scenarioId + '|' + nodeId + '|' + idx];
+}
 
 /* ===== 狀態 ===== */
 const app = document.getElementById('app');
@@ -3638,10 +3655,10 @@ function renderMenu() {
       <p style="text-align:center; font-size:12px; color:#6b5a7e; margin:14px 0 0; line-height:1.7;">
         沒有「輸」這件事 —— 走到不好的結局也會告訴你為什麼，<br>再走一次就好。
       </p>
-      <p style="text-align:center; font-size:11.5px; color:#8a7fa8; margin:10px 0 0;">
-        故事裡繞回同一題的時候，剛剛選過的那個會變灰：</p>
+      <p style="text-align:center; font-size:11.5px; color:#8a7fa8; margin:10px 0 0;">故事裡的選項會這樣標：</p>
       <div class="legend">
-        <span class="lg lg-new">還沒選</span>
+        <span class="lg lg-new">還沒選過</span>
+        <span class="lg lg-past">以前選過</span>
         <span class="lg lg-done">這次選過了</span>
       </div>
       <p style="text-align:center; margin:14px 0 0;">
@@ -3748,10 +3765,13 @@ function renderStory() {
           <div style="font-size:14px; font-weight:800; color:#6b4a9e; margin-bottom:7px;">你要怎麼做？</div>
           <div class="choices">
             ${n.choices.map((c, i) => {
-              // 只標「這一輪」按過的：走到一半繞回同一題時，才知道剛剛選過哪一個
-              const taken = isSeen(nodeId, i);
-              const cls = taken ? ' seen' : '';
-              const mark = taken ? '<span class="seenmark">這次選過了</span>' : '';
+              // 只標她真的按下去的。這一輪按的最明顯，以前按過的淡一點。
+              const now = seenNow(nodeId, i);
+              const before = !now && seenBefore(cur.id, nodeId, i);
+              const cls = now ? ' seen' : (before ? ' past' : '');
+              const mark = now ? '<span class="seenmark">這次選過了</span>'
+                         : before ? '<span class="pastmark">以前選過</span>'
+                         : '';
               return `<button class="choice${cls}" data-i="${i}">${esc(c.label)}${mark}</button>`;
             }).join('')}
           </div>
@@ -3773,7 +3793,7 @@ function renderStory() {
 function choose(i) {
   const n = cur.nodes[nodeId];
   const c = n.choices[i];
-  markSeen(nodeId, i);
+  markSeen(cur.id, nodeId, i);
   path.push({ text: plain(n.text), label: c.label });
   const nxt = c.to;
   if (cur.nodes[nxt]) {
