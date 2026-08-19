@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#6b4a9e" />
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
-<meta name="build" content="2026.08.18-b07382" />
+<meta name="build" content="2026.08.19-6dafde" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -118,6 +118,33 @@
   #g-good { background: #b7f0c2; }
   #g-bad  { background: #ffd0d0; }
   #g-idk  { background: #fff; }
+
+  /* 結局圖鑑 */
+  .galtop { text-align: center; margin: 12px 0 14px; }
+  .galnum { font-size: 30px; font-weight: 900; color: #6b4a9e; line-height: 1.2; }
+  .galnum small { font-size: 15px; color: #8a7fa8; font-weight: 800; }
+  .gal-bar { height: 12px; border-radius: 999px; background: #e2dcee;
+             border: 2px solid #cbbce0; overflow: hidden; margin-top: 8px; }
+  .gal-bar i { display: block; height: 100%; background: linear-gradient(90deg, #a8e6c0, #7cc9a0); }
+
+  .gal { background: #fff; border: 3px solid #33224a; border-radius: 14px;
+         padding: 10px 12px; margin-bottom: 12px; }
+  .gal h3 { margin: 0 0 8px; font-size: 15px; color: #6b4a9e;
+            display: flex; align-items: center; gap: 6px; }
+  .gal h3 .n { margin-left: auto; font-size: 13px; color: #8a7fa8; }
+  .gal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  @media (min-width: 560px) { .gal-grid { grid-template-columns: repeat(3, 1fr); } }
+
+  .gal-cell { border: 2.5px solid #cbbce0; border-radius: 10px; overflow: hidden; background: #fff; }
+  .gal-cell svg { width: 100%; display: block; }
+  .gal-cap { font-size: 11px; font-weight: 800; padding: 5px 6px; line-height: 1.35; }
+
+  .gal-lock {
+    aspect-ratio: 200 / 130; border: 2.5px dashed #cbbce0; border-radius: 10px;
+    background: repeating-linear-gradient(45deg, #f4f0fb, #f4f0fb 10px, #eae4f4 10px, #eae4f4 20px);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px; color: #b8abd4; font-weight: 900;
+  }
 
   /* 判斷紀錄 */
   .chk { background: #fff; border: 3px solid #33224a; border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
@@ -3465,6 +3492,9 @@ function recordEnding(id, key) {
   try { localStorage.setItem(pKey('ends'), JSON.stringify(e)); } catch (e2) {}
 }
 function endsSeen(id) { return Object.keys(loadEnds()[id] || {}).length; }
+// 全部劇本加起來的結局總數，以及她已經走到幾個
+const totalEnds = () => SCENARIOS.reduce((a, s) => a + Object.keys(s.endings).length, 0);
+const seenTotal = () => SCENARIOS.reduce((a, s) => a + endsSeen(s.id), 0);
 
 /* 揭曉之前先讓她押一個判斷。只在第一次走到某個結局時問，重玩不再打斷。
    後果卡模式（沒有對錯）不問。 */
@@ -3561,6 +3591,7 @@ const plain = s => String(s).replace(/<[^>]*>/g, '');
 function render() {
   if (view === 'menu') renderMenu();
   else if (view === 'check') renderCheck();
+  else if (view === 'gallery') renderGallery();
   else if (view === 'who') renderWho();
   else if (view === 'story') renderStory();
   else renderEnding();
@@ -3642,9 +3673,13 @@ function renderMenu() {
         🌱 <b>大部分的人都是安全、願意幫忙的。</b><br>
         這些故事是在練習：少數真的遇到危險的時候，你可以怎麼保護自己。
       </div>
-      <div style="text-align:center; font-size:13px; font-weight:800; color:#6b4a9e; margin-bottom:6px;">
+      <div style="text-align:center; font-size:13px; font-weight:800; color:#6b4a9e; margin-bottom:4px;">
         完美通關 ${done} / ${graded.length}
       </div>
+      <button id="galbtn" style="width:100%; background:#fff; font-size:14px; font-weight:900;
+        color:#6b4a9e; padding:9px; margin-bottom:2px;">
+        🖼️ 結局圖鑑　${seenTotal()} / ${totalEnds()}
+      </button>
       <button id="rand" style="width:100%; margin:8px 0 4px; background:#6b4a9e; color:#fff;">🎲 隨機挑一個</button>
       <div class="pick-grid">
         ${SCENARIOS.map(s => {
@@ -3659,12 +3694,14 @@ function renderMenu() {
                 <span class="t">${esc(s.title)}</span>
                 <span class="g">${esc(s.tag)}</span>
               </span>
-              ${cons
-                ? (seen
-                    ? `<span class="done" title="走過 ${seen} / ${Object.keys(s.endings).length} 種結果" style="font-size:13px; font-weight:900; color:#6b4a9e;">${seen}/${Object.keys(s.endings).length}</span>`
-                    : '<span class="done" style="opacity:.25;">▶️</span>')
-                : m ? `<span class="done" title="${m.label}">${g === 'best' ? '🌟' : g === 'good' ? '👍' : g === 'escape' ? '😮‍💨' : '🔁'}</span>`
-                    : '<span class="done" style="opacity:.25;">▶️</span>'}
+              ${(() => {
+                const got = endsSeen(s.id), all = Object.keys(s.endings).length;
+                if (!got) return '<span class="done" style="opacity:.25;">▶️</span>';
+                const icon = cons ? '' :
+                  (g === 'best' ? '🌟' : g === 'good' ? '👍' : g === 'escape' ? '😮‍💨' : g === 'bad' ? '🔁' : '');
+                return `<span class="done" title="走過 ${got} / ${all} 種結局"
+                  style="font-size:12.5px; font-weight:900; color:#6b4a9e; white-space:nowrap;">${icon} ${got}/${all}</span>`;
+              })()}
             </button>`;
         }).join('')}
       </div>
@@ -3706,6 +3743,7 @@ function renderMenu() {
     render();
   };
   document.getElementById('music').oncontextmenu = e => { e.preventDefault(); Sfx.toggleBgm(); render(); };
+  document.getElementById('galbtn').onclick = () => { Sfx.tap(); view = 'gallery'; render(); };
   document.getElementById('guessmode').onclick = () => { Sfx.tap(); toggleGuess(); render(); };
   document.getElementById('check').onclick = () => { Sfx.tap(); view = 'check'; render(); };
   document.getElementById('ver').onclick = () => {
@@ -3874,6 +3912,48 @@ function renderGuess() {
   document.getElementById('g-good').onclick = () => pick('good');
   document.getElementById('g-bad').onclick = () => pick('bad');
   document.getElementById('g-idk').onclick = () => pick('idk');
+}
+
+/* 結局圖鑑：101 張插圖當成收藏品。沒拿到的只顯示問號，不劇透標題也不顯示圖 */
+function renderGallery() {
+  const got = seenTotal(), all = totalEnds();
+  const pct = Math.round(got / all * 100);
+  app.innerHTML = `
+    <div class="card anim">
+      <h1>🖼️ 結局圖鑑</h1>
+      <div class="sub">每走到一種新結局，就會多一張圖</div>
+      <div class="galtop">
+        <div class="galnum">${got} <small>/ ${all}</small></div>
+        <div class="gal-bar"><i style="width:${pct}%"></i></div>
+      </div>
+      ${SCENARIOS.map(sc => {
+        const done = loadEnds()[sc.id] || {};
+        const keys = Object.keys(sc.endings);
+        const n = keys.filter(k => done[k]).length;
+        return `
+          <div class="gal">
+            <h3>${sc.emoji} ${esc(sc.title)}<span class="n">${n} / ${keys.length}</span></h3>
+            <div class="gal-grid">
+              ${keys.map(k => {
+                if (!done[k]) return '<div class="gal-lock">？</div>';
+                const e = sc.endings[k];
+                const m = isCons(sc)
+                  ? { color: '#6b4a9e', bg: '#eee6f8' }
+                  : GRADE_META[e.grade];
+                return `
+                  <div class="gal-cell" style="border-color:${m.color};">
+                    ${sceneFor(sc.id, k, e.grade)}
+                    <div class="gal-cap" style="background:${m.bg}; color:${m.color};">${esc(e.title)}</div>
+                  </div>`;
+              }).join('')}
+            </div>
+          </div>`;
+      }).join('')}
+      <div class="row" style="margin-top:4px;">
+        <button id="gal-back" style="background:#6b4a9e; color:#fff;">← 回首頁</button>
+      </div>
+    </div>`;
+  document.getElementById('gal-back').onclick = () => { Sfx.tap(); view = 'menu'; render(); };
 }
 
 /* 判斷紀錄：她以為對、結果不是的題目 —— 給爸媽看的 */
