@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#6b4a9e" />
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
-<meta name="build" content="2026.08.20-3bb2a1" />
+<meta name="build" content="2026.08.20-b3ed42" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -550,8 +550,6 @@ const SCENARIOS = [
   {
     id: 'bully', emoji: '😔', title: '班上的事',
     tag: '霸凌・友誼',
-    // 後果卡模式：結局不評等級、不比較、不說哪個是「完美」
-    mode: 'consequence',
     intro: '這學期班上有個轉學生叫小柔，比較安靜。最近你發現，有幾個同學開始故意不理她。',
     talk: '你們班上有沒有人被排擠？如果有，你想怎麼幫他？<br><br>如果你知道幫同學可能會讓自己也被討厭，你覺得自己會怎麼做？有沒有一種方法是不需要你一個人扛？',
     start: 'n1',
@@ -1140,8 +1138,6 @@ const SCENARIOS = [
   {
     id: 'money', emoji: '💰', title: '同學的請求',
     tag: '金錢・同儕壓力',
-    // 後果卡模式：借不借同學錢沒有標準答案，重點是界線
-    mode: 'consequence',
     intro: '班上有個跟你很要好的同學小豪。平常你們常一起玩，他以前沒有跟你借過錢。',
     talk: '你有沒有借過同學錢？他還了嗎？下次要怎麼說比較好？<br><br>如果是你很好的朋友，而且真的只差 50 元，你會借嗎？什麼情況下你會開始覺得不舒服？',
     start: 'n1',
@@ -1325,8 +1321,6 @@ const SCENARIOS = [
   {
     id: 'secret', emoji: '🤫', title: '不能說的秘密',
     tag: '身體自主・求助',
-    // 後果卡模式：不打分數。但這篇的安全底線一定要明確，寫在每一則 lesson 裡。
-    mode: 'consequence',
     intro: '有一個你認識的大人，最近對你特別好，常常買東西送你，還說你是他最喜歡的小孩。',
     talk: '有沒有人叫你不要告訴爸媽什麼事？不管是什麼時候的事都可以說。<br><br>如果好朋友跟你說「你告訴爸媽，我們就不是朋友了」，但那件事讓你很擔心，你會怎麼辦？',
     start: 'n1',
@@ -1383,10 +1377,11 @@ const SCENARIOS = [
       best: { grade: 'best', title: '你告訴了媽媽', emoji: '💬',
         text: '你告訴了媽媽。<br><br>媽媽緊緊抱住你說：「你做得非常好，這不是你的錯。」<br><br>爸媽處理了這件事，那個人再也沒有靠近過你。',
         lesson: '<b>你的身體是你的。</b>別人的碰觸讓你覺得不舒服的時候，你可以<b>拒絕、可以離開，也可以告訴可信任的大人</b>。<br><br>不管對方是誰、對你多好、送過你什麼東西，都一樣。<br><br>還有一個很重要的警訊請記住：<b>大人碰你的身體讓你不舒服，還要求你不要告訴別人</b>——這兩件事加在一起，就是不對的。<br><br>秘密有兩種：<b>讓你開心的</b>（媽媽的生日驚喜、同學準備的禮物）可以保守；<b>讓你害怕、擔心、睡不著的</b>，一定要說。<br><br><b>答應保密，不代表你必須一個人扛著危險。</b>' },
-      escape: { grade: 'escape', title: '你最後說了出來', emoji: '💬',
+      // 這一篇不設「再試」結局：說出來就是對的，悶著也不是她的錯，都不貼失敗標籤
+      escape: { grade: 'best', title: '你最後說了出來', emoji: '💬',
         text: '你說出來了。過程有點難，但爸媽從頭到尾都站在你這邊。',
         lesson: '你很勇敢。<b>說出來不是背叛，也不是害大家吵架</b>——是那個大人先做錯事的，該覺得羞愧的是他，不是你。<br><br>就算你之前答應過他不說，也一樣可以說。<b>答應保密，不代表你必須一個人扛著危險。</b><br><br>台灣有 <b>113 保護專線</b>，任何時候都可以打，就算只是想問問看也可以。' },
-      bad: { grade: 'bad', title: '你一個人放在心裡', emoji: '💬',
+      bad: { grade: 'escape', title: '你一個人放在心裡', emoji: '💬',
         text: '故事到這裡停下來了。<br><br>你一個人把這件事放在心裡，很久很久。',
         lesson: '不敢說是非常正常的——因為對方就是想讓你覺得說了會出事。但請你記得兩件事：<b>這件事從頭到尾都不是你的錯</b>，而且<b>不管過了多久，說出來都不嫌晚</b>。<br><br>可以告訴爸媽、老師，或打 <b>113</b>。<br><br>還有一件事：<b>就算你已經答應過他不說，也一樣可以說。</b>會讓你害怕的秘密，本來就不該由你一個人扛。' },
     },
