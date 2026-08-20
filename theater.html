@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#6b4a9e" />
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
-<meta name="build" content="2026.08.20-d4ca83" />
+<meta name="build" content="2026.08.20-3bb2a1" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -164,7 +164,12 @@
     color: #1e6b46; text-align: center; font-weight: 700;
   }
   .safeframe b { color: #14603c; }
-  .safeframe.mini { font-size: 12px; padding: 8px 12px; text-align: left; font-weight: 500; }
+  .safeframe.mini {
+    font-size: 12.5px; padding: 9px 12px; text-align: left; font-weight: 500;
+    display: flex; align-items: flex-start; gap: 8px;
+  }
+  .safeframe.mini .sf-ico { flex: 0 0 auto; line-height: 1.75; }
+  .safeframe.mini .sf-txt { flex: 1; min-width: 0; }
 
   /* 首頁底下的選項圖例：用跟遊戲裡一模一樣的顏色 */
   .legend {
@@ -4206,7 +4211,9 @@ function renderEnding() {
             <div>${narrate(cur.talk || '把這個故事講給爸爸媽媽聽，問問看他們會怎麼做？')}</div>
           </div>
           <div class="safeframe mini">
-            🌱 大部分的人都是安全、願意幫忙的。這個故事是在練習：<b>少數真的遇到危險的時候，你可以怎麼保護自己。</b>
+            <span class="sf-ico">🌱</span>
+            <span class="sf-txt">大部分的人都是安全、願意幫忙的。<br>
+              這個故事是在練習：<b>少數真的遇到危險的時候，你可以怎麼保護自己。</b></span>
           </div>
           <div class="replay">
             <h3>📖 回顧你的選擇</h3>
