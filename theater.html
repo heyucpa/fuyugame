@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#6b4a9e" />
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
-<meta name="build" content="2026.08.20-bd0cb0" />
+<meta name="build" content="2026.08.20-5e57ec" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -3636,10 +3636,13 @@ const pKey = k => 'theater-' + k + ':' + whoId();
   } catch (e) {}
 })();
 const GRADE_META = {
-  best:   { label: '完美', color: '#1e7d46', bg: '#b7f0c2' },
-  good:   { label: '不錯', color: '#1f6fa8', bg: '#c5e4ff' },
-  escape: { label: '驚險', color: '#b06a00', bg: '#ffe6a8' },
-  bad:    { label: '再試', color: '#a33', bg: '#ffd0d0' },
+  // label＝窄的地方用的短標籤；badge＝結局頁上那顆大徽章
+  // 👍 這一級不寫「不錯」也不寫「普通」：她常常已經做了最難的一步，
+  // 只是還沒做完。直接告訴她差什麼，比給她一個分數有用。
+  best:   { label: '完美',   badge: '完美結局', color: '#1e7d46', bg: '#b7f0c2' },
+  good:   { label: '差一步', badge: '只差一步', color: '#1f6fa8', bg: '#c5e4ff' },
+  escape: { label: '驚險',   badge: '驚險結局', color: '#b06a00', bg: '#ffe6a8' },
+  bad:    { label: '再試',   badge: '再試結局', color: '#a33',    bg: '#ffd0d0' },
 };
 /* 圖鑑裡結局的排法：由好到壞。劇本裡的順序是當初寫下來的順序，
    排出來會忽好忽壞，看不出要拼的是什麼。沒有等級的（後果卡模式）排最後。 */
@@ -4192,7 +4195,7 @@ function renderEnding() {
           <h1>${esc(ending.title)}</h1>
           ${cons
             ? `<span class="badge" style="background:#eee6f8; color:#6b4a9e;">💬 這個選擇的結果</span>`
-            : `<span class="badge" style="background:${m.bg}; color:${m.color};">${m.label}結局</span>`}
+            : `<span class="badge" style="background:${m.bg}; color:${m.color};">${m.badge}</span>`}
           ${!cons && improved && isGoodGrade(ending.grade) ? `<div style="font-weight:900; color:#c9a000; margin-top:8px;">🎉 比上次更好了！</div>` : ''}
           <div style="font-size:12px; color:#6b5a7e; margin-top:8px; line-height:1.6;">
             ${cons ? '這個故事沒有滿分答案。<br>' : ''}你走過 ${endsSeen(cur.id)} / ${Object.keys(cur.endings).length} 種結局${endsSeen(cur.id) < Object.keys(cur.endings).length ? '，再走一次看看別條路' : '，全部都看過了 🎉'}。
