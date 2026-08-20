@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#6b4a9e" />
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
-<meta name="build" content="2026.08.20-b3ed42" />
+<meta name="build" content="2026.08.20-8083f5" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -627,7 +627,7 @@ const SCENARIOS = [
       retaliate: { grade: 'escape', title: '你也說出了傷人的話', emoji: '💬',
         text: '你一生氣就回罵了他。<br><br>他也馬上罵回來，兩個人的聲音越來越大。<br><br>老師走過來時，只看到你們兩個正在互相吵架。',
         lesson: '被威脅、被排擠的時候會生氣，很正常。<br><br>但<b>回一句傷人的話，常常會讓原本很清楚的事情變得更難處理</b>。<br><br>可以生氣，也可以離開現場，再把發生的事情告訴可信任的大人。' },
-      slip: { grade: 'good', title: '你開始躲著小柔', emoji: '💬',
+      slip: { grade: 'escape', title: '你開始躲著小柔', emoji: '💬',
         text: '你開始躲著小柔。<br><br>她沒有問你為什麼，只是又變回一個人吃飯。',
         lesson: '你告訴老師這一步，是全班最難的一件事。<br><br>但<b>被說「告狀精」的時候退縮，等於把小柔又還回去了</b>。<br><br>記住：<b>會罵你告狀的人，正是最怕被大人知道的人</b>。他罵你，代表你做對了。' },
       good: { grade: 'good', title: '你沒有跟著大家', emoji: '💬',
@@ -1224,7 +1224,7 @@ const SCENARIOS = [
       boundary: { grade: 'best', title: '你劃出了一條線', emoji: '💬',
         text: '你說：「因為上次要了兩次你才還，我會很不舒服。所以這次我不想借。」<br><br>他有點不高興，但沒有再說什麼。<br><br>過了幾天，他還是會跟你講話——只是不再跟你借錢了。',
         lesson: '你做了一件很難的事：<b>把「我不舒服」講出來，而且沒有罵他</b>。<br><br>這跟「小氣」完全不一樣。小氣是什麼都不給；<b>界線是「我可以幫你，但要照講好的來」</b>。<br><br>真正的朋友，聽到你的界線不會消失。會因為你設界線就翻臉的人，本來要的就不是友情。' },
-      slip: { grade: 'good', title: '你私下拿錢給他', emoji: '💬',
+      slip: { grade: 'escape', title: '你私下拿錢給他', emoji: '💬',
         text: '你私下拿了兩百塊給他。<br><br>一個禮拜後，他又來借了。',
         lesson: '你讓大人知道，這一步是對的。<br><br>但<b>因為愧疚而再借，等於把整件事歸零</b>——而且他學到的是「鬧一鬧就有錢」。<br><br><b>他被罵不是你造成的，是他自己的行為造成的。</b>你不需要為別人的行為負責。' },
       good: { grade: 'good', title: '他改去找別人借了', emoji: '💬',
@@ -1368,7 +1368,7 @@ const SCENARIOS = [
       },
     },
     endings: {
-      slip: { grade: 'good', title: '你回了他一句', emoji: '💬',
+      slip: { grade: 'escape', title: '你回了他一句', emoji: '💬',
         text: '你回了「對不起」。<br><br>他馬上接著說：「那你去跟你媽說是誤會好不好？」',
         lesson: '你說出來這件事，做得非常好，沒有一點錯。<br><br>但<b>「你害我」是他在讓你有罪惡感</b>——這正是他一開始要你保密用的同一招。<br><br><b>做錯事的人是他，需要道歉的也是他。</b>他傳來的每一則訊息，都直接給大人看就好，你一個字都不用回。' },
       good: { grade: 'good', title: '你先告訴了好朋友', emoji: '💬',
@@ -3045,7 +3045,7 @@ Object.assign(ART_SCENES, {
     '<g class="fadeDanger">' + GIRL(150, 118, 0.82, { pose: 'sit', dress: '#7fc1ed', mood: 'flat' }) +
     EMO(166, 106, '🍱', 13) + '</g>' +
     GIRL(52, 118, 0.9, { mood: 'flat' }) + EMO(76, 78, '💧', 13) +
-    HOLD1() + AGAIN('別躲開小柔')),
+    HOLD1('warn') + AGAIN('別躲開小柔')),
 
   // 🌏 疏散對了，但陪同學回教室拿書包
   'quake.slip': SVG('餘震來了，兩個人躲在教室的桌子底下',
@@ -3102,7 +3102,7 @@ Object.assign(ART_SCENES, {
     GIRL(56, 118, 0.9, { pose: 'reachR', mood: 'flat' }) +
     BOY(118, 118, 0.86) + EMO(86, 74, '💵', 15) +
     '<g class="fadeDanger">' + EMO(146, 62, '💵', 12) + EMO(162, 50, '💵', 11) + '</g>' +
-    HOLD1() + AGAIN('不是你的責任')),
+    HOLD1('warn') + AGAIN('不是你的責任')),
 
   // 📝 自己沒作弊，但沒提醒朋友
   'exam.slip': SVG('小美作弊被老師抓到，小女生在旁邊看著',
@@ -3121,7 +3121,7 @@ Object.assign(ART_SCENES, {
     '<rect x="136" y="84" width="32" height="9" rx="4.5" fill="#a8e6c0" stroke="#33224a" stroke-width="1"/>' +
     '<text x="152" y="91.5" font-size="6.5" fill="#33224a" text-anchor="middle">對不起</text>' +
     GIRL(54, 118, 0.92, { mood: 'flat' }) + EMO(80, 76, '😟', 14) +
-    HOLD1() + AGAIN('要道歉的是他')),
+    HOLD1('warn') + AGAIN('要道歉的是他')),
 
   // 🚔 掛掉了，但第二通聽下去
   'fakecop.slip': SVG('同一個號碼換一個身分又打來，小女生聽了幾句',
