@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#6b4a9e" />
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
-<meta name="build" content="2026.08.20-8083f5" />
+<meta name="build" content="2026.08.20-66259a" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -3641,6 +3641,11 @@ const GRADE_META = {
   escape: { label: '驚險', color: '#b06a00', bg: '#ffe6a8' },
   bad:    { label: '再試', color: '#a33', bg: '#ffd0d0' },
 };
+/* 圖鑑裡結局的排法：由好到壞。劇本裡的順序是當初寫下來的順序，
+   排出來會忽好忽壞，看不出要拼的是什麼。沒有等級的（後果卡模式）排最後。 */
+const GRADE_RANK = { best: 0, good: 1, escape: 2, bad: 3 };
+const byGrade = (endings) => (a, b) =>
+  (GRADE_RANK[endings[a].grade] ?? 9) - (GRADE_RANK[endings[b].grade] ?? 9);
 /* 後果卡模式：這類劇本沒有「比較好」的結局，只有「這樣選會發生什麼」。
    所以不打等級、不比較、不跳「比上次更好了」，只記錄走過哪些結果。 */
 const isCons = sc => !!(sc && sc.mode === 'consequence');
@@ -4090,7 +4095,7 @@ function renderGallery() {
       </div>
       ${SCENARIOS.map(sc => {
         const done = loadEnds()[sc.id] || {};
-        const keys = Object.keys(sc.endings);
+        const keys = Object.keys(sc.endings).sort(byGrade(sc.endings));
         const n = keys.filter(k => done[k]).length;
         return `
           <div class="gal">
