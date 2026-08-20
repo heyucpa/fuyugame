@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#6b4a9e" />
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
-<meta name="build" content="2026.08.19-6dafde" />
+<meta name="build" content="2026.08.20-83c4e6" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -2087,6 +2087,95 @@ const SCENARIOS = [
         lesson: '有兩個地方可以再走一次看看：<br><br>第一，<b>不要自己走樓梯下樓</b>。等不到人就待在道館，讓教練知道。<br><br>第二，<b>在樓梯間覺得不對勁，就馬上往回跑</b>。往上跑回道館不丟臉——多爬三層樓梯而已。<br><br>最後想跟姊姊說一句話：<b>你不用當英雄，也不用自己解決問題</b>。<br>你只要做一件事——<b>帶著妹妹，待在有大人的地方</b>。' },
     },
   },
+
+  /* ---------- 21. 同學賣的幸運手鍊 ---------- */
+  {
+    id: 'wish', emoji: '✨', title: '同學賣的幸運手鍊',
+    tag: '恐懼操控・金錢',
+    intro: '下課時間，隔壁班的小葳把你拉到走廊角落，從口袋裡拿出一條亮亮的手鍊。',
+    talk: '如果有同學跟你說「這個很靈，但不可以問、也不可以跟大人講」，你會怎麼想？<br><br>我們家買東西的規矩是什麼？多少錢以上要先問過爸媽？',
+    start: 'n1',
+    nodes: {
+      after: {
+        text: '媽媽聽完，帶你去跟老師說，老師處理了這件事。<br><br>過幾天，小葳傳訊息給你：<br><br>「就是你害我被記過。」<br><br>「而且我跟你講，你把手鍊丟掉會有不好的事喔。」',
+        hint: '她被處理了，還是想用同一招——讓你害怕。',
+        choices: [
+          { label: '不回她，把訊息拿給媽媽看', to: 'best' },
+          { label: '有點怕，偷偷把手鍊留著不敢丟', to: 'slip' },
+        ],
+      },
+      n1: {
+        text: '「這個超靈的！我戴了之後數學考 95 分。」<br><br>「網路上一條要 300，我這裡只要 200，而且只剩兩條喔。」',
+        hint: '「只剩兩條」「要買要快」——你在別的故事裡是不是也看過這種話？',
+        choices: [
+          { label: '聽起來好厲害，跟她買一條', to: 'bought' },
+          { label: '「我先回家問媽媽」', to: 'after' },
+          { label: '「謝謝，我不想買」', to: 'refuse' },
+          { label: '先問她這到底是什麼、哪裡來的', to: 'ask' },
+        ],
+      },
+      ask: {
+        text: '「就……網路上一個大姊姊賣的啦，很多人都跟她買。」<br><br>「你不要問那麼多，<b>問太多就不靈了。</b>」',
+        hint: '連她自己都說不清楚那是什麼。而且「不可以問」本身就是一個訊號。',
+        choices: [
+          { label: '「不能問？那我更不要了」', to: 'refuse' },
+          { label: '大家都有買，應該沒問題吧', to: 'bought' },
+          { label: '「那我拿回家給媽媽看」', to: 'after' },
+        ],
+      },
+      refuse: {
+        text: '「你不買喔？」<br><br>她停了一下：「那……你不要跟別人講我在賣，好不好？」<br><br>隔天，班上有幾個同學開始不太跟你說話。',
+        hint: '她要你保守的，到底是什麼？',
+        choices: [
+          { label: '「我不會亂講，但這件事我要跟老師說」', to: 'after' },
+          { label: '「好啦我不講」，然後什麼都不做', to: 'good' },
+          { label: '不想被排擠，還是跟她買一條', to: 'bought' },
+        ],
+      },
+      bought: {
+        text: '你把 200 元給了她。<br><br>過了一個禮拜，數學還是沒有變好。你跟她說，她回答：<br><br>「因為你沒有每天戴啊。而且要再買一個吊飾配著才有用，這次 500。」',
+        hint: '為什麼「沒有效」的答案，永遠是「要再花更多錢」？',
+        choices: [
+          { label: '「不要了，我要跟媽媽說」', to: 'escape' },
+          { label: '再買一個，這次 500 元', to: 'deeper' },
+          { label: '「那我把手鍊還你，錢還我」', to: 'scared' },
+        ],
+      },
+      deeper: {
+        text: '你又給了 500 元。<br><br>她這次說：「而且不可以拿下來喔，<b>拿下來會有不好的事</b>。也不可以跟大人講，<b>講了就不靈了</b>。」<br><br>你晚上開始睡不好。',
+        hint: '讓你害怕、又不准你說——這兩件事加在一起的時候，正是最需要告訴大人的時候。',
+        choices: [
+          { label: '「我不管了，我要跟媽媽說」', to: 'escape' },
+          { label: '不敢拿下來，也不敢說', to: 'bad' },
+        ],
+      },
+      scared: {
+        text: '「不能還喔。」她說：「還了會有不好的事發生在你身上。」<br><br>你被嚇到了。',
+        hint: '她拿不出證據，只拿得出你的害怕。',
+        choices: [
+          { label: '「你這樣講，我更要告訴大人」', to: 'escape' },
+          { label: '太害怕了，什麼都不敢說', to: 'bad' },
+        ],
+      },
+    },
+    endings: {
+      slip: { grade: 'good', title: '手鍊還留在抽屜裡', emoji: '👍',
+        text: '你沒有回她的訊息。<br><br>但那條手鍊你不敢丟，放在抽屜最裡面。<br><br>每次看到，還是會想起她說的那句話。',
+        lesson: '你做對了最重要的事——<b>沒有回她，而且讓大人知道了</b>。<br><br>但「不敢丟」代表那句嚇你的話還在起作用。<br><br><b>可以請媽媽陪你一起丟。</b>兩個人一起做，那句話就沒有力氣了。' },
+      good: { grade: 'good', title: '你自己沒買', emoji: '👍',
+        text: '你沒有買，錢還在自己的撲滿裡。<br><br>但那條手鍊還在班上傳來傳去。後來你才知道，有同學前前後後花了快兩千塊。',
+        lesson: '你沒有被說動，這一點很好。<br><br>不過<b>你已經看穿的事，別人可能還沒看穿</b>。<br><br>如果你覺得怪怪的，也可以再多做一步：<b>把這件事告訴老師或爸媽</b>。大人可以幫忙判斷，也能提醒其他同學。' },
+      best: { grade: 'best', title: '你沒有被嚇到', emoji: '🌟',
+        text: '你把訊息拿給媽媽看。媽媽說：「她只是想讓你害怕而已。」<br><br>那天晚上，媽媽陪你把手鍊丟進垃圾桶。<br><br><b>什麼事都沒有發生。</b>',
+        lesson: '記住這兩句就好：<br><br><b>「不照做就會有不好的事」是最常見的一種控制方法。</b>假警察用它、跳出來的假中獎視窗用它，同學也可能用它。<br><br><b>越是叫你「不可以問」「不可以說」，越是要說。</b><br><br>還有一件事：<b>保證「一定有效」的東西，是在賣你希望</b>——真正確定的事情不需要保證。' },
+      escape: { grade: 'escape', title: '你踩了煞車', emoji: '😮‍💨',
+        text: '你把事情告訴媽媽。媽媽陪你跟老師說了，也提醒了其他家長。<br><br>已經花掉的錢拿不回來，但你沒有再花更多，晚上也不用再擔心了。',
+        lesson: '你停在最關鍵的地方。<br><br><b>發現不對就立刻停手</b>，不要為了拿回前面的錢，再照對方說的繼續付。這一招在網路購物、在同學之間，都是一樣的。<br><br>而且——<b>害怕的時候更要說</b>。你越不敢說，對方越好控制你。' },
+      bad: { grade: 'bad', title: '你一個人擔心了很久', emoji: '🔁',
+        text: '故事到這裡停下來了。<br><br>你沒有跟任何人說，晚上常常睡不好，看到那條手鍊就緊張。<br><br>而小葳，還在賣給別的同學。',
+        lesson: '<b>害怕的時候不敢說，正是對方希望你做的事。</b>他們就是靠這個讓你一直照做。<br><br>你可以跟爸媽說、跟老師說。<b>不管過了多久，說出來都不嫌晚。</b><br><br>回去再走一次，找找看哪裡可以早一點開口。' },
+    },
+  },
 ];
 
 /* ===== 結局插圖（inline SVG，動畫在 CSS） ===== */
@@ -3167,6 +3256,79 @@ Object.assign(ART_SCENES, {
     GIRL(52, 118, 0.94, { pose: 'reachR' }) +
     BOY(148, 118, 0.86, '#8a8f96') +
     EMO(176, 76, '😐', 14)),
+});
+
+/* ===== 第 21 篇：同學賣的幸運手鍊 =====
+   刻意不畫任何真實的宗教或信仰物品，只畫一條普通的串珠手鍊。
+   也刻意不畫任何「靈異」元素——這篇的傷害是花錢、害怕、不敢說，不是超自然。
+*/
+
+// 一條普通的串珠手鍊
+const BAND = (x, y, s, dim) =>
+  '<g transform="translate(' + x + ',' + y + ') scale(' + s + ')" opacity="' + (dim ? .5 : 1) + '">' +
+  '<ellipse cx="0" cy="0" rx="14" ry="9" fill="none" stroke="#c9a227" stroke-width="3.2"/>' +
+  Array.from({ length: 6 }, (_, i) => {
+    const a = i / 6 * Math.PI * 2;
+    return '<circle cx="' + (Math.cos(a) * 14).toFixed(1) + '" cy="' + (Math.sin(a) * 9).toFixed(1) +
+      '" r="3.4" fill="' + ['#ff8fb8', '#7fc1ed', '#ffd23f', '#a8e6c0', '#c9a2e8', '#ffb37f'][i] +
+      '" stroke="#33224a" stroke-width="1.1"/>';
+  }).join('') + '</g>';
+
+// 垃圾桶
+const BIN = (x, y, s) =>
+  '<g transform="translate(' + x + ',' + y + ') scale(' + s + ')">' +
+  '<path d="M-16 -34 L-13 0 L13 0 L16 -34 Z" fill="#9aa4ad" stroke="#33224a" stroke-width="2"/>' +
+  '<rect x="-19" y="-40" width="38" height="7" rx="2.5" fill="#7d868f" stroke="#33224a" stroke-width="1.8"/>' +
+  '<path d="M-7 -28 v18 M0 -28 v18 M7 -28 v18" stroke="#7d868f" stroke-width="1.6"/></g>';
+
+Object.assign(ART_SCENES, {
+  // 🌟 把訊息拿給媽媽看，媽媽陪你把手鍊丟掉，什麼事都沒發生
+  'wish.best': SVG('媽媽陪著小女生把手鍊丟進垃圾桶，天氣很好，什麼事都沒有發生',
+    BG('#eafaf1', '#bfe6cf') + SUNBURST(104, 52) +
+    BIN(148, 118, 1.0) +
+    '<g class="bob">' + BAND(148, 62, 0.8) + '</g>' +
+    MOM(46, 118, 1.0, 'reachR') +
+    GIRL(96, 118, 1.0, { pose: 'cheer' }) +
+    '<g class="twinkle">' + EMO(66, 44, '✨', 16) + EMO(124, 36, '✨', 13) + '</g>'),
+
+  // 👍 自己沒買，但手鍊還在班上傳
+  'wish.good': SVG('小女生沒有買，但手鍊在班上同學之間傳來傳去',
+    BG('#f2f7ff', '#c8dcf0') +
+    GIRL(38, 118, 0.94, { pose: 'reachR' }) + EMO(66, 66, '🚫', 18, 'clash') +
+    '<g class="fadeDanger">' +
+    GIRL(118, 118, 0.78, { dress: '#a8e6c0', mood: 'flat' }) +
+    BOY(154, 118, 0.74, '#b6a7d6') +
+    GIRL(184, 118, 0.7, { dress: '#ffd23f', mood: 'flat' }) +
+    BAND(136, 74, 0.62) + EMO(160, 52, '💸', 14) + EMO(180, 40, '💸', 12) + '</g>'),
+
+  // 😮‍💨 花過錢了，但停下來去找媽媽
+  'wish.escape': SVG('小女生把手鍊放在桌上，轉身走向媽媽',
+    BG('#fff6e6', '#d8c3a0') +
+    DESK(44, 118, 0.72) +
+    BAND(44, 60, 0.78, true) +
+    GIRL(96, 118, 1.0, { pose: 'reachR' }) +
+    MOM(160, 118, 1.0, 'reachL') +
+    EMO(126, 44, '💬', 18)),
+
+  // 👍 沒回訊息，但手鍊不敢丟
+  'wish.slip': SVG('抽屜半開著，手鍊放在最裡面，小女生在旁邊看著',
+    BG('#f4f0fb', '#cbbce0') +
+    '<rect x="104" y="58" width="88" height="60" rx="4" fill="#e0a76a" stroke="#33224a" stroke-width="2.2"/>' +
+    '<rect x="112" y="66" width="72" height="44" rx="3" fill="#3b3352"/>' +
+    '<rect x="132" y="52" width="32" height="8" rx="3" fill="#c98f52" stroke="#33224a" stroke-width="1.6"/>' +
+    BAND(158, 96, 0.72, true) +
+    GIRL(48, 118, 0.98, { mood: 'flat' }) +
+    EMO(76, 56, '💭', 17)),
+
+  // 🔁 一個人擔心很久，晚上睡不好
+  'wish.bad': SVG('深夜的房間，小女生坐在床上睡不著，手鍊在手上',
+    BG('#2e2745', '#463d63') +
+    '<circle cx="168" cy="30" r="12" fill="#ffeec2" opacity=".85"/>' +
+    '<rect x="30" y="92" width="140" height="26" rx="5" fill="#5b5080" stroke="#33224a" stroke-width="2"/>' +
+    '<rect x="30" y="82" width="34" height="14" rx="5" fill="#e9e3f5" stroke="#33224a" stroke-width="1.6"/>' +
+    GIRL(88, 92, 0.9, { pose: 'sit', mood: 'sad' }) +
+    BAND(146, 84, 0.62) +
+    '<g class="fadeDanger">' + EMO(38, 56, '💭', 18) + EMO(150, 60, '💭', 14) + '</g>'),
 });
 
 /* ===== 每個結局的專屬畫面（後 8 個劇本） ===== */
