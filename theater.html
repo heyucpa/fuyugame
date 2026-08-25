@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#6b4a9e" />
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
-<meta name="build" content="2026.08.20-107575" />
+<meta name="build" content="2026.08.25-edf28a" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -3682,6 +3682,12 @@ function guessOn() { return localStorage.getItem(pKey('guess')) !== 'off'; }
 function toggleGuess() {
   try { localStorage.setItem(pKey('guess'), guessOn() ? 'off' : 'on'); } catch (e) {}
 }
+/* 結局頁的「📖 回顧你的選擇」——已經看過很多次之後會變成雜訊，可以關掉。
+   一樣是每個玩家各自的設定。 */
+function replayOn() { return localStorage.getItem(pKey('replay')) !== 'off'; }
+function toggleReplay() {
+  try { localStorage.setItem(pKey('replay'), replayOn() ? 'off' : 'on'); } catch (e) {}
+}
 // 回傳 'hit'（猜對）/ 'over'（以為不錯，其實不是）/ 'under'（以為不好，其實不錯）
 function predictOutcome(p, g) {
   if (p === 'idk') return 'idk';
@@ -3880,6 +3886,7 @@ function renderMenu() {
         <button class="mini" id="music">${Sfx.isBgmOn() ? Sfx.trackName() : '🎵 音樂關'}</button>
         <button class="mini" id="reset">🗑️ 清除紀錄</button>
         <button class="mini" id="guessmode">${guessOn() ? '🤔 先猜再看' : '⚡ 直接看答案'}</button>
+        <button class="mini" id="replaymode">${replayOn() ? '📖 回顧開' : '📖 回顧關'}</button>
         <button class="mini" id="check">📊 判斷紀錄</button>
         <button class="mini" id="map">🗺️ 分支圖</button>
         <button class="mini" id="back">🎲 回骰子遊戲</button>
@@ -3915,6 +3922,7 @@ function renderMenu() {
   document.getElementById('music').oncontextmenu = e => { e.preventDefault(); Sfx.toggleBgm(); render(); };
   document.getElementById('galbtn').onclick = () => { Sfx.tap(); view = 'gallery'; render(); };
   document.getElementById('guessmode').onclick = () => { Sfx.tap(); toggleGuess(); render(); };
+  document.getElementById('replaymode').onclick = () => { Sfx.tap(); toggleReplay(); render(); };
   document.getElementById('check').onclick = () => { Sfx.tap(); view = 'check'; render(); };
   document.getElementById('ver').onclick = () => {
     // 換一個查詢字串，瀏覽器就不會拿舊的快取
@@ -4218,6 +4226,7 @@ function renderEnding() {
             <span class="sf-txt">大部分的人都是安全、願意幫忙的。<br>
               這個故事是在練習：<b>少數真的遇到危險的時候，你可以怎麼保護自己。</b></span>
           </div>
+          ${replayOn() ? `
           <div class="replay">
             <h3>📖 回顧你的選擇</h3>
             ${path.map((p, i) => `
@@ -4226,7 +4235,7 @@ function renderEnding() {
                 <span><span style="color:#6b5a7e;">${esc(p.text.slice(0, 26))}${p.text.length > 26 ? '…' : ''}</span><br>
                 <b style="color:#6b4a9e;">→ ${esc(p.label)}</b></span>
               </div>`).join('')}
-          </div>
+          </div>` : ''}
         </div>
       </div>
       <div class="row">
