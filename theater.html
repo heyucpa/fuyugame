@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#6b4a9e" />
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
-<meta name="build" content="2026.08.25-edf28a" />
+<meta name="build" content="2026.08.26-216111" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -132,15 +132,19 @@
   .gal h3 { margin: 0 0 8px; font-size: 15px; color: #6b4a9e;
             display: flex; align-items: center; gap: 6px; }
   .gal h3 .n { margin-left: auto; font-size: 13px; color: #8a7fa8; }
-  .gal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-  @media (min-width: 560px) { .gal-grid { grid-template-columns: repeat(3, 1fr); } }
+  /* 一定要用 minmax(0, 1fr)：1fr 等於 minmax(auto, 1fr)，而 auto 的下限是
+     內容的 min-content——格子裡的 SVG 會把欄位撐得比容器還寬，整排就溢出畫面。 */
+  .gal-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  @media (min-width: 560px) { .gal-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
-  .gal-cell { border: 2.5px solid #cbbce0; border-radius: 10px; overflow: hidden; background: #fff; }
+  .gal-cell { border: 2.5px solid #cbbce0; border-radius: 10px; overflow: hidden;
+              background: #fff; min-width: 0; }
   .gal-cell svg { width: 100%; display: block; }
   .gal-cap { font-size: 11px; font-weight: 800; padding: 5px 6px; line-height: 1.35; }
 
   .gal-lock {
-    aspect-ratio: 200 / 130; border: 2.5px dashed #cbbce0; border-radius: 10px;
+    aspect-ratio: 200 / 130; min-width: 0;
+    border: 2.5px dashed #cbbce0; border-radius: 10px;
     background: repeating-linear-gradient(45deg, #f4f0fb, #f4f0fb 10px, #eae4f4 10px, #eae4f4 20px);
     display: flex; align-items: center; justify-content: center;
     font-size: 30px; color: #b8abd4; font-weight: 900;
