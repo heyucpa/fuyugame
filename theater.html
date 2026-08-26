@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#6b4a9e" />
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
-<meta name="build" content="2026.08.26-14de77" />
+<meta name="build" content="2026.08.26-bdf887" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -4276,6 +4276,25 @@ function renderEnding() {
   document.addEventListener(ev, () => Sfx.unlock(), { once: true }));
 
 render();
+
+/* 一打開就自動對一次版本。
+   頁面上那兩行 <meta http-equiv="Cache-Control"> 其實瀏覽器不理，
+   只有伺服器回傳的標頭算數，而 GitHub Pages 的我們改不了——
+   所以按重新載入不一定拿得到新版，已經害人卡在舊版三次。
+   這裡靜靜問一次伺服器，有新版才重載，網址帶上版本號避開快取。
+   sessionStorage 那道鎖確保「同一次開啟最多只自動重載一次」，不會變成無限重整。 */
+(async function autoUpdate() {
+  if (location.protocol === 'file:') return;          // 本機開檔不用查
+  if (sessionStorage.getItem('theater-autoreload')) return;
+  try {
+    const r = await fetch(location.pathname + '?t=' + Date.now(), { cache: 'no-store' });
+    const m = (await r.text()).match(/name="build" content="([^"]+)"/);
+    if (m && m[1] !== BUILD) {
+      sessionStorage.setItem('theater-autoreload', '1');
+      location.replace(location.pathname + '?v=' + m[1]);
+    }
+  } catch (e) { /* 沒網路就算了，照樣可以玩 */ }
+})();
 </script>
 </body>
 </html>
