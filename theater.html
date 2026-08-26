@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#6b4a9e" />
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
-<meta name="build" content="2026.08.26-c9f24c" />
+<meta name="build" content="2026.08.26-1b0d3d" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -341,7 +341,9 @@
     .app { max-width: 1060px; }
     .endgrid { grid-template-columns: minmax(300px, 42%) 1fr; gap: 24px; }
     .storygrid { grid-template-columns: 1fr 1fr; gap: 24px; }
-    .scene { max-width: 100%; }
+    /* 只有在左右分欄裡的插圖才撐滿——它的欄本來就只有 42%。
+       開場定場圖不在格線裡，撐滿會變成一整片大圖，維持上面的 360px 上限。 */
+    .endgrid .scene, .storygrid .scene { max-width: 100%; }
     .result h1 { font-size: 28px; }
   }
 </style>
