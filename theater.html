@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#6b4a9e" />
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
-<meta name="build" content="2026.08.26-216111" />
+<meta name="build" content="2026.08.26-14de77" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -3928,9 +3928,22 @@ function renderMenu() {
   document.getElementById('guessmode').onclick = () => { Sfx.tap(); toggleGuess(); render(); };
   document.getElementById('replaymode').onclick = () => { Sfx.tap(); toggleReplay(); render(); };
   document.getElementById('check').onclick = () => { Sfx.tap(); view = 'check'; render(); };
-  document.getElementById('ver').onclick = () => {
-    // 換一個查詢字串，瀏覽器就不會拿舊的快取
-    location.href = location.pathname + '?v=' + Math.floor(Date.now() / 1000);
+  document.getElementById('ver').onclick = async (ev) => {
+    // 舊版只是換一個查詢字串重新載入，但按下去畫面一閃，
+    // 根本不知道到底有沒有更新到。改成先去問伺服器最新的 build 是多少，
+    // 有新的才重新載入，沒有就直接說「已經是最新版」。
+    const btn = ev.currentTarget;
+    btn.textContent = '檢查中…';
+    try {
+      const r = await fetch(location.pathname + '?t=' + Date.now(), { cache: 'no-store' });
+      const m = (await r.text()).match(/name="build" content="([^"]+)"/);
+      if (!m) throw new Error('讀不到版本');
+      if (m[1] !== BUILD) { location.href = location.pathname + '?v=' + m[1]; return; }
+      btn.textContent = '已經是最新版　' + BUILD;
+    } catch (e) {
+      // 用 file:// 打開、或連不上網的時候，就退回原本硬重載的作法
+      location.href = location.pathname + '?v=' + Math.floor(Date.now() / 1000);
+    }
   };
   document.getElementById('map').onclick = () => { location.href = './map.html'; };
   document.getElementById('back').onclick = () => { location.href = './index.html'; };
