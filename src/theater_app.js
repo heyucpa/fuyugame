@@ -123,6 +123,47 @@ function who() { return players().find(p => p.id === whoId()) || players()[0]; }
 function setWho(id) { try { localStorage.setItem(CKEY, id); } catch (e) {} }
 
 const pKey = k => 'theater-' + k + ':' + whoId();
+
+/* 按日期／時段命名的 key 會一直長出來，而且永遠不會有人去刪：
+     hunt-<日期>#<格>    一天最多 144 個（十分鐘一輪）
+     town-<日期>-<時段>  一天 4 個
+     huntday-<日期>      一天 1 個
+   一年下來一個玩家大約七千個，兩個玩家一萬四。
+   這些 key 過了那一天就完全沒用，開起來就掃掉。
+
+   比對日期一定要連分隔符號一起比：只用 indexOf(todayStamp()) 的話，
+   今天是 2026-10-3 會把 2026-10-30 的也當成今天。 */
+const DATED_PREFIX = ['theater-hunt-', 'theater-huntday-', 'theater-town-'];
+function sweepOldKeys() {
+  let today;
+  try { today = todayStamp(); } catch (e) { return; }
+  const keep = ['theater-hunt-' + today + '#',
+                'theater-huntday-' + today + ':',
+                'theater-town-' + today + '-'];
+  try {
+    const all = [];
+    for (let i = 0; i < localStorage.length; i++) all.push(localStorage.key(i));
+    all.forEach(k => {
+      if (!k || !DATED_PREFIX.some(p => k.indexOf(p) === 0)) return;
+      if (keep.some(p => k.indexOf(p) === 0)) return;
+      localStorage.removeItem(k);
+    });
+  } catch (e) {}
+}
+
+/* 清掉某一個玩家的全部東西。按鈕上寫「清除所有紀錄」，
+   那就真的要全部——以前漏掉寶物盒跟熟悉度，按完寶物還在。 */
+function wipePlayer(id) {
+  const suffix = ':' + id;
+  try {
+    const all = [];
+    for (let i = 0; i < localStorage.length; i++) all.push(localStorage.key(i));
+    all.forEach(k => {
+      if (k && k.indexOf('theater-') === 0 && k.slice(-suffix.length) === suffix)
+        localStorage.removeItem(k);
+    });
+  } catch (e) {}
+}
 // 舊的單人存檔搬給第一個玩家，只做一次
 (function migrate() {
   try {
@@ -1152,10 +1193,8 @@ function renderMenu() {
   document.getElementById('map').onclick = () => { location.href = './map.html'; };
   document.getElementById('back').onclick = () => { location.href = './index.html'; };
   document.getElementById('reset').onclick = () => {
-    if (confirm('要清除「' + who().name + '」的所有紀錄嗎？')) {
-      localStorage.removeItem(pKey('progress'));
-      localStorage.removeItem(pKey('seen'));   // 舊版留下的，清掉
-      localStorage.removeItem(pKey('ends'));
+    if (confirm('要清除「' + who().name + '」的所有紀錄嗎？\n\n結局圖鑑、寶物圖鑑、跟鎮民的熟悉度都會歸零。')) {
+      wipePlayer(whoId());
       render();
     }
   };
@@ -1432,6 +1471,7 @@ function renderEnding() {
 ['pointerdown', 'keydown'].forEach(ev =>
   document.addEventListener(ev, () => Sfx.unlock(), { once: true }));
 
+sweepOldKeys();   // 把昨天以前那一堆按日期命名的 key 掃掉
 render();
 
 /* 一打開就自動對一次版本。

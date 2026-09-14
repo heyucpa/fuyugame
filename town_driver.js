@@ -309,6 +309,40 @@
       // 新的那一輪要是還沒找到的狀態
       if (foundNow()) fails.push('換了一輪還算成已經找到');
     }
+    /* 按日期命名的 key 會一直長，而且永遠沒人刪。
+       一年下來一個玩家大約七千個，兩個玩家一萬四。 */
+    setDay(20);
+    var junk = ['theater-hunt-2026-10-19#5:p1', 'theater-hunt-2026-10-2#7:p1',
+                'theater-town-2026-10-19-dusk:p1', 'theater-huntday-2026-10-19:p1',
+                // 這一個是陷阱：今天是 2026-10-2 的話，用 indexOf 比會把它當成今天
+                'theater-hunt-2026-10-200#1:p1'];
+    var keepers = ['theater-hunt-2026-10-20#5:p1', 'theater-town-2026-10-20-dusk:p1',
+                   'theater-huntday-2026-10-20:p1', 'theater-treasures:p1', 'theater-ends:p1'];
+    junk.concat(keepers).forEach(function(k){ localStorage.setItem(k, '1'); });
+    sweepOldKeys();
+    junk.forEach(function(k){ if (localStorage.getItem(k)) fails.push('舊的 key 沒被掃掉：'+k); });
+    keepers.forEach(function(k){ if (!localStorage.getItem(k)) fails.push('不該掃的被掃掉了：'+k); });
+
+    /* 「清除紀錄」按鈕上寫的是「所有紀錄」，那就要真的全部——
+       以前只清 progress/seen/ends，按完寶物盒跟熟悉度都還在。 */
+    ['theater-ends:p1','theater-treasures:p1','theater-friend:p1',
+     'theater-progress:p1','theater-town-2026-10-20-dusk:p1',
+     'theater-ends:p2'].forEach(function(k){ localStorage.setItem(k, '1'); });
+    // 要按真的那顆按鈕，不是直接叫 wipePlayer——不然改壞按鈕這一關也驗不出來
+    var realConfirm = window.confirm;
+    window.confirm = function(){ return true; };
+    view='menu'; render();
+    var rb = document.getElementById('reset');
+    if (!rb) fails.push('選單上沒有「清除紀錄」');
+    else rb.onclick();
+    window.confirm = realConfirm;
+    ['theater-ends:p1','theater-treasures:p1','theater-friend:p1',
+     'theater-progress:p1','theater-town-2026-10-20-dusk:p1'].forEach(function(k){
+      if (localStorage.getItem(k)) fails.push('清除紀錄沒有清掉 '+k);
+    });
+    if (!localStorage.getItem('theater-ends:p2')) fails.push('清除紀錄把別的玩家也清掉了');
+    localStorage.clear();
+
     /* 新增一篇劇本卻忘了排進 PLACE_POOL 的話，它在小鎮裡永遠不會出現，
        而且完全沒有錯誤訊息——只有從選單進去才玩得到。 */
     SCENARIOS.forEach(function(sc){
