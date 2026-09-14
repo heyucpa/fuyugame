@@ -267,6 +267,16 @@
       setDay(8); render();
       if (!document.querySelector('.hide')) fails.push('換了一天卻沒有新的東西可以找');
     }
+    /* 新增一篇劇本卻忘了排進 PLACE_POOL 的話，它在小鎮裡永遠不會出現，
+       而且完全沒有錯誤訊息——只有從選單進去才玩得到。 */
+    SCENARIOS.forEach(function(sc){
+      if (!PLACE_OF[sc.id]) fails.push('「'+sc.title+'」沒有排進任何地點，小鎮裡永遠遇不到');
+    });
+    Object.keys(PLACE_OF).forEach(function(id){
+      if (!SCENARIOS.some(function(sc){ return sc.id===id; }))
+        fails.push(id+' 排進了地點池，但找不到這篇劇本');
+    });
+
     /* 六個地點每個都要有跟妹妹一起的小事。
        妹妹本來只出現在家裡，其他五個地方她完全不在——
        但現實裡姊姊去哪都帶著妹妹。 */

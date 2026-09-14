@@ -290,9 +290,9 @@ const GREET_TOWN = {
 
    小人站在哪裡跟著現實時間走，鎮上的人每天講的話也不一樣。 */
 const PLACE_POOL = {
-  school: ['bully', 'quake', 'money', 'candy', 'knife', 'wish'],
+  school: ['bully', 'quake', 'money', 'candy', 'knife', 'wish', 'sisbully'],
   home:   ['home', 'fire', 'fakecop', 'shop', 'imposter', 'exam', 'online', 'secret', 'scam'],
-  shop:   ['lost', 'breakfast'],
+  shop:   ['lost', 'breakfast', 'sislost'],
   park:   ['road', 'gate'],
   dojo:   ['dojo'],
   pool:   ['pool'],

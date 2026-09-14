@@ -21,6 +21,7 @@ cat src/theater_head.html \
     src/art_scenes_i.js \
     src/art_scenes_intro.js \
     src/art_town.js \
+    src/art_scenes_sis.js \
     src/art_scenes_b.js \
     src/theater_app.js > theater.html
 printf '</script>\n</body>\n</html>\n' >> theater.html
