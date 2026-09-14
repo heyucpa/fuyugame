@@ -1159,12 +1159,18 @@ function renderMenu() {
         <span class="sep">·</span>
         <span>🖼️ 圖鑑 ${seenTotal()} / ${totalEnds()}</span>
       </button>
-      <div class="pick-grid">
-        ${SCENARIOS.map(s => {
+      ${(() => {
+        /* 27 篇排成一長條要捲很久，改成照地點分組——
+           而且順序跟小鎮地圖一樣，她在地圖上點哪裡、在這裡就找得到同一批。
+           每一組標「還有幾篇沒玩過」，她一眼知道哪裡還有新的。 */
+        const order = ['home', 'school', 'shop', 'park', 'dojo', 'pool'];
+        const used = {};
+        const card = (s) => {
           const cons = isCons(s);
-          const seen = cons ? endsSeen(s.id) : 0;
           const g = cons ? null : p[s.id];
-          const m = g ? GRADE_META[g] : null;
+          const got = endsSeen(s.id), all = Object.keys(s.endings).length;
+          const icon = cons ? '' :
+            (g === 'best' ? '🌟' : g === 'good' ? '👍' : g === 'escape' ? '😮‍💨' : g === 'bad' ? '🔁' : '');
           return `
             <button class="pick" data-id="${esc(s.id)}">
               <span class="ico">${s.emoji}</span>
@@ -1172,17 +1178,28 @@ function renderMenu() {
                 <span class="t">${esc(s.title)}</span>
                 <span class="g">${esc(s.tag)}</span>
               </span>
-              ${(() => {
-                const got = endsSeen(s.id), all = Object.keys(s.endings).length;
-                if (!got) return '<span class="done" style="opacity:.25;">▶️</span>';
-                const icon = cons ? '' :
-                  (g === 'best' ? '🌟' : g === 'good' ? '👍' : g === 'escape' ? '😮‍💨' : g === 'bad' ? '🔁' : '');
-                return `<span class="done" title="走過 ${got} / ${all} 種結局"
-                  style="font-size:12.5px; font-weight:900; color:#6b4a9e; white-space:nowrap;">${icon} ${got}/${all}</span>`;
-              })()}
+              ${!got ? '<span class="done" style="opacity:.25;">▶️</span>'
+                     : `<span class="done" title="走過 ${got} / ${all} 種結局"
+                          style="font-size:12.5px; font-weight:900; color:#6b4a9e; white-space:nowrap;">${icon} ${got}/${all}</span>`}
             </button>`;
-        }).join('')}
-      </div>
+        };
+        const groups = order.map(k => {
+          const list = (PLACE_POOL[k] || []).map(id => SCENARIOS.find(x => x.id === id)).filter(Boolean);
+          list.forEach(x => { used[x.id] = 1; });
+          return { name: PLACE_NAME[k], emoji: (PLACES.find(x => x.key === k) || {}).emoji || '📍', list: list };
+        });
+        // 沒排進地點的不能就這樣消失（走查有在擋，但這裡也接住）
+        const rest = SCENARIOS.filter(x => !used[x.id]);
+        if (rest.length) groups.push({ name: '其他', emoji: '📦', list: rest });
+        return groups.filter(gr => gr.list.length).map(gr => {
+          const left = gr.list.filter(x => !endsSeen(x.id)).length;
+          return `<div class="gal">
+            <h3>${gr.emoji} ${esc(gr.name)}
+              <span class="n">${left ? '還有 ' + left + ' 篇沒玩過' : '都玩過了'}</span></h3>
+            <div class="pick-grid">${gr.list.map(card).join('')}</div>
+          </div>`;
+        }).join('');
+      })()}
       <div class="row" style="margin-top:14px;">
         <button class="mini" id="mute">${Sfx.isMuted() ? '🔇 靜音中' : '🔊 有聲'}</button>
         <button class="mini" id="music">${Sfx.isBgmOn() ? Sfx.trackName() : '🎵 音樂關'}</button>

@@ -343,6 +343,18 @@
     if (!localStorage.getItem('theater-ends:p2')) fails.push('清除紀錄把別的玩家也清掉了');
     localStorage.clear();
 
+    /* 劇本選單照地點分組之後，每一篇都必須在選單上出現得到。
+       漏掉一篇的話她從選單永遠點不到那一個故事。 */
+    view='menu'; render();
+    var onMenu = {};
+    document.querySelectorAll('.pick[data-id]').forEach(function(b){ onMenu[b.dataset.id]=1; });
+    SCENARIOS.forEach(function(sc){
+      if (!onMenu[sc.id]) fails.push('「'+sc.title+'」沒有出現在劇本選單上');
+    });
+    if (document.querySelectorAll('.pick[data-id]').length !== SCENARIOS.length)
+      fails.push('選單上的篇數對不上：'+document.querySelectorAll('.pick[data-id]').length+
+                 ' vs '+SCENARIOS.length);
+
     /* 新增一篇劇本卻忘了排進 PLACE_POOL 的話，它在小鎮裡永遠不會出現，
        而且完全沒有錯誤訊息——只有從選單進去才玩得到。 */
     SCENARIOS.forEach(function(sc){
