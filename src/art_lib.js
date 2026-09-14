@@ -3,10 +3,18 @@
    人物以「腳底為原點」的區域座標繪製，再用 transform 擺到定位
 */
 
-// 女孩：pose = stand / cheer / run / reachR / reachL / hang / shout / sit
+/* 女孩：pose = stand / cheer / run / reachR / reachL / hang / shout / sit
+   沒指定顏色就是「主角」，而主角的裙子跟著玩家走：
+   妹妹玩的時候，118 張結局圖裡的主角全部變成黃裙子的那個。
+
+   一定要用 CSS 變數，不能呼叫函式拿顏色——
+   ART_SCENES 那一大包是「載入時就算好的字串」，
+   換玩家的時候那些字串早就固定了，函式版本完全不會跟著變。 */
+const ME_DRESS = 'var(--me, #ff8fb8)', SIB_DRESS = 'var(--sib, #ffd23f)';
 const GIRL = (x, y, s, o) => {
   o = o || {};
-  const mood = o.mood || 'happy', dress = o.dress || '#ff8fb8', pose = o.pose || 'stand';
+  const mood = o.mood || 'happy', pose = o.pose || 'stand';
+  const dress = o.dress || ME_DRESS;
   let arms = '', legs = '', bottom = 0;
   if (pose === 'cheer')       arms = LIMB(-8, -26, -21, -47, 6) + LIMB(8, -26, 21, -47, 6);
   else if (pose === 'run')  { arms = LIMB(-8, -26, -19, -14, 6) + LIMB(8, -26, 21, -38, 6);

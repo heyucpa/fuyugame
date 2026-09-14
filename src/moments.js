@@ -15,7 +15,7 @@
 const MOMENTS = [
 
   /* ---------- 🏠 家 ---------- */
-  { id: 'm-crayon', place: 'home', sis: true,
+  { id: 'm-crayon', place: 'home', sis: true, sib: 'big',
     text: '妹妹把你的色筆弄斷了。<br><br>她抓著兩截色筆，很緊張地看著你，一句話都不敢講。',
     choices: [
       { label: '跟她說沒關係', reply: '妹妹整個鬆了一口氣，跑去房間拿她最寶貝的貼紙簿，硬要送你一張。' },
@@ -43,7 +43,7 @@ const MOMENTS = [
       { label: '自己躺回去', reply: '你翻了個身，數了一下呼吸，慢慢又睡著了。<br><br>早上起來覺得，好像也沒那麼可怕。' },
     ] },
 
-  { id: 'm-sisterdraw', place: 'home', sis: true,
+  { id: 'm-sisterdraw', place: 'home', sis: true, sib: 'big',
     text: '妹妹畫了一張圖要給你看。<br><br>老實說……看不太出來那是什麼。',
     choices: [
       { label: '問她畫的是什麼', reply: '「是姊姊啊！」她指著中間那一團說。<br><br>你看了第二次，好像真的有點像。' },
@@ -64,7 +64,7 @@ const MOMENTS = [
       { label: '不理它，去睡覺', reply: '你把平板闔上就去睡了。<br><br>隔天早上你還是跟媽媽提了一下——她說這樣很好。' },
     ] },
 
-  { id: 'm-secretgift', place: 'home', sis: true, care: true,
+  { id: 'm-secretgift', place: 'home', sis: true, sib: 'big', care: true,
     text: '妹妹拿著一個小玩具跑來：<br><br>「姊姊，有一個哥哥給我的，他說不要跟媽媽講。」',
     choices: [
       { label: '帶妹妹去跟媽媽說', reply: '媽媽謝謝你們兩個都有講。<br><br>她跟妹妹說：「叫你不要告訴媽媽的事，一定要告訴媽媽。」' },
@@ -198,14 +198,14 @@ const MOMENTS = [
   */
 
   /* --- 🏫 學校 --- */
-  { id: 'm-sis-hall', place: 'school', sis: true,
-    text: '下課時間，你在走廊看到妹妹。<br><br>她正跟兩個小朋友蹲在花圃旁邊，笑得很大聲，沒有看到你。',
+  { id: 'm-sis-hall', place: 'school', sis: true, sib: 'both',
+    text: '下課時間，你在走廊看到{sib}。<br><br>她正跟兩個同學蹲在花圃旁邊，笑得很大聲，沒有看到你。',
     choices: [
       { label: '不打擾她，自己走過去', reply: '你繞了另一邊走。<br><br>放學路上她跟你講了半小時花圃裡那隻蝸牛的事——聽起來她今天很開心。' },
-      { label: '過去跟她打招呼', reply: '妹妹看到你超得意，轉頭跟同學介紹：「這是我姊姊！」<br><br>那兩個小朋友看你的眼神，好像你是什麼很厲害的人。' },
+      { label: '過去跟她打招呼', reply: '{sib}看到你超得意，轉頭跟同學介紹：「這是我家的人！」<br><br>那兩個同學看你的眼神，好像你是什麼很厲害的人。' },
     ] },
 
-  { id: 'm-sis-coat', place: 'school', sis: true,
+  { id: 'm-sis-coat', place: 'school', sis: true, sib: 'big',
     text: '放學在校門口，妹妹站在那裡哭，說她的外套不見了。',
     choices: [
       { label: '陪她回教室找一次', reply: '外套就掛在她自己的椅背上。<br><br>她邊穿邊說「姊姊你好厲害」——其實你只是多看了一眼。' },
@@ -213,14 +213,14 @@ const MOMENTS = [
     ] },
 
   /* --- 🛒 商店街 --- */
-  { id: 'm-sis-ice', place: 'shop', sis: true,
-    text: '你們一人買一支冰。<br><br>妹妹想要的那個口味只剩最後一支——剛好也是你想要的。',
+  { id: 'm-sis-ice', place: 'shop', sis: true, sib: 'both',
+    text: '你們一人買一支冰。<br><br>{sib}想要的那個口味只剩最後一支——剛好也是你想要的。',
     choices: [
-      { label: '讓給她', reply: '妹妹咬了一口，然後把冰舉到你面前：「姊姊你也吃一口。」<br><br>其實那個口味沒有你想像中好吃。' },
+      { label: '讓給她', reply: '{sib}咬了一口，然後把冰舉到你面前：「你也吃一口。」<br><br>其實那個口味沒有你想像中好吃。' },
       { label: '說我們各買一種，一起分', reply: '店員阿姨笑著幫你們把兩支都剝好。<br><br>兩種口味你們都吃到了。' },
     ] },
 
-  { id: 'm-sis-hold', place: 'shop', sis: true, care: true,
+  { id: 'm-sis-hold', place: 'shop', sis: true, sib: 'big', care: true,
     text: '你帶妹妹去買麵包。<br><br>快到店門口的時候，她放開你的手就往前跑。',
     choices: [
       { label: '叫住她，牽好再一起走', reply: '妹妹嘟著嘴牽回來。<br><br>你跟她說：「人多的時候要牽好。」她點點頭——雖然三分鐘後又忘了。' },
@@ -228,14 +228,14 @@ const MOMENTS = [
     ] },
 
   /* --- 🌳 公園 --- */
-  { id: 'm-sis-swing', place: 'park', sis: true,
+  { id: 'm-sis-swing', place: 'park', sis: true, sib: 'big',
     text: '妹妹想盪鞦韆，但坐上去就抓得死緊，一直說「不要推、不要推」。',
     choices: [
       { label: '只推一點點', reply: '你只推了一點點，她就開始笑。<br><br>過了一下下，她自己說：「再高一點。」' },
       { label: '陪她坐旁邊那個', reply: '你們兩個並排慢慢晃。<br><br>她說：「這樣就好。」' },
     ] },
 
-  { id: 'm-sis-fall', place: 'park', sis: true,
+  { id: 'm-sis-fall', place: 'park', sis: true, sib: 'big',
     text: '妹妹在草地上跑，絆到自己的腳跌倒了。<br><br>她坐在地上，先看了你一眼，才開始哭。',
     choices: [
       { label: '先看她有沒有受傷', reply: '膝蓋紅了一塊，沒有破皮。<br><br>你跟她說「沒有流血喔」，她就不哭了——她好像只是需要有人幫她確認一下。' },
@@ -243,14 +243,14 @@ const MOMENTS = [
     ] },
 
   /* --- 🥋 道館 --- */
-  { id: 'm-sis-copy', place: 'dojo', sis: true,
+  { id: 'm-sis-copy', place: 'dojo', sis: true, sib: 'big',
     text: '妹妹今天比你早下課，坐在旁邊等你。<br><br>你一回頭，看到她在椅子上有樣學樣，跟著比你們剛剛那個動作。',
     choices: [
       { label: '下課教她一次', reply: '你教她那個動作，她做得歪七扭八但超認真。<br><br>回家那一路她一直重複那一招。' },
       { label: '假裝沒看到', reply: '你沒有拆穿她。<br><br>但教練走過去說了一句：「這個小朋友很有天份喔。」她整張臉都紅了。' },
     ] },
 
-  { id: 'm-sis-notgo', place: 'dojo', sis: true,
+  { id: 'm-sis-notgo', place: 'dojo', sis: true, sib: 'big',
     text: '妹妹今天說她不想上課，在門口拖拖拉拉。',
     choices: [
       { label: '問她為什麼', reply: '她說上禮拜有個動作做不好，怕又被看到。<br><br>你跟她說你也有做不好的時候——她想了一下，自己走進去了。' },
@@ -258,14 +258,14 @@ const MOMENTS = [
     ] },
 
   /* --- 🏊 泳池 --- */
-  { id: 'm-sis-deep', place: 'pool', sis: true, care: true,
+  { id: 'm-sis-deep', place: 'pool', sis: true, sib: 'big', care: true,
     text: '你想去深水區游，但妹妹只能待在淺水區。',
     choices: [
       { label: '先跟救生員說一聲', reply: '救生員說他會幫你看著妹妹。<br><br>「你先講一聲，這樣很對。」他說。' },
       { label: '陪她在淺水區', reply: '你們在淺水區比賽誰憋氣久。<br><br>你輸了兩次——她真的很會憋。' },
     ] },
 
-  { id: 'm-sis-face', place: 'pool', sis: true,
+  { id: 'm-sis-face', place: 'pool', sis: true, sib: 'big',
     text: '妹妹不敢把臉放進水裡，每次都在最後一秒把頭抬起來。',
     choices: [
       { label: '數三聲一起下去', reply: '你數一、二、三，兩個人一起把臉放進去。<br><br>她撐了兩秒，起來的時候整個人都在笑。' },
@@ -273,10 +273,113 @@ const MOMENTS = [
     ] },
 
   /* --- 🏠 家 --- */
-  { id: 'm-sis-secret', place: 'home', sis: true,
-    text: '妹妹把你昨天偷偷跟她講的事，在吃飯的時候講給全家聽。',
+  /* ==================== 當妹妹 ====================
+     這一段只有「妹妹」角色的玩家看得到。
+
+     為什麼要另外寫：上面那十一則是從姊姊的角度寫的——
+     「她抓著兩截色筆，很緊張地看著你」「跌倒先看你一眼才哭」，
+     把「妹妹」換成「姊姊」就全部不成立了。
+     真正的問題不是稱呼，是年紀。所以乾脆從妹妹的角度重寫一組。
+
+     一樣不要每一則都是「妹妹好可憐」。當妹妹也有很多種：
+     有人保護、被比較、想追上她、也有她需要你的時候。
+  */
+
+  { id: 'm-lil-broke', place: 'home', sis: true, sib: 'little',
+    text: '你不小心把姊姊的色筆弄斷了。<br><br>她還不知道。',
     choices: [
-      { label: '跟她說那是秘密', reply: '妹妹愣住，然後很小聲地說「對不起」。<br><br>你跟她解釋了一次什麼叫秘密——她好像真的聽懂了。' },
+      { label: '自己去跟她說', reply: '姊姊愣了一下，說：「沒關係啦。」<br><br>她其實有一點點在意——但她選擇說沒關係。你記住了。' },
+      { label: '先放回去，等一下再說', reply: '你放了一個下午都不舒服。<br><br>晚上還是講了。姊姊說：「你早點講我就不會找那麼久。」' },
+    ] },
+
+  { id: 'm-lil-compare', place: 'home', sis: true, sib: 'little',
+    text: '親戚來家裡，一直說姊姊好厲害。<br><br>沒有人問你今天做了什麼。',
+    choices: [
+      { label: '晚上跟媽媽說你的感覺', reply: '媽媽抱了你一下：「謝謝你跟我講。」<br><br>她說她小時候也是那個沒被問到的人。' },
+      { label: '自己回房間畫圖', reply: '你畫完了一整張。<br><br>姊姊後來探頭進來說：「這個超好看的欸。」' },
+    ] },
+
+  { id: 'm-lil-follow', place: 'home', sis: true, sib: 'little',
+    text: '姊姊跟她的朋友在房間，你想進去一起玩。<br><br>門是關著的。',
+    choices: [
+      { label: '敲門問可不可以', reply: '她們說等一下下。<br><br>十分鐘後真的開門叫你了——她們正在弄一個很複雜的東西。' },
+      { label: '自己去玩別的', reply: '你把整組積木蓋成一座橋。<br><br>姊姊出來看到，站在那裡看了很久。' },
+    ] },
+
+  { id: 'm-lil-hero', place: 'school', sis: true, sib: 'little',
+    text: '下課有人搶走你的鉛筆盒，在走廊上丟來丟去。<br><br>你看到姊姊剛好從那邊走過來。',
+    choices: [
+      { label: '先自己說「還我」', reply: '你說了。聲音很小，但你說了。<br><br>姊姊剛好走到，什麼都沒做，只是站在你旁邊——他們就還你了。' },
+      { label: '跑去找姊姊', reply: '姊姊陪你去跟老師講。<br><br>路上她說：「你來找我是對的，這種事不用自己忍。」' },
+    ] },
+
+  { id: 'm-lil-same', place: 'school', sis: true, sib: 'little',
+    text: '同學說：「你姊姊功課好好喔，你怎麼都不會？」',
+    choices: [
+      { label: '跟他說我們是不同的人', reply: '你說：「那是她，我是我。」<br><br>他愣住了，後來就沒再講了。' },
+      { label: '不理他', reply: '你走開了。<br><br>回家你問姊姊會不會也被拿來比——她說：「會啊，超煩的。」' },
+    ] },
+
+  { id: 'm-lil-wait', place: 'shop', sis: true, sib: 'little',
+    text: '姊姊在挑東西，挑好久。<br><br>你已經看完整間店三次了。',
+    choices: [
+      { label: '跟她說你等很久了', reply: '姊姊說：「對不起，我再一分鐘。」<br><br>她真的一分鐘就好了——原來講了就有用。' },
+      { label: '再等一下下', reply: '你數地板的磁磚，數到第八十四塊她就好了。<br><br>回家路上她請你吃了一支冰。' },
+    ] },
+
+  { id: 'm-lil-money', place: 'shop', sis: true, sib: 'little',
+    text: '你的零用錢比姊姊少。<br><br>今天她買了一個你也很想要的東西。',
+    choices: [
+      { label: '問媽媽為什麼不一樣', reply: '媽媽說：「因為她比你大，要自己買的東西比較多。」<br><br>「你長到她那麼大，也會一樣。」' },
+      { label: '決定自己存', reply: '你把撲滿拿出來數了一次。<br><br>還差很多，但你知道要存多久了。' },
+    ] },
+
+  { id: 'm-lil-swing', place: 'park', sis: true, sib: 'little',
+    text: '你想盪高一點，但有點怕。<br><br>姊姊在旁邊問要不要推你。',
+    choices: [
+      { label: '說好，但推小力一點', reply: '她推得很輕。<br><br>盪了幾下你自己說：「再大力一點。」' },
+      { label: '說你想自己試試看', reply: '姊姊站在旁邊沒有走開。<br><br>你自己蹬了好幾次，真的盪起來了。' },
+    ] },
+
+  { id: 'm-lil-race', place: 'dojo', sis: true, sib: 'little',
+    text: '姊姊那個動作做得很好看，你怎麼練都不像。',
+    choices: [
+      { label: '去問她怎麼做', reply: '她示範了三次給你看。<br><br>第三次你抓到了一點點——她說：「對，就是那樣。」' },
+      { label: '自己再練幾次', reply: '你留下來多練了二十次。<br><br>教練走過來說：「你姊姊當年也是這樣練的。」' },
+    ] },
+
+  { id: 'm-lil-deep', place: 'pool', sis: true, sib: 'little', care: true,
+    text: '姊姊要去深水區，你只能待在淺水區。<br><br>你也想去。',
+    choices: [
+      { label: '跟救生員說你想去', reply: '救生員說要先會換氣才可以。<br><br>他教了你兩次，還說：「下次來我再看你。」' },
+      { label: '在淺水區練換氣', reply: '你自己練了一個下午。<br><br>姊姊上來的時候說：「你剛剛那個很標準欸。」' },
+    ] },
+
+  { id: 'm-lil-cat', place: 'park', sis: true, sib: 'little',
+    text: '你先看到那隻貓的，可是姊姊一走過來，貓就跑去她那邊了。',
+    choices: [
+      { label: '跟姊姊說是你先看到的', reply: '姊姊退了兩步：「那你來。」<br><br>貓猶豫了一下，真的走回你旁邊。' },
+      { label: '安靜地蹲在旁邊', reply: '你蹲了很久都沒有動。<br><br>後來貓自己走過來，在你們兩個中間躺下。' },
+    ] },
+
+  { id: 'm-lil-belt', place: 'dojo', sis: true, sib: 'little',
+    text: '姊姊的腰帶顏色比你深。<br><br>今天有人問你：「你怎麼還在這一條？」',
+    choices: [
+      { label: '說「因為我比較晚開始」', reply: '你講得很平常，對方就沒再問了。<br><br>教練在旁邊聽到，點了點頭。' },
+      { label: '有點難過，回家跟姊姊說', reply: '姊姊說：「我那條練了兩年欸。」<br><br>你才知道她也花了很久。' },
+    ] },
+
+  { id: 'm-lil-float', place: 'pool', sis: true, sib: 'little',
+    text: '姊姊已經會漂了，你還要抓著池邊。',
+    choices: [
+      { label: '請姊姊扶著你試一次', reply: '她扶著你的背，慢慢放手。<br><br>你漂了大概三秒——三秒也是漂。' },
+      { label: '自己抓著池邊練', reply: '你練了一整個下午的踢水。<br><br>回家的時候腿很痠，但你知道自己有進步。' },
+    ] },
+
+  { id: 'm-sis-secret', place: 'home', sis: true, sib: 'both',
+    text: '{sib}把你昨天偷偷跟她講的事，在吃飯的時候講給全家聽。',
+    choices: [
+      { label: '跟她說那是秘密', reply: '{sib}愣住，然後很小聲地說「對不起」。<br><br>你們把什麼叫秘密講清楚了一次——她好像真的聽懂了。' },
       { label: '算了，也不是什麼大事', reply: '你沒有生氣。<br><br>不過睡前你跟她說：「下次我講『這是秘密』的時候，你就不要說出去喔。」' },
     ] },
 ];
@@ -285,3 +388,11 @@ const MOMENTS = [
 const MOMENTS_BY_PLACE = {};
 MOMENTS.forEach(m => { (MOMENTS_BY_PLACE[m.place] = MOMENTS_BY_PLACE[m.place] || []).push(m.id); });
 const momentById = id => MOMENTS.find(m => m.id === id);
+
+/* 這個玩家看得到哪些小事。
+   sib 沒標的誰都看得到；標了的只給對得上的角色。
+   沒有兄弟姊妹的玩家，連「雙向」的也不給——她根本沒有那個人。 */
+function momentsFor(role) {
+  return MOMENTS.filter(m =>
+    !m.sib || (m.sib === 'both' ? role !== 'only' : m.sib === role));
+}

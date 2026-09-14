@@ -100,7 +100,7 @@ const PLACES = [
     npc: [122, 168],
     npcArt: () => ADULT(116, 164, 0.4, { color: '#9b59b6' }) +        // 媽媽
                   ADULT(96, 182, 0.4, { color: '#5b7fa8', hair: '#2a1a0c' }) +  // 爸爸
-                  GIRL(198, 190, 0.34, { dress: '#ffd23f' }),         // 妹妹
+                  GIRL(198, 190, sibScale(0.34), { dress: SIB_DRESS }),  // 手足（顏色與高矮都跟角色走）
     art: lit => HOUSE(158, 170, 58, 30, '#ffd9e4', '#c9587f', lit) },
 ];
 
@@ -212,7 +212,7 @@ function placeCloseup(place, tod, weather, withSis) {
     cover + ' fill="#c8e6c0"/>' + townBase() +
     p.art(tod === 'night') + p.npcArt() + GIRL(b[4][0], b[4][1], 0.55) +
     // 妹妹：黃裙子，跟小鎮地圖上家門口那個是同一個人
-    (withSis && b[5] ? GIRL(b[5][0], b[5][1], 0.4, { dress: '#ffd23f' }) : '') +
+    (withSis && b[5] ? GIRL(b[5][0], b[5][1], sibScale(0.4), { dress: SIB_DRESS }) : '') +
     (tint ? cover + ' fill="' + tint[0] + '" opacity="' + tint[1] + '"/>' : '') +
     (weather === 'rain' ? RAIN + cover + ' fill="#7f93b8" opacity=".2"/>' : '') + '</svg>';
 }

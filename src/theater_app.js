@@ -101,13 +101,41 @@ const OLD_SAVE = 'theater-progress';           // 舊版單人存檔，會自動
 const PKEY = 'theater-players', CKEY = 'theater-who';
 const RANK = { bad: 1, escape: 2, good: 3, best: 4 };
 
+/* 每個玩家是家裡的老大還是老二。
+   這不是裝飾：小事是「她的日子」，所以「妹妹弄斷你的色筆」這種
+   只有當姊姊才成立——妹妹玩的時候看到會對不上。
+   劇本不分角色，因為那是「故事」，不是她的日子。 */
+const ROLES = {
+  big:    { label: '姊姊', sib: '妹妹', dress: '#ff8fb8', sibDress: '#ffd23f' },
+  little: { label: '妹妹', sib: '姊姊', dress: '#ffd23f', sibDress: '#ff8fb8' },
+  only:   { label: '沒有兄弟姊妹', sib: '',  dress: '#ff8fb8', sibDress: '#ffd23f' },
+};
 function defaultPlayers() {
-  return [{ id: 'p1', name: '姊姊', emoji: '⭐' }, { id: 'p2', name: '妹妹', emoji: '🌸' }];
+  return [{ id: 'p1', name: '姊姊', emoji: '⭐', role: 'big' },
+          { id: 'p2', name: '妹妹', emoji: '🌸', role: 'little' }];
 }
+// 舊存檔沒有 role，用順序補：第一個是老大，其他是老二
+function withRole(p, i) { return p.role ? p : Object.assign({}, p, { role: i === 0 ? 'big' : 'little' }); }
+function myRole() { const r = who().role; return ROLES[r] ? r : 'big'; }
+const ME = () => ROLES[myRole()];
+/* 主角／手足的裙子顏色由 CSS 變數決定（見 art_lib.js 的 ME_DRESS），
+   這裡只負責把角色貼到 <body> 上，讓那兩個變數換值。 */
+function setRoleAttr() { try { document.body.dataset.role = myRole(); } catch (e) {} }
+
+/* 手足要畫多大。顏色可以用 CSS 變數，大小不行（scale 是寫死在 transform 字串裡），
+   所以只有「畫的時候才產生」的圖能跟著角色變——小鎮地圖與小事的定場圖都是。
+   118 張結局插圖是載入時就算好的，改不了；不過那兩篇劇本的手足本來就是妹妹，
+   畫得比主角小是對的。
+
+   妹妹玩的時候手足是姊姊，一定要比她高——
+   第一版忘了這件事，畫面上她的姊姊比她還矮一截。 */
+function sibScale(base) { return myRole() === 'little' ? base * 1.35 : base; }
+/* 雙向的小事寫成 {sib}，這裡依角色填回去 */
+function fillSib(t) { return String(t).split('{sib}').join(ME().sib || '家人'); }
 function players() {
   try {
     const p = JSON.parse(localStorage.getItem(PKEY));
-    if (Array.isArray(p) && p.length) return p;
+    if (Array.isArray(p) && p.length) return p.map(withRole);
   } catch (e) {}
   const d = defaultPlayers();
   try { localStorage.setItem(PKEY, JSON.stringify(d)); } catch (e) {}
@@ -348,7 +376,7 @@ const NPC = {
               '下次再遇到，你就知道第一步要幹嘛了。'],
       rain: ['雨這麼大，等一下爸爸去接你。'],
       close: ['我們家這個最靠得住了。'] },
-    { who: '妹妹', emoji: '👧',
+    { who: '{sib}', emoji: '👧',
       lines: [
         '姊姊姊姊！你今天去哪裡？',
         '我今天在幼兒園畫了一張圖，要給你看！',
@@ -459,7 +487,9 @@ function periodEvent(tod) {
   const roll = (sd >>> 3) % 100;
   if (roll < 10) return { kind: null, place: null, id: null, seed: sd };  // 這個時段沒事
   if (roll < 62) {
-    const m = MOMENTS[(sd >>> 11) % MOMENTS.length];
+    // 只從這個玩家看得到的小事裡抽（種子已經含 whoId，所以每個人各自穩定）
+    const pool = momentsFor(myRole());
+    const m = pool[(sd >>> 11) % pool.length];
     return { kind: 'moment', place: m.place, id: m.id, seed: sd };
   }
   const id = DAY_IDS[sd % DAY_IDS.length];
@@ -878,7 +908,7 @@ function renderTown() {
       <div class="says">
         <span class="x" aria-hidden="true">✕</span>
         <span class="face">${msg.emoji}</span>
-        <span><b>${esc(msg.who)}</b><br>${narrate(msg.text)}
+        <span><b>${esc(fillSib(msg.who))}</b><br>${narrate(fillSib(msg.text))}
           ${msg.more ? '<span class="more">再點他一次還有話說 ▸</span>' : ''}
           <button id="tplay" class="playhere">
             🎭 在${esc(PLACE_NAME[msg.place] || '這裡')}玩一篇
@@ -974,14 +1004,14 @@ function renderMoment() {
       <div class="sub">小事一件</div>
       <div class="scene pop">${placeCloseup(m.place, tod, wx, m.sis)}</div>
       <div class="stage">
-        <div class="narr">${narrate(m.text)}</div>
+        <div class="narr">${narrate(fillSib(m.text))}</div>
       </div>
       ${picked ? `
         <div style="font-size:14px; font-weight:800; color:#6b4a9e; margin:12px 0 0;">
-          你選了：${esc(picked.label)}
+          你選了：${esc(fillSib(picked.label))}
         </div>
         <div class="stage" style="margin-top:7px;">
-          <div class="narr">${narrate(picked.reply)}</div>
+          <div class="narr">${narrate(fillSib(picked.reply))}</div>
         </div>
         <div class="row">
           <button id="mback" style="background:#2f6f8f; color:#fff; width:100%;">回小鎮 🏘️</button>
@@ -989,7 +1019,7 @@ function renderMoment() {
       : `
         <div style="font-size:14px; font-weight:800; color:#6b4a9e; margin-bottom:7px;">你要怎麼做？</div>
         <div class="choices">
-          ${m.choices.map((c, i) => `<button class="choice" data-i="${i}">${esc(c.label)}</button>`).join('')}
+          ${m.choices.map((c, i) => `<button class="choice" data-i="${i}">${esc(fillSib(c.label))}</button>`).join('')}
         </div>
         <div class="row">
           <button class="mini" id="mquit">← 回小鎮</button>
@@ -1010,6 +1040,7 @@ function renderMoment() {
 
 function render() {
   setTod(todNow());
+  setRoleAttr();
   if (view === 'menu') renderMenu();
   else if (view === 'gallery') renderGallery();
   else if (view === 'who') renderWho();
@@ -1040,11 +1071,23 @@ function renderWho() {
               <span class="ico">${p.emoji}</span>
               <span style="flex:1; min-width:0;">
                 <span class="t">${esc(p.name)}</span>
-                <span class="g">完美通關 ${done} / ${SCENARIOS.length}</span>
+                <span class="g">${esc(ROLES[p.role] ? ROLES[p.role].label : '姊姊')}　·　完美通關 ${done} / ${SCENARIOS.length}</span>
               </span>
               ${p.id === me ? '<span class="done">✅</span>' : '<span class="done" style="opacity:.25;">▶️</span>'}
             </button>`;
         }).join('')}
+      </div>
+      <div class="rolebox">
+        <div class="roleq">「${esc(who().name)}」在家裡是：</div>
+        <div class="roles">
+          ${Object.keys(ROLES).map(r => `
+            <button class="mini role-pick${myRole() === r ? ' on' : ''}" data-role="${r}">${esc(ROLES[r].label)}</button>`).join('')}
+        </div>
+        <div class="rolenote">
+          有些小事只有當姊姊才會遇到（像「妹妹把你的色筆弄斷了」），
+          有些只有當妹妹才會遇到。選對了才不會看到對不上的內容。<br>
+          主角的裙子顏色也會跟著換。
+        </div>
       </div>
       <button id="addwho" style="width:100%; margin-top:10px; background:#a8e6c0;">＋ 新增一個玩家</button>
       ${list.length > 1 ? `<button id="delwho" class="mini" style="margin-top:8px;">🗑️ 刪掉目前這個玩家</button>` : ''}
@@ -1053,6 +1096,13 @@ function renderWho() {
       </div>
     </div>
   `;
+  document.querySelectorAll('.role-pick').forEach(b => {
+    b.onclick = () => {
+      Sfx.tap();
+      savePlayers(players().map(p => p.id === whoId() ? Object.assign({}, p, { role: b.dataset.role }) : p));
+      render();
+    };
+  });
   document.querySelectorAll('.who-pick').forEach(b => {
     b.onclick = () => { Sfx.tap(); setWho(b.dataset.id); view = 'menu'; render(); };
   });

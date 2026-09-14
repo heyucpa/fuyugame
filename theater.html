@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#6b4a9e" />
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
-<meta name="build" content="2026.09.14-bfaaec" />
+<meta name="build" content="2026.09.14-e40af5" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -31,6 +31,11 @@
     min-height: 100vh;
     color: #33224a;
   }
+  /* 主角與手足的裙子顏色。妹妹玩的時候兩個對調，
+     這樣 118 張結局圖裡的主角就是她自己。 */
+  body { --me: #ff8fb8; --sib: #ffd23f; }
+  body[data-role="little"] { --me: #ffd23f; --sib: #ff8fb8; }
+
   body[data-tod="morning"] { --sky: linear-gradient(180deg, #ffe9c9 0%, #ffe4ec 50%, #dff0ff 100%); }
   body[data-tod="day"]     { --sky: linear-gradient(180deg, #d8ecff 0%, #eaf6ff 55%, #f3fff4 100%); }
   body[data-tod="dusk"]    { --sky: linear-gradient(180deg, #ffd9b0 0%, #f6c4d8 45%, #cdbde8 100%); }
@@ -88,6 +93,14 @@
   .whoname { font-weight: 900; }
   .whoswap { margin-left: auto; font-size: 12px; color: #6b4a9e; font-weight: 800; }
   .who-pick.on { background: #eadcff; border-color: #6b4a9e; }
+
+  /* 在家裡是老大還是老二。這不是裝飾：小事會照這個分 */
+  .rolebox { background: #faf5ff; border: 3px solid #33224a; border-radius: 14px;
+             padding: 11px 13px; margin-top: 12px; }
+  .roleq { font-size: 14px; font-weight: 900; color: #6b4a9e; text-align: center; }
+  .roles { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 8px; }
+  .role-pick.on { background: #ffd23f; border-color: #6b4a9e; }
+  .rolenote { font-size: 11.5px; color: #8a7fa8; line-height: 1.7; margin-top: 9px; text-align: center; }
 
   /* 故事 */
   .stage {
@@ -2518,7 +2531,7 @@ const SCENARIOS = [
 const MOMENTS = [
 
   /* ---------- 🏠 家 ---------- */
-  { id: 'm-crayon', place: 'home', sis: true,
+  { id: 'm-crayon', place: 'home', sis: true, sib: 'big',
     text: '妹妹把你的色筆弄斷了。<br><br>她抓著兩截色筆，很緊張地看著你，一句話都不敢講。',
     choices: [
       { label: '跟她說沒關係', reply: '妹妹整個鬆了一口氣，跑去房間拿她最寶貝的貼紙簿，硬要送你一張。' },
@@ -2546,7 +2559,7 @@ const MOMENTS = [
       { label: '自己躺回去', reply: '你翻了個身，數了一下呼吸，慢慢又睡著了。<br><br>早上起來覺得，好像也沒那麼可怕。' },
     ] },
 
-  { id: 'm-sisterdraw', place: 'home', sis: true,
+  { id: 'm-sisterdraw', place: 'home', sis: true, sib: 'big',
     text: '妹妹畫了一張圖要給你看。<br><br>老實說……看不太出來那是什麼。',
     choices: [
       { label: '問她畫的是什麼', reply: '「是姊姊啊！」她指著中間那一團說。<br><br>你看了第二次，好像真的有點像。' },
@@ -2567,7 +2580,7 @@ const MOMENTS = [
       { label: '不理它，去睡覺', reply: '你把平板闔上就去睡了。<br><br>隔天早上你還是跟媽媽提了一下——她說這樣很好。' },
     ] },
 
-  { id: 'm-secretgift', place: 'home', sis: true, care: true,
+  { id: 'm-secretgift', place: 'home', sis: true, sib: 'big', care: true,
     text: '妹妹拿著一個小玩具跑來：<br><br>「姊姊，有一個哥哥給我的，他說不要跟媽媽講。」',
     choices: [
       { label: '帶妹妹去跟媽媽說', reply: '媽媽謝謝你們兩個都有講。<br><br>她跟妹妹說：「叫你不要告訴媽媽的事，一定要告訴媽媽。」' },
@@ -2701,14 +2714,14 @@ const MOMENTS = [
   */
 
   /* --- 🏫 學校 --- */
-  { id: 'm-sis-hall', place: 'school', sis: true,
-    text: '下課時間，你在走廊看到妹妹。<br><br>她正跟兩個小朋友蹲在花圃旁邊，笑得很大聲，沒有看到你。',
+  { id: 'm-sis-hall', place: 'school', sis: true, sib: 'both',
+    text: '下課時間，你在走廊看到{sib}。<br><br>她正跟兩個同學蹲在花圃旁邊，笑得很大聲，沒有看到你。',
     choices: [
       { label: '不打擾她，自己走過去', reply: '你繞了另一邊走。<br><br>放學路上她跟你講了半小時花圃裡那隻蝸牛的事——聽起來她今天很開心。' },
-      { label: '過去跟她打招呼', reply: '妹妹看到你超得意，轉頭跟同學介紹：「這是我姊姊！」<br><br>那兩個小朋友看你的眼神，好像你是什麼很厲害的人。' },
+      { label: '過去跟她打招呼', reply: '{sib}看到你超得意，轉頭跟同學介紹：「這是我家的人！」<br><br>那兩個同學看你的眼神，好像你是什麼很厲害的人。' },
     ] },
 
-  { id: 'm-sis-coat', place: 'school', sis: true,
+  { id: 'm-sis-coat', place: 'school', sis: true, sib: 'big',
     text: '放學在校門口，妹妹站在那裡哭，說她的外套不見了。',
     choices: [
       { label: '陪她回教室找一次', reply: '外套就掛在她自己的椅背上。<br><br>她邊穿邊說「姊姊你好厲害」——其實你只是多看了一眼。' },
@@ -2716,14 +2729,14 @@ const MOMENTS = [
     ] },
 
   /* --- 🛒 商店街 --- */
-  { id: 'm-sis-ice', place: 'shop', sis: true,
-    text: '你們一人買一支冰。<br><br>妹妹想要的那個口味只剩最後一支——剛好也是你想要的。',
+  { id: 'm-sis-ice', place: 'shop', sis: true, sib: 'both',
+    text: '你們一人買一支冰。<br><br>{sib}想要的那個口味只剩最後一支——剛好也是你想要的。',
     choices: [
-      { label: '讓給她', reply: '妹妹咬了一口，然後把冰舉到你面前：「姊姊你也吃一口。」<br><br>其實那個口味沒有你想像中好吃。' },
+      { label: '讓給她', reply: '{sib}咬了一口，然後把冰舉到你面前：「你也吃一口。」<br><br>其實那個口味沒有你想像中好吃。' },
       { label: '說我們各買一種，一起分', reply: '店員阿姨笑著幫你們把兩支都剝好。<br><br>兩種口味你們都吃到了。' },
     ] },
 
-  { id: 'm-sis-hold', place: 'shop', sis: true, care: true,
+  { id: 'm-sis-hold', place: 'shop', sis: true, sib: 'big', care: true,
     text: '你帶妹妹去買麵包。<br><br>快到店門口的時候，她放開你的手就往前跑。',
     choices: [
       { label: '叫住她，牽好再一起走', reply: '妹妹嘟著嘴牽回來。<br><br>你跟她說：「人多的時候要牽好。」她點點頭——雖然三分鐘後又忘了。' },
@@ -2731,14 +2744,14 @@ const MOMENTS = [
     ] },
 
   /* --- 🌳 公園 --- */
-  { id: 'm-sis-swing', place: 'park', sis: true,
+  { id: 'm-sis-swing', place: 'park', sis: true, sib: 'big',
     text: '妹妹想盪鞦韆，但坐上去就抓得死緊，一直說「不要推、不要推」。',
     choices: [
       { label: '只推一點點', reply: '你只推了一點點，她就開始笑。<br><br>過了一下下，她自己說：「再高一點。」' },
       { label: '陪她坐旁邊那個', reply: '你們兩個並排慢慢晃。<br><br>她說：「這樣就好。」' },
     ] },
 
-  { id: 'm-sis-fall', place: 'park', sis: true,
+  { id: 'm-sis-fall', place: 'park', sis: true, sib: 'big',
     text: '妹妹在草地上跑，絆到自己的腳跌倒了。<br><br>她坐在地上，先看了你一眼，才開始哭。',
     choices: [
       { label: '先看她有沒有受傷', reply: '膝蓋紅了一塊，沒有破皮。<br><br>你跟她說「沒有流血喔」，她就不哭了——她好像只是需要有人幫她確認一下。' },
@@ -2746,14 +2759,14 @@ const MOMENTS = [
     ] },
 
   /* --- 🥋 道館 --- */
-  { id: 'm-sis-copy', place: 'dojo', sis: true,
+  { id: 'm-sis-copy', place: 'dojo', sis: true, sib: 'big',
     text: '妹妹今天比你早下課，坐在旁邊等你。<br><br>你一回頭，看到她在椅子上有樣學樣，跟著比你們剛剛那個動作。',
     choices: [
       { label: '下課教她一次', reply: '你教她那個動作，她做得歪七扭八但超認真。<br><br>回家那一路她一直重複那一招。' },
       { label: '假裝沒看到', reply: '你沒有拆穿她。<br><br>但教練走過去說了一句：「這個小朋友很有天份喔。」她整張臉都紅了。' },
     ] },
 
-  { id: 'm-sis-notgo', place: 'dojo', sis: true,
+  { id: 'm-sis-notgo', place: 'dojo', sis: true, sib: 'big',
     text: '妹妹今天說她不想上課，在門口拖拖拉拉。',
     choices: [
       { label: '問她為什麼', reply: '她說上禮拜有個動作做不好，怕又被看到。<br><br>你跟她說你也有做不好的時候——她想了一下，自己走進去了。' },
@@ -2761,14 +2774,14 @@ const MOMENTS = [
     ] },
 
   /* --- 🏊 泳池 --- */
-  { id: 'm-sis-deep', place: 'pool', sis: true, care: true,
+  { id: 'm-sis-deep', place: 'pool', sis: true, sib: 'big', care: true,
     text: '你想去深水區游，但妹妹只能待在淺水區。',
     choices: [
       { label: '先跟救生員說一聲', reply: '救生員說他會幫你看著妹妹。<br><br>「你先講一聲，這樣很對。」他說。' },
       { label: '陪她在淺水區', reply: '你們在淺水區比賽誰憋氣久。<br><br>你輸了兩次——她真的很會憋。' },
     ] },
 
-  { id: 'm-sis-face', place: 'pool', sis: true,
+  { id: 'm-sis-face', place: 'pool', sis: true, sib: 'big',
     text: '妹妹不敢把臉放進水裡，每次都在最後一秒把頭抬起來。',
     choices: [
       { label: '數三聲一起下去', reply: '你數一、二、三，兩個人一起把臉放進去。<br><br>她撐了兩秒，起來的時候整個人都在笑。' },
@@ -2776,10 +2789,113 @@ const MOMENTS = [
     ] },
 
   /* --- 🏠 家 --- */
-  { id: 'm-sis-secret', place: 'home', sis: true,
-    text: '妹妹把你昨天偷偷跟她講的事，在吃飯的時候講給全家聽。',
+  /* ==================== 當妹妹 ====================
+     這一段只有「妹妹」角色的玩家看得到。
+
+     為什麼要另外寫：上面那十一則是從姊姊的角度寫的——
+     「她抓著兩截色筆，很緊張地看著你」「跌倒先看你一眼才哭」，
+     把「妹妹」換成「姊姊」就全部不成立了。
+     真正的問題不是稱呼，是年紀。所以乾脆從妹妹的角度重寫一組。
+
+     一樣不要每一則都是「妹妹好可憐」。當妹妹也有很多種：
+     有人保護、被比較、想追上她、也有她需要你的時候。
+  */
+
+  { id: 'm-lil-broke', place: 'home', sis: true, sib: 'little',
+    text: '你不小心把姊姊的色筆弄斷了。<br><br>她還不知道。',
     choices: [
-      { label: '跟她說那是秘密', reply: '妹妹愣住，然後很小聲地說「對不起」。<br><br>你跟她解釋了一次什麼叫秘密——她好像真的聽懂了。' },
+      { label: '自己去跟她說', reply: '姊姊愣了一下，說：「沒關係啦。」<br><br>她其實有一點點在意——但她選擇說沒關係。你記住了。' },
+      { label: '先放回去，等一下再說', reply: '你放了一個下午都不舒服。<br><br>晚上還是講了。姊姊說：「你早點講我就不會找那麼久。」' },
+    ] },
+
+  { id: 'm-lil-compare', place: 'home', sis: true, sib: 'little',
+    text: '親戚來家裡，一直說姊姊好厲害。<br><br>沒有人問你今天做了什麼。',
+    choices: [
+      { label: '晚上跟媽媽說你的感覺', reply: '媽媽抱了你一下：「謝謝你跟我講。」<br><br>她說她小時候也是那個沒被問到的人。' },
+      { label: '自己回房間畫圖', reply: '你畫完了一整張。<br><br>姊姊後來探頭進來說：「這個超好看的欸。」' },
+    ] },
+
+  { id: 'm-lil-follow', place: 'home', sis: true, sib: 'little',
+    text: '姊姊跟她的朋友在房間，你想進去一起玩。<br><br>門是關著的。',
+    choices: [
+      { label: '敲門問可不可以', reply: '她們說等一下下。<br><br>十分鐘後真的開門叫你了——她們正在弄一個很複雜的東西。' },
+      { label: '自己去玩別的', reply: '你把整組積木蓋成一座橋。<br><br>姊姊出來看到，站在那裡看了很久。' },
+    ] },
+
+  { id: 'm-lil-hero', place: 'school', sis: true, sib: 'little',
+    text: '下課有人搶走你的鉛筆盒，在走廊上丟來丟去。<br><br>你看到姊姊剛好從那邊走過來。',
+    choices: [
+      { label: '先自己說「還我」', reply: '你說了。聲音很小，但你說了。<br><br>姊姊剛好走到，什麼都沒做，只是站在你旁邊——他們就還你了。' },
+      { label: '跑去找姊姊', reply: '姊姊陪你去跟老師講。<br><br>路上她說：「你來找我是對的，這種事不用自己忍。」' },
+    ] },
+
+  { id: 'm-lil-same', place: 'school', sis: true, sib: 'little',
+    text: '同學說：「你姊姊功課好好喔，你怎麼都不會？」',
+    choices: [
+      { label: '跟他說我們是不同的人', reply: '你說：「那是她，我是我。」<br><br>他愣住了，後來就沒再講了。' },
+      { label: '不理他', reply: '你走開了。<br><br>回家你問姊姊會不會也被拿來比——她說：「會啊，超煩的。」' },
+    ] },
+
+  { id: 'm-lil-wait', place: 'shop', sis: true, sib: 'little',
+    text: '姊姊在挑東西，挑好久。<br><br>你已經看完整間店三次了。',
+    choices: [
+      { label: '跟她說你等很久了', reply: '姊姊說：「對不起，我再一分鐘。」<br><br>她真的一分鐘就好了——原來講了就有用。' },
+      { label: '再等一下下', reply: '你數地板的磁磚，數到第八十四塊她就好了。<br><br>回家路上她請你吃了一支冰。' },
+    ] },
+
+  { id: 'm-lil-money', place: 'shop', sis: true, sib: 'little',
+    text: '你的零用錢比姊姊少。<br><br>今天她買了一個你也很想要的東西。',
+    choices: [
+      { label: '問媽媽為什麼不一樣', reply: '媽媽說：「因為她比你大，要自己買的東西比較多。」<br><br>「你長到她那麼大，也會一樣。」' },
+      { label: '決定自己存', reply: '你把撲滿拿出來數了一次。<br><br>還差很多，但你知道要存多久了。' },
+    ] },
+
+  { id: 'm-lil-swing', place: 'park', sis: true, sib: 'little',
+    text: '你想盪高一點，但有點怕。<br><br>姊姊在旁邊問要不要推你。',
+    choices: [
+      { label: '說好，但推小力一點', reply: '她推得很輕。<br><br>盪了幾下你自己說：「再大力一點。」' },
+      { label: '說你想自己試試看', reply: '姊姊站在旁邊沒有走開。<br><br>你自己蹬了好幾次，真的盪起來了。' },
+    ] },
+
+  { id: 'm-lil-race', place: 'dojo', sis: true, sib: 'little',
+    text: '姊姊那個動作做得很好看，你怎麼練都不像。',
+    choices: [
+      { label: '去問她怎麼做', reply: '她示範了三次給你看。<br><br>第三次你抓到了一點點——她說：「對，就是那樣。」' },
+      { label: '自己再練幾次', reply: '你留下來多練了二十次。<br><br>教練走過來說：「你姊姊當年也是這樣練的。」' },
+    ] },
+
+  { id: 'm-lil-deep', place: 'pool', sis: true, sib: 'little', care: true,
+    text: '姊姊要去深水區，你只能待在淺水區。<br><br>你也想去。',
+    choices: [
+      { label: '跟救生員說你想去', reply: '救生員說要先會換氣才可以。<br><br>他教了你兩次，還說：「下次來我再看你。」' },
+      { label: '在淺水區練換氣', reply: '你自己練了一個下午。<br><br>姊姊上來的時候說：「你剛剛那個很標準欸。」' },
+    ] },
+
+  { id: 'm-lil-cat', place: 'park', sis: true, sib: 'little',
+    text: '你先看到那隻貓的，可是姊姊一走過來，貓就跑去她那邊了。',
+    choices: [
+      { label: '跟姊姊說是你先看到的', reply: '姊姊退了兩步：「那你來。」<br><br>貓猶豫了一下，真的走回你旁邊。' },
+      { label: '安靜地蹲在旁邊', reply: '你蹲了很久都沒有動。<br><br>後來貓自己走過來，在你們兩個中間躺下。' },
+    ] },
+
+  { id: 'm-lil-belt', place: 'dojo', sis: true, sib: 'little',
+    text: '姊姊的腰帶顏色比你深。<br><br>今天有人問你：「你怎麼還在這一條？」',
+    choices: [
+      { label: '說「因為我比較晚開始」', reply: '你講得很平常，對方就沒再問了。<br><br>教練在旁邊聽到，點了點頭。' },
+      { label: '有點難過，回家跟姊姊說', reply: '姊姊說：「我那條練了兩年欸。」<br><br>你才知道她也花了很久。' },
+    ] },
+
+  { id: 'm-lil-float', place: 'pool', sis: true, sib: 'little',
+    text: '姊姊已經會漂了，你還要抓著池邊。',
+    choices: [
+      { label: '請姊姊扶著你試一次', reply: '她扶著你的背，慢慢放手。<br><br>你漂了大概三秒——三秒也是漂。' },
+      { label: '自己抓著池邊練', reply: '你練了一整個下午的踢水。<br><br>回家的時候腿很痠，但你知道自己有進步。' },
+    ] },
+
+  { id: 'm-sis-secret', place: 'home', sis: true, sib: 'both',
+    text: '{sib}把你昨天偷偷跟她講的事，在吃飯的時候講給全家聽。',
+    choices: [
+      { label: '跟她說那是秘密', reply: '{sib}愣住，然後很小聲地說「對不起」。<br><br>你們把什麼叫秘密講清楚了一次——她好像真的聽懂了。' },
       { label: '算了，也不是什麼大事', reply: '你沒有生氣。<br><br>不過睡前你跟她說：「下次我講『這是秘密』的時候，你就不要說出去喔。」' },
     ] },
 ];
@@ -2788,6 +2904,14 @@ const MOMENTS = [
 const MOMENTS_BY_PLACE = {};
 MOMENTS.forEach(m => { (MOMENTS_BY_PLACE[m.place] = MOMENTS_BY_PLACE[m.place] || []).push(m.id); });
 const momentById = id => MOMENTS.find(m => m.id === id);
+
+/* 這個玩家看得到哪些小事。
+   sib 沒標的誰都看得到；標了的只給對得上的角色。
+   沒有兄弟姊妹的玩家，連「雙向」的也不給——她根本沒有那個人。 */
+function momentsFor(role) {
+  return MOMENTS.filter(m =>
+    !m.sib || (m.sib === 'both' ? role !== 'only' : m.sib === role));
+}
 /* ===== 結局插圖（inline SVG，動畫在 CSS） ===== */
 
 // 共用零件
@@ -2984,10 +3108,18 @@ const SCENE = {
    人物以「腳底為原點」的區域座標繪製，再用 transform 擺到定位
 */
 
-// 女孩：pose = stand / cheer / run / reachR / reachL / hang / shout / sit
+/* 女孩：pose = stand / cheer / run / reachR / reachL / hang / shout / sit
+   沒指定顏色就是「主角」，而主角的裙子跟著玩家走：
+   妹妹玩的時候，118 張結局圖裡的主角全部變成黃裙子的那個。
+
+   一定要用 CSS 變數，不能呼叫函式拿顏色——
+   ART_SCENES 那一大包是「載入時就算好的字串」，
+   換玩家的時候那些字串早就固定了，函式版本完全不會跟著變。 */
+const ME_DRESS = 'var(--me, #ff8fb8)', SIB_DRESS = 'var(--sib, #ffd23f)';
 const GIRL = (x, y, s, o) => {
   o = o || {};
-  const mood = o.mood || 'happy', dress = o.dress || '#ff8fb8', pose = o.pose || 'stand';
+  const mood = o.mood || 'happy', pose = o.pose || 'stand';
+  const dress = o.dress || ME_DRESS;
   let arms = '', legs = '', bottom = 0;
   if (pose === 'cheer')       arms = LIMB(-8, -26, -21, -47, 6) + LIMB(8, -26, 21, -47, 6);
   else if (pose === 'run')  { arms = LIMB(-8, -26, -19, -14, 6) + LIMB(8, -26, 21, -38, 6);
@@ -4247,7 +4379,7 @@ const PLACES = [
     npc: [122, 168],
     npcArt: () => ADULT(116, 164, 0.4, { color: '#9b59b6' }) +        // 媽媽
                   ADULT(96, 182, 0.4, { color: '#5b7fa8', hair: '#2a1a0c' }) +  // 爸爸
-                  GIRL(198, 190, 0.34, { dress: '#ffd23f' }),         // 妹妹
+                  GIRL(198, 190, sibScale(0.34), { dress: SIB_DRESS }),  // 手足（顏色與高矮都跟角色走）
     art: lit => HOUSE(158, 170, 58, 30, '#ffd9e4', '#c9587f', lit) },
 ];
 
@@ -4359,7 +4491,7 @@ function placeCloseup(place, tod, weather, withSis) {
     cover + ' fill="#c8e6c0"/>' + townBase() +
     p.art(tod === 'night') + p.npcArt() + GIRL(b[4][0], b[4][1], 0.55) +
     // 妹妹：黃裙子，跟小鎮地圖上家門口那個是同一個人
-    (withSis && b[5] ? GIRL(b[5][0], b[5][1], 0.4, { dress: '#ffd23f' }) : '') +
+    (withSis && b[5] ? GIRL(b[5][0], b[5][1], sibScale(0.4), { dress: SIB_DRESS }) : '') +
     (tint ? cover + ' fill="' + tint[0] + '" opacity="' + tint[1] + '"/>' : '') +
     (weather === 'rain' ? RAIN + cover + ' fill="#7f93b8" opacity=".2"/>' : '') + '</svg>';
 }
@@ -4387,9 +4519,10 @@ const BOTTLE = (x, y, s, tilt) =>
   '<rect x="-4" y="-25" width="8" height="6" rx="1.5" fill="#e85a92" stroke="#33224a" stroke-width="1.4"/>' +
   '<path d="M-7 -12 h14" stroke="#33224a" stroke-width="1.1" opacity=".5"/></g>';
 
+// 手足：顏色永遠跟主角相反，這樣兩個人一眼分得出來
 const SIS = (x, y, s, o) => {
   o = o || {};
-  o.dress = '#ffd23f';
+  o.dress = SIB_DRESS;
   return GIRL(x, y, s, o);
 };
 
@@ -4788,13 +4921,41 @@ const OLD_SAVE = 'theater-progress';           // 舊版單人存檔，會自動
 const PKEY = 'theater-players', CKEY = 'theater-who';
 const RANK = { bad: 1, escape: 2, good: 3, best: 4 };
 
+/* 每個玩家是家裡的老大還是老二。
+   這不是裝飾：小事是「她的日子」，所以「妹妹弄斷你的色筆」這種
+   只有當姊姊才成立——妹妹玩的時候看到會對不上。
+   劇本不分角色，因為那是「故事」，不是她的日子。 */
+const ROLES = {
+  big:    { label: '姊姊', sib: '妹妹', dress: '#ff8fb8', sibDress: '#ffd23f' },
+  little: { label: '妹妹', sib: '姊姊', dress: '#ffd23f', sibDress: '#ff8fb8' },
+  only:   { label: '沒有兄弟姊妹', sib: '',  dress: '#ff8fb8', sibDress: '#ffd23f' },
+};
 function defaultPlayers() {
-  return [{ id: 'p1', name: '姊姊', emoji: '⭐' }, { id: 'p2', name: '妹妹', emoji: '🌸' }];
+  return [{ id: 'p1', name: '姊姊', emoji: '⭐', role: 'big' },
+          { id: 'p2', name: '妹妹', emoji: '🌸', role: 'little' }];
 }
+// 舊存檔沒有 role，用順序補：第一個是老大，其他是老二
+function withRole(p, i) { return p.role ? p : Object.assign({}, p, { role: i === 0 ? 'big' : 'little' }); }
+function myRole() { const r = who().role; return ROLES[r] ? r : 'big'; }
+const ME = () => ROLES[myRole()];
+/* 主角／手足的裙子顏色由 CSS 變數決定（見 art_lib.js 的 ME_DRESS），
+   這裡只負責把角色貼到 <body> 上，讓那兩個變數換值。 */
+function setRoleAttr() { try { document.body.dataset.role = myRole(); } catch (e) {} }
+
+/* 手足要畫多大。顏色可以用 CSS 變數，大小不行（scale 是寫死在 transform 字串裡），
+   所以只有「畫的時候才產生」的圖能跟著角色變——小鎮地圖與小事的定場圖都是。
+   118 張結局插圖是載入時就算好的，改不了；不過那兩篇劇本的手足本來就是妹妹，
+   畫得比主角小是對的。
+
+   妹妹玩的時候手足是姊姊，一定要比她高——
+   第一版忘了這件事，畫面上她的姊姊比她還矮一截。 */
+function sibScale(base) { return myRole() === 'little' ? base * 1.35 : base; }
+/* 雙向的小事寫成 {sib}，這裡依角色填回去 */
+function fillSib(t) { return String(t).split('{sib}').join(ME().sib || '家人'); }
 function players() {
   try {
     const p = JSON.parse(localStorage.getItem(PKEY));
-    if (Array.isArray(p) && p.length) return p;
+    if (Array.isArray(p) && p.length) return p.map(withRole);
   } catch (e) {}
   const d = defaultPlayers();
   try { localStorage.setItem(PKEY, JSON.stringify(d)); } catch (e) {}
@@ -5035,7 +5196,7 @@ const NPC = {
               '下次再遇到，你就知道第一步要幹嘛了。'],
       rain: ['雨這麼大，等一下爸爸去接你。'],
       close: ['我們家這個最靠得住了。'] },
-    { who: '妹妹', emoji: '👧',
+    { who: '{sib}', emoji: '👧',
       lines: [
         '姊姊姊姊！你今天去哪裡？',
         '我今天在幼兒園畫了一張圖，要給你看！',
@@ -5146,7 +5307,9 @@ function periodEvent(tod) {
   const roll = (sd >>> 3) % 100;
   if (roll < 10) return { kind: null, place: null, id: null, seed: sd };  // 這個時段沒事
   if (roll < 62) {
-    const m = MOMENTS[(sd >>> 11) % MOMENTS.length];
+    // 只從這個玩家看得到的小事裡抽（種子已經含 whoId，所以每個人各自穩定）
+    const pool = momentsFor(myRole());
+    const m = pool[(sd >>> 11) % pool.length];
     return { kind: 'moment', place: m.place, id: m.id, seed: sd };
   }
   const id = DAY_IDS[sd % DAY_IDS.length];
@@ -5565,7 +5728,7 @@ function renderTown() {
       <div class="says">
         <span class="x" aria-hidden="true">✕</span>
         <span class="face">${msg.emoji}</span>
-        <span><b>${esc(msg.who)}</b><br>${narrate(msg.text)}
+        <span><b>${esc(fillSib(msg.who))}</b><br>${narrate(fillSib(msg.text))}
           ${msg.more ? '<span class="more">再點他一次還有話說 ▸</span>' : ''}
           <button id="tplay" class="playhere">
             🎭 在${esc(PLACE_NAME[msg.place] || '這裡')}玩一篇
@@ -5661,14 +5824,14 @@ function renderMoment() {
       <div class="sub">小事一件</div>
       <div class="scene pop">${placeCloseup(m.place, tod, wx, m.sis)}</div>
       <div class="stage">
-        <div class="narr">${narrate(m.text)}</div>
+        <div class="narr">${narrate(fillSib(m.text))}</div>
       </div>
       ${picked ? `
         <div style="font-size:14px; font-weight:800; color:#6b4a9e; margin:12px 0 0;">
-          你選了：${esc(picked.label)}
+          你選了：${esc(fillSib(picked.label))}
         </div>
         <div class="stage" style="margin-top:7px;">
-          <div class="narr">${narrate(picked.reply)}</div>
+          <div class="narr">${narrate(fillSib(picked.reply))}</div>
         </div>
         <div class="row">
           <button id="mback" style="background:#2f6f8f; color:#fff; width:100%;">回小鎮 🏘️</button>
@@ -5676,7 +5839,7 @@ function renderMoment() {
       : `
         <div style="font-size:14px; font-weight:800; color:#6b4a9e; margin-bottom:7px;">你要怎麼做？</div>
         <div class="choices">
-          ${m.choices.map((c, i) => `<button class="choice" data-i="${i}">${esc(c.label)}</button>`).join('')}
+          ${m.choices.map((c, i) => `<button class="choice" data-i="${i}">${esc(fillSib(c.label))}</button>`).join('')}
         </div>
         <div class="row">
           <button class="mini" id="mquit">← 回小鎮</button>
@@ -5697,6 +5860,7 @@ function renderMoment() {
 
 function render() {
   setTod(todNow());
+  setRoleAttr();
   if (view === 'menu') renderMenu();
   else if (view === 'gallery') renderGallery();
   else if (view === 'who') renderWho();
@@ -5727,11 +5891,23 @@ function renderWho() {
               <span class="ico">${p.emoji}</span>
               <span style="flex:1; min-width:0;">
                 <span class="t">${esc(p.name)}</span>
-                <span class="g">完美通關 ${done} / ${SCENARIOS.length}</span>
+                <span class="g">${esc(ROLES[p.role] ? ROLES[p.role].label : '姊姊')}　·　完美通關 ${done} / ${SCENARIOS.length}</span>
               </span>
               ${p.id === me ? '<span class="done">✅</span>' : '<span class="done" style="opacity:.25;">▶️</span>'}
             </button>`;
         }).join('')}
+      </div>
+      <div class="rolebox">
+        <div class="roleq">「${esc(who().name)}」在家裡是：</div>
+        <div class="roles">
+          ${Object.keys(ROLES).map(r => `
+            <button class="mini role-pick${myRole() === r ? ' on' : ''}" data-role="${r}">${esc(ROLES[r].label)}</button>`).join('')}
+        </div>
+        <div class="rolenote">
+          有些小事只有當姊姊才會遇到（像「妹妹把你的色筆弄斷了」），
+          有些只有當妹妹才會遇到。選對了才不會看到對不上的內容。<br>
+          主角的裙子顏色也會跟著換。
+        </div>
       </div>
       <button id="addwho" style="width:100%; margin-top:10px; background:#a8e6c0;">＋ 新增一個玩家</button>
       ${list.length > 1 ? `<button id="delwho" class="mini" style="margin-top:8px;">🗑️ 刪掉目前這個玩家</button>` : ''}
@@ -5740,6 +5916,13 @@ function renderWho() {
       </div>
     </div>
   `;
+  document.querySelectorAll('.role-pick').forEach(b => {
+    b.onclick = () => {
+      Sfx.tap();
+      savePlayers(players().map(p => p.id === whoId() ? Object.assign({}, p, { role: b.dataset.role }) : p));
+      render();
+    };
+  });
   document.querySelectorAll('.who-pick').forEach(b => {
     b.onclick = () => { Sfx.tap(); setWho(b.dataset.id); view = 'menu'; render(); };
   });

@@ -356,16 +356,36 @@
     /* 六個地點每個都要有跟妹妹一起的小事。
        妹妹本來只出現在家裡，其他五個地方她完全不在——
        但現實裡姊姊去哪都帶著妹妹。 */
-    var sis = {};
+    /* 手足的小事：每個地點、每個角色都要有兩件。
+       妹妹玩的時候看不到「只有當姊姊才成立」的那十一則，
+       所以要另外算她那一份，不能只算總數。 */
+    function hasSib(m){ return /妹妹|姊姊|\{sib\}/.test(m.text); }
     MOMENTS.forEach(function(m){
-      // sis 這個旗標決定定場圖要不要把妹妹畫進去，所以不能跟內文脫節
-      if (m.text.indexOf('妹妹') >= 0 && !m.sis) fails.push(m.id+' 內文有妹妹，卻沒標 sis');
-      if (m.sis && m.text.indexOf('妹妹') < 0) fails.push(m.id+' 標了 sis，內文卻沒有妹妹');
-      if (m.sis) sis[m.place] = (sis[m.place]||0)+1;
+      if (hasSib(m) && !m.sis) fails.push(m.id+' 內文有手足，卻沒標 sis');
+      if (m.sis && !hasSib(m)) fails.push(m.id+' 標了 sis，內文卻沒有手足');
+      if (m.sis && !m.sib) fails.push(m.id+' 標了 sis 卻沒說是給哪個角色看的');
+      // 雙向的一定要用 {sib}，寫死稱呼的話妹妹玩起來會對不上
+      if (m.sib === 'both' && m.text.indexOf('{sib}') < 0)
+        fails.push(m.id+' 是雙向的，內文卻把稱呼寫死了');
     });
-    Object.keys(MOMENTS_BY_PLACE).forEach(function(k){
-      if ((sis[k]||0) < 2) fails.push('「'+k+'」只有 '+(sis[k]||0)+' 件跟妹妹一起的小事');
+    ['big','little'].forEach(function(role){
+      var cnt = {};
+      momentsFor(role).forEach(function(m){ if (m.sis) cnt[m.place] = (cnt[m.place]||0)+1; });
+      Object.keys(MOMENTS_BY_PLACE).forEach(function(k){
+        if ((cnt[k]||0) < 2)
+          fails.push('「'+role+'」在「'+k+'」只有 '+(cnt[k]||0)+' 件手足的小事');
+      });
     });
+    // 每個角色都不該看到「指定給別的角色」的小事
+    ['big','little','only'].forEach(function(role){
+      momentsFor(role).forEach(function(m){
+        if (m.sib && m.sib !== 'both' && m.sib !== role)
+          fails.push('「'+role+'」看得到只給「'+m.sib+'」的小事：'+m.id);
+      });
+    });
+    // 沒有兄弟姊妹的玩家，手足的小事一則都不該出現
+    if (momentsFor('only').some(function(m){ return m.sis; }))
+      fails.push('沒有兄弟姊妹的玩家還是看得到手足的小事');
 
     /* 小人站的地方要看得出來是「在那個地點」。
        家本來設在 [246,186]，離名牌 88，按了「家」她會走到畫面右下角，

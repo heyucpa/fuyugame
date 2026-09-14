@@ -22,9 +22,10 @@ const BOTTLE = (x, y, s, tilt) =>
   '<rect x="-4" y="-25" width="8" height="6" rx="1.5" fill="#e85a92" stroke="#33224a" stroke-width="1.4"/>' +
   '<path d="M-7 -12 h14" stroke="#33224a" stroke-width="1.1" opacity=".5"/></g>';
 
+// 手足：顏色永遠跟主角相反，這樣兩個人一眼分得出來
 const SIS = (x, y, s, o) => {
   o = o || {};
-  o.dress = '#ffd23f';
+  o.dress = SIB_DRESS;
   return GIRL(x, y, s, o);
 };
 
