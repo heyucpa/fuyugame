@@ -339,8 +339,8 @@ const PLACE_POOL = {
   home:   ['home', 'fire', 'fakecop', 'shop', 'imposter', 'exam', 'online', 'secret', 'scam'],
   shop:   ['lost', 'breakfast', 'sislost'],
   park:   ['road', 'gate'],
-  dojo:   ['dojo'],
-  pool:   ['pool'],
+  dojo:   ['dojo', 'dojopower', 'dojohurt'],
+  pool:   ['pool', 'poolsave', 'poolphone'],
 };
 
 /* 鎮上的人。一個地點可以住好幾個人（家裡就住了三個），
