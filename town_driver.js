@@ -5,6 +5,8 @@
   function spot(k){ var g=document.querySelector('.spot[data-spot="'+k+'"]'); if(!g){fails.push('地圖上找不到 '+k);} return g; }
   function setDay(d){ todayStamp=function(){ return '2026-10-'+d; }; }
   function setTodStub(t){ todNow=function(){ return t; }; }
+  // 藏東西是十分鐘換一輪，走查不可能真的等——把「現在幾分」換掉
+  function setMin(m){ nowMin=function(){ return m; }; }
   // 找一個「這個時段剛好是 kind」的日子，回傳那一天的事件
   function findKind(kind){
     for (var d=1; d<=60; d++){
@@ -229,11 +231,13 @@
       if (view!=='town') fails.push('小事做完再點竟然又進了一次');
     }
 
-    /* ⑨ 每天藏一個東西 */
-    setDay(7); setTodStub('dusk');
+    /* ⑨ 每十分鐘藏一個東西 */
+    setDay(7); setTodStub('dusk'); setMin(9 * 60 + 3);   // 09:03，離換輪還有 7 分鐘
     view='town'; townMsg=null; curMoment=null; render();
-    var h = huntToday();
-    if (!document.querySelector('.hide')) fails.push('小鎮上沒有藏東西');
+    var h = huntNow();
+    if (huntLeft() !== 7) fails.push('「還有幾分鐘換」算錯了：' + huntLeft());
+    if (!document.querySelector('.hide') || !document.querySelector('.hide').innerHTML)
+      fails.push('小鎮上沒有藏東西');
     else {
       // 要真的點得到——它比名牌小很多，透明的點擊圈是唯一的保障
       /* 刻意不打正中央：正中央是那個 emoji 字本身，打得到不代表什麼。
@@ -250,20 +254,35 @@
       document.querySelector('.hide').onclick({ stopPropagation: function(){} });
       if (document.querySelector('.card') !== hcard) fails.push('撿到東西整張卡片就重畫了，畫面會閃');
       if (view!=='town') fails.push('找到東西竟然離開了小鎮');
-      if (foundToday() !== h.id) fails.push('找到的東西沒有記起來');
+      if (foundNow() !== h.id) fails.push('找到的東西沒有記起來');
+      if (foundCountToday() < 1) fails.push('今天找到幾個沒有加上去');
       if (Object.keys(loadTreasures()).length <= box0) fails.push('寶物盒沒有增加');
-      if (document.querySelector('.hide')) fails.push('找到了東西還留在地圖上');
+      if (document.querySelector('.hide').innerHTML) fails.push('找到了東西還留在地圖上');
       var ht = document.querySelector('.hunt');
-      if (!ht) fails.push('沒有「今天藏了東西」那一行');
-      else if (ht.textContent.indexOf(treasureById(h.id).name) < 0)
-        fails.push('找到之後沒有說找到的是什麼');
+      if (!ht) fails.push('沒有「藏了東西」那一行');
+      else {
+        if (ht.textContent.indexOf(treasureById(h.id).name) < 0)
+          fails.push('找到之後沒有說找到的是什麼');
+        if (ht.textContent.indexOf('分鐘') < 0) fails.push('沒有告訴她再幾分鐘會換新的');
+      }
       if (document.querySelectorAll('.box span.on').length < 1) fails.push('寶物盒裡沒有亮起來的格子');
 
-      // 同一天不會再長出來，換一天要有新的
+      // 同一輪不會再長出來
       render();
-      if (document.querySelector('.hide')) fails.push('同一天又冒出一個可以找');
-      setDay(8); render();
-      if (!document.querySelector('.hide')) fails.push('換了一天卻沒有新的東西可以找');
+      if (document.querySelector('.hide').innerHTML) fails.push('同一輪又冒出一個可以找');
+
+      /* 過了十分鐘要自己換一個新的，而且不能重畫整張卡片。
+         她可能一直開著這一頁，不會重新整理。 */
+      var card1 = document.querySelector('.card'), svg1 = document.querySelector('.town svg');
+      setMin(9 * 60 + 13);                       // 跳到下一輪
+      if (!huntTimer) fails.push('沒有掛十分鐘換一輪的計時器');
+      huntTimerFn();                             // 直接叫一次，不用真的等
+      if (!document.querySelector('.hide').innerHTML) fails.push('過了十分鐘卻沒有換新的東西');
+      if (document.querySelector('.card') !== card1) fails.push('換一輪整張卡片就重畫了，畫面會閃');
+      if (document.querySelector('.town svg') !== svg1) fails.push('換一輪連地圖都重畫了');
+
+      // 新的那一輪要是還沒找到的狀態
+      if (foundNow()) fails.push('換了一輪還算成已經找到');
     }
     /* 新增一篇劇本卻忘了排進 PLACE_POOL 的話，它在小鎮裡永遠不會出現，
        而且完全沒有錯誤訊息——只有從選單進去才玩得到。 */
@@ -309,10 +328,15 @@
       });
     });
     // 三十天要換得夠勤，位置也要會動，不然找一次就記住了
-    var tids={}, tpos={};
-    for (var hd=1; hd<=30; hd++){ setDay(hd); var hh=huntToday(); tids[hh.id]=1; tpos[hh.at.join()]=1; }
-    if (Object.keys(tids).length < 8) fails.push('三十天只藏了 '+Object.keys(tids).length+' 種東西');
-    if (Object.keys(tpos).length < 6) fails.push('三十天只藏在 '+Object.keys(tpos).length+' 個位置');
+    var tids={}, tpos={}, ROUNDS=60;
+    setDay(7);
+    for (var hd=0; hd<ROUNDS; hd++){ setMin(hd*10); var hh=huntNow(); tids[hh.id]=1; tpos[hh.at.join()]=1; }
+    if (Object.keys(tids).length < 16) fails.push('連續 '+ROUNDS+' 輪只藏了 '+Object.keys(tids).length+' 種東西');
+    if (Object.keys(tpos).length < 9) fails.push('連續 '+ROUNDS+' 輪只藏在 '+Object.keys(tpos).length+' 個位置');
+    // 連著兩輪給同一樣東西會很沒感覺
+    var rep=0, prev=null;
+    for (var hr=0; hr<ROUNDS; hr++){ setMin(hr*10); var id=huntNow().id; if (id===prev) rep++; prev=id; }
+    if (rep > ROUNDS/8) fails.push('有 '+rep+' 次連著兩輪都是同一樣東西');
 
     // ⑩ 小鎮會跟著圖鑑長大
     var st0 = townStage();

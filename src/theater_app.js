@@ -471,12 +471,16 @@ function weatherToday() {
   return r < 55 ? 'sun' : r < 82 ? 'cloud' : 'rain';
 }
 
-/* ===== 每天藏一個東西 =====
-   一天一樣，藏在鎮上某個角落，點到就收進寶物盒。
+/* ===== 每十分鐘藏一個東西 =====
+   十分鐘換一樣，藏在鎮上某個角落，點到就收進寶物盒。
 
    為什麼要有這個：小事跟劇本都要「等下一個時段」，
    但她可能十分鐘後就想再打開一次。這個是唯一一件
    「打開就可以做」的事，而且不用讀字、不用選，只要看。
+
+   本來是一天一樣，改成十分鐘是因為她會一直想再開。
+   但十分鐘一輪的話，12 樣東西一個下午就收滿了，
+   寶物盒就沒有目標——所以一起補到 24 樣。
 
    刻意做得小又不閃不動：要用眼睛找，才有找到的感覺。
    十二個藏的位置都避開了六個地點的名牌，
@@ -494,18 +498,39 @@ const TREASURES = [
   { id: 't-balloon', emoji: '🎈', name: '汽球',       line: '繩子纏在樹枝上，你把它解下來了。' },
   { id: 't-fly',     emoji: '🦋', name: '蝴蝶',       line: '停在你的袖子上，翅膀一開一合。' },
   { id: 't-puzzle',  emoji: '🧩', name: '一片拼圖',   line: '不知道是哪一盒的，形狀很特別。' },
+  { id: 't-leaf',    emoji: '🌿', name: '香香的葉子', line: '搓一搓，手上留著味道。' },
+  { id: 't-bell',    emoji: '🔔', name: '小鈴鐺',     line: '聲音很小，要靠很近才聽得到。' },
+  { id: 't-sock',    emoji: '🧦', name: '一隻襪子',   line: '只有一隻。另一隻到底去哪了？' },
+  { id: 't-petal',   emoji: '🌸', name: '掉下來的花', line: '還很新，應該是剛剛才掉的。' },
+  { id: 't-kite',    emoji: '🪁', name: '斷線的風箏', line: '卡在樹上很久了，尾巴都褪色了。' },
+  { id: 't-shroom',  emoji: '🍄', name: '小蘑菇',     line: '長在樹根旁邊。你沒有摘它。' },
+  { id: 't-marble',  emoji: '💎', name: '玻璃珠',     line: '對著太陽看，裡面有一條藍色的線。' },
+  { id: 't-snail',   emoji: '🐌', name: '蝸牛',       line: '走得超級慢，你等牠爬過一整塊磚。' },
+  { id: 't-compass', emoji: '🧭', name: '壞掉的指南針', line: '針一直轉，指不出方向。' },
+  { id: 't-ribbon',  emoji: '🎀', name: '緞帶',       line: '粉紅色的，綁在欄杆上。' },
+  { id: 't-bone',    emoji: '🦴', name: '恐龍的骨頭', line: '只有一小塊，猜不出是哪一隻。' },
+  { id: 't-egg',     emoji: '🥚', name: '空的蛋殼',   line: '很小很小，淡藍色的。' },
 ];
 const HIDE_SPOTS = [
   [20, 150], [304, 84], [112, 30], [186, 26], [248, 160], [92, 96],
   [214, 46], [30, 92], [140, 148], [292, 186], [66, 186], [176, 70],
 ];
-function huntToday() {
-  const sd = seedOf('h:' + todayStamp() + ':' + whoId());
+const HUNT_MIN = 10;   // 幾分鐘換一樣
+// 抽出來是為了走查可以換掉它（不然只能真的等十分鐘）
+function nowMin() { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); }
+// 這一輪是哪一格。同一格裡算幾次都一樣，跨格才會換東西
+const huntSlot = () => todayStamp() + '#' + Math.floor(nowMin() / HUNT_MIN);
+function huntNow() {
+  const sd = seedOf('h:' + huntSlot() + ':' + whoId());
   const t = TREASURES[sd % TREASURES.length];
   return { id: t.id, emoji: t.emoji, name: t.name, line: t.line, at: HIDE_SPOTS[(sd >>> 9) % HIDE_SPOTS.length] };
 }
-const huntKey = () => pKey('hunt-' + todayStamp());
-const foundToday = () => localStorage.getItem(huntKey());
+// 還有幾分鐘換下一個——講得出數字，她才知道要不要等
+const huntLeft = () => HUNT_MIN - (nowMin() % HUNT_MIN);
+const huntKey = () => pKey('hunt-' + huntSlot());
+const foundNow = () => localStorage.getItem(huntKey());
+const huntDayKey = () => pKey('huntday-' + todayStamp());
+const foundCountToday = () => parseInt(localStorage.getItem(huntDayKey()) || '0', 10);
 function loadTreasures() {
   try { return JSON.parse(localStorage.getItem(pKey('treasures'))) || {}; } catch (e) { return {}; }
 }
@@ -515,6 +540,7 @@ function recordFind(id) {
   try {
     localStorage.setItem(pKey('treasures'), JSON.stringify(box));
     localStorage.setItem(huntKey(), id);
+    localStorage.setItem(huntDayKey(), String(foundCountToday() + 1));
   } catch (e) {}
 }
 const treasureById = id => TREASURES.find(t => t.id === id);
@@ -593,6 +619,10 @@ let townFree = false;   // 而且是「自由玩」的那種，不算今天的�
 /* 走過去要花多久。走查會把它設成 0 讓動畫直接跳過——
    不然點一下變成非同步，整個走查都要改寫成非同步。 */
 let walkMs = 780;
+let huntTimer = null;   // 十分鐘換一樣東西的計時器（只有一個，進小鎮就重設）
+/* 計時器實際做的事抽成這個變數，走查直接叫它就好——
+   不然驗「過十分鐘會不會換」要真的等十分鐘。跟 walkMs 一樣是刻意留的接縫。 */
+let huntTimerFn = null;
 let townMsg = null;     // 點了鎮上的人之後要顯示的話
 let townTaps = {};      // 每個地點點過幾下，決定講到第幾句
 
@@ -600,13 +630,18 @@ function renderTown() {
   const tod = todNow(), ev = periodEvent(tod), wx = weatherToday();
   const done = ev.id ? isPeriodDone(tod) : false;
   const stage = townStage(), friend = loadFriend();
-  const hunt = huntToday(), got = foundToday();
-  /* 抽成函式，是因為找到東西的時候只換這一段，不重畫整張卡片 */
-  function huntHTML(gotId) {
-    const t = gotId ? treasureById(gotId) : null, box = loadTreasures();
-    return (t ? `🎁 今天找到了：<b>${t.emoji} ${esc(t.name)}</b>　${esc(t.line)}`
-              : '👀 今天鎮上藏了一個小東西，找找看。')
-      + `<div class="box">${TREASURES.map(x =>
+  let hunt = huntNow();
+  /* 抽成函式，是因為找到東西、或十分鐘換一輪的時候只換這一段，
+     不重畫整張卡片（重畫會閃，而且地圖也會跟著重新產生）。 */
+  function huntHTML() {
+    const gotId = foundNow(), t = gotId ? treasureById(gotId) : null;
+    const box = loadTreasures(), n = foundCountToday();
+    const head = t
+      ? `🎁 找到了：<b>${t.emoji} ${esc(t.name)}</b>　${esc(t.line)}<br>` +
+        `<small>再 <b>${huntLeft()}</b> 分鐘會換一個新的。今天已經找到 ${n} 個。</small>`
+      : `👀 鎮上藏了一個小東西，找找看。` +
+        (n ? `<br><small>今天已經找到 ${n} 個。</small>` : '');
+    return head + `<div class="box">${TREASURES.map(x =>
           `<span class="${box[x.id] ? 'on' : ''}" title="${esc(x.name)}">${box[x.id] ? x.emoji : '•'}</span>`
         ).join('')}</div>`;
   }
@@ -628,10 +663,10 @@ function renderTown() {
         <div class="wx">${WEATHER[wx].icon} ${WEATHER[wx].name}　·　🖼️ ${seenTotal()} / ${totalEnds()}</div>
       </div>
       <div class="townwrap">
-        <div class="town">${townSVG(tod, marks, WHERE_NOW[tod], wx, stage, got ? null : hunt)}</div>
+        <div class="town">${townSVG(tod, marks, WHERE_NOW[tod], wx, stage, foundNow() ? null : hunt)}</div>
         <div class="saybox" hidden></div>
       </div>
-      <div class="hunt">${huntHTML(got)}</div>
+      <div class="hunt">${huntHTML()}</div>
       <div class="townhint">${hint}</div>
       <div class="row" style="margin-top:10px;">
         <button class="mini" id="tmenu">🎭 劇本選單</button>
@@ -716,17 +751,40 @@ function renderTown() {
   }
   if (townMsg) showSay(townMsg);   // 從別的畫面回小鎮時，把剛才那句接回去
 
-  // 找到今天藏的東西。這個 g 刻意不在任何 .spot 裡面，不會跟地點搶點擊
+  /* 找到藏的東西。這個 g 刻意不在任何 .spot 裡面，不會跟地點搶點擊。
+     它永遠存在（找到了就是空的），所以只要換 innerHTML，不用重畫地圖。 */
   const hg = app.querySelector('.hide');
-  if (hg) hg.onclick = (e) => {
-    e.stopPropagation();
+  const huntLine = app.querySelector('.hunt');
+  function paintHunt() {
+    const got = foundNow();
+    hg.innerHTML = got ? '' : hideArt(hunt);
+    hg.style.cursor = got ? '' : 'pointer';
+    huntLine.innerHTML = huntHTML();
+  }
+  paintHunt();
+  hg.onclick = (e) => {
+    if (foundNow()) return;                 // 這一輪已經找到了
+    if (e && e.stopPropagation) e.stopPropagation();
     Sfx.good();
     recordFind(hunt.id);
-    // 一樣不重畫整張卡片：把東西拿掉、換掉那一行就好
-    hg.remove();
-    app.querySelector('.hunt').innerHTML = huntHTML(hunt.id);
+    paintHunt();
     showSay(null);
   };
+
+  /* 十分鐘換一樣東西。她可能一直開著這一頁，所以要自己換，
+     不能等她重新整理——但一樣只換那一塊，不重畫整張卡片。
+     計時器掛在全域並且每次進小鎮都重設，不然離開小鎮之後
+     它還會繼續對著舊的 DOM 亂寫。 */
+  let slotShown = huntSlot();
+  huntTimerFn = () => {
+    if (view !== 'town' || !document.body.contains(hg)) return;
+    if (huntSlot() === slotShown) return;
+    slotShown = huntSlot();
+    hunt = huntNow();
+    paintHunt();
+  };
+  clearInterval(huntTimer);
+  huntTimer = setInterval(huntTimerFn, 15000);
   document.getElementById('tmenu').onclick = () => { Sfx.tap(); townMsg = null; view = 'menu'; render(); };
   document.getElementById('tgal').onclick  = () => { Sfx.tap(); townMsg = null; view = 'gallery'; render(); };
 }

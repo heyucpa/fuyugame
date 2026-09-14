@@ -55,6 +55,14 @@ const PLATE = (x, y, txt, mark) =>
   '</g>';
 
 const HIDE_R = 14;   // 藏的東西的點擊半徑（在 320 寬的畫面裡，手機上大約 31px）
+/* 那顆透明圈是點擊範圍——字只有 11 大，小孩的手指點不到那麼準。
+   fill 要 transparent 不能 none，none 不吃點擊。
+   圈放大就會開始搶名牌的點擊，所以 HIDE_SPOTS 跟名牌的距離有走查在擋。 */
+const hideArt = (hide) => hide
+  ? '<circle cx="' + hide.at[0] + '" cy="' + hide.at[1] + '" r="' + HIDE_R + '" fill="transparent"/>' +
+    '<text x="' + hide.at[0] + '" y="' + (hide.at[1] + 4) + '" font-size="11" ' +
+    'text-anchor="middle">' + hide.emoji + '</text>'
+  : '';
 
 /* 天色與雨都是蓋在最上層的整張遮罩，一定要 pointer-events="none"。
    沒有的話，它會把底下六個地點的點擊全部吃掉——
@@ -168,13 +176,10 @@ function townSVG(tod, marks, standAt, weather, stage, hide) {
     '<g id="walker" style="transition: transform .75s ease-in-out;">' +
       GIRL(here.stand[0], here.stand[1], 0.55) + '</g>' +
     /* 藏的東西畫在最後、遮罩之前：畫太早會被小人或房子蓋住。
-       那顆 HIDE_R 的透明圈是點擊範圍——字只有 11 大，
-       小孩的手指點不到那麼準。fill 要 transparent 不能 none，none 不吃點擊。
-       圈放大就會開始搶名牌的點擊，所以 HIDE_SPOTS 跟名牌的距離有走查在擋。 */
-    (hide ? '<g class="hide" style="cursor:pointer">' +
-        '<circle cx="' + hide.at[0] + '" cy="' + hide.at[1] + '" r="' + HIDE_R + '" fill="transparent"/>' +
-        '<text x="' + hide.at[0] + '" y="' + (hide.at[1] + 4) + '" font-size="11" ' +
-        'text-anchor="middle">' + hide.emoji + '</text></g>' : '') +
+       這個 <g> 一定要「永遠存在、裡面可能是空的」——十分鐘換一次東西的時候
+       才能只換這一塊，不用重畫整張地圖（重畫會閃）。順序也才固定，
+       不會變成畫在天色遮罩上面。 */
+    '<g class="hide">' + hideArt(hide) + '</g>' +
     (TOWN_TINT[tod] || '') +
     (weather === 'rain' ? RAIN : '') + '</svg>';
 }

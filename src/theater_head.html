@@ -411,7 +411,8 @@
           line-height: 1.65; margin: 6px 0 10px; }
   .hunt b { color: #6b4a9e; }
   /* 十二格一定要排得下一行，所以用 flex 讓它自己縮，不要固定寬度 */
-  .box { display: flex; justify-content: center; gap: 2px; margin-top: 5px; }
+  /* 24 格：手機寬度排不下一行，讓它自己折成兩行 */
+  .box { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 3px; margin-top: 5px; }
   .box span { flex: 0 1 auto; min-width: 0; font-size: 14px; line-height: 1.5;
               color: #b9abcc; filter: grayscale(1) opacity(.5); }
   .box span.on { filter: none; }
