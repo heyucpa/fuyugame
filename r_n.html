@@ -4782,5 +4782,15 @@ render();
   } catch (e) { /* 沒網路就算了，照樣可以玩 */ }
 })();
 </script>
+<script>(function(){
+localStorage.clear();
+todNow=function(){return 'night';};
+startDay();
+dayRun[0]={stop:STOPS[0],calm:null,scenarioId:'breakfast',result:{title:'第一時間就求助',grade:'best'}};
+dayRun[1]={stop:STOPS[1],calm:'今天在學校很平常。',result:null};
+dayRun[2]={stop:STOPS[2],calm:null,scenarioId:'road',result:{title:'安全脫身',grade:'good'}};
+dayRun[3]={stop:STOPS[3],calm:null,scenarioId:'fakecop',result:null};
+dayAt=3; view='route'; render();
+})();</script>
 </body>
 </html>

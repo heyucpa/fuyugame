@@ -22,11 +22,21 @@
     padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
              max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
     font-family: "Comic Sans MS", "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif;
-    background: linear-gradient(180deg, #efe4ff 0%, #ffe8f4 55%, #dceaff 100%);
+    /* 底色跟著時間走。平常看的是現實時間（早上開就是晨光、晚上開就是夜色）；
+       走「平安的一天」的時候改成跟著目前那一段，才有走過一天的感覺。
+       只動卡片後面的背景，卡片本身維持白底，字的對比不受影響。 */
+    background: var(--sky, linear-gradient(180deg, #efe4ff 0%, #ffe8f4 55%, #dceaff 100%));
     background-attachment: fixed;
+    transition: background 900ms ease;
     min-height: 100vh;
     color: #33224a;
   }
+  body[data-tod="morning"] { --sky: linear-gradient(180deg, #ffe9c9 0%, #ffe4ec 50%, #dff0ff 100%); }
+  body[data-tod="day"]     { --sky: linear-gradient(180deg, #d8ecff 0%, #eaf6ff 55%, #f3fff4 100%); }
+  body[data-tod="dusk"]    { --sky: linear-gradient(180deg, #ffd9b0 0%, #f6c4d8 45%, #cdbde8 100%); }
+  body[data-tod="night"]   { --sky: linear-gradient(180deg, #2f3b63 0%, #4a4a7a 45%, #6b5a8e 100%); }
+  /* 夜裡卡片外的字（版本號那類）要看得見 */
+  body[data-tod="night"] .app > p { color: #cfc7de !important; }
   .app { max-width: 620px; margin: 0 auto; position: relative; z-index: 2; }
   .card {
     background: #fff;
@@ -363,6 +373,8 @@
   /* ===== 平安的一天：路線圖 ===== */
   .daytop { text-align: center; margin-bottom: 10px; }
   .daynum { font-size: 13px; font-weight: 900; color: #2f6f8f; }
+  .greet { font-size: 15px; color: #33224a; margin-bottom: 6px; line-height: 1.6; }
+  .greet b { display: block; font-size: 19px; color: #2f6f8f; }
 
   .route { display: flex; align-items: flex-end; justify-content: space-between;
            gap: 2px; margin: 10px 0 14px; }

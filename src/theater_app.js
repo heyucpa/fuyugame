@@ -287,6 +287,26 @@ const CALM = {
   night:   ['晚上在家寫功課、看電視，很安靜的一個晚上。', '今天晚上沒什麼事，早早就睡了。'],
 };
 
+/* 現實時間 → 時段。底色與問候都看這個。 */
+function todNow() {
+  const h = new Date().getHours();
+  if (h < 10) return 'morning';
+  if (h < 16) return 'day';
+  if (h < 19) return 'dusk';
+  return 'night';
+}
+const TOD_OF_STOP = { morning: 'morning', school: 'day', after: 'dusk', night: 'night' };
+function setTod(t) { try { document.body.dataset.tod = t; } catch (e) {} }
+
+/* 開始一天的時候，依現在幾點跟她打個招呼。
+   不改流程——一天還是從早上走到晚上，只是承認「現在幾點」。 */
+const GREET = {
+  morning: ['早安 ☀️', '今天正要開始。'],
+  day:     ['午安 🌤️', '今天過了一半，我們從頭走一次。'],
+  dusk:    ['傍晚了 🌇', '來看看今天這一天。'],
+  night:   ['晚安 🌙', '睡前來走一次今天。'],
+};
+
 let dayRun = null;   // 不是 null 就代表正在過一天
 let dayAt = 0;
 
@@ -340,7 +360,10 @@ function renderRoute() {
   const d = dayRun[dayAt];
   app.innerHTML = `
     <div class="card anim">
-      <div class="daytop"><span class="daynum">${who().emoji} ${esc(who().name)} 的一天</span></div>
+      <div class="daytop">
+        ${dayAt === 0 ? `<div class="greet"><b>${GREET[todNow()][0]}</b>${GREET[todNow()][1]}</div>` : ''}
+        <span class="daynum">${who().emoji} ${esc(who().name)} 的一天</span>
+      </div>
       ${routeBar()}
       ${d.calm ? `
         <div class="calm">
@@ -424,6 +447,10 @@ function renderTally() {
 }
 
 function render() {
+  // 走一天的時候用那一段的時間，其他畫面用現實時間
+  setTod(dayRun && (view === 'route' || view === 'story' || view === 'end')
+    ? TOD_OF_STOP[dayRun[Math.min(dayAt, dayRun.length - 1)].stop.key]
+    : todNow());
   if (view === 'menu') renderMenu();
   else if (view === 'check') renderCheck();
   else if (view === 'gallery') renderGallery();
