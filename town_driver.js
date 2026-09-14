@@ -153,7 +153,6 @@
           if(!bs.length){ fails.push('沒有選項'); break; }
           bs[0].onclick();
         }
-        if (predicting){ var g=document.getElementById('g-idk'); g && g.onclick(); }
         if (view!=='end') fails.push('沒走到結局');
         if(!isPeriodDone()) fails.push('走完卻沒有標記這個時段完成');
         var back=document.getElementById('tgo');
@@ -181,7 +180,6 @@
             document.getElementById('go').onclick();
             var g2=0;
             while (view==='story' && g2++<40){ var b2=document.querySelectorAll('.choice'); if(!b2.length) break; b2[0].onclick(); }
-            if (predicting){ var gg=document.getElementById('g-idk'); gg && gg.onclick(); }
             if (seenTotal() <= before) fails.push('自由玩玩完，圖鑑沒有增加');
             var bk=document.getElementById('tgo'); bk && bk.onclick();
           }

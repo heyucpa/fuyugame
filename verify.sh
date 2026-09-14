@@ -64,7 +64,7 @@ import io
 src = io.open('theater.html', encoding='utf-8').read()
 tail = '</body>\n</html>\n'
 body = '''
-localStorage.clear(); localStorage.setItem('theater-guess:p1','off');
+localStorage.clear();
 var e={}; SCENARIOS.forEach(function(sc){ e[sc.id]={};
   Object.keys(sc.endings).forEach(function(k,i){ if(i%2===0) e[sc.id][k]=1; }); });
 localStorage.setItem('theater-ends:p1', JSON.stringify(e));
@@ -77,7 +77,6 @@ function scan(name){ var bad=[];
 view='menu'; render(); scan('首頁');
 view='who'; render(); scan('換人');
 view='gallery'; render(); scan('圖鑑');
-view='check'; render(); scan('判斷紀錄');
 view='town'; render(); scan('小鎮');
 document.querySelector('.spot[data-spot="school"]').onclick(); scan('小鎮・有人講話');
 townMsg=null;

@@ -6,7 +6,6 @@
 
   try {
     localStorage.clear();
-    localStorage.setItem('theater-guess:p1','off');   // 走查不要被押判斷攔住
 
     SCENARIOS.forEach(function(sc){
       Object.keys(sc.endings).forEach(function(key){
@@ -27,6 +26,8 @@
         total++;
 
         if(view!=='end'){ fails.push(tag+' 沒走到結局'); return; }
+        // 每一個結局都是第一次走到（開頭清空過），要直接看到答案，不能被攔下來
+        if(document.querySelector('.guess')) fails.push(tag+' 被「先猜再看」攔住了');
         var h1=document.querySelector('.result h1');
         if(!h1 || h1.textContent!==sc.endings[key].title) fails.push(tag+' 標題不符');
 
