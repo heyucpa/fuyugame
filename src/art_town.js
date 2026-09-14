@@ -155,7 +155,9 @@ function townSVG(tod, marks, standAt, weather, stage) {
   const here = PLACES.find(p => p.key === standAt) || PLACES[PLACES.length - 1];
   return '<svg viewBox="0 0 320 200" width="100%" role="img" aria-label="小鎮地圖">' +
     townBase() + townGrowth(stage || 0) + spots +
-    GIRL(here.stand[0], here.stand[1], 0.55) +
+    // 小人包起來並給 id，點地點時用 transform 讓她「走過去」
+    '<g id="walker" style="transition: transform .75s ease-in-out;">' +
+      GIRL(here.stand[0], here.stand[1], 0.55) + '</g>' +
     (TOWN_TINT[tod] || '') +
     (weather === 'rain' ? RAIN : '') + '</svg>';
 }

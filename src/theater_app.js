@@ -532,6 +532,22 @@ function pickFreePlay(place) {
   return best[Math.floor(Math.random() * best.length)].id;
 }
 
+/* 天神爸爸。
+   刻意不放進情境裡當「求救選項」——這個遊戲從頭到尾的原則是
+   保護她的是她自己的判斷，多一個「叫爸爸來」的選項，
+   最省力的答案就永遠是那個，而現實裡沒有人會來。
+
+   所以他只在她走到「🔁 再試」的時候出現：那是她最挫折的一刻，
+   也是最需要爸爸的一刻——給的是打氣，不是代替她解決。 */
+const DAD_LINES = [
+  '沒關係。這一次沒走好，不代表下一次也是。',
+  '爸爸也有很多事情第一次做不好。回去再走一次就好。',
+  '你願意再試一次，這件事本身就很厲害了。',
+  '記住剛才哪裡卡住就好，其他的別放心上。',
+  '不管你走到哪一種結局，爸爸都在這裡。',
+];
+function dadLine() { return DAD_LINES[Math.floor(Math.random() * DAD_LINES.length)]; }
+
 const PLACE_NAME = { home: '家裡', school: '學校', shop: '商店街', park: '公園', dojo: '道館', pool: '泳池' };
 
 // 現實時間決定她人在哪裡
@@ -539,6 +555,9 @@ const WHERE_NOW = { morning: 'home', day: 'school', dusk: 'park', night: 'home' 
 
 let fromTown = false;   // 這一篇是從小鎮點進來的
 let townFree = false;   // 而且是「自由玩」的那種，不算今天的事
+/* 走過去要花多久。走查會把它設成 0 讓動畫直接跳過——
+   不然點一下變成非同步，整個走查都要改寫成非同步。 */
+let walkMs = 780;
 let townMsg = null;     // 點了鎮上的人之後要顯示的話
 let townTaps = {};      // 每個地點點過幾下，決定講到第幾句
 
@@ -580,12 +599,26 @@ function renderTown() {
       </div>
     </div>`;
 
+  /* 點了地點，小人先走過去，走到了才發生事情。
+     只是把她平移過去，不是真的可以自由走動——但「走著走著遇到事情」
+     的感覺出來了，而且幾乎沒有成本。 */
+  function walkTo(place, after) {
+    const from = PLACES.find(p => p.key === WHERE_NOW[tod]) || PLACES[PLACES.length - 1];
+    const to = PLACES.find(p => p.key === place);
+    const w = document.getElementById('walker');
+    if (!walkMs || !w || !to || to.key === from.key) return after();
+    w.setAttribute('transform',
+      'translate(' + (to.stand[0] - from.stand[0]) + ',' + (to.stand[1] - from.stand[1]) + ')');
+    setTimeout(after, walkMs);
+  }
+
   app.querySelectorAll('.spot').forEach(g => {
     g.style.cursor = 'pointer';
     g.onclick = () => {
       const k = g.dataset.spot;
       if (ev.place && k === ev.place && !done) {      // 這個時段的事
-        Sfx.page(); townMsg = null; fromTown = true; townFree = false; startScenario(ev.id);
+        Sfx.page();
+        walkTo(k, () => { townMsg = null; fromTown = true; townFree = false; startScenario(ev.id); });
         return;
       }
       // 鎮上的人講話，再點會講下一句
@@ -603,9 +636,10 @@ function renderTown() {
   });
   const play = document.getElementById('tplay');
   if (play) play.onclick = () => {
-    const id = pickFreePlay(townMsg.place);
+    const place = townMsg.place, id = pickFreePlay(place);
     if (!id) return;
-    Sfx.page(); townMsg = null; fromTown = true; townFree = true; startScenario(id);
+    Sfx.page();
+    walkTo(place, () => { townMsg = null; fromTown = true; townFree = true; startScenario(id); });
   };
   document.getElementById('tmenu').onclick = () => { Sfx.tap(); townMsg = null; view = 'menu'; render(); };
   document.getElementById('tgal').onclick  = () => { Sfx.tap(); townMsg = null; view = 'gallery'; render(); };
@@ -1093,6 +1127,10 @@ function renderEnding() {
             <div style="font-weight:900; margin-bottom:5px; color:#1e7d46;">${cons ? '🤔 想一想' : '💡 學到了什麼'}</div>
             ${narrate(ending.lesson)}
           </div>
+          ${ending.grade === 'bad' ? `<div class="dadsay">
+            <div class="dadart"><svg viewBox="0 0 44 46" aria-hidden="true">${DAD(22, 43, 0.55, 'reachR')}</svg></div>
+            <div><b>爸爸</b><br>${narrate(dadLine())}</div>
+          </div>` : ''}
           <div class="talkbox">
             <div class="talkbox-h">💬 跟爸爸媽媽討論</div>
             <div>${narrate(cur.talk || '把這個故事講給爸爸媽媽聽，問問看他們會怎麼做？')}</div>

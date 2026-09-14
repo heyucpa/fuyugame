@@ -8,6 +8,7 @@
 
   try {
     localStorage.clear();
+    walkMs = 0;              // 關掉走路動畫，讓點擊維持同步
     var gal0 = seenTotal();
 
     // ① 同一天同一個時段，算幾次都要一樣
