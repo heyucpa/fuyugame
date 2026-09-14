@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<link rel="manifest" href="data:application/json;charset=utf-8;base64,ewogICJuYW1lIjogIuW5s+WuieeahOS4gOWkqSIsCiAgInNob3J0X25hbWUiOiAi5bmz5a6J55qE5LiA5aSpIiwKICAic3RhcnRfdXJsIjogIi4vd29ybGQuaHRtbCIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiI2VhZjRmZiIsCiAgInRoZW1lX2NvbG9yIjogIiMyZjZmOGYiCn0K" />
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj48cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgcng9IjQwIiBmaWxsPSIjMmY2ZjhmIi8+PHRleHQgeD0iOTAiIHk9IjEyNSIgZm9udC1zaXplPSIxMDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiPvCfl7rvuI88L3RleHQ+PC9zdmc+" />
+<title>平安的一天 🗺️</title>
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="平安的一天" />
+<meta name="theme-color" content="#2f6f8f" />
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta name="build" content="__BUILD__" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjMmY2ZjhmIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn5e677iPPC90ZXh0Pjwvc3ZnPg==" />
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+             max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    font-family: "Comic Sans MS", "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif;
+    background: linear-gradient(180deg, #efe4ff 0%, #ffe8f4 55%, #dceaff 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    color: #33224a;
+  }
+  .app { max-width: 620px; margin: 0 auto; position: relative; z-index: 2; }
+  .card {
+    background: #fff;
+    border: 4px solid #33224a;
+    border-radius: 22px;
+    padding: 18px;
+    box-shadow: 0 6px 0 rgba(0,0,0,.14), 0 10px 24px rgba(0,0,0,.16);
+  }
+  h1 {
+    margin: 0 0 4px; text-align: center; font-size: 27px; color: #6b4a9e;
+    text-shadow: 2px 2px 0 #fff;
+    text-wrap: balance;
+  }
+  .sub { text-align: center; color: #6b5a7e; margin-bottom: 14px; font-size: 14px; }
+  button {
+    font-family: inherit; cursor: pointer;
+    border: 3px solid #33224a; border-radius: 14px;
+    padding: 10px 20px; font-size: 17px; font-weight: 800;
+    background: #ffd23f; color: #33224a;
+    box-shadow: 0 4px 0 rgba(0,0,0,.15);
+  }
+  button { touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  @media (hover: hover) {
+    button:hover:not(:disabled) { transform: translateY(-2px); }
+    .pick:hover { background: #eadcff; }
+    .choice:hover { background: #ffe9a8; }
+  }
+  button:active:not(:disabled) { transform: translateY(2px); }
+  button:focus-visible { outline: 4px solid #ffaa00; outline-offset: 2px; }
+
+  /* 劇本選單 */
+  .pick-grid { display: grid; gap: 10px; margin-top: 12px; }
+  .pick {
+    display: flex; align-items: center; gap: 12px; text-align: left; width: 100%;
+    background: #faf5ff; border: 3px solid #33224a; border-radius: 16px; padding: 12px 14px;
+  }
+  .pick .ico { font-size: 40px; line-height: 1; flex-shrink: 0; }
+  .pick .t { font-size: 18px; font-weight: 900; display: block; }
+  .pick .g { font-size: 12px; color: #6b5a7e; font-weight: 700; margin-top: 2px; display: block; }
+  .pick .done { margin-left: auto; font-size: 26px; flex-shrink: 0; }
+
+  /* 玩家列 */
+  .whorow {
+    display: flex; align-items: center; gap: 8px; width: 100%;
+    background: #faf5ff; border: 3px solid #33224a; border-radius: 14px;
+    padding: 7px 12px; margin-bottom: 8px; font-size: 14px;
+  }
+  .whoemo { font-size: 22px; line-height: 1; }
+  .whoname { font-weight: 900; }
+  .whoswap { margin-left: auto; font-size: 12px; color: #6b4a9e; font-weight: 800; }
+  .who-pick.on { background: #eadcff; border-color: #6b4a9e; }
+
+  /* 故事 */
+  .stage {
+    background: #faf5ff; border: 3px solid #33224a; border-radius: 18px;
+    padding: 18px 16px; margin: 12px 0;
+  }
+  .stage .big { font-size: 62px; line-height: 1; text-align: center; margin-bottom: 8px; }
+  .narr { font-size: 17px; line-height: 1.85; }
+  .hint {
+    margin-top: 10px; font-size: 13px; font-weight: 700; color: #6b4a9e;
+    background: #fff3c4; border-radius: 10px; padding: 8px 12px; border: 2px dashed #c9a000;
+  }
+  .choices { display: grid; gap: 9px; }
+  .choice {
+    width: 100%; text-align: left; background: #fff; font-size: 16px; font-weight: 700;
+    padding: 13px 15px; line-height: 1.5; border-radius: 14px;
+    position: relative;
+  }
+  /* 這一輪已經選過的那個選項 → 變灰（重新開始故事就恢復） */
+  .choice.seen {
+    background: #efedf4; color: #877f9c; border-color: #a9a2bd;
+    box-shadow: 0 4px 0 rgba(0,0,0,.07);
+  }
+  /* 按過了，但這條路裡面還有沒按過的選項 → 淡一點，但不要看起來像關掉了 */
+  .choice.past { background: #fdfbff; color: #4a4260; }
+  .seenmark, .pastmark {
+    display: inline-block; margin-left: 8px; font-size: 11px; font-weight: 800;
+    border-radius: 8px; padding: 2px 7px; vertical-align: middle; white-space: nowrap;
+  }
+  .seenmark { color: #6b5a8e; background: #ded8ea; }
+  .pastmark { color: #8a7fa8; background: #efeaf7; }
+  /* 揭曉之前，先讓她自己押一個判斷 */
+  .guess { text-align: center; margin-top: 14px; }
+  .guess-q { font-size: 17px; font-weight: 900; color: #6b4a9e; margin-bottom: 4px; }
+  .guess-s { font-size: 12.5px; color: #8a7fa8; margin-bottom: 12px; line-height: 1.7; }
+  .guess-btns { display: grid; gap: 9px; max-width: 420px; margin: 0 auto; }
+  .guess-btns button { width: 100%; font-size: 16px; font-weight: 800; padding: 14px 16px; }
+  #g-good { background: #b7f0c2; }
+  #g-bad  { background: #ffd0d0; }
+  #g-idk  { background: #fff; }
+
+  /* 結局圖鑑 */
+  .galtop { text-align: center; margin: 12px 0 14px; }
+  .galnum { font-size: 30px; font-weight: 900; color: #6b4a9e; line-height: 1.2; }
+  .galnum small { font-size: 15px; color: #8a7fa8; font-weight: 800; }
+  .gal-bar { height: 12px; border-radius: 999px; background: #e2dcee;
+             border: 2px solid #cbbce0; overflow: hidden; margin-top: 8px; }
+  .gal-bar i { display: block; height: 100%; background: linear-gradient(90deg, #a8e6c0, #7cc9a0); }
+
+  .gal { background: #fff; border: 3px solid #33224a; border-radius: 14px;
+         padding: 10px 12px; margin-bottom: 12px; }
+  .gal h3 { margin: 0 0 8px; font-size: 15px; color: #6b4a9e;
+            display: flex; align-items: center; gap: 6px; }
+  .gal h3 .n { margin-left: auto; font-size: 13px; color: #8a7fa8; }
+  /* 一定要用 minmax(0, 1fr)：1fr 等於 minmax(auto, 1fr)，而 auto 的下限是
+     內容的 min-content——格子裡的 SVG 會把欄位撐得比容器還寬，整排就溢出畫面。 */
+  .gal-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  @media (min-width: 560px) { .gal-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+  .gal-cell { border: 2.5px solid #cbbce0; border-radius: 10px; overflow: hidden;
+              background: #fff; min-width: 0; }
+  .gal-cell svg { width: 100%; display: block; }
+  .gal-cap { font-size: 11px; font-weight: 800; padding: 5px 6px; line-height: 1.35; }
+
+  .gal-lock {
+    aspect-ratio: 200 / 130; min-width: 0;
+    border: 2.5px dashed #cbbce0; border-radius: 10px;
+    background: repeating-linear-gradient(45deg, #f4f0fb, #f4f0fb 10px, #eae4f4 10px, #eae4f4 20px);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px; color: #b8abd4; font-weight: 900;
+  }
+
+  /* 判斷紀錄 */
+  .chk { background: #fff; border: 3px solid #33224a; border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
+  .chk h3 { margin: 0 0 8px; font-size: 15px; color: #6b4a9e; }
+  .chk-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-top: 1px solid #eee6f8; font-size: 13.5px; }
+  .chk-row:first-of-type { border-top: 0; }
+  .chk-row .w { flex: 1; min-width: 0; }
+  .chk-tag { font-size: 11px; font-weight: 800; border-radius: 8px; padding: 2px 8px; white-space: nowrap; }
+  .chk-num { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; }
+  .chk-num div { background: #fff; border: 2px solid #cbbce0; border-radius: 10px; padding: 6px 14px; font-size: 12.5px; font-weight: 700; }
+  .chk-num b { color: #6b4a9e; font-size: 17px; }
+
+  /* 心理安全框：提醒孩子這是在練習少數狀況，不是說世界很可怕 */
+  .safeframe {
+    background: #eafaf1; border: 2px solid #7cc9a0; border-radius: 12px;
+    padding: 10px 14px; margin: 14px 0 0; font-size: 13px; line-height: 1.75;
+    color: #1e6b46; text-align: center; font-weight: 700;
+  }
+  .safeframe b { color: #14603c; }
+  .safeframe.mini {
+    font-size: 12.5px; padding: 9px 12px; text-align: left; font-weight: 500;
+    display: flex; align-items: flex-start; gap: 8px;
+  }
+  .safeframe.mini .sf-ico { flex: 0 0 auto; line-height: 1.75; }
+  .safeframe.mini .sf-txt { flex: 1; min-width: 0; }
+
+  /* 首頁底下的選項圖例：用跟遊戲裡一模一樣的顏色 */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+    margin: 12px 0 0;
+  }
+  .lg {
+    font-size: 11px; font-weight: 800; border-radius: 999px;
+    padding: 4px 10px; border: 2px solid #33224a;
+  }
+  .lg-new     { background: #fff;    color: #33224a; }
+  .lg-past    { background: #f7f5fb; color: #8a7fa8; }
+  .lg-done    { background: #efedf4; color: #877f9c; border-color: #a9a2bd; }
+
+  .steps {
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    margin-bottom: 4px;
+  }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #cbbce0; }
+  .dot.on { background: #6b4a9e; transform: scale(1.35); }
+
+  /* 結局 */
+  .result { text-align: center; }
+  .result .face { font-size: 76px; line-height: 1; }
+  /* 小字級用大陰影會糊成兩層，結局標題改用淺陰影 */
+  .result h1 { font-size: 24px; text-shadow: 2px 2px 0 #fff; }
+
+  /* 結局插圖 */
+  .scene { max-width: 300px; margin: 2px auto 4px; }
+  .scene svg { width: 100%; height: auto; display: block; border-radius: 14px; }
+  @keyframes rays-spin { to { transform: rotate(360deg); } }
+  @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+  @keyframes twinkle { 0%,100% { opacity: .35; } 50% { opacity: 1; } }
+  @keyframes cape-wave { 0%,100% { transform: skewY(0deg) scaleX(1); } 50% { transform: skewY(-4deg) scaleX(1.07); } }
+  @keyframes sway { 0%,100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-2px) rotate(-1.2deg); } }
+  @keyframes sway2 { 0%,100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-2px) rotate(1.2deg); } }
+  @keyframes hearts-rise { 0% { transform: translateY(6px); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(-14px); opacity: 0; } }
+  @keyframes run-shake { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-3px,-3px); } }
+  @keyframes dash { 0%,100% { opacity: .25; transform: translateX(0); } 50% { opacity: .95; transform: translateX(-6px); } }
+  @keyframes puff { 0% { opacity: .8; transform: scale(.7); } 100% { opacity: 0; transform: scale(1.4); } }
+  @keyframes dragon-miss { 0%,100% { transform: translateX(0) rotate(0deg); } 50% { transform: translateX(-7px) rotate(-5deg); } }
+  @keyframes wing-flap { 0%,100% { transform: rotate(0deg) scaleY(1); } 50% { transform: rotate(-16deg) scaleY(.82); } }
+  @keyframes fly-drift { 0%,100% { transform: translate(0,0); } 50% { transform: translate(6px,-6px); } }
+  @keyframes dangle { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+  @keyframes sparkle { 0%,100% { opacity: .3; transform: scale(.85); } 50% { opacity: 1; transform: scale(1.15); } }
+  .rays { animation: rays-spin 24s linear infinite; }
+  .bob { animation: bob 2.2s ease-in-out infinite; }
+  .twinkle text { animation: twinkle 1.6s ease-in-out infinite; }
+  .twinkle text:nth-child(2) { animation-delay: .4s; }
+  .twinkle text:nth-child(3) { animation-delay: .8s; }
+  .twinkle text:nth-child(4) { animation-delay: 1.2s; }
+  .cape { animation: cape-wave 2s ease-in-out infinite; }
+  .sway { animation: sway 2.6s ease-in-out infinite; }
+  .sway2 { animation: sway2 2.6s ease-in-out infinite; }
+  .sparkle { animation: sparkle 1.4s ease-in-out infinite; }
+  .hearts text { animation: hearts-rise 2.4s ease-out infinite; }
+  .hearts text:nth-child(2) { animation-delay: .8s; }
+  .hearts text:nth-child(3) { animation-delay: 1.6s; }
+  .run { animation: run-shake .38s ease-in-out infinite; }
+  .dash path { animation: dash .5s ease-in-out infinite; }
+  .dash path:nth-child(2) { animation-delay: .12s; }
+  .dash path:nth-child(3) { animation-delay: .24s; }
+  .puff circle { animation: puff 1s ease-out infinite; }
+  .puff circle:nth-child(2) { animation-delay: .25s; }
+  .puff circle:nth-child(3) { animation-delay: .5s; }
+  .dragonMiss { animation: dragon-miss 1.1s ease-in-out infinite; }
+  .wing { animation: wing-flap .7s ease-in-out infinite; transform-box: fill-box; transform-origin: 100% 60%; }
+  .fly { animation: fly-drift 3.2s ease-in-out infinite; }
+  .dangle { animation: dangle 1.6s ease-in-out infinite; }
+  @keyframes claw-push { 0%,100% { transform: translateX(0); } 50% { transform: translateX(7px); } }
+  @keyframes clash { 0%,100% { opacity: .5; transform: scale(.85); } 50% { opacity: 1; transform: scale(1.15); } }
+  @keyframes pull-in { 0%,100% { transform: translateX(0); } 50% { transform: translateX(-6px); } }
+  @keyframes swirl { to { transform: rotate(360deg); } }
+  @keyframes tilt { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(-3deg); } }
+  @keyframes shake-bits { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+  @keyframes crouch { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+  @keyframes fade-danger { 0%,100% { opacity: .3; } 50% { opacity: .7; } }
+  @keyframes ring { 0%,100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+  @keyframes snore { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+  @keyframes zzz { 0% { opacity: 0; transform: translateY(4px); } 40% { opacity: 1; } 100% { opacity: 0; transform: translateY(-10px); } }
+  .clawPush { animation: claw-push 1.3s ease-in-out infinite; }
+  .clash { animation: clash .8s ease-in-out infinite; }
+  .pull { animation: pull-in 1.6s ease-in-out infinite; }
+  .swirl { animation: swirl 6s linear infinite; }
+  .tilt { animation: tilt 2.4s ease-in-out infinite; }
+  .shakeBits circle { animation: shake-bits .5s ease-in-out infinite; }
+  .shakeBits circle:nth-child(2) { animation-delay: .18s; }
+  .crouch { animation: crouch 2s ease-in-out infinite; }
+  .fadeDanger { animation: fade-danger 1.8s ease-in-out infinite; }
+  .ring { animation: ring .9s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+  .snore { animation: snore 2.6s ease-in-out infinite; }
+  .zzz text { animation: zzz 2.4s ease-out infinite; }
+  .zzz text:nth-child(2) { animation-delay: 1.2s; }
+  .badge {
+    display: inline-block; padding: 5px 16px; border-radius: 999px;
+    font-weight: 900; font-size: 15px; border: 3px solid #33224a; margin-top: 6px;
+  }
+  .lesson {
+    text-align: left; font-size: 15px; line-height: 1.85;
+    background: #e8f8e6; border: 3px dashed #27ae60; border-radius: 16px;
+    padding: 14px 16px; margin: 14px 0;
+  }
+  .lesson b { color: #1e7d46; }
+  .talkbox {
+    text-align: left; font-size: 15px; line-height: 1.8;
+    background: #fff3c4; border: 3px dashed #c9a000; border-radius: 16px;
+    padding: 13px 16px; margin: 12px 0;
+  }
+  .talkbox-h { font-weight: 900; color: #a07a00; margin-bottom: 5px; }
+  .replay { text-align: left; margin: 12px 0; }
+  .replay h3 { font-size: 15px; margin: 0 0 8px; color: #6b4a9e; }
+  .step-row {
+    display: flex; gap: 9px; align-items: flex-start;
+    font-size: 13px; line-height: 1.6; padding: 7px 0;
+    border-bottom: 1px dashed #cbbce0;
+  }
+  .step-row:last-child { border-bottom: none; }
+  .step-n {
+    flex-shrink: 0; width: 21px; height: 21px; border-radius: 50%;
+    background: #6b4a9e; color: #fff; font-size: 12px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .row { display: flex; gap: 9px; justify-content: center; flex-wrap: wrap; margin-top: 6px; }
+  .mini { font-size: 13px; padding: 7px 14px; background: #fff;
+          min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .anim { animation: fadeUp .3s ease-out; }
+  @keyframes pop { 0% { transform: scale(.6);} 50% { transform: scale(1.15);} 100% { transform: scale(1);} }
+  .pop { animation: pop .45s ease-out; }
+  @media (prefers-reduced-motion: reduce) { .anim, .pop { animation: none; } }
+
+  /* 兩欄容器：手機／直向是一欄，橫向 iPad 變兩欄 */
+  .endgrid, .storygrid { display: grid; gap: 14px; align-items: start; margin-top: 12px; }
+  .storygrid > .stage { margin-top: 0; }
+
+  /* ===== iPad 直向 ===== */
+  @media (min-width: 700px) {
+    .app { max-width: 720px; }
+    .card { padding: 24px; border-radius: 26px; }
+    h1 { font-size: 32px; }
+    .sub { font-size: 16px; }
+    .narr { font-size: 20px; line-height: 1.9; }
+    .choice { font-size: 19px; padding: 17px 20px; }
+    .pick { padding: 16px 18px; }
+    .pick .ico { font-size: 46px; }
+    .pick .t { font-size: 21px; }
+    .pick .g { font-size: 14px; }
+    .lesson { font-size: 17px; }
+    .hint { font-size: 15px; }
+    .step-row { font-size: 15px; }
+    button { font-size: 19px; padding: 13px 24px; }
+    .mini { font-size: 15px; padding: 9px 16px; }
+    .scene { max-width: 360px; }
+  }
+
+  /* ===== 寬一點的螢幕：選單排兩欄 ===== */
+  @media (min-width: 820px) {
+    .app { max-width: 880px; }
+    .pick-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ===== iPad 橫向：故事與結局左右分欄，一頁看完不用捲 ===== */
+  @media (min-width: 1000px) {
+    .app { max-width: 1060px; }
+    .endgrid { grid-template-columns: minmax(300px, 42%) 1fr; gap: 24px; }
+    .storygrid { grid-template-columns: 1fr 1fr; gap: 24px; }
+    /* 只有在左右分欄裡的插圖才撐滿——它的欄本來就只有 42%。
+       開場定場圖不在格線裡，撐滿會變成一整片大圖，維持上面的 360px 上限。 */
+    .endgrid .scene, .storygrid .scene { max-width: 100%; }
+    .result h1 { font-size: 28px; }
+  }
+
+  /* ===== 平安的一天：路線圖 ===== */
+  .daytop { text-align: center; margin-bottom: 10px; }
+  .daynum { font-size: 13px; font-weight: 900; color: #2f6f8f; }
+
+  .route { display: flex; align-items: flex-end; justify-content: space-between;
+           gap: 2px; margin: 10px 0 14px; }
+  .stop { flex: 1; min-width: 0; text-align: center; position: relative; }
+  /* 站與站之間的路 */
+  .stop::before { content: ''; position: absolute; top: 22px; left: -50%; width: 100%;
+                  height: 4px; background: #cfd6dc; border-radius: 2px; }
+  .stop:first-child::before { display: none; }
+  .stop.done::before { background: #7cc9a0; }
+  .stop .dot { position: relative; display: inline-flex; align-items: center;
+               justify-content: center; width: 44px; height: 44px; border-radius: 50%;
+               background: #fff; border: 3px solid #cfd6dc; font-size: 20px; }
+  .stop.done .dot { border-color: #7cc9a0; background: #eafaf1; }
+  .stop.now  .dot { border-color: #2f6f8f; background: #dff0fa; transform: scale(1.15);
+                    box-shadow: 0 0 0 4px rgba(47,111,143,.15); }
+  .stop .nm { display: block; font-size: 10.5px; font-weight: 800; color: #6b7a85;
+              margin-top: 4px; line-height: 1.3; }
+  .stop.now .nm { color: #2f6f8f; }
+  .stop .mk { position: absolute; top: -9px; right: 50%; margin-right: -27px; font-size: 13px;
+             text-shadow: 0 0 3px #fff, 0 0 3px #fff; }
+
+  /* 這一段沒事發生 */
+  .calm { background: #eafaf1; border: 3px dashed #7cc9a0; border-radius: 16px;
+          padding: 18px 16px; text-align: center; margin: 12px 0; }
+  .calm .big { font-size: 34px; display: block; margin-bottom: 6px; }
+  .calm .t { font-size: 16px; font-weight: 900; color: #1e6b46; }
+  .calm .s { font-size: 13px; color: #3f7d5e; margin-top: 6px; line-height: 1.7; }
+
+  /* 一天結算 */
+  .tally { border: 3px solid #33224a; border-radius: 14px; overflow: hidden; margin: 12px 0; }
+  .tally-row { display: flex; align-items: center; gap: 8px; padding: 9px 11px;
+               border-bottom: 1.5px solid #efedf4; font-size: 13px; }
+  .tally-row:last-child { border-bottom: 0; }
+  .tally-row .wh { font-size: 17px; flex: 0 0 auto; }
+  .tally-row .ti { flex: 1; min-width: 0; font-weight: 700; color: #33224a; }
+  .tally-row .gd { flex: 0 0 auto; font-size: 11.5px; font-weight: 900;
+                   border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script>
