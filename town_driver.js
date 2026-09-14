@@ -265,7 +265,32 @@
           fails.push('找到之後沒有說找到的是什麼');
         if (ht.textContent.indexOf('分鐘') < 0) fails.push('沒有告訴她再幾分鐘會換新的');
       }
-      if (document.querySelectorAll('.box span.on').length < 1) fails.push('寶物盒裡沒有亮起來的格子');
+      // 小鎮那一行只放一顆按鈕（六十樣排不進去），細節在寶物圖鑑那一頁
+      var bb = document.getElementById('tbox');
+      if (!bb) fails.push('沒有進寶物圖鑑的按鈕');
+      else {
+        if (!/1 \/ 60|[1-9]\d* \/ 60/.test(bb.textContent)) fails.push('按鈕上的收集數不對：' + bb.textContent);
+        bb.onclick();
+        if (view !== 'box') fails.push('按了寶物圖鑑沒有進去');
+        else {
+          var cells = document.querySelectorAll('.tcell');
+          if (cells.length !== TREASURES.length)
+            fails.push('圖鑑格子數 ' + cells.length + '，應該是 ' + TREASURES.length);
+          if (document.querySelectorAll('.gal h3').length !== TREASURE_GROUPS.length)
+            fails.push('圖鑑的分類數不對');
+          if (document.querySelectorAll('.tcell:not(.lock)').length < 1)
+            fails.push('撿到了東西，圖鑑卻一格都沒開');
+          if (document.querySelectorAll('.tcell.lock').length < 1)
+            fails.push('還沒撿的應該要是問號，不能先透露');
+          // 沒撿過的不可以洩漏名字
+          var locked = document.querySelector('.tcell.lock');
+          if (locked && locked.textContent.trim() !== '❓') fails.push('沒撿過的格子透露了內容');
+          if (document.body.textContent.indexOf(treasureById(h.id).name) < 0)
+            fails.push('圖鑑裡找不到剛剛撿到的那一樣');
+          document.getElementById('box-town').onclick();
+          if (view !== 'town') fails.push('寶物圖鑑回不去小鎮');
+        }
+      }
 
       // 同一輪不會再長出來
       render();
@@ -328,15 +353,37 @@
       });
     });
     // 三十天要換得夠勤，位置也要會動，不然找一次就記住了
-    var tids={}, tpos={}, ROUNDS=60;
+    /* 六十樣東西、五類、八樣稀有。id 一旦改掉，她已經收集到的會全部歸零，
+       所以連「有沒有重複的 id」都要驗。 */
+    if (TREASURES.length !== 60) fails.push('寶物變成 '+TREASURES.length+' 樣了');
+    var uniq = {}; TREASURES.forEach(function(t){
+      if (uniq[t.id]) fails.push('寶物 id 重複：'+t.id); uniq[t.id]=1;
+      if (!t.emoji || !t.name || !t.line) fails.push(t.id+' 缺了圖示／名字／說明');
+    });
+    var rares = TREASURES.filter(function(t){ return t.rare; }).length;
+    if (rares < 4 || rares > 12) fails.push('稀有的有 '+rares+' 樣，太多或太少');
+
+    var tids={}, tpos={}, rareHit=0, ROUNDS=300;
     setDay(7);
-    for (var hd=0; hd<ROUNDS; hd++){ setMin(hd*10); var hh=huntNow(); tids[hh.id]=1; tpos[hh.at.join()]=1; }
-    if (Object.keys(tids).length < 16) fails.push('連續 '+ROUNDS+' 輪只藏了 '+Object.keys(tids).length+' 種東西');
+    for (var hd=0; hd<ROUNDS; hd++){
+      setMin(hd*10 % 1440); setDay(7 + Math.floor(hd/144));
+      var hh=huntNow(); tids[hh.id]=1; tpos[hh.at.join()]=1; if (hh.rare) rareHit++;
+    }
+    if (Object.keys(tids).length < 35) fails.push('連續 '+ROUNDS+' 輪只藏了 '+Object.keys(tids).length+' 種東西');
     if (Object.keys(tpos).length < 9) fails.push('連續 '+ROUNDS+' 輪只藏在 '+Object.keys(tpos).length+' 個位置');
+    // 稀有的要真的比較少見，但也不能永遠抽不到
+    if (rareHit === 0) fails.push('三百輪裡一次稀有的都沒出現');
+    /* 門檻量過才訂的：權重正常時三百輪抽到 13 次（4.3%），
+       把權重拉平變成 49 次（16.3%）。抓 8% 兩邊都離得夠遠。 */
+    if (rareHit > ROUNDS * 0.08) fails.push('稀有的出現了 '+rareHit+' 次（'+
+      Math.round(rareHit/ROUNDS*100)+'%），根本不稀有');
+
     // 連著兩輪給同一樣東西會很沒感覺
     var rep=0, prev=null;
-    for (var hr=0; hr<ROUNDS; hr++){ setMin(hr*10); var id=huntNow().id; if (id===prev) rep++; prev=id; }
-    if (rep > ROUNDS/8) fails.push('有 '+rep+' 次連著兩輪都是同一樣東西');
+    setDay(7);
+    for (var hr=0; hr<ROUNDS; hr++){ setMin(hr*10 % 1440); setDay(7 + Math.floor(hr/144));
+      var id=huntNow().id; if (id===prev) rep++; prev=id; }
+    if (rep > ROUNDS/12) fails.push('有 '+rep+' 次連著兩輪都是同一樣東西');
 
     // ⑩ 小鎮會跟著圖鑑長大
     var st0 = townStage();

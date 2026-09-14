@@ -411,11 +411,27 @@
           line-height: 1.65; margin: 6px 0 10px; }
   .hunt b { color: #6b4a9e; }
   /* 十二格一定要排得下一行，所以用 flex 讓它自己縮，不要固定寬度 */
-  /* 24 格：手機寬度排不下一行，讓它自己折成兩行 */
-  .box { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 3px; margin-top: 5px; }
-  .box span { flex: 0 1 auto; min-width: 0; font-size: 14px; line-height: 1.5;
-              color: #b9abcc; filter: grayscale(1) opacity(.5); }
-  .box span.on { filter: none; }
+  /* 進寶物圖鑑的那一顆。六十樣排不進小鎮那一行，細節留給圖鑑頁 */
+  .boxbtn { display: block; margin: 7px auto 0; font-size: 13px; padding: 7px 16px;
+            background: #fff; border-width: 2.5px; box-shadow: 0 3px 0 rgba(0,0,0,.12); }
+  .rare { font-style: normal; font-size: 11px; font-weight: 800; color: #a06a00;
+          background: #ffeec2; border-radius: 7px; padding: 1px 6px; }
+
+  /* 寶物圖鑑：一格一樣東西，沒撿過的只給問號 */
+  .tbox-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+  @media (min-width: 560px) { .tbox-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .tcell { border: 2.5px solid #cbbce0; border-radius: 10px; background: #fff;
+           padding: 7px 5px; text-align: center; min-width: 0; }
+  .tcell.rare { border-color: #e8c46a; background: #fffaec; }
+  .tcell .te { font-size: 26px; line-height: 1.2; }
+  .tcell .tn { font-size: 12px; font-weight: 900; color: #6b4a9e; margin-top: 2px;
+               overflow-wrap: anywhere; }
+  .tcell .tl { font-size: 10.5px; color: #8a7fa8; line-height: 1.5; margin-top: 3px;
+               overflow-wrap: anywhere; }
+  .tcell .tc { font-size: 10px; color: #a99ac9; font-weight: 800; margin-top: 3px; }
+  .tcell.lock { border-style: dashed; color: #b8abd4; font-size: 24px; font-weight: 900;
+                display: flex; align-items: center; justify-content: center; min-height: 76px;
+                background: repeating-linear-gradient(45deg, #f4f0fb, #f4f0fb 10px, #eae4f4 10px, #eae4f4 20px); }
 
   /* 小鎮上方的問候 */
   .daytop { text-align: center; margin-bottom: 10px; }

@@ -479,38 +479,102 @@ function weatherToday() {
    「打開就可以做」的事，而且不用讀字、不用選，只要看。
 
    本來是一天一樣，改成十分鐘是因為她會一直想再開。
-   但十分鐘一輪的話，12 樣東西一個下午就收滿了，
-   寶物盒就沒有目標——所以一起補到 24 樣。
+   十分鐘一輪收得很快，所以東西要夠多：六十樣、分五類，
+   其中八樣是稀有的（出現機率只有別人的四分之一）。
+   收集要有「今天運氣真好」的時刻，不然六十樣只是六十次一樣的體驗。
 
    刻意做得小又不閃不動：要用眼睛找，才有找到的感覺。
    十二個藏的位置都避開了六個地點的名牌，
    不然那顆透明的點擊圈會把名牌的點擊搶走。 */
-const TREASURES = [
-  { id: 't-clover',  emoji: '🍀', name: '四葉草',     line: '聽說找到的人，那天會有好事。' },
-  { id: 't-shell',   emoji: '🐚', name: '貝殼',       line: '離海那麼遠，不知道是誰帶來的。' },
-  { id: 't-coin',    emoji: '🪙', name: '舊錢幣',     line: '上面的字都磨掉了。' },
-  { id: 't-star',    emoji: '⭐', name: '掉下來的星星', line: '摸起來還是溫的。' },
-  { id: 't-feather', emoji: '🪶', name: '羽毛',       line: '白得發亮，比你的手掌還長。' },
-  { id: 't-bug',     emoji: '🐞', name: '瓢蟲',       line: '牠在你手上停了三秒才飛走。' },
-  { id: 't-key',     emoji: '🔑', name: '小鑰匙',     line: '不知道開哪裡的，你先收著。' },
-  { id: 't-candy',   emoji: '🍬', name: '一顆糖',     line: '包裝紙是你沒看過的顏色。' },
-  { id: 't-acorn',   emoji: '🌰', name: '橡實',       line: '圓圓的，搖起來有聲音。' },
-  { id: 't-balloon', emoji: '🎈', name: '汽球',       line: '繩子纏在樹枝上，你把它解下來了。' },
-  { id: 't-fly',     emoji: '🦋', name: '蝴蝶',       line: '停在你的袖子上，翅膀一開一合。' },
-  { id: 't-puzzle',  emoji: '🧩', name: '一片拼圖',   line: '不知道是哪一盒的，形狀很特別。' },
-  { id: 't-leaf',    emoji: '🌿', name: '香香的葉子', line: '搓一搓，手上留著味道。' },
-  { id: 't-bell',    emoji: '🔔', name: '小鈴鐺',     line: '聲音很小，要靠很近才聽得到。' },
-  { id: 't-sock',    emoji: '🧦', name: '一隻襪子',   line: '只有一隻。另一隻到底去哪了？' },
-  { id: 't-petal',   emoji: '🌸', name: '掉下來的花', line: '還很新，應該是剛剛才掉的。' },
-  { id: 't-kite',    emoji: '🪁', name: '斷線的風箏', line: '卡在樹上很久了，尾巴都褪色了。' },
-  { id: 't-shroom',  emoji: '🍄', name: '小蘑菇',     line: '長在樹根旁邊。你沒有摘它。' },
-  { id: 't-marble',  emoji: '💎', name: '玻璃珠',     line: '對著太陽看，裡面有一條藍色的線。' },
-  { id: 't-snail',   emoji: '🐌', name: '蝸牛',       line: '走得超級慢，你等牠爬過一整塊磚。' },
-  { id: 't-compass', emoji: '🧭', name: '壞掉的指南針', line: '針一直轉，指不出方向。' },
-  { id: 't-ribbon',  emoji: '🎀', name: '緞帶',       line: '粉紅色的，綁在欄杆上。' },
-  { id: 't-bone',    emoji: '🦴', name: '恐龍的骨頭', line: '只有一小塊，猜不出是哪一隻。' },
-  { id: 't-egg',     emoji: '🥚', name: '空的蛋殼',   line: '很小很小，淡藍色的。' },
+/* 六十樣，分五類。
+   舊的 24 個 id 一個都沒有改——改掉的話她已經收集到的會全部歸零。
+
+   rare 的東西出現機率是別人的四分之一。收集要有「今天運氣真好」
+   的時刻，不然六十樣只是六十次一樣的體驗。
+
+   全部都是「路上撿得到、撿了不會受傷」的東西。
+   刻意沒有玻璃碎片、針、打火機那一類——她會真的去翻。 */
+const TREASURE_GROUPS = [
+  { key: 'nature', name: '大自然', emoji: '🌿', items: [
+    { id: 't-clover',  emoji: '🍀', name: '四葉草',     line: '聽說找到的人，那天會有好事。', rare: true },
+    { id: 't-petal',   emoji: '🌸', name: '掉下來的花', line: '還很新，應該是剛剛才掉的。' },
+    { id: 't-leaf',    emoji: '🌿', name: '香香的葉子', line: '搓一搓，手上留著味道。' },
+    { id: 't-shroom',  emoji: '🍄', name: '小蘑菇',     line: '長在樹根旁邊。你沒有摘它。' },
+    { id: 't-acorn',   emoji: '🌰', name: '橡實',       line: '圓圓的，搖起來有聲音。' },
+    { id: 't-feather', emoji: '🪶', name: '羽毛',       line: '白得發亮，比你的手掌還長。' },
+    { id: 't-shell',   emoji: '🐚', name: '貝殼',       line: '離海那麼遠，不知道是誰帶來的。' },
+    { id: 't-egg',     emoji: '🥚', name: '空的蛋殼',   line: '很小很小，淡藍色的。' },
+    { id: 't-maple',   emoji: '🍁', name: '楓葉',       line: '紅得很誇張，你夾進書裡了。' },
+    { id: 't-stone',   emoji: '🪨', name: '扁扁的石頭', line: '摸起來滑滑的，正好放得進口袋。' },
+    { id: 't-dande',   emoji: '🌼', name: '蒲公英',     line: '你吹了三次才全部飛走。' },
+    { id: 't-grass',   emoji: '🌾', name: '狗尾草',     line: '拿去搔妹妹的脖子，她笑到跑掉。' },
+  ] },
+
+  { key: 'bug', name: '小生物', emoji: '🐞', items: [
+    { id: 't-bug',     emoji: '🐞', name: '瓢蟲',       line: '牠在你手上停了三秒才飛走。' },
+    { id: 't-fly',     emoji: '🦋', name: '蝴蝶',       line: '停在你的袖子上，翅膀一開一合。' },
+    { id: 't-snail',   emoji: '🐌', name: '蝸牛',       line: '走得超級慢，你等牠爬過一整塊磚。' },
+    { id: 't-ants',    emoji: '🐜', name: '螞蟻隊伍',   line: '從這塊磚排到那棵樹，中間一次都沒斷。' },
+    { id: 't-beetle',  emoji: '🪲', name: '金龜子',     line: '背上有金屬的光，像一顆綠色的珠子。', rare: true },
+    { id: 't-frog',    emoji: '🐸', name: '小青蛙',     line: '你才蹲下來，牠就跳走了。' },
+    { id: 't-web',     emoji: '🕸️', name: '蜘蛛網',     line: '上面沾了水珠，一整片在發亮。' },
+    { id: 't-worm',    emoji: '🐛', name: '毛毛蟲',     line: '你沒有碰牠，只是看著。' },
+    { id: 't-gecko',   emoji: '🦎', name: '壁虎',       line: '在牆上停很久，你以為牠是假的。', rare: true },
+    { id: 't-bee',     emoji: '🐝', name: '蜜蜂',       line: '你退了兩步，牠也沒理你。' },
+    { id: 't-cricket', emoji: '🦗', name: '蟋蟀',       line: '叫聲一直換位置，找不到牠在哪。' },
+    { id: 't-earthw',  emoji: '🪱', name: '蚯蚓',       line: '下過雨才會看到。你把牠撥回土裡。' },
+  ] },
+
+  { key: 'shiny', name: '亮亮的', emoji: '✨', items: [
+    { id: 't-star',    emoji: '⭐', name: '掉下來的星星', line: '摸起來還是溫的。', rare: true },
+    { id: 't-marble',  emoji: '💎', name: '玻璃珠',     line: '對著太陽看，裡面有一條藍色的線。' },
+    { id: 't-coin',    emoji: '🪙', name: '舊錢幣',     line: '上面的字都磨掉了。' },
+    { id: 't-key',     emoji: '🔑', name: '小鑰匙',     line: '不知道開哪裡的，你先收著。' },
+    { id: 't-glitter', emoji: '✨', name: '亮片',       line: '一片一片，怎麼掃都掃不乾淨。' },
+    { id: 't-bubble',  emoji: '🫧', name: '泡泡',       line: '飄了很久才破，你一路跟著走。' },
+    { id: 't-dew',     emoji: '💧', name: '露水',       line: '早上的草上面全都是，太陽出來就不見了。' },
+    { id: 't-rainbow', emoji: '🌈', name: '彩虹的一角', line: '只看得到一小段，另一半被大樓擋住。', rare: true },
+    { id: 't-orb',     emoji: '🔮', name: '透明的珠子', line: '對著燈看，牆上會出現一個小光點。', rare: true },
+    { id: 't-wrapper', emoji: '🪞', name: '銀色糖果紙', line: '攤平之後，可以隱隱約約照到自己。' },
+    { id: 't-candle',  emoji: '🕯️', name: '蠟燭頭',     line: '上面還留著燒過的痕跡。' },
+    { id: 't-sticker', emoji: '🌟', name: '星星貼紙',   line: '邊邊翹起來了，還是黏得住。' },
+  ] },
+
+  { key: 'lost', name: '別人掉的', emoji: '🧦', items: [
+    { id: 't-sock',    emoji: '🧦', name: '一隻襪子',   line: '只有一隻。另一隻到底去哪了？' },
+    { id: 't-puzzle',  emoji: '🧩', name: '一片拼圖',   line: '不知道是哪一盒的，形狀很特別。' },
+    { id: 't-ribbon',  emoji: '🎀', name: '緞帶',       line: '粉紅色的，綁在欄杆上。' },
+    { id: 't-kite',    emoji: '🪁', name: '斷線的風箏', line: '卡在樹上很久了，尾巴都褪色了。' },
+    { id: 't-bell',    emoji: '🔔', name: '小鈴鐺',     line: '聲音很小，要靠很近才聽得到。' },
+    { id: 't-bone',    emoji: '🦴', name: '恐龍的骨頭', line: '只有一小塊，猜不出是哪一隻。' },
+    { id: 't-compass', emoji: '🧭', name: '壞掉的指南針', line: '針一直轉，指不出方向。' },
+    { id: 't-button',  emoji: '🔘', name: '一顆鈕扣',   line: '四個洞，還留著一小截線。' },
+    { id: 't-ticket',  emoji: '🎫', name: '一張票根',   line: '上面的日期是三年前。' },
+    { id: 't-crayon',  emoji: '🖍️', name: '蠟筆頭',     line: '短到握不住了，顏色還很漂亮。' },
+    { id: 't-cap',     emoji: '🧢', name: '一頂帽子',   line: '掛在圍牆上，好像在等主人。' },
+    { id: 't-yoyo',    emoji: '🪀', name: '溜溜球',     line: '線纏死了，你解了十分鐘。' },
+  ] },
+
+  { key: 'keep', name: '帶著走的', emoji: '🍬', items: [
+    { id: 't-candy',   emoji: '🍬', name: '一顆糖',     line: '包裝紙是你沒看過的顏色。' },
+    { id: 't-balloon', emoji: '🎈', name: '汽球',       line: '繩子纏在樹枝上，你把它解下來了。' },
+    { id: 't-nest',    emoji: '🪺', name: '空的鳥巢',   line: '掉在地上，裡面墊著細細的草。', rare: true },
+    { id: 't-clip',    emoji: '📎', name: '迴紋針',     line: '被折成一個小小的愛心。' },
+    { id: 't-thread',  emoji: '🧵', name: '一段線',     line: '五顏六色的，不知道是誰的手工。' },
+    { id: 't-tag',     emoji: '🏷️', name: '一張標籤',   line: '上面的字被雨淋糊了。' },
+    { id: 't-stick',   emoji: '🪄', name: '一根樹枝',   line: '你決定它是魔法棒。' },
+    { id: 't-spoon',   emoji: '🥄', name: '小湯匙',     line: '塑膠的，卡在水溝蓋旁邊。' },
+    { id: 't-page',    emoji: '📖', name: '一頁書',     line: '只有一頁，看不出來是哪一本。' },
+    { id: 't-dice',    emoji: '🎲', name: '一顆骰子',   line: '六點那一面磨到快看不見了。' },
+    { id: 't-ice',     emoji: '🧊', name: '一塊冰',     line: '你握在手裡，走到家就沒了。' },
+    { id: 't-watch',   emoji: '🕰️', name: '停住的手錶', line: '指針停在三點十七分。', rare: true },
+  ] },
 ];
+const TREASURES = TREASURE_GROUPS.reduce(
+  (a, g) => a.concat(g.items.map(t => Object.assign({ group: g.key }, t))), []);
+/* 抽獎袋：普通的放四張，稀有的放一張 */
+const TREASURE_BAG = [];
+TREASURES.forEach(t => { for (let i = 0; i < (t.rare ? 1 : 4); i++) TREASURE_BAG.push(t); });
 const HIDE_SPOTS = [
   [20, 150], [304, 84], [112, 30], [186, 26], [248, 160], [92, 96],
   [214, 46], [30, 92], [140, 148], [292, 186], [66, 186], [176, 70],
@@ -522,8 +586,9 @@ function nowMin() { const d = new Date(); return d.getHours() * 60 + d.getMinute
 const huntSlot = () => todayStamp() + '#' + Math.floor(nowMin() / HUNT_MIN);
 function huntNow() {
   const sd = seedOf('h:' + huntSlot() + ':' + whoId());
-  const t = TREASURES[sd % TREASURES.length];
-  return { id: t.id, emoji: t.emoji, name: t.name, line: t.line, at: HIDE_SPOTS[(sd >>> 9) % HIDE_SPOTS.length] };
+  const t = TREASURE_BAG[sd % TREASURE_BAG.length];
+  return { id: t.id, emoji: t.emoji, name: t.name, line: t.line, rare: !!t.rare,
+           at: HIDE_SPOTS[(sd >>> 9) % HIDE_SPOTS.length] };
 }
 // 還有幾分鐘換下一個——講得出數字，她才知道要不要等
 const huntLeft = () => HUNT_MIN - (nowMin() % HUNT_MIN);
@@ -544,6 +609,7 @@ function recordFind(id) {
   } catch (e) {}
 }
 const treasureById = id => TREASURES.find(t => t.id === id);
+const boxCount = () => { const b = loadTreasures(); return TREASURES.filter(t => b[t.id]).length; };
 
 /* 小鎮會跟著她長大：走過的結局越多，鎮上的東西越多。
    這是為了讓「結局圖鑑 106」這個數字變成她每天看得見的東西。 */
@@ -626,6 +692,51 @@ let huntTimerFn = null;
 let townMsg = null;     // 點了鎮上的人之後要顯示的話
 let townTaps = {};      // 每個地點點過幾下，決定講到第幾句
 
+/* ===== 寶物圖鑑 =====
+   結局圖鑑是「她走過的路」，這一頁是「她撿過的東西」——
+   一個是練習的成果，一個純粹是玩。兩件事分開，
+   所以沒有合併到同一頁。
+
+   沒撿過的只顯示 ❓，連名字都不給：先知道有什麼，
+   等於把找的樂趣先花掉了。 */
+function renderBox() {
+  const b = loadTreasures(), have = boxCount(), total = TREASURES.length;
+  const rareHave = TREASURES.filter(t => t.rare && b[t.id]).length;
+  const rareAll = TREASURES.filter(t => t.rare).length;
+  app.innerHTML = `
+    <div class="card anim">
+      <h1>🎁 寶物圖鑑</h1>
+      <div class="galtop">
+        <div class="galnum">${have} <small>/ ${total}</small></div>
+        <div class="gal-bar"><i style="width:${total ? (have / total * 100) : 0}%"></i></div>
+        <div style="font-size:12.5px; color:#8a7fa8; margin-top:7px;">
+          稀有的 ${rareHave} / ${rareAll}　·　鎮上每十分鐘換一樣
+        </div>
+      </div>
+      ${TREASURE_GROUPS.map(g => {
+        const n = g.items.filter(t => b[t.id]).length;
+        return `<div class="gal">
+          <h3>${g.emoji} ${esc(g.name)} <span class="n">${n} / ${g.items.length}</span></h3>
+          <div class="tbox-grid">
+            ${g.items.map(t => b[t.id] ? `
+              <div class="tcell${t.rare ? ' rare' : ''}">
+                <div class="te">${t.emoji}</div>
+                <div class="tn">${esc(t.name)}</div>
+                <div class="tl">${esc(t.line)}</div>
+                ${b[t.id] > 1 ? `<div class="tc">撿過 ${b[t.id]} 次</div>` : ''}
+              </div>` : `<div class="tcell lock">❓</div>`).join('')}
+          </div>
+        </div>`;
+      }).join('')}
+      <div class="row" style="margin-top:6px;">
+        <button class="mini" id="box-town">← 回小鎮</button>
+        <button class="mini" id="box-menu">🎭 劇本選單</button>
+      </div>
+    </div>`;
+  document.getElementById('box-town').onclick = () => { Sfx.tap(); view = 'town'; render(); };
+  document.getElementById('box-menu').onclick = () => { Sfx.tap(); view = 'menu'; render(); };
+}
+
 function renderTown() {
   const tod = todNow(), ev = periodEvent(tod), wx = weatherToday();
   const done = ev.id ? isPeriodDone(tod) : false;
@@ -635,15 +746,14 @@ function renderTown() {
      不重畫整張卡片（重畫會閃，而且地圖也會跟著重新產生）。 */
   function huntHTML() {
     const gotId = foundNow(), t = gotId ? treasureById(gotId) : null;
-    const box = loadTreasures(), n = foundCountToday();
+    const n = foundCountToday(), have = boxCount();
     const head = t
-      ? `🎁 找到了：<b>${t.emoji} ${esc(t.name)}</b>　${esc(t.line)}<br>` +
+      ? `🎁 找到了：<b>${t.emoji} ${esc(t.name)}</b>${t.rare ? ' <i class="rare">稀有</i>' : ''}　${esc(t.line)}<br>` +
         `<small>再 <b>${huntLeft()}</b> 分鐘會換一個新的。今天已經找到 ${n} 個。</small>`
       : `👀 鎮上藏了一個小東西，找找看。` +
         (n ? `<br><small>今天已經找到 ${n} 個。</small>` : '');
-    return head + `<div class="box">${TREASURES.map(x =>
-          `<span class="${box[x.id] ? 'on' : ''}" title="${esc(x.name)}">${box[x.id] ? x.emoji : '•'}</span>`
-        ).join('')}</div>`;
+    // 六十格排不進一行，所以只放一顆按鈕，細節留給寶物圖鑑那一頁
+    return head + `<button class="boxbtn" id="tbox">🎁 寶物圖鑑　${have} / ${TREASURES.length}</button>`;
   }
 
   const marks = {};
@@ -760,6 +870,8 @@ function renderTown() {
     hg.innerHTML = got ? '' : hideArt(hunt);
     hg.style.cursor = got ? '' : 'pointer';
     huntLine.innerHTML = huntHTML();
+    // 這一行是整段重寫的，按鈕每次都是新的節點，事件要跟著重掛
+    huntLine.querySelector('#tbox').onclick = () => { Sfx.tap(); showSay(null); view = 'box'; render(); };
   }
   paintHunt();
   hg.onclick = (e) => {
@@ -862,6 +974,7 @@ function render() {
   else if (view === 'who') renderWho();
   else if (view === 'story') renderStory();
   else if (view === 'town') renderTown();
+  else if (view === 'box') renderBox();
   else if (view === 'moment') renderMoment();
   else renderEnding();
   window.scrollTo(0, 0);
