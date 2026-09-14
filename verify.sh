@@ -92,14 +92,16 @@ parent.postMessage(JSON.stringify({w:window.innerWidth,
   over: doc.scrollWidth > doc.clientWidth, pages: res}), '*');
 '''
 io.open('ovcheck.html','w',encoding='utf-8').write(src[:-len(tail)]+'<script>(function(){\n'+body+'\n})();</script>\n'+tail)
-for W in (360, 390, 430, 560, 900):
+# 平板是主要玩的機器，所以 iPad 直向（768）與橫向（1180）一定要量：
+# >=700 跟 >=1000 各有一套版面，900 以下量不到它們
+for W in (360, 390, 430, 560, 768, 900, 1180):
     io.open('ovcheck_%d.html' % W, 'w', encoding='utf-8').write(
       '<!DOCTYPE html><meta charset="utf-8"><title>wait</title>'
       '<script>window.addEventListener("message",function(e){document.title="R:"+e.data;});</script>'
-      '<iframe src="ovcheck.html" style="width:%dpx;height:1000px;border:0"></iframe>' % W)
+      '<iframe src="ovcheck.html" style="width:%dpx;height:1200px;border:0"></iframe>' % W)
 PYEOF
 OVFAIL=0
-for W in 360 390 430 560 900; do
+for W in 360 390 430 560 768 900 1180; do
   R=$($CHROME --headless --disable-gpu --no-sandbox --virtual-time-budget=8000 \
       --allow-file-access-from-files --dump-dom "file://$PWD/ovcheck_$W.html" 2>/dev/null \
       | grep -o '<title>R:[^<]*' | sed 's/<title>R://')
