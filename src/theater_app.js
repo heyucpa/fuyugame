@@ -300,12 +300,151 @@ function setTod(t) { try { document.body.dataset.tod = t; } catch (e) {} }
 
 /* 開始一天的時候，依現在幾點跟她打個招呼。
    不改流程——一天還是從早上走到晚上，只是承認「現在幾點」。 */
+// 「走完一天」的問候：那個玩法是從早上重走一次，所以這樣講
 const GREET = {
   morning: ['早安 ☀️', '今天正要開始。'],
   day:     ['午安 🌤️', '今天過了一半，我們從頭走一次。'],
   dusk:    ['傍晚了 🌇', '來看看今天這一天。'],
   night:   ['晚安 🌙', '睡前來走一次今天。'],
 };
+// 小鎮的問候：這裡是「現在」的鎮上，不是重走，所以講法不一樣
+const GREET_TOWN = {
+  morning: ['早安 ☀️', '鎮上剛醒過來。'],
+  day:     ['午安 🌤️', '今天過到一半了。'],
+  dusk:    ['傍晚了 🌇', '太陽快下山，大家要回家了。'],
+  night:   ['晚安 🌙', '鎮上的燈都亮了。'],
+};
+
+/* ===== 小鎮 =====
+   動森那種節奏：今天來看一下就好。
+   一天只有一件事，而且用日期決定——同一天重開，遇到的是同一件事，
+   因為「今天就是今天」。明天才會換。
+
+   小人站在哪裡跟著現實時間走，鎮上的人每天講的話也不一樣。 */
+const PLACE_POOL = {
+  school: ['bully', 'quake', 'money', 'candy', 'knife', 'wish'],
+  home:   ['home', 'fire', 'fakecop', 'shop', 'imposter', 'exam', 'online', 'secret', 'scam'],
+  shop:   ['lost', 'breakfast'],
+  park:   ['road', 'gate'],
+  dojo:   ['dojo'],
+  pool:   ['pool'],
+};
+
+/* 鎮上的人。每天講一句，不是教條，就是日常——
+   偶爾夾一句安全的提醒，像鄰居會講的那種。 */
+const NPC = {
+  home: { who: '媽媽', emoji: '👩', lines: [
+    '今天過得還好嗎？',
+    '回到家先洗手喔。',
+    '有什麼事都可以跟我說，不管是什麼事。',
+    '如果有人叫你不要告訴媽媽，那件事一定要告訴我。',
+    '晚餐想吃什麼？' ] },
+  school: { who: '老師', emoji: '👨‍🏫', lines: [
+    '今天上課很專心喔。',
+    '班上有人看起來不開心的話，可以來跟我說。',
+    '有問題隨時可以問，不會的事情不丟臉。',
+    '走廊上不要跑。' ] },
+  shop: { who: '店員阿姨', emoji: '🧑‍🍳', lines: [
+    '早餐要吃喔，不吃會餓一整天。',
+    '零錢收好，不要掉了。',
+    '一個人來買東西啊？很厲害耶。',
+    '有需要幫忙就跟我說，阿姨都在這裡。' ] },
+  park: { who: '警衛伯伯', emoji: '👮', lines: [
+    '天黑了就早點回家喔。',
+    '等不到爸媽的話，回學校裡面等比較安全。',
+    '公園裡有什麼事，來警衛室找我。',
+    '今天風有點大，小心一點。' ] },
+  dojo: { who: '教練', emoji: '🥋', lines: [
+    '今天的踢腿很有力氣。',
+    '下課要等家人來接，不要自己先走。',
+    '樓梯間光線暗，慢慢走。',
+    '練功要慢慢來，不用急。' ] },
+  pool: { who: '救生員', emoji: '🏊', lines: [
+    '下水前先暖身喔。',
+    '看到有人在水裡怪怪的，馬上大聲喊我，不要自己下去。',
+    '不要在池邊跑，地滑。',
+    '今天水溫剛剛好。' ] },
+};
+
+function todayStamp() {
+  const d = new Date();
+  return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+}
+// 把字串轉成一個穩定的數字，拿來當「今天」的種子
+function seedOf(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+// 哪一篇屬於哪個地點（由 PLACE_POOL 反推），六個池子加起來剛好 21 篇
+const PLACE_OF = {};
+Object.keys(PLACE_POOL).forEach(k => PLACE_POOL[k].forEach(id => { PLACE_OF[id] = k; }));
+const DAY_IDS = Object.keys(PLACE_OF);
+
+/* 今天發生什麼事。同一天同一個人，算出來永遠一樣。
+   要先均勻抽「哪一篇」再反推地點——不能先抽地點：
+   泳池只有 1 篇、家有 9 篇，先抽地點的話泳池那篇會一直重複出現。 */
+function todayEvent() {
+  const sd = seedOf(todayStamp() + ':' + whoId());
+  const id = DAY_IDS[sd % DAY_IDS.length];
+  return { place: PLACE_OF[id], id: id, seed: sd };
+}
+function npcLine(place, sd) {
+  const n = NPC[place];
+  return n ? { who: n.who, emoji: n.emoji, text: n.lines[(sd >>> 13) % n.lines.length] } : null;
+}
+const townDoneKey = () => pKey('town-' + todayStamp());
+const isTodayDone = () => localStorage.getItem(townDoneKey()) === '1';
+function markTodayDone() { try { localStorage.setItem(townDoneKey(), '1'); } catch (e) {} }
+
+// 現實時間決定她人在哪裡
+const WHERE_NOW = { morning: 'home', day: 'school', dusk: 'park', night: 'home' };
+
+let fromTown = false;   // 這一篇是從小鎮點進來的
+let townMsg = null;     // 點了鎮上的人之後要顯示的話
+
+function renderTown() {
+  const tod = todNow(), ev = todayEvent(), done = isTodayDone();
+  const marks = {};
+  Object.keys(PLACE_POOL).forEach(k => { marks[k] = NPC[k] ? '💬' : ''; });
+  marks[ev.place] = done ? '✓' : '❗';
+
+  app.innerHTML = `
+    <div class="card anim">
+      <div class="daytop">
+        <div class="greet"><b>${GREET_TOWN[tod][0]}</b>${GREET_TOWN[tod][1]}</div>
+      </div>
+      <div class="town">${townSVG(tod, marks, WHERE_NOW[tod])}</div>
+      ${townMsg ? `<div class="says">
+          <span class="face">${townMsg.emoji}</span>
+          <span><b>${esc(townMsg.who)}</b><br>${narrate(townMsg.text)}</span>
+        </div>` : `<div class="townhint">${done
+          ? '今天的事情處理完了 ✓　點點看鎮上的人，他們有話想說。'
+          : '有一個地方出事了 ❗　點它看看。'}</div>`}
+      <div class="row" style="margin-top:10px;">
+        <button class="mini" id="tmenu">🎭 劇本選單</button>
+        <button class="mini" id="tday">☀️ 走完一天</button>
+        <button class="mini" id="tgal">🖼️ 結局圖鑑</button>
+      </div>
+    </div>`;
+
+  app.querySelectorAll('.spot').forEach(g => {
+    g.style.cursor = 'pointer';
+    g.onclick = () => {
+      const k = g.dataset.spot;
+      if (k === ev.place && !done) {          // 今天的事
+        Sfx.page(); townMsg = null; fromTown = true; startScenario(ev.id);
+      } else {                                 // 鎮上的人講一句話
+        Sfx.tap();
+        townMsg = npcLine(k, ev.seed + seedOf(k));
+        render();
+      }
+    };
+  });
+  document.getElementById('tmenu').onclick = () => { Sfx.tap(); townMsg = null; view = 'menu'; render(); };
+  document.getElementById('tday').onclick  = () => { Sfx.tap(); townMsg = null; startDay(); };
+  document.getElementById('tgal').onclick  = () => { Sfx.tap(); townMsg = null; view = 'gallery'; render(); };
+}
 
 let dayRun = null;   // 不是 null 就代表正在過一天
 let dayAt = 0;
@@ -448,7 +587,7 @@ function renderTally() {
 
 function render() {
   // 走一天的時候用那一段的時間，其他畫面用現實時間
-  setTod(dayRun && (view === 'route' || view === 'story' || view === 'end')
+  setTod(dayRun && !fromTown && (view === 'route' || view === 'story' || view === 'end')
     ? TOD_OF_STOP[dayRun[Math.min(dayAt, dayRun.length - 1)].stop.key]
     : todNow());
   if (view === 'menu') renderMenu();
@@ -456,6 +595,7 @@ function render() {
   else if (view === 'gallery') renderGallery();
   else if (view === 'who') renderWho();
   else if (view === 'story') renderStory();
+  else if (view === 'town') renderTown();
   else if (view === 'route') renderRoute();
   else if (view === 'tally') renderTally();
   else renderEnding();
@@ -539,7 +679,7 @@ function renderMenu() {
       </div>
       <div class="modes">
         <button id="daybtn" style="background:#2f6f8f; color:#fff;">
-          ☀️ 平安的一天<small>走完一天</small>
+          🏘️ 小鎮<small>今天發生了什麼</small>
         </button>
         <button id="rand" style="background:#6b4a9e; color:#fff;">
           🎲 隨機挑一個<small>抽一篇來玩</small>
@@ -613,7 +753,7 @@ function renderMenu() {
     render();
   };
   document.getElementById('music').oncontextmenu = e => { e.preventDefault(); Sfx.toggleBgm(); render(); };
-  document.getElementById('daybtn').onclick = () => { Sfx.tap(); startDay(); };
+  document.getElementById('daybtn').onclick = () => { Sfx.tap(); townMsg = null; view = 'town'; render(); };
   document.getElementById('galbtn').onclick = () => { Sfx.tap(); view = 'gallery'; render(); };
   document.getElementById('guessmode').onclick = () => { Sfx.tap(); toggleGuess(); render(); };
   document.getElementById('replaymode').onclick = () => { Sfx.tap(); toggleReplay(); render(); };
@@ -656,6 +796,7 @@ function startRandom() {
 }
 
 function startScenario(id) {
+  if (view === 'menu') { fromTown = false; dayRun = null; }   // 從選單進來就不是小鎮／一天模式
   cur = SCENARIOS.find(s => s.id === id);
   if (!cur) return;
   lastId = id;
@@ -685,14 +826,14 @@ function renderStory() {
         </div>
         <div class="row">
           <button class="mini" id="music2">${Sfx.isBgmOn() ? '🎵 音樂開' : '🎵 音樂關'}</button>
-          <button class="mini" id="quit">${dayRun ? '← 回到今天的路線' : '← 選別的故事'}</button>
+          <button class="mini" id="quit">${fromTown ? '← 回小鎮' : dayRun ? '← 回到今天的路線' : '← 選別的故事'}</button>
         </div>
       </div>
     `;
     document.getElementById('go').onclick = () => { Sfx.page(); nodeId = cur.start; render(); };
     document.getElementById('music2').onclick = () => { Sfx.toggleBgm(); render(); };
     document.getElementById('quit').onclick = () => {
-      view = dayRun ? 'route' : 'menu'; render();
+      view = fromTown ? 'town' : dayRun ? 'route' : 'menu'; render();
     };
     return;
   }
@@ -731,7 +872,7 @@ function renderStory() {
       </div>
       <div class="row">
         <button class="mini" id="music2">${Sfx.isBgmOn() ? '🎵 音樂開' : '🎵 音樂關'}</button>
-        <button class="mini" id="quit">${dayRun ? '← 回到今天的路線' : '← 離開這個故事'}</button>
+        <button class="mini" id="quit">${fromTown ? '← 回小鎮' : dayRun ? '← 回到今天的路線' : '← 離開這個故事'}</button>
       </div>
     </div>
   `;
@@ -740,7 +881,7 @@ function renderStory() {
   });
   document.getElementById('music2')?.addEventListener('click', () => { Sfx.toggleBgm(); render(); });
   document.getElementById('quit').onclick = () => {
-      view = dayRun ? 'route' : 'menu'; render();
+      view = fromTown ? 'town' : dayRun ? 'route' : 'menu'; render();
     };
 }
 
@@ -769,6 +910,7 @@ function choose(i) {
       if (predicting) Sfx.page();
       else ({ best: Sfx.best, good: Sfx.good, escape: Sfx.escape, bad: Sfx.bad }[ending.grade] || Sfx.good)();
     }
+    if (fromTown) markTodayDone();
     if (dayRun && dayRun[dayAt] && dayRun[dayAt].scenarioId === cur.id) {
       dayRun[dayAt].result = { title: ending.title, grade: ending.grade };
       pushDayRecent(cur.id);
@@ -954,7 +1096,10 @@ function renderEnding() {
           </div>` : ''}
         </div>
       </div>
-      ${dayRun ? `
+      ${fromTown ? `
+      <div class="row">
+        <button id="tgo" style="background:#2f6f8f; color:#fff; width:100%;">回小鎮 🏘️</button>
+      </div>` : dayRun ? `
       <div class="row">
         <button id="dgo" style="background:#2f6f8f; color:#fff; width:100%;">
           ${dayAt < dayRun.length - 1 ? '繼續今天 ▶' : '回到家了 🏠'}
@@ -970,7 +1115,11 @@ function renderEnding() {
       </div>
     </div>
   `;
-  if (dayRun) {
+  if (fromTown) {
+    document.getElementById('tgo').onclick = () => {
+      Sfx.tap(); fromTown = false; townMsg = null; view = 'town'; render();
+    };
+  } else if (dayRun) {
     document.getElementById('dgo').onclick = () => { Sfx.tap(); dayAdvance(); };
   } else {
     document.getElementById('again').onclick = () => { Sfx.tap(); startScenario(cur.id); };
