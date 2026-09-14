@@ -161,3 +161,32 @@ function townSVG(tod, marks, standAt, weather, stage) {
     (TOWN_TINT[tod] || '') +
     (weather === 'rain' ? RAIN : '') + '</svg>';
 }
+
+/* ===== 小事的定場圖 =====
+   不另外畫，直接把小鎮的那一角放大。這樣她一眼認得出「這是公園」，
+   因為那就是地圖上的同一棵樹、同一個人——24 則小事一張新圖都不用畫。
+
+   裁切框會超出小鎮那張 320×200（例如學校上方、泳池右邊），
+   所以要自己先鋪一層草地，不能只靠 townBase()。
+   數字是量出來的：[x, y, 寬, 高, 她站的位置]，
+   她站的位置都刻意閃開房子跟鎮民，改動請跟著截圖看一次。 */
+const CLOSEUP = {
+  school: [ 10, -10, 112, 70, [ 94, 54]],
+  dojo:   [202, -10, 112, 70, [258, 54]],
+  shop:   [  6,  68, 112, 70, [ 98, 132]],
+  park:   [118,  60, 112, 70, [170, 126]],
+  pool:   [214,  58, 112, 70, [306, 124]],
+  home:   [ 84, 120, 132, 82, [152, 198]],
+};
+function placeCloseup(place, tod, weather) {
+  const p = PLACES.find(x => x.key === place), b = CLOSEUP[place];
+  if (!p || !b) return '';
+  const box = b[0] + ' ' + b[1] + ' ' + b[2] + ' ' + b[3];
+  const cover = '<rect x="' + b[0] + '" y="' + b[1] + '" width="' + b[2] + '" height="' + b[3] + '"';
+  const tint = { morning: ['#ffb46b', '.13'], dusk: ['#d4622a', '.2'], night: ['#1b2450', '.34'] }[tod];
+  return '<svg viewBox="' + box + '" width="100%" role="img" aria-label="' + p.name + '">' +
+    cover + ' fill="#c8e6c0"/>' + townBase() +
+    p.art(tod === 'night') + p.npcArt() + GIRL(b[4][0], b[4][1], 0.55) +
+    (tint ? cover + ' fill="' + tint[0] + '" opacity="' + tint[1] + '"/>' : '') +
+    (weather === 'rain' ? RAIN + cover + ' fill="#7f93b8" opacity=".2"/>' : '') + '</svg>';
+}

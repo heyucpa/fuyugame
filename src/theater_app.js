@@ -425,17 +425,28 @@ const DAY_IDS = Object.keys(PLACE_OF);
    要等到下午才會有新的。這樣「過一段時間再來看看」對她是具體的，
    而且跟畫面的天色是同一套時間。
 
-   一天四個時段，但不是每段都有事（約四分之三機率）——
-   沒事的時段就是平常的鎮上，這才像真的日子。
+   三種可能：
+     小事（約一半）　三十秒、不評分，大部分是純日常
+     劇本（約四成）　21 篇裡的一篇，有結局、會進圖鑑
+     沒事（約一成）　就是平常的鎮上
 
-   要先均勻抽「哪一篇」再反推地點，不能先抽地點：
+   小事給得比劇本多，是刻意的。這個遊戲的安全提醒寫著
+   「大部分的人都是安全、願意幫忙的」——如果每個時段都出事，
+   那句話就被畫面推翻了。日子本來就大多是普通的。
+
+   劇本要先均勻抽「哪一篇」再反推地點，不能先抽地點：
    泳池只有 1 篇、家有 9 篇，先抽地點的話泳池那篇會一直重複出現。 */
 function periodEvent(tod) {
   const key = todayStamp() + '/' + (tod || todNow()) + ':' + whoId();
   const sd = seedOf(key);
-  if ((sd >>> 3) % 100 < 25) return { place: null, id: null, seed: sd };  // 這個時段沒事
+  const roll = (sd >>> 3) % 100;
+  if (roll < 10) return { kind: null, place: null, id: null, seed: sd };  // 這個時段沒事
+  if (roll < 62) {
+    const m = MOMENTS[(sd >>> 11) % MOMENTS.length];
+    return { kind: 'moment', place: m.place, id: m.id, seed: sd };
+  }
   const id = DAY_IDS[sd % DAY_IDS.length];
-  return { place: PLACE_OF[id], id: id, seed: sd };
+  return { kind: 'story', place: PLACE_OF[id], id: id, seed: sd };
 }
 /* 挑哪一句要看情境：
    - 這個時段的事剛處理完 → 講「剛才那件事」
@@ -568,10 +579,11 @@ function renderTown() {
 
   const marks = {};
   Object.keys(PLACE_POOL).forEach(k => { marks[k] = NPC[k] ? '💬' : ''; });
-  if (ev.place) marks[ev.place] = done ? '✓' : '❗';
+  // ❗ 是「有事情要處理」，💭 是「有件小事」——記號不一樣，她才知道等一下是哪一種
+  if (ev.place) marks[ev.place] = done ? '✓' : (ev.kind === 'moment' ? '💭' : '❗');
 
   const hint = ev.place && !done
-    ? '有一個地方出事了 ❗　點它看看。'
+    ? (ev.kind === 'moment' ? '有個地方有一件小事 💭　點它看看。' : '有一個地方出事了 ❗　點它看看。')
     : `${ev.place ? `這個時段的事處理完了 ✓　<b>${NEXT_PERIOD[tod]}</b>還會有新的。<br>` : '這個時段鎮上很平靜。<br>'}`
       + '想繼續玩的話，<b>點任何一個地方都可以</b>。';
 
@@ -618,7 +630,11 @@ function renderTown() {
       const k = g.dataset.spot;
       if (ev.place && k === ev.place && !done) {      // 這個時段的事
         Sfx.page();
-        walkTo(k, () => { townMsg = null; fromTown = true; townFree = false; startScenario(ev.id); });
+        walkTo(k, () => {
+          townMsg = null;
+          if (ev.kind === 'moment') startMoment(ev.id);
+          else { fromTown = true; townFree = false; startScenario(ev.id); }
+        });
         return;
       }
       // 鎮上的人講話，再點會講下一句
@@ -646,6 +662,71 @@ function renderTown() {
 }
 
 
+/* ===== 小事 =====
+   刻意不走 startScenario 那一套：沒有節點、沒有結局、不記圖鑑、不評分。
+   她按完看到的是一句回應，不是一個評價。
+
+   為什麼不給分：這些是「日子」，不是考題。
+   如果連「妹妹弄斷色筆你怎麼辦」都要被打分數，
+   那她會學到的是「做什麼都在被評」，那跟這個遊戲想教的相反。 */
+let curMoment = null;   // 正在進行的小事
+let momentPick = -1;    // 她選了哪一個，-1 是還沒選
+
+function startMoment(id) {
+  curMoment = momentById(id);
+  momentPick = -1;
+  if (!curMoment) { view = 'town'; return render(); }
+  view = 'moment';
+  render();
+}
+
+function renderMoment() {
+  const m = curMoment;
+  if (!m) { view = 'town'; return renderTown(); }
+  const tod = todNow(), wx = weatherToday();
+  const p = PLACES.find(x => x.key === m.place) || {};
+  const picked = momentPick >= 0 ? m.choices[momentPick] : null;
+
+  app.innerHTML = `
+    <div class="card anim">
+      <h1>${p.emoji || '💭'} ${esc(PLACE_NAME[m.place] || '')}</h1>
+      <div class="sub">小事一件</div>
+      <div class="scene pop">${placeCloseup(m.place, tod, wx)}</div>
+      <div class="stage">
+        <div class="narr">${narrate(m.text)}</div>
+      </div>
+      ${picked ? `
+        <div style="font-size:14px; font-weight:800; color:#6b4a9e; margin:12px 0 0;">
+          你選了：${esc(picked.label)}
+        </div>
+        <div class="stage" style="margin-top:7px;">
+          <div class="narr">${narrate(picked.reply)}</div>
+        </div>
+        <div class="row">
+          <button id="mback" style="background:#2f6f8f; color:#fff; width:100%;">回小鎮 🏘️</button>
+        </div>`
+      : `
+        <div style="font-size:14px; font-weight:800; color:#6b4a9e; margin-bottom:7px;">你要怎麼做？</div>
+        <div class="choices">
+          ${m.choices.map((c, i) => `<button class="choice" data-i="${i}">${esc(c.label)}</button>`).join('')}
+        </div>
+        <div class="row">
+          <button class="mini" id="mquit">← 回小鎮</button>
+        </div>`}
+    </div>`;
+
+  app.querySelectorAll('.choice').forEach(b => {
+    b.onclick = () => {
+      Sfx.page();
+      momentPick = parseInt(b.dataset.i, 10);
+      markPeriodDone();       // 小事也算這個時段的事，做完就等下一個時段
+      render();
+    };
+  });
+  const back = document.getElementById('mback') || document.getElementById('mquit');
+  if (back) back.onclick = () => { Sfx.tap(); curMoment = null; momentPick = -1; view = 'town'; render(); };
+}
+
 function render() {
   setTod(todNow());
   if (view === 'menu') renderMenu();
@@ -654,6 +735,7 @@ function render() {
   else if (view === 'who') renderWho();
   else if (view === 'story') renderStory();
   else if (view === 'town') renderTown();
+  else if (view === 'moment') renderMoment();
   else renderEnding();
   window.scrollTo(0, 0);
 }

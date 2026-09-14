@@ -8,6 +8,7 @@ cd "$(dirname "$0")"
 
 cat src/theater_head.html \
     src/scenarios.js \
+    src/moments.js \
     src/theater_art.js \
     src/art_lib.js \
     src/art_scenes_a.js \
@@ -24,6 +25,6 @@ cat src/theater_head.html \
     src/theater_app.js > theater.html
 printf '</script>\n</body>\n</html>\n' >> theater.html
 
-BUILD="$(date +%Y.%m.%d)-$(cat src/scenarios.js src/theater_app.js src/theater_head.html | md5sum | cut -c1-6)"
+BUILD="$(date +%Y.%m.%d)-$(cat src/scenarios.js src/moments.js src/theater_app.js src/theater_head.html | md5sum | cut -c1-6)"
 sed -i "s/__BUILD__/$BUILD/" theater.html
 echo "版本 $BUILD"

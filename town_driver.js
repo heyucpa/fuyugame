@@ -1,10 +1,22 @@
 <script>(function(){
-  var fails=[], errs=[], seen={}, places={}, quiet=0, wx={}, said=0;
+  var fails=[], errs=[], seen={}, moments={}, places={}, quiet=0, wx={}, said=0;
   window.addEventListener('error', function(e){ errs.push(String(e.message)); });
   var TODS=['morning','day','dusk','night'], DAYS=40;
   function spot(k){ var g=document.querySelector('.spot[data-spot="'+k+'"]'); if(!g){fails.push('地圖上找不到 '+k);} return g; }
   function setDay(d){ todayStamp=function(){ return '2026-10-'+d; }; }
   function setTodStub(t){ todNow=function(){ return t; }; }
+  // 找一個「這個時段剛好是 kind」的日子，回傳那一天的事件
+  function findKind(kind){
+    for (var d=1; d<=60; d++){
+      setDay(d);
+      for (var i=0;i<4;i++){
+        setTodStub(TODS[i]);
+        var e = periodEvent(TODS[i]);
+        if (e.kind===kind) return e;
+      }
+    }
+    return null;
+  }
 
   try {
     localStorage.clear();
@@ -16,33 +28,44 @@
     var a = periodEvent('day');
     for (var i=0;i<20;i++){
       var b = periodEvent('day');
-      if (b.place!==a.place || b.id!==a.id){ fails.push('同一個時段算出不同的事'); break; }
+      if (b.place!==a.place || b.id!==a.id || b.kind!==a.kind){ fails.push('同一個時段算出不同的事'); break; }
     }
     // ② 同一天不同時段，要是不同的事（至少不會四段全同）
     var ids = TODS.map(function(t){ return periodEvent(t).id; });
     if (ids.filter(function(x){return x;}).length && new Set(ids).size===1)
       fails.push('同一天四個時段給的是同一件事');
 
-    // ③ 40 天 × 4 時段：變化夠、分布合理、有安靜的時段
+    // ③ 40 天 × 4 時段：三種都要出現、變化夠、分布合理
     for (var d=1; d<=DAYS; d++){
       setDay(d);
       wx[weatherToday()] = (wx[weatherToday()]||0)+1;
       TODS.forEach(function(t){
         var e = periodEvent(t);
-        if (!e.id){ quiet++; return; }
-        seen[e.id]=(seen[e.id]||0)+1; places[e.place]=(places[e.place]||0)+1;
-        if (PLACE_OF[e.id]!==e.place) fails.push(e.id+' 的地點對不上');
+        if (!e.kind){ quiet++; return; }
+        if (e.kind==='moment'){
+          moments[e.id]=(moments[e.id]||0)+1;
+          var m = momentById(e.id);
+          if (!m) fails.push('找不到小事 '+e.id);
+          else if (m.place!==e.place) fails.push(e.id+' 的地點對不上');
+        } else {
+          seen[e.id]=(seen[e.id]||0)+1;
+          if (PLACE_OF[e.id]!==e.place) fails.push(e.id+' 的地點對不上');
+        }
+        places[e.place]=(places[e.place]||0)+1;
       });
     }
-    if (Object.keys(seen).length < 18) fails.push('只出現 '+Object.keys(seen).length+' 種事，變化太少');
-    if (quiet < 10) fails.push('安靜的時段只有 '+quiet+' 個，太少了');
+    if (Object.keys(seen).length < 12) fails.push('只出現 '+Object.keys(seen).length+' 種劇本，變化太少');
+    if (Object.keys(moments).length < 12) fails.push('只出現 '+Object.keys(moments).length+' 種小事，變化太少');
+    // 小事要比劇本多：這個遊戲不想讓她覺得每個時段都在出事
+    if (Object.keys(moments).reduce(function(s,k){return s+moments[k];},0)
+        <= Object.keys(seen).reduce(function(s,k){return s+seen[k];},0))
+      fails.push('小事比劇本還少，日子變得太危險了');
+    if (quiet < 5) fails.push('安靜的時段只有 '+quiet+' 個，太少了');
     if (Object.keys(wx).length < 3) fails.push('天氣只有 '+Object.keys(wx).length+' 種');
 
-    // ④ 完整流程：開小鎮 → 點這個時段的事 → 走到結局 → 回小鎮
-    setDay(1); setTodStub('day');
-    var ev = periodEvent('day');
-    if (!ev.id){ setTodStub('morning'); ev = periodEvent('morning'); }
-    if (!ev.id){ fails.push('找不到有事的時段可以測'); }
+    // ④ 完整流程：開小鎮 → 點這個時段的劇本 → 走到結局 → 回小鎮
+    var ev = findKind('story');
+    if (!ev){ fails.push('六十天內找不到劇本時段可以測'); }
     else {
       view='town'; render();
       if(!document.querySelector('.town svg')) fails.push('小鎮沒有畫出來');
@@ -57,8 +80,8 @@
 
       // 家裡應該輪得到三個人。家如果剛好是這個時段出事的地方，點下去會進故事，
       // 所以先換到一個「家沒有出事」的日子再測。
-      var whos = {};
-      for (var dd=1; dd<=40 && (periodEvent('day').place==='home' || !periodEvent('day').id); dd++) setDay(dd);
+      var evDay = todayStamp(), evTod = todNow(), whos = {};
+      for (var dd=1; dd<=60; dd++){ setDay(dd); if (periodEvent(evTod).place!=='home') break; }
       view='town'; townMsg=null; render();
       for (var t2=0;t2<14;t2++){
         spot('home').onclick();
@@ -67,7 +90,7 @@
         whos[nm.textContent]=1;
       }
       ['媽媽','爸爸','妹妹'].forEach(function(w){ if(!whos[w]) fails.push('點家裡輪不到「'+w+'」'); });
-      setDay(1);
+      todayStamp=function(){ return evDay; };   // 回到剛才那個有劇本的日子
 
       // 走這個時段的事
       view='town'; townMsg=null; render();
@@ -116,13 +139,50 @@
         }
 
         // ⑦ 換一個時段要重置
-        var nxt = TODS[(TODS.indexOf('day')+1)%4];
-        setTodStub(nxt);
+        setTodStub(TODS[(TODS.indexOf(evTod)+1)%4]);
         if (isPeriodDone()) fails.push('換了時段卻還顯示已完成');
       }
     }
 
-    // ⑧ 小鎮會跟著圖鑑長大
+    // ⑧ 小事的完整流程
+    var mv = findKind('moment');
+    if (!mv){ fails.push('六十天內找不到小事時段可以測'); }
+    else {
+      var galM = seenTotal();
+      view='town'; townMsg=null; curMoment=null; render();
+      if (document.querySelector('.town svg').innerHTML.indexOf('💭') < 0)
+        fails.push('地圖上沒有 💭 記號，她不知道那裡有小事');
+      spot(mv.place).onclick();
+      if (view!=='moment') fails.push('點了小事沒有進到小事頁（view='+view+'）');
+      else {
+        if (curMoment.id !== mv.id) fails.push('進到的不是這個時段的小事');
+        if (curMoment.place !== mv.place) fails.push('小事的地點跟地圖上點的不一樣');
+        if (!document.querySelector('.scene svg')) fails.push('小事沒有定場圖');
+        if (isPeriodDone()) fails.push('還沒選就標記完成');
+        var opts = document.querySelectorAll('.choice');
+        if (opts.length < 1 || opts.length > 2) fails.push('小事的選項有 '+opts.length+' 個，應該是 1～2 個');
+        else {
+          opts[0].onclick();
+          var stages = document.querySelectorAll('.stage');
+          if (stages.length < 2) fails.push('選完沒有出現回應');
+          else if (!stages[1].textContent.trim()) fails.push('回應是空的');
+          if (document.querySelectorAll('.choice').length) fails.push('選完了還留著選項');
+          if (!isPeriodDone()) fails.push('小事做完卻沒有標記這個時段完成');
+          // 小事不評分：不能進圖鑑，也不能有結局徽章
+          if (seenTotal() !== galM) fails.push('小事竟然算進了結局圖鑑');
+          if (document.querySelector('.badge, .lesson, .talkbox')) fails.push('小事頁出現了結局的評分區塊');
+          var mb = document.getElementById('mback');
+          if (!mb) fails.push('小事沒有「回小鎮」');
+          else { mb.onclick(); if (view!=='town') fails.push('小事結束沒回到小鎮'); }
+        }
+      }
+      // 做完之後那個地點的記號要變成 ✓，再點不會又進小事
+      townMsg=null; render();
+      spot(mv.place).onclick();
+      if (view!=='town') fails.push('小事做完再點竟然又進了一次');
+    }
+
+    // ⑨ 小鎮會跟著圖鑑長大
     var st0 = townStage();
     var all={}; SCENARIOS.forEach(function(s){ all[s.id]={}; Object.keys(s.endings).forEach(function(k){ all[s.id][k]=1; }); });
     localStorage.setItem(pKey('ends'), JSON.stringify(all));
@@ -131,7 +191,7 @@
 
   var pre=document.createElement('pre'); pre.id='R';
   pre.textContent=[
-    DAYS+' 天 × 4 時段：出現 '+Object.keys(seen).length+' 種事、'+quiet+' 個時段沒事',
+    DAYS+' 天 × 4 時段：劇本 '+Object.keys(seen).length+' 種、小事 '+Object.keys(moments).length+' 種、'+quiet+' 個時段沒事',
     '地點分布 '+JSON.stringify(places),
     '天氣分布 '+JSON.stringify(wx),
     '連點六下出現 '+said+' 種話',

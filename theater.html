@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#6b4a9e" />
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
-<meta name="build" content="2026.09.14-6f119e" />
+<meta name="build" content="2026.09.14-6803d9" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -2248,6 +2248,201 @@ const SCENARIOS = [
   },
 ];
 
+
+/* ===== 小事 =====
+   跟 21 篇劇本不一樣的東西：一句情境、一兩個選項、一句回應，三十秒結束。
+
+   兩個刻意的設計：
+   1. 不評分。這些是「日子」，不是考題。把日常也拿去評分，
+      會讓她覺得每一件事都在被打分數。
+   2. 大部分是純日常，沒有危險。遊戲的安全提醒寫著
+      「大部分的人都是安全、願意幫忙的」——與其用一句話講，
+      不如讓她每天真的遇到幾件普通的好事。
+
+   少數幾則帶一點安全意識（標 care: true），但一樣不嚇人、不評分，
+   重點放在「開口講」「說出感覺」這種可以遷移的習慣。
+*/
+const MOMENTS = [
+
+  /* ---------- 🏠 家 ---------- */
+  { id: 'm-crayon', place: 'home',
+    text: '妹妹把你的色筆弄斷了。<br><br>她抓著兩截色筆，很緊張地看著你，一句話都不敢講。',
+    choices: [
+      { label: '跟她說沒關係', reply: '妹妹整個鬆了一口氣，跑去房間拿她最寶貝的貼紙簿，硬要送你一張。' },
+      { label: '說下次要小心一點', reply: '妹妹小小聲說「對不起」，然後很認真地幫你把筆收好。<br><br>晚上她還特地跑來問你：「姊姊你還在生氣嗎？」' },
+    ] },
+
+  { id: 'm-dinner', place: 'home',
+    text: '媽媽在廚房喊：「誰來幫我拿一下碗？」<br><br>你正在看的那一集還有五分鐘就演完了。',
+    choices: [
+      { label: '先去幫忙', reply: '你去拿了碗。媽媽說：「還好有你。」<br><br>那一集後來重播了，你還是看到了。' },
+      { label: '看完再去', reply: '你看完才過去。媽媽已經自己拿好了，不過她沒說什麼。<br><br>你幫忙擺了筷子。' },
+    ] },
+
+  { id: 'm-dadtired', place: 'home',
+    text: '爸爸今天回來得很晚，坐在沙發上沒有講話。',
+    choices: [
+      { label: '過去坐在他旁邊', reply: '爸爸愣了一下，然後笑了：「今天有點累而已。」<br><br>你們兩個就這樣坐了一下子，誰也沒說話。' },
+      { label: '問他怎麼了', reply: '爸爸說：「工作上有點煩的事，不過看到你就好多了。」<br><br>他揉了揉你的頭。' },
+    ] },
+
+  { id: 'm-nightmare', place: 'home',
+    text: '半夜你被一個夢嚇醒，心跳很快。<br><br>客廳還有一點燈光。',
+    choices: [
+      { label: '去找爸媽', reply: '媽媽讓你躺回去，坐在旁邊陪了你一下。<br><br>她說：「作噩夢不是你的錯，想過來就過來。」' },
+      { label: '自己躺回去', reply: '你翻了個身，數了一下呼吸，慢慢又睡著了。<br><br>早上起來覺得，好像也沒那麼可怕。' },
+    ] },
+
+  { id: 'm-sisterdraw', place: 'home',
+    text: '妹妹畫了一張圖要給你看。<br><br>老實說……看不太出來那是什麼。',
+    choices: [
+      { label: '問她畫的是什麼', reply: '「是姊姊啊！」她指著中間那一團說。<br><br>你看了第二次，好像真的有點像。' },
+      { label: '說很好看', reply: '妹妹超開心，當場又畫了三張。<br><br>你們家冰箱上現在有四張你。' },
+    ] },
+
+  { id: 'm-chore', place: 'home',
+    text: '你答應要收玩具，但一整個下午都在看書。<br><br>媽媽剛剛走過去看了一眼那堆玩具。',
+    choices: [
+      { label: '現在馬上去收', reply: '收完發現其實只花了五分鐘。<br><br>你心裡那個「還沒收」的感覺，也跟著不見了。' },
+      { label: '跟媽媽說我等一下收', reply: '媽媽說：「好，那我相信你。」<br><br>你決定不要讓她失望。' },
+    ] },
+
+  { id: 'm-phone-night', place: 'home', care: true,
+    text: '睡前你在玩平板，跳出一個從沒看過的通知，寫著「你有一個新朋友」。',
+    choices: [
+      { label: '拿去給爸媽看', reply: '爸爸看了一下說：「這種先給我們看就對了。」<br><br>他順手把那個通知關掉了。' },
+      { label: '不理它，去睡覺', reply: '你把平板闔上就去睡了。<br><br>隔天早上你還是跟媽媽提了一下——她說這樣很好。' },
+    ] },
+
+  { id: 'm-secretgift', place: 'home', care: true,
+    text: '妹妹拿著一個小玩具跑來：<br><br>「姊姊，有一個哥哥給我的，他說不要跟媽媽講。」',
+    choices: [
+      { label: '帶妹妹去跟媽媽說', reply: '媽媽謝謝你們兩個都有講。<br><br>她跟妹妹說：「叫你不要告訴媽媽的事，一定要告訴媽媽。」' },
+      { label: '先問妹妹那是誰', reply: '妹妹說不太清楚。<br><br>你牽著她去找媽媽——這種事情不用自己想答案。' },
+    ] },
+
+  /* ---------- 🏫 學校 ---------- */
+  { id: 'm-newkid', place: 'school',
+    text: '班上來了一個轉學生，下課的時候一個人坐在位子上。',
+    choices: [
+      { label: '過去跟他說話', reply: '你問他要不要一起去操場。他愣了一下，然後點頭。<br><br>後來那一整節下課你們都在講話。' },
+      { label: '找朋友一起過去', reply: '三個人一起去比較不尷尬。<br><br>轉學生後來說，那天是他來這裡最不緊張的一天。' },
+    ] },
+
+  { id: 'm-forgot', place: 'school',
+    text: '你忘記帶今天的直笛，下一節就是音樂課。',
+    choices: [
+      { label: '去跟老師說', reply: '老師說：「謝謝你先來講。」然後借了你一支公用的。<br><br>她說：「忘記帶不是什麼大事，不講才麻煩。」' },
+      { label: '問同學可不可以借', reply: '隔壁班的同學剛好有多的。<br><br>你答應下次換你幫他。' },
+    ] },
+
+  { id: 'm-testback', place: 'school',
+    text: '考卷發下來，比你想的低。<br><br>隔壁的同學一直想看你的分數。',
+    choices: [
+      { label: '把考卷收起來', reply: '你把考卷折好放進書包。<br><br>分數是你自己的事，不想給看就不用給。' },
+      { label: '給他看', reply: '同學看了說：「我也沒有很高啊。」<br><br>你們兩個一起研究了錯的那幾題。' },
+    ] },
+
+  { id: 'm-eraser', place: 'school',
+    text: '你在地上撿到一個很可愛的橡皮擦，沒有寫名字。',
+    choices: [
+      { label: '交給老師', reply: '下午老師在班上問，原來是隔壁排同學的。<br><br>她跑來跟你說了三次謝謝。' },
+      { label: '問問看附近的同學', reply: '問到第四個人的時候找到主人了。<br><br>她剛剛才在位子上到處翻。' },
+    ] },
+
+  { id: 'm-groupwork', place: 'school',
+    text: '分組報告，你們這組有一個人都沒有做事。',
+    choices: [
+      { label: '直接問他要做哪一部分', reply: '他其實是不知道要做什麼。<br><br>你分了一段給他，他做完了。' },
+      { label: '跟老師說', reply: '老師沒有罵人，只是重新排了一次分工。<br><br>她跟你說：「你先自己試過才來找我，這樣很好。」' },
+    ] },
+
+  { id: 'm-rainschool', place: 'school',
+    text: '放學下大雨，你沒帶傘。<br><br>走廊上還有幾個同學也在等。',
+    choices: [
+      { label: '打電話回家', reply: '媽媽說她二十分鐘後到。<br><br>你就在警衛室旁邊等，跟同學聊了一下天。' },
+      { label: '跟有傘的同學一起走', reply: '兩個人擠一把傘，兩邊肩膀都濕了，但一路上都在笑。' },
+    ] },
+
+  /* ---------- 🛒 商店街 ---------- */
+  { id: 'm-change', place: 'shop',
+    text: '買完早餐，你發現阿姨多找了你十塊錢。',
+    choices: [
+      { label: '拿回去還她', reply: '阿姨愣了一下，然後笑得很開心：「這個小孩真好。」<br><br>她多給了你一顆糖。' },
+      { label: '先算一次確定有多', reply: '你數了兩次，確定真的多了。<br><br>還回去的時候阿姨說：「還好你有講，不然我晚上帳會對不起來。」' },
+    ] },
+
+  { id: 'm-queue', place: 'shop',
+    text: '你在排隊，後面的阿婆只買一瓶醬油，一直在看時間。',
+    choices: [
+      { label: '讓她先', reply: '阿婆謝了你好幾次。<br><br>你其實也只等了兩分鐘。' },
+      { label: '照原本排', reply: '輪到你的時候，你順口跟阿姨說阿婆好像很趕。<br><br>阿姨很快幫她結了帳。' },
+    ] },
+
+  { id: 'm-wantbuy', place: 'shop',
+    text: '架上有一個你很想要的東西，但零用錢還差三十塊。',
+    choices: [
+      { label: '下次再買', reply: '你把它放回去。<br><br>兩個禮拜後你自己存到了——拿在手上的感覺，比想像中好。' },
+      { label: '問阿姨可不可以先欠', reply: '阿姨笑著說：「阿姨不能這樣做喔，不過我幫你留著。」<br><br>她真的幫你留了。' },
+    ] },
+
+  /* ---------- 🌳 公園 ---------- */
+  { id: 'm-catpark', place: 'park',
+    text: '公園長椅下面有一隻貓，一直看著你。',
+    choices: [
+      { label: '蹲下來看牠', reply: '你蹲得遠遠的，沒有伸手。<br><br>貓看了你一會兒，慢慢走過來，在你旁邊躺下。' },
+      { label: '去問警衛伯伯', reply: '伯伯說那是這附近的老住戶了。<br><br>「牠比你早來公園。」他說。' },
+    ] },
+
+  { id: 'm-swing', place: 'park',
+    text: '鞦韆只剩一個位子，你跟一個比你小的孩子同時走到。',
+    choices: [
+      { label: '讓他先盪', reply: '他盪了一下下就跑掉了。<br><br>你等了大概三分鐘。' },
+      { label: '說我們輪流', reply: '你數十下換他，他數十下換你。<br><br>後來你們兩個一直數到一百。' },
+    ] },
+
+  { id: 'm-lostkid', place: 'park', care: true,
+    text: '公園裡有一個小小孩在哭，附近看不到大人。',
+    choices: [
+      { label: '去叫警衛伯伯', reply: '伯伯馬上過來了，很快就找到那個孩子的阿嬤。<br><br>他跟你說：「找大人來，是最快的辦法。」' },
+      { label: '陪他站在原地等', reply: '你陪他站著，一邊四處看有沒有大人。<br><br>警衛伯伯經過的時候你喊住他——他說你做得很好，沒有自己把小孩帶走。' },
+    ] },
+
+  /* ---------- 🥋 道館 ---------- */
+  { id: 'm-belt', place: 'dojo',
+    text: '同一梯的同學今天升帶了，你還沒有。',
+    choices: [
+      { label: '去跟他說恭喜', reply: '他超開心，還教了你那個他練很久的動作。<br><br>教練在旁邊看著，什麼都沒說，但點了點頭。' },
+      { label: '自己再多練一下', reply: '你留下來多踢了二十下。<br><br>教練走過來說：「就是這樣。慢慢來的人走得比較遠。」' },
+    ] },
+
+  { id: 'm-tired', place: 'dojo',
+    text: '今天很累，一點都不想上課。',
+    choices: [
+      { label: '跟教練說今天狀況不好', reply: '教練說：「那今天做一半就好。」<br><br>結果做著做著，你還是做完了。' },
+      { label: '撐著做完', reply: '做完之後整個人癱在地上。<br><br>但走出道館的時候，心情意外地好。' },
+    ] },
+
+  /* ---------- 🏊 泳池 ---------- */
+  { id: 'm-cold', place: 'pool',
+    text: '水有點冷，你站在池邊猶豫很久。',
+    choices: [
+      { label: '慢慢走下去', reply: '從腳開始，一階一階。<br><br>下去之後發現，其實沒有想像中冷。' },
+      { label: '今天先在淺水區', reply: '你在淺水區走來走去，玩了一個下午。<br><br>不勉強自己也是一種選擇。' },
+    ] },
+
+  { id: 'm-goggles', place: 'pool',
+    text: '你的蛙鏡一直進水，同學說他有多的。',
+    choices: [
+      { label: '跟他借', reply: '他借你的那副超好用。<br><br>你們約好下次一起來。' },
+      { label: '先問問看怎麼調', reply: '同學教你把帶子放鬆一點。<br><br>調好之後就不進水了——原來一直是太緊。' },
+    ] },
+];
+
+/* 依地點分組，給小鎮挑用 */
+const MOMENTS_BY_PLACE = {};
+MOMENTS.forEach(m => { (MOMENTS_BY_PLACE[m.place] = MOMENTS_BY_PLACE[m.place] || []).push(m.id); });
+const momentById = id => MOMENTS.find(m => m.id === id);
 /* ===== 結局插圖（inline SVG，動畫在 CSS） ===== */
 
 // 共用零件
@@ -3768,6 +3963,35 @@ function townSVG(tod, marks, standAt, weather, stage) {
     (TOWN_TINT[tod] || '') +
     (weather === 'rain' ? RAIN : '') + '</svg>';
 }
+
+/* ===== 小事的定場圖 =====
+   不另外畫，直接把小鎮的那一角放大。這樣她一眼認得出「這是公園」，
+   因為那就是地圖上的同一棵樹、同一個人——24 則小事一張新圖都不用畫。
+
+   裁切框會超出小鎮那張 320×200（例如學校上方、泳池右邊），
+   所以要自己先鋪一層草地，不能只靠 townBase()。
+   數字是量出來的：[x, y, 寬, 高, 她站的位置]，
+   她站的位置都刻意閃開房子跟鎮民，改動請跟著截圖看一次。 */
+const CLOSEUP = {
+  school: [ 10, -10, 112, 70, [ 94, 54]],
+  dojo:   [202, -10, 112, 70, [258, 54]],
+  shop:   [  6,  68, 112, 70, [ 98, 132]],
+  park:   [118,  60, 112, 70, [170, 126]],
+  pool:   [214,  58, 112, 70, [306, 124]],
+  home:   [ 84, 120, 132, 82, [152, 198]],
+};
+function placeCloseup(place, tod, weather) {
+  const p = PLACES.find(x => x.key === place), b = CLOSEUP[place];
+  if (!p || !b) return '';
+  const box = b[0] + ' ' + b[1] + ' ' + b[2] + ' ' + b[3];
+  const cover = '<rect x="' + b[0] + '" y="' + b[1] + '" width="' + b[2] + '" height="' + b[3] + '"';
+  const tint = { morning: ['#ffb46b', '.13'], dusk: ['#d4622a', '.2'], night: ['#1b2450', '.34'] }[tod];
+  return '<svg viewBox="' + box + '" width="100%" role="img" aria-label="' + p.name + '">' +
+    cover + ' fill="#c8e6c0"/>' + townBase() +
+    p.art(tod === 'night') + p.npcArt() + GIRL(b[4][0], b[4][1], 0.55) +
+    (tint ? cover + ' fill="' + tint[0] + '" opacity="' + tint[1] + '"/>' : '') +
+    (weather === 'rain' ? RAIN + cover + ' fill="#7f93b8" opacity=".2"/>' : '') + '</svg>';
+}
 /* ===== 每個結局的專屬畫面（後 8 個劇本） ===== */
 Object.assign(ART_SCENES, {
   /* ---------- 9. 賣場走失 ---------- */
@@ -4363,17 +4587,28 @@ const DAY_IDS = Object.keys(PLACE_OF);
    要等到下午才會有新的。這樣「過一段時間再來看看」對她是具體的，
    而且跟畫面的天色是同一套時間。
 
-   一天四個時段，但不是每段都有事（約四分之三機率）——
-   沒事的時段就是平常的鎮上，這才像真的日子。
+   三種可能：
+     小事（約一半）　三十秒、不評分，大部分是純日常
+     劇本（約四成）　21 篇裡的一篇，有結局、會進圖鑑
+     沒事（約一成）　就是平常的鎮上
 
-   要先均勻抽「哪一篇」再反推地點，不能先抽地點：
+   小事給得比劇本多，是刻意的。這個遊戲的安全提醒寫著
+   「大部分的人都是安全、願意幫忙的」——如果每個時段都出事，
+   那句話就被畫面推翻了。日子本來就大多是普通的。
+
+   劇本要先均勻抽「哪一篇」再反推地點，不能先抽地點：
    泳池只有 1 篇、家有 9 篇，先抽地點的話泳池那篇會一直重複出現。 */
 function periodEvent(tod) {
   const key = todayStamp() + '/' + (tod || todNow()) + ':' + whoId();
   const sd = seedOf(key);
-  if ((sd >>> 3) % 100 < 25) return { place: null, id: null, seed: sd };  // 這個時段沒事
+  const roll = (sd >>> 3) % 100;
+  if (roll < 10) return { kind: null, place: null, id: null, seed: sd };  // 這個時段沒事
+  if (roll < 62) {
+    const m = MOMENTS[(sd >>> 11) % MOMENTS.length];
+    return { kind: 'moment', place: m.place, id: m.id, seed: sd };
+  }
   const id = DAY_IDS[sd % DAY_IDS.length];
-  return { place: PLACE_OF[id], id: id, seed: sd };
+  return { kind: 'story', place: PLACE_OF[id], id: id, seed: sd };
 }
 /* 挑哪一句要看情境：
    - 這個時段的事剛處理完 → 講「剛才那件事」
@@ -4506,10 +4741,11 @@ function renderTown() {
 
   const marks = {};
   Object.keys(PLACE_POOL).forEach(k => { marks[k] = NPC[k] ? '💬' : ''; });
-  if (ev.place) marks[ev.place] = done ? '✓' : '❗';
+  // ❗ 是「有事情要處理」，💭 是「有件小事」——記號不一樣，她才知道等一下是哪一種
+  if (ev.place) marks[ev.place] = done ? '✓' : (ev.kind === 'moment' ? '💭' : '❗');
 
   const hint = ev.place && !done
-    ? '有一個地方出事了 ❗　點它看看。'
+    ? (ev.kind === 'moment' ? '有個地方有一件小事 💭　點它看看。' : '有一個地方出事了 ❗　點它看看。')
     : `${ev.place ? `這個時段的事處理完了 ✓　<b>${NEXT_PERIOD[tod]}</b>還會有新的。<br>` : '這個時段鎮上很平靜。<br>'}`
       + '想繼續玩的話，<b>點任何一個地方都可以</b>。';
 
@@ -4556,7 +4792,11 @@ function renderTown() {
       const k = g.dataset.spot;
       if (ev.place && k === ev.place && !done) {      // 這個時段的事
         Sfx.page();
-        walkTo(k, () => { townMsg = null; fromTown = true; townFree = false; startScenario(ev.id); });
+        walkTo(k, () => {
+          townMsg = null;
+          if (ev.kind === 'moment') startMoment(ev.id);
+          else { fromTown = true; townFree = false; startScenario(ev.id); }
+        });
         return;
       }
       // 鎮上的人講話，再點會講下一句
@@ -4584,6 +4824,71 @@ function renderTown() {
 }
 
 
+/* ===== 小事 =====
+   刻意不走 startScenario 那一套：沒有節點、沒有結局、不記圖鑑、不評分。
+   她按完看到的是一句回應，不是一個評價。
+
+   為什麼不給分：這些是「日子」，不是考題。
+   如果連「妹妹弄斷色筆你怎麼辦」都要被打分數，
+   那她會學到的是「做什麼都在被評」，那跟這個遊戲想教的相反。 */
+let curMoment = null;   // 正在進行的小事
+let momentPick = -1;    // 她選了哪一個，-1 是還沒選
+
+function startMoment(id) {
+  curMoment = momentById(id);
+  momentPick = -1;
+  if (!curMoment) { view = 'town'; return render(); }
+  view = 'moment';
+  render();
+}
+
+function renderMoment() {
+  const m = curMoment;
+  if (!m) { view = 'town'; return renderTown(); }
+  const tod = todNow(), wx = weatherToday();
+  const p = PLACES.find(x => x.key === m.place) || {};
+  const picked = momentPick >= 0 ? m.choices[momentPick] : null;
+
+  app.innerHTML = `
+    <div class="card anim">
+      <h1>${p.emoji || '💭'} ${esc(PLACE_NAME[m.place] || '')}</h1>
+      <div class="sub">小事一件</div>
+      <div class="scene pop">${placeCloseup(m.place, tod, wx)}</div>
+      <div class="stage">
+        <div class="narr">${narrate(m.text)}</div>
+      </div>
+      ${picked ? `
+        <div style="font-size:14px; font-weight:800; color:#6b4a9e; margin:12px 0 0;">
+          你選了：${esc(picked.label)}
+        </div>
+        <div class="stage" style="margin-top:7px;">
+          <div class="narr">${narrate(picked.reply)}</div>
+        </div>
+        <div class="row">
+          <button id="mback" style="background:#2f6f8f; color:#fff; width:100%;">回小鎮 🏘️</button>
+        </div>`
+      : `
+        <div style="font-size:14px; font-weight:800; color:#6b4a9e; margin-bottom:7px;">你要怎麼做？</div>
+        <div class="choices">
+          ${m.choices.map((c, i) => `<button class="choice" data-i="${i}">${esc(c.label)}</button>`).join('')}
+        </div>
+        <div class="row">
+          <button class="mini" id="mquit">← 回小鎮</button>
+        </div>`}
+    </div>`;
+
+  app.querySelectorAll('.choice').forEach(b => {
+    b.onclick = () => {
+      Sfx.page();
+      momentPick = parseInt(b.dataset.i, 10);
+      markPeriodDone();       // 小事也算這個時段的事，做完就等下一個時段
+      render();
+    };
+  });
+  const back = document.getElementById('mback') || document.getElementById('mquit');
+  if (back) back.onclick = () => { Sfx.tap(); curMoment = null; momentPick = -1; view = 'town'; render(); };
+}
+
 function render() {
   setTod(todNow());
   if (view === 'menu') renderMenu();
@@ -4592,6 +4897,7 @@ function render() {
   else if (view === 'who') renderWho();
   else if (view === 'story') renderStory();
   else if (view === 'town') renderTown();
+  else if (view === 'moment') renderMoment();
   else renderEnding();
   window.scrollTo(0, 0);
 }
