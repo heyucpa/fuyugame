@@ -267,6 +267,14 @@
       setDay(8); render();
       if (!document.querySelector('.hide')) fails.push('換了一天卻沒有新的東西可以找');
     }
+    /* 小人站的地方要看得出來是「在那個地點」。
+       家本來設在 [246,186]，離名牌 88，按了「家」她會走到畫面右下角，
+       看起來像跑掉不像回家。其他地點都是 45～59，所以 65 是合理的上限。 */
+    PLACES.forEach(function(pl){
+      var d = Math.sqrt(Math.pow(pl.stand[0]-pl.plate[0],2) + Math.pow(pl.stand[1]-pl.plate[1],2));
+      if (d > 65) fails.push('「'+pl.name+'」的小人站得離名牌 '+Math.round(d)+'，看起來不像在那裡');
+    });
+
     /* 藏的位置不能壓到名牌。那顆透明的點擊圈畫在名牌上面，
        壓到的話她想點地點會變成撿到東西——這種事眼睛看不出來，
        因為圈是透明的，只能用座標算。 */

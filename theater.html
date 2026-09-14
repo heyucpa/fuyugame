@@ -3901,7 +3901,10 @@ const TOWN_TINT = {
 };
 
 /* 每個地點：畫什麼、名牌放哪、小人站哪。
-   stand 都刻意閃開名牌與房子，免得人疊在字上面。 */
+   stand 都刻意閃開名牌與房子，免得人疊在字上面——但不能閃太遠。
+   家本來是 [246,186]，離名牌 88（其他地方都是 45～59），
+   按了「家」她會走到畫面的右下角，看起來像跑掉不像回家。
+   走查有在擋這個距離。 */
 const PLACES = [
   { key: 'school', name: '學校',  emoji: '🏫', plate: [56, 48],   stand: [108, 76],
     npc: [102, 36], npcArt: () => ADULT(102, 36, 0.4, { color: '#5e8f78' }),
@@ -3919,7 +3922,7 @@ const PLACES = [
     npc: [238, 90], npcArt: () => ADULT(238, 90, 0.4, { color: '#e85a92' }),
     art: () => '<rect x="240" y="96" width="52" height="24" rx="4" fill="#7fc1ed" stroke="#33224a" stroke-width="2"/>' +
                '<path d="M244 104 q6 -3 12 0 q6 3 12 0 q6 -3 12 0" stroke="#a8d8f5" stroke-width="2.4" fill="none"/>' },
-  { key: 'home',   name: '家',    emoji: '🏠', plate: [158, 178], stand: [246, 186],
+  { key: 'home',   name: '家',    emoji: '🏠', plate: [158, 178], stand: [210, 168],
     npc: [122, 168],
     npcArt: () => ADULT(116, 164, 0.4, { color: '#9b59b6' }) +        // 媽媽
                   ADULT(96, 182, 0.4, { color: '#5b7fa8', hair: '#2a1a0c' }) +  // 爸爸
