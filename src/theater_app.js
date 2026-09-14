@@ -263,12 +263,174 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 const narrate = s => esc(s).replace(/&lt;(\/?(?:br|b))&gt;/g, '<$1>');
 const plain = s => String(s).replace(/<[^>]*>/g, '');
 
+/* ===== 平安的一天 =====
+   另一種玩法：不是挑一篇看，而是走完一天。
+   早上出門 → 在學校 → 放學後 → 晚上回到家，四段。
+
+   不是每一段都會出事——一天裡隨機兩到三段有狀況，其餘是平順的。
+   這是刻意的：首頁那句安全提醒寫著「大部分的人都是安全、願意幫忙的」，
+   讓大部分的路段真的平安無事，比用文字講一次有用。
+
+   四段的分法照劇本裡實際寫的時間與地點：
+   「去買早餐」是週末早上、「等不到爸媽」是放學鐘響、
+   「一個人在家」是爸媽出門之後。 */
+const STOPS = [
+  { key: 'morning', icon: '🌅', name: '早上<br>出門',   pool: ['breakfast', 'scam'] },
+  { key: 'school',  icon: '🏫', name: '在學校',         pool: ['bully', 'quake', 'money', 'candy', 'knife', 'wish'] },
+  { key: 'after',   icon: '🌆', name: '放學後',         pool: ['gate', 'road', 'dojo', 'lost', 'pool'] },
+  { key: 'night',   icon: '🏠', name: '晚上<br>回到家', pool: ['home', 'fire', 'fakecop', 'shop', 'imposter', 'exam', 'online', 'secret'] },
+];
+const CALM = {
+  morning: ['你自己出門，路上很順，準時到學校。', '今天早上什麼事都沒有，真好。'],
+  school:  ['今天在學校很平常，上課、下課、跟同學玩。', '一整天都很順，沒發生什麼特別的事。'],
+  after:   ['放學後你直接回家，路上沒什麼特別的。', '今天很準時被接到，一路平安。'],
+  night:   ['晚上在家寫功課、看電視，很安靜的一個晚上。', '今天晚上沒什麼事，早早就睡了。'],
+};
+
+let dayRun = null;   // 不是 null 就代表正在過一天
+let dayAt = 0;
+
+const pickOne = a => a[Math.floor(Math.random() * a.length)];
+
+function loadDayStats() {
+  try { return JSON.parse(localStorage.getItem(pKey('daystats'))) || { days: 0, perfect: 0 }; }
+  catch (e) { return { days: 0, perfect: 0 }; }
+}
+function saveDayStats(v) { try { localStorage.setItem(pKey('daystats'), JSON.stringify(v)); } catch (e) {} }
+// 最近遇過的先避開，免得同一篇一直重複
+function loadDayRecent() {
+  try { return JSON.parse(localStorage.getItem(pKey('dayrecent'))) || []; } catch (e) { return []; }
+}
+function pushDayRecent(id) {
+  const r = loadDayRecent().filter(x => x !== id);
+  r.unshift(id);
+  try { localStorage.setItem(pKey('dayrecent'), JSON.stringify(r.slice(0, 8))); } catch (e) {}
+}
+
+function startDay() {
+  const recent = loadDayRecent();
+  const n = 2 + Math.floor(Math.random() * 2);           // 四段裡兩到三段有事
+  const hit = STOPS.map((_, i) => i).sort(() => Math.random() - 0.5).slice(0, n);
+  const used = [];
+  dayRun = STOPS.map((stop, i) => {
+    if (hit.indexOf(i) < 0) return { stop, calm: pickOne(CALM[stop.key]), result: null };
+    const avail = stop.pool.filter(x => used.indexOf(x) < 0);
+    const fresh = avail.filter(x => recent.indexOf(x) < 0);
+    const id = pickOne(fresh.length ? fresh : avail);
+    used.push(id);
+    return { stop, calm: null, scenarioId: id, result: null };
+  });
+  dayAt = 0;
+  view = 'route';
+  render();
+}
+
+function routeBar() {
+  return `<div class="route">${dayRun.map((d, i) => {
+    const cls = i < dayAt ? ' done' : (i === dayAt ? ' now' : '');
+    const mark = i < dayAt
+      ? (d.result ? (d.result.grade === 'best' ? '🌟' : d.result.grade === 'bad' ? '🔁' : '✓') : '✓')
+      : '';
+    return `<div class="stop${cls}">${mark ? `<span class="mk">${mark}</span>` : ''}` +
+      `<span class="dot">${d.stop.icon}</span><span class="nm">${d.stop.name}</span></div>`;
+  }).join('')}</div>`;
+}
+
+function renderRoute() {
+  const d = dayRun[dayAt];
+  app.innerHTML = `
+    <div class="card anim">
+      <div class="daytop"><span class="daynum">${who().emoji} ${esc(who().name)} 的一天</span></div>
+      ${routeBar()}
+      ${d.calm ? `
+        <div class="calm">
+          <span class="big">${d.stop.icon}</span>
+          <div class="t">這一段很平順</div>
+          <div class="s">${narrate(d.calm)}</div>
+        </div>
+        <button id="dnext" style="width:100%; background:#7cc9a0; color:#1e3d2c;">繼續 ▶</button>
+      ` : `
+        <div class="stage" style="margin-top:4px;">
+          <div class="narr">${d.stop.icon} <b>${d.stop.name.replace('<br>', '')}</b>……有事情發生了。</div>
+        </div>
+        <button id="dnext" style="width:100%; background:#6b4a9e; color:#fff;">看看怎麼回事 ▶</button>
+      `}
+      <div class="row" style="margin-top:10px;">
+        <button class="mini" id="dquit">← 先不玩了</button>
+      </div>
+    </div>`;
+  document.getElementById('dnext').onclick = () => {
+    Sfx.page();
+    if (d.calm) dayAdvance();
+    else startScenario(d.scenarioId);     // 借用劇場本來就有的故事引擎
+  };
+  document.getElementById('dquit').onclick = () => { Sfx.tap(); dayRun = null; view = 'menu'; render(); };
+}
+
+function dayAdvance() {
+  dayAt++;
+  if (dayAt >= dayRun.length) {
+    const st = loadDayStats();
+    st.days++;
+    const done = dayRun.filter(d => d.result);
+    if (done.length && done.every(d => d.result.grade === 'best')) st.perfect++;
+    saveDayStats(st);
+    view = 'tally';
+  } else {
+    view = 'route';
+  }
+  render();
+}
+
+function renderTally() {
+  const done = dayRun.filter(d => d.result);
+  const allBest = done.length > 0 && done.every(d => d.result.grade === 'best');
+  const redo = done.filter(d => d.result.grade === 'escape' || d.result.grade === 'bad');
+  const st = loadDayStats();
+  app.innerHTML = `
+    <div class="card anim">
+      <h1>🏠 今天回到家了</h1>
+      <div class="sub">${allBest ? '而且每一件事都處理得很好' : '今天走過這些事'}</div>
+      ${routeBar()}
+      ${done.length ? `<div class="tally">
+        ${done.map(d => {
+          const g = GRADE_META[d.result.grade];
+          return `<div class="tally-row">
+            <span class="wh">${d.stop.icon}</span>
+            <span class="ti">${esc(d.result.title)}</span>
+            <span class="gd" style="background:${g.bg}; color:${g.color};">${g.label}</span>
+          </div>`;
+        }).join('')}
+      </div>` : `<div class="calm"><span class="big">🌤️</span>
+        <div class="t">今天一整天都很平安</div>
+        <div class="s">什麼事都沒發生，這其實是最常見的一種日子。</div></div>`}
+      ${allBest ? `<div class="safeframe">🌟 <b>今天每一關都做到了最好。</b></div>` : ''}
+      ${redo.length ? `<div class="safeframe mini">
+        <span class="sf-ico">🔁</span>
+        <span class="sf-txt">有 ${redo.length} 件事還可以更好。<b>再過一天，說不定會再遇到一次。</b></span>
+      </div>` : ''}
+      <div class="daytop" style="margin:12px 0;">
+        <span class="daynum">已經過了 ${st.days} 天${st.perfect ? `　🌟 全部完美的有 ${st.perfect} 天` : ''}</span>
+      </div>
+      <button id="dagain" style="width:100%; background:#6b4a9e; color:#fff;">☀️ 再過一天</button>
+      <div class="row" style="margin-top:8px;">
+        <button class="mini" id="dmenu">🎭 回劇本選單</button>
+        <button class="mini" id="dgal">🖼️ 看結局圖鑑</button>
+      </div>
+    </div>`;
+  document.getElementById('dagain').onclick = () => { Sfx.tap(); startDay(); };
+  document.getElementById('dmenu').onclick = () => { Sfx.tap(); dayRun = null; view = 'menu'; render(); };
+  document.getElementById('dgal').onclick  = () => { Sfx.tap(); dayRun = null; view = 'gallery'; render(); };
+}
+
 function render() {
   if (view === 'menu') renderMenu();
   else if (view === 'check') renderCheck();
   else if (view === 'gallery') renderGallery();
   else if (view === 'who') renderWho();
   else if (view === 'story') renderStory();
+  else if (view === 'route') renderRoute();
+  else if (view === 'tally') renderTally();
   else renderEnding();
   window.scrollTo(0, 0);
 }
@@ -348,6 +510,8 @@ function renderMenu() {
         🌱 <b>大部分的人都是安全、願意幫忙的。</b><br>
         這些故事是在練習：少數真的遇到危險的時候，你可以怎麼保護自己。
       </div>
+      <button id="daybtn" style="width:100%; background:#2f6f8f; color:#fff; font-size:17px;
+        padding:15px; margin-bottom:10px;">☀️ 平安的一天　<span style="font-size:13px; opacity:.85;">走完一天</span></button>
       <div style="text-align:center; font-size:13px; font-weight:800; color:#6b4a9e; margin-bottom:4px;">
         完美通關 ${done} / ${graded.length}
       </div>
@@ -419,6 +583,7 @@ function renderMenu() {
     render();
   };
   document.getElementById('music').oncontextmenu = e => { e.preventDefault(); Sfx.toggleBgm(); render(); };
+  document.getElementById('daybtn').onclick = () => { Sfx.tap(); startDay(); };
   document.getElementById('galbtn').onclick = () => { Sfx.tap(); view = 'gallery'; render(); };
   document.getElementById('guessmode').onclick = () => { Sfx.tap(); toggleGuess(); render(); };
   document.getElementById('replaymode').onclick = () => { Sfx.tap(); toggleReplay(); render(); };
@@ -490,13 +655,15 @@ function renderStory() {
         </div>
         <div class="row">
           <button class="mini" id="music2">${Sfx.isBgmOn() ? '🎵 音樂開' : '🎵 音樂關'}</button>
-          <button class="mini" id="quit">← 選別的故事</button>
+          <button class="mini" id="quit">${dayRun ? '← 回到今天的路線' : '← 選別的故事'}</button>
         </div>
       </div>
     `;
     document.getElementById('go').onclick = () => { Sfx.page(); nodeId = cur.start; render(); };
     document.getElementById('music2').onclick = () => { Sfx.toggleBgm(); render(); };
-    document.getElementById('quit').onclick = () => { view = 'menu'; render(); };
+    document.getElementById('quit').onclick = () => {
+      view = dayRun ? 'route' : 'menu'; render();
+    };
     return;
   }
 
@@ -534,7 +701,7 @@ function renderStory() {
       </div>
       <div class="row">
         <button class="mini" id="music2">${Sfx.isBgmOn() ? '🎵 音樂開' : '🎵 音樂關'}</button>
-        <button class="mini" id="quit">← 離開這個故事</button>
+        <button class="mini" id="quit">${dayRun ? '← 回到今天的路線' : '← 離開這個故事'}</button>
       </div>
     </div>
   `;
@@ -542,7 +709,9 @@ function renderStory() {
     b.onclick = () => choose(parseInt(b.dataset.i, 10));
   });
   document.getElementById('music2')?.addEventListener('click', () => { Sfx.toggleBgm(); render(); });
-  document.getElementById('quit').onclick = () => { view = 'menu'; render(); };
+  document.getElementById('quit').onclick = () => {
+      view = dayRun ? 'route' : 'menu'; render();
+    };
 }
 
 function choose(i) {
@@ -569,6 +738,10 @@ function choose(i) {
       // 還在等她押判斷的時候，不能用音效先洩漏答案
       if (predicting) Sfx.page();
       else ({ best: Sfx.best, good: Sfx.good, escape: Sfx.escape, bad: Sfx.bad }[ending.grade] || Sfx.good)();
+    }
+    if (dayRun && dayRun[dayAt] && dayRun[dayAt].scenarioId === cur.id) {
+      dayRun[dayAt].result = { title: ending.title, grade: ending.grade };
+      pushDayRecent(cur.id);
     }
     view = 'end';
     render();
@@ -751,19 +924,29 @@ function renderEnding() {
           </div>` : ''}
         </div>
       </div>
+      ${dayRun ? `
+      <div class="row">
+        <button id="dgo" style="background:#2f6f8f; color:#fff; width:100%;">
+          ${dayAt < dayRun.length - 1 ? '繼續今天 ▶' : '回到家了 🏠'}
+        </button>
+      </div>` : `
       <div class="row">
         <button id="again" style="background:#6b4a9e; color:#fff;">🔁 再走一次</button>
         <button id="rand">🎲 隨機下一個</button>
         <button id="menu" style="background:#fff;">🎭 選別的故事</button>
-      </div>
+      </div>`}
       <div class="row" style="margin-top:8px;">
         <button class="mini" id="music2">${Sfx.isBgmOn() ? '🎵 音樂開' : '🎵 音樂關'}</button>
       </div>
     </div>
   `;
-  document.getElementById('again').onclick = () => { Sfx.tap(); startScenario(cur.id); };
-  document.getElementById('rand').onclick = () => { Sfx.tap(); startRandom(); };
-  document.getElementById('menu').onclick = () => { Sfx.tap(); view = 'menu'; render(); };
+  if (dayRun) {
+    document.getElementById('dgo').onclick = () => { Sfx.tap(); dayAdvance(); };
+  } else {
+    document.getElementById('again').onclick = () => { Sfx.tap(); startScenario(cur.id); };
+    document.getElementById('rand').onclick = () => { Sfx.tap(); startRandom(); };
+    document.getElementById('menu').onclick = () => { Sfx.tap(); view = 'menu'; render(); };
+  }
   document.getElementById('music2')?.addEventListener('click', () => { Sfx.toggleBgm(); render(); });
 }
 
