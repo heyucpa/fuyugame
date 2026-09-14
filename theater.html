@@ -3856,11 +3856,14 @@ const PLATE = (x, y, txt, mark) =>
           '<text x="27" y="-4" font-size="10" text-anchor="middle">' + mark + '</text>' : '') +
   '</g>';
 
+/* 天色與雨都是蓋在最上層的整張遮罩，一定要 pointer-events="none"。
+   沒有的話，它會把底下六個地點的點擊全部吃掉——
+   早上、傍晚、晚上整張地圖都變成點不動的，只有白天玩得了。 */
 const TOWN_TINT = {
-  morning: '<rect width="320" height="200" fill="#ffb46b" opacity=".13"/>',
+  morning: '<rect width="320" height="200" fill="#ffb46b" opacity=".13" pointer-events="none"/>',
   day:     '',
-  dusk:    '<rect width="320" height="200" fill="#d4622a" opacity=".2"/>',
-  night:   '<rect width="320" height="200" fill="#1b2450" opacity=".34"/>',
+  dusk:    '<rect width="320" height="200" fill="#d4622a" opacity=".2" pointer-events="none"/>',
+  night:   '<rect width="320" height="200" fill="#1b2450" opacity=".34" pointer-events="none"/>',
 };
 
 /* 每個地點：畫什麼、名牌放哪、小人站哪。
@@ -3929,12 +3932,12 @@ function townGrowth(stage) {
 }
 
 // 雨：斜線 + 壓一層灰藍
-const RAIN = '<g opacity=".55">' +
+const RAIN = '<g opacity=".55" pointer-events="none">' +
   Array.from({ length: 26 }, (_, i) => {
     const x = (i * 37 % 320), y = (i * 53 % 190);
     return '<path d="M' + x + ' ' + y + ' l-3 9" stroke="#eaf4ff" stroke-width="1.6" stroke-linecap="round"/>';
   }).join('') + '</g>' +
-  '<rect width="320" height="200" fill="#7f93b8" opacity=".2"/>';
+  '<rect width="320" height="200" fill="#7f93b8" opacity=".2" pointer-events="none"/>';
 
 function townBase() {
   const road = 'M158 200 L158 140 M158 140 L56 86 M158 140 L258 86 M158 140 L44 130 M158 140 L266 130';

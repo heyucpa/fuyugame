@@ -63,6 +63,24 @@
     if (quiet < 5) fails.push('安靜的時段只有 '+quiet+' 個，太少了');
     if (Object.keys(wx).length < 3) fails.push('天氣只有 '+Object.keys(wx).length+' 種');
 
+    /* ③.5 四個時段、晴天跟雨天都要真的點得到。
+       其他檢查都是直接呼叫 .onclick()，不會經過瀏覽器的命中測試，
+       所以天色遮罩把整張地圖的點擊吃掉這種事完全驗不出來——
+       真的發生過：早上、傍晚、晚上地圖全部點不動，只有白天玩得了。 */
+    function hitTest(label){
+      view='town'; townMsg=null; curMoment=null; render();
+      var g = document.querySelector('.spot[data-spot="home"]');
+      if (!g) { fails.push(label+'：地圖沒畫出來'); return; }
+      var r = g.getBoundingClientRect();
+      var el = document.elementFromPoint(r.left + r.width/2, r.top + r.height/2);
+      if (!el || !el.closest || !el.closest('.spot'))
+        fails.push(label+' 點不到地點，被 <'+(el?el.tagName:'null')+'> 擋住了');
+    }
+    for (var wd=1; wd<=60 && weatherToday()!=='sun'; wd++) setDay(wd);
+    TODS.forEach(function(t){ setTodStub(t); hitTest('晴天 '+t); });
+    for (var wr=1; wr<=60 && weatherToday()!=='rain'; wr++) setDay(wr);
+    setTodStub('night'); hitTest('雨天 night');
+
     // ④ 完整流程：開小鎮 → 點這個時段的劇本 → 走到結局 → 回小鎮
     var ev = findKind('story');
     if (!ev){ fails.push('六十天內找不到劇本時段可以測'); }
