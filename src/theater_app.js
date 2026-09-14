@@ -503,10 +503,42 @@ function bumpFriend(place) {
 }
 const CLOSE_AT = 12;   // 講過這麼多次就算熟了
 
+/* 這個地點還有幾種結局沒走過。
+   拿來告訴她「這裡還有東西可以挖」，也用來決定自由玩要給哪一篇。 */
+function placeUnseen(place) {
+  const ends = loadEnds();
+  let n = 0;
+  (PLACE_POOL[place] || []).forEach(id => {
+    const sc = SCENARIOS.find(x => x.id === id);
+    if (!sc) return;
+    const got = ends[id] || {};
+    Object.keys(sc.endings).forEach(k => { if (!got[k]) n++; });
+  });
+  return n;
+}
+/* 自由玩：優先給「還有最多結局沒看過」的那一篇，
+   讓她每次回到同一個地方都還有新東西。 */
+function pickFreePlay(place) {
+  const ends = loadEnds();
+  const pool = (PLACE_POOL[place] || []).map(id => {
+    const sc = SCENARIOS.find(x => x.id === id);
+    const got = ends[id] || {};
+    const left = sc ? Object.keys(sc.endings).filter(k => !got[k]).length : 0;
+    return { id: id, left: left };
+  });
+  if (!pool.length) return null;
+  const max = Math.max.apply(null, pool.map(x => x.left));
+  const best = pool.filter(x => x.left === max);
+  return best[Math.floor(Math.random() * best.length)].id;
+}
+
+const PLACE_NAME = { home: '家裡', school: '學校', shop: '商店街', park: '公園', dojo: '道館', pool: '泳池' };
+
 // 現實時間決定她人在哪裡
 const WHERE_NOW = { morning: 'home', day: 'school', dusk: 'park', night: 'home' };
 
 let fromTown = false;   // 這一篇是從小鎮點進來的
+let townFree = false;   // 而且是「自由玩」的那種，不算今天的事
 let townMsg = null;     // 點了鎮上的人之後要顯示的話
 let townTaps = {};      // 每個地點點過幾下，決定講到第幾句
 
@@ -519,11 +551,10 @@ function renderTown() {
   Object.keys(PLACE_POOL).forEach(k => { marks[k] = NPC[k] ? '💬' : ''; });
   if (ev.place) marks[ev.place] = done ? '✓' : '❗';
 
-  const hint = ev.place
-    ? (done
-        ? `這個時段的事處理完了 ✓　<b>${NEXT_PERIOD[tod]}</b>再來看看。`
-        : '有一個地方出事了 ❗　點它看看。')
-    : '這個時段鎮上很平靜。點點看大家，他們有話想說。';
+  const hint = ev.place && !done
+    ? '有一個地方出事了 ❗　點它看看。'
+    : `${ev.place ? `這個時段的事處理完了 ✓　<b>${NEXT_PERIOD[tod]}</b>還會有新的。<br>` : '這個時段鎮上很平靜。<br>'}`
+      + '想繼續玩的話，<b>點任何一個地方都可以</b>。';
 
   app.innerHTML = `
     <div class="card anim">
@@ -536,7 +567,13 @@ function renderTown() {
           <span class="face">${townMsg.emoji}</span>
           <span><b>${esc(townMsg.who)}</b><br>${narrate(townMsg.text)}
             ${townMsg.more ? '<span class="more">再點一下，還有話說 ▸</span>' : ''}</span>
-        </div>` : `<div class="townhint">${hint}</div>`}
+        </div>
+        <button id="tplay" class="playhere">
+          🎭 在${esc(PLACE_NAME[townMsg.place] || '這裡')}玩一篇
+          ${placeUnseen(townMsg.place) ? `<small>還有 ${placeUnseen(townMsg.place)} 種結局沒看過</small>`
+                                       : '<small>這裡的結局都看過了，再走一次也可以</small>'}
+        </button>`
+        : `<div class="townhint">${hint}</div>`}
       <div class="row" style="margin-top:10px;">
         <button class="mini" id="tmenu">🎭 劇本選單</button>
         <button class="mini" id="tgal">🖼️ 結局圖鑑</button>
@@ -548,7 +585,7 @@ function renderTown() {
     g.onclick = () => {
       const k = g.dataset.spot;
       if (ev.place && k === ev.place && !done) {      // 這個時段的事
-        Sfx.page(); townMsg = null; fromTown = true; startScenario(ev.id);
+        Sfx.page(); townMsg = null; fromTown = true; townFree = false; startScenario(ev.id);
         return;
       }
       // 鎮上的人講話，再點會講下一句
@@ -564,6 +601,12 @@ function renderTown() {
       render();
     };
   });
+  const play = document.getElementById('tplay');
+  if (play) play.onclick = () => {
+    const id = pickFreePlay(townMsg.place);
+    if (!id) return;
+    Sfx.page(); townMsg = null; fromTown = true; townFree = true; startScenario(id);
+  };
   document.getElementById('tmenu').onclick = () => { Sfx.tap(); townMsg = null; view = 'menu'; render(); };
   document.getElementById('tgal').onclick  = () => { Sfx.tap(); townMsg = null; view = 'gallery'; render(); };
 }
@@ -775,7 +818,7 @@ function startRandom() {
 }
 
 function startScenario(id) {
-  if (view === 'menu') fromTown = false;   // 從選單進來就不是小鎮模式
+  if (view === 'menu') { fromTown = false; townFree = false; }   // 從選單進來就不是小鎮模式
   cur = SCENARIOS.find(s => s.id === id);
   if (!cur) return;
   lastId = id;
@@ -889,7 +932,7 @@ function choose(i) {
       if (predicting) Sfx.page();
       else ({ best: Sfx.best, good: Sfx.good, escape: Sfx.escape, bad: Sfx.bad }[ending.grade] || Sfx.good)();
     }
-    if (fromTown) markPeriodDone();
+    if (fromTown && !townFree) markPeriodDone();
     view = 'end';
     render();
   } else {
@@ -1087,7 +1130,7 @@ function renderEnding() {
   `;
   if (fromTown) {
     document.getElementById('tgo').onclick = () => {
-      Sfx.tap(); fromTown = false; townMsg = null; view = 'town'; render();
+      Sfx.tap(); fromTown = false; townFree = false; townMsg = null; view = 'town'; render();
     };
   } else {
     document.getElementById('again').onclick = () => { Sfx.tap(); startScenario(cur.id); };

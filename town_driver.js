@@ -93,14 +93,35 @@
         spot(ev.place).onclick();
         if (view!=='town') fails.push('做完後再點竟然又進了故事');
 
-        // ⑥ 換一個時段要重置
+        // ⑥ 做完之後還是可以繼續玩：點別的地方要有「在這裡玩一篇」
+        townMsg=null; render();
+        var other2 = Object.keys(PLACE_POOL).filter(function(k){ return k!==ev.place; })[0];
+        spot(other2).onclick();
+        var pb = document.getElementById('tplay');
+        if (!pb) fails.push('做完之後沒有「在這裡玩一篇」的按鈕，她就沒得玩了');
+        else {
+          var before = seenTotal();
+          pb.onclick();
+          if (view!=='story') fails.push('按了「在這裡玩一篇」沒有進到故事');
+          else if (PLACE_OF[cur.id] !== other2) fails.push('自由玩給的篇目不屬於那個地點');
+          else {
+            document.getElementById('go').onclick();
+            var g2=0;
+            while (view==='story' && g2++<40){ var b2=document.querySelectorAll('.choice'); if(!b2.length) break; b2[0].onclick(); }
+            if (predicting){ var gg=document.getElementById('g-idk'); gg && gg.onclick(); }
+            if (seenTotal() <= before) fails.push('自由玩玩完，圖鑑沒有增加');
+            var bk=document.getElementById('tgo'); bk && bk.onclick();
+          }
+        }
+
+        // ⑦ 換一個時段要重置
         var nxt = TODS[(TODS.indexOf('day')+1)%4];
         setTodStub(nxt);
         if (isPeriodDone()) fails.push('換了時段卻還顯示已完成');
       }
     }
 
-    // ⑦ 小鎮會跟著圖鑑長大
+    // ⑧ 小鎮會跟著圖鑑長大
     var st0 = townStage();
     var all={}; SCENARIOS.forEach(function(s){ all[s.id]={}; Object.keys(s.endings).forEach(function(k){ all[s.id][k]=1; }); });
     localStorage.setItem(pKey('ends'), JSON.stringify(all));
