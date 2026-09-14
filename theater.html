@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#6b4a9e" />
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
-<meta name="build" content="2026.09.14-6803d9" />
+<meta name="build" content="2026.09.14-4f54d9" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -401,6 +401,16 @@
 
   .townhint { text-align: center; font-size: 13px; font-weight: 700;
               color: #6b5a7e; line-height: 1.7; }
+
+  /* 每天藏的那個東西：說明 + 寶物盒 */
+  .hunt { text-align: center; font-size: 12.5px; font-weight: 700; color: #6b5a7e;
+          line-height: 1.65; margin: 6px 0 10px; }
+  .hunt b { color: #6b4a9e; }
+  /* 十二格一定要排得下一行，所以用 flex 讓它自己縮，不要固定寬度 */
+  .box { display: flex; justify-content: center; gap: 2px; margin-top: 5px; }
+  .box span { flex: 0 1 auto; min-width: 0; font-size: 14px; line-height: 1.5;
+              color: #b9abcc; filter: grayscale(1) opacity(.5); }
+  .box span.on { filter: none; }
 
   /* 小鎮上方的問候 */
   .daytop { text-align: center; margin-bottom: 10px; }
@@ -3856,6 +3866,8 @@ const PLATE = (x, y, txt, mark) =>
           '<text x="27" y="-4" font-size="10" text-anchor="middle">' + mark + '</text>' : '') +
   '</g>';
 
+const HIDE_R = 14;   // 藏的東西的點擊半徑（在 320 寬的畫面裡，手機上大約 31px）
+
 /* 天色與雨都是蓋在最上層的整張遮罩，一定要 pointer-events="none"。
    沒有的話，它會把底下六個地點的點擊全部吃掉——
    早上、傍晚、晚上整張地圖都變成點不動的，只有白天玩得了。 */
@@ -3948,8 +3960,9 @@ function townBase() {
     TREE(252, 186, 1, '#a8e6c0') + TREE(304, 30, 0.9);
 }
 
-/* marks: { 地點key: '❗' | '💬' | '✓' }　standAt: 小人站在哪個地點 */
-function townSVG(tod, marks, standAt, weather, stage) {
+/* marks: { 地點key: '❗' | '💬' | '✓' }　standAt: 小人站在哪個地點
+   hide: 今天藏的東西 { emoji, at:[x,y] }，已經找到就傳 null */
+function townSVG(tod, marks, standAt, weather, stage, hide) {
   const lit = tod === 'night';
   // 記號掛在名牌上。試過掛在人頭上，六個泡泡會把畫面擠爆。
   const spots = PLACES.map(p =>
@@ -3963,6 +3976,14 @@ function townSVG(tod, marks, standAt, weather, stage) {
     // 小人包起來並給 id，點地點時用 transform 讓她「走過去」
     '<g id="walker" style="transition: transform .75s ease-in-out;">' +
       GIRL(here.stand[0], here.stand[1], 0.55) + '</g>' +
+    /* 藏的東西畫在最後、遮罩之前：畫太早會被小人或房子蓋住。
+       那顆 HIDE_R 的透明圈是點擊範圍——字只有 11 大，
+       小孩的手指點不到那麼準。fill 要 transparent 不能 none，none 不吃點擊。
+       圈放大就會開始搶名牌的點擊，所以 HIDE_SPOTS 跟名牌的距離有走查在擋。 */
+    (hide ? '<g class="hide" style="cursor:pointer">' +
+        '<circle cx="' + hide.at[0] + '" cy="' + hide.at[1] + '" r="' + HIDE_R + '" fill="transparent"/>' +
+        '<text x="' + hide.at[0] + '" y="' + (hide.at[1] + 4) + '" font-size="11" ' +
+        'text-anchor="middle">' + hide.emoji + '</text></g>' : '') +
     (TOWN_TINT[tod] || '') +
     (weather === 'rain' ? RAIN : '') + '</svg>';
 }
@@ -4660,6 +4681,54 @@ function weatherToday() {
   return r < 55 ? 'sun' : r < 82 ? 'cloud' : 'rain';
 }
 
+/* ===== 每天藏一個東西 =====
+   一天一樣，藏在鎮上某個角落，點到就收進寶物盒。
+
+   為什麼要有這個：小事跟劇本都要「等下一個時段」，
+   但她可能十分鐘後就想再打開一次。這個是唯一一件
+   「打開就可以做」的事，而且不用讀字、不用選，只要看。
+
+   刻意做得小又不閃不動：要用眼睛找，才有找到的感覺。
+   十二個藏的位置都避開了六個地點的名牌，
+   不然那顆透明的點擊圈會把名牌的點擊搶走。 */
+const TREASURES = [
+  { id: 't-clover',  emoji: '🍀', name: '四葉草',     line: '聽說找到的人，那天會有好事。' },
+  { id: 't-shell',   emoji: '🐚', name: '貝殼',       line: '離海那麼遠，不知道是誰帶來的。' },
+  { id: 't-coin',    emoji: '🪙', name: '舊錢幣',     line: '上面的字都磨掉了。' },
+  { id: 't-star',    emoji: '⭐', name: '掉下來的星星', line: '摸起來還是溫的。' },
+  { id: 't-feather', emoji: '🪶', name: '羽毛',       line: '白得發亮，比你的手掌還長。' },
+  { id: 't-bug',     emoji: '🐞', name: '瓢蟲',       line: '牠在你手上停了三秒才飛走。' },
+  { id: 't-key',     emoji: '🔑', name: '小鑰匙',     line: '不知道開哪裡的，你先收著。' },
+  { id: 't-candy',   emoji: '🍬', name: '一顆糖',     line: '包裝紙是你沒看過的顏色。' },
+  { id: 't-acorn',   emoji: '🌰', name: '橡實',       line: '圓圓的，搖起來有聲音。' },
+  { id: 't-balloon', emoji: '🎈', name: '汽球',       line: '繩子纏在樹枝上，你把它解下來了。' },
+  { id: 't-fly',     emoji: '🦋', name: '蝴蝶',       line: '停在你的袖子上，翅膀一開一合。' },
+  { id: 't-puzzle',  emoji: '🧩', name: '一片拼圖',   line: '不知道是哪一盒的，形狀很特別。' },
+];
+const HIDE_SPOTS = [
+  [20, 150], [304, 84], [112, 30], [186, 26], [248, 160], [92, 96],
+  [214, 46], [30, 92], [140, 148], [292, 186], [66, 186], [176, 70],
+];
+function huntToday() {
+  const sd = seedOf('h:' + todayStamp() + ':' + whoId());
+  const t = TREASURES[sd % TREASURES.length];
+  return { id: t.id, emoji: t.emoji, name: t.name, line: t.line, at: HIDE_SPOTS[(sd >>> 9) % HIDE_SPOTS.length] };
+}
+const huntKey = () => pKey('hunt-' + todayStamp());
+const foundToday = () => localStorage.getItem(huntKey());
+function loadTreasures() {
+  try { return JSON.parse(localStorage.getItem(pKey('treasures'))) || {}; } catch (e) { return {}; }
+}
+function recordFind(id) {
+  const box = loadTreasures();
+  box[id] = (box[id] || 0) + 1;
+  try {
+    localStorage.setItem(pKey('treasures'), JSON.stringify(box));
+    localStorage.setItem(huntKey(), id);
+  } catch (e) {}
+}
+const treasureById = id => TREASURES.find(t => t.id === id);
+
 /* 小鎮會跟著她長大：走過的結局越多，鎮上的東西越多。
    這是為了讓「結局圖鑑 106」這個數字變成她每天看得見的東西。 */
 function townStage() {
@@ -4741,6 +4810,7 @@ function renderTown() {
   const tod = todNow(), ev = periodEvent(tod), wx = weatherToday();
   const done = ev.id ? isPeriodDone(tod) : false;
   const stage = townStage(), friend = loadFriend();
+  const hunt = huntToday(), got = foundToday(), box = loadTreasures();
 
   const marks = {};
   Object.keys(PLACE_POOL).forEach(k => { marks[k] = NPC[k] ? '💬' : ''; });
@@ -4758,7 +4828,14 @@ function renderTown() {
         <div class="greet"><b>${GREET_TOWN[tod][0]}</b>${GREET_TOWN[tod][1]}</div>
         <div class="wx">${WEATHER[wx].icon} ${WEATHER[wx].name}　·　🖼️ ${seenTotal()} / ${totalEnds()}</div>
       </div>
-      <div class="town">${townSVG(tod, marks, WHERE_NOW[tod], wx, stage)}</div>
+      <div class="town">${townSVG(tod, marks, WHERE_NOW[tod], wx, stage, got ? null : hunt)}</div>
+      <div class="hunt">
+        ${got ? `🎁 今天找到了：<b>${treasureById(got) ? treasureById(got).emoji + ' ' + esc(treasureById(got).name) : '？'}</b>
+                 ${treasureById(got) ? esc(treasureById(got).line) : ''}`
+              : '👀 今天鎮上藏了一個小東西，找找看。'}
+        <div class="box">${TREASURES.map(t =>
+          `<span class="${box[t.id] ? 'on' : ''}" title="${esc(t.name)}">${box[t.id] ? t.emoji : '•'}</span>`).join('')}</div>
+      </div>
       ${townMsg ? `<div class="says">
           <span class="face">${townMsg.emoji}</span>
           <span><b>${esc(townMsg.who)}</b><br>${narrate(townMsg.text)}
@@ -4815,6 +4892,16 @@ function renderTown() {
       render();
     };
   });
+  // 找到今天藏的東西。這個 g 刻意不在任何 .spot 裡面，不會跟地點搶點擊
+  const hg = app.querySelector('.hide');
+  if (hg) hg.onclick = (e) => {
+    e.stopPropagation();
+    Sfx.good();
+    recordFind(hunt.id);
+    townMsg = null;
+    render();
+  };
+
   const play = document.getElementById('tplay');
   if (play) play.onclick = () => {
     const place = townMsg.place, id = pickFreePlay(place);

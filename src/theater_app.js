@@ -495,6 +495,54 @@ function weatherToday() {
   return r < 55 ? 'sun' : r < 82 ? 'cloud' : 'rain';
 }
 
+/* ===== 每天藏一個東西 =====
+   一天一樣，藏在鎮上某個角落，點到就收進寶物盒。
+
+   為什麼要有這個：小事跟劇本都要「等下一個時段」，
+   但她可能十分鐘後就想再打開一次。這個是唯一一件
+   「打開就可以做」的事，而且不用讀字、不用選，只要看。
+
+   刻意做得小又不閃不動：要用眼睛找，才有找到的感覺。
+   十二個藏的位置都避開了六個地點的名牌，
+   不然那顆透明的點擊圈會把名牌的點擊搶走。 */
+const TREASURES = [
+  { id: 't-clover',  emoji: '🍀', name: '四葉草',     line: '聽說找到的人，那天會有好事。' },
+  { id: 't-shell',   emoji: '🐚', name: '貝殼',       line: '離海那麼遠，不知道是誰帶來的。' },
+  { id: 't-coin',    emoji: '🪙', name: '舊錢幣',     line: '上面的字都磨掉了。' },
+  { id: 't-star',    emoji: '⭐', name: '掉下來的星星', line: '摸起來還是溫的。' },
+  { id: 't-feather', emoji: '🪶', name: '羽毛',       line: '白得發亮，比你的手掌還長。' },
+  { id: 't-bug',     emoji: '🐞', name: '瓢蟲',       line: '牠在你手上停了三秒才飛走。' },
+  { id: 't-key',     emoji: '🔑', name: '小鑰匙',     line: '不知道開哪裡的，你先收著。' },
+  { id: 't-candy',   emoji: '🍬', name: '一顆糖',     line: '包裝紙是你沒看過的顏色。' },
+  { id: 't-acorn',   emoji: '🌰', name: '橡實',       line: '圓圓的，搖起來有聲音。' },
+  { id: 't-balloon', emoji: '🎈', name: '汽球',       line: '繩子纏在樹枝上，你把它解下來了。' },
+  { id: 't-fly',     emoji: '🦋', name: '蝴蝶',       line: '停在你的袖子上，翅膀一開一合。' },
+  { id: 't-puzzle',  emoji: '🧩', name: '一片拼圖',   line: '不知道是哪一盒的，形狀很特別。' },
+];
+const HIDE_SPOTS = [
+  [20, 150], [304, 84], [112, 30], [186, 26], [248, 160], [92, 96],
+  [214, 46], [30, 92], [140, 148], [292, 186], [66, 186], [176, 70],
+];
+function huntToday() {
+  const sd = seedOf('h:' + todayStamp() + ':' + whoId());
+  const t = TREASURES[sd % TREASURES.length];
+  return { id: t.id, emoji: t.emoji, name: t.name, line: t.line, at: HIDE_SPOTS[(sd >>> 9) % HIDE_SPOTS.length] };
+}
+const huntKey = () => pKey('hunt-' + todayStamp());
+const foundToday = () => localStorage.getItem(huntKey());
+function loadTreasures() {
+  try { return JSON.parse(localStorage.getItem(pKey('treasures'))) || {}; } catch (e) { return {}; }
+}
+function recordFind(id) {
+  const box = loadTreasures();
+  box[id] = (box[id] || 0) + 1;
+  try {
+    localStorage.setItem(pKey('treasures'), JSON.stringify(box));
+    localStorage.setItem(huntKey(), id);
+  } catch (e) {}
+}
+const treasureById = id => TREASURES.find(t => t.id === id);
+
 /* 小鎮會跟著她長大：走過的結局越多，鎮上的東西越多。
    這是為了讓「結局圖鑑 106」這個數字變成她每天看得見的東西。 */
 function townStage() {
@@ -576,6 +624,7 @@ function renderTown() {
   const tod = todNow(), ev = periodEvent(tod), wx = weatherToday();
   const done = ev.id ? isPeriodDone(tod) : false;
   const stage = townStage(), friend = loadFriend();
+  const hunt = huntToday(), got = foundToday(), box = loadTreasures();
 
   const marks = {};
   Object.keys(PLACE_POOL).forEach(k => { marks[k] = NPC[k] ? '💬' : ''; });
@@ -593,7 +642,14 @@ function renderTown() {
         <div class="greet"><b>${GREET_TOWN[tod][0]}</b>${GREET_TOWN[tod][1]}</div>
         <div class="wx">${WEATHER[wx].icon} ${WEATHER[wx].name}　·　🖼️ ${seenTotal()} / ${totalEnds()}</div>
       </div>
-      <div class="town">${townSVG(tod, marks, WHERE_NOW[tod], wx, stage)}</div>
+      <div class="town">${townSVG(tod, marks, WHERE_NOW[tod], wx, stage, got ? null : hunt)}</div>
+      <div class="hunt">
+        ${got ? `🎁 今天找到了：<b>${treasureById(got) ? treasureById(got).emoji + ' ' + esc(treasureById(got).name) : '？'}</b>
+                 ${treasureById(got) ? esc(treasureById(got).line) : ''}`
+              : '👀 今天鎮上藏了一個小東西，找找看。'}
+        <div class="box">${TREASURES.map(t =>
+          `<span class="${box[t.id] ? 'on' : ''}" title="${esc(t.name)}">${box[t.id] ? t.emoji : '•'}</span>`).join('')}</div>
+      </div>
       ${townMsg ? `<div class="says">
           <span class="face">${townMsg.emoji}</span>
           <span><b>${esc(townMsg.who)}</b><br>${narrate(townMsg.text)}
@@ -650,6 +706,16 @@ function renderTown() {
       render();
     };
   });
+  // 找到今天藏的東西。這個 g 刻意不在任何 .spot 裡面，不會跟地點搶點擊
+  const hg = app.querySelector('.hide');
+  if (hg) hg.onclick = (e) => {
+    e.stopPropagation();
+    Sfx.good();
+    recordFind(hunt.id);
+    townMsg = null;
+    render();
+  };
+
   const play = document.getElementById('tplay');
   if (play) play.onclick = () => {
     const place = townMsg.place, id = pickFreePlay(place);

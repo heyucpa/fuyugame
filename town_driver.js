@@ -67,12 +67,19 @@
        其他檢查都是直接呼叫 .onclick()，不會經過瀏覽器的命中測試，
        所以天色遮罩把整張地圖的點擊吃掉這種事完全驗不出來——
        真的發生過：早上、傍晚、晚上地圖全部點不動，只有白天玩得了。 */
+    /* elementFromPoint 只認得「看得到的那一塊」，元素捲出畫面外就回傳 null。
+       所以每次打點前都要先捲到中間，不然驗的是視窗大小，不是遮罩。 */
+    function hitAt(el, fx){
+      el.scrollIntoView({ block: 'center' });
+      var r = el.getBoundingClientRect();
+      return document.elementFromPoint(r.left + r.width * (fx === undefined ? 0.5 : fx),
+                                       r.top + r.height/2);
+    }
     function hitTest(label){
       view='town'; townMsg=null; curMoment=null; render();
       var g = document.querySelector('.spot[data-spot="home"]');
       if (!g) { fails.push(label+'：地圖沒畫出來'); return; }
-      var r = g.getBoundingClientRect();
-      var el = document.elementFromPoint(r.left + r.width/2, r.top + r.height/2);
+      var el = hitAt(g);
       if (!el || !el.closest || !el.closest('.spot'))
         fails.push(label+' 點不到地點，被 <'+(el?el.tagName:'null')+'> 擋住了');
     }
@@ -200,7 +207,58 @@
       if (view!=='town') fails.push('小事做完再點竟然又進了一次');
     }
 
-    // ⑨ 小鎮會跟著圖鑑長大
+    /* ⑨ 每天藏一個東西 */
+    setDay(7); setTodStub('dusk');
+    view='town'; townMsg=null; curMoment=null; render();
+    var h = huntToday();
+    if (!document.querySelector('.hide')) fails.push('小鎮上沒有藏東西');
+    else {
+      // 要真的點得到——它比名牌小很多，透明的點擊圈是唯一的保障
+      /* 刻意不打正中央：正中央是那個 emoji 字本身，打得到不代表什麼。
+         要打偏一點，才驗得到那顆放大的透明點擊圈——
+         小孩的手指不會準準戳在 11 大的字上面。 */
+      var hel = hitAt(document.querySelector('.hide'), 0.16);
+      if (!hel || !hel.closest || !hel.closest('.hide'))
+        fails.push('藏的東西點不到，被 <'+(hel?hel.tagName:'null')+'> 擋住了');
+      // 不能跟地點搶點擊
+      if (hel && hel.closest && hel.closest('.spot')) fails.push('藏的東西壓在地點上面');
+
+      var box0 = Object.keys(loadTreasures()).length;
+      document.querySelector('.hide').onclick({ stopPropagation: function(){} });
+      if (view!=='town') fails.push('找到東西竟然離開了小鎮');
+      if (foundToday() !== h.id) fails.push('找到的東西沒有記起來');
+      if (Object.keys(loadTreasures()).length <= box0) fails.push('寶物盒沒有增加');
+      if (document.querySelector('.hide')) fails.push('找到了東西還留在地圖上');
+      var ht = document.querySelector('.hunt');
+      if (!ht) fails.push('沒有「今天藏了東西」那一行');
+      else if (ht.textContent.indexOf(treasureById(h.id).name) < 0)
+        fails.push('找到之後沒有說找到的是什麼');
+      if (document.querySelectorAll('.box span.on').length < 1) fails.push('寶物盒裡沒有亮起來的格子');
+
+      // 同一天不會再長出來，換一天要有新的
+      render();
+      if (document.querySelector('.hide')) fails.push('同一天又冒出一個可以找');
+      setDay(8); render();
+      if (!document.querySelector('.hide')) fails.push('換了一天卻沒有新的東西可以找');
+    }
+    /* 藏的位置不能壓到名牌。那顆透明的點擊圈畫在名牌上面，
+       壓到的話她想點地點會變成撿到東西——這種事眼睛看不出來，
+       因為圈是透明的，只能用座標算。 */
+    HIDE_SPOTS.forEach(function(p){
+      PLACES.forEach(function(pl){
+        var dx = Math.max(pl.plate[0]-29 - p[0], 0, p[0] - (pl.plate[0]+29));
+        var dy = Math.max(pl.plate[1]-10 - p[1], 0, p[1] - (pl.plate[1]+9));
+        if (Math.sqrt(dx*dx + dy*dy) < HIDE_R)
+          fails.push('藏東西的位置 '+p.join()+' 壓到「'+pl.name+'」的名牌了');
+      });
+    });
+    // 三十天要換得夠勤，位置也要會動，不然找一次就記住了
+    var tids={}, tpos={};
+    for (var hd=1; hd<=30; hd++){ setDay(hd); var hh=huntToday(); tids[hh.id]=1; tpos[hh.at.join()]=1; }
+    if (Object.keys(tids).length < 8) fails.push('三十天只藏了 '+Object.keys(tids).length+' 種東西');
+    if (Object.keys(tpos).length < 6) fails.push('三十天只藏在 '+Object.keys(tpos).length+' 個位置');
+
+    // ⑩ 小鎮會跟著圖鑑長大
     var st0 = townStage();
     var all={}; SCENARIOS.forEach(function(s){ all[s.id]={}; Object.keys(s.endings).forEach(function(k){ all[s.id][k]=1; }); });
     localStorage.setItem(pKey('ends'), JSON.stringify(all));

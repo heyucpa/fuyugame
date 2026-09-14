@@ -54,6 +54,8 @@ const PLATE = (x, y, txt, mark) =>
           '<text x="27" y="-4" font-size="10" text-anchor="middle">' + mark + '</text>' : '') +
   '</g>';
 
+const HIDE_R = 14;   // 藏的東西的點擊半徑（在 320 寬的畫面裡，手機上大約 31px）
+
 /* 天色與雨都是蓋在最上層的整張遮罩，一定要 pointer-events="none"。
    沒有的話，它會把底下六個地點的點擊全部吃掉——
    早上、傍晚、晚上整張地圖都變成點不動的，只有白天玩得了。 */
@@ -146,8 +148,9 @@ function townBase() {
     TREE(252, 186, 1, '#a8e6c0') + TREE(304, 30, 0.9);
 }
 
-/* marks: { 地點key: '❗' | '💬' | '✓' }　standAt: 小人站在哪個地點 */
-function townSVG(tod, marks, standAt, weather, stage) {
+/* marks: { 地點key: '❗' | '💬' | '✓' }　standAt: 小人站在哪個地點
+   hide: 今天藏的東西 { emoji, at:[x,y] }，已經找到就傳 null */
+function townSVG(tod, marks, standAt, weather, stage, hide) {
   const lit = tod === 'night';
   // 記號掛在名牌上。試過掛在人頭上，六個泡泡會把畫面擠爆。
   const spots = PLACES.map(p =>
@@ -161,6 +164,14 @@ function townSVG(tod, marks, standAt, weather, stage) {
     // 小人包起來並給 id，點地點時用 transform 讓她「走過去」
     '<g id="walker" style="transition: transform .75s ease-in-out;">' +
       GIRL(here.stand[0], here.stand[1], 0.55) + '</g>' +
+    /* 藏的東西畫在最後、遮罩之前：畫太早會被小人或房子蓋住。
+       那顆 HIDE_R 的透明圈是點擊範圍——字只有 11 大，
+       小孩的手指點不到那麼準。fill 要 transparent 不能 none，none 不吃點擊。
+       圈放大就會開始搶名牌的點擊，所以 HIDE_SPOTS 跟名牌的距離有走查在擋。 */
+    (hide ? '<g class="hide" style="cursor:pointer">' +
+        '<circle cx="' + hide.at[0] + '" cy="' + hide.at[1] + '" r="' + HIDE_R + '" fill="transparent"/>' +
+        '<text x="' + hide.at[0] + '" y="' + (hide.at[1] + 4) + '" font-size="11" ' +
+        'text-anchor="middle">' + hide.emoji + '</text></g>' : '') +
     (TOWN_TINT[tod] || '') +
     (weather === 'rain' ? RAIN : '') + '</svg>';
 }
