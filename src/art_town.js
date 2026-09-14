@@ -185,17 +185,19 @@ function townSVG(tod, marks, standAt, weather, stage, hide) {
 
    裁切框會超出小鎮那張 320×200（例如學校上方、泳池右邊），
    所以要自己先鋪一層草地，不能只靠 townBase()。
-   數字是量出來的：[x, y, 寬, 高, 她站的位置]，
-   她站的位置都刻意閃開房子跟鎮民，改動請跟著截圖看一次。 */
+   數字是量出來的：[x, y, 寬, 高, 她站的位置, 妹妹站的位置]，
+   她站的位置都刻意閃開房子跟鎮民，改動請跟著截圖看一次。
+  第六欄是妹妹站的位置（跟妹妹一起的小事才畫）。
+   家沒有，因為家的 npcArt 本來就有畫她了，再畫一個會變兩個妹妹。 */
 const CLOSEUP = {
-  school: [ 10, -10, 112, 70, [ 94, 54]],
-  dojo:   [202, -10, 112, 70, [258, 54]],
-  shop:   [  6,  68, 112, 70, [ 98, 132]],
-  park:   [118,  60, 112, 70, [170, 126]],
-  pool:   [214,  58, 112, 70, [306, 124]],
-  home:   [ 84, 120, 132, 82, [152, 198]],
+  school: [ 10, -10, 112, 70, [ 94, 54], [ 70, 56]],
+  dojo:   [202, -10, 112, 70, [258, 54], [236, 56]],
+  shop:   [  6,  68, 112, 70, [ 98, 132], [ 76, 134]],
+  park:   [118,  60, 112, 70, [170, 126], [148, 126]],
+  pool:   [214,  58, 112, 70, [306, 124], [232, 124]],
+  home:   [ 84, 120, 132, 82, [152, 198], null],
 };
-function placeCloseup(place, tod, weather) {
+function placeCloseup(place, tod, weather, withSis) {
   const p = PLACES.find(x => x.key === place), b = CLOSEUP[place];
   if (!p || !b) return '';
   const box = b[0] + ' ' + b[1] + ' ' + b[2] + ' ' + b[3];
@@ -204,6 +206,8 @@ function placeCloseup(place, tod, weather) {
   return '<svg viewBox="' + box + '" width="100%" role="img" aria-label="' + p.name + '">' +
     cover + ' fill="#c8e6c0"/>' + townBase() +
     p.art(tod === 'night') + p.npcArt() + GIRL(b[4][0], b[4][1], 0.55) +
+    // 妹妹：黃裙子，跟小鎮地圖上家門口那個是同一個人
+    (withSis && b[5] ? GIRL(b[5][0], b[5][1], 0.4, { dress: '#ffd23f' }) : '') +
     (tint ? cover + ' fill="' + tint[0] + '" opacity="' + tint[1] + '"/>' : '') +
     (weather === 'rain' ? RAIN + cover + ' fill="#7f93b8" opacity=".2"/>' : '') + '</svg>';
 }

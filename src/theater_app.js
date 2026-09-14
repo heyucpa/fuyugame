@@ -785,7 +785,7 @@ function renderMoment() {
     <div class="card anim">
       <h1>${p.emoji || '💭'} ${esc(PLACE_NAME[m.place] || '')}</h1>
       <div class="sub">小事一件</div>
-      <div class="scene pop">${placeCloseup(m.place, tod, wx)}</div>
+      <div class="scene pop">${placeCloseup(m.place, tod, wx, m.sis)}</div>
       <div class="stage">
         <div class="narr">${narrate(m.text)}</div>
       </div>

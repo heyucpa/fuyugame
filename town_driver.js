@@ -267,6 +267,20 @@
       setDay(8); render();
       if (!document.querySelector('.hide')) fails.push('換了一天卻沒有新的東西可以找');
     }
+    /* 六個地點每個都要有跟妹妹一起的小事。
+       妹妹本來只出現在家裡，其他五個地方她完全不在——
+       但現實裡姊姊去哪都帶著妹妹。 */
+    var sis = {};
+    MOMENTS.forEach(function(m){
+      // sis 這個旗標決定定場圖要不要把妹妹畫進去，所以不能跟內文脫節
+      if (m.text.indexOf('妹妹') >= 0 && !m.sis) fails.push(m.id+' 內文有妹妹，卻沒標 sis');
+      if (m.sis && m.text.indexOf('妹妹') < 0) fails.push(m.id+' 標了 sis，內文卻沒有妹妹');
+      if (m.sis) sis[m.place] = (sis[m.place]||0)+1;
+    });
+    Object.keys(MOMENTS_BY_PLACE).forEach(function(k){
+      if ((sis[k]||0) < 2) fails.push('「'+k+'」只有 '+(sis[k]||0)+' 件跟妹妹一起的小事');
+    });
+
     /* 小人站的地方要看得出來是「在那個地點」。
        家本來設在 [246,186]，離名牌 88，按了「家」她會走到畫面右下角，
        看起來像跑掉不像回家。其他地點都是 45～59，所以 65 是合理的上限。 */
