@@ -80,10 +80,59 @@ const PLACES = [
     npc: [238, 90], npcArt: () => ADULT(238, 90, 0.4, { color: '#e85a92' }),
     art: () => '<rect x="240" y="96" width="52" height="24" rx="4" fill="#7fc1ed" stroke="#33224a" stroke-width="2"/>' +
                '<path d="M244 104 q6 -3 12 0 q6 3 12 0 q6 -3 12 0" stroke="#a8d8f5" stroke-width="2.4" fill="none"/>' },
-  { key: 'home',   name: '家',    emoji: '🏠', plate: [158, 178], stand: [212, 192],
-    npc: [122, 168], npcArt: () => ADULT(122, 168, 0.4, { color: '#9b59b6' }),
+  { key: 'home',   name: '家',    emoji: '🏠', plate: [158, 178], stand: [246, 186],
+    npc: [122, 168],
+    npcArt: () => ADULT(116, 164, 0.4, { color: '#9b59b6' }) +        // 媽媽
+                  ADULT(96, 182, 0.4, { color: '#5b7fa8', hair: '#2a1a0c' }) +  // 爸爸
+                  GIRL(198, 190, 0.34, { dress: '#ffd23f' }),         // 妹妹
     art: lit => HOUSE(158, 170, 58, 30, '#ffd9e4', '#c9587f', lit) },
 ];
+
+/* 小鎮會跟著她長大：走過的結局越多，鎮上的東西越多。
+   stage 0 是空曠的鎮，4 是熱鬧的鎮。 */
+const FLOWER = (x, y, c) =>
+  '<g transform="translate(' + x + ',' + y + ')">' +
+  '<rect x="-0.8" y="-5" width="1.6" height="5" fill="#5e8f78"/>' +
+  '<circle cx="0" cy="-6.5" r="2.6" fill="' + (c || '#ff8fb8') + '" stroke="#33224a" stroke-width="0.8"/></g>';
+const LAMP = (x, y) =>
+  '<g transform="translate(' + x + ',' + y + ')">' +
+  '<rect x="-1.3" y="-22" width="2.6" height="22" fill="#8a8f96"/>' +
+  '<circle cx="0" cy="-24" r="4.2" fill="#ffdf8a" stroke="#33224a" stroke-width="1.3"/></g>';
+const BENCH = (x, y) =>
+  '<g transform="translate(' + x + ',' + y + ')">' +
+  '<rect x="-9" y="-5" width="18" height="3" rx="1" fill="#c98f52" stroke="#33224a" stroke-width="1"/>' +
+  '<rect x="-7" y="-2" width="2" height="4" fill="#8a6a45"/><rect x="5" y="-2" width="2" height="4" fill="#8a6a45"/></g>';
+const SWING = (x, y) =>
+  '<g transform="translate(' + x + ',' + y + ')">' +
+  '<path d="M-10 0 L0 -16 L10 0" stroke="#8a8f96" stroke-width="2" fill="none"/>' +
+  '<path d="M-4 -15 v9 M4 -15 v9" stroke="#8a8f96" stroke-width="1.2"/>' +
+  '<rect x="-5" y="-6.5" width="10" height="2" fill="#c98f52" stroke="#33224a" stroke-width="0.8"/></g>';
+const FLAG = (x, y) =>
+  '<g transform="translate(' + x + ',' + y + ')">' +
+  '<rect x="-0.9" y="-18" width="1.8" height="18" fill="#8a8f96"/>' +
+  '<path d="M1 -18 L12 -14 L1 -10 Z" fill="#ff8fb8" stroke="#33224a" stroke-width="1"/></g>';
+
+function townGrowth(stage) {
+  let g = '';
+  if (stage >= 1) g += FLOWER(96, 126) + FLOWER(104, 130, '#ffd23f') + FLOWER(112, 124, '#c9a2e8') +
+                        BENCH(176, 132) + FLOWER(196, 60, '#ff8fb8');
+  if (stage >= 2) g += LAMP(118, 150) + LAMP(206, 150) + SWING(146, 86) +
+                        FLOWER(56, 148, '#ffd23f') + FLOWER(64, 152);
+  if (stage >= 3) g += TREE(70, 156, 1.1) + TREE(250, 66, 1, '#a8e6c0') + LAMP(88, 72) +
+                        FLOWER(232, 158, '#c9a2e8') + FLOWER(240, 162, '#ff8fb8') + BENCH(36, 76);
+  if (stage >= 4) g += FLAG(30, 40) + FLAG(292, 60) + FLAG(186, 148) +
+                        TREE(120, 60, 0.85, '#a8e6c0') + TREE(276, 178, 0.9) +
+                        FLOWER(150, 194, '#ffd23f') + FLOWER(160, 196) + FLOWER(170, 194, '#c9a2e8');
+  return g;
+}
+
+// 雨：斜線 + 壓一層灰藍
+const RAIN = '<g opacity=".55">' +
+  Array.from({ length: 26 }, (_, i) => {
+    const x = (i * 37 % 320), y = (i * 53 % 190);
+    return '<path d="M' + x + ' ' + y + ' l-3 9" stroke="#eaf4ff" stroke-width="1.6" stroke-linecap="round"/>';
+  }).join('') + '</g>' +
+  '<rect width="320" height="200" fill="#7f93b8" opacity=".2"/>';
 
 function townBase() {
   const road = 'M158 200 L158 140 M158 140 L56 86 M158 140 L258 86 M158 140 L44 130 M158 140 L266 130';
@@ -95,7 +144,7 @@ function townBase() {
 }
 
 /* marks: { 地點key: '❗' | '💬' | '✓' }　standAt: 小人站在哪個地點 */
-function townSVG(tod, marks, standAt) {
+function townSVG(tod, marks, standAt, weather, stage) {
   const lit = tod === 'night';
   // 記號掛在名牌上。試過掛在人頭上，六個泡泡會把畫面擠爆。
   const spots = PLACES.map(p =>
@@ -105,7 +154,8 @@ function townSVG(tod, marks, standAt) {
     '</g>').join('');
   const here = PLACES.find(p => p.key === standAt) || PLACES[PLACES.length - 1];
   return '<svg viewBox="0 0 320 200" width="100%" role="img" aria-label="小鎮地圖">' +
-    townBase() + spots +
+    townBase() + townGrowth(stage || 0) + spots +
     GIRL(here.stand[0], here.stand[1], 0.55) +
-    (TOWN_TINT[tod] || '') + '</svg>';
+    (TOWN_TINT[tod] || '') +
+    (weather === 'rain' ? RAIN : '') + '</svg>';
 }

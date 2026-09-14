@@ -298,63 +298,121 @@ const PLACE_POOL = {
   pool:   ['pool'],
 };
 
-/* 鎮上的人。點一下講一句，再點會講下一句——
-   她會想一直點，所以每個人要有夠多句，而且要有自己的個性。
+/* 鎮上的人。一個地點可以住好幾個人（家裡就住了三個），
+   點一下換一句，講完這個人的才換下一個人。
+
+   每個人有四組話：
+     lines  平常
+     after  這個時段的事剛處理完（會提到剛才發生的事）
+     rain   下雨天才會出現
+     close  點過很多次、跟她熟了之後才解鎖
    內容是日常，偶爾夾一句提醒，像鄰居會講的那種，不是教條。 */
 const NPC = {
-  home: { who: '媽媽', emoji: '👩', lines: [
-    '今天過得還好嗎？跟我說說。',
-    '回來啦。先洗手，飯快好了。',
-    '有什麼事都可以跟我說，不管是什麼事，我都不會生氣。',
-    '如果有人叫你「不要告訴媽媽」——那件事一定要告訴我。',
-    '你今天看起來心情不錯耶。',
-    '媽媽有時候會晚一點回來，但一定會回來。',
-    '想吃什麼？今天你決定。' ] },
-  school: { who: '老師', emoji: '👨‍🏫', lines: [
-    '今天上課很專心喔，我有看到。',
-    '不會的事情不丟臉，不問才會一直不會。',
-    '班上有人看起來怪怪的、不太說話，可以來跟我說。',
-    '走廊上不要跑，上次有人跌倒了。',
-    '你們這屆很會照顧同學，我很喜歡。',
-    '有事情發生的時候，先找大人，不要自己扛。' ] },
-  shop: { who: '店員阿姨', emoji: '🧑‍🍳', lines: [
-    '一個人來買東西啊？很厲害耶。',
-    '早餐要吃喔，不吃會餓一整天。',
-    '零錢收好，掉了會找不到。',
-    '阿姨都在這裡，有需要幫忙就進來喊一聲。',
-    '今天的蛋餅特別好吃，真的。',
-    '外面有人跟你搭話你覺得怪怪的，就進來店裡，沒關係。' ] },
-  park: { who: '警衛伯伯', emoji: '👮', lines: [
-    '天黑了就早點回家喔。',
-    '等不到爸媽的話，回學校裡面等，那裡有燈有人。',
-    '公園裡有什麼事，來警衛室找我，我都在。',
-    '今天風有點大，外套穿好。',
-    '伯伯在這裡三十年了，這附近我最熟。',
-    '不認識的人要載你，不管他說什麼，都不要上車。' ] },
-  dojo: { who: '教練', emoji: '🥋', lines: [
-    '今天的踢腿很有力氣。',
-    '下課要等家人來接，不要自己先走。',
-    '樓梯間光線暗，扶著扶手慢慢走。',
-    '練功急不得，慢慢來才會紮實。',
-    '學這個不是為了跟人打架，是為了保護自己。',
-    '會怕是正常的，會怕還能想辦法，那才厲害。' ] },
-  pool: { who: '救生員', emoji: '🏊', lines: [
-    '下水前先暖身喔。',
-    '看到有人在水裡怪怪的，馬上大聲喊我——不要自己跳下去。',
-    '不要在池邊跑，地很滑。',
-    '今天水溫剛剛好。',
-    '嗆到水不能忍，一定要講，後面可能還有狀況。',
-    '不會游泳沒關係，待在淺水區就好。' ] },
+  home: [
+    { who: '媽媽', emoji: '👩',
+      lines: [
+        '今天過得還好嗎？跟我說說。',
+        '回來啦。先洗手，飯快好了。',
+        '有什麼事都可以跟我說，不管是什麼事，我都不會生氣。',
+        '如果有人叫你「不要告訴媽媽」——那件事一定要告訴我。',
+        '媽媽有時候會晚一點回來，但一定會回來。' ],
+      after: ['剛剛那件事，你處理得怎麼樣？跟我說說看。',
+              '不管結果怎樣，你願意面對就很好了。'],
+      rain: ['下雨了，傘帶了嗎？'],
+      close: ['你最近很常回來陪媽媽耶，媽媽很開心。'] },
+    { who: '爸爸', emoji: '👨',
+      lines: [
+        '欸，回來啦。今天有什麼好玩的事嗎？',
+        '爸爸今天下班有買你愛吃的。',
+        '遇到不會處理的事，先不要自己決定，回來問我們。',
+        '爸爸小時候也很怕跟大人講話，後來發現講了比較輕鬆。',
+        '有人對你很好卻叫你保密，那個「保密」要特別小心。' ],
+      after: ['剛才的事我聽媽媽說了。你做得不錯。',
+              '下次再遇到，你就知道第一步要幹嘛了。'],
+      rain: ['雨這麼大，等一下爸爸去接你。'],
+      close: ['我們家這個最靠得住了。'] },
+    { who: '妹妹', emoji: '👧',
+      lines: [
+        '姊姊姊姊！你今天去哪裡？',
+        '我今天在幼兒園畫了一張圖，要給你看！',
+        '姊姊你什麼時候可以陪我玩？',
+        '我剛剛自己刷牙喔，沒有人幫我。',
+        '姊姊，那個叔叔給的糖果可以吃嗎？'],
+      after: ['姊姊你剛剛去哪裡了？我等你好久。',
+              '姊姊好厲害！我長大也要跟你一樣。'],
+      rain: ['下雨了！我可以踩水嗎？'],
+      close: ['姊姊最好了。'] },
+  ],
+  school: [{ who: '老師', emoji: '👨‍🏫',
+    lines: [
+      '今天上課很專心喔，我有看到。',
+      '不會的事情不丟臉，不問才會一直不會。',
+      '班上有人看起來怪怪的、不太說話，可以來跟我說。',
+      '走廊上不要跑，上次有人跌倒了。',
+      '有事情發生的時候，先找大人，不要自己扛。' ],
+    after: ['剛才的事我聽說了。你有處理，這一點很好。',
+            '遇到狀況會想一下再決定，比反應快更重要。'],
+    rain: ['下雨天，操場不能用，我們在教室裡上。'],
+    close: ['你這學期進步很多，我都有在看。'] }],
+  shop: [{ who: '店員阿姨', emoji: '🧑‍🍳',
+    lines: [
+      '一個人來買東西啊？很厲害耶。',
+      '早餐要吃喔，不吃會餓一整天。',
+      '零錢收好，掉了會找不到。',
+      '阿姨都在這裡，有需要幫忙就進來喊一聲。',
+      '外面有人跟你搭話你覺得怪怪的，就進來店裡，沒關係。' ],
+    after: ['剛才好像有點事？沒事就好。',
+            '有狀況就往人多的地方走，這裡永遠有人。'],
+    rain: ['下雨天生意冷清，你來剛好。'],
+    close: ['又是你啊，今天要一樣的嗎？'] }],
+  park: [{ who: '警衛伯伯', emoji: '👮',
+    lines: [
+      '天黑了就早點回家喔。',
+      '等不到爸媽的話，回學校裡面等，那裡有燈有人。',
+      '公園裡有什麼事，來警衛室找我，我都在。',
+      '伯伯在這裡三十年了，這附近我最熟。',
+      '不認識的人要載你，不管他說什麼，都不要上車。' ],
+    after: ['剛才那邊有點狀況，我有注意到。你沒事吧？',
+            '會覺得怕是正常的，怕了還記得怎麼做，那才厲害。'],
+    rain: ['雨這麼大，要不要來警衛室躲一下？'],
+    close: ['你每天都會來跟伯伯打招呼，伯伯很高興。'] }],
+  dojo: [{ who: '教練', emoji: '🥋',
+    lines: [
+      '今天的踢腿很有力氣。',
+      '下課要等家人來接，不要自己先走。',
+      '樓梯間光線暗，扶著扶手慢慢走。',
+      '學這個不是為了跟人打架，是為了保護自己。',
+      '會怕是正常的，會怕還能想辦法，那才厲害。' ],
+    after: ['剛才那件事，你有沒有嚇到？',
+            '真的遇到事情的時候，跑掉不丟臉，那是對的。'],
+    rain: ['下雨天樓梯更滑，慢慢走。'],
+    close: ['你是我這裡最認真的一個。'] }],
+  pool: [{ who: '救生員', emoji: '🏊',
+    lines: [
+      '下水前先暖身喔。',
+      '看到有人在水裡怪怪的，馬上大聲喊我——不要自己跳下去。',
+      '不要在池邊跑，地很滑。',
+      '嗆到水不能忍，一定要講，後面可能還有狀況。',
+      '不會游泳沒關係，待在淺水區就好。' ],
+    after: ['剛才有點狀況齁？處理完就好。',
+            '水邊的事不能拖，你有講出來就對了。'],
+    rain: ['下雨天不開放喔，改天再來。'],
+    close: ['你現在敢下水了耶，進步很多。'] }],
 };
 
 function todayStamp() {
   const d = new Date();
   return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
 }
-// 把字串轉成一個穩定的數字，拿來當「今天」的種子
+/* 把字串轉成一個穩定的數字，拿來當「今天」的種子。
+   最後那三行混合不能省：只做 FNV 的話，連續日期這種很像的字串
+   散不開，實測會連續九天陰、二十天晴——天氣等於好幾週都不變。 */
 function seedOf(str) {
   let h = 2166136261;
   for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  h ^= h >>> 16; h = Math.imul(h, 2246822507);
+  h ^= h >>> 13; h = Math.imul(h, 3266489909);
+  h ^= h >>> 16;
   return h >>> 0;
 }
 // 哪一篇屬於哪個地點（由 PLACE_POOL 反推），六個池子加起來剛好 21 篇
@@ -362,25 +420,88 @@ const PLACE_OF = {};
 Object.keys(PLACE_POOL).forEach(k => PLACE_POOL[k].forEach(id => { PLACE_OF[id] = k; }));
 const DAY_IDS = Object.keys(PLACE_OF);
 
-/* 今天發生什麼事。同一天同一個人，算出來永遠一樣。
-   要先均勻抽「哪一篇」再反推地點——不能先抽地點：
+/* 這個時段發生什麼事。
+   改成「每個時段一件」而不是「每天一件」：她做完早上那件，
+   要等到下午才會有新的。這樣「過一段時間再來看看」對她是具體的，
+   而且跟畫面的天色是同一套時間。
+
+   一天四個時段，但不是每段都有事（約四分之三機率）——
+   沒事的時段就是平常的鎮上，這才像真的日子。
+
+   要先均勻抽「哪一篇」再反推地點，不能先抽地點：
    泳池只有 1 篇、家有 9 篇，先抽地點的話泳池那篇會一直重複出現。 */
-function todayEvent() {
-  const sd = seedOf(todayStamp() + ':' + whoId());
+function periodEvent(tod) {
+  const key = todayStamp() + '/' + (tod || todNow()) + ':' + whoId();
+  const sd = seedOf(key);
+  if ((sd >>> 3) % 100 < 25) return { place: null, id: null, seed: sd };  // 這個時段沒事
   const id = DAY_IDS[sd % DAY_IDS.length];
   return { place: PLACE_OF[id], id: id, seed: sd };
 }
-/* 第幾句由「今天的種子 + 已經點了幾下」決定：
-   同一天第一次點到的那句是固定的，但再點會往下走一句。 */
-function npcLine(place, sd, nth) {
-  const n = NPC[place];
-  if (!n) return null;
-  const i = ((sd >>> 13) + nth) % n.lines.length;
-  return { who: n.who, emoji: n.emoji, text: n.lines[i], more: n.lines.length > 1 };
+/* 挑哪一句要看情境：
+   - 這個時段的事剛處理完 → 講「剛才那件事」
+   - 下雨天 → 多幾句跟雨有關的
+   - 跟她熟了 → 解鎖比較親近的口氣
+   第幾句由「今天的種子 + 已經點了幾下」決定：
+   第一次點到的那句是固定的，再點會往下走一句。 */
+function npcLine(place, sd, nth, ctx) {
+  const people = NPC[place];
+  if (!people || !people.length) return null;
+  // 把這個地點所有人、所有合用的話攤平成一串，再照順序往下走。
+  // 家裡住了三個人，所以點 🏠 會輪流遇到媽媽、爸爸、妹妹。
+  const pool = [];
+  people.forEach(pp => {
+    let lines;
+    if (ctx.justDone && pp.after && pp.after.length) {
+      lines = pp.after;
+    } else {
+      lines = pp.lines.slice();
+      if (ctx.weather === 'rain' && pp.rain) lines = lines.concat(pp.rain);
+      if (ctx.close && pp.close) lines = lines.concat(pp.close);
+    }
+    lines.forEach(t => pool.push({ who: pp.who, emoji: pp.emoji, text: t }));
+  });
+  if (!pool.length) return null;
+  const it = pool[((sd >>> 13) + nth) % pool.length];
+  return { who: it.who, emoji: it.emoji, text: it.text, more: pool.length > 1 };
 }
-const townDoneKey = () => pKey('town-' + todayStamp());
-const isTodayDone = () => localStorage.getItem(townDoneKey()) === '1';
-function markTodayDone() { try { localStorage.setItem(townDoneKey(), '1'); } catch (e) {} }
+// 完成紀錄要記到「哪一天的哪個時段」，換時段才會有新的事
+const townDoneKey = (tod) => pKey('town-' + todayStamp() + '-' + (tod || todNow()));
+const isPeriodDone = (tod) => localStorage.getItem(townDoneKey(tod)) === '1';
+function markPeriodDone() { try { localStorage.setItem(townDoneKey(), '1'); } catch (e) {} }
+
+// 下一個時段叫什麼，用來告訴她「什麼時候再來」
+const NEXT_PERIOD = { morning: '下午', day: '傍晚', dusk: '晚上', night: '明天早上' };
+
+/* 天氣：一天一種，用日期決定，所以同一天都一樣。
+   晴天最多，雨天最少——跟真的天氣一樣，也讓下雨那天比較特別。 */
+const WEATHER = {
+  sun:   { name: '晴天', icon: '☀️' },
+  cloud: { name: '多雲', icon: '☁️' },
+  rain:  { name: '下雨', icon: '🌧️' },
+};
+function weatherToday() {
+  const r = (seedOf('w:' + todayStamp()) >>> 5) % 100;
+  return r < 55 ? 'sun' : r < 82 ? 'cloud' : 'rain';
+}
+
+/* 小鎮會跟著她長大：走過的結局越多，鎮上的東西越多。
+   這是為了讓「結局圖鑑 106」這個數字變成她每天看得見的東西。 */
+function townStage() {
+  const pct = totalEnds() ? seenTotal() / totalEnds() : 0;
+  return pct >= 0.8 ? 4 : pct >= 0.5 ? 3 : pct >= 0.3 ? 2 : pct >= 0.1 ? 1 : 0;
+}
+
+/* 熟悉度：跟某個人講過幾次話。講夠多次會解鎖比較熟的口氣。 */
+function loadFriend() {
+  try { return JSON.parse(localStorage.getItem(pKey('friend'))) || {}; } catch (e) { return {}; }
+}
+function bumpFriend(place) {
+  const f = loadFriend();
+  f[place] = (f[place] || 0) + 1;
+  try { localStorage.setItem(pKey('friend'), JSON.stringify(f)); } catch (e) {}
+  return f[place];
+}
+const CLOSE_AT = 12;   // 講過這麼多次就算熟了
 
 // 現實時間決定她人在哪裡
 const WHERE_NOW = { morning: 'home', day: 'school', dusk: 'park', night: 'home' };
@@ -390,24 +511,32 @@ let townMsg = null;     // 點了鎮上的人之後要顯示的話
 let townTaps = {};      // 每個地點點過幾下，決定講到第幾句
 
 function renderTown() {
-  const tod = todNow(), ev = todayEvent(), done = isTodayDone();
+  const tod = todNow(), ev = periodEvent(tod), wx = weatherToday();
+  const done = ev.id ? isPeriodDone(tod) : false;
+  const stage = townStage(), friend = loadFriend();
+
   const marks = {};
   Object.keys(PLACE_POOL).forEach(k => { marks[k] = NPC[k] ? '💬' : ''; });
-  marks[ev.place] = done ? '✓' : '❗';
+  if (ev.place) marks[ev.place] = done ? '✓' : '❗';
+
+  const hint = ev.place
+    ? (done
+        ? `這個時段的事處理完了 ✓　<b>${NEXT_PERIOD[tod]}</b>再來看看。`
+        : '有一個地方出事了 ❗　點它看看。')
+    : '這個時段鎮上很平靜。點點看大家，他們有話想說。';
 
   app.innerHTML = `
     <div class="card anim">
       <div class="daytop">
         <div class="greet"><b>${GREET_TOWN[tod][0]}</b>${GREET_TOWN[tod][1]}</div>
+        <div class="wx">${WEATHER[wx].icon} ${WEATHER[wx].name}　·　🖼️ ${seenTotal()} / ${totalEnds()}</div>
       </div>
-      <div class="town">${townSVG(tod, marks, WHERE_NOW[tod])}</div>
+      <div class="town">${townSVG(tod, marks, WHERE_NOW[tod], wx, stage)}</div>
       ${townMsg ? `<div class="says">
           <span class="face">${townMsg.emoji}</span>
           <span><b>${esc(townMsg.who)}</b><br>${narrate(townMsg.text)}
-            ${townMsg.more ? '<span class="more">再點他一下，還有話說 ▸</span>' : ''}</span>
-        </div>` : `<div class="townhint">${done
-          ? '今天的事情處理完了 ✓　點點看鎮上的人，他們有話想說。'
-          : '有一個地方出事了 ❗　點它看看。'}</div>`}
+            ${townMsg.more ? '<span class="more">再點一下，還有話說 ▸</span>' : ''}</span>
+        </div>` : `<div class="townhint">${hint}</div>`}
       <div class="row" style="margin-top:10px;">
         <button class="mini" id="tmenu">🎭 劇本選單</button>
         <button class="mini" id="tgal">🖼️ 結局圖鑑</button>
@@ -418,15 +547,21 @@ function renderTown() {
     g.style.cursor = 'pointer';
     g.onclick = () => {
       const k = g.dataset.spot;
-      if (k === ev.place && !done) {          // 今天的事
+      if (ev.place && k === ev.place && !done) {      // 這個時段的事
         Sfx.page(); townMsg = null; fromTown = true; startScenario(ev.id);
-      } else {                                 // 鎮上的人講話，再點會講下一句
-        Sfx.tap();
-        townTaps[k] = (townTaps[k] || 0) + (townMsg && townMsg.place === k ? 1 : 0);
-        townMsg = npcLine(k, ev.seed + seedOf(k), townTaps[k]);
-        if (townMsg) townMsg.place = k;
-        render();
+        return;
       }
+      // 鎮上的人講話，再點會講下一句
+      Sfx.tap();
+      townTaps[k] = (townTaps[k] || 0) + (townMsg && townMsg.place === k ? 1 : 0);
+      const n = bumpFriend(k);
+      townMsg = npcLine(k, ev.seed + seedOf(k), townTaps[k], {
+        justDone: done && k === ev.place,
+        weather: wx,
+        close: n >= CLOSE_AT,
+      });
+      if (townMsg) townMsg.place = k;
+      render();
     };
   });
   document.getElementById('tmenu').onclick = () => { Sfx.tap(); townMsg = null; view = 'menu'; render(); };
@@ -754,7 +889,7 @@ function choose(i) {
       if (predicting) Sfx.page();
       else ({ best: Sfx.best, good: Sfx.good, escape: Sfx.escape, bad: Sfx.bad }[ending.grade] || Sfx.good)();
     }
-    if (fromTown) markTodayDone();
+    if (fromTown) markPeriodDone();
     view = 'end';
     render();
   } else {
