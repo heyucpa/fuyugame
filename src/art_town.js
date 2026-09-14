@@ -65,17 +65,23 @@ const TOWN_TINT = {
    stand 都刻意閃開名牌與房子，免得人疊在字上面。 */
 const PLACES = [
   { key: 'school', name: '學校',  emoji: '🏫', plate: [56, 48],   stand: [108, 76],
+    npc: [102, 36], npcArt: () => ADULT(102, 36, 0.4, { color: '#5e8f78' }),
     art: lit => SCHOOL(56, 38, lit) },
   { key: 'dojo',   name: '道館',  emoji: '🥋', plate: [258, 48],  stand: [212, 76],
+    npc: [226, 36], npcArt: () => ADULT(226, 36, 0.4, { color: '#33224a' }),
     art: lit => HOUSE(258, 38, 48, 28, '#e8e0f5', '#7d6aa8', lit) },
   { key: 'shop',   name: '商店街', emoji: '🛒', plate: [44, 122],  stand: [96, 140],
+    npc: [80, 108], npcArt: () => ADULT(80, 108, 0.4, { color: '#e8a33d' }),
     art: lit => HOUSE(44, 112, 54, 26, '#fff4d6', '#e8a33d', lit) },
   { key: 'park',   name: '公園',  emoji: '🌳', plate: [158, 108], stand: [200, 124],
+    npc: [196, 96], npcArt: () => ADULT(196, 96, 0.4, { color: '#7f9ab8' }),
     art: () => TREE(136, 104, 1.5) + TREE(180, 102, 1.2, '#a8e6c0') + TREE(158, 112, 1.1) },
   { key: 'pool',   name: '泳池',  emoji: '🏊', plate: [266, 122], stand: [224, 140],
+    npc: [238, 90], npcArt: () => ADULT(238, 90, 0.4, { color: '#e85a92' }),
     art: () => '<rect x="240" y="96" width="52" height="24" rx="4" fill="#7fc1ed" stroke="#33224a" stroke-width="2"/>' +
                '<path d="M244 104 q6 -3 12 0 q6 3 12 0 q6 -3 12 0" stroke="#a8d8f5" stroke-width="2.4" fill="none"/>' },
   { key: 'home',   name: '家',    emoji: '🏠', plate: [158, 178], stand: [212, 192],
+    npc: [122, 168], npcArt: () => ADULT(122, 168, 0.4, { color: '#9b59b6' }),
     art: lit => HOUSE(158, 170, 58, 30, '#ffd9e4', '#c9587f', lit) },
 ];
 
@@ -84,16 +90,18 @@ function townBase() {
   return '<rect width="320" height="200" fill="#c8e6c0"/>' +
     '<path d="' + road + '" stroke="#d9cdb4" stroke-width="13" stroke-linecap="round" fill="none"/>' +
     '<path d="' + road + '" stroke="#efe6d4" stroke-width="9" stroke-linecap="round" fill="none"/>' +
-    TREE(16, 66, 1) + TREE(304, 160, 1.1, '#a8e6c0') + TREE(100, 186, 0.9) +
+    TREE(10, 96, 1) + TREE(304, 160, 1.1, '#a8e6c0') + TREE(100, 186, 0.9) +
     TREE(252, 186, 1, '#a8e6c0') + TREE(304, 30, 0.9);
 }
 
 /* marks: { 地點key: '❗' | '💬' | '✓' }　standAt: 小人站在哪個地點 */
 function townSVG(tod, marks, standAt) {
   const lit = tod === 'night';
+  // 記號掛在名牌上。試過掛在人頭上，六個泡泡會把畫面擠爆。
   const spots = PLACES.map(p =>
     '<g class="spot" data-spot="' + p.key + '">' +
-    p.art(lit) + PLATE(p.plate[0], p.plate[1], p.emoji + ' ' + p.name, marks[p.key] || '') +
+    p.art(lit) + p.npcArt() +
+    PLATE(p.plate[0], p.plate[1], p.emoji + ' ' + p.name, marks[p.key] || '') +
     '</g>').join('');
   const here = PLACES.find(p => p.key === standAt) || PLACES[PLACES.length - 1];
   return '<svg viewBox="0 0 320 200" width="100%" role="img" aria-label="小鎮地圖">' +

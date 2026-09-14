@@ -263,30 +263,6 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 const narrate = s => esc(s).replace(/&lt;(\/?(?:br|b))&gt;/g, '<$1>');
 const plain = s => String(s).replace(/<[^>]*>/g, '');
 
-/* ===== 平安的一天 =====
-   另一種玩法：不是挑一篇看，而是走完一天。
-   早上出門 → 在學校 → 放學後 → 晚上回到家，四段。
-
-   不是每一段都會出事——一天裡隨機兩到三段有狀況，其餘是平順的。
-   這是刻意的：首頁那句安全提醒寫著「大部分的人都是安全、願意幫忙的」，
-   讓大部分的路段真的平安無事，比用文字講一次有用。
-
-   四段的分法照劇本裡實際寫的時間與地點：
-   「去買早餐」是週末早上、「等不到爸媽」是放學鐘響、
-   「一個人在家」是爸媽出門之後。 */
-const STOPS = [
-  { key: 'morning', icon: '🌅', name: '早上<br>出門',   pool: ['breakfast', 'scam'] },
-  { key: 'school',  icon: '🏫', name: '在學校',         pool: ['bully', 'quake', 'money', 'candy', 'knife', 'wish'] },
-  { key: 'after',   icon: '🌆', name: '放學後',         pool: ['gate', 'road', 'dojo', 'lost', 'pool'] },
-  { key: 'night',   icon: '🏠', name: '晚上<br>回到家', pool: ['home', 'fire', 'fakecop', 'shop', 'imposter', 'exam', 'online', 'secret'] },
-];
-const CALM = {
-  morning: ['你自己出門，路上很順，準時到學校。', '今天早上什麼事都沒有，真好。'],
-  school:  ['今天在學校很平常，上課、下課、跟同學玩。', '一整天都很順，沒發生什麼特別的事。'],
-  after:   ['放學後你直接回家，路上沒什麼特別的。', '今天很準時被接到，一路平安。'],
-  night:   ['晚上在家寫功課、看電視，很安靜的一個晚上。', '今天晚上沒什麼事，早早就睡了。'],
-};
-
 /* 現實時間 → 時段。底色與問候都看這個。 */
 function todNow() {
   const h = new Date().getHours();
@@ -295,19 +271,11 @@ function todNow() {
   if (h < 19) return 'dusk';
   return 'night';
 }
-const TOD_OF_STOP = { morning: 'morning', school: 'day', after: 'dusk', night: 'night' };
 function setTod(t) { try { document.body.dataset.tod = t; } catch (e) {} }
 
 /* 開始一天的時候，依現在幾點跟她打個招呼。
    不改流程——一天還是從早上走到晚上，只是承認「現在幾點」。 */
-// 「走完一天」的問候：那個玩法是從早上重走一次，所以這樣講
-const GREET = {
-  morning: ['早安 ☀️', '今天正要開始。'],
-  day:     ['午安 🌤️', '今天過了一半，我們從頭走一次。'],
-  dusk:    ['傍晚了 🌇', '來看看今天這一天。'],
-  night:   ['晚安 🌙', '睡前來走一次今天。'],
-};
-// 小鎮的問候：這裡是「現在」的鎮上，不是重走，所以講法不一樣
+// 小鎮的問候：跟著現實時間走
 const GREET_TOWN = {
   morning: ['早安 ☀️', '鎮上剛醒過來。'],
   day:     ['午安 🌤️', '今天過到一半了。'],
@@ -330,40 +298,53 @@ const PLACE_POOL = {
   pool:   ['pool'],
 };
 
-/* 鎮上的人。每天講一句，不是教條，就是日常——
-   偶爾夾一句安全的提醒，像鄰居會講的那種。 */
+/* 鎮上的人。點一下講一句，再點會講下一句——
+   她會想一直點，所以每個人要有夠多句，而且要有自己的個性。
+   內容是日常，偶爾夾一句提醒，像鄰居會講的那種，不是教條。 */
 const NPC = {
   home: { who: '媽媽', emoji: '👩', lines: [
-    '今天過得還好嗎？',
-    '回到家先洗手喔。',
-    '有什麼事都可以跟我說，不管是什麼事。',
-    '如果有人叫你不要告訴媽媽，那件事一定要告訴我。',
-    '晚餐想吃什麼？' ] },
+    '今天過得還好嗎？跟我說說。',
+    '回來啦。先洗手，飯快好了。',
+    '有什麼事都可以跟我說，不管是什麼事，我都不會生氣。',
+    '如果有人叫你「不要告訴媽媽」——那件事一定要告訴我。',
+    '你今天看起來心情不錯耶。',
+    '媽媽有時候會晚一點回來，但一定會回來。',
+    '想吃什麼？今天你決定。' ] },
   school: { who: '老師', emoji: '👨‍🏫', lines: [
-    '今天上課很專心喔。',
-    '班上有人看起來不開心的話，可以來跟我說。',
-    '有問題隨時可以問，不會的事情不丟臉。',
-    '走廊上不要跑。' ] },
+    '今天上課很專心喔，我有看到。',
+    '不會的事情不丟臉，不問才會一直不會。',
+    '班上有人看起來怪怪的、不太說話，可以來跟我說。',
+    '走廊上不要跑，上次有人跌倒了。',
+    '你們這屆很會照顧同學，我很喜歡。',
+    '有事情發生的時候，先找大人，不要自己扛。' ] },
   shop: { who: '店員阿姨', emoji: '🧑‍🍳', lines: [
-    '早餐要吃喔，不吃會餓一整天。',
-    '零錢收好，不要掉了。',
     '一個人來買東西啊？很厲害耶。',
-    '有需要幫忙就跟我說，阿姨都在這裡。' ] },
+    '早餐要吃喔，不吃會餓一整天。',
+    '零錢收好，掉了會找不到。',
+    '阿姨都在這裡，有需要幫忙就進來喊一聲。',
+    '今天的蛋餅特別好吃，真的。',
+    '外面有人跟你搭話你覺得怪怪的，就進來店裡，沒關係。' ] },
   park: { who: '警衛伯伯', emoji: '👮', lines: [
     '天黑了就早點回家喔。',
-    '等不到爸媽的話，回學校裡面等比較安全。',
-    '公園裡有什麼事，來警衛室找我。',
-    '今天風有點大，小心一點。' ] },
+    '等不到爸媽的話，回學校裡面等，那裡有燈有人。',
+    '公園裡有什麼事，來警衛室找我，我都在。',
+    '今天風有點大，外套穿好。',
+    '伯伯在這裡三十年了，這附近我最熟。',
+    '不認識的人要載你，不管他說什麼，都不要上車。' ] },
   dojo: { who: '教練', emoji: '🥋', lines: [
     '今天的踢腿很有力氣。',
     '下課要等家人來接，不要自己先走。',
-    '樓梯間光線暗，慢慢走。',
-    '練功要慢慢來，不用急。' ] },
+    '樓梯間光線暗，扶著扶手慢慢走。',
+    '練功急不得，慢慢來才會紮實。',
+    '學這個不是為了跟人打架，是為了保護自己。',
+    '會怕是正常的，會怕還能想辦法，那才厲害。' ] },
   pool: { who: '救生員', emoji: '🏊', lines: [
     '下水前先暖身喔。',
-    '看到有人在水裡怪怪的，馬上大聲喊我，不要自己下去。',
-    '不要在池邊跑，地滑。',
-    '今天水溫剛剛好。' ] },
+    '看到有人在水裡怪怪的，馬上大聲喊我——不要自己跳下去。',
+    '不要在池邊跑，地很滑。',
+    '今天水溫剛剛好。',
+    '嗆到水不能忍，一定要講，後面可能還有狀況。',
+    '不會游泳沒關係，待在淺水區就好。' ] },
 };
 
 function todayStamp() {
@@ -389,9 +370,13 @@ function todayEvent() {
   const id = DAY_IDS[sd % DAY_IDS.length];
   return { place: PLACE_OF[id], id: id, seed: sd };
 }
-function npcLine(place, sd) {
+/* 第幾句由「今天的種子 + 已經點了幾下」決定：
+   同一天第一次點到的那句是固定的，但再點會往下走一句。 */
+function npcLine(place, sd, nth) {
   const n = NPC[place];
-  return n ? { who: n.who, emoji: n.emoji, text: n.lines[(sd >>> 13) % n.lines.length] } : null;
+  if (!n) return null;
+  const i = ((sd >>> 13) + nth) % n.lines.length;
+  return { who: n.who, emoji: n.emoji, text: n.lines[i], more: n.lines.length > 1 };
 }
 const townDoneKey = () => pKey('town-' + todayStamp());
 const isTodayDone = () => localStorage.getItem(townDoneKey()) === '1';
@@ -402,6 +387,7 @@ const WHERE_NOW = { morning: 'home', day: 'school', dusk: 'park', night: 'home' 
 
 let fromTown = false;   // 這一篇是從小鎮點進來的
 let townMsg = null;     // 點了鎮上的人之後要顯示的話
+let townTaps = {};      // 每個地點點過幾下，決定講到第幾句
 
 function renderTown() {
   const tod = todNow(), ev = todayEvent(), done = isTodayDone();
@@ -417,13 +403,13 @@ function renderTown() {
       <div class="town">${townSVG(tod, marks, WHERE_NOW[tod])}</div>
       ${townMsg ? `<div class="says">
           <span class="face">${townMsg.emoji}</span>
-          <span><b>${esc(townMsg.who)}</b><br>${narrate(townMsg.text)}</span>
+          <span><b>${esc(townMsg.who)}</b><br>${narrate(townMsg.text)}
+            ${townMsg.more ? '<span class="more">再點他一下，還有話說 ▸</span>' : ''}</span>
         </div>` : `<div class="townhint">${done
           ? '今天的事情處理完了 ✓　點點看鎮上的人，他們有話想說。'
           : '有一個地方出事了 ❗　點它看看。'}</div>`}
       <div class="row" style="margin-top:10px;">
         <button class="mini" id="tmenu">🎭 劇本選單</button>
-        <button class="mini" id="tday">☀️ 走完一天</button>
         <button class="mini" id="tgal">🖼️ 結局圖鑑</button>
       </div>
     </div>`;
@@ -434,170 +420,28 @@ function renderTown() {
       const k = g.dataset.spot;
       if (k === ev.place && !done) {          // 今天的事
         Sfx.page(); townMsg = null; fromTown = true; startScenario(ev.id);
-      } else {                                 // 鎮上的人講一句話
+      } else {                                 // 鎮上的人講話，再點會講下一句
         Sfx.tap();
-        townMsg = npcLine(k, ev.seed + seedOf(k));
+        townTaps[k] = (townTaps[k] || 0) + (townMsg && townMsg.place === k ? 1 : 0);
+        townMsg = npcLine(k, ev.seed + seedOf(k), townTaps[k]);
+        if (townMsg) townMsg.place = k;
         render();
       }
     };
   });
   document.getElementById('tmenu').onclick = () => { Sfx.tap(); townMsg = null; view = 'menu'; render(); };
-  document.getElementById('tday').onclick  = () => { Sfx.tap(); townMsg = null; startDay(); };
   document.getElementById('tgal').onclick  = () => { Sfx.tap(); townMsg = null; view = 'gallery'; render(); };
 }
 
-let dayRun = null;   // 不是 null 就代表正在過一天
-let dayAt = 0;
-
-const pickOne = a => a[Math.floor(Math.random() * a.length)];
-
-function loadDayStats() {
-  try { return JSON.parse(localStorage.getItem(pKey('daystats'))) || { days: 0, perfect: 0 }; }
-  catch (e) { return { days: 0, perfect: 0 }; }
-}
-function saveDayStats(v) { try { localStorage.setItem(pKey('daystats'), JSON.stringify(v)); } catch (e) {} }
-// 最近遇過的先避開，免得同一篇一直重複
-function loadDayRecent() {
-  try { return JSON.parse(localStorage.getItem(pKey('dayrecent'))) || []; } catch (e) { return []; }
-}
-function pushDayRecent(id) {
-  const r = loadDayRecent().filter(x => x !== id);
-  r.unshift(id);
-  try { localStorage.setItem(pKey('dayrecent'), JSON.stringify(r.slice(0, 8))); } catch (e) {}
-}
-
-function startDay() {
-  const recent = loadDayRecent();
-  const n = 2 + Math.floor(Math.random() * 2);           // 四段裡兩到三段有事
-  const hit = STOPS.map((_, i) => i).sort(() => Math.random() - 0.5).slice(0, n);
-  const used = [];
-  dayRun = STOPS.map((stop, i) => {
-    if (hit.indexOf(i) < 0) return { stop, calm: pickOne(CALM[stop.key]), result: null };
-    const avail = stop.pool.filter(x => used.indexOf(x) < 0);
-    const fresh = avail.filter(x => recent.indexOf(x) < 0);
-    const id = pickOne(fresh.length ? fresh : avail);
-    used.push(id);
-    return { stop, calm: null, scenarioId: id, result: null };
-  });
-  dayAt = 0;
-  view = 'route';
-  render();
-}
-
-function routeBar() {
-  return `<div class="route">${dayRun.map((d, i) => {
-    const cls = i < dayAt ? ' done' : (i === dayAt ? ' now' : '');
-    const mark = i < dayAt
-      ? (d.result ? (d.result.grade === 'best' ? '🌟' : d.result.grade === 'bad' ? '🔁' : '✓') : '✓')
-      : '';
-    return `<div class="stop${cls}">${mark ? `<span class="mk">${mark}</span>` : ''}` +
-      `<span class="dot">${d.stop.icon}</span><span class="nm">${d.stop.name}</span></div>`;
-  }).join('')}</div>`;
-}
-
-function renderRoute() {
-  const d = dayRun[dayAt];
-  app.innerHTML = `
-    <div class="card anim">
-      <div class="daytop">
-        ${dayAt === 0 ? `<div class="greet"><b>${GREET[todNow()][0]}</b>${GREET[todNow()][1]}</div>` : ''}
-        <span class="daynum">${who().emoji} ${esc(who().name)} 的一天</span>
-      </div>
-      ${routeBar()}
-      ${d.calm ? `
-        <div class="calm">
-          <span class="big">${d.stop.icon}</span>
-          <div class="t">這一段很平順</div>
-          <div class="s">${narrate(d.calm)}</div>
-        </div>
-        <button id="dnext" style="width:100%; background:#7cc9a0; color:#1e3d2c;">繼續 ▶</button>
-      ` : `
-        <div class="stage" style="margin-top:4px;">
-          <div class="narr">${d.stop.icon} <b>${d.stop.name.replace('<br>', '')}</b>……有事情發生了。</div>
-        </div>
-        <button id="dnext" style="width:100%; background:#6b4a9e; color:#fff;">看看怎麼回事 ▶</button>
-      `}
-      <div class="row" style="margin-top:10px;">
-        <button class="mini" id="dquit">← 先不玩了</button>
-      </div>
-    </div>`;
-  document.getElementById('dnext').onclick = () => {
-    Sfx.page();
-    if (d.calm) dayAdvance();
-    else startScenario(d.scenarioId);     // 借用劇場本來就有的故事引擎
-  };
-  document.getElementById('dquit').onclick = () => { Sfx.tap(); dayRun = null; view = 'menu'; render(); };
-}
-
-function dayAdvance() {
-  dayAt++;
-  if (dayAt >= dayRun.length) {
-    const st = loadDayStats();
-    st.days++;
-    const done = dayRun.filter(d => d.result);
-    if (done.length && done.every(d => d.result.grade === 'best')) st.perfect++;
-    saveDayStats(st);
-    view = 'tally';
-  } else {
-    view = 'route';
-  }
-  render();
-}
-
-function renderTally() {
-  const done = dayRun.filter(d => d.result);
-  const allBest = done.length > 0 && done.every(d => d.result.grade === 'best');
-  const redo = done.filter(d => d.result.grade === 'escape' || d.result.grade === 'bad');
-  const st = loadDayStats();
-  app.innerHTML = `
-    <div class="card anim">
-      <h1>🏠 今天回到家了</h1>
-      <div class="sub">${allBest ? '而且每一件事都處理得很好' : '今天走過這些事'}</div>
-      ${routeBar()}
-      ${done.length ? `<div class="tally">
-        ${done.map(d => {
-          const g = GRADE_META[d.result.grade];
-          return `<div class="tally-row">
-            <span class="wh">${d.stop.icon}</span>
-            <span class="ti">${esc(d.result.title)}</span>
-            <span class="gd" style="background:${g.bg}; color:${g.color};">${g.label}</span>
-          </div>`;
-        }).join('')}
-      </div>` : `<div class="calm"><span class="big">🌤️</span>
-        <div class="t">今天一整天都很平安</div>
-        <div class="s">什麼事都沒發生，這其實是最常見的一種日子。</div></div>`}
-      ${allBest ? `<div class="safeframe">🌟 <b>今天每一關都做到了最好。</b></div>` : ''}
-      ${redo.length ? `<div class="safeframe mini">
-        <span class="sf-ico">🔁</span>
-        <span class="sf-txt">有 ${redo.length} 件事還可以更好。<b>再過一天，說不定會再遇到一次。</b></span>
-      </div>` : ''}
-      <div class="daytop" style="margin:12px 0;">
-        <span class="daynum">已經過了 ${st.days} 天${st.perfect ? `　🌟 全部完美的有 ${st.perfect} 天` : ''}</span>
-      </div>
-      <button id="dagain" style="width:100%; background:#6b4a9e; color:#fff;">☀️ 再過一天</button>
-      <div class="row" style="margin-top:8px;">
-        <button class="mini" id="dmenu">🎭 回劇本選單</button>
-        <button class="mini" id="dgal">🖼️ 看結局圖鑑</button>
-      </div>
-    </div>`;
-  document.getElementById('dagain').onclick = () => { Sfx.tap(); startDay(); };
-  document.getElementById('dmenu').onclick = () => { Sfx.tap(); dayRun = null; view = 'menu'; render(); };
-  document.getElementById('dgal').onclick  = () => { Sfx.tap(); dayRun = null; view = 'gallery'; render(); };
-}
 
 function render() {
-  // 走一天的時候用那一段的時間，其他畫面用現實時間
-  setTod(dayRun && !fromTown && (view === 'route' || view === 'story' || view === 'end')
-    ? TOD_OF_STOP[dayRun[Math.min(dayAt, dayRun.length - 1)].stop.key]
-    : todNow());
+  setTod(todNow());
   if (view === 'menu') renderMenu();
   else if (view === 'check') renderCheck();
   else if (view === 'gallery') renderGallery();
   else if (view === 'who') renderWho();
   else if (view === 'story') renderStory();
   else if (view === 'town') renderTown();
-  else if (view === 'route') renderRoute();
-  else if (view === 'tally') renderTally();
   else renderEnding();
   window.scrollTo(0, 0);
 }
@@ -796,7 +640,7 @@ function startRandom() {
 }
 
 function startScenario(id) {
-  if (view === 'menu') { fromTown = false; dayRun = null; }   // 從選單進來就不是小鎮／一天模式
+  if (view === 'menu') fromTown = false;   // 從選單進來就不是小鎮模式
   cur = SCENARIOS.find(s => s.id === id);
   if (!cur) return;
   lastId = id;
@@ -826,14 +670,14 @@ function renderStory() {
         </div>
         <div class="row">
           <button class="mini" id="music2">${Sfx.isBgmOn() ? '🎵 音樂開' : '🎵 音樂關'}</button>
-          <button class="mini" id="quit">${fromTown ? '← 回小鎮' : dayRun ? '← 回到今天的路線' : '← 選別的故事'}</button>
+          <button class="mini" id="quit">${fromTown ? '← 回小鎮' : '← 選別的故事'}</button>
         </div>
       </div>
     `;
     document.getElementById('go').onclick = () => { Sfx.page(); nodeId = cur.start; render(); };
     document.getElementById('music2').onclick = () => { Sfx.toggleBgm(); render(); };
     document.getElementById('quit').onclick = () => {
-      view = fromTown ? 'town' : dayRun ? 'route' : 'menu'; render();
+      view = fromTown ? 'town' : 'menu'; render();
     };
     return;
   }
@@ -872,7 +716,7 @@ function renderStory() {
       </div>
       <div class="row">
         <button class="mini" id="music2">${Sfx.isBgmOn() ? '🎵 音樂開' : '🎵 音樂關'}</button>
-        <button class="mini" id="quit">${fromTown ? '← 回小鎮' : dayRun ? '← 回到今天的路線' : '← 離開這個故事'}</button>
+        <button class="mini" id="quit">${fromTown ? '← 回小鎮' : '← 離開這個故事'}</button>
       </div>
     </div>
   `;
@@ -881,7 +725,7 @@ function renderStory() {
   });
   document.getElementById('music2')?.addEventListener('click', () => { Sfx.toggleBgm(); render(); });
   document.getElementById('quit').onclick = () => {
-      view = fromTown ? 'town' : dayRun ? 'route' : 'menu'; render();
+      view = fromTown ? 'town' : 'menu'; render();
     };
 }
 
@@ -911,10 +755,6 @@ function choose(i) {
       else ({ best: Sfx.best, good: Sfx.good, escape: Sfx.escape, bad: Sfx.bad }[ending.grade] || Sfx.good)();
     }
     if (fromTown) markTodayDone();
-    if (dayRun && dayRun[dayAt] && dayRun[dayAt].scenarioId === cur.id) {
-      dayRun[dayAt].result = { title: ending.title, grade: ending.grade };
-      pushDayRecent(cur.id);
-    }
     view = 'end';
     render();
   } else {
@@ -1099,11 +939,6 @@ function renderEnding() {
       ${fromTown ? `
       <div class="row">
         <button id="tgo" style="background:#2f6f8f; color:#fff; width:100%;">回小鎮 🏘️</button>
-      </div>` : dayRun ? `
-      <div class="row">
-        <button id="dgo" style="background:#2f6f8f; color:#fff; width:100%;">
-          ${dayAt < dayRun.length - 1 ? '繼續今天 ▶' : '回到家了 🏠'}
-        </button>
       </div>` : `
       <div class="row">
         <button id="again" style="background:#6b4a9e; color:#fff;">🔁 再走一次</button>
@@ -1119,8 +954,6 @@ function renderEnding() {
     document.getElementById('tgo').onclick = () => {
       Sfx.tap(); fromTown = false; townMsg = null; view = 'town'; render();
     };
-  } else if (dayRun) {
-    document.getElementById('dgo').onclick = () => { Sfx.tap(); dayAdvance(); };
   } else {
     document.getElementById('again').onclick = () => { Sfx.tap(); startScenario(cur.id); };
     document.getElementById('rand').onclick = () => { Sfx.tap(); startRandom(); };

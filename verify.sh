@@ -39,25 +39,7 @@ if '失敗 0' not in t or 'JS 錯誤 0' not in t: raise SystemExit(1)
 "
 
 echo
-echo "=== ③ 平安的一天：自動過 100 天 ==="
-python3 - <<'PYEOF'
-import io
-b = io.open('theater.html', encoding='utf-8').read()
-d = io.open('day_driver.js', encoding='utf-8').read()
-io.open('daywalk.html', 'w', encoding='utf-8').write(b.replace('</body>', d + '</body>'))
-PYEOF
-$CHROME --headless --disable-gpu --no-sandbox --virtual-time-budget=90000 \
-  --dump-dom "file://$PWD/daywalk.html" 2>/dev/null | python3 -c "
-import sys, re
-s = sys.stdin.read()
-m = re.findall(r'<pre id=\"R\">(.*?)</pre>', s, re.S)
-if not m: print('✗ 沒跑完'); raise SystemExit(1)
-t = m[-1].strip(); print(t)
-if '失敗 0' not in t or 'JS 錯誤 0' not in t or '21 篇都遇到過 是' not in t: raise SystemExit(1)
-"
-
-echo
-echo "=== ④ 小鎮：每天一件事 ==="
+echo "=== ③ 小鎮：每天一件事 ==="
 python3 - <<'PYEOF'
 import io
 b = io.open('theater.html', encoding='utf-8').read()
@@ -75,7 +57,7 @@ if '失敗 0' not in t or 'JS 錯誤 0' not in t: raise SystemExit(1)
 "
 
 echo
-echo "=== ⑤ 有沒有東西撐破畫面 ==="
+echo "=== ④ 有沒有東西撐破畫面 ==="
 # headless Chrome 的版面寬度最小只到 500px，所以手機寬度要放進固定寬的 iframe 量
 python3 - <<'PYEOF'
 import io
@@ -99,13 +81,6 @@ view='check'; render(); scan('判斷紀錄');
 view='town'; render(); scan('小鎮');
 document.querySelector('.spot[data-spot="school"]').onclick(); scan('小鎮・有人講話');
 townMsg=null;
-startDay();
-dayRun[0]={stop:STOPS[0], calm:null, scenarioId:'breakfast', result:null};
-dayAt=0; view='route'; render(); scan('一天的路線圖');
-dayRun[1].calm='測試'; dayRun[1].scenarioId=null; dayAt=1; render(); scan('平順路段');
-dayRun.forEach(function(d){ if(!d.calm) d.result={title:'測試結局',grade:'best'}; });
-dayAt=4; view='tally'; render(); scan('一天結算');
-dayRun=null; dayAt=0;
 var sc=SCENARIOS.find(function(s){return s.id==='online';}), f=null;
 (function w(k,seen,ch){ if(f) return; if(k==='best'){f=ch;return;}
   if(sc.endings[k]||seen.indexOf(k)>=0) return;
