@@ -510,16 +510,19 @@ function renderMenu() {
         🌱 <b>大部分的人都是安全、願意幫忙的。</b><br>
         這些故事是在練習：少數真的遇到危險的時候，你可以怎麼保護自己。
       </div>
-      <button id="daybtn" style="width:100%; background:#2f6f8f; color:#fff; font-size:17px;
-        padding:15px; margin-bottom:10px;">☀️ 平安的一天　<span style="font-size:13px; opacity:.85;">走完一天</span></button>
-      <div style="text-align:center; font-size:13px; font-weight:800; color:#6b4a9e; margin-bottom:4px;">
-        完美通關 ${done} / ${graded.length}
+      <div class="modes">
+        <button id="daybtn" style="background:#2f6f8f; color:#fff;">
+          ☀️ 平安的一天<small>走完一天</small>
+        </button>
+        <button id="rand" style="background:#6b4a9e; color:#fff;">
+          🎲 隨機挑一個<small>抽一篇來玩</small>
+        </button>
       </div>
-      <button id="galbtn" style="width:100%; background:#fff; font-size:14px; font-weight:900;
-        color:#6b4a9e; padding:9px; margin-bottom:2px;">
-        🖼️ 結局圖鑑　${seenTotal()} / ${totalEnds()}
+      <button id="galbtn" class="statbar">
+        <span>🌟 完美通關 ${done} / ${graded.length}</span>
+        <span class="sep">·</span>
+        <span>🖼️ 圖鑑 ${seenTotal()} / ${totalEnds()}</span>
       </button>
-      <button id="rand" style="width:100%; margin:8px 0 4px; background:#6b4a9e; color:#fff;">🎲 隨機挑一個</button>
       <div class="pick-grid">
         ${SCENARIOS.map(s => {
           const cons = isCons(s);
