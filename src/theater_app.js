@@ -624,7 +624,16 @@ function renderTown() {
   const tod = todNow(), ev = periodEvent(tod), wx = weatherToday();
   const done = ev.id ? isPeriodDone(tod) : false;
   const stage = townStage(), friend = loadFriend();
-  const hunt = huntToday(), got = foundToday(), box = loadTreasures();
+  const hunt = huntToday(), got = foundToday();
+  /* 抽成函式，是因為找到東西的時候只換這一段，不重畫整張卡片 */
+  function huntHTML(gotId) {
+    const t = gotId ? treasureById(gotId) : null, box = loadTreasures();
+    return (t ? `🎁 今天找到了：<b>${t.emoji} ${esc(t.name)}</b>　${esc(t.line)}`
+              : '👀 今天鎮上藏了一個小東西，找找看。')
+      + `<div class="box">${TREASURES.map(x =>
+          `<span class="${box[x.id] ? 'on' : ''}" title="${esc(x.name)}">${box[x.id] ? x.emoji : '•'}</span>`
+        ).join('')}</div>`;
+  }
 
   const marks = {};
   Object.keys(PLACE_POOL).forEach(k => { marks[k] = NPC[k] ? '💬' : ''; });
@@ -642,25 +651,12 @@ function renderTown() {
         <div class="greet"><b>${GREET_TOWN[tod][0]}</b>${GREET_TOWN[tod][1]}</div>
         <div class="wx">${WEATHER[wx].icon} ${WEATHER[wx].name}　·　🖼️ ${seenTotal()} / ${totalEnds()}</div>
       </div>
-      <div class="town">${townSVG(tod, marks, WHERE_NOW[tod], wx, stage, got ? null : hunt)}</div>
-      <div class="hunt">
-        ${got ? `🎁 今天找到了：<b>${treasureById(got) ? treasureById(got).emoji + ' ' + esc(treasureById(got).name) : '？'}</b>
-                 ${treasureById(got) ? esc(treasureById(got).line) : ''}`
-              : '👀 今天鎮上藏了一個小東西，找找看。'}
-        <div class="box">${TREASURES.map(t =>
-          `<span class="${box[t.id] ? 'on' : ''}" title="${esc(t.name)}">${box[t.id] ? t.emoji : '•'}</span>`).join('')}</div>
+      <div class="townwrap">
+        <div class="town">${townSVG(tod, marks, WHERE_NOW[tod], wx, stage, got ? null : hunt)}</div>
+        <div class="saybox" hidden></div>
       </div>
-      ${townMsg ? `<div class="says">
-          <span class="face">${townMsg.emoji}</span>
-          <span><b>${esc(townMsg.who)}</b><br>${narrate(townMsg.text)}
-            ${townMsg.more ? '<span class="more">再點一下，還有話說 ▸</span>' : ''}</span>
-        </div>
-        <button id="tplay" class="playhere">
-          🎭 在${esc(PLACE_NAME[townMsg.place] || '這裡')}玩一篇
-          ${placeUnseen(townMsg.place) ? `<small>還有 ${placeUnseen(townMsg.place)} 種結局沒看過</small>`
-                                       : '<small>這裡的結局都看過了，再走一次也可以</small>'}
-        </button>`
-        : `<div class="townhint">${hint}</div>`}
+      <div class="hunt">${huntHTML(got)}</div>
+      <div class="townhint">${hint}</div>
       <div class="row" style="margin-top:10px;">
         <button class="mini" id="tmenu">🎭 劇本選單</button>
         <button class="mini" id="tgal">🖼️ 結局圖鑑</button>
@@ -693,35 +689,67 @@ function renderTown() {
         });
         return;
       }
-      // 鎮上的人講話，再點會講下一句
+      // 鎮上的人講話。再點同一個人會講下一句（關掉再點也接得下去）
       Sfx.tap();
-      townTaps[k] = (townTaps[k] || 0) + (townMsg && townMsg.place === k ? 1 : 0);
+      const nth = townTaps[k] || 0;
+      townTaps[k] = nth + 1;
       const n = bumpFriend(k);
-      townMsg = npcLine(k, ev.seed + seedOf(k), townTaps[k], {
+      const msg = npcLine(k, ev.seed + seedOf(k), nth, {
         justDone: done && k === ev.place,
         weather: wx,
         close: n >= CLOSE_AT,
       });
-      if (townMsg) townMsg.place = k;
-      render();
+      if (msg) msg.place = k;
+      showSay(msg);
     };
   });
+
+  /* 只換講話框，不重畫整張卡片。
+     以前這裡是 render()，每點一個人整張卡（含 .card.anim 的淡入）
+     都重來一次，畫面就會閃一下。 */
+  const saybox = app.querySelector('.saybox');
+  function showSay(msg) {
+    townMsg = msg;
+    if (!msg) { saybox.hidden = true; saybox.innerHTML = ''; return; }
+    const left = placeUnseen(msg.place);
+    saybox.innerHTML = `
+      <div class="says">
+        <span class="x" aria-hidden="true">✕</span>
+        <span class="face">${msg.emoji}</span>
+        <span><b>${esc(msg.who)}</b><br>${narrate(msg.text)}
+          ${msg.more ? '<span class="more">再點他一次還有話說 ▸</span>' : ''}
+          <button id="tplay" class="playhere">
+            🎭 在${esc(PLACE_NAME[msg.place] || '這裡')}玩一篇
+            ${left ? `<small>還有 ${left} 種結局沒看過</small>`
+                   : '<small>這裡的結局都看過了，再走一次也可以</small>'}
+          </button>
+        </span>
+      </div>`;
+    saybox.hidden = false;
+    // 點框上任何地方就關起來，除了那顆「玩一篇」的按鈕
+    saybox.onclick = () => { Sfx.tap(); showSay(null); };
+    const play = saybox.querySelector('#tplay');
+    play.onclick = (e) => {
+      e.stopPropagation();
+      const place = msg.place, id = pickFreePlay(place);
+      if (!id) return;
+      Sfx.page();
+      showSay(null);
+      walkTo(place, () => { fromTown = true; townFree = true; startScenario(id); });
+    };
+  }
+  if (townMsg) showSay(townMsg);   // 從別的畫面回小鎮時，把剛才那句接回去
+
   // 找到今天藏的東西。這個 g 刻意不在任何 .spot 裡面，不會跟地點搶點擊
   const hg = app.querySelector('.hide');
   if (hg) hg.onclick = (e) => {
     e.stopPropagation();
     Sfx.good();
     recordFind(hunt.id);
-    townMsg = null;
-    render();
-  };
-
-  const play = document.getElementById('tplay');
-  if (play) play.onclick = () => {
-    const place = townMsg.place, id = pickFreePlay(place);
-    if (!id) return;
-    Sfx.page();
-    walkTo(place, () => { townMsg = null; fromTown = true; townFree = true; startScenario(id); });
+    // 一樣不重畫整張卡片：把東西拿掉、換掉那一行就好
+    hg.remove();
+    app.querySelector('.hunt').innerHTML = huntHTML(hunt.id);
+    showSay(null);
   };
   document.getElementById('tmenu').onclick = () => { Sfx.tap(); townMsg = null; view = 'menu'; render(); };
   document.getElementById('tgal').onclick  = () => { Sfx.tap(); townMsg = null; view = 'gallery'; render(); };

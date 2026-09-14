@@ -18,6 +18,8 @@
     return null;
   }
 
+  function showSayNull(){ townMsg = null; }
+
   try {
     localStorage.clear();
     walkMs = 0;              // 關掉走路動畫，讓點擊維持同步
@@ -98,10 +100,32 @@
 
       // 點鎮上的人，而且要能一直點下去換句子
       var other = Object.keys(PLACE_POOL).filter(function(k){ return k!==ev.place; })[0];
+      if (!document.querySelector('.saybox').hidden) fails.push('還沒點人，講話框就開著');
       var texts = {};
       for (var t=0;t<6;t++){ spot(other).onclick(); texts[document.querySelector('.says').textContent]=1; }
       said = Object.keys(texts).length;
       if (said < 3) fails.push('連點六下只出現 '+said+' 種話，沒有換句子');
+
+      /* 講話框要浮在地圖上面、而且點一下就關。
+         在地圖下面的話整頁會被推下去，她的眼睛要一路跳到畫面最底下。 */
+      var sb = document.querySelector('.saybox'), tw = document.querySelector('.townwrap');
+      if (!tw || !tw.contains(sb)) fails.push('講話框不在地圖那一塊裡面，會把版面推下去');
+      if (getComputedStyle(sb).position !== 'absolute') fails.push('講話框不是浮在地圖上面的');
+      sb.onclick();
+      if (!sb.hidden) fails.push('點了講話框卻沒有關起來');
+      // 關掉之後再點同一個人，要接著講下一句，不是從頭來
+      spot(other).onclick();
+      var again = document.querySelector('.says').textContent;
+      if (texts[again] && Object.keys(texts).length > 1 && again === Object.keys(texts)[0])
+        fails.push('關掉再點又從第一句開始講');
+
+      /* 點人不可以重畫整張卡片：.card.anim 的淡入會跟著重播一次，
+         畫面就閃一下。用「卡片還是不是同一個節點」來驗。 */
+      view='town'; showSayNull(); render();
+      var card0 = document.querySelector('.card'), svg0 = document.querySelector('.town svg');
+      spot(other).onclick();
+      if (document.querySelector('.card') !== card0) fails.push('點一下人整張卡片就重畫了，畫面會閃');
+      if (document.querySelector('.town svg') !== svg0) fails.push('點一下人連地圖都重畫了');
 
       // 家裡應該輪得到三個人。家如果剛好是這個時段出事的地方，點下去會進故事，
       // 所以先換到一個「家沒有出事」的日子再測。
@@ -150,7 +174,7 @@
         if (!pb) fails.push('做完之後沒有「在這裡玩一篇」的按鈕，她就沒得玩了');
         else {
           var before = seenTotal();
-          pb.onclick();
+          pb.onclick({ stopPropagation: function(){} });
           if (view!=='story') fails.push('按了「在這裡玩一篇」沒有進到故事');
           else if (PLACE_OF[cur.id] !== other2) fails.push('自由玩給的篇目不屬於那個地點');
           else {
@@ -224,7 +248,9 @@
       if (hel && hel.closest && hel.closest('.spot')) fails.push('藏的東西壓在地點上面');
 
       var box0 = Object.keys(loadTreasures()).length;
+      var hcard = document.querySelector('.card');
       document.querySelector('.hide').onclick({ stopPropagation: function(){} });
+      if (document.querySelector('.card') !== hcard) fails.push('撿到東西整張卡片就重畫了，畫面會閃');
       if (view!=='town') fails.push('找到東西竟然離開了小鎮');
       if (foundToday() !== h.id) fails.push('找到的東西沒有記起來');
       if (Object.keys(loadTreasures()).length <= box0) fails.push('寶物盒沒有增加');

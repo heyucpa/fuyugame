@@ -377,7 +377,29 @@
   .town .spot { cursor: pointer; }
   .town .spot:active { opacity: .75; }
 
-  /* 鎮上的人講話 */
+  /* 鎮上的人講話。
+     講話框浮在地圖中間，不是接在地圖下面：
+     接在下面的話，框一出現整頁就被往下推，看起來會頓一下，
+     而且她的眼睛要從剛剛點的那個人跳到畫面最底下。 */
+  .townwrap { position: relative; }
+  .saybox { position: absolute; inset: 0; display: flex;
+            align-items: center; justify-content: center; padding: 10px; }
+  .saybox[hidden] { display: none; }
+  /* 壓得比一般的對話框小：框太高會把整張地圖蓋掉，
+     她就看不到自己剛剛點的是誰、旁邊還有什麼。 */
+  .saybox .says { width: 100%; max-width: 290px; margin: 0;
+                  padding: 9px 11px; font-size: 13.5px; line-height: 1.6;
+                  box-shadow: 0 6px 0 rgba(0,0,0,.14), 0 10px 24px rgba(0,0,0,.22);
+                  animation: pop .2s ease-out; }
+  .saybox .says .face { font-size: 22px; }
+  .saybox .says { position: relative; }
+  .saybox .says .more { margin-top: 4px; font-size: 11px; }
+  /* 關起來的記號。點框上任何地方都會關，這個 ✕ 只是讓她看得出來可以關 */
+  .saybox .says .x { position: absolute; top: 4px; right: 9px;
+                     font-size: 13px; font-weight: 900; color: #c9a055; }
+  .saybox .playhere { margin-top: 7px; padding: 9px 10px; font-size: 14px; }
+  .saybox .playhere small { font-size: 11px; }
+
   .says { display: flex; align-items: flex-start; gap: 10px;
           background: #fff8e6; border: 3px solid #e8a33d; border-radius: 14px;
           padding: 11px 13px; font-size: 14px; line-height: 1.7; }
