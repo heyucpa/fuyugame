@@ -272,6 +272,9 @@
         if (ft.indexOf(treasureById(h.id).line) < 0) fails.push('慶祝的框沒有那一句說明');
         if (fb.querySelectorAll('.spark').length < 4) fails.push('沒有撒星星');
         if (!fb.querySelector('.femo')) fails.push('沒有把那個東西放大');
+        // 普通的不該有祝福，祝福是稀有的專屬
+        if (!treasureById(h.id).rare && fb.querySelector('.bless'))
+          fails.push('普通的寶物也給了祝福，稀有就不特別了');
         fb.onclick();
         if (!fb.hidden) fails.push('點了慶祝的框卻關不掉');
       }
@@ -389,6 +392,40 @@
       var all = m.text + m.choices.map(function(c){ return c.label + c.reply; }).join('');
       if (/警衛伯伯|店員阿姨/.test(all)) fails.push(m.id+' 還留著舊的稱呼（警衛伯伯／店員阿姨）');
     });
+
+    /* 稀有寶物要附一段家人的祝福，而且給祝福的人不能是她自己。
+       八樣稀有的東西，姊姊玩應該輪到媽咪／爸比／妹妹三種。 */
+    ['big', 'little', 'only'].forEach(function(role){
+      savePlayers(players().map(function(p){
+        return p.id === whoId() ? Object.assign({}, p, { role: role }) : p; }));
+      var seen = {}, sibWord = ROLES[role].sib;
+      TREASURES.filter(function(t){ return t.rare; }).forEach(function(t){
+        for (var m = 0; m < 60; m++) {
+          setDay(3 + Math.floor(m / 6)); setMin((m % 6) * 10 + 1);
+          var b = blessingFor(t);
+          seen[b.who] = 1;
+          if (!b.text || !b.title) fails.push(role + '：' + t.id + ' 的祝福是空的');
+          // 她自己不會祝福她自己
+          if (b.title.indexOf(ROLES[role].label) === 0)
+            fails.push(role + '：祝福竟然來自她自己（' + b.title + '）');
+          if (role === 'only' && b.who === 'sib')
+            fails.push('沒有兄弟姊妹的玩家收到了手足的祝福');
+          if (b.who === 'sib' && b.title.indexOf(sibWord) < 0)
+            fails.push(role + '：手足的祝福稱呼不對（' + b.title + '，應該是' + sibWord + '）');
+        }
+      });
+      if (role === 'only') {
+        if (seen.sib) fails.push('沒有兄弟姊妹卻抽到手足');
+        if (!seen.mom || !seen.dad) fails.push('only：媽咪跟爸比沒有都出現');
+      } else {
+        ['mom','dad','sib'].forEach(function(k){
+          if (!seen[k]) fails.push(role + '：祝福裡從來沒出現過 ' + k);
+        });
+      }
+    });
+    // 測完把角色還原
+    savePlayers(players().map(function(p){
+      return p.id === whoId() ? Object.assign({}, p, { role: 'big' }) : p; }));
 
     /* 點到沒有東西的地方（草地、樹、天空）也要有反應。
        這個鎮如果只有六個地方會回應，她點兩下就再也不看別的地方了。 */

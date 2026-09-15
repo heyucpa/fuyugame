@@ -700,6 +700,51 @@ function recordFind(id) {
   } catch (e) {}
 }
 const treasureById = id => TREASURES.find(t => t.id === id);
+
+/* ===== 稀有寶物附帶的祝福 =====
+   八樣稀有的東西撿到的時候，家裡會有一個人跟她說一句話。
+
+   給祝福的人一定是「家裡的另一個人」，不會是她自己——
+   姊姊玩的時候輪到媽咪、爸比、妹妹；妹妹玩就是媽咪、爸比、姊姊。
+   設定成「沒有兄弟姊妹」的話就只有媽咪跟爸比。
+
+   內容刻意寫得短而且具體。「要加油喔」那種話她聽過太多次了，
+   「不管幾點，打給爸爸都可以」才是她真的用得到的。 */
+const BLESS = {
+  mom: { title: '媽咪的祝福', emoji: '👩', lines: [
+    '今天不管遇到什麼，記得你可以打給我。',
+    '你已經很努力了，不用再多了。',
+    '如果有事情不敢講，先講一半也可以。',
+    '餓了就吃，累了就休息。其他的媽媽幫你想。',
+    '你今天笑的樣子，媽媽記住了。',
+    '媽媽看到你就覺得今天值得了。',
+  ] },
+  dad: { title: '爸比的祝福', emoji: '👨', lines: [
+    '做不好沒關係，爸爸也是。',
+    '你比你自己以為的勇敢。',
+    '怕的時候可以先站在原地，這也是一種方法。',
+    '不管幾點，打給爸爸都可以。',
+    '今天走慢一點也沒關係。',
+    '爸爸永遠站在你這邊。',
+  ] },
+  sib: { emoji: '👧', lines: [
+    '我今天把最後一顆糖留給你。',
+    '你是我最喜歡的人（不要跟媽媽說）。',
+    '下次我們一起去找。',
+    '你昨天陪我，我記得。',
+    '我覺得你超厲害的。',
+    '如果你不開心，我可以陪你坐著。',
+  ] },
+};
+function blessingFor(t) {
+  const pool = ME().sib ? ['mom', 'dad', 'sib'] : ['mom', 'dad'];
+  const sd = seedOf('bless:' + huntSlot() + ':' + t.id + ':' + whoId());
+  const k = pool[sd % pool.length], b = BLESS[k];
+  return { who: k,
+           title: k === 'sib' ? ME().sib + '的祝福' : b.title,
+           emoji: b.emoji,
+           text: b.lines[(sd >>> 7) % b.lines.length] };
+}
 const boxCount = () => { const b = loadTreasures(); return TREASURES.filter(t => b[t.id]).length; };
 
 /* 小鎮會跟著她長大：走過的結局越多，鎮上的東西越多。
@@ -1018,6 +1063,11 @@ function renderTown() {
         </div>
         <div class="fname">${esc(t.name)}${t.rare ? ' <i class="rare">稀有</i>' : ''}</div>
         <div class="fline">${esc(t.line)}</div>
+        ${t.rare ? (() => { const b = blessingFor(t); return `
+        <div class="bless">
+          <span class="bface">${b.emoji}</span>
+          <span><b>${esc(b.title)}</b><br>${esc(b.text)}</span>
+        </div>`; })() : ''}
         <div class="fhint">點一下收起來</div>
       </div>`;
     foundbox.hidden = false;
