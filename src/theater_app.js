@@ -1309,9 +1309,46 @@ function renderMoment() {
   if (back) back.onclick = () => { Sfx.tap(); curMoment = null; momentPick = -1; view = 'town'; render(); };
 }
 
+/* ===== 接住「上一頁」 =====
+   平板上小孩很容易滑到螢幕邊緣觸發上一頁，或按到手機的返回鍵。
+   原本一滑就整個跳出遊戲，正在走的劇本也斷掉——對她是很挫折的事。
+
+   做法：離開開始畫面時往歷史裡多塞一格，上一頁就吃掉那一格，
+   我們把它接起來當成「回上一層」。開始畫面不塞，
+   所以在開始畫面按上一頁還是真的離開（不然會變成退不出去的網頁）。
+
+   一次只塞一格：回上一層之後 render() 會再塞一格，
+   所以每按一次就退一層，不會累積出一長串要按很多次的歷史。 */
+let navArmed = false;
+function armBack() {
+  if (navArmed || view === 'menu') return;
+  navArmed = true;
+  try { history.pushState({ t: 'v' }, ''); } catch (e) {}
+}
+// 從每個畫面往回退一層是退到哪裡
+function backView() {
+  if (view === 'story' || view === 'ending' || view === 'moment')
+    return fromTown ? 'town' : 'menu';
+  return 'menu';                      // town / gallery / box / who
+}
+function goBack() {
+  const to = backView();
+  if (to === 'town') { fromTown = false; townFree = false; townMsg = null; }
+  curMoment = null;
+  view = to;
+  render();
+}
+window.addEventListener('popstate', () => {
+  navArmed = false;                   // 剛剛那一格已經被吃掉了
+  if (view === 'menu') return;        // 根畫面：讓它真的離開
+  Sfx.tap();
+  goBack();
+});
+
 function render() {
   setTod(todNow());
   setRoleAttr();
+  armBack();
   if (view === 'menu') renderMenu();
   else if (view === 'gallery') renderGallery();
   else if (view === 'who') renderWho();
@@ -1421,6 +1458,11 @@ function renderMenu() {
         🌱 <b>大部分的人都是安全、願意幫忙的。</b><br>
         這些故事是在練習：少數真的遇到危險的時候，你可以怎麼保護自己。
       </div>
+      ${myRole() === 'little' ? `
+      <!-- 只在小小孩那個角色出現，而且是講給大人看的。
+           故事裡有幾篇的關鍵是「聽出語氣不對」，那不是認得字就讀得出來的。 -->
+      <div class="grownup">👨‍👩‍👧 這個角色的故事建議<b>大人陪著一起唸</b>。
+        有幾篇的重點是聽出對方的語氣不對勁，唸出來比自己看容易發現。</div>` : ''}
       <div class="modes">
         <button id="daybtn" style="background:#2f6f8f; color:#fff;">
           🏘️ 小鎮<small>今天發生了什麼</small>

@@ -171,6 +171,13 @@
     color: #1e6b46; text-align: center; font-weight: 700;
   }
   .safeframe b { color: #14603c; }
+  /* 給大人看的一句話，語氣要跟給小孩的那一框分開，所以不用綠色 */
+  .grownup {
+    background: #fff6e5; border: 2px dashed #e0b25c; border-radius: 12px;
+    padding: 9px 13px; margin: 8px 0 0; font-size: 12.5px; line-height: 1.7;
+    color: #7a5a1e; text-align: center;
+  }
+  .grownup b { color: #8a5a00; }
 
   /* 首頁底下的選項圖例：用跟遊戲裡一模一樣的顏色 */
   .legend {
@@ -499,7 +506,38 @@
   .greet b { display: block; font-size: 19px; color: #2f6f8f; }
   .wx { font-size: 12px; font-weight: 800; color: #6b7a85; margin-top: 2px; }
 
+  /* ===== 妹妹版：字放大一點 =====
+     小一的識字量還不夠，故事的長句她要一個字一個字認。
+     字級是唯一不用外掛任何東西就能降低門檻的地方。
+     刻意不做「關鍵字自動上色」：那等於先幫她圈出答案，
+     這個遊戲練的就是自己從語氣裡讀出不對勁。 */
+  body[data-role="little"] .narr { font-size: 19px; line-height: 1.95; }
+  body[data-role="little"] .choice { font-size: 17px; line-height: 1.6; }
+  body[data-role="little"] .hint { font-size: 14px; }
+  @media (min-width: 700px) {
+    body[data-role="little"] .narr { font-size: 22px; }
+  }
 
+  /* ===== 會暈的人：把動畫全部關掉 =====
+     上面幾個 @media 只關掉了 .anim / .pop 跟慶祝那一張卡，
+     插圖裡還有三十幾個動畫（搖晃、飛、閃、撲過來）沒有被關到。
+     這一段是總開關，放在最後才蓋得過前面所有的宣告。 */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .01ms !important;
+      scroll-behavior: auto !important;
+    }
+    /* 這一個不是裝飾：最後兩分鐘藏的東西會一閃一閃，是她找不到時的提示。
+       動畫關掉之後那個字不會變暗（沒有 animation-fill-mode，會回到自己的
+       opacity 1），但它就完全不顯眼了——提示等於沒有了。
+       所以用一圈靜態的光暈代替那個「閃」，不會動的人也看得出是哪一個。
+       opacity 那一行是保險：動畫掛在 .twinkle 裡面的 <text>，
+       哪天有人給它加了 fill-mode，這一行會擋住它停在 .35。 */
+    .twinkle { filter: drop-shadow(0 0 2px #ffd23f) drop-shadow(0 0 5px #f0a33d); }
+    .twinkle text { opacity: 1 !important; }
+  }
 
 </style>
 </head>

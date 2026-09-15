@@ -74,19 +74,28 @@ function scan(name){ var bad=[];
     if(el.getBoundingClientRect().right > doc.clientWidth+0.5)
       bad.push(el.tagName.toLowerCase()+(typeof el.className==='string'&&el.className?'.'+el.className:'')); });
   if(bad.length) res[name]=bad.slice(0,3); }
-view='menu'; render(); scan('首頁');
-view='who'; render(); scan('換人');
-view='gallery'; render(); scan('圖鑑');
-view='town'; render(); scan('小鎮');
-document.querySelector('.spot[data-spot="school"]').onclick(); scan('小鎮・有人講話');
-townMsg=null;
 var sc=SCENARIOS.find(function(s){return s.id==='online';}), f=null;
 (function w(k,seen,ch){ if(f) return; if(k==='best'){f=ch;return;}
   if(sc.endings[k]||seen.indexOf(k)>=0) return;
   sc.nodes[k].choices.forEach(function(c,i){ w(c.to,seen.concat([k]),ch.concat([i])); }); })(sc.start,[],[]);
-startScenario('online'); scan('開場白');
-nodeId=sc.start; render(); scan('故事中');
-f.forEach(function(i){choose(i);}); scan('結局頁');
+function sweep(pfx){
+  view='menu'; render(); scan(pfx+'首頁');
+  view='who'; render(); scan(pfx+'換人');
+  view='gallery'; render(); scan(pfx+'圖鑑');
+  view='town'; render(); scan(pfx+'小鎮');
+  document.querySelector('.spot[data-spot="school"]').onclick(); scan(pfx+'小鎮・有人講話');
+  townMsg=null;
+  startScenario('online'); scan(pfx+'開場白');
+  nodeId=sc.start; render(); scan(pfx+'故事中');
+  f.forEach(function(i){choose(i);}); scan(pfx+'結局頁');
+  fromTown=false;
+}
+sweep('');
+/* 妹妹版的字比較大（.narr 19→22、.choice 17），字一大就可能撐破窄畫面，
+   所以兩種角色都要量一次。只量姊姊版等於沒驗到放大的那一套。 */
+savePlayers(players().map(function(p){
+  return p.id===whoId() ? Object.assign({}, p, {role:'little'}) : p; }));
+sweep('妹妹版・');
 parent.postMessage(JSON.stringify({w:window.innerWidth,
   over: doc.scrollWidth > doc.clientWidth, pages: res}), '*');
 '''
@@ -111,6 +120,46 @@ for W in 360 390 430 560 768 900 1180; do
   esac
 done
 [ "$OVFAIL" = 0 ] || exit 1
+
+echo
+echo "=== ⑤ 會暈的人：動畫關掉之後提示還在嗎 ==="
+# 藏東西最後兩分鐘會一閃一閃。那不是裝飾，是找不到時的提示。
+# 動畫關掉之後那個字不會變暗，但它就完全不顯眼了，提示等於沒有了，
+# 所以要改用一圈靜態的光暈；同時平常那個動畫不能被順手一起關掉。
+python3 - <<'PYEOF'
+import io
+src = io.open('theater.html', encoding='utf-8').read()
+tail = '</body>\n</html>\n'
+body = '''
+localStorage.clear();
+todayStamp=function(){return '2026-10-7';}; nowMin=function(){return 9*60+9;};
+view='town'; render();
+var t = document.querySelector('.twinkle text'), out={};
+out.reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+if (!t) out.missing = true;
+else { out.op = getComputedStyle(t).opacity;
+       out.dur = getComputedStyle(t).animationDuration;
+       out.glow = getComputedStyle(t.parentNode).filter !== 'none'; }
+document.title = 'R:' + JSON.stringify(out);
+'''
+io.open('rmcheck.html','w',encoding='utf-8').write(src[:-len(tail)]+'<script>(function(){\n'+body+'\n})();</script>\n'+tail)
+PYEOF
+RM_FAIL=0
+R_ON=$($CHROME --headless --disable-gpu --no-sandbox --force-prefers-reduced-motion \
+  --virtual-time-budget=6000 --dump-dom "file://$PWD/rmcheck.html" 2>/dev/null \
+  | grep -o '<title>R:[^<]*' | sed 's/<title>R://')
+R_OFF=$($CHROME --headless --disable-gpu --no-sandbox \
+  --virtual-time-budget=6000 --dump-dom "file://$PWD/rmcheck.html" 2>/dev/null \
+  | grep -o '<title>R:[^<]*' | sed 's/<title>R://')
+case "$R_ON" in
+  *'"op":"1"'*'"glow":true'*) echo "✓ 關掉動畫之後，藏的東西還是看得見（改用光暈）" ;;
+  *) echo "✗ 關掉動畫之後提示不見了：$R_ON"; RM_FAIL=1 ;;
+esac
+case "$R_OFF" in
+  *'"dur":"1.6s"'*) echo "✓ 平常還是會一閃一閃" ;;
+  *) echo "✗ 連平常的閃爍都被關掉了：$R_OFF"; RM_FAIL=1 ;;
+esac
+[ "$RM_FAIL" = 0 ] || exit 1
 
 echo
 echo "✅ 全部通過"

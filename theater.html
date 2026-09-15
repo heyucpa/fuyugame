@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#6b4a9e" />
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
-<meta name="build" content="2026.09.15-dd75fa" />
+<meta name="build" content="2026.09.15-d45741" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -171,6 +171,13 @@
     color: #1e6b46; text-align: center; font-weight: 700;
   }
   .safeframe b { color: #14603c; }
+  /* 給大人看的一句話，語氣要跟給小孩的那一框分開，所以不用綠色 */
+  .grownup {
+    background: #fff6e5; border: 2px dashed #e0b25c; border-radius: 12px;
+    padding: 9px 13px; margin: 8px 0 0; font-size: 12.5px; line-height: 1.7;
+    color: #7a5a1e; text-align: center;
+  }
+  .grownup b { color: #8a5a00; }
 
   /* 首頁底下的選項圖例：用跟遊戲裡一模一樣的顏色 */
   .legend {
@@ -499,7 +506,38 @@
   .greet b { display: block; font-size: 19px; color: #2f6f8f; }
   .wx { font-size: 12px; font-weight: 800; color: #6b7a85; margin-top: 2px; }
 
+  /* ===== 妹妹版：字放大一點 =====
+     小一的識字量還不夠，故事的長句她要一個字一個字認。
+     字級是唯一不用外掛任何東西就能降低門檻的地方。
+     刻意不做「關鍵字自動上色」：那等於先幫她圈出答案，
+     這個遊戲練的就是自己從語氣裡讀出不對勁。 */
+  body[data-role="little"] .narr { font-size: 19px; line-height: 1.95; }
+  body[data-role="little"] .choice { font-size: 17px; line-height: 1.6; }
+  body[data-role="little"] .hint { font-size: 14px; }
+  @media (min-width: 700px) {
+    body[data-role="little"] .narr { font-size: 22px; }
+  }
 
+  /* ===== 會暈的人：把動畫全部關掉 =====
+     上面幾個 @media 只關掉了 .anim / .pop 跟慶祝那一張卡，
+     插圖裡還有三十幾個動畫（搖晃、飛、閃、撲過來）沒有被關到。
+     這一段是總開關，放在最後才蓋得過前面所有的宣告。 */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .01ms !important;
+      scroll-behavior: auto !important;
+    }
+    /* 這一個不是裝飾：最後兩分鐘藏的東西會一閃一閃，是她找不到時的提示。
+       動畫關掉之後那個字不會變暗（沒有 animation-fill-mode，會回到自己的
+       opacity 1），但它就完全不顯眼了——提示等於沒有了。
+       所以用一圈靜態的光暈代替那個「閃」，不會動的人也看得出是哪一個。
+       opacity 那一行是保險：動畫掛在 .twinkle 裡面的 <text>，
+       哪天有人給它加了 fill-mode，這一行會擋住它停在 .35。 */
+    .twinkle { filter: drop-shadow(0 0 2px #ffd23f) drop-shadow(0 0 5px #f0a33d); }
+    .twinkle text { opacity: 1 !important; }
+  }
 
 </style>
 </head>
@@ -1083,7 +1121,10 @@ const SCENARIOS = [
         ],
       },
       callmom: {
-        text: '媽媽衝出來把火關掉，蓋上鍋蓋，火熄了。<br><br>但這時候你聞到另一種味道——很濃的瓦斯味，整個廚房都是。',
+        // 火熄了為什麼還會有瓦斯味：爐火被蓋熄了，但爐子的開關沒關，
+        // 瓦斯還在流出來。這是真實常見的情況，但要寫出來小孩才串得起來。
+        text: '媽媽衝出來蓋上鍋蓋，火熄了。<br><br>但爐子的開關還沒關，你聽到「嘶——」的聲音，' +
+              '聞到一股很濃的怪味道。<br><br>火熄了，瓦斯卻還一直在跑出來。',
         hint: '瓦斯遇到一點點火花會怎麼樣？',
         choices: [
           { label: '把電燈打開看清楚', to: 'spark' },
@@ -1564,7 +1605,7 @@ const SCENARIOS = [
         ],
       },
       fakeverify: {
-        text: '電話接通了，另一個人說：<br><br>「對，這裡是警察局。我幫你查一下案件編號。」<br><br>過了一會兒，他說：<br><br>「查到了，是真的。你要配合前一位警察。」<br><br>你不知道的是——這支電話本來就是他們自己的人接的。',
+        text: '電話接通了，另一個人說：<br><br>「對，這裡是警察局。我幫你查一下案件編號。」<br><br>過了一會兒，他說：<br><br>「查到了，是真的。你要配合前一位警察。」<br><br>你不知道的是——這支電話根本不是警察局，接電話的就是剛才那個人的同伴。',
         hint: '查證不是「再問一次同一個人」，是換一個他給不了你的來源。',
         choices: [
           { label: '覺得已經查證成功了，照他們的指示做', to: 'bad' },
@@ -7152,9 +7193,46 @@ function renderMoment() {
   if (back) back.onclick = () => { Sfx.tap(); curMoment = null; momentPick = -1; view = 'town'; render(); };
 }
 
+/* ===== 接住「上一頁」 =====
+   平板上小孩很容易滑到螢幕邊緣觸發上一頁，或按到手機的返回鍵。
+   原本一滑就整個跳出遊戲，正在走的劇本也斷掉——對她是很挫折的事。
+
+   做法：離開開始畫面時往歷史裡多塞一格，上一頁就吃掉那一格，
+   我們把它接起來當成「回上一層」。開始畫面不塞，
+   所以在開始畫面按上一頁還是真的離開（不然會變成退不出去的網頁）。
+
+   一次只塞一格：回上一層之後 render() 會再塞一格，
+   所以每按一次就退一層，不會累積出一長串要按很多次的歷史。 */
+let navArmed = false;
+function armBack() {
+  if (navArmed || view === 'menu') return;
+  navArmed = true;
+  try { history.pushState({ t: 'v' }, ''); } catch (e) {}
+}
+// 從每個畫面往回退一層是退到哪裡
+function backView() {
+  if (view === 'story' || view === 'ending' || view === 'moment')
+    return fromTown ? 'town' : 'menu';
+  return 'menu';                      // town / gallery / box / who
+}
+function goBack() {
+  const to = backView();
+  if (to === 'town') { fromTown = false; townFree = false; townMsg = null; }
+  curMoment = null;
+  view = to;
+  render();
+}
+window.addEventListener('popstate', () => {
+  navArmed = false;                   // 剛剛那一格已經被吃掉了
+  if (view === 'menu') return;        // 根畫面：讓它真的離開
+  Sfx.tap();
+  goBack();
+});
+
 function render() {
   setTod(todNow());
   setRoleAttr();
+  armBack();
   if (view === 'menu') renderMenu();
   else if (view === 'gallery') renderGallery();
   else if (view === 'who') renderWho();
@@ -7264,6 +7342,11 @@ function renderMenu() {
         🌱 <b>大部分的人都是安全、願意幫忙的。</b><br>
         這些故事是在練習：少數真的遇到危險的時候，你可以怎麼保護自己。
       </div>
+      ${myRole() === 'little' ? `
+      <!-- 只在小小孩那個角色出現，而且是講給大人看的。
+           故事裡有幾篇的關鍵是「聽出語氣不對」，那不是認得字就讀得出來的。 -->
+      <div class="grownup">👨‍👩‍👧 這個角色的故事建議<b>大人陪著一起唸</b>。
+        有幾篇的重點是聽出對方的語氣不對勁，唸出來比自己看容易發現。</div>` : ''}
       <div class="modes">
         <button id="daybtn" style="background:#2f6f8f; color:#fff;">
           🏘️ 小鎮<small>今天發生了什麼</small>

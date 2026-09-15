@@ -812,6 +812,36 @@
       if (/^沒有|^不是/.test(ROLES[r].label))
         fails.push('「主角是'+ROLES[r].label+'」不成句');
     });
+
+    /* ⑬ 上一頁
+       平板上小孩很容易滑到螢幕邊緣觸發上一頁，或按到手機的返回鍵。
+       原本一滑就整個跳出遊戲，正在走的劇本也斷掉。 */
+    navArmed = false;                       // 先把前面那些 render() 留下的狀態清掉
+    view='menu'; render();
+    var h0 = history.length;
+    view='menu'; render();
+    if (history.length !== h0) fails.push('在開始畫面也往歷史裡塞東西');
+    view='town'; townMsg=null; render();
+    if (history.length <= h0) fails.push('進小鎮沒有先接住上一頁');
+    // 重畫很多次只能塞一格，不然她要按十幾次上一頁才退得出去
+    var h1 = history.length;
+    for (var rr=0; rr<6; rr++) render();
+    if (history.length !== h1) fails.push('每重畫一次就多塞一格歷史（上一頁會退不出去）');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    if (view !== 'menu') fails.push('在小鎮按上一頁沒有回到開始畫面（現在是 '+view+'）');
+    /* 從小鎮點進去的故事，上一頁要回小鎮，不是跳回選單。
+       要先站在小鎮才算數：startScenario 看到 view==='menu' 會把
+       fromTown 清掉（從選單進來的故事本來就不該回小鎮）。 */
+    navArmed = false;
+    view='town'; townMsg=null; render();
+    fromTown = true; townFree = true; startScenario('road');
+    if (view !== 'story') fails.push('進不了故事，這一關等於沒驗');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    if (view !== 'town') fails.push('從小鎮進去的故事，按上一頁要回小鎮（現在是 '+view+'）');
+    // 開始畫面不攔，不然會變成一個退不出去的網頁
+    view='menu'; render();
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    if (view !== 'menu') fails.push('在開始畫面按上一頁不該被攔下來');
   } catch(e){ errs.push('THROW '+e.message+' | '+(e.stack||'').split('\n')[1]); }
 
   var pre=document.createElement('pre'); pre.id='R';
