@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#6b4a9e" />
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
-<meta name="build" content="2026.09.15-91d9b6" />
+<meta name="build" content="2026.09.15-22a7bd" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -5985,7 +5985,8 @@ const RANK = { bad: 1, escape: 2, good: 3, best: 4 };
 const ROLES = {
   big:    { label: '姊姊', sib: '妹妹', dress: '#ff8fb8', sibDress: '#ffd23f' },
   little: { label: '妹妹', sib: '姊姊', dress: '#ffd23f', sibDress: '#ff8fb8' },
-  only:   { label: '沒有兄弟姊妹', sib: '',  dress: '#ff8fb8', sibDress: '#ffd23f' },
+  // 「沒有兄弟姊妹」接在「主角是⋯」後面不成句，所以標籤改成名詞
+  only:   { label: '獨生子女', sib: '',  dress: '#ff8fb8', sibDress: '#ffd23f' },
 };
 function defaultPlayers() {
   return [{ id: 'p1', name: '姊姊', emoji: '⭐', role: 'big' },
@@ -7192,14 +7193,17 @@ function renderWho() {
               <span class="ico">${p.emoji}</span>
               <span style="flex:1; min-width:0;">
                 <span class="t">${esc(p.name)}</span>
-                <span class="g">${esc(ROLES[p.role] ? ROLES[p.role].label : '姊姊')}　·　完美通關 ${done} / ${SCENARIOS.length}</span>
+                <span class="g">扮演${esc(ROLES[p.role] ? ROLES[p.role].label : '姊姊')}　·　完美通關 ${done} / ${SCENARIOS.length}</span>
               </span>
               ${p.id === me ? '<span class="done">✅</span>' : '<span class="done" style="opacity:.25;">▶️</span>'}
             </button>`;
         }).join('')}
       </div>
       <div class="rolebox">
-        <div class="roleq">「${esc(who().name)}」在家裡是：</div>
+        <!-- 這裡問的是「這次要當誰」，不是「這個人是誰」。
+             本來寫成「『爸比』在家裡是：姊姊／妹妹」，爸比在家裡當然
+             不會是姊姊——大人自己開一個玩家就會讀到一句不通的話。 -->
+        <div class="roleq">「${esc(who().name)}」玩的時候，主角是：</div>
         <div class="roles">
           ${Object.keys(ROLES).map(r => `
             <button class="mini role-pick${myRole() === r ? ' on' : ''}" data-role="${r}">${esc(ROLES[r].label)}</button>`).join('')}
@@ -7207,7 +7211,8 @@ function renderWho() {
         <div class="rolenote">
           有些小事只有當姊姊才會遇到（像「妹妹把你的色筆弄斷了」），
           有些只有當妹妹才會遇到。選對了才不會看到對不上的內容。<br>
-          主角的裙子顏色也會跟著換。
+          主角的裙子顏色也會跟著換。<br>
+          大人玩也選一個，這是在選「這次要當誰」。
         </div>
       </div>
       <button id="addwho" style="width:100%; margin-top:10px; background:#a8e6c0;">＋ 新增一個玩家</button>

@@ -79,14 +79,26 @@
       return document.elementFromPoint(r.left + r.width * (fx === undefined ? 0.5 : fx),
                                        r.top + r.height/2);
     }
+    /* 打的是「家」的名牌，不是整組的外框中心。
+       外框中心是那棟房子的屋頂，而藏的東西本來就可能剛好蓋在屋頂上
+       （[140,148] 離家的外框中心只有 12），那時候點下去撿到寶物是對的，
+       不是壞掉。名牌才是設計上保證點得到的那一塊，天色遮罩那個
+       bug 一樣蓋得到名牌，所以改打名牌不會漏掉它。 */
     function hitTest(label){
       view='town'; townMsg=null; curMoment=null; render();
-      var g = document.querySelector('.spot[data-spot="home"]');
-      if (!g) { fails.push(label+'：地圖沒畫出來'); return; }
-      var el = hitAt(g);
+      var svg = document.querySelector('.town svg');
+      var pl = PLACES.filter(function(p){ return p.key==='home'; })[0];
+      if (!svg || !pl) { fails.push(label+'：地圖沒畫出來'); return; }
+      svg.scrollIntoView({ block: 'center' });
+      var pt = svg.createSVGPoint();
+      pt.x = pl.plate[0]; pt.y = pl.plate[1];
+      pt = pt.matrixTransform(svg.getScreenCTM());
+      var el = document.elementFromPoint(pt.x, pt.y);
       if (!el || !el.closest || !el.closest('.spot'))
         fails.push(label+' 點不到地點，被 <'+(el?el.tagName:'null')+'> 擋住了');
     }
+    // 藏的東西是跟「現在幾分」綁的，不釘死的話這一關會隨著跑測試的時間忽過忽不過
+    setMin(10 * 60 + 4);
     for (var wd=1; wd<=60 && weatherToday()!=='sun'; wd++) setDay(wd);
     TODS.forEach(function(t){ setTodStub(t); hitTest('晴天 '+t); });
     for (var wr=1; wr<=60 && weatherToday()!=='rain'; wr++) setDay(wr);
@@ -776,6 +788,30 @@
     view='menu'; render(); view='town'; render();
     if (Sfx.trackName() !== picked)
       fails.push('她挑了「'+picked+'」，一回小鎮就被搶回去了');
+
+    /* ⑫ 換人玩那一頁問的是「這次要當誰」，不是「這個人是誰」。
+       本來寫成「『爸比』在家裡是：姊姊／妹妹」——大人自己開一個玩家
+       就會讀到一句不通的話。用一個叫「爸比」的玩家驗這件事。 */
+    savePlayers([{ id: 'p1', name: '爸比', emoji: '🦊', role: 'little' }]);
+    setWho('p1');
+    view='who'; render();
+    var rq = document.querySelector('.roleq');
+    if (!rq) fails.push('換人玩那一頁沒有選角色的那一題');
+    else {
+      if (rq.textContent.indexOf('主角') < 0)
+        fails.push('選角色問的不是「主角是誰」：'+rq.textContent.trim());
+      if (/在家裡是|在家中是/.test(rq.textContent))
+        fails.push('「'+rq.textContent.trim()+'」——爸比在家裡不會是姊姊或妹妹');
+    }
+    var wsub = document.querySelector('.who-pick .g');
+    if (!wsub) fails.push('玩家列表沒有那一行小字');
+    else if (wsub.textContent.indexOf('扮演') !== 0)
+      fails.push('玩家列表把「扮演誰」寫成「他是誰」了：'+wsub.textContent.trim());
+    // 三個選項接在「主角是⋯」後面都要成句，所以不能是「沒有兄弟姊妹」那種句子
+    Object.keys(ROLES).forEach(function(r){
+      if (/^沒有|^不是/.test(ROLES[r].label))
+        fails.push('「主角是'+ROLES[r].label+'」不成句');
+    });
   } catch(e){ errs.push('THROW '+e.message+' | '+(e.stack||'').split('\n')[1]); }
 
   var pre=document.createElement('pre'); pre.id='R';
