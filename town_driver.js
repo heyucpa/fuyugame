@@ -134,7 +134,10 @@
       var evDay = todayStamp(), evTod = todNow(), whos = {};
       for (var dd=1; dd<=60; dd++){ setDay(dd); if (periodEvent(evTod).place!=='home') break; }
       view='town'; townMsg=null; render();
-      for (var t2=0;t2<14;t2++){
+      /* 點 40 下而不是 14 下：家裡的句子池本來是 15 句，但點到第 12 下
+         會解鎖「變熟」的句子，池子中途變大、索引整個位移，
+         14 下就有可能剛好跳過某一個人。這是走查不夠穩，不是程式的問題。 */
+      for (var t2=0;t2<40;t2++){
         spot('home').onclick();
         var nm = document.querySelector('.says b');
         if (!nm){ fails.push('點家裡沒有人講話'); break; }

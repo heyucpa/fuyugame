@@ -338,7 +338,7 @@ const PLACE_POOL = {
   school: ['bully', 'quake', 'money', 'candy', 'knife', 'wish', 'sisbully'],
   home:   ['home', 'fire', 'fakecop', 'shop', 'imposter', 'exam', 'online', 'secret', 'scam'],
   shop:   ['lost', 'breakfast', 'sislost'],
-  park:   ['road', 'gate'],
+  park:   ['road', 'gate', 'parkdare', 'parkdark'],
   dojo:   ['dojo', 'dojopower', 'dojohurt'],
   pool:   ['pool', 'poolsave', 'poolphone'],
 };
