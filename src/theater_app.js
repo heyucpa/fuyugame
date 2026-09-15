@@ -3,7 +3,9 @@ const Sfx = (() => {
   let ctx = null;
   let muted = localStorage.getItem('theater-muted') === '1';
   let bgmOn = localStorage.getItem('theater-bgm') !== '0';
-  let trackId = localStorage.getItem('theater-track') || 'fairy';
+  // 預設是小鎮那一首。她自己按過音樂鈕之後就以她挑的為準（picked）
+  let trackId = localStorage.getItem('theater-track') || 'town';
+  let picked = localStorage.getItem('theater-trackpick') === '1';
   let bgmTimer = null, bgmGain = null, bgmAlive = false;
   function get() {
     if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
@@ -24,6 +26,16 @@ const Sfx = (() => {
   }
   /* 背景音樂：輕柔、音量壓低，不要蓋過讀故事 */
   const TRACKS = {
+    /* 🏘️ 小鎮的早晨 —— 小鎮畫面的預設曲
+       她說想要動物森友會的音樂。那是任天堂的東西，不能照抄，
+       所以寫的是一首「同一種心情」的原創曲：F 大調、不趕、
+       長短音交錯帶一點搖擺，句尾留白讓它像在散步而不是在行軍。
+       四句：出門、走遠一點、抬頭看一下、回到原地。 */
+    town: { name: '🏘️ 小鎮的早晨', notes: [
+      [440,.3],[523,.15],[587,.45],[523,.15],[466,.3],[440,.3],[392,.45],[0,.15],
+      [349,.3],[440,.15],[523,.45],[587,.15],[659,.3],[587,.3],[523,.6],[0,.15],
+      [587,.3],[698,.15],[784,.45],[698,.15],[659,.3],[587,.3],[523,.45],[0,.15],
+      [466,.3],[440,.15],[392,.45],[440,.15],[349,.75],[0,.5] ] },
     fairy: { name: '🏰 童話圓舞曲', notes: [
       [523,.45],[659,.22],[784,.22],[880,.45],[784,.22],[659,.22],
       [698,.45],[880,.22],[1047,.22],[880,.45],[784,.22],[659,.22],
@@ -43,7 +55,7 @@ const Sfx = (() => {
     if (!bgmAlive || muted || !bgmOn) { bgmAlive = false; return; }
     const c = get(); if (!c) { bgmAlive = false; return; }
     if (!bgmGain) { bgmGain = c.createGain(); bgmGain.gain.value = 0.055; bgmGain.connect(c.destination); }
-    const notes = (TRACKS[trackId] || TRACKS.fairy).notes;
+    const notes = (TRACKS[trackId] || TRACKS.town).notes;
     let t = c.currentTime + 0.05;
     notes.forEach(([f, d]) => {
       if (f > 0) {
@@ -79,13 +91,27 @@ const Sfx = (() => {
       if (bgmOn) { get(); startBgm(); } else stopBgm();
       return bgmOn;
     },
-    trackName() { return (TRACKS[trackId] || TRACKS.fairy).name; },
+    trackName() { return (TRACKS[trackId] || TRACKS.town).name; },
     nextTrack() {
       const ids = Object.keys(TRACKS);
       trackId = ids[(ids.indexOf(trackId) + 1) % ids.length];
-      localStorage.setItem('theater-track', trackId);
+      picked = true;
+      try {
+        localStorage.setItem('theater-track', trackId);
+        localStorage.setItem('theater-trackpick', '1');
+      } catch (e) {}
       stopBgm(); get(); startBgm();
       return TRACKS[trackId].name;
+    },
+    /* 進小鎮時換成小鎮那一首。只在她自己沒挑過的時候換——
+       她挑了星星搖籃曲卻每次回小鎮就被搶走，那才討厭。 */
+    useTrack(id) {
+      if (picked || !TRACKS[id]) return;
+      // 先寫回去再比：舊版本存的是別首，不寫的話她下次打開還是聽到舊的
+      try { localStorage.setItem('theater-track', id); } catch (e) {}
+      if (trackId === id) return;
+      trackId = id;
+      if (bgmAlive) { stopBgm(); startBgm(); }
     },
     tap() { tone(680, 0.07, 0.12, 'triangle'); },
     page() { tone(520, 0.09, 0.1, 'sine'); tone(700, 0.1, 0.09, 'sine', 0.07); },
@@ -968,6 +994,7 @@ function renderBox() {
 }
 
 function renderTown() {
+  Sfx.useTrack('town');   // 小鎮預設放小鎮那一首（她自己挑過就不換）
   const tod = todNow(), ev = periodEvent(tod), wx = weatherToday();
   const done = ev.id ? isPeriodDone(tod) : false;
   const stage = townStage(), friend = loadFriend();

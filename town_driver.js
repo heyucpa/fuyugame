@@ -759,6 +759,23 @@
     var all={}; SCENARIOS.forEach(function(s){ all[s.id]={}; Object.keys(s.endings).forEach(function(k){ all[s.id][k]=1; }); });
     localStorage.setItem(pKey('ends'), JSON.stringify(all));
     if (townStage() <= st0) fails.push('圖鑑蒐集滿了，小鎮階段卻沒有變（'+st0+' → '+townStage()+'）');
+
+    /* ⑪ 小鎮的音樂
+       她要的是動物森友會那一首。那是任天堂的曲子不能照抄，
+       所以放的是同一種心情的原創曲，名字就叫「小鎮的早晨」。
+       這一關驗的是：進小鎮預設放它，但她自己挑過就不准再搶走。 */
+    localStorage.removeItem('theater-track');
+    view='town'; townMsg=null; render();
+    if (Sfx.trackName().indexOf('小鎮') < 0)
+      fails.push('進小鎮放的不是小鎮那一首（'+Sfx.trackName()+'）');
+    // 要寫回去，不然舊版本存的曲子會一直跟著她
+    if (localStorage.getItem('theater-track') !== 'town')
+      fails.push('進小鎮沒有把預設的曲子記成小鎮那一首');
+    var picked = Sfx.nextTrack();          // 她自己按了音樂鈕挑另一首
+    if (picked.indexOf('小鎮') >= 0) picked = Sfx.nextTrack();
+    view='menu'; render(); view='town'; render();
+    if (Sfx.trackName() !== picked)
+      fails.push('她挑了「'+picked+'」，一回小鎮就被搶回去了');
   } catch(e){ errs.push('THROW '+e.message+' | '+(e.stack||'').split('\n')[1]); }
 
   var pre=document.createElement('pre'); pre.id='R';
