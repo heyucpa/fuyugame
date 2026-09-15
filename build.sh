@@ -20,6 +20,7 @@ cat src/theater_head.html \
     src/art_scenes_h.js \
     src/art_scenes_i.js \
     src/art_scenes_intro.js \
+    src/art_animals.js \
     src/art_town.js \
     src/art_scenes_sis.js \
     src/art_scenes_pd.js \

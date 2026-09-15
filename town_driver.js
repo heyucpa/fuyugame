@@ -346,6 +346,31 @@
     if (!localStorage.getItem('theater-ends:p2')) fails.push('清除紀錄把別的玩家也清掉了');
     localStorage.clear();
 
+    /* 除了家人以外，鎮上的居民都要是動物。
+       家人不能換：那三個對應的是她生活裡真正的人，
+       而且「妹妹被欺負了」「妹妹不見了」那兩篇裡也是同一個。 */
+    var ZOO = ['兔', '貓', '熊', '獅', '企鵝'];
+    Object.keys(NPC).forEach(function(k){
+      NPC[k].forEach(function(p){
+        var isZoo = ZOO.some(function(z){ return p.who.indexOf(z) >= 0; });
+        if (k === 'home') {
+          if (isZoo) fails.push('家裡的「'+p.who+'」被換成動物了，家人要維持人類');
+        } else if (!isZoo) {
+          fails.push('「'+k+'」的「'+p.who+'」還是人，鎮上的居民要是動物');
+        }
+      });
+    });
+    // 這兩種是指定要有的
+    var whoAll = Object.keys(NPC).map(function(k){
+      return NPC[k].map(function(p){ return p.who; }).join(''); }).join('');
+    if (whoAll.indexOf('企鵝') < 0) fails.push('鎮上沒有企鵝');
+    if (whoAll.indexOf('兔') < 0) fails.push('鎮上沒有兔子');
+    // 小事的內文不能還留著舊的人類稱呼
+    MOMENTS.forEach(function(m){
+      var all = m.text + m.choices.map(function(c){ return c.label + c.reply; }).join('');
+      if (/警衛伯伯|店員阿姨/.test(all)) fails.push(m.id+' 還留著舊的稱呼（警衛伯伯／店員阿姨）');
+    });
+
     /* 點到沒有東西的地方（草地、樹、天空）也要有反應。
        這個鎮如果只有六個地方會回應，她點兩下就再也不看別的地方了。 */
     setDay(3); setTodStub('day'); setMin(9 * 60);

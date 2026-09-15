@@ -80,25 +80,28 @@ const TOWN_TINT = {
 };
 
 /* 每個地點：畫什麼、名牌放哪、小人站哪。
+   鎮上的居民除了家人以外都是動物（見 art_animals.js）。
+   衣服顏色維持原本那五個人的顏色——她是靠顏色認人的。
+
    stand 都刻意閃開名牌與房子，免得人疊在字上面——但不能閃太遠。
    家本來是 [246,186]，離名牌 88（其他地方都是 45～59），
    按了「家」她會走到畫面的右下角，看起來像跑掉不像回家。
    走查有在擋這個距離。 */
 const PLACES = [
   { key: 'school', name: '學校',  emoji: '🏫', plate: [56, 48],   stand: [108, 76],
-    npc: [102, 36], npcArt: () => ADULT(102, 36, 0.4, { color: '#5e8f78' }),
+    npc: [102, 36], npcArt: () => RABBIT(102, 36, 0.4),        // 兔子老師
     art: lit => SCHOOL(56, 38, lit) },
   { key: 'dojo',   name: '道館',  emoji: '🥋', plate: [258, 48],  stand: [212, 76],
-    npc: [226, 36], npcArt: () => ADULT(226, 36, 0.4, { color: '#33224a' }),
+    npc: [226, 36], npcArt: () => LION(226, 36, 0.4),          // 獅子教練
     art: lit => HOUSE(258, 38, 48, 28, '#e8e0f5', '#7d6aa8', lit) },
   { key: 'shop',   name: '商店街', emoji: '🛒', plate: [44, 122],  stand: [96, 140],
-    npc: [80, 108], npcArt: () => ADULT(80, 108, 0.4, { color: '#e8a33d' }),
+    npc: [80, 108], npcArt: () => CAT(80, 108, 0.4),           // 貓店長
     art: lit => HOUSE(44, 112, 54, 26, '#fff4d6', '#e8a33d', lit) },
   { key: 'park',   name: '公園',  emoji: '🌳', plate: [158, 108], stand: [200, 124],
-    npc: [196, 96], npcArt: () => ADULT(196, 96, 0.4, { color: '#7f9ab8' }),
+    npc: [196, 96], npcArt: () => BEAR(196, 96, 0.4),          // 熊伯伯
     art: () => TREE(136, 104, 1.5) + TREE(180, 102, 1.2, '#a8e6c0') + TREE(158, 112, 1.1) },
   { key: 'pool',   name: '泳池',  emoji: '🏊', plate: [266, 122], stand: [224, 140],
-    npc: [238, 90], npcArt: () => ADULT(238, 90, 0.4, { color: '#e85a92' }),
+    npc: [238, 90], npcArt: () => PENGUIN(238, 90, 0.4),       // 企鵝救生員
     art: () => '<rect x="240" y="96" width="52" height="24" rx="4" fill="#7fc1ed" stroke="#33224a" stroke-width="2"/>' +
                '<path d="M244 104 q6 -3 12 0 q6 3 12 0 q6 -3 12 0" stroke="#a8d8f5" stroke-width="2.4" fill="none"/>' },
   { key: 'home',   name: '家',    emoji: '🏠', plate: [158, 178], stand: [210, 168],
