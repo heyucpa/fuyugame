@@ -254,8 +254,27 @@
 
       var box0 = Object.keys(loadTreasures()).length;
       var hcard = document.querySelector('.card');
+      if (!document.querySelector('.foundbox').hidden) fails.push('還沒撿到，慶祝的框就開著');
       document.querySelector('.hide').onclick({ stopPropagation: function(){} });
       if (document.querySelector('.card') !== hcard) fails.push('撿到東西整張卡片就重畫了，畫面會閃');
+
+      /* 撿到的那一刻要把東西放到畫面中間。
+         本來只是「東西消失 + 下面那行換字」，撿到跟沒撿到幾乎沒差別。 */
+      var fb = document.querySelector('.foundbox');
+      if (fb.hidden) fails.push('撿到東西沒有跳出慶祝的框');
+      else {
+        if (getComputedStyle(fb).position !== 'absolute')
+          fails.push('慶祝的框不是浮在地圖上面的，會把版面推下去');
+        if (!document.querySelector('.townwrap').contains(fb))
+          fails.push('慶祝的框不在地圖那一塊裡面');
+        var ft = fb.textContent;
+        if (ft.indexOf(treasureById(h.id).name) < 0) fails.push('慶祝的框沒有寫是什麼東西');
+        if (ft.indexOf(treasureById(h.id).line) < 0) fails.push('慶祝的框沒有那一句說明');
+        if (fb.querySelectorAll('.spark').length < 4) fails.push('沒有撒星星');
+        if (!fb.querySelector('.femo')) fails.push('沒有把那個東西放大');
+        fb.onclick();
+        if (!fb.hidden) fails.push('點了慶祝的框卻關不掉');
+      }
       if (view!=='town') fails.push('找到東西竟然離開了小鎮');
       if (foundNow() !== h.id) fails.push('找到的東西沒有記起來');
       if (foundCountToday() < 1) fails.push('今天找到幾個沒有加上去');

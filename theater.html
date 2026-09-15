@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#6b4a9e" />
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
-<meta name="build" content="2026.09.15-5c066e" />
+<meta name="build" content="2026.09.15-a9fec2" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -426,6 +426,46 @@
           line-height: 1.65; margin: 6px 0 10px; }
   .hunt b { color: #6b4a9e; }
   /* 十二格一定要排得下一行，所以用 flex 讓它自己縮，不要固定寬度 */
+  /* 撿到寶物的那一下：飛到畫面中間、放大、撒星星。
+     跟講話框一樣浮在地圖上，不推版面。 */
+  .foundbox { position: absolute; inset: 0; display: flex;
+              align-items: center; justify-content: center; padding: 10px; }
+  .foundbox[hidden] { display: none; }
+  .foundcard {
+    background: #fffaec; border: 3px solid #e8c46a; border-radius: 18px;
+    padding: 12px 18px 10px; text-align: center; max-width: 250px;
+    box-shadow: 0 6px 0 rgba(0,0,0,.14), 0 12px 28px rgba(0,0,0,.24);
+    animation: found-pop .42s cubic-bezier(.2,1.5,.4,1);
+  }
+  @keyframes found-pop {
+    0%   { transform: scale(.4); opacity: 0; }
+    70%  { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(1); }
+  }
+  /* 星星從中間往外散，六顆各自延遲，看起來像一直在閃 */
+  .bigfind { position: relative; height: 62px; display: flex;
+             align-items: center; justify-content: center; }
+  .bigfind .femo { font-size: 46px; line-height: 1; animation: bob 1.8s ease-in-out infinite; }
+  .spark { position: absolute; font-size: 15px; animation: spark 1.5s ease-out infinite; }
+  @keyframes spark {
+    0%   { transform: translate(0,0) scale(.3); opacity: 0; }
+    35%  { opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) scale(1.1); opacity: 0; }
+  }
+  .spark.s0 { --dx: -42px; --dy: -22px; animation-delay: 0s; }
+  .spark.s1 { --dx:  42px; --dy: -22px; animation-delay: .25s; }
+  .spark.s2 { --dx: -34px; --dy:  22px; animation-delay: .5s; }
+  .spark.s3 { --dx:  34px; --dy:  22px; animation-delay: .75s; }
+  .spark.s4 { --dx:   0px; --dy: -34px; animation-delay: 1s; }
+  .spark.s5 { --dx:   0px; --dy:  32px; animation-delay: 1.25s; }
+  .fname { font-size: 16px; font-weight: 900; color: #6b4a9e; margin-top: 4px; }
+  .fline { font-size: 12.5px; color: #8a7fa8; line-height: 1.6; margin-top: 4px; }
+  .fhint { font-size: 11px; font-weight: 800; color: #c9a055; margin-top: 7px; }
+  @media (prefers-reduced-motion: reduce) {
+    .foundcard, .bigfind .femo, .spark { animation: none; }
+    .spark { opacity: .8; }
+  }
+
   /* 進寶物圖鑑的那一顆。六十樣排不進小鎮那一行，細節留給圖鑑頁 */
   .boxbtn { display: block; margin: 7px auto 0; font-size: 13px; padding: 7px 16px;
             background: #fff; border-width: 2.5px; box-shadow: 0 3px 0 rgba(0,0,0,.12); }
@@ -6634,6 +6674,7 @@ function renderTown() {
         <div class="town">${townSVG(tod, marks, WHERE_NOW[tod], wx, stage,
                                     foundNow() ? null : hunt, huntStage() >= 2)}</div>
         <div class="saybox" hidden></div>
+        <div class="foundbox" hidden></div>
       </div>
       <div class="hunt">${huntHTML()}</div>
       <div class="townhint">${hint}</div>
@@ -6744,13 +6785,36 @@ function renderTown() {
     huntLine.querySelector('#tbox').onclick = () => { Sfx.tap(); showSay(null); view = 'box'; render(); };
   }
   paintHunt();
+  /* 撿到的那一刻要有一下。
+     本來只是「東西消失 + 下面那行換字」，撿到跟沒撿到幾乎沒差別——
+     她點了半天找到的東西，值得被放到畫面中間看一眼。
+     稀有的用比較高的音效。 */
+  const foundbox = app.querySelector('.foundbox');
+  function showFound(t) {
+    if (!t) { foundbox.hidden = true; foundbox.innerHTML = ''; return; }
+    foundbox.innerHTML = `
+      <div class="foundcard">
+        <div class="bigfind">
+          ${[0, 1, 2, 3, 4, 5].map(i =>
+            `<span class="spark s${i}">✨</span>`).join('')}
+          <span class="femo">${t.emoji}</span>
+        </div>
+        <div class="fname">${esc(t.name)}${t.rare ? ' <i class="rare">稀有</i>' : ''}</div>
+        <div class="fline">${esc(t.line)}</div>
+        <div class="fhint">點一下收起來</div>
+      </div>`;
+    foundbox.hidden = false;
+    foundbox.onclick = () => { Sfx.tap(); showFound(null); };
+  }
+
   hg.onclick = (e) => {
     if (foundNow()) return;                 // 這一輪已經找到了
     if (e && e.stopPropagation) e.stopPropagation();
-    Sfx.good();
+    (hunt.rare ? Sfx.best : Sfx.good)();
     recordFind(hunt.id);
     paintHunt();
     showSay(null);
+    showFound(hunt);
   };
 
   /* 十分鐘換一樣東西。她可能一直開著這一頁，所以要自己換，

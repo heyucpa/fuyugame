@@ -426,6 +426,46 @@
           line-height: 1.65; margin: 6px 0 10px; }
   .hunt b { color: #6b4a9e; }
   /* 十二格一定要排得下一行，所以用 flex 讓它自己縮，不要固定寬度 */
+  /* 撿到寶物的那一下：飛到畫面中間、放大、撒星星。
+     跟講話框一樣浮在地圖上，不推版面。 */
+  .foundbox { position: absolute; inset: 0; display: flex;
+              align-items: center; justify-content: center; padding: 10px; }
+  .foundbox[hidden] { display: none; }
+  .foundcard {
+    background: #fffaec; border: 3px solid #e8c46a; border-radius: 18px;
+    padding: 12px 18px 10px; text-align: center; max-width: 250px;
+    box-shadow: 0 6px 0 rgba(0,0,0,.14), 0 12px 28px rgba(0,0,0,.24);
+    animation: found-pop .42s cubic-bezier(.2,1.5,.4,1);
+  }
+  @keyframes found-pop {
+    0%   { transform: scale(.4); opacity: 0; }
+    70%  { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(1); }
+  }
+  /* 星星從中間往外散，六顆各自延遲，看起來像一直在閃 */
+  .bigfind { position: relative; height: 62px; display: flex;
+             align-items: center; justify-content: center; }
+  .bigfind .femo { font-size: 46px; line-height: 1; animation: bob 1.8s ease-in-out infinite; }
+  .spark { position: absolute; font-size: 15px; animation: spark 1.5s ease-out infinite; }
+  @keyframes spark {
+    0%   { transform: translate(0,0) scale(.3); opacity: 0; }
+    35%  { opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) scale(1.1); opacity: 0; }
+  }
+  .spark.s0 { --dx: -42px; --dy: -22px; animation-delay: 0s; }
+  .spark.s1 { --dx:  42px; --dy: -22px; animation-delay: .25s; }
+  .spark.s2 { --dx: -34px; --dy:  22px; animation-delay: .5s; }
+  .spark.s3 { --dx:  34px; --dy:  22px; animation-delay: .75s; }
+  .spark.s4 { --dx:   0px; --dy: -34px; animation-delay: 1s; }
+  .spark.s5 { --dx:   0px; --dy:  32px; animation-delay: 1.25s; }
+  .fname { font-size: 16px; font-weight: 900; color: #6b4a9e; margin-top: 4px; }
+  .fline { font-size: 12.5px; color: #8a7fa8; line-height: 1.6; margin-top: 4px; }
+  .fhint { font-size: 11px; font-weight: 800; color: #c9a055; margin-top: 7px; }
+  @media (prefers-reduced-motion: reduce) {
+    .foundcard, .bigfind .femo, .spark { animation: none; }
+    .spark { opacity: .8; }
+  }
+
   /* 進寶物圖鑑的那一顆。六十樣排不進小鎮那一行，細節留給圖鑑頁 */
   .boxbtn { display: block; margin: 7px auto 0; font-size: 13px; padding: 7px 16px;
             background: #fff; border-width: 2.5px; box-shadow: 0 3px 0 rgba(0,0,0,.12); }

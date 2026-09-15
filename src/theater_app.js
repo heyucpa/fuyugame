@@ -891,6 +891,7 @@ function renderTown() {
         <div class="town">${townSVG(tod, marks, WHERE_NOW[tod], wx, stage,
                                     foundNow() ? null : hunt, huntStage() >= 2)}</div>
         <div class="saybox" hidden></div>
+        <div class="foundbox" hidden></div>
       </div>
       <div class="hunt">${huntHTML()}</div>
       <div class="townhint">${hint}</div>
@@ -1001,13 +1002,36 @@ function renderTown() {
     huntLine.querySelector('#tbox').onclick = () => { Sfx.tap(); showSay(null); view = 'box'; render(); };
   }
   paintHunt();
+  /* 撿到的那一刻要有一下。
+     本來只是「東西消失 + 下面那行換字」，撿到跟沒撿到幾乎沒差別——
+     她點了半天找到的東西，值得被放到畫面中間看一眼。
+     稀有的用比較高的音效。 */
+  const foundbox = app.querySelector('.foundbox');
+  function showFound(t) {
+    if (!t) { foundbox.hidden = true; foundbox.innerHTML = ''; return; }
+    foundbox.innerHTML = `
+      <div class="foundcard">
+        <div class="bigfind">
+          ${[0, 1, 2, 3, 4, 5].map(i =>
+            `<span class="spark s${i}">✨</span>`).join('')}
+          <span class="femo">${t.emoji}</span>
+        </div>
+        <div class="fname">${esc(t.name)}${t.rare ? ' <i class="rare">稀有</i>' : ''}</div>
+        <div class="fline">${esc(t.line)}</div>
+        <div class="fhint">點一下收起來</div>
+      </div>`;
+    foundbox.hidden = false;
+    foundbox.onclick = () => { Sfx.tap(); showFound(null); };
+  }
+
   hg.onclick = (e) => {
     if (foundNow()) return;                 // 這一輪已經找到了
     if (e && e.stopPropagation) e.stopPropagation();
-    Sfx.good();
+    (hunt.rare ? Sfx.best : Sfx.good)();
     recordFind(hunt.id);
     paintHunt();
     showSay(null);
+    showFound(hunt);
   };
 
   /* 十分鐘換一樣東西。她可能一直開著這一頁，所以要自己換，
