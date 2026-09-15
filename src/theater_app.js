@@ -1710,32 +1710,15 @@ function renderGallery() {
   document.getElementById('gal-back').onclick = () => { Sfx.tap(); view = 'menu'; render(); };
 }
 
-/* 安全提醒要不要出現在結局頁。
-   這句話的工作是：不要讓遊戲教出「每個人都很危險」。
-   但每一頁都放，看過幾十次之後就只是雜訊——她會直接跳過，
+/* 「大部分的人都是安全、願意幫忙的」只留在開始畫面，結局頁不再出現。
+
+   這句話的工作是不要讓遊戲教出「每個人都很危險」，
+   但那是一句「進來之前先知道」的話，不是每走完一篇都要再講一次的話。
+   她一次玩很多篇，同一段字看過幾十次之後只會變成要跳過的東西，
    真正需要的時候反而看不進去。
 
    而且小鎮現在有一半的時段是純日常的小事，
-   那個結構本身就在講同一件事，比一行字有力得多。
-
-   所以分三段：前八個結局講完整的；之後只在她剛被嚇到的時候
-   （驚險、再試）補一句短的；做對的時候就不用再安慰她了。
-   次數是每個玩家各自算的，所以妹妹第一次玩還是會看到完整版。 */
-const SAFE_FULL_UNTIL = 8;
-function safeFrame(grade) {
-  if (seenTotal() <= SAFE_FULL_UNTIL) return `
-    <div class="safeframe mini">
-      <span class="sf-ico">🌱</span>
-      <span class="sf-txt">大部分的人都是安全、願意幫忙的。<br>
-        這個故事是在練習：<b>少數真的遇到危險的時候，你可以怎麼保護自己。</b></span>
-    </div>`;
-  if (grade === 'escape' || grade === 'bad') return `
-    <div class="safeframe mini one">
-      <span class="sf-ico">🌱</span>
-      <span class="sf-txt">大部分的人都是安全的——這是在練習<b>少數</b>的時候。</span>
-    </div>`;
-  return '';
-}
+   那個結構本身就在講同一件事，比一行字有力得多。 */
 
 function renderEnding() {
   const cons = isCons(cur);
@@ -1770,7 +1753,6 @@ function renderEnding() {
             <div class="talkbox-h">💬 跟爸爸媽媽討論</div>
             <div>${narrate(cur.talk || '把這個故事講給爸爸媽媽聽，問問看他們會怎麼做？')}</div>
           </div>
-          ${safeFrame(ending.grade)}
           ${replayOn() ? `
           <div class="replay">
             <h3>📖 回顧你的選擇</h3>

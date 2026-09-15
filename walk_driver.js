@@ -39,20 +39,15 @@
         if(document.querySelector('.lesson div').textContent.indexOf('學到了什麼')<0)
           fails.push(tag+' 沒有「學到了什麼」');
 
-        /* 安全提醒：前八個結局講完整的，之後只在驚險／再試 補一句短的。
-           每一頁都放的話，她看過幾十次就會直接跳過，
-           真正需要的時候反而看不進去。 */
-        var sf=document.querySelector('.safeframe'), g=sc.endings[key].grade;
-        if (seenTotal() <= SAFE_FULL_UNTIL) {
-          if(!sf || sf.textContent.indexOf('願意幫忙')<0) fails.push(tag+' 前八個結局要有完整的安全提醒');
-          safe.full++;
-        } else if (g==='escape' || g==='bad') {
-          if(!sf || !sf.className.match(/\bone\b/)) fails.push(tag+' 驚險／再試 要留一句短的安全提醒');
-          safe.one++;
-        } else {
-          if(sf) fails.push(tag+' 完美／只差一步 不該再出現安全提醒（她已經看過很多次了）');
-          safe.none++;
-        }
+        /* 「大部分的人都是安全、願意幫忙的」只留在開始畫面。
+           那是一句進來之前先知道的話，不是每走完一篇都要再講一次的話——
+           她一次玩很多篇，同一段字看過幾十次只會變成要跳過的東西。 */
+        if (document.querySelector('.safeframe')) { safe.none++;
+          fails.push(tag+' 結局頁又出現安全提醒了，那一段只放在開始畫面'); }
+        // 要看 #app 不能看 body：整支程式就內嵌在 body 的 <script> 裡，
+        // 用 body.textContent 比的話連註解都算進去，148 篇全部誤報
+        if (/大部分的人都是安全/.test(app.textContent)) { safe.none++;
+          fails.push(tag+' 結局頁還留著「大部分的人都是安全」那一段'); }
 
         var svg=document.querySelector('.scene svg');
         if(!svg){ fails.push(tag+' 沒有插圖'); }
@@ -61,11 +56,20 @@
                else seenArt[sig]=tag; }
       });
     });
+    /* 反過來也要驗：拿掉結局頁的那一段之後，
+       開始畫面那一段就是唯一還在講這件事的地方，不能連它也不見。 */
+    view='menu'; render();
+    var mf = document.querySelector('.safeframe');
+    if (!mf) fails.push('開始畫面沒有安全提醒了');
+    else {
+      if (mf.textContent.indexOf('願意幫忙') < 0) fails.push('開始畫面的安全提醒不完整');
+      if (mf.textContent.indexOf('保護自己') < 0) fails.push('開始畫面的安全提醒少了後半句');
+    }
   } catch(e) { errs.push('THROW '+e.message); }
 
   var pre=document.createElement('pre'); pre.id='R';
   pre.textContent=['走過結局 '+total,
-    '安全提醒：完整 '+safe.full+'、短版 '+safe.one+'、不顯示 '+safe.none,
+    '結局頁出現安全提醒 '+safe.none+' 次（應該是 0，那一段只放開始畫面）',
     '失敗 '+fails.length,
     '重複插圖 '+dup.length, 'JS 錯誤 '+errs.length, '',
     fails.concat(dup).concat(errs).slice(0,25).join('\n')].join('\n');
