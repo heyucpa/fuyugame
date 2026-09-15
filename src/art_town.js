@@ -99,8 +99,10 @@ const PLACES = [
     npc: [80, 108], npcArt: () => CAT(80, 108, 0.4),           // 貓店長
     art: lit => HOUSE(44, 112, 54, 26, '#fff4d6', '#e8a33d', lit) },
   { key: 'park',   name: '公園',  emoji: '🌳', plate: [158, 108], stand: [200, 124],
-    npc: [196, 96], npcArt: () => BEAR(196, 96, 0.4),          // 熊伯伯
-    art: () => TREE(136, 104, 1.5) + TREE(180, 102, 1.2, '#a8e6c0') + TREE(158, 112, 1.1) },
+    // 熊伯伯本來站在 (196,96)，池塘正好蓋掉他的頭，變成一個沒有頭的身體
+    npc: [218, 100], npcArt: () => BEAR(218, 100, 0.4),        // 熊伯伯
+    // 中間那棵本來在 (180,102)，樹冠會蓋到池塘，往左下挪了一點
+    art: () => TREE(136, 104, 1.5) + TREE(176, 106, 1.2, '#a8e6c0') + TREE(158, 112, 1.1) },
   { key: 'pool',   name: '泳池',  emoji: '🏊', plate: [266, 122], stand: [224, 140],
     npc: [238, 90], npcArt: () => PENGUIN(238, 90, 0.4),       // 企鵝救生員
     art: () => '<rect x="240" y="96" width="52" height="24" rx="4" fill="#7fc1ed" stroke="#33224a" stroke-width="2"/>' +
@@ -151,8 +153,57 @@ function townGrowth(stage) {
   return g;
 }
 
+/* ===== 兩個動手做的地方：公園的池塘、家門口的花圃 =====
+   藏的東西是「找」，這兩個是「做」——她知道東西一定在那裡，
+   按下去一定有收穫，只是要等。兩件事給的感覺不一樣，所以都留著。
+
+   跟藏的東西一樣自己一個 <g>，刻意不放進 .spot 裡面：
+   放進去的話點池塘會變成跟熊伯伯講話，她會以為池塘沒反應。
+
+   座標是量過的，離最近的名牌與 HIDE_SPOTS 都大於兩個半徑相加
+   （不然它會把名牌或寶物的點擊吃掉），走查有在擋。
+   為了讓出池塘的位置，HIDE_SPOTS 原本的 [176,70] 已經搬到 [124,64]。 */
+const ACT_R = 13;   // 點擊半徑，跟 HIDE_R 同一個量級
+
+const POND = (x, y) =>
+  // 先鋪一圈深一點的草，池塘才像陷在地裡，不然是一顆藍色的東西浮在草皮上
+  '<ellipse cx="' + x + '" cy="' + y + '" rx="16" ry="10" fill="#a8d6a0"/>' +
+  '<ellipse cx="' + x + '" cy="' + y + '" rx="13" ry="7.5" fill="#7fc1ed" stroke="#33224a" stroke-width="1.6"/>' +
+  '<path d="M' + (x - 7) + ' ' + (y - 1) + ' q3 -2.4 6 0 q3 2.4 6 0" stroke="#a8d8f5" stroke-width="1.5" fill="none"/>' +
+  '<path d="M' + (x - 6) + ' ' + (y + 3) + ' q3 -2.4 6 0" stroke="#a8d8f5" stroke-width="1.5" fill="none"/>' +
+  // 兩根蘆葦，不然一顆藍色橢圓看起來像水窪不像池塘
+  '<path d="M' + (x - 12) + ' ' + (y - 1) + ' q-1.5 -7 1 -11" stroke="#5e8f78" stroke-width="1.4" fill="none" stroke-linecap="round"/>' +
+  '<ellipse cx="' + (x - 11) + '" cy="' + (y - 13) + '" rx="1.5" ry="3" fill="#8a6a45"/>' +
+  '<path d="M' + (x + 12) + ' ' + (y - 1) + ' q1.5 -5 -0.5 -8" stroke="#5e8f78" stroke-width="1.4" fill="none" stroke-linecap="round"/>';
+
+/* 翻過的土要用直的犁溝，不能用兩道弧線——
+   弧線配上兩朵花，整塊看起來會像一張臉。 */
+const PATCH = (x, y) =>
+  '<ellipse cx="' + x + '" cy="' + y + '" rx="12" ry="6.5" fill="#b08a6a" stroke="#33224a" stroke-width="1.6"/>' +
+  '<path d="M' + (x - 5) + ' ' + (y - 3) + ' v6 M' + x + ' ' + (y - 4) + ' v8 M' + (x + 5) + ' ' + (y - 3) + ' v6"' +
+  ' stroke="#8a6a45" stroke-width="1.2" stroke-linecap="round"/>' +
+  FLOWER(x - 8, y - 1, '#ffd23f') + FLOWER(x + 8, y - 1, '#c9a2e8');
+
+const ACT_SPOTS = [
+  { key: 'fish', place: 'park', at: [194, 70],  emoji: '🎣', art: POND },
+  // 花圃本來在房子左邊的 [94,152]，正好蓋住爸爸的頭，看起來像他戴了一頂土色的帽子。
+  // 改到房子右邊、小人回家站的位置旁邊——那一角本來就是空的。
+  { key: 'dig',  place: 'home', at: [232, 186], emoji: '⛏️', art: PATCH },
+];
+
+/* ready 是「現在可以做」。做完的那幾分鐘整組壓暗、圖示也不再浮動——
+   按下去沒東西的話要先看得出來，不然她會一直按。
+   浮動的 class 掛在沒有自己 transform 的那一層（同 PLATE）。 */
+const actArt = (a, ready) =>
+  '<g class="act" data-act="' + a.key + '"' + (ready ? '' : ' opacity=".5"') + '>' +
+  a.art(a.at[0], a.at[1]) +
+  (ready ? '<g class="bob">' : '<g>') +
+  '<text x="' + a.at[0] + '" y="' + (a.at[1] - 11) + '" font-size="12" text-anchor="middle">' + a.emoji + '</text></g>' +
+  // 跟藏的東西同一招：字太小，點擊範圍要自己放大一圈
+  '<circle cx="' + a.at[0] + '" cy="' + a.at[1] + '" r="' + ACT_R + '" fill="transparent"/></g>';
+
 // 雨：斜線 + 壓一層灰藍
-const RAIN = '<g opacity=".55" pointer-events="none">' +
+const RAIN ='<g opacity=".55" pointer-events="none">' +
   Array.from({ length: 26 }, (_, i) => {
     const x = (i * 37 % 320), y = (i * 53 % 190);
     return '<path d="M' + x + ' ' + y + ' l-3 9" stroke="#eaf4ff" stroke-width="1.6" stroke-linecap="round"/>';
@@ -171,7 +222,7 @@ function townBase() {
 /* marks: { 地點key: '❗' | '💬' | '✓' }　standAt: 小人站在哪個地點
    hide: 這一輪藏的東西 { emoji, at:[x,y] }，已經找到就傳 null
    blink: 最後兩分鐘還沒找到，讓它一閃一閃 */
-function townSVG(tod, marks, standAt, weather, stage, hide, blink) {
+function townSVG(tod, marks, standAt, weather, stage, hide, blink, actReady) {
   const lit = tod === 'night';
   // 記號掛在名牌上。試過掛在人頭上，六個泡泡會把畫面擠爆。
   const spots = PLACES.map(p =>
@@ -189,6 +240,10 @@ function townSVG(tod, marks, standAt, weather, stage, hide, blink) {
        這個 <g> 一定要「永遠存在、裡面可能是空的」——十分鐘換一次東西的時候
        才能只換這一塊，不用重畫整張地圖（重畫會閃）。順序也才固定，
        不會變成畫在天色遮罩上面。 */
+    /* 池塘與花圃跟藏的東西一樣，放在小人之後：一樣要永遠存在、
+       裡面可能整組是暗的，做完一次才能只換這一塊。 */
+    '<g class="acts">' +
+      ACT_SPOTS.map(a => actArt(a, !actReady || actReady(a.key))).join('') + '</g>' +
     '<g class="hide">' + hideArt(hide, blink) + '</g>' +
     (TOWN_TINT[tod] || '') +
     (weather === 'rain' ? RAIN : '') + '</svg>';

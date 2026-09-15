@@ -161,13 +161,14 @@ const pKey = k => 'theater-' + k + ':' + whoId();
 
    比對日期一定要連分隔符號一起比：只用 indexOf(todayStamp()) 的話，
    今天是 2026-10-3 會把 2026-10-30 的也當成今天。 */
-const DATED_PREFIX = ['theater-hunt-', 'theater-huntday-', 'theater-town-'];
+const DATED_PREFIX = ['theater-hunt-', 'theater-huntday-', 'theater-town-', 'theater-act-'];
 function sweepOldKeys() {
   let today;
   try { today = todayStamp(); } catch (e) { return; }
   const keep = ['theater-hunt-' + today + '#',
                 'theater-huntday-' + today + ':',
-                'theater-town-' + today + '-'];
+                'theater-town-' + today + '-']
+    .concat(Object.keys(ACTS).map(k => 'theater-act-' + k + '-' + today + '#'));
   try {
     const all = [];
     for (let i = 0; i < localStorage.length; i++) all.push(localStorage.key(i));
@@ -640,15 +641,49 @@ const TREASURE_GROUPS = [
     { id: 't-ice',     emoji: '🧊', name: '一塊冰',     line: '你握在手裡，走到家就沒了。' },
     { id: 't-watch',   emoji: '🕰️', name: '停住的手錶', line: '指針停在三點十七分。', rare: true },
   ] },
+  { key: 'fish', name: '釣到的', emoji: '🎣', src: 'fish', items: [
+    { id: 'f-fish',    emoji: '🐟', name: '小魚',       line: '銀色的，只有你的手指那麼長。' },
+    { id: 'f-stripe',  emoji: '🐠', name: '條紋魚',     line: '身上三條黑線，你數了兩次才確定。' },
+    { id: 'f-shrimp',  emoji: '🦐', name: '小蝦',       line: '幾乎是透明的，只看得到兩顆眼睛。' },
+    { id: 'f-crab',    emoji: '🦀', name: '小螃蟹',     line: '橫著走了兩步，就躲到石頭下面。' },
+    { id: 'f-boot',    emoji: '🥾', name: '一隻長靴',   line: '整隻都是泥巴。到底是誰掉的？' },
+    { id: 'f-bottle',  emoji: '🍾', name: '玻璃瓶',     line: '裡面沒有紙條，你有一點點失望。' },
+    { id: 'f-wood',    emoji: '🪵', name: '漂流木',     line: '被水磨得圓圓的，摸起來很舒服。' },
+    { id: 'f-lily',    emoji: '🪷', name: '睡蓮',       line: '浮在水面上。你看了很久，沒有摘。' },
+    { id: 'f-clam',    emoji: '🦪', name: '河蚌',       line: '閉得很緊，你沒有硬撬開它。' },
+    { id: 'f-magnet',  emoji: '🧲', name: '磁鐵',       line: '不知道誰丟的，牢牢吸住了你的鉤子。' },
+    { id: 'f-turtle',  emoji: '🐢', name: '小烏龜',     line: '探出頭看了你三秒，又縮回去了。', rare: true },
+    { id: 'f-cray',    emoji: '🦞', name: '小螯蝦',     line: '舉著一隻大螯——兇歸兇，其實只有你的拇指大。', rare: true },
+  ] },
+
+  { key: 'dig', name: '挖到的', emoji: '⛏️', src: 'dig', items: [
+    { id: 'd-seed',    emoji: '🌱', name: '發芽的種子', line: '不知道是什麼。你決定先澆水看看。' },
+    { id: 'd-tuber',   emoji: '🥔', name: '奇怪的塊莖', line: '長得像馬鈴薯，不過媽媽說那個不能吃。' },
+    { id: 'd-jar',     emoji: '🫙', name: '空罐子',     line: '蓋子還在，裡面只有泥土。' },
+    { id: 'd-beads',   emoji: '📿', name: '一串珠子',   line: '線早就斷了，珠子散了一整片。' },
+    { id: 'd-screw',   emoji: '🔩', name: '生鏽的螺絲', line: '轉不動了，整個卡死在裡面。' },
+    { id: 'd-brush',   emoji: '🪥', name: '舊牙刷',     line: '誰會把牙刷埋起來啦？' },
+    { id: 'd-brick',   emoji: '🧱', name: '一塊紅磚',   line: '邊角都磨圓了，看起來埋很久了。' },
+    { id: 'd-beans',   emoji: '🫘', name: '幾顆豆子',   line: '硬邦邦的。種下去還會發芽嗎？' },
+    { id: 'd-glove',   emoji: '🧤', name: '一隻手套',   line: '園藝用的，只剩一隻。' },
+    { id: 'd-doll',    emoji: '🧸', name: '布娃娃',     line: '洗過還是舊舊的，但你決定留著。' },
+    { id: 'd-quartz',  emoji: '💠', name: '亮晶晶的石英', line: '對著光看，裡面有一條白色的紋路。', rare: true },
+    { id: 'd-fossil',  emoji: '🦕', name: '小小的化石', line: '一片葉子的形狀，印在石頭上。', rare: true },
+  ] },
 ];
 const TREASURES = TREASURE_GROUPS.reduce(
-  (a, g) => a.concat(g.items.map(t => Object.assign({ group: g.key }, t))), []);
-/* 抽獎袋：普通的放四張，稀有的放一張 */
+  (a, g) => a.concat(g.items.map(t => Object.assign({ group: g.key, src: g.src }, t))), []);
+/* 抽獎袋：普通的放四張，稀有的放一張。
+   釣到的、挖到的不進這個袋子——那兩類各有自己的池，
+   不然在草地上會撿到一隻活的小螃蟹。 */
 const TREASURE_BAG = [];
-TREASURES.forEach(t => { for (let i = 0; i < (t.rare ? 1 : 4); i++) TREASURE_BAG.push(t); });
+TREASURES.filter(t => !t.src).forEach(t => {
+  for (let i = 0; i < (t.rare ? 1 : 4); i++) TREASURE_BAG.push(t);
+});
+// [176,70] 原本在這裡，為了讓出公園池塘的位置搬到 [124,64]（見 art_town.js）
 const HIDE_SPOTS = [
   [20, 150], [304, 84], [112, 30], [186, 26], [248, 160], [92, 96],
-  [214, 46], [30, 92], [140, 148], [292, 186], [66, 186], [176, 70],
+  [214, 46], [30, 92], [140, 148], [292, 186], [66, 186], [124, 64],
 ];
 const HUNT_MIN = 10;   // 幾分鐘換一樣
 // 抽出來是為了走查可以換掉它（不然只能真的等十分鐘）
@@ -690,16 +725,53 @@ const foundCountToday = () => parseInt(localStorage.getItem(huntDayKey()) || '0'
 function loadTreasures() {
   try { return JSON.parse(localStorage.getItem(pKey('treasures'))) || {}; } catch (e) { return {}; }
 }
-function recordFind(id) {
+// 進寶物盒。釣到的、挖到的也走這裡，但不動下面那兩個「這一輪」的記錄
+function addToBox(id) {
   const box = loadTreasures();
   box[id] = (box[id] || 0) + 1;
+  try { localStorage.setItem(pKey('treasures'), JSON.stringify(box)); } catch (e) {}
+}
+function recordFind(id) {
+  addToBox(id);
   try {
-    localStorage.setItem(pKey('treasures'), JSON.stringify(box));
     localStorage.setItem(huntKey(), id);
     localStorage.setItem(huntDayKey(), String(foundCountToday() + 1));
   } catch (e) {}
 }
 const treasureById = id => TREASURES.find(t => t.id === id);
+
+/* ===== 釣魚與挖土 =====
+   藏的東西是「找」：不知道在哪，找到了才有。
+   這兩個是「做」：知道在哪，按下去一定有，但要等。
+
+   等的時間刻意比藏的東西短（三分鐘對十分鐘）——
+   她玩到一半想「做點什麼」的時候，不用等太久。
+   兩邊的冷卻各自獨立，所以池塘剛釣過還可以去挖土。
+
+   一樣是種子決定的：同一個三分鐘裡算幾次都同一條魚，
+   走查才有辦法對答案（不然只能真的一直按）。 */
+const ACT_MIN = 3;
+const ACTS = {
+  fish: { emoji: '🎣', head: '釣到了', wait: '線才剛收起來。再 {n} 分鐘可以再釣一次。' },
+  dig:  { emoji: '⛏️', head: '挖到了', wait: '土剛剛才填回去。再 {n} 分鐘可以再挖一次。' },
+};
+const actSlot = () => todayStamp() + '#' + Math.floor(nowMin() / ACT_MIN);
+const actLeft = () => ACT_MIN - (nowMin() % ACT_MIN);
+const actKey = k => pKey('act-' + k + '-' + actSlot());
+const actDone = k => !!localStorage.getItem(actKey(k));
+const markAct = k => { try { localStorage.setItem(actKey(k), '1'); } catch (e) {} };
+// 各自的池：稀有的一樣是四分之一的機會
+const ACT_BAG = {};
+Object.keys(ACTS).forEach(k => {
+  ACT_BAG[k] = [];
+  TREASURES.filter(t => t.src === k).forEach(t => {
+    for (let i = 0; i < (t.rare ? 1 : 4); i++) ACT_BAG[k].push(t);
+  });
+});
+function actNow(k) {
+  const bag = ACT_BAG[k];
+  return bag[seedOf('a:' + k + ':' + actSlot() + ':' + whoId()) % bag.length];
+}
 
 /* ===== 稀有寶物附帶的祝福 =====
    八樣稀有的東西撿到的時候，家裡會有一個人跟她說一句話。
@@ -867,7 +939,8 @@ function renderBox() {
         <div class="galnum">${have} <small>/ ${total}</small></div>
         <div class="gal-bar"><i style="width:${total ? (have / total * 100) : 0}%"></i></div>
         <div style="font-size:12.5px; color:#8a7fa8; margin-top:7px;">
-          稀有的 ${rareHave} / ${rareAll}　·　鎮上每十分鐘換一樣
+          稀有的 ${rareHave} / ${rareAll}<br>
+          鎮上藏的每十分鐘換一樣　·　池塘 🎣 跟花圃 ⛏️ 每 ${ACT_MIN} 分鐘可以再來一次
         </div>
       </div>
       ${TREASURE_GROUPS.map(g => {
@@ -925,6 +998,8 @@ function renderTown() {
     ? (ev.kind === 'moment' ? '有個地方有一件小事 💭　點它看看。' : '有一個地方出事了 ❗　點它看看。')
     : `${ev.place ? `這個時段的事處理完了 ✓　<b>${NEXT_PERIOD[tod]}</b>還會有新的。<br>` : '這個時段鎮上很平靜。<br>'}`
       + '想繼續玩的話，<b>點任何一個地方都可以</b>。';
+  // 圖示會自己浮動，不過還是寫一行——她第一次打開的時候不會知道那兩個可以按
+  const actHint = '公園的池塘 🎣 可以釣魚，家門口的花圃 ⛏️ 可以挖挖看。';
 
   app.innerHTML = `
     <div class="card anim">
@@ -934,12 +1009,13 @@ function renderTown() {
       </div>
       <div class="townwrap">
         <div class="town">${townSVG(tod, marks, WHERE_NOW[tod], wx, stage,
-                                    foundNow() ? null : hunt, huntStage() >= 2)}</div>
+                                    foundNow() ? null : hunt, huntStage() >= 2,
+                                    k => !actDone(k))}</div>
         <div class="saybox" hidden></div>
         <div class="foundbox" hidden></div>
       </div>
       <div class="hunt">${huntHTML()}</div>
-      <div class="townhint">${hint}</div>
+      <div class="townhint">${hint}<br>${actHint}</div>
       <div class="row" style="margin-top:10px;">
         <button class="mini" id="tmenu">🎭 劇本選單</button>
         <button class="mini" id="tgal">🖼️ 結局圖鑑</button>
@@ -1025,11 +1101,12 @@ function renderTown() {
   if (townMsg) showSay(townMsg);   // 從別的畫面回小鎮時，把剛才那句接回去
 
   /* 點到沒有東西的地方（草地、樹、天空）也給一句話。
-     .spot 跟 .hide 各自有 onclick，這裡只接住漏下來的。 */
+     .spot、.hide、.act 各自有 onclick，這裡只接住漏下來的。 */
   let idleN = 0;
   const townSvg = app.querySelector('.town svg');
   if (townSvg) townSvg.onclick = (e) => {
-    if (e.target.closest && (e.target.closest('.spot') || e.target.closest('.hide'))) return;
+    if (e.target.closest && (e.target.closest('.spot') || e.target.closest('.hide')
+                             || e.target.closest('.act'))) return;
     Sfx.tap();
     showSay({ who: '', emoji: '🍃', text: idleLine(tod, wx, idleN++), place: null });
   };
@@ -1052,10 +1129,12 @@ function renderTown() {
      她點了半天找到的東西，值得被放到畫面中間看一眼。
      稀有的用比較高的音效。 */
   const foundbox = app.querySelector('.foundbox');
-  function showFound(t) {
+  // head 是「釣到了」「挖到了」；地上撿到的不寫，那一句下面的 fline 已經講完了
+  function showFound(t, head) {
     if (!t) { foundbox.hidden = true; foundbox.innerHTML = ''; return; }
     foundbox.innerHTML = `
       <div class="foundcard">
+        ${head ? `<div class="fwhat">${esc(head)}</div>` : ''}
         <div class="bigfind">
           ${[0, 1, 2, 3, 4, 5].map(i =>
             `<span class="spark s${i}">✨</span>`).join('')}
@@ -1084,13 +1163,45 @@ function renderTown() {
     showFound(hunt);
   };
 
+  /* 池塘與花圃。跟藏的東西一樣只換那一個 <g>，不重畫地圖。
+     冷卻中還是接得到點擊——按了要講「再幾分鐘」，
+     不接的話畫面壓暗但按下去毫無反應，她會以為壞掉了。 */
+  const actsG = app.querySelector('.acts');
+  function wireAct(g) {
+    g.style.cursor = 'pointer';
+    g.onclick = (e) => {
+      if (e && e.stopPropagation) e.stopPropagation();
+      const k = g.dataset.act, a = ACTS[k];
+      if (actDone(k)) {
+        Sfx.tap();
+        showSay({ who: '', emoji: a.emoji, text: a.wait.split('{n}').join(actLeft()), place: null });
+        return;
+      }
+      const t = actNow(k);
+      (t.rare ? Sfx.best : Sfx.good)();
+      addToBox(t.id);
+      markAct(k);
+      paintActs();
+      paintHunt();          // 寶物圖鑑那顆按鈕上的收集數要跟著加
+      showSay(null);
+      showFound(t, a.emoji + ' ' + a.head);
+    };
+  }
+  function paintActs() {
+    actsG.innerHTML = ACT_SPOTS.map(a => actArt(a, !actDone(a.key))).join('');
+    actsG.querySelectorAll('.act').forEach(wireAct);
+  }
+  paintActs();
+
   /* 十分鐘換一樣東西。她可能一直開著這一頁，所以要自己換，
      不能等她重新整理——但一樣只換那一塊，不重畫整張卡片。
      計時器掛在全域並且每次進小鎮都重設，不然離開小鎮之後
      它還會繼續對著舊的 DOM 亂寫。 */
-  let slotShown = huntSlot(), stageShown = huntStage();
+  let slotShown = huntSlot(), stageShown = huntStage(), actSlotShown = actSlot();
   huntTimerFn = () => {
     if (view !== 'town' || !document.body.contains(hg)) return;
+    // 三分鐘的冷卻過了就把池塘與花圃點亮，不然她要離開小鎮再回來才看得到
+    if (actSlot() !== actSlotShown) { actSlotShown = actSlot(); paintActs(); }
     const slot = huntSlot(), st = huntStage();
     // 換輪要重畫，換提示階段也要——不然她要等到下一輪才看得到閃
     if (slot === slotShown && st === stageShown) return;

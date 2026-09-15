@@ -294,7 +294,8 @@
       var bb = document.getElementById('tbox');
       if (!bb) fails.push('沒有進寶物圖鑑的按鈕');
       else {
-        if (!/1 \/ 60|[1-9]\d* \/ 60/.test(bb.textContent)) fails.push('按鈕上的收集數不對：' + bb.textContent);
+        if (bb.textContent.indexOf('/ ' + TREASURES.length) < 0 || !/[1-9]\d* \//.test(bb.textContent))
+          fails.push('按鈕上的收集數不對：' + bb.textContent);
         bb.onclick();
         if (view !== 'box') fails.push('按了寶物圖鑑沒有進去');
         else {
@@ -334,15 +335,146 @@
       // 新的那一輪要是還沒找到的狀態
       if (foundNow()) fails.push('換了一輪還算成已經找到');
     }
+
+    /* ===== 池塘釣魚、花圃挖土 =====
+       跟藏的東西是兩件事：那個是「找」，這兩個是「做」。
+       所以最要緊的是兩邊不能互相污染——魚不可以出現在草地上，
+       釣到一條魚也不可以算成「今天藏的那一個找到了」。 */
+    // 兩個池子各自獨立，草地上的袋子裡不可以有魚跟土裡挖出來的東西
+    var leaked = TREASURE_BAG.filter(function(t){ return t.src; });
+    if (leaked.length) fails.push('草地上會撿到 '+leaked[0].name+'（'+leaked[0].src+' 的東西跑進抽獎袋了）');
+    Object.keys(ACTS).forEach(function(k){
+      var bag = ACT_BAG[k];
+      if (!bag || !bag.length) { fails.push(k+' 沒有東西可以拿'); return; }
+      if (bag.some(function(t){ return t.src !== k; })) fails.push(k+' 的池子裡混到別類的東西');
+      if (!TREASURES.some(function(t){ return t.src === k && t.rare; })) fails.push(k+' 一樣稀有的都沒有');
+    });
+    /* 同一個三分鐘裡算幾次都要同一樣（不然她按兩下會看到兩種答案），
+       但一直換時段就要抽得夠散、稀有的也要真的稀有。 */
+    setDay(7); setMin(9*60+13);
+    var aFirst = actNow('fish');
+    for (var ai=0; ai<10; ai++) if (actNow('fish').id !== aFirst.id) { fails.push('同一輪釣到不同的魚'); break; }
+    Object.keys(ACTS).forEach(function(k){
+      var got={}, rare=0, N=240;
+      for (var n=0; n<N; n++){ setDay(7 + Math.floor(n/480)); setMin(n*3 % 1440);
+        var t = actNow(k); got[t.id]=1; if (t.rare) rare++; }
+      if (Object.keys(got).length < 8) fails.push(k+' 連 '+N+' 輪只拿到 '+Object.keys(got).length+' 種');
+      if (!rare) fails.push(k+' 連 '+N+' 輪一次稀有的都沒有');
+      if (rare > N * 0.15) fails.push(k+' 的稀有出現了 '+Math.round(rare/N*100)+'%，根本不稀有');
+    });
+    /* 點擊圈放大了就會開始搶名牌跟藏東西的點擊。
+       公園的池塘本來就壓在 HIDE_SPOTS 的 [176,70] 上，那一格已經搬到 [124,64]。 */
+    ACT_SPOTS.forEach(function(a){
+      PLACES.forEach(function(pl){
+        var dx = Math.max(pl.plate[0]-29 - a.at[0], 0, a.at[0] - (pl.plate[0]+29));
+        var dy = Math.max(pl.plate[1]-10 - a.at[1], 0, a.at[1] - (pl.plate[1]+9));
+        if (Math.sqrt(dx*dx + dy*dy) < ACT_R)
+          fails.push(a.key+' 壓到「'+pl.name+'」的名牌了');
+      });
+      HIDE_SPOTS.forEach(function(p){
+        if (Math.hypot(p[0]-a.at[0], p[1]-a.at[1]) < ACT_R + HIDE_R)
+          fails.push(a.key+' 跟藏東西的位置 '+p.join()+' 重疊了');
+      });
+      if (!PLACES.some(function(pl){ return pl.key === a.place; })) fails.push(a.key+' 掛在不存在的地點');
+    });
+
+    setDay(7); setMin(9*60+13);
+    view='town'; townMsg=null; render();
+    if (document.querySelectorAll('.act').length !== ACT_SPOTS.length)
+      fails.push('地圖上沒有畫出池塘跟花圃');
+    else {
+      /* 池塘與花圃畫在居民後面，蓋到誰就是誰不見。
+         踩過兩次：池塘蓋掉熊伯伯的頭（變成一個沒有頭的身體）、
+         花圃蓋在爸爸頭上（像戴了一頂土色的帽子）。
+         人跟動物都是「有兩顆以上圓形的 <g>」——樹跟花只有一顆，不會誤判。 */
+      var folk = [];
+      document.querySelectorAll('.spot g[transform], #walker g[transform]').forEach(function(g){
+        if (g.querySelectorAll('circle').length >= 2) folk.push(g);
+      });
+      if (folk.length < 6) fails.push('抓不到鎮上的人（只找到 '+folk.length+' 個），這一關等於沒驗');
+      document.querySelectorAll('.act').forEach(function(ag){
+        var a = ag.getBoundingClientRect();
+        folk.forEach(function(g){
+          var b = g.getBoundingClientRect();
+          var ox = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+          var oy = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+          if (ox > 1 && oy > 1) fails.push(ag.dataset.act+' 蓋到鎮上的人了（重疊 '+
+            Math.round(ox)+'×'+Math.round(oy)+' px）');
+        });
+      });
+      // 一樣要打偏一點：打正中央只證明那個 emoji 點得到，證明不了放大的點擊圈
+      var ael = hitAt(document.querySelector('.act[data-act="fish"]'), 0.16);
+      if (!ael || !ael.closest || !ael.closest('.act'))
+        fails.push('池塘點不到，被 <'+(ael?ael.tagName:'null')+'> 擋住了');
+      if (ael && ael.closest && ael.closest('.spot')) fails.push('池塘壓在地點上面，點下去會變成跟居民講話');
+
+      var acard = document.querySelector('.card'), asvg = document.querySelector('.town svg');
+      var abox0 = Object.keys(loadTreasures()).length;
+      var hunt0 = foundNow(), day0 = foundCountToday();
+      var fishT = actNow('fish');
+      document.querySelector('.act[data-act="fish"]').onclick({ stopPropagation: function(){} });
+
+      if (document.querySelector('.card') !== acard) fails.push('釣一次魚整張卡片就重畫了，畫面會閃');
+      if (document.querySelector('.town svg') !== asvg) fails.push('釣一次魚連地圖都重畫了');
+      if (Object.keys(loadTreasures()).length <= abox0) fails.push('釣到的東西沒有進寶物盒');
+      if (!loadTreasures()[fishT.id]) fails.push('進寶物盒的不是剛剛釣到的那一樣');
+      // 這兩行是重點：釣魚不可以順手把「今天藏的那一個」算成找到了
+      if (foundNow() !== hunt0) fails.push('釣魚竟然把地上藏的那一個也算成找到了');
+      if (foundCountToday() !== day0) fails.push('釣魚被算進「今天找到幾個」');
+
+      var afb = document.querySelector('.foundbox');
+      if (afb.hidden) fails.push('釣到東西沒有跳出慶祝的框');
+      else {
+        if (afb.textContent.indexOf(fishT.name) < 0) fails.push('慶祝的框沒寫釣到什麼');
+        if (!afb.querySelector('.fwhat')) fails.push('沒有寫這是釣到的還是挖到的');
+        else if (afb.querySelector('.fwhat').textContent.indexOf('釣') < 0)
+          fails.push('釣到的卻寫成別的：'+afb.querySelector('.fwhat').textContent);
+        afb.onclick();
+      }
+      // 做完要看得出來，不然她會一直按同一個地方
+      var fg = document.querySelector('.act[data-act="fish"]');
+      if (!fg.getAttribute('opacity')) fails.push('釣過了池塘卻沒有壓暗，她會一直按');
+      // 花圃是另一個冷卻，不可以被池塘連坐
+      if (document.querySelector('.act[data-act="dig"]').getAttribute('opacity'))
+        fails.push('釣了魚連花圃也一起冷卻了');
+
+      // 冷卻中還是要接得到點擊，而且要講「再幾分鐘」
+      var abox1 = Object.keys(loadTreasures()).length;
+      var cnt1 = loadTreasures()[fishT.id];
+      fg.onclick({ stopPropagation: function(){} });
+      if (loadTreasures()[fishT.id] !== cnt1 || Object.keys(loadTreasures()).length !== abox1)
+        fails.push('三分鐘還沒到就又釣到一條');
+      var sb = document.querySelector('.saybox');
+      if (sb.hidden || sb.textContent.indexOf('分鐘') < 0)
+        fails.push('冷卻中按下去沒有告訴她還要等幾分鐘');
+
+      // 三分鐘過了要自己點亮，不能等她離開小鎮再回來
+      var acard2 = document.querySelector('.card');
+      setMin(9*60 + 17);
+      huntTimerFn();
+      if (document.querySelector('.act[data-act="fish"]').getAttribute('opacity'))
+        fails.push('過了三分鐘池塘還是暗的');
+      if (document.querySelector('.card') !== acard2) fails.push('冷卻結束整張卡片就重畫了');
+      // 點亮之後真的釣得到，而且是新的一輪、新的東西
+      var abox2 = Object.keys(loadTreasures()).length;
+      document.querySelector('.act[data-act="fish"]').onclick({ stopPropagation: function(){} });
+      if (Object.keys(loadTreasures()).length < abox2 &&
+          !loadTreasures()[actNow('fish').id]) fails.push('冷卻結束後釣不到東西');
+      document.querySelector('.foundbox').onclick();
+    }
+    localStorage.clear();
+
     /* 按日期命名的 key 會一直長，而且永遠沒人刪。
        一年下來一個玩家大約七千個，兩個玩家一萬四。 */
     setDay(20);
     var junk = ['theater-hunt-2026-10-19#5:p1', 'theater-hunt-2026-10-2#7:p1',
                 'theater-town-2026-10-19-dusk:p1', 'theater-huntday-2026-10-19:p1',
+                'theater-act-fish-2026-10-19#182:p1', 'theater-act-dig-2026-10-19#182:p1',
                 // 這一個是陷阱：今天是 2026-10-2 的話，用 indexOf 比會把它當成今天
                 'theater-hunt-2026-10-200#1:p1'];
     var keepers = ['theater-hunt-2026-10-20#5:p1', 'theater-town-2026-10-20-dusk:p1',
-                   'theater-huntday-2026-10-20:p1', 'theater-treasures:p1', 'theater-ends:p1'];
+                   'theater-huntday-2026-10-20:p1', 'theater-treasures:p1', 'theater-ends:p1',
+                   'theater-act-fish-2026-10-20#182:p1'];
     junk.concat(keepers).forEach(function(k){ localStorage.setItem(k, '1'); });
     sweepOldKeys();
     junk.forEach(function(k){ if (localStorage.getItem(k)) fails.push('舊的 key 沒被掃掉：'+k); });
@@ -592,13 +724,13 @@
     // 三十天要換得夠勤，位置也要會動，不然找一次就記住了
     /* 六十樣東西、五類、八樣稀有。id 一旦改掉，她已經收集到的會全部歸零，
        所以連「有沒有重複的 id」都要驗。 */
-    if (TREASURES.length !== 60) fails.push('寶物變成 '+TREASURES.length+' 樣了');
+    if (TREASURES.length !== 84) fails.push('寶物變成 '+TREASURES.length+' 樣了');
     var uniq = {}; TREASURES.forEach(function(t){
       if (uniq[t.id]) fails.push('寶物 id 重複：'+t.id); uniq[t.id]=1;
       if (!t.emoji || !t.name || !t.line) fails.push(t.id+' 缺了圖示／名字／說明');
     });
     var rares = TREASURES.filter(function(t){ return t.rare; }).length;
-    if (rares < 4 || rares > 12) fails.push('稀有的有 '+rares+' 樣，太多或太少');
+    if (rares < 4 || rares > TREASURES.length * 0.25) fails.push('稀有的有 '+rares+' 樣，太多或太少');
 
     var tids={}, tpos={}, rareHit=0, ROUNDS=300;
     setDay(7);
