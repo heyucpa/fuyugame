@@ -663,9 +663,18 @@ function huntNow() {
 }
 // 還有幾分鐘換下一個——講得出數字，她才知道要不要等
 const huntLeft = () => HUNT_MIN - (nowMin() % HUNT_MIN);
-/* 這一輪過了一半還沒找到，就自動給一個範圍（離它最近的地點）。
+/* 提示分三段，越找不到給越多：
+     剩 10～6 分鐘　什麼都沒有，用眼睛找（這才是重點）
+     剩 5～3 分鐘　 講出大概在哪一帶
+     剩 2 分鐘以內　那個東西自己一閃一閃
+
    刻意不做成「提示按鈕」：按鈕會變成她每次先按提示再去找，
-   找的樂趣就沒了。時間到了才出現，等於只在她真的卡住的時候幫。 */
+   找的樂趣就沒了。時間到了才出現，等於只在她真的卡住的時候幫。
+   而且最後兩分鐘一定找得到，不會有哪一輪整個白費。 */
+function huntStage() {
+  const left = huntLeft();
+  return left > HUNT_MIN / 2 ? 0 : left > 2 ? 1 : 2;
+}
 function huntNear(hunt) {
   let best = null, bd = 1e9;
   PLACES.forEach(p => {
@@ -854,8 +863,9 @@ function renderTown() {
       ? `🎁 找到了：<b>${t.emoji} ${esc(t.name)}</b>${t.rare ? ' <i class="rare">稀有</i>' : ''}　${esc(t.line)}<br>` +
         `<small>再 <b>${huntLeft()}</b> 分鐘會換一個新的。今天已經找到 ${n} 個。</small>`
       : `👀 鎮上藏了一個小東西，找找看。` +
-        (huntLeft() <= HUNT_MIN / 2
-          ? `<br><small>提示：好像在<b>${esc(huntNear(hunt).name)}</b>那一帶。</small>`
+        (huntStage() >= 1
+          ? `<br><small>提示：好像在<b>${esc(huntNear(hunt).name)}</b>那一帶。` +
+            (huntStage() >= 2 ? '它開始一閃一閃了 ✨' : '') + '</small>'
           : (n ? `<br><small>今天已經找到 ${n} 個。</small>` : ''));
     // 六十格排不進一行，所以只放一顆按鈕，細節留給寶物圖鑑那一頁
     return head + `<button class="boxbtn" id="tbox">🎁 寶物圖鑑　${have} / ${TREASURES.length}</button>`;
@@ -878,7 +888,8 @@ function renderTown() {
         <div class="wx">${WEATHER[wx].icon} ${WEATHER[wx].name}　·　🖼️ ${seenTotal()} / ${totalEnds()}</div>
       </div>
       <div class="townwrap">
-        <div class="town">${townSVG(tod, marks, WHERE_NOW[tod], wx, stage, foundNow() ? null : hunt)}</div>
+        <div class="town">${townSVG(tod, marks, WHERE_NOW[tod], wx, stage,
+                                    foundNow() ? null : hunt, huntStage() >= 2)}</div>
         <div class="saybox" hidden></div>
       </div>
       <div class="hunt">${huntHTML()}</div>
@@ -983,7 +994,7 @@ function renderTown() {
   const huntLine = app.querySelector('.hunt');
   function paintHunt() {
     const got = foundNow();
-    hg.innerHTML = got ? '' : hideArt(hunt);
+    hg.innerHTML = got ? '' : hideArt(hunt, huntStage() >= 2);
     hg.style.cursor = got ? '' : 'pointer';
     huntLine.innerHTML = huntHTML();
     // 這一行是整段重寫的，按鈕每次都是新的節點，事件要跟著重掛
@@ -1003,11 +1014,13 @@ function renderTown() {
      不能等她重新整理——但一樣只換那一塊，不重畫整張卡片。
      計時器掛在全域並且每次進小鎮都重設，不然離開小鎮之後
      它還會繼續對著舊的 DOM 亂寫。 */
-  let slotShown = huntSlot();
+  let slotShown = huntSlot(), stageShown = huntStage();
   huntTimerFn = () => {
     if (view !== 'town' || !document.body.contains(hg)) return;
-    if (huntSlot() === slotShown) return;
-    slotShown = huntSlot();
+    const slot = huntSlot(), st = huntStage();
+    // 換輪要重畫，換提示階段也要——不然她要等到下一輪才看得到閃
+    if (slot === slotShown && st === stageShown) return;
+    slotShown = slot; stageShown = st;
     hunt = huntNow();
     paintHunt();
   };

@@ -410,19 +410,53 @@
       if (animated('💬') === true) fails.push('💬 也在動，六個一起浮動會很吵');
     }
 
-    /* 這一輪過了一半還沒找到，要自動給範圍提示 */
-    setDay(3); setMin(9 * 60 + 1);      // 還有 9 分鐘
-    view='town'; townMsg=null; render();
-    if (document.querySelector('.hunt').textContent.indexOf('提示') >= 0)
-      fails.push('才剛開始就給提示，找的樂趣沒了');
-    setMin(9 * 60 + 6);                 // 只剩 4 分鐘
-    view='town'; render();
-    var ht2 = document.querySelector('.hunt').textContent;
-    if (ht2.indexOf('提示') < 0) fails.push('過了一半還沒給提示');
+    /* 提示分三段，越找不到給越多：
+         剩 10～6 分鐘　什麼都沒有
+         剩 5～3 分鐘　 講出大概在哪一帶
+         剩 2 分鐘以內　那個東西一閃一閃（最後一定找得到，不會白費一輪） */
+    setDay(3);
+    function huntAt(min){
+      setMin(9 * 60 + min); view='town'; townMsg=null; render();
+      return { txt: document.querySelector('.hunt').textContent,
+               blink: document.querySelector('.hide').innerHTML.indexOf('twinkle') >= 0,
+               stage: huntStage() };
+    }
+    var st0 = huntAt(1);    // 還有 9 分鐘
+    if (st0.stage !== 0) fails.push('剛開始的提示階段算錯了：'+st0.stage);
+    if (st0.txt.indexOf('提示') >= 0) fails.push('才剛開始就給提示，找的樂趣沒了');
+    if (st0.blink) fails.push('才剛開始就在閃了');
+
+    var st1 = huntAt(6);    // 只剩 4 分鐘
+    if (st1.stage !== 1) fails.push('過了一半的提示階段算錯了：'+st1.stage);
+    if (st1.txt.indexOf('提示') < 0) fails.push('過了一半還沒給範圍提示');
     else {
       var near = huntNear(huntNow()).name;
-      if (ht2.indexOf(near) < 0) fails.push('提示給的地點不對，應該是「'+near+'」');
+      if (st1.txt.indexOf(near) < 0) fails.push('提示給的地點不對，應該是「'+near+'」');
     }
+    if (st1.blink) fails.push('才剩四分鐘就開始閃了，太早');
+
+    var st2 = huntAt(9);    // 只剩 1 分鐘
+    if (st2.stage !== 2) fails.push('最後的提示階段算錯了：'+st2.stage);
+    if (!st2.blink) fails.push('最後兩分鐘那個東西沒有一閃一閃');
+    if (st2.txt.indexOf('一閃') < 0) fails.push('開始閃了，但那一行沒有告訴她');
+
+    /* 她會一直開著這一頁不重新整理，所以「開始閃」要由計時器自己接手。
+       這裡直接叫計時器，不重畫整頁——不然驗到的是 render()，不是計時器。 */
+    setMin(9 * 60 + 1); view='town'; townMsg=null; render();   // 先停在還沒提示的階段
+    var card2 = document.querySelector('.card');
+    setMin(9 * 60 + 9);                                        // 時間走到只剩 1 分鐘
+    huntTimerFn();
+    if (document.querySelector('.hide').innerHTML.indexOf('twinkle') < 0)
+      fails.push('時間到了但畫面沒有自己開始閃，她要重新整理才看得到');
+    if (document.querySelector('.hunt').textContent.indexOf('提示') < 0)
+      fails.push('時間到了但那一行沒有跟著更新');
+    if (document.querySelector('.card') !== card2)
+      fails.push('換提示階段整張卡片就重畫了，畫面會閃');
+
+    // 找到之後就不該再閃（東西已經不在地圖上了）
+    document.querySelector('.hide').onclick({ stopPropagation: function(){} });
+    if (document.querySelector('.hide').innerHTML) fails.push('找到了還留在地圖上');
+    localStorage.removeItem(huntKey());
 
     /* 劇本選單照地點分組之後，每一篇都必須在選單上出現得到。
        漏掉一篇的話她從選單永遠點不到那一個故事。 */

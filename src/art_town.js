@@ -63,10 +63,11 @@ const HIDE_R = 14;   // 藏的東西的點擊半徑（在 320 寬的畫面裡，
 /* 那顆透明圈是點擊範圍——字只有 11 大，小孩的手指點不到那麼準。
    fill 要 transparent 不能 none，none 不吃點擊。
    圈放大就會開始搶名牌的點擊，所以 HIDE_SPOTS 跟名牌的距離有走查在擋。 */
-const hideArt = (hide) => hide
-  ? '<circle cx="' + hide.at[0] + '" cy="' + hide.at[1] + '" r="' + HIDE_R + '" fill="transparent"/>' +
+const hideArt = (hide, blink) => hide
+  ? (blink ? '<g class="twinkle">' : '<g>') +
+    '<circle cx="' + hide.at[0] + '" cy="' + hide.at[1] + '" r="' + HIDE_R + '" fill="transparent"/>' +
     '<text x="' + hide.at[0] + '" y="' + (hide.at[1] + 4) + '" font-size="11" ' +
-    'text-anchor="middle">' + hide.emoji + '</text>'
+    'text-anchor="middle">' + hide.emoji + '</text></g>'
   : '';
 
 /* 天色與雨都是蓋在最上層的整張遮罩，一定要 pointer-events="none"。
@@ -168,8 +169,9 @@ function townBase() {
 }
 
 /* marks: { 地點key: '❗' | '💬' | '✓' }　standAt: 小人站在哪個地點
-   hide: 今天藏的東西 { emoji, at:[x,y] }，已經找到就傳 null */
-function townSVG(tod, marks, standAt, weather, stage, hide) {
+   hide: 這一輪藏的東西 { emoji, at:[x,y] }，已經找到就傳 null
+   blink: 最後兩分鐘還沒找到，讓它一閃一閃 */
+function townSVG(tod, marks, standAt, weather, stage, hide, blink) {
   const lit = tod === 'night';
   // 記號掛在名牌上。試過掛在人頭上，六個泡泡會把畫面擠爆。
   const spots = PLACES.map(p =>
@@ -187,7 +189,7 @@ function townSVG(tod, marks, standAt, weather, stage, hide) {
        這個 <g> 一定要「永遠存在、裡面可能是空的」——十分鐘換一次東西的時候
        才能只換這一塊，不用重畫整張地圖（重畫會閃）。順序也才固定，
        不會變成畫在天色遮罩上面。 */
-    '<g class="hide">' + hideArt(hide) + '</g>' +
+    '<g class="hide">' + hideArt(hide, blink) + '</g>' +
     (TOWN_TINT[tod] || '') +
     (weather === 'rain' ? RAIN : '') + '</svg>';
 }
