@@ -663,6 +663,17 @@ function huntNow() {
 }
 // 還有幾分鐘換下一個——講得出數字，她才知道要不要等
 const huntLeft = () => HUNT_MIN - (nowMin() % HUNT_MIN);
+/* 這一輪過了一半還沒找到，就自動給一個範圍（離它最近的地點）。
+   刻意不做成「提示按鈕」：按鈕會變成她每次先按提示再去找，
+   找的樂趣就沒了。時間到了才出現，等於只在她真的卡住的時候幫。 */
+function huntNear(hunt) {
+  let best = null, bd = 1e9;
+  PLACES.forEach(p => {
+    const d = Math.hypot(p.plate[0] - hunt.at[0], p.plate[1] - hunt.at[1]);
+    if (d < bd) { bd = d; best = p; }
+  });
+  return best;
+}
 const huntKey = () => pKey('hunt-' + huntSlot());
 const foundNow = () => localStorage.getItem(huntKey());
 const huntDayKey = () => pKey('huntday-' + todayStamp());
@@ -748,6 +759,27 @@ function dadLine() { return DAD_LINES[Math.floor(Math.random() * DAD_LINES.lengt
 
 const PLACE_NAME = { home: '家裡', school: '學校', shop: '商店街', park: '公園', dojo: '道館', pool: '泳池' };
 
+/* 點到沒有東西的地方（草地、樹、天空）也要有反應。
+   這個鎮如果只有六個地方會回應，其他全部是死的，
+   她點兩下就知道「只有名牌能點」，然後再也不看別的地方。
+
+   內容刻意都是「看到什麼」而不是「發生什麼」——
+   這裡不該有事件，只是讓她知道這個鎮是活的。 */
+const IDLE = {
+  any: ['一隻鳥從屋頂飛過去。', '風吹過樹葉，沙沙的。', '有人在遠處喊小孩回家吃飯。',
+        '水溝蓋上有一排小螞蟻。', '不知道哪一家在煎東西，很香。'],
+  morning: ['草上還有露水。', '垃圾車的音樂從另一條街傳過來。'],
+  day:     ['太陽把影子曬得很短。', '有隻貓睡在圍牆上，動都不動。'],
+  dusk:    ['雲被染成橘色的。', '路燈一盞一盞亮起來。'],
+  night:   ['有幾扇窗還亮著。', '天上看得到三顆星星。'],
+  rain:    ['雨滴在水窪裡彈起來。', '屋簷下排了一整排躲雨的人。'],
+};
+function idleLine(tod, wx, n) {
+  let pool = IDLE.any.concat(IDLE[tod] || []);
+  if (wx === 'rain') pool = pool.concat(IDLE.rain);
+  return pool[n % pool.length];
+}
+
 // 現實時間決定她人在哪裡
 const WHERE_NOW = { morning: 'home', day: 'school', dusk: 'park', night: 'home' };
 
@@ -822,7 +854,9 @@ function renderTown() {
       ? `🎁 找到了：<b>${t.emoji} ${esc(t.name)}</b>${t.rare ? ' <i class="rare">稀有</i>' : ''}　${esc(t.line)}<br>` +
         `<small>再 <b>${huntLeft()}</b> 分鐘會換一個新的。今天已經找到 ${n} 個。</small>`
       : `👀 鎮上藏了一個小東西，找找看。` +
-        (n ? `<br><small>今天已經找到 ${n} 個。</small>` : '');
+        (huntLeft() <= HUNT_MIN / 2
+          ? `<br><small>提示：好像在<b>${esc(huntNear(hunt).name)}</b>那一帶。</small>`
+          : (n ? `<br><small>今天已經找到 ${n} 個。</small>` : ''));
     // 六十格排不進一行，所以只放一顆按鈕，細節留給寶物圖鑑那一頁
     return head + `<button class="boxbtn" id="tbox">🎁 寶物圖鑑　${have} / ${TREASURES.length}</button>`;
   }
@@ -903,25 +937,26 @@ function renderTown() {
   function showSay(msg) {
     townMsg = msg;
     if (!msg) { saybox.hidden = true; saybox.innerHTML = ''; return; }
-    const left = placeUnseen(msg.place);
+    const left = msg.place ? placeUnseen(msg.place) : 0;
     saybox.innerHTML = `
       <div class="says">
         <span class="x" aria-hidden="true">✕</span>
         <span class="face">${msg.emoji}</span>
-        <span><b>${esc(fillSib(msg.who))}</b><br>${narrate(fillSib(msg.text))}
+        <span>${msg.who ? `<b>${esc(fillSib(msg.who))}</b><br>` : ''}${narrate(fillSib(msg.text))}
           ${msg.more ? '<span class="more">再點他一次還有話說 ▸</span>' : ''}
+          ${msg.place ? `
           <button id="tplay" class="playhere">
             🎭 在${esc(PLACE_NAME[msg.place] || '這裡')}玩一篇
             ${left ? `<small>還有 ${left} 種結局沒看過</small>`
                    : '<small>這裡的結局都看過了，再走一次也可以</small>'}
-          </button>
+          </button>` : ''}
         </span>
       </div>`;
     saybox.hidden = false;
     // 點框上任何地方就關起來，除了那顆「玩一篇」的按鈕
     saybox.onclick = () => { Sfx.tap(); showSay(null); };
-    const play = saybox.querySelector('#tplay');
-    play.onclick = (e) => {
+    const play = saybox.querySelector('#tplay');   // 閒聊沒有這一顆
+    if (play) play.onclick = (e) => {
       e.stopPropagation();
       const place = msg.place, id = pickFreePlay(place);
       if (!id) return;
@@ -931,6 +966,16 @@ function renderTown() {
     };
   }
   if (townMsg) showSay(townMsg);   // 從別的畫面回小鎮時，把剛才那句接回去
+
+  /* 點到沒有東西的地方（草地、樹、天空）也給一句話。
+     .spot 跟 .hide 各自有 onclick，這裡只接住漏下來的。 */
+  let idleN = 0;
+  const townSvg = app.querySelector('.town svg');
+  if (townSvg) townSvg.onclick = (e) => {
+    if (e.target.closest && (e.target.closest('.spot') || e.target.closest('.hide'))) return;
+    Sfx.tap();
+    showSay({ who: '', emoji: '🍃', text: idleLine(tod, wx, idleN++), place: null });
+  };
 
   /* 找到藏的東西。這個 g 刻意不在任何 .spot 裡面，不會跟地點搶點擊。
      它永遠存在（找到了就是空的），所以只要換 innerHTML，不用重畫地圖。 */

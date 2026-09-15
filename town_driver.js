@@ -346,6 +346,59 @@
     if (!localStorage.getItem('theater-ends:p2')) fails.push('清除紀錄把別的玩家也清掉了');
     localStorage.clear();
 
+    /* 點到沒有東西的地方（草地、樹、天空）也要有反應。
+       這個鎮如果只有六個地方會回應，她點兩下就再也不看別的地方了。 */
+    setDay(3); setTodStub('day'); setMin(9 * 60);
+    view='town'; townMsg=null; curMoment=null; render();
+    var svg = document.querySelector('.town svg');
+    if (!svg || !svg.onclick) fails.push('點小鎮的空白處沒有任何反應');
+    else {
+      var idle = {};
+      for (var q=0; q<8; q++){
+        svg.onclick({ target: svg });
+        var sy = document.querySelector('.saybox');
+        if (sy.hidden) { fails.push('點空白處沒有出現任何一句話'); break; }
+        idle[document.querySelector('.says').textContent] = 1;
+      }
+      if (Object.keys(idle).length < 4)
+        fails.push('點空白處八下只有 '+Object.keys(idle).length+' 種話，太少了');
+      // 閒聊不是地點，不該出現「在這裡玩一篇」
+      if (document.getElementById('tplay')) fails.push('點空白處竟然出現了「在這裡玩一篇」');
+      document.querySelector('.saybox').onclick();
+    }
+
+    /* ❗ 和 💭 要會動（一年級需要視覺引導），✓ 和 💬 不要動——
+       六個名牌都在動會很吵，就看不出哪一個才是現在要點的。 */
+    var mv2 = findKind('story');
+    if (mv2) {
+      view='town'; townMsg=null; curMoment=null; render();
+      var mapHtml = document.querySelector('.town svg').innerHTML;
+      /* 不要比對標籤的寫法：瀏覽器會把 <circle/> 吐成 <circle></circle>，
+         第一版的正則就是因為這樣一直誤報。改成看記號前面那一小段。 */
+      function animated(mark){
+        var k = mapHtml.indexOf('>' + mark + '<');
+        if (k < 0) return null;
+        return mapHtml.slice(Math.max(0, k - 200), k).indexOf('class="bob"') >= 0;
+      }
+      if (animated('❗') === null) fails.push('這個時段有劇本，地圖上卻沒有 ❗');
+      else if (!animated('❗')) fails.push('❗ 記號沒有動畫，她看不出來現在要點哪裡');
+      if (animated('💬') === true) fails.push('💬 也在動，六個一起浮動會很吵');
+    }
+
+    /* 這一輪過了一半還沒找到，要自動給範圍提示 */
+    setDay(3); setMin(9 * 60 + 1);      // 還有 9 分鐘
+    view='town'; townMsg=null; render();
+    if (document.querySelector('.hunt').textContent.indexOf('提示') >= 0)
+      fails.push('才剛開始就給提示，找的樂趣沒了');
+    setMin(9 * 60 + 6);                 // 只剩 4 分鐘
+    view='town'; render();
+    var ht2 = document.querySelector('.hunt').textContent;
+    if (ht2.indexOf('提示') < 0) fails.push('過了一半還沒給提示');
+    else {
+      var near = huntNear(huntNow()).name;
+      if (ht2.indexOf(near) < 0) fails.push('提示給的地點不對，應該是「'+near+'」');
+    }
+
     /* 劇本選單照地點分組之後，每一篇都必須在選單上出現得到。
        漏掉一篇的話她從選單永遠點不到那一個故事。 */
     view='menu'; render();

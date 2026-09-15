@@ -50,8 +50,13 @@ const PLATE = (x, y, txt, mark) =>
   '<g transform="translate(' + x + ',' + y + ')">' +
   '<rect x="-29" y="-10" width="58" height="19" rx="9.5" fill="#fff" stroke="#33224a" stroke-width="1.8"/>' +
   '<text x="0" y="4.5" font-size="10.5" fill="#33224a" text-anchor="middle" font-weight="bold">' + txt + '</text>' +
-  (mark ? '<circle cx="27" cy="-8" r="8.5" fill="#fff" stroke="#33224a" stroke-width="1.6"/>' +
-          '<text x="27" y="-4" font-size="10" text-anchor="middle">' + mark + '</text>' : '') +
+  /* ❗ 和 💭 會輕輕上下浮動，✓ 和 💬 不會。
+     六個名牌都在動會很吵，而且就看不出哪一個才是現在要點的。
+     動畫掛在多包的那一層 <g>，那一層沒有自己的 transform（外層才有）， 
+     所以不會被 CSS 的 transform 蓋掉。 */
+  (mark ? (mark === '❗' || mark === '💭' ? '<g class="bob">' : '<g>') +
+          '<circle cx="27" cy="-8" r="8.5" fill="#fff" stroke="#33224a" stroke-width="1.6"/>' +
+          '<text x="27" y="-4" font-size="10" text-anchor="middle">' + mark + '</text></g>' : '') +
   '</g>';
 
 const HIDE_R = 14;   // 藏的東西的點擊半徑（在 320 寬的畫面裡，手機上大約 31px）
