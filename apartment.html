@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>公寓大廈記帳</title>
+<style>
+:root{
+  --bg:#f5f3ef; --card:#fff; --ink:#26221d; --muted:#7d7469; --line:#e0dad0;
+  --accent:#2f6f5e; --accent-soft:#e4efe9;
+  --in:#1f7a52; --out:#b04432;
+  --shadow:0 1px 2px rgba(0,0,0,.05),0 6px 18px rgba(0,0,0,.05);
+  --radius:12px;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#1b1917; --card:#252220; --ink:#ece7e0; --muted:#a29a8e; --line:#39342f;
+    --accent:#6dc0a5; --accent-soft:#23332e;
+    --in:#63c393; --out:#e58a77;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.25);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,-apple-system,sans-serif;
+  font-size:15px; line-height:1.6;
+}
+h1,h2,h3{margin:0;font-weight:700}
+button,input,select,textarea{font:inherit;color:inherit}
+
+/* ── 版頭 ───────────────────────────── */
+.topbar{
+  position:sticky; top:0; z-index:20; background:var(--card);
+  border-bottom:1px solid var(--line); box-shadow:var(--shadow);
+}
+.topbar-inner{max-width:1180px;margin:0 auto;padding:12px 16px 0;}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.brand h1{font-size:19px;letter-spacing:.5px}
+.brand .sub{color:var(--muted);font-size:13px}
+.tabs{display:flex;gap:4px;margin-top:10px;overflow-x:auto}
+.tabs button{
+  background:none;border:none;border-bottom:3px solid transparent;
+  padding:9px 14px;cursor:pointer;color:var(--muted);white-space:nowrap;border-radius:8px 8px 0 0;
+}
+.tabs button:hover{background:var(--accent-soft);color:var(--ink)}
+.tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent);font-weight:700}
+
+main{max-width:1180px;margin:0 auto;padding:18px 16px 60px}
+.panel{display:none}
+.panel.active{display:block}
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px;margin-bottom:16px;box-shadow:var(--shadow);
+}
+.card > h2{font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card > h2 .hint{font-weight:400;color:var(--muted);font-size:13px}
+
+/* ── 摘要數字 ───────────────────────── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px}
+.stat .label{color:var(--muted);font-size:13px}
+.stat .value{font-size:23px;font-weight:700;letter-spacing:.5px;margin-top:2px;font-variant-numeric:tabular-nums}
+.stat.in .value{color:var(--in)}
+.stat.out .value{color:var(--out)}
+
+/* ── 表單 ───────────────────────────── */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font-size:12.5px;color:var(--muted)}
+.field.wide{grid-column:span 2}
+input,select,textarea{
+  background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;
+}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
+input[type=number]{text-align:right;font-variant-numeric:tabular-nums}
+.seg{display:flex;gap:0;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{flex:1;background:var(--bg);border:none;padding:8px 6px;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff;font-weight:700}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.btn{
+  background:var(--accent);color:#fff;border:none;border-radius:8px;
+  padding:9px 18px;cursor:pointer;font-weight:700;
+}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);font-weight:400}
+.btn.ghost:hover{background:var(--accent-soft)}
+.btn.danger{background:transparent;color:var(--out);border:1px solid var(--out);font-weight:400}
+.btn.danger:hover{background:var(--out);color:#fff}
+.btn.sm{padding:5px 10px;font-size:13px;font-weight:400}
+
+/* ── 表格 ───────────────────────────── */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{color:var(--muted);font-weight:600;font-size:12.5px;position:sticky;top:0;background:var(--card)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+td.memo{white-space:normal;min-width:160px}
+tbody tr:hover{background:var(--accent-soft)}
+tr.editing{background:var(--accent-soft)}
+tfoot td{font-weight:700;border-top:2px solid var(--line);border-bottom:none}
+.tag{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;border:1px solid}
+.tag.in{color:var(--in);border-color:var(--in)}
+.tag.out{color:var(--out);border-color:var(--out)}
+.amt-in{color:var(--in)}
+.amt-out{color:var(--out)}
+.empty{padding:28px 10px;text-align:center;color:var(--muted)}
+.sec-row td{background:var(--accent-soft);font-weight:700}
+
+/* ── 雜項 ───────────────────────────── */
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px}
+.toolbar .field{flex:0 0 auto;min-width:120px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:99px;padding:3px 6px 3px 12px;background:var(--bg);font-size:13px}
+.chip button{background:none;border:none;color:var(--muted);cursor:pointer;line-height:1;font-size:16px;padding:0 4px}
+.chip button:hover{color:var(--out)}
+.note{color:var(--muted);font-size:13px;margin-top:8px}
+.toast{
+  position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:99px;
+  opacity:0;pointer-events:none;transition:.25s;z-index:50;box-shadow:var(--shadow);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.report-head{display:none}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:760px){
+  .split{grid-template-columns:1fr}
+  .field.wide{grid-column:span 1}
+}
+
+/* ── 列印 ───────────────────────────── */
+@media print{
+  :root{--bg:#fff;--card:#fff;--ink:#000;--muted:#555;--line:#999;--accent:#000;--accent-soft:#f0f0f0;--shadow:none}
+  body{font-size:12px}
+  .topbar,.noprint,.tabs,.toast{display:none !important}
+  .card > h2{font-size:13px;margin-bottom:6px}
+  main{max-width:none;padding:0}
+  .panel{display:none !important}
+  .panel.active{display:block !important}
+  .card{border:none;box-shadow:none;padding:0;margin-bottom:14px;page-break-inside:auto}
+  .report-head{display:block;text-align:center;margin-bottom:12px}
+  .report-head h2{font-size:17px}
+  .report-head .period{color:#000;font-size:13px;margin-top:4px}
+  th{position:static}
+  table{font-size:11.5px}
+  th,td{padding:4px 6px}
+  tbody tr:hover{background:none}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar noprint">
+  <div class="topbar-inner">
+    <div class="brand">
+      <h1 id="brandName">公寓大廈記帳</h1>
+      <span class="sub">收支流水帳 · 資料存在這台電腦的瀏覽器</span>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="entry" aria-selected="true">記帳</button>
+      <button role="tab" data-tab="monthly" aria-selected="false">月報表</button>
+      <button role="tab" data-tab="yearly" aria-selected="false">年度彙總</button>
+      <button role="tab" data-tab="settings" aria-selected="false">設定與備份</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- ══ 記帳 ══════════════════════════ -->
+<section class="panel active" id="panel-entry">
+
+  <div class="stats noprint" id="entryStats"></div>
+
+  <div class="card noprint">
+    <h2 id="formTitle">新增一筆<span class="hint">日期與科目會留著，方便連續輸入</span></h2>
+    <form id="entryForm" autocomplete="off">
+      <div class="form-grid">
+        <div class="field">
+          <label for="f-date">日期</label>
+          <input type="date" id="f-date" required>
+        </div>
+        <div class="field">
+          <label>收支別</label>
+          <div class="seg" id="f-type">
+            <button type="button" data-type="income" aria-pressed="false">收入</button>
+            <button type="button" data-type="expense" aria-pressed="true">支出</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="f-category">會計科目</label>
+          <select id="f-category" required></select>
+        </div>
+        <div class="field">
+          <label for="f-account">資金帳戶</label>
+          <select id="f-account" required></select>
+        </div>
+        <div class="field wide">
+          <label for="f-summary">摘要</label>
+          <input type="text" id="f-summary" placeholder="例：114年3月電梯保養費" required>
+        </div>
+        <div class="field">
+          <label for="f-amount">金額</label>
+          <input type="number" id="f-amount" min="0" step="1" placeholder="0" required>
+        </div>
+        <div class="field">
+          <label for="f-voucher">單據號碼</label>
+          <input type="text" id="f-voucher" placeholder="選填">
+        </div>
+        <div class="field wide">
+          <label for="f-note">備註</label>
+          <input type="text" id="f-note" placeholder="選填">
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn" type="submit" id="submitBtn">新增</button>
+        <button class="btn ghost" type="button" id="cancelEdit" hidden>取消編輯</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="report-head">
+      <h2 id="eRepName">公寓大廈管理委員會</h2>
+      <div>收支流水帳</div>
+      <div class="period" id="eRepPeriod"></div>
+    </div>
+    <h2 class="noprint">流水帳<span class="hint" id="listCount"></span></h2>
+    <div class="toolbar noprint">
+      <div class="field"><label for="q-year">年度</label><select id="q-year"></select></div>
+      <div class="field"><label for="q-month">月份</label><select id="q-month"></select></div>
+      <div class="field"><label for="q-type">收支別</label>
+        <select id="q-type">
+          <option value="">全部</option><option value="income">收入</option><option value="expense">支出</option>
+        </select>
+      </div>
+      <div class="field"><label for="q-category">科目</label><select id="q-category"></select></div>
+      <div class="field"><label for="q-account">帳戶</label><select id="q-account"></select></div>
+      <div class="field" style="flex:1 1 180px"><label for="q-text">關鍵字</label><input type="search" id="q-text" placeholder="摘要／備註／單據"></div>
+      <button class="btn ghost sm" type="button" id="q-reset">清除條件</button>
+      <button class="btn ghost sm" type="button" id="exportEntriesCsv">匯出 CSV</button>
+      <button class="btn ghost sm" type="button" id="printEntries">列印</button>
+    </div>
+    <div class="table-wrap">
+      <table id="entryTable">
+        <thead>
+          <tr>
+            <th>日期</th><th>收支</th><th>科目</th><th>摘要</th><th>帳戶</th>
+            <th class="num">收入</th><th class="num">支出</th><th>單據</th><th>備註</th><th class="noprint"></th>
+          </tr>
+        </thead>
+        <tbody id="entryBody"></tbody>
+        <tfoot id="entryFoot"></tfoot>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 月報表 ════════════════════════ -->
+<section class="panel" id="panel-monthly">
+  <div class="card noprint">
+    <div class="toolbar" style="margin:0">
+      <div class="field"><label for="m-year">年度</label><select id="m-year"></select></div>
+      <div class="field"><label for="m-month">月份</label><select id="m-month"></select></div>
+      <button class="btn ghost sm" type="button" id="printMonthly">列印／存成 PDF</button>
+      <button class="btn ghost sm" type="button" id="exportMonthlyCsv">匯出 CSV</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="report-head">
+      <h2 id="mRepName">公寓大廈管理委員會</h2>
+      <div>收支月報表</div>
+      <div class="period" id="mRepPeriod"></div>
+    </div>
+    <div class="stats noprint" id="monthlyStats"></div>
+    <div class="split" style="margin-top:14px">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>收入科目</th><th class="num">本月金額</th><th class="num">本年累計</th></tr></thead>
+          <tbody id="mIncomeBody"></tbody>
+          <tfoot id="mIncomeFoot"></tfoot>
+        </table>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>支出科目</th><th class="num">本月金額</th><th class="num">本年累計</th></tr></thead>
+          <tbody id="mExpenseBody"></tbody>
+          <tfoot id="mExpenseFoot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>結餘表</h2>
+    <div class="table-wrap">
+      <table>
+        <tbody id="mBalanceBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>各帳戶餘額（截至本月底）</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>帳戶</th><th class="num">期初</th><th class="num">收入</th><th class="num">支出</th><th class="num">餘額</th></tr></thead>
+        <tbody id="mAccountBody"></tbody>
+        <tfoot id="mAccountFoot"></tfoot>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 年度彙總 ══════════════════════ -->
+<section class="panel" id="panel-yearly">
+  <div class="card noprint">
+    <div class="toolbar" style="margin:0">
+      <div class="field"><label for="y-year">年度</label><select id="y-year"></select></div>
+      <button class="btn ghost sm" type="button" id="printYearly">列印／存成 PDF</button>
+      <button class="btn ghost sm" type="button" id="exportYearlyCsv">匯出 CSV</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="report-head">
+      <h2 id="yRepName">公寓大廈管理委員會</h2>
+      <div>年度收支彙總表</div>
+      <div class="period" id="yRepPeriod"></div>
+    </div>
+    <div class="table-wrap">
+      <table id="yearlyTable">
+        <thead id="yearlyHead"></thead>
+        <tbody id="yearlyBody"></tbody>
+      </table>
+    </div>
+    <p class="note noprint">「本月結餘」為當月收入減支出；「期末結餘」含期初餘額累計到該月底。</p>
+  </div>
+</section>
+
+<!-- ══ 設定 ══════════════════════════ -->
+<section class="panel" id="panel-settings">
+  <div class="card">
+    <h2>基本資料</h2>
+    <div class="form-grid">
+      <div class="field wide">
+        <label for="s-name">社區／管委會名稱</label>
+        <input type="text" id="s-name" placeholder="例：晴光名園公寓大廈管理委員會">
+      </div>
+      <div class="field">
+        <label for="s-opening-date">期初基準日</label>
+        <input type="date" id="s-opening-date">
+      </div>
+    </div>
+    <p class="note">名稱會印在報表抬頭。期初基準日只作報表說明用，不影響計算。</p>
+  </div>
+
+  <div class="card">
+    <h2>資金帳戶與期初餘額</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>帳戶名稱</th><th class="num" style="width:180px">期初餘額</th><th style="width:60px"></th></tr></thead>
+        <tbody id="accountSettingBody"></tbody>
+        <tfoot id="accountSettingFoot"></tfoot>
+      </table>
+    </div>
+    <div class="actions">
+      <input type="text" id="newAccount" placeholder="新增帳戶名稱，例：公共基金專戶" style="max-width:280px">
+      <button class="btn ghost sm" type="button" id="addAccount">新增帳戶</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>會計科目</h2>
+    <div class="split">
+      <div>
+        <h3 style="font-size:14px;color:var(--in)">收入科目</h3>
+        <div class="chips" id="incomeChips"></div>
+        <div class="actions">
+          <input type="text" id="newIncome" placeholder="新增收入科目" style="max-width:220px">
+          <button class="btn ghost sm" type="button" data-add-cat="income">新增</button>
+        </div>
+      </div>
+      <div>
+        <h3 style="font-size:14px;color:var(--out)">支出科目</h3>
+        <div class="chips" id="expenseChips"></div>
+        <div class="actions">
+          <input type="text" id="newExpense" placeholder="新增支出科目" style="max-width:220px">
+          <button class="btn ghost sm" type="button" data-add-cat="expense">新增</button>
+        </div>
+      </div>
+    </div>
+    <p class="note">已經記過帳的科目不能刪除，先把那些帳改成別的科目再刪。</p>
+  </div>
+
+  <div class="card">
+    <h2>備份與還原<span class="hint">資料只存在這台電腦，換電腦或清瀏覽器資料前務必先備份</span></h2>
+    <div class="actions">
+      <button class="btn" type="button" id="exportJson">匯出備份檔（JSON）</button>
+      <button class="btn ghost" type="button" id="importJsonBtn">匯入備份檔</button>
+      <input type="file" id="importJson" accept="application/json,.json" hidden>
+      <button class="btn danger" type="button" id="wipeAll">清除全部資料</button>
+    </div>
+    <p class="note" id="storageNote"></p>
+  </div>
+</section>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+/* ══ 資料 ══════════════════════════════════════════════ */
+
+const STORE_KEY = 'apartment-ledger-v1';
+
+const DEFAULTS = {
+  version: 1,
+  settings: { name: '', openingDate: '' },
+  accounts: [
+    { name: '現金', opening: 0 },
+    { name: '銀行存款', opening: 0 },
+    { name: '公共基金專戶', opening: 0 }
+  ],
+  categories: {
+    income: ['管理費', '車位管理費', '公共基金提撥', '公共空間租金', '利息收入', '滯納金', '其他收入'],
+    expense: ['保全人事費', '清潔費', '水電費', '電梯保養費', '消防安全維護', '機電設備保養',
+              '垃圾清運費', '公共設施修繕', '水塔清洗', '園藝維護', '行政事務費',
+              '郵電及文具', '保險費', '稅捐及規費', '會議及活動費', '其他支出']
+  },
+  entries: []
+};
+
+let db;              // 等下面的小工具都備妥了才在「啟動」那段載入
+let editingId = null;
+let formType = 'expense';
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return clone(DEFAULTS);
+    const data = JSON.parse(raw);
+    return normalize(data);
+  } catch (err) {
+    console.error('讀取資料失敗', err);
+    return clone(DEFAULTS);
+  }
+}
+
+/* 舊檔或手改過的備份檔也要能開，缺什麼補什麼。 */
+function normalize(data) {
+  const base = clone(DEFAULTS);
+  if (!data || typeof data !== 'object') return base;
+  base.settings = Object.assign(base.settings, data.settings || {});
+  if (Array.isArray(data.accounts) && data.accounts.length) {
+    base.accounts = data.accounts
+      .map(a => typeof a === 'string'
+        ? { name: a, opening: 0 }
+        : { name: String(a.name || '').trim(), opening: num(a.opening) })
+      .filter(a => a.name);
+  }
+  if (data.categories) {
+    ['income', 'expense'].forEach(k => {
+      if (Array.isArray(data.categories[k]) && data.categories[k].length) {
+        base.categories[k] = data.categories[k].map(String);
+      }
+    });
+  }
+  if (Array.isArray(data.entries)) {
+    base.entries = data.entries.map(e => ({
+      id: e.id || uid(),
+      date: String(e.date || '').slice(0, 10),
+      type: e.type === 'income' ? 'income' : 'expense',
+      category: String(e.category || ''),
+      account: String(e.account || ''),
+      summary: String(e.summary || ''),
+      amount: num(e.amount),
+      voucher: String(e.voucher || ''),
+      note: String(e.note || '')
+    })).filter(e => /^\d{4}-\d{2}-\d{2}$/.test(e.date));
+  }
+  return base;
+}
+
+function save() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(db));
+  } catch (err) {
+    alert('儲存失敗，瀏覽器空間可能已滿。請先匯出備份檔。\n' + err);
+  }
+}
+
+/* ══ 小工具 ════════════════════════════════════════════ */
+
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+const clone = o => JSON.parse(JSON.stringify(o));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const num = v => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
+const esc = s => String(s).replace(/[&<>"']/g, c =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+const nf = new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 2 });
+const fmt = n => nf.format(Math.round(num(n) * 100) / 100);
+const money = n => (n === 0 ? '' : fmt(n));   // 報表裡的 0 留白比較好讀
+const today = () => new Date().toLocaleDateString('sv-SE');   // sv-SE 剛好是 YYYY-MM-DD
+
+function toast(msg) {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+const accountNames = () => db.accounts.map(a => a.name);
+const yearOf = e => e.date.slice(0, 4);
+const monthOf = e => e.date.slice(5, 7);
+
+function sortedEntries() {
+  return db.entries.slice().sort((a, b) =>
+    a.date === b.date ? String(a.id).localeCompare(String(b.id)) : a.date.localeCompare(b.date));
+}
+
+function years() {
+  const set = new Set(db.entries.map(yearOf));
+  set.add(String(new Date().getFullYear()));
+  return Array.from(set).sort().reverse();
+}
+
+function sum(list, type) {
+  return list.reduce((t, e) => t + (e.type === type ? e.amount : 0), 0);
+}
+
+function fillSelect(sel, values, current, allLabel) {
+  const keep = current !== undefined ? current : sel.value;
+  sel.innerHTML = (allLabel ? `<option value="">${esc(allLabel)}</option>` : '') +
+    values.map(v => {
+      const value = typeof v === 'object' ? v.value : v;
+      const label = typeof v === 'object' ? v.label : v;
+      return `<option value="${esc(value)}">${esc(label)}</option>`;
+    }).join('');
+  if (keep !== null && Array.from(sel.options).some(o => o.value === keep)) sel.value = keep;
+}
+
+/* ══ 分頁切換 ══════════════════════════════════════════ */
+
+function showTab(name) {
+  $$('.tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
+  $$('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + name));
+  if (name === 'monthly') renderMonthly();
+  if (name === 'yearly') renderYearly();
+  if (name === 'settings') renderSettings();
+}
+$$('.tabs button').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+
+/* ══ 記帳頁 ════════════════════════════════════════════ */
+
+function setFormType(type) {
+  formType = type;
+  $$('#f-type button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.type === type)));
+  fillSelect($('#f-category'), db.categories[type], null);
+}
+$$('#f-type button').forEach(b => b.addEventListener('click', () => setFormType(b.dataset.type)));
+
+function refreshFormOptions() {
+  fillSelect($('#f-category'), db.categories[formType], null);
+  fillSelect($('#f-account'), accountNames(), null);
+}
+
+function filtered() {
+  const y = $('#q-year').value, m = $('#q-month').value, t = $('#q-type').value;
+  const c = $('#q-category').value, a = $('#q-account').value;
+  const q = $('#q-text').value.trim().toLowerCase();
+  return sortedEntries().filter(e => {
+    if (y && yearOf(e) !== y) return false;
+    if (m && monthOf(e) !== m) return false;
+    if (t && e.type !== t) return false;
+    if (c && e.category !== c) return false;
+    if (a && e.account !== a) return false;
+    if (q && ![e.summary, e.note, e.voucher, e.category].join(' ').toLowerCase().includes(q)) return false;
+    return true;
+  }).reverse();   // 畫面上新的在前
+}
+
+function renderEntryFilters() {
+  fillSelect($('#q-year'), years(), undefined, '全部年度');
+  fillSelect($('#q-month'),
+    Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1).padStart(2, '0'), label: (i + 1) + ' 月' })),
+    undefined, '全部月份');
+  fillSelect($('#q-category'), db.categories.income.concat(db.categories.expense), undefined, '全部科目');
+  fillSelect($('#q-account'), accountNames(), undefined, '全部帳戶');
+}
+
+function renderEntry() {
+  const list = filtered();
+  const openings = db.accounts.reduce((t, a) => t + a.opening, 0);
+  const allIn = sum(db.entries, 'income'), allOut = sum(db.entries, 'expense');
+
+  $('#entryStats').innerHTML = [
+    ['期初餘額合計', fmt(openings), ''],
+    ['累計收入', fmt(allIn), 'in'],
+    ['累計支出', fmt(allOut), 'out'],
+    ['目前結餘', fmt(openings + allIn - allOut), '']
+  ].map(([label, value, cls]) =>
+    `<div class="stat ${cls}"><div class="label">${label}</div><div class="value">${value}</div></div>`).join('');
+
+  const fIn = sum(list, 'income'), fOut = sum(list, 'expense');
+  $('#listCount').textContent = `符合條件 ${list.length} 筆，共 ${db.entries.length} 筆`;
+
+  $('#entryBody').innerHTML = list.length ? list.map(e => `
+    <tr data-id="${e.id}" class="${e.id === editingId ? 'editing' : ''}">
+      <td>${e.date}</td>
+      <td><span class="tag ${e.type === 'income' ? 'in' : 'out'}">${e.type === 'income' ? '收' : '支'}</span></td>
+      <td>${esc(e.category)}</td>
+      <td class="memo">${esc(e.summary)}</td>
+      <td>${esc(e.account)}</td>
+      <td class="num amt-in">${e.type === 'income' ? fmt(e.amount) : ''}</td>
+      <td class="num amt-out">${e.type === 'expense' ? fmt(e.amount) : ''}</td>
+      <td>${esc(e.voucher)}</td>
+      <td class="memo">${esc(e.note)}</td>
+      <td class="noprint">
+        <button class="btn ghost sm" data-act="edit">編輯</button>
+        <button class="btn ghost sm" data-act="del">刪除</button>
+      </td>
+    </tr>`).join('')
+    : `<tr><td colspan="10" class="empty">還沒有符合條件的帳。從上面「新增一筆」開始記。</td></tr>`;
+
+  $('#entryFoot').innerHTML = list.length ? `
+    <tr>
+      <td colspan="5">篩選結果小計</td>
+      <td class="num amt-in">${fmt(fIn)}</td>
+      <td class="num amt-out">${fmt(fOut)}</td>
+      <td colspan="3">結餘 ${fmt(fIn - fOut)}</td>
+    </tr>` : '';
+
+  $('#brandName').textContent = db.settings.name || '公寓大廈記帳';
+  document.title = (db.settings.name || '公寓大廈記帳');
+
+  // 列印時的抬頭：把目前的篩選條件寫清楚，印出來才知道這張是什麼
+  $('#eRepName').textContent = db.settings.name || '公寓大廈管理委員會';
+  const cond = [
+    $('#q-year').value ? $('#q-year').value + ' 年' : '全部年度',
+    $('#q-month').value ? Number($('#q-month').value) + ' 月' : '',
+    $('#q-type').value === 'income' ? '僅收入' : ($('#q-type').value === 'expense' ? '僅支出' : ''),
+    $('#q-category').value, $('#q-account').value,
+    $('#q-text').value.trim() ? `關鍵字「${$('#q-text').value.trim()}」` : ''
+  ].filter(Boolean).join(' · ');
+  $('#eRepPeriod').textContent = `${cond}　共 ${list.length} 筆　收入 ${fmt(fIn)}　支出 ${fmt(fOut)}　結餘 ${fmt(fIn - fOut)}`;
+}
+
+$('#entryForm').addEventListener('submit', ev => {
+  ev.preventDefault();
+  const amount = num($('#f-amount').value);
+  if (amount <= 0) { toast('金額要大於 0'); $('#f-amount').focus(); return; }
+
+  const record = {
+    id: editingId || uid(),
+    date: $('#f-date').value,
+    type: formType,
+    category: $('#f-category').value,
+    account: $('#f-account').value,
+    summary: $('#f-summary').value.trim(),
+    amount: amount,
+    voucher: $('#f-voucher').value.trim(),
+    note: $('#f-note').value.trim()
+  };
+
+  if (editingId) {
+    const i = db.entries.findIndex(e => e.id === editingId);
+    if (i >= 0) db.entries[i] = record;
+    stopEditing();
+    toast('已更新');
+  } else {
+    db.entries.push(record);
+    toast('已新增一筆');
+  }
+  save();
+  // 日期、收支別、科目、帳戶留著，只清掉每筆都不一樣的欄位
+  ['#f-summary', '#f-amount', '#f-voucher', '#f-note'].forEach(s => { $(s).value = ''; });
+  renderEntryFilters();
+  renderEntry();
+  $('#f-summary').focus();
+});
+
+$('#entryBody').addEventListener('click', ev => {
+  const btn = ev.target.closest('button[data-act]');
+  if (!btn) return;
+  const id = btn.closest('tr').dataset.id;
+  if (btn.dataset.act === 'edit') startEditing(id);
+  else if (confirm('確定刪除這筆帳？刪掉就找不回來了。')) {
+    db.entries = db.entries.filter(e => e.id !== id);
+    if (editingId === id) stopEditing();
+    save(); renderEntry();
+    toast('已刪除');
+  }
+});
+
+function startEditing(id) {
+  const e = db.entries.find(x => x.id === id);
+  if (!e) return;
+  editingId = id;
+  setFormType(e.type);
+  fillSelect($('#f-account'), accountNames(), null);
+  // 科目或帳戶被刪掉過的舊資料，先補回選項才選得到
+  ensureOption($('#f-category'), e.category);
+  ensureOption($('#f-account'), e.account);
+  $('#f-date').value = e.date;
+  $('#f-category').value = e.category;
+  $('#f-account').value = e.account;
+  $('#f-summary').value = e.summary;
+  $('#f-amount').value = e.amount;
+  $('#f-voucher').value = e.voucher;
+  $('#f-note').value = e.note;
+  $('#formTitle').innerHTML = '修改這筆<span class="hint">改完按「更新」</span>';
+  $('#submitBtn').textContent = '更新';
+  $('#cancelEdit').hidden = false;
+  renderEntry();
+  $('#entryForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function ensureOption(sel, value) {
+  if (value && !Array.from(sel.options).some(o => o.value === value)) {
+    sel.insertAdjacentHTML('beforeend', `<option value="${esc(value)}">${esc(value)}</option>`);
+  }
+}
+
+function stopEditing() {
+  editingId = null;
+  $('#formTitle').innerHTML = '新增一筆<span class="hint">日期與科目會留著，方便連續輸入</span>';
+  $('#submitBtn').textContent = '新增';
+  $('#cancelEdit').hidden = true;
+  ['#f-summary', '#f-amount', '#f-voucher', '#f-note'].forEach(s => { $(s).value = ''; });
+  refreshFormOptions();
+}
+$('#cancelEdit').addEventListener('click', () => { stopEditing(); renderEntry(); });
+
+['#q-year', '#q-month', '#q-type', '#q-category', '#q-account'].forEach(s =>
+  $(s).addEventListener('change', renderEntry));
+$('#q-text').addEventListener('input', renderEntry);
+$('#printEntries').addEventListener('click', () => window.print());
+$('#q-reset').addEventListener('click', () => {
+  ['#q-year', '#q-month', '#q-type', '#q-category', '#q-account', '#q-text'].forEach(s => { $(s).value = ''; });
+  renderEntry();
+});
+
+/* ══ 月報表 ════════════════════════════════════════════ */
+
+function renderMonthly() {
+  fillSelect($('#m-year'), years(), $('#m-year').value || String(new Date().getFullYear()));
+  if (!$('#m-month').options.length) {
+    fillSelect($('#m-month'),
+      Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1).padStart(2, '0'), label: (i + 1) + ' 月' })),
+      String(new Date().getMonth() + 1).padStart(2, '0'));
+  }
+  const y = $('#m-year').value, m = $('#m-month').value;
+  const ym = `${y}-${m}`;
+
+  const inMonth = db.entries.filter(e => e.date.slice(0, 7) === ym);
+  const ytd = db.entries.filter(e => yearOf(e) === y && e.date.slice(0, 7) <= ym);
+  const before = db.entries.filter(e => e.date.slice(0, 7) < ym);
+
+  const openings = db.accounts.reduce((t, a) => t + a.opening, 0);
+  const carry = openings + sum(before, 'income') - sum(before, 'expense');
+  const mIn = sum(inMonth, 'income'), mOut = sum(inMonth, 'expense');
+
+  $('#mRepName').textContent = db.settings.name || '公寓大廈管理委員會';
+  $('#mRepPeriod').textContent = `${y} 年 ${Number(m)} 月（${ym}-01 ～ ${ym}-${lastDay(y, m)}）`;
+
+  $('#monthlyStats').innerHTML = [
+    ['上月結轉', fmt(carry), ''],
+    ['本月收入', fmt(mIn), 'in'],
+    ['本月支出', fmt(mOut), 'out'],
+    ['本月結餘', fmt(mIn - mOut), ''],
+    ['月底結餘', fmt(carry + mIn - mOut), '']
+  ].map(([label, value, cls]) =>
+    `<div class="stat ${cls}"><div class="label">${label}</div><div class="value">${value}</div></div>`).join('');
+
+  renderCategoryTable('income', inMonth, ytd, '#mIncomeBody', '#mIncomeFoot');
+  renderCategoryTable('expense', inMonth, ytd, '#mExpenseBody', '#mExpenseFoot');
+
+  $('#mBalanceBody').innerHTML = [
+    ['上月結轉金額', carry],
+    ['本月收入合計', mIn],
+    ['本月支出合計', mOut],
+    ['本月結餘（收入－支出）', mIn - mOut],
+    ['本月底結餘金額', carry + mIn - mOut]
+  ].map(([label, value], i, arr) =>
+    `<tr${i === arr.length - 1 ? ' style="font-weight:700"' : ''}>
+       <td>${label}</td><td class="num">${fmt(value)}</td></tr>`).join('');
+
+  // 帳戶餘額：期初 + 到本月底為止的收支
+  const upto = db.entries.filter(e => e.date.slice(0, 7) <= ym);
+  let tO = 0, tI = 0, tE = 0;
+  $('#mAccountBody').innerHTML = db.accounts.map(a => {
+    const rows = upto.filter(e => e.account === a.name);
+    const i = sum(rows, 'income'), o = sum(rows, 'expense');
+    tO += a.opening; tI += i; tE += o;
+    return `<tr><td>${esc(a.name)}</td><td class="num">${fmt(a.opening)}</td>
+            <td class="num amt-in">${money(i)}</td><td class="num amt-out">${money(o)}</td>
+            <td class="num">${fmt(a.opening + i - o)}</td></tr>`;
+  }).join('');
+
+  const orphan = upto.filter(e => !accountNames().includes(e.account));
+  const oi = sum(orphan, 'income'), oo = sum(orphan, 'expense');
+  if (orphan.length) {
+    tI += oi; tE += oo;
+    $('#mAccountBody').insertAdjacentHTML('beforeend',
+      `<tr><td>未指定帳戶</td><td class="num">0</td>
+        <td class="num amt-in">${money(oi)}</td><td class="num amt-out">${money(oo)}</td>
+        <td class="num">${fmt(oi - oo)}</td></tr>`);
+  }
+  $('#mAccountFoot').innerHTML =
+    `<tr><td>合計</td><td class="num">${fmt(tO)}</td><td class="num">${fmt(tI)}</td>
+      <td class="num">${fmt(tE)}</td><td class="num">${fmt(tO + tI - tE)}</td></tr>`;
+}
+
+function renderCategoryTable(type, monthRows, ytdRows, bodySel, footSel) {
+  const cats = db.categories[type].slice();
+  // 舊資料用過但科目表已經沒有的，也要列出來，不然報表金額會對不起來
+  monthRows.concat(ytdRows).forEach(e => {
+    if (e.type === type && e.category && !cats.includes(e.category)) cats.push(e.category);
+  });
+
+  let mTotal = 0, yTotal = 0;
+  const rows = cats.map(c => {
+    const m = monthRows.filter(e => e.type === type && e.category === c).reduce((t, e) => t + e.amount, 0);
+    const y = ytdRows.filter(e => e.type === type && e.category === c).reduce((t, e) => t + e.amount, 0);
+    mTotal += m; yTotal += y;
+    if (!m && !y) return '';   // 整年都沒動過的科目不必佔版面
+    return `<tr><td>${esc(c)}</td><td class="num">${money(m)}</td><td class="num">${money(y)}</td></tr>`;
+  }).filter(Boolean).join('');
+
+  $(bodySel).innerHTML = rows || `<tr><td colspan="3" class="empty">本期沒有${type === 'income' ? '收入' : '支出'}</td></tr>`;
+  $(footSel).innerHTML = `<tr><td>合計</td><td class="num">${fmt(mTotal)}</td><td class="num">${fmt(yTotal)}</td></tr>`;
+}
+
+function lastDay(y, m) {
+  return String(new Date(Number(y), Number(m), 0).getDate()).padStart(2, '0');
+}
+
+$('#m-year').addEventListener('change', renderMonthly);
+$('#m-month').addEventListener('change', renderMonthly);
+$('#printMonthly').addEventListener('click', () => window.print());
+
+/* ══ 年度彙總 ══════════════════════════════════════════ */
+
+function yearlyMatrix(year) {
+  const months = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
+  const rows = db.entries.filter(e => yearOf(e) === year);
+
+  const build = type => {
+    const cats = db.categories[type].slice();
+    rows.forEach(e => { if (e.type === type && e.category && !cats.includes(e.category)) cats.push(e.category); });
+    return cats.map(c => {
+      const cells = months.map(m =>
+        rows.filter(e => e.type === type && e.category === c && monthOf(e) === m)
+            .reduce((t, e) => t + e.amount, 0));
+      return { name: c, cells, total: cells.reduce((a, b) => a + b, 0) };
+    }).filter(r => r.total !== 0);
+  };
+
+  const incomes = build('income'), expenses = build('expense');
+  const monthIn = months.map((m, i) => incomes.reduce((t, r) => t + r.cells[i], 0));
+  const monthOut = months.map((m, i) => expenses.reduce((t, r) => t + r.cells[i], 0));
+
+  // 期初 + 這一年之前的所有收支 = 年初結轉
+  const before = db.entries.filter(e => yearOf(e) < year);
+  let running = db.accounts.reduce((t, a) => t + a.opening, 0)
+    + sum(before, 'income') - sum(before, 'expense');
+  const opening = running;
+  const closing = months.map((m, i) => (running = running + monthIn[i] - monthOut[i]));
+
+  return { months, incomes, expenses, monthIn, monthOut, opening, closing };
+}
+
+function renderYearly() {
+  fillSelect($('#y-year'), years(), $('#y-year').value || String(new Date().getFullYear()));
+  const year = $('#y-year').value;
+  const d = yearlyMatrix(year);
+
+  $('#yRepName').textContent = db.settings.name || '公寓大廈管理委員會';
+  $('#yRepPeriod').textContent = `${year} 年 1 月 ～ 12 月（年初結轉 ${fmt(d.opening)}）`;
+
+  $('#yearlyHead').innerHTML =
+    `<tr><th>科目</th>${d.months.map(m => `<th class="num">${Number(m)}月</th>`).join('')}<th class="num">合計</th></tr>`;
+
+  const line = (r, cls) =>
+    `<tr><td>${esc(r.name)}</td>${r.cells.map(v => `<td class="num ${cls}">${money(v)}</td>`).join('')}
+      <td class="num">${fmt(r.total)}</td></tr>`;
+  const section = label => `<tr class="sec-row"><td colspan="14">${label}</td></tr>`;
+  const totalLine = (label, cells) =>
+    `<tr style="font-weight:700"><td>${label}</td>${cells.map(v => `<td class="num">${money(v)}</td>`).join('')}
+      <td class="num">${fmt(cells.reduce((a, b) => a + b, 0))}</td></tr>`;
+
+  const net = d.months.map((m, i) => d.monthIn[i] - d.monthOut[i]);
+
+  $('#yearlyBody').innerHTML =
+    section('收入') +
+    (d.incomes.map(r => line(r, 'amt-in')).join('') || `<tr><td colspan="14" class="empty">本年度沒有收入紀錄</td></tr>`) +
+    totalLine('收入合計', d.monthIn) +
+    section('支出') +
+    (d.expenses.map(r => line(r, 'amt-out')).join('') || `<tr><td colspan="14" class="empty">本年度沒有支出紀錄</td></tr>`) +
+    totalLine('支出合計', d.monthOut) +
+    section('結餘') +
+    totalLine('本月結餘', net) +
+    `<tr style="font-weight:700"><td>期末結餘</td>${d.closing.map(v => `<td class="num">${fmt(v)}</td>`).join('')}
+      <td class="num">${fmt(d.closing[11])}</td></tr>`;
+}
+
+$('#y-year').addEventListener('change', renderYearly);
+$('#printYearly').addEventListener('click', () => window.print());
+
+/* ══ 設定頁 ════════════════════════════════════════════ */
+
+function renderSettings() {
+  $('#s-name').value = db.settings.name || '';
+  $('#s-opening-date').value = db.settings.openingDate || '';
+
+  $('#accountSettingBody').innerHTML = db.accounts.map((a, i) => `
+    <tr data-index="${i}">
+      <td><input type="text" data-acc="name" value="${esc(a.name)}"></td>
+      <td><input type="number" step="1" data-acc="opening" value="${a.opening}"></td>
+      <td><button class="btn ghost sm" data-acc-del>刪除</button></td>
+    </tr>`).join('') || `<tr><td colspan="3" class="empty">還沒有帳戶</td></tr>`;
+
+  $('#accountSettingFoot').innerHTML =
+    `<tr><td>期初合計</td><td class="num">${fmt(db.accounts.reduce((t, a) => t + a.opening, 0))}</td><td></td></tr>`;
+
+  ['income', 'expense'].forEach(type => {
+    $(type === 'income' ? '#incomeChips' : '#expenseChips').innerHTML =
+      db.categories[type].map(c => `
+        <span class="chip">${esc(c)}
+          <button type="button" data-del-cat="${esc(type)}" data-name="${esc(c)}" title="刪除">×</button>
+        </span>`).join('');
+  });
+
+  const bytes = new Blob([JSON.stringify(db)]).size;
+  $('#storageNote').textContent =
+    `目前 ${db.entries.length} 筆帳，資料約 ${(bytes / 1024).toFixed(1)} KB。` +
+    `清除瀏覽器資料、換裝置或換瀏覽器都會看不到這些帳，請定期匯出備份。`;
+}
+
+$('#s-name').addEventListener('input', ev => {
+  db.settings.name = ev.target.value;
+  save(); renderEntry();
+});
+$('#s-opening-date').addEventListener('change', ev => {
+  db.settings.openingDate = ev.target.value;
+  save();
+});
+
+$('#accountSettingBody').addEventListener('change', ev => {
+  const input = ev.target.closest('input[data-acc]');
+  if (!input) return;
+  const i = Number(input.closest('tr').dataset.index);
+  const acc = db.accounts[i];
+  if (!acc) return;
+
+  if (input.dataset.acc === 'name') {
+    const newName = input.value.trim();
+    if (!newName) { input.value = acc.name; toast('帳戶名稱不能空白'); return; }
+    if (db.accounts.some((a, j) => j !== i && a.name === newName)) {
+      input.value = acc.name; toast('已經有同名帳戶了'); return;
+    }
+    const oldName = acc.name;
+    acc.name = newName;
+    db.entries.forEach(e => { if (e.account === oldName) e.account = newName; });   // 帳也跟著改名
+  } else {
+    acc.opening = num(input.value);
+  }
+  save(); renderSettings(); refreshFormOptions(); renderEntryFilters(); renderEntry();
+});
+
+$('#accountSettingBody').addEventListener('click', ev => {
+  if (!ev.target.closest('[data-acc-del]')) return;
+  const i = Number(ev.target.closest('tr').dataset.index);
+  const acc = db.accounts[i];
+  if (!acc) return;
+  const used = db.entries.filter(e => e.account === acc.name).length;
+  if (used) { alert(`「${acc.name}」已經有 ${used} 筆帳在用，不能刪除。請先把那些帳改到別的帳戶。`); return; }
+  if (!confirm(`刪除帳戶「${acc.name}」？`)) return;
+  db.accounts.splice(i, 1);
+  save(); renderSettings(); refreshFormOptions(); renderEntryFilters(); renderEntry();
+});
+
+$('#addAccount').addEventListener('click', () => {
+  const name = $('#newAccount').value.trim();
+  if (!name) { toast('請先輸入帳戶名稱'); return; }
+  if (accountNames().includes(name)) { toast('已經有同名帳戶了'); return; }
+  db.accounts.push({ name, opening: 0 });
+  $('#newAccount').value = '';
+  save(); renderSettings(); refreshFormOptions(); renderEntryFilters();
+  toast('已新增帳戶');
+});
+
+$$('[data-add-cat]').forEach(btn => btn.addEventListener('click', () => {
+  const type = btn.dataset.addCat;
+  const input = $(type === 'income' ? '#newIncome' : '#newExpense');
+  const name = input.value.trim();
+  if (!name) { toast('請先輸入科目名稱'); return; }
+  if (db.categories[type].includes(name)) { toast('這個科目已經有了'); return; }
+  db.categories[type].push(name);
+  input.value = '';
+  save(); renderSettings(); refreshFormOptions(); renderEntryFilters();
+  toast('已新增科目');
+}));
+
+$('#panel-settings').addEventListener('click', ev => {
+  const btn = ev.target.closest('[data-del-cat]');
+  if (!btn) return;
+  const type = btn.dataset.delCat, name = btn.dataset.name;
+  const used = db.entries.filter(e => e.type === type && e.category === name).length;
+  if (used) { alert(`「${name}」已經有 ${used} 筆帳在用，不能刪除。請先把那些帳改成別的科目。`); return; }
+  if (!confirm(`刪除科目「${name}」？`)) return;
+  db.categories[type] = db.categories[type].filter(c => c !== name);
+  save(); renderSettings(); refreshFormOptions(); renderEntryFilters();
+});
+
+/* ══ 匯出與備份 ════════════════════════════════════════ */
+
+function download(filename, text, mime) {
+  const blob = new Blob([text], { type: (mime || 'text/plain') + ';charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function toCsv(rows) {
+  const body = rows.map(r => r.map(cell => {
+    const s = String(cell === null || cell === undefined ? '' : cell);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }).join(',')).join('\r\n');
+  return '﻿' + body;   // 加 BOM，Excel 開啟才不會變亂碼
+}
+
+function stamp() { return today().replace(/-/g, ''); }
+function prefix() { return (db.settings.name || '公寓大廈').replace(/[\\/:*?"<>|]/g, ''); }
+
+$('#exportEntriesCsv').addEventListener('click', () => {
+  const list = filtered().slice().reverse();
+  if (!list.length) { toast('目前沒有可匯出的資料'); return; }
+  const rows = [['日期', '收支別', '科目', '摘要', '帳戶', '收入', '支出', '單據號碼', '備註']];
+  list.forEach(e => rows.push([
+    e.date, e.type === 'income' ? '收入' : '支出', e.category, e.summary, e.account,
+    e.type === 'income' ? e.amount : '', e.type === 'expense' ? e.amount : '', e.voucher, e.note
+  ]));
+  rows.push([]);
+  rows.push(['合計', '', '', '', '', sum(list, 'income'), sum(list, 'expense'), '', '']);
+  download(`${prefix()}_流水帳_${stamp()}.csv`, toCsv(rows), 'text/csv');
+  toast('已匯出 CSV');
+});
+
+$('#exportMonthlyCsv').addEventListener('click', () => {
+  const y = $('#m-year').value, m = $('#m-month').value, ym = `${y}-${m}`;
+  const inMonth = db.entries.filter(e => e.date.slice(0, 7) === ym);
+  const ytd = db.entries.filter(e => yearOf(e) === y && e.date.slice(0, 7) <= ym);
+  const before = db.entries.filter(e => e.date.slice(0, 7) < ym);
+  const carry = db.accounts.reduce((t, a) => t + a.opening, 0) + sum(before, 'income') - sum(before, 'expense');
+  const mIn = sum(inMonth, 'income'), mOut = sum(inMonth, 'expense');
+
+  const rows = [[db.settings.name || '公寓大廈管理委員會'], [`${y} 年 ${Number(m)} 月 收支月報表`], []];
+  ['income', 'expense'].forEach(type => {
+    rows.push([type === 'income' ? '收入科目' : '支出科目', '本月金額', '本年累計']);
+    const cats = db.categories[type].slice();
+    ytd.forEach(e => { if (e.type === type && !cats.includes(e.category)) cats.push(e.category); });
+    cats.forEach(c => {
+      const mv = inMonth.filter(e => e.type === type && e.category === c).reduce((t, e) => t + e.amount, 0);
+      const yv = ytd.filter(e => e.type === type && e.category === c).reduce((t, e) => t + e.amount, 0);
+      if (mv || yv) rows.push([c, mv, yv]);
+    });
+    rows.push(['合計', type === 'income' ? mIn : mOut,
+      ytd.filter(e => e.type === type).reduce((t, e) => t + e.amount, 0)]);
+    rows.push([]);
+  });
+  rows.push(['上月結轉', carry]);
+  rows.push(['本月結餘', mIn - mOut]);
+  rows.push(['本月底結餘', carry + mIn - mOut]);
+  download(`${prefix()}_${y}${m}_月報表.csv`, toCsv(rows), 'text/csv');
+  toast('已匯出 CSV');
+});
+
+$('#exportYearlyCsv').addEventListener('click', () => {
+  const year = $('#y-year').value;
+  const d = yearlyMatrix(year);
+  const header = ['科目'].concat(d.months.map(m => Number(m) + '月')).concat(['合計']);
+  const rows = [[db.settings.name || '公寓大廈管理委員會'], [`${year} 年度收支彙總表`], [], header, ['收入']];
+  d.incomes.forEach(r => rows.push([r.name].concat(r.cells).concat([r.total])));
+  rows.push(['收入合計'].concat(d.monthIn).concat([d.monthIn.reduce((a, b) => a + b, 0)]));
+  rows.push(['支出']);
+  d.expenses.forEach(r => rows.push([r.name].concat(r.cells).concat([r.total])));
+  rows.push(['支出合計'].concat(d.monthOut).concat([d.monthOut.reduce((a, b) => a + b, 0)]));
+  const net = d.months.map((m, i) => d.monthIn[i] - d.monthOut[i]);
+  rows.push(['本月結餘'].concat(net).concat([net.reduce((a, b) => a + b, 0)]));
+  rows.push(['期末結餘'].concat(d.closing).concat([d.closing[11]]));
+  download(`${prefix()}_${year}_年度彙總.csv`, toCsv(rows), 'text/csv');
+  toast('已匯出 CSV');
+});
+
+$('#exportJson').addEventListener('click', () => {
+  download(`${prefix()}_備份_${stamp()}.json`, JSON.stringify(db, null, 2), 'application/json');
+  toast('備份檔已下載');
+});
+
+$('#importJsonBtn').addEventListener('click', () => $('#importJson').click());
+$('#importJson').addEventListener('change', ev => {
+  const file = ev.target.files && ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = normalize(JSON.parse(reader.result));
+      if (!confirm(`備份檔裡有 ${data.entries.length} 筆帳。匯入會蓋掉目前的 ${db.entries.length} 筆，確定嗎？`)) return;
+      db = data;
+      save();
+      stopEditing(); renderEntryFilters(); renderEntry(); renderSettings();
+      toast('已匯入備份檔');
+    } catch (err) {
+      alert('這個檔案讀不出來，請確認是本程式匯出的 JSON 備份檔。\n' + err);
+    } finally {
+      ev.target.value = '';
+    }
+  };
+  reader.readAsText(file);
+});
+
+$('#wipeAll').addEventListener('click', () => {
+  if (!confirm('會刪掉全部帳目、科目與帳戶設定，且無法復原。要先匯出備份嗎？\n\n按「確定」繼續清除。')) return;
+  if (!confirm('再確認一次：真的要清除全部資料？')) return;
+  db = clone(DEFAULTS);
+  localStorage.removeItem(STORE_KEY);
+  stopEditing(); renderEntryFilters(); renderEntry(); renderSettings();
+  toast('資料已清除');
+});
+
+/* ══ 啟動 ══════════════════════════════════════════════ */
+
+db = load();
+$('#f-date').value = today();
+setFormType('expense');
+refreshFormOptions();
+renderEntryFilters();
+renderEntry();
+</script>
+</body>
+</html>
