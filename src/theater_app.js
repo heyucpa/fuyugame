@@ -1835,15 +1835,18 @@ function renderEnding() {
             ${foldHTML('talkmore', '💬 跟爸爸媽媽討論',
               narrate(cur.talk || '把這個故事講給爸爸媽媽聽，問問看他們會怎麼做？'))}
           </div>
+          <!-- 回顧也折起來。它是這一頁第三塊長東西——
+               而且她剛剛才走過那幾步，最不需要馬上再讀一次的就是它。
+               標題寫出幾步，想回去看的人知道裡面有什麼。 -->
           ${replayOn() ? `
           <div class="replay">
-            <h3>📖 回顧你的選擇</h3>
-            ${path.map((p, i) => `
+            ${foldHTML('repmore', '📖 回顧你的選擇（' + path.length + ' 步）',
+              path.map((p, i) => `
               <div class="step-row">
                 <span class="step-n">${i + 1}</span>
                 <span><span style="color:#6b5a7e;">${esc(p.text.slice(0, 26))}${p.text.length > 26 ? '…' : ''}</span><br>
                 <b style="color:#6b4a9e;">→ ${esc(p.label)}</b></span>
-              </div>`).join('')}
+              </div>`).join(''))}
           </div>` : ''}
         </div>
       </div>
@@ -1863,6 +1866,7 @@ function renderEnding() {
   `;
   wireFold('lmore');      // 「還有 N 段」
   wireFold('talkmore');   // 「跟爸爸媽媽討論」
+  wireFold('repmore');    // 「回顧你的選擇」
   if (fromTown) {
     document.getElementById('tgo').onclick = () => {
       Sfx.tap(); fromTown = false; townFree = false; townMsg = null; view = 'town'; render();
