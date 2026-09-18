@@ -1,5 +1,7 @@
 <script>(function(){
   var fails=[], errs=[], seenArt={}, dup=[], total=0, safe={full:0,one:0,none:0};
+  var lead2=[];                       // 第一眼看到幾個字
+  var strip=function(t){ return String(t||'').replace(/\s+/g,''); };
   window.addEventListener('error', function(e){ errs.push(String(e.message)); });
   // 每個等級應該顯示哪一顆徽章——等級改了徽章沒跟上，這裡會直接擋下來
   var WANT={best:'完美結局', good:'只差一步', escape:'驚險結局', bad:'再試結局'};
@@ -49,6 +51,34 @@
         if (/大部分的人都是安全/.test(app.textContent)) { safe.none++;
           fails.push(tag+' 結局頁還留著「大部分的人都是安全」那一段'); }
 
+        /* 結局頁的說明預設只給第一段（重點句），其餘收起來。
+           姊姊的反應是「文字一堆，她沒在看」——量過之後長的就是這一塊。
+           這裡最要緊的一條是：收起來不等於弄丟。 */
+        var lead = document.querySelector('.lesson .lead');
+        var lbody = document.getElementById('lmore-body');
+        if (!lead) fails.push(tag+' 結局頁沒有那句重點');
+        else {
+          var leadN = strip(lead.textContent).length;
+          lead2.push(leadN);
+          if (leadN > 90) fails.push(tag+' 第一眼就 '+leadN+' 個字，還是一堆');
+          if (lbody && !lbody.hidden) fails.push(tag+' 其餘那幾段預設就攤開了');
+          // 收起來 ≠ 弄丟：第一段 + 收起來的那幾段要拼得回原文
+          var whole = strip(lead.textContent) + (lbody ? strip(lbody.textContent) : '');
+          if (whole !== strip(plain(sc.endings[key].lesson)))
+            fails.push(tag+' 折起來之後內容對不上原文（有東西掉了）');
+          var lb = document.getElementById('lmore');
+          if (lbody && !lb) fails.push(tag+' 有收起來的段落卻沒有可以打開的按鈕');
+          if (lb) { lb.onclick(); if (lbody.hidden) fails.push(tag+' 按了「還有幾段」卻打不開'); }
+        }
+        // 「跟爸媽討論」是寫給大人看的，整塊也收起來
+        var tbody = document.getElementById('talkmore-body');
+        if (!tbody) fails.push(tag+' 沒有「跟爸爸媽媽討論」');
+        else {
+          if (!tbody.hidden) fails.push(tag+' 「跟爸媽討論」預設就攤開了');
+          if (sc.talk && strip(tbody.textContent) !== strip(plain(sc.talk)))
+            fails.push(tag+' 「跟爸媽討論」的內容對不上');
+        }
+
         var svg=document.querySelector('.scene svg');
         if(!svg){ fails.push(tag+' 沒有插圖'); }
         else { var sig=svg.innerHTML;   // 要整段比，只比開頭會誤判成重複
@@ -68,8 +98,10 @@
   } catch(e) { errs.push('THROW '+e.message); }
 
   var pre=document.createElement('pre'); pre.id='R';
+  lead2.sort(function(a,b){return a-b;});
   pre.textContent=['走過結局 '+total,
     '結局頁出現安全提醒 '+safe.none+' 次（應該是 0，那一段只放開始畫面）',
+    '結局頁第一眼看到的字數：中位 '+lead2[Math.floor(lead2.length/2)]+'、最長 '+lead2[lead2.length-1],
     '失敗 '+fails.length,
     '重複插圖 '+dup.length, 'JS 錯誤 '+errs.length, '',
     fails.concat(dup).concat(errs).slice(0,25).join('\n')].join('\n');

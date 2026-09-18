@@ -7798,5 +7798,19 @@ render();
   } catch (e) { /* 沒網路就算了，照樣可以玩 */ }
 })();
 </script>
+<script>(function(){
+
+localStorage.clear();
+todayStamp=function(){return '2026-10-7';}; nowMin=function(){return 9*60+9;};
+view='town'; render();
+var t = document.querySelector('.twinkle text'), out={};
+out.reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+if (!t) out.missing = true;
+else { out.op = getComputedStyle(t).opacity;
+       out.dur = getComputedStyle(t).animationDuration;
+       out.glow = getComputedStyle(t.parentNode).filter !== 'none'; }
+document.title = 'R:' + JSON.stringify(out);
+
+})();</script>
 </body>
 </html>

@@ -336,6 +336,42 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 const narrate = s => esc(s).replace(/&lt;(\/?(?:br|b))&gt;/g, '<$1>');
 const plain = s => String(s).replace(/<[^>]*>/g, '');
 
+/* ===== 一次只給一句 =====
+   姊姊的反應是「文字一堆，她沒在看」。量過之後問題不在故事——
+   節點旁白中位數才 46 字——而是結局頁的「學到了什麼」：
+   中位數 95 字、四分之一超過 112 字、最長 291 字。
+   她做完選擇、拿到結果、正想再玩一次的那一刻，我們丟一篇說明給她。
+
+   148 則裡有 125 則的第一段本來就是重點句（其餘是延伸與例外），
+   所以只要在第一個空行切開，預設只顯示第一段：中位數變成 24 字。
+   其餘的沒有刪掉，收在一個「還有 N 段」底下，她想看、或大人要唸，
+   點一下就全部出來。看不下去的字教不了任何東西，
+   一句她真的看完的，比一百字她跳過的有用。 */
+const PARA = /<br\s*\/?>\s*<br\s*\/?>/i;
+function splitLead(t) {
+  const s = String(t || '');
+  const m = s.match(PARA);
+  if (!m) return { head: s, rest: '', n: 0 };
+  const head = s.slice(0, m.index);
+  const rest = s.slice(m.index + m[0].length);
+  return { head: head, rest: rest, n: rest.split(PARA).length };
+}
+/* 折起來的那一塊。id 要傳進來，因為同一頁有兩個（說明、跟爸媽討論）。
+   預設一定是收起來的：記住上次展開的話，下一篇又會變成一堆字。 */
+function foldHTML(id, label, inner) {
+  return `<button class="foldbtn" id="${id}">${esc(label)} <span class="car">▾</span></button>
+    <div class="foldbody" id="${id}-body" hidden>${inner}</div>`;
+}
+function wireFold(id) {
+  const b = document.getElementById(id), body = document.getElementById(id + '-body');
+  if (!b || !body) return;
+  b.onclick = () => {
+    Sfx.tap();
+    body.hidden = !body.hidden;
+    b.classList.toggle('open', !body.hidden);
+  };
+}
+
 /* 現實時間 → 時段。底色與問候都看這個。 */
 function todNow() {
   const h = new Date().getHours();
@@ -1785,15 +1821,19 @@ function renderEnding() {
           </div>
           <div class="lesson">
             <div style="font-weight:900; margin-bottom:5px; color:#1e7d46;">${cons ? '🤔 想一想' : '💡 學到了什麼'}</div>
-            ${narrate(ending.lesson)}
+            ${(() => { const L = splitLead(ending.lesson);
+              return `<div class="lead">${narrate(L.head)}</div>` + (L.rest
+                ? foldHTML('lmore', '還有 ' + L.n + ' 段', narrate(L.rest)) : ''); })()}
           </div>
           ${ending.grade === 'bad' ? `<div class="dadsay">
             <div class="dadart"><svg viewBox="0 0 44 46" aria-hidden="true">${DAD(22, 43, 0.55, 'reachR')}</svg></div>
             <div><b>爸爸</b><br>${narrate(dadLine())}</div>
           </div>` : ''}
+          <!-- 這一塊本來就是寫給大人看的，她自己一個人玩的時候不會讀。
+               整塊收起來，需要的人點開，不需要的人少看五十個字。 -->
           <div class="talkbox">
-            <div class="talkbox-h">💬 跟爸爸媽媽討論</div>
-            <div>${narrate(cur.talk || '把這個故事講給爸爸媽媽聽，問問看他們會怎麼做？')}</div>
+            ${foldHTML('talkmore', '💬 跟爸爸媽媽討論',
+              narrate(cur.talk || '把這個故事講給爸爸媽媽聽，問問看他們會怎麼做？'))}
           </div>
           ${replayOn() ? `
           <div class="replay">
@@ -1821,6 +1861,8 @@ function renderEnding() {
       </div>
     </div>
   `;
+  wireFold('lmore');      // 「還有 N 段」
+  wireFold('talkmore');   // 「跟爸爸媽媽討論」
   if (fromTown) {
     document.getElementById('tgo').onclick = () => {
       Sfx.tap(); fromTown = false; townFree = false; townMsg = null; view = 'town'; render();
