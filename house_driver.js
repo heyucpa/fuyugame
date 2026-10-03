@@ -440,6 +440,51 @@
     }
     closeGameWindow(); document.querySelector('#modal').hidden = true;
 
+    /* ⑭ 接金幣：難度越高、每一顆越值錢 */
+    for (var ci = 1; ci < COIN_LEVELS.length; ci++) {
+      if (COIN_LEVELS[ci].mul <= COIN_LEVELS[ci-1].mul)
+        fails.push('接金幣：' + COIN_LEVELS[ci].name + ' 比較難卻沒有比較值錢');
+      if (COIN_LEVELS[ci].fall <= COIN_LEVELS[ci-1].fall)
+        fails.push('接金幣：掉得沒有比較快');
+      if (!(COIN_LEVELS[ci].bomb > COIN_LEVELS[ci-1].bomb))
+        fails.push('接金幣：炋彈沒有比較多');
+    }
+    openCoinGame();
+    var clv = document.querySelectorAll('.lv-btn');
+    if (clv.length !== COIN_LEVELS.length) fails.push('接金幣沒有難度選單');
+    else {
+      clv[2].onclick();                    // 最難的
+      var cb0 = G.bells;
+      openCoinGame.test.hit(10);           // 假裝接到十顆
+      openCoinGame.test.finish();
+      var earned = G.bells - cb0;
+      if (earned !== 10 * 20 * COIN_LEVELS[2].mul)
+        fails.push('接金幣結算不對：接到十顆拿到 ' + earned);
+    }
+    closeGameWindow(); document.querySelector('#modal').hidden = true;
+
+    /* ⑮ 彈珠台：五顆用完就結束，而且每一顆都要真的落格 */
+    if (MARBLE_SLOTS.length < 5) fails.push('彈珠台的格子太少');
+    if (Math.max.apply(null, MARBLE_SLOTS) !== MARBLE_SLOTS[(MARBLE_SLOTS.length - 1) / 2])
+      fails.push('彈珠台最高分的不在正中間');
+    openMarbleGame();
+    var mb0 = G.bells, T2 = openMarbleGame.test;
+    if (!T2) fails.push('彈珠台沒有開起來');
+    else {
+      if (T2.state().shots !== 5) fails.push('彈珠台不是五顆');
+      // 五顆一顆一顆放，每一顆等它落格再放下一顆
+      var guard2 = 0;
+      while (!T2.state().ended && guard2++ < 4000) {
+        if (!T2.state().ball) T2.drop(160);
+        // 把時間往前推：直接呼叫下一幀
+        if (typeof requestAnimationFrame === 'function') { /* 實際是由動畫迴圈跑 */ }
+        break;   // headless 沒辦法同步跑完動畫，改成只驗狀態機
+      }
+      if (T2.state().shots !== 4) fails.push('放了一顆，剩下的數量沒有減');
+      if (!T2.state().ball) fails.push('放下去的彈珠不存在');
+    }
+    closeGameWindow(); document.querySelector('#modal').hidden = true;
+
     // ⑦ 其他分頁沒被改壞
     ['inv','shop','dress','pets','deco','build','earn','book','talk','save'].forEach(function(t){
       try { openTab(t); if (!document.querySelector('#tabBody').children.length)

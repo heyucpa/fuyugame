@@ -6158,7 +6158,9 @@ function tabEarn(body) {
   [['🃏', '翻牌配對', openMemoryGame], ['🧺', `${petName()}接水果`, openCatchGame], ['🫧', '戳泡泡', openBubbleGame],
     ['🥤', '杯子躲貓貓', openCupGame], ['🥞', '疊疊鬆餅', openStackGame], ['🎵', '跟著唱', openSimonGame],
     ['🎯', '彈弓丟蘋果', openSlingGame],
-    ['🧩', '拼圖', openPuzzleGame]].forEach(([icon, label, fn]) => {
+    ['🧩', '拼圖', openPuzzleGame],
+    ['🪙', '接金幣', openCoinGame],
+    ['⚪', '彈珠台', openMarbleGame]].forEach(([icon, label, fn]) => {
     const b = el('button', 'game-pick');
     b.append(el('span', 'gi', icon), el('span', '', label));
     b.onclick = () => { Sound.play('click'); fn(); };
@@ -7652,6 +7654,231 @@ function openFarmGame() {
 }
 </script>
 <script>
+/* ===== 小遊戲：接金幣 =====
+   手指按著籃子左右移動就好，不用準度、不用連打。
+   難度只改「掉得多快、掉多久」，不改操作方式——
+   小一的妹妹玩簡單的，姊姊想拚就玩快的。
+
+   掉下來的有金幣也有炸彈：全部都是金幣的話，閉著眼睛左右掃就滿分了。 */
+const COIN_LEVELS = [
+  { name: '慢慢來', sec: 30, fall: 90,  gap: 900, bomb: .12, mul: 1 },
+  { name: '普通',   sec: 30, fall: 140, gap: 700, bomb: .18, mul: 2 },
+  { name: '好快！', sec: 30, fall: 200, gap: 520, bomb: .24, mul: 3 }
+];
+
+function openCoinGame() {
+  const w = openGameWindow('🪙 接金幣', '手指按著籃子左右移動，接住掉下來的金幣。碰到炸彈會掉一顆喔！');
+  pickLevel();
+
+  function pickLevel() {
+    w.stage.innerHTML = ''; w.btns.innerHTML = '';
+    w.status.textContent = '選一個難度';
+    const row = el('div', 'lv-row');
+    COIN_LEVELS.forEach(L => {
+      const b = el('button', 'lv-btn');
+      b.append(el('span', 'lv-n', L.name), el('span', 'lv-p', `一顆 💰 ${L.mul * 20}`));
+      b.onclick = () => { Sound.play('click'); play(L); };
+      row.appendChild(b);
+    });
+    w.stage.appendChild(row);
+  }
+
+  function play(L) {
+    w.stage.innerHTML = '';
+    const W = 320, H = 400, { c, g, pos } = gameCanvas(w.stage, W, H);
+    const GY = H - 26, BW = 54;
+    let bx = W / 2, items = [], got = 0, left = L.sec, raf = 0, ended = false;
+    let last = performance.now(), nextDrop = 0, timers = [];
+    gameCleanup = () => { cancelAnimationFrame(raf); timers.forEach(clearTimeout); };
+
+    const move = e => { if (!ended) bx = Math.max(BW / 2, Math.min(W - BW / 2, pos(e).x)); };
+    c.addEventListener('pointerdown', e => { move(e); try { c.setPointerCapture(e.pointerId); } catch (err) {} });
+    c.addEventListener('pointermove', move);
+
+    const tick = setInterval(() => {
+      if (ended) return;
+      left--;
+      w.status.textContent = `${L.name}　還有 ${left} 秒　接到 ${got} 個`;
+      if (left <= 0) finish();
+    }, 1000);
+    timers.push(tick);
+    w.status.textContent = `${L.name}　還有 ${left} 秒　接到 0 個`;
+
+    function finish() {
+      if (ended) return;
+      ended = true;
+      clearInterval(tick);
+      const bells = payReward(w, Math.max(0, got) * 20 * L.mul);
+      w.status.textContent = `接到 ${got} 個！💰 +${fmt(bells)}`;
+      toast(`🪙 接到 ${got} 個，拿到 💰 ${fmt(bells)}`);
+      gameButtons(w, () => pickLevel());
+    }
+    openCoinGame.test = { finish: finish, hit: n => { got += n; }, level: L };
+
+    (function frame(now) {
+      now = now || performance.now();
+      const dt = Math.min(.05, (now - last) / 1000);
+      last = now;
+      if (!ended) {
+        if (now > nextDrop) {
+          nextDrop = now + L.gap * (.7 + Math.random() * .6);
+          items.push({ x: 20 + Math.random() * (W - 40), y: -14,
+                       bomb: Math.random() < L.bomb });
+        }
+        items.forEach(it => { it.y += L.fall * dt; });
+        items = items.filter(it => {
+          if (it.y > GY - 16 && it.y < GY + 6 && Math.abs(it.x - bx) < BW / 2 + 8) {
+            if (it.bomb) { got = Math.max(0, got - 1); Sound.play('bad'); }
+            else { got++; Sound.play('coin'); }
+            w.status.textContent = `${L.name}　還有 ${left} 秒　接到 ${got} 個`;
+            return false;
+          }
+          return it.y < H + 20;
+        });
+      }
+      g.clearRect(0, 0, W, H);
+      const sky = g.createLinearGradient(0, 0, 0, H);
+      sky.addColorStop(0, '#dff1fb'); sky.addColorStop(1, '#f6f2e6');
+      g.fillStyle = sky; g.fillRect(0, 0, W, H);
+      g.fillStyle = '#e4d8c3'; g.fillRect(0, GY + 10, W, H - GY - 10);
+      items.forEach(it => {
+        if (it.bomb) {
+          g.fillStyle = '#3b3340';
+          g.beginPath(); g.arc(it.x, it.y, 11, 0, Math.PI * 2); g.fill();
+          g.strokeStyle = '#c9772e'; g.lineWidth = 2.4;
+          g.beginPath(); g.moveTo(it.x + 6, it.y - 9); g.quadraticCurveTo(it.x + 13, it.y - 17, it.x + 8, it.y - 22); g.stroke();
+        } else {
+          g.fillStyle = '#f2c230';
+          g.beginPath(); g.arc(it.x, it.y, 11, 0, Math.PI * 2); g.fill();
+          g.strokeStyle = '#c99a20'; g.lineWidth = 2; g.stroke();
+          g.fillStyle = '#fff3c4'; g.font = 'bold 13px sans-serif';
+          g.textAlign = 'center'; g.textBaseline = 'middle';
+          g.fillText('$', it.x, it.y + 1); g.textAlign = 'start';
+        }
+      });
+      // 籃子
+      g.fillStyle = '#c98f52';
+      g.beginPath();
+      g.moveTo(bx - BW / 2, GY - 14); g.lineTo(bx + BW / 2, GY - 14);
+      g.lineTo(bx + BW / 2 - 7, GY + 10); g.lineTo(bx - BW / 2 + 7, GY + 10);
+      g.closePath(); g.fill();
+      g.strokeStyle = '#8a5a33'; g.lineWidth = 2.4; g.stroke();
+      g.strokeStyle = '#e0b07a'; g.lineWidth = 2;
+      g.beginPath(); g.moveTo(bx - BW / 2 + 3, GY - 8); g.lineTo(bx + BW / 2 - 3, GY - 8); g.stroke();
+      if (!ended) raf = requestAnimationFrame(frame);
+    })();
+  }
+}
+
+/* ===== 小遊戲：彈珠台 =====
+   刻意不是「瞄準用力丟」——那個彈弓已經做過了，而且小一的妹妹瞄不準。
+   這裡是放下去讓它自己彈：撞釘子、掉進下面的格子，純看運氣，
+   每一顆都有驚喜，完全沒有技巧門檻。
+   她能決定的只有「從哪裡放」，那一點點控制感剛剛好。 */
+const MARBLE_N = 5;                     // 一局五顆
+const MARBLE_SLOTS = [10, 50, 10, 100, 10, 50, 10];   // 下面七格，中間那格最高
+
+function openMarbleGame() {
+  const w = openGameWindow('⚪ 彈珠台', `點畫面上方放下彈珠，它會撞來撞去掉進下面的格子。一局 ${MARBLE_N} 顆，中間那格分數最高！`);
+  const W = 320, H = 420, { c, g, pos } = gameCanvas(w.stage, W, H);
+  const R = 8, GRAV = 560, TOP = 54, SLOT_Y = H - 56;
+  // 釘子：交錯排列
+  const pegs = [];
+  for (let row = 0; row < 6; row++) {
+    const n = row % 2 ? 6 : 7, dx = W / (n + 1);
+    for (let i = 1; i <= n; i++) pegs.push({ x: dx * i, y: TOP + 42 + row * 44 });
+  }
+  const slotW = W / MARBLE_SLOTS.length;
+  let ball = null, score = 0, shots = MARBLE_N, raf = 0, ended = false;
+  let last = performance.now(), msg = '', msgUntil = 0;
+  gameCleanup = () => cancelAnimationFrame(raf);
+  w.status.textContent = `還有 ${shots} 顆　分數 0`;
+
+  function drop(x) {
+    if (ended || ball || shots <= 0) return;
+    ball = { x: Math.max(R + 2, Math.min(W - R - 2, x)), y: TOP - 10, vx: (Math.random() - .5) * 30, vy: 0 };
+    shots--;
+    w.status.textContent = `還有 ${shots} 顆　分數 ${score}`;
+    Sound.play('pickUp');
+  }
+  c.addEventListener('pointerdown', e => drop(pos(e).x));
+  openMarbleGame.test = { drop: drop, state: () => ({ shots, score, ended, ball: !!ball }),
+                          slots: MARBLE_SLOTS };
+
+  function land() {
+    const i = Math.max(0, Math.min(MARBLE_SLOTS.length - 1, Math.floor(ball.x / slotW)));
+    const pts = MARBLE_SLOTS[i];
+    score += pts;
+    msg = `+${pts}`; msgUntil = performance.now() + 900;
+    Sound.play(pts >= 100 ? 'petHappy' : 'coin');
+    ball = null;
+    w.status.textContent = `還有 ${shots} 顆　分數 ${score}`;
+    if (shots <= 0) finish();
+  }
+  function finish() {
+    ended = true;
+    const bells = payReward(w, score * 3);
+    w.status.textContent = `總分 ${score}！💰 +${fmt(bells)}`;
+    toast(`⚪ 總分 ${score}，拿到 💰 ${fmt(bells)}`);
+    gameButtons(w, () => { closeGameWindow(); openMarbleGame(); });
+  }
+
+  (function frame(now) {
+    now = now || performance.now();
+    const dt = Math.min(.03, (now - last) / 1000);
+    last = now;
+    if (ball) {
+      ball.vy += GRAV * dt;
+      ball.x += ball.vx * dt; ball.y += ball.vy * dt;
+      if (ball.x < R) { ball.x = R; ball.vx = Math.abs(ball.vx) * .7; }
+      if (ball.x > W - R) { ball.x = W - R; ball.vx = -Math.abs(ball.vx) * .7; }
+      pegs.forEach(p => {
+        const dx = ball.x - p.x, dy = ball.y - p.y, d = Math.hypot(dx, dy);
+        if (d < R + 5 && d > 0) {
+          const nx = dx / d, ny = dy / d;
+          ball.x = p.x + nx * (R + 5.5); ball.y = p.y + ny * (R + 5.5);
+          const dot = ball.vx * nx + ball.vy * ny;
+          ball.vx = (ball.vx - 2 * dot * nx) * .62 + (Math.random() - .5) * 24;
+          ball.vy = (ball.vy - 2 * dot * ny) * .62;
+        }
+      });
+      if (ball.y > SLOT_Y) land();
+    }
+    g.clearRect(0, 0, W, H);
+    g.fillStyle = '#f6f1e4'; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#efe6d2'; g.fillRect(0, 0, W, TOP);
+    g.fillStyle = '#8a7a60'; g.font = '600 13px "Noto Sans TC", sans-serif';
+    g.textAlign = 'center'; g.fillText('點這裡放下彈珠', W / 2, TOP - 18); g.textAlign = 'start';
+    pegs.forEach(p => {
+      g.fillStyle = '#c7b89a';
+      g.beginPath(); g.arc(p.x, p.y, 5, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = '#a2906e'; g.lineWidth = 1.4; g.stroke();
+    });
+    MARBLE_SLOTS.forEach((pts, i) => {
+      const x = i * slotW;
+      g.fillStyle = pts >= 100 ? '#ffe3a8' : pts >= 50 ? '#e2f0d8' : '#eee8dc';
+      g.fillRect(x + 1, SLOT_Y, slotW - 2, H - SLOT_Y);
+      g.strokeStyle = '#c7b89a'; g.lineWidth = 1.5;
+      g.strokeRect(x + 1, SLOT_Y, slotW - 2, H - SLOT_Y);
+      g.fillStyle = '#6b5a3e'; g.font = 'bold 14px sans-serif';
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(String(pts), x + slotW / 2, SLOT_Y + 22); g.textAlign = 'start';
+    });
+    if (ball) {
+      g.fillStyle = '#7fc0e8';
+      g.beginPath(); g.arc(ball.x, ball.y, R, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = '#4d93bd'; g.lineWidth = 2; g.stroke();
+      g.fillStyle = 'rgba(255,255,255,.75)';
+      g.beginPath(); g.arc(ball.x - 2.5, ball.y - 3, 2.6, 0, Math.PI * 2); g.fill();
+    }
+    if (now < msgUntil) {
+      g.fillStyle = '#c9772e'; g.font = 'bold 22px sans-serif';
+      g.textAlign = 'center'; g.fillText(msg, W / 2, SLOT_Y - 24); g.textAlign = 'start';
+    }
+    if (!ended) raf = requestAnimationFrame(frame);
+  })();
+}
+
 /* ===== 小遊戲：拼圖 =====
    給小一的妹妹做的：不用反應速度、不用拖曳，點兩下交換就好。
    圖案用她自己的寵物畫出來——不用準備任何圖檔，而且每個人的不一樣。
