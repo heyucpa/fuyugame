@@ -2496,6 +2496,10 @@ function newGame() {
     kidFood: { xiaoansu: 2, sandwich: 2 },
     outfit: Object.assign({}, DEFAULT_OUTFIT), // 小可愛目前穿的 {slot: 衣服 id}
     wardrobe: CLOTHES.filter(c => !c.price).map(c => c.id), // 已經擁有的衣服
+    /* 新存檔一開始就是 10 萬，等於補償已經給了。
+       本來沒寫這一行：新開的存檔沒有旗標，第二次打開時被當成舊存檔，
+       她花剩多少都會被補回 10 萬——每開一間新的就白送一次錢。 */
+    topup100k: true,
     supplyAt: Date.now(),                       // 上次送小安素的時間
     supplyWho: 0,                               // 下一次輪到誰送（媽媽、爸爸輪流）
     hair: Object.assign({}, DEFAULT_HAIR),        // 現在的髮型與髮色

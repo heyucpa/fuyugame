@@ -258,4 +258,27 @@ sys.exit(1 if bad else 0)
 PYEOF
 
 echo
+echo "=== ⑧ 全面掃描（她真實的舊備份、完整還原、亂按、模擬玩三小時） ==="
+# 這一關專門找「上面幾關沒想到的」。第一次跑就抓到一個真的 bug：
+# 新開的存檔沒有補償旗標，第二次打開會被補回 10 萬（每開一間白送一次錢）。
+python3 -c "
+import io
+b = io.open('house.html', encoding='utf-8').read()
+d = io.open('sweep_driver.js', encoding='utf-8').read()
+io.open('sweepwalk.html', 'w', encoding='utf-8').write(b.replace('</body>', d + '</body>'))
+"
+timeout 150 $CHROME --headless --disable-gpu --no-sandbox --virtual-time-budget=40000 \
+  --dump-dom "file://$PWD/sweepwalk.html" 2>/dev/null > sweep_out.txt
+python3 - sweep_out.txt <<'SWEEPPY'
+import io, re, sys
+s = io.open(sys.argv[1], encoding='utf-8').read()
+m = re.findall(r'<pre id="R">(.*?)</pre>', s, re.S)
+if not m:
+    print('✗ 沒跑完（可能卡住了）'); raise SystemExit(1)
+t = m[-1].strip(); print(t)
+if '失敗 0' not in t or 'JS 錯誤 0' not in t: raise SystemExit(1)
+SWEEPPY
+rm -f sweep_out.txt sweepwalk.html
+
+echo
 echo "✅ 全部通過"

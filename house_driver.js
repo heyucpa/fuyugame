@@ -801,6 +801,16 @@
     });
     var md2 = document.querySelector('#modal'); if (md2) md2.hidden = true;
 
+    /* ㉙ 新存檔不可以被當成舊存檔再補一次錢（全面掃 bug 時抓到的）
+       新開一間 → 花掉 → 存 → 重新讀，錢必須維持花掉後的數字。 */
+    var keepG = JSON.stringify(G);
+    G = newGame();
+    if (!G.topup100k) fails.push('新存檔沒有記下「補償已經給過」');
+    G.bells = 30000; saveGame();
+    G = loadGame();
+    if (G.bells !== 30000) fails.push('新存檔花剩 3 萬，重新打開變成 ' + G.bells + '（白送錢）');
+    G = JSON.parse(keepG); G.pet = G.pets[G.activePet]; saveGame();
+
     // ⑦ 其他分頁沒被改壞
     ['inv','shop','dress','pets','deco','build','earn','book','talk','save'].forEach(function(t){
       try { openTab(t); if (!document.querySelector('#tabBody').children.length)
