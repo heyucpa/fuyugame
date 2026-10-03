@@ -5139,11 +5139,121 @@ function doSupply(now) {
   return who;
 }
 let nextSupplyCheck = 0;
-function supplyTick(now) {
-  if (now < nextSupplyCheck) return;
-  nextSupplyCheck = now + 4000;      // 四秒看一次就夠，不用每幀算
-  if (supplyDue(Date.now())) doSupply(Date.now());
+/* ===== 送貨的爸爸媽媽（會走進來） =====
+   刻意不接進訪客系統：那一套跟聊天、坐下、送禮纏在一起，
+   硬接進去容易把鄰居來訪弄壞。這裡自己一個很小的狀態機，
+   只借用底層的走路、找路、畫人。
+
+   流程：從房間最前面的角落走進來 → 走到小可愛旁邊 → 說一句、
+   放下箱子（這一刻才真的給食物）→ 走回角落 → 淡出。
+   全程大約六秒，她不用做任何事。
+
+   她不在家（去親戚家）或正在玩小遊戲的時候不走這一套，
+   直接默默給——不然她回來會看到一個卡在半路的人。 */
+const SUP_K = 1.3;                        // 大人畫得比小可愛大一點
+const sup = { who: null, a: null, state: 'none', alpha: 0,
+              say: null, sayUntil: 0, actAt: 0, from: null };
+
+function supplyArrive(now) {
+  const room = curRoom();
+  const c = nearestFree(room, room.w - .5, room.d - .5) || [0, 0];
+  const who = PARENTS[(G.supplyWho || 0) % PARENTS.length];
+  sup.who = who;
+  sup.from = c;
+  sup.a = { room: roomKey(), x: c[0] + .5, y: c[1] + .5, z: 0, path: [], t: 0, facing: -1,
+            idleUntil: 0, blinkAt: 0, squish: 0, squishV: -6, lean: 0, leanV: 0,
+            press: null, happyUntil: now + 1500, particles: [] };
+  sup.state = 'in'; sup.alpha = 0; sup.say = null;
+  sup.actAt = now + 5200;                 // 最久走五秒就一定要放下箱子
+  // 走到小可愛旁邊
+  const t = nearestFree(room, Math.round(fufu.x), Math.round(fufu.y)) || c;
+  sup.a.path = findPath(room, c[0], c[1], t[0], t[1]).slice(0, -1);
 }
+
+function supSay(text, ms) { sup.say = text; sup.sayUntil = performance.now() + (ms || 3000); }
+
+function supplyDeliver(now) {
+  const who = doSupply(Date.now());       // 真正給食物的是這一行
+  supSay(who.lines[Math.floor(Math.random() * who.lines.length)], 3400);
+  sup.state = 'out';
+  sup.actAt = now + 3400;
+  const room = curRoom();
+  sup.a.path = findPath(room, Math.round(sup.a.x), Math.round(sup.a.y),
+                        sup.from[0], sup.from[1]).slice(0, -1);
+  setTimeout(() => { if (!fufu.pose) fufuSay('謝謝！', 2200); }, 1400);
+}
+
+function supplyTick(now) {
+  // 沒人在送的時候才看時間到了沒
+  if (!sup.who) {
+    if (now < nextSupplyCheck) return;
+    nextSupplyCheck = now + 4000;
+    if (!supplyDue(Date.now())) return;
+    // 不在家、或正在玩小遊戲：不走動畫，默默給
+    if (G.away || !$('#modal').hidden) { doSupply(Date.now()); return; }
+    supplyArrive(now);
+    return;
+  }
+  const a = sup.a, room = curRoom();
+  a.t += (1 / 60);
+  if (a.room !== roomKey()) { supplyGone(); return; }   // 她換房間就算了，下次再送
+  actorEnterRoom(a, room);
+  actorSpring(a, 1 / 60, now, false);
+  sup.alpha = sup.state === 'gone' ? Math.max(0, sup.alpha - .04) : Math.min(1, sup.alpha + .05);
+
+  if (sup.state === 'in') {
+    // 走到了（或等太久）就放下箱子
+    const near = Math.hypot(a.x - fufu.x, a.y - fufu.y) < 1.8;
+    if ((!a.path.length && near) || now > sup.actAt) supplyDeliver(now);
+  } else if (sup.state === 'out') {
+    if (!a.path.length || now > sup.actAt) { sup.state = 'gone'; sup.actAt = now + 1200; }
+  } else if (sup.state === 'gone') {
+    if (sup.alpha <= 0) supplyGone();
+  }
+  actorWalk(a, 1 / 60, now, room, blockedGrid(room), .7);
+}
+function supplyGone() {
+  sup.who = null; sup.a = null; sup.state = 'none'; sup.say = null;
+  nextSupplyCheck = performance.now() + 4000;
+}
+
+// 畫：沿用小可愛那一套，換衣服、換髮型、放大一點，所以不用新畫一個大人
+function drawSupplyActor(ctx) {
+  const a = sup.a, who = sup.who;
+  if (!a || !who) return;
+  const p = iso(a.x, a.y, a.z || 0), moving = a.path.length > 0;
+  const hop = moving ? Math.abs(Math.sin(a.t * 8)) * 4 : 0;
+  ctx.globalAlpha = sup.alpha;
+  ctx.fillStyle = 'rgba(40,30,20,.2)';
+  ctx.beginPath(); ctx.ellipse(p.x, p.y, 12 * SUP_K, 5 * SUP_K, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.save();
+  ctx.translate(p.x, p.y - hop);
+  ctx.scale(SUP_K, SUP_K);
+  const outfit = {};
+  OUTFIT_SLOTS.forEach(({ key }) => { outfit[key] = CLOTHES_BY_ID[who.outfit[key]]; });
+  // 還沒放下箱子之前，手上捧著一箱
+  drawGirl(ctx, { t: a.t, walking: moving, blink: a.t > a.blinkAt, outfit: outfit,
+                  hair: who.hair });
+  if (sup.state === 'in') {
+    ctx.fillStyle = '#c9925a';
+    ctx.fillRect(-9, -36, 18, 13);
+    ctx.strokeStyle = '#8a5a33'; ctx.lineWidth = 1.4;
+    ctx.strokeRect(-9, -36, 18, 13);
+    ctx.beginPath(); ctx.moveTo(-9, -30); ctx.lineTo(9, -30); ctx.stroke();
+  }
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+function supplyDrawEntries() {
+  if (!sup.who) return [];
+  const a = sup.a;
+  return [{ x: a.x - .2, y: a.y - .2, w: .4, d: .4, z: 0, h: 30 * SUP_K, drawFn: drawSupplyActor }];
+}
+function drawSupplyBubble(ctx) {
+  if (!sup.who || !sup.say || performance.now() > sup.sayUntil) return;
+  drawNeighborBubble(ctx, sup.a, { short: sup.who.short }, sup.say, sup.alpha);
+}
+
 
 // ── 坐下聊天 ──
 function sitSpots(room) {
@@ -5504,6 +5614,7 @@ function visitorDrawOverlay(ctx, now) {
   drawParticles(ctx, vis.a);
   if (!vis.say || now > vis.sayUntil) { vis.say = null; return; }
   drawNeighborBubble(ctx, vis.a, vis.who, vis.say, vis.alpha);
+  drawSupplyBubble(ctx);
 }
 
 // 圖鑑用的小圖；silhouette 為 true 時畫成剪影
@@ -5597,7 +5708,7 @@ function draw() {
   const c = iso(room.w / 2, room.d / 2);
   ctx.ellipse(c.x, c.y + 18, (room.w + room.d) * TW / 4 + 20, (room.w + room.d) * TH / 4 + 14, 0, 0, Math.PI * 2);
   ctx.fill();
-  drawRoom(ctx, room, { ghost: hold, hoverUid: hold ? null : hoverUid, showGrid: !!hold, extras: [fufuDrawEntry()].concat(petDrawEntries(), visitorDrawEntries(), hostDrawEntries()), occupants: [fufuOccupant(), petOccupant(), visitorOccupant()] });
+  drawRoom(ctx, room, { ghost: hold, hoverUid: hold ? null : hoverUid, showGrid: !!hold, extras: [fufuDrawEntry()].concat(petDrawEntries(), visitorDrawEntries(), hostDrawEntries(), supplyDrawEntries()), occupants: [fufuOccupant(), petOccupant(), visitorOccupant()] });
   petDrawOverlay(ctx);
   visitorDrawOverlay(ctx, performance.now());
   fufuDrawBubble(ctx, performance.now());

@@ -560,6 +560,58 @@
     if (CLOTHES.filter(function(c){ return c.slot === 'head'; }).length < 19)
       fails.push('頭飾數量變少了');
 
+    /* ⑲ 爸媽走進屋裡送貨的動畫
+       最要緊的是「食物要真的送到」——動畫卡住了也不能餓到她。 */
+    var kk = JSON.stringify(G.kidFood), ff = JSON.stringify(G.food);
+    G.kidFood = {}; G.food = {}; G.supplyAt = 0; G.away = null;
+    supplyGone();
+    document.querySelector('#modal').hidden = true;
+    nextSupplyCheck = 0;
+    supplyTick(performance.now());
+    if (!sup.who) fails.push('時間到了卻沒有人進來送');
+    else {
+      if (!sup.a) fails.push('送貨的人沒有位置');
+      if (sup.state !== 'in') fails.push('剛進來的狀態不對：' + sup.state);
+      if (!supplyDrawEntries().length) fails.push('送貨的人沒有被畫出來');
+      // 一直跑到他離開為止，食物必須真的進到兩邊的櫃子
+      var g3 = 0;
+      while (sup.who && g3++ < 2000) supplyTick(performance.now() + g3 * 100);
+      if (sup.who) fails.push('送貨的人走不掉（卡在半路）');
+      if (G.kidFood.xiaoansu !== SUPPLY_N) fails.push('動畫跑完了，小可愛沒拿到小安素');
+      if (G.food.xiaoansu !== SUPPLY_N) fails.push('動畫跑完了，寵物沒拿到小安素');
+    }
+    /* 走不到她旁邊的時候，也必須在逾時之後把東西放下。
+       沒有這條防線的話，只要路被家具擋住就永遠送不到，而且是靜靜地壞掉。
+       做法：讓他已經走完路（path 空），但人離得很遠（near 為假）。 */
+    G.kidFood = {}; G.food = {}; G.supplyAt = 0;
+    supplyGone(); nextSupplyCheck = 0;
+    supplyTick(performance.now());
+    if (sup.who) {
+      sup.a.path = [];
+      sup.a.x = 0.5; sup.a.y = 0.5;
+      fufu.x = curRoom().w - 0.5; fufu.y = curRoom().d - 0.5;   // 離很遠
+      var g4 = 0;
+      while (sup.who && g4++ < 3000) {
+        sup.a.x = 0.5; sup.a.y = 0.5; sup.a.path = [];
+        fufu.x = curRoom().w - 0.5; fufu.y = curRoom().d - 0.5;
+        supplyTick(performance.now() + 6000 + g4 * 100);
+      }
+      if (sup.who) fails.push('走不到她旁邊的時候，送貨的人永遠卡在那裡');
+      if (G.kidFood.xiaoansu !== SUPPLY_N) fails.push('走不到她旁邊就沒把東西放下');
+    }
+    supplyGone();
+
+    // 她不在家的時候不走動畫，直接默默給（不然回來會看到卡在半路的人）
+    G.kidFood = {}; G.food = {}; G.supplyAt = 0;
+    supplyGone(); nextSupplyCheck = 0;
+    G.away = { place: 'uncle', idx: 0 };
+    supplyTick(performance.now());
+    if (sup.who) fails.push('她不在家的時候竟然走進來送');
+    if (G.kidFood.xiaoansu !== SUPPLY_N) fails.push('她不在家的時候沒有默默給');
+    G.away = null;
+    G.kidFood = JSON.parse(kk); G.food = JSON.parse(ff);
+    supplyGone();
+
     // ⑦ 其他分頁沒被改壞
     ['inv','shop','dress','pets','deco','build','earn','book','talk','save'].forEach(function(t){
       try { openTab(t); if (!document.querySelector('#tabBody').children.length)
