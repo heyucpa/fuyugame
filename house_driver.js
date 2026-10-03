@@ -1320,6 +1320,70 @@
       fails.push('蝴蝶相簿顯示不對');
     var md8 = document.querySelector('#modal'); if (md8) md8.hidden = true;
 
+    /* ㊴ 圖書館：繪本（看完最後一頁才蓋章）、閱讀護照（蓋滿送獎狀）、找書、貓咪館員 */
+    var LB = PLACES.library;
+    if (!LB || !HOSTS[LB.host]) fails.push('沒有圖書館或沒有館員');
+    else {
+      ['lib_shelf','story_stand','lib_counter','quiet_sign'].forEach(function(id){
+        if (!FURN_BY_ID[id]) fails.push('沒有 ' + id);
+        if (FURNITURE.some(function(f){ return f.id === id; })) fails.push(id + ' 跑進商店了');
+      });
+      if (ACTIVITIES[FURNITURE_ACT.lib_shelf].open !== 'shelf' || ACTIVITIES[FURNITURE_ACT.story_stand].open !== 'story' || ACTIVITIES[FURNITURE_ACT.lib_counter].open !== 'passport')
+        fails.push('圖書館的家具沒有對到找書／繪本／護照');
+      host.n = HOSTS.librarian; G.away = { place: 'library', idx: 0 };
+      if (hostLineKey() !== 'hostLibrarian') fails.push('館員講的是別人的台詞');
+      var lm = hostMenuEntries().map(function(e){ return e[0]; }).join('|');
+      if (!/繪本/.test(lm) || !/護照/.test(lm) || !/找書/.test(lm)) fails.push('館員的選單不對：' + lm);
+      host.n = null; G.away = null;
+    }
+    // 繪本：每本四頁；翻到一半關掉不蓋章；看完才蓋；看完一本不給錢
+    STORYBOOKS.forEach(function(b){ if (b.pages.length !== 4) fails.push('繪本「' + b.title + '」不是四頁'); });
+    if (STORYBOOKS.length !== 8) fails.push('繪本不是八本');
+    if (/🔪/.test(JSON.stringify(STORYBOOKS))) fails.push('繪本裡有刀子');
+    G.passport = {};
+    openStorybook('brave');
+    var SB = openStorybook.test;
+    SB.next(); SB.next();
+    $('#modal').hidden = true;
+    if (Object.keys(G.passport).length) fails.push('繪本翻到一半就蓋章了');
+    openStorybook('brave');
+    var bk0 = G.bells;
+    for (var pgi = 0; pgi < 5; pgi++) openStorybook.test.next();
+    if (!G.passport.brave) fails.push('繪本看完沒有蓋章');
+    if (G.bells !== bk0) fails.push('看繪本給了錢');
+    if (!document.querySelector('#modalCard .pass-grid') || document.querySelectorAll('#modalCard .pass-stamp').length !== 1) fails.push('看完沒有打開閱讀護照，或章數不對');
+    // 繪本架先給沒看過的：連開七次，八本全部看過
+    for (var bi = 0; bi < 7; bi++) {
+      openNextStorybook();
+      if (G.passport[openStorybook.test.book.id]) { fails.push('繪本架給了看過的書（還有沒看過的）'); break; }
+      for (var pj = 0; pj < 5; pj++) openStorybook.test.next();
+    }
+    // 第八本看完 → 蓋滿 → 獎狀
+    if (Object.keys(G.passport).length !== 8) fails.push('八本都看完，護照只有 ' + Object.keys(G.passport).length + ' 個章');
+    G.passport = {}; STORYBOOKS.slice(1).forEach(function(b){ G.passport[b.id] = 1; });
+    var cert0 = G.inv.certificate || 0;
+    openStorybook(STORYBOOKS[0].id); for (var pk2 = 0; pk2 < 5; pk2++) openStorybook.test.next();
+    if ((G.inv.certificate || 0) !== cert0 + 1) fails.push('閱讀護照蓋滿沒有拿到獎狀');
+    openStorybook(STORYBOOKS[0].id); for (var pk3 = 0; pk3 < 5; pk3++) openStorybook.test.next();
+    if ((G.inv.certificate || 0) !== cert0 + 1) fails.push('蓋滿之後再看一次又送一張獎狀');
+    $('#modal').hidden = true;
+    // 找書：題目要對得上書架、放對加錢
+    SHELF_LEVELS.forEach(function(L, li){
+      for (var k = 0; k < 200; k++) {
+        var B = shelfBook(L);
+        if (B.ans < 0 || B.ans > 3) { fails.push('找書的答案超出範圍'); break; }
+        if (li === 0 && B.color !== L.shelves[B.ans][1]) { fails.push('一年級的書顏色對不上書架'); break; }
+        if (li > 0) { var v = Number(B.label), sh = L.shelves[B.ans]; if (!(v >= sh[0] && v <= sh[1])) { fails.push(L.name + ' 的書號 ' + v + ' 不在 ' + sh.join('～')); break; } }
+      }
+    });
+    openShelfGame(); document.querySelectorAll('.lv-btn')[1].onclick();
+    var ST = openShelfGame.test, sb0 = G.bells;
+    for (var q = 0; q < 10; q++) { var bb2 = ST.book(); ST.choose(q < 6 ? bb2.ans : (bb2.ans + 1) % 4); ST.choose(bb2.ans); ST.next(); }
+    if (ST.right() !== 6) fails.push('找書放對 6 本卻記成 ' + ST.right());
+    if (G.bells - sb0 !== 6 * 15 * 2) fails.push('找書的錢不對：' + (G.bells - sb0));
+    closeGameWindow();
+    var md9 = document.querySelector('#modal'); if (md9) md9.hidden = true;
+
     /* ㊲ 教室（照片參考）：綠桌墊課桌、紅藍布袋、置物櫃、注音布告欄、綠窗簾、磨石子地
        另外所有地點的房間都檢查：家具不重疊、不超出房間；牆上的東西不重疊、不超出牆 */
     var CR = PLACES.school.rooms[0];
@@ -1386,7 +1450,7 @@
     [null, { place: 'uncle', idx: 0 }].forEach(function(aw){
       G.away = aw;
       ['openFishing','openMemoryGame','openCatchGame','openBubbleGame','openCupGame','openStackGame','openSimonGame',
-       'openMoleGame','openRaceGame','openBrickGame','openFarmGame','openCoinGame','openMarbleGame','openPuzzleGame','openSlingGame','openQuizGame','openRunGame','openButterflyGame'
+       'openMoleGame','openRaceGame','openBrickGame','openFarmGame','openCoinGame','openMarbleGame','openPuzzleGame','openSlingGame','openQuizGame','openRunGame','openButterflyGame','openShelfGame'
       ].forEach(function(fn){
         try {
           window[fn]();

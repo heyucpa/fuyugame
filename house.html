@@ -311,6 +311,29 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .bfly canvas { width: 64px; height: 52px; }
 .bfly span { font-size: 12px; color: var(--muted); }
 .bfly.none b { font-size: 28px; color: #c8bfae; line-height: 52px; }
+.book-page { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 18px 8px 10px;
+  background: #fffdf6; border: 3px solid #e2c79c; border-radius: 16px; min-height: 230px; justify-content: center; }
+.book-pic { font-size: 84px; line-height: 1.1; }
+.book-title { font-size: 24px; font-weight: 800; color: #4a3b2a; }
+.book-txt { font-size: 22px; font-weight: 700; color: #4a3b2a; text-align: center; line-height: 1.5; }
+.book-no { font-size: 13px; color: var(--muted); }
+.book-btns { display: flex; gap: 10px; margin-top: 12px; }
+.book-btns button { flex: 1; font-size: 20px; }
+.pass-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 8px 0; }
+.pass { position: relative; background: #fffaf0; border: 2px dashed var(--line); border-radius: 12px; padding: 6px 2px; text-align: center; min-width: 0; }
+.pass.done { border-style: solid; border-color: #e8a0a0; }
+.pass-cover { font-size: 28px; opacity: .35; }
+.pass.done .pass-cover { opacity: 1; }
+.pass span { display: block; font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pass-stamp { position: absolute; right: 2px; top: 2px; width: 24px; height: 24px; border: 2px solid #d9443c; border-radius: 50%;
+  color: #d9443c; font-size: 12px; font-weight: 900; line-height: 20px; transform: rotate(-12deg); background: rgba(255,255,255,.7); }
+.shelf-game { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 10px 0; }
+.shelf-book { width: 90px; height: 120px; border-radius: 6px 12px 12px 6px; border: 3px solid rgba(60,40,30,.35); border-left-width: 10px;
+  display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 900; color: #3a3240; }
+.shelf-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: min(100%, 340px); }
+.shelf-slot { font-size: 17px; font-weight: 800; padding: 16px 2px; border-radius: 12px; border: 3px solid #8a5a33; background: #f3e2c8; }
+.shelf-slot.right { box-shadow: 0 0 0 4px #5fae7c; }
+.shelf-slot.wrong { box-shadow: 0 0 0 4px #e8505b; }
 .lv-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; padding: 10px 0; }
 .lv-btn {
   display: flex; flex-direction: column; align-items: center; gap: 3px;
@@ -1597,6 +1620,37 @@ const PLACE_FURNITURE = [
       { x: .36, y: .36, w: .28, d: .28, z: 74, h: 10, c: '#fff1c2' },
       { x: .32, y: .32, w: .36, d: .36, z: 84, h: 3, c: '#3a3f47' }
     ] },
+  // 圖書館
+  { id: 'lib_shelf', name: '大書架', theme: 'wood', w: 2, d: 1,
+    parts: [{ x: 0, y: .05, w: 2, d: .7, z: 0, h: 112, c: '#8a5a33' }]
+      .concat([4, 31, 58, 85].map((z, r) => ['#e8505b', '#3f8ee0', '#7bd389', '#ffd35c', '#b18cff', '#ffa53a', '#ff9ec4', '#6bb6ff']
+        .map((c, i) => ({ x: .08 + i * .23, y: .72, w: .18, d: .05, z: z + 2, h: 20 - ((i + r) % 3) * 3, c: [c, '#ffffff'][(i * 3 + r) % 7 === 0 ? 1 : 0] }))).flat()) },
+  { id: 'story_stand', name: '繪本架', theme: 'cute', w: 1, d: 1,
+    parts: [
+      { x: .1, y: .2, w: .8, d: .6, z: 0, h: 6, c: '#c9925a' },
+      { x: .1, y: .55, w: .8, d: .08, z: 6, h: 30, c: '#c9925a' },
+      { x: .15, y: .63, w: .32, d: .03, z: 10, h: 22, c: '#ffd35c' },     // 封面朝外的繪本
+      { x: .53, y: .63, w: .32, d: .03, z: 10, h: 22, c: '#7bd389' },
+      { k: 'ball', x: .31, y: .66, z: 22, r: 3, c: '#e8505b' },
+      { k: 'ball', x: .69, y: .66, z: 22, r: 3, c: '#3f8ee0' }
+    ] },
+  { id: 'lib_counter', name: '借書櫃台', theme: 'wood', w: 2, d: 1,
+    parts: [
+      { x: 0, y: .15, w: 2, d: .75, z: 0, h: 34, c: '#c9925a' },
+      { x: -.02, y: .12, w: 2.04, d: .8, z: 34, h: 3, c: '#8a5a33' },
+      { x: .25, y: .3, w: .5, d: .06, z: 37, h: 18, c: '#3a3f47' },       // 電腦
+      { x: .29, y: .36, w: .42, d: .01, z: 40, h: 12, c: '#9fd4f2' },
+      { x: 1.3, y: .4, w: .2, d: .2, z: 37, h: 8, c: '#e8505b' },          // 印章
+      { x: 1.55, y: .35, w: .35, d: .3, z: 37, h: 2, c: '#ffffff' }        // 閱讀護照
+    ] },
+  { id: 'quiet_sign', name: '請小聲標語', theme: 'cute', w: 1, h: 26, z: 60, layer: 'wall', d: 1, parts: [],
+    draw(ctx, W, H) {
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#e7f4ff'; ctx.fillRect(2, 2, W - 4, H - 4);
+      ctx.font = '14px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('🤫', W / 2, H / 2);
+      ctx.textAlign = 'start';
+    } },
   { id: 'apple_tree', name: '蘋果樹', theme: 'nature', w: 2, d: 2, parts: treeParts('#5fa15a', '#6db866', '#e8505b') },
   { id: 'orange_tree', name: '橘子樹', theme: 'nature', w: 2, d: 2, parts: treeParts('#4f9150', '#5fa15a', '#ffa53a') },
   { id: 'banana_tree', name: '香蕉樹', theme: 'nature', w: 2, d: 2, parts: treeParts('#7bd389', '#8fe09a', '#ffd35c') }
@@ -1616,6 +1670,10 @@ Object.assign(ACTIVITIES, {
   farmcare: { label: '🐮 照顧小牛小羊', name: '照顧小牛小羊', fx: '💗', open: 'farm', lines: ['小牛小羊，我來了！', '要好好照顧牠們～'] },
   hay: { label: '🌾 搬稻草', name: '搬稻草', fx: '🌾', open: 'hay', lines: ['稻草好香～', '嘿咻嘿咻！', '這是給小牛小羊吃的'] },
   trough: { label: '💧 加水', name: '加水', fx: '💧', lines: ['水加滿了！', '小牛小羊渴了吧', '嘩啦嘩啦～'] },
+  // 圖書館
+  findbook: { label: '🔎 幫忙找書', name: '找書', fx: '📚', open: 'shelf', lines: ['這本要放哪裡呢？', '書好多喔！', '要排整齊～'] },
+  storybook: { label: '📖 看繪本', name: '看繪本', fx: '📖', open: 'story', lines: ['這本看起來好好看！', '要小聲看喔', '我來翻下一頁～'] },
+  passport: { label: '📗 閱讀護照', name: '看閱讀護照', fx: '📗', open: 'passport', lines: ['我蓋了幾個章呢？', '要把護照蓋滿！'] },
   // 公園
   pondfish: { label: '🎣 池塘釣魚', name: '釣魚', fx: '🫧', open: 'fish', lines: ['魚會不會上鉤呢？', '要安靜等喔～', '池塘裡有小鴨子！'] },
   bfly: { label: '📷 拍蝴蝶', name: '拍蝴蝶', fx: '🦋', open: 'bfly', lines: ['好多蝴蝶！', '花好香喔～', '公園的花不能摘，用看的就好'] },
@@ -1634,6 +1692,7 @@ Object.assign(FURNITURE_ACT, {
   comic_shelf: 'comic', comic_pile: 'comic', arcade: 'arcade', console_tv: 'videogame', tea_table: 'tea',
   fruit_basket: 'fruit', fruit_crate: 'fruit', apple_tree: 'pick', orange_tree: 'pick', banana_tree: 'pick',
   gaming_desk: 'pcgame', figure_shelf: 'figures', barn: 'farmcare', hay_bale: 'hay', trough: 'trough',
+  lib_shelf: 'findbook', story_stand: 'storybook', lib_counter: 'passport',
   pond: 'pondfish', flower_bed: 'bfly', picnic_mat: 'picnic', fountain: 'fountain', icecream_cart: 'icecream',
   school_desk: 'lesson', school_desk_b: 'lesson', teacher_desk: 'homework', slide: 'slide', swing: 'swing', flagpole: 'flag', finish_flag: 'run'
 });
@@ -1655,6 +1714,8 @@ const HOSTS = {
   uncle: { id: 'uncle', name: '浣熊叔叔', short: '叔叔', body: '#a3a8b0', edge: '#6f757d', belly: '#e3e6ea', inner: '#5a5f66', ears: 'round', stripes: true, acc: 'hat', accColor: '#e8505b' },
   grandma: { id: 'grandma', name: '山羊阿婆', short: '阿婆', body: '#f5f1e6', edge: '#cfc6b0', belly: '#ffffff', inner: '#d8c7a0', ears: 'curl', acc: 'glasses', accColor: '#8a5a33' },
   // 學校的老師：貓頭鷹（耳朵用羽毛簇），戴眼鏡
+  // 圖書館的館員：貓咪，圍藍色圍巾
+  librarian: { id: 'librarian', name: '貓咪館員', short: '館員', body: '#d9cfc4', edge: '#a8998a', belly: '#fff8f0', inner: '#ffb3c7', ears: 'pointy', acc: 'scarf', accColor: '#3f8ee0' },
   // 公園的園長：柴犬，戴綠色帽子
   ranger: { id: 'ranger', name: '柴犬園長', short: '園長', body: '#e8a25e', edge: '#b9763a', belly: '#fff4e6', inner: '#fff4e6', ears: 'pointy', acc: 'hat', accColor: '#4f9150' },
   teacher: { id: 'teacher', name: '貓頭鷹老師', short: '老師', body: '#b08a68', edge: '#7d5d43', belly: '#f3e2c8', inner: '#7d5d43', ears: 'tuft', acc: 'glasses', accColor: '#3a3240' }
@@ -1687,6 +1748,16 @@ const PLACES = {
       ['fence', 0, 9], ['fence', 1, 9], ['fence', 2, 9], ['fence', 3, 9], ['fence', 6, 9], ['fence', 7, 9], ['fence', 8, 9], ['fence', 9, 9],
       ['fence', 9, 5, 1], ['fence', 9, 6, 1], ['fence', 9, 7, 1], ['fence', 9, 8, 1]
     ], wallItems: [] }
+  ] },
+  /* 圖書館：大書架（找書）、繪本架（看繪本、蓋閱讀護照）、借書櫃台、閱讀桌、繪本角 */
+  library: { name: '圖書館', host: 'librarian', emoji: '📚', desc: '看繪本、蓋閱讀護照、幫忙找書！', rooms: [
+    { name: '圖書館', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_wood', items: [
+      ['lib_shelf', 0, 0], ['lib_shelf', 2, 0], ['lib_shelf', 4, 0], ['lib_counter', 7, 0], ['plant_l', 9, 0],
+      ['lib_shelf', 0, 3, 1], ['lib_shelf', 0, 5, 1],
+      ['dining_chair', 5, 3], ['dining_table', 5, 4], ['dining_chair', 6, 6, 2], ['globe', 8, 4],
+      ['rainbow_rug', 2, 8], ['story_stand', 2, 7], ['story_stand', 3, 7], ['beanbag', 2, 8], ['beanbag', 3, 9],
+      ['plant_l', 9, 9]
+    ], wallItems: [['quiet_sign', 'L', 1], ['window', 'L', 7], ['quiet_sign', 'R', 7], ['wall_clock', 'R', 9]] }
   ] },
   /* 公園：一大片草地，有池塘（可以釣魚）、花圃（拍蝴蝶）、野餐墊、噴水池、冰淇淋車 */
   park: { name: '公園', host: 'ranger', emoji: '🌳', desc: '池塘釣魚、拍蝴蝶、野餐、吃冰淇淋！', rooms: [
@@ -1765,6 +1836,7 @@ Object.values(PLACES).forEach(pl => {
 });
 LINE_TYPES.push(
   { key: 'hostUncle', label: '叔叔說的話', hint: '可用 {名字}', lines: ['歡迎來叔叔家！漫畫隨便看～', '功課寫完了嗎？寫完叔叔陪你打一局！', '這台電玩是叔叔小時候玩的喔', '看漫畫也要讓眼睛休息一下喔', '要不要跟叔叔比賽？', '叔叔最近在看這本，超好看！'] },
+  { key: 'hostLibrarian', label: '館員說的話', hint: '可用 {名字}', lines: ['{名字}，歡迎來圖書館～', '在圖書館要小聲說話喔 🤫', '繪本架上有好看的書喔', '看完的書要放回原來的地方', '閱讀護照蓋滿可以拿獎狀喔', '要不要幫我把書放回書架？'] },
   { key: 'hostRanger', label: '園長說的話', hint: '可用 {名字}', lines: ['{名字}，歡迎來公園玩！', '花圃的蝴蝶今天好多喔', '公園的花不能摘，拍照就好囉', '池塘裡的魚很會躲喔', '垃圾要記得帶回家喔', '天氣好熱，要不要吃冰淇淋？', '要不要在草地上野餐？'] },
   { key: 'hostTeacher', label: '老師說的話', hint: '可用 {名字}', lines: ['{名字}早安！今天也要開心上課喔', '下課了，去操場玩一下吧！', '要不要來小考？答對有獎勵喔', '去操場跟同學賽跑吧！', '寫字的時候背要挺直喔', '有問題要舉手問老師喔', '下課記得喝水、上廁所～', '作業寫好了可以拿給老師看喔'] },
   { key: 'hostGrandma', label: '阿婆說的話', hint: '可用 {名字}', lines: ['{名字}來啦！快來吃水果～', '後面的果園水果熟了，要不要去摘？', '多吃點水果，身體才會壯壯的', '阿婆泡了茶，要不要喝一點？', '寫完功課，阿婆帶你去果園散步好不好？', '慢慢吃，不要噎到喔～', '小牛小羊肚子餓了，要不要幫阿婆餵牠們？', '農場的小羊最喜歡你了～'] },
@@ -4346,7 +4418,7 @@ function fufuStartAct(key, now, it, auto) {
   else if (a.sound !== 'note') Sound.play('pickUp');
   if (a.tab) openTab(a.tab);
   if (a.open) setTimeout(() => { // 叔叔的電腦、阿婆的穀倉：打開那裡專屬的小遊戲
-    const fn = { brick: openBrickGame, mole: openMoleGame, race: openRaceGame, farm: openFarmGame, hay: () => openStackGame('hay'), quiz: openQuizGame, run: openRunGame, fish: openFishing, bfly: openButterflyGame }[a.open] || openFarmGame;
+    const fn = { brick: openBrickGame, mole: openMoleGame, race: openRaceGame, farm: openFarmGame, hay: () => openStackGame('hay'), quiz: openQuizGame, run: openRunGame, fish: openFishing, bfly: openButterflyGame, shelf: openShelfGame, story: openNextStorybook, passport: openPassport }[a.open] || openFarmGame;
     if ($('#modal').hidden) fn();
   }, 1300);
   if (a.game) setTimeout(() => { // 大型電玩：隨機開一個小遊戲
@@ -5917,7 +5989,7 @@ function drawNeighborBubble(ctx, a, n, say, alpha) {
 
 // ── 親戚家：叔叔、阿婆在家裡陪小可愛（跟著她走，偶爾說話）──
 const host = { n: null, a: null, say: null, sayUntil: 0, nextTalkAt: 0, danceUntil: 0, nextHop: 0 };
-const HOST_LINE_KEYS = { uncle: 'hostUncle', grandma: 'hostGrandma', teacher: 'hostTeacher', ranger: 'hostRanger' };
+const HOST_LINE_KEYS = { uncle: 'hostUncle', grandma: 'hostGrandma', teacher: 'hostTeacher', ranger: 'hostRanger', librarian: 'hostLibrarian' };
 const hostLineKey = () => HOST_LINE_KEYS[host.n.id] || 'hostGrandma';
 function hostSay(text, ms) {
   if (!text) return;
@@ -6013,6 +6085,11 @@ function hostMenuEntries() {
     list.push(['🕹️ 一起打地鼠', openMoleGame]);
     list.push(['📺 一起玩賽車', openRaceGame]);
     list.push(['🖥️ 一起打磚塊', openBrickGame]);
+  }
+  if (host.n.id === 'librarian') {
+    list.push(['📖 一起看繪本', openNextStorybook]);
+    list.push(['📗 閱讀護照', openPassport]);
+    list.push(['🔎 幫忙找書', openShelfGame]);
   }
   if (host.n.id === 'ranger') {
     list.push(['🎣 一起釣魚', openFishing]);
@@ -9361,6 +9438,156 @@ function openButterflyAlbum() {
   ok.onclick = () => { $('#modal').hidden = true; };
   card.appendChild(ok);
   $('#modal').hidden = false;
+}
+
+/* ===== 📚 圖書館：繪本、閱讀護照、找書 =====
+   繪本：每本四頁，一頁一張大圖＋一兩句短短的話，妹妹看圖也看得懂。
+   看完最後一頁才蓋章（閱讀護照）。八本都看完，館員送一張獎狀。
+   看繪本不給錢——閱讀本身就是獎勵，章蓋滿有獎狀。 */
+const STORYBOOKS = [
+  { id: 'moon',   title: '月亮的蛋糕', cover: '🌙', pages: [['🌙', '月亮肚子餓了。'], ['🎂', '小兔子做了一個圓圓的蛋糕。'], ['🐰🌙', '「月亮，這給你！」'], ['🌕', '月亮吃飽了，變得圓圓胖胖的。']] },
+  { id: 'seed',   title: '小種子',     cover: '🌱', pages: [['🌰', '一顆小種子睡在土裡。'], ['🌧️', '雨滴說：「起床囉！」'], ['🌱', '小種子伸了一個懶腰。'], ['🌻', '長成一朵好高的向日葵！']] },
+  { id: 'cloud',  title: '雲朵去散步', cover: '☁️', pages: [['☁️', '小雲朵出門散步。'], ['🐑', '牠變成一隻綿羊。'], ['🐳', '又變成一隻鯨魚。'], ['🌈', '最後，變成了彩虹的枕頭。']] },
+  { id: 'shoes',  title: '鞋子不見了', cover: '👟', pages: [['👟', '咦？我的鞋子只剩一隻。'], ['🐶', '狗狗搖搖尾巴。'], ['🛏️', '鞋子在狗狗的床上！'], ['😆', '狗狗只是想要一起出門。']] },
+  { id: 'brave',  title: '勇敢的小企鵝', cover: '🐧', pages: [['🐧', '小企鵝不敢跳下水。'], ['🐧🐧', '媽媽說：「慢慢來沒關係。」'], ['💦', '一、二、三——撲通！'], ['😊', '原來水裡好好玩！']] },
+  { id: 'sorry',  title: '對不起',     cover: '🧸', pages: [['🧸', '我不小心弄壞了妹妹的積木。'], ['😢', '妹妹哭了。'], ['🙇', '我說：「對不起，我們一起蓋。」'], ['🏰', '我們蓋了一座更大的城堡！']] },
+  { id: 'night',  title: '睡不著',     cover: '⭐', pages: [['🌃', '晚上，我睡不著。'], ['⭐', '我數星星：一顆、兩顆……'], ['🐑', '數到第十隻小羊……'], ['😴', '呼——呼——晚安。']] },
+  { id: 'share',  title: '一顆蘋果',   cover: '🍎', pages: [['🍎', '小熊撿到一顆蘋果。'], ['🐰🐿️', '朋友們也好想吃。'], ['🍽️', '小熊請爸爸幫忙，把蘋果切成好幾片。'], ['😋', '大家一起吃，更好吃！']] }
+];
+function openStorybook(id) {
+  const book = STORYBOOKS.find(b => b.id === id) || STORYBOOKS[Math.floor(Math.random() * STORYBOOKS.length)];
+  let page = -1; // -1 是封面
+  const card = $('#modalCard');
+  function show() {
+    card.innerHTML = '';
+    const pg = el('div', 'book-page');
+    if (page < 0) {
+      pg.append(el('div', 'book-pic', book.cover), el('div', 'book-title', `📖 ${book.title}`));
+    } else {
+      const [pic, text] = book.pages[page];
+      pg.append(el('div', 'book-pic', pic), el('div', 'book-txt', text), el('div', 'book-no', `${page + 1} / ${book.pages.length}`));
+    }
+    card.appendChild(pg);
+    const row = el('div', 'book-btns');
+    if (page >= 0) { const prev = el('button', 'big alt', '⬅️'); prev.onclick = () => { page--; show(); }; row.appendChild(prev); }
+    const last = page === book.pages.length - 1;
+    const next = el('button', 'big', last ? '看完了！' : page < 0 ? '翻開 ➡️' : '➡️');
+    next.onclick = () => { if (last) finishBook(book); else { page++; Sound.play('click'); show(); } };
+    row.appendChild(next);
+    card.appendChild(row);
+    $('#modal').hidden = false;
+  }
+  openStorybook.test = { book, next: () => card.querySelector('.book-btns button:last-child').onclick(), page: () => page };
+  show();
+}
+// 看完最後一頁才蓋章（翻一半就關掉不算）
+function finishBook(book) {
+  const pass = G.passport = G.passport || {};
+  const isNew = !pass[book.id];
+  pass[book.id] = (pass[book.id] || 0) + 1;
+  const n = Object.keys(pass).length;
+  if (isNew && n === STORYBOOKS.length) { // 八本都看完：館員送獎狀
+    addItem('certificate');
+    toast('🏅 閱讀護照蓋滿了！館員送你一張獎狀（收進收納了）');
+  } else toast(isNew ? `📗 閱讀護照蓋了一個新章！（${n} / ${STORYBOOKS.length}）` : '📗 這本看過了，再看一次也很好看');
+  Sound.play('coin');
+  saveGame();
+  openPassport();
+}
+function openPassport() {
+  const pass = G.passport || {};
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', '📗 閱讀護照'));
+  const grid = el('div', 'pass-grid');
+  STORYBOOKS.forEach(b => {
+    const cell = el('div', 'pass' + (pass[b.id] ? ' done' : ''));
+    cell.append(el('div', 'pass-cover', b.cover), el('span', '', b.title));
+    if (pass[b.id]) cell.appendChild(el('div', 'pass-stamp', '讀'));
+    grid.appendChild(cell);
+  });
+  card.appendChild(grid);
+  card.appendChild(note(`蓋了 ${Object.keys(pass).length} / ${STORYBOOKS.length} 個章　全部蓋滿可以拿獎狀！`));
+  const ok = el('button', 'big', '好');
+  ok.onclick = () => { $('#modal').hidden = true; };
+  card.appendChild(ok);
+  $('#modal').hidden = false;
+}
+// 繪本架：先給還沒看過的
+function openNextStorybook() {
+  const pass = G.passport || {};
+  const fresh = STORYBOOKS.filter(b => !pass[b.id]);
+  const pool = fresh.length ? fresh : STORYBOOKS;
+  openStorybook(pool[Math.floor(Math.random() * pool.length)].id);
+}
+
+/* ── 🔎 找書：把書放回對的書架 ──
+   一年級看顏色、二年級看數字（1~40 分四格）、四年級看三位數的書號（像真的圖書館）。 */
+const SHELF_LEVELS = [
+  { name: '一年級', sub: '看顏色', mul: 1, shelves: [['紅', '#e8505b'], ['藍', '#3f8ee0'], ['綠', '#5fae6f'], ['黃', '#ffcf3a']] },
+  { name: '二年級', sub: '看數字', mul: 2, shelves: [[1, 10], [11, 20], [21, 30], [31, 40]] },
+  { name: '四年級', sub: '看書號', mul: 3, shelves: [[100, 299], [300, 499], [500, 699], [700, 999]] }
+];
+const SHELF_N = 10;
+// 出一本書：{ label, color, ans }（ans＝第幾個書架）
+function shelfBook(L) {
+  const ans = Math.floor(Math.random() * 4);
+  if (L === SHELF_LEVELS[0]) return { label: '', color: L.shelves[ans][1], ans };
+  const [lo, hi] = L.shelves[ans];
+  const n = lo + Math.floor(Math.random() * (hi - lo + 1));
+  return { label: String(n), color: ['#e8c99a', '#cfe6ff', '#d9f3df', '#ffe3ec'][Math.floor(Math.random() * 4)], ans };
+}
+function openShelfGame() {
+  const w = openGameWindow('🔎 找書', '把書放回對的書架！看書上的顏色或號碼，點對的那一格。一共 10 本。');
+  pickLevelRow(w, SHELF_LEVELS, L => `${L.sub}・一本 💰 ${15 * L.mul}`, L => playShelf(w, L));
+}
+function playShelf(w, L) {
+  w.stage.innerHTML = '';
+  let n = 0, right = 0, book = null, locked = false, ended = false, timer = 0;
+  gameCleanup = () => clearTimeout(timer);
+  const box = el('div', 'shelf-game');
+  const bookEl = el('div', 'shelf-book'), row = el('div', 'shelf-row');
+  box.append(bookEl, row);
+  w.stage.appendChild(box);
+  const btns = L.shelves.map((s, i) => {
+    const b = el('button', 'shelf-slot');
+    if (L === SHELF_LEVELS[0]) { b.style.background = s[1]; b.textContent = '📚'; }
+    else b.textContent = `${s[0]}～${s[1]}`;
+    b.onclick = () => choose(i);
+    row.appendChild(b);
+    return b;
+  });
+  function show() {
+    book = shelfBook(L); locked = false;
+    bookEl.style.background = book.color;
+    bookEl.textContent = book.label || '📕';
+    btns.forEach(b => b.classList.remove('right', 'wrong'));
+    w.status.textContent = `${L.name}　第 ${n + 1} / ${SHELF_N} 本　放對 ${right} 本`;
+  }
+  function choose(i) {
+    if (locked || ended) return;
+    locked = true;
+    const ok = i === book.ans;
+    if (ok) { right++; Sound.play('coin'); } else Sound.play('bad');
+    btns[book.ans].classList.add('right');
+    if (!ok) btns[i].classList.add('wrong');
+    n++;
+    timer = setTimeout(() => (n >= SHELF_N ? finish() : show()), ok ? 600 : 1300);
+  }
+  function finish() {
+    if (ended) return;
+    ended = true; clearTimeout(timer);
+    const all = right === SHELF_N;
+    const bells = payReward(w, right * 15 * L.mul + (all ? 100 * L.mul : 0));
+    w.stage.innerHTML = '';
+    w.stage.appendChild(el('div', 'quiz-end', all ? '💯' : '📚'));
+    w.status.textContent = `放對 ${right} / ${SHELF_N} 本${all ? '，全對！' : ''}　💰 +${fmt(bells)}`;
+    toast(`🔎 找書放對 ${right} 本，拿到 💰 ${fmt(bells)}`);
+    gameButtons(w, openShelfGame);
+  }
+  openShelfGame.test = { book: () => book, choose, right: () => right, level: L,
+                         next: () => { clearTimeout(timer); if (!ended) (n >= SHELF_N ? finish() : show()); } };
+  show();
 }
 
 // ── 叔叔的打磚塊：左右移動板子接球，把磚塊全部打掉 ──
