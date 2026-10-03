@@ -182,4 +182,23 @@ if '失敗 0' not in t or 'JS 錯誤 0' not in t: raise SystemExit(1)
 "
 
 echo
+echo "=== ⑦ 首頁的入口按鈕 ==="
+# 首頁連到劇場與小屋。連結打錯不會有任何錯誤訊息，
+# 要等小孩按下去才會發現，所以這裡直接檢查檔案在不在。
+python3 - <<'PYEOF'
+import io, os, re, sys
+src = io.open('index.html', encoding='utf-8').read()
+targets = re.findall(r"location\.href\s*=\s*'\./([^']+)'", src)
+if not targets:
+    print('✗ 首頁上找不到任何入口按鈕'); sys.exit(1)
+bad = [t for t in targets if not os.path.exists(t)]
+for t in targets:
+    print(('✓ ' if t not in bad else '✗ ') + t + (' 檔案不存在' if t in bad else ''))
+for want in ('theater.html', 'house.html'):
+    if want not in targets:
+        print('✗ 首頁沒有連到 ' + want); bad.append(want)
+sys.exit(1 if bad else 0)
+PYEOF
+
+echo
 echo "✅ 全部通過"
