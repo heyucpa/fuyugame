@@ -96,7 +96,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .tabbody h3 { margin: 14px 2px 6px; font-size: 14px; color: var(--muted); font-weight: 600; }
 .tabbody p.note { margin: 4px 2px 10px; font-size: 13px; color: var(--muted); line-height: 1.6; }
 
-.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.card canvas, .card img { max-width: 100%; height: auto; }
 .card {
   background: #fff; border: 2px solid var(--line); border-radius: 12px; padding: 6px 4px;
   display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center;
@@ -137,6 +138,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .grow-text { font-size: 12px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
 .card.dex { cursor: default; }
 .card.comp { border-color: #8fc97a; }
+/* 卡片只有 80～95px 寬（手機、還有 iPad 橫向時左欄只有 320），
+   裡面的小按鈕一定要能換行，不然字一長就把整個格子撐出畫面 */
+.card .mini { white-space: normal; word-break: break-word; max-width: 100%; }
 .card .tag.new { background: #e8505b; color: #fff; border-radius: 999px; padding: 0 6px; font-weight: 700; }
 .card .mini { margin-top: 3px; padding: 3px 8px; white-space: nowrap; }
 .card .mini:disabled { opacity: .45; }
@@ -222,6 +226,13 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .textin:focus, .talkbox:focus { outline: none; border-color: var(--accent); }
 .talkbox.locked { background: #f4f1ea; color: var(--muted); border-style: dashed; }
+/* 髮色色票：圓形、夠大好按（小孩手指不準），選中的加一圈深色外框 */
+.hair-colors { display: flex; flex-wrap: wrap; gap: 10px; padding: 4px 2px 2px; }
+.swatch {
+  width: 40px; height: 40px; border-radius: 50%; border: 3px solid #fff;
+  box-shadow: 0 0 0 2px var(--line); padding: 0;
+}
+.swatch.on { box-shadow: 0 0 0 3px var(--ink); }
 .talkhead { display: flex; align-items: center; justify-content: space-between; }
 .mini { border: none; background: var(--chip); border-radius: 999px; padding: 2px 10px; font-size: 12px; margin-top: 8px; }
 .row { display: flex; justify-content: space-between; align-items: center; padding: 6px 2px; font-size: 14px; border-bottom: 1px dashed var(--line); }
@@ -304,7 +315,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .stage { flex: 1; min-height: 0; }
   .tabs { grid-template-columns: repeat(5, 1fr); gap: 3px; padding: 8px; }
   .tabs button { font-size: 12px; white-space: nowrap; padding: 5px 0; }
-  .grid { grid-template-columns: repeat(4, 1fr); }
+  .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .toasts { top: auto; bottom: 46vh; left: 16px; right: 16px; }
   .hint { font-size: 12px; }
   .petcard { top: 8px; left: 8px; width: 140px; padding: 4px 6px 6px; font-size: 12px; }
@@ -1469,6 +1480,33 @@ const CLOTHES = [
 ];
 const CLOTHES_BY_ID = Object.fromEntries(CLOTHES.map(c => [c.id, c]));
 const DEFAULT_OUTFIT = { head: 'head_none', top: 'uniform', bottom: 'red_shorts', shoes: 'black_shoes' };
+
+/* ── 髮型與髮色 ──
+   髮型要買，顏色買了之後隨便換——顏色不收錢是刻意的：
+   小孩換髮色是一直換著玩的，每換一次收一次錢她就不會玩了。
+
+   五款都共用原本那顆「妹妹頭」當底，差別畫在外面（馬尾、長髮、丸子）。
+   這樣臉、瀏海、眨眼、腮紅全部沿用，不用為每一款重畫一次頭。 */
+const HAIR_STYLES = [
+  { id: 'bob',  name: '妹妹頭', price: 0 },
+  { id: 'pony', name: '馬尾',   price: 900 },
+  { id: 'twin', name: '雙馬尾', price: 1200 },
+  { id: 'long', name: '長髮',   price: 1500 },
+  { id: 'bun',  name: '丸子頭', price: 1100 }
+];
+const HAIR_BY_ID = Object.fromEntries(HAIR_STYLES.map(h => [h.id, h]));
+// 常見的幾種就好，太多色她反而選不出來
+const HAIR_COLORS = [
+  { id: 'black', name: '黑色',   c: '#211a1a', hi: '#3a2f2e' },
+  { id: 'brown', name: '咖啡色', c: '#6b4226', hi: '#8a5a38' },
+  { id: 'gold',  name: '金黃色', c: '#e3b84e', hi: '#f6d97e' },
+  { id: 'pink',  name: '粉紅色', c: '#ff9ec4', hi: '#ffc4dc' },
+  { id: 'green', name: '綠色',   c: '#7bc98c', hi: '#a3e0b0' },
+  { id: 'blue',  name: '水藍色', c: '#7fc0e8', hi: '#aedbf4' },
+  { id: 'purple', name: '紫色',  c: '#b998e8', hi: '#d4bdf5' }
+];
+const HAIR_COLOR_BY_ID = Object.fromEntries(HAIR_COLORS.map(h => [h.id, h]));
+const DEFAULT_HAIR = { style: 'bob', color: 'black' };
 </script>
 <script>
 // 背景音樂與音效：全部用 Web Audio 即時合成，不需要音檔
@@ -2275,7 +2313,9 @@ function newGame() {
     kid: newKid(),                              // 小可愛自己的飽足與身高
     kidFood: { xiaoansu: 2, sandwich: 2 },
     outfit: Object.assign({}, DEFAULT_OUTFIT), // 小可愛目前穿的 {slot: 衣服 id}
-    wardrobe: CLOTHES.filter(c => !c.price).map(c => c.id) // 已經擁有的衣服
+    wardrobe: CLOTHES.filter(c => !c.price).map(c => c.id), // 已經擁有的衣服
+    hair: Object.assign({}, DEFAULT_HAIR),        // 現在的髮型與髮色
+    hairOwned: HAIR_STYLES.filter(h => !h.price).map(h => h.id)  // 買過的髮型
   };
   g.pet = g.pets[0];
   Object.keys(g.inv).forEach(id => (g.seen[id] = true));
@@ -2338,6 +2378,14 @@ function normalizeSave(g) {
   // 衣服：補上預設款，穿著中的衣服若資料裡已不存在就換回預設
   out.wardrobe = Array.from(new Set((g.wardrobe || []).concat(newGame().wardrobe))).filter(id => CLOTHES_BY_ID[id]);
   out.outfit = Object.assign({}, DEFAULT_OUTFIT, g.outfit || {});
+  /* 舊存檔沒有髮型欄位，補上預設。髮型或髮色被刪掉（改版）就換回預設，
+     不然會畫出一顆沒有顏色的頭。 */
+  out.hair = Object.assign({}, DEFAULT_HAIR, g.hair || {});
+  if (!HAIR_BY_ID[out.hair.style]) out.hair.style = DEFAULT_HAIR.style;
+  if (!HAIR_COLOR_BY_ID[out.hair.color]) out.hair.color = DEFAULT_HAIR.color;
+  out.hairOwned = Array.from(new Set((g.hairOwned || [])
+    .concat(HAIR_STYLES.filter(h => !h.price).map(h => h.id))
+    .concat([out.hair.style]))).filter(id => HAIR_BY_ID[id]);
   OUTFIT_SLOTS.forEach(({ key }) => {
     const c = CLOTHES_BY_ID[out.outfit[key]];
     if (!c || c.slot !== key || !out.wardrobe.includes(c.id)) out.outfit[key] = DEFAULT_OUTFIT[key];
@@ -3175,8 +3223,58 @@ function drawTopCollar(ctx, t, back) {
 }
 
 // ── 頭 ──
+/* 現在用的髮型與髮色。預覽縮圖會自己傳 o.hair 進來蓋掉存檔裡的那組。 */
+function hairOf(o) {
+  /* 不能用 typeof G：G 是 let，在它被指派之前讀到的是暫時死區，
+     typeof 一樣會丟 ReferenceError（只有「完全沒宣告」的變數才安全）。
+     所以用 try 包起來。 */
+  let cur = null;
+  try { cur = G && G.hair; } catch (e) { cur = null; }
+  const h = (o && o.hair) || cur || DEFAULT_HAIR;
+  const col = HAIR_COLOR_BY_ID[h.color] || HAIR_COLOR_BY_ID.black;
+  return { style: HAIR_BY_ID[h.style] ? h.style : 'bob', c: col.c, hi: col.hi };
+}
+
+/* 髮型多出來的那一塊，畫在頭之前（會被頭蓋住一部分，看起來才像長在後面）。
+   五款共用同一顆頭，差別只在這裡。 */
+function drawHairBack(ctx, hair, hy) {
+  ctx.fillStyle = hair.c;
+  if (hair.style === 'long') {
+    // 長髮：披到背後，兩側垂下來
+    ctx.beginPath();
+    ctx.moveTo(-16, hy - 4);
+    ctx.quadraticCurveTo(-23, hy + 14, -19, hy + 40);
+    ctx.lineTo(19, hy + 40);
+    ctx.quadraticCurveTo(23, hy + 14, 16, hy - 4);
+    ctx.closePath(); ctx.fill();
+  } else if (hair.style === 'twin') {
+    // 雙馬尾：兩邊各一束，往外下方甩
+    [-1, 1].forEach(s => {
+      ctx.beginPath();
+      ctx.moveTo(s * 13, hy - 6);
+      ctx.quadraticCurveTo(s * 27, hy + 2, s * 24, hy + 26);
+      ctx.quadraticCurveTo(s * 20, hy + 16, s * 12, hy + 4);
+      ctx.closePath(); ctx.fill();
+    });
+  } else if (hair.style === 'pony') {
+    // 馬尾：綁在右後方，一束往下
+    ctx.beginPath();
+    ctx.moveTo(13, hy - 8);
+    ctx.quadraticCurveTo(28, hy - 2, 25, hy + 28);
+    ctx.quadraticCurveTo(19, hy + 14, 11, hy + 2);
+    ctx.closePath(); ctx.fill();
+  } else if (hair.style === 'bun') {
+    // 丸子頭：頭頂兩顆小丸子
+    [-1, 1].forEach(s => {
+      ctx.beginPath(); ctx.arc(s * 11, hy - 17, 6.2, 0, Math.PI * 2); ctx.fill();
+    });
+  }
+}
+
 function drawGirlHead(ctx, o) {
   const hy = -46;
+  const hair = hairOf(o);
+  drawHairBack(ctx, hair, hy);
   // 後髮（妹妹頭輪廓）
   ctx.beginPath();
   ctx.moveTo(-16, hy + 12);
@@ -3186,12 +3284,12 @@ function drawGirlHead(ctx, o) {
   ctx.quadraticCurveTo(16, hy + 14, 13, hy + 14);
   ctx.lineTo(-13, hy + 14);
   ctx.quadraticCurveTo(-16, hy + 14, -16, hy + 12);
-  ctx.fillStyle = GIRL.hair;
+  ctx.fillStyle = hair.c;
   ctx.fill();
 
   if (o.back) {
     // 背影：只看到頭髮
-    ctx.strokeStyle = GIRL.hairHi; ctx.lineWidth = 1;
+    ctx.strokeStyle = hair.hi; ctx.lineWidth = 1;
     for (let x = -10; x <= 10; x += 5) {
       ctx.beginPath(); ctx.moveTo(x * .4, hy - 16); ctx.quadraticCurveTo(x, hy, x * 1.1, hy + 12); ctx.stroke();
     }
@@ -3233,7 +3331,7 @@ function drawGirlHead(ctx, o) {
   for (let x = 10; x >= -10; x -= 4) ctx.lineTo(x, hy - 5 + (x / 4 % 2 ? 1.5 : 0));
   ctx.lineTo(-12, hy - 4);
   ctx.closePath();
-  ctx.fillStyle = GIRL.hair;
+  ctx.fillStyle = hair.c;
   ctx.fill();
   // 兩側髮絲蓋住臉頰
   ctx.beginPath(); ctx.moveTo(-15.5, hy - 3); ctx.quadraticCurveTo(-12, hy + 6, -12.5, hy + 13); ctx.lineTo(-16, hy + 13); ctx.closePath(); ctx.fill();
@@ -6051,7 +6149,10 @@ function confirmReset() {
 const girlThumbCache = {};
 function renderGirl(ids, w, h, opts) {
   const back = !!(opts && opts.back);
-  const key = JSON.stringify([ids, w, h, back]);
+  /* 髮型也要進快取的 key。不加的話，五款髮型的預覽圖會因為
+     ids/w/h/back 都一樣而共用同一張快取——全部長成第一張畫的那一款。 */
+  const hair = (opts && opts.hair) || (G && G.hair) || DEFAULT_HAIR;
+  const key = JSON.stringify([ids, w, h, back, hair]);
   const dpr = window.devicePixelRatio || 1;
   const c = document.createElement('canvas');
   c.width = w * dpr; c.height = h * dpr;
@@ -6067,7 +6168,7 @@ function renderGirl(ids, w, h, opts) {
   OUTFIT_SLOTS.forEach(({ key: k }) => { outfit[k] = CLOTHES_BY_ID[ids[k]]; });
   const s = (h - 6) / 74 * dpr; // 含帽子約 74 高
   g.setTransform(s, 0, 0, s, c.width / 2, c.height - 3 * dpr);
-  drawGirl(g, { t: 0, back, outfit });
+  drawGirl(g, { t: 0, back, outfit, hair });
   girlThumbCache[key] = c.toDataURL();
   return c;
 }
@@ -6088,6 +6189,47 @@ function tabDress(body) {
   head.appendChild(side);
   body.appendChild(head);
   sellToggle(body, '正在穿的衣服要先換掉才能賣。');
+
+  /* ── 髮型與髮色 ──
+     髮型要買，顏色買了之後隨便換。顏色不收錢是刻意的：
+     小孩換髮色是一直換著玩的，每換一次收一次錢她就不會玩了。 */
+  if (!sellMode) {
+    body.appendChild(h3('髮型'));
+    const hgrid = el('div', 'grid');
+    HAIR_STYLES.forEach(hs => {
+      const has = (G.hairOwned || []).includes(hs.id), wearing = G.hair.style === hs.id;
+      const c = el('div', 'card' + (wearing ? ' cur' : ''));
+      // 預覽用現在的髮色畫，她才看得出換上去是什麼樣子
+      c.appendChild(renderGirl(G.outfit, 56, 70, { hair: { style: hs.id, color: G.hair.color } }));
+      c.appendChild(el('div', 'nm', hs.name));
+      c.appendChild(el('div', 'pr', wearing ? '✓ 用這個' : has ? '已經有了' : `💰 ${fmt(hs.price)}`));
+      c.onclick = () => {
+        if (wearing) return;
+        if (!has) {
+          if (!spend(hs.price)) { toast('鈴錢不夠，去賺一點吧！'); return; }
+          G.hairOwned.push(hs.id);
+          Sound.play('coin');
+        } else Sound.play('click');
+        G.hair.style = hs.id;
+        commit();
+      };
+      hgrid.appendChild(c);
+    });
+    body.appendChild(hgrid);
+
+    body.appendChild(h3('髮色'));
+    body.appendChild(note('髮色可以隨便換，不用錢。'));
+    const cgrid = el('div', 'hair-colors');
+    HAIR_COLORS.forEach(hc => {
+      const b = el('button', 'swatch' + (G.hair.color === hc.id ? ' on' : ''));
+      b.style.background = hc.c;
+      b.title = hc.name;
+      b.setAttribute('aria-label', hc.name);
+      b.onclick = () => { G.hair.color = hc.id; Sound.play('click'); commit(); };
+      cgrid.appendChild(b);
+    });
+    body.appendChild(cgrid);
+  }
 
   OUTFIT_SLOTS.forEach(slot => {
     body.appendChild(h3(slot.name));
@@ -6188,7 +6330,7 @@ function tabPets(body) {
          得先把別隻設成照顧中。多一步，就不會手滑送掉她最寶貝的那一隻。
          最後一隻也不給送，不然她會變成一隻寵物都沒有。 */
       if (G.pets.length > 1) {
-        const bye = el('button', 'mini', `👋 送回寵物店 +💰${fmt(sellValue(EGG_PRICE))}`);
+        const bye = el('button', 'mini', '👋 送回店裡');
         bye.onclick = () => {
           if (!confirm(`要把「${petNameOf(p)}」送回寵物店嗎？\n\n` +
                        `會拿回 💰 ${fmt(sellValue(EGG_PRICE))}。\n` +

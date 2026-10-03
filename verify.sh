@@ -190,16 +190,27 @@ import io
 src = io.open('house.html', encoding='utf-8').read()
 tail = '</body>\n</html>\n'
 body = '''
-localStorage.clear(); G = newGame(); saveGame();
+localStorage.clear(); G = newGame();
+G.pets = PET_SPECIES.slice(0, 6).map(function(sp, i){ return newPet(sp.id, i ? 'kid' : 'adult', sp.name); });
+G.activePet = 0; G.pet = G.pets[0]; G.companions = [];
+G.rooms = [G.rooms[0], JSON.parse(JSON.stringify(G.rooms[0]))];
+G.hairOwned = HAIR_STYLES.map(function(h){ return h.id; });
+FURNITURE.forEach(function(f){ G.seen[f.id] = true; });
+FISH.forEach(function(f){ G.fish[f.name] = 1; });
+saveGame();
 var tabs = ['inv','shop','dress','pets','deco','build','earn','book','talk','save'];
 var doc = document.documentElement, bad = {};
 function scan(name){
+  var tb = document.querySelector('.tabbody');
+  var pr = tb ? tb.getBoundingClientRect() : null;
+  function note(t){ (bad[name] = bad[name] || []); if (bad[name].indexOf(t) < 0) bad[name].push(t); }
+  if (tb && tb.scrollWidth > tb.clientWidth + 0.5) note('面板被撐出橫向捲軸');
   document.querySelectorAll('*').forEach(function(el){
     var r = el.getBoundingClientRect();
-    if (r.right > doc.clientWidth + 0.5 && r.width > 0) {
-      var t = el.tagName.toLowerCase() + (typeof el.className === 'string' && el.className ? '.' + el.className.split(' ')[0] : '');
-      (bad[name] = bad[name] || []); if (bad[name].indexOf(t) < 0) bad[name].push(t);
-    }
+    if (r.width <= 0) return;
+    var t = el.tagName.toLowerCase() + (typeof el.className === 'string' && el.className ? '.' + el.className.split(' ')[0] : '');
+    if (r.right > doc.clientWidth + 0.5) note(t);
+    else if (pr && tb.contains(el) && r.right > pr.right + 0.5) note(t);
   });
 }
 tabs.forEach(function(t){ openTab(t); scan(t); });
