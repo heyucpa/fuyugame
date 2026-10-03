@@ -338,6 +338,35 @@
     });
     G.rooms = rm;
 
+    /* ⑪ 重複的寵物：圖鑑上標 ×N，但「我的寵物們」不合併。
+       那邊每一隻都是獨立個體（自己的名字、階段、肚子），
+       合併了就沒辦法分別餵、分別改名。 */
+    var keepPets = JSON.stringify(G.pets), keepAct = G.activePet;
+    G.pets = [newPet('mochi','kid','圓圓'), newPet('mochi','kid','第二隻'),
+              newPet('bunny','kid','兔兔'), newPet('starfox','egg','')];
+    G.activePet = 0; G.pet = G.pets[0]; G.companions = [];
+    openTab('pets');
+    var dexCards = document.querySelectorAll('#tabBody .card.dex');
+    if (dexCards.length !== PET_SPECIES.length)
+      fails.push('寵物圖鑑有 ' + dexCards.length + ' 格，應該是一種一格');
+    var mochiCard = [].slice.call(dexCards).filter(function(c){
+      return c.textContent.indexOf('粉紅糰子') >= 0; })[0];
+    if (!mochiCard) fails.push('圖鑑裡找不到粉紅糰子');
+    else if (mochiCard.textContent.indexOf('×2') < 0)
+      fails.push('養了兩隻粉紅糰子，圖鑑沒有標 ×2');
+    var bunnyCard = [].slice.call(dexCards).filter(function(c){
+      return c.textContent.indexOf('奶油兔') >= 0; })[0];
+    if (bunnyCard && /×\d/.test(bunnyCard.textContent))
+      fails.push('只養一隻奶油兔，卻也標了數量');
+    // 「我的寵物們」每一隻都要有自己的一格，不可以被合併掉
+    var mine = document.querySelectorAll('#tabBody .card:not(.dex)');
+    if (mine.length < G.pets.length)
+      fails.push('我的寵物們只列了 ' + mine.length + ' 格，有 ' + G.pets.length + ' 隻');
+    // 照顧中的要排在最前面
+    if (mine.length && mine[0].textContent.indexOf('照顧中') < 0)
+      fails.push('照顧中的那隻沒有排在最前面');
+    G.pets = JSON.parse(keepPets); G.activePet = keepAct; G.pet = G.pets[G.activePet];
+
     // ⑦ 其他分頁沒被改壞
     ['inv','shop','dress','pets','deco','build','earn','book','talk','save'].forEach(function(t){
       try { openTab(t); if (!document.querySelector('#tabBody').children.length)

@@ -6322,7 +6322,15 @@ function tabPets(body) {
   body.appendChild(note(`有 ${G.rooms.length} 間房間，可以同時帶 ${limit} 隻寵物出來。⭐ 是要照顧的那隻，🐾 是一起逛的，不會餓也不會髒。`
     + (limit < MAX_PETS_OUT ? `蓋好「${ROOM_NAMES[G.rooms.length] || '新房間'}」就能多帶一隻！` : '')));
   const grid = el('div', 'grid');
-  G.pets.forEach((p, i) => {
+  /* 排序：照顧中的 → 一起逛的 → 蛋 → 其他。
+     十八種收齊之後這一串會很長，正在照顧的那隻不該被埋在中間。
+     排序只影響顯示，索引還是用原本的 i（activePet / companions 都靠索引）。 */
+  const order = G.pets.map((p, i) => i).sort((a, b) => {
+    const rank = i => (i === G.activePet ? 0 : isCompanion(i) ? 1 : G.pets[i].stage === 'egg' ? 2 : 3);
+    return rank(a) - rank(b) || a - b;
+  });
+  order.forEach(i => {
+    const p = G.pets[i];
     const active = i === G.activePet, comp = isCompanion(i), egg = p.stage === 'egg';
     const c = el('div', 'card' + (active ? ' cur' : comp ? ' comp' : ''));
     c.appendChild(renderPetPortrait(p, 60, 54));
@@ -6409,11 +6417,14 @@ function tabPets(body) {
   const got = collectedSpecies();
   body.appendChild(h3(`寵物圖鑑 ${got.size} / ${PET_SPECIES.length}`));
   const dex = el('div', 'grid');
+  const owned = {};
+  G.pets.forEach(p => { if (p.stage !== 'egg') owned[p.species] = (owned[p.species] || 0) + 1; });
   PET_SPECIES.forEach(s => {
-    const has = got.has(s.id);
+    const has = got.has(s.id), n = owned[s.id] || 0;
     const c = el('div', 'card dex' + (has ? '' : ' dim'));
     c.appendChild(renderPetPortrait({ species: s.id, stage: 'adult', growth: 0 }, 60, 54, { silhouette: !has }));
     c.appendChild(el('div', 'nm', has ? s.name : '？？？'));
+    if (n > 1) c.appendChild(el('span', 'ct', '×' + n));   // 養了不只一隻
     if (s.rare) c.appendChild(el('span', 'tag', '⭐稀有'));
     dex.appendChild(c);
   });
