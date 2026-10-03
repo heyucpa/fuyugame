@@ -1402,7 +1402,9 @@ const FOODS = [
   { id: 'cookie', name: '餅乾', emoji: '🍪', price: 150, hunger: 20, mood: 3 },
   { id: 'onigiri', name: '飯糰', emoji: '🍙', price: 200, hunger: 30, mood: 0 },
   { id: 'pudding', name: '布丁', emoji: '🍮', price: 250, hunger: 22, mood: 8 },
-  { id: 'cake', name: '草莓蛋糕', emoji: '🍰', price: 400, hunger: 35, mood: 15 }
+  { id: 'cake', name: '草莓蛋糕', emoji: '🍰', price: 400, hunger: 35, mood: 15 },
+  // 小安素：小可愛跟寵物都喝得到，所以兩邊的食物櫃都要有
+  { id: 'xiaoansu', name: '小安素', emoji: '🥤', price: 300, hunger: 20, mood: 4, grow: .3 }
 ];
 const FOOD_BY_ID = Object.fromEntries(FOODS.map(f => [f.id, f]));
 
@@ -2330,6 +2332,8 @@ function newGame() {
     kidFood: { xiaoansu: 2, sandwich: 2 },
     outfit: Object.assign({}, DEFAULT_OUTFIT), // 小可愛目前穿的 {slot: 衣服 id}
     wardrobe: CLOTHES.filter(c => !c.price).map(c => c.id), // 已經擁有的衣服
+    supplyAt: Date.now(),                       // 上次送小安素的時間
+    supplyWho: 0,                               // 下一次輪到誰送（媽媽、爸爸輪流）
     hair: Object.assign({}, DEFAULT_HAIR),        // 現在的髮型與髮色
     hairOwned: HAIR_STYLES.filter(h => !h.price).map(h => h.id)  // 買過的髮型
   };
@@ -4886,6 +4890,66 @@ function visitorTick(dt, now) {
   if (!vis.seat) actorWalk(a, dt, now, room, blockedGrid(room), .7);
 }
 
+/* ===== 爸爸媽媽送小安素 =====
+   她玩到一半最常卡的事是「沒東西餵」——小可愛每分鐘掉 6.7 的飽足，
+   寵物掉 4.0，加起來每 10 分鐘要 5.3 瓶才養得活兩個。
+   這裡每 10 分鐘送 3 瓶（約六成），夠她不會一直餓著，
+   但還是要去商店買、搖果樹、摘水果，賺錢跟商店才有存在意義。
+
+   家裡最多放 12 瓶，滿了就不送：她可能開著頁面好幾個小時，
+   不設上限會累積上百瓶，之後永遠不用管吃飯了。
+
+   刻意不綁真實的早午晚餐時間——她可能下午三點才打開，
+   那樣會看到「今天三餐都錯過了」。固定間隔對小孩友善得多。 */
+const SUPPLY_MS = 10 * 60000;
+const SUPPLY_N = 3;
+const SUPPLY_CAP = 12;
+const PARENTS = [
+  { id: 'mom', short: '媽媽',
+    outfit: { head: 'head_none', top: 'pink_tee', bottom: 'jeans', shoes: 'white_sneakers' },
+    hair: { style: 'long', color: 'brown' }, k: 1.32,
+    lines: ['小安素來囉～記得喝完喔！',
+            '媽媽買了小安素，放桌上了。',
+            '肚子餓了就喝一瓶，不要餓著。',
+            '寵物也可以一起喝喔～',
+            '長高高要靠這個，加油！'] },
+  { id: 'dad', short: '爸爸',
+    outfit: { head: 'head_none', top: 'sport_jacket', bottom: 'jeans', shoes: 'black_shoes' },
+    hair: { style: 'bob', color: 'black' }, k: 1.38,
+    lines: ['爸爸送貨來囉！',
+            '剛好經過，順便帶幾瓶過來。',
+            '收好收好，別讓寵物自己偷喝光。',
+            '喝完記得把瓶子收好喔。',
+            '爸爸下次再帶別的來。'] }
+];
+
+const supplyStock = () => (G.kidFood.xiaoansu || 0) + (G.food.xiaoansu || 0);
+function supplyDue(now) {
+  if (supplyStock() >= SUPPLY_CAP) return false;     // 還有一堆就先不送
+  return now - (G.supplyAt || 0) >= SUPPLY_MS;
+}
+/* 送一次。小可愛跟寵物各一份：兩邊的食物櫃本來就是分開的，
+   合成一份的話其中一邊永遠拿不到。 */
+function doSupply(now) {
+  G.supplyAt = now;
+  const who = PARENTS[(G.supplyWho || 0) % PARENTS.length];
+  G.supplyWho = ((G.supplyWho || 0) + 1) % PARENTS.length;
+  G.kidFood.xiaoansu = Math.min(SUPPLY_CAP, (G.kidFood.xiaoansu || 0) + SUPPLY_N);
+  G.food.xiaoansu = Math.min(SUPPLY_CAP, (G.food.xiaoansu || 0) + SUPPLY_N);
+  Sound.play('coin');
+  toast(`📦 ${who.short}送來 ${SUPPLY_N} 瓶小安素！`);
+  fufuSay(who.lines[Math.floor(Math.random() * who.lines.length)], 3200);
+  saveGame();
+  renderTab();
+  return who;
+}
+let nextSupplyCheck = 0;
+function supplyTick(now) {
+  if (now < nextSupplyCheck) return;
+  nextSupplyCheck = now + 4000;      // 四秒看一次就夠，不用每幀算
+  if (supplyDue(Date.now())) doSupply(Date.now());
+}
+
 // ── 坐下聊天 ──
 function sitSpots(room) {
   const spots = [];
@@ -5352,6 +5416,7 @@ let lastFrame = performance.now(), nextPetTick = 0, nextCard = 0;
   fufuArrivalCheck();
   petUpdate(dt, now);
   visitorTick(dt, now);
+  supplyTick(now);
   if (now > nextPetTick) { nextPetTick = now + 5000; if (petTick()) saveGame(); }
   if (now > nextCard) { nextCard = now + 300; updatePetCard(); }
   if (hold) $('#btnPlace').disabled = !hold.ok; // 放不下的位置，「放這裡」按鈕變灰

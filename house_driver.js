@@ -367,6 +367,43 @@
       fails.push('照顧中的那隻沒有排在最前面');
     G.pets = JSON.parse(keepPets); G.activePet = keepAct; G.pet = G.pets[G.activePet];
 
+    /* ⑫ 爸媽送小安素
+       每 10 分鐘 3 瓶，家裡最多 12 瓶（滿了就不送）。
+       小可愛跟寵物都要拿得到——兩邊的食物櫃是分開的。 */
+    var keepK = JSON.stringify(G.kidFood), keepF = JSON.stringify(G.food);
+    G.kidFood = {}; G.food = {}; G.supplyAt = 0; G.supplyWho = 0;
+    if (!supplyDue(Date.now())) fails.push('存貨是空的、上次送是很久以前，卻說不用送');
+    var who1 = doSupply(Date.now());
+    if (!who1) fails.push('送不出去');
+    if (G.kidFood.xiaoansu !== 3) fails.push('小可愛沒拿到 3 瓶（' + G.kidFood.xiaoansu + '）');
+    if (G.food.xiaoansu !== 3) fails.push('寵物沒拿到 3 瓶（' + G.food.xiaoansu + '）');
+    if (!FOOD_BY_ID.xiaoansu) fails.push('寵物的食物表裡沒有小安素，牠喝不到');
+    if (!KID_FOOD_BY_ID.xiaoansu) fails.push('小可愛的食物表裡沒有小安素');
+    // 剛送完不可以馬上再送
+    if (supplyDue(Date.now())) fails.push('剛送完馬上又要送一次');
+    // 滿了就不送，不然開幾小時會累積上百瓶
+    G.supplyAt = 0;
+    G.kidFood.xiaoansu = SUPPLY_CAP; G.food.xiaoansu = SUPPLY_CAP;
+    if (supplyDue(Date.now())) fails.push('家裡已經滿了卻還要送');
+    // 爸媽輪流
+    G.kidFood = {}; G.food = {}; G.supplyAt = 0; G.supplyWho = 0;
+    var w1 = doSupply(Date.now());
+    G.supplyAt = 0; G.kidFood = {}; G.food = {};
+    var w2 = doSupply(Date.now());
+    if (w1 && w2 && w1.id === w2.id) fails.push('每次都是同一個人送（' + w1.short + '）');
+    // 爸媽的穿搭要是真的衣服 id，不然屋子里會竟然出現光身的人
+    PARENTS.forEach(function(pa){
+      if (!pa.lines || !pa.lines.length) fails.push(pa.short + ' 沒有台詞');
+      Object.keys(pa.outfit).forEach(function(slot){
+        if (!CLOTHES_BY_ID[pa.outfit[slot]])
+          fails.push(pa.short + ' 的 ' + slot + ' 是不存在的衣服：' + pa.outfit[slot]);
+      });
+      if (!HAIR_BY_ID[pa.hair.style]) fails.push(pa.short + ' 的髮型不存在');
+      if (!HAIR_COLOR_BY_ID[pa.hair.color]) fails.push(pa.short + ' 的髮色不存在');
+    });
+    if (PARENTS.length !== 2) fails.push('爸媽不是兩個人');
+    G.kidFood = JSON.parse(keepK); G.food = JSON.parse(keepF);
+
     // ⑦ 其他分頁沒被改壞
     ['inv','shop','dress','pets','deco','build','earn','book','talk','save'].forEach(function(t){
       try { openTab(t); if (!document.querySelector('#tabBody').children.length)
