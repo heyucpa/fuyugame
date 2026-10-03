@@ -811,6 +811,56 @@
     if (G.bells !== 30000) fails.push('新存檔花剩 3 萬，重新打開變成 ' + G.bells + '（白送錢）');
     G = JSON.parse(keepG); G.pet = G.pets[G.activePet]; saveGame();
 
+    /* ㉚ 叔叔家的三台機器各開各的遊戲
+       本來大型電玩是隨機開家裡的遊戲、電視遊樂器只有動畫。 */
+    var wantOpen = { arcade: 'mole', console_tv: 'race', gaming_desk: 'brick' };
+    Object.keys(wantOpen).forEach(function(fid){
+      var act = FURNITURE_ACT[fid], A = act && ACTIVITIES[act];
+      if (!A) fails.push(fid + ' 沒有可以做的事');
+      else if (A.open !== wantOpen[fid]) fails.push(fid + ' 開的不是「' + wantOpen[fid] + '」而是「' + (A.open || (A.game ? '隨機家裡的遊戲' : '沒有遊戲')) + '」');
+    });
+    [MOLE_LEVELS, RACE_LEVELS].forEach(function(LV, gi){
+      for (var li = 1; li < LV.length; li++)
+        if (!(LV[li].mul > LV[li-1].mul)) fails.push(['打地鼠','賽車'][gi] + '：越難沒有越值錢');
+    });
+    // 打地鼠：打到地鼠加分、打到炸彈扣分，結算 = 隻數 × 15 × 倍率
+    openMoleGame();
+    var mlv = document.querySelectorAll('.lv-btn');
+    if (mlv.length !== 3) fails.push('打地鼠沒有難度選單');
+    else {
+      mlv[2].onclick();
+      var MT = openMoleGame.test;
+      MT.force(0, 'mole'); MT.hit(0);
+      MT.force(1, 'mole'); MT.hit(1);
+      MT.force(2, 'mole'); MT.hit(2);
+      if (MT.score() !== 3) fails.push('打到三隻地鼠，分數是 ' + MT.score());
+      MT.force(3, 'bomb'); MT.hit(3);
+      if (MT.score() !== 1) fails.push('打到炸彈沒有扣分（' + MT.score() + '）');
+      MT.hit(4);   // 空的洞
+      if (MT.score() !== 1) fails.push('點空的洞也有分數');
+      var mb = G.bells; MT.finish();
+      if (G.bells - mb !== 1 * 15 * MOLE_LEVELS[2].mul) fails.push('打地鼠結算不對：' + (G.bells - mb));
+    }
+    closeGameWindow();
+    // 賽車：換車道不能開出馬路、撞三次就結束、結算
+    openRaceGame();
+    var rlv = document.querySelectorAll('.lv-btn');
+    if (rlv.length !== 3) fails.push('賽車沒有難度選單');
+    else {
+      rlv[0].onclick();
+      var RT = openRaceGame.test;
+      RT.steer(-1); RT.steer(-1); RT.steer(-1);
+      if (RT.lane() !== 0) fails.push('一直往左開出了馬路（車道 ' + RT.lane() + '）');
+      RT.steer(1); RT.steer(1); RT.steer(1); RT.steer(1);
+      if (RT.lane() !== 2) fails.push('一直往右開出了馬路（車道 ' + RT.lane() + '）');
+      RT.addCoins(5);
+      var rb = G.bells;
+      RT.hitWall(); RT.hitWall(); RT.hitWall();
+      if (G.bells - rb !== 5 * 20 * RACE_LEVELS[0].mul) fails.push('撞三次之後沒有結算，或金額不對：' + (G.bells - rb));
+    }
+    closeGameWindow();
+    var md3 = document.querySelector('#modal'); if (md3) md3.hidden = true;
+
     // ⑦ 其他分頁沒被改壞
     ['inv','shop','dress','pets','deco','build','earn','book','talk','save'].forEach(function(t){
       try { openTab(t); if (!document.querySelector('#tabBody').children.length)

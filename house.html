@@ -247,6 +247,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .fish-shadow[data-tier="2"] { color: #c9772e; font-size: 17px; }
 .fish-shadow[data-tier="3"] { color: #d0453a; font-size: 19px; }
 
+/* 打地鼠：九個洞，洞要夠大好點（小一的手指） */
+.mole-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 300px; margin: 6px auto; }
+.mole-hole { aspect-ratio: 1; border: none; border-radius: 50%; font-size: 40px; line-height: 1;
+  background: radial-gradient(ellipse at 50% 70%, #5a3d22 0 45%, #8a6a45 46% 100%); }
+.mole-hole.up { background: radial-gradient(ellipse at 50% 70%, #5a3d22 0 45%, #c9a06a 46% 100%); }
+
 /* 出門的過場：蓋在房間畫面上，點一下跳過 */
 .trip {
   position: absolute; inset: 0; z-index: 30; display: flex;
@@ -1366,8 +1372,8 @@ const PLACE_FURNITURE = [
 const TREE_FRUIT = { apple_tree: ['pet', 'apple'], orange_tree: ['kid', 'orange'], banana_tree: ['kid', 'banana'] };
 Object.assign(ACTIVITIES, {
   comic: { label: '📚 看漫畫', name: '看漫畫', fx: '📚', lines: ['這本漫畫好好笑！', '叔叔的漫畫好多喔', '下一集呢？', '主角好帥！', '看完要放回去喔'] },
-  arcade: { label: '🕹️ 玩大型電玩', name: '玩大型電玩', fx: '🕹️', game: true, lines: ['來挑戰高分！', '叔叔教我怎麼玩～', '好刺激喔！'] },
-  videogame: { label: '🎮 打電動', name: '打電動', fx: '🎮', lines: ['叔叔好厲害！', '我也要玩！', '再一局就好～', '我們一起破關！'] },
+  arcade: { label: '🕹️ 玩大型電玩', name: '玩大型電玩', fx: '🕹️', open: 'mole', lines: ['來挑戰高分！', '叔叔教我怎麼玩～', '好刺激喔！'] },
+  videogame: { label: '🎮 打電動', name: '打電動', fx: '🎮', open: 'race', lines: ['叔叔好厲害！', '我也要玩！', '再一局就好～', '我們一起破關！'] },
   tea: { label: '🍵 喝茶', name: '喝茶', fx: '🍵', lines: ['阿婆泡的茶好香', '燙燙的，慢慢喝', '喝茶配點心～'] },
   fruit: { label: '🍎 吃水果', name: '吃水果', fx: '🍎', lines: ['阿婆的水果好甜！', '好好吃喔～', '謝謝阿婆！', '水果好新鮮！'] },
   pick: { label: '🧺 摘水果', name: '摘水果', fx: '🧺', lines: ['摘到{水果}了！', '這顆{水果}好大！', '{水果}好香喔～'] },
@@ -4014,7 +4020,8 @@ function fufuStartAct(key, now, it, auto) {
   else if (a.sound !== 'note') Sound.play('pickUp');
   if (a.tab) openTab(a.tab);
   if (a.open) setTimeout(() => { // 叔叔的電腦、阿婆的穀倉：打開那裡專屬的小遊戲
-    if ($('#modal').hidden) (a.open === 'brick' ? openBrickGame : openFarmGame)();
+    const fn = { brick: openBrickGame, mole: openMoleGame, race: openRaceGame, farm: openFarmGame }[a.open] || openFarmGame;
+    if ($('#modal').hidden) fn();
   }, 1300);
   if (a.game) setTimeout(() => { // 大型電玩：隨機開一個小遊戲
     const games = [openMemoryGame, openCatchGame, openBubbleGame, openCupGame, openStackGame, openSimonGame];
@@ -5669,7 +5676,11 @@ function hostMenuEntries() {
     }],
     ['💃 一起跳舞', () => { fufuDance(); host.danceUntil = now() + 6000; }]
   ];
-  if (host.n.id === 'uncle') list.push(['🕹️ 跟叔叔打電動', openBrickGame]);
+  if (host.n.id === 'uncle') {
+    list.push(['🕹️ 一起打地鼠', openMoleGame]);
+    list.push(['📺 一起玩賽車', openRaceGame]);
+    list.push(['🖥️ 一起打磚塊', openBrickGame]);
+  }
   if (host.n.id === 'grandma') { // 阿婆帶你去其他地方
     [['🏡 回屋裡', 0], ['🧺 一起去果園', 1], ['🐮 一起去小農場', 2]]
       .filter(([, i]) => i !== G.away.idx).forEach(([label, i]) => list.push([label, () => goPlaceRoom(i)]));
@@ -8183,6 +8194,175 @@ function openSimonGame() {
 <script>
 // 親戚家專屬小遊戲：叔叔的打磚塊、阿婆的照顧小牛小羊（共用 games.js 的視窗與獎金工具）
 'use strict';
+
+/* ===== 叔叔家的電動：三台機器各有自己的遊戲 =====
+   本來「大型電玩」點下去是隨機開家裡那些小遊戲（翻牌、戳泡泡…），
+   一點都不像在打電動；「電視遊樂器」更是只有動畫、根本沒有遊戲。
+   現在：大型電玩 → 打地鼠、電視遊樂器 → 賽車閃避、電競桌 → 打磚塊（原本就有）。
+   三種難度、越難越多錢，跟家裡的新遊戲同一套規矩。 */
+
+// ── 🕹️ 打地鼠：只要點，小一的妹妹也會玩 ──
+const MOLE_LEVELS = [
+  { name: '慢慢來', up: 1150, max: 1, bomb: .1,  mul: 1 },
+  { name: '普通',   up: 820,  max: 2, bomb: .16, mul: 2 },
+  { name: '超快！', up: 560,  max: 3, bomb: .22, mul: 3 }
+];
+function openMoleGame() {
+  const w = openGameWindow('🕹️ 打地鼠', '地鼠冒出來就點牠！點到炸彈會扣分喔。30 秒內打越多越好。');
+  pickLevelRow(w, MOLE_LEVELS, L => `一隻 💰 ${15 * L.mul}`, L => playMole(w, L));
+}
+function playMole(w, L) {
+  w.stage.innerHTML = '';
+  const board = el('div', 'mole-board');
+  const holes = [];
+  for (let i = 0; i < 9; i++) {
+    const h = el('button', 'mole-hole');
+    h.dataset.i = i;
+    h.onclick = () => hit(i);
+    board.appendChild(h);
+    holes.push({ el: h, kind: null, until: 0 });
+  }
+  w.stage.appendChild(board);
+  let score = 0, left = 30, ended = false, timers = [];
+  gameCleanup = () => timers.forEach(t => { clearTimeout(t); clearInterval(t); });
+
+  function paint() {
+    holes.forEach(h => { h.el.textContent = h.kind === 'mole' ? '🐹' : h.kind === 'bomb' ? '💣' : ''; h.el.classList.toggle('up', !!h.kind); });
+    w.status.textContent = `${L.name}　還有 ${left} 秒　打到 ${score} 隻`;
+  }
+  function pop() {
+    if (ended) return;
+    const now = performance.now();
+    holes.forEach(h => { if (h.kind && now > h.until) h.kind = null; });
+    const upNow = holes.filter(h => h.kind).length;
+    if (upNow < L.max) {
+      const free = holes.filter(h => !h.kind);
+      const h = free[Math.floor(Math.random() * free.length)];
+      if (h) { h.kind = Math.random() < L.bomb ? 'bomb' : 'mole'; h.until = now + L.up; }
+    }
+    paint();
+    timers.push(setTimeout(pop, L.up * .45));
+  }
+  function hit(i) {
+    if (ended) return;
+    const h = holes[i];
+    if (h.kind === 'mole') { score++; Sound.play('pickUp'); }
+    else if (h.kind === 'bomb') { score = Math.max(0, score - 2); Sound.play('bad'); }
+    else return;
+    h.kind = null;
+    paint();
+  }
+  function finish() {
+    if (ended) return;
+    ended = true;
+    gameCleanup();
+    holes.forEach(h => { h.kind = null; });
+    paint();
+    const bells = payReward(w, score * 15 * L.mul);
+    w.status.textContent = `打到 ${score} 隻！💰 +${fmt(bells)}`;
+    toast(`🕹️ 打到 ${score} 隻，拿到 💰 ${fmt(bells)}`);
+    gameButtons(w, openMoleGame);
+  }
+  openMoleGame.test = { holes: () => holes.map(h => h.kind), hit: hit, finish: finish,
+                        force: (i, kind) => { holes[i].kind = kind; holes[i].until = performance.now() + 99999; paint(); },
+                        score: () => score, level: L };
+  timers.push(setInterval(() => { if (ended) return; left--; if (left <= 0) finish(); else paint(); }, 1000));
+  pop();
+}
+
+// ── 📺 賽車閃避：點左半邊往左、右半邊往右，躲路障、吃金幣 ──
+const RACE_LEVELS = [
+  { name: '慢慢開', speed: 150, gap: 950, mul: 1 },
+  { name: '普通',   speed: 220, gap: 760, mul: 2 },
+  { name: '飆車！', speed: 300, gap: 600, mul: 3 }
+];
+function openRaceGame() {
+  const w = openGameWindow('📺 賽車閃避', '點畫面左邊往左、右邊往右，躲開路障 🚧，吃到金幣 🪙！撞到 3 次就結束，最多 30 秒。');
+  pickLevelRow(w, RACE_LEVELS, L => `一枚 💰 ${20 * L.mul}`, L => playRace(w, L));
+}
+function playRace(w, L) {
+  w.stage.innerHTML = '';
+  const W = 340, H = 360, { c, g, pos } = gameCanvas(w.stage, W, H);
+  const LANES = [W * .2, W * .5, W * .8], CAR_Y = H - 56;
+  let lane = 1, things = [], coins = 0, lives = 3, left = 30, ended = false, raf = 0, timers = [];
+  let last = performance.now(), nextDrop = 0, hurtUntil = 0, road = 0;
+  gameCleanup = () => { cancelAnimationFrame(raf); timers.forEach(t => clearInterval(t)); };
+
+  function steer(dir) { if (!ended) { lane = Math.max(0, Math.min(2, lane + dir)); Sound.play('click'); } }
+  c.addEventListener('pointerdown', e => steer(pos(e).x < W / 2 ? -1 : 1));
+  const onKey = e => { if (e.key === 'ArrowLeft') steer(-1); if (e.key === 'ArrowRight') steer(1); };
+  document.addEventListener('keydown', onKey);
+  const oldCleanup = gameCleanup;
+  gameCleanup = () => { oldCleanup(); document.removeEventListener('keydown', onKey); };
+
+  function finish() {
+    if (ended) return;
+    ended = true;
+    gameCleanup();
+    // 撐完 30 秒沒撞爛，再加一筆
+    const bonus = lives > 0 && left <= 0 ? 100 * L.mul : 0;
+    const bells = payReward(w, coins * 20 * L.mul + bonus);
+    w.status.textContent = `吃到 ${coins} 枚金幣${bonus ? '，還撐完全程！' : ''}　💰 +${fmt(bells)}`;
+    toast(`📺 拿到 💰 ${fmt(bells)}`);
+    gameButtons(w, openRaceGame);
+  }
+  openRaceGame.test = { steer: steer, lane: () => lane, finish: finish,
+                        addCoins: n => { coins += n; }, level: L, lives: () => lives,
+                        hitWall: () => { lives--; if (lives <= 0) finish(); } };
+  timers.push(setInterval(() => { if (ended) return; left--; if (left <= 0) finish(); }, 1000));
+
+  (function frame(now) {
+    now = now || performance.now();
+    const dt = Math.min(.05, (now - last) / 1000);
+    last = now;
+    if (!ended) {
+      road = (road + L.speed * dt) % 40;
+      if (now > nextDrop) {
+        nextDrop = now + L.gap * (.75 + Math.random() * .5);
+        things.push({ lane: Math.floor(Math.random() * 3), y: -20, coin: Math.random() < .45 });
+      }
+      things.forEach(t => { t.y += L.speed * dt; });
+      things = things.filter(t => {
+        if (t.lane === lane && Math.abs(t.y - CAR_Y) < 28) {
+          if (t.coin) { coins++; Sound.play('coin'); }
+          else if (now > hurtUntil) { lives--; hurtUntil = now + 900; Sound.play('bad'); if (lives <= 0) finish(); }
+          return false;
+        }
+        return t.y < H + 30;
+      });
+      w.status.textContent = `${L.name}　還有 ${left} 秒　❤️×${Math.max(0, lives)}　🪙×${coins}`;
+    }
+    // 路面
+    g.fillStyle = '#5d6470'; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#7cc9a0'; g.fillRect(0, 0, 18, H); g.fillRect(W - 18, 0, 18, H);
+    g.strokeStyle = 'rgba(255,255,255,.75)'; g.lineWidth = 4; g.setLineDash([22, 18]); g.lineDashOffset = -road;
+    [W * .35, W * .65].forEach(x => { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); });
+    g.setLineDash([]);
+    g.font = '30px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    things.forEach(t => g.fillText(t.coin ? '🪙' : '🚧', LANES[t.lane], t.y));
+    // 車子：撞到的時候閃
+    if (!(now < hurtUntil && Math.floor(now / 100) % 2)) {
+      g.font = '40px sans-serif';
+      g.fillText('🚗', LANES[lane], CAR_Y);
+    }
+    g.textAlign = 'start'; g.textBaseline = 'alphabetic';
+    if (!ended) raf = requestAnimationFrame(frame);
+  })();
+}
+
+// 三種難度的選單，三個遊戲共用
+function pickLevelRow(w, levels, sub, play) {
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  w.status.textContent = '選一個難度';
+  const row = el('div', 'lv-row');
+  levels.forEach(L => {
+    const b = el('button', 'lv-btn');
+    b.append(el('span', 'lv-n', L.name), el('span', 'lv-p', sub(L)));
+    b.onclick = () => { Sound.play('click'); play(L); };
+    row.appendChild(b);
+  });
+  w.stage.appendChild(row);
+}
 
 // ── 叔叔的打磚塊：左右移動板子接球，把磚塊全部打掉 ──
 function openBrickGame() {
