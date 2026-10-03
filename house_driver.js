@@ -1326,6 +1326,52 @@
       fails.push('蝴蝶相簿顯示不對');
     var md8 = document.querySelector('#modal'); if (md8) md8.hidden = true;
 
+    /* ㊺ 手機讓房間大一點：放大按鈕、點分頁自動打開面板、記住選擇、
+       放大時房間可以比螢幕寬並跟著小可愛、提示條玩過幾次就收起來（拿著家具時還是要有） */
+    setBigRoom(false);
+    $('#btnZoom').onclick();
+    if (!document.body.classList.contains('bigroom') || !/縮小/.test($('#btnZoom').textContent)) fails.push('按放大沒有進入放大模式');
+    if (localStorage.getItem(BIG_KEY) !== '1') fails.push('放大模式沒有記住');
+    document.querySelector('#tabs button[data-tab="shop"]').onclick();
+    if (document.body.classList.contains('bigroom')) fails.push('放大時點分頁，面板沒有打開');
+    if (localStorage.getItem(BIG_KEY) !== '0') fails.push('離開放大模式沒有記住');
+    // 跟著小可愛：把畫布弄成直立手機的比例
+    var cvs = document.getElementById('view'), keepCss = cvs.getAttribute('style');
+    cvs.style.width = '360px'; cvs.style.height = '640px';
+    G.away = null; computeView();
+    var normalScale = view.scale;
+    setBigRoom(true); cam.key = null;
+    var rm = curRoom(), minX = iso(0, rm.d).x - 30, maxX = iso(rm.w, 0).x + 30;
+    fufu.x = .5; fufu.y = rm.d - .5; computeView();                    // 走到最左邊
+    var bigScale = view.scale, leftOx = view.ox;
+    if (!(bigScale > normalScale * 1.3)) fails.push('放大模式的房間沒有比較大（' + normalScale.toFixed(2) + ' → ' + bigScale.toFixed(2) + '）');
+    if (leftOx > -minX * bigScale + .5 || leftOx + maxX * bigScale < 360 - .5) fails.push('放大時畫面捲到房間外面了');
+    fufu.x = rm.w - .5; fufu.y = .5;                                     // 走到最右邊，畫面要慢慢跟過去
+    for (var fr = 0; fr < 120; fr++) computeView();
+    if (!(view.ox < leftOx - 20)) fails.push('小可愛走到右邊，畫面沒有跟過去');
+    if (view.ox + maxX * bigScale < 360 - .5) fails.push('跟到右邊時捲過頭了');
+    setBigRoom(false); computeView();
+    if (Math.abs(view.scale - normalScale) > 1e-6) fails.push('縮小回來，房間大小沒有恢復');
+    if (keepCss == null) cvs.removeAttribute('style'); else cvs.setAttribute('style', keepCss);
+    // 提示條：收起來時房間可以往下長；拿著家具時一定要看得到
+    var stg = $('.stage');
+    stg.classList.remove('hint-off');
+    if (!hintShown()) fails.push('提示條預設看不到');
+    stg.classList.add('hint-off');
+    if (hintShown()) fails.push('提示條收起來了卻還看得到');
+    stg.classList.add('holding');
+    if (!hintShown()) fails.push('拿著家具的時候提示條不見了');
+    stg.classList.remove('holding', 'hint-off');
+    // 房間被高度卡住的時候，收起提示條房間要變大
+    var cv2 = document.getElementById('view'), keep2 = cv2.getAttribute('style');
+    cv2.style.width = '900px'; cv2.style.height = '300px';
+    computeView(); var sOn = view.scale;
+    stg.classList.add('hint-off'); computeView(); var sOff = view.scale;
+    stg.classList.remove('hint-off');
+    if (keep2 == null) cv2.removeAttribute('style'); else cv2.setAttribute('style', keep2);
+    if (!(sOff > sOn)) fails.push('提示條收起來，房間沒有變大（' + sOn.toFixed(3) + ' / ' + sOff.toFixed(3) + '）');
+    if (typeof HINT_RUNS !== 'number' || HINT_RUNS < 3) fails.push('提示條太快收起來');
+
     /* ㊹ 阿婆家的動物圖鑑：小農場有動物輪流來玩，點了記進圖鑑 */
     G.animals = {};
     G.away = { place: 'grandma', idx: 2 }; farm.actors = []; farm.spot = null;

@@ -369,6 +369,10 @@ button.pass { font: inherit; }
   background: linear-gradient(var(--sky1), var(--sky2));
 }
 #view { width: 100%; height: 100%; display: block; touch-action: none; }
+.zoom-btn { display: none; position: absolute; top: 8px; right: 8px; z-index: 6; border: 2px solid var(--line);
+  background: rgba(255,250,240,.92); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 700; }
+/* ③ 提示條玩過幾次就不顯示（拿著家具的時候還是會出現，那時候需要它） */
+.stage.hint-off:not(.holding) .hint { display: none; }
 .hint {
   position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
   background: rgba(74,59,42,.8); color: #fff; padding: 6px 14px; border-radius: 999px;
@@ -438,12 +442,29 @@ button.pass { font: inherit; }
 /* 手機，以及直拿的平板：房間在上、面板在下（左右並排會把房間擠得很小） */
 @media (max-width: 760px), (orientation: portrait) and (max-width: 1100px) {
   .layout { flex-direction: column-reverse; }
-  .panel { width: 100%; height: 44vh; border-right: none; border-top: 2px solid var(--line); }
+  .panel { width: 100%; height: 38vh; border-right: none; border-top: 2px solid var(--line); }
+  /* ① 放大房間：面板只留一排分頁，房間佔滿；點任何分頁就打開 */
+  .zoom-btn { display: block; }
+  body.bigroom .panel { height: auto; }
+  body.bigroom .tabbody { display: none; }
+  body.bigroom .toasts { bottom: 120px; }
+  /* ② 標題列壓成一行：拿掉「我的小屋」字樣，房間按鈕不換行、可以左右滑，出門／回家排最前面 */
+  .brand-txt { display: none; }
+  .topbar { flex-wrap: nowrap; gap: 8px; padding: 6px 10px; }
+  .rooms { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; min-width: 0; }
+  .rooms::-webkit-scrollbar { display: none; }
+  .rooms button { padding: 4px 10px; flex: none; }
+  .rooms button.go { order: -1; }
+  /* 音樂、音效、評分、錢：手機上搬到房間右上角的天空（那裡本來就空著），標題列只放房間按鈕 */
+  .topbar { height: 46px; }
+  .stats { position: absolute; top: 52px; right: 8px; z-index: 7; gap: 4px; flex-wrap: wrap; justify-content: flex-end; max-width: 60%; }
+  .pill { padding: 3px 8px; font-size: 13px; background: rgba(255,250,240,.92); border: 1px solid var(--line); }
+  .zoom-btn { top: 40px; }
   .stage { flex: 1; min-height: 0; }
   .tabs { grid-template-columns: repeat(5, 1fr); gap: 3px; padding: 8px; }
   .tabs button { font-size: 12px; white-space: nowrap; padding: 5px 0; }
   .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .toasts { top: auto; bottom: 46vh; left: 16px; right: 16px; }
+  .toasts { top: auto; bottom: 40vh; left: 16px; right: 16px; }
   .hint { font-size: 12px; }
   .petcard { top: 8px; left: 8px; width: 140px; padding: 4px 6px 6px; font-size: 12px; }
   .pc-bar { margin-top: 3px; }
@@ -462,7 +483,7 @@ button.pass { font: inherit; }
 }
 </style>
 <header class="topbar">
-  <div class="brand">🏡 我的小屋</div>
+  <div class="brand">🏡<span class="brand-txt"> 我的小屋</span></div>
   <div class="rooms" id="roomTabs"></div>
   <div class="stats">
     <button class="pill sound" id="btnBgm" title="背景音樂">🎵</button>
@@ -490,6 +511,7 @@ button.pass { font: inherit; }
 
   <section class="stage">
     <canvas id="view"></canvas>
+    <button class="zoom-btn" id="btnZoom" title="放大房間">🔍 放大</button>
     <div class="hint" id="hint">從「我的東西」點家具放進房間；點房間裡的家具可以搬動</div>
     <div class="itemmenu" id="itemMenu" hidden></div>
     <div class="petcard" id="petCard">
@@ -6642,6 +6664,7 @@ const canvas = $('#view'), ctx = canvas.getContext('2d');
 const pickCtx = document.createElement('canvas').getContext('2d');
 
 let view = { scale: 1, ox: 0, oy: 0 };
+const cam = { key: null, ox: 0 }; // 放大房間時，畫面跟著小可愛左右移動
 let hold = null;       // {def, rot, x, y, ok, fromUid, orig}
 let hoverUid = null;
 let tab = 'inv', shopTheme = 'all';
@@ -6683,11 +6706,28 @@ function computeView() {
   const room = curRoom(), r = canvas.getBoundingClientRect();
   const minX = iso(0, room.d).x - 30, maxX = iso(room.w, 0).x + 30;
   const minY = iso(0, 0, WALL_H).y - 20, maxY = iso(room.w, room.d).y + 40;
-  const scale = Math.min(r.width / (maxX - minX), (r.height - 50) / (maxY - minY), 1.9);
+  const hintH = hintShown() ? 50 : 12; // 提示條收起來，房間就可以往下長
+  const fitW = r.width / (maxX - minX), fitH = (r.height - hintH) / (maxY - minY);
+  let scale = Math.min(fitW, fitH, 1.9);
+  let ox = r.width / 2 - (minX + maxX) / 2 * scale;
+  /* 放大房間＋直立的手機：房間被「寬度」卡住，只給它更高的空間不會變大。
+     所以放大時讓房間比螢幕寬（最多 1.7 倍），畫面左右跟著小可愛走，
+     但不會捲到房間外面。換房間時直接跳過去，走路時慢慢跟。 */
+  const follow = document.body.classList.contains('bigroom') && fitH > fitW * 1.05;
+  if (follow) {
+    scale = Math.min(fitH, fitW * 1.7, 1.9);
+    const fp = iso(fufu.x, fufu.y, 0);
+    const lo = r.width - maxX * scale, hi = -minX * scale;
+    const want = Math.max(lo, Math.min(hi, r.width / 2 - fp.x * scale));
+    const key = roomKey() + ':' + scale.toFixed(3);
+    cam.ox = cam.key === key ? cam.ox + (want - cam.ox) * .12 : want;
+    cam.key = key;
+    ox = cam.ox;
+  } else cam.key = null;
   view = {
     scale,
-    ox: r.width / 2 - (minX + maxX) / 2 * scale,
-    oy: (r.height - 40) / 2 - (minY + maxY) / 2 * scale
+    ox,
+    oy: (r.height - hintH + 10) / 2 - (minY + maxY) / 2 * scale
   };
 }
 
@@ -7200,6 +7240,7 @@ function refreshTop() {
 }
 
 function openTab(name) {
+  setBigRoom(false);                  // 放大房間時點了分頁：把面板打開
   if (tab !== name) sellMode = false; // 換分頁就離開賣東西模式
   tab = name;
   if (name !== tab) talkEdit = false;   // 離開這一頁，台詞自動鎖回去
@@ -7207,6 +7248,28 @@ function openTab(name) {
   renderTab();
 }
 document.querySelectorAll('#tabs button').forEach(b => { b.onclick = () => openTab(b.dataset.tab); });
+
+/* ===== 手機上讓房間大一點 =====
+   ① 「🔍 放大」：面板收成一排分頁，房間佔滿畫面；點任何分頁就打開面板。記住上次的選擇。
+   ③ 提示條只在前幾次打開遊戲時顯示（拿著家具時一定顯示）。
+   記在這台裝置的瀏覽器裡就好（不是存檔的一部分），讀寫失敗也不影響遊戲。 */
+const BIG_KEY = 'myHouse_bigRoom', HINT_KEY = 'myHouse_hintRuns', HINT_RUNS = 5;
+const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* 私密瀏覽之類，算了 */ } };
+function setBigRoom(on) {
+  const was = document.body.classList.contains('bigroom');
+  if (was === !!on) return;
+  document.body.classList.toggle('bigroom', !!on);
+  const b = $('#btnZoom');
+  if (b) b.textContent = on ? '🔍 縮小' : '🔍 放大';
+  lsSet(BIG_KEY, on ? '1' : '0');
+}
+$('#btnZoom').onclick = () => { setBigRoom(!document.body.classList.contains('bigroom')); Sound.play('click'); };
+if (lsGet(BIG_KEY) === '1') setBigRoom(true);
+const hintRuns = Number(lsGet(HINT_KEY) || 0) + 1;
+lsSet(HINT_KEY, String(hintRuns));
+if (hintRuns > HINT_RUNS) $('.stage').classList.add('hint-off');
+function hintShown() { const h = $('#hint'); return !!(h && h.offsetParent); }
 </script>
 <script>
 // 左側面板：收納、商店、壁紙地板、擴建、賺錢、圖鑑
