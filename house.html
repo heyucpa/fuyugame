@@ -1569,6 +1569,19 @@ const CLOTHES = [
   { id: 'bunny_ears', slot: 'head', name: '兔耳髮箍', price: 900, style: 'bunnyEars', color: '#ffffff', inner: '#ffb3c7' },
   { id: 'star_clip', slot: 'head', name: '星星髮夾', price: 500, style: 'starClip', color: '#ffd35c' },
   { id: 'flower_crown', slot: 'head', name: '花冠', price: 1500, style: 'flowerCrown', color: '#7fb069' },
+  /* ── 節慶髮飾 ──
+     她問節慶髮型，不過節慶的特徵其實在配件不在髮型（聖誕帽、兔耳朵、
+     南瓜髮夾都是戴上去的東西），所以做成頭飾，一件就是一件，
+     不用動髮型系統。
+     國慶日刻意跳過：它沒有小孩認得的視覺符號，做出來她看不懂是什麼。 */
+  { id: 'pumpkin_clip', slot: 'head', name: '南瓜髮夾', price: 700, style: 'pumpkin', color: '#f0902f' },
+  { id: 'devil_horns', slot: 'head', name: '小惡魔角', price: 900, style: 'devilHorns', color: '#c0392b' },
+  { id: 'witch_hat', slot: 'head', name: '巫師帽', price: 1400, style: 'witchHat', color: '#4b3b6b', band: '#f2c75c' },
+  { id: 'santa_hat', slot: 'head', name: '聖誕帽', price: 1200, style: 'santaHat', color: '#d94a4a' },
+  { id: 'antlers', slot: 'head', name: '麋鹿角', price: 1000, style: 'antlers', color: '#8a5a33' },
+  { id: 'osmanthus_clip', slot: 'head', name: '桂花髮夾', price: 800, style: 'osmanthus', color: '#f2c75c', band: '#f4ead2' },
+  { id: 'fu_clip', slot: 'head', name: '福字髮飾', price: 800, style: 'fuClip', color: '#d4352f', band: '#f2d06a' },
+  { id: 'sakura_band', slot: 'head', name: '櫻花髮圈', price: 1100, style: 'sakura', color: '#ff9ec4', band: '#f7c5d8' },
   { id: 'heart_glasses', slot: 'head', name: '愛心墨鏡', price: 1300, style: 'glasses', color: '#ff5f8f' },
   { id: 'rainbow_tee', slot: 'top', name: '彩虹T恤', price: 1200, style: 'rainbow', color: '#ffffff' },
   { id: 'stripe_top', slot: 'top', name: '條紋上衣', price: 900, style: 'stripe', color: '#ffffff', print: '#5b84c4' },
@@ -3538,6 +3551,93 @@ function drawHeadwear(ctx, o, h) {
         ctx.beginPath(); ctx.arc(x + Math.cos(a) * 1.8, y + Math.sin(a) * 1.8, 1.5, 0, Math.PI * 2); ctx.fill();
       }
       ctx.beginPath(); ctx.arc(x, y, 1, 0, Math.PI * 2); ctx.fillStyle = '#e8b43a'; ctx.fill();
+    });
+  } else if (h.style === 'pumpkin') {      // 🎃 南瓜髮夾
+    const cx = -10, cy = top + 7;
+    ctx.fillStyle = h.color;
+    ctx.beginPath(); ctx.ellipse(cx, cy, 4.6, 4, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(120,60,10,.5)'; ctx.lineWidth = .8;
+    ctx.beginPath(); ctx.moveTo(cx - 1.6, cy - 3.4); ctx.lineTo(cx - 1.6, cy + 3.4);
+    ctx.moveTo(cx + 1.6, cy - 3.4); ctx.lineTo(cx + 1.6, cy + 3.4); ctx.stroke();
+    ctx.fillStyle = '#4a7a3a';
+    ctx.fillRect(cx - .7, cy - 6.2, 1.4, 2.6);
+  } else if (h.style === 'devilHorns') {    // 😈 小惡魔角
+    ctx.fillStyle = h.color; ctx.strokeStyle = line; ctx.lineWidth = .8;
+    [-1, 1].forEach(s => {
+      ctx.beginPath();
+      ctx.moveTo(s * 7, top + 2);
+      ctx.quadraticCurveTo(s * 12, top - 4, s * 9.5, top - 9);
+      ctx.quadraticCurveTo(s * 9, top - 3, s * 4.5, top + 2);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    });
+  } else if (h.style === 'witchHat') {      // 🧙 巫師帽
+    ctx.fillStyle = h.color; ctx.strokeStyle = line; ctx.lineWidth = .8;
+    ctx.beginPath(); ctx.ellipse(0, top + 7, 19, 4.4, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-10, top + 6);
+    ctx.quadraticCurveTo(-5, top - 12, 4, top - 20);
+    ctx.quadraticCurveTo(6, top - 6, 10, top + 6);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = h.band || '#f2c75c';
+    ctx.beginPath(); ctx.ellipse(-.5, top + 3, 10.5, 3, 0, 0, Math.PI * 2); ctx.fill();
+  } else if (h.style === 'santaHat') {      // 🎄 聖誕帽
+    ctx.fillStyle = h.color; ctx.strokeStyle = line; ctx.lineWidth = .8;
+    ctx.beginPath();
+    ctx.moveTo(-12, top + 5);
+    ctx.quadraticCurveTo(-6, top - 13, 9, top - 14);
+    ctx.quadraticCurveTo(8, top - 2, 12, top + 5);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.ellipse(0, top + 5.5, 13, 3.6, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(10.5, top - 14, 3.6, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  } else if (h.style === 'antlers') {       // 🦌 麋鹿角
+    ctx.strokeStyle = h.color; ctx.lineWidth = 2; ctx.lineCap = 'round';
+    [-1, 1].forEach(s => {
+      ctx.beginPath();
+      ctx.moveTo(s * 6, top + 2); ctx.quadraticCurveTo(s * 11, top - 5, s * 10, top - 12);
+      ctx.moveTo(s * 9.4, top - 6); ctx.lineTo(s * 14, top - 9);
+      ctx.moveTo(s * 10.2, top - 10); ctx.lineTo(s * 6, top - 13);
+      ctx.stroke();
+    });
+    ctx.lineCap = 'butt';
+  } else if (h.style === 'osmanthus') {     // 🥮 桂花髮夾（中秋）
+    const cx = -10, cy = top + 7;
+    for (let i = 0; i < 6; i++) {
+      const a = i / 6 * Math.PI * 2, r = 3.2;
+      ctx.fillStyle = h.color;
+      ctx.beginPath(); ctx.arc(cx + Math.cos(a) * r, cy + Math.sin(a) * r, 1.6, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.fillStyle = '#fff6d8';
+    ctx.beginPath(); ctx.arc(cx, cy, 1.8, 0, Math.PI * 2); ctx.fill();
+    // 旁邊一彎小月亮
+    ctx.fillStyle = '#fff3c4';
+    ctx.beginPath(); ctx.arc(cx - 7, cy - 4, 3.2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = h.band || '#f4ead2';
+    ctx.beginPath(); ctx.arc(cx - 8.6, cy - 5.2, 3, 0, Math.PI * 2); ctx.fill();
+  } else if (h.style === 'fuClip') {        // 🧧 福字髮飾（新年）
+    const cx = -10, cy = top + 7;
+    ctx.save();
+    ctx.translate(cx, cy); ctx.rotate(Math.PI / 4);
+    ctx.fillStyle = h.color; ctx.strokeStyle = 'rgba(120,20,20,.5)'; ctx.lineWidth = .8;
+    ctx.fillRect(-4, -4, 8, 8); ctx.strokeRect(-4, -4, 8, 8);
+    ctx.restore();
+    ctx.fillStyle = h.band || '#f2d06a';
+    ctx.font = 'bold 6px "Noto Sans TC", sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('福', cx, cy + .5);
+    ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+  } else if (h.style === 'sakura') {        // 🌸 櫻花髮圈
+    ctx.strokeStyle = h.band || '#f7c5d8'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(0, hy - 2, 15.5, Math.PI * 1.08, Math.PI * 1.92); ctx.stroke();
+    [[-11, top + 4], [0, top - 1], [11, top + 4]].forEach(([fx2, fy], i) => {
+      const r = i === 1 ? 3.4 : 2.6;
+      ctx.fillStyle = h.color;
+      for (let k = 0; k < 5; k++) {
+        const a = k / 5 * Math.PI * 2;
+        ctx.beginPath(); ctx.arc(fx2 + Math.cos(a) * r, fy + Math.sin(a) * r, r * .72, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.fillStyle = '#fff6d8';
+      ctx.beginPath(); ctx.arc(fx2, fy, r * .5, 0, Math.PI * 2); ctx.fill();
     });
   } else if (h.style === 'glasses') { // 愛心墨鏡（只有正面看得到）
     if (o.back) return;

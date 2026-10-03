@@ -534,6 +534,32 @@
     if (cards !== want) fails.push('用途跟風格一起篩時數量不對：' + cards + ' vs ' + want);
     shopKind = 'all'; shopTheme = 'all';
 
+    /* ⑱ 衣服跟髮飾：每一件都要畫得出來。
+       style 打錯字的話那件會完全不顯示，而且不會報錯——
+       她花錢買了一頂帽子，戴上去却什麼都沒有。 */
+    var drawnStyles = {};
+    (function(){
+      var src = document.documentElement.innerHTML;  // 只是拿來找字串，不是當指令用
+      var re = /h\.style === '(\w+)'/g, mm;
+      while ((mm = re.exec(src))) drawnStyles[mm[1]] = 1;
+    })();
+    CLOTHES.filter(function(c){ return c.slot === 'head'; }).forEach(function(c){
+      if (!drawnStyles[c.style] && c.style !== 'none')
+        fails.push('頭飾「' + c.name + '」的 style（' + c.style + '）沒有對應的畫法');
+    });
+    // 每一件頭飾戴上去都要真的畫得出來，而且不可以兩件長得一模一樣
+    var seenHead = {};
+    CLOTHES.filter(function(c){ return c.slot === 'head'; }).forEach(function(c){
+      var ids = Object.assign({}, G.outfit, { head: c.id });
+      var d;
+      try { d = renderGirl(ids, 47, 59, { hair: { style: 'bob', color: 'black' } }).toDataURL(); }
+      catch (e) { fails.push(c.name + ' 畫不出來：' + e.message); return; }
+      if (seenHead[d]) fails.push('「' + c.name + '」跟「' + seenHead[d] + '」戴起來一模一樣');
+      seenHead[d] = c.name;
+    });
+    if (CLOTHES.filter(function(c){ return c.slot === 'head'; }).length < 19)
+      fails.push('頭飾數量變少了');
+
     // ⑦ 其他分頁沒被改壞
     ['inv','shop','dress','pets','deco','build','earn','book','talk','save'].forEach(function(t){
       try { openTab(t); if (!document.querySelector('#tabBody').children.length)
