@@ -395,13 +395,70 @@
     PARENTS.forEach(function(pa){
       if (!pa.lines || !pa.lines.length) fails.push(pa.short + ' 沒有台詞');
       Object.keys(pa.outfit).forEach(function(slot){
-        if (!CLOTHES_BY_ID[pa.outfit[slot]])
-          fails.push(pa.short + ' 的 ' + slot + ' 是不存在的衣服：' + pa.outfit[slot]);
+        var cl = CLOTHES_BY_ID[pa.outfit[slot]] || PARENT_CLOTHES[pa.outfit[slot]];
+        if (!cl) fails.push(pa.short + ' 的 ' + slot + ' 是不存在的衣服：' + pa.outfit[slot]);
+        else if (slot !== 'head' && slot !== 'shoes' && cl.slot !== slot) fails.push(pa.short + ' 的 ' + slot + ' 穿成了 ' + cl.slot);
       });
-      if (!HAIR_BY_ID[pa.hair.style]) fails.push(pa.short + ' 的髮型不存在');
+      if (hairOf({ hair: pa.hair }).style !== pa.hair.style) fails.push(pa.short + ' 的髮型不存在（被換成 ' + hairOf({ hair: pa.hair }).style + '）');
       if (!HAIR_COLOR_BY_ID[pa.hair.color]) fails.push(pa.short + ' 的髮色不存在');
     });
     if (PARENTS.length !== 2) fails.push('爸媽不是兩個人');
+    // 爸爸專用的衣服不可以跑進商店／換裝
+    Object.keys(PARENT_CLOTHES).forEach(function(id){
+      if (CLOTHES_BY_ID[id]) fails.push('爸爸的衣服 ' + id + ' 跑進商店了');
+    });
+    /* 爸爸要戴眼鏡（參考照片）：
+       1. 爸爸有眼鏡、媽媽沒有
+       2. 畫出來真的不一樣（正面），背影看不到眼鏡
+       3. 送貨時畫爸爸真的有把眼鏡傳進去 */
+    var dadP = PARENTS.filter(function(x){ return x.id === 'dad'; })[0];
+    var momP = PARENTS.filter(function(x){ return x.id === 'mom'; })[0];
+    if (!dadP || !dadP.glasses) fails.push('爸爸沒有戴眼鏡');
+    if (momP && momP.glasses) fails.push('媽媽也戴了眼鏡');
+    // 爸爸是短髮（照片），不是妹妹頭；短髮不能出現在商店
+    if (!dadP || dadP.hair.style !== 'short') fails.push('爸爸不是短髮');
+    if (HAIR_BY_ID.short) fails.push('爸爸的短髮跑進商店了');
+    var dadHead = function(style, back){
+      var cv = document.createElement('canvas'); cv.width = 60; cv.height = 60;
+      var cx = cv.getContext('2d'); cx.translate(30, 76);
+      drawGirlHead(cx, { hair: { style: style, color: 'black' }, back: back });
+      return cx.getImageData(0, 0, 60, 60).data.join(',');
+    };
+    if (dadHead('short') === dadHead('bob')) fails.push('短髮跟妹妹頭畫起來一樣');
+    if (dadHead('short', true) === dadHead('bob', true)) fails.push('短髮的背影跟妹妹頭一樣');
+    // 臉頰旁邊（耳朵下面）短髮不能有頭髮；妹妹頭有。畫布原點 (30,76)，頭中心 y = -46
+    var cheekHair = function(style){
+      var cv = document.createElement('canvas'); cv.width = 60; cv.height = 60;
+      var cx = cv.getContext('2d'); cx.translate(30, 76);
+      drawGirlHead(cx, { hair: { style: style, color: 'black' } });
+      return [[-14, -38], [14, -36]].map(function(pt){ return cx.getImageData(30 + pt[0], 76 + pt[1], 1, 1).data[3] > 0; });
+    };
+    var ch = cheekHair('short'), cb = cheekHair('bob');
+    if (ch[0] || ch[1]) fails.push('爸爸的短髮還是蓋到臉頰旁邊（' + ch + '）');
+    if (!cb[0] || !cb[1]) fails.push('測試點不對：妹妹頭在臉頰旁邊應該有頭髮');
+    var faceOf = function(extra){
+      var cv = document.createElement('canvas'); cv.width = 80; cv.height = 100;
+      var cx = cv.getContext('2d'); cx.translate(40, 90);
+      var o = { t: 0, outfit: { head: CLOTHES_BY_ID.head_none, top: PARENT_CLOTHES.dad_black_tee,
+                bottom: PARENT_CLOTHES.dad_cargo_shorts, shoes: CLOTHES_BY_ID.black_shoes }, hair: { style: 'bob', color: 'black' } };
+      Object.assign(o, extra); drawGirl(cx, o);
+      return cx.getImageData(20, 20, 40, 30).data.join(',');
+    };
+    if (faceOf({}) === faceOf({ glasses: '#2b2b33' })) fails.push('眼鏡沒有畫出來');
+    if (faceOf({ back: true }) !== faceOf({ back: true, glasses: '#2b2b33' })) fails.push('背影也看得到眼鏡');
+    var realDraw = drawGirl, seenGlasses = null, seenOutfit = null, keepSup = { a: sup.a, who: sup.who, alpha: sup.alpha, state: sup.state };
+    try {
+      drawGirl = function(c, o){ seenGlasses = o.glasses; seenOutfit = o.outfit; };
+      sup.who = dadP; sup.a = { x: 1, y: 1, z: 0, path: [], t: 0, blinkAt: 9 }; sup.alpha = 1;
+      var scv = document.createElement('canvas').getContext('2d');
+      drawSupplyActor(scv);
+      if (!seenGlasses) fails.push('爸爸送貨時沒戴眼鏡');
+      ['top', 'bottom', 'shoes'].forEach(function(k){
+        if (!seenOutfit || !seenOutfit[k] || !seenOutfit[k].style) fails.push('爸爸送貨時沒穿 ' + k);
+      });
+      sup.who = momP; seenGlasses = 'x'; drawSupplyActor(scv);
+      if (seenGlasses) fails.push('媽媽送貨時戴了眼鏡');
+    } finally { drawGirl = realDraw; Object.assign(sup, keepSup); }
     G.kidFood = JSON.parse(keepK); G.food = JSON.parse(keepF);
 
     /* ⑬ 拼圖：難度越高獎金越高，而且打亂之後不可以是「已經拼好的」 */
@@ -995,15 +1052,21 @@
     };
     var good = makeBackup();
     tb.value = '';
+    // FileReader 什麼時候讀完不一定（機器忙的時候 80ms 不夠），等到有結果或 3 秒
+    var waitFor = function(ok, then, t0){
+      t0 = t0 || Date.now();
+      if (ok() || Date.now() - t0 > 3000) then(); else setTimeout(function(){ waitFor(ok, then, t0); }, 50);
+    };
     feed(good, 'ok.json');
-    setTimeout(function(){
+    waitFor(function(){ return tb.value === good; }, function(){
       if (tb.value !== good) fails.push('選了備份檔，內容沒有被讀進來');
       tb.value = '';
       feed('這不是備份', 'bad.json');
+      // 壞檔案「不填進去」沒有東西可以等，就固定多等一下
       setTimeout(function(){
         if (tb.value) fails.push('選了不是備份的檔案，竟然還填進框裡');
         report();
-      }, 80);
-    }, 80);
+      }, 400);
+    });
   } catch(e){ errs.push('THROW(file) '+e.message); report(); }
 })();</script>

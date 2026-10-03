@@ -3414,7 +3414,7 @@ function drawTop(ctx, t, back) {
     ctx.fillStyle = GIRL.uniformStripe; ctx.fillRect(-10, -23, 20, 1.3);
     ctx.fillStyle = GIRL.uniformCollar; ctx.fillRect(-10, -21.7, 20, 1.6);
   } else if (t.style === 'tee') {
-    if (!back) heart(ctx, 0, -24, 3, t.print);
+    if (!back && t.print) heart(ctx, 0, -24, 3, t.print); // 爸爸的素色 T 恤沒有圖案
   } else if (t.style === 'hoodie') {
     ctx.fillStyle = t.trim; ctx.fillRect(-9.5, -18.5, 19, 2.5);         // 下擺羅紋
     if (!back) rr(ctx, -6, -24, 12, 5, 2, t.trim);                       // 口袋
@@ -3484,7 +3484,8 @@ function hairOf(o) {
   try { cur = G && G.hair; } catch (e) { cur = null; }
   const h = (o && o.hair) || cur || DEFAULT_HAIR;
   const col = HAIR_COLOR_BY_ID[h.color] || HAIR_COLOR_BY_ID.black;
-  return { style: HAIR_BY_ID[h.style] ? h.style : 'bob', c: col.c, hi: col.hi };
+  // short＝爸爸的短髮，只給爸媽用，商店買不到
+  return { style: HAIR_BY_ID[h.style] || h.style === 'short' ? h.style : 'bob', c: col.c, hi: col.hi };
 }
 
 /* 髮型多出來的那一塊，畫在頭之前（會被頭蓋住一部分，看起來才像長在後面）。
@@ -3537,15 +3538,22 @@ function drawGirlHead(ctx, o) {
   const hy = -46;
   const hair = hairOf(o);
   drawHairBack(ctx, hair, hy);
+  /* 短髮（爸爸）：後髮只到耳朵上面，不蓋住臉頰。
+     背影的時候下半顆頭沒有頭髮蓋著，要先把頭畫出來。 */
+  const short = hair.style === 'short', hb = short ? (o.back ? hy + 10 : hy + 3) : hy + 14; // 背影的短髮要蓋到後頸
+  if (short && o.back) {
+    ctx.beginPath(); ctx.ellipse(0, hy + 1, 12.5, 13, 0, 0, Math.PI * 2);
+    ctx.fillStyle = GIRL.skin; ctx.fill();
+  }
   // 後髮（妹妹頭輪廓）
   ctx.beginPath();
-  ctx.moveTo(-16, hy + 12);
+  ctx.moveTo(-16, hb - 2);
   ctx.lineTo(-16, hy - 2);
   ctx.arc(0, hy - 2, 16, Math.PI, 0);
-  ctx.lineTo(16, hy + 12);
-  ctx.quadraticCurveTo(16, hy + 14, 13, hy + 14);
-  ctx.lineTo(-13, hy + 14);
-  ctx.quadraticCurveTo(-16, hy + 14, -16, hy + 12);
+  ctx.lineTo(16, hb - 2);
+  ctx.quadraticCurveTo(16, hb, 13, hb);
+  ctx.lineTo(-13, hb);
+  ctx.quadraticCurveTo(-16, hb, -16, hb - 2);
   ctx.fillStyle = hair.c;
   ctx.fill();
 
@@ -3553,7 +3561,7 @@ function drawGirlHead(ctx, o) {
     // 背影：只看到頭髮
     ctx.strokeStyle = hair.hi; ctx.lineWidth = 1;
     for (let x = -10; x <= 10; x += 5) {
-      ctx.beginPath(); ctx.moveTo(x * .4, hy - 16); ctx.quadraticCurveTo(x, hy, x * 1.1, hy + 12); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x * .4, hy - 16); ctx.quadraticCurveTo(x, hy - (short ? 6 : 0), x * 1.1, hb - 2); ctx.stroke();
     }
     return;
   }
@@ -3607,12 +3615,25 @@ function drawGirlHead(ctx, o) {
   ctx.closePath();
   ctx.fillStyle = hair.c;
   ctx.fill();
-  // 兩側髮絲蓋住臉頰
-  ctx.beginPath(); ctx.moveTo(-15.5, hy - 3); ctx.quadraticCurveTo(-12, hy + 6, -12.5, hy + 13); ctx.lineTo(-16, hy + 13); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(15.5, hy - 3); ctx.quadraticCurveTo(12, hy + 6, 12.5, hy + 13); ctx.lineTo(16, hy + 13); ctx.closePath(); ctx.fill();
+  // 兩側髮絲蓋住臉頰（短髮沒有）
+  if (!short) {
+    ctx.beginPath(); ctx.moveTo(-15.5, hy - 3); ctx.quadraticCurveTo(-12, hy + 6, -12.5, hy + 13); ctx.lineTo(-16, hy + 13); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(15.5, hy - 3); ctx.quadraticCurveTo(12, hy + 6, 12.5, hy + 13); ctx.lineTo(16, hy + 13); ctx.closePath(); ctx.fill();
+  }
   // 髮光
   ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 2;
   ctx.beginPath(); ctx.arc(0, hy - 2, 11, Math.PI * 1.2, Math.PI * 1.45); ctx.stroke();
+  // 眼鏡（爸爸）：細細的方框，框在眼睛外面，再加鏡腳到耳朵
+  if (o.glasses) {
+    ctx.strokeStyle = o.glasses; ctx.lineWidth = 1;
+    ctx.fillStyle = 'rgba(255,255,255,.18)';
+    [-5, 5].forEach(ex => {
+      ctx.beginPath(); ctx.roundRect(ex + fx - 3.6, hy - 2, 7.2, 5.6, 1.2); ctx.fill(); ctx.stroke();
+    });
+    ctx.beginPath(); ctx.moveTo(fx - 1.4, hy - .2); ctx.lineTo(fx + 1.4, hy - .2); ctx.stroke(); // 鼻樑
+    ctx.beginPath(); ctx.moveTo(fx - 8.6, hy - .6); ctx.lineTo(-12.5, hy - 1.4);
+    ctx.moveTo(fx + 8.6, hy - .6); ctx.lineTo(12.5, hy - 1.4); ctx.stroke();               // 鏡腳
+  }
 }
 
 // ── 頭飾（正面、背面都看得到）──
@@ -5252,6 +5273,11 @@ function visitorTick(dt, now) {
 const SUPPLY_MS = 10 * 60000;
 const SUPPLY_N = 3;
 const SUPPLY_CAP = 12;
+/* 爸爸媽媽專用的衣服：不放進 CLOTHES，商店和換裝看不到 */
+const PARENT_CLOTHES = {
+  dad_black_tee:    { id: 'dad_black_tee', slot: 'top', style: 'tee', color: '#26262b' },
+  dad_cargo_shorts: { id: 'dad_cargo_shorts', slot: 'bottom', style: 'shorts', color: '#6e6a58' }
+};
 const PARENTS = [
   { id: 'mom', short: '媽媽',
     outfit: { head: 'head_none', top: 'pink_tee', bottom: 'jeans', shoes: 'white_sneakers' },
@@ -5262,8 +5288,9 @@ const PARENTS = [
             '寵物也可以一起喝喔～',
             '長高高要靠這個，加油！'] },
   { id: 'dad', short: '爸爸',
-    outfit: { head: 'head_none', top: 'sport_jacket', bottom: 'jeans', shoes: 'black_shoes' },
-    hair: { style: 'bob', color: 'black' }, k: 1.38,
+    outfit: { head: 'head_none', top: 'dad_black_tee', bottom: 'dad_cargo_shorts', shoes: 'black_shoes' },
+    hair: { style: 'short', color: 'black' }, k: 1.38,
+    glasses: '#2b2b33', // 爸爸戴細框方眼鏡
     lines: ['爸爸送貨來囉！',
             '剛好經過，順便帶幾瓶過來。',
             '收好收好，別讓寵物自己偷喝光。',
@@ -5383,10 +5410,10 @@ function drawSupplyActor(ctx) {
   ctx.translate(p.x, p.y - hop);
   ctx.scale(SUP_K, SUP_K);
   const outfit = {};
-  OUTFIT_SLOTS.forEach(({ key }) => { outfit[key] = CLOTHES_BY_ID[who.outfit[key]]; });
+  OUTFIT_SLOTS.forEach(({ key }) => { outfit[key] = CLOTHES_BY_ID[who.outfit[key]] || PARENT_CLOTHES[who.outfit[key]]; });
   // 還沒放下箱子之前，手上捧著一箱
   drawGirl(ctx, { t: a.t, walking: moving, blink: a.t > a.blinkAt, outfit: outfit,
-                  hair: who.hair });
+                  hair: who.hair, glasses: who.glasses });
   if (sup.state === 'in') {
     ctx.fillStyle = '#c9925a';
     ctx.fillRect(-9, -36, 18, 13);
