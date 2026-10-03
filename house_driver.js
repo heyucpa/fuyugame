@@ -755,6 +755,72 @@
     else { L4.onclick(); }
     if (G.away) fails.push('過場完了卻沒有回到家');
 
+    /* ㉝ 在親戚家可以直接去另一家（不用先回家）
+       她說：去了阿婆家就只能回家，不能去叔叔家。 */
+    travelTo('uncle'); var Lt = document.getElementById('tripLayer'); if (Lt) Lt.onclick();
+    var topBtns = [].map.call(document.querySelectorAll('#roomTabs button'), function(b){ return b; });
+    var outBtn = topBtns.filter(function(b){ return /出門/.test(b.textContent); })[0];
+    if (!outBtn) fails.push('在叔叔家上面沒有「出門」');
+    else {
+      outBtn.onclick();
+      var picks = [].slice.call(document.querySelectorAll('#modalCard .place-pick'));
+      var pUncle = picks.filter(function(b){ return /叔叔家/.test(b.textContent); })[0];
+      var pGrand = picks.filter(function(b){ return /阿婆家/.test(b.textContent); })[0];
+      var pHome = picks.filter(function(b){ return /回家/.test(b.textContent); })[0];
+      if (!pUncle || !pUncle.disabled) fails.push('在叔叔家，出門選單還可以點「叔叔家」');
+      if (!pHome) fails.push('在叔叔家，出門選單沒有「回家」');
+      if (!pGrand || pGrand.disabled) fails.push('在叔叔家，出門選單不能去阿婆家');
+      else {
+        pGrand.onclick();
+        var Lg = document.getElementById('tripLayer');
+        if (!Lg) fails.push('從叔叔家去阿婆家沒有走過場'); else Lg.onclick();
+        if (!G.away || G.away.place !== 'grandma' || G.away.idx !== 0) fails.push('從叔叔家去阿婆家沒有到（' + JSON.stringify(G.away) + '）');
+      }
+    }
+    // 出門選單的「回家」要真的回家
+    openTravelMenu();
+    var ph2 = [].filter.call(document.querySelectorAll('#modalCard .place-pick'), function(b){ return /回家/.test(b.textContent); })[0];
+    if (ph2) { ph2.onclick(); var Lh = document.getElementById('tripLayer'); if (Lh) Lh.onclick(); }
+    if (G.away) fails.push('出門選單的「回家」沒有回到家');
+    // 在家打開，不能有「回家」，也沒有哪一家是「你在這裡」
+    openTravelMenu();
+    var homePicks = [].slice.call(document.querySelectorAll('#modalCard .place-pick'));
+    if (homePicks.some(function(b){ return /回家/.test(b.textContent) || b.disabled; })) fails.push('在家打開出門選單，出現「回家」或不能點的地方');
+    $('#modal').hidden = true;
+    // 之後加的地方（學校…）沒有主人，選單也要打得開
+    PLACES.__school = { name: '學校', emoji: '🏫', desc: '測試用', rooms: [{ name: '教室' }] };
+    try {
+      openTravelMenu();
+      if (![].some.call(document.querySelectorAll('#modalCard .place-pick'), function(b){ return /學校/.test(b.textContent); }))
+        fails.push('沒有主人的地方沒出現在出門選單');
+    } catch(e) { fails.push('沒有主人的地方讓出門選單壞掉：' + e.message); }
+    delete PLACES.__school;
+    $('#modal').hidden = true;
+
+    /* ㉞ 換房間有開門動畫，但房間要「馬上」換好（不能延後，不然連點會亂） */
+    if (G.rooms.length < 2) G.rooms.push(JSON.parse(JSON.stringify(G.rooms[0])));
+    G.cur = 0; refreshTop();
+    var rd = document.getElementById('roomDoors'); if (rd) rd.remove();
+    var tabBtns = document.querySelectorAll('#roomTabs button');
+    tabBtns[1].onclick();
+    if (G.cur !== 1) fails.push('點房間沒有馬上換過去');
+    var doors = document.getElementById('roomDoors');
+    if (!doors) fails.push('換房間沒有開門動畫');
+    else if (!/🚪/.test(doors.textContent) || doors.textContent.indexOf(G.rooms[1].name) < 0) fails.push('門上沒寫要去的房間');
+    if (doors && getComputedStyle(doors).pointerEvents !== 'none') fails.push('開門動畫會擋住點擊');
+    if (doors) doors.remove();
+    document.querySelectorAll('#roomTabs button')[1].onclick();
+    if (document.getElementById('roomDoors')) fails.push('點自己現在的房間也在開門');
+    G.cur = 0; commit();
+    var rd2 = document.getElementById('roomDoors'); if (rd2) rd2.remove();
+    // 親戚家換房間也有
+    travelTo('grandma'); var Lg2 = document.getElementById('tripLayer'); if (Lg2) Lg2.onclick();
+    goPlaceRoom(1);
+    if (G.away.idx !== 1) fails.push('阿婆家換房間沒有換');
+    if (!document.getElementById('roomDoors')) fails.push('阿婆家換房間沒有開門動畫');
+    goHome(); var Lh2 = document.getElementById('tripLayer'); if (Lh2) Lh2.onclick();
+    var rd3 = document.getElementById('roomDoors'); if (rd3) rd3.remove();
+
     /* ⑵ 表情要跟狀態一致
        她說「肚子好餓喔…」卻還在笑，講一套臉一套。 */
     var keepH = G.kid.hunger;

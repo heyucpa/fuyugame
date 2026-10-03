@@ -253,6 +253,25 @@ button { font: inherit; color: inherit; cursor: pointer; }
   background: radial-gradient(ellipse at 50% 70%, #5a3d22 0 45%, #8a6a45 46% 100%); }
 .mole-hole.up { background: radial-gradient(ellipse at 50% 70%, #5a3d22 0 45%, #c9a06a 46% 100%); }
 
+/* 換房間的門：關著的兩扇門往兩邊打開（不擋點擊） */
+.room-doors { position: absolute; inset: 0; z-index: 25; pointer-events: none; display: flex; overflow: hidden; }
+.room-doors .door { flex: 1; position: relative;
+  background: repeating-linear-gradient(90deg, #c99a66 0 22px, #bb8b58 22px 24px);
+  box-shadow: inset 0 0 0 4px #8a5a33; animation: doorL .6s ease-in .3s forwards; }
+.room-doors .door.r { animation-name: doorR; }
+.room-doors .door::after { content: ''; position: absolute; top: 64%; width: 10px; height: 10px; border-radius: 50%; background: #ffd35c; box-shadow: 0 0 0 2px #8a5a33; }
+.room-doors .door.l::after { right: 12px; }
+.room-doors .door.r::after { left: 12px; }
+.room-doors .door-name { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  background: #fffaf0; border: 3px solid #8a5a33; border-radius: 14px; padding: 8px 16px;
+  font-size: 20px; font-weight: 800; color: #4a3b2a; white-space: nowrap; animation: doorName .25s ease-in .3s forwards; }
+@keyframes doorL { to { transform: translateX(-100%); } }
+@keyframes doorR { to { transform: translateX(100%); } }
+@keyframes doorName { to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .room-doors { display: none; } }
+.place-pick.here { opacity: .55; }
+.place-emoji { width: 64px; height: 58px; display: flex; align-items: center; justify-content: center; font-size: 40px; flex: none; }
+
 /* 出門的過場：蓋在房間畫面上，點一下跳過 */
 .trip {
   position: absolute; inset: 0; z-index: 30; display: flex;
@@ -5894,6 +5913,24 @@ function walkTrip(label, done) {
   })();
 }
 
+/* ===== 換房間的開門動畫 =====
+   本來點房間是瞬間換掉，換了哪間不太有感覺。
+   現在：兩扇門先關著、門上寫房間名字，然後往兩邊打開，看到新房間。
+   房間是「馬上」換好的，門只是蓋在上面的畫面——
+   不擋點擊、不延後任何事情，連點好幾間也不會亂掉。 */
+function roomDoors(name) {
+  const stage = $('.stage');
+  if (!stage) return;
+  const old = document.getElementById('roomDoors');
+  if (old) old.remove();
+  const d = el('div', 'room-doors');
+  d.id = 'roomDoors';
+  d.append(el('div', 'door l'), el('div', 'door r'), el('div', 'door-name', '🚪 ' + name));
+  stage.appendChild(d);
+  Sound.play('click');
+  setTimeout(() => d.remove(), 1200);
+}
+
 // ── 出門、回家 ──
 function travelTo(place) {
   if (G.away && G.away.place === place) return;
@@ -5911,6 +5948,7 @@ function travelArrive(place) {
 }
 function goPlaceRoom(i) {
   if (!G.away) return;
+  if (i !== G.away.idx) roomDoors(PLACES[G.away.place].rooms[i].name);
   G.away.idx = i;
   commit();
 }
@@ -5925,19 +5963,30 @@ function homeArrive() {
   toast('🏠 回到家了');
   commit();
 }
-// 出門選單：兩個地方，附上叔叔、阿婆的小圖
+/* 出門選單：每個地方一張卡，有主人的附上主人的小圖。
+   在親戚家也能打開：直接去另一家，不用先回家再出門。
+   現在在的那一家標「你在這裡」、不能點。
+   之後的學校、公園、圖書館沒有主人，就用大大的圖示代替小圖——
+   PLACES 多加一筆就會出現在這裡，不用改選單。 */
 function openTravelMenu() {
   const card = $('#modalCard');
   card.innerHTML = '';
   card.appendChild(el('h2', '', '🚗 要去哪裡玩？'));
-  Object.entries(PLACES).forEach(([id, pl]) => {
-    const b = el('button', 'place-pick');
-    b.appendChild(renderNeighborPortrait(HOSTS[pl.host], 64, 58, false));
+  const pick = (icon, title, desc, fn, here) => {
+    const b = el('button', 'place-pick' + (here ? ' here' : ''));
+    b.appendChild(icon);
     const t = el('div', 'place-txt');
-    t.append(el('b', '', `${pl.emoji} ${pl.name}`), el('span', '', pl.desc));
+    t.append(el('b', '', title), el('span', '', desc));
     b.appendChild(t);
-    b.onclick = () => { $('#modal').hidden = true; travelTo(id); };
+    if (here) b.disabled = true;
+    else b.onclick = () => { $('#modal').hidden = true; fn(); };
     card.appendChild(b);
+  };
+  if (G.away) pick(el('div', 'place-emoji', '🏠'), '🏠 回家', '回到自己的小屋', goHome, false);
+  Object.entries(PLACES).forEach(([id, pl]) => {
+    const here = !!(G.away && G.away.place === id);
+    const icon = pl.host && HOSTS[pl.host] ? renderNeighborPortrait(HOSTS[pl.host], 64, 58, false) : el('div', 'place-emoji', pl.emoji);
+    pick(icon, `${pl.emoji} ${pl.name}${here ? '（你在這裡）' : ''}`, pl.desc, () => travelTo(id), here);
   });
   const no = el('button', 'big alt', '不去了');
   no.onclick = () => { $('#modal').hidden = true; };
@@ -6539,9 +6588,14 @@ function refreshTop() {
   if (G.away) { // 在親戚家：回家按鈕＋那個地方的房間
     add('🏠 回家', false, goHome, 'go');
     PLACES[G.away.place].rooms.forEach((r, i) => add(r.name, i === G.away.idx, () => goPlaceRoom(i)));
+    add('🚗 出門', false, () => { cancelHold(); openTravelMenu(); }, 'go'); // 從叔叔家直接去阿婆家，不用先回家
     return;
   }
-  G.rooms.forEach((r, i) => add(r.name, i === G.cur, () => { cancelHold(); G.cur = i; commit(); }));
+  G.rooms.forEach((r, i) => add(r.name, i === G.cur, () => {
+    cancelHold();
+    if (i !== G.cur) roomDoors(r.name);
+    G.cur = i; commit();
+  }));
   add('🚗 出門', false, () => { cancelHold(); openTravelMenu(); }, 'go');
 }
 
