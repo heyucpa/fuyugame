@@ -250,6 +250,44 @@
     if (releasePet(0)) fails.push('最後一隻竟然送得走');
     G = JSON.parse(save0); G.pet = G.pets[G.activePet];
 
+    /* ⑩ 彈弓丟蘋果：拉出畫布也要射得出去
+       本來彈弓在 x=62、最大拉距 72，要拉滿得拉到畫面外的 x=-10，
+       而且手指一出畫布 pointerleave 就把整發取消掉——
+       結果是水平方向永遠拉不滿，小孩只覺得「怎麼沒反應」。 */
+    openSlingGame();
+    var sc = document.querySelector('.game-stage canvas');
+    var st = document.querySelector('.game-status');
+    if (!sc || !st) fails.push('彈弓遊戲沒有開起來');
+    else {
+      var r0 = sc.getBoundingClientRect();
+      var before = st.textContent;
+      var at = function(type, px, py, extra){
+        var r = sc.getBoundingClientRect();
+        sc.dispatchEvent(new PointerEvent(type, Object.assign({
+          bubbles: true, pointerId: 1, clientX: r.left + px, clientY: r.top + py }, extra || {})));
+      };
+      // 拉滿的位置一定要還在畫面裡，不然水平方向永遠拉不滿
+      var gm = openSlingGame.geom;
+      if (!gm) fails.push('量不到彈弓的位置，這一關等於沒驗');
+      else if (gm.anchor.x - gm.maxPull < gm.edge)
+        fails.push('彈弓在 x=' + gm.anchor.x + '，拉滿要到 x=' +
+          (gm.anchor.x - gm.maxPull) + '，在畫面外（至少要 ' + gm.edge + '）');
+
+      if (r0.width <= 0) fails.push('彈弓的畫布量不到大小，這一關等於沒驗');
+      else {
+        /* 從彈弓按下去，往左拉到畫面外，中途手指離開畫布（真的瀏覽器
+           會送 pointerleave），再放開。這一發必須射得出去。 */
+        at('pointerdown', r0.width * 0.27, r0.height * 0.74);
+        at('pointermove', -r0.width * 0.6, r0.height * 0.80);
+        at('pointerleave', -r0.width * 0.6, r0.height * 0.80);
+        at('pointerup',   -r0.width * 0.6, r0.height * 0.80);
+        if (st.textContent === before)
+          fails.push('往左拉出畫面再放開，蘋果沒有射出去（' + st.textContent + '）');
+      }
+      closeGameWindow();
+      document.querySelector('#modal').hidden = true;
+    }
+
     // ⑦ 其他分頁沒被改壞
     ['inv','shop','dress','pets','deco','build','earn','book','talk','save'].forEach(function(t){
       try { openTab(t); if (!document.querySelector('#tabBody').children.length)

@@ -7324,7 +7324,17 @@ function openFarmGame() {
 function openSlingGame() {
   const w = openGameWindow('🎯 彈弓丟蘋果', '往後拉彈弓再放開，蘋果會飛出去！打破所有氣球就過關，一關有 3 顆蘋果，共 3 關。');
   const W = 360, H = 420, { c, g, pos } = gameCanvas(w.stage, W, H);
-  const GY = 382, ANCHOR = { x: 62, y: 312 }, R = 9, GRAV = 900, MAXPULL = 72;
+  /* 彈弓本來在 x=62，最大拉距 72——要拉滿得拉到 x=-10，在畫面外，
+     根本拉不到。結果是「水平方向永遠拉不滿」：想拉滿只能往正下方拉，
+     但那樣蘋果是往上飛的。往右挪到 96 之後，拉滿落在 x=24，
+     離左邊還有 24 的餘裕，手指不會被畫面邊緣卡住。
+     距離變近 34，但滿拉的射程有 466，打最遠的箱子（x≈314）綽綽有餘。 */
+  const GY = 382, ANCHOR = { x: 96, y: 312 }, R = 9, GRAV = 900, MAXPULL = 72;
+  const EDGE = 4;   // 瞄準點夾在畫布裡面留的邊
+  /* 給走查看的。要擋的是「拉滿的位置落在畫面外」——
+     那是一個幾何條件，不是畫面上看得出來的東西，
+     只靠模擬手指去點是驗不到的（拉不滿一樣射得出去，只是軟綿綿的）。 */
+  openSlingGame.geom = { W: W, H: H, anchor: ANCHOR, maxPull: MAXPULL, edge: EDGE };
   // 每一關：木箱 [x, y, 寬, 高]，氣球 [x, y]
   const LEVELS = [
     { boxes: [[240, 360, 22, 22], [240, 338, 22, 22], [300, 360, 22, 22], [300, 338, 22, 22], [236, 326, 90, 12]],
@@ -7355,9 +7365,21 @@ function openSlingGame() {
     return { vx: dx / len * p * 9, vy: dy / len * p * 9 };
   };
 
-  c.addEventListener('pointerdown', e => { if (!ended && !apple) { aim = pos(e); Sound.play('pickUp'); } });
-  c.addEventListener('pointermove', e => { if (aim) aim = pos(e); });
-  c.addEventListener('pointerup', () => {
+  /* 手指拉出畫布也要算數。本來 pointerleave 一觸發就把 aim 清掉，
+     小孩拉過頭一點整發就沒了，而且完全沒有回饋，只覺得「怎麼沒反應」。
+     改成：按下去就 setPointerCapture（出了畫布一樣收得到事件），
+     瞄準點夾在畫布裡面。拉到邊緣就是拉到底，不會消失。 */
+  const clampAim = p => ({ x: Math.max(EDGE, Math.min(W - EDGE, p.x)),
+                           y: Math.max(EDGE, Math.min(H - EDGE, p.y)) });
+  c.addEventListener('pointerdown', e => {
+    if (ended || apple) return;
+    aim = clampAim(pos(e));
+    try { c.setPointerCapture(e.pointerId); } catch (err) {}
+    Sound.play('pickUp');
+  });
+  c.addEventListener('pointermove', e => { if (aim) aim = clampAim(pos(e)); });
+  function release(e) {
+    if (e) { try { c.releasePointerCapture(e.pointerId); } catch (err) {} }
     if (!aim) return;
     if (pull() < 10) { aim = null; return; } // 拉太短不算
     const v = aimVel();
@@ -7365,8 +7387,10 @@ function openSlingGame() {
     aim = null; shots--;
     Sound.play('jump');
     w.status.textContent = `第 ${level + 1} 關：還有 ${shots} 顆蘋果`;
-  });
-  c.addEventListener('pointerleave', () => { aim = null; });
+  }
+  c.addEventListener('pointerup', release);
+  // 手指被系統收走（來電、切 App）才取消，不是拉出畫布就取消
+  c.addEventListener('pointercancel', () => { aim = null; });
 
   function pop(b) {
     b.popped = true;
