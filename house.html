@@ -475,11 +475,10 @@ button.pass { font: inherit; }
 <main class="layout">
   <aside class="panel">
     <nav class="tabs" id="tabs">
-      <button data-tab="inv" class="on"><span class="ti">📦</span>收納</button>
+      <button data-tab="inv" class="on"><span class="ti">📦</span>我的東西</button>
       <button data-tab="shop"><span class="ti">🛒</span>商店</button>
       <button data-tab="dress"><span class="ti">👗</span>換裝</button>
       <button data-tab="pets"><span class="ti">🐾</span>寵物</button>
-      <button data-tab="deco"><span class="ti">🎨</span>壁紙地板</button>
       <button data-tab="build"><span class="ti">🏗️</span>蓋房間</button>
       <button data-tab="earn"><span class="ti">💰</span>賺錢</button>
       <button data-tab="book"><span class="ti">📖</span>圖鑑</button>
@@ -491,7 +490,7 @@ button.pass { font: inherit; }
 
   <section class="stage">
     <canvas id="view"></canvas>
-    <div class="hint" id="hint">從「收納」點家具放進房間；點房間裡的家具可以搬動</div>
+    <div class="hint" id="hint">從「我的東西」點家具放進房間；點房間裡的家具可以搬動</div>
     <div class="itemmenu" id="itemMenu" hidden></div>
     <div class="petcard" id="petCard">
       <div class="pc-head"><span>👧 <b id="kidNameLbl">小可愛</b></span><button id="pcToggle" title="收合">－</button></div>
@@ -3344,7 +3343,7 @@ function sellValue(price) { return Math.floor(price / 2); }
 
 // 回傳不能賣的原因；可以賣回傳 null
 function furnSellBlock(id) {
-  if (!G.inv[id]) return '沒有收納';
+  if (!G.inv[id]) return '沒有了';
   return FURN_BY_ID[id].price ? null : '不能賣';
 }
 function foodSellBlock(id) { return G.food[id] ? null : '沒有了'; }
@@ -6028,7 +6027,7 @@ function hostTick(dt, now) {
       if (!got) return;
       hostSay(pickLine(place === 'uncle' ? 'giftUncle' : 'giftGrandma', { 名字: charName() }), 3200);
       host.nextTalkAt = performance.now() + 9000;
-      toast(`🎁 ${host.n.short}送你${got.map(g => g.emoji + g.name).join('、')}！${place === 'uncle' ? '（放進收納了）' : ''}`);
+      toast(`🎁 ${host.n.short}送你${got.map(g => g.emoji + g.name).join('、')}！${place === 'uncle' ? '（放進「我的東西」了）' : ''}`);
       Sound.play('coin');
       saveGame(); renderTab();
     }, 2500);
@@ -6719,7 +6718,7 @@ function rotateHold() {
 function storeHold() {
   if (!hold) return;
   if (hold.fromUid) addItem(hold.def.id);
-  toast(`${hold.def.name} 收進收納了`);
+  toast(`${hold.def.name} 收起來了`);
   hold = null;
   updateHoldUI();
   commit();
@@ -6887,7 +6886,7 @@ function openTopPicker(it) {
   ON_TABLE.filter(id => G.inv[id] > 0).forEach(id => {
     const def = FURN_BY_ID[id];
     if (!def) return;
-    grid.appendChild(furnCard(def, '收納 ×' + G.inv[id], () => {
+    grid.appendChild(furnCard(def, '有 ×' + G.inv[id], () => {
       if (!takeItem(id)) return;
       it.top = id;
       $('#modal').hidden = true;
@@ -6934,13 +6933,13 @@ function showItemMenu(it, e) {
       add(`⬇️ 把${tdef ? tdef.name : '桌上的東西'}收起來`, () => {
         if (it.top) addItem(it.top);
         it.top = null;
-        toast('收進收納了');
+        toast('收起來了');
         commit();
       });
     } else {
       const can = ON_TABLE.filter(id => G.inv[id] > 0);
       if (can.length) add('🧺 放東西上去', () => openTopPicker(it));
-      else add('🧺 放東西上去（收納裡沒有小東西）', () => {
+      else add('🧺 放東西上去（我的東西裡沒有小東西）', () => {
         toast('先去商店買小盆栽、公仔這類小東西吧！');
       });
     }
@@ -6949,7 +6948,7 @@ function showItemMenu(it, e) {
   add('📦 收起來', () => {
     curRoom().items = curRoom().items.filter(x => x.uid !== it.uid);
     addItem(it.id);
-    toast(`${def.name} 收進收納了`);
+    toast(`${def.name} 收起來了`);
     commit();
   });
   openMenu(entries, e);
@@ -6995,7 +6994,7 @@ canvas.addEventListener('contextmenu', e => {
   if (wi) {
     curRoom().wallItems = curRoom().wallItems.filter(x => x.uid !== wi.uid);
     addItem(wi.id);
-    toast(`${FURN_BY_ID[wi.id].name} 收進收納了`);
+    toast(`${FURN_BY_ID[wi.id].name} 收起來了`);
     hoverUid = null;
     commit();
     return;
@@ -7004,7 +7003,7 @@ canvas.addEventListener('contextmenu', e => {
   if (it) {
     curRoom().items = curRoom().items.filter(x => x.uid !== it.uid);
     addItem(it.id);
-    toast(`${FURN_BY_ID[it.id].name} 收進收納了`);
+    toast(`${FURN_BY_ID[it.id].name} 收起來了`);
     hoverUid = null;
     commit();
   }
@@ -7088,7 +7087,7 @@ function furnCard(def, sub, onClick, count) {
 function renderTab() {
   const body = $('#tabBody');
   body.innerHTML = '';
-  ({ inv: tabInv, shop: tabShop, deco: tabDeco, build: tabBuild, earn: tabEarn, book: tabBook, talk: tabTalk, dress: tabDress, pets: tabPets, save: tabSave })[tab](body);
+  ({ inv: tabInv, shop: tabShop, deco: tabInv, build: tabBuild, earn: tabEarn, book: tabBook, talk: tabTalk, dress: tabDress, pets: tabPets, save: tabSave })[tab](body);
 }
 
 // ── 賣回商店 ──
@@ -7144,10 +7143,10 @@ function sellCard(visual, name, price, block, count, onSell) {
 function tabInv(body) {
   const ids = Object.keys(G.inv).filter(id => G.inv[id] > 0);
   const foods = Object.keys(G.food).filter(id => G.food[id] > 0);
-  sellToggle(body, '房間裡的家具要先收進收納才能賣。');
-  body.appendChild(h3('收納中的家具'));
+  sellToggle(body, '房間裡的家具要先收起來才能賣；正在用的壁紙地板也要先換成別的。');
+  body.appendChild(h3('🛋️ 家具'));
   if (!ids.length) {
-    body.appendChild(note('收納是空的。去「商店」買家具，或到「賺錢」搖樹看看會不會掉東西下來。'));
+    body.appendChild(note('還沒有家具。去「商店」買家具，或到「賺錢」搖樹看看會不會掉東西下來。'));
   } else {
     if (!sellMode) body.appendChild(note('點一下家具，再點房間地板放下。掛畫、時鐘這類掛飾要點在牆上。'));
     const grid = el('div', 'grid');
@@ -7158,6 +7157,17 @@ function tabInv(body) {
         : furnCard(def, THEME_NAMES[def.theme], () => startHoldFromInv(id), G.inv[id]));
     });
     body.appendChild(grid);
+  }
+  /* 壁紙、地板也是買回來的東西，跟家具放在一起（以前是獨立的「壁紙地板」分頁）。
+     這裡只列自己有的，點了就換上；還沒買的在「商店」→「🎨 壁紙地板」。 */
+  const room = curRoom();
+  if (!sellMode && G.away) body.appendChild(note(`現在在${PLACES[G.away.place].name}，回家才能換壁紙地板喔。`));
+  else {
+    if (!sellMode) body.appendChild(note(`點一下就換到「${room.name}」。牆和地板跟家具同風格，評分會加分。想要新的去「商店」→「🎨 壁紙地板」。`));
+    body.appendChild(h3('🧱 壁紙'));
+    body.appendChild(decoGrid('wall', WALLPAPERS, G.walls, room.wall, 'own'));
+    body.appendChild(h3('🟫 地板'));
+    body.appendChild(decoGrid('floor', FLOORS, G.floors, room.floor, 'own'));
   }
   const kidFoods = Object.keys(G.kidFood).filter(id => G.kidFood[id] > 0);
   if (sellMode && kidFoods.length) { // 賣東西時也可以賣食物
@@ -7202,7 +7212,7 @@ function tabShop(body) {
   body.appendChild(h3('小狸商店'));
   // 第一排：她在想的事（我要一張床）。第二排：想湊風格加成的時候才用
   const f = el('div', 'filter kinds');
-  [['all', '', '全部'], ['food', '🍎', '食物']]
+  [['all', '', '全部'], ['food', '🍎', '食物'], ['paper', '🎨', '壁紙地板']]
     .concat(FURN_KINDS.map(k => [k.id, k.icon, k.name]))
     .forEach(([k, icon, n]) => {
       const b = el('button', k === shopKind ? 'on' : '');
@@ -7220,6 +7230,7 @@ function tabShop(body) {
     f2.appendChild(b);
   });
   body.appendChild(f2);
+  if (shopKind === 'paper') { shopDeco(body); return; }
   if (shopKind === 'all' || shopKind === 'food') {
     body.appendChild(h3(`${charName()}的食物`));
     body.appendChild(foodShopGrid(KID_FOODS, G.kidFood, buyKidFood,
@@ -7235,7 +7246,7 @@ function tabShop(body) {
     .filter(d => shopTheme === 'all' || d.theme === shopTheme)
     .forEach(def => {
     const card = furnCard(def, '💰 ' + fmt(def.price), () => {
-      if (buyFurniture(def.id)) { Sound.play('coin'); toast(`買了「${def.name}」，放進收納了`); commit(); }
+      if (buyFurniture(def.id)) { Sound.play('coin'); toast(`買了「${def.name}」，放進「我的東西」了`); commit(); }
       else toast('鈴錢不夠，去賺一點吧！');
     }, G.inv[def.id]);
     if (G.bells < def.price) card.classList.add('dim');
@@ -7243,12 +7254,28 @@ function tabShop(body) {
     grid.appendChild(card);
   });
   body.appendChild(grid);
+  if (shopKind === 'all') shopDeco(body);
+}
+// 商店的壁紙地板：只賣還沒有的；買了直接換上
+function shopDeco(body) {
+  if (G.away) { body.appendChild(h3('🎨 壁紙地板')); body.appendChild(note(`現在在${PLACES[G.away.place].name}，回家才能買壁紙地板喔。`)); return; }
+  const room = curRoom();
+  body.appendChild(h3('🧱 壁紙'));
+  const wg = decoGrid('wall', WALLPAPERS, G.walls, room.wall, 'shop');
+  body.appendChild(wg.children.length ? wg : note('壁紙全部都買齊了！'));
+  body.appendChild(h3('🟫 地板'));
+  const fg = decoGrid('floor', FLOORS, G.floors, room.floor, 'shop');
+  body.appendChild(fg.children.length ? fg : note('地板全部都買齊了！'));
 }
 
-function decoGrid(kind, list, owned, current) {
+/* mode：'own'＝我的東西（只列有的，點了換上）；'shop'＝商店（只列還沒有的，點了買＋換上） */
+function decoGrid(kind, list, owned, current, mode) {
   const grid = el('div', 'grid');
   list.forEach(item => {
     const has = owned.includes(item.id);
+    if (mode === 'own' && !has) return;
+    if (mode === 'shop' && has) return;
+    if (mode === 'shop' && shopTheme !== 'all' && item.theme !== shopTheme) return;
     if (sellMode) {
       if (!has) return; // 賣東西時只列出自己有的
       const sw = renderSwatch(kind, item, 56);
@@ -7263,23 +7290,13 @@ function decoGrid(kind, list, owned, current) {
     c.appendChild(el('div', 'nm', item.name));
     c.appendChild(el('div', 'pr', has ? (item.id === current ? '使用中' : '已擁有') : '💰 ' + fmt(item.price)));
     c.onclick = () => {
-      if (buyDeco(kind, item.id)) { Sound.play(has ? 'click' : 'coin'); if (!has) toast(`買了「${item.name}」`); commit(); }
+      if (G.away) { toast('在別人家不能換壁紙地板，回家再換吧！'); return; }
+      if (buyDeco(kind, item.id)) { Sound.play(has ? 'click' : 'coin'); toast(has ? `換上「${item.name}」了` : `買了「${item.name}」，已經換上了（之後在「我的東西」可以換回來）`); commit(); }
       else toast('鈴錢不夠，去賺一點吧！');
     };
     grid.appendChild(c);
   });
   return grid;
-}
-
-function tabDeco(body) {
-  if (G.away) { body.appendChild(note(`現在在${PLACES[G.away.place].name}，不能換壁紙地板喔。按上面的「🏠 回家」再布置吧！`)); return; }
-  const room = curRoom();
-  sellToggle(body, '房間正在用的壁紙地板不能賣，先換成別的就可以。');
-  if (!sellMode) body.appendChild(note(`正在裝潢：${room.name}。牆和地板跟家具同風格，評分會加分。`));
-  body.appendChild(h3('壁紙'));
-  body.appendChild(decoGrid('wall', WALLPAPERS, G.walls, room.wall));
-  body.appendChild(h3('地板'));
-  body.appendChild(decoGrid('floor', FLOORS, G.floors, room.floor));
 }
 
 function tabBuild(body) {
@@ -7347,7 +7364,7 @@ function tabEarn(body) {
     if (!r.wait) { Sound.play('shake'); if (r.bells || r.food || r.item) setTimeout(() => Sound.play('coin'), 350); }
     if (r.wait) toast(`樹還在晃，${r.wait} 秒後再試`);
     else if (r.bells) toast(`掉下 ${fmt(r.bells)} 鈴錢！`);
-    else if (r.item) toast(`掉下「${r.item.name}」！放進收納了`);
+    else if (r.item) toast(`掉下「${r.item.name}」！放進「我的東西」了`);
     else if (r.food) toast(`掉下一顆${r.food.emoji}${r.food.name}！可以餵${petName()}`);
     else toast('🐝 蜂窩掉下來了！快跑！');
     if (!r.wait) commit();
@@ -9173,7 +9190,7 @@ function figureGift() {
   if (Math.random() < .3) {
     addItem('mini_figure');
     setTimeout(() => { if (host.n) hostSay('喜歡嗎？這隻送你！'); }, 900);
-    toast('🎁 叔叔送你一個小公仔！（收進收納了，可以放到桌上）');
+    toast('🎁 叔叔送你一個小公仔！（放進「我的東西」了，可以放到桌上）');
     Sound.play('coin');
   } else {
     setTimeout(() => fufuSay('好多公仔喔，好酷！', 2600), 600);
@@ -9181,15 +9198,15 @@ function figureGift() {
 }
 
 /* ===== 📝 學校的小考 =====
-   三個年級：一年級的妹妹也能玩（加減 10 以內，下面畫蘋果可以數），
-   二年級是 100 以內加減，四年級的姊姊玩九九乘法和除法。
+   三種難度（畫面上不寫年級）：簡單＝妹妹也能玩（加減 10 以內，下面畫蘋果可以數），
+   普通＝100 以內加減，挑戰＝姊姊玩的九九乘法和除法。
    不限時間：小考是要她算對，不是要她手忙腳亂。
    答錯不扣錢，告訴她正確答案就換下一題。 */
 const QUIZ_N = 10;
 const QUIZ_LEVELS = [
-  { name: '一年級', sub: '加減 10 以內', mul: 1, apples: true },
-  { name: '二年級', sub: '100 以內加減', mul: 2 },
-  { name: '四年級', sub: '乘法、除法',   mul: 3 }
+  { name: '簡單', sub: '10 以內加減', mul: 1, apples: true },
+  { name: '普通', sub: '100 以內加減', mul: 2 },
+  { name: '挑戰！', sub: '乘法、除法', mul: 3 }
 ];
 const quizRnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 // 出一題：{ a, b, op, ans, text }
@@ -9210,7 +9227,7 @@ function quizQuestion(L) {
   return { a, b, op, ans, text: `${a} ${op} ${b} = ?` };
 }
 // 四個選項：正確答案＋三個「看起來很像」的錯誤答案，不會有負數、不會重複
-// small：一年級的答案只有 0~10，錯誤答案也只差 1~3（差 10 的一眼就知道不對）
+// small：簡單的答案只有 0~10，錯誤答案也只差 1~3（差 10 的一眼就知道不對）
 function quizChoices(ans, small) {
   const set = new Set([ans]);
   const near = small ? [1, -1, 2, -2, 3, -3] : [1, -1, 2, -2, 10, -10, 3, -3, 5, -5];
@@ -9241,7 +9258,7 @@ function playQuiz(w, L) {
     locked = false;
     qEl.textContent = q.text;
     pics.innerHTML = '';
-    if (L.apples) { // 一年級：下面畫蘋果，數得出來。減掉的那幾顆畫淡淡的
+    if (L.apples) { // 簡單：下面畫蘋果，數得出來。減掉的那幾顆畫淡淡的
       const tot = q.op === '+' ? q.a + q.b : q.a;
       for (let i = 0; i < tot; i++) {
         const s = el('span', q.op === '−' && i >= q.a - q.b ? 'gone' : '', '🍎');
@@ -9578,7 +9595,7 @@ function finishBook(book) {
   const n = Object.keys(pass).length;
   if (isNew && n === STORYBOOKS.length) { // 八本都看完：館員送獎狀
     addItem('certificate');
-    toast('🏅 閱讀護照蓋滿了！館員送你一張獎狀（收進收納了）');
+    toast('🏅 閱讀護照蓋滿了！館員送你一張獎狀（放進「我的東西」了）');
   } else toast(isNew ? `📗 閱讀護照蓋了一個新章！（${n} / ${STORYBOOKS.length}）` : '📗 這本看過了，再看一次也很好看');
   Sound.play('coin');
   saveGame();
@@ -9612,11 +9629,11 @@ function openNextStorybook() {
 }
 
 /* ── 🔎 找書：把書放回對的書架 ──
-   一年級看顏色、二年級看數字（1~40 分四格）、四年級看三位數的書號（像真的圖書館）。 */
+   簡單看顏色、普通看數字（1~40 分四格）、挑戰看三位數的書號（像真的圖書館）。畫面上不寫年級。 */
 const SHELF_LEVELS = [
-  { name: '一年級', sub: '看顏色', mul: 1, shelves: [['紅', '#e8505b'], ['藍', '#3f8ee0'], ['綠', '#5fae6f'], ['黃', '#ffcf3a']] },
-  { name: '二年級', sub: '看數字', mul: 2, shelves: [[1, 10], [11, 20], [21, 30], [31, 40]] },
-  { name: '四年級', sub: '看書號', mul: 3, shelves: [[100, 299], [300, 499], [500, 699], [700, 999]] }
+  { name: '簡單', sub: '看顏色', mul: 1, shelves: [['紅', '#e8505b'], ['藍', '#3f8ee0'], ['綠', '#5fae6f'], ['黃', '#ffcf3a']] },
+  { name: '普通', sub: '看數字', mul: 2, shelves: [[1, 10], [11, 20], [21, 30], [31, 40]] },
+  { name: '挑戰！', sub: '看書號', mul: 3, shelves: [[100, 299], [300, 499], [500, 699], [700, 999]] }
 ];
 const SHELF_N = 10;
 // 出一本書：{ label, color, ans }（ans＝第幾個書架）

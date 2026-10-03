@@ -1417,6 +1417,54 @@
     if (document.querySelectorAll('#tabBody .bfly canvas').length !== 3) fails.push('圖鑑的蝴蝶不是 3 隻有圖');
     G.comics = {}; G.stickers = {}; G.butterflies = {}; G.passport = {};
 
+    /* ㊶ 壁紙地板併進「我的東西」；商店多「🎨 壁紙地板」；小遊戲難度不寫年級 */
+    var tabNames = [].map.call(document.querySelectorAll('.tabs button'), function(b){ return b.textContent; });
+    if (!tabNames.some(function(t){ return /我的東西/.test(t); })) fails.push('沒有「我的東西」分頁：' + tabNames.join('|'));
+    if (tabNames.some(function(t){ return /收納|壁紙地板/.test(t); })) fails.push('還有「收納」或「壁紙地板」分頁：' + tabNames.join('|'));
+    G.away = null; sellMode = false;
+    var rm0 = curRoom(), keepWall = rm0.wall, keepWalls = G.walls.slice(), keepFloors = G.floors.slice();
+    G.walls = ['wp_cream', 'wp_pink']; G.floors = ['fl_wood']; rm0.wall = 'wp_cream';
+    openTab('inv');
+    var invTxt = document.querySelector('#tabBody').textContent;
+    if (!/粉紅圓點/.test(invTxt) || /薄荷條紋/.test(invTxt)) fails.push('我的東西的壁紙不是只列自己有的');
+    var pinkCard = [].filter.call(document.querySelectorAll('#tabBody .card'), function(c){ return /粉紅圓點/.test(c.textContent); })[0];
+    var bInv = G.bells;
+    if (pinkCard) { pinkCard.onclick(); if (curRoom().wall !== 'wp_pink' || G.bells !== bInv) fails.push('在我的東西點壁紙沒有換上（或扣了錢）'); }
+    // 商店：只賣還沒有的，買了就換上、變成自己的
+    shopKind = 'paper'; openTab('shop');
+    var shopTxt = document.querySelector('#tabBody').textContent;
+    if (/粉紅圓點/.test(shopTxt) || !/薄荷條紋/.test(shopTxt)) fails.push('商店的壁紙沒有排除已經有的');
+    var mint = [].filter.call(document.querySelectorAll('#tabBody .card'), function(c){ return /薄荷條紋/.test(c.textContent); })[0];
+    var bShop = G.bells;
+    if (mint) { mint.onclick(); if (curRoom().wall !== 'wp_stripe' || G.walls.indexOf('wp_stripe') < 0 || bShop - G.bells !== 1500) fails.push('商店買壁紙沒有換上或扣錢不對'); }
+    // 在別人家：我的東西、商店都不能換壁紙
+    G.away = { place: 'uncle', idx: 0 };
+    openTab('inv');
+    if (document.querySelector('#tabBody').textContent.indexOf('回家才能換壁紙地板') < 0) fails.push('在叔叔家的我的東西沒有說不能換壁紙');
+    shopKind = 'paper'; openTab('shop');
+    if (document.querySelector('#tabBody').textContent.indexOf('回家才能買壁紙地板') < 0) fails.push('在叔叔家的商店沒有說不能買壁紙');
+    // 就算在別人家點到壁紙卡片，也不能說成「鈴錢不夠」（錢明明夠）
+    var lastToast = '', realToast = toast;
+    toast = function(t){ lastToast = t; };
+    try { var awayGrid = decoGrid('wall', WALLPAPERS, G.walls, 'wp_cream', 'own'); awayGrid.querySelector('.card').onclick(); }
+    finally { toast = realToast; }
+    if (/鈴錢不夠/.test(lastToast) || !/回家/.test(lastToast)) fails.push('在叔叔家點壁紙的提示不對：' + lastToast);
+    G.away = null; shopKind = 'all';
+    // 賣東西模式也要看得到壁紙
+    sellMode = true; openTab('inv');
+    if (!/粉紅圓點/.test(document.querySelector('#tabBody').textContent)) fails.push('我的東西賣東西模式看不到壁紙');
+    sellMode = false;
+    rm0.wall = keepWall; G.walls = keepWalls; G.floors = keepFloors;
+    openTab('inv');
+    // 所有小遊戲的難度名字都不寫年級
+    ['MOLE_LEVELS','RACE_LEVELS','QUIZ_LEVELS','RUN_LEVELS','BFLY_LEVELS','SHELF_LEVELS','CUP_LEVELS','COIN_LEVELS','PUZZLE_LEVELS'].forEach(function(nm){
+      var LV; try { LV = eval(nm); } catch(e) { return; }
+      (LV || []).forEach(function(L){ if (/年級/.test((L.name || '') + (L.sub || ''))) fails.push(nm + ' 的難度寫了年級：' + L.name); });
+    });
+    openQuizGame();
+    if (/年級/.test(document.querySelector('#modalCard').textContent)) fails.push('小考的難度選單還有年級');
+    closeGameWindow();
+
     /* ㊲ 教室（照片參考）：綠桌墊課桌、紅藍布袋、置物櫃、注音布告欄、綠窗簾、磨石子地
        另外所有地點的房間都檢查：家具不重疊、不超出房間；牆上的東西不重疊、不超出牆 */
     var CR = PLACES.school.rooms[0];
@@ -1498,7 +1546,7 @@
     G.away = keepAway2;
 
     // ⑦ 其他分頁沒被改壞
-    ['inv','shop','dress','pets','deco','build','earn','book','talk','save'].forEach(function(t){
+    ['inv','shop','dress','pets','build','earn','book','talk','save'].forEach(function(t){
       try { openTab(t); if (!document.querySelector('#tabBody').children.length)
               fails.push('分頁「'+t+'」是空的'); }
       catch(e){ fails.push('分頁「'+t+'」打不開：'+e.message); }

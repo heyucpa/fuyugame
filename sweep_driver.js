@@ -66,7 +66,7 @@
       if (!G.hair || !G.hair.style) fails.push('A：舊存檔沒有被補上髮型');
       if (G.bells !== 100000) fails.push('A：補償旗標已經有了，卻又補了一次');
       // 載入之後所有分頁都要打得開
-      ['inv','shop','dress','pets','deco','build','earn','book','talk','save'].forEach(function(t){
+      ['inv','shop','dress','pets','build','earn','book','talk','save'].forEach(function(t){
         try { openTab(t); } catch (e) { fails.push('A：舊存檔打開「' + t + '」分頁出錯 ' + e.message); }
       });
     }
@@ -128,7 +128,7 @@
     window.confirm = function(){ return false; };   // 所有「真的要嗎？」一律按取消
     var SKIP = /強制更新|重新開始|刪掉|清除|還原|換回|存成檔案|複製|回家|出門|換成這個|開一間/;
     var clicked = 0;
-    ['inv','shop','dress','pets','deco','build','earn','book','talk','save'].forEach(function(t){
+    ['inv','shop','dress','pets','build','earn','book','talk','save'].forEach(function(t){
       for (var pass = 0; pass < 2; pass++) {
         try { openTab(t); } catch (e) { fails.push('C：打開「' + t + '」出錯 ' + e.message); return; }
         var bs = [].slice.call(document.querySelectorAll('#tabBody button'));
