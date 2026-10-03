@@ -1484,6 +1484,15 @@
         if (kind !== 'all' && th !== 'all' && cnt[th] > 0 && cardsNow() !== cnt[th]) fails.push('商店「' + kind + '／' + THEME_NAMES[th] + '」寫 ' + cnt[th] + ' 樣，實際 ' + cardsNow() + ' 樣');
       });
     });
+    // 在「全部」選風格：最上面就要是那個風格的家具，不能還是食物（點了看起來沒反應）
+    shopKind = 'all'; shopTheme = 'cute'; openTab('shop');
+    var firstH = [].map.call(document.querySelectorAll('#tabBody h3'), function(h){ return h.textContent; });
+    if (firstH.some(function(t){ return /食物/.test(t); })) fails.push('在全部選了可愛風格，還是先顯示食物：' + firstH.join('|'));
+    var firstCards = [].slice.call(document.querySelectorAll('#tabBody .grid'))[0];
+    var cuteIds = FURNITURE.filter(function(d){ return !d.gift && d.theme === 'cute'; }).length;
+    if (!firstCards || firstCards.children.length !== cuteIds) fails.push('在全部選了可愛風格，第一區不是可愛家具（' + (firstCards && firstCards.children.length) + ' / ' + cuteIds + '）');
+    shopTheme = 'all'; openTab('shop');
+    if (![].some.call(document.querySelectorAll('#tabBody h3'), function(h){ return /食物/.test(h.textContent); })) fails.push('全部＋全部風格卻沒有食物');
     // 只有一種風格的類別（像衛浴）不用顯示風格那一排
     var one = FURN_KINDS.map(function(k){ return k.id; }).filter(function(k){ return Object.keys(shopThemeCounts(k)).length === 1; })[0];
     if (one) { shopKind = one; shopTheme = 'all'; openTab('shop'); if (themeBtns().length) fails.push('只有一種風格的「' + one + '」還顯示風格那一排'); }

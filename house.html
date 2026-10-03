@@ -7241,7 +7241,9 @@ function tabShop(body) {
     body.appendChild(f2);
   }
   if (shopKind === 'paper') { shopDeco(body); return; }
-  if (shopKind === 'all' || shopKind === 'food') {
+  /* 在「全部」選了風格：食物沒有風格，不要再把食物擺最上面——
+     不然點了風格，畫面看起來完全沒變（家具在很下面） */
+  if (shopKind === 'food' || (shopKind === 'all' && shopTheme === 'all')) {
     body.appendChild(h3(`${charName()}的食物`));
     body.appendChild(foodShopGrid(KID_FOODS, G.kidFood, buyKidFood,
       food => food.grow ? '💪 健康長大' : `飽足+${food.hunger}`));
@@ -7249,7 +7251,7 @@ function tabShop(body) {
     body.appendChild(foodShopGrid(FOODS, G.food, buyFood, food => `飽足+${food.hunger}`));
     if (shopKind === 'food') return;
     body.appendChild(h3('家具'));
-  }
+  } else if (shopKind === 'all') body.appendChild(h3(`${THEME_ICONS[shopTheme]} ${THEME_NAMES[shopTheme]}風格的家具`));
   const grid = el('div', 'grid');
   FURNITURE.filter(d => !d.gift)
     .filter(d => shopKind === 'all' || shopKind === 'food' || furnKind(d.id) === shopKind)
