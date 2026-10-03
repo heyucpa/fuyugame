@@ -2065,6 +2065,18 @@ function renderEnding() {
 ['pointerdown', 'keydown'].forEach(ev =>
   document.addEventListener(ev, () => Sfx.unlock(), { once: true }));
 
+/* 註冊離線快取。用 try 包起來是因為 file:// 開的時候（走查、本機測試）
+   根本沒有 serviceWorker，直接呼叫會丟錯把整支程式打斷。 */
+(function registerSW() {
+  try {
+    if (location.protocol.indexOf('http') !== 0) return;   // file:// 不支援
+    if (!('serviceWorker' in navigator)) return;
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('./sw.js').catch(function () {});
+    });
+  } catch (e) {}
+})();
+
 sweepOldKeys();   // 把昨天以前那一堆按日期命名的 key 掃掉
 render();
 

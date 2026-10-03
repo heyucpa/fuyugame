@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#6b4a9e" />
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
-<meta name="build" content="2026.10.03-2cbfe5" />
+<meta name="build" content="2026.10.03-fc27b3" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -7992,6 +7992,18 @@ function renderEnding() {
 // 瀏覽器規定要有使用者動作才能播放聲音，第一次碰畫面就解鎖並開始音樂
 ['pointerdown', 'keydown'].forEach(ev =>
   document.addEventListener(ev, () => Sfx.unlock(), { once: true }));
+
+/* 註冊離線快取。用 try 包起來是因為 file:// 開的時候（走查、本機測試）
+   根本沒有 serviceWorker，直接呼叫會丟錯把整支程式打斷。 */
+(function registerSW() {
+  try {
+    if (location.protocol.indexOf('http') !== 0) return;   // file:// 不支援
+    if (!('serviceWorker' in navigator)) return;
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('./sw.js').catch(function () {});
+    });
+  } catch (e) {}
+})();
 
 sweepOldKeys();   // 把昨天以前那一堆按日期命名的 key 掃掉
 render();

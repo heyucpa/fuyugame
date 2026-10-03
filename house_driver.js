@@ -485,6 +485,22 @@
     }
     closeGameWindow(); document.querySelector('#modal').hidden = true;
 
+    /* ⑯ 設定分頁要有版本跟強制更新。
+       她回報「新的小遊戲看不到」——檔案早就更新了，
+       是加到主畫面的網頁 App 在 iOS 上的快取太黏。 */
+    openTab('save');
+    var sv = document.querySelector('#tabBody').textContent;
+    if (sv.indexOf('強制更新') < 0) fails.push('設定分頁沒有「強制更新」');
+    if (sv.indexOf('這一份的日期') < 0) fails.push('設定分頁沒有顯示版本日期');
+    // 十個小遊戲都要在清單上，而且每一顆都叫得出對應的函式
+    openTab('earn');
+    var picks = document.querySelectorAll('.game-pick');
+    if (picks.length !== 10) fails.push('小遊戲清單有 ' + picks.length + ' 個，應該是 10 個');
+    ['拼圖', '接金幣', '彈珠台'].forEach(function(nm){
+      if (![].slice.call(picks).some(function(b){ return b.textContent.indexOf(nm) >= 0; }))
+        fails.push('小遊戲清單裡找不到「' + nm + '」');
+    });
+
     // ⑦ 其他分頁沒被改壞
     ['inv','shop','dress','pets','deco','build','earn','book','talk','save'].forEach(function(t){
       try { openTab(t); if (!document.querySelector('#tabBody').children.length)

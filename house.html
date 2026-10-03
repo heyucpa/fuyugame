@@ -2444,6 +2444,18 @@ function buyAndWear(id) {
   return true;
 }
 
+/* 註冊離線快取。用 try 包起來是因為 file:// 開的時候（走查、本機測試）
+   根本沒有 serviceWorker，直接呼叫會丟錯把整支程式打斷。 */
+(function registerSW() {
+  try {
+    if (location.protocol.indexOf('http') !== 0) return;   // file:// 不支援
+    if (!('serviceWorker' in navigator)) return;
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('./sw.js').catch(function () {});
+    });
+  } catch (e) {}
+})();
+
 let G = loadGame();
 // 上次玩到現在隔了幾小時（在第一次結算之前記下來，給「好久不見」用）
 const hoursAway = (Date.now() - Math.max(G.pet.lastTick || 0, G.kid.lastTick || 0)) / 3600000;
@@ -6718,6 +6730,35 @@ function tabSave(body) {
   reset.style.background = 'var(--warn)';
   reset.onclick = confirmReset;
   body.appendChild(reset);
+
+  /* ── 版本與強制更新 ──
+     加到主畫面的網頁 App 在 iOS 上有自己的一套快取，而且非常黏，
+     跟 Safari 不共用。她回報「新的小遊戲看不到」就是這個——
+     檔案早就更新了，她那台還在用舊的。
+     所以把版本顯示出來（用 document.lastModified，不需要任何建置步驟），
+     再給一顆真的清得掉快取的按鈕。 */
+  body.appendChild(h3('ℹ️ 版本'));
+  body.appendChild(note('這一份的日期：' + document.lastModified +
+    '\n如果我跟你說改了什麼、你卻看不到，按下面那顆。'));
+  const upd = el('button', 'big alt', '🔄 強制更新（清掉快取重新下載）');
+  upd.onclick = async () => {
+    upd.disabled = true;
+    upd.textContent = '更新中…';
+    try {
+      if ('caches' in window) {
+        const ks = await caches.keys();
+        await Promise.all(ks.map(k => caches.delete(k)));
+      }
+      if (navigator.serviceWorker) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r => r.unregister()));
+      }
+    } catch (e) {}
+    // 加一個用過就丟的參數，確保不會再拿到舊的那一份
+    location.replace(location.pathname + '?v=' + Date.now());
+  };
+  body.appendChild(upd);
+  body.appendChild(note('按了不會動到任何進度，只是把遊戲本身重新下載。'));
 
   body.appendChild(h3('📱 建議加到主畫面'));
   body.appendChild(note('用 Safari 開這一頁 → 分享鈕 → 「加入主畫面」。' +
