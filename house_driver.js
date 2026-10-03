@@ -1166,6 +1166,59 @@
     catch(e) { fails.push('路上的學校畫不出來：' + e.message); }
     var md5 = document.querySelector('#modal'); if (md5) md5.hidden = true;
 
+    /* ㊱ 操場（照片參考：藍色跑道）＋賽跑
+       跑道地板只給操場用、不能出現在商店；前面是藍色跑道，後面是綠色球場。 */
+    var PG = PLACES.school.rooms[1];
+    if (PG.floor !== 'fl_track') fails.push('操場的地板不是跑道');
+    if (FLOORS.some(function(f){ return f.id === 'fl_track'; })) fails.push('跑道地板跑進商店了');
+    var seenFl = null, realFloor = drawFloor;
+    try {
+      drawFloor = function(c, r, f){ seenFl = f; };
+      drawRoom(document.createElement('canvas').getContext('2d'), PG, {});
+    } catch(e) { /* 只要看畫地板那一步 */ } finally { drawFloor = realFloor; }
+    if (!seenFl || seenFl.id !== 'fl_track') fails.push('操場畫出來的地板不是跑道（' + (seenFl && seenFl.id) + '）');
+    var fcv = document.createElement('canvas'); fcv.width = 900; fcv.height = 700;
+    var fx2 = fcv.getContext('2d'); fx2.translate(450, 150);
+    drawFloor(fx2, { w: 10, d: 10 }, floorById('fl_track'));
+    var px = function(x, y){ var p = iso(x, y, 0); return fx2.getImageData(450 + p.x, 150 + p.y, 1, 1).data; };
+    var lane = px(5, 9.3), field = px(5, 1.6);
+    if (!(lane[2] > lane[0] + 60)) fails.push('跑道那一排不是藍色（' + [].slice.call(lane, 0, 3) + '）');
+    if (!(field[1] > field[0] + 30 && field[1] > field[2])) fails.push('球場不是綠色（' + [].slice.call(field, 0, 3) + '）');
+    if (FURNITURE_ACT.finish_flag !== 'run' || ACTIVITIES.run.open !== 'run') fails.push('終點旗沒有開賽跑');
+    if (!FURNITURE_USE.park_bench) fails.push('長椅不能坐');
+    G.away = { place: 'school', idx: 1 }; host.n = HOSTS.teacher;
+    if (!/賽跑/.test(hostMenuEntries().map(function(e){ return e[0]; }).join('|'))) fails.push('老師的選單沒有賽跑');
+    host.n = null; G.away = null;
+    // 最難的一關，一秒點 6 下以內也要贏得了；最簡單的一秒 3.5 下以內
+    var need = function(L){ return L.speed * 1.05 / RUN_STEP; };
+    if (need(RUN_LEVELS[2]) > 6) fails.push('運動會！太難：一秒要點 ' + need(RUN_LEVELS[2]).toFixed(1) + ' 下');
+    if (need(RUN_LEVELS[0]) > 3.5) fails.push('慢慢跑太難：一秒要點 ' + need(RUN_LEVELS[0]).toFixed(1) + ' 下');
+    var playRunAt = function(li){ openRunGame(); document.querySelectorAll('.lv-btn')[li].onclick(); return openRunGame.test; };
+    // 倒數的時候點不算
+    var R1 = playRunAt(0); R1.tap(); R1.tap();
+    if (R1.me() !== 0) fails.push('倒數還沒結束就可以跑');
+    R1.skipCountdown();
+    var rb1 = G.bells;
+    for (var t1 = 0; t1 < 80; t1++) R1.tap();
+    R1.tick(.01);
+    if (R1.place() !== 1 || G.bells - rb1 !== RUN_PRIZE[0] * RUN_LEVELS[0].mul) fails.push('先到終點卻不是第一名（第 ' + R1.place() + ' 名，' + (G.bells - rb1) + '）');
+    closeGameWindow();
+    // 一個同學先到 → 第二名
+    var R2 = playRunAt(1); R2.skipCountdown();
+    R2.mates[0].x = RUN_LEN - .01; R2.tick(.1);
+    var rb2 = G.bells;
+    for (var t2 = 0; t2 < 80; t2++) R2.tap();
+    R2.tick(.01);
+    if (R2.place() !== 2 || G.bells - rb2 !== RUN_PRIZE[1] * RUN_LEVELS[1].mul) fails.push('第二個到卻不是第二名（第 ' + R2.place() + ' 名，' + (G.bells - rb2) + '）');
+    closeGameWindow();
+    // 完全不跑 → 同學都到了就結束、最後一名，還是有一點點錢
+    var R3 = playRunAt(2); R3.skipCountdown();
+    var rb3 = G.bells;
+    R3.tick(.05); for (var t3 = 0; t3 < 400; t3++) R3.tick(.05);
+    if (R3.place() !== 4 || G.bells - rb3 !== RUN_PRIZE[3] * RUN_LEVELS[2].mul) fails.push('沒跑卻沒有結束在第四名（第 ' + R3.place() + ' 名，' + (G.bells - rb3) + '）');
+    closeGameWindow();
+    var md6 = document.querySelector('#modal'); if (md6) md6.hidden = true;
+
     /* ㉜ 每個小遊戲一打開就要有「離開」的按鈕
        （iPad 上看到：賽車選難度的畫面只有三個難度，不想玩就走不掉）。
        在家裡和在親戚家都測，按下去要真的關掉。 */
@@ -1173,7 +1226,7 @@
     [null, { place: 'uncle', idx: 0 }].forEach(function(aw){
       G.away = aw;
       ['openFishing','openMemoryGame','openCatchGame','openBubbleGame','openCupGame','openStackGame','openSimonGame',
-       'openMoleGame','openRaceGame','openBrickGame','openFarmGame','openCoinGame','openMarbleGame','openPuzzleGame','openSlingGame','openQuizGame'
+       'openMoleGame','openRaceGame','openBrickGame','openFarmGame','openCoinGame','openMarbleGame','openPuzzleGame','openSlingGame','openQuizGame','openRunGame'
       ].forEach(function(fn){
         try {
           window[fn]();

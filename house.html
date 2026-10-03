@@ -291,6 +291,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .comic-txt { font-size: 14px; font-weight: 700; text-align: center; }
 @media (prefers-reduced-motion: reduce) { .comic-p { animation: none; opacity: 1; } }
 @keyframes comicIn { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: none; } }
+.run-go { display: block; margin: 10px auto 0; font-size: 22px; padding: 14px 48px; touch-action: manipulation; }
 .quiz { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 6px 0; }
 .quiz-q { font-size: 34px; font-weight: 800; color: #4a3b2a; letter-spacing: 1px; }
 .quiz-pics { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; font-size: 24px; min-height: 30px; max-width: 320px; }
@@ -1017,6 +1018,12 @@ const FLOORS = [
   { id: 'fl_bath', name: '淺藍小磁磚', price: 1600, theme: 'bath', a: '#dff0f6', b: '#c9e3ec', pattern: 'check' }
 ];
 
+/* 地點專用的地板（不在商店）：學校操場的跑道。
+   照片參考：深藍、淺藍交錯的跑道、白線分道，後面是綠色球場、中間一條紅色帶。 */
+const PLACE_FLOORS = [
+  { id: 'fl_track', name: '操場跑道', pattern: 'track', a: '#5fae6f', b: '#55a265', lane: ['#2f6fd1', '#4a9be8'], stripe: '#e98a9a', lanes: 4, laneW: .9 }
+];
+const floorById = id => FLOORS.find(x => x.id === id) || PLACE_FLOORS.find(x => x.id === id);
 const THEME_NAMES = { wood: '原木', cute: '可愛', modern: '現代', nature: '自然', bath: '衛浴' };
 /* ===== 家具的「用途」分類 =====
    商店本來只能照風格篩（原木／可愛／現代⋯），可是她在想的事情是
@@ -1463,6 +1470,23 @@ const PLACE_FURNITURE = [
       { x: 1.56, y: .5, w: .02, d: .02, z: 18, h: 54, c: '#8a8f96' },
       { x: 1.14, y: .36, w: .5, d: .3, z: 15, h: 4, c: '#ffd35c' }
     ] },
+  { id: 'park_bench', name: '公園長椅', theme: 'nature', w: 2, d: 1,
+    parts: [
+      { x: .15, y: .3, w: .1, d: .5, z: 0, h: 16, c: '#4b5563' },
+      { x: 1.75, y: .3, w: .1, d: .5, z: 0, h: 16, c: '#4b5563' },
+      { x: .05, y: .25, w: 1.9, d: .6, z: 16, h: 4, c: '#a8784a' },
+      { x: .05, y: .2, w: 1.9, d: .08, z: 20, h: 16, c: '#a8784a' },
+      { x: .05, y: .2, w: 1.9, d: .08, z: 27, h: 1.4, c: '#8a5a33' }
+    ] },
+  { id: 'finish_flag', name: '終點旗', theme: 'cute', w: 1, d: 1,
+    parts: [
+      { x: .45, y: .45, w: .08, d: .08, z: 0, h: 52, c: '#e6e8eb' },
+      { x: .53, y: .47, w: .4, d: .04, z: 38, h: 14, c: '#222222' },
+      { x: .53, y: .46, w: .1, d: .04, z: 45, h: 7, c: '#ffffff' },
+      { x: .73, y: .46, w: .1, d: .04, z: 45, h: 7, c: '#ffffff' },
+      { x: .63, y: .46, w: .1, d: .04, z: 38, h: 7, c: '#ffffff' },
+      { x: .83, y: .46, w: .1, d: .04, z: 38, h: 7, c: '#ffffff' }
+    ] },
   { id: 'shade_tree', name: '大樹', theme: 'nature', w: 2, d: 2, parts: treeParts('#5fa15a', '#6db866', '#7bc874') },
   { id: 'apple_tree', name: '蘋果樹', theme: 'nature', w: 2, d: 2, parts: treeParts('#5fa15a', '#6db866', '#e8505b') },
   { id: 'orange_tree', name: '橘子樹', theme: 'nature', w: 2, d: 2, parts: treeParts('#4f9150', '#5fa15a', '#ffa53a') },
@@ -1488,14 +1512,16 @@ Object.assign(ACTIVITIES, {
   homework: { label: '📒 交作業', name: '交作業', fx: '⭐', lines: ['作業寫好了！', '老師請看～', '我有寫得很整齊喔'] },
   slide: { label: '🛝 溜滑梯', name: '溜滑梯', fx: '✨', lines: ['咻～', '再溜一次！', '好好玩喔！'] },
   swing: { label: '🪢 盪鞦韆', name: '盪鞦韆', fx: '✨', lines: ['盪好高喔！', '風吹得好舒服～', '推我一下～'] },
+  run: { label: '🏃 賽跑', name: '賽跑', fx: '💨', open: 'run', lines: ['預備——跑！', '我要跑第一名！', '加油加油！'] },
   flag: { label: '🚩 看升旗', name: '看升旗', fx: '🚩', lines: ['旗子好高喔', '立正站好！', '風吹得旗子飄飄的'] }
 });
 Object.assign(FURNITURE_ACT, {
   comic_shelf: 'comic', comic_pile: 'comic', arcade: 'arcade', console_tv: 'videogame', tea_table: 'tea',
   fruit_basket: 'fruit', fruit_crate: 'fruit', apple_tree: 'pick', orange_tree: 'pick', banana_tree: 'pick',
   gaming_desk: 'pcgame', figure_shelf: 'figures', barn: 'farmcare', hay_bale: 'hay', trough: 'trough',
-  school_desk: 'lesson', teacher_desk: 'homework', slide: 'slide', swing: 'swing', flagpole: 'flag'
+  school_desk: 'lesson', teacher_desk: 'homework', slide: 'slide', swing: 'swing', flagpole: 'flag', finish_flag: 'run'
 });
+FURNITURE_USE.park_bench = { use: 'sit', seats: [{ x: .55, y: .55, z: 20 }, { x: 1.45, y: .55, z: 20 }], front: [0, 1] };
 FURNITURE_USE.school_chair = { use: 'sit', seats: [{ x: .5, y: .55, z: 24 }], front: [0, 1] };
 FURNITURE_USE.gaming_chair = { use: 'sit', seats: [{ x: .5, y: .55, z: 26 }], front: [0, 1] };
 // 上面新加的事情也要有台詞類別（前面產生 act_ 台詞時它們還不存在）
@@ -1553,9 +1579,11 @@ const PLACES = {
       ['school_desk', 1, 5], ['school_desk', 3, 5], ['school_desk', 5, 5],
       ['school_chair', 1, 6], ['school_chair', 3, 6], ['school_chair', 5, 6]
     ], wallItems: [['blackboard', 'L', 1], ['wall_clock', 'L', 5], ['window', 'R', 2], ['window', 'R', 5]] },
-    { name: '操場', w: 10, d: 10, wall: 'wp_forest', floor: 'fl_grass', items: [
+    // 前面四道藍色跑道（第 6~9 排），後面是球場；樹和長椅在球場邊（照片參考）
+    { name: '操場', w: 10, d: 10, wall: 'wp_forest', floor: 'fl_track', items: [
       ['flagpole', 1, 1], ['slide', 3, 1], ['swing', 7, 1],
-      ['shade_tree', 0, 6], ['log_stool', 3, 7], ['log_stool', 4, 7], ['shade_tree', 8, 7]
+      ['shade_tree', 0, 3], ['park_bench', 2, 4], ['shade_tree', 8, 3], ['park_bench', 5, 4],
+      ['finish_flag', 9, 6]
     ], wallItems: [] }
   ] }
 };
@@ -1608,7 +1636,7 @@ Object.values(PLACES).forEach(pl => {
 });
 LINE_TYPES.push(
   { key: 'hostUncle', label: '叔叔說的話', hint: '可用 {名字}', lines: ['歡迎來叔叔家！漫畫隨便看～', '功課寫完了嗎？寫完叔叔陪你打一局！', '這台電玩是叔叔小時候玩的喔', '看漫畫也要讓眼睛休息一下喔', '要不要跟叔叔比賽？', '叔叔最近在看這本，超好看！'] },
-  { key: 'hostTeacher', label: '老師說的話', hint: '可用 {名字}', lines: ['{名字}早安！今天也要開心上課喔', '下課了，去操場玩一下吧！', '要不要來小考？答對有獎勵喔', '寫字的時候背要挺直喔', '有問題要舉手問老師喔', '下課記得喝水、上廁所～', '作業寫好了可以拿給老師看喔'] },
+  { key: 'hostTeacher', label: '老師說的話', hint: '可用 {名字}', lines: ['{名字}早安！今天也要開心上課喔', '下課了，去操場玩一下吧！', '要不要來小考？答對有獎勵喔', '去操場跟同學賽跑吧！', '寫字的時候背要挺直喔', '有問題要舉手問老師喔', '下課記得喝水、上廁所～', '作業寫好了可以拿給老師看喔'] },
   { key: 'hostGrandma', label: '阿婆說的話', hint: '可用 {名字}', lines: ['{名字}來啦！快來吃水果～', '後面的果園水果熟了，要不要去摘？', '多吃點水果，身體才會壯壯的', '阿婆泡了茶，要不要喝一點？', '寫完功課，阿婆帶你去果園散步好不好？', '慢慢吃，不要噎到喔～', '小牛小羊肚子餓了，要不要幫阿婆餵牠們？', '農場的小羊最喜歡你了～'] },
   { key: 'travelGo', label: '出門', hint: '可用 {地點}', lines: ['出發去{地點}囉！', '要去{地點}玩了～'] },
   { key: 'travelHome', label: '回家', lines: ['回家囉！', '還是自己家最舒服～', '我回來了！'] },
@@ -2323,6 +2351,19 @@ function drawFloor(ctx, room, fl) {
       }
     }
   }
+  if (fl.pattern === 'track') { // 前面幾道是跑道，後面是球場
+    const t0 = room.d - fl.lanes * fl.laneW;
+    ctx.fillStyle = fl.a; ctx.fillRect(0, 0, room.w, t0);
+    ctx.fillStyle = fl.stripe; ctx.fillRect(0, t0 * .45, room.w, .35);          // 球場中間的紅色帶
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = .05;
+    ctx.strokeRect(.5, .5, room.w - 1, t0 - 1);                                  // 球場白線
+    for (let k = 0; k < fl.lanes; k++) {
+      ctx.fillStyle = fl.lane[k % 2]; ctx.fillRect(0, t0 + k * fl.laneW, room.w, fl.laneW);
+    }
+    ctx.fillStyle = '#ffffff';
+    for (let k = 0; k <= fl.lanes; k++) ctx.fillRect(0, t0 + k * fl.laneW - .025, room.w, .05);
+    ctx.fillRect(1, t0, .06, fl.lanes * fl.laneW);                                // 起跑線
+  }
   ctx.fillStyle = 'rgba(0,0,0,.12)';
   if (fl.pattern === 'plank') {
     for (let j = 0; j < room.d; j += .5) ctx.fillRect(0, j, room.w, .03);
@@ -2350,7 +2391,7 @@ function drawFootprint(ctx, x, y, w, d, fill, stroke) {
 // opts: {ghost:{def,x,y,rot,ok}, hoverUid, showGrid}
 function drawRoom(ctx, room, opts) {
   const wp = WALLPAPERS.find(x => x.id === room.wall) || WALLPAPERS[0];
-  const fl = FLOORS.find(x => x.id === room.floor) || FLOORS[0];
+  const fl = floorById(room.floor) || FLOORS[0];
   drawFloor(ctx, room, fl);
   drawWalls(ctx, room, wp);
   const isWallGhost = opts.ghost && opts.ghost.def.layer === 'wall';
@@ -4168,7 +4209,7 @@ function fufuStartAct(key, now, it, auto) {
   else if (a.sound !== 'note') Sound.play('pickUp');
   if (a.tab) openTab(a.tab);
   if (a.open) setTimeout(() => { // 叔叔的電腦、阿婆的穀倉：打開那裡專屬的小遊戲
-    const fn = { brick: openBrickGame, mole: openMoleGame, race: openRaceGame, farm: openFarmGame, hay: () => openStackGame('hay'), quiz: openQuizGame }[a.open] || openFarmGame;
+    const fn = { brick: openBrickGame, mole: openMoleGame, race: openRaceGame, farm: openFarmGame, hay: () => openStackGame('hay'), quiz: openQuizGame, run: openRunGame }[a.open] || openFarmGame;
     if ($('#modal').hidden) fn();
   }, 1300);
   if (a.game) setTimeout(() => { // 大型電玩：隨機開一個小遊戲
@@ -5838,6 +5879,7 @@ function hostMenuEntries() {
   }
   if (host.n.id === 'teacher') {
     list.push(['📝 來小考', openQuizGame]);
+    list.push(['🏃 跟同學賽跑', openRunGame]);
     [['🏫 回教室', 0], ['🛝 一起去操場', 1]]
       .filter(([, i]) => i !== G.away.idx).forEach(([label, i]) => list.push([label, () => goPlaceRoom(i)]));
   }
@@ -8850,6 +8892,104 @@ function playQuiz(w, L) {
   openQuizGame.test = { q: () => q, choose: v => choose(v, null), finish, right: () => right, n: () => n, level: L,
                         next: () => { clearTimeout(timer); if (!ended) (n >= QUIZ_N ? finish() : show()); } };
   show();
+}
+
+/* ===== 🏃 操場賽跑 =====
+   照片參考：學校操場的藍色跑道（深藍、淺藍交錯，白線分道）。
+   一直點「跑！」就會往前跑，跟熊熊阿布、兔兔米米、狐狸露露比賽。
+   不用看字：點越快跑越快，第幾名用獎牌表示。 */
+const RUN_LEN = 100;
+const RUN_LEVELS = [
+  { name: '慢慢跑', speed: 4.6, mul: 1 },
+  { name: '普通',   speed: 6.6, mul: 2 },
+  { name: '運動會！', speed: 8.4, mul: 3 }
+];
+const RUN_STEP = 1.6;                  // 點一下跑多遠
+const RUN_PRIZE = [200, 100, 50, 20];  // 第 1~4 名（再乘難度）
+function openRunGame() {
+  const w = openGameWindow('🏃 操場賽跑', '一直點「跑！」（或點畫面）就會往前跑，點越快跑越快！跟同學比賽，看誰先到終點。');
+  pickLevelRow(w, RUN_LEVELS, L => `第一名 💰 ${RUN_PRIZE[0] * L.mul}`, L => playRun(w, L));
+}
+function playRun(w, L) {
+  w.stage.innerHTML = '';
+  const W = 340, H = 260, { c, g } = gameCanvas(w.stage, W, H);
+  const go = el('button', 'big run-go', '🏃 跑！');
+  w.stage.appendChild(go);
+  const mates = NEIGHBORS.filter(Boolean).slice(0, 3).map((n, i) => ({ n, x: 0, v: L.speed * (.9 + Math.random() * .15) * (1 - i * .03), done: 0 }));
+  let me = 0, myDone = false, order = [], ended = false, raf = 0, last = performance.now(), t = 0, countdown = 3, bounce = 0;
+  gameCleanup = () => cancelAnimationFrame(raf);
+
+  function tap() {
+    if (ended || countdown > 0) return;
+    me = Math.min(RUN_LEN, me + RUN_STEP);
+    bounce = 1;
+    if (me >= RUN_LEN && !myDone) { myDone = true; order.push('me'); } // 用 true，不要存時間：t 可能剛好是 0
+  }
+  go.onclick = tap;
+  c.addEventListener('pointerdown', tap);
+  function tick(dt) {
+    if (ended) return;
+    if (countdown > 0) { countdown -= dt; return; }
+    t += dt;
+    mates.forEach(m => {
+      if (m.x >= RUN_LEN) return;
+      m.x = Math.min(RUN_LEN, m.x + m.v * dt);
+      if (m.x >= RUN_LEN) { m.done = t; order.push(m); }
+    });
+    // 自己跑到終點就結束（後面的不用等），或三個同學都到了也結束（最後一名）
+    if (myDone || mates.every(m => m.x >= RUN_LEN)) finish();
+  }
+  function place() { const i = order.indexOf('me'); return i < 0 ? 4 : i + 1; }
+  function finish() {
+    if (ended) return;
+    ended = true;
+    const p = place();
+    const bells = payReward(w, RUN_PRIZE[p - 1] * L.mul);
+    const medal = ['🥇', '🥈', '🥉', '🎽'][p - 1];
+    w.status.textContent = `${medal} 第 ${p} 名！💰 +${fmt(bells)}`;
+    toast(`🏃 賽跑第 ${p} 名 ${medal}，拿到 💰 ${fmt(bells)}`);
+    go.disabled = true;
+    gameButtons(w, openRunGame);
+  }
+  openRunGame.test = { tap, tick, me: () => me, mates, place, finish, level: L, skipCountdown: () => { countdown = 0; } };
+
+  const LANE_H = 50, TOP = 40, X0 = 30, X1 = W - 30;
+  const xOf = d => X0 + (X1 - X0) * d / RUN_LEN;
+  function frame(now) {
+    now = now || performance.now();
+    const dt = Math.max(0, Math.min(.05, (now - last) / 1000)); last = now;
+    tick(dt);
+    bounce = Math.max(0, bounce - dt * 6);
+    // 跑道：深藍淺藍交錯、白線分道，兩邊是草地
+    g.fillStyle = '#5fae6f'; g.fillRect(0, 0, W, H);
+    for (let i = 0; i < 4; i++) { g.fillStyle = i % 2 ? '#4a9be8' : '#2f6fd1'; g.fillRect(0, TOP + i * LANE_H, W, LANE_H); }
+    g.fillStyle = '#ffffff';
+    for (let i = 0; i <= 4; i++) g.fillRect(0, TOP + i * LANE_H - 1, W, 2);
+    g.fillRect(X0 - 1, TOP, 3, LANE_H * 4);                                  // 起跑線
+    for (let y = 0; y < LANE_H * 4; y += 8) for (let k = 0; k < 2; k++) {     // 終點：黑白格
+      g.fillStyle = (y / 8 + k) % 2 ? '#222' : '#fff'; g.fillRect(X1 + k * 5, TOP + y, 5, 8);
+    }
+    // 同學（上面三道）和自己（最下面一道）
+    mates.forEach((m, i) => {
+      g.save(); g.translate(xOf(m.x), TOP + i * LANE_H + LANE_H - 8); g.scale(.85, .85);
+      drawNeighbor(g, m.n, { happy: m.x >= RUN_LEN, fx: 1.5, clean: 100 });
+      g.restore();
+    });
+    g.save(); g.translate(xOf(me), TOP + 3 * LANE_H + LANE_H - 6 - bounce * 4); g.scale(.62, .62);
+    const outfit = {}; OUTFIT_SLOTS.forEach(({ key }) => { outfit[key] = CLOTHES_BY_ID[G.outfit[key]]; });
+    drawGirl(g, { t: now / 1000, walking: countdown <= 0 && !ended, outfit, hair: G.hair });
+    g.restore();
+    // 倒數
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    if (countdown > 0) {
+      g.fillStyle = 'rgba(255,255,255,.92)'; g.font = 'bold 56px sans-serif';
+      g.fillText(String(Math.ceil(countdown)), W / 2, H / 2);
+    } else if (t < .6) { g.fillStyle = '#ffd35c'; g.font = 'bold 44px sans-serif'; g.fillText('開始！', W / 2, H / 2); }
+    g.textAlign = 'start'; g.textBaseline = 'alphabetic';
+    if (!ended) w.status.textContent = countdown > 0 ? '準備…' : `${L.name}　點「跑！」一直跑！`;
+    raf = requestAnimationFrame(frame);
+  }
+  raf = requestAnimationFrame(frame);
 }
 
 // ── 叔叔的打磚塊：左右移動板子接球，把磚塊全部打掉 ──
