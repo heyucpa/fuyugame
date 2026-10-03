@@ -941,6 +941,27 @@
     G.away = keepAway; fufu.act = keepFufuAct; G.actCD = {};
     var md4 = document.querySelector('#modal'); if (md4) md4.hidden = true;
 
+    /* ㉜ 每個小遊戲一打開就要有「離開」的按鈕
+       （iPad 上看到：賽車選難度的畫面只有三個難度，不想玩就走不掉）。
+       在家裡和在親戚家都測，按下去要真的關掉。 */
+    var keepAway2 = G.away;
+    [null, { place: 'uncle', idx: 0 }].forEach(function(aw){
+      G.away = aw;
+      ['openFishing','openMemoryGame','openCatchGame','openBubbleGame','openCupGame','openStackGame','openSimonGame',
+       'openMoleGame','openRaceGame','openBrickGame','openFarmGame','openCoinGame','openMarbleGame','openPuzzleGame','openSlingGame'
+      ].forEach(function(fn){
+        try {
+          window[fn]();
+          var out = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){
+            return /回家|離開|不想玩/.test(b.textContent) && b.offsetParent; })[0];
+          if (!out) { fails.push(fn + (aw ? '（親戚家）' : '') + ' 一打開沒有離開的按鈕'); closeGameWindow(); return; }
+          out.onclick();
+          if (!document.querySelector('#modal').hidden) { fails.push(fn + ' 按「' + out.textContent + '」關不掉'); closeGameWindow(); }
+        } catch(e) { fails.push(fn + ' 打開出錯：' + e.message); try { closeGameWindow(); } catch(_){} }
+      });
+    });
+    G.away = keepAway2;
+
     // ⑦ 其他分頁沒被改壞
     ['inv','shop','dress','pets','deco','build','earn','book','talk','save'].forEach(function(t){
       try { openTab(t); if (!document.querySelector('#tabBody').children.length)

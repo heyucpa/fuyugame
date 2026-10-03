@@ -7633,6 +7633,13 @@ function gameButtons(w, again) {
   home.onclick = () => { closeGameWindow(); renderTab(); };
   w.btns.append(replay, home);
 }
+/* 選難度的畫面也要能離開：她點進來發現不想玩，不能只能硬選一個玩完。
+   開始玩之後這顆還在，玩到一半不想玩也可以走（不給錢）。 */
+function leaveButton(w) {
+  const b = el('button', 'big alt', G.away ? '不想玩了，離開' : '不想玩了，回家');
+  b.onclick = () => { closeGameWindow(); renderTab(); };
+  w.btns.appendChild(b);
+}
 function payReward(w, bells, extra) {
   addBells(bells);
   didSomething(); // 玩完一場小遊戲，樹長回一顆果子
@@ -7903,6 +7910,7 @@ function openCupGame() {
   const w = openGameWindow('🥤 杯子躲貓貓', `${petName()}會躲進其中一個杯子，看清楚杯子怎麼換位置，再點牠躲的那個杯子！一共 5 回合。`);
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   w.status.textContent = '要幾個杯子？';
+  leaveButton(w);
   const row = el('div', 'lv-row');
   CUP_LEVELS.forEach(L => {
     const b = el('button', 'lv-btn');
@@ -8381,6 +8389,7 @@ function playRace(w, L) {
 function pickLevelRow(w, levels, sub, play) {
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   w.status.textContent = '選一個難度';
+  leaveButton(w);
   const row = el('div', 'lv-row');
   levels.forEach(L => {
     const b = el('button', 'lv-btn');
@@ -8737,6 +8746,7 @@ function openCoinGame() {
   function pickLevel() {
     w.stage.innerHTML = ''; w.btns.innerHTML = '';
     w.status.textContent = '選一個難度';
+    leaveButton(w);
     const row = el('div', 'lv-row');
     COIN_LEVELS.forEach(L => {
       const b = el('button', 'lv-btn');
@@ -8857,6 +8867,7 @@ function openMarbleGame() {
   let last = performance.now(), msg = '', msgUntil = 0;
   gameCleanup = () => cancelAnimationFrame(raf);
   w.status.textContent = `還有 ${shots} 顆　分數 0`;
+  leaveButton(w);
 
   function drop(x) {
     if (ended || ball || shots <= 0) return;
@@ -8962,6 +8973,7 @@ function openPuzzleGame() {
   function pickLevel() {
     w.stage.innerHTML = ''; w.btns.innerHTML = '';
     w.status.textContent = '選一個難度';
+    leaveButton(w);
     const row = el('div', 'lv-row');
     PUZZLE_LEVELS.forEach(L => {
       const b = el('button', 'lv-btn');
