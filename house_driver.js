@@ -292,7 +292,7 @@
        那是整個遊戲最危險的按鈕，藏在收集品頁面裡很容易被誤觸。 */
     openTab('book');
     if (document.querySelector('#tabBody').textContent.indexOf('重新開始') >= 0)
-      fails.push('「重新開始」還在家具分頁');
+      fails.push('「重新開始」還在圖鑑分頁');
     openTab('save');
     if (document.querySelector('#tabBody').textContent.indexOf('重新開始') < 0)
       fails.push('設定分頁沒有「重新開始」');
@@ -1383,6 +1383,39 @@
     if (G.bells - sb0 !== 6 * 15 * 2) fails.push('找書的錢不對：' + (G.bells - sb0));
     closeGameWindow();
     var md9 = document.querySelector('#modal'); if (md9) md9.hidden = true;
+
+    /* ㊵ 📖 圖鑑分頁：名字是「圖鑑」、所有收集都在這一頁、總覽的數字要對 */
+    var bookTab = document.querySelector('button[data-tab="book"]');
+    if (!bookTab || !/圖鑑/.test(bookTab.textContent) || !/📖/.test(bookTab.textContent)) fails.push('分頁不是「📖 圖鑑」：' + (bookTab && bookTab.textContent));
+    G.comics = { '早餐': 1, '恐龍': 3 }; G.stickers = { '⭐': 1 }; G.butterflies = { red: 2, blue: 1, rainbow: 1 }; G.passport = { moon: 1, seed: 1 };
+    openTab('book');
+    var chips = [].map.call(document.querySelectorAll('#tabBody .dex-chip'), function(c){ return c.textContent; });
+    if (chips.length !== 7) fails.push('圖鑑總覽不是七種收集：' + chips.length);
+    [['漫畫', '2/12'], ['貼紙', '1/12'], ['蝴蝶', '3/6'], ['閱讀護照', '2/8']].forEach(function(p){
+      if (!chips.some(function(t){ return t.indexOf(p[0]) >= 0 && t.indexOf(p[1]) >= 0; })) fails.push('圖鑑總覽的「' + p[0] + '」不是 ' + p[1] + '：' + chips.join(' | '));
+    });
+    ['dexFurn','dexFish','dexFriend','dexComic','dexSticker','dexBfly','dexPass'].forEach(function(id){
+      if (!document.getElementById(id)) fails.push('圖鑑少了一段：' + id);
+    });
+    // 看過的漫畫點一下可以再看，但不能算成多看一次、也不能變成新的
+    var tiles = document.querySelectorAll('#tabBody .dex-tile');
+    var seenTile = [].filter.call(tiles, function(t){ return !t.disabled; });
+    if (seenTile.length !== 2 || [].filter.call(tiles, function(t){ return t.disabled; }).length !== 10) fails.push('漫畫格子：看過 2 本可以點、其他 10 本不能點（' + seenTile.length + '）');
+    else {
+      var before = JSON.stringify(G.comics);
+      seenTile[0].onclick();
+      if (document.querySelectorAll('#modalCard .comic-p').length !== 4) fails.push('從圖鑑點漫畫沒有打開');
+      if (JSON.stringify(G.comics) !== before) fails.push('從圖鑑再看一次漫畫，收集次數被改了');
+      if (/新的一則/.test(document.querySelector('#modalCard').textContent)) fails.push('從圖鑑再看一次，卻說是新的一則');
+      $('#modal').hidden = true;
+    }
+    // 閱讀護照：看過的點了打開那本繪本
+    openTab('book');
+    var pcells = [].filter.call(document.querySelectorAll('#tabBody .pass'), function(c){ return !c.disabled; });
+    if (pcells.length !== 2) fails.push('閱讀護照可以點的不是 2 本（' + pcells.length + '）');
+    else { pcells[0].onclick(); if (!document.querySelector('#modalCard .book-page')) fails.push('從圖鑑點繪本沒有打開'); $('#modal').hidden = true; }
+    if (document.querySelectorAll('#tabBody .bfly canvas').length !== 3) fails.push('圖鑑的蝴蝶不是 3 隻有圖');
+    G.comics = {}; G.stickers = {}; G.butterflies = {}; G.passport = {};
 
     /* ㊲ 教室（照片參考）：綠桌墊課桌、紅藍布袋、置物櫃、注音布告欄、綠窗簾、磨石子地
        另外所有地點的房間都檢查：家具不重疊、不超出房間；牆上的東西不重疊、不超出牆 */

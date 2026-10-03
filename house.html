@@ -334,6 +334,20 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .shelf-slot { font-size: 17px; font-weight: 800; padding: 16px 2px; border-radius: 12px; border: 3px solid #8a5a33; background: #f3e2c8; }
 .shelf-slot.right { box-shadow: 0 0 0 4px #5fae7c; }
 .shelf-slot.wrong { box-shadow: 0 0 0 4px #e8505b; }
+.dex-sum { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 6px; margin: 4px 0 10px; }
+.dex-chip { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 2px; border-radius: 12px;
+  border: 2px solid var(--line); background: #fff; min-width: 0; }
+.dex-chip.full { border-color: #e7a94a; background: #fff6df; }
+.dex-ic { font-size: 24px; line-height: 1.1; }
+.dex-nm { font-size: 12px; font-weight: 700; white-space: nowrap; }
+.dex-n { font-size: 12px; color: var(--muted); }
+.dex-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 6px; margin: 4px 0 10px; }
+.dex-tile { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; border-radius: 12px;
+  border: 2px solid var(--line); background: #fffaf0; min-width: 0; }
+.dex-tile span { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.dex-big { font-size: 28px; line-height: 1.2; }
+.dex-tile.none .dex-big { color: #c8bfae; font-weight: 800; }
+button.pass { font: inherit; }
 .lv-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; padding: 10px 0; }
 .lv-btn {
   display: flex; flex-direction: column; align-items: center; gap: 3px;
@@ -468,7 +482,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
       <button data-tab="deco"><span class="ti">🎨</span>壁紙地板</button>
       <button data-tab="build"><span class="ti">🏗️</span>蓋房間</button>
       <button data-tab="earn"><span class="ti">💰</span>賺錢</button>
-      <button data-tab="book"><span class="ti">🛋️</span>家具</button>
+      <button data-tab="book"><span class="ti">📖</span>圖鑑</button>
       <button data-tab="talk"><span class="ti">🏷️</span>名字</button>
       <button data-tab="save"><span class="ti">⚙️</span>設定</button>
     </nav>
@@ -7365,9 +7379,30 @@ function tabEarn(body) {
   body.appendChild(games);
 }
 
+/* 📖 圖鑑：所有收集都在這一頁。最上面一排是總覽，點了跳到那一段。
+   妹妹看不懂字，所以每一段都有圖示，總覽也是圖示＋數字。 */
 function tabBook(body) {
   const got = FURNITURE.filter(f => G.seen[f.id]).length;
-  body.appendChild(h3(`家具圖鑑 ${got} / ${FURNITURE.length}`));
+  const count = o => Object.keys(o || {}).length;
+  const sections = [
+    ['dexFurn', '🛋️', '家具', got, FURNITURE.length],
+    ['dexFish', '🐟', '魚', FISH.filter(f => G.fish[f.name]).length, FISH.length],
+    ['dexFriend', '🐻', '好朋友', NEIGHBORS.filter(n => G.friends[n.id]).length, NEIGHBORS.length],
+    ['dexComic', '📚', '漫畫', count(G.comics), COMICS.length],
+    ['dexSticker', '⭐', '貼紙', count(G.stickers), STICKERS.length],
+    ['dexBfly', '🦋', '蝴蝶', count(G.butterflies), BUTTERFLIES.length],
+    ['dexPass', '📗', '閱讀護照', count(G.passport), STORYBOOKS.length]
+  ];
+  const sum = el('div', 'dex-sum');
+  sections.forEach(([id, icon, name, n, all]) => {
+    const b = el('button', 'dex-chip' + (n >= all ? ' full' : ''));
+    b.append(el('span', 'dex-ic', icon), el('span', 'dex-nm', name), el('span', 'dex-n', `${n}/${all}`));
+    b.onclick = () => { const t = document.getElementById(id); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+    sum.appendChild(b);
+  });
+  body.appendChild(sum);
+  const sec = (id, text) => { const h = h3(text); h.id = id; return h; };
+  body.appendChild(sec('dexFurn', `🛋️ 家具圖鑑 ${got} / ${FURNITURE.length}`));
   body.appendChild(note('買過、或搖樹掉下來拿到的家具，就會收進圖鑑。淡淡的是還沒收集到的。'));
   const grid = el('div', 'grid');
   FURNITURE.forEach(def => {
@@ -7378,14 +7413,14 @@ function tabBook(body) {
   body.appendChild(grid);
 
   const fishGot = FISH.filter(f => G.fish[f.name]).length;
-  body.appendChild(h3(`魚類圖鑑 ${fishGot} / ${FISH.length}`));
+  body.appendChild(sec('dexFish', `🐟 魚類圖鑑 ${fishGot} / ${FISH.length}`));
   FISH.forEach(f => {
     const r = el('div', 'row');
     r.append(el('span', '', G.fish[f.name] ? f.name : '？？？'), el('span', '', G.fish[f.name] ? `釣到 ${G.fish[f.name]} 次` : '—'));
     body.appendChild(r);
   });
   const met = NEIGHBORS.filter(n => G.friends[n.id]);
-  body.appendChild(h3(`好朋友 ${met.length} / ${NEIGHBORS.length}`));
+  body.appendChild(sec('dexFriend', `🐻 好朋友 ${met.length} / ${NEIGHBORS.length}`));
   body.appendChild(note('動物鄰居會不定時來家裡玩。點他們可以聊天、請他們坐下來聊、一起跳舞。'));
   const fg = el('div', 'grid');
   NEIGHBORS.forEach(n => {
@@ -7397,6 +7432,56 @@ function tabBook(body) {
     fg.appendChild(c);
   });
   body.appendChild(fg);
+
+  // 📚 叔叔的漫畫：看過的可以點來再看一次
+  body.appendChild(sec('dexComic', `📚 叔叔的漫畫 ${count(G.comics)} / ${COMICS.length}`));
+  body.appendChild(note('在叔叔家看漫畫就會收集到。看過的點一下可以再看一次。'));
+  const cg = el('div', 'dex-tiles');
+  COMICS.forEach(cm => {
+    const has = !!(G.comics || {})[cm.title];
+    const t = el('button', 'dex-tile' + (has ? '' : ' none'));
+    t.append(el('div', 'dex-big', has ? cm.panels[0][0] : '？'), el('span', '', has ? cm.title : '還沒看過'));
+    if (has) t.onclick = () => openComic(cm); else t.disabled = true;
+    cg.appendChild(t);
+  });
+  body.appendChild(cg);
+
+  // ⭐ 老師的貼紙
+  body.appendChild(sec('dexSticker', `⭐ 老師的貼紙 ${count(G.stickers)} / ${STICKERS.length}`));
+  body.appendChild(note('在學校交作業，老師會給一張貼紙。'));
+  const sg = el('div', 'sticker-grid');
+  STICKERS.forEach(s2 => { const has = !!(G.stickers || {})[s2]; sg.appendChild(el('div', 'sticker' + (has ? '' : ' none'), has ? s2 : '？')); });
+  body.appendChild(sg);
+
+  // 🦋 蝴蝶相簿
+  body.appendChild(sec('dexBfly', `🦋 蝴蝶相簿 ${count(G.butterflies)} / ${BUTTERFLIES.length}`));
+  body.appendChild(note('在公園的花圃拍蝴蝶就會收集到。彩虹蝴蝶很少見喔！'));
+  const bg = el('div', 'bfly-grid');
+  BUTTERFLIES.forEach(b => {
+    const n = (G.butterflies || {})[b.id];
+    const cell = el('div', 'bfly' + (n ? '' : ' none'));
+    if (n) {
+      const cv = document.createElement('canvas'); cv.width = 64; cv.height = 52;
+      drawButterfly(cv.getContext('2d'), 32, 28, b, 1.2, 1.5);
+      cell.append(cv, el('span', '', `${b.name} ×${n}`));
+    } else cell.append(el('b', '', '？'), el('span', '', '還沒拍到'));
+    bg.appendChild(cell);
+  });
+  body.appendChild(bg);
+
+  // 📗 閱讀護照：看過的點一下可以再看一次
+  body.appendChild(sec('dexPass', `📗 閱讀護照 ${count(G.passport)} / ${STORYBOOKS.length}`));
+  body.appendChild(note('在圖書館看完一本繪本就蓋一個章。全部蓋滿可以拿獎狀！看過的點一下可以再看一次。'));
+  const pg = el('div', 'pass-grid');
+  STORYBOOKS.forEach(b => {
+    const has = !!(G.passport || {})[b.id];
+    const cell = el('button', 'pass' + (has ? ' done' : ''));
+    cell.append(el('div', 'pass-cover', b.cover), el('span', '', b.title));
+    if (has) { cell.appendChild(el('div', 'pass-stamp', '讀')); cell.onclick = () => openStorybook(b.id); }
+    else cell.disabled = true;
+    pg.appendChild(cell);
+  });
+  body.appendChild(pg);
 
   /* 「累計賺到」留在這裡（它是收集的一部分），
      但「重新開始」搬去設定分頁了——那是整個遊戲最危險的按鈕，
@@ -9019,15 +9104,20 @@ const COMICS = [
   { title: '洗澡', panels: [['🛁', '要洗澡囉'], ['🐶', '狗狗跑掉了'], ['🏃‍♀️🐶', '追追追'], ['🛁🐶😆', '結果大家都濕了']] },
   { title: '月亮', panels: [['🌙', '晚上的月亮'], ['🚶‍♀️', '我走它也走'], ['🏃‍♀️🌙', '我跑它也跑'], ['🌙😊', '月亮在跟我回家']] }
 ];
-function openComic() {
+// again：從圖鑑點一則看過的再看一次（不算新的、不改收集）
+function openComic(again) {
   const seen = G.comics = G.comics || {};
-  // 優先給還沒看過的，看完一輪才重複
-  const fresh = COMICS.filter(c => !seen[c.title]);
-  const pool = fresh.length ? fresh : COMICS;
-  const cm = pool[Math.floor(Math.random() * pool.length)];
-  const isNew = !seen[cm.title];
-  seen[cm.title] = (seen[cm.title] || 0) + 1;
-  saveGame();
+  let cm, isNew = false;
+  if (again && again.panels) cm = again;
+  else {
+    // 優先給還沒看過的，看完一輪才重複
+    const fresh = COMICS.filter(c => !seen[c.title]);
+    const pool = fresh.length ? fresh : COMICS;
+    cm = pool[Math.floor(Math.random() * pool.length)];
+    isNew = !seen[cm.title];
+    seen[cm.title] = (seen[cm.title] || 0) + 1;
+    saveGame();
+  }
   const card = $('#modalCard');
   card.innerHTML = '';
   card.appendChild(el('h2', '', `📚 ${cm.title}`));
