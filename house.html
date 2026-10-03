@@ -1081,6 +1081,8 @@ const FLOORS = [
 const PLACE_FLOORS = [
   // 教室的磨石子地：灰色底，上面一點一點的小石子
   { id: 'fl_terrazzo', name: '磨石子地', pattern: 'check', a: '#d9d9d4', b: '#d2d2cc', speckle: ['#9a9a94', '#f4f4f0', '#b5a99a'] },
+  // 公園：草地，中間一條水泥步道，前面一角是紅白格子的磚地（照片參考）
+  { id: 'fl_park', name: '公園草地', pattern: 'check', a: '#8fc27a', b: '#86b972', path: [4, 6], plaza: [6, 8, 10, 10] },
   { id: 'fl_track', name: '操場跑道', pattern: 'track', a: '#5fae6f', b: '#55a265', lane: ['#2f6fd1', '#4a9be8'], stripe: '#e98a9a', lanes: 4, laneW: .9 }
 ];
 const floorById = id => FLOORS.find(x => x.id === id) || PLACE_FLOORS.find(x => x.id === id);
@@ -1595,12 +1597,48 @@ const PLACE_FURNITURE = [
         { k: 'ball', x: 1.4, y: 1.3, z: 4, r: 3.2, c: '#e8505b' },        // 蘋果
         { x: 1.2, y: .4, w: .3, d: .3, z: 1.5, h: 3, c: '#ffd35c' }       // 三明治
       ]) },
+  // 花圃（照片參考）：灰色水泥矮牆圍著一排綠籬，上面開滿紅色的仙丹花
   { id: 'flower_bed', name: '花圃', theme: 'nature', w: 2, d: 1,
-    parts: [{ x: 0, y: .1, w: 2, d: .8, z: 0, h: 8, c: '#8a5a33' }, { x: .06, y: .16, w: 1.88, d: .68, z: 8, h: 1, c: '#5a3d22' }]
-      .concat(['#e8505b', '#ffd35c', '#ff9ec4', '#b18cff', '#ffa53a', '#ffffff', '#e8505b', '#6bb6ff'].map((c, i) => [
-        { x: .14 + i * .23, y: .4 + (i % 2) * .16, w: .03, d: .03, z: 9, h: 9, c: '#4f9150' },
-        { k: 'ball', x: .155 + i * .23, y: .415 + (i % 2) * .16, z: 19, r: 3, c }
-      ]).flat()) },
+    parts: [
+      { x: 0, y: .1, w: 2, d: .8, z: 0, h: 7, c: '#c9c6bf' },
+      { x: .08, y: .18, w: 1.84, d: .64, z: 7, h: 9, c: '#4f9150' }
+    ].concat([0, 1, 2, 3, 4, 5, 6, 7, 8].map(i => ({ k: 'ball', x: .16 + i * .21, y: .36 + (i % 2) * .26, z: 18, r: 3.2, c: i % 4 === 3 ? '#ff9ec4' : '#e8503a' }))) },
+  // 展示用的大戰車（照片參考）：放在水泥台上給大家看，不會動
+  { id: 'display_tank', name: '展示戰車', theme: 'nature', w: 3, d: 2,
+    parts: [
+      { x: 0, y: 0, w: 3, d: 2, z: 0, h: 4, c: '#bdb9b0' },                 // 水泥台
+      { x: .15, y: .2, w: 2.7, d: .4, z: 4, h: 11, c: '#3a3d36' },          // 履帶
+      { x: .15, y: 1.4, w: 2.7, d: .4, z: 4, h: 11, c: '#3a3d36' }
+    ].concat([0, 1, 2, 3, 4].map(i => ({ k: 'ball', x: .45 + i * .5, y: 1.82, z: 9, r: 4.5, c: '#4b5043' })))   // 輪子
+     .concat([
+      { x: .1, y: .3, w: 2.8, d: 1.4, z: 15, h: 10, c: '#5f6b4e' },          // 車身
+      { x: .7, y: .55, w: 1.1, d: .9, z: 25, h: 11, c: '#56614a' },          // 砲塔
+      { x: 1.8, y: .95, w: 1.15, d: .12, z: 30, h: 3.5, c: '#4b5543' },      // 砲管
+      { x: 2.95, y: .92, w: .04, d: .18, z: 29, h: 5.5, c: '#3a3d36' },
+      { x: 2.75, y: 1.75, w: .04, d: .04, z: 4, h: 14, c: '#8a8f96' },       // 旁邊的說明牌（留白）
+      { x: 2.6, y: 1.72, w: .34, d: .06, z: 18, h: 10, c: '#3f7d46' }
+    ]) },
+  // 粉紅色的雙愛心雕塑（照片參考）：用一顆一顆小球排成愛心的形狀
+  { id: 'heart_sculpture', name: '愛心雕塑', theme: 'cute', w: 2, d: 1,
+    parts: [{ x: .1, y: .2, w: 1.8, d: .6, z: 0, h: 4, c: '#d6d3cc' }]
+      .concat([[.75, '#f2a7c3'], [1.25, '#e889b0']].map(([cx, c]) => {
+        const out = [];
+        for (let i = 0; i < 26; i++) {
+          const t = i / 26 * Math.PI * 2;
+          const hx = 16 * Math.sin(t) ** 3, hz = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+          out.push({ k: 'ball', x: cx + hx * .028, y: cx < 1 ? .45 : .55, z: 26 + hz * 1.3, r: 2.6, c });
+        }
+        return out;
+      }).flat()) },
+  // 沙坑（照片的評論說有沙坑溜滑梯）
+  { id: 'sandbox', name: '沙坑', theme: 'nature', w: 2, d: 2,
+    parts: [
+      { x: 0, y: 0, w: 2, d: 2, z: 0, h: 6, c: '#b07843' },
+      { x: .12, y: .12, w: 1.76, d: 1.76, z: 0, h: 6.5, c: '#f0d9a0' },
+      { x: .5, y: .6, w: .3, d: .3, z: 6.5, h: 6, c: '#e8505b' },           // 小水桶
+      { x: 1.2, y: 1.1, w: .35, d: .12, z: 6.5, h: 1.5, c: '#3f8ee0' },      // 小鏟子
+      { k: 'ball', x: 1.3, y: .5, z: 8, r: 3.5, c: '#e6c98a' }               // 沙堆
+    ] },
   { id: 'fountain', name: '噴水池', theme: 'modern', w: 2, d: 2,
     parts: [
       { x: .05, y: .05, w: 1.9, d: 1.9, z: 0, h: 9, c: '#d6d3cc' },
@@ -1691,6 +1729,9 @@ Object.assign(ACTIVITIES, {
   pondfish: { label: '🎣 池塘釣魚', name: '釣魚', fx: '🫧', open: 'fish', lines: ['魚會不會上鉤呢？', '要安靜等喔～', '池塘裡有小鴨子！'] },
   bfly: { label: '📷 拍蝴蝶', name: '拍蝴蝶', fx: '🦋', open: 'bfly', lines: ['好多蝴蝶！', '花好香喔～', '公園的花不能摘，用看的就好'] },
   picnic: { label: '🧺 野餐', name: '野餐', fx: '🥪', lines: ['在草地上吃東西好開心！', '三明治好好吃～', '風好舒服喔'] },
+  tank: { label: '🪖 看大戰車', name: '看戰車', fx: '✨', lines: ['好大的戰車喔！', '輪子好多個！', '這台不會動，是放在公園給大家看的', '只能看，不可以爬上去喔'] },
+  heart: { label: '💗 愛心拍照', name: '愛心拍照', fx: '💗', lines: ['在愛心前面拍一張！', '比一個愛心～', '粉紅色的愛心好可愛！'] },
+  sand: { label: '🏖️ 玩沙', name: '玩沙', fx: '✨', lines: ['我要蓋一座沙堡！', '沙子軟軟的～', '玩完要洗手喔'] },
   fountain: { label: '⛲ 看噴水池', name: '看噴水池', fx: '💦', lines: ['水噴得好高！', '亮晶晶的～', '小心不要弄濕喔'] },
   icecream: { label: '🍦 買冰淇淋', name: '買冰淇淋', fx: '🍦', lines: ['我要草莓口味！', '冰冰涼涼的～', '要慢慢吃喔'] },
   // 學校
@@ -1706,7 +1747,7 @@ Object.assign(FURNITURE_ACT, {
   fruit_basket: 'fruit', fruit_crate: 'fruit', apple_tree: 'pick', orange_tree: 'pick', banana_tree: 'pick',
   gaming_desk: 'pcgame', figure_shelf: 'figures', barn: 'farmcare', hay_bale: 'hay', trough: 'trough',
   lib_shelf: 'findbook', story_stand: 'storybook', lib_counter: 'passport',
-  pond: 'pondfish', flower_bed: 'bfly', picnic_mat: 'picnic', fountain: 'fountain', icecream_cart: 'icecream',
+  pond: 'pondfish', flower_bed: 'bfly', display_tank: 'tank', heart_sculpture: 'heart', sandbox: 'sand', picnic_mat: 'picnic', fountain: 'fountain', icecream_cart: 'icecream',
   school_desk: 'lesson', school_desk_b: 'lesson', teacher_desk: 'homework', slide: 'slide', swing: 'swing', flagpole: 'flag', finish_flag: 'run'
 });
 FURNITURE_USE.park_bench = { use: 'sit', seats: [{ x: .55, y: .55, z: 20 }, { x: 1.45, y: .55, z: 20 }], front: [0, 1] };
@@ -1773,11 +1814,15 @@ const PLACES = {
     ], wallItems: [['quiet_sign', 'L', 1], ['window', 'L', 7], ['quiet_sign', 'R', 7], ['wall_clock', 'R', 9]] }
   ] },
   /* 公園：一大片草地，有池塘（可以釣魚）、花圃（拍蝴蝶）、野餐墊、噴水池、冰淇淋車 */
-  park: { name: '公園', host: 'ranger', emoji: '🌳', desc: '池塘釣魚、拍蝴蝶、野餐、吃冰淇淋！', rooms: [
-    { name: '公園', w: 10, d: 10, wall: 'wp_forest', floor: 'fl_grass', items: [
-      ['shade_tree', 0, 0], ['pond', 3, 0], ['street_lamp', 6, 0], ['shade_tree', 8, 0],
-      ['flower_bed', 0, 3, 1], ['fountain', 4, 3], ['park_bench', 7, 3], ['street_lamp', 9, 3],
-      ['picnic_mat', 1, 6], ['icecream_cart', 7, 6], ['flower_bed', 4, 8], ['park_bench', 7, 9, 2]
+  park: { name: '公園', host: 'ranger', emoji: '🌳', desc: '看大戰車、玩沙溜滑梯、拍蝴蝶、找松鼠！', rooms: [
+    // 照片參考：中間一條步道（第 4、5 行空著），兩邊是樹和草地；展示戰車、粉紅愛心雕塑、
+    // 紅花綠籬；前面一角紅白磚地；評論說有沙坑溜滑梯、還有松鼠
+    { name: '公園', w: 10, d: 10, wall: 'wp_forest', floor: 'fl_park', items: [
+      ['shade_tree', 0, 0], ['street_lamp', 3, 0], ['pond', 6, 0], ['street_lamp', 9, 0],
+      ['park_bench', 3, 2, 1], ['display_tank', 0, 3], ['park_bench', 6, 2, 3], ['heart_sculpture', 7, 3],
+      ['flower_bed', 6, 5], ['flower_bed', 8, 5],
+      ['slide', 0, 6], ['street_lamp', 3, 6], ['shade_tree', 8, 6],
+      ['sandbox', 0, 8], ['picnic_mat', 2, 8], ['icecream_cart', 6, 8]
     ], wallItems: [] }
   ] },
   /* 學校：教室＋操場。一般的學校樣子，沒有校名、校徽（去識別化） */
@@ -2571,6 +2616,15 @@ function drawFloor(ctx, room, fl) {
       const h = (i * 73 + j * 151 + k * 37) % 97;
       ctx.fillStyle = fl.speckle[(i + j + k) % fl.speckle.length];
       ctx.fillRect(i + (h % 10) / 10, j + ((h * 7) % 10) / 10, .05, .05);
+    }
+  }
+  if (fl.path) { // 公園的步道和磚地
+    const [px0, px1] = fl.path;
+    ctx.fillStyle = '#d3cec4'; ctx.fillRect(px0 + .1, 0, px1 - px0 - .2, room.d);
+    ctx.fillStyle = '#bdb7ac'; ctx.fillRect(px0 + .05, 0, .06, room.d); ctx.fillRect(px1 - .11, 0, .06, room.d);
+    const [qx0, qy0, qx1, qy1] = fl.plaza;
+    for (let i = qx0; i < qx1; i += .5) for (let j = qy0; j < qy1; j += .5) {
+      ctx.fillStyle = Math.round((i + j) * 2) % 2 ? '#e7d3c4' : '#d98c7a'; ctx.fillRect(i, j, .5, .5);
     }
   }
   if (fl.pattern === 'track') { // 前面幾道是跑道，後面是球場
@@ -6048,27 +6102,47 @@ function hostTick(dt, now) {
 
 // ── 阿婆的小農場：小牛、小羊在裡面散步，點牠們可以摸摸、照顧 ──
 const FARM_K = 1.25;
-const farm = { actors: [] };
+const farm = { actors: [], spot: null };
 const inFarm = () => G.away && G.away.place === 'grandma' && G.away.idx === 2;
+/* 會在地上跑來跑去的小動物：阿婆的小農場有小牛小羊，公園有松鼠（評論說公園有松鼠）。
+   松鼠是野生的：只能看、不能摸，點了會嚇一跳跑開。 */
+const PARK_CRITTERS = [
+  { id: 'squirrel1', name: '松鼠', short: '松鼠', body: '#b5774a', edge: '#8a5733', belly: '#f3dcc0', inner: '#e8b88a', ears: 'tuft', wild: true, k: .8 },
+  { id: 'squirrel2', name: '松鼠', short: '松鼠', body: '#a86a42', edge: '#7d4f2e', belly: '#f0d6b8', inner: '#e8b88a', ears: 'tuft', wild: true, k: .7 }
+];
+const CRITTER_SPOTS = [
+  { place: 'grandma', idx: 2, list: FARM_ANIMALS, speed: .15 },
+  { place: 'park', idx: 0, list: PARK_CRITTERS, speed: .4 }
+];
+const critterSpot = () => (G.away && CRITTER_SPOTS.find(s => s.place === G.away.place && s.idx === G.away.idx)) || null;
 function farmTick(dt, now, room) {
-  if (!inFarm()) { farm.actors = []; return; }
+  const spot = critterSpot();
+  if (!spot) { farm.actors = []; farm.spot = null; return; }
+  if (farm.spot !== spot) { farm.actors = []; farm.spot = spot; }
   if (!farm.actors.length) {
-    farm.actors = FARM_ANIMALS.map((n, i) => {
+    farm.actors = spot.list.map((n, i) => {
       const c = nearestFree(room, 5 + i * 2, 5) || [5, 5];
       return { n, a: { room: roomKey(), x: c[0] + .5, y: c[1] + .5, z: 0, path: [], t: Math.random() * 3, facing: 1, idleUntil: now + 1000 + i * 1500,
         blinkAt: 0, squish: 0, squishV: 0, lean: 0, leanV: 0, press: null, happyUntil: 0, particles: [] } };
     });
   }
   const blk = blockedGrid(room);
-  farm.actors.forEach(({ a }) => { a.t += dt; actorSpring(a, dt, now, false); actorWalk(a, dt, now, room, blk, .15); });
+  farm.actors.forEach(({ a }) => { a.t += dt; actorSpring(a, dt, now, false); actorWalk(a, dt, now, room, blk, spot.speed); });
 }
 function farmHit(w) {
-  return farm.actors.find(({ a }) => {
-    const p = iso(a.x, a.y, 0), k = FARM_K;
+  return farm.actors.find(({ a, n }) => {
+    const p = iso(a.x, a.y, 0), k = n.k || FARM_K;
     return w.x > p.x - 18 * k && w.x < p.x + 18 * k && w.y > p.y - 30 * k && w.y < p.y + 5;
   }) || null;
 }
 function farmMenuEntries(f) {
+  if (f.n.wild) return [ // 松鼠：只能看
+    ['🐿️ 看松鼠', () => {
+      f.a.squishV = -7; f.a.idleUntil = 0; // 嚇一跳，跳一下就跑走
+      Sound.play('pickUp');
+      fufuSay('松鼠好可愛～要輕輕的，不要嚇到牠', 2800);
+    }]
+  ];
   return [
     [`💗 摸摸${f.n.short}`, () => {
       f.a.happyUntil = performance.now() + 1800; f.a.squishV = -6;
@@ -6124,7 +6198,7 @@ function hostMenuEntries() {
 function hostDrawEntries() {
   if (!host.n) return [];
   const list = [{ x: host.a.x - .2, y: host.a.y - .2, w: .4, d: .4, z: 0, h: 30 * VISITOR_K, drawFn: ctx => drawNeighborActor(ctx, host.a, host.n, 1, false, false) }];
-  farm.actors.forEach(({ n, a }) => list.push({ x: a.x - .2, y: a.y - .2, w: .4, d: .4, z: 0, h: 30 * FARM_K, drawFn: ctx => drawNeighborActor(ctx, a, n, 1, false, false, FARM_K) }));
+  farm.actors.forEach(({ n, a }) => list.push({ x: a.x - .2, y: a.y - .2, w: .4, d: .4, z: 0, h: 30 * (n.k || FARM_K), drawFn: ctx => drawNeighborActor(ctx, a, n, 1, false, false, n.k || FARM_K) }));
   return list;
 }
 function hostDrawOverlay(ctx, now) {
@@ -9073,11 +9147,12 @@ const RELATIVE_PERKS = {
   figures: { who: 'uncle',   figure: true },
   // 交作業不給錢（寫作業本來就是自己的事），老師給一張貼紙，可以收集
   picnic:   { who: 'park', kid: 20, pet: 10, say: '在公園野餐好開心！', toast: '🧺 野餐，飽足 +20、寵物心情 +10' },
+  sand:     { who: 'park', pet: 10, say: '寵物也在沙子裡打滾！', toast: '🏖️ 玩沙，寵物心情 +10' },
   bfly:     { who: 'park', pet: 10, toast: '🌸 聞聞花香，寵物心情 +10' },
   // 冰淇淋是用買的（不用等冷卻），比商店便宜一點
   icecream: { who: 'park', buy: { cost: 150, kidFood: 'ice_cream' } },
   homework: { who: 'school', sticker: true, cd: 3 * 60000, say: '老師說我寫得很棒！' }, // 只給貼紙不給錢，等 3 分鐘就好
-  slide:    { who: 'school', pet: 15, say: '咻～寵物也跟著溜下來了！', toast: '🛝 好好玩，寵物心情 +15' },
+  slide:    { who: ['school', 'park'], pet: 15, say: '咻～寵物也跟著溜下來了！', toast: '🛝 好好玩，寵物心情 +15' },
   swing:    { who: 'school', pet: 10, say: '盪好高喔！', toast: '🪢 盪鞦韆，寵物心情 +10' }
 };
 
@@ -9096,7 +9171,7 @@ function relativeMinsLeft(key) {
 function relativePerk(key) {
   const P = RELATIVE_PERKS[key];
   if (!P) return false;
-  if (P.who && !(G.away && G.away.place === P.who)) return false;
+  if (P.who && !(G.away && [].concat(P.who).includes(G.away.place))) return false; // who 可以是好幾個地方
   if (P.buy) { // 用買的：錢夠就買，不夠就說
     const f = KID_FOOD_BY_ID[P.buy.kidFood];
     if (!spend(P.buy.cost)) { toast(`💰 錢不夠，${f.name}要 ${P.buy.cost}`); return false; }

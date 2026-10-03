@@ -1326,6 +1326,50 @@
       fails.push('蝴蝶相簿顯示不對');
     var md8 = document.querySelector('#modal'); if (md8) md8.hidden = true;
 
+    /* ㊸ 公園照照片改：步道、磚地、展示戰車、愛心雕塑、紅花綠籬、沙坑溜滑梯、松鼠 */
+    var PR = PLACES.park.rooms[0];
+    if (PR.floor !== 'fl_park') fails.push('公園的地板不是步道草地');
+    if (FLOORS.some(function(f){ return f.id === 'fl_park'; })) fails.push('公園草地跑進商店了');
+    // 步道（第 4、5 行）上不能擺東西，要走得過去
+    PR.items.forEach(function(it){
+      var id = it.id || it[0], x = it.x != null ? it.x : it[1], rot = it.rot != null ? it.rot : (it[3] || 0);
+      var fp = footprint(FURN_BY_ID[id], rot);
+      if (x < 6 && x + fp.w > 4) fails.push('公園步道上擺了 ' + id);
+    });
+    ['display_tank','heart_sculpture','sandbox','slide','flower_bed'].forEach(function(id){
+      if (!PR.items.some(function(it){ return (it.id || it[0]) === id; })) fails.push('公園沒有 ' + id);
+      if (FURNITURE.some(function(f){ return f.id === id; })) fails.push(id + ' 跑進商店了');
+    });
+    if (FURNITURE_ACT.display_tank !== 'tank' || FURNITURE_ACT.heart_sculpture !== 'heart' || FURNITURE_ACT.sandbox !== 'sand') fails.push('公園新家具沒有對應的事');
+    // 溜滑梯在學校、公園都有效果，在阿婆家沒有
+    [['school', true], ['park', true], ['grandma', false]].forEach(function(c){
+      G.away = { place: c[0], idx: 0 }; G.actCD = {}; G.pet.mood = 20;
+      relativePerk('slide');
+      if ((G.pet.mood === 35) !== c[1]) fails.push('溜滑梯在' + c[0] + (c[1] ? '沒有效果' : '也有效果'));
+    });
+    G.away = { place: 'park', idx: 0 }; G.actCD = {}; G.pet.mood = 20;
+    relativePerk('sand');
+    if (G.pet.mood !== 30) fails.push('玩沙沒有寵物心情 +10');
+    // 松鼠：在公園跑出來，只能看、不能摸；到阿婆的小農場換成小牛小羊
+    farm.actors = []; farm.spot = null;
+    farmTick(.016, performance.now(), curRoom());
+    var sq = farm.actors.filter(function(f){ return f.n.wild; });
+    if (sq.length !== 2) fails.push('公園沒有兩隻松鼠（' + farm.actors.length + '）');
+    else {
+      var sm = farmMenuEntries(sq[0]).map(function(e){ return e[0]; }).join('|');
+      if (/摸/.test(sm) || !/看松鼠/.test(sm)) fails.push('松鼠的選單不對：' + sm);
+      var p0 = iso(sq[0].a.x, sq[0].a.y, 0);
+      if (farmHit({ x: p0.x, y: p0.y - 10 }) !== sq[0] && farmHit({ x: p0.x, y: p0.y - 10 }) !== sq[1]) fails.push('點松鼠點不到');
+    }
+    G.away = { place: 'grandma', idx: 2 };
+    farmTick(.016, performance.now(), curRoom());
+    if (farm.actors.some(function(f){ return f.n.wild; }) || farm.actors.length !== FARM_ANIMALS.length) fails.push('到了小農場，松鼠沒有換成小牛小羊');
+    if (!/照顧/.test(farmMenuEntries(farm.actors[0]).map(function(e){ return e[0]; }).join('|'))) fails.push('小牛小羊的選單不見了');
+    G.away = { place: 'school', idx: 0 };
+    farmTick(.016, performance.now(), curRoom());
+    if (farm.actors.length) fails.push('離開公園，松鼠還跟著');
+    G.away = null; G.actCD = {}; farm.actors = []; farm.spot = null;
+
     /* ㊴ 圖書館：繪本（看完最後一頁才蓋章）、閱讀護照（蓋滿送獎狀）、找書、貓咪館員 */
     var LB = PLACES.library;
     if (!LB || !HOSTS[LB.host]) fails.push('沒有圖書館或沒有館員');
