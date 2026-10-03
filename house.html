@@ -1,5 +1,18 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>我的小屋</title>
+<!doctype html><html lang="zh-Hant"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>我的小屋 🏡</title>
+<!-- ===== 加到主畫面之後會變成全螢幕的獨立 App =====
+     這幾行是搬出 Artifact 之後加的。除了好看以外，它還解決存檔：
+     iOS 會把「一般瀏覽的網站」太久沒開的資料回收掉，
+     加到主畫面的網頁 App 不受這條限制。
+     圖示與 manifest 都用 data: 內嵌，維持整個檔案自足、不連外。 -->
+<link rel="manifest" href='data:application/json;charset=utf-8,{"name":"我的小屋","short_name":"我的小屋","start_url":"./house.html","display":"standalone","background_color":"%23f4efe3","theme_color":"%235fae7c"}' />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="我的小屋" />
+<meta name="theme-color" content="#5fae7c" />
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%235fae7c'/%3E%3Ctext x='90' y='126' font-size='100' text-anchor='middle'%3E%F0%9F%8F%A1%3C/text%3E%3C/svg%3E" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%235fae7c'/%3E%3Ctext x='50' y='71' font-size='56' text-anchor='middle'%3E%F0%9F%8F%A1%3C/text%3E%3C/svg%3E" />
+<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <style>
 :root {
   --bg: #f4efe3;
@@ -304,6 +317,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
       <button data-tab="earn">賺錢</button>
       <button data-tab="book">圖鑑</button>
       <button data-tab="talk">台詞</button>
+      <button data-tab="save">備份</button>
     </nav>
     <section class="tabbody" id="tabBody"></section>
   </aside>
@@ -5461,7 +5475,7 @@ function furnCard(def, sub, onClick, count) {
 function renderTab() {
   const body = $('#tabBody');
   body.innerHTML = '';
-  ({ inv: tabInv, shop: tabShop, deco: tabDeco, build: tabBuild, earn: tabEarn, book: tabBook, talk: tabTalk, dress: tabDress, pets: tabPets })[tab](body);
+  ({ inv: tabInv, shop: tabShop, deco: tabDeco, build: tabBuild, earn: tabEarn, book: tabBook, talk: tabTalk, dress: tabDress, pets: tabPets, save: tabSave })[tab](body);
 }
 
 // ── 賣回商店 ──
@@ -5985,6 +5999,131 @@ function tabPets(body) {
 }
 
 // ── 台詞編輯 ──
+/* ===== 備份 =====
+   存檔在 localStorage，只活在這一台機器的這個瀏覽器裡。
+   之前住在 Artifact 的 iframe 裡，iPad 關掉瀏覽器就會被清掉；
+   搬成獨立網頁之後留得住了，但「換裝置、清網站資料、
+   加到主畫面之前的那段期間」還是會不見，而且不見了救不回來。
+
+   所以給一份看得到、帶得走的備份：按一下複製成一段文字，
+   貼到記事本或傳給自己就是一份存檔，要用的時候貼回來。
+   以複製貼上為主而不是下載檔案——iPad 的 Safari 下載很難用。
+
+   這一頁是給大人看的，所以字可以多一點、講清楚一點。 */
+const UNDO_KEY = 'myHouseGame_undo';   // 還原之前的現況，留一次反悔的機會
+const SAVE_TAG = 'myHouse-save';
+
+function makeBackup() {
+  return JSON.stringify({ tag: SAVE_TAG, v: 1,
+    at: new Date().toISOString().slice(0, 16).replace('T', ' '),
+    data: localStorage.getItem(SAVE_KEY) || '' });
+}
+// 回傳 { data, at } 或 null。壞掉的字串一定要擋下來，不能半套蓋上去
+function readBackup(txt) {
+  let o;
+  try { o = JSON.parse(String(txt || '').trim()); } catch (e) { return null; }
+  if (!o || o.tag !== SAVE_TAG || typeof o.data !== 'string' || !o.data) return null;
+  let g;
+  try { g = JSON.parse(o.data); } catch (e) { return null; }
+  // 真的是這個遊戲的存檔才收：normalizeSave 會把舊版缺的欄位補齊，格式不對回傳 null
+  if (!normalizeSave(g)) return null;
+  return { data: o.data, at: o.at || '' };
+}
+const hasUndo = () => !!readBackup(localStorage.getItem(UNDO_KEY));
+
+/* 把一份備份寫進存檔。抽成函式是為了走查驗得到真正的寫入路徑——
+   按鈕最後會 location.reload()，走查沒辦法在點下去之後繼續驗。
+   寫進去的一定是備份「裡面那一份存檔」，不是貼進來的那整段字。
+   蓋掉之前先留一份可以反悔的：她可能貼到一份舊的備份。 */
+function applyBackup(txt) {
+  const s = readBackup(txt);
+  if (!s) return false;
+  try {
+    localStorage.setItem(UNDO_KEY, makeBackup());
+    localStorage.setItem(SAVE_KEY, s.data);
+  } catch (e) { return false; }
+  return true;
+}
+
+function tabSave(body) {
+  const code = makeBackup();
+
+  body.appendChild(h3('📤 把現在的進度複製起來'));
+  body.appendChild(note('她玩的東西只存在這一台機器的這個瀏覽器裡。換裝置、' +
+    '清掉網站資料，紀錄就會不見，而且沒有辦法救回來。' +
+    '偶爾按一次下面那顆，貼到記事本或傳給自己，就有一份帶得走的存檔。'));
+  const info = el('div', 'sell-info',
+    `💰 ${fmt(G.bells)}　·　⭐ ${fmt(totalScore())}　·　${(code.length / 1024).toFixed(1)} KB`);
+  body.appendChild(info);
+
+  const copy = el('button', 'big', '📋 複製備份');
+  copy.onclick = async () => {
+    Sound.play('click');
+    try {
+      await navigator.clipboard.writeText(code);
+      toast('複製好了，貼到記事本存起來');
+    } catch (e) {
+      // clipboard 在非 https 或舊 Safari 會沒有／被擋，一定要留後路，
+      // 不然按下去完全沒反應，她會以為壞掉
+      box.value = code; box.focus(); box.select();
+      toast('請長按下面的框→拷貝');
+    }
+  };
+  body.appendChild(copy);
+
+  const dl = el('button', 'big alt', '💾 存成檔案（電腦比較好用）');
+  dl.onclick = () => {
+    Sound.play('click');
+    try {
+      const url = URL.createObjectURL(new Blob([code], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url; a.download = '我的小屋備份-' + today() + '.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast('存好了');
+    } catch (e) { toast('這台機器存不了檔案，請用上面那顆複製'); }
+  };
+  body.appendChild(dl);
+
+  body.appendChild(h3('📥 把備份貼回來'));
+  body.appendChild(note('貼上之後按「還原」。現在的進度會被整份蓋掉，' +
+    '不過蓋掉之前會自動留一份，按錯了可以反悔。'));
+  const box = el('textarea', 'talkbox');
+  box.rows = 4;
+  box.placeholder = '把備份貼在這裡…';
+  body.appendChild(box);
+
+  const restore = el('button', 'big', '↩️ 還原');
+  restore.onclick = () => {
+    const s = readBackup(box.value);
+    if (!s) { toast('這段不是小屋的備份，沒有動到任何東西'); return; }
+    if (!confirm('要用這一份備份蓋掉現在的進度嗎？\n\n備份時間：' + (s.at || '不詳'))) return;
+    if (!applyBackup(box.value)) { toast('寫不進去，沒有動到任何東西'); return; }
+    location.reload();   // 整個重讀最乾淨，G 跟畫面都會跟著換
+  };
+  body.appendChild(restore);
+
+  if (hasUndo()) {
+    body.appendChild(h3('⏪ 反悔'));
+    body.appendChild(note('上一次還原之前的那一份還留著。'));
+    const undo = el('button', 'big alt', '把上一份換回來');
+    undo.onclick = () => {
+      const s = readBackup(localStorage.getItem(UNDO_KEY));
+      if (!s) return;
+      if (!confirm('要換回上一份嗎？（' + (s.at || '不詳') + '）')) return;
+      // applyBackup 自己會先收起現況，所以按兩次就是來回切
+      if (!applyBackup(localStorage.getItem(UNDO_KEY))) { toast('寫不進去'); return; }
+      location.reload();
+    };
+    body.appendChild(undo);
+  }
+
+  body.appendChild(h3('📱 建議加到主畫面'));
+  body.appendChild(note('用 Safari 開這一頁 → 分享鈕 → 「加入主畫面」。' +
+    '這樣玩起來是全螢幕，而且 iPhone／iPad 不會把太久沒開的網站資料回收掉——' +
+    '一般用瀏覽器開的網站，七天沒玩存檔就可能被清掉。'));
+}
+
 function tabTalk(body) {
   body.appendChild(h3('角色名字'));
   const name = el('input', 'textin');

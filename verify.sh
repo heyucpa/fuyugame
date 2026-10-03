@@ -162,4 +162,24 @@ esac
 [ "$RM_FAIL" = 0 ] || exit 1
 
 echo
+echo "=== ⑥ 我的小屋 ==="
+# house.html 不是從 src/ 組起來的（整份從 Artifact 搬過來的單檔），
+# 所以走查是直接插進那個檔案裡跑
+python3 - <<'PYEOF'
+import io
+b = io.open('house.html', encoding='utf-8').read()
+d = io.open('house_driver.js', encoding='utf-8').read()
+io.open('housewalk.html', 'w', encoding='utf-8').write(b.replace('</body>', d + '</body>'))
+PYEOF
+$CHROME --headless --disable-gpu --no-sandbox --virtual-time-budget=20000 \
+  --dump-dom "file://$PWD/housewalk.html" 2>/dev/null | python3 -c "
+import sys, re
+s = sys.stdin.read()
+m = re.findall(r'<pre id=\"R\">(.*?)</pre>', s, re.S)
+if not m: print('✗ 沒跑完'); raise SystemExit(1)
+t = m[-1].strip(); print(t)
+if '失敗 0' not in t or 'JS 錯誤 0' not in t: raise SystemExit(1)
+"
+
+echo
 echo "✅ 全部通過"
