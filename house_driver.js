@@ -404,6 +404,42 @@
     if (PARENTS.length !== 2) fails.push('爸媽不是兩個人');
     G.kidFood = JSON.parse(keepK); G.food = JSON.parse(keepF);
 
+    /* ⑬ 拼圖：難度越高獎金越高，而且打亂之後不可以是「已經拼好的」 */
+    if (PUZZLE_LEVELS.length < 3) fails.push('拼圖難度不到三種');
+    for (var pi = 1; pi < PUZZLE_LEVELS.length; pi++) {
+      if (PUZZLE_LEVELS[pi].pay <= PUZZLE_LEVELS[pi-1].pay)
+        fails.push('拼圖：' + PUZZLE_LEVELS[pi].name + ' 比較難卻沒有比較多錢');
+      if (PUZZLE_LEVELS[pi].n <= PUZZLE_LEVELS[pi-1].n)
+        fails.push('拼圖：片數沒有越來越多');
+    }
+    openPuzzleGame();
+    var lv = document.querySelectorAll('.lv-btn');
+    if (lv.length !== PUZZLE_LEVELS.length) fails.push('拼圖沒有難度選單');
+    else {
+      var bells0 = G.bells;
+      lv[0].onclick();                       // 最簡單的 4 片
+      var tiles = document.querySelectorAll('.puz-tile');
+      if (tiles.length !== 4) fails.push('4 片的拼圖竟然有 ' + tiles.length + ' 格');
+      else {
+        // 打亂之後不可以剛好就是完成的（那會馬上過關）
+        if (openPuzzleGame.test.solved()) fails.push('一開局就已經拼好了');
+        /* 用選擇排序解：每一格去找「該在這裡的那一片」現在在哪，換過來。
+           走的是真正的 tap()，所以驗到的是真的點擊路徑。 */
+        var T = openPuzzleGame.test, total = T.n * T.n, steps = 0;
+        for (var pos = 0; pos < total && !T.solved(); pos++) {
+          var ord = T.order();
+          if (ord[pos] === pos) continue;
+          var from = ord.indexOf(pos);
+          if (from < 0) { fails.push('拼圖少了第 ' + pos + ' 片'); break; }
+          T.tap(pos); T.tap(from); steps++;
+          if (steps > total * 2) { fails.push('解拼圖的步數爆掉了'); break; }
+        }
+        if (!T.solved()) fails.push('拼圖解不開（交換邏輯可能有問題）');
+        else if (G.bells <= bells0) fails.push('拼好了卻沒有拿到錢');
+      }
+    }
+    closeGameWindow(); document.querySelector('#modal').hidden = true;
+
     // ⑦ 其他分頁沒被改壞
     ['inv','shop','dress','pets','deco','build','earn','book','talk','save'].forEach(function(t){
       try { openTab(t); if (!document.querySelector('#tabBody').children.length)

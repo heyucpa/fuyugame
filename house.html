@@ -233,6 +233,19 @@ button { font: inherit; color: inherit; cursor: pointer; }
   box-shadow: 0 0 0 2px var(--line); padding: 0;
 }
 .swatch.on { box-shadow: 0 0 0 3px var(--ink); }
+/* 拼圖：難度選單與拼盤 */
+.lv-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; padding: 10px 0; }
+.lv-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  border: 2px solid var(--line); background: #fff; border-radius: 14px;
+  padding: 14px 18px; min-width: 92px;
+}
+.lv-n { font-size: 17px; font-weight: 800; }
+.lv-p { font-size: 12px; color: var(--muted); }
+.puz-board { display: grid; gap: 2px; margin: 0 auto; background: var(--line); border-radius: 10px; overflow: hidden; }
+.puz-tile { background-repeat: no-repeat; cursor: pointer; position: relative; }
+.puz-tile.on { outline: 3px solid var(--accent); outline-offset: -3px; z-index: 1; }
+.puz-tile.ok { outline: none; }
 .talkhead { display: flex; align-items: center; justify-content: space-between; }
 .mini { border: none; background: var(--chip); border-radius: 999px; padding: 2px 10px; font-size: 12px; margin-top: 8px; }
 .row { display: flex; justify-content: space-between; align-items: center; padding: 6px 2px; font-size: 14px; border-bottom: 1px dashed var(--line); }
@@ -6144,7 +6157,8 @@ function tabEarn(body) {
   const games = el('div', 'game-list');
   [['🃏', '翻牌配對', openMemoryGame], ['🧺', `${petName()}接水果`, openCatchGame], ['🫧', '戳泡泡', openBubbleGame],
     ['🥤', '杯子躲貓貓', openCupGame], ['🥞', '疊疊鬆餅', openStackGame], ['🎵', '跟著唱', openSimonGame],
-    ['🎯', '彈弓丟蘋果', openSlingGame]].forEach(([icon, label, fn]) => {
+    ['🎯', '彈弓丟蘋果', openSlingGame],
+    ['🧩', '拼圖', openPuzzleGame]].forEach(([icon, label, fn]) => {
     const b = el('button', 'game-pick');
     b.append(el('span', 'gi', icon), el('span', '', label));
     b.onclick = () => { Sound.play('click'); fn(); };
@@ -7638,6 +7652,111 @@ function openFarmGame() {
 }
 </script>
 <script>
+/* ===== 小遊戲：拼圖 =====
+   給小一的妹妹做的：不用反應速度、不用拖曳，點兩下交換就好。
+   圖案用她自己的寵物畫出來——不用準備任何圖檔，而且每個人的不一樣。
+
+   難度 = 片數，越難獎金越高。打亂之後一定會檢查「不是已經完成的」，
+   不然她偶爾會拿到一張已經拼好的圖，莫名其妙就過關了。 */
+const PUZZLE_LEVELS = [
+  { n: 2, name: '4 片',  pay: 150 },
+  { n: 3, name: '9 片',  pay: 400 },
+  { n: 4, name: '16 片', pay: 900 }
+];
+
+function openPuzzleGame() {
+  const w = openGameWindow('🧩 拼圖', '點一片、再點另一片，就會交換位置。全部排回原樣就過關！');
+  pickLevel();
+
+  function pickLevel() {
+    w.stage.innerHTML = ''; w.btns.innerHTML = '';
+    w.status.textContent = '選一個難度';
+    const row = el('div', 'lv-row');
+    PUZZLE_LEVELS.forEach(L => {
+      const b = el('button', 'lv-btn');
+      b.append(el('span', 'lv-n', L.name), el('span', 'lv-p', `💰 ${fmt(L.pay)}`));
+      b.onclick = () => { Sound.play('click'); play(L); };
+      row.appendChild(b);
+    });
+    w.stage.appendChild(row);
+  }
+
+  function play(L) {
+    w.stage.innerHTML = '';
+    const SZ = 264, n = L.n, cell = SZ / n;
+    // 原圖：她現在照顧的那隻寵物，放大畫一次
+    const src = document.createElement('canvas');
+    const dpr = window.devicePixelRatio || 1;
+    src.width = src.height = SZ * dpr;
+    const sg = src.getContext('2d');
+    sg.setTransform(dpr, 0, 0, dpr, 0, 0);
+    sg.fillStyle = '#fdf6e8'; sg.fillRect(0, 0, SZ, SZ);
+    const pic = renderPetPortrait(G.pet, SZ, SZ);
+    sg.drawImage(pic, 0, 0, SZ, SZ);
+
+    // 打亂；排到不是已經完成的為止
+    let order = [];
+    for (let i = 0; i < n * n; i++) order.push(i);
+    const solved = () => order.every((v, i) => v === i);
+    let guard = 0;
+    do {
+      for (let i = order.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [order[i], order[j]] = [order[j], order[i]];
+      }
+    } while (solved() && guard++ < 20);
+
+    let picked = -1, moves = 0, done = false;
+    const board = el('div', 'puz-board');
+    board.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+    board.style.width = board.style.height = SZ + 'px';
+    const tiles = [];
+    for (let i = 0; i < n * n; i++) {
+      const t = el('div', 'puz-tile');
+      t.onclick = () => tap(i);
+      board.appendChild(t);
+      tiles.push(t);
+    }
+    w.stage.appendChild(board);
+    openPuzzleGame.test = { n: n, order: () => order.slice(), tap: tap,
+                            solved: () => solved() };
+    paint();
+    w.status.textContent = `${L.name}　移動 0 次`;
+    gameButtons(w, () => pickLevel());
+
+    function paint() {
+      tiles.forEach((t, pos) => {
+        const piece = order[pos];
+        const px = (piece % n) * cell, py = Math.floor(piece / n) * cell;
+        t.style.backgroundImage = `url(${src.toDataURL()})`;
+        t.style.backgroundSize = `${SZ}px ${SZ}px`;
+        t.style.backgroundPosition = `-${px}px -${py}px`;
+        t.classList.toggle('on', pos === picked);
+        t.classList.toggle('ok', done);
+      });
+    }
+    function tap(pos) {
+      if (done) return;
+      if (picked < 0) { picked = pos; Sound.play('pickUp'); paint(); return; }
+      if (picked === pos) { picked = -1; paint(); return; }
+      [order[picked], order[pos]] = [order[pos], order[picked]];
+      picked = -1; moves++;
+      Sound.play('click');
+      paint();
+      w.status.textContent = `${L.name}　移動 ${moves} 次`;
+      if (solved()) win();
+    }
+    function win() {
+      done = true; paint();
+      // 步數少有額外獎金：剛好是「想一下再動」會拿到的那種
+      const quick = moves <= n * n * 1.5;
+      const bells = payReward(w, L.pay + (quick ? Math.round(L.pay / 2) : 0));
+      w.status.textContent = `拼好了！移動 ${moves} 次${quick ? '（很有效率！）' : ''}　💰 +${fmt(bells)}`;
+      toast(`🧩 拼好了！拿到 💰 ${fmt(bells)}`);
+    }
+  }
+}
+
 // 小遊戲：彈弓丟蘋果（往後拉再放開，打倒木箱、打破氣球）
 'use strict';
 
