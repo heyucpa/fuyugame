@@ -1109,7 +1109,13 @@
       G.actCD = { comic: Date.now() - 4 * 60000 };
       if (relativeReady('comic')) fails.push('漫畫 4 分鐘就可以再看');
       if (relativeMinsLeft('comic') !== 1) fails.push('漫畫還要等的分鐘數不對：' + relativeMinsLeft('comic'));
-      G.away = { place: 'school', idx: 0 }; G.actCD = {};
+      // 交作業只要等 3 分鐘
+      G.away = { place: 'school', idx: 0 };
+      G.actCD = { homework: Date.now() - 3 * 60000 - 1 };
+      if (!relativeReady('homework')) fails.push('交作業過了 3 分鐘還不能再交');
+      G.actCD = { homework: Date.now() - 2 * 60000 };
+      if (relativeReady('homework')) fails.push('交作業 2 分鐘就可以再交');
+      G.actCD = {};
       var md7 = document.querySelector('#modal'); if (md7) md7.hidden = true;
       G.pet.mood = 20; relativePerk('slide');
       if (G.pet.mood !== 35) fails.push('溜滑梯寵物心情沒有 +15（' + G.pet.mood + '）');
