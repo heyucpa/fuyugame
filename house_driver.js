@@ -1326,6 +1326,65 @@
       fails.push('蝴蝶相簿顯示不對');
     var md8 = document.querySelector('#modal'); if (md8) md8.hidden = true;
 
+    /* ㊹ 阿婆家的動物圖鑑：小農場有動物輪流來玩，點了記進圖鑑 */
+    G.animals = {};
+    G.away = { place: 'grandma', idx: 2 }; farm.actors = []; farm.spot = null;
+    var t0 = performance.now();
+    farmTick(.016, t0, curRoom());
+    var vis = farm.actors.filter(function(f){ return f.visitor; });
+    if (vis.length !== 1) fails.push('小農場來玩的動物不是一隻（' + vis.length + '）');
+    else {
+      var firstVis = vis[0];
+      farmTick(.016, t0 + 1000, curRoom());
+      if (farm.actors.filter(function(f){ return f.visitor; })[0] !== firstVis) fails.push('來玩的動物一秒就換了');
+      farmTick(.016, t0 + FARM_VISIT_MS + 1000, curRoom());
+      var v2 = farm.actors.filter(function(f){ return f.visitor; });
+      if (v2.length !== 1 || v2[0] === firstVis) fails.push('過了一陣子，來玩的動物沒有換（或變成兩隻）');
+      if (farm.actors.filter(function(f){ return !f.visitor; }).length !== FARM_ANIMALS.length) fails.push('換動物的時候小牛小羊不見了');
+    }
+    // 點一般的動物：摸摸、記進圖鑑；沒有「照顧小牛小羊」
+    var dogF = { n: VISIT_ANIMALS.filter(function(n){ return n.id === 'fa_dog'; })[0], visitor: true, a: farm.actors[0].a };
+    var dm = farmMenuEntries(dogF);
+    if (!/摸摸/.test(dm[0][0]) || dm.some(function(e){ return /照顧/.test(e[0]); })) fails.push('來玩的小狗選單不對：' + dm.map(function(e){ return e[0]; }).join('|'));
+    dm[0][1]();
+    if (G.animals.fa_dog !== 1) fails.push('摸了小狗沒有記進動物圖鑑');
+    // 猴子：野生的，只能看；企鵝：迷路的
+    var mk = { n: VISIT_ANIMALS.filter(function(n){ return n.id === 'fa_monkey'; })[0], visitor: true, a: farm.actors[0].a };
+    var mm = farmMenuEntries(mk).map(function(e){ return e[0]; }).join('|');
+    if (/摸|餵/.test(mm) || !/看猴子/.test(mm)) fails.push('猴子的選單不對（野生的不能摸）：' + mm);
+    farmMenuEntries(mk)[0][1]();
+    if (!G.animals.fa_monkey) fails.push('看了猴子沒有記進圖鑑');
+    var pg2 = { n: VISIT_ANIMALS.filter(function(n){ return n.id === 'fa_penguin'; })[0], visitor: true, a: farm.actors[0].a };
+    if (!/企鵝/.test(farmMenuEntries(pg2)[0][0])) fails.push('迷路的企鵝選單不對');
+    // 小牛小羊也算：摸了記進去，而且還能照顧
+    var calfF = farm.actors.filter(function(f){ return !f.visitor; })[0];
+    var cm2 = farmMenuEntries(calfF);
+    cm2[0][1]();
+    if (!G.animals[calfF.n.id]) fails.push('摸了' + calfF.n.short + '沒有記進圖鑑');
+    if (!cm2.some(function(e){ return /照顧/.test(e[0]); })) fails.push('小牛小羊的「照顧」不見了');
+    // 稀有度：企鵝最少見、猴子第二
+    var ws = VISIT_ANIMALS.map(function(n){ return n.w; }).sort(function(a, b){ return a - b; });
+    var wOf = function(id){ return VISIT_ANIMALS.filter(function(n){ return n.id === id; })[0].w; };
+    if (wOf('fa_penguin') !== ws[0] || wOf('fa_monkey') !== ws[1] || ws[0] === ws[1]) fails.push('企鵝、猴子不是最少見的');
+    // 抽一千次：每一種都抽得到（不會有永遠收集不到的）
+    var drawn = {};
+    for (var rv = 0; rv < 3000; rv++) drawn[rollVisitor().id] = 1;
+    if (Object.keys(drawn).length !== VISIT_ANIMALS.length) fails.push('有動物永遠不會來：抽到 ' + Object.keys(drawn).length + ' / ' + VISIT_ANIMALS.length);
+    // 公園不會跑出農場的動物
+    G.away = { place: 'park', idx: 0 }; farmTick(.016, performance.now(), curRoom());
+    if (farm.actors.some(function(f){ return f.visitor; })) fails.push('公園也跑出小農場的動物');
+    // 圖鑑：遇過的有名字，沒遇過的是剪影＋？？？
+    G.away = null; farm.actors = []; farm.spot = null;
+    openTab('book');
+    var dexTxt = document.querySelector('#tabBody').textContent;
+    var meetN = Object.keys(G.animals).length;
+    if (dexTxt.indexOf('阿婆家的動物 ' + meetN + ' / ' + ANIMAL_DEX().length) < 0) fails.push('動物圖鑑的數字不對');
+    if (!/小狗/.test(dexTxt) || /小馬/.test(dexTxt)) fails.push('動物圖鑑沒有遇過的也顯示名字了（或遇過的沒顯示）');
+    // 阿婆的選單可以直接看動物圖鑑
+    G.away = { place: 'grandma', idx: 0 }; host.n = HOSTS.grandma;
+    if (!/動物圖鑑/.test(hostMenuEntries().map(function(e){ return e[0]; }).join('|'))) fails.push('阿婆的選單沒有動物圖鑑');
+    host.n = null; G.away = null; G.animals = {};
+
     /* ㊸ 公園照照片改：步道、磚地、展示戰車、愛心雕塑、紅花綠籬、沙坑溜滑梯、松鼠 */
     var PR = PLACES.park.rooms[0];
     if (PR.floor !== 'fl_park') fails.push('公園的地板不是步道草地');
@@ -1363,7 +1422,7 @@
     }
     G.away = { place: 'grandma', idx: 2 };
     farmTick(.016, performance.now(), curRoom());
-    if (farm.actors.some(function(f){ return f.n.wild; }) || farm.actors.length !== FARM_ANIMALS.length) fails.push('到了小農場，松鼠沒有換成小牛小羊');
+    if (farm.actors.some(function(f){ return f.n.wild && !f.visitor; }) || farm.actors.filter(function(f){ return !f.visitor; }).length !== FARM_ANIMALS.length) fails.push('到了小農場，松鼠沒有換成小牛小羊');
     if (!/照顧/.test(farmMenuEntries(farm.actors[0]).map(function(e){ return e[0]; }).join('|'))) fails.push('小牛小羊的選單不見了');
     G.away = { place: 'school', idx: 0 };
     farmTick(.016, performance.now(), curRoom());
@@ -1440,11 +1499,11 @@
     G.comics = { '早餐': 1, '恐龍': 3 }; G.stickers = { '⭐': 1 }; G.butterflies = { red: 2, blue: 1, rainbow: 1 }; G.passport = { moon: 1, seed: 1 };
     openTab('book');
     var chips = [].map.call(document.querySelectorAll('#tabBody .dex-chip'), function(c){ return c.textContent; });
-    if (chips.length !== 7) fails.push('圖鑑總覽不是七種收集：' + chips.length);
+    if (chips.length !== 8) fails.push('圖鑑總覽不是八種收集：' + chips.length);
     [['漫畫', '2/12'], ['貼紙', '1/12'], ['蝴蝶', '3/6'], ['閱讀護照', '2/8']].forEach(function(p){
       if (!chips.some(function(t){ return t.indexOf(p[0]) >= 0 && t.indexOf(p[1]) >= 0; })) fails.push('圖鑑總覽的「' + p[0] + '」不是 ' + p[1] + '：' + chips.join(' | '));
     });
-    ['dexFurn','dexFish','dexFriend','dexComic','dexSticker','dexBfly','dexPass'].forEach(function(id){
+    ['dexFurn','dexFish','dexFriend','dexAnimal','dexComic','dexSticker','dexBfly','dexPass'].forEach(function(id){
       if (!document.getElementById(id)) fails.push('圖鑑少了一段：' + id);
     });
     // 看過的漫畫點一下可以再看，但不能算成多看一次、也不能變成新的

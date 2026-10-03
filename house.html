@@ -1897,7 +1897,7 @@ LINE_TYPES.push(
   { key: 'hostLibrarian', label: '館員說的話', hint: '可用 {名字}', lines: ['{名字}，歡迎來圖書館～', '在圖書館要小聲說話喔 🤫', '繪本架上有好看的書喔', '看完的書要放回原來的地方', '閱讀護照蓋滿可以拿獎狀喔', '要不要幫我把書放回書架？'] },
   { key: 'hostRanger', label: '園長說的話', hint: '可用 {名字}', lines: ['{名字}，歡迎來公園玩！', '花圃的蝴蝶今天好多喔', '公園的花不能摘，拍照就好囉', '池塘裡的魚很會躲喔', '垃圾要記得帶回家喔', '天氣好熱，要不要吃冰淇淋？', '要不要在草地上野餐？'] },
   { key: 'hostTeacher', label: '老師說的話', hint: '可用 {名字}', lines: ['{名字}早安！今天也要開心上課喔', '下課了，去操場玩一下吧！', '要不要來小考？答對有獎勵喔', '去操場跟同學賽跑吧！', '寫字的時候背要挺直喔', '有問題要舉手問老師喔', '下課記得喝水、上廁所～', '作業寫好了可以拿給老師看喔'] },
-  { key: 'hostGrandma', label: '阿婆說的話', hint: '可用 {名字}', lines: ['{名字}來啦！快來吃水果～', '後面的果園水果熟了，要不要去摘？', '多吃點水果，身體才會壯壯的', '阿婆泡了茶，要不要喝一點？', '寫完功課，阿婆帶你去果園散步好不好？', '慢慢吃，不要噎到喔～', '小牛小羊肚子餓了，要不要幫阿婆餵牠們？', '農場的小羊最喜歡你了～'] },
+  { key: 'hostGrandma', label: '阿婆說的話', hint: '可用 {名字}', lines: ['{名字}來啦！快來吃水果～', '後面的果園水果熟了，要不要去摘？', '多吃點水果，身體才會壯壯的', '阿婆泡了茶，要不要喝一點？', '寫完功課，阿婆帶你去果園散步好不好？', '慢慢吃，不要噎到喔～', '小牛小羊肚子餓了，要不要幫阿婆餵牠們？', '農場的小羊最喜歡你了～', '今天小農場又來了新朋友喔！', '有時候山上的猴子會跑下來，只能遠遠看喔'] },
   { key: 'travelGo', label: '出門', hint: '可用 {地點}', lines: ['出發去{地點}囉！', '要去{地點}玩了～'] },
   { key: 'travelHome', label: '回家', lines: ['回家囉！', '還是自己家最舒服～', '我回來了！'] },
   { key: 'orchardEmpty', label: '果園摘完了', lines: ['水果都摘完了，下次再來摘吧！', '樹上的水果還沒長出來耶'] },
@@ -5383,7 +5383,17 @@ function drawCreature(ctx, sp, look) {
   ctx.fillStyle = body; ctx.fill();
   ctx.strokeStyle = edge; ctx.lineWidth = L; ctx.stroke();
   ctx.fillStyle = belly;
-  ctx.beginPath(); ctx.ellipse(0, -5, sp.id === 'penguin' ? 10 : 8, sp.id === 'penguin' ? 7 : 4.5, 0, 0, Math.PI * 2); ctx.fill();
+  const bigBelly = sp.id === 'penguin' || sp.bigBelly;
+  ctx.beginPath(); ctx.ellipse(0, -5, bigBelly ? 10 : 8, bigBelly ? 7 : 4.5, 0, 0, Math.PI * 2); ctx.fill();
+  if (sp.mane) { // 小馬：頭頂一撮鬃毛
+    ctx.fillStyle = sp.mane;
+    ctx.beginPath(); ctx.ellipse(-2, -19, 6, 2.6, -.3, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(3, -19.5, 4, 2.2, .3, 0, Math.PI * 2); ctx.fill();
+  }
+  if (sp.face) { // 猴子：臉是淺色的一塊
+    ctx.fillStyle = sp.face;
+    ctx.beginPath(); ctx.ellipse((look.fx || 0), -10, 8.5, 6.2, 0, 0, Math.PI * 2); ctx.fill();
+  }
   ctx.fillStyle = 'rgba(255,255,255,.45)';
   ctx.beginPath(); ctx.ellipse(-6, -15, 3, 1.8, -.5, 0, Math.PI * 2); ctx.fill();
 
@@ -5421,7 +5431,12 @@ function drawCreature(ctx, sp, look) {
   });
   ctx.fillStyle = 'rgba(255,110,140,.5)';
   [-9, 9].forEach(cx => { ctx.beginPath(); ctx.arc(cx + fx, ey + 4, 2.2, 0, Math.PI * 2); ctx.fill(); });
-  if (sp.beak) { // 鳥類：小嘴喙
+  if (sp.snout) { // 小豬：圓圓的鼻子、兩個鼻孔
+    ctx.fillStyle = sp.inner; ctx.strokeStyle = sp.edge; ctx.lineWidth = .8;
+    ctx.beginPath(); ctx.ellipse(fx, ey + 4.5, 3.4, 2.4, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#b5566e';
+    [-1.2, 1.2].forEach(nx => { ctx.beginPath(); ctx.ellipse(fx + nx, ey + 4.5, .6, .9, 0, 0, Math.PI * 2); ctx.fill(); });
+  } else if (sp.beak) { // 鳥類：小嘴喙
     ctx.beginPath(); ctx.moveTo(fx - 2.4, ey + 3); ctx.lineTo(fx + 2.4, ey + 3); ctx.lineTo(fx, ey + 6); ctx.closePath();
     ctx.fillStyle = '#f5a623'; ctx.fill();
   } else {
@@ -6104,6 +6119,41 @@ function hostTick(dt, now) {
 const FARM_K = 1.25;
 const farm = { actors: [], spot: null };
 const inFarm = () => G.away && G.away.place === 'grandma' && G.away.idx === 2;
+/* ===== 🐾 阿婆家的動物圖鑑 =====
+   小農場除了小牛小羊，附近的動物會輪流跑來玩（一次一隻，過一陣子換一隻）。
+   點牠就會記進動物圖鑑。猴子是野生的台灣獼猴：只能看，不能餵、不能摸；
+   企鵝是「迷路的」，很少很少出現。w 越小越少見。 */
+const FARM_VISIT_MS = 90000;
+const VISIT_ANIMALS = [
+  { id: 'fa_dog',     name: '小狗',     emoji: '🐶', short: '小狗', body: '#e8c088', edge: '#b98f55', belly: '#fff4e0', inner: '#b98f55', ears: 'round', w: 18 },
+  { id: 'fa_cat',     name: '小貓',     emoji: '🐱', short: '小貓', body: '#c9c4bd', edge: '#98928a', belly: '#f4f1ec', inner: '#ffb3c7', ears: 'pointy', stripes: true, w: 18 },
+  { id: 'fa_chick',   name: '小雞',     emoji: '🐥', short: '小雞', body: '#ffe066', edge: '#e0b52e', belly: '#fff3b0', inner: '#ffd35c', beak: true, w: 18 },
+  { id: 'fa_bunny',   name: '小兔子',   emoji: '🐰', short: '小兔子', body: '#ffffff', edge: '#d8c8d8', belly: '#fff4f8', inner: '#ffb3c7', ears: 'long', w: 16 },
+  { id: 'fa_duck',    name: '小鴨',     emoji: '🦆', short: '小鴨', body: '#ffffff', edge: '#cfcfd8', belly: '#f4f4f8', inner: '#ffd35c', beak: true, w: 14 },
+  { id: 'fa_piglet',  name: '小豬',     emoji: '🐷', short: '小豬', body: '#ffc4cf', edge: '#e597a6', belly: '#ffe3e8', inner: '#ff9fb2', ears: 'pointy', snout: true, w: 14 },
+  { id: 'fa_horse',   name: '小馬',     emoji: '🐴', short: '小馬', body: '#b07843', edge: '#8a5733', belly: '#e8c99a', inner: '#e8c99a', ears: 'pointy', mane: '#5a3d22', w: 10 },
+  { id: 'fa_monkey',  name: '台灣獼猴', emoji: '🐒', short: '猴子', body: '#9a6a44', edge: '#6f4a2c', belly: '#f0c8a0', inner: '#f0c8a0', ears: 'round', face: '#f0c8a0', wild: true, w: 5 },
+  { id: 'fa_penguin', name: '迷路的企鵝', emoji: '🐧', short: '企鵝', body: '#3a3f4a', edge: '#22262d', belly: '#ffffff', inner: '#ffffff', beak: true, bigBelly: true, lost: true, w: 2 }
+];
+// 圖鑑裡的全部動物：小牛小羊（一直都在）＋會來玩的
+const ANIMAL_DEX = () => FARM_ANIMALS.map(n => Object.assign({ emoji: n.id === 'calf' ? '🐮' : '🐑' }, n)).concat(VISIT_ANIMALS);
+function rollVisitor() {
+  let r = Math.random() * VISIT_ANIMALS.reduce((a, b) => a + b.w, 0);
+  return VISIT_ANIMALS.find(b => (r -= b.w) < 0) || VISIT_ANIMALS[0];
+}
+// 記進動物圖鑑；第一次遇到會說「新的動物」
+function meetAnimal(n) {
+  const dex = G.animals = G.animals || {};
+  const isNew = !dex[n.id];
+  dex[n.id] = (dex[n.id] || 0) + 1;
+  if (isNew) {
+    toast(`✨ 新的動物：${n.emoji || ''}${n.name}！（動物圖鑑 ${Object.keys(dex).length} / ${ANIMAL_DEX().length}）`);
+    Sound.play('coin');
+  }
+  saveGame();
+  return isNew;
+}
+
 /* 會在地上跑來跑去的小動物：阿婆的小農場有小牛小羊，公園有松鼠（評論說公園有松鼠）。
    松鼠是野生的：只能看、不能摸，點了會嚇一跳跑開。 */
 const PARK_CRITTERS = [
@@ -6118,13 +6168,22 @@ const critterSpot = () => (G.away && CRITTER_SPOTS.find(s => s.place === G.away.
 function farmTick(dt, now, room) {
   const spot = critterSpot();
   if (!spot) { farm.actors = []; farm.spot = null; return; }
-  if (farm.spot !== spot) { farm.actors = []; farm.spot = spot; }
+  if (farm.spot !== spot) { farm.actors = []; farm.spot = spot; farm.nextVisit = 0; }
   if (!farm.actors.length) {
     farm.actors = spot.list.map((n, i) => {
       const c = nearestFree(room, 5 + i * 2, 5) || [5, 5];
       return { n, a: { room: roomKey(), x: c[0] + .5, y: c[1] + .5, z: 0, path: [], t: Math.random() * 3, facing: 1, idleUntil: now + 1000 + i * 1500,
         blinkAt: 0, squish: 0, squishV: 0, lean: 0, leanV: 0, press: null, happyUntil: 0, particles: [] } };
     });
+  }
+  if (spot.place === 'grandma') { // 附近的動物輪流來玩
+    if (!farm.actors.some(f => f.visitor) || now > (farm.nextVisit || 0)) {
+      farm.actors = farm.actors.filter(f => !f.visitor);
+      const n = rollVisitor(), c = nearestFree(room, 2, 6) || [2, 6];
+      farm.actors.push({ n, visitor: true, a: { room: roomKey(), x: c[0] + .5, y: c[1] + .5, z: 0, path: [], t: 0, facing: 1, idleUntil: now + 800,
+        blinkAt: 0, squish: 0, squishV: -6, lean: 0, leanV: 0, press: null, happyUntil: now + 1500, particles: [] } });
+      farm.nextVisit = now + FARM_VISIT_MS;
+    }
   }
   const blk = blockedGrid(room);
   farm.actors.forEach(({ a }) => { a.t += dt; actorSpring(a, dt, now, false); actorWalk(a, dt, now, room, blk, spot.speed); });
@@ -6136,6 +6195,19 @@ function farmHit(w) {
   }) || null;
 }
 function farmMenuEntries(f) {
+  if (f.n.lost) return [ // 迷路的企鵝
+    ['🐧 看企鵝', () => {
+      f.a.happyUntil = performance.now() + 1500; f.a.squishV = -5;
+      meetAnimal(f.n);
+      fufuSay('企鵝迷路了！阿婆說會請動物園的人帶牠回家～', 3200);
+    }]
+  ];
+  if (f.n.wild && f.visitor) return [ // 台灣獼猴：野生的，只能遠遠看
+    ['👀 看猴子', () => {
+      meetAnimal(f.n);
+      fufuSay('是台灣獼猴！牠是野生的，不能餵牠、也不要靠近喔', 3400);
+    }]
+  ];
   if (f.n.wild) return [ // 松鼠：只能看
     ['🐿️ 看松鼠', () => {
       f.a.squishV = -7; f.a.idleUntil = 0; // 嚇一跳，跳一下就跑走
@@ -6148,10 +6220,10 @@ function farmMenuEntries(f) {
       f.a.happyUntil = performance.now() + 1800; f.a.squishV = -6;
       petBurst({ kind: 'heart' }, 3, f.a);
       Sound.play('petHappy');
+      meetAnimal(f.n);
       fufuSay(`${f.n.short}好可愛～`, 2200);
-    }],
-    ['🐮 照顧小牛小羊', openFarmGame]
-  ];
+    }]
+  ].concat(f.visitor ? [] : [['🐮 照顧小牛小羊', openFarmGame]]);
 }
 function hostHit(w) {
   if (!host.n) return false;
@@ -6190,6 +6262,7 @@ function hostMenuEntries() {
       .filter(([, i]) => i !== G.away.idx).forEach(([label, i]) => list.push([label, () => goPlaceRoom(i)]));
   }
   if (host.n.id === 'grandma') { // 阿婆帶你去其他地方
+    list.push(['📖 動物圖鑑', () => { openTab('book'); const t = document.getElementById('dexAnimal'); if (t) t.scrollIntoView({ block: 'start' }); }]);
     [['🏡 回屋裡', 0], ['🧺 一起去果園', 1], ['🐮 一起去小農場', 2]]
       .filter(([, i]) => i !== G.away.idx).forEach(([label, i]) => list.push([label, () => goPlaceRoom(i)]));
   }
@@ -7504,6 +7577,7 @@ function tabBook(body) {
     ['dexFurn', '🛋️', '家具', got, FURNITURE.length],
     ['dexFish', '🐟', '魚', FISH.filter(f => G.fish[f.name]).length, FISH.length],
     ['dexFriend', '🐻', '好朋友', NEIGHBORS.filter(n => G.friends[n.id]).length, NEIGHBORS.length],
+    ['dexAnimal', '🐮', '動物', count(G.animals), ANIMAL_DEX().length],
     ['dexComic', '📚', '漫畫', count(G.comics), COMICS.length],
     ['dexSticker', '⭐', '貼紙', count(G.stickers), STICKERS.length],
     ['dexBfly', '🦋', '蝴蝶', count(G.butterflies), BUTTERFLIES.length],
@@ -7548,6 +7622,20 @@ function tabBook(body) {
     fg.appendChild(c);
   });
   body.appendChild(fg);
+
+  // 🐮 阿婆家的動物：沒遇過的是剪影（給一點提示）
+  body.appendChild(sec('dexAnimal', `🐮 阿婆家的動物 ${count(G.animals)} / ${ANIMAL_DEX().length}`));
+  body.appendChild(note('到阿婆家的小農場，點跑來玩的動物就會記下來。有些動物很少出現喔！'));
+  const ag = el('div', 'grid');
+  ANIMAL_DEX().forEach(n => {
+    const met = (G.animals || {})[n.id];
+    const c = el('div', 'card dex' + (met ? '' : ' dim'));
+    c.appendChild(renderNeighborPortrait(n, 60, 54, !met));
+    c.appendChild(el('div', 'nm', met ? `${n.emoji} ${n.name}` : '？？？'));
+    c.appendChild(el('div', 'pr', met ? `遇到 ${met} 次` : '還沒遇過'));
+    ag.appendChild(c);
+  });
+  body.appendChild(ag);
 
   // 📚 叔叔的漫畫：看過的可以點來再看一次
   body.appendChild(sec('dexComic', `📚 叔叔的漫畫 ${count(G.comics)} / ${COMICS.length}`));
