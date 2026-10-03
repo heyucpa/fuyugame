@@ -657,6 +657,47 @@
       fails.push('桌上放了不能放的東西，讀回來沒有被清掉');
     tb0.top = null;
 
+    /* ⑴ 出門的過場
+       最要緊的一條：不管是走完、被點掉、還是中途出錯，
+       都一定要真的到了——沒到的話她就卡在黑畫面裡。 */
+    G.away = null; curMoment = null;
+    var arrived = false;
+    walkTrip('測試', function(){ arrived = true; });
+    var layer = document.getElementById('tripLayer');
+    if (!layer) fails.push('出門沒有過場畫面');
+    else {
+      if (!layer.querySelector('canvas')) fails.push('過場沒有畫布');
+      if (layer.textContent.indexOf('跳過') < 0) fails.push('過場沒有告訴她可以跳過');
+      // 點一下要能跳過，而且一定要抵達
+      layer.onclick();
+      if (!arrived) fails.push('點了跳過卻沒有抵達');
+      if (document.getElementById('tripLayer')) fails.push('跳過之後過場沒有消失');
+    }
+    // 跳過也要拿得到路上那件小事的獎勵，不然跳過等於懲罰她
+    var gotCoin = false, tries = 0;
+    while (!gotCoin && tries++ < 60) {
+      var b4 = G.bells, fr4 = JSON.stringify(G.friends);
+      var done2 = false;
+      walkTrip('測試', function(){ done2 = true; });
+      var L2 = document.getElementById('tripLayer');
+      if (L2) L2.onclick();
+      if (!done2) { fails.push('過場沒有回呼'); break; }
+      if (G.bells > b4) gotCoin = true;
+      else if (JSON.stringify(G.friends) !== fr4) gotCoin = true;   // 遇到鄰居也算
+    }
+    if (!gotCoin) fails.push('跟了六十次都沒有任何路上的小事');
+    // 出門與回家都要經過過場，而且最後真的換場
+    travelTo('uncle');
+    var L3 = document.getElementById('tripLayer');
+    if (!L3) fails.push('出門沒有走過場');
+    else { L3.onclick(); }
+    if (!G.away || G.away.place !== 'uncle') fails.push('過場完了卻沒有到叔叔家');
+    goHome();
+    var L4 = document.getElementById('tripLayer');
+    if (!L4) fails.push('回家沒有走過場');
+    else { L4.onclick(); }
+    if (G.away) fails.push('過場完了卻沒有回到家');
+
     // ⑦ 其他分頁沒被改壞
     ['inv','shop','dress','pets','deco','build','earn','book','talk','save'].forEach(function(t){
       try { openTab(t); if (!document.querySelector('#tabBody').children.length)

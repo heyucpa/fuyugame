@@ -242,6 +242,17 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .swatch.on { box-shadow: 0 0 0 3px var(--ink); }
 /* 拼圖：難度選單與拼盤 */
+/* 出門的過場：蓋在房間畫面上，點一下跳過 */
+.trip {
+  position: absolute; inset: 0; z-index: 30; display: flex;
+  flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  background: rgba(20,16,12,.45); cursor: pointer;
+}
+.trip-canvas { width: min(92%, 420px); aspect-ratio: 3 / 2; border-radius: 16px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.3); background: #bfe6f2; }
+.trip-tip { font-size: 13px; font-weight: 700;
+  color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.5); }
+
 .lv-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; padding: 10px 0; }
 .lv-btn {
   display: flex; flex-direction: column; align-items: center; gap: 3px;
@@ -5603,11 +5614,171 @@ function hostDrawOverlay(ctx, now) {
   drawNeighborBubble(ctx, host.a, host.n, host.say, 1);
 }
 
+/* ===== 出門的過場：走一段路 =====
+   本來點了地點是直接瞬移，沒有「出門」的感覺。
+
+   刻意不做成一整個可以自由走動的街道場景：那要新的導航、新的美術，
+   而且風險高。這裡是一段兩三秒的過場——小可愛走路、背景往後捲、
+   路上有機會遇到一件小事，就有「走過去」的感覺了，成本小很多。
+
+   路上那件小事是重點：純轉場看第三次就只想跳過，
+   但「路上可能撿到東西」會讓她願意多跑幾趟。
+   一半的機率什麼都沒有，不然就不稀奇了。
+
+   一定要可以跳過：點一下畫面就直接到。第一次看完整，之後想快就快。 */
+const TRIP_MS = 2600;
+const TRIP_EVENTS = [
+  { w: 50, kind: 'none' },
+  { w: 14, kind: 'coin', emoji: '💰', say: '撿到錢了！' },
+  { w: 12, kind: 'friend', emoji: '👋', say: '遇到鄰居，打個招呼～' },
+  { w: 8,  kind: 'scene', emoji: '🦋', say: '有一隻蝴蝶跟著我走！' },
+  { w: 8,  kind: 'scene', emoji: '🌸', say: '路邊的花開了～' },
+  { w: 8,  kind: 'scene', emoji: '🐱', say: '一隻貓咪在曬太陽' }
+];
+function rollTripEvent() {
+  let r = Math.random() * TRIP_EVENTS.reduce((a, e) => a + e.w, 0);
+  for (const e of TRIP_EVENTS) { if ((r -= e.w) < 0) return e; }
+  return TRIP_EVENTS[0];
+}
+
+let tripRaf = 0, tripDone = null;
+/* label 是要去哪裡（回家時是「家」）。done 一定會被呼叫到，
+   不管是走完、被點掉、還是中途出錯——不然她會卡在黑畫面裡。 */
+function walkTrip(label, done) {
+  const stage = $('.stage');
+  if (!stage) { done(); return; }
+  const old = document.getElementById('tripLayer');
+  if (old) old.remove();
+
+  const layer = el('div', '', '');
+  layer.id = 'tripLayer';
+  layer.className = 'trip';
+  const c = document.createElement('canvas');
+  const W = 360, H = 240, dpr = window.devicePixelRatio || 1;
+  c.width = W * dpr; c.height = H * dpr;
+  c.className = 'trip-canvas';
+  const g = c.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  layer.appendChild(c);
+  const tip = el('div', 'trip-tip', '點一下跳過');
+  layer.appendChild(tip);
+  stage.appendChild(layer);
+
+  const ev = rollTripEvent();
+  const start = performance.now();
+  let fired = false, ended = false;
+  tripDone = finish;
+
+  function fire() {
+    if (fired) return;
+    fired = true;
+    if (ev.kind === 'coin') {
+      const n = 20 + Math.floor(Math.random() * 61);
+      addBells(n);
+      ev.gain = n;
+    } else if (ev.kind === 'friend') {
+      const list = NEIGHBORS.filter(Boolean);
+      const n = list[Math.floor(Math.random() * list.length)];
+      if (n) { G.friends[n.id] = (G.friends[n.id] || 0) + 1; ev.who = n.short; }
+    }
+  }
+  function finish() {
+    if (ended) return;
+    ended = true;
+    cancelAnimationFrame(tripRaf);
+    fire();                       // 被點掉也算數，不然跳過等於懲罰她
+    layer.remove();
+    tripDone = null;
+    if (ev.kind === 'coin') toast(`💰 路上撿到 ${ev.gain} 鈴錢！`);
+    else if (ev.kind === 'friend' && ev.who) toast(`👋 路上遇到${ev.who}`);
+    saveGame();
+    done();
+  }
+  layer.onclick = finish;
+
+  (function frame(now) {
+    now = now || performance.now();
+    const p = Math.min(1, (now - start) / TRIP_MS);
+    if (p >= .45) fire();
+    const t = (now - start) / 1000, scroll = (now - start) * .18;
+
+    // 天空與地面
+    const sky = g.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#bfe6f2'); sky.addColorStop(1, '#eaf6e4');
+    g.fillStyle = sky; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#d8c9a8'; g.fillRect(0, H - 56, W, 56);
+    g.fillStyle = '#cbb892'; g.fillRect(0, H - 56, W, 4);
+
+    // 往後捲的房子與樹
+    for (let i = -1; i < 7; i++) {
+      const x = ((i * 110 - scroll) % 770 + 770) % 770 - 110;
+      const hh = 54 + (i % 3) * 16;
+      g.fillStyle = ['#ffe3ec', '#e8e0f5', '#fff4d6'][i % 3];
+      g.fillRect(x, H - 56 - hh, 64, hh);
+      g.strokeStyle = 'rgba(80,60,50,.25)'; g.lineWidth = 1.5;
+      g.strokeRect(x, H - 56 - hh, 64, hh);
+      g.fillStyle = ['#c9587f', '#7d6aa8', '#e8a33d'][i % 3];
+      g.beginPath();
+      g.moveTo(x - 6, H - 56 - hh); g.lineTo(x + 32, H - 56 - hh - 18); g.lineTo(x + 70, H - 56 - hh);
+      g.closePath(); g.fill();
+      g.fillStyle = '#cfe6ff';
+      g.fillRect(x + 12, H - 56 - hh + 14, 14, 14);
+      g.fillRect(x + 38, H - 56 - hh + 14, 14, 14);
+      // 兩棟中間一棵樹
+      const tx = x + 88;
+      g.fillStyle = '#8a6a45'; g.fillRect(tx - 2, H - 76, 4, 20);
+      g.fillStyle = '#7cc9a0';
+      g.beginPath(); g.arc(tx, H - 82, 13, 0, Math.PI * 2); g.fill();
+    }
+    // 路面的虛線
+    g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 3;
+    g.setLineDash([16, 14]); g.lineDashOffset = -scroll * 2;
+    g.beginPath(); g.moveTo(0, H - 26); g.lineTo(W, H - 26); g.stroke();
+    g.setLineDash([]);
+
+    // 小可愛走路
+    g.save();
+    g.translate(W / 2 - 30, H - 22);
+    g.scale(1.5, 1.5);
+    const outfit = {};
+    OUTFIT_SLOTS.forEach(({ key }) => { outfit[key] = CLOTHES_BY_ID[G.outfit[key]]; });
+    drawGirl(g, { t: t, walking: true, blink: (t % 3) > 2.85, outfit: outfit, hair: G.hair });
+    g.restore();
+
+    // 路上遇到的小事
+    if (fired && ev.kind !== 'none') {
+      g.font = '30px sans-serif'; g.textAlign = 'center';
+      g.fillText(ev.emoji, W / 2 + 54, H - 54 + Math.sin(t * 5) * 4);
+      g.font = '600 14px "Noto Sans TC", sans-serif';
+      const txt = ev.kind === 'coin' ? `撿到 ${ev.gain} 鈴錢！`
+                : ev.kind === 'friend' && ev.who ? `遇到${ev.who}，打個招呼～` : ev.say;
+      const tw = g.measureText(txt).width;
+      g.fillStyle = 'rgba(255,255,255,.95)';
+      g.beginPath(); g.roundRect(W / 2 - tw / 2 - 11, 18, tw + 22, 28, 12); g.fill();
+      g.strokeStyle = 'rgba(95,120,90,.5)'; g.lineWidth = 1.4; g.stroke();
+      g.fillStyle = '#4a3b2a'; g.textBaseline = 'middle';
+      g.fillText(txt, W / 2, 33);
+      g.textAlign = 'start'; g.textBaseline = 'alphabetic';
+    }
+    // 要去哪裡
+    g.font = '700 15px "Noto Sans TC", sans-serif'; g.textAlign = 'center';
+    g.fillStyle = 'rgba(74,59,42,.75)';
+    g.fillText('往 ' + label + ' 的路上…', W / 2, H - 8);
+    g.textAlign = 'start';
+
+    if (p >= 1) { finish(); return; }
+    tripRaf = requestAnimationFrame(frame);
+  })();
+}
+
 // ── 出門、回家 ──
 function travelTo(place) {
   if (G.away && G.away.place === place) return;
   cancelHold(); hideItemMenu();
   if (fufu.pose) fufuStandUp(false);
+  walkTrip(PLACES[place].name, () => travelArrive(place));
+}
+function travelArrive(place) {
   G.away = { place, idx: 0 };
   host.n = null; // 讓 hostTick 重新迎接
   fufuSay(pickLine('travelGo', { 地點: PLACES[place].name }), 3000);
@@ -5623,6 +5794,9 @@ function goPlaceRoom(i) {
 function goHome() {
   if (!G.away) return;
   if (fufu.pose) fufuStandUp(false);
+  walkTrip('家', homeArrive);
+}
+function homeArrive() {
   G.away = null;
   fufuSay(pickLine('travelHome'), 2600);
   toast('🏠 回到家了');
