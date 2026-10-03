@@ -612,6 +612,51 @@
     G.kidFood = JSON.parse(kk); G.food = JSON.parse(ff);
     supplyGone();
 
+    /* ⑳ 桌上放一樣小東西
+       重點是「一張桌子只放一樣」，而且收起來要回到收納——
+       不回去的話那樣東西就消失了，而且她不會發現。 */
+    var rr0 = curRoom();
+    rr0.items = [{ uid: 9001, id: 'wood_table', x: 1, y: 1, rot: 0 }];
+    G.inv.game_cart = 1;
+    var tb0 = rr0.items[0];
+    if (!canHaveTop('wood_table')) fails.push('原木桌竟然不能放東西');
+    if (canHaveTop('wood_bed')) fails.push('床竟然被當成桌子');
+    if (!canSitOnTable('game_cart')) fails.push('卡帶竟然不能放桌上');
+    if (canSitOnTable('wood_bed')) fails.push('床竟然可以放桌上');
+    // 放上去：收納要少一個
+    if (!takeItem('game_cart')) fails.push('拿不到卡帶');
+    tb0.top = 'game_cart';
+    if (G.inv.game_cart) fails.push('放上桌了，收納裡卻還有一個');
+    if (!topParts(FURN_BY_ID.wood_table, 0, tb0).length)
+      fails.push('桌上那樣東西沒有被畫出來');
+    // 畫出來的位置要在桌面上方，不是埋在桌子裡
+    var tableH = itemHeight(FURN_BY_ID.wood_table);
+    if (topParts(FURN_BY_ID.wood_table, 0, tb0).some(function(pp){ return pp.z < tableH; }))
+      fails.push('桌上那樣東西沒有抬到桌面高度');
+    // 桌上有東西，居家評分要比沒有高
+    var sc1 = roomScore(rr0).score;
+    tb0.top = null;
+    var sc0 = roomScore(rr0).score;
+    if (sc1 <= sc0) fails.push('桌上摆了東西，居家評分卻沒有比較高');
+    G.inv.mini_figure = 1; G.inv.fishtank = 1;
+    tb0.top = 'mini_figure'; var scCheap = roomScore(rr0).score;
+    tb0.top = 'fishtank';    var scRich = roomScore(rr0).score;
+    var wantDiff = Math.round(FURN_BY_ID.fishtank.price / 100) -
+                   Math.round(FURN_BY_ID.mini_figure.price / 100);
+    if (scRich - scCheap !== wantDiff)
+      fails.push('桌上貴的東西沒有比便宜的多分：差 ' +
+        (scRich - scCheap) + '，應該差 ' + wantDiff);
+    // 收起來要回到收納
+    tb0.top = 'game_cart';
+    addItem(tb0.top); tb0.top = null;
+    if (!G.inv.game_cart) fails.push('從桌上收起來，東西沒有回到收納');
+    // 存檔裡放了不能放的東西，讀回來要被清掉
+    tb0.top = 'wood_bed';
+    var fixed = normalizeSave(JSON.parse(JSON.stringify(G)));
+    if (fixed && fixed.rooms[G.cur].items[0].top)
+      fails.push('桌上放了不能放的東西，讀回來沒有被清掉');
+    tb0.top = null;
+
     // ⑦ 其他分頁沒被改壞
     ['inv','shop','dress','pets','deco','build','earn','book','talk','save'].forEach(function(t){
       try { openTab(t); if (!document.querySelector('#tabBody').children.length)

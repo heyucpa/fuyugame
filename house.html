@@ -1951,6 +1951,36 @@ function footprint(def, rot) {
   return rot % 2 ? { w: def.d, d: def.w } : { w: def.w, d: def.d };
 }
 
+
+/* ===== 桌上可以放一樣小東西 =====
+   叔叔送的卡帶現在只能放地上，看起來像垃圾掉在那裡。
+
+   一張桌子只放一樣——她提的這個限制是對的：
+   自由擺放會疊在一起、會穿過桌面，小孩擺到一半就亂了；
+   把桌面切成格子又太複雜，而且 1×1 的小桌子根本放不下。
+   一張一個最簡單，而且一眼看得懂。 */
+const TABLE_TOPS = ['wood_table', 'cute_table', 'lemon_table', 'dining_table',
+                    'desk', 'pink_desk', 'lemon_desk',
+                    'nightstand', 'pink_nightstand', 'lemon_nightstand',
+                    'dresser', 'cupboard', 'kitchen'];
+// 適合放桌上的小東西：本來就是 1×1，單獨佔一格地板反而奇怪
+const ON_TABLE = ['game_cart', 'mini_figure', 'comic_book', 'robot_toy',
+                  'plant_s', 'cactus', 'fishtank', 'globe'];
+const canHaveTop = id => TABLE_TOPS.indexOf(id) >= 0;
+const canSitOnTable = id => ON_TABLE.indexOf(id) >= 0;
+
+/* 把桌上那樣東西的零件抬到桌面高度、擺在桌子中央，直接接在桌子的零件後面。
+   這樣排前後、遮擋、縮圖全部沿用原本那一套，不用另外寫一套畫法。 */
+function topParts(def, rot, it) {
+  const topDef = it && it.top ? FURN_BY_ID[it.top] : null;
+  if (!topDef) return [];
+  const h = itemHeight(def);                       // 桌面高度
+  const W = (rot % 2) ? def.d : def.w, D = (rot % 2) ? def.w : def.d;
+  const dx = W / 2 - topDef.w / 2, dy = D / 2 - topDef.d / 2;
+  return getParts(topDef, 0).map(pp =>
+    Object.assign({}, pp, { x: pp.x + dx, y: pp.y + dy, z: pp.z + h }));
+}
+
 function itemHeight(def) {
   return def.parts.reduce((m, p) => Math.max(m, p.k === 'ball' ? p.z + p.r : p.z + p.h), 0);
 }
@@ -1964,7 +1994,8 @@ function drawPart(ctx, p, gx, gy) {
 
 // it 有給的時候（房間裡的家具），套用使用中的效果：螢幕閃、生火、碗盤…（itemLook 在 character.js）
 function drawItem(ctx, def, gx, gy, rot, it) {
-  const parts = it && typeof itemLook === 'function' ? itemLook(def, rot, it, getParts(def, rot)) : getParts(def, rot);
+  let parts = it && typeof itemLook === 'function' ? itemLook(def, rot, it, getParts(def, rot)) : getParts(def, rot);
+  if (it && it.top) parts = parts.concat(topParts(def, rot, it));
   parts.forEach(p => drawPart(ctx, p, gx, gy));
 }
 // 在未旋轉座標寫的額外零件，轉成家具目前的方向
@@ -2465,6 +2496,11 @@ function normalizeSave(g) {
   g.rooms.forEach(r => {
     r.wallItems = r.wallItems || []; // 舊存檔沒有掛飾欄位
     r.items = r.items || [];
+    /* 桌上那樣東西：舊存檔沒有這個欄位；放了不存在的東西（改版拿掉了）
+       也要清掉，不然會在桌上畫出一個空的。 */
+    r.items.forEach(it => {
+      if (it.top && !(FURN_BY_ID[it.top] && canHaveTop(it.id) && canSitOnTable(it.top))) it.top = null;
+    });
     // 舊版的 4×4 房間免費升級成 6×6；往前方擴大，原本的家具位置不變
     if (r.w < MIN_ROOM_SIZE) r.w = MIN_ROOM_SIZE;
     if (r.d < MIN_ROOM_SIZE) r.d = MIN_ROOM_SIZE;
@@ -2610,6 +2646,13 @@ function spend(n) {
 function addItem(id, n) {
   G.inv[id] = (G.inv[id] || 0) + (n || 1);
   G.seen[id] = true;
+}
+// 從收納拿走一件；沒有就回傳 false（放桌上、放地上都走這裡）
+function takeItem(id) {
+  if (!G.inv[id]) return false;
+  G.inv[id]--;
+  if (!G.inv[id]) delete G.inv[id];
+  return true;
 }
 
 // ── 擺放判定 ──
@@ -2946,6 +2989,13 @@ function roomScore(room) {
     s += Math.round(def.price / 100);
     kinds.add(it.id);
     themes[def.theme] = (themes[def.theme] || 0) + 1;
+    // 桌上擺了東西：那樣東西照算，再加一點「有在布置細節」的分
+    const td = it.top ? FURN_BY_ID[it.top] : null;
+    if (td) {
+      s += Math.round(td.price / 100) + 20;
+      kinds.add(td.id);
+      themes[td.theme] = (themes[td.theme] || 0) + 1;
+    }
   });
   s += kinds.size * 30;
   let main = null;
@@ -6027,6 +6077,32 @@ function openMenu(entries, e) {
   menu.style.left = Math.max(8, Math.min(r.width - mw - 8, e.clientX - r.left - mw / 2)) + 'px';
   menu.style.top = Math.max(8, Math.min(r.height - mh - 8, e.clientY - r.top + 12)) + 'px';
 }
+/* 選一樣小東西放到桌上。用既有的 modal，卡片沿用商店那一套，
+   所以不用新做一套版面。 */
+function openTopPicker(it) {
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', '🧺 放什麼在桌上？'));
+  const grid = el('div', 'grid');
+  ON_TABLE.filter(id => G.inv[id] > 0).forEach(id => {
+    const def = FURN_BY_ID[id];
+    if (!def) return;
+    grid.appendChild(furnCard(def, '收納 ×' + G.inv[id], () => {
+      if (!takeItem(id)) return;
+      it.top = id;
+      $('#modal').hidden = true;
+      Sound.play('place');
+      toast(`${def.name} 放到桌上了`);
+      commit();
+    }));
+  });
+  card.appendChild(grid);
+  const no = el('button', 'big alt', '不要了');
+  no.onclick = () => { $('#modal').hidden = true; };
+  card.appendChild(no);
+  $('#modal').hidden = false;
+}
+
 // 點小可愛：叫她做事
 function showKidMenu(e) {
   openMenu([
@@ -6050,6 +6126,25 @@ function showItemMenu(it, e) {
     petGoNap(it, false);
   });
   if (G.away) { openMenu(entries, e); return; } // 親戚家只能用，不能搬、不能收
+  /* 桌上放一樣小東西。一張桌子只放一樣——不然會疊在一起、會穿過桌面。
+     收納裡沒有可以放的東西時就不顯示這一項，免得點了跳出空選單。 */
+  if (canHaveTop(it.id)) {
+    if (it.top) {
+      const tdef = FURN_BY_ID[it.top];
+      add(`⬇️ 把${tdef ? tdef.name : '桌上的東西'}收起來`, () => {
+        if (it.top) addItem(it.top);
+        it.top = null;
+        toast('收進收納了');
+        commit();
+      });
+    } else {
+      const can = ON_TABLE.filter(id => G.inv[id] > 0);
+      if (can.length) add('🧺 放東西上去', () => openTopPicker(it));
+      else add('🧺 放東西上去（收納裡沒有小東西）', () => {
+        toast('先去商店買小盆栽、公仔這類小東西吧！');
+      });
+    }
+  }
   add('✋ 搬動', () => startHoldFromRoom(it));
   add('📦 收起來', () => {
     curRoom().items = curRoom().items.filter(x => x.uid !== it.uid);

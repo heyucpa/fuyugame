@@ -171,7 +171,7 @@ b = io.open('house.html', encoding='utf-8').read()
 d = io.open('house_driver.js', encoding='utf-8').read()
 io.open('housewalk.html', 'w', encoding='utf-8').write(b.replace('</body>', d + '</body>'))
 PYEOF
-$CHROME --headless --disable-gpu --no-sandbox --virtual-time-budget=20000 \
+$CHROME --headless --disable-gpu --no-sandbox --virtual-time-budget=40000 \
   --dump-dom "file://$PWD/housewalk.html" 2>/dev/null | python3 -c "
 import sys, re
 s = sys.stdin.read()
