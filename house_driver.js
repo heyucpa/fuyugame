@@ -1250,6 +1250,76 @@
     closeGameWindow();
     var md6 = document.querySelector('#modal'); if (md6) md6.hidden = true;
 
+    /* ㊳ 公園：池塘釣魚、花圃拍蝴蝶、野餐、噴水池、冰淇淋車（用買的）、柴犬園長 */
+    var PK = PLACES.park;
+    if (!PK || !HOSTS[PK.host]) fails.push('沒有公園或沒有園長');
+    else {
+      ['pond','picnic_mat','flower_bed','fountain','icecream_cart','street_lamp'].forEach(function(id){
+        if (!FURN_BY_ID[id]) fails.push('沒有 ' + id);
+        if (FURNITURE.some(function(f){ return f.id === id; })) fails.push(id + ' 跑進商店了');
+      });
+      if (ACTIVITIES[FURNITURE_ACT.pond].open !== 'fish') fails.push('池塘不能釣魚');
+      if (ACTIVITIES[FURNITURE_ACT.flower_bed].open !== 'bfly') fails.push('花圃不能拍蝴蝶');
+      host.n = HOSTS.ranger; G.away = { place: 'park', idx: 0 };
+      if (hostLineKey() !== 'hostRanger') fails.push('園長講的是別人的台詞');
+      var rm = hostMenuEntries().map(function(e){ return e[0]; }).join('|');
+      if (!/釣魚/.test(rm) || !/拍蝴蝶/.test(rm) || !/相簿/.test(rm)) fails.push('園長的選單不對：' + rm);
+      if (relativeGift('park') !== null) fails.push('園長也在送禮物');
+      host.n = null;
+      // 野餐：飽足 +20、寵物心情 +10，有冷卻
+      G.actCD = {}; G.kid.hunger = 30; G.pet.mood = 30;
+      relativePerk('picnic');
+      if (G.kid.hunger !== 50 || G.pet.mood !== 40) fails.push('野餐沒有飽足 +20、寵物心情 +10（' + G.kid.hunger + '/' + G.pet.mood + '）');
+      relativePerk('picnic');
+      if (G.kid.hunger !== 50) fails.push('野餐可以一直吃');
+      // 冰淇淋：用買的，扣 150、多一支；不用等冷卻；錢不夠買不了
+      G.kidFood = G.kidFood || {};
+      var ic0 = G.kidFood.ice_cream || 0, b0 = G.bells;
+      relativePerk('icecream'); relativePerk('icecream');
+      if ((G.kidFood.ice_cream || 0) !== ic0 + 2 || b0 - G.bells !== 300) fails.push('冰淇淋車買兩支不對（' + ((G.kidFood.ice_cream || 0) - ic0) + ' 支、花 ' + (b0 - G.bells) + '）');
+      var keepB = G.bells; G.bells = 100;
+      if (relativePerk('icecream') || G.bells !== 100) fails.push('錢不夠還買得到冰淇淋');
+      G.bells = keepB;
+      G.away = { place: 'grandma', idx: 0 };
+      if (relativePerk('icecream')) fails.push('在阿婆家也能買公園的冰淇淋');
+      G.away = null; G.actCD = {};
+    }
+    // 拍蝴蝶：點蝴蝶加一張、點蜜蜂扣一張、點空的沒事；新的蝴蝶進相簿
+    openButterflyGame();
+    var blv = document.querySelectorAll('.lv-btn');
+    if (blv.length !== 3) fails.push('拍蝴蝶沒有三個難度');
+    else {
+      blv[1].onclick();
+      var BT = openButterflyGame.test, th = BT.things();
+      var bf = th.filter(function(t){ return !t.bee; })[0], bee = th.filter(function(t){ return t.bee; })[0];
+      th.forEach(function(t, i){ t.x = 40 + i * 50; t.y = 60; });     // 排開，點得到想點的那一隻
+      bf.x = 40; bee.x = 300; bee.y = 250;
+      var sid = bf.sp.id;
+      BT.shoot(40, 60);
+      if (BT.photos() !== 1 || !BT.got[sid]) fails.push('點蝴蝶沒有拍到');
+      BT.shoot(300, 250);
+      if (BT.photos() !== 0) fails.push('點到蜜蜂沒有扣一張（' + BT.photos() + '）');
+      BT.shoot(170, 330);                                                 // 地上沒有東西
+      if (BT.photos() !== 0) fails.push('點空的地方也有拍到');
+      th.forEach(function(t){ if (!t.bee) { t.x = 100; t.y = 100; } });
+      var others = th.filter(function(t){ return t.bee; }); others.forEach(function(t){ t.x = 300; t.y = 300; });
+      BT.shoot(100, 100); BT.shoot(100, 100);
+      G.butterflies = {};
+      var bb = G.bells; BT.finish();
+      if (G.bells - bb !== 2 * 15 * BFLY_LEVELS[1].mul) fails.push('拍蝴蝶結算不對：' + (G.bells - bb));
+      if (!G.butterflies[sid]) fails.push('拍到的蝴蝶沒進相簿');
+    }
+    closeGameWindow();
+    // 稀有度：彩虹蝴蝶要比一般的少見
+    var rb = BUTTERFLIES.filter(function(b){ return b.id === 'rainbow'; })[0];
+    if (!rb || BUTTERFLIES.some(function(b){ return b !== rb && b.w <= rb.w; })) fails.push('彩虹蝴蝶不是最少見的');
+    // 相簿：拍過的有圖，沒拍過的是？
+    G.butterflies = { red: 2 };
+    openButterflyAlbum();
+    if (document.querySelectorAll('#modalCard .bfly canvas').length !== 1 || document.querySelectorAll('#modalCard .bfly.none').length !== BUTTERFLIES.length - 1)
+      fails.push('蝴蝶相簿顯示不對');
+    var md8 = document.querySelector('#modal'); if (md8) md8.hidden = true;
+
     /* ㊲ 教室（照片參考）：綠桌墊課桌、紅藍布袋、置物櫃、注音布告欄、綠窗簾、磨石子地
        另外所有地點的房間都檢查：家具不重疊、不超出房間；牆上的東西不重疊、不超出牆 */
     var CR = PLACES.school.rooms[0];
@@ -1316,7 +1386,7 @@
     [null, { place: 'uncle', idx: 0 }].forEach(function(aw){
       G.away = aw;
       ['openFishing','openMemoryGame','openCatchGame','openBubbleGame','openCupGame','openStackGame','openSimonGame',
-       'openMoleGame','openRaceGame','openBrickGame','openFarmGame','openCoinGame','openMarbleGame','openPuzzleGame','openSlingGame','openQuizGame','openRunGame'
+       'openMoleGame','openRaceGame','openBrickGame','openFarmGame','openCoinGame','openMarbleGame','openPuzzleGame','openSlingGame','openQuizGame','openRunGame','openButterflyGame'
       ].forEach(function(fn){
         try {
           window[fn]();

@@ -306,6 +306,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .sticker-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin: 8px 0; }
 .sticker { font-size: 26px; text-align: center; background: #fffaf0; border: 2px solid var(--line); border-radius: 12px; padding: 4px 0; }
 .sticker.none { color: #c8bfae; font-size: 18px; font-weight: 800; padding: 8px 0; }
+.bfly-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 8px 0; }
+.bfly { display: flex; flex-direction: column; align-items: center; gap: 2px; background: #fffaf0; border: 2px solid var(--line); border-radius: 12px; padding: 6px 2px; min-width: 0; }
+.bfly canvas { width: 64px; height: 52px; }
+.bfly span { font-size: 12px; color: var(--muted); }
+.bfly.none b { font-size: 28px; color: #c8bfae; line-height: 52px; }
 .lv-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; padding: 10px 0; }
 .lv-btn {
   display: flex; flex-direction: column; align-items: center; gap: 3px;
@@ -1534,6 +1539,64 @@ const PLACE_FURNITURE = [
       { x: .83, y: .46, w: .1, d: .04, z: 38, h: 7, c: '#ffffff' }
     ] },
   { id: 'shade_tree', name: '大樹', theme: 'nature', w: 2, d: 2, parts: treeParts('#5fa15a', '#6db866', '#7bc874') },
+  // 公園
+  { id: 'pond', name: '小池塘', theme: 'nature', w: 3, d: 2,
+    parts: [
+      { x: 0, y: 0, w: 3, d: 2, z: 0, h: 4, c: '#9a9488' },              // 石頭邊
+      { x: .15, y: .15, w: 2.7, d: 1.7, z: 0, h: 4.6, c: '#5fb3d9' },     // 水
+      { x: .7, y: .5, w: .4, d: .3, z: 4.6, h: .6, c: '#5fa15a' },        // 荷葉
+      { x: 1.9, y: 1.1, w: .35, d: .3, z: 4.6, h: .6, c: '#5fa15a' },
+      { k: 'ball', x: 2.05, y: 1.22, z: 7, r: 2.4, c: '#ff9ec4' },        // 荷花
+      { x: 1.3, y: .9, w: .3, d: .2, z: 4.6, h: 5, c: '#ffffff' },         // 小鴨子
+      { k: 'ball', x: 1.52, y: 1, z: 11, r: 3, c: '#ffffff' },
+      { x: 1.62, y: .96, w: .1, d: .06, z: 10, h: 1.6, c: '#ffa53a' }
+    ] },
+  { id: 'picnic_mat', name: '野餐墊', theme: 'cute', w: 2, d: 2,
+    parts: [0, 1, 2, 3].map(i => ({ x: .05 + (i % 2) * .95, y: .05 + Math.floor(i / 2) * .95, w: .95, d: .95, z: 0, h: 1.5, c: i % 3 ? '#ffffff' : '#e8505b' }))
+      .concat([
+        { x: .2, y: .25, w: .45, d: .3, z: 1.5, h: 10, c: '#c9925a' },   // 野餐籃
+        { x: .2, y: .38, w: .45, d: .04, z: 11.5, h: 4, c: '#8a5a33' },
+        { k: 'ball', x: 1.4, y: 1.3, z: 4, r: 3.2, c: '#e8505b' },        // 蘋果
+        { x: 1.2, y: .4, w: .3, d: .3, z: 1.5, h: 3, c: '#ffd35c' }       // 三明治
+      ]) },
+  { id: 'flower_bed', name: '花圃', theme: 'nature', w: 2, d: 1,
+    parts: [{ x: 0, y: .1, w: 2, d: .8, z: 0, h: 8, c: '#8a5a33' }, { x: .06, y: .16, w: 1.88, d: .68, z: 8, h: 1, c: '#5a3d22' }]
+      .concat(['#e8505b', '#ffd35c', '#ff9ec4', '#b18cff', '#ffa53a', '#ffffff', '#e8505b', '#6bb6ff'].map((c, i) => [
+        { x: .14 + i * .23, y: .4 + (i % 2) * .16, w: .03, d: .03, z: 9, h: 9, c: '#4f9150' },
+        { k: 'ball', x: .155 + i * .23, y: .415 + (i % 2) * .16, z: 19, r: 3, c }
+      ]).flat()) },
+  { id: 'fountain', name: '噴水池', theme: 'modern', w: 2, d: 2,
+    parts: [
+      { x: .05, y: .05, w: 1.9, d: 1.9, z: 0, h: 9, c: '#d6d3cc' },
+      { x: .2, y: .2, w: 1.6, d: 1.6, z: 0, h: 9.6, c: '#7cc6e6' },
+      { x: .85, y: .85, w: .3, d: .3, z: 9.6, h: 14, c: '#d6d3cc' },
+      { x: .65, y: .65, w: .7, d: .7, z: 23.6, h: 3, c: '#d6d3cc' },
+      { x: .72, y: .72, w: .56, d: .56, z: 26.6, h: .6, c: '#7cc6e6' },
+      { k: 'ball', x: 1, y: 1, z: 34, r: 4, c: '#cfeaf7' },             // 水花
+      { k: 'ball', x: 1, y: 1, z: 41, r: 2.6, c: '#e6f5fc' }
+    ] },
+  { id: 'icecream_cart', name: '冰淇淋車', theme: 'cute', w: 2, d: 1,
+    parts: [
+      { k: 'ball', x: .3, y: .85, z: 5, r: 5, c: '#3a3240' },             // 輪子
+      { k: 'ball', x: 1.7, y: .85, z: 5, r: 5, c: '#3a3240' },
+      { x: .05, y: .15, w: 1.9, d: .7, z: 6, h: 26, c: '#ffffff' },
+      { x: .05, y: .84, w: 1.9, d: .02, z: 12, h: 8, c: '#ff9ec4' },       // 粉紅條紋
+      { x: .1, y: .45, w: .06, d: .06, z: 32, h: 26, c: '#d6d3cc' },
+      { x: 1.84, y: .45, w: .06, d: .06, z: 32, h: 26, c: '#d6d3cc' },
+      { x: -.05, y: .05, w: 2.1, d: .9, z: 58, h: 4, c: '#ff9ec4' },       // 遮陽棚
+      { x: -.05, y: .05, w: 2.1, d: .9, z: 62, h: 2, c: '#ffffff' },
+      { x: .6, y: .35, w: .14, d: .14, z: 32, h: 8, c: '#e8c99a' },        // 冰淇淋
+      { k: 'ball', x: .67, y: .42, z: 43, r: 3.4, c: '#ff9ec4' },
+      { x: 1.2, y: .35, w: .14, d: .14, z: 32, h: 8, c: '#e8c99a' },
+      { k: 'ball', x: 1.27, y: .42, z: 43, r: 3.4, c: '#fff1c2' }
+    ] },
+  { id: 'street_lamp', name: '路燈', theme: 'modern', w: 1, d: 1,
+    parts: [
+      { x: .38, y: .38, w: .24, d: .24, z: 0, h: 4, c: '#3a3f47' },
+      { x: .46, y: .46, w: .08, d: .08, z: 4, h: 70, c: '#3a3f47' },
+      { x: .36, y: .36, w: .28, d: .28, z: 74, h: 10, c: '#fff1c2' },
+      { x: .32, y: .32, w: .36, d: .36, z: 84, h: 3, c: '#3a3f47' }
+    ] },
   { id: 'apple_tree', name: '蘋果樹', theme: 'nature', w: 2, d: 2, parts: treeParts('#5fa15a', '#6db866', '#e8505b') },
   { id: 'orange_tree', name: '橘子樹', theme: 'nature', w: 2, d: 2, parts: treeParts('#4f9150', '#5fa15a', '#ffa53a') },
   { id: 'banana_tree', name: '香蕉樹', theme: 'nature', w: 2, d: 2, parts: treeParts('#7bd389', '#8fe09a', '#ffd35c') }
@@ -1553,6 +1616,12 @@ Object.assign(ACTIVITIES, {
   farmcare: { label: '🐮 照顧小牛小羊', name: '照顧小牛小羊', fx: '💗', open: 'farm', lines: ['小牛小羊，我來了！', '要好好照顧牠們～'] },
   hay: { label: '🌾 搬稻草', name: '搬稻草', fx: '🌾', open: 'hay', lines: ['稻草好香～', '嘿咻嘿咻！', '這是給小牛小羊吃的'] },
   trough: { label: '💧 加水', name: '加水', fx: '💧', lines: ['水加滿了！', '小牛小羊渴了吧', '嘩啦嘩啦～'] },
+  // 公園
+  pondfish: { label: '🎣 池塘釣魚', name: '釣魚', fx: '🫧', open: 'fish', lines: ['魚會不會上鉤呢？', '要安靜等喔～', '池塘裡有小鴨子！'] },
+  bfly: { label: '📷 拍蝴蝶', name: '拍蝴蝶', fx: '🦋', open: 'bfly', lines: ['好多蝴蝶！', '花好香喔～', '公園的花不能摘，用看的就好'] },
+  picnic: { label: '🧺 野餐', name: '野餐', fx: '🥪', lines: ['在草地上吃東西好開心！', '三明治好好吃～', '風好舒服喔'] },
+  fountain: { label: '⛲ 看噴水池', name: '看噴水池', fx: '💦', lines: ['水噴得好高！', '亮晶晶的～', '小心不要弄濕喔'] },
+  icecream: { label: '🍦 買冰淇淋', name: '買冰淇淋', fx: '🍦', lines: ['我要草莓口味！', '冰冰涼涼的～', '要慢慢吃喔'] },
   // 學校
   lesson: { label: '📝 上課小考', name: '上課', fx: '✏️', open: 'quiz', lines: ['老師說要專心聽喔', '這題我會！', '舉手回答問題～'] },
   homework: { label: '📒 交作業', name: '交作業', fx: '⭐', lines: ['作業寫好了！', '老師請看～', '我有寫得很整齊喔'] },
@@ -1565,6 +1634,7 @@ Object.assign(FURNITURE_ACT, {
   comic_shelf: 'comic', comic_pile: 'comic', arcade: 'arcade', console_tv: 'videogame', tea_table: 'tea',
   fruit_basket: 'fruit', fruit_crate: 'fruit', apple_tree: 'pick', orange_tree: 'pick', banana_tree: 'pick',
   gaming_desk: 'pcgame', figure_shelf: 'figures', barn: 'farmcare', hay_bale: 'hay', trough: 'trough',
+  pond: 'pondfish', flower_bed: 'bfly', picnic_mat: 'picnic', fountain: 'fountain', icecream_cart: 'icecream',
   school_desk: 'lesson', school_desk_b: 'lesson', teacher_desk: 'homework', slide: 'slide', swing: 'swing', flagpole: 'flag', finish_flag: 'run'
 });
 FURNITURE_USE.park_bench = { use: 'sit', seats: [{ x: .55, y: .55, z: 20 }, { x: 1.45, y: .55, z: 20 }], front: [0, 1] };
@@ -1585,6 +1655,8 @@ const HOSTS = {
   uncle: { id: 'uncle', name: '浣熊叔叔', short: '叔叔', body: '#a3a8b0', edge: '#6f757d', belly: '#e3e6ea', inner: '#5a5f66', ears: 'round', stripes: true, acc: 'hat', accColor: '#e8505b' },
   grandma: { id: 'grandma', name: '山羊阿婆', short: '阿婆', body: '#f5f1e6', edge: '#cfc6b0', belly: '#ffffff', inner: '#d8c7a0', ears: 'curl', acc: 'glasses', accColor: '#8a5a33' },
   // 學校的老師：貓頭鷹（耳朵用羽毛簇），戴眼鏡
+  // 公園的園長：柴犬，戴綠色帽子
+  ranger: { id: 'ranger', name: '柴犬園長', short: '園長', body: '#e8a25e', edge: '#b9763a', belly: '#fff4e6', inner: '#fff4e6', ears: 'pointy', acc: 'hat', accColor: '#4f9150' },
   teacher: { id: 'teacher', name: '貓頭鷹老師', short: '老師', body: '#b08a68', edge: '#7d5d43', belly: '#f3e2c8', inner: '#7d5d43', ears: 'tuft', acc: 'glasses', accColor: '#3a3240' }
 };
 // 每個地方的房間（固定擺設）。wallItems 的 pos 為從牆角算起第幾格
@@ -1614,6 +1686,14 @@ const PLACES = {
       ['sunflower', 8, 0], ['sunflower', 9, 0], ['log_stool', 6, 6],
       ['fence', 0, 9], ['fence', 1, 9], ['fence', 2, 9], ['fence', 3, 9], ['fence', 6, 9], ['fence', 7, 9], ['fence', 8, 9], ['fence', 9, 9],
       ['fence', 9, 5, 1], ['fence', 9, 6, 1], ['fence', 9, 7, 1], ['fence', 9, 8, 1]
+    ], wallItems: [] }
+  ] },
+  /* 公園：一大片草地，有池塘（可以釣魚）、花圃（拍蝴蝶）、野餐墊、噴水池、冰淇淋車 */
+  park: { name: '公園', host: 'ranger', emoji: '🌳', desc: '池塘釣魚、拍蝴蝶、野餐、吃冰淇淋！', rooms: [
+    { name: '公園', w: 10, d: 10, wall: 'wp_forest', floor: 'fl_grass', items: [
+      ['shade_tree', 0, 0], ['pond', 3, 0], ['street_lamp', 6, 0], ['shade_tree', 8, 0],
+      ['flower_bed', 0, 3, 1], ['fountain', 4, 3], ['park_bench', 7, 3], ['street_lamp', 9, 3],
+      ['picnic_mat', 1, 6], ['icecream_cart', 7, 6], ['flower_bed', 4, 8], ['park_bench', 7, 9, 2]
     ], wallItems: [] }
   ] },
   /* 學校：教室＋操場。一般的學校樣子，沒有校名、校徽（去識別化） */
@@ -1685,6 +1765,7 @@ Object.values(PLACES).forEach(pl => {
 });
 LINE_TYPES.push(
   { key: 'hostUncle', label: '叔叔說的話', hint: '可用 {名字}', lines: ['歡迎來叔叔家！漫畫隨便看～', '功課寫完了嗎？寫完叔叔陪你打一局！', '這台電玩是叔叔小時候玩的喔', '看漫畫也要讓眼睛休息一下喔', '要不要跟叔叔比賽？', '叔叔最近在看這本，超好看！'] },
+  { key: 'hostRanger', label: '園長說的話', hint: '可用 {名字}', lines: ['{名字}，歡迎來公園玩！', '花圃的蝴蝶今天好多喔', '公園的花不能摘，拍照就好囉', '池塘裡的魚很會躲喔', '垃圾要記得帶回家喔', '天氣好熱，要不要吃冰淇淋？', '要不要在草地上野餐？'] },
   { key: 'hostTeacher', label: '老師說的話', hint: '可用 {名字}', lines: ['{名字}早安！今天也要開心上課喔', '下課了，去操場玩一下吧！', '要不要來小考？答對有獎勵喔', '去操場跟同學賽跑吧！', '寫字的時候背要挺直喔', '有問題要舉手問老師喔', '下課記得喝水、上廁所～', '作業寫好了可以拿給老師看喔'] },
   { key: 'hostGrandma', label: '阿婆說的話', hint: '可用 {名字}', lines: ['{名字}來啦！快來吃水果～', '後面的果園水果熟了，要不要去摘？', '多吃點水果，身體才會壯壯的', '阿婆泡了茶，要不要喝一點？', '寫完功課，阿婆帶你去果園散步好不好？', '慢慢吃，不要噎到喔～', '小牛小羊肚子餓了，要不要幫阿婆餵牠們？', '農場的小羊最喜歡你了～'] },
   { key: 'travelGo', label: '出門', hint: '可用 {地點}', lines: ['出發去{地點}囉！', '要去{地點}玩了～'] },
@@ -4265,7 +4346,7 @@ function fufuStartAct(key, now, it, auto) {
   else if (a.sound !== 'note') Sound.play('pickUp');
   if (a.tab) openTab(a.tab);
   if (a.open) setTimeout(() => { // 叔叔的電腦、阿婆的穀倉：打開那裡專屬的小遊戲
-    const fn = { brick: openBrickGame, mole: openMoleGame, race: openRaceGame, farm: openFarmGame, hay: () => openStackGame('hay'), quiz: openQuizGame, run: openRunGame }[a.open] || openFarmGame;
+    const fn = { brick: openBrickGame, mole: openMoleGame, race: openRaceGame, farm: openFarmGame, hay: () => openStackGame('hay'), quiz: openQuizGame, run: openRunGame, fish: openFishing, bfly: openButterflyGame }[a.open] || openFarmGame;
     if ($('#modal').hidden) fn();
   }, 1300);
   if (a.game) setTimeout(() => { // 大型電玩：隨機開一個小遊戲
@@ -5836,7 +5917,7 @@ function drawNeighborBubble(ctx, a, n, say, alpha) {
 
 // ── 親戚家：叔叔、阿婆在家裡陪小可愛（跟著她走，偶爾說話）──
 const host = { n: null, a: null, say: null, sayUntil: 0, nextTalkAt: 0, danceUntil: 0, nextHop: 0 };
-const HOST_LINE_KEYS = { uncle: 'hostUncle', grandma: 'hostGrandma', teacher: 'hostTeacher' };
+const HOST_LINE_KEYS = { uncle: 'hostUncle', grandma: 'hostGrandma', teacher: 'hostTeacher', ranger: 'hostRanger' };
 const hostLineKey = () => HOST_LINE_KEYS[host.n.id] || 'hostGrandma';
 function hostSay(text, ms) {
   if (!text) return;
@@ -5932,6 +6013,11 @@ function hostMenuEntries() {
     list.push(['🕹️ 一起打地鼠', openMoleGame]);
     list.push(['📺 一起玩賽車', openRaceGame]);
     list.push(['🖥️ 一起打磚塊', openBrickGame]);
+  }
+  if (host.n.id === 'ranger') {
+    list.push(['🎣 一起釣魚', openFishing]);
+    list.push(['📷 一起拍蝴蝶', openButterflyGame]);
+    list.push(['📖 蝴蝶相簿', openButterflyAlbum]);
   }
   if (host.n.id === 'teacher') {
     list.push(['📝 來小考', openQuizGame]);
@@ -8782,6 +8868,10 @@ const RELATIVE_PERKS = {
   comic:   { who: 'uncle',   comic: true, cd: 5 * 60000 }, // 漫畫是收集的樂趣，等 5 分鐘就好
   figures: { who: 'uncle',   figure: true },
   // 交作業不給錢（寫作業本來就是自己的事），老師給一張貼紙，可以收集
+  picnic:   { who: 'park', kid: 20, pet: 10, say: '在公園野餐好開心！', toast: '🧺 野餐，飽足 +20、寵物心情 +10' },
+  bfly:     { who: 'park', pet: 10, toast: '🌸 聞聞花香，寵物心情 +10' },
+  // 冰淇淋是用買的（不用等冷卻），比商店便宜一點
+  icecream: { who: 'park', buy: { cost: 150, kidFood: 'ice_cream' } },
   homework: { who: 'school', sticker: true, say: '老師說我寫得很棒！' },
   slide:    { who: 'school', pet: 15, say: '咻～寵物也跟著溜下來了！', toast: '🛝 好好玩，寵物心情 +15' },
   swing:    { who: 'school', pet: 10, say: '盪好高喔！', toast: '🪢 盪鞦韆，寵物心情 +10' }
@@ -8803,6 +8893,14 @@ function relativePerk(key) {
   const P = RELATIVE_PERKS[key];
   if (!P) return false;
   if (P.who && !(G.away && G.away.place === P.who)) return false;
+  if (P.buy) { // 用買的：錢夠就買，不夠就說
+    const f = KID_FOOD_BY_ID[P.buy.kidFood];
+    if (!spend(P.buy.cost)) { toast(`💰 錢不夠，${f.name}要 ${P.buy.cost}`); return false; }
+    G.kidFood[f.id] = (G.kidFood[f.id] || 0) + 1;
+    toast(`${f.emoji} 買了一支${f.name}（-${P.buy.cost}），放進小可愛的食物了`);
+    Sound.play('coin'); refreshTop();
+    return true;
+  }
   if (!relativeReady(key)) {
     toast(`⏳ 等一下再來，還要 ${relativeMinsLeft(key)} 分鐘`);
     return false;
@@ -9119,6 +9217,150 @@ function playRun(w, L) {
     raf = requestAnimationFrame(frame);
   }
   raf = requestAnimationFrame(frame);
+}
+
+/* ===== 📷 公園拍蝴蝶 =====
+   蝴蝶在花叢裡飛來飛去，點一下就「喀嚓」拍一張；點到蜜蜂會被嚇一跳（扣一張）。
+   公園的花不能摘、蝴蝶也不抓——用拍照的，拍完牠還是自由的。
+   蝴蝶有六種顏色，拍過的會記在「蝴蝶相簿」，彩虹蝴蝶很少見。 */
+const BUTTERFLIES = [
+  { id: 'red',    name: '紅蝴蝶', c: '#e8505b', c2: '#ffb3b8', w: 22 },
+  { id: 'yellow', name: '黃蝴蝶', c: '#ffcf3a', c2: '#fff1a8', w: 22 },
+  { id: 'blue',   name: '藍蝴蝶', c: '#3f8ee0', c2: '#a9d4ff', w: 18 },
+  { id: 'purple', name: '紫蝴蝶', c: '#9b6ad8', c2: '#dcc8ff', w: 16 },
+  { id: 'white',  name: '白蝴蝶', c: '#f4f4f0', c2: '#ffffff', w: 16 },
+  { id: 'rainbow', name: '彩虹蝴蝶', c: 'rainbow', c2: '#ffffff', w: 6 }
+];
+const BFLY_LEVELS = [
+  { name: '慢慢飛', n: 3, speed: 50, bee: 1, mul: 1 },
+  { name: '普通',   n: 4, speed: 80, bee: 2, mul: 2 },
+  { name: '飛好快！', n: 5, speed: 115, bee: 3, mul: 3 }
+];
+function pickButterfly() {
+  let r = Math.random() * BUTTERFLIES.reduce((a, b) => a + b.w, 0);
+  return BUTTERFLIES.find(b => (r -= b.w) < 0) || BUTTERFLIES[0];
+}
+function drawButterfly(g, x, y, sp, flap, s) {
+  g.save(); g.translate(x, y); g.scale(s || 1, s || 1);
+  const open = .35 + .65 * Math.abs(Math.sin(flap));
+  const col = sp.c === 'rainbow' ? (() => { const gr = g.createLinearGradient(-14, 0, 14, 0); ['#e8505b', '#ffcf3a', '#7bd389', '#3f8ee0', '#9b6ad8'].forEach((c, i) => gr.addColorStop(i / 4, c)); return gr; })() : sp.c;
+  [-1, 1].forEach(side => {
+    g.fillStyle = col; g.strokeStyle = 'rgba(60,40,40,.45)'; g.lineWidth = 1;
+    g.beginPath(); g.ellipse(side * 7 * open, -4, 8 * open, 7, side * .5, 0, Math.PI * 2); g.fill(); g.stroke();
+    g.fillStyle = sp.c2;
+    g.beginPath(); g.ellipse(side * 5 * open, 5, 5 * open, 4.5, -side * .4, 0, Math.PI * 2); g.fill(); g.stroke();
+  });
+  g.fillStyle = '#3a3240'; g.fillRect(-1.3, -8, 2.6, 16);
+  g.strokeStyle = '#3a3240'; g.beginPath(); g.moveTo(0, -8); g.lineTo(-4, -13); g.moveTo(0, -8); g.lineTo(4, -13); g.stroke();
+  g.restore();
+}
+function openButterflyGame() {
+  const w = openGameWindow('📷 拍蝴蝶', '點蝴蝶就會拍一張照片！小心不要點到蜜蜂 🐝。30 秒內拍越多越好，拍到新的蝴蝶會放進相簿。');
+  pickLevelRow(w, BFLY_LEVELS, L => `一張 💰 ${15 * L.mul}`, L => playButterfly(w, L));
+}
+function playButterfly(w, L) {
+  w.stage.innerHTML = '';
+  const W = 340, H = 340, { c, g, pos } = gameCanvas(w.stage, W, H);
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const spawn = bee => ({ bee, sp: bee ? null : pickButterfly(), x: rnd(30, W - 30), y: rnd(40, H - 70),
+    vx: rnd(-1, 1), vy: rnd(-1, 1), flap: rnd(0, 6), turn: 0 });
+  let things = [], photos = 0, left = 30, ended = false, raf = 0, last = performance.now(), flash = 0, oops = 0, timers = [];
+  const got = {};
+  for (let i = 0; i < L.n; i++) things.push(spawn(false));
+  for (let i = 0; i < L.bee; i++) things.push(spawn(true));
+  gameCleanup = () => { cancelAnimationFrame(raf); timers.forEach(t => clearInterval(t)); };
+
+  function shoot(px, py) {
+    if (ended) return;
+    // 點最近的那一隻（手指比較粗，範圍給大一點）
+    let best = null, bd = 30 * 30;
+    things.forEach(t => { const d = (t.x - px) ** 2 + (t.y - py) ** 2; if (d < bd) { bd = d; best = t; } });
+    if (!best) return;
+    if (best.bee) { photos = Math.max(0, photos - 1); oops = 1; Sound.play('bad'); }
+    else {
+      photos++; flash = 1; Sound.play('pickUp');
+      got[best.sp.id] = (got[best.sp.id] || 0) + 1;
+    }
+    Object.assign(best, spawn(best.bee), { x: Math.random() < .5 ? -20 : W + 20 }); // 拍完飛走，換一隻從旁邊飛進來
+  }
+  c.addEventListener('pointerdown', e => { const p = pos(e); shoot(p.x, p.y); });
+  function finish() {
+    if (ended) return;
+    ended = true;
+    gameCleanup();
+    const album = G.butterflies = G.butterflies || {};
+    const fresh = Object.keys(got).filter(id => !album[id]);
+    Object.keys(got).forEach(id => { album[id] = (album[id] || 0) + got[id]; });
+    const bells = payReward(w, photos * 15 * L.mul);
+    const names = fresh.map(id => BUTTERFLIES.find(b => b.id === id).name);
+    w.status.textContent = `拍了 ${photos} 張！💰 +${fmt(bells)}${names.length ? `　✨ 新的：${names.join('、')}` : ''}`;
+    toast(`📷 拍了 ${photos} 張蝴蝶，蝴蝶相簿 ${Object.keys(album).length} / ${BUTTERFLIES.length}`);
+    gameButtons(w, openButterflyGame);
+  }
+  openButterflyGame.test = { things: () => things, shoot, finish, photos: () => photos, got, level: L };
+  timers.push(setInterval(() => { if (ended) return; left--; if (left <= 0) finish(); }, 1000));
+
+  function frame(now) {
+    const dt = Math.max(0, Math.min(.05, (now - last) / 1000)); last = now;
+    if (!ended) things.forEach(t => {
+      t.turn -= dt;
+      if (t.turn <= 0) { t.turn = rnd(.4, 1.2); const a = rnd(0, Math.PI * 2); t.vx = Math.cos(a); t.vy = Math.sin(a); }
+      t.x += t.vx * L.speed * dt; t.y += t.vy * L.speed * dt * .7;
+      if (t.x < 20) t.vx = Math.abs(t.vx); if (t.x > W - 20) t.vx = -Math.abs(t.vx);
+      if (t.y < 30) t.vy = Math.abs(t.vy); if (t.y > H - 70) t.vy = -Math.abs(t.vy);
+      t.flap += dt * (t.bee ? 30 : 12);
+    });
+    flash = Math.max(0, flash - dt * 4); oops = Math.max(0, oops - dt * 2);
+    // 公園的草地和花叢
+    const sky = g.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#d9f1ff'); sky.addColorStop(.7, '#eaf8df'); sky.addColorStop(1, '#bfe3a8');
+    g.fillStyle = sky; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#8fc27a'; g.fillRect(0, H - 60, W, 60);
+    ['#e8505b', '#ffd35c', '#ff9ec4', '#b18cff', '#ffffff', '#ffa53a'].forEach((col, i) => {
+      for (let k = 0; k < 4; k++) {
+        const fx = 14 + i * 56 + k * 13, fy = H - 40 + (k % 2) * 14;
+        g.strokeStyle = '#4f9150'; g.lineWidth = 2; g.beginPath(); g.moveTo(fx, fy); g.lineTo(fx, fy + 18); g.stroke();
+        g.fillStyle = col; g.beginPath(); g.arc(fx, fy, 5, 0, Math.PI * 2); g.fill();
+        g.fillStyle = '#ffd35c'; g.beginPath(); g.arc(fx, fy, 1.8, 0, Math.PI * 2); g.fill();
+      }
+    });
+    things.forEach(t => {
+      if (t.bee) {
+        g.font = '24px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillText('🐝', t.x, t.y + Math.sin(t.flap) * 1.5);
+        g.textAlign = 'start'; g.textBaseline = 'alphabetic';
+      } else drawButterfly(g, t.x, t.y, t.sp, t.flap, 1.2);
+    });
+    if (flash > 0) { g.fillStyle = `rgba(255,255,255,${flash * .7})`; g.fillRect(0, 0, W, H); }
+    if (oops > 0) { g.fillStyle = `rgba(232,80,91,${oops * .25})`; g.fillRect(0, 0, W, H); }
+    w.status.textContent = ended ? w.status.textContent : `${L.name}　還有 ${left} 秒　📷 ${photos} 張`;
+    if (!ended) raf = requestAnimationFrame(frame);
+  }
+  raf = requestAnimationFrame(frame);
+}
+
+// 蝴蝶相簿：拍過的有顏色，沒拍過的是「？」
+function openButterflyAlbum() {
+  const album = G.butterflies || {};
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', '📷 蝴蝶相簿'));
+  const grid = el('div', 'bfly-grid');
+  BUTTERFLIES.forEach(b => {
+    const cell = el('div', 'bfly' + (album[b.id] ? '' : ' none'));
+    if (album[b.id]) {
+      const cv = document.createElement('canvas'); cv.width = 64; cv.height = 52;
+      drawButterfly(cv.getContext('2d'), 32, 28, b, 1.2, 1.5);
+      cell.append(cv, el('span', '', `${b.name} ×${album[b.id]}`));
+    } else cell.append(el('b', '', '？'), el('span', '', '還沒拍到'));
+    grid.appendChild(cell);
+  });
+  card.appendChild(grid);
+  card.appendChild(note(`收集 ${Object.keys(album).length} / ${BUTTERFLIES.length} 種`));
+  const ok = el('button', 'big', '好');
+  ok.onclick = () => { $('#modal').hidden = true; };
+  card.appendChild(ok);
+  $('#modal').hidden = false;
 }
 
 // ── 叔叔的打磚塊：左右移動板子接球，把磚塊全部打掉 ──
