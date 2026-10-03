@@ -501,6 +501,39 @@
         fails.push('小遊戲清單裡找不到「' + nm + '」');
     });
 
+    /* ⑰ 商店的用途分類
+       最要緊的一條：每一件家具都要找得到。
+       分類漏掉一件，那件東西就永遠不會出現在任何一個類別裡。 */
+    var kindIds = FURN_KINDS.map(function(k){ return k.id; });
+    var missed = FURNITURE.filter(function(d){ return kindIds.indexOf(furnKind(d.id)) < 0; });
+    if (missed.length) fails.push('有家具被分到不存在的類別：' + missed[0].name);
+    var unclassified = FURNITURE.filter(function(d){ return !FURN_KIND_OF[d.id]; });
+    if (unclassified.length > 0)
+      fails.push(unclassified.length + ' 件家具沒分類（例：' + unclassified[0].name + '）');
+    FURN_KINDS.forEach(function(k){
+      if (!k.icon) fails.push('用途「' + k.name + '」沒有圖示');
+      if (!FURNITURE.some(function(d){ return furnKind(d.id) === k.id; }))
+        fails.push('用途「' + k.name + '」裡面一件家具都沒有');
+    });
+    // 每一個用途都點一遍，全部加起來要等於全部家具
+    openTab('shop');
+    shopTheme = 'all';
+    var total = 0;
+    kindIds.forEach(function(k){
+      shopKind = k; renderTab();
+      total += document.querySelectorAll('#tabBody .grid .card').length;
+    });
+    var all = FURNITURE.filter(function(d){ return !d.gift; }).length;
+    if (total !== all)
+      fails.push('各用途加起來是 ' + total + ' 件，全部家具是 ' + all + ' 件');
+    // 風格篩選要和用途篩選一起生效
+    shopKind = 'sleep'; shopTheme = 'cute'; renderTab();
+    var cards = document.querySelectorAll('#tabBody .grid .card').length;
+    var want = FURNITURE.filter(function(d){
+      return !d.gift && furnKind(d.id) === 'sleep' && d.theme === 'cute'; }).length;
+    if (cards !== want) fails.push('用途跟風格一起篩時數量不對：' + cards + ' vs ' + want);
+    shopKind = 'all'; shopTheme = 'all';
+
     // ⑦ 其他分頁沒被改壞
     ['inv','shop','dress','pets','deco','build','earn','book','talk','save'].forEach(function(t){
       try { openTab(t); if (!document.querySelector('#tabBody').children.length)

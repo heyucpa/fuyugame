@@ -148,6 +148,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .filter { display: flex; gap: 4px; flex-wrap: wrap; margin: 6px 0; }
 .filter button { border: none; background: var(--chip); border-radius: 999px; padding: 2px 10px; font-size: 12px; }
 .filter button.on { background: var(--accent); color: #fff; }
+/* 用途那一排：圖示放在字前面，按鈕加大一點（小孩手指不準），
+   而且是她最常用的那一排，視覺上要比風格那排明顯 */
+.filter.kinds button { padding: 5px 11px; font-size: 13px; display: inline-flex; align-items: center; gap: 4px; }
+.filter.kinds .fi { font-size: 15px; line-height: 1; }
+/* 風格那一排是次要的：小一點、前面加一個標籤說明這排在幹嘛 */
+.filter.themes { margin-top: 2px; align-items: center; }
+.filter.themes button { font-size: 11.5px; padding: 2px 9px; }
+.flabel { font-size: 11.5px; color: var(--muted); margin-right: 2px; }
 
 .big {
   display: block; width: 100%; border: none; border-radius: 12px; padding: 12px;
@@ -951,6 +959,68 @@ const FLOORS = [
 ];
 
 const THEME_NAMES = { wood: '原木', cute: '可愛', modern: '現代', nature: '自然', bath: '衛浴' };
+/* ===== 家具的「用途」分類 =====
+   商店本來只能照風格篩（原木／可愛／現代⋯），可是她在想的事情是
+   「我要放一張床」，不是「我要一件原木風的東西」。
+   而且原本那一排把兩種邏輯混在一起（食物、掛飾是用途，其餘是風格），
+   大人都要想一下。
+
+   所以拆成兩排：用途一排、風格一排，兩個可以一起用。
+   用途每一項都有圖示——妹妹還不認得國字。
+
+   風格不能拿掉：⭐ 居家評分的加成是看「同風格擺滿 3 件／6 件」，
+   那是遊戲機制的一部分。 */
+const FURN_KINDS = [
+  { id: 'sleep', icon: '🛏️', name: '睡覺' },
+  { id: 'eat',   icon: '🍽️', name: '吃飯' },
+  { id: 'study', icon: '📚', name: '讀書' },
+  { id: 'sit',   icon: '🛋️', name: '坐著' },
+  { id: 'toy',   icon: '🧸', name: '玩具' },
+  { id: 'plant', icon: '🌱', name: '植物' },
+  { id: 'bath',  icon: '🚿', name: '衛浴' },
+  { id: 'wall',  icon: '🖼️', name: '牆上' },
+  { id: 'pet',   icon: '🐾', name: '寵物' },
+  { id: 'deco',  icon: '🏮', name: '佈置' }
+];
+const FURN_KIND_OF = {
+  // 睡覺
+  wood_bed: 'sleep', cute_bed: 'sleep', lemon_bed: 'sleep',
+  nightstand: 'sleep', pink_nightstand: 'sleep', lemon_nightstand: 'sleep',
+  wardrobe: 'sleep', pink_wardrobe: 'sleep', lemon_wardrobe: 'sleep',
+  dresser: 'sleep', coat_rack: 'sleep',
+  // 吃飯
+  dining_table: 'eat', dining_chair: 'eat', kitchen: 'eat', fridge: 'eat',
+  stove: 'eat', cupboard: 'eat', bar_stool: 'eat',
+  // 讀書
+  bookshelf: 'study', pink_bookshelf: 'study', lemon_bookshelf: 'study',
+  desk: 'study', pink_desk: 'study', lemon_desk: 'study',
+  office_chair: 'study', wall_shelf: 'study', globe: 'study',
+  comic_book: 'study', easel: 'study',
+  // 坐著（連桌子一起：桌椅是一組的，她找椅子的時候通常也在找桌子）
+  sofa: 'sit', loveseat: 'sit', beanbag: 'sit', rocking_chair: 'sit',
+  wood_chair: 'sit', cute_chair: 'sit', lemon_chair: 'sit', log_stool: 'sit',
+  wood_table: 'sit', cute_table: 'sit', lemon_table: 'sit',
+  // 玩具
+  teddy: 'toy', toybox: 'toy', mini_figure: 'toy', game_cart: 'toy',
+  robot_toy: 'toy', piano: 'toy',
+  // 植物
+  plant_s: 'plant', plant_l: 'plant', sunflower: 'plant', cactus: 'plant',
+  // 衛浴
+  bathtub: 'bath', toilet: 'bath', bath_sink: 'bath', bath_mat: 'bath',
+  washer: 'bath', bath_mirror: 'bath', towel_rack: 'bath',
+  // 牆上
+  art_mountain: 'wall', art_flower: 'wall', wall_clock: 'wall', calendar: 'wall',
+  window: 'wall', star_poster: 'wall', certificate: 'wall',
+  rainbow_art: 'wall', star_lights: 'wall', heart_frame: 'wall',
+  // 寵物
+  pet_bed: 'pet', pet_house: 'pet', fishtank: 'pet',
+  // 佈置（地毯、燈、電視、暖爐、鐘這類「氣氛」的東西）
+  cute_rug: 'deco', gray_rug: 'deco', leaf_rug: 'deco', rainbow_rug: 'deco',
+  lamp: 'deco', clock: 'deco', tv: 'deco', fireplace: 'deco'
+};
+// 沒分到的一律歸「佈置」，這樣不管以後加什麼，都不會有東西在商店裡消失
+const furnKind = id => FURN_KIND_OF[id] || 'deco';
+
 
 const FISH = [
   { name: '鯽魚', price: 120, weight: 30 },
@@ -5368,6 +5438,7 @@ let view = { scale: 1, ox: 0, oy: 0 };
 let hold = null;       // {def, rot, x, y, ok, fromUid, orig}
 let hoverUid = null;
 let tab = 'inv', shopTheme = 'all';
+let shopKind = 'all';   // 商店的用途篩選（跟風格篩選各自獨立，兩個可以一起用）
 let dirty = true;
 
 // ── 小工具 ──
@@ -6018,24 +6089,40 @@ function foodShopGrid(list, stock, buy, subText) {
 
 function tabShop(body) {
   body.appendChild(h3('小狸商店'));
-  const f = el('div', 'filter');
-  [['all', '全部'], ['food', '食物'], ['wall', '掛飾']].concat(Object.entries(THEME_NAMES)).forEach(([k, n]) => {
+  // 第一排：她在想的事（我要一張床）。第二排：想湊風格加成的時候才用
+  const f = el('div', 'filter kinds');
+  [['all', '', '全部'], ['food', '🍎', '食物']]
+    .concat(FURN_KINDS.map(k => [k.id, k.icon, k.name]))
+    .forEach(([k, icon, n]) => {
+      const b = el('button', k === shopKind ? 'on' : '');
+      if (icon) b.appendChild(el('span', 'fi', icon));
+      b.appendChild(el('span', '', n));
+      b.onclick = () => { shopKind = k; renderTab(); };
+      f.appendChild(b);
+    });
+  body.appendChild(f);
+  const f2 = el('div', 'filter themes');
+  f2.appendChild(el('span', 'flabel', '風格'));
+  [['all', '全部']].concat(Object.entries(THEME_NAMES)).forEach(([k, n]) => {
     const b = el('button', k === shopTheme ? 'on' : '', n);
     b.onclick = () => { shopTheme = k; renderTab(); };
-    f.appendChild(b);
+    f2.appendChild(b);
   });
-  body.appendChild(f);
-  if (shopTheme === 'all' || shopTheme === 'food') {
+  body.appendChild(f2);
+  if (shopKind === 'all' || shopKind === 'food') {
     body.appendChild(h3(`${charName()}的食物`));
     body.appendChild(foodShopGrid(KID_FOODS, G.kidFood, buyKidFood,
       food => food.grow ? '💪 健康長大' : `飽足+${food.hunger}`));
     body.appendChild(h3(`寵物食物（${charName()}也可以吃）`));
     body.appendChild(foodShopGrid(FOODS, G.food, buyFood, food => `飽足+${food.hunger}`));
-    if (shopTheme === 'food') return;
+    if (shopKind === 'food') return;
     body.appendChild(h3('家具'));
   }
   const grid = el('div', 'grid');
-  FURNITURE.filter(d => !d.gift).filter(d => shopTheme === 'all' || (shopTheme === 'wall' ? d.layer === 'wall' : d.theme === shopTheme)).forEach(def => {
+  FURNITURE.filter(d => !d.gift)
+    .filter(d => shopKind === 'all' || shopKind === 'food' || furnKind(d.id) === shopKind)
+    .filter(d => shopTheme === 'all' || d.theme === shopTheme)
+    .forEach(def => {
     const card = furnCard(def, '💰 ' + fmt(def.price), () => {
       if (buyFurniture(def.id)) { Sound.play('coin'); toast(`買了「${def.name}」，放進收納了`); commit(); }
       else toast('鈴錢不夠，去賺一點吧！');
