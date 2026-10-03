@@ -288,6 +288,56 @@
       document.querySelector('#modal').hidden = true;
     }
 
+    /* ⑩.5 重新開始要在設定分頁，不是家具分頁。
+       那是整個遊戲最危險的按鈕，藏在收集品頁面裡很容易被誤觸。 */
+    openTab('book');
+    if (document.querySelector('#tabBody').textContent.indexOf('重新開始') >= 0)
+      fails.push('「重新開始」還在家具分頁');
+    openTab('save');
+    if (document.querySelector('#tabBody').textContent.indexOf('重新開始') < 0)
+      fails.push('設定分頁沒有「重新開始」');
+
+    /* ⑩.8 寵物跟髮型的數量與資料完整性 */
+    if (PET_SPECIES.length !== 18) fails.push('寵物變成 ' + PET_SPECIES.length + ' 種了');
+    var pid = {};
+    PET_SPECIES.forEach(function(sp){
+      if (pid[sp.id]) fails.push('寵物 id 重複：' + sp.id);
+      pid[sp.id] = 1;
+      ['name','body','edge','belly','inner'].forEach(function(k){
+        if (!sp[k]) fails.push(sp.id + ' 缺了 ' + k); });
+      if (!sp.weight) fails.push(sp.id + ' 沒有權重，永遠抽不到');
+    });
+    // 每一種都要畫得出來（新增的耳朵或記號打錯就會空白）
+    PET_SPECIES.forEach(function(sp){
+      try {
+        var cv = renderPetPortrait(newPet(sp.id, 'adult', sp.name), 60, 54);
+        if (!cv || cv.toDataURL().length < 500) fails.push(sp.name + ' 畫出來是空白的');
+      } catch (e) { fails.push(sp.name + ' 畫不出來：' + e.message); }
+    });
+    HAIR_STYLES.forEach(function(h){
+      HAIR_COLORS.forEach(function(col){
+        try { renderGirl(G.outfit, 40, 50, { hair: { style: h.id, color: col.id } }); }
+        catch (e) { fails.push(h.name + col.name + ' 畫不出來'); }
+      });
+    });
+    // 五款髮型的預覽圖不可以长得一模一樣（快取 key 漏掉髮型的話會）
+    var seenHair = {};
+    HAIR_STYLES.forEach(function(h){
+      var d = renderGirl(G.outfit, 43, 53, { hair: { style: h.id, color: 'gold' } }).toDataURL();
+      if (seenHair[d]) fails.push(h.name + ' 跟 ' + seenHair[d] + ' 的預覽圖一模一樣');
+      seenHair[d] = h.name;
+    });
+
+    /* ⑩.9 同時帶得出來的寵物數 = 1 + 房間數，最多 5。
+       本來是 min(3, 房間數)，一開始只有一間房就等於一隻都帶不出來。 */
+    var rm = G.rooms;
+    [[1, 2], [2, 3], [3, 4], [4, 5], [6, 5]].forEach(function(p){
+      G.rooms = []; for (var i = 0; i < p[0]; i++) G.rooms.push(JSON.parse(JSON.stringify(rm[0])));
+      if (petsOutLimit() !== p[1])
+        fails.push(p[0] + ' 間房間應該帶 ' + p[1] + ' 隻，實際是 ' + petsOutLimit());
+    });
+    G.rooms = rm;
+
     // ⑦ 其他分頁沒被改壞
     ['inv','shop','dress','pets','deco','build','earn','book','talk','save'].forEach(function(t){
       try { openTab(t); if (!document.querySelector('#tabBody').children.length)

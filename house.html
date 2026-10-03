@@ -357,7 +357,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
       <button data-tab="earn"><span class="ti">💰</span>賺錢</button>
       <button data-tab="book"><span class="ti">🛋️</span>家具</button>
       <button data-tab="talk"><span class="ti">🏷️</span>名字</button>
-      <button data-tab="save"><span class="ti">💾</span>存檔</button>
+      <button data-tab="save"><span class="ti">⚙️</span>設定</button>
     </nav>
     <section class="tabbody" id="tabBody"></section>
   </aside>
@@ -958,8 +958,12 @@ const EXPAND_COST = { 8: 8000, 10: 25000 };
 // 115.9.18 調降：一週玩一小時的節奏，臥室約 1～2 週、餐廳再 3～4 週蓋得起來；閣樓是長期目標
 const NEW_ROOM_COST = [15000, 25000, 40000]; // 第 2、3、4 間房
 const ROOM_NAMES = ['客廳', '臥室', '餐廳', '閣樓']; // 預設名稱；玩家可以在「台詞」分頁改
-// 有幾間房間就能同時帶幾隻寵物出來（最多 3 隻）；只有主要那隻需要照顧
-const MAX_PETS_OUT = 3;
+/* 可以同時帶出來的寵物數 = 1 + 房間數，最多 5 隻；只有主要那隻需要照顧。
+   本來是 min(3, 房間數)，一開始只有一間房就等於一隻都帶不出來，
+   而寵物有十八種——上限 3 太小氣了。
+   改成「1 + 房間數」之後：一間房 2 隻、每蓋一間多一隻，蓋滿四間 5 隻。
+   擴建一樣有意義，但不會從一開始就空蕩蕩。 */
+const MAX_PETS_OUT = 5;
 
 // 角色可以使用的家具：sit＝坐（seats 為未旋轉時的座位點，front 為面向），lie＝躺（pillow 為頭靠的位置）
 const FURNITURE_USE = {
@@ -1414,7 +1418,19 @@ const PET_SPECIES = [
   { id: 'penguin', name: '藍莓企鵝', body: '#7aa7e0', edge: '#5381c0', belly: '#ffffff', inner: '#5381c0', ears: 'none', beak: true, weight: 10 },
   { id: 'dragon', name: '橘子龍', body: '#ffb36b', edge: '#e08a3a', belly: '#ffe2bf', inner: '#fff3c4', ears: 'horns', spikes: true, weight: 10 },
   { id: 'sheep', name: '雲朵羊', body: '#ffffff', edge: '#cfcfd8', belly: '#f4f4f8', inner: '#c9b8e8', ears: 'curl', fluffy: true, weight: 10 },
-  { id: 'starfox', name: '星星狐', body: '#cdb8ff', edge: '#a58be0', belly: '#efe6ff', inner: '#ffe066', ears: 'pointy', starMark: true, rare: true, weight: 3 }
+  { id: 'starfox', name: '星星狐', body: '#cdb8ff', edge: '#a58be0', belly: '#efe6ff', inner: '#ffe066', ears: 'pointy', starMark: true, rare: true, weight: 3 },
+  /* 第二批九種（115.10.3）。她上一份存檔九種全收齊了，才加的。
+     每一種都只換配色＋換耳朵／身上的記號，沿用同一套畫法，
+     所以不用為任何一隻重畫，也不會有畫不出來的風險。 */
+  { id: 'strawcow', name: '草莓牛', body: '#fff0f2', edge: '#e0c2c8', belly: '#ffffff', inner: '#ff8fa8', ears: 'round', stripes: true, weight: 10 },
+  { id: 'peachmouse', name: '蜜桃鼠', body: '#ffd2bd', edge: '#e2a98c', belly: '#fff0e6', inner: '#ff9e7a', ears: 'round', weight: 10 },
+  { id: 'matchafrog', name: '抹茶蛙', body: '#b7d97a', edge: '#8bb04d', belly: '#eaf5cf', inner: '#8bb04d', ears: 'none', weight: 10 },
+  { id: 'cocoadog', name: '可可狗', body: '#a8744d', edge: '#7d5233', belly: '#eed7bf', inner: '#7d5233', ears: 'long', weight: 10 },
+  { id: 'grapeocto', name: '葡萄章魚', body: '#b48ad8', edge: '#8a63ad', belly: '#e8d6f5', inner: '#8a63ad', ears: 'tuft', weight: 10 },
+  { id: 'marshpig', name: '棉花糖豬', body: '#ffd9e6', edge: '#e5aec2', belly: '#fff2f7', inner: '#ff9ec4', ears: 'curl', fluffy: true, weight: 10 },
+  { id: 'sodapeng', name: '蘇打企鵝', body: '#9fd8ee', edge: '#6fb0cc', belly: '#ffffff', inner: '#6fb0cc', ears: 'none', beak: true, weight: 10 },
+  { id: 'pancakeotter', name: '煎餅獺', body: '#e8c489', edge: '#c09a5c', belly: '#fff3dc', inner: '#c09a5c', ears: 'round', weight: 10 },
+  { id: 'rainbowuni', name: '彩虹獨角獸', body: '#f3dcff', edge: '#c69ae0', belly: '#fff2fb', inner: '#8fd4f0', ears: 'horns', starMark: true, rare: true, weight: 3 }
 ];
 const PET_SPECIES_BY_ID = Object.fromEntries(PET_SPECIES.map(s => [s.id, s]));
 // next：要累積多少成長才進入下一階段；scale：畫面大小
@@ -2602,7 +2618,7 @@ function setActivePet(i) {
 }
 
 // ── 一起逛的寵物：有幾間房間就能帶幾隻出來（含主要那隻），最多 MAX_PETS_OUT ──
-function petsOutLimit(g) { g = g || G; return Math.min(MAX_PETS_OUT, g.rooms.length); }
+function petsOutLimit(g) { g = g || G; return Math.min(MAX_PETS_OUT, 1 + g.rooms.length); }
 function fixCompanions(g) {
   const seen = new Set([g.activePet]);
   g.companions = (Array.isArray(g.companions) ? g.companions : []).filter(i => {
@@ -3240,13 +3256,23 @@ function hairOf(o) {
 function drawHairBack(ctx, hair, hy) {
   ctx.fillStyle = hair.c;
   if (hair.style === 'long') {
-    // 長髮：披到背後，兩側垂下來
+    /* 長髮本來是一片直直垂到底、下緣切平的布，看起來像女鬼。
+       改成：到肩膀下面一點就收、下緣畫成兩個圓弧（像髮尾分兩束），
+       中間稍微內縮，兩側帶一點外翻的弧度。有形狀才像頭髮。 */
     ctx.beginPath();
-    ctx.moveTo(-16, hy - 4);
-    ctx.quadraticCurveTo(-23, hy + 14, -19, hy + 40);
-    ctx.lineTo(19, hy + 40);
-    ctx.quadraticCurveTo(23, hy + 14, 16, hy - 4);
+    ctx.moveTo(-15.5, hy - 4);
+    ctx.quadraticCurveTo(-21, hy + 8, -17.5, hy + 22);   // 左側外翻
+    ctx.quadraticCurveTo(-14, hy + 30, -9, hy + 24);     // 左邊髮尾圓弧
+    ctx.quadraticCurveTo(-6, hy + 14, 0, hy + 8);        // 中間挖深，露出衣服
+    ctx.quadraticCurveTo(6, hy + 14, 9, hy + 24);
+    ctx.quadraticCurveTo(14, hy + 30, 17.5, hy + 22);    // 右邊髮尾圓弧
+    ctx.quadraticCurveTo(21, hy + 8, 15.5, hy - 4);      // 右側外翻
     ctx.closePath(); ctx.fill();
+    // 一道髮光，不然大面積的單色看起來很平
+    ctx.strokeStyle = hair.hi; ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(-11, hy + 4); ctx.quadraticCurveTo(-13, hy + 13, -11, hy + 20);
+    ctx.stroke();
   } else if (hair.style === 'twin') {
     // 雙馬尾：兩邊各一束，往外下方甩
     [-1, 1].forEach(s => {
@@ -4071,7 +4097,7 @@ function fufuArrivalCheck() {
 }
 </script>
 <script>
-// 寵物：在房間跳來跳去，可以摸摸、捏捏、餵食、洗澡；照顧會長大（蛋→寶寶→小朋友→大朋友），可以收集 9 種
+// 寵物：在房間跳來跳去，可以摸摸、捏捏、餵食、洗澡；照顧會長大（蛋→寶寶→小朋友→大朋友）
 'use strict';
 
 const PET_SPEED = 1.6; // 每秒幾格
@@ -6095,14 +6121,13 @@ function tabBook(body) {
   });
   body.appendChild(fg);
 
+  /* 「累計賺到」留在這裡（它是收集的一部分），
+     但「重新開始」搬去設定分頁了——那是整個遊戲最危險的按鈕，
+     不該藏在收集品頁面，而且它跟備份、存檔格本來就是同一件事。 */
   body.appendChild(h3('紀錄'));
   const r = el('div', 'row');
   r.append(el('span', '', '累計賺到'), el('span', '', '💰 ' + fmt(G.earned)));
   body.appendChild(r);
-  const reset = el('button', 'big', '重新開始（清除存檔）');
-  reset.style.background = 'var(--warn)';
-  reset.onclick = confirmReset;
-  body.appendChild(reset);
 }
 
 // 清除存檔要確認兩次：先看清楚會失去什麼，再自己打「重新開始」四個字，避免小朋友點錯（115.9.19 謝會）
@@ -6593,6 +6618,14 @@ function tabSave(body) {
     };
     body.appendChild(undo);
   }
+
+  body.appendChild(h3('⚠️ 重新開始'));
+  body.appendChild(note('把「' + curSlotName() + '」整間清掉，從頭開始。' +
+    '清掉之前會自動留一份，上面的「把上一份換回來」還救得回來。'));
+  const reset = el('button', 'big', '重新開始（清除存檔）');
+  reset.style.background = 'var(--warn)';
+  reset.onclick = confirmReset;
+  body.appendChild(reset);
 
   body.appendChild(h3('📱 建議加到主畫面'));
   body.appendChild(note('用 Safari 開這一頁 → 分享鈕 → 「加入主畫面」。' +
