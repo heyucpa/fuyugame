@@ -188,6 +188,18 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .simon-pad.lit { filter: saturate(1.3) brightness(1.12); transform: translateY(3px) scale(1.04); box-shadow: 0 0 0 5px #fff, 0 0 18px 6px rgba(255,255,255,.9); }
 @media (prefers-reduced-motion: reduce) { .simon-pad { transition: none; } }
+/* 存檔格：一列一間房子 */
+.slotrow {
+  display: flex; align-items: center; gap: 10px; margin: 6px 0;
+  padding: 9px 11px; border: 2px solid var(--line); border-radius: 12px; background: #fff;
+}
+.slotrow.on { border-color: var(--accent); background: #f1faf3; }
+.slotmain { flex: 1; min-width: 0; }
+.slotname { font-weight: 800; font-size: 14px; }
+.slotrow.on .slotname { color: var(--accent); }
+.slotsub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.slotrow .mini { flex: 0 0 auto; margin-top: 0; }
+
 /* 選檔案匯入：原生的 file input 在 iPad 上又小又醜，包成一塊好按的虛線框 */
 .fileopen {
   display: block; width: 100%; margin: 0 0 8px; padding: 10px;
@@ -328,7 +340,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
       <button data-tab="earn">賺錢</button>
       <button data-tab="book">圖鑑</button>
       <button data-tab="talk">台詞</button>
-      <button data-tab="save">備份</button>
+      <button data-tab="save">存檔</button>
     </nav>
     <section class="tabbody" id="tabBody"></section>
   </aside>
@@ -2072,7 +2084,108 @@ PLACE_FURNITURE.forEach(f => { FURN_BY_ID[f.id] = f; }); // 親戚家專用的�
 // 遊戲狀態、存檔、經濟與評分
 'use strict';
 
-const SAVE_KEY = 'myHouseGame_v1';
+/* ===== 存檔格 =====
+   兩個小孩要各玩各的，所以一份存檔不夠用。
+
+   做法刻意選了最不會出錯的一種：SAVE_KEY 還是一個常數，只是在
+   載入的時候才算出「現在是哪一格」。換格一律 location.reload()，
+   所以這兩個常數在一次執行裡永遠不會變——
+   原本幾十處用到 SAVE_KEY / UNDO_KEY 的地方一行都不用改。
+
+   搬家：還沒有存檔格之前的那一份存在 myHouseGame_v1（沒有後綴）。
+   第一次跑到這裡會把它複製進第 1 格，而且刻意「不刪原本那一份」——
+   萬一哪裡沒想到，那份原始資料還在，救得回來。 */
+const LEGACY_KEY = 'myHouseGame_v1';
+const SLOTS_KEY  = 'myHouseGame_slots';
+const CUR_KEY    = 'myHouseGame_cur';
+const slotSave = id => LEGACY_KEY + ':' + id;
+const slotUndo = id => 'myHouseGame_undo:' + id;
+
+function slots() {
+  try {
+    const a = JSON.parse(localStorage.getItem(SLOTS_KEY));
+    if (Array.isArray(a) && a.length && a.every(s => s && s.id)) return a;
+  } catch (e) { /* 壞掉就當成沒有，用預設的一格 */ }
+  return [{ id: 'p1', name: '第 1 間' }];
+}
+function saveSlots(list) {
+  try { localStorage.setItem(SLOTS_KEY, JSON.stringify(list)); } catch (e) {}
+}
+function curSlotId() {
+  const list = slots(), id = localStorage.getItem(CUR_KEY);
+  return list.some(s => s.id === id) ? id : list[0].id;
+}
+function curSlotName() {
+  const s = slots().find(x => x.id === curSlotId());
+  return (s && s.name) || '第 1 間';
+}
+(function migrateToSlots() {
+  try {
+    const old = localStorage.getItem(LEGACY_KEY);
+    if (!old) return;                                  // 全新的人，沒東西要搬
+    if (localStorage.getItem(slotSave('p1'))) return;  // 搬過了
+    localStorage.setItem(slotSave('p1'), old);
+    const u = localStorage.getItem('myHouseGame_undo');
+    if (u) localStorage.setItem(slotUndo('p1'), u);
+  } catch (e) {}
+})();
+
+const SAVE_KEY = slotSave(curSlotId());
+const UNDO_KEY = slotUndo(curSlotId());
+
+/* 換一格來玩。先把現在這格存好再換，然後整個重讀——
+   G 跟畫面上所有東西都要跟著換，重讀是最不會漏的做法。 */
+function switchSlot(id) {
+  if (id === curSlotId()) return;
+  saveGame();
+  try { localStorage.setItem(CUR_KEY, id); } catch (e) { return; }
+  location.reload();
+}
+function addSlot(name) {
+  const list = slots();
+  let n = 1;
+  list.forEach(s => { const m = /^p(\d+)$/.exec(s.id); if (m) n = Math.max(n, +m[1] + 1); });
+  const id = 'p' + n;
+  list.push({ id: id, name: name || ('第 ' + n + ' 間') });
+  saveSlots(list);
+  return id;
+}
+function renameSlot(id, name) {
+  const list = slots();
+  const s = list.find(x => x.id === id);
+  if (!s) return;
+  s.name = String(name || '').trim().slice(0, 10) || s.name;
+  saveSlots(list);
+}
+// 刪掉一格。最後一格不給刪——刪完沒有任何一格可以玩
+function removeSlot(id) {
+  const list = slots();
+  if (list.length <= 1) return false;
+  const rest = list.filter(s => s.id !== id);
+  if (rest.length === list.length) return false;
+  saveSlots(rest);
+  try {
+    localStorage.removeItem(slotSave(id));
+    localStorage.removeItem(slotUndo(id));
+  } catch (e) {}
+  if (id === localStorage.getItem(CUR_KEY)) {
+    try { localStorage.setItem(CUR_KEY, rest[0].id); } catch (e) {}
+  }
+  return true;
+}
+// 每一格的概況，給列表顯示用。不會動到正在玩的那一格
+function slotInfo(id) {
+  try {
+    const raw = localStorage.getItem(slotSave(id));
+    if (!raw) return null;
+    const g = normalizeSave(JSON.parse(raw));
+    if (!g) return null;
+    return { bells: g.bells,
+             score: g.rooms.reduce((a, r) => a + roomScore(r).score, 0),
+             rooms: g.rooms.length,
+             items: g.rooms.reduce((a, r) => a + r.items.length + (r.wallItems || []).length, 0) };
+  } catch (e) { return null; }
+}
 
 /* 開局金幣。本來是 3000。
    之前的存檔住在 Artifact 的 iframe 裡，被 iOS 當暫時資料清掉了，
@@ -2341,15 +2454,36 @@ function collectedSpecies() {
 }
 // 買蛋：孵出來的種類先決定好（優先還沒收集到的），蛋上的斑點顏色會透露一點線索
 function buyEgg() {
-  if (!spend(EGG_PRICE)) return null;
   const have = new Set(G.pets.map(p => p.species));
   const fresh = PET_SPECIES.filter(s => !have.has(s.id));
   const pool = fresh.length ? fresh : PET_SPECIES;
+  if (!spend(EGG_PRICE)) return null;
   let r = Math.random() * pool.reduce((a, s) => a + s.weight, 0), pick = pool[0];
   for (const s of pool) { if ((r -= s.weight) < 0) { pick = s; break; } }
   G.pets.push(newPet(pick.id, 'egg', ''));
   return G.pets.length - 1;
 }
+/* 送回寵物店，拿回一半的蛋錢。
+   收齊之後再買只會孵出重複的，重複的在這個遊戲裡沒有用途——
+   與其擋住不給買（那她就不能養兩隻一樣的了），不如留一條後路。
+
+   G.pets 是用「索引」被 activePet 與 companions 指著的，
+   抽掉一隻之後後面全部往前移一格。這幾行沒處理好的話，
+   她會變成在照顧另一隻寵物，或是畫面上跑出兩隻一樣的。 */
+function releasePet(i) {
+  if (!G.pets[i] || G.pets.length <= 1) return false;   // 最後一隻不能送走
+  G.pets.splice(i, 1);
+  const shift = x => (x > i ? x - 1 : x);
+  G.companions = (Array.isArray(G.companions) ? G.companions : [])
+    .filter(x => x !== i).map(shift);
+  G.activePet = G.activePet === i ? 0 : shift(G.activePet);
+  G.activePet = Math.max(0, Math.min(G.pets.length - 1, G.activePet));
+  G.pet = G.pets[G.activePet];
+  fixCompanions(G);
+  addBells(sellValue(EGG_PRICE));
+  return true;
+}
+
 // 換一隻帶出來玩；在寵物屋休息的不會餓
 // 原本一起逛的那隻變成主要時，舊的主要那隻換去一起逛（蛋不會走路，就回寵物屋）
 function setActivePet(i) {
@@ -5994,6 +6128,24 @@ function tabPets(body) {
         };
         c.appendChild(go);
       }
+      /* 買太多可以送回寵物店，拿回一半的蛋錢。
+         刻意只給「現在沒在照顧的」那幾隻——要送走正在照顧的那隻，
+         得先把別隻設成照顧中。多一步，就不會手滑送掉她最寶貝的那一隻。
+         最後一隻也不給送，不然她會變成一隻寵物都沒有。 */
+      if (G.pets.length > 1) {
+        const bye = el('button', 'mini', `👋 送回寵物店 +💰${fmt(sellValue(EGG_PRICE))}`);
+        bye.onclick = () => {
+          if (!confirm(`要把「${petNameOf(p)}」送回寵物店嗎？\n\n` +
+                       `會拿回 💰 ${fmt(sellValue(EGG_PRICE))}。\n` +
+                       '送走之後就不在你家了喔。')) return;
+          const nm = petNameOf(p);
+          if (!releasePet(i)) return;
+          Sound.play('coin');
+          toast(`${nm}回寵物店了，拿回 💰 ${fmt(sellValue(EGG_PRICE))}`);
+          commit();
+        };
+        c.appendChild(bye);
+      }
     }
     grid.appendChild(c);
   });
@@ -6003,12 +6155,25 @@ function tabPets(body) {
   body.appendChild(h3('寵物蛋'));
   const have = new Set(G.pets.map(p => p.species));
   const left = PET_SPECIES.filter(s => !have.has(s.id)).length;
+  /* 收齊了就不給買。買蛋本來就是「優先孵還沒有的種類」，
+     收齊之後再買只會孵出重複的，而重複的在這個遊戲裡完全沒有用途
+     （不能繁殖、不能交換、不會加分），只會變成一長串列表，
+     而且她有十萬塊，不擋的話會買出三十幾顆沒意義的蛋。
+     條件用「還有沒有沒收集到的」而不是數顆數：數顆數的話，
+     萬一先買到重複的就永遠湊不滿圖鑑了。 */
+  /* 收齊之後還是可以買，但要先問一次——再買只會孵出重複的，
+     而重複的在這個遊戲裡沒有用途。她有十萬塊，不問的話
+     會一路點出三十幾顆沒意義的蛋。買錯了可以在下面送回寵物店。 */
   body.appendChild(note(left
     ? `孵出來的寶寶是隨機的，會先孵出還沒有的種類（還有 ${left} 種沒有）。蛋上的斑點顏色是小提示喔！`
-    : '9 種都收集到了！再買蛋會隨機孵出其中一種。'));
-  const egg = el('button', 'big' + (G.bells < EGG_PRICE ? '' : ''), `🥚 買一顆寵物蛋　💰 ${fmt(EGG_PRICE)}`);
+    : `${PET_SPECIES.length} 種都收集到了 🎉　再買的話會孵出重複的，` +
+      `不想要可以送回寵物店，拿回 💰 ${fmt(sellValue(EGG_PRICE))}。`));
+  const egg = el('button', 'big',
+    left ? `🥚 買一顆寵物蛋　💰 ${fmt(EGG_PRICE)}` : `🥚 再買一顆（會重複）　💰 ${fmt(EGG_PRICE)}`);
   egg.disabled = G.bells < EGG_PRICE;
   egg.onclick = () => {
+    if (!left && !confirm(`${PET_SPECIES.length} 種都收集到了。\n\n` +
+        '再買一顆的話，孵出來會是已經有的種類喔。要買嗎？')) return;
     const i = buyEgg();
     if (i == null) { toast('鈴錢不夠，去賺一點吧！'); return; }
     Sound.play('coin');
@@ -6045,7 +6210,7 @@ function tabPets(body) {
    以複製貼上為主而不是下載檔案——iPad 的 Safari 下載很難用。
 
    這一頁是給大人看的，所以字可以多一點、講清楚一點。 */
-const UNDO_KEY = 'myHouseGame_undo';   // 還原之前的現況，留一次反悔的機會
+// UNDO_KEY / SAVE_KEY 在存檔格那一段就算好了（跟著「現在玩哪一格」走）
 const SAVE_TAG = 'myHouse-save';
 
 function makeBackup() {
@@ -6083,7 +6248,59 @@ function applyBackup(txt) {
 function tabSave(body) {
   const code = makeBackup();
 
-  body.appendChild(h3('📤 把現在的進度複製起來'));
+  /* ── 存檔格 ──
+     兩個小孩各玩各的。每一格是完全獨立的一間房子，互不影響。 */
+  body.appendChild(h3('🏠 現在玩的是：' + curSlotName()));
+  body.appendChild(note('每一格是一間完全獨立的房子，錢、家具、寵物都分開。' +
+    '換一格不會動到另一格。'));
+
+  const list = slots(), cur = curSlotId();
+  list.forEach(s => {
+    const info = slotInfo(s.id);
+    const card = el('div', 'slotrow' + (s.id === cur ? ' on' : ''));
+    const left = el('div', 'slotmain');
+    left.appendChild(el('div', 'slotname', (s.id === cur ? '▶ ' : '') + s.name));
+    left.appendChild(el('div', 'slotsub', info
+      ? `💰 ${fmt(info.bells)}　⭐ ${fmt(info.score)}　${info.rooms} 個房間・擺了 ${info.items} 件`
+      : '還沒開始玩'));
+    card.appendChild(left);
+    if (s.id !== cur) {
+      const go = el('button', 'mini', '換成這個');
+      go.onclick = () => { Sound.play('click'); switchSlot(s.id); };
+      card.appendChild(go);
+    }
+    body.appendChild(card);
+  });
+
+  // 改名字：直接改現在這一格，打完就存
+  const nm = el('input', 'textin');
+  nm.value = curSlotName();
+  nm.maxLength = 10;
+  nm.placeholder = '幫這一間取個名字';
+  nm.oninput = () => { renameSlot(cur, nm.value); };
+  nm.onblur = () => { renderTab(); };
+  body.appendChild(nm);
+
+  const add = el('button', 'big alt', '＋ 開一間新的');
+  add.onclick = () => {
+    if (slots().length >= 6) { toast('最多六間'); return; }
+    Sound.play('click');
+    switchSlot(addSlot(''));     // 開好就直接換過去
+  };
+  body.appendChild(add);
+
+  if (list.length > 1) {
+    const del = el('button', 'mini', '🗑️ 刪掉「' + curSlotName() + '」這一間');
+    del.onclick = () => {
+      if (!confirm('要刪掉「' + curSlotName() + '」整間房子嗎？\n\n' +
+                   '這一格的錢、家具、寵物全部都會不見。\n' +
+                   '（刪掉的那一格救不回來，建議先存成檔案）')) return;
+      if (removeSlot(cur)) location.reload();
+    };
+    body.appendChild(del);
+  }
+
+  body.appendChild(h3('📤 把「' + curSlotName() + '」複製起來'));
   body.appendChild(note('她玩的東西只存在這一台機器的這個瀏覽器裡。換裝置、' +
     '清掉網站資料，紀錄就會不見，而且沒有辦法救回來。' +
     '偶爾按一次下面那顆，貼到記事本或傳給自己，就有一份帶得走的存檔。'));

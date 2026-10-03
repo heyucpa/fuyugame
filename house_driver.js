@@ -172,6 +172,84 @@
     localStorage.setItem(SAVE_KEY, mark);
     G = loadGame();
 
+    /* ⑧ 存檔格：兩個小孩各玩各的，互不影響 */
+    if (slots().length < 1) fails.push('一格都沒有');
+    if (SAVE_KEY.indexOf(curSlotId()) < 0) fails.push('存檔的 key 沒有跟著存檔格走');
+    if (UNDO_KEY.indexOf(curSlotId()) < 0) fails.push('反悔的 key 沒有跟著存檔格走');
+    if (slotSave('p1') === slotSave('p2')) fails.push('不同格的 key 竟然一樣');
+    // 各自獨立：寫一格不可以動到另一格
+    localStorage.setItem(slotSave('p1'), JSON.stringify(Object.assign({}, G, {bells: 111, topup100k: true})));
+    localStorage.setItem(slotSave('p2'), JSON.stringify(Object.assign({}, G, {bells: 222, topup100k: true})));
+    var i1 = slotInfo('p1'), i2 = slotInfo('p2');
+    if (!i1 || i1.bells !== 111) fails.push('第一格的概況讀錯了');
+    if (!i2 || i2.bells !== 222) fails.push('第二格的概況讀錯了');
+    if (slotInfo('沒這格')) fails.push('不存在的格竟然讀得出東西');
+    // 最後一格不給刪，刪了就沒有任何一格可以玩
+    saveSlots([{id:'p1', name:'只剩一格'}]);
+    if (removeSlot('p1')) fails.push('最後一格竟然刪得掉');
+    // 刪掉一格要連它的存檔一起清，不然會越積越多
+    saveSlots([{id:'p1',name:'a'},{id:'p2',name:'b'}]);
+    if (!removeSlot('p2')) fails.push('刪不掉第二格');
+    if (localStorage.getItem(slotSave('p2'))) fails.push('格刪了，它的存檔還在');
+    if (slots().length !== 1) fails.push('刪完之後格數不對');
+    // 新開一格不可以跟舊的撞 id
+    var nid = addSlot('新的');
+    if (nid === 'p1') fails.push('新開的格跟舊的撞 id 了');
+    if (!slots().some(function(x){ return x.id === nid; })) fails.push('新開的格沒有存進清單');
+    renameSlot(nid, '妹妹');
+    if (!slots().some(function(x){ return x.name === '妹妹'; })) fails.push('改名字沒有生效');
+    saveSlots([{id:'p1', name:'第 1 間'}]);
+
+    /* ⑨ 買蛋跟「送回寵物店」
+       收齊之後還是可以買（她可能想養兩隻一樣的），
+       但買錯了要有後路。最要緊的是送走之後索引不能亂——
+       activePet / companions 都是用索引指著 G.pets。 */
+    var save0 = JSON.stringify(G);
+    G.bells = 999999;
+    G.pets = PET_SPECIES.map(function(sp){ return newPet(sp.id, 'kid', sp.name); });
+    G.activePet = 0; G.pet = G.pets[0]; G.companions = [];
+    var n0 = G.pets.length;
+    // 收齊了還是買得到
+    if (buyEgg() === null) fails.push('收齊了就完全買不到蛋了');
+    if (G.pets.length !== n0 + 1) fails.push('買了蛋卻沒有多一隻');
+    // 還沒收齊的時候，孵出來一定是新的種類
+    G.pets = [newPet('mochi', 'kid', 'a')]; G.activePet = 0; G.pet = G.pets[0]; G.companions = [];
+    var got = buyEgg();
+    if (got === null) fails.push('還沒收齊卻買不到蛋');
+    else if (G.pets[got].species === 'mochi') fails.push('還有沒收集的，竟然孵出重複的');
+    // 錢不夠不可以買到
+    G.bells = 10;
+    var poor = buyEgg();
+    if (poor !== null) fails.push('錢不夠竟然也買得到蛋');
+    if (G.bells !== 10) fails.push('錢不夠買不到，錢卻被扣了');
+
+    /* 送回寵物店：索引要跟著移，不然她會變成在照顧另一隻 */
+    G.bells = 0;
+    /* 照顧中的那隻要放在「中間」。放最後一隻的話，就算索引完全不處理，
+       releasePet 最後那行夾緊（clamp）也會剛好夾到對的位置，等於沒驗到。
+       踩過一次：這一關本來放最後一隻，突變測試照樣全過。 */
+    // 房間數決定可以同時帶幾隻出來。只有一間的話 fixCompanions 會把
+    // 同伴清空（那是對的行為），同伴那一條就驗不到了，所以先給三間
+    G.rooms = [G.rooms[0], JSON.parse(JSON.stringify(G.rooms[0])),
+               JSON.parse(JSON.stringify(G.rooms[0]))];
+    G.pets = [newPet('mochi','kid','A'), newPet('bunny','kid','B'),
+              newPet('bear','kid','C'), newPet('cat','kid','D')];
+    G.activePet = 1; G.pet = G.pets[1]; G.companions = [2];
+    if (!releasePet(0)) fails.push('送不走第一隻');
+    if (G.pets.length !== 3) fails.push('送走了卻沒少一隻');
+    if (petNameOf(G.pets[G.activePet]) !== 'B')
+      fails.push('送走一隻之後，照顧中的變成「' + petNameOf(G.pets[G.activePet]) + '」了');
+    if (G.pet !== G.pets[G.activePet]) fails.push('G.pet 沒有指回照顧中的那隻');
+    if (G.companions.length !== 1 || petNameOf(G.pets[G.companions[0]]) !== 'C')
+      fails.push('一起逛的變成別隻寵物了');
+    if (G.companions.some(function(x){ return !G.pets[x]; }))
+      fails.push('一起逛的名單指到不存在的寵物');
+    if (G.bells !== sellValue(EGG_PRICE)) fails.push('送回寵物店沒有拿回一半的蛋錢');
+    // 最後一隻不能送，不然她會一隻寵物都沒有
+    G.pets = [newPet('mochi','kid','唯一')]; G.activePet = 0; G.pet = G.pets[0]; G.companions = [];
+    if (releasePet(0)) fails.push('最後一隻竟然送得走');
+    G = JSON.parse(save0); G.pet = G.pets[G.activePet];
+
     // ⑦ 其他分頁沒被改壞
     ['inv','shop','dress','pets','deco','build','earn','book','talk','save'].forEach(function(t){
       try { openTab(t); if (!document.querySelector('#tabBody').children.length)
