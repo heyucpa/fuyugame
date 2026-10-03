@@ -730,6 +730,77 @@
     clearThumbs();
     G.kid.hunger = keepH;
 
+    /* ㉗ 釣魚：先決定魚，越大越難
+       以前是成功之後才隨機決定魚，技術好不好跟釣到什麼無關。 */
+    // 舊的八種名字一個都不能改（G.fish 用名字記，改了圖鑑會歸零）
+    ['鯽魚','小丑魚','竹筴魚','鱸魚','鯛魚','鮪魚','鯨鯊','空罐頭'].forEach(function(n){
+      if (!FISH.some(function(f){ return f.name === n; })) fails.push('舊的魚「' + n + '」不見了，她的圖鑑會歸零');
+    });
+    if (FISH.length < 16) fails.push('魚只有 ' + FISH.length + ' 種');
+    var fn = {}; FISH.forEach(function(f){ if (fn[f.name]) fails.push('魚的名字重複：' + f.name); fn[f.name] = 1; });
+    // 越大的魚，綠色區越窄、指針越快
+    for (var ti = 1; ti < FISH_TIERS.length; ti++) {
+      if (!(FISH_TIERS[ti].zone < FISH_TIERS[ti-1].zone)) fails.push('大魚的綠色區沒有比較窄');
+      if (!(FISH_TIERS[ti].speed > FISH_TIERS[ti-1].speed)) fails.push('大魚的指針沒有比較快');
+    }
+    FISH.forEach(function(f){ if (fishTier(f) < 0) fails.push(f.name + ' 不屬於任何一級'); });
+    openFishing();
+    var FT = openFishing.test;
+    if (!FT) fails.push('釣魚沒有開起來');
+    else {
+      FT.round();
+      var f1 = FT.fish();
+      var z = FT.zone();
+      // 拉竿時指針在綠色區正中間 → 一定要釣到「影子是那條」的那條魚
+      var b5 = G.bells, c5 = G.fish[f1.name] || 0;
+      FT.setPos(z[0] + z[1] / 2); FT.pull();
+      if ((G.fish[f1.name] || 0) !== c5 + 1) fails.push('釣到的不是影子那條魚');
+      if (G.bells < b5 + f1.price) fails.push('釣到魚卻沒拿到錢');
+      // 沒拉到：要告訴她剛剛是什麼，而且連續紀錄要歸零
+      FT.round(); var f2 = FT.fish(); var z2 = FT.zone();
+      FT.setPos(z2[0] > 50 ? 1 : 99); FT.pull();
+      var rs = document.querySelector('#modalCard').textContent;
+      if (rs.indexOf(f2.name) < 0) fails.push('沒拉到的時候沒告訴她剛剛是什麼魚');
+      if (FT.streak() !== 0) fails.push('沒拉到之後連續紀錄沒有歸零');
+      // 連續兩竿要有加成
+      FT.round(); var z3 = FT.zone(); FT.setPos(z3[0] + z3[1] / 2); FT.pull();
+      FT.round(); var f4 = FT.fish(); var z4 = FT.zone();
+      var b6 = G.bells; FT.setPos(z4[0] + z4[1] / 2); FT.pull();
+      if (G.bells - b6 <= f4.price && f4.price >= 10)
+        fails.push('連續第二竿沒有加成');
+    }
+    var mdl = document.querySelector('#modal'); if (mdl) mdl.hidden = true;
+    cancelAnimationFrame(fishTimer);
+
+    /* ㉘ 杯子躲貓貓：3／4／5 個杯子，越多越值錢 */
+    for (var ki = 1; ki < CUP_LEVELS.length; ki++) {
+      if (!(CUP_LEVELS[ki].n > CUP_LEVELS[ki-1].n)) fails.push('杯子數沒有越來越多');
+      if (!(CUP_LEVELS[ki].per > CUP_LEVELS[ki-1].per)) fails.push('杯子越多卻沒有越值錢');
+    }
+    CUP_LEVELS.forEach(function(L, li){
+      openCupGame();
+      var lb = document.querySelectorAll('.lv-btn');
+      if (lb.length !== CUP_LEVELS.length) { fails.push('杯子躲貓貓沒有難度選單'); return; }
+      lb[li].onclick();
+      var CT = openCupGame.test;
+      if (!CT || CT.n !== L.n) { fails.push(L.name + '：杯子數不對'); return; }
+      if (CT.cups().length !== L.n) fails.push(L.name + '：畫出來的杯子是 ' + CT.cups().length + ' 個');
+      // 杯子不可以疊在一起：相鄰兩個的間距要大於杯子的寬度
+      var gap = CT.slots[1] - CT.slots[0];
+      if (gap < 76 * L.k) fails.push(L.name + '：杯子疊在一起了（間距 ' + Math.round(gap) + '）');
+      // 全部杯子都要在畫面裡
+      if (CT.slots[0] - 38 * L.k < 0 || CT.slots[CT.slots.length - 1] + 38 * L.k > 360)
+        fails.push(L.name + '：有杯子超出畫面');
+      // 點寵物躲的那個杯子，要算找到
+      CT.setPick();
+      var target = CT.cups()[CT.petCup()];
+      CT.tap(target.x);
+      if (document.querySelector('.game-status').textContent.indexOf('找到') < 0)
+        fails.push(L.name + '：點了寵物躲的杯子卻沒算找到');
+      closeGameWindow();
+    });
+    var md2 = document.querySelector('#modal'); if (md2) md2.hidden = true;
+
     // ⑦ 其他分頁沒被改壞
     ['inv','shop','dress','pets','deco','build','earn','book','talk','save'].forEach(function(t){
       try { openTab(t); if (!document.querySelector('#tabBody').children.length)

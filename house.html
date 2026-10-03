@@ -242,6 +242,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .swatch.on { box-shadow: 0 0 0 3px var(--ink); }
 /* 拼圖：難度選單與拼盤 */
+/* 釣魚：水面的影子。越大的魚字越大越醒目，她一看就知道這竿值得拚 */
+.fish-shadow { text-align: center; font-weight: 800; margin: 4px 0 8px; color: #2f6f8f; font-size: 15px; }
+.fish-shadow[data-tier="2"] { color: #c9772e; font-size: 17px; }
+.fish-shadow[data-tier="3"] { color: #d0453a; font-size: 19px; }
+
 /* 出門的過場：蓋在房間畫面上，點一下跳過 */
 .trip {
   position: absolute; inset: 0; z-index: 30; display: flex;
@@ -1041,8 +1046,29 @@ const FISH = [
   { name: '鯛魚', price: 3000, weight: 6 },
   { name: '鮪魚', price: 7000, weight: 3 },
   { name: '鯨鯊', price: 13000, weight: 1 },
-  { name: '空罐頭', price: 10, weight: 8 }
+  { name: '空罐頭', price: 10, weight: 8 },
+  /* 第二批（115.10.3）。舊的名字一個都不能改：G.fish 是用名字記的，
+     改了她的魚類圖鑑就歸零了。好笑的東西（舊靴子）跟寶箱是刻意的——
+     釣魚最好玩的就是「不知道會拉起什麼」。 */
+  { name: '吳郭魚', price: 100, weight: 26 },
+  { name: '虱目魚', price: 250, weight: 20 },
+  { name: '金魚', price: 300, weight: 15 },
+  { name: '小鰻魚', price: 500, weight: 12 },
+  { name: '河豚', price: 900, weight: 9 },
+  { name: '章魚', price: 1500, weight: 7 },
+  { name: '舊靴子', price: 5, weight: 7 },
+  { name: '寶箱', price: 5000, weight: 2 }
 ];
+/* 這一竿是「多大的影子」。看價格分四級，越大越難拉：
+   綠色區越窄、指針越快。這樣技術好就釣得到大魚，
+   而不是像以前一樣成功之後才隨機決定是什麼。 */
+const FISH_TIERS = [
+  { max: 400,   shadow: '小小的影子',     zone: 24, speed: 1.0 },
+  { max: 1000,  shadow: '中等的影子',     zone: 18, speed: 1.4 },
+  { max: 4000,  shadow: '好大的影子！',   zone: 12, speed: 1.9 },
+  { max: 1e9,   shadow: '超巨大的影子！！', zone: 8,  speed: 2.5 }
+];
+const fishTier = f => FISH_TIERS.findIndex(t => f.price <= t.max);
 
 // 房間擴建：尺寸階梯與價格
 // 115.9.17 起一開始就是 6×6（4×4 太擠），擴建也調便宜
@@ -7441,15 +7467,24 @@ function openFishing() {
   card.append(pull, close);
   $('#modal').hidden = false;
 
+  const shadow = el('p', 'fish-shadow', '　');
+  card.insertBefore(shadow, bar);
   let pos = 0, dir = 1, speed = 0, zStart = 0, zW = 0, active = false;
+  let fish = null, streak = 0;
   function round() {
-    zW = 12 + Math.random() * 10;
+    fish = rollFish();                       // 先決定這一竿是什麼
+    const T = FISH_TIERS[fishTier(fish)];
+    shadow.textContent = '🌊 水裡有' + T.shadow;
+    shadow.dataset.tier = fishTier(fish);
+    zW = T.zone;
     zStart = 5 + Math.random() * (90 - zW);
     zone.style.left = zStart + '%';
     zone.style.width = zW + '%';
-    pos = 0; dir = 1; speed = 1.1 + Math.random() * 1.2; active = true;
+    pos = 0; dir = 1; speed = T.speed * (.9 + Math.random() * .2); active = true;
     pull.textContent = '拉竿！';
   }
+  openFishing.test = { round: round, fish: () => fish, zone: () => [zStart, zW],
+                       setPos: v => { pos = v; }, pull: () => doPull(), streak: () => streak };
   let last = performance.now();
   function tick(now) {
     const dt = Math.min(50, (now || last) - last) / 16.7; // 依實際經過時間移動，不受螢幕更新率影響
@@ -7466,12 +7501,23 @@ function openFishing() {
     if (!active) { result.textContent = '　'; round(); return; }
     active = false;
     if (pos >= zStart && pos <= zStart + zW) {
-      const f = rollFish();
+      const f = fish;
       catchFish(f);
+      streak++;
+      // 連續釣到有加成：第二竿起每多一竿 +10%，最多 +50%
+      const bonus = streak >= 2 ? Math.round(f.price * Math.min(.5, (streak - 1) * .1)) : 0;
+      if (bonus) addBells(bonus);
       Sound.play('catchFish');
-      result.textContent = f.price >= 3000 ? `🎉 釣到「${f.name}」！賣了 ${fmt(f.price)} 鈴錢！` : `釣到「${f.name}」，賣了 ${fmt(f.price)} 鈴錢`;
+      const big = f.price >= 3000;
+      result.textContent = (big ? `🎉 釣到「${f.name}」！` : `釣到「${f.name}」，`) +
+        `賣了 ${fmt(f.price)} 鈴錢` + (bonus ? `（連續 ${streak} 竿，再加 ${fmt(bonus)}）` : '');
       commit();
-    } else { result.textContent = '💨 魚跑掉了…'; Sound.play('miss'); }
+    } else {
+      // 沒拉到也告訴她剛剛是什麼——「那是鮪魚！」會讓她想再試
+      result.textContent = `💨 跑掉了…剛剛那是「${fish.name}」！`;
+      streak = 0;
+      Sound.play('miss');
+    }
     pull.textContent = '再釣一次';
   }
   function onKey(e) { if (e.code === 'Space') { e.preventDefault(); doPull(); } }
@@ -7793,11 +7839,35 @@ function openBubbleGame() {
 'use strict';
 
 // ── 4. 杯子躲貓貓：寵物躲進杯子，洗牌後猜牠在哪 ──
+/* 杯子躲貓貓：可以選 3／4／5 個杯子。
+   本來只有 3 個、沒得選——對小一的妹妹剛好，對姊姊太簡單。
+   杯子越多、越難、每找到一次越值錢。連續找到還有加成。 */
+const CUP_LEVELS = [
+  { n: 3, name: '3 個杯子', per: 120, all: 200, k: 1 },
+  { n: 4, name: '4 個杯子', per: 200, all: 350, k: .9 },
+  { n: 5, name: '5 個杯子', per: 300, all: 500, k: .8 }
+];
 function openCupGame() {
+  const w = openGameWindow('🥤 杯子躲貓貓', `${petName()}會躲進其中一個杯子，看清楚杯子怎麼換位置，再點牠躲的那個杯子！一共 5 回合。`);
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  w.status.textContent = '要幾個杯子？';
+  const row = el('div', 'lv-row');
+  CUP_LEVELS.forEach(L => {
+    const b = el('button', 'lv-btn');
+    b.append(el('span', 'lv-n', L.name), el('span', 'lv-p', `一次 💰 ${L.per}`));
+    b.onclick = () => { Sound.play('click'); w.stage.innerHTML = ''; playCupGame(w, L); };
+    row.appendChild(b);
+  });
+  w.stage.appendChild(row);
+}
+function playCupGame(w, L) {
   const pname = petName();
-  const w = openGameWindow('🥤 杯子躲貓貓', `${pname}會躲進其中一個杯子，看清楚杯子怎麼換位置，再點${pname}躲的那個杯子！一共 5 回合。`);
   const W = 360, H = 300, { c, g, pos } = gameCanvas(w.stage, W, H);
-  const SLOT_X = [70, 180, 290], BASE_Y = 240, ROUNDS = 5;
+  const N = L.n, K = L.k, BASE_Y = 240, ROUNDS = 5;
+  // 杯子平均排開：3 個時維持原本的 70／180／290
+  const M = N === 3 ? 70 : 46, GAP = (W - 2 * M) / (N - 1);
+  const SLOT_X = Array.from({ length: N }, (_, i) => M + i * GAP);
+  let streak = 0, extra = 0;
   const sp = PET_SPECIES_BY_ID[G.pet.species], egg = G.pet.stage === 'egg';
   let round = 0, correct = 0, raf = 0, ended = false;
   let cups, petCup, phase, phaseAt, swaps, swapIdx, swapDur, picked = -1, timers = [];
@@ -7805,14 +7875,14 @@ function openCupGame() {
 
   function startRound() {
     round++;
-    cups = [0, 1, 2].map(slot => ({ slot, x: SLOT_X[slot], lift: 1, dy: 0 }));
-    petCup = Math.floor(Math.random() * 3);
+    cups = SLOT_X.map((x, slot) => ({ slot, x, lift: 1, dy: 0 }));
+    petCup = Math.floor(Math.random() * N);
     cups.forEach((cup, i) => { cup.lift = i === petCup ? 1 : 0; });
     swapDur = Math.max(.2, .52 - round * .065);
     swaps = [];
     for (let i = 0; i < 3 + round; i++) {
-      const a = Math.floor(Math.random() * 3);
-      let b = Math.floor(Math.random() * 2); if (b >= a) b++;
+      const a = Math.floor(Math.random() * N);
+      let b = Math.floor(Math.random() * (N - 1)); if (b >= a) b++;
       swaps.push([a, b]);
     }
     swapIdx = 0; picked = -1;
@@ -7822,7 +7892,7 @@ function openCupGame() {
 
   function drawCup(cup) {
     const y = BASE_Y - cup.lift * 75 + cup.dy;
-    g.save(); g.translate(cup.x, y);
+    g.save(); g.translate(cup.x, y); g.scale(K, K);
     g.fillStyle = 'rgba(0,0,0,.12)';
     if (cup.lift < .05) { g.beginPath(); g.ellipse(0, 4, 40, 7, 0, 0, Math.PI * 2); g.fill(); }
     g.beginPath(); g.moveTo(-38, 0); g.lineTo(-27, -78); g.lineTo(27, -78); g.lineTo(38, 0); g.closePath();
@@ -7863,7 +7933,7 @@ function openCupGame() {
     g.fillStyle = '#e8c49a'; g.fillRect(0, BASE_Y + 6, W, H - BASE_Y);
     // 寵物先畫，杯子蓋在上面
     const pc = cups[petCup];
-    g.save(); g.translate(pc.x, BASE_Y); g.scale(1.55, 1.55);
+    g.save(); g.translate(pc.x, BASE_Y); g.scale(1.55 * K, 1.55 * K);
     if (egg) drawEgg(g, sp, 0); else drawCreature(g, sp, { happy: phase === 'reveal', clean: 100, adult: G.pet.stage === 'adult' });
     g.restore();
     cups.forEach(drawCup);
@@ -7876,23 +7946,34 @@ function openCupGame() {
   c.addEventListener('pointerdown', e => {
     if (phase !== 'pick') return;
     const p = pos(e);
-    const hit = cups.findIndex(cup => Math.abs(p.x - cup.x) < 42 && p.y > BASE_Y - 90 && p.y < BASE_Y + 12);
+    const hit = cups.findIndex(cup => Math.abs(p.x - cup.x) < 42 * K && p.y > BASE_Y - 90 * K && p.y < BASE_Y + 12);
     if (hit < 0) return;
     picked = hit; phase = 'reveal'; phaseAt = performance.now();
-    if (hit === petCup) { correct++; Sound.play('petHappy'); w.status.textContent = `🎉 找到${pname}了！`; }
-    else { Sound.play('miss'); w.status.textContent = `差一點點！${pname}躲在另一個杯子`; }
+    if (hit === petCup) {
+      correct++; streak++;
+      // 連續找到：第二次起每多一次 +30
+      if (streak >= 2) extra += (streak - 1) * 30;
+      Sound.play('petHappy');
+      w.status.textContent = streak >= 2 ? `🎉 找到${pname}了！連續 ${streak} 次！` : `🎉 找到${pname}了！`;
+    } else { streak = 0; Sound.play('miss'); w.status.textContent = `差一點點！${pname}躲在另一個杯子`; }
     timers.push(setTimeout(() => {
       if (round < ROUNDS) { startRound(); return; }
       ended = true;
-      const bells = payReward(w, correct * 120 + (correct === ROUNDS ? 200 : 0));
+      const bells = payReward(w, correct * L.per + (correct === ROUNDS ? L.all : 0) + extra);
       setTimeout(() => petGainGrowth(GROWTH.game), 400);
-      w.status.textContent = `🎉 找到 ${correct} 次！拿到 ${fmt(bells)} 鈴錢${correct === ROUNDS ? '（全部答對加獎 200）' : ''}`;
+      w.status.textContent = `🎉 找到 ${correct} 次！拿到 ${fmt(bells)} 鈴錢${correct === ROUNDS ? `（全部答對加獎 ${L.all}）` : ''}`;
       gameButtons(w, openCupGame);
     }, 1400));
   });
 
   gameButtons(w, openCupGame);
   startRound();
+  openCupGame.test = { n: N, slots: SLOT_X, cups: () => cups, petCup: () => petCup,
+                       phase: () => phase, setPick: () => { phase = 'pick'; },
+                       tap: x => c.dispatchEvent(new PointerEvent('pointerdown', {
+                         clientX: c.getBoundingClientRect().left + x / W * c.getBoundingClientRect().width,
+                         clientY: c.getBoundingClientRect().top + (BASE_Y - 30 * K) / H * c.getBoundingClientRect().height,
+                         bubbles: true })) };
   raf = requestAnimationFrame(frame);
 }
 
