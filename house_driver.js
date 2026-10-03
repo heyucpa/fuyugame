@@ -137,6 +137,41 @@
     if (rich && rich.bells !== 300000)
       fails.push('本來就比 10 萬多的被改成 ' + rich.bells);
 
+    /* ⑥.9 「重新開始」要可以反悔一次。
+       走真的那個流程（確認兩次、打四個字），
+       不是直接叫 newGame()——改壞按鈕這一關才驗得出來。 */
+    var keepSave = JSON.stringify(Object.assign({}, G, { bells: 55555, topup100k: true }));
+    localStorage.setItem(SAVE_KEY, keepSave);
+    G = loadGame();
+    localStorage.removeItem(UNDO_KEY);
+    confirmReset();
+    var card = document.querySelector('#modalCard');
+    var step1 = [].slice.call(card.querySelectorAll('button'))
+      .filter(function(b){ return b.textContent.indexOf('\u6211\u78ba\u5b9a') >= 0; })[0];
+    if (!step1) fails.push('\u91cd\u65b0\u958b\u59cb\u627e\u4e0d\u5230\u300c\u6211\u78ba\u5b9a\u300d');
+    else {
+      step1.onclick();
+      var inp = card.querySelector('input.textin');
+      var go = [].slice.call(card.querySelectorAll('button'))
+        .filter(function(b){ return b.textContent.indexOf('\u6e05\u9664\u6240\u6709\u9032\u5ea6') >= 0; })[0];
+      if (!inp || !go) fails.push('\u91cd\u65b0\u958b\u59cb\u7684\u7b2c\u4e8c\u6b65\u4e0d\u898b\u4e86');
+      else {
+        // 打錯字不該清得掉
+        inp.value = '\u96a8\u4fbf'; inp.oninput(); go.onclick();
+        if (loadGame().bells !== 55555) fails.push('\u6253\u932f\u5b57\u7adf\u7136\u4e5f\u6e05\u6389\u4e86');
+        inp.value = '\u91cd\u65b0\u958b\u59cb'; inp.oninput(); go.onclick();
+        if (G.bells === 55555) fails.push('\u6309\u4e86\u91cd\u65b0\u958b\u59cb\u537b\u6c92\u6709\u6e05\u6389');
+        if (!hasUndo()) fails.push('\u91cd\u65b0\u958b\u59cb\u4e4b\u524d\u6c92\u6709\u7559\u4e00\u4efd\u53ef\u4ee5\u53cd\u6094\u7684');
+        var u2 = readBackup(localStorage.getItem(UNDO_KEY));
+        if (!u2 || u2.data !== keepSave)
+          fails.push('\u53ef\u4ee5\u53cd\u6094\u7684\u90a3\u4e00\u4efd\u4e0d\u662f\u6e05\u6389\u524d\u7684\u9032\u5ea6');
+      }
+    }
+    document.querySelector('#modal').hidden = true;
+    localStorage.removeItem(UNDO_KEY);
+    localStorage.setItem(SAVE_KEY, mark);
+    G = loadGame();
+
     // ⑦ 其他分頁沒被改壞
     ['inv','shop','dress','pets','deco','build','earn','book','talk','save'].forEach(function(t){
       try { openTab(t); if (!document.querySelector('#tabBody').children.length)

@@ -5823,7 +5823,11 @@ function confirmReset() {
   const card = $('#modalCard'), close = () => { $('#modal').hidden = true; };
   card.innerHTML = '';
   card.appendChild(el('h2', '', '⚠️ 真的要重新開始嗎？'));
-  card.appendChild(el('p', 'sell-q', '房子、家具、衣服、寵物、鈴錢，全部都會不見，而且救不回來喔！'));
+  card.appendChild(el('p', 'sell-q', '房子、家具、衣服、寵物、鈴錢，全部都會不見喔！'));
+  // 以前這裡寫「救不回來」。現在清掉之前會自動留一份，所以講實話，
+  // 但還是要她先自己存一份——自動留的那一份只有一次，再清一次就蓋掉了
+  card.appendChild(note('清掉之前會自動留一份，到「備份」分頁按「把上一份換回來」還救得回來。' +
+    '不過只留最近一次，想保險一點的話，先去「備份」分頁存一份再清。'));
   const no = el('button', 'big', '不要，我要繼續玩');
   const yes = el('button', 'big alt', '我確定，下一步');
   no.onclick = () => { close(); Sound.play('click'); };
@@ -5839,8 +5843,10 @@ function confirmReset() {
     doIt.onclick = () => {
       if (input.value.trim() !== '重新開始') return;
       close();
+      // 清掉之前整份收起來，到「備份」分頁按「把上一份換回來」就回得去
+      try { localStorage.setItem(UNDO_KEY, makeBackup()); } catch (e) {}
       G = newGame(); cancelHold(); hold = null; updateHoldUI(); commit();
-      toast('已經重新開始了');
+      toast('已經重新開始了（「備份」分頁可以反悔）');
     };
     const back = el('button', 'big', '不要，我要繼續玩');
     back.onclick = () => { close(); Sound.play('click'); };
