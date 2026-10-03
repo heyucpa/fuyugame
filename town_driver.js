@@ -842,6 +842,91 @@
     view='menu'; render();
     window.dispatchEvent(new PopStateEvent('popstate'));
     if (view !== 'menu') fails.push('在開始畫面按上一頁不該被攔下來');
+
+    /* ⑭ 備份與還原
+       存檔只在這一台機器裡，不見了救不回來。所以這一關最要緊的是
+       「備份出去再貼回來，要一模一樣」——差一個欄位就是白備份。 */
+    localStorage.clear();
+    savePlayers([{id:'p1',name:'姊姊',emoji:'⭐',role:'big'},
+                 {id:'p2',name:'妹妹',emoji:'🌸',role:'little'}]);
+    setWho('p2');
+    // 兩個玩家都塞一點東西進去，而且要不一樣，才驗得出有沒有漏掉某一個
+    localStorage.setItem('theater-ends:p1', JSON.stringify({road:{best:1}}));
+    localStorage.setItem('theater-treasures:p1', JSON.stringify({'t-clover':2}));
+    localStorage.setItem('theater-progress:p2', JSON.stringify({road:'good'}));
+    localStorage.setItem('theater-friend:p2', JSON.stringify({park:5}));
+    var snap = {};
+    for (var si=0; si<localStorage.length; si++){ var sk=localStorage.key(si);
+      if (sk && sk.indexOf('theater-')===0) snap[sk]=localStorage.getItem(sk); }
+    var code = collectSave();
+    var parsed = parseSave(code);
+    if (!parsed) { fails.push('自己做的備份自己讀不回來'); }
+    else {
+      // 備份要含兩個玩家的東西，不是只有現在這一個
+      ['theater-ends:p1','theater-treasures:p1','theater-progress:p2',
+       'theater-friend:p2','theater-players','theater-who'].forEach(function(k){
+        if (!(k in parsed.data)) fails.push('備份漏掉 '+k);
+      });
+      // 全部清光再貼回來，要一模一樣
+      localStorage.clear();
+      if (!applySave(parsed.data)) fails.push('還原寫不進去');
+      var now = {};
+      for (var ni=0; ni<localStorage.length; ni++){ var nk=localStorage.key(ni);
+        if (nk && nk.indexOf('theater-')===0 && nk!=='theater-undo') now[nk]=localStorage.getItem(nk); }
+      Object.keys(snap).forEach(function(k){
+        if (now[k] !== snap[k]) fails.push('還原之後 '+k+' 對不上'); });
+      Object.keys(now).forEach(function(k){
+        if (!(k in snap)) fails.push('還原之後多出一個 '+k); });
+    }
+    // 壞掉的字串一定要擋下來，不能半套蓋上去
+    var keep = localStorage.getItem('theater-ends:p1');
+    ['', '{}', 'hello', '{"tag":"別人的遊戲","data":{"a":"1"}}',
+     '{"tag":"fuyu-theater-save","data":{"壞的key":"1"}}',
+     '{"tag":"fuyu-theater-save","data":{}}'].forEach(function(bad){
+      if (parseSave(bad)) fails.push('這種壞備份竟然收下了：'+bad.slice(0,30));
+    });
+    if (localStorage.getItem('theater-ends:p1') !== keep)
+      fails.push('驗壞備份的時候竟然動到了現有紀錄');
+    // 備份裡不可以包含上一份備份，不然每備份一次就脹一倍
+    localStorage.setItem('theater-undo', collectSave());
+    var c2 = collectSave();
+    if (c2.indexOf('theater-undo') >= 0) fails.push('備份把上一份備份也包進去了（會越滾越大）');
+    // 還原之前要留一份可以反悔的
+    localStorage.removeItem('theater-undo');
+    var mark = JSON.stringify({road:{best:1,good:1}});
+    localStorage.setItem('theater-ends:p1', mark);
+    applySave(parseSave(code).data);
+    if (!hasUndo()) fails.push('還原之後沒有留下可以反悔的那一份');
+    var back = parseSave(localStorage.getItem('theater-undo'));
+    if (!back || back.data['theater-ends:p1'] !== mark)
+      fails.push('可以反悔的那一份不是還原前的現況');
+    // 「清除紀錄」也要先留一份
+    localStorage.removeItem('theater-undo');
+    var realConfirm2 = window.confirm; window.confirm = function(){ return true; };
+    view='menu'; render();
+    var rb2 = document.getElementById('reset');
+    if (rb2) rb2.onclick();
+    window.confirm = realConfirm2;
+    if (!hasUndo()) fails.push('清除紀錄之前沒有先留一份可以反悔的');
+    // 備份那一頁要進得去、複製的內容要是真的備份
+    localStorage.clear();
+    view='menu'; render();
+    var sb2 = document.getElementById('savebtn');
+    if (!sb2) fails.push('選單上沒有「備份存檔」');
+    else { sb2.onclick();
+      if (view !== 'save') fails.push('按了備份存檔沒有進去');
+      else {
+        ['copy','dl','restore','pastebox','saveback'].forEach(function(id){
+          if (!document.getElementById(id)) fails.push('備份頁少了 '+id); });
+        // 貼垃圾進去按還原，不可以動到任何東西
+        var before2 = collectSave();
+        document.getElementById('pastebox').value = '隨便亂打';
+        document.getElementById('restore').onclick();
+        if (collectSave().replace(/"at":"[^"]*"/,'') !== before2.replace(/"at":"[^"]*"/,''))
+          fails.push('貼了垃圾按還原竟然動到了紀錄');
+      }
+    }
+    localStorage.clear();
   } catch(e){ errs.push('THROW '+e.message+' | '+(e.stack||'').split('\n')[1]); }
 
   var pre=document.createElement('pre'); pre.id='R';

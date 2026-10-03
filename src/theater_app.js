@@ -207,6 +207,60 @@ function sweepOldKeys() {
   } catch (e) {}
 }
 
+/* ===== 備份與還原 =====
+   存檔全部在 localStorage，而 localStorage 是會不見的：
+   換一台裝置、換瀏覽器、清掉網站資料、iOS 把久沒開的網站資料回收，
+   她玩了幾個月的東西就沒了，而且沒有任何辦法救回來。
+
+   所以給一份看得到、帶得走的備份：按一下複製成一段文字，
+   貼到記事本或傳給自己就是一份存檔，要用的時候貼回來。
+   刻意不做成「下載檔案」為主：iPad 的 Safari 下載檔案很難用，
+   小孩的裝置上更不好找。複製貼上在每一台機器上都行得通。
+
+   備份含「全部玩家」，不只現在這一個——一份備份就蓋掉兩個小孩的紀錄，
+   不會發生「救回姊姊卻漏掉妹妹」。 */
+const SAVE_TAG = 'fuyu-theater-save';
+const UNDO_KEY = 'theater-undo';     // 還原／清除之前的現況，留一次反悔的機會
+function collectSave() {
+  const data = {};
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      // UNDO_KEY 自己不能進備份，不然每備份一次就把上一份包進去，會越滾越大
+      if (k && k.indexOf('theater-') === 0 && k !== UNDO_KEY) data[k] = localStorage.getItem(k);
+    }
+  } catch (e) {}
+  return JSON.stringify({ tag: SAVE_TAG, v: 1, build: BUILD,
+    at: new Date().toISOString().slice(0, 16).replace('T', ' '), data: data });
+}
+// 回傳 { data, at, n } 或 null。壞掉的字串一定要擋下來，不能半套蓋上去
+function parseSave(txt) {
+  let o;
+  try { o = JSON.parse(String(txt || '').trim()); } catch (e) { return null; }
+  if (!o || o.tag !== SAVE_TAG || !o.data || typeof o.data !== 'object') return null;
+  const keys = Object.keys(o.data);
+  if (!keys.length || keys.some(k => k.indexOf('theater-') !== 0)) return null;
+  if (keys.some(k => typeof o.data[k] !== 'string')) return null;
+  return { data: o.data, at: o.at || '', n: keys.length };
+}
+/* 蓋上去之前先把現況整份收起來。她可能貼錯一份舊的備份，
+   那時候沒有這一步就真的回不去了。 */
+function applySave(data) {
+  const before = collectSave();
+  try {
+    const old = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.indexOf('theater-') === 0 && k !== UNDO_KEY) old.push(k);
+    }
+    old.forEach(k => localStorage.removeItem(k));
+    Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
+    localStorage.setItem(UNDO_KEY, before);
+  } catch (e) { return false; }
+  return true;
+}
+const hasUndo = () => !!parseSave(localStorage.getItem(UNDO_KEY));
+
 /* 清掉某一個玩家的全部東西。按鈕上寫「清除所有紀錄」，
    那就真的要全部——以前漏掉寶物盒跟熟悉度，按完寶物還在。 */
 function wipePlayer(id) {
@@ -1391,9 +1445,111 @@ function render() {
   else if (view === 'story') renderStory();
   else if (view === 'town') renderTown();
   else if (view === 'box') renderBox();
+  else if (view === 'save') renderSave();
   else if (view === 'moment') renderMoment();
   else renderEnding();
   window.scrollTo(0, 0);
+}
+
+/* ===== 備份存檔那一頁 =====
+   這一頁是給大人用的，不是給小孩的，所以字可以多一點、講清楚一點。
+   最重要的一句放最上面：她玩的東西只存在這一台機器裡。 */
+function renderSave() {
+  const list = players();
+  const code = collectSave();
+  app.innerHTML = `
+    <div class="card anim">
+      <h1>💾 備份存檔</h1>
+      <div class="sub">給大人的：把紀錄帶著走</div>
+      <div class="grownup" style="text-align:left;">
+        她玩的東西<b>只存在這一台機器的這個瀏覽器裡</b>。<br>
+        換裝置、換瀏覽器、清掉網站資料，或是 iPhone／iPad 把太久沒開的網站資料回收掉，
+        紀錄就會不見，而且沒有辦法救回來。<br>
+        <b>定期按一次下面的「複製備份」，貼到記事本或傳給自己</b>，就有一份帶得走的存檔。
+      </div>
+
+      <div class="savebox">
+        <div class="saveh">📤 把現在的紀錄複製起來</div>
+        <div class="savenum">${list.length} 個玩家　·　${(code.length / 1024).toFixed(1)} KB</div>
+        <div class="savewho">${list.map(p => `${p.emoji} ${esc(p.name)}`).join('　')}</div>
+        <button id="copy" style="width:100%; background:#2f6f8f; color:#fff;">📋 複製備份</button>
+        <button class="mini" id="dl" style="width:100%; margin-top:7px;">💾 存成檔案（電腦比較好用）</button>
+        <div class="savehint" id="copyhint" hidden></div>
+      </div>
+
+      <div class="savebox">
+        <div class="saveh">📥 把備份貼回來</div>
+        <div class="savehint">貼上之後按「還原」。<b>現在的紀錄會被整份蓋掉</b>，
+          不過蓋掉之前會自動留一份，按錯了可以反悔。</div>
+        <textarea id="pastebox" rows="4" placeholder="把備份貼在這裡…"></textarea>
+        <button id="restore" style="width:100%; background:#6b4a9e; color:#fff;">↩️ 還原</button>
+        <div class="savehint" id="rhint" hidden></div>
+      </div>
+
+      ${hasUndo() ? `
+      <div class="savebox undo">
+        <div class="saveh">⏪ 反悔</div>
+        <div class="savehint">上一次還原（或清除紀錄）之前的那一份還留著。</div>
+        <button class="mini" id="undo" style="width:100%;">把上一份換回來</button>
+      </div>` : ''}
+
+      <div class="row" style="margin-top:12px;">
+        <button class="mini" id="saveback">← 回劇本選單</button>
+      </div>
+    </div>`;
+
+  const hint = (el, msg, ok) => {
+    const d = document.getElementById(el);
+    d.textContent = msg; d.hidden = false;
+    d.className = 'savehint ' + (ok ? 'ok' : 'ng');
+  };
+  /* 複製：navigator.clipboard 在非 https 或舊 Safari 會沒有／會被擋，
+     所以一定要留後路——選起來讓她自己按「拷貝」，而不是按了沒反應。 */
+  document.getElementById('copy').onclick = async () => {
+    Sfx.tap();
+    try {
+      await navigator.clipboard.writeText(code);
+      hint('copyhint', '✓ 複製好了。貼到記事本或傳給自己，就是一份存檔。', true);
+    } catch (e) {
+      const ta = document.getElementById('pastebox');
+      ta.value = code; ta.focus(); ta.select();
+      hint('copyhint', '這台機器不給程式自己複製。備份已經填在下面的框裡，請自己長按→拷貝。', false);
+    }
+  };
+  document.getElementById('dl').onclick = () => {
+    Sfx.tap();
+    try {
+      const url = URL.createObjectURL(new Blob([code], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '情境劇場備份-' + todayStamp() + '.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      hint('copyhint', '✓ 存好了。iPad 如果沒反應，請改用上面那顆「複製備份」。', true);
+    } catch (e) {
+      hint('copyhint', '這台機器存不了檔案，請改用上面那顆「複製備份」。', false);
+    }
+  };
+  document.getElementById('restore').onclick = () => {
+    const txt = document.getElementById('pastebox').value;
+    const s = parseSave(txt);
+    if (!s) { Sfx.bad(); return hint('rhint', '這段看起來不是這個遊戲的備份，沒有動到任何東西。', false); }
+    if (!confirm('要用這一份備份蓋掉現在的紀錄嗎？\n\n備份時間：' + (s.at || '不詳') +
+                 '\n裡面有 ' + s.n + ' 項資料。')) return;
+    if (!applySave(s.data)) { Sfx.bad(); return hint('rhint', '寫不進去（可能是空間滿了），沒有動到任何東西。', false); }
+    Sfx.good();
+    render();
+  };
+  const ub = document.getElementById('undo');
+  if (ub) ub.onclick = () => {
+    const s = parseSave(localStorage.getItem(UNDO_KEY));
+    if (!s) return;
+    if (!confirm('要換回上一份嗎？（' + (s.at || '不詳') + '）')) return;
+    applySave(s.data);      // 這一步又會把現在這份收起來，所以可以來回切
+    Sfx.good();
+    render();
+  };
+  document.getElementById('saveback').onclick = () => { Sfx.tap(); view = 'menu'; render(); };
 }
 
 /* 換人玩：每個人的通關紀錄與「走過的選項」各自分開 */
@@ -1556,6 +1712,7 @@ function renderMenu() {
       <div class="row" style="margin-top:14px;">
         <button class="mini" id="mute">${Sfx.isMuted() ? '🔇 靜音中' : '🔊 有聲'}</button>
         <button class="mini" id="music">${Sfx.isBgmOn() ? Sfx.trackName() : '🎵 音樂關'}</button>
+        <button class="mini" id="savebtn">💾 備份存檔</button>
         <button class="mini" id="reset">🗑️ 清除紀錄</button>
         <button class="mini" id="replaymode">${replayOn() ? '📖 回顧開' : '📖 回顧關'}</button>
         <button class="mini" id="map">🗺️ 分支圖</button>
@@ -1614,10 +1771,13 @@ function renderMenu() {
   document.getElementById('back').onclick = () => { location.href = './index.html'; };
   document.getElementById('reset').onclick = () => {
     if (confirm('要清除「' + who().name + '」的所有紀錄嗎？\n\n結局圖鑑、寶物圖鑑、跟鎮民的熟悉度都會歸零。')) {
+      // 清掉之前先整份收起來，按錯了還有一次反悔的機會
+      try { localStorage.setItem(UNDO_KEY, collectSave()); } catch (e) {}
       wipePlayer(whoId());
       render();
     }
   };
+  document.getElementById('savebtn').onclick = () => { Sfx.tap(); view = 'save'; render(); };
 }
 
 // 隨機挑一個，但避開剛剛玩過的那個（不然常常連抽到同一個）
