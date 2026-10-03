@@ -1088,10 +1088,29 @@
       if (!FURNITURE_USE.school_chair) fails.push('學生椅不能坐');
       G.actCD = {};
       G.away = { place: 'grandma', idx: 0 };
-      if (relativePerk('homework')) fails.push('在阿婆家也能交作業拿錢');
+      if (relativePerk('homework')) fails.push('在阿婆家也能交作業');
       G.away = { place: 'school', idx: 0 };
+      // 交作業不給錢，給貼紙；12 次收集完（先給沒有的）
+      G.stickers = {};
       var hw = G.bells; relativePerk('homework');
-      if (G.bells - hw < 40 || G.bells - hw > 80) fails.push('交作業的零用錢不在 40~80（' + (G.bells - hw) + '）');
+      if (G.bells !== hw) fails.push('交作業還在給零用錢（' + (G.bells - hw) + '）');
+      if (Object.keys(G.stickers).length !== 1) fails.push('交作業沒有拿到貼紙');
+      for (var si = 1; si < STICKERS.length; si++) giveSticker();
+      if (Object.keys(G.stickers).length !== STICKERS.length) fails.push('交了 ' + STICKERS.length + ' 次作業，貼紙只收集到 ' + Object.keys(G.stickers).length + ' 張');
+      openSticker({ s: '⭐', isNew: false });
+      if (document.querySelectorAll('#modalCard .sticker').length !== STICKERS.length) fails.push('貼紙收集畫面不是 12 格');
+      var stBtn = document.querySelector('#modalCard button.big'); if (stBtn) stBtn.onclick();
+      if (!document.querySelector('#modal').hidden) fails.push('貼紙畫面關不掉');
+      // 漫畫只要等 5 分鐘，其他還是 10 分鐘
+      G.away = { place: 'uncle', idx: 0 };
+      G.actCD = { comic: Date.now() - 5 * 60000 - 1, snack: Date.now() - 5 * 60000 - 1 };
+      if (!relativeReady('comic')) fails.push('漫畫過了 5 分鐘還不能看');
+      if (relativeReady('snack')) fails.push('點心也變成 5 分鐘了（應該還是 10 分鐘）');
+      G.actCD = { comic: Date.now() - 4 * 60000 };
+      if (relativeReady('comic')) fails.push('漫畫 4 分鐘就可以再看');
+      if (relativeMinsLeft('comic') !== 1) fails.push('漫畫還要等的分鐘數不對：' + relativeMinsLeft('comic'));
+      G.away = { place: 'school', idx: 0 }; G.actCD = {};
+      var md7 = document.querySelector('#modal'); if (md7) md7.hidden = true;
       G.pet.mood = 20; relativePerk('slide');
       if (G.pet.mood !== 35) fails.push('溜滑梯寵物心情沒有 +15（' + G.pet.mood + '）');
       // 老師：講老師的話、不送禮物、選單有小考和去操場

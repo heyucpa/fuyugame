@@ -302,6 +302,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .quiz-c.right { background: #d9f3df; border-color: #5fae7c; }
 .quiz-c.wrong { background: #fde0e0; border-color: #e8505b; }
 .quiz-end { font-size: 72px; text-align: center; }
+.sticker-big { font-size: 72px; text-align: center; animation: comicIn .4s ease; }
+.sticker-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin: 8px 0; }
+.sticker { font-size: 26px; text-align: center; background: #fffaf0; border: 2px solid var(--line); border-radius: 12px; padding: 4px 0; }
+.sticker.none { color: #c8bfae; font-size: 18px; font-weight: 800; padding: 8px 0; }
 .lv-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; padding: 10px 0; }
 .lv-btn {
   display: flex; flex-direction: column; align-items: center; gap: 3px;
@@ -8738,20 +8742,23 @@ const RELATIVE_PERKS = {
   warm:    { who: null,      pet: 15, say: '暖呼呼的…',             toast: '🔥 暖呼呼，寵物心情 +15' },
   hay:     { who: 'grandma', money: [50, 100], say: '阿婆說我好棒！', toast: '🌾 幫阿婆搬稻草，拿到零用錢' },
   trough:  { who: 'grandma', money: [50, 100], say: '小牛小羊喝得好開心！', toast: '💧 幫忙加水，阿婆給了零用錢' },
-  comic:   { who: 'uncle',   comic: true },
+  comic:   { who: 'uncle',   comic: true, cd: 5 * 60000 }, // 漫畫是收集的樂趣，等 5 分鐘就好
   figures: { who: 'uncle',   figure: true },
-  homework: { who: 'school', money: [40, 80], say: '老師說我寫得很棒！', toast: '⭐ 老師給了一張貼紙，還有零用錢' },
+  // 交作業不給錢（寫作業本來就是自己的事），老師給一張貼紙，可以收集
+  homework: { who: 'school', sticker: true, say: '老師說我寫得很棒！' },
   slide:    { who: 'school', pet: 15, say: '咻～寵物也跟著溜下來了！', toast: '🛝 好好玩，寵物心情 +15' },
   swing:    { who: 'school', pet: 10, say: '盪好高喔！', toast: '🪢 盪鞦韆，寵物心情 +10' }
 };
 
+// 冷卻時間：每件事可以自己設（cd），沒設就是 10 分鐘
+const relativeCD = key => (RELATIVE_PERKS[key] && RELATIVE_PERKS[key].cd) || RELATIVE_CD_MS;
 function relativeReady(key) {
   const t = (G.actCD || {})[key] || 0;
-  return Date.now() - t >= RELATIVE_CD_MS;
+  return Date.now() - t >= relativeCD(key);
 }
 function relativeMinsLeft(key) {
   const t = (G.actCD || {})[key] || 0;
-  return Math.max(1, Math.ceil((RELATIVE_CD_MS - (Date.now() - t)) / 60000));
+  return Math.max(1, Math.ceil((relativeCD(key) - (Date.now() - t)) / 60000));
 }
 
 /* 回傳 true＝這次有給效果。冷卻中會講還要等幾分鐘，不會默默沒反應。 */
@@ -8775,6 +8782,10 @@ function relativePerk(key) {
   } else if (P.toast) toast(P.toast);
   if (P.say) setTimeout(() => fufuSay(P.say, 2800), 600);
   if (P.comic) setTimeout(() => { if ($('#modal').hidden) openComic(); }, 1200);
+  if (P.sticker) { // 貼紙先記下來，畫面晚一點再跳（她如果剛好在玩別的，貼紙也不會不見）
+    const st = giveSticker();
+    setTimeout(() => { if ($('#modal').hidden) openSticker(st); }, 1200);
+  }
   if (P.figure) figureGift();
   return true;
 }
@@ -8819,6 +8830,35 @@ function openComic() {
   const got = Object.keys(seen).length;
   card.appendChild(note((isNew ? '✨ 新的一則！' : '看過了，還是好好笑') + `　（漫畫收集 ${got} / ${COMICS.length}）`));
   const ok = el('button', 'big', '好好笑！');
+  ok.onclick = () => { $('#modal').hidden = true; };
+  card.appendChild(ok);
+  $('#modal').hidden = false;
+}
+
+/* ── ⭐ 老師的貼紙 ──
+   交作業拿到一張，先給還沒有的，收集 12 張。 */
+const STICKERS = ['⭐', '🌟', '💯', '🌈', '🍀', '🦄', '🐰', '🌸', '🍓', '🎀', '🏅', '👍'];
+function giveSticker() {
+  const have = G.stickers = G.stickers || {};
+  const fresh = STICKERS.filter(s => !have[s]);
+  const pool = fresh.length ? fresh : STICKERS;
+  const s = pool[Math.floor(Math.random() * pool.length)];
+  const isNew = !have[s];
+  have[s] = (have[s] || 0) + 1;
+  saveGame();
+  return { s, isNew };
+}
+function openSticker(st) {
+  const have = G.stickers || {};
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', '⭐ 老師給你一張貼紙！'));
+  card.appendChild(el('div', 'sticker-big', st.s));
+  const grid = el('div', 'sticker-grid');
+  STICKERS.forEach(s => grid.appendChild(el('div', 'sticker' + (have[s] ? '' : ' none'), have[s] ? s : '？')));
+  card.appendChild(grid);
+  card.appendChild(note((st.isNew ? '✨ 新的貼紙！' : '這張已經有了') + `　（貼紙收集 ${Object.keys(have).length} / ${STICKERS.length}）`));
+  const ok = el('button', 'big', '謝謝老師！');
   ok.onclick = () => { $('#modal').hidden = true; };
   card.appendChild(ok);
   $('#modal').hidden = false;
