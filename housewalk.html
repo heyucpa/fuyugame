@@ -2063,9 +2063,16 @@ PLACE_FURNITURE.forEach(f => { FURN_BY_ID[f.id] = f; }); // 親戚家專用的�
 
 const SAVE_KEY = 'myHouseGame_v1';
 
+/* 開局金幣。本來是 3000。
+   之前的存檔住在 Artifact 的 iframe 裡，被 iOS 當暫時資料清掉了，
+   她布置到一半的東西全沒了，這是補償，也是讓她一口氣布置得起來。
+   137 件家具全部買一輪要 227,970，10 萬大約是四成——
+   夠一次弄得有樣子，又不會一次玩完、沒東西可以賺。 */
+const START_BELLS = 100000;
+
 function newGame() {
   const g = {
-    bells: 3000,
+    bells: START_BELLS,
     earned: 0,
     inv: { wood_bed: 1, wood_chair: 1, wood_table: 1, plant_s: 1 },
     walls: ['wp_cream'],
@@ -2130,6 +2137,13 @@ function normalizeSave(g) {
     if (r.d < MIN_ROOM_SIZE) r.d = MIN_ROOM_SIZE;
   });
   const out = Object.assign(newGame(), g);
+  /* 補償也要發給「已經存在的存檔」——只改 newGame() 的話，
+     她那台已經有存檔了，newGame() 根本不會再跑，一毛都拿不到。
+     補過一次就記在存檔裡，之後不管她花到剩多少都不再補。 */
+  if (!out.topup100k) {
+    out.topup100k = true;
+    if (out.bells < START_BELLS) out.bells = START_BELLS;
+  }
   // 寵物：舊存檔只有一隻 g.pet（當作「小朋友」階段的粉紅糰子），新存檔用 g.pets
   const src = Array.isArray(g.pets) && g.pets.length ? g.pets : [Object.assign({ name: DEFAULT_PET_NAME }, g.pet || {})];
   out.pets = src.map(p => {
@@ -2175,6 +2189,10 @@ function buyAndWear(id) {
 let G = loadGame();
 // 上次玩到現在隔了幾小時（在第一次結算之前記下來，給「好久不見」用）
 const hoursAway = (Date.now() - Math.max(G.pet.lastTick || 0, G.kid.lastTick || 0)) / 3600000;
+/* 讀完立刻存一次。normalizeSave 裡的補欄位與補償如果沒有馬上落地，
+   她開了又關、什麼都沒做的話那些調整就白做了——
+   補償那一筆更糟：旗標沒存下來，下次開又補一次。 */
+saveGame();
 
 function saveGame() {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(G)); } catch (e) { /* 私密視窗等情況存不了 */ }
@@ -7352,6 +7370,28 @@ function openSlingGame() {
     openTab('save');
     if (!undoHead()) fails.push('有上一份可以反悔，卻沒顯示反悔那一塊');
     localStorage.removeItem(UNDO_KEY);
+
+    /* ⑥.5 補償金幣
+       重點是「已經存在的存檔也要拿得到」——
+       只改 newGame() 的話，她那台有存檔就一毛都拿不到。
+       而且只能補一次，不能每次開都補。 */
+    if (newGame().bells !== START_BELLS)
+      fails.push('開局金幣不是 ' + START_BELLS);
+    var old = normalizeSave(Object.assign(JSON.parse(mark), { bells: 3000, topup100k: undefined }));
+    if (!old) fails.push('舊存檔讀不回來');
+    else {
+      if (old.bells !== START_BELLS)
+        fails.push('舊存檔沒有補到 ' + START_BELLS + '（現在是 ' + old.bells + '）');
+      if (!old.topup100k) fails.push('補完沒有記起來（下次開會再補一次）');
+    }
+    // 補過了就不再補，不管她花到剩多少
+    var spent = normalizeSave(Object.assign(JSON.parse(mark), { bells: 500, topup100k: true }));
+    if (spent && spent.bells !== 500)
+      fails.push('補過了還再補一次（花到 500 被推回 ' + spent.bells + '）');
+    // 比 10 萬多的不要被打下來
+    var rich = normalizeSave(Object.assign(JSON.parse(mark), { bells: 300000, topup100k: undefined }));
+    if (rich && rich.bells !== 300000)
+      fails.push('本來就比 10 萬多的被改成 ' + rich.bells);
 
     // ⑦ 其他分頁沒被改壞
     ['inv','shop','dress','pets','deco','build','earn','book','talk','save'].forEach(function(t){

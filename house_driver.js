@@ -115,6 +115,28 @@
     if (!undoHead()) fails.push('有上一份可以反悔，卻沒顯示反悔那一塊');
     localStorage.removeItem(UNDO_KEY);
 
+    /* ⑥.5 補償金幣
+       重點是「已經存在的存檔也要拿得到」——
+       只改 newGame() 的話，她那台有存檔就一毛都拿不到。
+       而且只能補一次，不能每次開都補。 */
+    if (newGame().bells !== START_BELLS)
+      fails.push('開局金幣不是 ' + START_BELLS);
+    var old = normalizeSave(Object.assign(JSON.parse(mark), { bells: 3000, topup100k: undefined }));
+    if (!old) fails.push('舊存檔讀不回來');
+    else {
+      if (old.bells !== START_BELLS)
+        fails.push('舊存檔沒有補到 ' + START_BELLS + '（現在是 ' + old.bells + '）');
+      if (!old.topup100k) fails.push('補完沒有記起來（下次開會再補一次）');
+    }
+    // 補過了就不再補，不管她花到剩多少
+    var spent = normalizeSave(Object.assign(JSON.parse(mark), { bells: 500, topup100k: true }));
+    if (spent && spent.bells !== 500)
+      fails.push('補過了還再補一次（花到 500 被推回 ' + spent.bells + '）');
+    // 比 10 萬多的不要被打下來
+    var rich = normalizeSave(Object.assign(JSON.parse(mark), { bells: 300000, topup100k: undefined }));
+    if (rich && rich.bells !== 300000)
+      fails.push('本來就比 10 萬多的被改成 ' + rich.bells);
+
     // ⑦ 其他分頁沒被改壞
     ['inv','shop','dress','pets','deco','build','earn','book','talk','save'].forEach(function(t){
       try { openTab(t); if (!document.querySelector('#tabBody').children.length)
