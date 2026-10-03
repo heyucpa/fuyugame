@@ -1181,7 +1181,19 @@
     if (G.bells - qb3 !== QUIZ_N * 15 * 3 + 100 * 3) fails.push('四年級全對的錢不對：' + (G.bells - qb3));
     closeGameWindow();
     // 去學校的路上畫得出學校
-    try { var tc = document.createElement('canvas').getContext('2d'); drawTripSchool(tc, 360, 240, 150); }
+    try {
+      var tcv = document.createElement('canvas'); tcv.width = 360; tcv.height = 240;
+      var tc = tcv.getContext('2d'), wrote = [];
+      var realFT = tc.fillText, realST = tc.strokeText;
+      tc.fillText = function(t){ wrote.push(t); }; tc.strokeText = function(t){ wrote.push(t); };
+      drawTripSchool(tc, 360, 240, (360 - SCHOOL_W) / 2);
+      // 照校門口畫，但門牌留白：整棟學校一個字都不能寫
+      if (wrote.length) fails.push('學校外觀上寫了字：' + wrote.join('、'));
+      // 停在正中間、整棟在畫面裡；大門（深紅色）在正中間下面
+      if ((360 - SCHOOL_W) / 2 < 0) fails.push('學校太寬，畫面放不下');
+      var gp = tc.getImageData(226, 184 - 30, 1, 1).data;  // 門廊右邊的深紅色牆（中間是空白門牌和拱門）
+      if (!(gp[0] > 100 && gp[0] < 140 && gp[1] < 70 && gp[2] < 70)) fails.push('學校正中間不是深紅色大門廊（' + [].slice.call(gp, 0, 3) + '）');
+    }
     catch(e) { fails.push('路上的學校畫不出來：' + e.message); }
     var md5 = document.querySelector('#modal'); if (md5) md5.hidden = true;
 

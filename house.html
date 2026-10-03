@@ -6076,7 +6076,7 @@ function walkTrip(label, done, dest) {
       g.beginPath(); g.arc(tx, H - 82, 13, 0, Math.PI * 2); g.fill();
     }
     // 去學校：後半段學校從右邊出現，最後停在前面
-    if (dest === 'school' && p > .35) drawTripSchool(g, W, H, W + 20 - Math.min(1, (p - .35) / .5) * 200);
+    if (dest === 'school' && p > .35) drawTripSchool(g, W, H, W + 20 - Math.min(1, (p - .35) / .5) * (W + 20 - (W - SCHOOL_W) / 2)); // 最後停在正中間
     // 路面的虛線
     g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 3;
     g.setLineDash([16, 14]); g.lineDashOffset = -scroll * 2;
@@ -6136,38 +6136,75 @@ function roomDoors(name) {
   setTimeout(() => d.remove(), 1200);
 }
 
-/* 過場裡的學校外觀：一般的小學樣子——暖色的樓、一排拱形窗、中間拱門、
-   上面一個時鐘、旁邊一支旗桿。不寫校名、不畫校徽、不照真的學校的樣子（去識別化）。 */
+/* 過場裡的學校外觀：照校門口的照片畫（家長同意），但不寫校名、不畫校徽、門牌留白。
+   兩側是長長的側翼樓、一排一排拱形陽台；中間主樓比較高，兩邊紅色塔柱、
+   頂上一格一格白色城垛；前面是深紅色的大門廊（白柱子），
+   右邊一支很高的灰色石柱、左邊矮石柱，中間拉門；門口有紅花花圃、大樹。
+   x 是整棟的左邊，寬 SCHOOL_W。 */
+const SCHOOL_W = 250;
 function drawTripSchool(g, W, H, x) {
-  const base = H - 56, bw = 190, bh = 112, top = base - bh;
+  const base = H - 56, BW = SCHOOL_W, cx = x + BW / 2;
+  const peach = '#f1c49d', salmon = '#d9826a', white = '#fbf6ee', maroon = '#7a3b3b', stone = '#a9a7a1';
+  const arch = (ax, ay, aw, ah, c) => { // 拱形開口
+    g.fillStyle = c;
+    g.beginPath(); g.moveTo(ax, ay + ah); g.lineTo(ax, ay + aw / 2); g.arc(ax + aw / 2, ay + aw / 2, aw / 2, Math.PI, 0); g.lineTo(ax + aw, ay + ah); g.closePath(); g.fill();
+  };
   g.save();
-  // 主樓
-  g.fillStyle = '#f4c9a8'; g.fillRect(x, top, bw, bh);
-  g.strokeStyle = 'rgba(120,70,50,.35)'; g.lineWidth = 1.5; g.strokeRect(x, top, bw, bh);
-  g.fillStyle = '#d98b6f'; g.fillRect(x - 4, top - 8, bw + 8, 10);            // 屋簷
-  g.fillStyle = '#fff4e6'; g.fillRect(x, top + 50, bw, 4);                      // 樓層線
-  // 兩層拱形窗
-  g.fillStyle = '#cfe6ff';
-  [top + 14, top + 62].forEach(wy => {
-    for (let i = 0; i < 6; i++) {
-      const wx = x + 12 + i * 29;
-      if (wy > top + 40 && i >= 2 && i <= 3) continue;                          // 一樓中間是門
-      g.beginPath(); g.moveTo(wx, wy + 24); g.lineTo(wx, wy + 8); g.arc(wx + 8, wy + 8, 8, Math.PI, 0); g.lineTo(wx + 16, wy + 24); g.closePath(); g.fill();
-    }
+  // 兩側的側翼：三層，每層一排拱形陽台
+  g.fillStyle = peach; g.fillRect(x, base - 96, BW, 96);
+  g.fillStyle = white; g.fillRect(x, base - 100, BW, 5);
+  [base - 90, base - 60, base - 30].forEach(ry => {
+    g.fillStyle = white; g.fillRect(x, ry + 24, BW, 3);
+    for (let ax = x + 4; ax < x + BW - 10; ax += 15) arch(ax, ry, 10, 22, '#8a6a5a');
   });
-  // 中間的拱門
-  const gx = x + bw / 2;
-  g.fillStyle = '#7a4a36';
-  g.beginPath(); g.moveTo(gx - 24, base); g.lineTo(gx - 24, base - 30); g.arc(gx, base - 30, 24, Math.PI, 0); g.lineTo(gx + 24, base); g.closePath(); g.fill();
-  g.fillStyle = '#3d2a20';
-  g.beginPath(); g.moveTo(gx - 16, base); g.lineTo(gx - 16, base - 28); g.arc(gx, base - 28, 16, Math.PI, 0); g.lineTo(gx + 16, base); g.closePath(); g.fill();
-  // 時鐘
-  g.fillStyle = '#ffffff'; g.beginPath(); g.arc(gx, top - 16, 11, 0, Math.PI * 2); g.fill();
-  g.strokeStyle = '#7a4a36'; g.lineWidth = 2; g.stroke();
-  g.beginPath(); g.moveTo(gx, top - 16); g.lineTo(gx, top - 23); g.moveTo(gx, top - 16); g.lineTo(gx + 5, top - 16); g.stroke();
-  // 旗桿
-  g.fillStyle = '#e6e8eb'; g.fillRect(x - 22, base - 130, 3, 130);
-  g.fillStyle = '#6bb6ff'; g.fillRect(x - 19, base - 128, 24, 15);
+  // 中間的主樓（比較高），兩邊紅色塔柱
+  const mw = 120, mx = cx - mw / 2, mt = base - 150;
+  g.fillStyle = peach; g.fillRect(mx, mt + 10, mw, 150 - 10);
+  g.fillStyle = salmon; g.fillRect(mx - 6, mt, 24, 150); g.fillRect(mx + mw - 18, mt, 24, 150);
+  g.fillStyle = white;
+  g.fillRect(mx - 8, mt - 4, 28, 6); g.fillRect(mx + mw - 20, mt - 4, 28, 6);           // 塔頂
+  for (let bx = mx - 8; bx < mx + 20; bx += 7) g.fillRect(bx, mt - 9, 4, 5);             // 塔上的城垛
+  for (let bx = mx + mw - 20; bx < mx + mw + 8; bx += 7) g.fillRect(bx, mt - 9, 4, 5);
+  for (let bx = mx + 22; bx < mx + mw - 22; bx += 9) g.fillRect(bx, mt + 4, 5, 6);       // 主樓頂的一格一格
+  g.fillRect(mx + 18, mt + 10, mw - 36, 3);
+  // 主樓的窗：上面一排拱形窗、下面一排方窗
+  for (let i = 0; i < 6; i++) {
+    const wx = mx + 24 + i * 12.5;
+    arch(wx, mt + 18, 9, 18, '#cfe0ea');
+    g.fillStyle = '#cfe0ea'; g.fillRect(wx, mt + 44, 9, 14);
+  }
+  g.fillStyle = white; g.fillRect(mx + 18, mt + 40, mw - 36, 2); g.fillRect(mx + 18, mt + 62, mw - 36, 2);
+  // 大門廊：深紅色、平頂，下面拱形，兩根白柱子；門牌留白（不寫校名）
+  const pw = 104, px = cx - pw / 2, pt = base - 62;
+  g.fillStyle = maroon; g.fillRect(px, pt, pw, 62);
+  g.fillStyle = '#5e2c2c'; g.fillRect(px - 3, pt - 4, pw + 6, 6);
+  g.fillStyle = '#3a2a26';
+  g.beginPath(); g.moveTo(px + 12, base); g.lineTo(px + 12, pt + 26); g.quadraticCurveTo(cx, pt + 12, px + pw - 12, pt + 26); g.lineTo(px + pw - 12, base); g.closePath(); g.fill();
+  g.fillStyle = '#ece8e0'; g.fillRect(cx - 22, pt + 26, 5, base - pt - 26); g.fillRect(cx + 17, pt + 26, 5, base - pt - 26);
+  g.fillStyle = '#9a8f86'; g.fillRect(cx - 14, base - 8, 28, 8);                          // 台階
+  g.fillStyle = '#8f4a48'; g.fillRect(cx - 26, pt + 6, 52, 9);                              // 空白門牌
+  g.strokeStyle = '#c9a85a'; g.lineWidth = 1; g.strokeRect(cx - 26, pt + 6, 52, 9);
+  // 石柱和拉門
+  g.fillStyle = stone;
+  g.fillRect(px + 2, base - 46, 10, 46);                                                    // 左邊矮石柱
+  g.fillRect(x + BW * .8, base - 124, 18, 124);                                             // 右邊高石柱
+  g.fillRect(x + BW * .8 - 4, base - 128, 26, 8);
+  g.fillStyle = 'rgba(0,0,0,.12)'; g.fillRect(x + BW * .8 + 13, base - 120, 5, 120);
+  g.strokeStyle = '#8d8a84'; g.lineWidth = 1.2;                                             // 拉門的鐵條
+  for (let gx = px + 14; gx < cx + 12; gx += 5) { g.beginPath(); g.moveTo(gx, base); g.lineTo(gx, base - 20); g.stroke(); }
+  g.beginPath(); g.moveTo(px + 12, base - 20); g.lineTo(cx + 12, base - 20); g.stroke();
+  // 門口的紅花花圃
+  g.fillStyle = '#3f7d46'; g.fillRect(x - 6, base - 9, px - x, 9);
+  g.fillStyle = '#e8503a';
+  for (let fx = x - 3; fx < px - 8; fx += 6) { g.beginPath(); g.arc(fx, base - 9 + (fx % 3), 3, 0, Math.PI * 2); g.fill(); }
+  // 大樹：左邊兩棵大的、右邊一棵小的
+  [[x + 8, 58, 30], [x + 40, 50, 24], [x + BW - 6, 40, 18]].forEach(([tx, th, r]) => {
+    g.fillStyle = '#6b4e33'; g.fillRect(tx - 3, base - th, 6, th);
+    g.fillStyle = '#3f8a4a'; g.beginPath(); g.arc(tx, base - th - r * .4, r, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#56a35e'; g.beginPath(); g.arc(tx - r * .35, base - th - r * .7, r * .6, 0, Math.PI * 2); g.fill();
+  });
+  // 紅磚地
+  g.fillStyle = '#b5644f'; g.fillRect(x - 10, base, BW + 20, 8);
   g.restore();
 }
 
