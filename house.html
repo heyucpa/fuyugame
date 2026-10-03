@@ -264,6 +264,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .trip-tip { font-size: 13px; font-weight: 700;
   color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.5); }
 
+.comic { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 6px 0 10px; }
+.comic-p { border: 3px solid #4a3b2a; border-radius: 10px; background: #fffdf6; padding: 8px 6px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0;
+  opacity: 0; animation: comicIn .4s ease forwards; }
+.comic-pic { font-size: 38px; line-height: 1.15; }
+.comic-txt { font-size: 14px; font-weight: 700; text-align: center; }
+@media (prefers-reduced-motion: reduce) { .comic-p { animation: none; opacity: 1; } }
+@keyframes comicIn { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: none; } }
 .lv-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; padding: 10px 0; }
 .lv-btn {
   display: flex; flex-direction: column; align-items: center; gap: 3px;
@@ -1381,7 +1389,7 @@ Object.assign(ACTIVITIES, {
   pcgame: { label: '🖥️ 玩電腦遊戲', name: '玩電腦遊戲', fx: '🎮', open: 'brick', lines: ['叔叔的電腦好酷！', '來挑戰打磚塊！', '螢幕好大喔～'] },
   figures: { label: '🤖 看公仔', name: '看公仔', fx: '✨', lines: ['叔叔的公仔好多！', '這隻好可愛～', '要輕輕看，不能亂摸喔'] },
   farmcare: { label: '🐮 照顧小牛小羊', name: '照顧小牛小羊', fx: '💗', open: 'farm', lines: ['小牛小羊，我來了！', '要好好照顧牠們～'] },
-  hay: { label: '🌾 搬稻草', name: '搬稻草', fx: '🌾', lines: ['稻草好香～', '嘿咻嘿咻！', '這是給小牛小羊吃的'] },
+  hay: { label: '🌾 搬稻草', name: '搬稻草', fx: '🌾', open: 'hay', lines: ['稻草好香～', '嘿咻嘿咻！', '這是給小牛小羊吃的'] },
   trough: { label: '💧 加水', name: '加水', fx: '💧', lines: ['水加滿了！', '小牛小羊渴了吧', '嘩啦嘩啦～'] }
 });
 Object.assign(FURNITURE_ACT, {
@@ -4016,11 +4024,12 @@ function fufuStartAct(key, now, it, auto) {
     Sound.play('coin');
   } else fufuSay(pickLine('act_' + key, { 時間: timeText() }), 3000);
   if (key === 'fruit') G.kid.hunger = clampStat(G.kid.hunger + 15); // 阿婆的水果免費吃
+  if (!auto) relativePerk(key); // 親戚家的事情：吃點心、喝茶、幫忙做事…（她自己點的才算）
   if (a.sound === 'bath') Sound.play('bath');
   else if (a.sound !== 'note') Sound.play('pickUp');
   if (a.tab) openTab(a.tab);
   if (a.open) setTimeout(() => { // 叔叔的電腦、阿婆的穀倉：打開那裡專屬的小遊戲
-    const fn = { brick: openBrickGame, mole: openMoleGame, race: openRaceGame, farm: openFarmGame }[a.open] || openFarmGame;
+    const fn = { brick: openBrickGame, mole: openMoleGame, race: openRaceGame, farm: openFarmGame, hay: () => openStackGame('hay') }[a.open] || openFarmGame;
     if ($('#modal').hidden) fn();
   }, 1300);
   if (a.game) setTimeout(() => { // 大型電玩：隨機開一個小遊戲
@@ -6028,7 +6037,7 @@ function draw() {
 let lastFrame = performance.now(), nextPetTick = 0, nextCard = 0;
 (function loop(now) {
   now = now || performance.now();
-  const dt = Math.min(.05, (now - lastFrame) / 1000);
+  const dt = Math.max(0, Math.min(.05, (now - lastFrame) / 1000));
   lastFrame = now;
   fufuUpdate(dt, now);
   fufuArrivalCheck();
@@ -7740,7 +7749,7 @@ function openCatchGame() {
   }
 
   function frame(now) {
-    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    const dt = Math.max(0, Math.min(.05, (now - last) / 1000)); last = now;
     const left = Math.max(0, DURATION - (now - start));
     const dizzy = now < dizzyUntil;
     if (!dizzy) {
@@ -7824,7 +7833,7 @@ function openBubbleGame() {
   });
 
   function frame(now) {
-    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    const dt = Math.max(0, Math.min(.05, (now - last) / 1000)); last = now;
     const left = Math.max(0, DURATION - (now - start));
     if (now > nextSpawn && left > 0) {
       const r = 16 + Math.random() * 16;
@@ -8021,8 +8030,17 @@ function playCupGame(w, L) {
 }
 
 // ── 5. 疊疊鬆餅：看準時機點下去，越疊越高 ──
-function openStackGame() {
-  const w = openGameWindow('🥞 疊疊鬆餅', '鬆餅會左右滑動，點一下（或按空白鍵）放下去。沒對齊的部分會掉下去，對得剛剛好有「完美」加分！');
+/* skin 'hay'＝阿婆家的疊稻草：玩法一樣，換成稻草捆、木棧板、穀倉的天空。
+   「再玩一次」的按鈕會把點擊事件傳進來，所以只認字串 'hay'。 */
+const STACK_SKINS = {
+  pancake: { title: '🥞 疊疊鬆餅', thing: '鬆餅', dark: '#d8913f', light: '#f1c27d', sky: ['#ffe9f2', '#fff7e6'], base: '#ffffff', baseEdge: '#e4d8c3', top: '#fff6d6' },
+  hay:     { title: '🌾 疊稻草',   thing: '稻草', dark: '#c9a23a', light: '#e8c35a', sky: ['#bfe6f2', '#f3f7dc'], base: '#a0703f', baseEdge: '#7a5230', top: null }
+};
+function openStackGame(skin) {
+  skin = skin === 'hay' ? 'hay' : 'pancake';
+  const S = STACK_SKINS[skin];
+  openStackGame.skin = skin;
+  const w = openGameWindow(S.title, `${S.thing}會左右滑動，點一下（或按空白鍵）放下去。沒對齊的部分會掉下去，對得剛剛好有「完美」加分！`);
   const W = 360, H = 420, { c, g } = gameCanvas(w.stage, W, H);
   const LAYER_H = 16, BASE_Y = H - 40, MAX_LAYERS = 20;
   let layers = [{ x: W / 2, w: 150 }], moving, falling = [], perfects = 0, raf = 0, ended = false, flash = 0, camY = 0;
@@ -8062,22 +8080,26 @@ function openStackGame() {
     const n = layers.length - 1;
     const bells = payReward(w, n * 30 + perfects * 20 + (full ? 200 : 0));
     w.status.textContent = `🎉 ${full ? '疊到最高了！' : '倒了！'}疊了 ${n} 層、完美 ${perfects} 次，拿到 ${fmt(bells)} 鈴錢`;
-    gameButtons(w, openStackGame);
+    gameButtons(w, () => openStackGame(skin));
   }
   const onKey = e => { if (e.code === 'Space') { e.preventDefault(); drop(); } };
   document.addEventListener('keydown', onKey);
   c.addEventListener('pointerdown', drop);
 
   function drawPancake(x, y, wd, top) {
-    g.fillStyle = '#d8913f'; g.beginPath(); g.roundRect(x - wd / 2, y, wd, LAYER_H, 7); g.fill();
-    g.fillStyle = '#f1c27d'; g.beginPath(); g.roundRect(x - wd / 2, y, wd, LAYER_H - 6, 6); g.fill();
-    if (top && wd > 20) { // 最上面一層加奶油
-      g.fillStyle = '#fff6d6'; g.beginPath(); g.roundRect(x - 9, y - 5, 18, 8, 3); g.fill();
+    const rad = skin === 'hay' ? 3 : 7;
+    g.fillStyle = S.dark; g.beginPath(); g.roundRect(x - wd / 2, y, wd, LAYER_H, rad); g.fill();
+    g.fillStyle = S.light; g.beginPath(); g.roundRect(x - wd / 2, y, wd, LAYER_H - 6, rad); g.fill();
+    if (skin === 'hay' && wd > 24) { // 稻草捆的兩條繩子
+      g.fillStyle = '#8a5a33'; g.fillRect(x - wd / 4, y, 2, LAYER_H); g.fillRect(x + wd / 4 - 2, y, 2, LAYER_H);
+    }
+    if (top && wd > 20 && S.top) { // 最上面一層加奶油
+      g.fillStyle = S.top; g.beginPath(); g.roundRect(x - 9, y - 5, 18, 8, 3); g.fill();
     }
   }
 
   function frame(now) {
-    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    const dt = Math.max(0, Math.min(.05, (now - last) / 1000)); last = now;
     if (moving) {
       moving.x += moving.dir * moving.speed * dt;
       if (moving.x > W - moving.w / 2) { moving.x = W - moving.w / 2; moving.dir = -1; }
@@ -8091,11 +8113,16 @@ function openStackGame() {
 
     g.clearRect(0, 0, W, H);
     const bg = g.createLinearGradient(0, 0, 0, H);
-    bg.addColorStop(0, '#ffe9f2'); bg.addColorStop(1, '#fff7e6');
+    bg.addColorStop(0, S.sky[0]); bg.addColorStop(1, S.sky[1]);
     g.fillStyle = bg; g.fillRect(0, 0, W, H);
     g.save(); g.translate(0, camY);
-    g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(W / 2, BASE_Y + 6, 100, 12, 0, 0, Math.PI * 2); g.fill();
-    g.strokeStyle = '#e4d8c3'; g.lineWidth = 2; g.stroke();
+    if (skin === 'hay') { // 木棧板
+      g.fillStyle = S.base; g.fillRect(W / 2 - 95, BASE_Y, 190, 12);
+      g.strokeStyle = S.baseEdge; g.lineWidth = 2; g.strokeRect(W / 2 - 95, BASE_Y, 190, 12);
+    } else {
+      g.fillStyle = S.base; g.beginPath(); g.ellipse(W / 2, BASE_Y + 6, 100, 12, 0, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = S.baseEdge; g.lineWidth = 2; g.stroke();
+    }
     layers.slice(1).forEach((L, i) => drawPancake(L.x, layerY(i + 1), L.w, i === layers.length - 2 && ended));
     if (layers.length === 1) { g.fillStyle = 'rgba(0,0,0,.08)'; g.fillRect(layers[0].x - layers[0].w / 2, BASE_Y - 2, layers[0].w, 3); }
     falling.forEach(f => drawPancake(f.x, f.y, f.w, false));
@@ -8113,8 +8140,8 @@ function openStackGame() {
   // 第一層的底座寬度就是盤子上的範圍
   layers = [{ x: W / 2, w: 150 }];
   newMoving();
-  w.status.textContent = '點一下放鬆餅！';
-  gameButtons(w, openStackGame);
+  w.status.textContent = `點一下放${S.thing}！`;
+  gameButtons(w, () => openStackGame(skin));
   raf = requestAnimationFrame(frame);
 }
 
@@ -8313,7 +8340,7 @@ function playRace(w, L) {
 
   (function frame(now) {
     now = now || performance.now();
-    const dt = Math.min(.05, (now - last) / 1000);
+    const dt = Math.max(0, Math.min(.05, (now - last) / 1000));
     last = now;
     if (!ended) {
       road = (road + L.speed * dt) % 40;
@@ -8364,6 +8391,124 @@ function pickLevelRow(w, levels, sub, play) {
   w.stage.appendChild(row);
 }
 
+/* ===== 親戚家的事情要有效果 =====
+   本來叔叔家的看漫畫、看公仔、找點心，阿婆家的喝茶、烤火、搬稻草、加水，
+   都只有動畫，做完什麼都沒變。
+
+   刻意不全部做成小遊戲：每件事都要「玩完才有東西」會讓她覺得在工作。
+   照那件事本來的意思給效果——
+     吃東西就真的飽、喝茶烤火就放鬆、幫忙做事就拿零用錢、
+     看漫畫看公仔就有小驚喜。
+
+   全部都有冷卻：不然她可以一直點冰箱刷飽足、一直搬稻草刷錢。
+   而且只有「她自己點的」才算——小可愛閒晃時自己去做的不給，
+   不然她什麼都不用做，小可愛就自己在那邊賺錢吃飯。 */
+const RELATIVE_CD_MS = 10 * 60000;
+
+// key → 效果。who：在哪一家才有（null＝哪裡都可以）
+const RELATIVE_PERKS = {
+  snack:   { who: 'uncle',   kid: 20, say: '叔叔的冰箱好多零食！',  toast: '🧃 吃了叔叔的點心，飽足 +20' },
+  tea:     { who: 'grandma', kid: 10, pet: 15, say: '跟阿婆喝茶好放鬆～', toast: '🍵 好放鬆，飽足 +10、寵物心情 +15' },
+  warm:    { who: null,      pet: 15, say: '暖呼呼的…',             toast: '🔥 暖呼呼，寵物心情 +15' },
+  hay:     { who: 'grandma', money: [50, 100], say: '阿婆說我好棒！', toast: '🌾 幫阿婆搬稻草，拿到零用錢' },
+  trough:  { who: 'grandma', money: [50, 100], say: '小牛小羊喝得好開心！', toast: '💧 幫忙加水，阿婆給了零用錢' },
+  comic:   { who: 'uncle',   comic: true },
+  figures: { who: 'uncle',   figure: true }
+};
+
+function relativeReady(key) {
+  const t = (G.actCD || {})[key] || 0;
+  return Date.now() - t >= RELATIVE_CD_MS;
+}
+function relativeMinsLeft(key) {
+  const t = (G.actCD || {})[key] || 0;
+  return Math.max(1, Math.ceil((RELATIVE_CD_MS - (Date.now() - t)) / 60000));
+}
+
+/* 回傳 true＝這次有給效果。冷卻中會講還要等幾分鐘，不會默默沒反應。 */
+function relativePerk(key) {
+  const P = RELATIVE_PERKS[key];
+  if (!P) return false;
+  if (P.who && !(G.away && G.away.place === P.who)) return false;
+  if (!relativeReady(key)) {
+    toast(`⏳ 等一下再來，還要 ${relativeMinsLeft(key)} 分鐘`);
+    return false;
+  }
+  G.actCD = G.actCD || {};
+  G.actCD[key] = Date.now();
+  if (P.kid) G.kid.hunger = clampStat(G.kid.hunger + P.kid);
+  if (P.pet) G.pet.mood = clampStat((G.pet.mood || 0) + P.pet);
+  if (P.money) {
+    const n = P.money[0] + Math.floor(Math.random() * (P.money[1] - P.money[0] + 1));
+    addBells(n);
+    toast(`${P.toast} 💰${n}`);
+    Sound.play('coin');
+  } else if (P.toast) toast(P.toast);
+  if (P.say) setTimeout(() => fufuSay(P.say, 2800), 600);
+  if (P.comic) setTimeout(() => { if ($('#modal').hidden) openComic(); }, 1200);
+  if (P.figure) figureGift();
+  return true;
+}
+
+/* ── 📚 叔叔的四格漫畫 ──
+   用表情符號畫的小笑話，看過的會記起來，可以收集。
+   每一則都是她生活裡會遇到的事，四格、每格一句，小二以下讀得懂。 */
+const COMICS = [
+  { title: '早餐', panels: [['🍞', '吐司烤好了'], ['🐶', '狗狗看著吐司'], ['🍞🐶', '狗狗看著我'], ['🐶😋', '……好啦分你一半']] },
+  { title: '下雨天', panels: [['🌧️', '下雨了'], ['☂️', '帶了傘'], ['💨☂️', '風好大！'], ['☂️🙃', '傘翻過來了']] },
+  { title: '貓咪', panels: [['📦', '買了新床給貓咪'], ['🛏️', '很軟很舒服喔'], ['🐱', '貓咪看了一眼'], ['🐱📦', '睡在紙箱裡']] },
+  { title: '作業', panels: [['📒', '寫作業'], ['✏️', '好認真'], ['😴', '有點睏'], ['📒💤', '作業變枕頭']] },
+  { title: '魔術', panels: [['🎩', '我會變魔術'], ['🪄', '一、二、三'], ['🐇', '變出兔子！'], ['🐇🥕', '兔子把紅蘿蔔吃掉了']] },
+  { title: '比賽', panels: [['🐢🐇', '烏龜跟兔子賽跑'], ['🐇💨', '兔子跑好快'], ['🐇😴', '兔子睡著了'], ['🐢🏁', '烏龜：我只是來散步的']] },
+  { title: '冰淇淋', panels: [['🍦', '買了冰淇淋'], ['☀️', '好熱喔'], ['🍦💧', '在融化！'], ['😋', '快點吃掉']] },
+  { title: '照相', panels: [['📷', '來拍照'], ['😁', '笑一個'], ['🙈', '眼睛閉起來了'], ['📷😆', '再拍一張！']] },
+  { title: '恐龍', panels: [['🦖', '恐龍好可怕'], ['🦖🍰', '恐龍看到蛋糕'], ['🦖😊', '恐龍笑了'], ['🦖🎂', '原來是牠的生日']] },
+  { title: '釣魚', panels: [['🎣', '去釣魚'], ['⏳', '等好久'], ['🎣👢', '釣到一隻鞋子'], ['👢🐟', '鞋子裡有魚！']] },
+  { title: '洗澡', panels: [['🛁', '要洗澡囉'], ['🐶', '狗狗跑掉了'], ['🏃‍♀️🐶', '追追追'], ['🛁🐶😆', '結果大家都濕了']] },
+  { title: '月亮', panels: [['🌙', '晚上的月亮'], ['🚶‍♀️', '我走它也走'], ['🏃‍♀️🌙', '我跑它也跑'], ['🌙😊', '月亮在跟我回家']] }
+];
+function openComic() {
+  const seen = G.comics = G.comics || {};
+  // 優先給還沒看過的，看完一輪才重複
+  const fresh = COMICS.filter(c => !seen[c.title]);
+  const pool = fresh.length ? fresh : COMICS;
+  const cm = pool[Math.floor(Math.random() * pool.length)];
+  const isNew = !seen[cm.title];
+  seen[cm.title] = (seen[cm.title] || 0) + 1;
+  saveGame();
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', `📚 ${cm.title}`));
+  const grid = el('div', 'comic');
+  cm.panels.forEach(([pic, text], i) => {
+    const p = el('div', 'comic-p');
+    p.append(el('div', 'comic-pic', pic), el('div', 'comic-txt', text));
+    p.style.animationDelay = (i * .35) + 's';
+    grid.appendChild(p);
+  });
+  card.appendChild(grid);
+  const got = Object.keys(seen).length;
+  card.appendChild(note((isNew ? '✨ 新的一則！' : '看過了，還是好好笑') + `　（漫畫收集 ${got} / ${COMICS.length}）`));
+  const ok = el('button', 'big', '好好笑！');
+  ok.onclick = () => { $('#modal').hidden = true; };
+  card.appendChild(ok);
+  $('#modal').hidden = false;
+}
+
+/* ── 🤖 叔叔送公仔 ──
+   看公仔有三成機會叔叔說「這隻送你！」→ 收納多一個小公仔，
+   剛好可以放到桌上。冷卻跟上面共用，不會一直送。 */
+function figureGift() {
+  if (Math.random() < .3) {
+    addItem('mini_figure');
+    setTimeout(() => { if (host.n) hostSay('喜歡嗎？這隻送你！'); }, 900);
+    toast('🎁 叔叔送你一個小公仔！（收進收納了，可以放到桌上）');
+    Sound.play('coin');
+  } else {
+    setTimeout(() => fufuSay('好多公仔喔，好酷！', 2600), 600);
+  }
+}
+
 // ── 叔叔的打磚塊：左右移動板子接球，把磚塊全部打掉 ──
 function openBrickGame() {
   const w = openGameWindow('🕹️ 叔叔的打磚塊', '左右移動板子接住球，把磚塊全部打掉！有 3 條命。點一下（或按空白鍵）發球，電腦可以用方向鍵。');
@@ -8401,7 +8546,7 @@ function openBrickGame() {
   }
 
   function frame(now) {
-    const dt = Math.min(.03, (now - last) / 1000); last = now;
+    const dt = Math.max(0, Math.min(.03, (now - last) / 1000)); last = now;
     if (keys.ArrowLeft) target = Math.max(paddle.w / 2, target - 360 * dt);
     if (keys.ArrowRight) target = Math.min(W - paddle.w / 2, target + 360 * dt);
     paddle.x += (target - paddle.x) * Math.min(1, dt * 16);
@@ -8522,7 +8667,7 @@ function openFarmGame() {
   }
 
   function frame(now) {
-    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    const dt = Math.max(0, Math.min(.05, (now - last) / 1000)); last = now;
     const left = Math.max(0, DURATION - (now - start));
     animals.forEach(a => {
       if (!ended && !a.need && now > a.nextNeedAt && left > 1500) {
@@ -8636,7 +8781,7 @@ function openCoinGame() {
 
     (function frame(now) {
       now = now || performance.now();
-      const dt = Math.min(.05, (now - last) / 1000);
+      const dt = Math.max(0, Math.min(.05, (now - last) / 1000));
       last = now;
       if (!ended) {
         if (now > nextDrop) {
@@ -8744,7 +8889,7 @@ function openMarbleGame() {
 
   (function frame(now) {
     now = now || performance.now();
-    const dt = Math.min(.03, (now - last) / 1000);
+    const dt = Math.max(0, Math.min(.03, (now - last) / 1000));
     last = now;
     if (ball) {
       ball.vy += GRAV * dt;
@@ -9039,7 +9184,7 @@ function openSlingGame() {
   }
 
   function frame(now) {
-    const dt = Math.min(.03, (now - last) / 1000); last = now;
+    const dt = Math.max(0, Math.min(.03, (now - last) / 1000)); last = now;
     balloons.forEach(b => { b.t += dt; });
     if (msg && now > msgUntil) msg = ''; // 字樣顯示一下就消失
     if (!ended) {

@@ -836,7 +836,7 @@
       if (MT.score() !== 3) fails.push('打到三隻地鼠，分數是 ' + MT.score());
       MT.force(3, 'bomb'); MT.hit(3);
       if (MT.score() !== 1) fails.push('打到炸彈沒有扣分（' + MT.score() + '）');
-      MT.hit(4);   // 空的洞
+      MT.force(4, null); MT.hit(4);   // 空的洞（先清空：遊戲自己可能剛好在這格冒出地鼠）
       if (MT.score() !== 1) fails.push('點空的洞也有分數');
       var mb = G.bells; MT.finish();
       if (G.bells - mb !== 1 * 15 * MOLE_LEVELS[2].mul) fails.push('打地鼠結算不對：' + (G.bells - mb));
@@ -860,6 +860,86 @@
     }
     closeGameWindow();
     var md3 = document.querySelector('#modal'); if (md3) md3.hidden = true;
+
+    /* ㉛ 親戚家的事情要有效果
+       冰箱吃點心會飽、喝茶烤火會放鬆、幫阿婆做事拿零用錢、
+       看漫畫收集四格漫畫、看公仔有機會被送一個。
+       全部要有冷卻，而且小可愛自己閒晃去做的不算。 */
+    var keepAway = G.away, keepRand = Math.random, keepFufuAct = fufu.act;
+    G.actCD = {};
+    G.away = null;
+    G.kid.hunger = 40;
+    if (relativePerk('snack') || G.kid.hunger !== 40) fails.push('在自己家也能拿到叔叔冰箱的點心');
+    G.away = { place: 'uncle', idx: 0 };
+    var fakeFridge = { id: 'fridge', x: 0, y: 0, rot: 0, uid: 'relTest1' };
+    fufuStartAct('snack', performance.now(), fakeFridge, true);
+    if (G.kid.hunger !== 40) fails.push('小可愛自己閒晃去開冰箱也算飽足（' + G.kid.hunger + '）');
+    if (G.actCD.snack) fails.push('自己閒晃也吃掉了冷卻');
+    fufuStartAct('snack', performance.now(), fakeFridge, false);
+    if (G.kid.hunger !== 60) fails.push('自己點叔叔的冰箱，飽足沒有 +20（' + G.kid.hunger + '）');
+    fufuStartAct('snack', performance.now(), fakeFridge, false);
+    if (G.kid.hunger !== 60) fails.push('冰箱可以一直點一直吃（' + G.kid.hunger + '）');
+    G.actCD.snack = Date.now() - RELATIVE_CD_MS - 1;
+    if (!relativePerk('snack') || G.kid.hunger !== 80) fails.push('冷卻過了還是不能再吃');
+    // 阿婆家的事情在叔叔家不算
+    if (relativePerk('tea')) fails.push('在叔叔家也能喝到阿婆的茶');
+    G.away = { place: 'grandma', idx: 0 };
+    G.kid.hunger = 30; G.pet.mood = 30;
+    relativePerk('tea');
+    if (G.kid.hunger !== 40 || G.pet.mood !== 45) fails.push('喝茶沒有飽足 +10、寵物心情 +15（' + G.kid.hunger + '/' + G.pet.mood + '）');
+    // 零用錢 50~100，兩件事各自冷卻
+    var lo = 999, hi = 0;
+    for (var ri = 0; ri < 60; ri++) {
+      G.actCD = {};
+      var hb = G.bells; relativePerk(ri % 2 ? 'hay' : 'trough');
+      var got = G.bells - hb; lo = Math.min(lo, got); hi = Math.max(hi, got);
+    }
+    if (lo < 50 || hi > 100 || lo === hi) fails.push('幫阿婆做事的零用錢不在 50~100（' + lo + '~' + hi + '）');
+    G.actCD = {}; relativePerk('hay');
+    var tb2 = G.bells; relativePerk('trough');
+    if (G.bells === tb2) fails.push('搬完稻草就不能加水（冷卻不該共用）');
+    var tb3 = G.bells; relativePerk('hay');
+    if (G.bells !== tb3) fails.push('稻草可以一直搬一直拿錢');
+    // 搬稻草會開「疊稻草」
+    if (ACTIVITIES.hay.open !== 'hay') fails.push('搬稻草沒有開疊稻草小遊戲');
+    openStackGame('hay');
+    var sh = document.querySelector('#modalCard h2');
+    if (!sh || sh.textContent.indexOf('稻草') < 0) fails.push('疊稻草的標題不對：' + (sh && sh.textContent));
+    var again = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return b.textContent === '再玩一次'; })[0];
+    if (again) { again.onclick(new MouseEvent('click')); if (openStackGame.skin !== 'hay') fails.push('疊稻草按「再玩一次」變回鬆餅了'); }
+    else fails.push('疊稻草沒有「再玩一次」');
+    closeGameWindow();
+    openStackGame(new MouseEvent('click'));
+    if (openStackGame.skin !== 'pancake') fails.push('從家裡點疊疊鬆餅（傳進點擊事件）變成別的樣子');
+    closeGameWindow();
+    // 四格漫畫：先給沒看過的，12 次就收集完
+    G.away = { place: 'uncle', idx: 0 };
+    G.comics = {};
+    for (var ci = 0; ci < COMICS.length; ci++) openComic();
+    if (Object.keys(G.comics).length !== COMICS.length) fails.push('看了 ' + COMICS.length + ' 次漫畫只收集到 ' + Object.keys(G.comics).length + ' 則（沒有先給沒看過的）');
+    if (document.querySelectorAll('#modalCard .comic-p').length !== 4) fails.push('漫畫不是四格');
+    var cmBtn = document.querySelector('#modalCard button.big');
+    if (cmBtn) cmBtn.onclick();
+    if (!document.querySelector('#modal').hidden) fails.push('漫畫看完關不掉');
+    // 公仔：三成送一個
+    G.actCD = {};
+    var mf = G.inv.mini_figure || 0;
+    Math.random = function(){ return .1; };
+    relativePerk('figures');
+    if ((G.inv.mini_figure || 0) !== mf + 1) fails.push('叔叔說要送公仔，收納沒有多一個');
+    G.actCD = {};
+    Math.random = function(){ return .9; };
+    relativePerk('figures');
+    if ((G.inv.mini_figure || 0) !== mf + 1) fails.push('沒抽到也送了公仔');
+    Math.random = keepRand;
+    // 冷卻要存進存檔（不然重開就可以再刷）
+    G.actCD = { snack: Date.now() };
+    saveGame();
+    var reload = normalizeSave(JSON.parse(localStorage.getItem(SAVE_KEY)));
+    if (!reload.actCD || !reload.actCD.snack) fails.push('冷卻沒有存進存檔');
+    if (!reload.comics || Object.keys(reload.comics).length !== COMICS.length) fails.push('漫畫收集沒有存進存檔');
+    G.away = keepAway; fufu.act = keepFufuAct; G.actCD = {};
+    var md4 = document.querySelector('#modal'); if (md4) md4.hidden = true;
 
     // ⑦ 其他分頁沒被改壞
     ['inv','shop','dress','pets','deco','build','earn','book','talk','save'].forEach(function(t){
