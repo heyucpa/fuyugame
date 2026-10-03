@@ -788,13 +788,13 @@
     if (homePicks.some(function(b){ return /回家/.test(b.textContent) || b.disabled; })) fails.push('在家打開出門選單，出現「回家」或不能點的地方');
     $('#modal').hidden = true;
     // 之後加的地方（學校…）沒有主人，選單也要打得開
-    PLACES.__school = { name: '學校', emoji: '🏫', desc: '測試用', rooms: [{ name: '教室' }] };
+    PLACES.__park = { name: '公園', emoji: '🌳', desc: '測試用', rooms: [{ name: '教室' }] };
     try {
       openTravelMenu();
-      if (![].some.call(document.querySelectorAll('#modalCard .place-pick'), function(b){ return /學校/.test(b.textContent); }))
+      if (![].some.call(document.querySelectorAll('#modalCard .place-pick'), function(b){ return /公園/.test(b.textContent); }))
         fails.push('沒有主人的地方沒出現在出門選單');
     } catch(e) { fails.push('沒有主人的地方讓出門選單壞掉：' + e.message); }
-    delete PLACES.__school;
+    delete PLACES.__park;
     $('#modal').hidden = true;
 
     /* ㉞ 換房間有開門動畫，但房間要「馬上」換好（不能延後，不然連點會亂） */
@@ -1064,6 +1064,108 @@
     G.away = keepAway; fufu.act = keepFufuAct; G.actCD = {};
     var md4 = document.querySelector('#modal'); if (md4) md4.hidden = true;
 
+    /* ㉟ 學校（照片參考：國小。去識別化：沒有校名、校徽）
+       教室＋操場、貓頭鷹老師、上課開小考、交作業拿零用錢、溜滑梯盪鞦韆寵物開心。 */
+    var SC = PLACES.school;
+    if (!SC) fails.push('沒有學校');
+    else {
+      if (SC.rooms.length !== 2) fails.push('學校不是教室＋操場兩間');
+      SC.rooms.forEach(function(r){
+        r.items.forEach(function(it){ var iid = it.id || it[0]; if (!FURN_BY_ID[iid]) fails.push('學校' + r.name + '有不存在的家具：' + iid); });
+        r.wallItems.forEach(function(it){ var wid = it.id || it[0]; if (!FURN_BY_ID[wid]) fails.push('學校' + r.name + '有不存在的掛飾：' + wid); });
+      });
+      if (!HOSTS[SC.host]) fails.push('學校沒有老師');
+      // 學校專用的家具不能跑進商店
+      ['school_desk','school_chair','teacher_desk','blackboard','flagpole','slide','swing','shade_tree'].forEach(function(id){
+        if (FURNITURE.some(function(f){ return f.id === id; })) fails.push(id + ' 跑進商店了');
+      });
+      // 去識別化：學校相關的文字不可以出現「國小、國民小學、市、區」這種會指到真的學校的字
+      var scText = JSON.stringify(SC) + JSON.stringify(HOSTS.teacher) + drawTripSchool.toString().replace(/\/\*[\s\S]*?\*\//g, '');
+      if (/國民小學|國小|[市區]立|Elementary/.test(scText)) fails.push('學校的內容出現了像真實校名的字');
+      // 上課 → 小考、交作業 → 零用錢、溜滑梯 → 寵物心情
+      if (ACTIVITIES[FURNITURE_ACT.school_desk].open !== 'quiz') fails.push('課桌上課沒有開小考');
+      if (FURNITURE_ACT.teacher_desk !== 'homework' || FURNITURE_ACT.slide !== 'slide' || FURNITURE_ACT.swing !== 'swing') fails.push('學校的家具沒有對應的事');
+      if (!FURNITURE_USE.school_chair) fails.push('學生椅不能坐');
+      G.actCD = {};
+      G.away = { place: 'grandma', idx: 0 };
+      if (relativePerk('homework')) fails.push('在阿婆家也能交作業拿錢');
+      G.away = { place: 'school', idx: 0 };
+      var hw = G.bells; relativePerk('homework');
+      if (G.bells - hw < 40 || G.bells - hw > 80) fails.push('交作業的零用錢不在 40~80（' + (G.bells - hw) + '）');
+      G.pet.mood = 20; relativePerk('slide');
+      if (G.pet.mood !== 35) fails.push('溜滑梯寵物心情沒有 +15（' + G.pet.mood + '）');
+      // 老師：講老師的話、不送禮物、選單有小考和去操場
+      host.n = HOSTS.teacher;
+      if (hostLineKey() !== 'hostTeacher') fails.push('老師講的是別人的台詞（' + hostLineKey() + '）');
+      if (!LINE_TYPES.some(function(t){ return t.key === 'hostTeacher' && t.lines.length >= 5; })) fails.push('老師沒有台詞');
+      var ga = JSON.stringify(G.giftAt || {});
+      if (relativeGift('school') !== null || JSON.stringify(G.giftAt || {}) !== ga) fails.push('老師也在送禮物（或吃掉了禮物冷卻）');
+      var tm = hostMenuEntries().map(function(e){ return e[0]; }).join('|');
+      if (!/小考/.test(tm) || !/操場/.test(tm) || /教室/.test(tm)) fails.push('在教室時老師的選單不對：' + tm);
+      G.away.idx = 1;
+      tm = hostMenuEntries().map(function(e){ return e[0]; }).join('|');
+      if (!/教室/.test(tm) || /操場/.test(tm)) fails.push('在操場時老師的選單不對：' + tm);
+      host.n = null; G.away = null; G.actCD = {};
+    }
+    // 小考的題目：答案要對、範圍要對、選項四個不重複、沒有負數、有正確答案
+    QUIZ_LEVELS.forEach(function(L, li){
+      for (var qi = 0; qi < 300; qi++) {
+        var Q = quizQuestion(L);
+        var real = Q.op === '+' ? Q.a + Q.b : Q.op === '−' ? Q.a - Q.b : Q.op === '×' ? Q.a * Q.b : Q.a / Q.b;
+        if (real !== Q.ans || Q.ans !== Math.floor(Q.ans) || Q.ans < 0) { fails.push(L.name + ' 出了錯的題目：' + Q.text + ' 答案 ' + Q.ans); break; }
+        if (li === 0 && (Q.a > 10 || Q.b > 10 || Q.ans > 10 || Q.ans < 0)) { fails.push('一年級的題目超過 10：' + Q.text); break; }
+        if (li === 1 && (Q.ans > 99 || Q.a > 99)) { fails.push('二年級的題目超過 100：' + Q.text); break; }
+        if (li === 2 && Q.op !== '×' && Q.op !== '÷') { fails.push('四年級不是乘除：' + Q.text); break; }
+        var CH = quizChoices(Q.ans, li === 0);
+        if (CH.length !== 4 || new Set(CH).size !== 4 || CH.indexOf(Q.ans) < 0 || CH.some(function(v){ return v < 0; })) { fails.push(L.name + ' 的選項不對：' + CH + '（答案 ' + Q.ans + '）'); break; }
+        if (li === 0 && CH.some(function(v){ return Math.abs(v - Q.ans) > 4; })) { fails.push('一年級的錯誤答案差太多，一看就知道：' + CH + '（答案 ' + Q.ans + '）'); break; }
+      }
+    });
+    // 一年級畫蘋果：加法是 a + b 顆，減法 a 顆裡面 b 顆是淡的（固定亂數，加法減法各驗一次）
+    var keepR2 = Math.random;
+    [.9, .1].forEach(function(rv){
+      Math.random = function(){ return rv; };
+      try { openQuizGame(); document.querySelectorAll('.lv-btn')[0].onclick(); } finally { Math.random = keepR2; }
+      var qq = openQuizGame.test.q();
+      var ap = document.querySelectorAll('.quiz-pics span:not(.plus)').length, gn = document.querySelectorAll('.quiz-pics .gone').length;
+      if (qq.op !== (rv > .5 ? '−' : '+')) fails.push('固定亂數沒有出到想要的題型：' + qq.text);
+      else if (qq.op === '+' && (ap !== qq.a + qq.b || gn)) fails.push('加法的蘋果數不對：' + qq.text + ' 畫了 ' + ap + '、淡的 ' + gn);
+      else if (qq.op === '−' && (ap !== qq.a || gn !== qq.b)) fails.push('減法的蘋果不對：' + qq.text + ' 畫了 ' + ap + '、淡的 ' + gn);
+      closeGameWindow();
+    });
+    openQuizGame();
+    var qlv = document.querySelectorAll('.lv-btn');
+    if (qlv.length !== 3) fails.push('小考沒有三個年級');
+    else {
+      qlv[0].onclick();
+      var QT = openQuizGame.test, q1 = QT.q();
+      var apples = document.querySelectorAll('.quiz-pics span:not(.plus)').length, gone = document.querySelectorAll('.quiz-pics .gone').length;
+      if (q1.op === '+' && (apples !== q1.a + q1.b || gone)) fails.push('加法的蘋果數不對：' + q1.text + ' 畫了 ' + apples);
+      if (q1.op === '−' && (apples !== q1.a || gone !== q1.b)) fails.push('減法的蘋果不對：' + q1.text + ' 畫了 ' + apples + '、淡的 ' + gone);
+      if (document.querySelectorAll('.quiz-c').length !== 4) fails.push('小考不是四個選項');
+      // 答對 7 題、答錯 3 題：錢 = 7 × 15 × 1，沒有全對獎勵
+      var qb = G.bells;
+      for (var k = 0; k < QUIZ_N; k++) {
+        var cur = QT.q();
+        QT.choose(k < 7 ? cur.ans : cur.ans + 1);
+        QT.choose(cur.ans);           // 連點：同一題不能算兩次
+        QT.next();
+      }
+      if (QT.right() !== 7) fails.push('答對 7 題卻記成 ' + QT.right() + ' 題（連點有沒有被算兩次？）');
+      if (G.bells - qb !== 7 * 15 * QUIZ_LEVELS[0].mul) fails.push('小考的錢不對：' + (G.bells - qb));
+    }
+    closeGameWindow();
+    // 全對有額外獎勵
+    openQuizGame(); document.querySelectorAll('.lv-btn')[2].onclick();
+    var QT3 = openQuizGame.test, qb3 = G.bells;
+    for (var k3 = 0; k3 < QUIZ_N; k3++) { QT3.choose(QT3.q().ans); QT3.next(); }
+    if (G.bells - qb3 !== QUIZ_N * 15 * 3 + 100 * 3) fails.push('四年級全對的錢不對：' + (G.bells - qb3));
+    closeGameWindow();
+    // 去學校的路上畫得出學校
+    try { var tc = document.createElement('canvas').getContext('2d'); drawTripSchool(tc, 360, 240, 150); }
+    catch(e) { fails.push('路上的學校畫不出來：' + e.message); }
+    var md5 = document.querySelector('#modal'); if (md5) md5.hidden = true;
+
     /* ㉜ 每個小遊戲一打開就要有「離開」的按鈕
        （iPad 上看到：賽車選難度的畫面只有三個難度，不想玩就走不掉）。
        在家裡和在親戚家都測，按下去要真的關掉。 */
@@ -1071,7 +1173,7 @@
     [null, { place: 'uncle', idx: 0 }].forEach(function(aw){
       G.away = aw;
       ['openFishing','openMemoryGame','openCatchGame','openBubbleGame','openCupGame','openStackGame','openSimonGame',
-       'openMoleGame','openRaceGame','openBrickGame','openFarmGame','openCoinGame','openMarbleGame','openPuzzleGame','openSlingGame'
+       'openMoleGame','openRaceGame','openBrickGame','openFarmGame','openCoinGame','openMarbleGame','openPuzzleGame','openSlingGame','openQuizGame'
       ].forEach(function(fn){
         try {
           window[fn]();

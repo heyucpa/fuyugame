@@ -291,6 +291,16 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .comic-txt { font-size: 14px; font-weight: 700; text-align: center; }
 @media (prefers-reduced-motion: reduce) { .comic-p { animation: none; opacity: 1; } }
 @keyframes comicIn { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: none; } }
+.quiz { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 6px 0; }
+.quiz-q { font-size: 34px; font-weight: 800; color: #4a3b2a; letter-spacing: 1px; }
+.quiz-pics { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; font-size: 24px; min-height: 30px; max-width: 320px; }
+.quiz-pics .gone { opacity: .22; }
+.quiz-pics .plus { font-weight: 800; color: var(--muted); padding: 0 4px; }
+.quiz-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: min(100%, 320px); }
+.quiz-c { font-size: 26px; font-weight: 800; padding: 14px 0; border-radius: 14px; border: 2px solid var(--line); background: #fff; }
+.quiz-c.right { background: #d9f3df; border-color: #5fae7c; }
+.quiz-c.wrong { background: #fde0e0; border-color: #e8505b; }
+.quiz-end { font-size: 72px; text-align: center; }
 .lv-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; padding: 10px 0; }
 .lv-btn {
   display: flex; flex-direction: column; align-items: center; gap: 3px;
@@ -1391,6 +1401,69 @@ const PLACE_FURNITURE = [
       { x: .6, y: 1.7, w: .8, d: .02, z: 0, h: 32, c: '#f2e6d0' },
       { x: .96, y: 1.72, w: .08, d: .01, z: 0, h: 32, c: '#d8574a' }
     ] },
+  // 學校（教室、操場）。外觀刻意做成一般的學校，不照任何一間真的學校畫
+  { id: 'school_desk', name: '課桌', theme: 'wood', w: 1, d: 1,
+    parts: [
+      { x: .14, y: .2, w: .08, d: .08, z: 0, h: 26, c: '#9aa3ad' },
+      { x: .78, y: .2, w: .08, d: .08, z: 0, h: 26, c: '#9aa3ad' },
+      { x: .14, y: .72, w: .08, d: .08, z: 0, h: 26, c: '#9aa3ad' },
+      { x: .78, y: .72, w: .08, d: .08, z: 0, h: 26, c: '#9aa3ad' },
+      { x: .1, y: .16, w: .8, d: .68, z: 18, h: 6, c: '#c9ccd0' },     // 抽屜
+      { x: .08, y: .14, w: .84, d: .72, z: 26, h: 4, c: '#e8c99a' },   // 桌面
+      { x: .3, y: .3, w: .34, d: .26, z: 30, h: 2, c: '#ffffff' },     // 課本
+      { x: .3, y: .3, w: .34, d: .03, z: 30, h: 2.4, c: '#6bb6ff' }
+    ] },
+  { id: 'school_chair', name: '學生椅', theme: 'wood', w: 1, d: 1,
+    parts: chairParts({ leg: '#9aa3ad', seat: '#e8c99a', back: '#e8c99a' }).map(p => p.h === 36 ? Object.assign({}, p, { h: 26 }) : p) },
+  { id: 'teacher_desk', name: '老師的桌子', theme: 'wood', w: 2, d: 1,
+    parts: [
+      { x: .05, y: .1, w: 1.9, d: .8, z: 0, h: 32, c: '#a8784a' },
+      { x: 0, y: .05, w: 2, d: .9, z: 32, h: 4, c: '#c9925a' },
+      { x: .25, y: .3, w: .4, d: .3, z: 36, h: 10, c: '#e8505b' },     // 一疊作業簿
+      { x: .25, y: .3, w: .4, d: .3, z: 46, h: 2, c: '#ffd35c' },
+      { k: 'ball', x: 1.5, y: .5, z: 41, r: 5, c: '#e8505b' }          // 蘋果
+    ] },
+  { id: 'blackboard', name: '黑板', theme: 'wood', w: 3, h: 30, z: 44, layer: 'wall', d: 1, parts: [],
+    draw(ctx, W, H) {
+      ctx.fillStyle = '#a8784a'; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#2f5d4a'; ctx.fillRect(3, 3, W - 6, H - 7);
+      ctx.fillStyle = '#c9925a'; ctx.fillRect(2, H - 4, W - 4, 3);      // 粉筆槽
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(10, H - 5, 5, 1.6);
+      ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.font = 'bold 10px sans-serif'; ctx.textBaseline = 'middle';
+      ctx.fillText('1 + 2 = 3', 8, H / 2 - 3);
+      star(ctx, W - 14, H / 2 - 3, 4, '#ffd35c');
+    } },
+  { id: 'flagpole', name: '旗桿', theme: 'nature', w: 1, d: 1,
+    parts: [
+      { x: .3, y: .3, w: .4, d: .4, z: 0, h: 6, c: '#c9ccd0' },
+      { x: .46, y: .46, w: .08, d: .08, z: 6, h: 110, c: '#e6e8eb' },
+      { k: 'ball', x: .5, y: .5, z: 118, r: 2.5, c: '#ffd35c' },
+      { x: .54, y: .48, w: .55, d: .04, z: 86, h: 24, c: '#6bb6ff' }
+    ] },
+  { id: 'slide', name: '溜滑梯', theme: 'cute', w: 3, d: 1,
+    parts: [
+      { x: .05, y: .15, w: .1, d: .1, z: 0, h: 58, c: '#e8505b' },
+      { x: .05, y: .75, w: .1, d: .1, z: 0, h: 58, c: '#e8505b' },
+      { x: .6, y: .15, w: .1, d: .1, z: 0, h: 58, c: '#e8505b' },
+      { x: .6, y: .75, w: .1, d: .1, z: 0, h: 58, c: '#e8505b' },
+      { x: .05, y: .15, w: .65, d: .7, z: 52, h: 5, c: '#ffd35c' },    // 平台
+      { x: .05, y: .15, w: .65, d: .06, z: 57, h: 12, c: '#ff9ec4' },   // 欄杆
+      { x: .05, y: .79, w: .65, d: .06, z: 57, h: 12, c: '#ff9ec4' }
+    ].concat([0, 1, 2, 3, 4, 5, 6, 7].map(i => ({ x: .7 + i * .28, y: .22, w: .3, d: .56, z: 48 - i * 6.6, h: 5, c: '#6bb6ff' }))) // 滑道一階一階往下
+     .concat([0, 1, 2, 3].map(i => ({ x: .08, y: .9, w: .6, d: .04, z: 8 + i * 12, h: 3, c: '#ffffff' }))) },     // 梯子
+  { id: 'swing', name: '鞦韆', theme: 'cute', w: 2, d: 1,
+    parts: [
+      { x: .05, y: .45, w: .12, d: .12, z: 0, h: 72, c: '#7bd389' },
+      { x: 1.83, y: .45, w: .12, d: .12, z: 0, h: 72, c: '#7bd389' },
+      { x: .05, y: .45, w: 1.9, d: .12, z: 72, h: 5, c: '#5fa15a' },
+      { x: .42, y: .5, w: .02, d: .02, z: 18, h: 54, c: '#8a8f96' },
+      { x: .78, y: .5, w: .02, d: .02, z: 18, h: 54, c: '#8a8f96' },
+      { x: .36, y: .36, w: .5, d: .3, z: 15, h: 4, c: '#e8505b' },
+      { x: 1.2, y: .5, w: .02, d: .02, z: 18, h: 54, c: '#8a8f96' },
+      { x: 1.56, y: .5, w: .02, d: .02, z: 18, h: 54, c: '#8a8f96' },
+      { x: 1.14, y: .36, w: .5, d: .3, z: 15, h: 4, c: '#ffd35c' }
+    ] },
+  { id: 'shade_tree', name: '大樹', theme: 'nature', w: 2, d: 2, parts: treeParts('#5fa15a', '#6db866', '#7bc874') },
   { id: 'apple_tree', name: '蘋果樹', theme: 'nature', w: 2, d: 2, parts: treeParts('#5fa15a', '#6db866', '#e8505b') },
   { id: 'orange_tree', name: '橘子樹', theme: 'nature', w: 2, d: 2, parts: treeParts('#4f9150', '#5fa15a', '#ffa53a') },
   { id: 'banana_tree', name: '香蕉樹', theme: 'nature', w: 2, d: 2, parts: treeParts('#7bd389', '#8fe09a', '#ffd35c') }
@@ -1409,13 +1482,21 @@ Object.assign(ACTIVITIES, {
   figures: { label: '🤖 看公仔', name: '看公仔', fx: '✨', lines: ['叔叔的公仔好多！', '這隻好可愛～', '要輕輕看，不能亂摸喔'] },
   farmcare: { label: '🐮 照顧小牛小羊', name: '照顧小牛小羊', fx: '💗', open: 'farm', lines: ['小牛小羊，我來了！', '要好好照顧牠們～'] },
   hay: { label: '🌾 搬稻草', name: '搬稻草', fx: '🌾', open: 'hay', lines: ['稻草好香～', '嘿咻嘿咻！', '這是給小牛小羊吃的'] },
-  trough: { label: '💧 加水', name: '加水', fx: '💧', lines: ['水加滿了！', '小牛小羊渴了吧', '嘩啦嘩啦～'] }
+  trough: { label: '💧 加水', name: '加水', fx: '💧', lines: ['水加滿了！', '小牛小羊渴了吧', '嘩啦嘩啦～'] },
+  // 學校
+  lesson: { label: '📝 上課小考', name: '上課', fx: '✏️', open: 'quiz', lines: ['老師說要專心聽喔', '這題我會！', '舉手回答問題～'] },
+  homework: { label: '📒 交作業', name: '交作業', fx: '⭐', lines: ['作業寫好了！', '老師請看～', '我有寫得很整齊喔'] },
+  slide: { label: '🛝 溜滑梯', name: '溜滑梯', fx: '✨', lines: ['咻～', '再溜一次！', '好好玩喔！'] },
+  swing: { label: '🪢 盪鞦韆', name: '盪鞦韆', fx: '✨', lines: ['盪好高喔！', '風吹得好舒服～', '推我一下～'] },
+  flag: { label: '🚩 看升旗', name: '看升旗', fx: '🚩', lines: ['旗子好高喔', '立正站好！', '風吹得旗子飄飄的'] }
 });
 Object.assign(FURNITURE_ACT, {
   comic_shelf: 'comic', comic_pile: 'comic', arcade: 'arcade', console_tv: 'videogame', tea_table: 'tea',
   fruit_basket: 'fruit', fruit_crate: 'fruit', apple_tree: 'pick', orange_tree: 'pick', banana_tree: 'pick',
-  gaming_desk: 'pcgame', figure_shelf: 'figures', barn: 'farmcare', hay_bale: 'hay', trough: 'trough'
+  gaming_desk: 'pcgame', figure_shelf: 'figures', barn: 'farmcare', hay_bale: 'hay', trough: 'trough',
+  school_desk: 'lesson', teacher_desk: 'homework', slide: 'slide', swing: 'swing', flagpole: 'flag'
 });
+FURNITURE_USE.school_chair = { use: 'sit', seats: [{ x: .5, y: .55, z: 24 }], front: [0, 1] };
 FURNITURE_USE.gaming_chair = { use: 'sit', seats: [{ x: .5, y: .55, z: 26 }], front: [0, 1] };
 // 上面新加的事情也要有台詞類別（前面產生 act_ 台詞時它們還不存在）
 Object.entries(ACTIVITIES).forEach(([k, a]) => {
@@ -1430,7 +1511,9 @@ const FARM_ANIMALS = [
 // 叔叔、阿婆（動物角色，畫法同鄰居）
 const HOSTS = {
   uncle: { id: 'uncle', name: '浣熊叔叔', short: '叔叔', body: '#a3a8b0', edge: '#6f757d', belly: '#e3e6ea', inner: '#5a5f66', ears: 'round', stripes: true, acc: 'hat', accColor: '#e8505b' },
-  grandma: { id: 'grandma', name: '山羊阿婆', short: '阿婆', body: '#f5f1e6', edge: '#cfc6b0', belly: '#ffffff', inner: '#d8c7a0', ears: 'curl', acc: 'glasses', accColor: '#8a5a33' }
+  grandma: { id: 'grandma', name: '山羊阿婆', short: '阿婆', body: '#f5f1e6', edge: '#cfc6b0', belly: '#ffffff', inner: '#d8c7a0', ears: 'curl', acc: 'glasses', accColor: '#8a5a33' },
+  // 學校的老師：貓頭鷹（耳朵用羽毛簇），戴眼鏡
+  teacher: { id: 'teacher', name: '貓頭鷹老師', short: '老師', body: '#b08a68', edge: '#7d5d43', belly: '#f3e2c8', inner: '#7d5d43', ears: 'tuft', acc: 'glasses', accColor: '#3a3240' }
 };
 // 每個地方的房間（固定擺設）。wallItems 的 pos 為從牆角算起第幾格
 const PLACES = {
@@ -1459,6 +1542,20 @@ const PLACES = {
       ['sunflower', 8, 0], ['sunflower', 9, 0], ['log_stool', 6, 6],
       ['fence', 0, 9], ['fence', 1, 9], ['fence', 2, 9], ['fence', 3, 9], ['fence', 6, 9], ['fence', 7, 9], ['fence', 8, 9], ['fence', 9, 9],
       ['fence', 9, 5, 1], ['fence', 9, 6, 1], ['fence', 9, 7, 1], ['fence', 9, 8, 1]
+    ], wallItems: [] }
+  ] },
+  /* 學校：教室＋操場。一般的學校樣子，沒有校名、校徽（去識別化） */
+  school: { name: '學校', host: 'teacher', emoji: '🏫', desc: '上課小考、溜滑梯、盪鞦韆，還有貓頭鷹老師！', rooms: [
+    { name: '教室', w: 8, d: 8, wall: 'wp_cream', floor: 'fl_tile', items: [
+      ['teacher_desk', 1, 1], ['bookshelf', 5, 0], ['plant_l', 7, 0],
+      ['school_desk', 1, 3], ['school_desk', 3, 3], ['school_desk', 5, 3],
+      ['school_chair', 1, 4], ['school_chair', 3, 4], ['school_chair', 5, 4],
+      ['school_desk', 1, 5], ['school_desk', 3, 5], ['school_desk', 5, 5],
+      ['school_chair', 1, 6], ['school_chair', 3, 6], ['school_chair', 5, 6]
+    ], wallItems: [['blackboard', 'L', 1], ['wall_clock', 'L', 5], ['window', 'R', 2], ['window', 'R', 5]] },
+    { name: '操場', w: 10, d: 10, wall: 'wp_forest', floor: 'fl_grass', items: [
+      ['flagpole', 1, 1], ['slide', 3, 1], ['swing', 7, 1],
+      ['shade_tree', 0, 6], ['log_stool', 3, 7], ['log_stool', 4, 7], ['shade_tree', 8, 7]
     ], wallItems: [] }
   ] }
 };
@@ -1511,6 +1608,7 @@ Object.values(PLACES).forEach(pl => {
 });
 LINE_TYPES.push(
   { key: 'hostUncle', label: '叔叔說的話', hint: '可用 {名字}', lines: ['歡迎來叔叔家！漫畫隨便看～', '功課寫完了嗎？寫完叔叔陪你打一局！', '這台電玩是叔叔小時候玩的喔', '看漫畫也要讓眼睛休息一下喔', '要不要跟叔叔比賽？', '叔叔最近在看這本，超好看！'] },
+  { key: 'hostTeacher', label: '老師說的話', hint: '可用 {名字}', lines: ['{名字}早安！今天也要開心上課喔', '下課了，去操場玩一下吧！', '要不要來小考？答對有獎勵喔', '寫字的時候背要挺直喔', '有問題要舉手問老師喔', '下課記得喝水、上廁所～', '作業寫好了可以拿給老師看喔'] },
   { key: 'hostGrandma', label: '阿婆說的話', hint: '可用 {名字}', lines: ['{名字}來啦！快來吃水果～', '後面的果園水果熟了，要不要去摘？', '多吃點水果，身體才會壯壯的', '阿婆泡了茶，要不要喝一點？', '寫完功課，阿婆帶你去果園散步好不好？', '慢慢吃，不要噎到喔～', '小牛小羊肚子餓了，要不要幫阿婆餵牠們？', '農場的小羊最喜歡你了～'] },
   { key: 'travelGo', label: '出門', hint: '可用 {地點}', lines: ['出發去{地點}囉！', '要去{地點}玩了～'] },
   { key: 'travelHome', label: '回家', lines: ['回家囉！', '還是自己家最舒服～', '我回來了！'] },
@@ -2689,6 +2787,7 @@ function didSomething() {
 }
 // 親戚送禮物：1 小時內送過就回傳 null；否則放進收納／食物，回傳送了哪些 [{emoji, name}]
 function relativeGift(place) {
+  if (place !== 'uncle' && place !== 'grandma') return null; // 學校不送禮物（老師的獎勵在交作業、小考）
   const now = Date.now();
   if (now - (G.giftAt[place] || 0) < GIFT_COOLDOWN_MS) return null;
   G.giftAt[place] = now;
@@ -3990,7 +4089,7 @@ function timeText() {
 const ACT_PROPS = {
   read: 'book', comic: 'comic', study: 'pencil', paint: 'brush', cook: 'spatula', snack: 'juice', dishes: 'plate',
   water: 'can', hug: 'teddy', videogame: 'pad', fruit: 'apple', tea: 'cup', hay: 'hay', pick: 'basket',
-  trough: 'bucket', laundry: 'shirt', toys: 'ball'
+  trough: 'bucket', laundry: 'shirt', toys: 'ball', lesson: 'pencil', homework: 'book'
 };
 // 家具留下來的狀態（只在這次遊戲中記得）：{fireUntil, dishesUntil, lit, paint}
 const itemState = {};
@@ -4069,7 +4168,7 @@ function fufuStartAct(key, now, it, auto) {
   else if (a.sound !== 'note') Sound.play('pickUp');
   if (a.tab) openTab(a.tab);
   if (a.open) setTimeout(() => { // 叔叔的電腦、阿婆的穀倉：打開那裡專屬的小遊戲
-    const fn = { brick: openBrickGame, mole: openMoleGame, race: openRaceGame, farm: openFarmGame, hay: () => openStackGame('hay') }[a.open] || openFarmGame;
+    const fn = { brick: openBrickGame, mole: openMoleGame, race: openRaceGame, farm: openFarmGame, hay: () => openStackGame('hay'), quiz: openQuizGame }[a.open] || openFarmGame;
     if ($('#modal').hidden) fn();
   }, 1300);
   if (a.game) setTimeout(() => { // 大型電玩：隨機開一個小遊戲
@@ -5640,7 +5739,8 @@ function drawNeighborBubble(ctx, a, n, say, alpha) {
 
 // ── 親戚家：叔叔、阿婆在家裡陪小可愛（跟著她走，偶爾說話）──
 const host = { n: null, a: null, say: null, sayUntil: 0, nextTalkAt: 0, danceUntil: 0, nextHop: 0 };
-const hostLineKey = () => (host.n.id === 'uncle' ? 'hostUncle' : 'hostGrandma');
+const HOST_LINE_KEYS = { uncle: 'hostUncle', grandma: 'hostGrandma', teacher: 'hostTeacher' };
+const hostLineKey = () => HOST_LINE_KEYS[host.n.id] || 'hostGrandma';
 function hostSay(text, ms) {
   if (!text) return;
   host.say = text; host.sayUntil = performance.now() + (ms || 3400);
@@ -5736,6 +5836,11 @@ function hostMenuEntries() {
     list.push(['📺 一起玩賽車', openRaceGame]);
     list.push(['🖥️ 一起打磚塊', openBrickGame]);
   }
+  if (host.n.id === 'teacher') {
+    list.push(['📝 來小考', openQuizGame]);
+    [['🏫 回教室', 0], ['🛝 一起去操場', 1]]
+      .filter(([, i]) => i !== G.away.idx).forEach(([label, i]) => list.push([label, () => goPlaceRoom(i)]));
+  }
   if (host.n.id === 'grandma') { // 阿婆帶你去其他地方
     [['🏡 回屋裡', 0], ['🧺 一起去果園', 1], ['🐮 一起去小農場', 2]]
       .filter(([, i]) => i !== G.away.idx).forEach(([label, i]) => list.push([label, () => goPlaceRoom(i)]));
@@ -5786,7 +5891,7 @@ function rollTripEvent() {
 let tripRaf = 0, tripDone = null;
 /* label 是要去哪裡（回家時是「家」）。done 一定會被呼叫到，
    不管是走完、被點掉、還是中途出錯——不然她會卡在黑畫面裡。 */
-function walkTrip(label, done) {
+function walkTrip(label, done, dest) {
   const stage = $('.stage');
   if (!stage) { done(); return; }
   const old = document.getElementById('tripLayer');
@@ -5872,6 +5977,8 @@ function walkTrip(label, done) {
       g.fillStyle = '#7cc9a0';
       g.beginPath(); g.arc(tx, H - 82, 13, 0, Math.PI * 2); g.fill();
     }
+    // 去學校：後半段學校從右邊出現，最後停在前面
+    if (dest === 'school' && p > .35) drawTripSchool(g, W, H, W + 20 - Math.min(1, (p - .35) / .5) * 200);
     // 路面的虛線
     g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 3;
     g.setLineDash([16, 14]); g.lineDashOffset = -scroll * 2;
@@ -5931,12 +6038,47 @@ function roomDoors(name) {
   setTimeout(() => d.remove(), 1200);
 }
 
+/* 過場裡的學校外觀：一般的小學樣子——暖色的樓、一排拱形窗、中間拱門、
+   上面一個時鐘、旁邊一支旗桿。不寫校名、不畫校徽、不照真的學校的樣子（去識別化）。 */
+function drawTripSchool(g, W, H, x) {
+  const base = H - 56, bw = 190, bh = 112, top = base - bh;
+  g.save();
+  // 主樓
+  g.fillStyle = '#f4c9a8'; g.fillRect(x, top, bw, bh);
+  g.strokeStyle = 'rgba(120,70,50,.35)'; g.lineWidth = 1.5; g.strokeRect(x, top, bw, bh);
+  g.fillStyle = '#d98b6f'; g.fillRect(x - 4, top - 8, bw + 8, 10);            // 屋簷
+  g.fillStyle = '#fff4e6'; g.fillRect(x, top + 50, bw, 4);                      // 樓層線
+  // 兩層拱形窗
+  g.fillStyle = '#cfe6ff';
+  [top + 14, top + 62].forEach(wy => {
+    for (let i = 0; i < 6; i++) {
+      const wx = x + 12 + i * 29;
+      if (wy > top + 40 && i >= 2 && i <= 3) continue;                          // 一樓中間是門
+      g.beginPath(); g.moveTo(wx, wy + 24); g.lineTo(wx, wy + 8); g.arc(wx + 8, wy + 8, 8, Math.PI, 0); g.lineTo(wx + 16, wy + 24); g.closePath(); g.fill();
+    }
+  });
+  // 中間的拱門
+  const gx = x + bw / 2;
+  g.fillStyle = '#7a4a36';
+  g.beginPath(); g.moveTo(gx - 24, base); g.lineTo(gx - 24, base - 30); g.arc(gx, base - 30, 24, Math.PI, 0); g.lineTo(gx + 24, base); g.closePath(); g.fill();
+  g.fillStyle = '#3d2a20';
+  g.beginPath(); g.moveTo(gx - 16, base); g.lineTo(gx - 16, base - 28); g.arc(gx, base - 28, 16, Math.PI, 0); g.lineTo(gx + 16, base); g.closePath(); g.fill();
+  // 時鐘
+  g.fillStyle = '#ffffff'; g.beginPath(); g.arc(gx, top - 16, 11, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = '#7a4a36'; g.lineWidth = 2; g.stroke();
+  g.beginPath(); g.moveTo(gx, top - 16); g.lineTo(gx, top - 23); g.moveTo(gx, top - 16); g.lineTo(gx + 5, top - 16); g.stroke();
+  // 旗桿
+  g.fillStyle = '#e6e8eb'; g.fillRect(x - 22, base - 130, 3, 130);
+  g.fillStyle = '#6bb6ff'; g.fillRect(x - 19, base - 128, 24, 15);
+  g.restore();
+}
+
 // ── 出門、回家 ──
 function travelTo(place) {
   if (G.away && G.away.place === place) return;
   cancelHold(); hideItemMenu();
   if (fufu.pose) fufuStandUp(false);
-  walkTrip(PLACES[place].name, () => travelArrive(place));
+  walkTrip(PLACES[place].name, () => travelArrive(place), place);
 }
 function travelArrive(place) {
   G.away = { place, idx: 0 };
@@ -8503,7 +8645,10 @@ const RELATIVE_PERKS = {
   hay:     { who: 'grandma', money: [50, 100], say: '阿婆說我好棒！', toast: '🌾 幫阿婆搬稻草，拿到零用錢' },
   trough:  { who: 'grandma', money: [50, 100], say: '小牛小羊喝得好開心！', toast: '💧 幫忙加水，阿婆給了零用錢' },
   comic:   { who: 'uncle',   comic: true },
-  figures: { who: 'uncle',   figure: true }
+  figures: { who: 'uncle',   figure: true },
+  homework: { who: 'school', money: [40, 80], say: '老師說我寫得很棒！', toast: '⭐ 老師給了一張貼紙，還有零用錢' },
+  slide:    { who: 'school', pet: 15, say: '咻～寵物也跟著溜下來了！', toast: '🛝 好好玩，寵物心情 +15' },
+  swing:    { who: 'school', pet: 10, say: '盪好高喔！', toast: '🪢 盪鞦韆，寵物心情 +10' }
 };
 
 function relativeReady(key) {
@@ -8597,6 +8742,114 @@ function figureGift() {
   } else {
     setTimeout(() => fufuSay('好多公仔喔，好酷！', 2600), 600);
   }
+}
+
+/* ===== 📝 學校的小考 =====
+   三個年級：一年級的妹妹也能玩（加減 10 以內，下面畫蘋果可以數），
+   二年級是 100 以內加減，四年級的姊姊玩九九乘法和除法。
+   不限時間：小考是要她算對，不是要她手忙腳亂。
+   答錯不扣錢，告訴她正確答案就換下一題。 */
+const QUIZ_N = 10;
+const QUIZ_LEVELS = [
+  { name: '一年級', sub: '加減 10 以內', mul: 1, apples: true },
+  { name: '二年級', sub: '100 以內加減', mul: 2 },
+  { name: '四年級', sub: '乘法、除法',   mul: 3 }
+];
+const quizRnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+// 出一題：{ a, b, op, ans, text }
+function quizQuestion(L) {
+  let a, b, op;
+  if (L === QUIZ_LEVELS[0]) {
+    op = Math.random() < .5 ? '+' : '−';
+    if (op === '+') { a = quizRnd(1, 9); b = quizRnd(1, 10 - a); } else { a = quizRnd(2, 10); b = quizRnd(1, a - 1); }
+  } else if (L === QUIZ_LEVELS[1]) {
+    op = Math.random() < .5 ? '+' : '−';
+    if (op === '+') { a = quizRnd(10, 89); b = quizRnd(1, 99 - a); } else { a = quizRnd(20, 99); b = quizRnd(1, a - 1); }
+  } else {
+    op = Math.random() < .6 ? '×' : '÷';
+    const x = quizRnd(2, 9), y = quizRnd(2, 9);
+    if (op === '×') { a = x; b = y; } else { a = x * y; b = x; }
+  }
+  const ans = op === '+' ? a + b : op === '−' ? a - b : op === '×' ? a * b : a / b;
+  return { a, b, op, ans, text: `${a} ${op} ${b} = ?` };
+}
+// 四個選項：正確答案＋三個「看起來很像」的錯誤答案，不會有負數、不會重複
+// small：一年級的答案只有 0~10，錯誤答案也只差 1~3（差 10 的一眼就知道不對）
+function quizChoices(ans, small) {
+  const set = new Set([ans]);
+  const near = small ? [1, -1, 2, -2, 3, -3] : [1, -1, 2, -2, 10, -10, 3, -3, 5, -5];
+  for (let i = 0; set.size < 4 && i < 200; i++) {
+    const v = ans + near[Math.floor(Math.random() * near.length)];
+    if (v >= 0) set.add(v);
+  }
+  for (let v = ans + 4; set.size < 4; v++) set.add(v);
+  const out = [...set];
+  for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [out[i], out[j]] = [out[j], out[i]]; }
+  return out;
+}
+function openQuizGame() {
+  const w = openGameWindow('📝 小考', `${QUIZ_N} 題，點你覺得對的答案。不用急，慢慢算！答對越多拿越多。`);
+  pickLevelRow(w, QUIZ_LEVELS, L => `${L.sub}・一題 💰 ${15 * L.mul}`, L => playQuiz(w, L));
+}
+function playQuiz(w, L) {
+  w.stage.innerHTML = '';
+  let n = 0, right = 0, q = null, locked = false, ended = false, timer = 0;
+  gameCleanup = () => clearTimeout(timer);
+  const box = el('div', 'quiz');
+  const qEl = el('div', 'quiz-q'), pics = el('div', 'quiz-pics'), row = el('div', 'quiz-choices');
+  box.append(qEl, pics, row);
+  w.stage.appendChild(box);
+
+  function show() {
+    q = quizQuestion(L);
+    locked = false;
+    qEl.textContent = q.text;
+    pics.innerHTML = '';
+    if (L.apples) { // 一年級：下面畫蘋果，數得出來。減掉的那幾顆畫淡淡的
+      const tot = q.op === '+' ? q.a + q.b : q.a;
+      for (let i = 0; i < tot; i++) {
+        const s = el('span', q.op === '−' && i >= q.a - q.b ? 'gone' : '', '🍎');
+        if (q.op === '+' && i === q.a) pics.appendChild(el('span', 'plus', '＋'));
+        pics.appendChild(s);
+      }
+    }
+    row.innerHTML = '';
+    quizChoices(q.ans, !!L.apples).forEach(v => {
+      const b = el('button', 'quiz-c', String(v));
+      b.onclick = () => choose(v, b);
+      row.appendChild(b);
+    });
+    w.status.textContent = `${L.name}　第 ${n + 1} / ${QUIZ_N} 題　答對 ${right} 題`;
+  }
+  function choose(v, btn) {
+    if (locked || ended) return;
+    locked = true;
+    const ok = v === q.ans;
+    if (ok) { right++; Sound.play('coin'); }
+    else Sound.play('bad');
+    [...row.children].forEach(b => {
+      if (Number(b.textContent) === q.ans) b.classList.add('right');
+      else if (b === btn) b.classList.add('wrong');
+    });
+    qEl.textContent = `${q.a} ${q.op} ${q.b} = ${q.ans}　${ok ? '⭕' : '❌'}`;
+    n++;
+    timer = setTimeout(() => (n >= QUIZ_N ? finish() : show()), ok ? 700 : 1500); // 答錯多留一點時間看正確答案
+  }
+  function finish() {
+    if (ended) return;
+    ended = true;
+    clearTimeout(timer);
+    const all = right === QUIZ_N;
+    const bells = payReward(w, right * 15 * L.mul + (all ? 100 * L.mul : 0));
+    w.stage.innerHTML = '';
+    w.stage.appendChild(el('div', 'quiz-end', all ? '💯' : right >= QUIZ_N * .7 ? '🌟' : '👍'));
+    w.status.textContent = `答對 ${right} / ${QUIZ_N} 題${all ? '，全對！' : ''}　💰 +${fmt(bells)}`;
+    toast(`📝 小考答對 ${right} 題，拿到 💰 ${fmt(bells)}`);
+    gameButtons(w, openQuizGame);
+  }
+  openQuizGame.test = { q: () => q, choose: v => choose(v, null), finish, right: () => right, n: () => n, level: L,
+                        next: () => { clearTimeout(timer); if (!ended) (n >= QUIZ_N ? finish() : show()); } };
+  show();
 }
 
 // ── 叔叔的打磚塊：左右移動板子接球，把磚塊全部打掉 ──
