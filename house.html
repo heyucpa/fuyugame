@@ -84,8 +84,13 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; padding: 10px; }
 .tabs button {
-  border: none; background: var(--chip); border-radius: 10px; padding: 7px 0; font-size: 13px; white-space: nowrap;
+  border: none; background: var(--chip); border-radius: 10px; padding: 6px 0; font-size: 13px; white-space: nowrap;
+  /* 圖示放在字的「上面」，不是同一行：妹妹還不認得國字，圖示要夠大才看得懂，
+     但擠在同一行的話「壁紙地板」四個字加圖示在 360 寬會爆版 */
+  display: flex; flex-direction: column; align-items: center; gap: 1px; line-height: 1.25;
 }
+.tabs .ti { font-size: 19px; line-height: 1.15; }
+@media (max-width: 420px) { .tabs .ti { font-size: 17px; } }
 .tabs button.on { background: var(--ink); color: #fff; }
 .tabbody { flex: 1; overflow-y: auto; padding: 0 10px 16px; }
 .tabbody h3 { margin: 14px 2px 6px; font-size: 14px; color: var(--muted); font-weight: 600; }
@@ -216,6 +221,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   font: inherit; font-size: 14px; color: var(--ink); background: #fff; resize: vertical;
 }
 .textin:focus, .talkbox:focus { outline: none; border-color: var(--accent); }
+.talkbox.locked { background: #f4f1ea; color: var(--muted); border-style: dashed; }
 .talkhead { display: flex; align-items: center; justify-content: space-between; }
 .mini { border: none; background: var(--chip); border-radius: 999px; padding: 2px 10px; font-size: 12px; margin-top: 8px; }
 .row { display: flex; justify-content: space-between; align-items: center; padding: 6px 2px; font-size: 14px; border-bottom: 1px dashed var(--line); }
@@ -331,16 +337,16 @@ button { font: inherit; color: inherit; cursor: pointer; }
 <main class="layout">
   <aside class="panel">
     <nav class="tabs" id="tabs">
-      <button data-tab="inv" class="on">收納</button>
-      <button data-tab="shop">商店</button>
-      <button data-tab="dress">換裝</button>
-      <button data-tab="pets">寵物</button>
-      <button data-tab="deco">壁紙地板</button>
-      <button data-tab="build">擴建</button>
-      <button data-tab="earn">賺錢</button>
-      <button data-tab="book">圖鑑</button>
-      <button data-tab="talk">台詞</button>
-      <button data-tab="save">存檔</button>
+      <button data-tab="inv" class="on"><span class="ti">📦</span>收納</button>
+      <button data-tab="shop"><span class="ti">🛒</span>商店</button>
+      <button data-tab="dress"><span class="ti">👗</span>換裝</button>
+      <button data-tab="pets"><span class="ti">🐾</span>寵物</button>
+      <button data-tab="deco"><span class="ti">🎨</span>壁紙地板</button>
+      <button data-tab="build"><span class="ti">🏗️</span>蓋房間</button>
+      <button data-tab="earn"><span class="ti">💰</span>賺錢</button>
+      <button data-tab="book"><span class="ti">🛋️</span>家具</button>
+      <button data-tab="talk"><span class="ti">🏷️</span>名字</button>
+      <button data-tab="save"><span class="ti">💾</span>存檔</button>
     </nav>
     <section class="tabbody" id="tabBody"></section>
   </aside>
@@ -2076,6 +2082,53 @@ function renderSwatch(kind, item, size) {
   }
   return c;
 }
+
+/* ===== 粉紅色與黃色的版本 =====
+   書櫃、書桌、衣櫃、床頭櫃本來都只有一種，而且是原木／灰白色系，
+   不是她們喜歡的顏色。造型沿用原本那一個，只換顏色——
+   縮圖是從 parts 自動畫的，所以換了顏色就自動有新的圖，
+   擺放、碰撞、佔格也全部沿用，不會有新的 bug。
+
+   顏色一律歸在 cute 這個主題：⭐ 居家評分裡「同主題擺滿 3 件 +300、
+   6 件 +500」，粉紅跟黃色算同一類，她混搭也拿得到加成。 */
+const recolor = (parts, map) => parts.map(p =>
+  map[p.c] ? Object.assign({}, p, { c: map[p.c] }) : Object.assign({}, p));
+
+const PINK = { // 原木→粉紅
+  '#8a5a33': '#f0a8c0', '#b07843': '#ffc0d6', '#a8733f': '#ffb7d0', '#9b6a3e': '#f7b4c9',
+  '#6b4524': '#e58aa8', '#e8c36a': '#fff0f5', '#e6d3b0': '#ffe3ec',
+  // 書櫃上那排書維持彩色，只把最上層的米色換掉
+  '#dfe3e8': '#ffd6e4', '#f2f4f6': '#ffe8f1', '#6b7280': '#f0a8c0',
+  '#3b4252': '#ff8fb3', '#9aa3ad': '#ffc8da', '#f2b33d': '#ff6f9c',
+};
+const LEMON = { // 原木→檸檬黃
+  '#8a5a33': '#e8b84a', '#b07843': '#ffd76b', '#a8733f': '#ffcf55', '#9b6a3e': '#f2c75c',
+  '#6b4524': '#c99a2e', '#e8c36a': '#fff6d8', '#e6d3b0': '#fff1b8',
+  '#dfe3e8': '#ffe8a8', '#f2f4f6': '#fff6d8', '#6b7280': '#e8b84a',
+  '#3b4252': '#c99a2e', '#9aa3ad': '#ffe08a', '#f2b33d': '#ff9f43',
+  '#c68b52': '#ffd76b', '#c9925a': '#ffd76b', '#f3c1d2': '#f2c75c',
+};
+(function addColorVariants() {
+  const base = Object.fromEntries(FURNITURE.map(f => [f.id, f]));
+  [
+    ['bookshelf',  'pink_bookshelf',  '粉紅書櫃',  3400, PINK],
+    ['bookshelf',  'lemon_bookshelf', '檸檬書櫃',  3400, LEMON],
+    ['desk',       'pink_desk',       '粉紅書桌',  3000, PINK],
+    ['desk',       'lemon_desk',      '檸檬書桌',  3000, LEMON],
+    ['wardrobe',   'pink_wardrobe',   '粉紅衣櫃',  4000, PINK],
+    ['wardrobe',   'lemon_wardrobe',  '檸檬衣櫃',  4000, LEMON],
+    ['nightstand', 'pink_nightstand', '粉紅床頭櫃', 1600, PINK],
+    ['nightstand', 'lemon_nightstand', '檸檬床頭櫃', 1600, LEMON],
+    ['wood_chair', 'lemon_chair',     '檸檬椅',    900, LEMON],
+    ['wood_table', 'lemon_table',     '檸檬桌',   2000, LEMON],
+    ['wood_bed',   'lemon_bed',       '檸檬床',   5000, LEMON],
+  ].forEach(([from, id, name, price, map]) => {
+    const b = base[from];
+    if (!b) return;                                 // 來源被改名就跳過，不要整個壞掉
+    FURNITURE.push(Object.assign({}, b, {
+      id: id, name: name, price: price, theme: 'cute', parts: recolor(b.parts, map) }));
+  });
+})();
 
 const FURN_BY_ID = Object.fromEntries(FURNITURE.map(f => [f.id, f]));
 PLACE_FURNITURE.forEach(f => { FURN_BY_ID[f.id] = f; }); // 親戚家專用的家具（不在商店、圖鑑裡）
@@ -5607,6 +5660,7 @@ function refreshTop() {
 function openTab(name) {
   if (tab !== name) sellMode = false; // 換分頁就離開賣東西模式
   tab = name;
+  if (name !== tab) talkEdit = false;   // 離開這一頁，台詞自動鎖回去
   document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === name));
   renderTab();
 }
@@ -5643,6 +5697,7 @@ function renderTab() {
 
 // ── 賣回商店 ──
 let sellMode = false; // 切換分頁時會關掉（ui.js）
+let talkEdit = false;  // 台詞編輯模式；換分頁就鎖回去，不存進存檔
 
 function sellToggle(body, extraNote) {
   const b = el('button', 'sellbtn' + (sellMode ? ' on' : ''), sellMode ? '✓ 賣完了，回到一般模式' : '💰 賣回商店（半價）');
@@ -6431,18 +6486,32 @@ function tabTalk(body) {
     body.appendChild(rn);
   });
 
-  body.appendChild(note('每一行是一句話，會隨機挑一句說。清空就會用回預設的句子。'));
+  /* 台詞預設是鎖住的。
+     名字（角色、寵物、房間）她想改隨時改，那是她的東西；
+     但台詞有幾十組、每組好幾行，小孩手指點進去一滑就整段不見，
+     而且不會發現，等到那隻寵物不說話了才知道。
+     要改就先按「✏️ 編輯」，離開這一頁就自動鎖回去。 */
+  body.appendChild(h3('小可愛說的話'));
+  const lock = el('button', 'big alt', talkEdit ? '🔒 改好了，鎖起來' : '✏️ 我要改台詞');
+  lock.onclick = () => { talkEdit = !talkEdit; Sound.play('click'); renderTab(); };
+  body.appendChild(lock);
+  body.appendChild(note(talkEdit
+    ? '每一行是一句話，會隨機挑一句說。清空就會用回預設的句子。改完記得按上面那顆鎖起來。'
+    : '這裡可以改小可愛、寵物、鄰居說的話。現在是鎖住的，要改請先按上面那顆。'));
+
   LINE_TYPES.forEach(t => {
     const head = el('div', 'talkhead');
-    head.appendChild(el('h3', '', t.label + (t.hint ? `（${t.hint}）` : '')));
+    head.appendChild(el('h3', '', t.label + (t.hint && talkEdit ? `（${t.hint}）` : '')));
     const test = el('button', 'mini', '試說');
     test.onclick = () => fufuSay(pickLine(t.key, { 家具: '原木椅', 寵物: petName() }), 3000);
     head.appendChild(test);
     body.appendChild(head);
-    const box = el('textarea', 'talkbox');
+    const box = el('textarea', 'talkbox' + (talkEdit ? '' : ' locked'));
     box.value = lineList(t.key).join('\n');
     box.rows = Math.min(6, Math.max(2, lineList(t.key).length));
+    box.readOnly = !talkEdit;
     box.oninput = () => {
+      if (!talkEdit) return;          // 鎖著就什麼都不寫，連存檔都不碰
       const lines = box.value.split('\n').map(x => x.trim()).filter(Boolean);
       if (lines.length) G.lines[t.key] = lines; else delete G.lines[t.key];
       saveGame();

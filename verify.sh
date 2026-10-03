@@ -182,6 +182,52 @@ if '失敗 0' not in t or 'JS 錯誤 0' not in t: raise SystemExit(1)
 "
 
 echo
+echo "=== ⑥.5 我的小屋：有沒有東西撐破畫面 ==="
+# 分頁加了圖示、家具加了新品項，窄畫面最容易爆版。
+# headless 的版面寬度最小只到約 500px，所以一樣要放進固定寬的 iframe 量。
+python3 - <<'PYEOF'
+import io
+src = io.open('house.html', encoding='utf-8').read()
+tail = '</body>\n</html>\n'
+body = '''
+localStorage.clear(); G = newGame(); saveGame();
+var tabs = ['inv','shop','dress','pets','deco','build','earn','book','talk','save'];
+var doc = document.documentElement, bad = {};
+function scan(name){
+  document.querySelectorAll('*').forEach(function(el){
+    var r = el.getBoundingClientRect();
+    if (r.right > doc.clientWidth + 0.5 && r.width > 0) {
+      var t = el.tagName.toLowerCase() + (typeof el.className === 'string' && el.className ? '.' + el.className.split(' ')[0] : '');
+      (bad[name] = bad[name] || []); if (bad[name].indexOf(t) < 0) bad[name].push(t);
+    }
+  });
+}
+tabs.forEach(function(t){ openTab(t); scan(t); });
+Object.keys(bad).forEach(function(k){ bad[k] = bad[k].slice(0, 3); });
+parent.postMessage(JSON.stringify({ w: window.innerWidth,
+  over: doc.scrollWidth > doc.clientWidth, pages: bad }), '*');
+'''
+io.open('hovcheck.html','w',encoding='utf-8').write(src[:-len(tail)]+'<script>(function(){\n'+body+'\n})();</script>\n'+tail)
+for W in (360, 390, 430, 768, 1180):
+    io.open('hovcheck_%d.html' % W, 'w', encoding='utf-8').write(
+      '<!DOCTYPE html><meta charset="utf-8"><title>wait</title>'
+      '<script>window.addEventListener("message",function(e){document.title="R:"+e.data;});</script>'
+      '<iframe src="hovcheck.html" style="width:%dpx;height:1000px;border:0"></iframe>' % W)
+PYEOF
+HOVFAIL=0
+for W in 360 390 430 768 1180; do
+  R=$($CHROME --headless --disable-gpu --no-sandbox --virtual-time-budget=9000 \
+      --allow-file-access-from-files --dump-dom "file://$PWD/hovcheck_$W.html" 2>/dev/null \
+      | grep -o '<title>R:[^<]*' | sed 's/<title>R://')
+  case "$R" in
+    *'"over":false'*'"pages":{}'*) echo "✓ ${W}px 沒有溢出" ;;
+    '') echo "✗ ${W}px 量不到（頁面沒跑完）"; HOVFAIL=1 ;;
+    *) echo "✗ ${W}px $R"; HOVFAIL=1 ;;
+  esac
+done
+[ "$HOVFAIL" = 0 ] || exit 1
+
+echo
 echo "=== ⑦ 首頁的入口按鈕 ==="
 # 首頁連到劇場與小屋。連結打錯不會有任何錯誤訊息，
 # 要等小孩按下去才會發現，所以這裡直接檢查檔案在不在。
