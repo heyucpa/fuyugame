@@ -480,6 +480,19 @@ button { font: inherit; color: inherit; cursor: pointer; }
 // 家具 parts 單位：x/y/w/d 為格數（可小數），z/h 為像素高度
 'use strict';
 
+function schoolDeskParts(bag) {
+  return [
+    { x: .14, y: .2, w: .08, d: .08, z: 0, h: 26, c: '#8a5a33' },
+    { x: .78, y: .2, w: .08, d: .08, z: 0, h: 26, c: '#8a5a33' },
+    { x: .14, y: .72, w: .08, d: .08, z: 0, h: 26, c: '#8a5a33' },
+    { x: .78, y: .72, w: .08, d: .08, z: 0, h: 26, c: '#8a5a33' },
+    { x: .1, y: .16, w: .8, d: .68, z: 18, h: 6, c: '#a8784a' },      // 抽屜
+    { x: .08, y: .14, w: .84, d: .72, z: 24, h: 2, c: '#a8784a' },     // 桌面木框
+    { x: .08, y: .14, w: .84, d: .72, z: 26, h: 2, c: '#2f9e7a' },     // 綠色桌墊
+    { x: .3, y: .62, w: .4, d: .07, z: 28, h: 5, c: '#ffffff' },       // 空白名牌
+    { x: .93, y: .32, w: .06, d: .3, z: 6, h: 14, c: bag }             // 掛在桌邊的布袋
+  ];
+}
 function chairParts(c) {
   return [
     { x: .25, y: .25, w: .5, d: .5, z: 0, h: 18, c: c.leg },
@@ -1021,6 +1034,8 @@ const FLOORS = [
 /* 地點專用的地板（不在商店）：學校操場的跑道。
    照片參考：深藍、淺藍交錯的跑道、白線分道，後面是綠色球場、中間一條紅色帶。 */
 const PLACE_FLOORS = [
+  // 教室的磨石子地：灰色底，上面一點一點的小石子
+  { id: 'fl_terrazzo', name: '磨石子地', pattern: 'check', a: '#d9d9d4', b: '#d2d2cc', speckle: ['#9a9a94', '#f4f4f0', '#b5a99a'] },
   { id: 'fl_track', name: '操場跑道', pattern: 'track', a: '#5fae6f', b: '#55a265', lane: ['#2f6fd1', '#4a9be8'], stripe: '#e98a9a', lanes: 4, laneW: .9 }
 ];
 const floorById = id => FLOORS.find(x => x.id === id) || PLACE_FLOORS.find(x => x.id === id);
@@ -1409,23 +1424,50 @@ const PLACE_FURNITURE = [
       { x: .96, y: 1.72, w: .08, d: .01, z: 0, h: 32, c: '#d8574a' }
     ] },
   // 學校（教室、操場）。外觀刻意做成一般的學校，不照任何一間真的學校畫
-  { id: 'school_desk', name: '課桌', theme: 'wood', w: 1, d: 1,
-    parts: [
-      { x: .14, y: .2, w: .08, d: .08, z: 0, h: 26, c: '#9aa3ad' },
-      { x: .78, y: .2, w: .08, d: .08, z: 0, h: 26, c: '#9aa3ad' },
-      { x: .14, y: .72, w: .08, d: .08, z: 0, h: 26, c: '#9aa3ad' },
-      { x: .78, y: .72, w: .08, d: .08, z: 0, h: 26, c: '#9aa3ad' },
-      { x: .1, y: .16, w: .8, d: .68, z: 18, h: 6, c: '#c9ccd0' },     // 抽屜
-      { x: .08, y: .14, w: .84, d: .72, z: 26, h: 4, c: '#e8c99a' },   // 桌面
-      { x: .3, y: .3, w: .34, d: .26, z: 30, h: 2, c: '#ffffff' },     // 課本
-      { x: .3, y: .3, w: .34, d: .03, z: 30, h: 2.4, c: '#6bb6ff' }
-    ] },
+  /* 課桌（照片參考：教室）：木頭桌腳、綠色桌面、桌邊掛一個布袋（紅或藍），
+     桌上立一個空白名牌（不寫名字）。 */
+  { id: 'school_desk', name: '課桌', theme: 'wood', w: 1, d: 1, parts: schoolDeskParts('#c0392b') },
+  { id: 'school_desk_b', name: '課桌', theme: 'wood', w: 1, d: 1, parts: schoolDeskParts('#2c4f9e') },
   { id: 'school_chair', name: '學生椅', theme: 'wood', w: 1, d: 1,
-    parts: chairParts({ leg: '#9aa3ad', seat: '#e8c99a', back: '#e8c99a' }).map(p => p.h === 36 ? Object.assign({}, p, { h: 26 }) : p) },
+    parts: chairParts({ leg: '#8a5a33', seat: '#b07843', back: '#b07843' }).map(p => p.h === 36 ? Object.assign({}, p, { h: 26 }) : p) },
+  // 教室後面的置物櫃：一格一格的小門
+  { id: 'cubby_lockers', name: '置物櫃', theme: 'wood', w: 2, d: 1,
+    parts: [{ x: 0, y: .1, w: 2, d: .7, z: 0, h: 44, c: '#e2c79c' }]
+      .concat([0, 1, 2, 3].map(i => ({ x: .06 + i * .48, y: .8, w: .42, d: .02, z: 4, h: 17, c: '#efd9b4' })))
+      .concat([0, 1, 2, 3].map(i => ({ x: .06 + i * .48, y: .8, w: .42, d: .02, z: 24, h: 17, c: '#efd9b4' })))
+      .concat([0, 1, 2, 3].map(i => ({ x: .22 + i * .48, y: .82, w: .1, d: .01, z: 18, h: 1.4, c: '#8a5a33' })))
+      .concat([0, 1, 2, 3].map(i => ({ x: .22 + i * .48, y: .82, w: .1, d: .01, z: 38, h: 1.4, c: '#8a5a33' }))) },
+  // 布告欄：彩虹、太陽，下面一排注音（教室最常見的布置，沒有學校的字）
+  { id: 'zhuyin_board', name: '注音布告欄', theme: 'cute', w: 3, h: 32, z: 46, layer: 'wall', d: 1, parts: [],
+    draw(ctx, W, H) {
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#d6f0ea'; ctx.fillRect(2, 2, W - 4, H - 4);
+      ['#e8505b', '#ffa53a', '#ffd35c', '#7bd389', '#6bb6ff', '#b18cff'].forEach((c, i) => {
+        ctx.strokeStyle = c; ctx.lineWidth = 1.6;
+        ctx.beginPath(); ctx.arc(W / 2, H - 9, 16 - i * 1.7, Math.PI, 0); ctx.stroke();
+      });
+      ctx.fillStyle = '#ffd35c'; ctx.beginPath(); ctx.arc(W / 2, H - 13, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(2, H - 8, W - 4, 6);
+      ctx.fillStyle = '#3a3240'; ctx.font = '5px sans-serif'; ctx.textBaseline = 'middle';
+      ctx.fillText('ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏ', 4, H - 5);
+      ctx.fillStyle = '#e8505b'; ctx.font = 'bold 6px sans-serif';
+      ctx.fillText('ㄅ', 6, 9); ctx.fillStyle = '#2c4f9e'; ctx.fillText('ㄆ', W - 12, 9);
+    } },
+  // 教室的窗戶：兩邊綠色窗簾
+  { id: 'class_window', name: '教室窗戶', theme: 'modern', w: 2, h: 40, z: 40, layer: 'wall', d: 1, parts: [],
+    draw(ctx, W, H) {
+      frameRect(ctx, W, H, '#ffffff');
+      ctx.fillStyle = '#bfe3f5'; ctx.fillRect(3, 3, W - 6, H - 6);
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(W / 2 - 1, 3, 2, H - 6); ctx.fillRect(3, H / 2 - 1, W - 6, 2);
+      ctx.fillStyle = '#3f9e86';
+      ctx.fillRect(1, 1, 8, H - 2); ctx.fillRect(W - 9, 1, 8, H - 2);
+      ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(4, 1, 1.5, H - 2); ctx.fillRect(W - 6, 1, 1.5, H - 2);
+    } },
   { id: 'teacher_desk', name: '老師的桌子', theme: 'wood', w: 2, d: 1,
     parts: [
       { x: .05, y: .1, w: 1.9, d: .8, z: 0, h: 32, c: '#a8784a' },
-      { x: 0, y: .05, w: 2, d: .9, z: 32, h: 4, c: '#c9925a' },
+      { x: 0, y: .05, w: 2, d: .9, z: 32, h: 3, c: '#c9925a' },
+      { x: .04, y: .09, w: 1.92, d: .82, z: 35, h: 1, c: '#2f9e7a' },   // 綠色桌墊
       { x: .25, y: .3, w: .4, d: .3, z: 36, h: 10, c: '#e8505b' },     // 一疊作業簿
       { x: .25, y: .3, w: .4, d: .3, z: 46, h: 2, c: '#ffd35c' },
       { k: 'ball', x: 1.5, y: .5, z: 41, r: 5, c: '#e8505b' }          // 蘋果
@@ -1519,7 +1561,7 @@ Object.assign(FURNITURE_ACT, {
   comic_shelf: 'comic', comic_pile: 'comic', arcade: 'arcade', console_tv: 'videogame', tea_table: 'tea',
   fruit_basket: 'fruit', fruit_crate: 'fruit', apple_tree: 'pick', orange_tree: 'pick', banana_tree: 'pick',
   gaming_desk: 'pcgame', figure_shelf: 'figures', barn: 'farmcare', hay_bale: 'hay', trough: 'trough',
-  school_desk: 'lesson', teacher_desk: 'homework', slide: 'slide', swing: 'swing', flagpole: 'flag', finish_flag: 'run'
+  school_desk: 'lesson', school_desk_b: 'lesson', teacher_desk: 'homework', slide: 'slide', swing: 'swing', flagpole: 'flag', finish_flag: 'run'
 });
 FURNITURE_USE.park_bench = { use: 'sit', seats: [{ x: .55, y: .55, z: 20 }, { x: 1.45, y: .55, z: 20 }], front: [0, 1] };
 FURNITURE_USE.school_chair = { use: 'sit', seats: [{ x: .5, y: .55, z: 24 }], front: [0, 1] };
@@ -1572,13 +1614,16 @@ const PLACES = {
   ] },
   /* 學校：教室＋操場。一般的學校樣子，沒有校名、校徽（去識別化） */
   school: { name: '學校', host: 'teacher', emoji: '🏫', desc: '上課小考、溜滑梯、盪鞦韆，還有貓頭鷹老師！', rooms: [
-    { name: '教室', w: 8, d: 8, wall: 'wp_cream', floor: 'fl_tile', items: [
-      ['teacher_desk', 1, 1], ['bookshelf', 5, 0], ['plant_l', 7, 0],
-      ['school_desk', 1, 3], ['school_desk', 3, 3], ['school_desk', 5, 3],
-      ['school_chair', 1, 4], ['school_chair', 3, 4], ['school_chair', 5, 4],
-      ['school_desk', 1, 5], ['school_desk', 3, 5], ['school_desk', 5, 5],
-      ['school_chair', 1, 6], ['school_chair', 3, 6], ['school_chair', 5, 6]
-    ], wallItems: [['blackboard', 'L', 1], ['wall_clock', 'L', 5], ['window', 'R', 2], ['window', 'R', 5]] },
+    // 照片參考：綠桌墊的課桌一排一排、桌邊掛紅藍布袋，後面一排置物櫃和書櫃，
+    // 牆上有注音布告欄、窗戶有綠色窗簾，地板是磨石子
+    { name: '教室', w: 8, d: 8, wall: 'wp_cream', floor: 'fl_terrazzo', items: [
+      ['teacher_desk', 1, 1], ['cubby_lockers', 3, 0], ['cubby_lockers', 5, 0], ['bookshelf', 0, 6, 1],
+      ['school_desk', 1, 3], ['school_desk_b', 3, 3], ['school_desk', 5, 3],
+      // 椅子轉 180 度：坐下來臉朝黑板
+      ['school_chair', 1, 4, 2], ['school_chair', 3, 4, 2], ['school_chair', 5, 4, 2],
+      ['school_desk_b', 1, 5], ['school_desk', 3, 5], ['school_desk_b', 5, 5],
+      ['school_chair', 1, 6, 2], ['school_chair', 3, 6, 2], ['school_chair', 5, 6, 2]
+    ], wallItems: [['blackboard', 'L', 0], ['zhuyin_board', 'L', 3], ['class_window', 'R', 1], ['class_window', 'R', 4], ['wall_clock', 'R', 7]] },
     // 前面四道藍色跑道（第 6~9 排），後面是球場；樹和長椅在球場邊（照片參考）
     { name: '操場', w: 10, d: 10, wall: 'wp_forest', floor: 'fl_track', items: [
       ['flagpole', 1, 1], ['slide', 3, 1], ['swing', 7, 1],
@@ -2349,6 +2394,13 @@ function drawFloor(ctx, room, fl) {
         ctx.fillStyle = (i + j) % 2 ? fl.b : fl.a;
         ctx.fillRect(i, j, 1, 1);
       }
+    }
+  }
+  if (fl.speckle) { // 磨石子：每格固定幾顆小點（用座標算，不用亂數，畫面才不會閃）
+    for (let i = 0; i < room.w; i++) for (let j = 0; j < room.d; j++) for (let k = 0; k < 6; k++) {
+      const h = (i * 73 + j * 151 + k * 37) % 97;
+      ctx.fillStyle = fl.speckle[(i + j + k) % fl.speckle.length];
+      ctx.fillRect(i + (h % 10) / 10, j + ((h * 7) % 10) / 10, .05, .05);
     }
   }
   if (fl.pattern === 'track') { // 前面幾道是跑道，後面是球場

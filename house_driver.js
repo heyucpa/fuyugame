@@ -1219,6 +1219,65 @@
     closeGameWindow();
     var md6 = document.querySelector('#modal'); if (md6) md6.hidden = true;
 
+    /* ㊲ 教室（照片參考）：綠桌墊課桌、紅藍布袋、置物櫃、注音布告欄、綠窗簾、磨石子地
+       另外所有地點的房間都檢查：家具不重疊、不超出房間；牆上的東西不重疊、不超出牆 */
+    var CR = PLACES.school.rooms[0];
+    if (CR.floor !== 'fl_terrazzo') fails.push('教室不是磨石子地');
+    if (FLOORS.some(function(f){ return f.id === 'fl_terrazzo'; })) fails.push('磨石子地跑進商店了');
+    ['school_desk_b','cubby_lockers','zhuyin_board','class_window'].forEach(function(id){
+      if (!FURN_BY_ID[id]) fails.push('沒有 ' + id);
+      if (FURNITURE.some(function(f){ return f.id === id; })) fails.push(id + ' 跑進商店了');
+    });
+    if (FURNITURE_ACT.school_desk_b !== 'lesson') fails.push('藍布袋的課桌不能上課');
+    ['school_desk','school_desk_b'].forEach(function(id){
+      var ps = FURN_BY_ID[id].parts;
+      if (!ps.some(function(p){ return p.c === '#2f9e7a' && p.z >= 24; })) fails.push(id + ' 不是綠色桌墊');
+    });
+    if (FURN_BY_ID.school_desk.parts[8].c === FURN_BY_ID.school_desk_b.parts[8].c) fails.push('兩種課桌的布袋同一個顏色');
+    // 椅子在課桌後面一格、轉 180 度（坐下來臉朝黑板，黑板在左牆＝靠 y 小的那邊）
+    var deskAt = {};
+    CR.items.forEach(function(it){ var id = it.id || it[0]; if (/^school_desk/.test(id)) deskAt[(it.x != null ? it.x : it[1]) + ',' + (it.y != null ? it.y : it[2])] = 1; });
+    CR.items.forEach(function(it){
+      var id = it.id || it[0]; if (id !== 'school_chair') return;
+      var x = it.x != null ? it.x : it[1], y = it.y != null ? it.y : it[2], rot = it.rot != null ? it.rot : (it[3] || 0);
+      if (!deskAt[x + ',' + (y - 1)]) fails.push('椅子 (' + x + ',' + y + ') 前面沒有課桌');
+      if (rot !== 2) fails.push('椅子 (' + x + ',' + y + ') 沒有轉向黑板（rot ' + rot + '）');
+    });
+    // 教室的書櫃、置物櫃要靠牆（擺在教室中間會擋住課桌，看起來也怪）
+    CR.items.forEach(function(it){
+      var id = it.id || it[0]; if (id !== 'bookshelf' && id !== 'cubby_lockers') return;
+      var x = it.x != null ? it.x : it[1], y = it.y != null ? it.y : it[2];
+      if (x !== 0 && y !== 0) fails.push('教室的 ' + id + ' 沒有靠牆（' + x + ',' + y + '）');
+    });
+    Object.keys(PLACES).forEach(function(pk){
+      PLACES[pk].rooms.forEach(function(r){
+        var where = PLACES[pk].name + r.name;
+        var cells = {};
+        r.items.forEach(function(it){
+          var id = it.id || it[0], def = FURN_BY_ID[id]; if (!def) return;
+          var x = it.x != null ? it.x : it[1], y = it.y != null ? it.y : it[2], rot = it.rot != null ? it.rot : (it[3] || 0);
+          var fp = footprint(def, rot);
+          if (x < 0 || y < 0 || x + fp.w > r.w || y + fp.d > r.d) fails.push(where + '：' + id + ' 超出房間');
+          for (var i = 0; i < fp.w; i++) for (var j = 0; j < fp.d; j++) {
+            var k = (x + i) + ',' + (y + j);
+            if (def.layer === 'floor') continue;
+            if (cells[k]) fails.push(where + '：' + id + ' 跟 ' + cells[k].id + ' 疊在一起（' + k + '）');
+            cells[k] = def;
+          }
+        });
+        ['L', 'R'].forEach(function(side){
+          var used = {}, len = wallLength(r, side);
+          (r.wallItems || []).forEach(function(wi){
+            var id = wi.id || wi[0], sd = wi.side || wi[1], pos = wi.pos != null ? wi.pos : wi[2];
+            if (sd !== side || !FURN_BY_ID[id]) return;
+            var wd = FURN_BY_ID[id].w;
+            if (pos < 0 || pos + wd > len) fails.push(where + '：牆上的 ' + id + ' 超出牆');
+            for (var q = 0; q < wd; q++) { if (used[pos + q]) fails.push(where + '：牆上的 ' + id + ' 跟 ' + used[pos + q] + ' 疊在一起'); used[pos + q] = id; }
+          });
+        });
+      });
+    });
+
     /* ㉜ 每個小遊戲一打開就要有「離開」的按鈕
        （iPad 上看到：賽車選難度的畫面只有三個難度，不想玩就走不掉）。
        在家裡和在親戚家都測，按下去要真的關掉。 */
