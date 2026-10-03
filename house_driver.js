@@ -1462,6 +1462,34 @@
     sellMode = false;
     rm0.wall = keepWall; G.walls = keepWalls; G.floors = keepFloors;
     openTab('inv');
+
+    /* ㊷ 商店的風格：每一類只列有東西的風格、數字要對、選了沒東西的風格要自動回到全部、不會空白一整頁 */
+    G.away = null;
+    var themeBtns = function(){ return [].map.call(document.querySelectorAll('#tabBody .filter.themes button'), function(b){ return b.textContent; }); };
+    var cardsNow = function(){ return document.querySelectorAll('#tabBody .grid .card').length; };
+    ['all', 'paper'].concat(FURN_KINDS.map(function(k){ return k.id; })).forEach(function(kind){
+      var cnt = shopThemeCounts(kind);
+      Object.keys(THEME_NAMES).concat(['all']).forEach(function(th){
+        shopKind = kind; shopTheme = th; openTab('shop');
+        var shown = themeBtns();
+        // 有列出來的風格，一定有東西；沒東西的風格不能列
+        Object.keys(THEME_NAMES).forEach(function(t){
+          var listed = shown.some(function(x){ return x.indexOf(THEME_NAMES[t]) >= 0; });
+          if (listed && !(cnt[t] > 0)) fails.push('商店「' + kind + '」列出了沒有東西的風格：' + THEME_NAMES[t]);
+          if (listed && shown.every(function(x){ return x.indexOf(THEME_NAMES[t] + ' ' + cnt[t]) < 0; })) fails.push('商店「' + kind + '」的風格數字不對：' + THEME_NAMES[t]);
+        });
+        if (th !== 'all' && !(cnt[th] > 0) && shopTheme !== 'all') fails.push('商店「' + kind + '」選了沒東西的風格「' + th + '」沒有回到全部');
+        if (!cardsNow() && !/買齊了/.test(document.querySelector('#tabBody').textContent)) fails.push('商店「' + kind + '／' + th + '」一整頁空白');
+        // 按鈕上寫幾樣，選下去就要真的有幾樣（不是拿同一個函式比自己）
+        if (kind !== 'all' && th !== 'all' && cnt[th] > 0 && cardsNow() !== cnt[th]) fails.push('商店「' + kind + '／' + THEME_NAMES[th] + '」寫 ' + cnt[th] + ' 樣，實際 ' + cardsNow() + ' 樣');
+      });
+    });
+    // 只有一種風格的類別（像衛浴）不用顯示風格那一排
+    var one = FURN_KINDS.map(function(k){ return k.id; }).filter(function(k){ return Object.keys(shopThemeCounts(k)).length === 1; })[0];
+    if (one) { shopKind = one; shopTheme = 'all'; openTab('shop'); if (themeBtns().length) fails.push('只有一種風格的「' + one + '」還顯示風格那一排'); }
+    shopKind = 'food'; openTab('shop');
+    if (themeBtns().length) fails.push('食物也顯示風格那一排');
+    shopKind = 'all'; shopTheme = 'all'; openTab('inv');
     // 所有小遊戲的難度名字都不寫年級
     ['MOLE_LEVELS','RACE_LEVELS','QUIZ_LEVELS','RUN_LEVELS','BFLY_LEVELS','SHELF_LEVELS','CUP_LEVELS','COIN_LEVELS','PUZZLE_LEVELS'].forEach(function(nm){
       var LV; try { LV = eval(nm); } catch(e) { return; }

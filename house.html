@@ -7222,14 +7222,24 @@ function tabShop(body) {
       f.appendChild(b);
     });
   body.appendChild(f);
-  const f2 = el('div', 'filter themes');
-  f2.appendChild(el('span', 'flabel', '風格'));
-  [['all', '全部']].concat(Object.entries(THEME_NAMES)).forEach(([k, n]) => {
-    const b = el('button', k === shopTheme ? 'on' : '', n);
-    b.onclick = () => { shopTheme = k; renderTab(); };
-    f2.appendChild(b);
-  });
-  body.appendChild(f2);
+  /* 風格：只列「這一類真的有東西」的風格，後面寫有幾樣，前面加小圖示（妹妹看圖就知道）。
+     以前五個風格永遠都在，選「佈置」再選「衛浴」就是一整頁空白。
+     這一類只有一種風格（或是食物）就不顯示這一排。 */
+  const counts = shopThemeCounts(shopKind);
+  const themes = Object.keys(THEME_NAMES).filter(t => counts[t] > 0);
+  if (shopTheme !== 'all' && !themes.includes(shopTheme)) shopTheme = 'all';
+  if (themes.length > 1) {
+    const f2 = el('div', 'filter themes');
+    f2.appendChild(el('span', 'flabel', '風格'));
+    [['all', '', '全部']].concat(themes.map(t => [t, THEME_ICONS[t], `${THEME_NAMES[t]} ${counts[t]}`])).forEach(([k, icon, n]) => {
+      const b = el('button', k === shopTheme ? 'on' : '');
+      if (icon) b.appendChild(el('span', 'fi', icon));
+      b.appendChild(el('span', '', n));
+      b.onclick = () => { shopTheme = k; renderTab(); };
+      f2.appendChild(b);
+    });
+    body.appendChild(f2);
+  }
   if (shopKind === 'paper') { shopDeco(body); return; }
   if (shopKind === 'all' || shopKind === 'food') {
     body.appendChild(h3(`${charName()}的食物`));
@@ -7256,16 +7266,29 @@ function tabShop(body) {
   body.appendChild(grid);
   if (shopKind === 'all') shopDeco(body);
 }
+// 這一類商品裡，每個風格有幾樣（壁紙地板只算還沒買的）
+const THEME_ICONS = { wood: '🪵', cute: '🎀', modern: '🏙️', nature: '🌿', bath: '🛁' };
+function shopThemeCounts(kind) {
+  const c = {};
+  const add = t => { c[t] = (c[t] || 0) + 1; };
+  if (kind !== 'paper') FURNITURE.filter(d => !d.gift && (kind === 'all' || furnKind(d.id) === kind)).forEach(d => add(d.theme));
+  if (kind === 'all' || kind === 'paper') {
+    WALLPAPERS.filter(w => !G.walls.includes(w.id)).forEach(w => add(w.theme));
+    FLOORS.filter(f => !G.floors.includes(f.id)).forEach(f => add(f.theme));
+  }
+  return c;
+}
 // 商店的壁紙地板：只賣還沒有的；買了直接換上
 function shopDeco(body) {
   if (G.away) { body.appendChild(h3('🎨 壁紙地板')); body.appendChild(note(`現在在${PLACES[G.away.place].name}，回家才能買壁紙地板喔。`)); return; }
   const room = curRoom();
   body.appendChild(h3('🧱 壁紙'));
   const wg = decoGrid('wall', WALLPAPERS, G.walls, room.wall, 'shop');
-  body.appendChild(wg.children.length ? wg : note('壁紙全部都買齊了！'));
+  const allTheme = shopTheme === 'all';
+  body.appendChild(wg.children.length ? wg : note(allTheme ? '壁紙全部都買齊了！' : '這個風格的壁紙都買齊了！'));
   body.appendChild(h3('🟫 地板'));
   const fg = decoGrid('floor', FLOORS, G.floors, room.floor, 'shop');
-  body.appendChild(fg.children.length ? fg : note('地板全部都買齊了！'));
+  body.appendChild(fg.children.length ? fg : note(allTheme ? '地板全部都買齊了！' : '這個風格的地板都買齊了！'));
 }
 
 /* mode：'own'＝我的東西（只列有的，點了換上）；'shop'＝商店（只列還沒有的，點了買＋換上） */
