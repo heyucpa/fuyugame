@@ -145,8 +145,40 @@
     });
   } catch(e){ errs.push('THROW '+e.message+' | '+(e.stack||'').split('\n')[1]); }
 
-  var pre=document.createElement('pre'); pre.id='R';
-  pre.textContent=['失敗 '+fails.length, 'JS 錯誤 '+errs.length, '',
-    fails.concat(errs).slice(0,15).join('\n')].join('\n');
-  document.body.innerHTML=''; document.body.appendChild(pre);
+  function report(){
+    var pre=document.createElement('pre'); pre.id='R';
+    pre.textContent=['失敗 '+fails.length, 'JS 錯誤 '+errs.length, '',
+      fails.concat(errs).slice(0,15).join('\n')].join('\n');
+    document.body.innerHTML=''; document.body.appendChild(pre);
+  }
+
+  /* 選檔案匯入。FileReader 是非同步的，所以放在最後，
+     跟完了再印結果。用真的 File 丟進去，
+     不是只檢查「標籤在不在」——「存成檔案」存得出來卻匯不回來的話，
+     那個檔案等於白存。 */
+  try {
+    openTab('save');
+    var fb = document.querySelector('#tabBody input[type="file"]');
+    var tb = document.querySelector('#tabBody textarea');
+    if (!fb) { fails.push('備份頁沒有「選檔案」'); return report(); }
+    if (typeof fb.onchange !== 'function') { fails.push('選檔案沒有掛事件'); return report(); }
+    var feed = function(text, name){
+      var dt = new DataTransfer();
+      dt.items.add(new File([text], name, { type: 'application/json' }));
+      fb.files = dt.files;
+      fb.onchange();
+    };
+    var good = makeBackup();
+    tb.value = '';
+    feed(good, 'ok.json');
+    setTimeout(function(){
+      if (tb.value !== good) fails.push('選了備份檔，內容沒有被讀進來');
+      tb.value = '';
+      feed('這不是備份', 'bad.json');
+      setTimeout(function(){
+        if (tb.value) fails.push('選了不是備份的檔案，竟然還填進框裡');
+        report();
+      }, 80);
+    }, 80);
+  } catch(e){ errs.push('THROW(file) '+e.message); report(); }
 })();</script>

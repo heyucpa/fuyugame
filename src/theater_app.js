@@ -1478,10 +1478,13 @@ function renderSave() {
       </div>
 
       <div class="savebox">
-        <div class="saveh">📥 把備份貼回來</div>
-        <div class="savehint">貼上之後按「還原」。<b>現在的紀錄會被整份蓋掉</b>，
+        <div class="saveh">📥 把備份放回來</div>
+        <div class="savehint">選檔案或直接貼上，然後按「還原」。<b>現在的紀錄會被整份蓋掉</b>，
           不過蓋掉之前會自動留一份，按錯了可以反悔。</div>
-        <textarea id="pastebox" rows="4" placeholder="把備份貼在這裡…"></textarea>
+        <!-- 本來只能貼上，所以「存成檔案」存下來的那個檔沒辦法放回去——
+             存得出來、匯不進來，等於白存。 -->
+        <input type="file" id="pickfile" class="fileopen" accept="application/json,.json,text/plain" />
+        <textarea id="pastebox" rows="4" placeholder="…或把備份貼在這裡"></textarea>
         <button id="restore" style="width:100%; background:#6b4a9e; color:#fff;">↩️ 還原</button>
         <div class="savehint" id="rhint" hidden></div>
       </div>
@@ -1529,6 +1532,25 @@ function renderSave() {
     } catch (e) {
       hint('copyhint', '這台機器存不了檔案，請改用上面那顆「複製備份」。', false);
     }
+  };
+  /* 選檔案跟貼上走同一條路：驗過才填進框裡。
+     讀進來就先驗一次告訴她結果，不要讓她按了「還原」才發現選錯檔案。 */
+  const putBackup = (txt) => {
+    if (!parseSave(txt)) return false;
+    document.getElementById('pastebox').value = txt;
+    return true;
+  };
+  const pick = document.getElementById('pickfile');
+  pick.onchange = () => {
+    const f = pick.files && pick.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = () => hint('rhint', putBackup(String(r.result))
+      ? '✓ 讀好了，按下面的「還原」。' : '這個檔案不是情境劇場的備份。',
+      !!parseSave(String(r.result)));
+    r.onerror = () => hint('rhint', '這個檔案讀不出來。', false);
+    r.readAsText(f);
+    pick.value = '';   // 清掉才選得了同一個檔案第二次
   };
   document.getElementById('restore').onclick = () => {
     const txt = document.getElementById('pastebox').value;

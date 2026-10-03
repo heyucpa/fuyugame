@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#6b4a9e" />
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
-<meta name="build" content="2026.10.03-cdd61a" />
+<meta name="build" content="2026.10.03-2cbfe5" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNmI0YTllIi8+PHRleHQgeD0iNTAiIHk9IjcwIiBmb250LXNpemU9IjU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn46tPC90ZXh0Pjwvc3ZnPg==" />
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -192,6 +192,17 @@
   .savehint { font-size: 12.5px; line-height: 1.7; color: #6b5a7e; margin: 7px 0; }
   .savehint.ok { color: #1e7d46; font-weight: 800; }
   .savehint.ng { color: #b4453a; font-weight: 800; }
+  /* 選檔案匯入：原生的 file input 在 iPad 上又小又醜，包成一塊好按的虛線框 */
+  .fileopen {
+    display: block; width: 100%; margin: 0 0 8px; padding: 10px;
+    border: 2px dashed #c9bde6; border-radius: 10px; background: #fff;
+    font: inherit; font-size: 12.5px; color: #6b5a7e;
+  }
+  .fileopen::file-selector-button {
+    font: inherit; font-size: 12.5px; font-weight: 800; margin-right: 10px;
+    padding: 6px 12px; border: none; border-radius: 999px;
+    background: #efe7fa; color: #6b4a9e; cursor: pointer;
+  }
   .savebox textarea {
     width: 100%; font-size: 12px; font-family: ui-monospace, Menlo, Consolas, monospace;
     line-height: 1.5; padding: 9px 11px; border: 2px solid #c9bde6; border-radius: 10px;
@@ -7395,10 +7406,13 @@ function renderSave() {
       </div>
 
       <div class="savebox">
-        <div class="saveh">📥 把備份貼回來</div>
-        <div class="savehint">貼上之後按「還原」。<b>現在的紀錄會被整份蓋掉</b>，
+        <div class="saveh">📥 把備份放回來</div>
+        <div class="savehint">選檔案或直接貼上，然後按「還原」。<b>現在的紀錄會被整份蓋掉</b>，
           不過蓋掉之前會自動留一份，按錯了可以反悔。</div>
-        <textarea id="pastebox" rows="4" placeholder="把備份貼在這裡…"></textarea>
+        <!-- 本來只能貼上，所以「存成檔案」存下來的那個檔沒辦法放回去——
+             存得出來、匯不進來，等於白存。 -->
+        <input type="file" id="pickfile" class="fileopen" accept="application/json,.json,text/plain" />
+        <textarea id="pastebox" rows="4" placeholder="…或把備份貼在這裡"></textarea>
         <button id="restore" style="width:100%; background:#6b4a9e; color:#fff;">↩️ 還原</button>
         <div class="savehint" id="rhint" hidden></div>
       </div>
@@ -7446,6 +7460,25 @@ function renderSave() {
     } catch (e) {
       hint('copyhint', '這台機器存不了檔案，請改用上面那顆「複製備份」。', false);
     }
+  };
+  /* 選檔案跟貼上走同一條路：驗過才填進框裡。
+     讀進來就先驗一次告訴她結果，不要讓她按了「還原」才發現選錯檔案。 */
+  const putBackup = (txt) => {
+    if (!parseSave(txt)) return false;
+    document.getElementById('pastebox').value = txt;
+    return true;
+  };
+  const pick = document.getElementById('pickfile');
+  pick.onchange = () => {
+    const f = pick.files && pick.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = () => hint('rhint', putBackup(String(r.result))
+      ? '✓ 讀好了，按下面的「還原」。' : '這個檔案不是情境劇場的備份。',
+      !!parseSave(String(r.result)));
+    r.onerror = () => hint('rhint', '這個檔案讀不出來。', false);
+    r.readAsText(f);
+    pick.value = '';   // 清掉才選得了同一個檔案第二次
   };
   document.getElementById('restore').onclick = () => {
     const txt = document.getElementById('pastebox').value;
