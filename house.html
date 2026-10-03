@@ -3123,6 +3123,12 @@ function outfitOf(o) {
 }
 
 // 以腳底中心為原點，往上是負值；身高約 64
+/* 現在該露出什麼表情。只有「房間裡那個真的小可愛」會用到——
+   預覽縮圖不傳 face，所以商店、換裝裡永遠是笑的。 */
+function kidFace() {
+  try { if (G.kid && G.kid.hunger < 30) return 'hungry'; } catch (e) {}
+  return 'happy';
+}
 function drawGirl(ctx, o) {
   const swing = o.walking ? Math.sin(o.t * 11) : 0;
   const fit = outfitOf(o);
@@ -3516,9 +3522,21 @@ function drawGirlHead(ctx, o) {
   });
   ctx.fillStyle = GIRL.blush;
   [-8.5, 8.5].forEach(bx => { ctx.beginPath(); ctx.arc(bx + fx, hy + 5.5, 2.6, 0, Math.PI * 2); ctx.fill(); });
-  // 笑臉
+  /* 表情。她肚子餓的時候會說「肚子好餓喔…」，可是臉還在笑——
+     講一套、臉一套，小孩會覺得怪。
+     預覽縮圖（商店、換裝）一律用笑臉：那些是在看衣服，不是在看心情。 */
   ctx.strokeStyle = '#8a3b36'; ctx.lineWidth = 1.2;
-  ctx.beginPath(); ctx.arc(fx, hy + 5.5, 3.2, .2 * Math.PI, .8 * Math.PI); ctx.stroke();
+  if (o.face === 'hungry') {
+    // 嘴角往下，再加一道口水／汗滴
+    ctx.beginPath(); ctx.arc(fx, hy + 9.5, 3.2, 1.18 * Math.PI, 1.82 * Math.PI); ctx.stroke();
+    ctx.fillStyle = 'rgba(120,190,230,.85)';
+    ctx.beginPath(); ctx.ellipse(fx + 10, hy + 2, 1.5, 2.4, 0, 0, Math.PI * 2); ctx.fill();
+  } else if (o.face === 'sleepy') {
+    // 睏：嘴巴一條線
+    ctx.beginPath(); ctx.moveTo(fx - 2.6, hy + 6.4); ctx.lineTo(fx + 2.6, hy + 6.4); ctx.stroke();
+  } else {
+    ctx.beginPath(); ctx.arc(fx, hy + 5.5, 3.2, .2 * Math.PI, .8 * Math.PI); ctx.stroke();
+  }
 
   // 瀏海
   ctx.beginPath();
@@ -4231,7 +4249,7 @@ function fufuDraw(ctx) {
   ctx.save();
   ctx.translate(p.x, p.y - hop - jump + 1);
   ctx.scale(fufu.facing * k, breathe * k);
-  drawGirl(ctx, { t: fufu.t, walking, back: fufu.back && (walking || !!fufu.act), blink: fufuBlink(), outfit: currentOutfit(), prop });
+  drawGirl(ctx, { t: fufu.t, walking, back: fufu.back && (walking || !!fufu.act), blink: fufuBlink(), outfit: currentOutfit(), prop, face: kidFace() });
   ctx.restore();
 }
 
@@ -4243,13 +4261,13 @@ function fufuDrawPosed(ctx) {
   if (pose.type === 'sit') {
     ctx.translate(p.x, p.y + 12 * k - jump); // 讓褲子底部剛好在座面上
     ctx.scale(pose.facing * k, (1 + Math.sin(fufu.t * 2.4) * .012) * k);
-    drawGirl(ctx, { t: fufu.t, sit: true, back: pose.back, blink: fufuBlink(), outfit: currentOutfit() });
+    drawGirl(ctx, { t: fufu.t, sit: true, back: pose.back, blink: fufuBlink(), outfit: currentOutfit(), face: kidFace() });
   } else {
     // 頭靠在枕頭上、身體在棉被下，只畫頭，微微歪一邊
     ctx.translate(p.x, p.y - 6 - jump);
     ctx.rotate(-.3 + Math.sin(fufu.t * 1.2) * .03);
     ctx.translate(0, 46);
-    drawGirl(ctx, { t: 0, blink: true, headOnly: true, outfit: currentOutfit() });
+    drawGirl(ctx, { t: 0, blink: true, headOnly: true, outfit: currentOutfit(), face: kidFace() });
   }
   ctx.restore();
 }

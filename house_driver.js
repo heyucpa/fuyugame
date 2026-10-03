@@ -698,6 +698,38 @@
     else { L4.onclick(); }
     if (G.away) fails.push('過場完了卻沒有回到家');
 
+    /* ⑵ 表情要跟狀態一致
+       她說「肚子好餓喔…」卻還在笑，講一套臉一套。 */
+    var keepH = G.kid.hunger;
+    G.kid.hunger = 10;
+    if (kidFace() !== 'hungry') fails.push('肚子快餓死了表情卻沒變');
+    G.kid.hunger = 90;
+    if (kidFace() === 'hungry') fails.push('吃飽了還是餓肚子的表情');
+    // 餓的臉跟平常的臉要真的畫得不一樣
+    function headPic(face){
+      var cv = document.createElement('canvas');
+      cv.width = 90; cv.height = 90;
+      var gg = cv.getContext('2d');
+      gg.setTransform(1.6, 0, 0, 1.6, 45, 76);
+      var of = {};
+      OUTFIT_SLOTS.forEach(function(sl){ of[sl.key] = CLOTHES_BY_ID[G.outfit[sl.key]]; });
+      drawGirl(gg, { t: 0, outfit: of, hair: G.hair, face: face });
+      return cv.toDataURL();
+    }
+    if (headPic('hungry') === headPic('happy')) fails.push('餓的臉跟平常的臉畫出來一模一樣');
+    // 商店、換裝的預覽圖不可以跟著變臉（那是在看衣服，不是看心情）
+    /* 同一個尺寸第二次會走快取，而快取是非同步畫回畫布的，當下取到的是空白，
+       跟第一張比當然「不一樣」——那是測試的錯不是程式的錯。
+       每次先把縮圖快取清掉，才比得到真的像素。 */
+    var clearThumbs = function(){ Object.keys(girlThumbCache).forEach(function(k){ delete girlThumbCache[k]; }); };
+    G.kid.hunger = 95; clearThumbs();
+    var prevFull = renderGirl(G.outfit, 52, 64, { hair: G.hair }).toDataURL();
+    G.kid.hunger = 5; clearThumbs();
+    var prevHungry2 = renderGirl(G.outfit, 52, 64, { hair: G.hair }).toDataURL();
+    if (prevFull !== prevHungry2) fails.push('預覽圖竟然跟著肚子餓不餓變臉');
+    clearThumbs();
+    G.kid.hunger = keepH;
+
     // ⑦ 其他分頁沒被改壞
     ['inv','shop','dress','pets','deco','build','earn','book','talk','save'].forEach(function(t){
       try { openTab(t); if (!document.querySelector('#tabBody').children.length)
