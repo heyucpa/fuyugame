@@ -2303,9 +2303,26 @@ const Sound = (() => {
   } catch (e) { /* 讀不到就用預設 */ }
   const savePrefs = () => { try { localStorage.setItem('myHouseAudio', JSON.stringify(prefs)); } catch (e) { /* 忽略 */ } };
 
-  // 瀏覽器規定：要等使用者點過畫面才能出聲
+  /* 瀏覽器規定：要等使用者點過畫面才能出聲。
+     iPad／iPhone（Safari、Chrome 都是蘋果的引擎）有三個坑，家長回報 iPad 沒聲音：
+     ① 只有「手指放開」（touchend／pointerup／click）才算使用者同意出聲，按下去（touchstart）不算，
+        之前在 touchstart 開聲音，聲音一直是關著的 → 放開的事件也要接。
+     ② iPad 開靜音時，網頁的聲音會被一起靜音 → 跟系統說「這是在播音樂」（audioSession = playback）；
+        舊版 iOS 沒有這個設定，就在點擊時放一段無聲的 <audio>，效果一樣。
+     ③ 切到別的 App、來電之後，狀態會變成 interrupted（不是 suspended）→ 只要不是 running 就重新開。 */
+  let unlockEl = null;
+  function iosUnlock() {
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+    if (unlockEl) return;
+    try {
+      unlockEl = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=');
+      unlockEl.setAttribute('playsinline', ''); unlockEl.loop = true; unlockEl.volume = 0;
+      const pr = unlockEl.play(); if (pr && pr.catch) pr.catch(() => {});
+    } catch (e) {}
+  }
   function ensure() {
-    if (ac) { if (ac.state === 'suspended' && !document.hidden) ac.resume(); return true; }
+    iosUnlock();
+    if (ac) { if (ac.state !== 'running' && !document.hidden) { try { ac.resume(); } catch (e) {} } return true; }
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return false;
     ac = new AC();
@@ -2315,7 +2332,7 @@ const Sound = (() => {
     startBgm();
     return true;
   }
-  ['pointerdown', 'keydown', 'touchstart'].forEach(ev => window.addEventListener(ev, ensure, { passive: true }));
+  ['pointerdown', 'pointerup', 'touchstart', 'touchend', 'click', 'keydown'].forEach(ev => window.addEventListener(ev, ensure, { passive: true }));
   document.addEventListener('visibilitychange', () => {
     if (!ac) return;
     if (document.hidden) ac.suspend(); else ac.resume();
@@ -2524,7 +2541,8 @@ const Sound = (() => {
   }
   const songName = () => (prefs.bgm ? song.name : null);
 
-  return { play, setPref, prefs, nextSong, songName, songCount: SONGS.length };
+  return { play, setPref, prefs, nextSong, songName, songCount: SONGS.length,
+           _t: { getAc: () => ac, setAc: v => { ac = v; } } }; // _t：測試用
 })();
 </script>
 <script>

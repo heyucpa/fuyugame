@@ -2264,6 +2264,24 @@
     G = keepG; G.away = keepAway; G.openGift = true; saveGame(); giftReset();
     $('#modal').hidden = true;
 
+    /* 70 🔊 iPad 沒聲音：手指放開（touchend／click）也要開聲音；interrupted 也要重新開；靜音模式下也要能播 */
+    var realAc = Sound._t.getAc(), resumes = 0;
+    var fakeAc = { state: 'interrupted', resume: function(){ resumes++; this.state = 'running'; return Promise.resolve(); } };
+    var hadSession = 'audioSession' in navigator, fakeSession = { type: 'auto' };
+    Object.defineProperty(navigator, 'audioSession', { value: fakeSession, configurable: true });
+    try {
+      Sound._t.setAc(fakeAc);
+      window.dispatchEvent(new Event('touchend'));
+      if (!resumes) fails.push('iPad：手指放開（touchend）時沒有把聲音打開');
+      fakeAc.state = 'interrupted'; resumes = 0;
+      window.dispatchEvent(new Event('click'));
+      if (!resumes) fails.push('iPad：聲音被中斷（interrupted）之後，點畫面沒有重新開');
+      if (fakeSession.type !== 'playback') fails.push('iPad：沒有跟系統說要播音樂（靜音模式下會沒聲音）');
+    } finally {
+      Sound._t.setAc(realAc);
+      if (!hadSession) delete navigator.audioSession;
+    }
+
     /* 69 🐾 寵物屋：在家裡（不用出門、不在出門選單）、免費不佔房間數；沒帶出來的寵物（含蛋）在裡面走來走去；
        點了只開心、數值不變、不會長大；可以直接「照顧牠」或「一起逛」；回房間不用走路過場 */
     var keepG7 = JSON.stringify(G);
