@@ -2553,6 +2553,27 @@
       if (!(full > countFills(Object.assign({}, sp, { sparkle: false })))) fails.push(sp.name + ' 沒有一閃一閃的星星');
     });
 
+    /* 81 第四批家具：甜點風一整組＋可愛風＋寵物用；每件畫得出來、商店買得到、椅子坐得下、床躺得下、寵物床睡得了 */
+    var NEW4 = ['cupcake_chair', 'macaron_table', 'donut_rug', 'candy_bed', 'icecream_lamp', 'cake_shelf', 'lollipop_tree', 'strawberry_sofa', 'cookie_jar', 'cream_wardrobe',
+                'cloud_sofa', 'unicorn_rocker', 'star_lamp', 'heart_mirror', 'rainbow_shelf', 'bunny_cushion', 'pet_castle', 'cat_tower'];
+    NEW4.forEach(function(id){
+      var df = FURN_BY_ID[id];
+      if (!df) { fails.push('第四批少了 ' + id); return; }
+      try { renderThumb(df, 64); } catch (e) { fails.push(df.name + ' 畫不出來：' + e.message); }
+      if (!(df.price > 0)) fails.push(df.name + ' 沒有價錢');
+      if (!FURN_KIND_OF[id]) fails.push(df.name + ' 沒有分類');
+    });
+    if (FURNITURE.filter(function(f){ return f.theme === 'sweet'; }).length < 10) fails.push('甜點風不到 10 樣');
+    if (!WALLPAPERS.some(function(w){ return w.theme === 'sweet'; }) || !FLOORS.some(function(f){ return f.theme === 'sweet'; })) fails.push('甜點風沒有壁紙或地板');
+    ['cupcake_chair', 'bunny_cushion', 'strawberry_sofa', 'cloud_sofa'].forEach(function(id){ if (!FURNITURE_USE[id] || FURNITURE_USE[id].use !== 'sit') fails.push(FURN_BY_ID[id].name + ' 不能坐'); });
+    if (!FURNITURE_USE.candy_bed || !PET_BEDS.candy_bed || !PET_BEDS.candy_bed.withKid) fails.push('糖果床不能躺、或寵物不能上來一起睡');
+    if (!PET_BEDS.pet_castle || !PET_BEDS.cat_tower) fails.push('寵物城堡／跳台寵物不能睡');
+    if (!canHaveTop('macaron_table') || !canSitOnTable('cookie_jar')) fails.push('馬卡龍桌不能放東西、或餅乾罐不能放桌上');
+    shopKind = 'all'; shopTheme = 'sweet'; openTab('shop');
+    var sweetCards = [].filter.call(document.querySelectorAll('#tabBody .card'), function(c){ return /杯子蛋糕椅|糖果床|草莓沙發/.test(c.textContent); });
+    if (sweetCards.length < 3) fails.push('商店選「甜點」風格看不到甜點家具');
+    shopTheme = 'all'; openTab('inv');
+
     /* 80 極稀有：爸比龍（眼鏡、大角、翅膀、大一號）、媽咪鳳（羽冠、彩虹尾巴、愛心腮紅）；最難孵；圖鑑標「🌟極稀有」 */
     var legends = PET_SPECIES.filter(function(s){ return s.legend; });
     if (legends.map(function(s){ return s.name; }).sort().join() !== '媽咪鳳,爸比龍') fails.push('極稀有不是爸比龍、媽咪鳳：' + legends.map(function(s){ return s.name; }).join());
@@ -3850,7 +3871,8 @@
     var allCost = NEW_ROOM_COST.reduce(function(a2, b2){ return a2 + b2; }, 0)
       + ROOM_NAMES.length * Object.values(EXPAND_COST).reduce(function(a2, b2){ return a2 + b2; }, 0)
       + sumP(FURNITURE.filter(function(d){ return !d.gift; })) + sumP(WALLPAPERS) + sumP(FLOORS) + sumP(CLOTHES) + sumP(HAIR_STYLES);
-    if (allCost < 150000 || allCost > 200000) fails.push('全部買齊要 ' + allCost + '，不在 15～20 萬');
+    // 116.10 家長要多加家具（第四批），全部買齊從約 18 萬變約 20 萬；上限放到 22 萬
+    if (allCost < 150000 || allCost > 220000) fails.push('全部買齊要 ' + allCost + '，不在 15～22 萬');
     [FURNITURE, WALLPAPERS, FLOORS, CLOTHES, HAIR_STYLES].forEach(function(l){ l.forEach(function(x){
       if (typeof x.price !== 'number') return;
       if (x.price % 50) fails.push(x.name + ' 的價格不是整數好看的數字：' + x.price);
