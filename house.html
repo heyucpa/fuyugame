@@ -1974,7 +1974,7 @@ const PET_DECAY_MIN = { hunger: .25, clean: .42, mood: .3 };
 const PET_MIN = 10;
 // 115.9.18 謝會：大約一週才玩一小時。遊戲關著的期間，數值最多只降到 AWAY_FLOOR（有點餓），
 // 回來時有事可以照顧，但不會每次都看到牠們又餓又難過。超過 AWAY_GAP_MIN 分鐘沒結算就當作離開
-const AWAY_FLOOR = 30;
+const AWAY_FLOOR = 45; // 116.10：從 30 提高到 45，回來時還有事可以照顧，但不會一開就髒髒、看起來像沒照顧好
 const AWAY_GAP_MIN = 1;
 const WELCOME_BACK_HOURS = 6; // 隔這麼久再打開，小可愛會說「好久不見」
 
@@ -2221,6 +2221,10 @@ const Sound = (() => {
     bath() { for (let i = 0; i < 9; i++) tone({ f0: 900 + Math.random() * 900, f1: 1800 + Math.random() * 600, dur: .07, vol: .22, at: i * .07 + Math.random() * .03 }); },
     place() { tone({ f0: 180, f1: 90, dur: .14, type: 'sine', vol: .6 }); noise({ dur: .06, vol: .15, freq: 900 }); },
     pickUp() { tone({ f0: 420, f1: 640, dur: .08, vol: .3 }); },
+    whoosh() { tone({ f0: 900, f1: 220, dur: .7, vol: .14 }); noise({ dur: .6, vol: .12, freq: 1400 }); },  // 溜滑梯「咻」
+    sand() { noise({ dur: .14, vol: .18, freq: 4200 }); noise({ dur: .12, vol: .12, freq: 3600, at: .16 }); },  // 沙沙
+    splash() { noise({ dur: .3, vol: .2, freq: 1100 }); tone({ f0: 700, f1: 300, dur: .18, vol: .1, at: .04 }); }, // 水聲
+    creak() { tone({ f0: 260, f1: 320, dur: .22, type: 'triangle', vol: .08 }); },  // 鞦韆嘎吱
     coin() { tone({ f0: 1319, dur: .1, type: 'square', vol: .12 }); tone({ f0: 1760, dur: .25, type: 'square', vol: .12, at: .08 }); },
     click() { tone({ f0: 1100, dur: .04, vol: .15 }); },
     shake() { noise({ dur: .35, vol: .35, freq: 2500 }); noise({ dur: .25, vol: .25, freq: 1800, at: .12 }); },
@@ -3021,7 +3025,10 @@ const NEWS = [
     ['💡', '可以玩的東西會冒出小圖示，點點看'],
     ['↩️', '家具放錯了？按「復原」就回來了'],
     ['🔊', '繪本可以聽故事了'],
-    ['⭐', '小遊戲的星星越多越難，綠框的最簡單']
+    ['⭐', '小遊戲的星星越多越難，綠框的最簡單'],
+    ['🦋', '公園有蝴蝶在飛、魚會跳出水面'],
+    ['💬', '叔叔、阿婆、老師都會記得你上次做了什麼'],
+    ['🐾', '每隻寵物有自己的個性']
   ], newItems: [] },
   { id: '2026-10-04', title: '小屋更新了！', lines: [
     ['🏫', '可以去學校、公園、圖書館玩了！點上面的「🚗 出門」'],
@@ -3099,6 +3106,7 @@ function newGame() {
        她花剩多少都會被補回 10 萬——每開一間新的就白送一次錢。 */
     newsSeen: NEWS.map(n => n.id), // 新開的存檔不用看以前的更新公告
     usedActs: {},                  // 做過哪些事（做過的就不再冒提示圖示）
+    hostMem: {},                   // 主人記得的上次的事
     topup100k: true,
     supplyAt: Date.now(),                       // 上次送小安素的時間
     supplyWho: 0,                               // 下一次輪到誰送（媽媽、爸爸輪流）
@@ -3819,10 +3827,21 @@ function outfitOf(o) {
 // 以腳底中心為原點，往上是負值；身高約 64
 /* 現在該露出什麼表情。只有「房間裡那個真的小可愛」會用到——
    預覽縮圖不傳 face，所以商店、換裝裡永遠是笑的。 */
+/* 表情跟著她在做的事：玩的時候笑開懷、看書釣魚專心、遇到新動物嚇一跳。
+   妹妹不用看字，看臉就知道發生什麼事。 */
+const JOY_ACTS = ['slide', 'swing', 'sand', 'picnic', 'dance', 'playPet', 'heart', 'tank', 'icecream', 'fruit', 'snack', 'toys', 'hug', 'videogame', 'arcade', 'run', 'flag'];
+const FOCUS_ACTS = ['read', 'comic', 'study', 'lesson', 'homework', 'paint', 'pondfish', 'storybook', 'findbook', 'bfly', 'cook'];
 function kidFace() {
   try { if (G.kid && G.kid.hunger < 30) return 'hungry'; } catch (e) {}
+  try {
+    if (fufu.faceUntil > performance.now()) return fufu.faceKind;
+    const k = fufu.act && fufu.act.key;
+    if (fufu.ride || JOY_ACTS.includes(k)) return 'joy';
+    if (FOCUS_ACTS.includes(k)) return 'focus';
+  } catch (e) {}
   return 'happy';
 }
+function kidMakeFace(kind, ms) { fufu.faceKind = kind; fufu.faceUntil = performance.now() + (ms || 1600); }
 function drawGirl(ctx, o) {
   const swing = o.walking ? Math.sin(o.t * 11) : 0;
   const fit = outfitOf(o);
@@ -4221,7 +4240,13 @@ function drawGirlHead(ctx, o) {
   const blink = o.blink;
   ctx.fillStyle = '#231c1c';
   [-5, 5].forEach(ex => {
-    if (blink) {
+    if (o.face === 'joy' && !blink) { // 開心：眼睛瞇成 ^ ^
+      ctx.strokeStyle = '#231c1c'; ctx.lineWidth = 1.3;
+      ctx.beginPath(); ctx.arc(ex + fx, hy + 2.2, 2.2, 1.15 * Math.PI, 1.85 * Math.PI); ctx.stroke();
+    } else if (o.face === 'wow' && !blink) { // 嚇一跳：眼睛睜大
+      ctx.beginPath(); ctx.ellipse(ex + fx, hy + .6, 2.3, 3, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ex + fx + .7, hy - .5, .9, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#231c1c';
+    } else if (blink) {
       ctx.fillRect(ex + fx - 2, hy + 1, 4, 1);
     } else {
       ctx.beginPath(); ctx.ellipse(ex + fx, hy + 1, 1.9, 2.5, 0, 0, Math.PI * 2); ctx.fill();
@@ -4244,6 +4269,13 @@ function drawGirlHead(ctx, o) {
   } else if (o.face === 'sleepy') {
     // 睏：嘴巴一條線
     ctx.beginPath(); ctx.moveTo(fx - 2.6, hy + 6.4); ctx.lineTo(fx + 2.6, hy + 6.4); ctx.stroke();
+  } else if (o.face === 'joy') { // 張嘴大笑
+    ctx.fillStyle = '#c94f6d';
+    ctx.beginPath(); ctx.arc(fx, hy + 5.2, 3.4, 0, Math.PI); ctx.closePath(); ctx.fill();
+  } else if (o.face === 'focus') { // 專心：小小的嘴
+    ctx.beginPath(); ctx.moveTo(fx - 1.5, hy + 6.2); ctx.lineTo(fx + 1.5, hy + 6.2); ctx.stroke();
+  } else if (o.face === 'wow') { // 喔！
+    ctx.fillStyle = '#8a3b36'; ctx.beginPath(); ctx.ellipse(fx, hy + 6.2, 1.8, 2.4, 0, 0, Math.PI * 2); ctx.fill();
   } else {
     ctx.beginPath(); ctx.arc(fx, hy + 5.5, 3.2, .2 * Math.PI, .8 * Math.PI); ctx.stroke();
   }
@@ -4708,6 +4740,8 @@ function fufuStartAct(key, now, it, auto) {
   if (key === 'warm') st.fireUntil = now + 120000;
   if (key === 'dishes' && it.id === 'dining_table') st.dishesUntil = now + 120000;
   if (key === 'paint') st.paint = Math.min(12, (st.paint || 0) + 1);
+  if (key === 'sand') Sound.play('sand');
+  if (key === 'pondfish') Sound.play('splash');
   if (key === 'sand') { // 沙堡每玩一次多蓋一層，最多五層；留十分鐘
     st.castle = st.castleUntil > Date.now() ? Math.min(5, (st.castle || 0) + 1) : 1;
     st.castleUntil = Date.now() + 10 * 60000;
@@ -4716,7 +4750,7 @@ function fufuStartAct(key, now, it, auto) {
   fufu.path = [];
   fufu.act = { key, uid: it.uid, start: now, until: now + 5500, nextFx: now + 300, fxEvery: a.sound === 'note' ? 380 : 1000, n: 0 };
   if (RIDES[key]) { // 溜滑梯、盪鞦韆：真的爬上去、滑下來／坐上去擺
-    fufu.ride = { key, it, def, start: now, dur: RIDES[key].dur };
+    fufu.ride = { key, it, def, start: now, dur: RIDES[key].dur, sfx: {} };
     fufu.act.until = now + RIDES[key].dur;
     fufu.back = false;
   } else fufu.ride = null;
@@ -4732,6 +4766,7 @@ function fufuStartAct(key, now, it, auto) {
     G.usedActs = G.usedActs || {};
     G.usedActs[key] = 1;
     if (!sessionLog.acts[key]) sessionLog.acts[key] = 1;
+    if (G.away && G.away.place === 'park' && PARK_MEM_LINES[key]) rememberFor('ranger', 'act', key);
   }
   if (!auto) relativePerk(key); // 親戚家的事情：吃點心、喝茶、幫忙做事…（她自己點的才算）
   if (a.sound === 'bath') Sound.play('bath');
@@ -4835,6 +4870,7 @@ function fufuUpdateAct(now) {
   } else {
     const act = ACTIVITIES[a.key];
     fufuBurst(act.fx);
+    petReact(a.key, a.n);
     if (act.sound === 'note') Sound.play('note', Math.floor(Math.random() * 4));
     if (a.key === 'paint' && a.uid) { const st = stateOf(a.uid); st.paint = Math.min(12, (st.paint || 0) + 1); } // 邊畫邊多一筆
   }
@@ -5060,10 +5096,16 @@ function swingNow() {
   return { dy: ph * .45, dz: Math.abs(ph) * 7 };
 }
 // 回傳 {x, y, z, sit, cheer}（房間座標）；不在騎乘中回傳 null
+function rideSfx(r, t) { // 動作到了那一刻才出聲（每段只響一次）
+  const once = (k, name) => { if (!r.sfx[k]) { r.sfx[k] = 1; Sound.play(name); } };
+  if (r.key === 'slide' && t >= 2) once('w', 'whoosh');
+  if (r.key === 'swing') { const k = Math.floor(t * 3.2 / Math.PI); if (k > 0 && k < 6) once('c' + k, 'creak'); }
+}
 function ridePos(now) {
   const r = fufu.ride;
   if (!r || !fufu.act || fufu.act.key !== r.key) return null;
   const t = (now - r.start) / 1000;
+  if (r.sfx) rideSfx(r, t);
   let lx, ly, z, sit = false, cheer = false;
   if (r.key === 'slide') {
     if (t < 1.5) { const k = t / 1.5; lx = .38; ly = lerp(1.25, .55, k); z = lerp(0, 57, k); }          // 爬梯子
@@ -5254,6 +5296,32 @@ const isEgg = () => G.pet.stage === 'egg';
 const petScale = () => stageOf(G.pet).scale;
 
 // ── 小效果：愛心、泡泡、食物、星星 ──
+/* ===== 寵物個性 =====
+   每一種寵物有一個個性，只差在「動作」，不影響獎勵：
+   愛看魚（到池塘會湊過去看）、愛玩沙、害羞（溜滑梯前會先冒汗）、活潑（一直跳）。
+   換寵物出門，同一件事會有不一樣的反應。 */
+const PET_TRAIT_OF = {
+  penguin: 'fish', sodapeng: 'fish', matchafrog: 'fish', pancakeotter: 'fish', cat: 'fish', grapeocto: 'fish',
+  chick: 'sand', peachmouse: 'sand', marshpig: 'sand', cocoadog: 'sand',
+  bunny: 'shy', sheep: 'shy', mochi: 'shy', bear: 'shy',
+  dragon: 'jump', starfox: 'jump', strawcow: 'jump', rainbowuni: 'jump'
+};
+const petTrait = () => (G.pet && PET_TRAIT_OF[G.pet.species]) || 'jump';
+const PET_TRAIT_NAMES = { fish: '愛看魚', sand: '愛玩沙', shy: '有點害羞', jump: '很活潑' };
+// 小可愛在做事的時候，旁邊的寵物也有反應（第 n 次特效）
+function petReact(key, n) {
+  try { if (isEgg() || pet.sleep) return null; } catch (e) { return null; }
+  const tr = petTrait(), now = performance.now();
+  let emoji = null, hop = false;
+  if (key === 'pondfish' || key === 'fish') emoji = tr === 'fish' ? (n % 2 ? '🐟' : '👀') : null;
+  else if (key === 'sand') { emoji = tr === 'sand' ? '🏖️' : null; hop = tr === 'sand'; }
+  else if (key === 'slide' || key === 'swing') { emoji = tr === 'shy' && n < 2 ? '💦' : (tr === 'jump' ? '🎉' : '💗'); hop = tr === 'jump' || n >= 2; }
+  else if (key === 'picnic') { emoji = '😋'; hop = true; }
+  else if (tr === 'jump') hop = n % 2 === 0;
+  if (hop) { pet.squishV = -7; pet.happyUntil = now + 700; }
+  if (emoji) petBurst({ kind: 'emoji', emoji }, 1);
+  return emoji;
+}
 function petBurst(opt, n, a) {
   a = a || pet;
   const p = iso(a.x, a.y, a.z || 0);
@@ -6392,6 +6460,28 @@ function drawNeighborBubble(ctx, a, n, say, alpha) {
   ctx.globalAlpha = 1;
 }
 
+/* ===== 主人記得上次 =====
+   叔叔記得你上次看的漫畫、老師記得給你的貼紙、館員記得你看的書、
+   園長記得你在公園做了什麼、阿婆記得來玩的動物。存在存檔裡（hostMem）。
+   不做每日報到、不怪你「怎麼都沒來」：常來的會說很開心，隔很久回來說好久不見。 */
+function hostMemOf(id) { G.hostMem = G.hostMem || {}; return (G.hostMem[id] = G.hostMem[id] || {}); }
+function rememberFor(id, k, v) { hostMemOf(id)[k] = v; }
+const PARK_MEM_LINES = {
+  sand: '上次你蓋的沙堡好漂亮，園長拍照留下來了！', slide: '上次你溜滑梯好勇敢喔！',
+  swing: '上次你盪鞦韆盪好高！', picnic: '上次的野餐好開心吧？', bfly: '上次有拍到蝴蝶嗎？',
+  pondfish: '池塘的魚上次有上鉤嗎？', tank: '大戰車今天也在喔！', heart: '上次在愛心前面拍的照片好可愛！'
+};
+function hostMemoryLine(id) {
+  const m = hostMemOf(id), nm = charName();
+  if (id === 'uncle' && m.comic) return `${nm}，上次你看的《${m.comic}》那則，叔叔也覺得好好笑！`;
+  if (id === 'teacher' && m.sticker) return `上次給你的${m.sticker}貼紙，有沒有收好呀？`;
+  if (id === 'librarian' && m.book) return `上次你看了《${m.book}》，今天要不要換一本？`;
+  if (id === 'ranger' && m.act && PARK_MEM_LINES[m.act]) return PARK_MEM_LINES[m.act];
+  if (id === 'grandma' && m.animal) return `上次跑來玩的${m.animal}，今天說不定也會來喔！`;
+  if ((m.visits || 0) >= 5) return `${nm}常常來玩，好開心！`;
+  return null;
+}
+
 // ── 親戚家：叔叔、阿婆在家裡陪小可愛（跟著她走，偶爾說話）──
 const host = { n: null, a: null, say: null, sayUntil: 0, nextTalkAt: 0, danceUntil: 0, nextHop: 0 };
 const HOST_LINE_KEYS = { uncle: 'hostUncle', grandma: 'hostGrandma', teacher: 'hostTeacher', ranger: 'hostRanger', librarian: 'hostLibrarian' };
@@ -6411,6 +6501,9 @@ function hostTick(dt, now) {
     host.a = { room: roomKey(), x: c[0] + .5, y: c[1] + .5, z: 0, path: [], t: 0, facing: -1, idleUntil: now + 3000, blinkAt: 0,
       squish: 0, squishV: -6, lean: 0, leanV: 0, press: null, happyUntil: now + 2500, particles: [] };
     host.nextTalkAt = now + 2500;
+    host.memSaid = false;
+    const mem = hostMemOf(want.id); mem.visits = (mem.visits || 0) + 1; saveGame();
+    if (!sessionLog.met.includes(want.short)) sessionLog.met.push(want.short);
     // 剛到的時候送禮物（同一位親戚 1 小時內只送一次）
     const place = G.away.place;
     setTimeout(() => {
@@ -6431,7 +6524,10 @@ function hostTick(dt, now) {
   if (now < host.danceUntil && now > host.nextHop) { host.nextHop = now + 420; a.squishV = -8; a.happyUntil = now + 500; a.facing = -a.facing; }
   if (now > host.nextTalkAt) {
     host.nextTalkAt = now + 13000 + Math.random() * 7000;
-    hostSay(pickLine(hostLineKey(), { 名字: charName() }));
+    // 第一句先說「上次」的事：有人記得我，比隨機問候更像真的朋友
+    const memLine = !host.memSaid ? hostMemoryLine(host.n.id) : null;
+    host.memSaid = true;
+    hostSay(memLine || pickLine(hostLineKey(), { 名字: charName() }));
     if (Math.random() < .5) setTimeout(() => { if (host.n) fufuSay(pickLine('kidReply'), 2600); }, 3000);
   }
   actorWalk(a, dt, now, room, blockedGrid(room), .5);
@@ -6469,7 +6565,9 @@ function meetAnimal(n) {
   const dex = G.animals = G.animals || {};
   const isNew = !dex[n.id];
   dex[n.id] = (dex[n.id] || 0) + 1;
+  rememberFor('grandma', 'animal', n.name);
   if (isNew) {
+    try { kidMakeFace('wow', 1800); } catch (e) {}
     showcase(renderNeighborPortrait(n, 120, 108, false), `${n.emoji || ''} ${n.name}`, `動物圖鑑 ${Object.keys(dex).length} / ${ANIMAL_DEX().length}`);
     sessionLog.newThings.push(`${n.emoji || '🐾'} ${n.name}`);
     toast(`✨ 新的動物：${n.emoji || ''}${n.name}！（動物圖鑑 ${Object.keys(dex).length} / ${ANIMAL_DEX().length}）`);
@@ -7050,9 +7148,50 @@ function draw() {
   drawRoom(ctx, room, { ghost: hold, hoverUid: hold ? null : hoverUid, showGrid: !!hold, extras: [fufuDrawEntry()].concat(petDrawEntries(), visitorDrawEntries(), hostDrawEntries(), supplyDrawEntries()), occupants: [fufuOccupant(), petOccupant(), visitorOccupant()] });
   petDrawOverlay(ctx);
   visitorDrawOverlay(ctx, performance.now());
+  drawAmbient(ctx, performance.now());
   drawTargetMarker(ctx, performance.now());
   drawActHint(ctx, performance.now());
   fufuDrawBubble(ctx, performance.now());
+}
+/* ===== 世界自己會動 =====
+   沒有點任何東西的時候，場景裡也有事情在發生：花圃上有蝴蝶飛、樹上的葉子飄下來、
+   池塘的魚偶爾跳出水面。都用時間算（不存狀態），每件家具用自己的 uid 錯開節奏。 */
+const LEAF_TREES = ['shade_tree', 'apple_tree', 'orange_tree', 'banana_tree'];
+function drawAmbient(ctx, now) {
+  const t = now / 1000;
+  curRoom().items.forEach(it => {
+    const def = FURN_BY_ID[it.id]; if (!def) return;
+    const fp = footprint(def, it.rot || 0), cx = it.x + fp.w / 2, cy = it.y + fp.d / 2, seed = Math.abs(it.uid || 0) % 97;
+    if (it.id === 'flower_bed') { // 兩隻蝴蝶在花上飛來飛去
+      for (let k = 0; k < 2; k++) {
+        const a = t * (.6 + k * .2) + seed + k * 3;
+        const p = iso(cx + Math.sin(a) * .8, cy + Math.cos(a * 1.3) * .4, 26 + Math.sin(a * 2.1) * 8);
+        drawButterfly(ctx, p.x, p.y, BUTTERFLIES[(seed + k) % 5], t * 11 + k, .62);
+      }
+    } else if (LEAF_TREES.includes(it.id)) { // 一片葉子從樹上慢慢飄下來
+      const ph = ((t + seed * .37) % 6) / 6;
+      if (ph < .75) {
+        const k = ph / .75;
+        const p = iso(cx + .5 + Math.sin(k * 9 + seed) * .35, cy + .5 + k * .4, 80 * (1 - k));
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(Math.sin(k * 12) * .8);
+        ctx.fillStyle = seed % 3 ? '#7bc874' : '#e8c35a';
+        ctx.beginPath(); ctx.ellipse(0, 0, 3.2, 1.6, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      }
+    } else if (it.id === 'pond') { // 每 7 秒左右，一條魚跳出水面
+      const ph = ((t + seed) % 7) / 7;
+      if (ph < .12) {
+        const k = ph / .12, x0 = cx - .4, x1 = cx + .2;
+        const p = iso(x0 + (x1 - x0) * k, cy, 5 + Math.sin(k * Math.PI) * 16);
+        ctx.fillStyle = '#ff8a3d';
+        ctx.beginPath(); ctx.ellipse(p.x, p.y, 4, 2.2, (k - .5) * 1.4, 0, Math.PI * 2); ctx.fill();
+      } else if (ph < .2) { // 落水的漣漪
+        const k = (ph - .12) / .08, p = iso(cx + .2, cy, 5);
+        ctx.strokeStyle = `rgba(255,255,255,${.8 * (1 - k)})`; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.ellipse(p.x, p.y, 4 + k * 12, 2 + k * 6, 0, 0, Math.PI * 2); ctx.stroke();
+      }
+    }
+  });
 }
 const actEmoji = key => (ACTIVITIES[key] ? ACTIVITIES[key].label.split(' ')[0] : '✨');
 // 小在空中的小圖示（點了東西、可以玩的東西都用這個）
@@ -7141,6 +7280,10 @@ function pickItem(w) {
     return { x: it.x, y: it.y, w: fp.w, d: fp.d, z: 0, h: def.layer === 'floor' ? 2 : itemHeight(def), it, flat: def.layer === 'floor' };
   });
   const order = sortBoxes(entries.filter(e => !e.flat)).reverse().concat(entries.filter(e => e.flat));
+  /* 在別人家（公園、學校…）：點到的是樹、路燈這種「不能做事」的東西，
+     後面又剛好有可以玩的（愛心雕塑被大樹擋住），就讓她點到可以玩的那個。
+     在自己家不這樣做：樹也要能點來搬。 */
+  let first = null;
   for (const e of order) {
     const p = new Path2D(), pts = [
       iso(e.x, e.y, e.h), iso(e.x + e.w, e.y, e.h), iso(e.x + e.w, e.y, 0),
@@ -7149,9 +7292,12 @@ function pickItem(w) {
     p.moveTo(pts[0].x, pts[0].y);
     pts.slice(1).forEach(q => p.lineTo(q.x, q.y));
     p.closePath();
-    if (pickCtx.isPointInPath(p, w.x, w.y)) return e.it;
+    if (pickCtx.isPointInPath(p, w.x, w.y)) {
+      if (!G.away || canUse(e.it)) return e.it;
+      if (!first) first = e.it;
+    }
   }
-  return null;
+  return first;
 }
 
 // 掛飾：滑鼠在畫面右半邊就掛右上牆，左半邊掛左上牆
@@ -7705,7 +7851,7 @@ function saveRestState(s) { lsSet(REST_STATE_KEY, JSON.stringify(s)); }
 // 用 var：畫面的 loop 在載入時就先跑第一格（比這一行早），let 會在那時候丟錯、讓整段程式停掉
 var resting = false, restUnlocked = false;
 // 這次打開遊戲之後做了什麼（給休息畫面的「今天做了」用；不存檔）
-var sessionLog = { acts: {}, newThings: [], placed: 0, earned0: null };
+var sessionLog = { acts: {}, newThings: [], placed: 0, earned0: null, met: [] };
 
 // 每秒呼叫一次。now、visible 可以從外面給（測試用）
 function restTick(now, visible) {
@@ -7770,6 +7916,7 @@ function showRest(until) {
   }
   if (!resting) {
     resting = true;
+    stopSpeak();
     if (typeof closeGameWindow === 'function' && !$('#modal').hidden) { try { closeGameWindow(); } catch (e) {} $('#modal').hidden = true; }
     Sound.play('click');
   }
@@ -7783,14 +7930,19 @@ function sessionSummary() {
   const rows = [];
   const acts = Object.keys(sessionLog.acts).filter(k => ACTIVITIES[k]);
   if (acts.length) rows.push(acts.slice(0, 4).map(k => ACTIVITIES[k].label).join('　'));
+  if (sessionLog.met.length) rows.push('👋 遇見了' + sessionLog.met.join('、'));
+  if (sessionLog.placed) rows.push(`🛋️ 布置了 ${sessionLog.placed} 樣家具`);
+  if (sessionLog.newThings.length) rows.push('✨ 新收集：' + sessionLog.newThings.slice(0, 3).join('、'));
   const books = Object.keys(sessionLog.acts).filter(k => k.startsWith('book:')).length;
   if (books) rows.push(`📖 看了 ${books} 本繪本`);
-  if (sessionLog.newThings.length) rows.push('✨ 新收集：' + sessionLog.newThings.slice(0, 3).join('、'));
-  if (sessionLog.placed) rows.push(`🛋️ 布置了 ${sessionLog.placed} 樣家具`);
   const earned = sessionLog.earned0 == null ? 0 : G.earned - sessionLog.earned0;
-  if (earned > 0) rows.push(`💰 賺了 ${fmt(earned)}`);
+  // 錢放最後、而且只在還有位置時才列：成果是「做了什麼、遇見誰、布置了哪裡」，不是賺多少
+  if (earned > 0 && rows.length < 4) rows.push(`💰 賺了 ${fmt(earned)}`);
   return rows.length ? '今天做了：\n' + rows.slice(0, 4).join('\n') : '';
 }
+function stopSpeak() { try { if (canSpeak()) speechSynthesis.cancel(); } catch (e) {} }
+// 視窗不管是怎麼關掉的（按好、點旁邊、被休息畫面關），都順便停止朗讀
+try { new MutationObserver(() => { if ($('#modal').hidden) stopSpeak(); }).observe($('#modal'), { attributes: true, attributeFilter: ['hidden'] }); } catch (e) {}
 function endRest() {
   const ov = document.getElementById('restOverlay');
   if (ov) ov.hidden = true;
@@ -8506,7 +8658,7 @@ function tabPets(body) {
   head.appendChild(pic);
   const info = el('div', 'pet-info');
   info.appendChild(el('div', 'pet-name', petName()));
-  info.appendChild(el('div', 'pet-kind', cur.stage === 'egg' ? '還不知道會孵出什麼寶寶' : `${sp.name}・${st.name}`));
+  info.appendChild(el('div', 'pet-kind', cur.stage === 'egg' ? '還不知道會孵出什麼寶寶' : `${sp.name}・${st.name}・${({ fish: '🐟', sand: '🏖️', shy: '🙈', jump: '🎉' })[PET_TRAIT_OF[sp.id] || 'jump']} ${PET_TRAIT_NAMES[PET_TRAIT_OF[sp.id] || 'jump']}`));
   if (st.next) {
     const bar = el('div', 'grow-bar'), fill = el('b', '');
     fill.style.width = Math.min(100, cur.growth / st.next * 100) + '%';
@@ -9983,6 +10135,7 @@ function openComic(again) {
     cm = pool[Math.floor(Math.random() * pool.length)];
     isNew = !seen[cm.title];
     seen[cm.title] = (seen[cm.title] || 0) + 1;
+    rememberFor('uncle', 'comic', cm.title);
     saveGame();
   }
   const card = $('#modalCard');
@@ -10008,7 +10161,9 @@ function openComic(again) {
    交作業拿到一張，先給還沒有的，收集 12 張。 */
 const STICKERS = ['⭐', '🌟', '💯', '🌈', '🍀', '🦄', '🐰', '🌸', '🍓', '🎀', '🏅', '👍'];
 function showcase(visual, title, sub) {
-  /* ⑤ 收集到新東西：畫面中間跳出大圖 2.5 秒（不擋操作），知道自己真的拿到了 */
+  /* ⑤ 收集到新東西：畫面中間跳出大圖 2.5 秒（不擋操作），知道自己真的拿到了。
+     正在玩小遊戲的時候不跳大圖（會擋住遊戲），改成一行提示 */
+  if (!$('#modal').hidden && $('#modalCard').classList.contains('in-game')) { toast(`✨ 新的！${title}`); return null; }
   const old = document.getElementById('showcase');
   if (old) old.remove();
   const box = el('div', 'showcase'); box.id = 'showcase';
@@ -10026,6 +10181,7 @@ function giveSticker() {
   const s = pool[Math.floor(Math.random() * pool.length)];
   const isNew = !have[s];
   have[s] = (have[s] || 0) + 1;
+  rememberFor('teacher', 'sticker', s);
   if (isNew) sessionLog.newThings.push(s + ' 貼紙');
   saveGame();
   return { s, isNew };
@@ -10451,13 +10607,19 @@ function openStorybook(id) {
     if (canSpeak()) {
       const say = el('button', 'big alt book-say', '🔊');
       say.title = '聽故事';
-      say.onclick = () => { readAloud = true; speak(pageText); };
+      say.onclick = () => { readAloud = true; show(); }; // 重畫這一頁：會念出來，也會出現🔇
       row.appendChild(say);
       if (readAloud) speak(pageText);
     }
     const last = page === book.pages.length - 1;
     const next = el('button', 'big', last ? '看完了！' : page < 0 ? '翻開 ➡️' : '➡️');
-    next.onclick = () => { if (last) finishBook(book); else { page++; Sound.play('click'); show(); } };
+    if (canSpeak() && readAloud) { // 正在念：可以隨時關掉
+      const mute = el('button', 'big alt', '🔇');
+      mute.title = '不要念了';
+      mute.onclick = () => { readAloud = false; stopSpeak(); show(); };
+      row.appendChild(mute);
+    }
+    next.onclick = () => { if (last) { stopSpeak(); finishBook(book); } else { page++; Sound.play('click'); show(); } };
     row.appendChild(next);
     card.appendChild(row);
     $('#modal').hidden = false;
@@ -10483,6 +10645,7 @@ function finishBook(book) {
   const isNew = !pass[book.id];
   pass[book.id] = (pass[book.id] || 0) + 1;
   sessionLog.acts['book:' + book.id] = 1;
+  rememberFor('librarian', 'book', book.title);
   const n = Object.keys(pass).length;
   if (isNew && n === STORYBOOKS.length) { // 八本都看完：館員送獎狀
     addItem('certificate');

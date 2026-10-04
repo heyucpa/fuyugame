@@ -5,7 +5,7 @@
 
      最要緊的一條：備份出去再貼回來，進度要一模一樣。
      她玩的東西不見過一次了，備份如果是壞的，等於沒有備份。 */
-  var fails=[], errs=[];
+  var fails=[], errs=[], pendingChecks=[];  // pendingChecks：要等非同步（MutationObserver 之類）跑完才能驗的
   window.addEventListener('error', function(e){ errs.push(String(e.message)); });
 
   function restore(raw){ if(raw===null) localStorage.removeItem(SAVE_KEY);
@@ -1326,6 +1326,155 @@
       fails.push('蝴蝶相簿顯示不對');
     var md8 = document.querySelector('#modal'); if (md8) md8.hidden = true;
 
+    /* 54 你回報的：公園的愛心拍照點不到（被前面的大樹擋住）。在別人家點到不能玩的東西，要穿過去點後面能玩的 */
+    travelArrive('park'); var rd6 = document.getElementById('roomDoors'); if (rd6) rd6.remove();
+    computeView();
+    var heartIt = curRoom().items.filter(function(x){ return x.id === 'heart_sculpture'; })[0];
+    var hp = iso(heartIt.x + 1, heartIt.y + .5, 20);
+    var screenOf = function(p){ return { x: p.x, y: p.y }; };
+    var hitHeart = 0, hitTree = 0, tries = 0;
+    for (var dz = 4; dz <= 40; dz += 4) for (var dx = -.8; dx <= .8; dx += .2) {
+      var w4 = iso(heartIt.x + 1 + dx, heartIt.y + .5, dz); tries++;
+      var got4 = pickItem(w4);
+      if (got4 === heartIt) hitHeart++;
+      else if (got4 && !canUse(got4)) hitTree++;
+    }
+    if (hitTree) fails.push('在公園點愛心雕塑，有 ' + hitTree + ' 個位置點到的是樹或路燈（應該穿過去點到愛心）');
+    if (!hitHeart) fails.push('點不到愛心雕塑');
+    // 回家：樹還是要點得到（要能搬）
+    G.away = null;
+    var homeTree = { uid: 999001, id: 'shade_tree', x: 1, y: 1, rot: 0 }, homeBed = { uid: 999002, id: 'wood_bed', x: 1, y: 3, rot: 0 };
+    var hr = G.rooms[G.cur], keepItems = hr.items; hr.items = [homeBed, homeTree];
+    homeTree.x = 2; homeTree.y = 2; homeBed.x = 0; homeBed.y = 0;   // 樹在前、床在後
+    var both = null;
+    for (var sx3 = 0; sx3 < 4 && !both; sx3 += .25) for (var sz3 = 0; sz3 < 90 && !both; sz3 += 5) {
+      var q3 = iso(sx3, 2.5, sz3);
+      if (pickItem(q3) !== homeTree) continue;
+      hr.items = [homeBed]; var behind = pickItem(q3); hr.items = [homeBed, homeTree];
+      if (behind === homeBed) both = q3;
+    }
+    if (!both) fails.push('在自己家，樹擋住床的地方點不到樹（樹要能搬）');
+    else if (pickItem(both) !== homeTree) fails.push('在自己家，點樹（後面有床）點到的不是樹（樹要能搬）');
+    hr.items = keepItems;
+    // 新收集大圖：小遊戲進行中不要擋住
+    openMemoryGame();
+    var realToast4 = toast, tt4 = [];
+    toast = function(m){ tt4.push(m); };
+    try {
+      G.animals = {}; meetAnimal(VISIT_ANIMALS[1]);
+      if (document.getElementById('showcase')) fails.push('小遊戲進行中，新收集大圖擋住了遊戲');
+      if (!tt4.some(function(m){ return /新的/.test(m); })) fails.push('小遊戲進行中拿到新東西，連提示都沒有');
+    } finally { toast = realToast4; closeGameWindow(); G.animals = {}; }
+    // 朗讀：可以按🔇關掉；關掉繪本就停
+    var cancels = 0, spoken2 = [];
+    var realSS2 = window.speechSynthesis, realSU2 = window.SpeechSynthesisUtterance;
+    Object.defineProperty(window, 'SpeechSynthesisUtterance', { value: function(t){ this.text = t; }, configurable: true, writable: true });
+    Object.defineProperty(window, 'speechSynthesis', { value: { cancel: function(){ cancels++; }, speak: function(u){ spoken2.push(u.text); } }, configurable: true, writable: true });
+    try {
+      openStorybook('seed'); openStorybook.test.next();
+      document.querySelector('#modalCard .book-say').onclick();
+      var muteB = [].filter.call(document.querySelectorAll('#modalCard .book-btns button'), function(b){ return b.textContent === '🔇'; })[0];
+      if (!muteB) fails.push('朗讀中沒有🔇可以關掉');
+      else { var c0 = cancels; muteB.onclick(); if (cancels <= c0) fails.push('按🔇沒有停止朗讀'); var n0 = spoken2.length; openStorybook.test.next(); if (spoken2.length !== n0) fails.push('按了🔇之後翻頁還在念'); }
+      $('#modal').hidden = true;
+    } finally {
+      Object.defineProperty(window, 'speechSynthesis', { value: realSS2, configurable: true, writable: true });
+      Object.defineProperty(window, 'SpeechSynthesisUtterance', { value: realSU2, configurable: true, writable: true });
+    }
+    // 遇見誰：到了有主人的地方要記下來
+    sessionLog.met = []; host.n = null; G.away = { place: 'library', idx: 0 }; hostTick(.016, performance.now());
+    if (sessionLog.met.indexOf('館員') < 0) fails.push('今天遇見的人沒有記下來');
+    sessionLog.met = []; host.n = null; G.away = null;
+
+    /* 53 生活感：主人記得上次、表情、寵物個性、世界自己會動、配合動作的音效、離開時不會變得太慘 */
+    if (AWAY_FLOOR < 45) fails.push('離開時數值底線太低（回來會看到寵物髒髒餓餓）');
+    if (decayStat(100, 60 * 24 * 3, .25) < 45) fails.push('離開三天回來，數值掉到 45 以下');
+    // 主人記得上次
+    G.hostMem = {};
+    G.comics = {}; openComic(); var cmT = Object.keys(G.comics)[0]; $('#modal').hidden = true;
+    if (hostMemoryLine('uncle').indexOf(cmT) < 0) fails.push('叔叔不記得上次看的漫畫：' + hostMemoryLine('uncle'));
+    var stk = giveSticker().s;
+    if (hostMemoryLine('teacher').indexOf(stk) < 0) fails.push('老師不記得上次給的貼紙');
+    openStorybook('moon'); for (var bq = 0; bq < 5; bq++) openStorybook.test.next(); $('#modal').hidden = true;
+    if (hostMemoryLine('librarian').indexOf('月亮的蛋糕') < 0) fails.push('館員不記得上次看的書');
+    G.animals = {}; meetAnimal(VISIT_ANIMALS.filter(function(n){ return n.id === 'fa_piglet'; })[0]);
+    var scx = document.getElementById('showcase'); if (scx) scx.remove();
+    if (hostMemoryLine('grandma').indexOf('小豬') < 0) fails.push('阿婆不記得上次來的動物');
+    travelArrive('park'); var rd5 = document.getElementById('roomDoors'); if (rd5) rd5.remove();
+    var sbx2 = curRoom().items.filter(function(x){ return x.id === 'sandbox'; })[0];
+    fufuStartAct('sand', performance.now(), sbx2, false); fufu.act = null;
+    if (!/沙堡/.test(hostMemoryLine('ranger') || '')) fails.push('園長不記得上次蓋沙堡');
+    G.hostMem = {};
+    fufuStartAct('sand', performance.now(), sbx2, true); fufu.act = null;
+    if (hostMemoryLine('ranger')) fails.push('小可愛自己閒晃去玩沙，園長也記成她做的');
+    // 第一句話先說上次的事；只說一次
+    G.hostMem = { ranger: { act: 'slide' } };
+    host.n = null; hostTick(.016, performance.now());
+    host.nextTalkAt = 0; host.say = null; hostTick(.016, performance.now());
+    if (!/溜滑梯/.test(host.say || '')) fails.push('到了公園，園長第一句沒有說上次的事：' + host.say);
+    host.nextTalkAt = 0; hostTick(.016, performance.now());
+    if (/溜滑梯好勇敢/.test(host.say || '') && host.memSaid !== true) fails.push('上次的事一直重複講');
+    if ((hostMemOf('ranger').visits || 0) < 1) fails.push('沒有記錄來玩的次數');
+    // 不怪孩子：所有主人的台詞都不能有責備的話
+    LINE_TYPES.filter(function(t){ return /^host/.test(t.key) || t.key === 'welcomeBack'; }).forEach(function(t){
+      t.lines.forEach(function(l){ if (/怎麼都沒來|為什麼沒來|好久沒來看我|你都不來/.test(l)) fails.push('台詞在怪孩子：' + l); });
+    });
+    // 表情
+    fufu.faceUntil = 0; fufu.act = { key: 'slide', uid: 1 }; if (kidFace() !== 'joy') fails.push('溜滑梯的時候沒有開心的表情');
+    fufu.act = { key: 'read', uid: 1 }; if (kidFace() !== 'focus') fails.push('看書的時候沒有專心的表情');
+    fufu.act = null; kidMakeFace('wow', 2000); if (kidFace() !== 'wow') fails.push('嚇一跳的表情沒有出現');
+    fufu.faceUntil = 0;
+    var kh = G.kid.hunger; G.kid.hunger = 10; fufu.act = { key: 'slide', uid: 1 };
+    if (kidFace() !== 'hungry') fails.push('肚子很餓的時候還在大笑（餓要優先）');
+    G.kid.hunger = kh; fufu.act = null;
+    var fcv = function(face){ var c2 = document.createElement('canvas'); c2.width = 60; c2.height = 80; var g2 = c2.getContext('2d'); g2.translate(30, 76); drawGirl(g2, { t: 0, outfit: currentOutfit(), face: face }); return c2.getContext('2d').getImageData(0, 0, 60, 80).data.join(','); };
+    var fN = fcv('happy');
+    ['joy', 'focus', 'wow'].forEach(function(f){ if (fcv(f) === fN) fails.push('「' + f + '」表情畫出來跟平常一樣'); });
+    var eyes = function(face){ var c3 = document.createElement('canvas'); c3.width = 60; c3.height = 80; var g3 = c3.getContext('2d'); g3.translate(30, 76); drawGirl(g3, { t: 0, outfit: currentOutfit(), face: face }); return g3.getImageData(0, 26, 60, 8).data.join(','); };
+    if (eyes('joy') === eyes('happy')) fails.push('開心的時候眼睛沒有瞇成 ^ ^');
+    if (eyes('wow') === eyes('happy')) fails.push('嚇一跳的時候眼睛沒有睜大');
+    // 寵物個性：只差在動作
+    var spKeep = G.pet.species, stKeep = G.pet.stage;
+    G.pet.stage = 'kid'; pet.sleep = false;
+    G.pet.species = 'penguin'; if (petReact('pondfish', 1) !== '🐟') fails.push('愛看魚的企鵝到池塘沒有看魚');
+    G.pet.species = 'bunny'; if (petReact('slide', 0) !== '💦') fails.push('害羞的兔子溜滑梯前沒有緊張');
+    G.pet.species = 'chick'; if (petReact('sand', 0) !== '🏖️') fails.push('愛玩沙的小雞在沙坑沒有反應');
+    G.pet.species = spKeep; G.pet.stage = stKeep;
+    if (!Object.keys(PET_TRAIT_OF).every(function(k){ return PET_SPECIES.some(function(s){ return s.id === k; }); })) fails.push('個性表裡有不存在的寵物');
+    if (PET_SPECIES.some(function(s){ return !PET_TRAIT_OF[s.id]; })) fails.push('有寵物沒有個性');
+    // 世界自己會動：公園的花圃有蝴蝶、池塘會有魚跳
+    var bcalls = 0, realBF = drawButterfly;
+    drawButterfly = function(){ bcalls++; };
+    try { drawAmbient(ctx, performance.now()); } finally { drawButterfly = realBF; }
+    var beds = curRoom().items.filter(function(x){ return x.id === 'flower_bed'; }).length;
+    if (bcalls !== beds * 2) fails.push('公園的花圃上沒有蝴蝶在飛（' + bcalls + '）');
+    var pondI = curRoom().items.filter(function(x){ return x.id === 'pond'; })[0], seedP = Math.abs(pondI.uid) % 97;
+    var jumpT = (Math.ceil(performance.now() / 1000 / 7) * 7 - seedP + 70) % 7;   // 讓 (t + seed) % 7 落在 0.4
+    var ell = 0, realEll = CanvasRenderingContext2D.prototype.ellipse;
+    CanvasRenderingContext2D.prototype.ellipse = function(){ ell++; return realEll.apply(this, arguments); };
+    try {
+      var base3 = Math.floor((performance.now() / 1000 + seedP) / 7) * 7 - seedP;
+      drawAmbient(ctx, (base3 + .4) * 1000);
+      var withFish = ell; ell = 0;
+      drawAmbient(ctx, (base3 + 3.5) * 1000);
+      if (!(withFish > ell)) fails.push('池塘不會有魚跳出水面');
+    } finally { CanvasRenderingContext2D.prototype.ellipse = realEll; }
+    // 音效跟著動作：溜滑梯滑下來的時候「咻」一次
+    var played = [], realPlay = Sound.play;
+    Sound.play = function(n){ played.push(n); };
+    try {
+      var sl2 = curRoom().items.filter(function(x){ return x.id === 'slide'; })[0];
+      fufuStartAct('slide', performance.now(), sl2, true);
+      fufu.ride.start = performance.now() - 1000; ridePos(performance.now());
+      if (played.indexOf('whoosh') >= 0) fails.push('還在爬梯子就「咻」了');
+      fufu.ride.start = performance.now() - 2500; ridePos(performance.now()); ridePos(performance.now());
+      if (played.filter(function(n){ return n === 'whoosh'; }).length !== 1) fails.push('滑下來沒有剛好「咻」一次');
+      fufu.ride = null; fufu.act = null; played = [];
+      fufuStartAct('sand', performance.now(), sbx2, true); fufu.act = null;
+      if (played.indexOf('sand') < 0) fails.push('玩沙沒有沙沙聲');
+    } finally { Sound.play = realPlay; }
+    G.away = null; host.n = null; G.hostMem = {}; G.animals = {};
+
     /* 52 第一輪 UX：可以玩的東西冒提示、點了有回應、目的地圖示、復原上一步、新收集大圖、休息前的今天成果 */
     G.away = null; closeGameWindow(); $('#modal').hidden = true; hideUndo();
     var rmU = G.rooms[G.cur];
@@ -1409,9 +1558,13 @@
     var sc1 = document.getElementById('showcase'); if (sc1) sc1.remove();
     G.animals = {};
     // ⑧ 休息畫面：今天做了什麼、存好了先玩到這裡
-    sessionLog.acts = { slide: 1, 'book:moon': 1 }; sessionLog.newThings = ['🐷 小豬']; sessionLog.placed = 2; sessionLog.earned0 = G.earned - 500;
+    sessionLog.met = ['園長']; sessionLog.acts = { slide: 1 }; sessionLog.newThings = ['🐷 小豬']; sessionLog.placed = 2; sessionLog.earned0 = G.earned - 500;
     var sum = sessionSummary();
-    if (!/溜滑梯/.test(sum) || !/1 本繪本/.test(sum) || !/小豬/.test(sum) || !/布置了 2 樣/.test(sum)) fails.push('今天做了的內容不對：' + sum);
+    if (!/溜滑梯/.test(sum) || !/遇見了園長/.test(sum) || !/小豬/.test(sum) || !/布置了 2 樣/.test(sum)) fails.push('今天做了的內容不對：' + sum);
+    if (/賺了/.test(sum)) fails.push('今天做了的已經有四件事，還把賺多少錢擠進來（錢應該最次要）');
+    sessionLog.met = []; sessionLog.acts = { 'book:moon': 1 }; sessionLog.newThings = []; sessionLog.placed = 0;
+    if (!/1 本繪本/.test(sessionSummary()) || !/賺了/.test(sessionSummary())) fails.push('只有看書和賺錢的時候，今天做了的內容不對：' + sessionSummary());
+    sessionLog.met = [];
     sessionLog.acts = {}; sessionLog.newThings = []; sessionLog.placed = 0; sessionLog.earned0 = G.earned;
     if (sessionSummary() !== '') fails.push('什麼都沒做也有「今天做了」');
     saveRestCfg({ on: true, play: 20, rest: 5, pin: '' });
@@ -2288,7 +2441,17 @@
           for (var gs2 = 0; gs2 < 30; gs2++) gameStep(.05, nowS + 2000 + gs2 * 50);
           if (Math.abs(fufu.x - sx) < .01 && Math.abs(fufu.y - sy) < .01) fails.push('暫停測試：不休息的時候小可愛也沒走（測試本身不對）');
           fufu.path = [];
-          report();
+          pendingChecks.forEach(function(f){ try { f(); } catch(e2) { fails.push('延後的檢查出錯：' + e2.message); } });
+          // 視窗不管怎麼關掉都要停止朗讀（MutationObserver 是 microtask，用 Promise 排在它後面再驗）
+          var stopN = 0, realStopS = stopSpeak;
+          stopSpeak = function(){ stopN++; };
+          openStorybook('seed');
+          $('#modal').hidden = true;
+          Promise.resolve().then(function(){
+            stopSpeak = realStopS;
+            if (!stopN) fails.push('關掉繪本視窗，朗讀沒有停');
+            report();
+          });
         } catch(e) { fails.push('暫停測試出錯：' + e.message); report(); }
       }, 400);
     });
