@@ -413,7 +413,6 @@ button.pass { font: inherit; }
 .stage.holding .photo-btn { display: none; }
 .photo-flash { position: fixed; inset: 0; background: #fff; z-index: 120; pointer-events: none; animation: flashOut .45s ease-out forwards; }
 @keyframes flashOut { from { opacity: .9; } to { opacity: 0; } }
-.tag.legend { background: linear-gradient(90deg, #ffd35c, #ff9ec4, #b18cff); color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,.25); }
 .photo-pop { position: fixed; left: 50%; top: 45%; z-index: 85; pointer-events: none; transform: translate(-50%, -50%);
   background: #fff; padding: 10px 10px 8px; border-radius: 14px; box-shadow: 0 12px 34px rgba(0,0,0,.3); text-align: center;
   width: min(320px, calc(100vw - 40px)); animation: photoIn .3s cubic-bezier(.2,1.5,.4,1); transition: transform .45s ease-in, opacity .45s ease-in; }
@@ -2432,14 +2431,7 @@ const PET_SPECIES = [
      跟其他寵物不一樣的地方：有小翅膀（wings）、身邊一直閃亮亮（sparkle），天使兔頭上還有光環（halo）。
      比稀有的更難孵到（weight 2）。 */
   { id: 'angelbunny', name: '天使兔', body: '#fffaf2', edge: '#e6d3a8', belly: '#ffffff', inner: '#ffd6e6', ears: 'long', wings: '#ffffff', halo: '#ffd35c', sparkle: true, rare: true, special: true, weight: 2 },
-  { id: 'galaxydragon', name: '銀河龍', body: '#5b4b9e', edge: '#3c2f75', belly: '#a99ae0', inner: '#ffe066', ears: 'horns', wings: '#8f7fe0', starMark: true, sparkle: true, rare: true, special: true, weight: 2 },
-  /* 極稀有（家長：爸比龍、媽咪鳳，看起來跟一般寵物不太一樣但一樣可愛）。最難孵到（weight 1）。
-     爸比龍：戴圓眼鏡（跟爸爸一樣）、大大的角、翅膀、背上小刺，身體大一號。
-     媽咪鳳：頭上三根彩色羽冠、身後一大把彩虹尾羽、金色翅膀、臉上愛心腮紅。 */
-  { id: 'papadragon', name: '爸比龍', body: '#7cc4a6', edge: '#4f9a7d', belly: '#e3f6ec', inner: '#ffd35c', ears: 'horns', bigHorns: true,
-    wings: '#a9e0c8', spikes: true, glasses: '#2b2b33', sparkle: true, rare: true, legend: true, sizeMul: 1.12, weight: 1 },
-  { id: 'mamaphoenix', name: '媽咪鳳', body: '#ffb3a7', edge: '#e5867a', belly: '#fff0e6', inner: '#ffd35c', ears: 'none', beak: true,
-    crest: ['#ff6b6b', '#ffd35c', '#6bb6ff'], rainbowTail: true, wings: '#ffd98a', heartBlush: true, sparkle: true, rare: true, legend: true, sizeMul: 1.08, weight: 1 }
+  { id: 'galaxydragon', name: '銀河龍', body: '#5b4b9e', edge: '#3c2f75', belly: '#a99ae0', inner: '#ffe066', ears: 'horns', wings: '#8f7fe0', starMark: true, sparkle: true, rare: true, special: true, weight: 2 }
 ];
 const PET_SPECIES_BY_ID = Object.fromEntries(PET_SPECIES.map(s => [s.id, s]));
 // next：要累積多少成長才進入下一階段；scale：畫面大小
@@ -3598,7 +3590,6 @@ const NEWS = [
     ['🏰', '寵物城堡、寵物跳台，寵物會去睡喔'],
     ['💡', '小主題變多了：甜點屋、公主房、寵物天地…'],
     ['🐠', '新的小遊戲：撈金魚、烤餅乾、杯子蛋糕店'],
-    ['🌟', '超級稀有的寵物：爸比龍、媽咪鳳'],
     ['🦴', '寵物的新點心：骨頭']
   ], newItems: ['cupcake_chair', 'macaron_table', 'donut_rug', 'candy_bed', 'icecream_lamp', 'cake_shelf', 'lollipop_tree', 'strawberry_sofa', 'cookie_jar', 'cream_wardrobe',
                 'cloud_sofa', 'unicorn_rocker', 'star_lamp', 'heart_mirror', 'rainbow_shelf', 'bunny_cushion', 'pet_castle', 'cat_tower'] },
@@ -6075,7 +6066,7 @@ const PET_TRAIT_OF = {
   chick: 'sand', peachmouse: 'sand', marshpig: 'sand', cocoadog: 'sand',
   bunny: 'shy', sheep: 'shy', mochi: 'shy', bear: 'shy',
   dragon: 'jump', starfox: 'jump', strawcow: 'jump', rainbowuni: 'jump',
-  angelbunny: 'shy', galaxydragon: 'jump', papadragon: 'jump', mamaphoenix: 'shy'
+  angelbunny: 'shy', galaxydragon: 'jump'
 };
 const petTrait = () => (G.pet && PET_TRAIT_OF[G.pet.species]) || 'jump';
 const PET_TRAIT_NAMES = { fish: '愛看魚', sand: '愛玩沙', shy: '有點害羞', jump: '很活潑' };
@@ -6136,12 +6127,12 @@ function celebrateStage(up, p, a) {
     // 孵蛋：畫面中間先搖蛋、喀啦裂開，再跳出寵物大圖（重複的種類也演，只是不算圖鑑進度）
     try {
       const nP = collectedSpecies().size, all = PET_SPECIES.length;
-      showcase(renderPetPortrait(p, 150, 140), `是${sp.name}！${sp.legend ? '（🌟極稀有！）' : sp.rare ? '（稀有！）' : ''}`,
+      showcase(renderPetPortrait(p, 150, 140), `是${sp.name}！${sp.rare ? '（稀有！）' : ''}`,
         up.firstOfSpecies ? `🐾 寵物圖鑑 ${nP} / ${all}` : '圖鑑裡已經有了，又多一個好朋友！',
         up.firstOfSpecies ? { hatch: true, n: nP, all } : { hatch: true });
     } catch (e) {}
     // 蛋還在搖的時候先不要說是什麼（會爆雷），裂開之後再說
-    const hatchMsg = `🎉 孵出來了！是${sp.name}${sp.legend ? '（🌟極稀有！）' : sp.rare ? '（稀有！）' : ''}${up.firstOfSpecies ? '，圖鑑多了一種！' : ''}`;
+    const hatchMsg = `🎉 孵出來了！是${sp.name}${sp.rare ? '（稀有！）' : ''}${up.firstOfSpecies ? '，圖鑑多了一種！' : ''}`;
     setTimeout(() => { fufuSay(pickLine('petHatch', { 寵物: name }), 3500); toast(hatchMsg); }, SC_HATCH_MS);
   } else {
     fufuSay(pickLine('petGrow', { 寵物: name }), 3500);
@@ -7255,18 +7246,6 @@ function petBath() {
 function drawCreature(ctx, sp, look) {
   const { body, edge, belly, inner } = sp;
   const L = 1;
-  if (sp.sizeMul) { ctx.save(); ctx.scale(sp.sizeMul, sp.sizeMul); try { drawCreature(ctx, Object.assign({}, sp, { sizeMul: 0 }), look); } finally { ctx.restore(); } return; } // 極稀有的大一號
-
-  // 媽咪鳳：身後一大把彩虹尾羽（最先畫，在身體後面）
-  if (sp.rainbowTail) {
-    const sway = Math.sin(performance.now() / 500) * .08;
-    ['#ff6b6b', '#ffb84d', '#ffe066', '#7bd389', '#6bb6ff', '#b18cff'].forEach((c, i) => {
-      ctx.save(); ctx.translate(11, -7); ctx.rotate(.25 + i * .24 + sway);   // 往右後方開成扇形
-      ctx.beginPath(); ctx.ellipse(0, -11, 3.4, 11, 0, 0, Math.PI * 2);
-      ctx.fillStyle = c; ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,.12)'; ctx.lineWidth = .8; ctx.stroke();
-      ctx.restore();
-    });
-  }
 
   // 雲朵羊：身體外圍一圈蓬蓬的毛
   if (sp.fluffy) {
@@ -7302,9 +7281,8 @@ function drawCreature(ctx, sp, look) {
       ctx.beginPath(); ctx.moveTo(x1, y1); ctx.quadraticCurveTo(x1, y2 + 1, x2, y2); ctx.stroke();
     });
   } else if (sp.ears === 'horns') {
-    const hk = sp.bigHorns ? 1.45 : 1;   // 爸比龍：大大的角
     [-1, 1].forEach(s => {
-      ctx.beginPath(); ctx.moveTo(s * 4, -19); ctx.quadraticCurveTo(s * 7 * hk, -19 - 7 * hk, s * 9 * hk, -19 - 10 * hk); ctx.lineTo(s * (9.5 + (hk - 1) * 6), -19); ctx.closePath();
+      ctx.beginPath(); ctx.moveTo(s * 4, -19); ctx.quadraticCurveTo(s * 7, -26, s * 9, -29); ctx.lineTo(s * 9.5, -19); ctx.closePath();
       ctx.fillStyle = inner; ctx.fill(); ctx.strokeStyle = edge; ctx.stroke();
     });
   } else if (sp.ears === 'curl') {
@@ -7364,14 +7342,6 @@ function drawCreature(ctx, sp, look) {
     [-4, 0, 4].forEach(x => { ctx.beginPath(); ctx.moveTo(x, -19.5); ctx.lineTo(x * .9, -16); ctx.stroke(); });
   }
   if (sp.starMark) star(ctx, 0, -17, 2.6, inner);
-  if (sp.crest) { // 媽咪鳳：頭上三根彩色羽冠
-    sp.crest.forEach((c, i) => {
-      ctx.save(); ctx.translate(-3 + i * 3, -20); ctx.rotate(-.35 + i * .35);
-      ctx.beginPath(); ctx.ellipse(0, -5, 1.8, 5.5, 0, 0, Math.PI * 2); ctx.fillStyle = c; ctx.fill();
-      ctx.beginPath(); ctx.arc(0, -10.5, 1.6, 0, Math.PI * 2); ctx.fill();
-      ctx.restore();
-    });
-  }
   if (sp.halo) { // 天使兔：頭上的光環
     ctx.strokeStyle = sp.halo; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.ellipse(0, -36 + Math.sin(performance.now() / 400) * 1, 7, 2.4, 0, 0, Math.PI * 2); ctx.stroke();
@@ -7433,22 +7403,6 @@ function drawCreature(ctx, sp, look) {
     ctx.beginPath(); ctx.moveTo(0, -3.5); ctx.lineTo(-5, -6); ctx.lineTo(-5, -1); ctx.closePath(); ctx.fill();
     ctx.beginPath(); ctx.moveTo(0, -3.5); ctx.lineTo(5, -6); ctx.lineTo(5, -1); ctx.closePath(); ctx.fill();
     ctx.beginPath(); ctx.arc(0, -3.5, 1.5, 0, Math.PI * 2); ctx.fillStyle = '#ffffff'; ctx.fill();
-  }
-  // 爸比龍：圓圓的眼鏡（跟爸爸一樣）
-  if (sp.glasses) {
-    const fx2 = look.fx || 0;
-    ctx.strokeStyle = sp.glasses; ctx.lineWidth = 1.3;
-    [-4.5, 4.5].forEach(ex => { ctx.beginPath(); ctx.arc(ex + fx2, -11, 3.4, 0, Math.PI * 2); ctx.stroke(); });
-    ctx.beginPath(); ctx.moveTo(-1.1 + fx2, -11.5); ctx.lineTo(1.1 + fx2, -11.5); ctx.stroke();
-  }
-  // 媽咪鳳：臉頰兩顆小愛心
-  if (sp.heartBlush) {
-    const fx3 = look.fx || 0;
-    [-8.5, 8.5].forEach(hx => {
-      const x = hx + fx3, y = -7;
-      ctx.fillStyle = '#ff7fa0';
-      ctx.beginPath(); ctx.moveTo(x, y + 1.6); ctx.bezierCurveTo(x - 2.6, y - .4, x - 1.4, y - 2.4, x, y - 1); ctx.bezierCurveTo(x + 1.4, y - 2.4, x + 2.6, y - .4, x, y + 1.6); ctx.fill();
-    });
   }
 }
 
@@ -11267,7 +11221,7 @@ function petDexGrid() {
     c.appendChild(renderPetPortrait({ species: s.id, stage: 'adult', growth: 0 }, 60, 54, { silhouette: !has }));
     c.appendChild(el('div', 'nm', has ? s.name : '？？？'));
     if (n > 1) c.appendChild(el('span', 'ct', '×' + n));   // 養了不只一隻
-    if (s.rare) c.appendChild(el('span', 'tag' + (s.legend ? ' legend' : ''), s.legend ? '🌟極稀有' : '⭐稀有'));
+    if (s.rare) c.appendChild(el('span', 'tag', '⭐稀有'));
     dex.appendChild(c);
   });
   return dex;
