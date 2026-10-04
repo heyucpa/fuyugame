@@ -2471,7 +2471,26 @@ const Sound = (() => {
       ['E5', .5], ['G5', .5], ['E5', .5], ['C5', .5], ['D5', 1], ['E5', 1], ['G5', 2], ['E5', 2],
       ['C5', 1], ['E5', 1], ['A5', 2], ['G5', 1], ['E5', 1], ['C5', 2],
       ['A4', 1], ['C5', 1], ['F5', 1], ['E5', 1], ['D5', 1], ['C5', 1], ['D5', 2],
-      ['G5', 1], ['F5', 1], ['E5', 1], ['D5', 1], ['C5', 3], [null, 1]] }
+      ['G5', 1], ['F5', 1], ['E5', 1], ['D5', 1], ['C5', 3], [null, 1]] },
+    // 家長：音樂要不要多設計兩首 → 第 5、6 首（原創）
+    { name: '花園跳跳', bpm: 112, bass: ['C3', 'G3', 'A3', 'F3', 'C3', 'G3', 'F3', 'C3'], melody: [
+      ['C5', .5], ['D5', .5], ['E5', 1], ['G5', 1], ['E5', 1], ['D5', 1], ['B4', 1], ['G4', 2],
+      ['A4', .5], ['B4', .5], ['C5', 1], ['E5', 1], ['C5', 1], ['A4', 1], ['G4', 1], ['E4', 2],
+      ['F4', 1], ['A4', 1], ['C5', 1], ['F5', 1], ['E5', 1], ['C5', 1], ['G4', 2],
+      ['F5', .5], ['E5', .5], ['D5', 1], ['G5', 1], ['B4', 1], ['C5', 3], [null, 1],
+      ['E5', 1], ['E5', .5], ['F5', .5], ['G5', 1], ['E5', 1], ['D5', 1], ['D5', .5], ['E5', .5], ['F5', 1], ['D5', 1],
+      ['C5', 1], ['E5', 1], ['A5', 2], ['G5', 1], ['E5', 1], ['C5', 2],
+      ['A4', 1], ['C5', 1], ['F5', 1], ['A5', 1], ['G5', 1], ['F5', 1], ['E5', 1], ['D5', 1],
+      ['C5', 2], ['G4', 1], ['E4', 1], ['C4', 3], [null, 1]] },
+    { name: '雨天窗邊', bpm: 80, bass: ['A3', 'F3', 'C3', 'G3', 'A3', 'F3', 'G3', 'C3'], melody: [
+      ['E5', 2], ['C5', 1], ['A4', 1], ['F5', 2], ['E5', 1], ['D5', 1],
+      ['C5', 2], ['E5', 1], ['G5', 1], ['D5', 3], [null, 1],
+      ['A4', 1], ['C5', 1], ['E5', 1], ['A5', 1], ['G5', 2], ['F5', 1], ['D5', 1],
+      ['E5', 1], ['D5', 1], ['C5', 1], ['B4', 1], ['A4', 3], [null, 1],
+      ['C5', 1], ['D5', 1], ['E5', 2], ['G5', 1], ['F5', 1], ['E5', 2],
+      ['F5', 1], ['E5', 1], ['D5', 2], ['C5', 1], ['D5', 1], ['E5', 2],
+      ['A5', 2], ['G5', 1], ['E5', 1], ['F5', 1], ['E5', 1], ['D5', 1], ['B4', 1],
+      ['C5', 2], ['B4', 1], ['G4', 1], ['A4', 3], [null, 1]] }
   ];
   let song = SONGS[prefs.song] || SONGS[0], BEAT = 60 / song.bpm;
   let nextIdx = 0, nextTime = 0, bassIdx = 0, nextBass = 0;
@@ -2560,7 +2579,7 @@ const Sound = (() => {
   const songName = () => (prefs.bgm ? song.name : null);
 
   return { play, setPref, prefs, nextSong, songName, songCount: SONGS.length,
-           _t: { getAc: () => ac, setAc: v => { ac = v; } } }; // _t：測試用
+           _t: { getAc: () => ac, setAc: v => { ac = v; }, songs: SONGS, notes: N } }; // _t：測試用
 })();
 </script>
 <script>
@@ -5952,8 +5971,9 @@ function petGoNap(it, quiet) {
   return true;
 }
 // 小可愛躺上床時呼叫：寵物偶爾會跟上來一起睡
+// 小可愛躺上床：照顧中的寵物一定跳上來抱著一起睡（家長：讓照顧的寵物到床上抱著睡覺）
 function petMaybeJoinBed(it) {
-  if (isEgg() || pet.sleep || !PET_BEDS[it.id] || Math.random() > .5) return;
+  if (isEgg() || pet.sleep || !PET_BEDS[it.id]) return;
   petGoTo(it, 'bed');
 }
 function petArriveBed(now, room) {
@@ -5972,6 +5992,7 @@ function petArriveBed(now, room) {
     until: now + (t.kind === 'bed' ? 120000 : 20000 + Math.random() * 15000), zzzAt: now + 900 };
   pet.x = it.x + p.x; pet.y = it.y + p.y; pet.z = spot.z;
   pet.path = []; pet.squishV = -5; pet.thinkUntil = 0;
+  pet.rollUntil = now + PET_ROLL_MS;   // 上床先滾來滾去，再睡
   Sound.play('boing');
   if (t.kind === 'bed') fufuSay(pickLine('petJoinBed', { 寵物: petName() }), 3000);
   else if (Math.random() < .5) fufuSay(pickLine('petNap', { 寵物: petName() }), 2600);
@@ -6125,7 +6146,7 @@ function phUpdate(dt, now) {
     else if (a.playTo != null && !a.path.length) phPlayArrive(a, now, room);
     else if (a.napTo == null && a.playTo == null && !a.path.length && now > a.idleUntil && !hold && Math.random() < PH_NAP_CHANCE) {
       // 一半去睡、一半去玩玩具（只有其中一種就做那一種）
-      if (Math.random() < PH_PLAY_SHARE) phPlayGo(a, room) || phNapGo(a, room);
+      if (Math.random() < PH_PLAY_SHARE) (Math.random() < PH_FUN_SHARE ? phFunGo(a, room) : phPlayGo(a, room) || phFunGo(a, room)) || phNapGo(a, room);
       else phNapGo(a, room) || phPlayGo(a, room);
     }
     actorWalk(a, dt, now, room, blk, .15); // 大多自己逛，偶爾跑來找小可愛
@@ -6161,6 +6182,7 @@ function phNapArrive(a, now, room) {
   const spot = PET_BEDS[it.id], p = rotatePoint(def, it.rot, spot.x, spot.y);
   a.sleep = { uid: it.uid, snap: `${it.x},${it.y},${it.rot}`, lx: p.x, ly: p.y, z: spot.z, until: now + 15000 + Math.random() * 15000, zzzAt: now + 900 };
   a.x = it.x + p.x; a.y = it.y + p.y; a.z = spot.z; a.path = []; a.squishV = -4;
+  a.rollUntil = now + PET_ROLL_MS;   // 先在床上滾一滾
 }
 function phNapTick(a, now, room) {
   const s = a.sleep, it = room.items.find(x => x.uid === s.uid);
@@ -6177,6 +6199,7 @@ function phWake(a, room) {
    走到玩具旁邊，對著玩具一跳一跳 6～10 秒，冒 🎵／💕／⭐，玩具也跟著輕輕跳。
    玩具＝「玩具」類的家具（大熊玩偶、玩具箱、鋼琴、公仔、機器人…），自己買來放進寵物屋的也算。 */
 var PH_PLAY_SHARE = .5;   // var：測試要改它
+var PH_FUN_SHARE = .3;    // 有玩具時，也有三成去跳舞／找小可愛（var：測試要改它）
 const PH_PLAY_FX = { piano: '🎵', teddy: '💕', toybox: '⭐', robot_toy: '✨', mini_figure: '⭐', game_cart: '🎮' };
 const isPetToy = it => furnKind(it.id) === 'toy';
 function phPlayGo(a, room) {
@@ -6188,7 +6211,29 @@ function phPlayGo(a, room) {
   a.playTo = it.uid; a.path = path.slice(0, 12);
   return true;
 }
+/* 沒有玩具（或偶爾）：自己原地跳舞，或跑去找小可愛玩（家長：沒有玩具就跳舞、晃來晃去、去找主角玩） */
+function phFunGo(a, room) {
+  const now = performance.now();
+  if (Math.random() < .5) { // 原地跳舞
+    a.play = { uid: null, kind: 'dance', until: now + 4000 + Math.random() * 3000, hopAt: now, fxAt: now + 200, fx: '🎵' };
+    a.path = [];
+    return true;
+  }
+  const t = phFreeSpots(room, fufu.x, fufu.y, 1)[0];
+  if (!t) return false;
+  a.playTo = 'kid'; a.path = findPath(room, Math.floor(a.x), Math.floor(a.y), t[0], t[1]).slice(0, 12);
+  return true;
+}
 function phPlayArrive(a, now, room) {
+  if (a.playTo === 'kid') { // 跑到小可愛旁邊：對著她開心跳、冒愛心
+    a.playTo = null;
+    if (Math.hypot(a.x - fufu.x, a.y - fufu.y) > 2.2) return;
+    const dx = fufu.x - a.x, dy = fufu.y - a.y;
+    if (Math.abs(dx - dy) > .01) a.facing = dx - dy > 0 ? 1 : -1;
+    a.play = { uid: null, kind: 'kid', until: now + 4000 + Math.random() * 2000, hopAt: now, fxAt: now + 300, fx: '💕' };
+    if (!fufu.pose && Math.random() < .5) fufuSay('你來找我玩呀？', 2000);
+    return;
+  }
   const it = room.items.find(x => x.uid === a.playTo);
   a.playTo = null;
   if (!it) return;
@@ -6200,7 +6245,13 @@ function phPlayArrive(a, now, room) {
   a.path = [];
 }
 function phPlayTick(a, now, room) {
-  const pl = a.play, it = room.items.find(x => x.uid === pl.uid);
+  const pl = a.play, it = pl.uid == null ? null : room.items.find(x => x.uid === pl.uid);
+  if (pl.uid == null) { // 原地跳舞／找小可愛玩：沒有玩具要看
+    if (now > pl.until) { phPlayStop(a, now); return; }
+    if (now > pl.hopAt) { pl.hopAt = now + 600; a.squishV = -6; a.happyUntil = now + 700; if (pl.kind === 'dance') a.facing = -a.facing || 1; }
+    if (now > pl.fxAt) { pl.fxAt = now + 1300; petBurst({ kind: 'emoji', emoji: pl.fx, spread: 14 }, 1, a); }
+    return;
+  }
   if (!it || `${it.x},${it.y},${it.rot}` !== pl.snap || now > pl.until) { phPlayStop(a, now); return; }
   if (now > pl.hopAt) { pl.hopAt = now + 650; a.squishV = -6; a.happyUntil = now + 700; }
   if (now > pl.fxAt) {
@@ -6216,7 +6267,6 @@ function phPlayStop(a, now) { a.play = null; a.idleUntil = (now || performance.n
    💤 大家去睡覺：搶寵物床／小屋，床不夠的趴在地毯（沒有地毯就地板）上；房間變暗；點畫面任何地方就天亮。
    💃 一起跳舞：圍成一圈繞著小可愛，一起跳、冒 🎵✨，約 10 秒。
    🍪 點心時間：小可愛撒幾塊點心，大家搶著跑去吃，吃完冒愛心。只是好玩：不改數值、不花錢、不用食物。
-   📸 大合照：排成一排站在小可愛旁邊，大家站好就自動拍一張（跟 📷 一樣可以留到相簿）。
    🚂 跟我走：排成一列跟著小可愛走，像小火車，30 秒或再按一次就解散。
    只有寵物屋裡的寵物（蛋不參加）。離開寵物屋就結束。 */
 let phMode = null;
@@ -6224,7 +6274,6 @@ const PH_MODES = [
   { id: 'sleep', icon: '💤', name: '大家去睡覺' },
   { id: 'dance', icon: '💃', name: '一起跳舞' },
   { id: 'snack', icon: '🍪', name: '點心時間' },
-  { id: 'photo', icon: '📸', name: '大合照' },
   { id: 'train', icon: '🚂', name: '跟我走' }
 ];
 function phWalkers() { return phList().filter(i => G.pets[i].stage !== 'egg').map(phActor); }
@@ -6245,7 +6294,8 @@ function phFreeSpots(room, cx, cy, n, filter) {
   }
   return out.sort((p, q) => p[2] - q[2]).slice(0, n).map(p => [p[0], p[1]]);
 }
-/* 跳舞：圍成一圈；大合照：排在小可愛左右。小可愛如果走開了，大家跟著換位置（圍著她） */
+/* 跳舞：圍成一圈。小可愛如果走開了，大家跟著換位置（圍著她）。
+   （本來還有「📸 大合照」，家長說她們沒在拍照，拿掉了） */
 function phGather(kind) {
   const room = curRoom(), list = phWalkers(), kid = fufuTile();
   let spots = [];
@@ -6255,9 +6305,6 @@ function phGather(kind) {
       const sp = phFreeSpots(room, fufu.x + Math.cos(ang) * r, fufu.y + Math.sin(ang) * r, 1, (i, j) => !spots.some(p => p[0] === i && p[1] === j))[0];
       spots.push(sp || kid);
     }
-  } else {
-    spots = phFreeSpots(room, kid[0] + .5, kid[1] + .5, list.length, (i, j) => Math.abs(j - kid[1]) <= 1);
-    spots = spots.concat(phFreeSpots(room, kid[0] + .5, kid[1] + .5, list.length).filter(s => !spots.some(f => f[0] === s[0] && f[1] === s[1])));
   }
   list.forEach((a, k) => phGoTo(a, room, spots[k] || kid));
   if (phMode) phMode.center = kid;
@@ -6298,10 +6345,6 @@ function phCallAll(id) {
     phMode.dur = 15000;
     Sound.play('sand');
     fufuSay('點心時間！', 2400);
-  } else if (id === 'photo') {
-    phGather('photo');
-    phMode.dur = 7000;
-    fufuSay('大家排好，要拍照囉！', 2600);
   } else if (id === 'train') {
     phMode.trail = [fufuTile()];
     list.forEach(a => { a.goal = null; a.idleUntil = Infinity; a.path = []; if (a.sleep) phWake(a, room); a.play = null; a.napTo = null; a.playTo = null; });
@@ -6347,10 +6390,6 @@ function phModeActor(a, now, room, blk, dt) {
     if (next) phGoTo(a, room, [next.x, next.y]);
     return true;
   }
-  if (m.id === 'photo') {
-    if (!atGoal(a)) { actorWalk(a, dt, now, room, blk, 0); return true; }
-    a.facing = 1; return true;
-  }
   if (m.id === 'train') {
     const list = phWalkers(), k = list.indexOf(a), tr = m.trail;
     const t = tr[Math.max(0, tr.length - 2 - k)];
@@ -6367,7 +6406,7 @@ function phModeTick(now) {
     const t = fufuTile(), last = m.trail[m.trail.length - 1];
     if (t[0] !== last[0] || t[1] !== last[1]) { m.trail.push(t); if (m.trail.length > 20) m.trail.shift(); }
   }
-  if (m.id === 'dance' || m.id === 'photo') {
+  if (m.id === 'dance') {
     fufu.idleUntil = now + 1500;                     // 小可愛留在原地（不要自己走開）
     const t = fufuTile();
     if (m.center && (t[0] !== m.center[0] || t[1] !== m.center[1]) && !fufu.path.length) phGather(m.id); // 她被叫去別的地方：大家跟過去
@@ -6378,11 +6417,6 @@ function phModeTick(now) {
     if (!fufu.pose && !fufu.path.length) fufu.jumpT = .35;   // 小可愛也一起跳
   }
   if (m.id === 'snack' && m.snacks.every(q => !q.left)) { fufuSay('大家吃飽飽！', 2200); phModeEnd(); return; }
-  if (m.id === 'photo' && !m.shot && (phWalkers().every(atGoal) || now > m.start + 5000)) {
-    m.shot = true;
-    try { draw(); takePhoto(); } catch (e) {}
-    m.until = now + 600;
-  }
   if (now > m.until) phModeEnd();
 }
 function phModeEnd() {
@@ -6854,7 +6888,20 @@ function petDrawEntries() {
   return main.concat(compList().map(a => actorDrawEntry(a, fine(G.pets[a.idx]))));
 }
 
+/* 在床上滾來滾去（家長：寵物也可以在床上滾來滾去）：剛躺上床的前兩秒半左右搖晃翻滾，之後才睡著。
+   用包一層的方式，不動原本畫寵物的那一大段。 */
+const PET_ROLL_MS = 2600;
 function drawPetActor(ctx, pet, st) {
+  const now = performance.now();
+  if (!(pet.rollUntil > now)) return drawPetActorBody(ctx, pet, st);
+  const p = iso(pet.x, pet.y, pet.z || 0), left = (pet.rollUntil - now) / PET_ROLL_MS;
+  ctx.save();
+  ctx.translate(p.x, p.y - 8);
+  ctx.rotate(Math.sin(now / 170) * .9 * Math.min(1, left * 2));
+  ctx.translate(-p.x, -(p.y - 8));
+  try { return drawPetActorBody(ctx, Object.assign({}, pet, { sleep: null }), st); } finally { ctx.restore(); }
+}
+function drawPetActorBody(ctx, pet, st) {
   const now = performance.now(), sp = PET_SPECIES_BY_ID[st.species];
   const p = iso(pet.x, pet.y, pet.z || 0), k = stageOf(st).scale, asleep = !!pet.sleep;
   const moving = pet.path.length > 0;
@@ -10482,9 +10529,10 @@ function tabPets(body) {
   };
   body.appendChild(egg);
 
-  // 寵物圖鑑
-  body.appendChild(h3(`寵物圖鑑 ${collectedSpecies().size} / ${PET_SPECIES.length}`));
-  body.appendChild(petDexGrid());
+  // 寵物圖鑑搬到「📖 圖鑑」（家長：圖鑑應該放在圖鑑那邊）；這裡留一顆按鈕過去
+  const dexB = el('button', 'big alt', `📖 看寵物圖鑑（${collectedSpecies().size} / ${PET_SPECIES.length}）`);
+  dexB.onclick = () => { openTab('book'); setTimeout(() => { const t = document.getElementById('dexPet'); if (t) t.scrollIntoView({ block: 'start' }); }, 0); };
+  body.appendChild(dexB);
 }
 // 寵物圖鑑的格子：「寵物」分頁跟「📖 圖鑑」分頁共用
 function petDexGrid() {

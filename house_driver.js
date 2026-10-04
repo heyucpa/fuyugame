@@ -366,8 +366,16 @@
     G.pets = [newPet('mochi','kid','圓圓'), newPet('mochi','kid','第二隻'),
               newPet('bunny','kid','兔兔'), newPet('starfox','egg','')];
     G.activePet = 0; G.pet = G.pets[0]; G.companions = [];
+    // 寵物圖鑑搬到「📖 圖鑑」了：寵物分頁只留一顆按鈕過去
     openTab('pets');
-    var dexCards = document.querySelectorAll('#tabBody .card.dex');
+    if (document.querySelectorAll('#tabBody .card.dex').length) fails.push('寵物分頁還有寵物圖鑑（應該只在圖鑑）');
+    var goDex = [].filter.call(document.querySelectorAll('#tabBody button'), function(b){ return /看寵物圖鑑/.test(b.textContent); })[0];
+    if (!goDex) fails.push('寵物分頁沒有「看寵物圖鑑」按鈕');
+    else { goDex.onclick(); if (tab !== 'book') fails.push('「看寵物圖鑑」沒有打開圖鑑'); }
+    openTab('book');
+    var pdH = document.getElementById('dexPet'), pdG = pdH && pdH.nextElementSibling;
+    while (pdG && !pdG.classList.contains('grid')) pdG = pdG.nextElementSibling;
+    var dexCards = pdG ? pdG.querySelectorAll('.card.dex') : [];
     if (dexCards.length !== PET_SPECIES.length)
       fails.push('寵物圖鑑有 ' + dexCards.length + ' 格，應該是一種一格');
     var mochiCard = [].slice.call(dexCards).filter(function(c){
@@ -380,6 +388,7 @@
     if (bunnyCard && /×\d/.test(bunnyCard.textContent))
       fails.push('只養一隻奶油兔，卻也標了數量');
     // 「我的寵物們」每一隻都要有自己的一格，不可以被合併掉
+    openTab('pets');
     var mine = document.querySelectorAll('#tabBody .card:not(.dex)');
     if (mine.length < G.pets.length)
       fails.push('我的寵物們只列了 ' + mine.length + ' 格，有 ' + G.pets.length + ' 隻');
@@ -2296,7 +2305,7 @@
       enterPetHouse(); refreshDupBtn();
       if ($('#btnCallAll').hidden) fails.push('寵物屋沒有「📣 叫大家」');
       $('#btnCallAll').onclick();
-      if ($('#modalCard').querySelectorAll('.call-pick').length !== 5) fails.push('叫大家不是五個選項');
+      if ($('#modalCard').querySelectorAll('.call-pick').length !== 4 || /大合照/.test($('#modalCard').textContent)) fails.push('叫大家不是四個選項（大合照要拿掉）');
       $('#modal').hidden = true;
       var walkers = phWalkers(), egg13 = phActor(9), ex13 = [egg13.x, egg13.y];
       if (walkers.length !== 7) fails.push('（測試）寵物屋裡的寵物數量不對：' + walkers.length);
@@ -2342,11 +2351,6 @@
       t13 = run13(650, t13);   // 15 秒會自己結束，這裡 11 秒內就要吃完
       if (phMode) fails.push('點心吃不完（' + (phMode.snacks || []).filter(function(q){ return q.left; }).length + ' 塊沒吃）');
       if (phMode) phModeEnd();
-      // 📸 大合照
-      phCallAll('photo');
-      t13 = run13(500, t13);
-      if (shots !== 1) fails.push('大合照沒有拍照（或拍了 ' + shots + ' 次）');
-      if (phMode) fails.push('大合照拍完沒結束');
       // 🚂 跟我走
       phCallAll('train'); refreshDupBtn();
       if (!/解散/.test($('#btnCallAll').textContent)) fails.push('跟我走的時候按鈕沒有變成「解散」');
@@ -2365,6 +2369,59 @@
       phCallAll('dance'); leavePetHouse(0); gameStep(1 / 60, t13 + 20);
       if (phMode) fails.push('離開寵物屋，活動還沒結束');
     } finally { toast = realToast13; takePhoto = realTake; if (phMode) phModeEnd(); hideItemMenu(); G = normalizeSave(JSON.parse(keepG13)); saveGame(); phReset(); refreshTop(); refreshDupBtn(); $('#modal').hidden = true; }
+
+    /* 76 音樂多兩首（共 6 首）：每首 64 拍、音名都認得；小可愛躺上床，照顧中的寵物一定跳上來抱著睡、先滾一滾；
+       寵物屋沒有玩具：原地跳舞或跑去找小可愛 */
+    var SG = Sound._t.songs, NT = Sound._t.notes;
+    if (SG.length !== 6 || Sound.songCount !== 6) fails.push('背景音樂不是 6 首（' + SG.length + '）');
+    SG.forEach(function(sg){
+      var beats = sg.melody.reduce(function(t, n){ return t + n[1]; }, 0);
+      if (Math.abs(beats - 64) > 1e-9) fails.push('「' + sg.name + '」不是 64 拍（' + beats + '）');
+      sg.melody.concat(sg.bass.map(function(b){ return [b, 0]; })).forEach(function(n){ if (n[0] !== null && !NT[n[0]]) fails.push('「' + sg.name + '」有不認得的音 ' + n[0]); });
+      if (sg.bass.length !== 8) fails.push('「' + sg.name + '」的低音不是 8 個');
+    });
+    if (new Set(SG.map(function(sg){ return sg.name; })).size !== 6) fails.push('歌名有重複');
+    // 抱著睡：每次都會上來（以前是一半機率）
+    var keepG14 = JSON.stringify(G);
+    try {
+      G = normalizeSave(JSON.parse(keepG14)); G.away = null; G.cur = 0; cancelHold();
+      G.pets = [newPet('mochi', 'kid', 'M')]; G.activePet = 0; G.pet = G.pets[0]; G.companions = [];
+      var bedRoom = G.rooms[0], bed14 = bedRoom.items.filter(function(it){ return it.id === 'wood_bed' || it.id === 'cute_bed'; })[0];
+      if (!bed14) { bed14 = { uid: 7777, id: 'wood_bed', x: 0, y: 0, rot: 0 }; bedRoom.items.push(bed14); }
+      var joined = 0;
+      for (var jj = 0; jj < 8; jj++) { pet.sleep = null; pet.task = null; petMaybeJoinBed(bed14); if (pet.task && pet.task.kind === 'bed') joined++; }
+      if (joined !== 8) fails.push('小可愛躺上床，照顧中的寵物沒有每次都跳上來（' + joined + '/8）');
+      // 到床邊：躺好、先滾一滾，滾的時候畫面有轉
+      var fpB = footprint(FURN_BY_ID[bed14.id], bed14.rot);
+      pet.x = bed14.x + fpB.w + .5; pet.y = bed14.y + .5; pet.task = { uid: bed14.uid, kind: 'nap' };
+      var nowB = performance.now(); petArriveBed(nowB, bedRoom);
+      if (!pet.sleep) fails.push('（測試）寵物沒有躺上床');
+      else {
+        if (!(pet.rollUntil > nowB)) fails.push('寵物上床沒有滾一滾');
+        var rot14 = 0, realRot = CanvasRenderingContext2D.prototype.rotate;
+        CanvasRenderingContext2D.prototype.rotate = function(r){ if (Math.abs(r) > .05) rot14++; return realRot.apply(this, arguments); };
+        pet.rollUntil = performance.now() + 2000;
+        try { drawPetActor(canvas.getContext('2d'), Object.assign({}, pet, { t: 1 }), G.pet); } finally { CanvasRenderingContext2D.prototype.rotate = realRot; }
+        if (!rot14) fails.push('寵物在床上滾的時候畫面沒有轉');
+      }
+      pet.sleep = null; pet.z = 0; pet.task = null; pet.rollUntil = 0;
+      // 寵物屋沒有玩具：去跳舞或找小可愛
+      G.petHouse = null; G.away = null; phReset();
+      G.pets = [newPet('mochi', 'kid', 'M'), newPet(PET_SPECIES[1].id, 'kid', 'A'), newPet(PET_SPECIES[2].id, 'kid', 'B')];
+      G.activePet = 0; G.pet = G.pets[0]; G.companions = [];
+      enterPetHouse();
+      curRoom().items = curRoom().items.filter(function(it){ return furnKind(it.id) !== 'toy'; });
+      var nk2 = PH_NAP_CHANCE, pk2 = PH_PLAY_SHARE; PH_NAP_CHANCE = 1; PH_PLAY_SHARE = 1;
+      var kinds = {}, tF = performance.now() + 200000;
+      for (var ff = 0; ff < 2500 && !(kinds.dance && kinds.kid); ff++) {
+        gameStep(1 / 60, tF + ff * 17);
+        [1, 2].forEach(function(i){ var a = phActors[i]; if (a && a.play) { kinds[a.play.kind] = 1; if (a.play.uid != null) kinds.toy = 1; } });
+      }
+      PH_NAP_CHANCE = nk2; PH_PLAY_SHARE = pk2;
+      if (kinds.toy) fails.push('沒有玩具也在玩玩具');
+      if (!kinds.dance) fails.push('寵物屋沒有玩具時，寵物不會自己跳舞');
+      if (!kinds.kid) fails.push('寵物屋沒有玩具時，寵物不會跑去找小可愛玩');
+    } finally { G = normalizeSave(JSON.parse(keepG14)); saveGame(); phReset(); pet.sleep = null; pet.z = 0; pet.rollUntil = 0; refreshTop(); }
 
     /* 74 寵物屋可以自己布置（跟家裡一樣）：搬、轉向、收起來、放自己的家具、搬牆上的東西；擺法跟著存檔走；
        上一版的存法讀得懂；寵物會自己去寵物小屋／寵物床睡覺，點了會醒 */
@@ -2443,10 +2500,10 @@
       phReset(); G.away = null; enterPetHouse();
       var toyIt = curRoom().items.filter(function(x){ return furnKind(x.id) === 'toy'; })[0];
       if (!toyIt) fails.push('（測試）寵物屋裡沒有玩具');
-      var nk = PH_NAP_CHANCE, pk = PH_PLAY_SHARE; PH_NAP_CHANCE = 1; PH_PLAY_SHARE = 1;
+      var nk = PH_NAP_CHANCE, pk = PH_PLAY_SHARE, fk = PH_FUN_SHARE; PH_NAP_CHANCE = 1; PH_PLAY_SHARE = 1; PH_FUN_SHARE = 0;
       var tP = performance.now() + 50000, player = null;
       for (var pf3 = 0; pf3 < 1500 && !player; pf3++) { gameStep(1 / 60, tP + pf3 * 17); var aP = phActors[1]; if (aP && aP.play) player = aP; }
-      PH_NAP_CHANCE = nk; PH_PLAY_SHARE = pk;
+      PH_NAP_CHANCE = nk; PH_PLAY_SHARE = pk; PH_FUN_SHARE = fk;
       if (!player) fails.push('寵物屋的寵物不會去玩玩具');
       else {
         var pIt = curRoom().items.filter(function(x){ return x.uid === player.play.uid; })[0];
