@@ -3521,9 +3521,21 @@
     maybeShowNews();
     if (!$('#modal').hidden) fails.push('看過的公告又跳出來');
     openTab('save');
-    var nbtn = [].filter.call(document.querySelectorAll('#tabBody button'), function(b){ return /最近的更新/.test(b.textContent); })[0];
-    if (!nbtn) fails.push('設定頁沒有「看最近的更新」');
-    else { nbtn.onclick(); if ($('#modal').hidden) fails.push('設定頁的「看最近的更新」打不開'); }
+    var nbtn = [].filter.call(document.querySelectorAll('#tabBody button'), function(b){ return /更新紀錄/.test(b.textContent); })[0];
+    if (!nbtn) fails.push('設定頁沒有「更新紀錄」');
+    else {
+      nbtn.onclick();
+      if ($('#modal').hidden) fails.push('設定頁的「更新紀錄」打不開');
+      // 每一次更新都要列出來（不是只有最新的），最新的打開、其他收著，每一次都有日期
+      var hs = document.querySelectorAll('#modalCard details.news-hist');
+      if (hs.length !== NEWS.length) fails.push('更新紀錄只列了 ' + hs.length + ' 次，應該有 ' + NEWS.length + ' 次');
+      else {
+        if (!hs[0].open || [].slice.call(hs, 1).some(function(d){ return d.open; })) fails.push('更新紀錄：應該只有最新的一次是打開的');
+        if (hs[hs.length - 1].querySelectorAll('.news-row').length !== NEWS[NEWS.length - 1].lines.length) fails.push('更新紀錄：最早那次的內容不完整');
+        [].forEach.call(hs, function(d, i){ if (!/\d+ 月 \d+ 日/.test(d.querySelector('.nh-when').textContent)) fails.push('更新紀錄第 ' + (i + 1) + ' 張沒有日期'); });
+        if (!hs[NEWS.length - 1].querySelector('summary').textContent.includes('第 1 次')) fails.push('更新紀錄：最早的那次不是「第 1 次」');
+      }
+    }
     $('#modal').hidden = true;
     // 新進商店的家具掛「新」
     var testDef = FURNITURE.filter(function(d){ return !d.gift && !d.fresh; })[0];

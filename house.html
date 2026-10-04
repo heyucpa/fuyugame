@@ -545,6 +545,13 @@ button.pass { font: inherit; }
 .gift-env.open { display: none; }
 .gift-tx { text-align: center; font-size: 18px; font-weight: 700; color: #4a3b2a; margin: 4px 0 12px; }
 @keyframes giftWiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-8deg); } 75% { transform: rotate(8deg); } }
+.news-hist { border: 2px solid var(--line); border-radius: 14px; background: #fff; margin-bottom: 8px; }
+.news-hist > summary { cursor: pointer; padding: 10px 12px; font-weight: 700; font-size: 16px; list-style: none; display: flex; align-items: center; gap: 8px; }
+.news-hist > summary::-webkit-details-marker { display: none; }
+.news-hist > summary .nh-when { margin-left: auto; font-weight: 400; font-size: 13px; color: var(--muted); }
+.news-hist > summary::after { content: '▼'; font-size: 12px; color: var(--muted); }
+.news-hist[open] > summary::after { content: '▲'; }
+.news-hist .news { padding: 0 10px 10px; }
 .news-older { font-size: 14px; color: var(--muted); margin: -4px 0 10px; line-height: 1.6; }
 .news-ok { position: sticky; bottom: -20px; box-shadow: 0 -8px 12px var(--panel); }
 .modal-card h2 { margin: 0 0 8px; }
@@ -3658,6 +3665,42 @@ function openNews(list) {
   G.newsSeen = Array.from(new Set((G.newsSeen || []).concat(list.map(n => n.id))));
   saveGame();
   Sound.play('coin');
+}
+/* 📜 更新紀錄（家長：公告跳太快來不及看，想知道上次、上上次更新了什麼）。
+   每一次更新一張卡，最新的打開、其他收起來，點標題打開。🔊 可以念給妹妹聽。 */
+function newsWhen(n) {
+  const id = n.id.replace(/^(\d{4}-\d\d-\d\d)-\d+$/, '$1');   // 同一天第二次：2026-10-04-2
+  const d = new Date(id.length === 10 ? id + 'T00:00' : id);
+  return isNaN(d) ? '' : `${d.getMonth() + 1} 月 ${d.getDate()} 日`;
+}
+function openNewsHistory() {
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  const x = el('button', 'modal-x', '✕');
+  x.title = '關掉';
+  x.onclick = () => { $('#modal').hidden = true; };
+  card.appendChild(x);
+  card.appendChild(el('h2', '', '📜 更新紀錄'));
+  NEWS.forEach((n, i) => {
+    const d = document.createElement('details');
+    d.className = 'news-hist';
+    if (i === 0) d.open = true;
+    const sm = document.createElement('summary');
+    sm.append(el('span', '', (i === 0 ? '🆕 ' : '') + `第 ${NEWS.length - i} 次：${n.title}`), el('span', 'nh-when', newsWhen(n)));
+    d.appendChild(sm);
+    const box = el('div', 'news');
+    n.lines.forEach(([ic, tx]) => { const r = el('div', 'news-row'); r.append(el('span', 'news-ic', ic), el('span', 'news-tx', tx)); box.appendChild(r); });
+    const say = el('button', 'mini', '🔊 念給我聽');
+    say.onclick = () => { try { speak(n.title + '。' + n.lines.map(l => l[1]).join('。')); } catch (e) {} };
+    box.appendChild(say);
+    d.appendChild(box);
+    card.appendChild(d);
+  });
+  const ok = el('button', 'big news-ok', '好');
+  ok.onclick = () => { $('#modal').hidden = true; };
+  card.appendChild(ok);
+  $('#modal').hidden = false;
+  Sound.play('click');
 }
 /* 🎁 點了地上的包裹才打開。妹妹看不懂字：大圖示＋打開的時候念出來。
    沒有 ✕：錢跟蛋是按「打開包裹」才給，關掉的話包裹還在地上，下次點還可以開。 */
@@ -11491,8 +11534,8 @@ function tabSave(body) {
     rb.onclick = openRescue;
     body.appendChild(rb);
   }
-  const nb = el('button', 'mini', '📣 看最近的更新');
-  nb.onclick = () => openNews(NEWS.slice(0, 1));
+  const nb = el('button', 'mini', '📜 更新紀錄（以前更新了什麼）');
+  nb.onclick = () => openNewsHistory();
   body.appendChild(nb);
   restSettings(body);
   // 👇 小手教學：可以關掉，也可以再打開重看一次
