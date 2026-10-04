@@ -5988,8 +5988,19 @@ function compPressEnd(now) {
 const PH_MAX = 12;
 const phActors = {};
 function inPetHouse() { return !!(G.away && G.away.place === 'pethouse'); }
+/* 同一種寵物只出來一隻（家長：重複的不用全部出現）：
+   已經在房間裡的（照顧中、一起逛）那一種也不用再出來一隻。蛋還不知道是什麼，每顆都放。
+   其他重複的還在寵物分頁看得到、換得出來。 */
 function phList() {
-  return G.pets.map((p, i) => i).filter(i => i !== G.activePet && !G.companions.includes(i)).slice(0, PH_MAX);
+  const seen = new Set([G.activePet].concat(G.companions).map(i => G.pets[i]).filter(p => p && p.stage !== 'egg').map(p => p.species));
+  return G.pets.map((p, i) => i).filter(i => {
+    if (i === G.activePet || G.companions.includes(i)) return false;
+    const p = G.pets[i];
+    if (p.stage === 'egg') return true;
+    if (seen.has(p.species)) return false;
+    seen.add(p.species);
+    return true;
+  }).slice(0, PH_MAX);
 }
 function phReset() { Object.keys(phActors).forEach(k => delete phActors[k]); }
 function phActor(i) {

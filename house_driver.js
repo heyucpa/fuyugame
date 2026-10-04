@@ -2270,7 +2270,8 @@
     var realToast8 = toast; toast = function(){};
     try {
       G = normalizeSave(JSON.parse(keepG7)); G.away = null; G.cur = 0; cancelHold(); $('#modal').hidden = true;
-      G.pets = [newPet('mochi', 'kid', 'A'), newPet('mochi', 'baby', 'B'), newPet('mochi', 'kid', 'C'), newPet('mochi', 'egg', '')];
+      var sp2 = PET_SPECIES[1].id, sp3 = PET_SPECIES[2].id;
+      G.pets = [newPet('mochi', 'kid', 'A'), newPet(sp2, 'baby', 'B'), newPet(sp3, 'kid', 'C'), newPet('mochi', 'egg', '')];
       G.activePet = 0; G.pet = G.pets[0]; G.companions = [2];
       var rooms0 = G.rooms.length, lim0 = petsOutLimit();
       openTravelMenu();
@@ -2306,8 +2307,12 @@
       if (G.activePet !== 1) fails.push('在寵物屋按「照顧牠」沒有換過來');
       if (phList().indexOf(1) >= 0) fails.push('換成照顧的那隻還留在寵物屋清單');
       hideItemMenu();
-      // 最多 12 隻
-      G.pets = []; for (var pn = 0; pn < 16; pn++) G.pets.push(newPet('mochi', 'kid', 'P' + pn));
+      // 重複的同一種只出來一隻；已經在房間裡（照顧中）的那一種也不用再出來；蛋每顆都放
+      G.pets = [newPet('mochi', 'kid', 'M'), newPet('mochi', 'kid', 'M2'), newPet(sp2, 'kid', 'X'), newPet(sp2, 'adult', 'X2'), newPet(sp2, 'baby', 'X3'), newPet('mochi', 'egg', ''), newPet('mochi', 'egg', '')];
+      G.activePet = 0; G.pet = G.pets[0]; G.companions = [];
+      if (phList().join() !== '2,5,6') fails.push('寵物屋裡重複的寵物沒有只出來一隻：' + phList().join());
+      // 最多 12 隻（每隻都不同種）
+      G.pets = []; for (var pn = 0; pn < 16; pn++) G.pets.push(newPet(PET_SPECIES[pn % PET_SPECIES.length].id, 'kid', 'P' + pn));
       G.activePet = 0; G.pet = G.pets[0]; G.companions = [];
       if (phList().length !== PH_MAX || PH_MAX > 12) fails.push('寵物屋同時超過 12 隻');
       // 回自己家的房間：不用走路過場，回到點的那間
