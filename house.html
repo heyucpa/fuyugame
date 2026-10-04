@@ -398,6 +398,14 @@ button.pass { font: inherit; }
 .dup-btn { position: absolute; left: 10px; bottom: 100px; z-index: 6; border: 2px solid #e7a94a; background: #fff6df; color: #a26d12;
   border-radius: 999px; padding: 6px 12px; font-weight: 800; font-size: 14px; }
 .stage.holding .dup-btn { display: none; }
+.call-btn { position: absolute; left: 10px; bottom: 56px; z-index: 6; border: 2px solid #7bb3e8; background: #eef6ff; color: #2f6aa3;
+  border-radius: 999px; padding: 6px 12px; font-weight: 800; font-size: 14px; }
+.stage.holding .call-btn { display: none; }
+.night-shade { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: rgba(20,25,60,.45); pointer-events: none; z-index: 3; }
+.night-shade[hidden] { display: none; }
+.call-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 8px 0; }
+.call-pick { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 6px; border: 2px solid var(--line); border-radius: 16px; background: #fffaf0; }
+.call-pick .ci { font-size: 34px; } .call-pick b { font-size: 15px; color: #4a3b2a; }
 .dup-row { display: flex; align-items: center; gap: 10px; background: #fffaf0; border: 2px solid var(--line); border-radius: 14px; padding: 8px 10px; margin-bottom: 8px; }
 .dup-row .dup-tx { flex: 1; font-weight: 700; color: #4a3b2a; }
 .photo-btn { position: absolute; right: 10px; bottom: 100px; z-index: 6; width: 46px; height: 46px; border-radius: 50%;
@@ -619,6 +627,8 @@ button.pass { font: inherit; }
     <button class="theme-btn" id="btnTheme">💡 小主題</button>
     <button class="photo-btn" id="btnPhoto" title="拍照">📷</button>
     <button class="dup-btn" id="btnDup" hidden>🧺 重複的寵物</button>
+    <button class="call-btn" id="btnCallAll" hidden>📣 叫大家</button>
+    <div class="night-shade" id="nightShade" hidden></div>
     <div class="hint" id="hint">從「我的東西」點家具放進房間；點房間裡的家具可以搬動</div>
     <div class="itemmenu" id="itemMenu" hidden></div>
     <div class="petcard" id="petCard">
@@ -5934,7 +5944,7 @@ function petGoNap(it, quiet) {
   if (isEgg() || pet.sleep) return false;
   const room = curRoom();
   if (!it) {
-    const beds = room.items.filter(x => PET_BEDS[x.id] && !PET_BEDS[x.id].withKid);
+    const beds = room.items.filter(x => PET_BEDS[x.id] && !PET_BEDS[x.id].withKid && !phBedBusy(x.uid));
     it = beds[Math.floor(Math.random() * beds.length)];
   }
   if (!it) return false;
@@ -5956,6 +5966,7 @@ function petArriveBed(now, room) {
   const near = pet.x > it.x - 1.6 && pet.x < it.x + fp.w + 1.6 && pet.y > it.y - 1.6 && pet.y < it.y + fp.d + 1.6;
   if (!near) return;
   if (t.kind === 'bed' && !(fufu.pose && fufu.pose.type === 'lie' && fufu.pose.uid === it.uid)) return;
+  if (phBedBusy(it.uid)) return; // 寵物屋裡已經有別隻睡在那裡（或正要去）
   const spot = PET_BEDS[it.id], p = rotatePoint(def, it.rot, spot.x, spot.y);
   pet.sleep = { uid: it.uid, snap: `${it.x},${it.y},${it.rot}`, lx: p.x, ly: p.y, z: spot.z, kind: t.kind,
     until: now + (t.kind === 'bed' ? 120000 : 20000 + Math.random() * 15000), zzzAt: now + 900 };
@@ -6097,7 +6108,8 @@ function phActor(i) {
 }
 function phUpdate(dt, now) {
   refreshDupBtn(now);
-  if (!inPetHouse()) { if (Object.keys(phActors).length) phReset(); return; }
+  if (!inPetHouse()) { if (phMode) phModeEnd(); if (Object.keys(phActors).length) phReset(); return; }
+  if (phMode) phModeTick(now);
   const list = phList();
   Object.keys(phActors).forEach(k => { if (!list.includes(+k)) delete phActors[k]; }); // 被帶出去了
   const room = curRoom(), blk = blockedGrid(room);
@@ -6106,6 +6118,7 @@ function phUpdate(dt, now) {
     a.t += dt;
     actorSpring(a, dt, now, egg);
     if (egg) return;
+    if (phMode && phModeActor(a, now, room, blk, dt)) return;
     if (a.sleep) { phNapTick(a, now, room); return; }
     if (a.play) { phPlayTick(a, now, room); return; }
     if (a.napTo != null && !a.path.length) phNapArrive(a, now, room);
@@ -6121,6 +6134,11 @@ function phUpdate(dt, now) {
 /* 寵物屋裡的寵物會自己去寵物小屋、寵物床睡一下（家長：買的寵物小屋也可以讓寵物進去住）。
    一張床一次一隻；睡 15～30 秒醒來；床被搬走就醒來；點睡著的會叫醒、開心一下。 */
 var PH_NAP_CHANCE = .35;   // var：測試要改它
+// 照顧中那隻要睡之前問：寵物屋的寵物是不是已經睡在（或正要去、被叫去）這張床
+function phBedBusy(uid) {
+  if (!inPetHouse()) return false;
+  return Object.values(phActors).some(o => (o.sleep && o.sleep.uid === uid) || o.napTo === uid || o.modeBed === uid);
+}
 function phBedTaken(uid, me) {
   if (pet.sleep && pet.sleep.uid === uid) return true;
   return Object.values(phActors).some(o => o !== me && ((o.sleep && o.sleep.uid === uid) || o.napTo === uid));
@@ -6193,11 +6211,217 @@ function phPlayTick(a, now, room) {
 }
 function phPlayStop(a, now) { a.play = null; a.idleUntil = (now || performance.now()) + 3000; }
 
+/* ===== 📣 叫大家（家長：寵物屋裡的寵物還有什麼玩法？→ 都做）=====
+   寵物屋左下角「📣 叫大家」，五個大圖示：
+   💤 大家去睡覺：搶寵物床／小屋，床不夠的趴在地毯（沒有地毯就地板）上；房間變暗；點畫面任何地方就天亮。
+   💃 一起跳舞：圍成一圈繞著小可愛，一起跳、冒 🎵✨，約 10 秒。
+   🍪 點心時間：小可愛撒幾塊點心，大家搶著跑去吃，吃完冒愛心。只是好玩：不改數值、不花錢、不用食物。
+   📸 大合照：排成一排站在小可愛旁邊，大家站好就自動拍一張（跟 📷 一樣可以留到相簿）。
+   🚂 跟我走：排成一列跟著小可愛走，像小火車，30 秒或再按一次就解散。
+   只有寵物屋裡的寵物（蛋不參加）。離開寵物屋就結束。 */
+let phMode = null;
+const PH_MODES = [
+  { id: 'sleep', icon: '💤', name: '大家去睡覺' },
+  { id: 'dance', icon: '💃', name: '一起跳舞' },
+  { id: 'snack', icon: '🍪', name: '點心時間' },
+  { id: 'photo', icon: '📸', name: '大合照' },
+  { id: 'train', icon: '🚂', name: '跟我走' }
+];
+function phWalkers() { return phList().filter(i => G.pets[i].stage !== 'egg').map(phActor); }
+function phGoTo(a, room, t) {
+  a.goal = t; a.idleUntil = Infinity; a.napTo = null; a.playTo = null;
+  if (a.play) a.play = null;
+  if (a.sleep) phWake(a, room);
+  a.path = (Math.floor(a.x) === t[0] && Math.floor(a.y) === t[1]) ? [] : findPath(room, Math.floor(a.x), Math.floor(a.y), t[0], t[1]);
+}
+const atGoal = a => !a.goal || (!a.path.length && Math.floor(a.x) === a.goal[0] && Math.floor(a.y) === a.goal[1]);
+// 找 n 個不重複的空格，越靠近 (cx, cy) 越先（排除小可愛腳下）
+function phFreeSpots(room, cx, cy, n, filter) {
+  const blk = blockedGrid(room), kid = fufuTile(), out = [];
+  for (let i = 0; i < room.w; i++) for (let j = 0; j < room.d; j++) {
+    if (blk[i][j] || (i === kid[0] && j === kid[1])) continue;
+    if (filter && !filter(i, j)) continue;
+    out.push([i, j, Math.hypot(i + .5 - cx, j + .5 - cy)]);
+  }
+  return out.sort((p, q) => p[2] - q[2]).slice(0, n).map(p => [p[0], p[1]]);
+}
+/* 跳舞：圍成一圈；大合照：排在小可愛左右。小可愛如果走開了，大家跟著換位置（圍著她） */
+function phGather(kind) {
+  const room = curRoom(), list = phWalkers(), kid = fufuTile();
+  let spots = [];
+  if (kind === 'dance') {
+    for (let k = 0; k < list.length; k++) {
+      const ang = k / list.length * Math.PI * 2, r = 1.8;
+      const sp = phFreeSpots(room, fufu.x + Math.cos(ang) * r, fufu.y + Math.sin(ang) * r, 1, (i, j) => !spots.some(p => p[0] === i && p[1] === j))[0];
+      spots.push(sp || kid);
+    }
+  } else {
+    spots = phFreeSpots(room, kid[0] + .5, kid[1] + .5, list.length, (i, j) => Math.abs(j - kid[1]) <= 1);
+    spots = spots.concat(phFreeSpots(room, kid[0] + .5, kid[1] + .5, list.length).filter(s => !spots.some(f => f[0] === s[0] && f[1] === s[1])));
+  }
+  list.forEach((a, k) => phGoTo(a, room, spots[k] || kid));
+  if (phMode) phMode.center = kid;
+}
+function phCallAll(id) {
+  if (!inPetHouse()) return false;
+  const room = curRoom(), list = phWalkers(), now = performance.now();
+  if (!list.length) { toast('寵物屋裡現在沒有寵物喔'); return false; }
+  if (phMode) phModeEnd();
+  if (fufu.pose) fufuStandUp(false);
+  phMode = { id, start: null, dur: 30000 };   // 時間在第一格畫面才開始算（跟畫面迴圈用同一個時鐘）
+  list.forEach(a => { a.napTo = null; a.playTo = null; a.play = null; if (a.sleep) phWake(a, room); }); // 原本要去睡／去玩的先取消（不然床會被「預約」住）
+  if (id === 'sleep') {
+    const beds = room.items.filter(it => PET_BEDS[it.id] && !PET_BEDS[it.id].withKid && !(pet.sleep && pet.sleep.uid === it.uid));
+    const rugCells = new Set();
+    room.items.filter(it => FURN_BY_ID[it.id].layer === 'floor').forEach(it => {
+      const fp = footprint(FURN_BY_ID[it.id], it.rot);
+      for (let i = 0; i < fp.w; i++) for (let j = 0; j < fp.d; j++) rugCells.add((it.x + i) + ',' + (it.y + j));
+    });
+    let floor = phFreeSpots(room, room.w / 2, room.d / 2, list.length, (i, j) => rugCells.has(i + ',' + j));
+    if (floor.length < list.length) floor = floor.concat(phFreeSpots(room, room.w / 2, room.d / 2, list.length).filter(s => !floor.some(f => f[0] === s[0] && f[1] === s[1])));
+    list.forEach((a, k) => {
+      const bed = beds[k];
+      if (bed) { a.modeBed = bed.uid; const path = findPathToItem(room, Math.floor(a.x), Math.floor(a.y), bed); a.goal = null; a.idleUntil = Infinity; a.path = path || []; if (a.sleep) phWake(a, room); a.play = null; }
+      else { a.modeBed = null; phGoTo(a, room, floor[(k - beds.length) % Math.max(1, floor.length)] || [Math.floor(a.x), Math.floor(a.y)]); }
+    });
+    phMode.dur = Infinity;
+    $('.stage').classList.add('night'); $('#nightShade').hidden = false;
+    fufuSay('大家晚安～', 2400);
+  } else if (id === 'dance') {
+    phGather('dance');
+    phMode.dur = 12000;
+    fufuSay('一起來跳舞！', 2400);
+  } else if (id === 'snack') {
+    const spots = phFreeSpots(room, fufu.x, fufu.y, Math.min(6, list.length + 1)).sort(() => Math.random() - .5);
+    phMode.snacks = spots.map(s => ({ x: s[0], y: s[1], left: 1 }));
+    list.forEach((a, k) => phGoTo(a, room, spots[k % spots.length]));
+    phMode.dur = 15000;
+    Sound.play('sand');
+    fufuSay('點心時間！', 2400);
+  } else if (id === 'photo') {
+    phGather('photo');
+    phMode.dur = 7000;
+    fufuSay('大家排好，要拍照囉！', 2600);
+  } else if (id === 'train') {
+    phMode.trail = [fufuTile()];
+    list.forEach(a => { a.goal = null; a.idleUntil = Infinity; a.path = []; if (a.sleep) phWake(a, room); a.play = null; a.napTo = null; a.playTo = null; });
+    fufuSay('大家跟我走！', 2400);
+    toast('🚂 帶著大家走走看！點地板讓小可愛走');
+  }
+  Sound.play('petHappy');
+  return true;
+}
+// 每一隻在活動中要做什麼；回傳 true＝這一格不用走一般的逛來逛去
+function phModeActor(a, now, room, blk, dt) {
+  const m = phMode;
+  if (m.id === 'sleep') {
+    if (a.sleep) { if (now > a.sleep.zzzAt) { a.sleep.zzzAt = now + 1600; petBurst({ kind: 'emoji', emoji: '💤', spread: 8 }, 1, a); } return true; }
+    if (!a.path.length) {
+      const it = a.modeBed != null && room.items.find(x => x.uid === a.modeBed);
+      if (it) { a.napTo = it.uid; phNapArrive(a, now, room); if (a.sleep) a.sleep.until = Infinity; }
+      if (!a.sleep) a.sleep = { uid: null, floor: true, until: Infinity, zzzAt: now + 600 }; // 床不夠：趴在原地睡
+      return true;
+    }
+    actorWalk(a, dt, now, room, blk, 0);
+    return true;
+  }
+  if (m.id === 'dance') {
+    if (!atGoal(a)) { actorWalk(a, dt, now, room, blk, 0); return true; }
+    if (now > (a.beatAt || 0)) {
+      a.beatAt = now + 500; a.squishV = -7; a.happyUntil = now + 600; a.facing = -a.facing || 1;
+      if (Math.random() < .35) petBurst({ kind: 'emoji', emoji: Math.random() < .5 ? '🎵' : '✨', spread: 14 }, 1, a);
+    }
+    return true;
+  }
+  if (m.id === 'snack') {
+    if (!atGoal(a)) { actorWalk(a, dt, now, room, blk, 0); return true; }
+    const sn = m.snacks.find(q => q.left > 0 && q.x === Math.floor(a.x) && q.y === Math.floor(a.y));
+    if (sn) {
+      if (!a.eatAt) a.eatAt = now + 1500;
+      if (now > (a.chompAt || 0)) { a.chompAt = now + 300; a.squishV = -3; }
+      if (now > a.eatAt) { sn.left = 0; a.eatAt = 0; a.happyUntil = now + 1500; petBurst({ kind: 'heart' }, 3, a); Sound.play('eat'); }
+      return true;
+    }
+    // 這塊被吃掉了：去找下一塊
+    const next = m.snacks.find(q => q.left > 0);
+    if (next) phGoTo(a, room, [next.x, next.y]);
+    return true;
+  }
+  if (m.id === 'photo') {
+    if (!atGoal(a)) { actorWalk(a, dt, now, room, blk, 0); return true; }
+    a.facing = 1; return true;
+  }
+  if (m.id === 'train') {
+    const list = phWalkers(), k = list.indexOf(a), tr = m.trail;
+    const t = tr[Math.max(0, tr.length - 2 - k)];
+    if (t && (!a.goal || a.goal[0] !== t[0] || a.goal[1] !== t[1])) phGoTo(a, room, t); // 她一走就跟著改方向，不要落後
+    if (!atGoal(a)) actorWalk(a, dt, now, room, blk, 0);
+    return true;
+  }
+  return false;
+}
+function phModeTick(now) {
+  const m = phMode;
+  if (m.start == null) { m.start = now; m.until = now + m.dur; }
+  if (m.id === 'train') {
+    const t = fufuTile(), last = m.trail[m.trail.length - 1];
+    if (t[0] !== last[0] || t[1] !== last[1]) { m.trail.push(t); if (m.trail.length > 20) m.trail.shift(); }
+  }
+  if (m.id === 'dance' || m.id === 'photo') {
+    fufu.idleUntil = now + 1500;                     // 小可愛留在原地（不要自己走開）
+    const t = fufuTile();
+    if (m.center && (t[0] !== m.center[0] || t[1] !== m.center[1]) && !fufu.path.length) phGather(m.id); // 她被叫去別的地方：大家跟過去
+  }
+  if (m.id === 'dance' && now > (m.beatAt || 0)) {
+    m.beatAt = now + 1000;
+    try { Sound.play('note', [0, 1, 2, 3][Math.floor(now / 1000) % 4]); } catch (e) {}
+    if (!fufu.pose && !fufu.path.length) fufu.jumpT = .35;   // 小可愛也一起跳
+  }
+  if (m.id === 'snack' && m.snacks.every(q => !q.left)) { fufuSay('大家吃飽飽！', 2200); phModeEnd(); return; }
+  if (m.id === 'photo' && !m.shot && (phWalkers().every(atGoal) || now > m.start + 5000)) {
+    m.shot = true;
+    try { draw(); takePhoto(); } catch (e) {}
+    m.until = now + 600;
+  }
+  if (now > m.until) phModeEnd();
+}
+function phModeEnd() {
+  const was = phMode; phMode = null;
+  $('.stage').classList.remove('night'); $('#nightShade').hidden = true;
+  const now = performance.now();
+  Object.values(phActors).forEach(a => {
+    a.goal = null; a.modeBed = null; a.eatAt = 0; a.idleUntil = now + 2000 + Math.random() * 2000;
+    if (was && was.id === 'sleep' && a.sleep) { phWake(a); a.squishV = -7; }
+  });
+  if (was && was.id === 'sleep') { fufuSay('早安！', 2000); Sound.play('petHappy'); }
+}
+function openCallAll() {
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  const x = el('button', 'modal-x', '✕'); x.onclick = () => { $('#modal').hidden = true; }; card.appendChild(x);
+  card.appendChild(el('h2', '', '📣 叫大家來…'));
+  const grid = el('div', 'call-grid');
+  PH_MODES.forEach(m => {
+    const b = el('button', 'call-pick');
+    b.append(el('span', 'ci', m.icon), el('b', '', m.name));
+    b.onclick = () => { $('#modal').hidden = true; phCallAll(m.id); };
+    grid.appendChild(b);
+  });
+  card.appendChild(grid);
+  $('#modal').hidden = false;
+}
+// 點心畫在地上（只在點心時間）
+function phSnackEntries() {
+  if (!phMode || phMode.id !== 'snack') return [];
+  return phMode.snacks.filter(q => q.left > 0).map(q => ({ x: q.x + .35, y: q.y + .35, w: .3, d: .3, z: 0, h: 6,
+    drawFn: ctx => { const p = iso(q.x + .5, q.y + .5, 0); drawFloatIcon(ctx, p.x, p.y - 4, '🍪', 1); } }));
+}
+
 // 睡在床上的跟床一起畫（排前後才不會被床蓋住）
 function phOccupants() {
   if (!inPetHouse()) return [];
   const fine = p => Object.assign({}, p, { hunger: 100, clean: 100, mood: 100 });
-  return phList().map(i => phActors[i]).filter(a => a && a.sleep).map(a => {
+  return phList().map(i => phActors[i]).filter(a => a && a.sleep && a.sleep.uid != null).map(a => {
     const st = fine(G.pets[a.idx]);
     return { uid: a.sleep.uid, pose: 'pet', lx: a.sleep.lx, ly: a.sleep.ly, z: a.sleep.z, h: 26 * stageOf(st).scale, draw: ctx => drawPetActor(ctx, a, st) };
   });
@@ -6224,6 +6448,11 @@ function refreshDupBtn(now) {
   nextDupCheck = (now || performance.now()) + 500;
   const b = $('#btnDup'); if (!b) return;
   b.hidden = !(inPetHouse() && dupGroups().length);
+  const c = $('#btnCallAll');
+  if (c) {
+    c.hidden = !inPetHouse();
+    c.textContent = phMode && phMode.id === 'train' ? '🚂 解散' : '📣 叫大家';
+  }
 }
 function openDupSell() {
   const card = $('#modalCard');
@@ -6260,7 +6489,7 @@ function openDupSell() {
 function phDrawEntries() {
   if (!inPetHouse()) return [];
   const fine = p => Object.assign({}, p, { hunger: 100, clean: 100, mood: 100 });
-  return phList().filter(i => !phActor(i).sleep).map(i => actorDrawEntry(phActor(i), fine(G.pets[i])));
+  return phList().filter(i => !phActor(i).sleep || !phActor(i).sleep.uid).map(i => actorDrawEntry(phActor(i), fine(G.pets[i]))).concat(phSnackEntries());
 }
 function phHit(w) {
   if (!inPetHouse()) return null;
@@ -9085,6 +9314,7 @@ canvas.addEventListener('pointerup', e => {
     placeHold();
     return;
   }
+  if (phMode && phMode.id === 'sleep') { phModeEnd(); return; } // 大家在睡覺：點畫面就天亮
   if (giftBoxHit(w)) { (giftVisit.spec || GIFT_SPECS[0]).open(); return; }
   { const ph = phHit(w); if (ph != null) { phTap(ph, e); return; } }
   if (visitorHit(w)) { openMenu(visitorMenuEntries(), e); return; }
@@ -9227,6 +9457,11 @@ function setBigRoom(on) {
 $('#btnTheme').onclick = () => { Sound.play('click'); openThemes(); };
 $('#btnPhoto').onclick = () => takePhoto();
 $('#btnDup').onclick = () => { Sound.play('click'); openDupSell(); };
+$('#btnCallAll').onclick = () => {
+  Sound.play('click');
+  if (phMode && phMode.id === 'train') { phModeEnd(); toast('🚂 解散！'); refreshDupBtn(); return; }
+  openCallAll();
+};
 setTimeout(() => { try { refreshThemeBtn(); } catch (e) {} }, 0);
 $('#btnZoom').onclick = () => { setBigRoom(!document.body.classList.contains('bigroom')); Sound.play('click'); };
 if (lsGet(BIG_KEY) === '1') setBigRoom(true);

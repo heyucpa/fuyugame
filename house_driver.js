@@ -2280,6 +2280,92 @@
     G = keepG; G.away = keepAway; G.openGift = true; saveGame(); giftReset();
     $('#modal').hidden = true;
 
+    /* 75 📣 叫大家：睡覺、跳舞、點心、大合照、跟我走（只有寵物屋、蛋不參加、不改數值、不花錢） */
+    var keepG13 = JSON.stringify(G), realToast13 = toast, realTake = takePhoto, shots = 0;
+    toast = function(){}; takePhoto = function(){ shots++; return 'x'; };
+    var run13 = function(n, t0){ for (var f = 0; f < n; f++) gameStep(1 / 60, t0 + f * 17); return t0 + n * 17; };
+    try {
+      G = normalizeSave(JSON.parse(keepG13)); G.away = null; G.petHouse = null; $('#modal').hidden = true; cancelHold(); phReset();
+      G.pets = [newPet('mochi', 'kid', 'Main')];
+      for (var q13 = 1; q13 <= 7; q13++) G.pets.push(newPet(PET_SPECIES[q13].id, 'kid', 'P' + q13));
+      G.pets.push(newPet(PET_SPECIES[9].id, 'egg', ''));
+      G.activePet = 0; G.pet = G.pets[0]; G.companions = [];
+      fufu.pose = null; fufu.path = []; fufu.x = 3.5; fufu.y = 5.5;
+      refreshDupBtn();
+      if (!$('#btnCallAll').hidden) fails.push('不在寵物屋也有「叫大家」');
+      enterPetHouse(); refreshDupBtn();
+      if ($('#btnCallAll').hidden) fails.push('寵物屋沒有「📣 叫大家」');
+      $('#btnCallAll').onclick();
+      if ($('#modalCard').querySelectorAll('.call-pick').length !== 5) fails.push('叫大家不是五個選項');
+      $('#modal').hidden = true;
+      var walkers = phWalkers(), egg13 = phActor(9), ex13 = [egg13.x, egg13.y];
+      if (walkers.length !== 7) fails.push('（測試）寵物屋裡的寵物數量不對：' + walkers.length);
+      var stats0 = JSON.stringify(G.pets.slice(1).map(function(p){ return [p.hunger, p.clean, p.mood, p.growth]; })), bells0 = G.bells, food0 = JSON.stringify([G.food, G.kidFood]);
+      var t13 = performance.now() + 100000;
+      // 💤 睡覺
+      phCallAll('sleep');
+      if ($('#nightShade').hidden || !$('#nightShade').getBoundingClientRect().height) fails.push('大家去睡覺，房間沒有變暗');
+      t13 = run13(1500, t13);
+      if (!walkers.every(function(a){ return a.sleep; })) fails.push('叫大家去睡覺，有的沒有睡（' + walkers.filter(function(a){ return !a.sleep; }).length + ' 隻醒著）');
+      var bedUids = walkers.filter(function(a){ return a.sleep && a.sleep.uid != null; }).map(function(a){ return a.sleep.uid; });
+      if (new Set(bedUids).size !== bedUids.length) fails.push('兩隻擠在同一張床');
+      var nBeds = curRoom().items.filter(function(it){ return PET_BEDS[it.id] && !PET_BEDS[it.id].withKid && !(pet.sleep && pet.sleep.uid === it.uid); }).length; // 照顧中那隻自己去睡掉的那張不算
+      if (bedUids.length !== Math.min(nBeds, walkers.length)) fails.push('床沒有睡滿（' + bedUids.length + '/' + nBeds + '）');
+      if (egg13.x !== ex13[0] || egg13.y !== ex13[1]) fails.push('蛋也跑去睡覺了');
+      t13 = run13(600, t13);
+      if (!walkers.every(function(a){ return a.sleep; })) fails.push('大家睡一下就自己醒了（要點畫面才天亮）');
+      // 照顧中那隻不能擠到別隻睡著的床上
+      var busyBed = curRoom().items.filter(function(it){ return bedUids.indexOf(it.uid) >= 0; })[0];
+      if (busyBed) {
+        var keepPS = pet.sleep; pet.sleep = null;
+        pet.x = busyBed.x + .5; pet.y = busyBed.y + 1.5; pet.task = { uid: busyBed.uid, kind: 'nap' };
+        petArriveBed(performance.now(), curRoom());
+        if (pet.sleep) { fails.push('照顧中的寵物擠到別隻睡著的床上'); pet.sleep = null; pet.z = 0; }
+        pet.sleep = keepPS;
+      }
+      var r13 = canvas.getBoundingClientRect();
+      canvas.dispatchEvent(new PointerEvent('pointerup', { clientX: r13.left + 5, clientY: r13.top + 5, bubbles: true }));
+      if (phMode || walkers.some(function(a){ return a.sleep; }) || !$('#nightShade').hidden) fails.push('點畫面沒有天亮、大家沒醒');
+      // 💃 跳舞
+      phCallAll('dance');
+      t13 = run13(500, t13);
+      var far = walkers.filter(function(a){ return Math.hypot(a.x - fufu.x, a.y - fufu.y) > 3.6; }).length;
+      if (far) fails.push('跳舞時有 ' + far + ' 隻沒有圍在小可愛旁邊');
+      var hops = 0; walkers.forEach(function(a){ a.beatAt = 0; }); run13(40, t13); walkers.forEach(function(a){ if (a.beatAt > t13) hops++; });
+      if (hops < walkers.length) fails.push('跳舞時有的沒在跳（' + hops + '/' + walkers.length + '）');
+      t13 = run13(600, t13 + 40 * 17);
+      if (phMode) fails.push('跳舞一直沒結束');
+      // 🍪 點心
+      phCallAll('snack');
+      var nSn = phMode.snacks.length;
+      if (!nSn || phSnackEntries().length !== nSn) fails.push('點心時間沒有撒點心（或沒畫出來）');
+      t13 = run13(650, t13);   // 15 秒會自己結束，這裡 11 秒內就要吃完
+      if (phMode) fails.push('點心吃不完（' + (phMode.snacks || []).filter(function(q){ return q.left; }).length + ' 塊沒吃）');
+      if (phMode) phModeEnd();
+      // 📸 大合照
+      phCallAll('photo');
+      t13 = run13(500, t13);
+      if (shots !== 1) fails.push('大合照沒有拍照（或拍了 ' + shots + ' 次）');
+      if (phMode) fails.push('大合照拍完沒結束');
+      // 🚂 跟我走
+      phCallAll('train'); refreshDupBtn();
+      if (!/解散/.test($('#btnCallAll').textContent)) fails.push('跟我走的時候按鈕沒有變成「解散」');
+      var steps = [[3, 5], [4, 5], [5, 5], [5, 4], [5, 3]];
+      steps.forEach(function(st){ fufu.x = st[0] + .5; fufu.y = st[1] + .5; fufu.path = []; fufu.idleUntil = Infinity; t13 = run13(80, t13); });
+      t13 = run13(120, t13);
+      var lead = walkers[0];
+      if (Math.hypot(lead.x - fufu.x, lead.y - fufu.y) > 2.6) fails.push('跟我走：第一隻沒有跟在小可愛後面（距離 ' + Math.hypot(lead.x - fufu.x, lead.y - fufu.y).toFixed(1) + '）');
+      fufu.idleUntil = 0;
+      $('#btnCallAll').onclick();
+      if (phMode) fails.push('按「解散」沒有結束跟我走');
+      // 不改數值、不花錢、不用食物
+      if (JSON.stringify(G.pets.slice(1).map(function(p){ return [p.hunger, p.clean, p.mood, p.growth]; })) !== stats0) fails.push('叫大家改到了寵物屋寵物的數值');
+      if (G.bells !== bells0 || JSON.stringify([G.food, G.kidFood]) !== food0) fails.push('點心時間花了錢或用掉了食物');
+      // 離開寵物屋就結束
+      phCallAll('dance'); leavePetHouse(0); gameStep(1 / 60, t13 + 20);
+      if (phMode) fails.push('離開寵物屋，活動還沒結束');
+    } finally { toast = realToast13; takePhoto = realTake; if (phMode) phModeEnd(); hideItemMenu(); G = normalizeSave(JSON.parse(keepG13)); saveGame(); phReset(); refreshTop(); refreshDupBtn(); $('#modal').hidden = true; }
+
     /* 74 寵物屋可以自己布置（跟家裡一樣）：搬、轉向、收起來、放自己的家具、搬牆上的東西；擺法跟著存檔走；
        上一版的存法讀得懂；寵物會自己去寵物小屋／寵物床睡覺，點了會醒 */
     var keepG12 = JSON.stringify(G), realToast12 = toast;
