@@ -199,6 +199,18 @@
     renameSlot(nid, '妹妹');
     if (!slots().some(function(x){ return x.name === '妹妹'; })) fails.push('改名字沒有生效');
     saveSlots([{id:'p1', name:'第 1 間'}]);
+    // 以前的預設名字「第 1 間」家長看不懂，顯示成「存檔 1」；她自己取的名字不動；新開的叫「存檔 N」
+    if (slots()[0].name !== '存檔 1') fails.push('舊的預設名字「第 1 間」沒有顯示成「存檔 1」');
+    saveSlots([{id:'p1', name:'第 1 間'}, {id:'p2', name:'姊姊'}]);
+    if (slots()[1].name !== '姊姊') fails.push('自己取的存檔名字被改掉了');
+    var nid2 = addSlot('');
+    if (!slots().some(function(x){ return x.id === nid2 && x.name === '存檔 3'; })) fails.push('新開的存檔名字不是「存檔 3」');
+    saveSlots([{id:'p1', name:'第 1 間'}]);
+    openTab('save');
+    var stx = $('#tabBody').textContent;
+    if (/房子|開一間|這一間/.test(stx)) fails.push('存檔那一區還寫著「房子／間」（家長看不懂）');
+    if (!/開一個新存檔/.test(stx)) fails.push('沒有「開一個新存檔」');
+    openTab('inv');
 
     /* ⑨ 買蛋跟「送回寵物店」
        收齊之後還是可以買（她可能想養兩隻一樣的），

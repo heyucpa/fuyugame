@@ -3090,9 +3090,11 @@ const slotUndo = id => 'myHouseGame_undo:' + id;
 function slots() {
   try {
     const a = JSON.parse(localStorage.getItem(SLOTS_KEY));
-    if (Array.isArray(a) && a.length && a.every(s => s && s.id)) return a;
+    if (Array.isArray(a) && a.length && a.every(s => s && s.id))
+      // 以前預設叫「第 1 間」，家長看不懂是什麼「間」；沒改過名字的，顯示成「存檔 1」
+      return a.map(s => { const m = /^第 (\d+) 間$/.exec(s.name || ''); return m ? Object.assign({}, s, { name: '存檔 ' + m[1] }) : s; });
   } catch (e) { /* 壞掉就當成沒有，用預設的一格 */ }
-  return [{ id: 'p1', name: '第 1 間' }];
+  return [{ id: 'p1', name: '存檔 1' }];
 }
 function saveSlots(list) {
   try { localStorage.setItem(SLOTS_KEY, JSON.stringify(list)); } catch (e) {}
@@ -3103,7 +3105,7 @@ function curSlotId() {
 }
 function curSlotName() {
   const s = slots().find(x => x.id === curSlotId());
-  return (s && s.name) || '第 1 間';
+  return (s && s.name) || '存檔 1';
 }
 (function migrateToSlots() {
   try {
@@ -3132,7 +3134,7 @@ function addSlot(name) {
   let n = 1;
   list.forEach(s => { const m = /^p(\d+)$/.exec(s.id); if (m) n = Math.max(n, +m[1] + 1); });
   const id = 'p' + n;
-  list.push({ id: id, name: name || ('第 ' + n + ' 間') });
+  list.push({ id: id, name: name || ('存檔 ' + n) });
   saveSlots(list);
   return id;
 }
@@ -3523,11 +3525,11 @@ function openRescue() {
   card.appendChild(note('紀錄沒有被刪掉，也另外留了一份。現在玩的不會存檔，免得把它蓋掉。請家長選一個：'));
   const b1 = el('button', 'big', '⬇️ 下載原始資料（給大人保存）');
   b1.onclick = () => { try { downloadText(SAVE_LOCKED, '我的小屋-讀不出來的紀錄-' + today() + '.json'); toast('下載好了'); } catch (e) { toast('這台機器存不了檔案'); } };
-  const b2 = el('button', 'big alt', '↩️ 用備份還原／換別的存檔格');
+  const b2 = el('button', 'big alt', '↩️ 用備份還原／換別的存檔');
   b2.onclick = () => { $('#modal').hidden = true; openTab('save'); };
-  const b3 = el('button', 'big alt', '🆕 這一格重新開始');
-  b3.onclick = () => askPin('這一格重新開始', () => {
-    if (!confirm('確定要讓這一格重新開始嗎？\n讀不出來的那份已經另外留著，之後還可以下載。')) return;
+  const b3 = el('button', 'big alt', '🆕 這個存檔重新開始');
+  b3.onclick = () => askPin('這個存檔重新開始', () => {
+    if (!confirm('確定要讓這個存檔重新開始嗎？\n讀不出來的那份已經另外留著，之後還可以下載。')) return;
     SAVE_LOCKED = null; saveGame(); $('#modal').hidden = true; toast('重新開始了！'); setTimeout(() => maybeShowNews(), 1200);
   });
   card.append(b1, b2, b3);
@@ -9608,9 +9610,9 @@ function tabSave(body) {
 
   /* ── 存檔格 ──
      兩個小孩各玩各的。每一格是完全獨立的一間房子，互不影響。 */
-  body.appendChild(h3('🏠 現在玩的是：' + curSlotName()));
-  body.appendChild(note('每一格是一間完全獨立的房子，錢、家具、寵物都分開。' +
-    '換一格不會動到另一格。'));
+  body.appendChild(h3('💾 存檔：現在玩的是「' + curSlotName() + '」'));
+  body.appendChild(note('最多 6 個存檔，像一般遊戲的存檔一樣，每個都會自動存。' +
+    '每個存檔的錢、家具、寵物都是分開的，換別的存檔來玩，不會動到原本那個。'));
 
   const list = slots(), cur = curSlotId();
   list.forEach(s => {
@@ -9634,25 +9636,25 @@ function tabSave(body) {
   const nm = el('input', 'textin');
   nm.value = curSlotName();
   nm.maxLength = 10;
-  nm.placeholder = '幫這一間取個名字';
+  nm.placeholder = '幫這個存檔取名字（例如：姊姊、妹妹）';
   nm.oninput = () => { renameSlot(cur, nm.value); };
   nm.onblur = () => { renderTab(); };
   body.appendChild(nm);
 
-  const add = el('button', 'big alt', '＋ 開一間新的');
+  const add = el('button', 'big alt', '＋ 開一個新存檔');
   add.onclick = () => {
-    if (slots().length >= 6) { toast('最多六間'); return; }
+    if (slots().length >= 6) { toast('最多 6 個存檔'); return; }
     Sound.play('click');
     switchSlot(addSlot(''));     // 開好就直接換過去
   };
   body.appendChild(add);
 
   if (list.length > 1) {
-    const del = el('button', 'mini', '🗑️ 刪掉「' + curSlotName() + '」這一間');
-    del.onclick = () => askPin('刪掉存檔格', () => {
-      if (!confirm('要刪掉「' + curSlotName() + '」整間房子嗎？\n\n' +
-                   '這一格的錢、家具、寵物全部都會不見。\n' +
-                   '（刪掉的那一格救不回來，建議先存成檔案）')) return;
+    const del = el('button', 'mini', '🗑️ 刪掉「' + curSlotName() + '」這個存檔');
+    del.onclick = () => askPin('刪掉存檔', () => {
+      if (!confirm('要刪掉「' + curSlotName() + '」這個存檔嗎？\n\n' +
+                   '這個存檔的錢、家具、寵物全部都會不見。\n' +
+                   '（刪掉的存檔救不回來，建議先存成檔案）')) return;
       if (removeSlot(cur)) location.reload();
     });
     body.appendChild(del);
@@ -9764,7 +9766,7 @@ function tabSave(body) {
   }
 
   body.appendChild(h3('⚠️ 重新開始'));
-  body.appendChild(note('把「' + curSlotName() + '」整間清掉，從頭開始。' +
+  body.appendChild(note('把「' + curSlotName() + '」這個存檔清掉，從頭開始。' +
     '清掉之前會自動留一份，上面的「把上一份換回來」還救得回來。'));
   const reset = el('button', 'big', '重新開始（清除存檔）');
   reset.style.background = 'var(--warn)';
