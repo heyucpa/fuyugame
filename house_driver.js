@@ -1661,7 +1661,8 @@
         if (x < 0 || y < 0 || x >= room3.w || y >= room3.d || blk3[x][y] || seen3[x + ',' + y]) return; seen3[x + ',' + y] = 1; q4.push([x, y]); }); }
       for (var x3 = 0; x3 < room3.w; x3++) for (var y3 = 0; y3 < room3.d; y3++) {
         if (!blk3[x3][y3] && !seen3[x3 + ',' + y3]) fails.push(where3 + '：空地 ' + x3 + ',' + y3 + ' 走不進去');
-        if (!blk3[x3][y3]) { var g4 = pickItem(iso(x3 + .5, y3 + .5, 0)); if (g4 && !canUse(g4)) fails.push(where3 + '：點地板 ' + x3 + ',' + y3 + ' 被' + g4.id + '攔住（走不過去）'); }
+        // 寵物屋跟自己家一樣，擺設點了可以拿起來搬，所以不驗這一條
+        if (!blk3[x3][y3] && !PLACES[pk].inHouse) { var g4 = pickItem(iso(x3 + .5, y3 + .5, 0)); if (g4 && !canUse(g4)) fails.push(where3 + '：點地板 ' + x3 + ',' + y3 + ' 被' + g4.id + '攔住（走不過去）'); }
       }
       room3.items.forEach(function(it3){
         if (!canUse(it3)) return;
@@ -2263,6 +2264,47 @@
     fufu.x = keepFufu[0]; fufu.y = keepFufu[1]; fufu.pose = keepFufu[2]; fufu.path = keepFufu[3];
     G = keepG; G.away = keepAway; G.openGift = true; saveGame(); giftReset();
     $('#modal').hidden = true;
+
+    /* 74 寵物屋的擺設可以自己搬、轉向，但不能收起來（不能賣）；不能放自己的家具；擺法跟著存檔走 */
+    var keepG12 = JSON.stringify(G), realToast12 = toast;
+    toast = function(){};
+    try {
+      G = normalizeSave(JSON.parse(keepG12)); G.petHouse = null; G.away = null; $('#modal').hidden = true; cancelHold();
+      enterPetHouse();
+      var phR = curRoom(), house = phR.items.filter(function(x){ return x.id === 'pet_house'; })[0];
+      var inv0 = JSON.stringify(G.inv);
+      startHoldFromRoom(house);
+      if (!hold || hold.fromUid !== house.uid) fails.push('寵物屋的擺設拿不起來');
+      else {
+        if (!$('#btnStore').hidden) fails.push('寵物屋的擺設有「收起來」按鈕');
+        storeHold();
+        if (!hold || JSON.stringify(G.inv) !== inv0) fails.push('寵物屋的擺設被收起來了（之後就能賣掉）');
+        // 轉向、換位置
+        var r0 = hold.rot, spots = [];
+        for (var sx = 0; sx < phR.w; sx++) for (var sy = 0; sy < phR.d; sy++) spots.push([sx, sy]);
+        var placed = false;
+        for (var k = 0; k < spots.length && !placed; k++) {
+          hold.x = spots[k][0]; hold.y = spots[k][1]; hold.rot = (r0 + 1) % 4;
+          hold.ok = canPlace(phR, hold.def, hold.x, hold.y, hold.rot, hold.fromUid);
+          if (hold.ok && (hold.x !== house.x || hold.y !== house.y)) { var tx = hold.x, ty = hold.y, trot = hold.rot; placeHold(); placed = true; }
+        }
+        if (!placed) fails.push('寵物屋的擺設找不到地方放');
+        var moved = curRoom().items.filter(function(x){ return x.uid === house.uid; })[0];
+        if (!moved || moved.x !== tx || moved.y !== ty || moved.rot !== trot) fails.push('寵物屋的擺設搬了、轉了卻沒變');
+        if (!G.petHouse || !G.petHouse[house.uid] || G.petHouse[house.uid].x !== tx) fails.push('寵物屋的擺法沒有存進存檔');
+        // 換一個存檔（G 換掉）再換回來：擺法跟著存檔
+        var saved12 = JSON.stringify(G);
+        G = newGame(); G.away = { place: 'pethouse', idx: 0 };
+        var d12 = curRoom().items.filter(function(x){ return x.uid === house.uid; })[0];
+        if (d12.x === tx && d12.y === ty && d12.rot === trot) fails.push('別的存檔的寵物屋也跟著變了');
+        G = normalizeSave(JSON.parse(saved12)); G.away = { place: 'pethouse', idx: 0 };
+        var b12 = curRoom().items.filter(function(x){ return x.uid === house.uid; })[0];
+        if (!b12 || b12.x !== tx || b12.y !== ty || b12.rot !== trot) fails.push('讀回存檔，寵物屋的擺法沒有回來');
+      }
+      // 不能把自己的家具搬進寵物屋
+      var ownId = Object.keys(G.inv).filter(function(id){ return G.inv[id] > 0; })[0];
+      if (ownId) { startHoldFromInv(ownId); if (hold) { fails.push('可以把自己的家具放進寵物屋'); cancelHold(); } }
+    } finally { toast = realToast12; cancelHold(); G = normalizeSave(JSON.parse(keepG12)); saveGame(); phReset(); refreshTop(); updateHoldUI(); }
 
     /* 73 🧺 寵物屋裡可以賣重複的寵物：只有在寵物屋、有重複時才出現；每種至少留一隻；
        照顧中、一起逛、蛋不會被賣；先賣最小的；要確認；拿回半價 */

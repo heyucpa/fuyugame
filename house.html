@@ -3456,6 +3456,7 @@ function newGame() {
     guide: 'egg',                          // 第一次玩的小手教學走到哪一步（egg→place→shop→done）
     guideAsked: false,                     // 問過要不要小手教學了沒
     trophies: {},                          // 🏆 拿過的集滿獎盃 {set id: true}
+    petHouse: null,                        // 🐾 寵物屋自己的擺法 {uid: {id, x, y, rot}}；null＝預設
     welcome: { at: 0, uncle: false, grandma: false }, // 🏠 搬新家：叔叔、阿婆來送禮了沒（at＝教學做完的時間）
     earned: 0,
     inv: { wood_bed: 1, wood_chair: 1, wood_table: 1, plant_s: 1 },
@@ -3693,7 +3694,34 @@ function today() {
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 }
 
-function curRoom() { return G.away ? PLACES[G.away.place].rooms[G.away.idx] : G.rooms[G.cur]; }
+function curRoom() {
+  if (G.away && G.away.place === 'pethouse') return petHouseRoom();
+  return G.away ? PLACES[G.away.place].rooms[G.away.idx] : G.rooms[G.cur];
+}
+/* 🐾 寵物屋的擺設可以自己搬、轉向（家長：可以自己選位置和方向，但不能賣掉）。
+   寵物屋本身寫在 PLACES 裡（大家共用的預設擺法），每個存檔自己的擺法記在 G.petHouse：
+   {uid: {id, x, y, rot}}。換了存檔（G 換掉）就重新套一次。
+   以後寵物屋的擺設改版，對不上的那件就用新的預設位置，不會壞。 */
+let phAppliedFor = null, phDefault = null;
+function petHouseRoom() {
+  const room = PLACES.pethouse.rooms[0];
+  if (phAppliedFor !== G) {
+    phAppliedFor = G;
+    if (!phDefault) phDefault = JSON.stringify(room.items);
+    room.items = JSON.parse(phDefault);
+    const saved = G.petHouse;
+    if (saved && typeof saved === 'object') room.items.forEach(it => {
+      const s = saved[it.uid];
+      if (s && s.id === it.id && [s.x, s.y, s.rot].every(v => Number.isInteger(v))) { it.x = s.x; it.y = s.y; it.rot = ((s.rot % 4) + 4) % 4; }
+    });
+  }
+  return room;
+}
+function savePetHouse() {
+  const room = petHouseRoom(), out = {};
+  room.items.forEach(it => { out[it.uid] = { id: it.id, x: it.x, y: it.y, rot: it.rot || 0 }; });
+  G.petHouse = out;
+}
 // 目前所在房間的代號（角色、寵物用來判斷有沒有換房間）
 function roomKey() { return G.away ? `${G.away.place}:${G.away.idx}` : G.cur; }
 
@@ -8520,7 +8548,7 @@ function pickItem(w) {
     p.moveTo(pts[0].x, pts[0].y);
     pts.slice(1).forEach(q => p.lineTo(q.x, q.y));
     p.closePath();
-    if (pickCtx.isPointInPath(p, w.x, w.y) && (!G.away || canUse(e.it))) return e.it;
+    if (pickCtx.isPointInPath(p, w.x, w.y) && (!G.away || G.away.place === 'pethouse' || canUse(e.it))) return e.it;
   }
   return null;
 }
@@ -8557,7 +8585,7 @@ function moveGhost(w) {
 // ── 拿起／放下 ──
 // 親戚家的擺設是固定的
 function awayNoEdit() {
-  if (!G.away) return false;
+  if (!G.away || G.away.place === 'pethouse') return false; // 寵物屋的擺設可以自己搬
   toast(`這是${PLACES[G.away.place].name}，不能搬家具喔！回家再布置吧`);
   return true;
 }
@@ -8592,6 +8620,7 @@ function doUndo() {
   return true;
 }
 function startHoldFromInv(id) {
+  if (G.away && G.away.place === 'pethouse') { toast('寵物屋只能搬裡面原本的東西，自己的家具放在家裡喔'); return; }
   if (awayNoEdit()) return;
   cancelHold();
   snapUndo();
@@ -8612,7 +8641,7 @@ function startHoldFromInv(id) {
   updateHoldUI();
 }
 function startHoldWall(it) {
-  if (awayNoEdit()) return;
+  if (G.away) { awayNoEdit() || toast('牆上的東西不能搬喔'); return; }
   Sound.play('pickUp');
   cancelHold();
   snapUndo();
@@ -8633,6 +8662,7 @@ function startHoldFromRoom(it) {
 }
 function placeHold() {
   if (!hold || !hold.ok) { toast('這裡放不下喔'); Sound.play('miss'); return; }
+  if (G.away && G.away.place === 'pethouse' && !hold.fromUid) { cancelHold(); return; } // 寵物屋不能放自己的家具
   Sound.play('place');
   const room = curRoom(), onWall = hold.def.layer === 'wall';
   const spot = onWall ? { side: hold.side, pos: hold.pos } : { x: hold.x, y: hold.y, rot: hold.rot };
@@ -8647,6 +8677,7 @@ function placeHold() {
     fufuSay(pickLine('newItem', { 家具: hold.def.name }));
     sessionLog.placed++;
   }
+  if (G.away && G.away.place === 'pethouse') savePetHouse(); // 記下這個存檔自己的寵物屋擺法
   hold = null;
   updateHoldUI();
   commit();
@@ -8667,6 +8698,7 @@ function rotateHold() {
 }
 function storeHold() {
   if (!hold) return;
+  if (G.away && G.away.place === 'pethouse') { toast('寵物屋的東西不能收起來喔，幫牠換個位置吧！'); return; }
   if (hold.fromUid) addItem(hold.def.id);
   toast(`${hold.def.name} 收起來了`);
   hold = null;
@@ -8769,6 +8801,7 @@ const isTouchDevice = () => window.matchMedia && window.matchMedia('(pointer: co
 function updateHoldUI() {
   $('.stage').classList.toggle('holding', !!hold);
   $('#holdActions').hidden = !hold;
+  $('#btnStore').hidden = !!(G.away && G.away.place === 'pethouse'); // 寵物屋的東西不能收起來
   const onWall = hold && hold.def.layer === 'wall', touch = isTouchDevice();
   $('#btnRotate').firstChild.textContent = onWall ? '↻ 換牆' : '↻ 旋轉';
   $('#hint').textContent = !hold
@@ -8897,6 +8930,10 @@ function showItemMenu(it, e) {
     if (isEgg()) { toast('蛋還不會走路喔～'); return; }
     petGoNap(it, false);
   });
+  if (G.away && G.away.place === 'pethouse') { // 寵物屋：可以搬、轉向，但不能收起來（也就不能賣）
+    add('✋ 搬動', () => startHoldFromRoom(it));
+    openMenu(entries, e); return;
+  }
   if (G.away) { openMenu(entries, e); return; } // 親戚家只能用，不能搬、不能收
   /* 桌上放一樣小東西。一張桌子只放一樣——不然會疊在一起、會穿過桌面。
      收納裡沒有可以放的東西時就不顯示這一項，免得點了跳出空選單。 */
@@ -8957,7 +8994,7 @@ canvas.addEventListener('pointerup', e => {
   if (fa) { openMenu(farmMenuEntries(fa), e); return; }
   if (fufuHit(w)) { if (fufu.pose && fufu.pose.type === 'lie') fufuPoke(); else showKidMenu(e); return; } // 睡覺中點她就叫醒
   const it = pickItem(w);
-  if (it) { if (canUse(it)) showItemMenu(it, e); else if (!G.away) startHoldFromRoom(it); return; }
+  if (it) { if (canUse(it)) showItemMenu(it, e); else if (!G.away || inPetHouse()) startHoldFromRoom(it); return; }
   const wi = G.away ? null : pickWallItem(w);
   if (wi) { startHoldWall(wi); return; }
   const g = toGrid(w), room = curRoom();
