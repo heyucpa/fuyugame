@@ -8544,7 +8544,35 @@ const THEMES = [
   { id: 'petwalk', icon: '🐾', title: '帶寵物去公園', desc: '帶寵物一起去公園散步', steps: [
     { icon: '🐾', label: '帶寵物去公園', test: () => themeFlag('park') }] },
   { id: 'explorer', icon: '🗺️', title: '出門走走', desc: '去 3 個不同的地方玩', steps: [
-    { icon: '🗺️', label: '去 3 個不同的地方', test: () => Object.keys((G.theme && G.theme.places) || {}).length >= 3 }] }
+    { icon: '🗺️', label: '去 3 個不同的地方', test: () => Object.keys((G.theme && G.theme.places) || {}).length >= 3 }] },
+  // ── 第二批（家長：佈置主題加多一點）──
+  { id: 'sweets', icon: '🍰', title: '甜點屋', desc: '一間房間放 3 樣甜點風的家具', steps: [
+    { icon: '🍰', label: '一間房間有 3 樣甜點風家具', test: () => anyRoom(r => r.items.filter(it => (FURN_BY_ID[it.id] || {}).theme === 'sweet').length >= 3) }] },
+  { id: 'candyland', icon: '🍭', title: '夢幻糖果屋', desc: '糖果壁紙、餅乾地板，再放甜點家具', steps: [
+    { icon: '🍬', label: '一間房間換上糖果條紋壁紙', test: () => anyRoom(r => r.wall === 'wp_candy') },
+    { icon: '🍪', label: '同一間換上餅乾地板', test: () => anyRoom(r => r.wall === 'wp_candy' && r.floor === 'fl_cookie') },
+    { icon: '🧁', label: '同一間再放 2 樣甜點風家具', test: () => anyRoom(r => r.wall === 'wp_candy' && r.floor === 'fl_cookie' && r.items.filter(it => (FURN_BY_ID[it.id] || {}).theme === 'sweet').length >= 2) }] },
+  { id: 'petland', icon: '🐾', title: '寵物天地', desc: '把寵物屋布置得舒舒服服', steps: [
+    { icon: '🛏️', label: '寵物屋有 3 個寵物床、小屋或城堡', test: () => petHouseRoom().items.filter(it => PET_BEDS[it.id] && !PET_BEDS[it.id].withKid).length >= 3 },
+    { icon: '🧸', label: '寵物屋有 2 樣玩具', test: () => petHouseRoom().items.filter(it => furnKind(it.id) === 'toy').length >= 2 }] },
+  { id: 'goodnight', icon: '🌙', title: '晚安房間', desc: '床、夜燈、地毯，準備睡覺囉', steps: [
+    { icon: '🛏️', label: '有一張床', test: () => anyRoom(r => r.items.some(it => FURNITURE_USE[it.id] && FURNITURE_USE[it.id].use === 'lie' && !FURNITURE_USE[it.id].bath)) },
+    { icon: '🌟', label: '同一間有夜燈（星星夜燈、冰淇淋燈或立燈）和地毯', test: () => anyRoom(r => r.items.some(it => FURNITURE_USE[it.id] && FURNITURE_USE[it.id].use === 'lie' && !FURNITURE_USE[it.id].bath)
+        && roomCount(r, ['star_lamp', 'icecream_lamp', 'lamp']) >= 1 && r.items.some(it => (FURN_BY_ID[it.id] || {}).layer === 'floor')) }] },
+  { id: 'rainbow', icon: '🌈', title: '彩虹房間', desc: '一間房間放 2 樣彩虹的東西', steps: [
+    { icon: '🌈', label: '彩虹地毯、彩虹掛飾、彩虹書櫃，放 2 樣在同一間', test: () => anyRoom(r => roomCount(r, ['rainbow_rug', 'rainbow_art', 'rainbow_shelf']) >= 2) }] },
+  { id: 'concert', icon: '🎹', title: '小小音樂會', desc: '鋼琴旁邊放椅子，請大家來聽', steps: [
+    { icon: '🎹', label: '有一台鋼琴', test: () => anyRoom(r => roomCount(r, ['piano']) >= 1) },
+    { icon: '🪑', label: '同一間有 2 個可以坐的地方', test: () => anyRoom(r => roomCount(r, ['piano']) >= 1 && r.items.filter(it => FURNITURE_USE[it.id] && FURNITURE_USE[it.id].use === 'sit').length >= 2) }] },
+  { id: 'garden', icon: '🪴', title: '室內花園', desc: '4 樣植物加上草地地毯', steps: [
+    { icon: '🪴', label: '一間房間有 4 樣花或植物', test: () => anyRoom(r => roomCount(r, PLANT_IDS) >= 4) },
+    { icon: '🌿', label: '同一間有草地地毯', test: () => anyRoom(r => roomCount(r, PLANT_IDS) >= 4 && roomCount(r, ['leaf_rug']) >= 1) }] },
+  { id: 'princess', icon: '👑', title: '夢幻公主房', desc: '公主床、獨角獸、愛心鏡子', steps: [
+    { icon: '🛏️', label: '有公主床或糖果床', test: () => anyRoom(r => roomCount(r, ['cute_bed', 'candy_bed']) >= 1) },
+    { icon: '🦄', label: '同一間有獨角獸搖搖馬', test: () => anyRoom(r => roomCount(r, ['cute_bed', 'candy_bed']) >= 1 && roomCount(r, ['unicorn_rocker']) >= 1) },
+    { icon: '💗', label: '同一間牆上掛愛心鏡子', test: () => anyRoom(r => roomCount(r, ['cute_bed', 'candy_bed']) >= 1 && roomCount(r, ['unicorn_rocker']) >= 1 && roomCount(r, ['heart_mirror']) >= 1) }] },
+  { id: 'buddies', icon: '🐶', title: '寵物好朋友', desc: '帶兩隻寵物一起出來玩', steps: [
+    { icon: '🐾', label: '帶一隻寵物「一起逛」（照顧中的加上一起逛的，共 2 隻）', test: () => (G.companions || []).length >= 1 }] }
 ];
 const THEME_BY_ID = Object.fromEntries(THEMES.map(t => [t.id, t]));
 function themeFlag(k) { return !!(G.theme && G.theme.flags && G.theme.flags[k]); }

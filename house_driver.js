@@ -2553,6 +2553,29 @@
       if (!(full > countFills(Object.assign({}, sp, { sparkle: false })))) fails.push(sp.name + ' 沒有一閃一閃的星星');
     });
 
+    /* 82 小主題第二批：空房間做不到、照說明布置就做得到 */
+    var keepG18 = JSON.stringify(G);
+    try {
+      var NEWT = ['sweets', 'candyland', 'petland', 'goodnight', 'rainbow', 'concert', 'garden', 'princess', 'buddies'];
+      NEWT.forEach(function(id){ if (!THEME_BY_ID[id]) fails.push('少了小主題 ' + id); });
+      if (THEMES.length < 16) fails.push('小主題不到 16 個（' + THEMES.length + '）');
+      G = normalizeSave(JSON.parse(keepG18)); G.petHouse = { items: [], wallItems: [] }; G.companions = [];
+      G.rooms = [{ name: '測試', w: 8, d: 8, wall: 'wp_cream', floor: 'fl_wood', items: [], wallItems: [] }];
+      NEWT.forEach(function(id){ var pr = themeProgress(THEME_BY_ID[id]); if (pr.done === pr.total) fails.push('空房間就完成了小主題「' + THEME_BY_ID[id].title + '」'); });
+      var u = 100, put = function(id, x, y){ G.rooms[0].items.push({ uid: u++, id: id, x: x, y: y, rot: 0 }); };
+      G.rooms[0].wall = 'wp_candy'; G.rooms[0].floor = 'fl_cookie';
+      put('cupcake_chair', 0, 0); put('macaron_table', 1, 0); put('lollipop_tree', 2, 0);
+      put('cute_bed', 0, 2); put('unicorn_rocker', 3, 2); G.rooms[0].wallItems.push({ uid: u++, id: 'heart_mirror', side: 'L', pos: 1 });
+      put('star_lamp', 3, 4); put('rainbow_rug', 4, 5); put('rainbow_shelf', 5, 0);
+      put('piano', 6, 2); put('wood_chair', 6, 4);
+      put('plant_s', 7, 0); put('plant_l', 7, 1); put('cactus', 7, 4); put('sunflower', 7, 5); put('leaf_rug', 5, 6);
+      G.petHouse = { items: [{ uid: -1, id: 'pet_bed', x: 0, y: 0, rot: 0 }, { uid: -2, id: 'pet_house', x: 2, y: 0, rot: 0 }, { uid: -3, id: 'pet_castle', x: 4, y: 0, rot: 0 },
+                             { uid: -4, id: 'teddy', x: 0, y: 4, rot: 0 }, { uid: -5, id: 'toybox', x: 2, y: 4, rot: 0 }], wallItems: [] };
+      phAppliedFor = null;   // 寵物屋的擺法是照存檔快取的，這裡直接換了存檔內容，要重新套
+      G.pets = [newPet('mochi', 'kid', 'A'), newPet('bunny', 'kid', 'B')]; G.activePet = 0; G.pet = G.pets[0]; G.companions = [1];
+      NEWT.forEach(function(id){ var pr = themeProgress(THEME_BY_ID[id]); if (pr.done !== pr.total) fails.push('照說明布置了，小主題「' + THEME_BY_ID[id].title + '」還沒完成（' + pr.done + '/' + pr.total + '）'); });
+    } finally { G = normalizeSave(JSON.parse(keepG18)); saveGame(); }
+
     /* 81 第四批家具：甜點風一整組＋可愛風＋寵物用；每件畫得出來、商店買得到、椅子坐得下、床躺得下、寵物床睡得了 */
     var NEW4 = ['cupcake_chair', 'macaron_table', 'donut_rug', 'candy_bed', 'icecream_lamp', 'cake_shelf', 'lollipop_tree', 'strawberry_sofa', 'cookie_jar', 'cream_wardrobe',
                 'cloud_sofa', 'unicorn_rocker', 'star_lamp', 'heart_mirror', 'rainbow_shelf', 'bunny_cushion', 'pet_castle', 'cat_tower'];
