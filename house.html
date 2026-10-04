@@ -380,6 +380,12 @@ button.pass { font: inherit; }
 .rest-tips { font-size: 18px; line-height: 1.8; white-space: pre-line; }
 .rest-time { font-size: 40px; font-weight: 800; font-variant-numeric: tabular-nums; color: #ffe08a; }
 .rest-sub { font-size: 15px; opacity: .85; white-space: pre-line; line-height: 1.7; }
+.pin-ov { position: fixed; inset: 0; z-index: 150; background: rgba(40,30,20,.5); display: grid; place-items: center; padding: 16px; }
+.pin-card { box-sizing: border-box; background: #fffaf0; border-radius: 20px; padding: 18px; width: min(340px, calc(100vw - 32px)); display: flex; flex-direction: column; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.3); }
+.pin-msg { font-weight: 800; color: #4a3b2a; line-height: 1.5; }
+.pin-row { display: flex; gap: 8px; }
+.pin-in { flex: 1; min-width: 0; width: 0; box-sizing: border-box; font-size: 28px; letter-spacing: 10px; text-align: center; padding: 8px; border: 2px solid var(--line); border-radius: 12px; }
+.pin-eye { flex: none; width: 54px; border: 2px solid var(--line); border-radius: 12px; background: #fff; font-size: 22px; }
 .rest-parent { margin-top: 18px; background: rgba(255,255,255,.15); color: #fff; border: 1px solid rgba(255,255,255,.4); border-radius: 999px; padding: 6px 14px; font-size: 13px; }
 .news { display: flex; flex-direction: column; gap: 8px; margin: 6px 0 12px; }
 .news-row { display: flex; align-items: center; gap: 10px; background: #fffaf0; border: 2px solid var(--line); border-radius: 14px; padding: 8px 10px; }
@@ -9271,10 +9277,40 @@ function endRest() {
 function askPin(why, ok) {
   const c = restCfg();
   if (!c.pin) { ok(); return; } // 每次都要輸入：只輸入一次就整段免驗證，小朋友就可以自己改
-  const v = window.prompt(`${why}：請輸入家長密碼（4 位數字）`);
-  if (v === null) return;
-  if (v.trim() === c.pin) ok();
-  else toast('密碼不對喔');
+  readPin(`${why}：請輸入家長密碼（4 位數字）`, v => {
+    if (v === null) return;
+    if (v.trim() === c.pin) ok();
+    else toast('密碼不對喔');
+  });
+}
+/* 輸入密碼的小視窗。本來用瀏覽器的 prompt()，打的字會直接顯示出來，小孩在旁邊就看到了
+   （家長：輸入密碼要預設隱藏）。改成自己的視窗：預設是 ●●●●，iPad 跳數字鍵盤，
+   旁邊 👁 可以按著看一下（設新密碼時怕打錯）。
+   疊在最上層（比休息畫面還高）：休息中、救援畫面上也會用到，不能把底下的視窗蓋掉。 */
+function readPin(msg, cb) {
+  const old = document.getElementById('pinBox'); if (old) old.remove();
+  const ov = el('div', 'pin-ov'); ov.id = 'pinBox';
+  const card = el('div', 'pin-card');
+  card.appendChild(el('div', 'pin-msg', msg));
+  const row = el('div', 'pin-row');
+  const inp = el('input', 'pin-in');
+  inp.type = 'password'; inp.inputMode = 'numeric'; inp.pattern = '[0-9]*'; inp.maxLength = 4; inp.size = 4;
+  inp.autocomplete = 'off'; inp.setAttribute('autocorrect', 'off'); inp.setAttribute('autocapitalize', 'off');
+  const eye = el('button', 'pin-eye', '👁');
+  eye.type = 'button'; eye.title = '看一下密碼';
+  eye.onclick = () => { inp.type = inp.type === 'password' ? 'text' : 'password'; inp.focus(); };
+  row.append(inp, eye);
+  card.appendChild(row);
+  const done = v => { ov.remove(); cb(v); };
+  const okB = el('button', 'big', '確定'), noB = el('button', 'big alt', '取消');
+  okB.onclick = () => done(inp.value);
+  noB.onclick = () => done(null);
+  inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); done(inp.value); } else if (e.key === 'Escape') done(null); };
+  card.append(okB, noB);
+  ov.appendChild(card);
+  document.body.appendChild(ov);
+  setTimeout(() => { try { inp.focus(); } catch (e) {} }, 30);
+  return inp;
 }
 // 設定分頁裡的「⏰ 休息提醒」
 function restSettings(body) {
@@ -9299,15 +9335,14 @@ function restSettings(body) {
     row('休息幾分鐘', REST_BREAK_OPTS, c.rest, (c2, v) => { c2.rest = v; });
   }
   const pinBtn = el('button', 'mini', c.pin ? '🔑 改家長密碼' : '🔑 設定家長密碼');
-  pinBtn.onclick = () => askPin('修改家長密碼', () => {
-    const v = window.prompt('請輸入新的 4 位數家長密碼（留空＝不用密碼）', '');
+  pinBtn.onclick = () => askPin('修改家長密碼', () => readPin('請輸入新的 4 位數家長密碼（留空＝不用密碼）', v => {
     if (v === null) return;
     const t = v.trim();
     if (t && !/^\d{4}$/.test(t)) { toast('密碼要是 4 位數字'); return; }
     const c2 = restCfg(); c2.pin = t; saveRestCfg(c2); restUnlocked = false;
     toast(t ? '🔑 家長密碼設好了，請記下來' : '已經取消家長密碼');
     renderTab();
-  });
+  }));
   body.appendChild(pinBtn);
 }
 setInterval(() => { try { restTick(); } catch (e) { /* 提醒出錯也不能讓遊戲壞掉 */ } }, 1000);

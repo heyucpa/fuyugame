@@ -2066,21 +2066,43 @@
       if (added.some(function(f){ return removed.indexOf(f) < 0; })) fails.push('連開兩次釣魚，事件累積起來了');
     } finally { document.addEventListener = realAdd; document.removeEventListener = realRemove; }
     // (3) 家長密碼每次都要問
-    var prompts = 0, realPrompt2 = window.prompt;
+    var prompts = 0, realPrompt2 = readPin;
     saveRestCfg({ on: true, play: 20, rest: 5, pin: '4321' });
-    window.prompt = function(){ prompts++; return '4321'; };
+    readPin = function(m, cb){ prompts++; cb('4321'); };
     var okN = 0;
     askPin('a', function(){ okN++; }); askPin('b', function(){ okN++; });
     if (prompts !== 2 || okN !== 2) fails.push('家長密碼輸入一次後就不再問（問了 ' + prompts + ' 次）');
+    // 輸入密碼要預設隱藏（●●●●）；可以按 👁 看一下；取消就什麼都不做；iPad 跳數字鍵盤
+    readPin = realPrompt2;
+    var pinOk = 0, pinGot = 'x';
+    askPin('測試', function(){ pinOk++; });
+    var pinIn = document.querySelector('#pinBox input');
+    if (!pinIn) fails.push('輸入密碼沒有跳出密碼框');
+    else {
+      if (pinIn.type !== 'password') fails.push('輸入密碼沒有預設隱藏（type=' + pinIn.type + '）');
+      if (pinIn.inputMode !== 'numeric') fails.push('輸入密碼不是數字鍵盤');
+      var pcR = document.querySelector('#pinBox .pin-card').getBoundingClientRect();
+      if (pcR.right > innerWidth + 1 || pcR.left < -1) fails.push('密碼框超出畫面（' + Math.round(pcR.left) + '～' + Math.round(pcR.right) + '）');
+      if (!(parseInt(getComputedStyle(document.getElementById('pinBox')).zIndex, 10) > 100)) fails.push('密碼框會被休息畫面蓋住（休息中要用密碼提早結束）');
+      document.querySelector('#pinBox .pin-eye').onclick();
+      if (pinIn.type !== 'text') fails.push('按 👁 看不到密碼');
+      pinIn.value = '4321';
+      [].filter.call(document.querySelectorAll('#pinBox button'), function(b){ return b.textContent === '確定'; })[0].onclick();
+      if (pinOk !== 1 || document.getElementById('pinBox')) fails.push('密碼框打對了按確定沒有通過或沒有關掉');
+    }
+    askPin('測試', function(){ pinOk++; });
+    document.querySelector('#pinBox input').value = '4321';   // 打對了，但按取消：還是不算
+    [].filter.call(document.querySelectorAll('#pinBox button'), function(b){ return b.textContent === '取消'; })[0].onclick();
+    if (pinOk !== 1) fails.push('密碼框按取消也通過了');
     // 危險的按鈕也要密碼：重新開始
     var realReset = confirmReset, resetCalled = 0;
     confirmReset = function(){ resetCalled++; };
-    window.prompt = function(){ return '0000'; };
+    readPin = function(m, cb){ cb('0000'); };
     openTab('save');
     var resetBtn = [].filter.call(document.querySelectorAll('#tabBody button'), function(b){ return /重新開始（清除存檔）/.test(b.textContent); })[0];
-    if (resetBtn) { resetBtn.onclick(); if (resetCalled) fails.push('密碼錯了還能按「重新開始」'); window.prompt = function(){ return '4321'; }; resetBtn.onclick(); if (!resetCalled) fails.push('密碼對了卻不能按「重新開始」'); }
+    if (resetBtn) { resetBtn.onclick(); if (resetCalled) fails.push('密碼錯了還能按「重新開始」'); readPin = function(m, cb){ cb('4321'); }; resetBtn.onclick(); if (!resetCalled) fails.push('密碼對了卻不能按「重新開始」'); }
     else fails.push('找不到「重新開始」按鈕');
-    confirmReset = realReset; window.prompt = realPrompt2;
+    confirmReset = realReset; readPin = realPrompt2;
     localStorage.removeItem(REST_CFG_KEY);              // 回到預設，後面的測試要用
     // 寬限中打開新的小遊戲：直接開始休息（等一下下）
     saveRestCfg({ on: true, play: 20, rest: 5, pin: '' });
@@ -2849,7 +2871,7 @@
        看不到畫面不算時間、休息完寵物不會變餓、重新整理躲不掉、家長密碼 */
     var realToast2 = toast, toasts2 = [];
     toast = function(t){ toasts2.push(t); };
-    var realPrompt = window.prompt;
+    var realPrompt = readPin;
     var restReset = function(cfg){ localStorage.removeItem(REST_STATE_KEY); saveRestCfg(Object.assign({ on: true, play: 20, rest: 5, pin: '' }, cfg || {})); restUnlocked = false; endRest(); resting = false; };
     var playFor = function(t, secs, visible){ for (var q = 0; q < secs; q += 4) { t += 4000; restTick(t, visible === undefined ? true : visible); if (resting) break; } return t; };
     try {
@@ -2917,28 +2939,28 @@
       if (resting) fails.push('提醒關掉了還是要休息');
       // 家長密碼：錯的不能改、對的可以；提早結束休息也要密碼
       restReset({ pin: '1234' });
-      window.prompt = function(){ return '0000'; };
+      readPin = function(m, cb){ cb('0000'); };
       openTab('save');
       var offBtn = [].filter.call(document.querySelectorAll('#tabBody .filter button'), function(b){ return b.textContent === '關'; })[0];
       if (!offBtn) fails.push('設定頁沒有休息提醒的開關');
       else {
         offBtn.onclick();
         if (!restCfg().on) fails.push('密碼錯了還是能把提醒關掉');
-        window.prompt = function(){ return '1234'; };
+        readPin = function(m, cb){ cb('1234'); };
         offBtn.onclick();
         if (restCfg().on) fails.push('密碼對了卻關不掉提醒');
       }
       restReset({ pin: '1234' }); T = 7e12; restTick(T, true); T = playFor(T, 21 * 60);
-      window.prompt = function(){ return '9999'; };
+      readPin = function(m, cb){ cb('9999'); };
       var pb = document.querySelector('#restOverlay .rest-parent');
       pb.onclick();
       if (!resting) fails.push('密碼錯了也能提早結束休息');
-      window.prompt = function(){ return '1234'; };
+      readPin = function(m, cb){ cb('1234'); };
       pb.onclick();
       if (resting) fails.push('家長密碼對了卻不能提早結束休息');
     } catch(e) { fails.push('休息提醒測試出錯：' + e.message); }
     finally {
-      toast = realToast2; window.prompt = realPrompt;
+      toast = realToast2; readPin = realPrompt;
       saveRestCfg({ on: false, play: 20, rest: 5, pin: '' });   // 後面的測試不要被休息畫面擋住
       localStorage.removeItem(REST_STATE_KEY); endRest(); resting = false; restUnlocked = false;
       $('#modal').hidden = true;
