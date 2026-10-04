@@ -379,6 +379,10 @@ button.pass { font: inherit; }
 .rest-time { font-size: 40px; font-weight: 800; font-variant-numeric: tabular-nums; color: #ffe08a; }
 .rest-sub { font-size: 15px; opacity: .85; }
 .rest-parent { margin-top: 18px; background: rgba(255,255,255,.15); color: #fff; border: 1px solid rgba(255,255,255,.4); border-radius: 999px; padding: 6px 14px; font-size: 13px; }
+.news { display: flex; flex-direction: column; gap: 8px; margin: 6px 0 12px; }
+.news-row { display: flex; align-items: center; gap: 10px; background: #fffaf0; border: 2px solid var(--line); border-radius: 14px; padding: 8px 10px; }
+.news-ic { font-size: 30px; flex: none; }
+.news-tx { font-size: 15px; font-weight: 700; color: #4a3b2a; line-height: 1.4; }
 .zoom-btn { display: none; position: absolute; top: 8px; right: 8px; z-index: 6; border: 2px solid var(--line);
   background: rgba(255,250,240,.92); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 700; }
 /* ③ 提示條玩過幾次就不顯示（拿著家具的時候還是會出現，那時候需要它） */
@@ -2972,6 +2976,54 @@ function slotInfo(id) {
    夠一次弄得有樣子，又不會一次玩完、沒東西可以賺。 */
 const START_BELLS = 100000;
 
+/* ===== 📣 更新公告 =====
+   之後每次加了新東西，就在最上面加一筆。每個存檔格第一次打開會跳出來一次
+   （兩個小孩各自都會看到），看過就不再跳；設定頁可以再看一次。
+   妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
+   newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
+const NEWS = [
+  { id: '2026-10-04', title: '小屋更新了！', lines: [
+    ['🏫', '可以去學校、公園、圖書館玩了！點上面的「🚗 出門」'],
+    ['🐮', '阿婆家的小農場會有動物跑來玩，收集動物圖鑑'],
+    ['🏷️', '東西都變便宜了！'],
+    ['📖', '圖鑑可以看到所有收集'],
+    ['😴', '玩一陣子要休息一下，眼睛才不會累喔']
+  ], newItems: [] }
+];
+const NEWS_FRESH_DAYS = 14;
+function unseenNews(g) { g = g || G; const seen = g.newsSeen || []; return NEWS.filter(n => !seen.includes(n.id)); }
+// 這件家具是不是「最近新進商店、還沒買過」
+function isNewItem(id) {
+  const now = Date.now();
+  return NEWS.some(n => (n.newItems || []).includes(id) && now - Date.parse(n.id) < NEWS_FRESH_DAYS * 864e5) && !(G.seen || {})[id];
+}
+function openNews(list) {
+  list = list && list.length ? list : NEWS.slice(0, 1);
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', '✨ ' + list[0].title));
+  list.slice(0, 2).forEach(n => {
+    const box = el('div', 'news');
+    n.lines.forEach(([ic, tx]) => { const r = el('div', 'news-row'); r.append(el('span', 'news-ic', ic), el('span', 'news-tx', tx)); box.appendChild(r); });
+    card.appendChild(box);
+  });
+  const ok = el('button', 'big', '好！去玩囉');
+  ok.onclick = () => { $('#modal').hidden = true; };
+  card.appendChild(ok);
+  $('#modal').hidden = false;
+  G.newsSeen = Array.from(new Set((G.newsSeen || []).concat(list.map(n => n.id))));
+  saveGame();
+  Sound.play('coin');
+}
+// 打開遊戲一會兒之後才跳（等畫面、休息畫面都穩定）；別的視窗開著就晚一點再試
+function maybeShowNews(tries) {
+  tries = tries || 0;
+  const list = unseenNews();
+  if (!list.length || tries > 20) return;
+  if (!$('#modal').hidden || (typeof resting !== 'undefined' && resting) || (typeof hold !== 'undefined' && hold)) { setTimeout(() => maybeShowNews(tries + 1), 3000); return; }
+  openNews(list);
+}
+
 function newGame() {
   const g = {
     bells: START_BELLS,
@@ -3004,6 +3056,7 @@ function newGame() {
     /* 新存檔一開始就是 10 萬，等於補償已經給了。
        本來沒寫這一行：新開的存檔沒有旗標，第二次打開時被當成舊存檔，
        她花剩多少都會被補回 10 萬——每開一間新的就白送一次錢。 */
+    newsSeen: NEWS.map(n => n.id), // 新開的存檔不用看以前的更新公告
     topup100k: true,
     supplyAt: Date.now(),                       // 上次送小安素的時間
     supplyWho: 0,                               // 下一次輪到誰送（媽媽、爸爸輪流）
@@ -3052,6 +3105,7 @@ function normalizeSave(g) {
     if (r.d < MIN_ROOM_SIZE) r.d = MIN_ROOM_SIZE;
   });
   const out = Object.assign(newGame(), g);
+  if (!Array.isArray(g.newsSeen)) out.newsSeen = []; // 舊存檔：還沒看過任何公告，要讓她看到這次更新了什麼
   /* 補償也要發給「已經存在的存檔」——只改 newGame() 的話，
      她那台已經有存檔了，newGame() 根本不會再跑，一毛都拿不到。
      補過一次就記在存檔裡，之後不管她花到剩多少都不再補。 */
@@ -7645,7 +7699,7 @@ function tabShop(body) {
       else toast('鈴錢不夠，去賺一點吧！');
     }, G.inv[def.id]);
     if (G.bells < def.price) card.classList.add('dim');
-    if (def.fresh) card.appendChild(el('span', 'tag new', '新'));
+    if (def.fresh || isNewItem(def.id)) card.appendChild(el('span', 'tag new', '新'));
     grid.appendChild(card);
   });
   body.appendChild(grid);
@@ -8282,6 +8336,9 @@ function applyBackup(txt) {
 
 function tabSave(body) {
   const code = makeBackup();
+  const nb = el('button', 'mini', '📣 看最近的更新');
+  nb.onclick = () => openNews(NEWS.slice(0, 1));
+  body.appendChild(nb);
   restSettings(body);
 
   /* ── 存檔格 ──
@@ -8635,6 +8692,7 @@ function openFishing() {
 // ── 啟動 ──
 refreshTop();
 renderTab();
+setTimeout(() => maybeShowNews(), 1500);
 updateHoldUI();
 resize();
 // 好久沒來玩：小可愛開心打招呼

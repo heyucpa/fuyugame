@@ -1326,6 +1326,51 @@
       fails.push('蝴蝶相簿顯示不對');
     var md8 = document.querySelector('#modal'); if (md8) md8.hidden = true;
 
+    /* ㊾ 更新公告：舊存檔要看到、新存檔不用看、看過不再跳、有別的視窗時不要蓋掉、
+       設定頁可以再看；新進商店的家具兩週內掛「新」，買過就不掛 */
+    var oldSave = JSON.parse(JSON.stringify(G)); delete oldSave.newsSeen;
+    if (!unseenNews(normalizeSave(oldSave)).length) fails.push('舊存檔看不到這次的更新公告');
+    if (unseenNews(newGame()).length) fails.push('新開的存檔還要看以前的更新公告');
+    var keepSeen = G.newsSeen;
+    G.newsSeen = []; saveGame();                         // 存檔裡也先改成「沒看過」
+    $('#modal').hidden = false; $('#modalCard').innerHTML = '<p id="busy">小遊戲中</p>';
+    maybeShowNews();                                     // 有別的視窗開著：不能把它蓋掉（晚點再試）
+    if (!document.getElementById('busy')) fails.push('更新公告把正在開的視窗蓋掉了');
+    $('#modal').hidden = true;
+    maybeShowNews();
+    if ($('#modal').hidden || !document.querySelector('#modalCard .news')) fails.push('有沒看過的公告卻沒有跳出來');
+    else if (document.querySelectorAll('#modalCard .news-ic').length !== NEWS[0].lines.length) fails.push('公告每一行前面沒有圖示');
+    if (unseenNews().length) fails.push('看過公告還算沒看過');
+    var reloaded = normalizeSave(JSON.parse(localStorage.getItem(SAVE_KEY)));
+    if (unseenNews(reloaded).length) fails.push('看過公告沒有存起來，下次打開又會跳');
+    $('#modal').hidden = true;
+    maybeShowNews();
+    if (!$('#modal').hidden) fails.push('看過的公告又跳出來');
+    openTab('save');
+    var nbtn = [].filter.call(document.querySelectorAll('#tabBody button'), function(b){ return /最近的更新/.test(b.textContent); })[0];
+    if (!nbtn) fails.push('設定頁沒有「看最近的更新」');
+    else { nbtn.onclick(); if ($('#modal').hidden) fails.push('設定頁的「看最近的更新」打不開'); }
+    $('#modal').hidden = true;
+    // 新進商店的家具掛「新」
+    var testDef = FURNITURE.filter(function(d){ return !d.gift && !d.fresh; })[0];
+    var keepSeenItem = G.seen[testDef.id];
+    delete G.seen[testDef.id];
+    var today = new Date().toISOString().slice(0, 10);
+    NEWS.unshift({ id: today, title: 't', lines: [['🆕', 'x']], newItems: [testDef.id] });
+    var tagged = function(){ shopKind = 'all'; shopTheme = 'all'; openTab('shop');
+      var card = [].filter.call(document.querySelectorAll('#tabBody .card'), function(c){ return c.textContent.indexOf(testDef.name) >= 0; })[0];
+      return !!(card && card.querySelector('.tag.new')); };
+    if (!tagged()) fails.push('新進商店的家具沒有掛「新」');
+    G.seen[testDef.id] = 1;
+    if (tagged()) fails.push('買過的新家具還掛著「新」');
+    delete G.seen[testDef.id];
+    NEWS[0].id = '2020-01-01';
+    if (tagged()) fails.push('很久以前進的家具還掛著「新」');
+    NEWS.shift();
+    if (keepSeenItem) G.seen[testDef.id] = keepSeenItem;
+    G.newsSeen = keepSeen;
+    openTab('inv');
+
     /* ㊽ 休息提醒：玩滿時間就休息、提前提醒、玩小遊戲時等她玩完、離開夠久算休息過、
        看不到畫面不算時間、休息完寵物不會變餓、重新整理躲不掉、家長密碼 */
     var realToast2 = toast, toasts2 = [];
