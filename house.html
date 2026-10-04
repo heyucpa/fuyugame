@@ -369,6 +369,16 @@ button.pass { font: inherit; }
   background: linear-gradient(var(--sky1), var(--sky2));
 }
 #view { width: 100%; height: 100%; display: block; touch-action: none; }
+.rest-overlay { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; padding: 24px; text-align: center; background: linear-gradient(#2b3a67, #4a5a8a); color: #fff; }
+.rest-overlay[hidden] { display: none; }
+.rest-zz { font-size: 96px; animation: restBob 2.4s ease-in-out infinite; }
+@keyframes restBob { 50% { transform: translateY(-10px); } }
+.rest-title { font-size: 26px; font-weight: 800; }
+.rest-tips { font-size: 18px; line-height: 1.8; white-space: pre-line; }
+.rest-time { font-size: 40px; font-weight: 800; font-variant-numeric: tabular-nums; color: #ffe08a; }
+.rest-sub { font-size: 15px; opacity: .85; }
+.rest-parent { margin-top: 18px; background: rgba(255,255,255,.15); color: #fff; border: 1px solid rgba(255,255,255,.4); border-radius: 999px; padding: 6px 14px; font-size: 13px; }
 .zoom-btn { display: none; position: absolute; top: 8px; right: 8px; z-index: 6; border: 2px solid var(--line);
   background: rgba(255,250,240,.92); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 700; }
 /* ③ 提示條玩過幾次就不顯示（拿著家具的時候還是會出現，那時候需要它） */
@@ -6771,10 +6781,9 @@ function draw() {
 }
 
 let lastFrame = performance.now(), nextPetTick = 0, nextCard = 0;
-(function loop(now) {
-  now = now || performance.now();
-  const dt = Math.max(0, Math.min(.05, (now - lastFrame) / 1000));
-  lastFrame = now;
+// 一格畫面的遊戲邏輯。休息中整個暫停（也比較省電）；回傳有沒有動
+function gameStep(dt, now) {
+  if (resting) return false;
   fufuUpdate(dt, now);
   fufuArrivalCheck();
   petUpdate(dt, now);
@@ -6785,6 +6794,13 @@ let lastFrame = performance.now(), nextPetTick = 0, nextCard = 0;
   if (hold) $('#btnPlace').disabled = !hold.ok; // 放不下的位置，「放這裡」按鈕變灰
   draw(); // 小可愛一直在動，每幀都重畫
   dirty = false;
+  return true;
+}
+(function loop(now) {
+  now = now || performance.now();
+  const dt = Math.max(0, Math.min(.05, (now - lastFrame) / 1000));
+  lastFrame = now;
+  gameStep(dt, now);
   requestAnimationFrame(loop);
 })();
 
@@ -7290,6 +7306,143 @@ const hintRuns = Number(lsGet(HINT_KEY) || 0) + 1;
 lsSet(HINT_KEY, String(hintRuns));
 if (hintRuns > HINT_RUNS) $('.stage').classList.add('hint-off');
 function hintShown() { const h = $('#hint'); return !!(h && h.offsetParent); }
+
+/* ===== ⏰ 休息提醒 =====
+   家長希望小學生不要一次玩太久：連續玩 N 分鐘就請她們休息 M 分鐘。
+   - 只算畫面開著的時間；關掉遊戲超過休息時間，回來就重新算（等於已經休息過）。
+   - 時間到的時候如果正在玩小遊戲，等她玩完（最多再等 3 分鐘），不要打斷一場遊戲。
+   - 提前 2 分鐘提醒「快要休息囉」，讓她有心理準備。
+   - 休息時整個遊戲暫停：小可愛、寵物、小農場的動物都在睡覺，寵物不會在休息時變餓。
+   - 重新整理也躲不掉（休息到幾點記在這台裝置上）。
+   - 家長密碼：設了之後，關掉提醒、改時間、提早結束休息都要輸入密碼。
+   這些是「這台裝置」的設定（記在瀏覽器），不是存檔的一部分，換存檔格也一樣有效。 */
+const REST_CFG_KEY = 'myHouse_restCfg', REST_STATE_KEY = 'myHouse_restState';
+const REST_PLAY_OPTS = [10, 15, 20, 30, 45, 60], REST_BREAK_OPTS = [3, 5, 10, 15];
+const REST_GRACE_MS = 3 * 60000, REST_WARN_S = 120;
+function restCfg() {
+  let c = null;
+  try { c = JSON.parse(lsGet(REST_CFG_KEY) || 'null'); } catch (e) { c = null; }
+  return Object.assign({ on: true, play: 20, rest: 5, pin: '' }, c || {});
+}
+function saveRestCfg(c) { lsSet(REST_CFG_KEY, JSON.stringify(c)); }
+function restState() {
+  let s = null;
+  try { s = JSON.parse(lsGet(REST_STATE_KEY) || 'null'); } catch (e) { s = null; }
+  return Object.assign({ played: 0, restUntil: 0, lastSeen: 0, dueAt: 0, warned: false }, s || {});
+}
+function saveRestState(s) { lsSet(REST_STATE_KEY, JSON.stringify(s)); }
+// 用 var：畫面的 loop 在載入時就先跑第一格（比這一行早），let 會在那時候丟錯、讓整段程式停掉
+var resting = false, restUnlocked = false;
+
+// 每秒呼叫一次。now、visible 可以從外面給（測試用）
+function restTick(now, visible) {
+  now = now || Date.now();
+  const c = restCfg(), s = restState();
+  if (s.restUntil > now) { showRest(s.restUntil); return; }
+  if (resting) endRest();
+  if (!c.on) { s.played = 0; s.lastSeen = now; s.dueAt = 0; s.warned = false; saveRestState(s); return; }
+  // 離開超過休息時間 → 算已經休息過
+  if (s.lastSeen && now - s.lastSeen >= c.rest * 60000) { s.played = 0; s.dueAt = 0; s.warned = false; }
+  if (visible === undefined ? document.visibilityState === 'visible' : visible) {
+    if (s.lastSeen && now - s.lastSeen < 5000) s.played += (now - s.lastSeen) / 1000;
+    s.lastSeen = now;
+  }
+  const left = c.play * 60 - s.played;
+  if (left <= REST_WARN_S && left > 0 && !s.warned) {
+    s.warned = true;
+    toast(`⏰ 再玩 ${Math.ceil(left / 60)} 分鐘就要休息囉～`);
+    fufuSay('等一下要休息了，把這個玩完吧！', 3000);
+  }
+  if (left <= 0) {
+    if (!s.dueAt) s.dueAt = now;
+    const inGame = !$('#modal').hidden;
+    if (!inGame || now - s.dueAt >= REST_GRACE_MS) { // 正在玩小遊戲就等她玩完，最多再等 3 分鐘
+      s.restUntil = now + c.rest * 60000;
+      s.played = 0; s.dueAt = 0; s.warned = false;
+      saveRestState(s);
+      showRest(s.restUntil);
+      return;
+    }
+  }
+  saveRestState(s);
+}
+function showRest(until) {
+  let ov = document.getElementById('restOverlay');
+  if (!ov) {
+    ov = el('div', 'rest-overlay'); ov.id = 'restOverlay';
+    ov.append(el('div', 'rest-zz', '😴'), el('div', 'rest-title', '眼睛累了，我們休息一下吧！'),
+      el('div', 'rest-tips', '💧 去喝水\n👀 看看窗外遠的地方\n🙆 伸伸懶腰'),
+      el('div', 'rest-time', ''), el('div', 'rest-sub', `${charName()}和寵物們也在睡覺喔，等一下見！`));
+    const unlock = el('button', 'rest-parent', '👨‍👩‍👧 家長提早結束');
+    unlock.onclick = () => askPin('提早結束休息', () => { const s = restState(); s.restUntil = 0; s.lastSeen = Date.now(); saveRestState(s); endRest(); });
+    ov.appendChild(unlock);
+    document.body.appendChild(ov);
+  }
+  if (!resting) {
+    resting = true;
+    if (typeof closeGameWindow === 'function' && !$('#modal').hidden) { try { closeGameWindow(); } catch (e) {} $('#modal').hidden = true; }
+    Sound.play('click');
+  }
+  const left = Math.max(0, Math.ceil((until - Date.now()) / 1000));
+  ov.querySelector('.rest-time').textContent = `還要休息 ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+  ov.hidden = false;
+}
+function endRest() {
+  const ov = document.getElementById('restOverlay');
+  if (ov) ov.hidden = true;
+  if (!resting) return;
+  resting = false;
+  // 休息的時候寵物在睡覺：從現在開始重新算肚子餓，不扣休息那段
+  const now = Date.now();
+  G.pet.lastTick = now; G.kid.lastTick = now;
+  saveGame();
+  fufuSay('休息好了！我們繼續玩吧～', 3000);
+}
+// 家長密碼：沒有設密碼就直接通過；設了就要輸入對
+function askPin(why, ok) {
+  const c = restCfg();
+  if (!c.pin || restUnlocked) { ok(); return; }
+  const v = window.prompt(`${why}：請輸入家長密碼（4 位數字）`);
+  if (v === null) return;
+  if (v.trim() === c.pin) { restUnlocked = true; ok(); }
+  else toast('密碼不對喔');
+}
+// 設定分頁裡的「⏰ 休息提醒」
+function restSettings(body) {
+  const c = restCfg();
+  body.appendChild(h3('⏰ 休息提醒（家長設定）'));
+  body.appendChild(note(c.on
+    ? `現在：連續玩 ${c.play} 分鐘，就休息 ${c.rest} 分鐘。` + (c.pin ? '已經設了家長密碼。' : '建議設一個家長密碼，小朋友才不會自己關掉。')
+    : '現在：休息提醒是關掉的。'));
+  const row = (label, opts, cur, set) => {
+    const r = el('div', 'filter themes');
+    r.appendChild(el('span', 'flabel', label));
+    opts.forEach(v => {
+      const b = el('button', v === cur ? 'on' : '', typeof v === 'number' ? `${v} 分` : v);
+      b.onclick = () => askPin('修改休息提醒', () => { const c2 = restCfg(); set(c2, v); saveRestCfg(c2); renderTab(); });
+      r.appendChild(b);
+    });
+    body.appendChild(r);
+  };
+  row('提醒', ['開', '關'], c.on ? '開' : '關', (c2, v) => { c2.on = v === '開'; });
+  if (c.on) {
+    row('玩幾分鐘', REST_PLAY_OPTS, c.play, (c2, v) => { c2.play = v; });
+    row('休息幾分鐘', REST_BREAK_OPTS, c.rest, (c2, v) => { c2.rest = v; });
+  }
+  const pinBtn = el('button', 'mini', c.pin ? '🔑 改家長密碼' : '🔑 設定家長密碼');
+  pinBtn.onclick = () => askPin('修改家長密碼', () => {
+    const v = window.prompt('請輸入新的 4 位數家長密碼（留空＝不用密碼）', '');
+    if (v === null) return;
+    const t = v.trim();
+    if (t && !/^\d{4}$/.test(t)) { toast('密碼要是 4 位數字'); return; }
+    const c2 = restCfg(); c2.pin = t; saveRestCfg(c2); restUnlocked = false;
+    toast(t ? '🔑 家長密碼設好了，請記下來' : '已經取消家長密碼');
+    renderTab();
+  });
+  body.appendChild(pinBtn);
+}
+setInterval(() => { try { restTick(); } catch (e) { /* 提醒出錯也不能讓遊戲壞掉 */ } }, 1000);
+
 </script>
 <script>
 // 左側面板：收納、商店、壁紙地板、擴建、賺錢、圖鑑
@@ -8129,6 +8282,7 @@ function applyBackup(txt) {
 
 function tabSave(body) {
   const code = makeBackup();
+  restSettings(body);
 
   /* ── 存檔格 ──
      兩個小孩各玩各的。每一格是完全獨立的一間房子，互不影響。 */

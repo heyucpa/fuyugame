@@ -1326,6 +1326,91 @@
       fails.push('蝴蝶相簿顯示不對');
     var md8 = document.querySelector('#modal'); if (md8) md8.hidden = true;
 
+    /* ㊽ 休息提醒：玩滿時間就休息、提前提醒、玩小遊戲時等她玩完、離開夠久算休息過、
+       看不到畫面不算時間、休息完寵物不會變餓、重新整理躲不掉、家長密碼 */
+    var realToast2 = toast, toasts2 = [];
+    toast = function(t){ toasts2.push(t); };
+    var realPrompt = window.prompt;
+    var restReset = function(cfg){ localStorage.removeItem(REST_STATE_KEY); saveRestCfg(Object.assign({ on: true, play: 20, rest: 5, pin: '' }, cfg || {})); restUnlocked = false; endRest(); resting = false; };
+    var playFor = function(t, secs, visible){ for (var q = 0; q < secs; q += 4) { t += 4000; restTick(t, visible === undefined ? true : visible); if (resting) break; } return t; };
+    try {
+      var dc = restCfg();
+      if (!dc.on || dc.play !== 20 || dc.rest !== 5) fails.push('休息提醒預設不是「開、玩 20 分、休息 5 分」');
+      restReset();
+      $('#modal').hidden = true;
+      var T = 1e12; restTick(T, true);
+      T = playFor(T, 18 * 60 + 30);
+      if (resting) fails.push('還沒到 20 分鐘就要休息');
+      if (!toasts2.some(function(x){ return /再玩 \d 分鐘就要休息/.test(x); })) fails.push('快到時間沒有先提醒');
+      T = playFor(T, 3 * 60);
+      if (!resting) fails.push('玩滿 20 分鐘沒有休息');
+      var ov = document.getElementById('restOverlay');
+      if (!ov || ov.hidden) fails.push('休息畫面沒有出現');
+      var until = restState().restUntil;
+      if (Math.abs(until - T - 5 * 60000) > 5000) fails.push('休息時間不是 5 分鐘');
+      // 重新整理躲不掉：畫面關掉再打開（resting 歸零），時間還沒到就繼續休息
+      endRest(); resting = false;
+      restTick(T + 60000, true);
+      if (!resting) fails.push('重新整理之後就不用休息了');
+      // 休息完：畫面消失、寵物從現在開始重新算肚子餓
+      G.pet.lastTick = 0;
+      restTick(until + 1000, true);
+      if (resting || !ov.hidden) fails.push('休息時間到了，休息畫面沒有關掉');
+      if (Math.abs(G.pet.lastTick - Date.now()) > 3000) fails.push('休息完寵物的肚子沒有重新算（休息時會變餓）');
+      // 玩小遊戲時時間到：等她玩完；但最多再等 3 分鐘
+      restReset(); T = 2e12; restTick(T, true);
+      $('#modal').hidden = false;
+      T = playFor(T, 20 * 60 + 30);
+      if (resting) fails.push('正在玩小遊戲，時間一到就被打斷');
+      $('#modal').hidden = true; restTick(T + 1000, true);
+      if (!resting) fails.push('小遊戲玩完了還沒休息');
+      restReset(); T = 3e12; restTick(T, true);
+      $('#modal').hidden = false;
+      T = playFor(T, 20 * 60 + 3 * 60 + 30);
+      if (!resting) fails.push('一直開著小遊戲，超過 3 分鐘還是不用休息');
+      $('#modal').hidden = true;
+      // 畫面看不到（切到別的 App）不算時間
+      restReset(); T = 4e12; restTick(T, true);
+      T = playFor(T, 30 * 60, false);
+      if (resting || restState().played > 1) fails.push('沒有在看畫面也在算時間');
+      // 離開超過休息時間 → 回來重新算
+      restReset(); T = 5e12; restTick(T, true);
+      T = playFor(T, 15 * 60);
+      restTick(T + 6 * 60000, true);
+      if (restState().played > 10) fails.push('離開超過 5 分鐘回來，時間沒有重新算');
+      // 關掉提醒就不會休息
+      restReset({ on: false }); T = 6e12; restTick(T, true);
+      T = playFor(T, 60 * 60);
+      if (resting) fails.push('提醒關掉了還是要休息');
+      // 家長密碼：錯的不能改、對的可以；提早結束休息也要密碼
+      restReset({ pin: '1234' });
+      window.prompt = function(){ return '0000'; };
+      openTab('save');
+      var offBtn = [].filter.call(document.querySelectorAll('#tabBody .filter button'), function(b){ return b.textContent === '關'; })[0];
+      if (!offBtn) fails.push('設定頁沒有休息提醒的開關');
+      else {
+        offBtn.onclick();
+        if (!restCfg().on) fails.push('密碼錯了還是能把提醒關掉');
+        window.prompt = function(){ return '1234'; };
+        offBtn.onclick();
+        if (restCfg().on) fails.push('密碼對了卻關不掉提醒');
+      }
+      restReset({ pin: '1234' }); T = 7e12; restTick(T, true); T = playFor(T, 21 * 60);
+      window.prompt = function(){ return '9999'; };
+      var pb = document.querySelector('#restOverlay .rest-parent');
+      pb.onclick();
+      if (!resting) fails.push('密碼錯了也能提早結束休息');
+      window.prompt = function(){ return '1234'; };
+      pb.onclick();
+      if (resting) fails.push('家長密碼對了卻不能提早結束休息');
+    } catch(e) { fails.push('休息提醒測試出錯：' + e.message); }
+    finally {
+      toast = realToast2; window.prompt = realPrompt;
+      saveRestCfg({ on: false, play: 20, rest: 5, pin: '' });   // 後面的測試不要被休息畫面擋住
+      localStorage.removeItem(REST_STATE_KEY); endRest(); resting = false; restUnlocked = false;
+      $('#modal').hidden = true;
+    }
+
     /* ㊺ 手機讓房間大一點：放大按鈕、點分頁自動打開面板、記住選擇、
        放大時房間可以比螢幕寬並跟著小可愛、提示條玩過幾次就收起來（拿著家具時還是要有） */
     setBigRoom(false);
@@ -1808,7 +1893,23 @@
       // 壞檔案「不填進去」沒有東西可以等，就固定多等一下
       setTimeout(function(){
         if (tb.value) fails.push('選了不是備份的檔案，竟然還填進框裡');
-        report();
+        // 休息的時候整個遊戲要暫停：給小可愛一條路，等一下，她不能動
+        try {
+          G.away = null; closeGameWindow(); $('#modal').hidden = true;
+          var sx = fufu.x, sy = fufu.y;
+          resting = true;
+          var rmP = curRoom(), tries = [[rmP.w - 1, rmP.d - 1], [0, 0], [rmP.w - 1, 0], [0, rmP.d - 1]];
+          for (var ti2 = 0; ti2 < tries.length && !(fufu.path && fufu.path.length); ti2++) fufuWalkTo(tries[ti2][0], tries[ti2][1]);
+          if (!(fufu.path && fufu.path.length)) fails.push('暫停測試：找不到可以走的路');
+          var nowS = performance.now();
+          for (var gs = 0; gs < 30; gs++) gameStep(.05, nowS + gs * 50);
+          if (Math.abs(fufu.x - sx) > .01 || Math.abs(fufu.y - sy) > .01) fails.push('休息的時候小可愛還在走（遊戲沒有暫停）');
+          resting = false;
+          for (var gs2 = 0; gs2 < 30; gs2++) gameStep(.05, nowS + 2000 + gs2 * 50);
+          if (Math.abs(fufu.x - sx) < .01 && Math.abs(fufu.y - sy) < .01) fails.push('暫停測試：不休息的時候小可愛也沒走（測試本身不對）');
+          fufu.path = [];
+          report();
+        } catch(e) { fails.push('暫停測試出錯：' + e.message); report(); }
       }, 400);
     });
   } catch(e){ errs.push('THROW(file) '+e.message); report(); }
