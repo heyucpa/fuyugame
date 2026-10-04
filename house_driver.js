@@ -1326,6 +1326,101 @@
       fails.push('蝴蝶相簿顯示不對');
     var md8 = document.querySelector('#modal'); if (md8) md8.hidden = true;
 
+    /* 51 場景動畫：溜滑梯爬上去滑下來、鞦韆座位擺、沙堡一層一層、池塘的魚和鴨子會動、野餐點心變少；
+       冷卻中動畫照演、不跳「等幾分鐘」（零用錢的才說） */
+    travelArrive('park'); var rdd = document.getElementById('roomDoors'); if (rdd) rdd.remove();
+    var slideIt = curRoom().items.filter(function(x){ return x.id === 'slide'; })[0];
+    var t0r = performance.now();
+    G.actCD = {}; fufu.pose = null;
+    fufuStartAct('slide', t0r, slideIt, true);
+    if (!fufu.ride || fufu.ride.key !== 'slide' || fufu.act.until - t0r !== RIDES.slide.dur) fails.push('點溜滑梯沒有開始溜滑梯動畫');
+    var at = function(ms){ fufu.ride.start = performance.now() - ms; fufu.act.start = fufu.ride.start; return ridePos(performance.now()); };
+    var pClimb0 = at(50), pClimb = at(1400), pTop = at(1900), pMid = at(2600), pEnd = at(3300), pCheer = at(4000);
+    if (!(pClimb.z > pClimb0.z + 30) || pClimb.sit) fails.push('爬梯子沒有往上爬（' + pClimb0.z.toFixed(0) + '→' + pClimb.z.toFixed(0) + '）');
+    if (!pTop.sit || pTop.z < 50) fails.push('沒有坐在滑梯頂端');
+    if (!(pMid.z < pTop.z && pMid.z > pEnd.z) || !pMid.sit) fails.push('滑下來的時候高度沒有一路往下');
+    var dTop = Math.hypot(pTop.x - pClimb.x, pTop.y - pClimb.y), dEnd = Math.hypot(pEnd.x - pClimb.x, pEnd.y - pClimb.y);
+    if (!(dEnd > dTop + 1.5)) fails.push('沒有沿著滑道滑到另一頭');
+    if (!pCheer.cheer || pCheer.sit) fails.push('滑完沒有站起來歡呼');
+    // 越滑越快：後半段移動得比前半段多
+    var a1 = at(2000), a2 = at(2550), a3 = at(3100);
+    if (!(Math.hypot(a3.x - a2.x, a3.y - a2.y) > Math.hypot(a2.x - a1.x, a2.y - a1.y) * 1.5)) fails.push('溜滑梯沒有越滑越快');
+    // 結束：停在滑道尾巴那一格（能站的話）
+    fufu.act.until = performance.now() - 1;
+    fufuUpdateAct(performance.now());
+    if (fufu.ride) fails.push('溜滑梯結束了還在滑');
+    if (Math.abs(fufu.x - pEnd.x) > .6 || Math.abs(fufu.y - pEnd.y) > .6) fails.push('滑完沒有停在滑道尾巴（' + fufu.x.toFixed(1) + ',' + fufu.y.toFixed(1) + '）');
+    // 冷卻中：動畫一樣演，不跳等待提醒；拿錢的才說
+    var realToast3 = toast, tl = [];
+    toast = function(m){ tl.push(m); };
+    try {
+      G.actCD = { slide: Date.now() };
+      fufuStartAct('slide', performance.now(), slideIt, false);
+      if (!fufu.ride) fails.push('冷卻中就不能溜滑梯了（應該照樣可以玩）');
+      if (tl.some(function(m){ return /等/.test(m); })) fails.push('冷卻中溜滑梯跳出等待提醒：' + tl.join('|'));
+      G.away = { place: 'grandma', idx: 0 }; G.actCD = { hay: Date.now() }; tl = [];
+      relativePerk('hay');
+      if (!tl.some(function(m){ return /零用錢/.test(m); })) fails.push('零用錢冷卻中沒有說要等');
+      G.away = { place: 'park', idx: 0 };
+    } finally { toast = realToast3; }
+    fufu.ride = null; fufu.act = null;
+    // 每個地點的溜滑梯，出口那一格都要能站（不然滑完會卡在滑梯上）
+    Object.keys(PLACES).forEach(function(pk){ PLACES[pk].rooms.forEach(function(rm2){
+      rm2.items.forEach(function(it2){
+        if ((it2.id || it2[0]) !== 'slide') return;
+        var sx = it2.x != null ? it2.x : it2[1], sy = it2.y != null ? it2.y : it2[2], sr = it2.rot != null ? it2.rot : (it2[3] || 0);
+        var lp = rotPoint(FURN_BY_ID.slide, sr, 3.3, .5), lx2 = Math.floor(sx + lp.x), ly2 = Math.floor(sy + lp.y);
+        var bg = blockedGrid({ w: rm2.w, d: rm2.d, items: rm2.items.map(function(q){ return q.id ? q : { id: q[0], x: q[1], y: q[2], rot: q[3] || 0 }; }) });
+        if (lx2 < 0 || ly2 < 0 || lx2 >= rm2.w || ly2 >= rm2.d || bg[lx2][ly2]) fails.push(PLACES[pk].name + rm2.name + '的溜滑梯出口被擋住了');
+      });
+    }); });
+    // 鞦韆：座位跟著擺
+    travelArrive('school'); rdd = document.getElementById('roomDoors'); if (rdd) rdd.remove(); goPlaceRoom(1); rdd = document.getElementById('roomDoors'); if (rdd) rdd.remove();
+    var swIt = curRoom().items.filter(function(x){ return x.id === 'swing'; })[0], swDef = FURN_BY_ID.swing;
+    fufuStartAct('swing', performance.now(), swIt, true);
+    var seatAt = function(ms){ fufu.ride.start = performance.now() - ms;
+      var ps = itemLook(swDef, swIt.rot || 0, swIt, getParts(swDef, swIt.rot || 0)).filter(function(p){ return p.swingA === 1; })[0];
+      return ps ? ps.x + ps.y + ps.z / 10 : null; };
+    var s1 = seatAt(1500), s2 = seatAt(1980), s3 = seatAt(2470);
+    if (s1 === null || (Math.abs(s1 - s2) < .05 && Math.abs(s2 - s3) < .05)) fails.push('盪鞦韆的時候座位沒有動');
+    var rpS = (fufu.ride.start = performance.now() - 2000, ridePos(performance.now()));
+    if (!rpS || !rpS.sit || rpS.z < 15) fails.push('盪鞦韆沒有坐在座位上');
+    fufu.ride = null; fufu.act = null;
+    var still = itemLook(swDef, swIt.rot || 0, swIt, getParts(swDef, swIt.rot || 0)).filter(function(p){ return p.swingA === 1; })[0];
+    var base = getParts(swDef, swIt.rot || 0).filter(function(p){ return p.swingA === 1; })[0];
+    if (still.x !== base.x || still.y !== base.y) fails.push('沒在盪的鞦韆座位也在動');
+    // 沙堡：一層一層蓋、最多五層、過一陣子不見
+    travelArrive('park'); rdd = document.getElementById('roomDoors'); if (rdd) rdd.remove();
+    var sbIt = curRoom().items.filter(function(x){ return x.id === 'sandbox'; })[0], sbDef = FURN_BY_ID.sandbox;
+    delete itemState[sbIt.uid];
+    var nParts = function(){ return itemLook(sbDef, sbIt.rot || 0, sbIt, getParts(sbDef, sbIt.rot || 0)).length; };
+    var n0 = nParts(), counts = [];
+    for (var sb = 0; sb < 7; sb++) { fufuStartAct('sand', performance.now(), sbIt, true); fufu.act = null; counts.push(nParts()); }
+    if (!(counts[0] > n0 && counts[4] > counts[2] && counts[2] > counts[0])) fails.push('沙堡沒有一層一層變高：' + n0 + ' → ' + counts.join(','));
+    if (counts[6] !== counts[4] || stateOf(sbIt.uid).castle !== 5) fails.push('沙堡超過五層了');
+    stateOf(sbIt.uid).castleUntil = Date.now() - 1;
+    if (nParts() !== n0) fails.push('過了一陣子沙堡還在');
+    // 池塘：沒有人在玩也有魚在游、鴨子在漂
+    var pondIt = curRoom().items.filter(function(x){ return x.id === 'pond'; })[0], pondDef = FURN_BY_ID.pond;
+    var pp = itemLook(pondDef, pondIt.rot || 0, pondIt, getParts(pondDef, pondIt.rot || 0));
+    if (pp.length <= getParts(pondDef, pondIt.rot || 0).length) fails.push('池塘裡沒有魚在游');
+    var duckA = pp.filter(function(p){ return p.duck; })[0], duckB = getParts(pondDef, pondIt.rot || 0).filter(function(p){ return p.duck; })[0];
+    if (!duckA || (duckA.x === duckB.x && duckA.y === duckB.y)) fails.push('池塘的小鴨子沒有在漂');
+    // 野餐：點心越吃越少
+    var pmIt = curRoom().items.filter(function(x){ return x.id === 'picnic_mat'; })[0], pmDef = FURN_BY_ID.picnic_mat;
+    fufu.act = { key: 'picnic', uid: pmIt.uid, start: performance.now(), until: performance.now() + 9e9 };
+    var e0 = itemLook(pmDef, pmIt.rot || 0, pmIt, getParts(pmDef, pmIt.rot || 0)).length;
+    fufu.act.start = performance.now() - 4500;
+    var e1 = itemLook(pmDef, pmIt.rot || 0, pmIt, getParts(pmDef, pmIt.rot || 0)).length;
+    if (!(e0 > getParts(pmDef, pmIt.rot || 0).length && e1 < e0)) fails.push('野餐沒有拿出點心、或點心沒有變少');
+    var sandH = function(ms){ fufu.act.start = performance.now() - ms;
+      var sp = itemLook(pmDef, pmIt.rot || 0, pmIt, getParts(pmDef, pmIt.rot || 0)).filter(function(q){ return q.c === '#ffffff' && q.z === 1.5 && q.h > 1; });
+      return sp.length ? Math.max.apply(0, sp.map(function(q){ return q.h; })) : 0; };
+    var h0 = sandH(0), h3 = sandH(3000), h5 = sandH(4900);
+    if (!(h0 > h3 && h3 > 0)) fails.push('野餐的三明治沒有越吃越少（' + h0 + ' → ' + h3 + '）');
+    if (h5 !== 0) fails.push('吃完了三明治還在');
+    fufu.act = null; G.away = null; G.actCD = {};
+
     /* ㊿ ChatGPT 檢查出來的四個問題＋兩個建議 */
     // (1) 讀不出來的存檔：不能被新遊戲蓋掉、要另外留一份、存檔要回報失敗、畫面要提醒
     var goodRaw = localStorage.getItem(SAVE_KEY);

@@ -1594,9 +1594,9 @@ const PLACE_FURNITURE = [
       { x: .05, y: .45, w: .12, d: .12, z: 0, h: 72, c: '#7bd389' },
       { x: 1.83, y: .45, w: .12, d: .12, z: 0, h: 72, c: '#7bd389' },
       { x: .05, y: .45, w: 1.9, d: .12, z: 72, h: 5, c: '#5fa15a' },
-      { x: .42, y: .5, w: .02, d: .02, z: 18, h: 54, c: '#8a8f96' },
-      { x: .78, y: .5, w: .02, d: .02, z: 18, h: 54, c: '#8a8f96' },
-      { x: .36, y: .36, w: .5, d: .3, z: 15, h: 4, c: '#e8505b' },
+      { x: .42, y: .5, w: .02, d: .02, z: 18, h: 54, c: '#8a8f96', swingA: .5 },
+      { x: .78, y: .5, w: .02, d: .02, z: 18, h: 54, c: '#8a8f96', swingA: .5 },
+      { x: .36, y: .36, w: .5, d: .3, z: 15, h: 4, c: '#e8505b', swingA: 1 },
       { x: 1.2, y: .5, w: .02, d: .02, z: 18, h: 54, c: '#8a8f96' },
       { x: 1.56, y: .5, w: .02, d: .02, z: 18, h: 54, c: '#8a8f96' },
       { x: 1.14, y: .36, w: .5, d: .3, z: 15, h: 4, c: '#ffd35c' }
@@ -1627,9 +1627,9 @@ const PLACE_FURNITURE = [
       { x: .7, y: .5, w: .4, d: .3, z: 4.6, h: .6, c: '#5fa15a' },        // 荷葉
       { x: 1.9, y: 1.1, w: .35, d: .3, z: 4.6, h: .6, c: '#5fa15a' },
       { k: 'ball', x: 2.05, y: 1.22, z: 7, r: 2.4, c: '#ff9ec4' },        // 荷花
-      { x: 1.3, y: .9, w: .3, d: .2, z: 4.6, h: 5, c: '#ffffff' },         // 小鴨子
-      { k: 'ball', x: 1.52, y: 1, z: 11, r: 3, c: '#ffffff' },
-      { x: 1.62, y: .96, w: .1, d: .06, z: 10, h: 1.6, c: '#ffa53a' }
+      { x: 1.3, y: .9, w: .3, d: .2, z: 4.6, h: 5, c: '#ffffff', duck: true },         // 小鴨子
+      { k: 'ball', x: 1.52, y: 1, z: 11, r: 3, c: '#ffffff', duck: true },
+      { x: 1.62, y: .96, w: .1, d: .06, z: 10, h: 1.6, c: '#ffa53a', duck: true }
     ] },
   { id: 'picnic_mat', name: '野餐墊', theme: 'cute', w: 2, d: 2,
     parts: [0, 1, 2, 3].map(i => ({ x: .05 + (i % 2) * .95, y: .05 + Math.floor(i / 2) * .95, w: .95, d: .95, z: 0, h: 1.5, c: i % 3 ? '#ffffff' : '#e8505b' }))
@@ -1863,7 +1863,7 @@ const PLACES = {
       ['shade_tree', 0, 0], ['street_lamp', 3, 0], ['pond', 6, 0], ['street_lamp', 9, 0],
       ['park_bench', 3, 2, 1], ['display_tank', 0, 3], ['park_bench', 6, 2, 3], ['heart_sculpture', 7, 3],
       ['flower_bed', 6, 5], ['flower_bed', 8, 5],
-      ['slide', 0, 6], ['street_lamp', 3, 6], ['shade_tree', 8, 6],
+      ['slide', 0, 6], ['shade_tree', 8, 6], ['street_lamp', 9, 9], // 路燈不能擋在滑梯出口
       ['sandbox', 0, 8], ['picnic_mat', 2, 8], ['icecream_cart', 6, 8]
     ], wallItems: [] }
   ] },
@@ -2502,6 +2502,16 @@ function drawItem(ctx, def, gx, gy, rot, it) {
   parts.forEach(p => drawPart(ctx, p, gx, gy));
 }
 // 在未旋轉座標寫的額外零件，轉成家具目前的方向
+// 家具「沒轉之前」的座標 → 轉了 rot 次之後的座標（跟 rotatePart 同一套算法）
+function rotPoint(def, rot, x, y) {
+  let W = def.w, D = def.d;
+  for (let i = 0; i < rot; i++) { [x, y] = [y, W - x]; [W, D] = [D, W]; }
+  return { x, y };
+}
+function rotVec(def, rot, dx, dy) {
+  const a = rotPoint(def, rot, 0, 0), b = rotPoint(def, rot, dx, dy);
+  return { x: b.x - a.x, y: b.y - a.y };
+}
 function rotateParts(parts, def, rot) {
   let W = def.w, D = def.d;
   for (let i = 0; i < rot; i++) { parts = parts.map(p => rotatePart(p, W)); [W, D] = [D, W]; }
@@ -4592,7 +4602,7 @@ function itemLook(def, rot, it, parts) {
   const now = performance.now(), t = now / 1000;
   const active = fufu.act && fufu.act.uid === it.uid ? fufu.act.key : null;
   const st = itemState[it.uid];
-  const alwaysMoving = def.id === 'fishtank';
+  const alwaysMoving = def.id === 'fishtank' || def.id === 'pond'; // 池塘：魚一直游、小鴨子一直漂
   if (!active && !st && !alwaysMoving) return parts;
   const fire = st && st.fireUntil > now;
   let out = parts.map((p, i) => {
@@ -4603,6 +4613,11 @@ function itemLook(def, rot, it, parts) {
     if (p.fish) return Object.assign({}, p, { x: p.x + Math.sin(t * 1.6) * .16 });
     if (p.globe && active) return Object.assign({}, p, { c: Math.floor(t * 3) % 2 ? '#6bb6ff' : '#7bd389' });
     if (p.toy && active) return Object.assign({}, p, { z: p.z + Math.abs(Math.sin(t * 6 + p.x * 5)) * 8 });
+    if (p.duck) { const d = rotVec(def, rot, Math.sin(t * .5) * .5, Math.cos(t * .37) * .25); return Object.assign({}, p, { x: p.x + d.x, y: p.y + d.y, z: p.z + Math.sin(t * 3) * .6 }); }
+    if (p.swingA && active === 'swing') { // 鞦韆前後擺：座位擺最多，繩子擺一半
+      const sw = swingNow(), d = rotVec(def, rot, 0, sw.dy * p.swingA);
+      return Object.assign({}, p, { x: p.x + d.x, y: p.y + d.y, z: p.z + sw.dz * p.swingA });
+    }
     return p;
   });
   const extra = [];
@@ -4625,6 +4640,28 @@ function itemLook(def, rot, it, parts) {
     { x: .76, y: .25, w: .04, d: .42, z: 36, h: 1.5, c: '#8a5a33' },
     { x: 1.28, y: 1.28, w: .5, d: .5, z: 36, h: 1, c: '#ffffff' }, { k: 'ball', x: 1.53, y: 1.53, z: 41, r: 5, c: '#fff4d6' },
     { x: 1.2, y: 1.3, w: .04, d: .42, z: 36, h: 1.5, c: '#8a5a33' });
+  if (def.id === 'pond') { // 兩條小魚在水裡繞圈；點池塘的時候冒漣漪
+    [[1, .7, 1.3], [1.9, .55, -1]].forEach(([cx, ry, dir], i) => {
+      const a = t * .8 * dir + i * 2;
+      extra.push({ k: 'ball', x: cx + Math.cos(a) * .45, y: 1 + Math.sin(a) * ry * .6, z: 3.6, r: 2.6, c: i ? '#ffd35c' : '#ff8a3d' });
+    });
+    if (active) extra.push(...puffs(3, t, 1.1, (ph, i) => ({ k: 'ball', x: 1.2 + i * .35, y: .9 + (i % 2) * .4, z: 5, r: 2 + ph * 9, c: '#ffffff', a: .55 * (1 - ph) })));
+  }
+  if (def.id === 'sandbox') { // 沙堡：每玩一次多蓋一點，留著一陣子
+    const lv = st && st.castleUntil > Date.now() ? st.castle : 0; // castleUntil 用的是 Date.now()，不是 performance.now()
+    if (lv >= 1) extra.push({ x: .75, y: .75, w: .5, d: .5, z: 6.5, h: 7, c: '#e6c98a' });
+    if (lv >= 2) extra.push({ x: .82, y: .82, w: .36, d: .36, z: 13.5, h: 6, c: '#dcbc7a' });
+    if (lv >= 3) [[.72, .72], [1.18, .72], [.72, 1.18], [1.18, 1.18]].forEach(([x, y]) => extra.push({ x: x - .06, y: y - .06, w: .12, d: .12, z: 6.5, h: 13, c: '#d8b56f' }));
+    if (lv >= 4) extra.push({ x: .9, y: .9, w: .2, d: .2, z: 19.5, h: 6, c: '#e6c98a' });
+    if (lv >= 5) extra.push({ x: .99, y: .99, w: .02, d: .02, z: 25.5, h: 10, c: '#8a8f96' }, { x: 1.01, y: .99, w: .14, d: .02, z: 31, h: 4, c: '#e8505b' });
+    if (active === 'sand') extra.push(...puffs(4, t, 1.6, (ph, i) => ({ k: 'ball', x: .5 + i * .3, y: .5 + (i % 2) * .6, z: 7 + ph * 10, r: 1.6, c: '#e6c98a', a: 1 - ph })));
+  }
+  if (active === 'picnic' && def.id === 'picnic_mat') { // 野餐：拿出點心，一邊吃一邊少
+    const left = Math.max(0, 1 - (now - fufu.act.start) / 5000);
+    if (left > .2) extra.push({ x: 1.15, y: 1.05, w: .3, d: .22, z: 1.5, h: 6 * left + 1, c: '#ffffff' }, { x: 1.15, y: 1.05, w: .3, d: .22, z: 7.5 * left + 2.5, h: 1, c: '#e8505b' });
+    if (left > .5) extra.push({ k: 'ball', x: .6, y: 1.4, z: 4, r: 3, c: '#c58b62' }, { k: 'ball', x: .78, y: 1.5, z: 4, r: 3, c: '#c58b62' });
+    extra.push(...puffs(2, t, .8, (ph, i) => ({ k: 'ball', x: .9 + i * .3, y: .9, z: 12 + ph * 20, r: 2.5, c: '#ff9ec4', a: 1 - ph })));
+  }
   if (st && st.paint && def.id === 'easel') // 畫布上一筆一筆多出顏色
     for (let i = 0; i < st.paint; i++) extra.push({ x: .2 + (i * .37) % .5, y: .52, w: .14, d: .01, z: 28 + (i * 11) % 28, h: 6, c: SCREEN_COLORS[i % SCREEN_COLORS.length] });
   if (extra.length) out = sortBoxes(out.concat(rotateParts(extra, def, rot)).map(toBounds)).map(b => b.src);
@@ -4642,9 +4679,18 @@ function fufuStartAct(key, now, it, auto) {
   if (key === 'warm') st.fireUntil = now + 120000;
   if (key === 'dishes' && it.id === 'dining_table') st.dishesUntil = now + 120000;
   if (key === 'paint') st.paint = Math.min(12, (st.paint || 0) + 1);
+  if (key === 'sand') { // 沙堡每玩一次多蓋一層，最多五層；留十分鐘
+    st.castle = st.castleUntil > Date.now() ? Math.min(5, (st.castle || 0) + 1) : 1;
+    st.castleUntil = Date.now() + 10 * 60000;
+  }
   if (key === 'light') { st.lit = !st.lit; if (!st.lit) { fufu.path = []; fufu.act = { key, uid: it.uid, until: now + 2000, nextFx: now + 9e9, fxEvery: 9e9, n: 0 }; fufuSay('關燈囉～', 2200); Sound.play('click'); return; } }
   fufu.path = [];
-  fufu.act = { key, uid: it.uid, until: now + 5500, nextFx: now + 300, fxEvery: a.sound === 'note' ? 380 : 1000, n: 0 };
+  fufu.act = { key, uid: it.uid, start: now, until: now + 5500, nextFx: now + 300, fxEvery: a.sound === 'note' ? 380 : 1000, n: 0 };
+  if (RIDES[key]) { // 溜滑梯、盪鞦韆：真的爬上去、滑下來／坐上去擺
+    fufu.ride = { key, it, def, start: now, dur: RIDES[key].dur };
+    fufu.act.until = now + RIDES[key].dur;
+    fufu.back = false;
+  } else fufu.ride = null;
   if (key === 'pick') { // 阿婆的果園：摘水果（有次數限制，摘完要等水果長出來）
     const f = orchardPick(it.id);
     if (!f) { fufu.act = null; fufuSay(pickLine('orchardEmpty'), 3000); return; }
@@ -4734,8 +4780,8 @@ function fufuBurst(emoji) {
 
 function fufuUpdateAct(now) {
   const a = fufu.act;
-  if (a.uid && !curRoom().items.some(x => x.uid === a.uid)) { fufu.act = null; return; } // 家具被收走了
-  if (now > a.until) { fufu.act = null; fufu.back = false; fufu.idleUntil = now + 2500; return; }
+  if (a.uid && !curRoom().items.some(x => x.uid === a.uid)) { fufu.ride = null; fufu.act = null; return; } // 家具被收走了
+  if (now > a.until) { endRide(); fufu.act = null; fufu.back = false; fufu.idleUntil = now + 2500; return; }
   if (now < a.nextFx) return;
   a.nextFx = now + a.fxEvery;
   a.n++;
@@ -4920,6 +4966,11 @@ function fufuWander(room) {
 // ── 繪圖 ──
 function fufuDrawEntry() {
   if (fufu.pose) return null; // 坐著躺著時跟家具一起畫
+  const rp = ridePos(performance.now());
+  if (rp) { // 在溜滑梯、鞦韆上：排在那件家具的前面畫（她在家具上面）
+    const fp = footprint(fufu.ride.def, fufu.ride.it.rot || 0);
+    return { x: fufu.ride.it.x + fp.w - .2, y: fufu.ride.it.y + fp.d - .2, w: .4, d: .4, z: 0, h: FUFU_H + 60, drawFn: fufuDraw };
+  }
   return { x: fufu.x - .2, y: fufu.y - .2, w: .4, d: .4, z: 0, h: FUFU_H, drawFn: fufuDraw };
 }
 
@@ -4935,6 +4986,8 @@ function fufuBlink() {
 }
 
 function fufuDraw(ctx) {
+  const rp = ridePos(performance.now());
+  if (rp) { drawRiding(ctx, rp); return; }
   const p = iso(fufu.x, fufu.y);
   const walking = fufu.path.length > 0;
   const busy = fufu.act && ACTIVITIES[fufu.act.key]; // 做事中：身體跟著動作輕輕上下
@@ -4954,6 +5007,69 @@ function fufuDraw(ctx) {
   ctx.scale(fufu.facing * k, breathe * k);
   drawGirl(ctx, { t: fufu.t, walking, back: fufu.back && (walking || !!fufu.act), blink: fufuBlink(), outfit: currentOutfit(), prop, face: kidFace() });
   ctx.restore();
+}
+
+/* ===== 溜滑梯、盪鞦韆的動畫 =====
+   以前只是站在旁邊冒星星、講一句話，妹妹看不出來自己做了什麼。
+   現在：溜滑梯真的爬梯子 → 坐在上面 → 咻地滑下來 → 落地歡呼；
+   鞦韆真的坐上去，座位跟她一起前後擺。路線用家具「沒轉之前」的座標寫，
+   畫的時候跟著家具的方向轉。 */
+const RIDES = {
+  slide: { dur: 4800 },
+  swing: { dur: 6000 }
+};
+const lerp = (a, b, k) => a + (b - a) * Math.max(0, Math.min(1, k));
+function swingNow() {
+  const r = fufu.ride, t = r && r.key === 'swing' ? (performance.now() - r.start) / 1000 : 0;
+  const amp = Math.min(1, t / 1.2) * Math.min(1, Math.max(0, (6 - t) / 1.2)); // 慢慢盪高、最後慢慢停
+  const ph = Math.sin(t * 3.2) * amp;
+  return { dy: ph * .45, dz: Math.abs(ph) * 7 };
+}
+// 回傳 {x, y, z, sit, cheer}（房間座標）；不在騎乘中回傳 null
+function ridePos(now) {
+  const r = fufu.ride;
+  if (!r || !fufu.act || fufu.act.key !== r.key) return null;
+  const t = (now - r.start) / 1000;
+  let lx, ly, z, sit = false, cheer = false;
+  if (r.key === 'slide') {
+    if (t < 1.5) { const k = t / 1.5; lx = .38; ly = lerp(1.25, .55, k); z = lerp(0, 57, k); }          // 爬梯子
+    else if (t < 2) { const k = (t - 1.5) / .5; lx = lerp(.38, .72, k); ly = .5; z = 57; sit = true; }  // 坐到滑道口
+    else if (t < 3.1) { const k = ((t - 2) / 1.1) ** 2; lx = lerp(.72, 2.95, k); ly = .5; z = lerp(54, 6, k); sit = true; } // 咻——越滑越快
+    else if (t < 3.4) { const k = (t - 3.1) / .3; lx = lerp(2.95, 3.3, k); ly = .5; z = lerp(6, 0, k); sit = true; }
+    else { lx = 3.3; ly = .5; z = Math.abs(Math.sin((t - 3.4) * 7)) * 8; cheer = true; }                // 落地歡呼
+  } else {
+    const sw = swingNow();
+    lx = .61; ly = .5 + sw.dy; z = 19 + sw.dz; sit = true;
+  }
+  const p = rotPoint(r.def, r.it.rot || 0, lx, ly);
+  return { x: r.it.x + p.x, y: r.it.y + p.y, z, sit, cheer };
+}
+function drawRiding(ctx, rp) {
+  const p = iso(rp.x, rp.y, rp.z), k = kidHeightScale();
+  ctx.fillStyle = 'rgba(40,30,20,.18)';
+  const g = iso(rp.x, rp.y, 0);
+  ctx.beginPath(); ctx.ellipse(g.x, g.y, 12, 5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.save();
+  if (rp.sit) {
+    ctx.translate(p.x, p.y + 12 * k);
+    ctx.scale(fufu.facing * k, k);
+    drawGirl(ctx, { t: fufu.t, sit: true, blink: fufuBlink(), outfit: currentOutfit(), face: kidFace() });
+  } else {
+    ctx.translate(p.x, p.y);
+    ctx.scale(fufu.facing * k, k);
+    drawGirl(ctx, { t: fufu.t, walking: !rp.cheer, blink: fufuBlink(), outfit: currentOutfit(), face: kidFace() });
+  }
+  ctx.restore();
+}
+// 騎完：溜滑梯停在滑道尾端（那一格能站才過去），鞦韆回到原位
+function endRide() {
+  const r = fufu.ride;
+  if (!r) return;
+  fufu.ride = null;
+  if (r.key !== 'slide') return;
+  const p = rotPoint(r.def, r.it.rot || 0, 3.3, .5), gx = r.it.x + p.x, gy = r.it.y + p.y;
+  const room = curRoom(), blk = blockedGrid(room), ti = Math.floor(gx), tj = Math.floor(gy);
+  if (ti >= 0 && tj >= 0 && ti < room.w && tj < room.d && !blk[ti][tj]) { fufu.x = gx; fufu.y = gy; } // blockedGrid 是 [x][y]
 }
 
 function fufuDrawPosed(ctx) {
@@ -9655,7 +9771,8 @@ function relativePerk(key) {
     return true;
   }
   if (!relativeReady(key)) {
-    toast(`⏳ 等一下再來，還要 ${relativeMinsLeft(key)} 分鐘`);
+    // 溜滑梯、玩沙這種「玩」的，動畫照樣演、不跳提醒（不然像被拒絕）；只有拿零用錢的會說要等
+    if (P.money) toast(`💰 零用錢等 ${relativeMinsLeft(key)} 分鐘才有，現在還是可以幫忙喔`);
     return false;
   }
   G.actCD = G.actCD || {};
