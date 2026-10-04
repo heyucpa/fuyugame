@@ -1831,31 +1831,15 @@
     /* 52 第一輪 UX：可以玩的東西冒提示、點了有回應、目的地圖示、復原上一步、新收集大圖、休息前的今天成果 */
     G.away = null; closeGameWindow(); $('#modal').hidden = true; hideUndo();
     var rmU = G.rooms[G.cur];
-    // ④ 復原：從收納放一張床 → 復原 → 床回到收納、房間沒有那張床
+    // ④ 復原按鈕拿掉了（家長：不需要）：放家具、搬家具之後都不會出現
+    if (document.getElementById('btnUndo')) fails.push('畫面上還有「復原」按鈕');
     G.inv.wood_bed = (G.inv.wood_bed || 0) + 1;
-    var invBefore = G.inv.wood_bed, nBefore = rmU.items.length;
+    var nBefore = rmU.items.length;
     startHoldFromInv('wood_bed');
     if (!hold || !hold.ok) { for (var hx = 0; hx < rmU.w && !(hold && hold.ok); hx++) for (var hy = 0; hy < rmU.d; hy++) { hold.x = hx; hold.y = hy; hold.ok = canPlace(rmU, hold.def, hx, hy, 0, null); if (hold.ok) break; } }
     placeHold();
-    if (rmU.items.length !== nBefore + 1) fails.push('復原測試：床沒有放下去');
-    if ($('#btnUndo').hidden) fails.push('放好家具後沒有出現「復原」');
-    $('#btnUndo').onclick();
-    if (rmU.items.length !== nBefore || G.inv.wood_bed !== invBefore) fails.push('按復原沒有把床收回來（' + rmU.items.length + '/' + nBefore + '，收納 ' + G.inv.wood_bed + '/' + invBefore + '）');
-    if (!$('#btnUndo').hidden) fails.push('復原完按鈕還在');
-    // 搬動 → 復原回原位
-    var mv = rmU.items[0];
-    if (mv) {
-      var ox2 = mv.x, oy2 = mv.y, ouid = mv.uid;
-      startHoldFromRoom(mv);
-      var moved = false;
-      for (var mx = 0; mx < rmU.w && !moved; mx++) for (var my = 0; my < rmU.d; my++) { if ((mx !== ox2 || my !== oy2) && canPlace(rmU, hold.def, mx, my, hold.rot, hold.fromUid)) { hold.x = mx; hold.y = my; hold.ok = true; moved = true; break; } }
-      placeHold();
-      $('#btnUndo').onclick();
-      var back = rmU.items.filter(function(x){ return x.uid === ouid; })[0];
-      if (!back || back.x !== ox2 || back.y !== oy2) fails.push('搬動之後按復原，家具沒有回到原位');
-    }
-    // 拿起來又取消：什麼都沒改，不要出現復原
-    if (rmU.items[0]) { startHoldFromRoom(rmU.items[0]); cancelHold(); offerUndo(); if (!$('#btnUndo').hidden) fails.push('拿起來又放回去（取消），之後還留著可以復原的東西'); hideUndo(); }
+    if (rmU.items.length !== nBefore + 1) fails.push('放家具測試：床沒有放下去');
+    if (/復原/.test(document.querySelector('.stage').textContent)) fails.push('放好家具後出現「復原」');
     // ② 點家具會跳一下
     var tapIt = rmU.items[0];
     if (tapIt) {

@@ -414,9 +414,6 @@ button.pass { font: inherit; }
 .theme-txt b { font-size: 16px; }
 .theme-txt span { font-size: 13px; color: var(--muted); }
 .theme-ok { border-color: #5fae7c; background: #effaf2; }
-.undo-btn { position: absolute; left: 10px; bottom: 56px; z-index: 6; border: 2px solid #e7a94a; background: #fff6df; color: #a26d12;
-  border-radius: 999px; padding: 8px 16px; font-size: 15px; font-weight: 800; box-shadow: 0 3px 10px rgba(0,0,0,.15); }
-.undo-btn[hidden] { display: none; }
 #tabs button.dot { position: relative; }
 #tabs button.dot::after { content: ''; position: absolute; top: 4px; right: 6px; width: 10px; height: 10px; border-radius: 50%;
   background: #e8505b; box-shadow: 0 0 0 2px #fff; }
@@ -613,7 +610,6 @@ button.pass { font: inherit; }
   <section class="stage">
     <canvas id="view"></canvas>
     <button class="zoom-btn" id="btnZoom" title="放大房間">🔍 放大</button>
-    <button class="undo-btn" id="btnUndo" hidden>↩️ 復原</button>
     <button class="theme-btn" id="btnTheme">💡 小主題</button>
     <button class="photo-btn" id="btnPhoto" title="拍照">📷</button>
     <button class="dup-btn" id="btnDup" hidden>🧺 重複的寵物</button>
@@ -3308,7 +3304,6 @@ const NEWS = [
   { id: '2026-10-04-2', title: '小屋又更新了！', lines: [
     ['🛝', '溜滑梯、鞦韆真的可以玩了！沙坑會蓋沙堡'],
     ['💡', '可以玩的東西會冒出小圖示，點點看'],
-    ['↩️', '家具放錯了？按「復原」就回來了'],
     ['🔊', '繪本可以聽故事了'],
     ['⭐', '小遊戲的星星越多越難，綠框的最簡單'],
     ['🦋', '公園有蝴蝶在飛、魚會跳出水面'],
@@ -8589,23 +8584,16 @@ function awayNoEdit() {
   toast(`這是${PLACES[G.away.place].name}，不能搬家具喔！回家再布置吧`);
   return true;
 }
-/* ===== ↩️ 復原上一步 =====
-   放錯、收錯家具很挫折。改家具之前先記一份房間和收納的樣子，
-   做完之後 20 秒內房間左下角有「↩️ 復原」可以按（只記最近一步）。 */
+/* ===== ↩️ 復原上一步（已關掉） =====
+   本來做完家具之後 20 秒內左下角有「↩️ 復原」。家長覺得不需要，按鈕拿掉了；
+   offerUndo 不再顯示任何東西。snapUndo／doUndo 留著，之後要再打開只要改 offerUndo。 */
 let pendingUndo = null, undoSnap = null, undoTimer = 0;
 function snapUndo() {
   if (G.away) return;
   const r = G.rooms[G.cur];
   pendingUndo = { cur: G.cur, items: JSON.stringify(r.items), wallItems: JSON.stringify(r.wallItems || []), inv: JSON.stringify(G.inv) };
 }
-function offerUndo() {
-  if (!pendingUndo) return;
-  undoSnap = pendingUndo; pendingUndo = null;
-  const b = $('#btnUndo');
-  if (b) b.hidden = false;
-  clearTimeout(undoTimer);
-  undoTimer = setTimeout(hideUndo, 20000);
-}
+function offerUndo() { pendingUndo = null; }
 function hideUndo() { undoSnap = null; const b = $('#btnUndo'); if (b) b.hidden = true; }
 function doUndo() {
   const u = undoSnap;
@@ -9125,7 +9113,6 @@ function setBigRoom(on) {
   if (b) b.textContent = on ? '🔍 縮小' : '🔍 放大';
   lsSet(BIG_KEY, on ? '1' : '0');
 }
-$('#btnUndo').onclick = () => doUndo();
 $('#btnTheme').onclick = () => { Sound.play('click'); openThemes(); };
 $('#btnPhoto').onclick = () => takePhoto();
 $('#btnDup').onclick = () => { Sound.play('click'); openDupSell(); };
