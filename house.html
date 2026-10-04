@@ -412,6 +412,9 @@ button.pass { font: inherit; }
 .undo-btn { position: absolute; left: 10px; bottom: 56px; z-index: 6; border: 2px solid #e7a94a; background: #fff6df; color: #a26d12;
   border-radius: 999px; padding: 8px 16px; font-size: 15px; font-weight: 800; box-shadow: 0 3px 10px rgba(0,0,0,.15); }
 .undo-btn[hidden] { display: none; }
+.guide-hand { position: fixed; z-index: 9; font-size: 42px; line-height: 1; pointer-events: none;
+  transform: translate(-50%, -100%); animation: guideBob .8s ease-in-out infinite; filter: drop-shadow(0 2px 3px rgba(0,0,0,.25)); }
+@keyframes guideBob { 0%,100% { margin-top: -6px; } 50% { margin-top: 4px; } }
 .showcase { position: fixed; left: 50%; top: 42%; transform: translate(-50%, -50%); z-index: 80; pointer-events: none;
   background: #fffaf0; border: 4px solid #ffd35c; border-radius: 22px; padding: 14px 26px; text-align: center;
   box-shadow: 0 10px 30px rgba(0,0,0,.25); animation: scPop .35s ease-out, scOut .4s ease-in 2.2s forwards; }
@@ -613,6 +616,7 @@ button.pass { font: inherit; }
   <div class="modal-card" id="modalCard"></div>
 </div>
 <div class="toasts" id="toasts"></div>
+<div class="guide-hand" id="guideHand" hidden>👇</div>
 <script>
 // 遊戲資料：家具、壁紙、地板、魚、擴建價格
 // 家具 parts 單位：x/y/w/d 為格數（可小數），z/h 為像素高度
@@ -3308,6 +3312,7 @@ function newGame() {
   const g = {
     bells: START_BELLS - OPEN_GIFT_BELLS, // 剩下的由開幕包裹給
     openGift: false,                       // 🎁 新版開幕包裹打開了沒
+    guide: 'egg',                          // 第一次玩的小手教學走到哪一步（egg→place→shop→done）
     earned: 0,
     inv: { wood_bed: 1, wood_chair: 1, wood_table: 1, plant_s: 1 },
     walls: ['wp_cream'],
@@ -3409,6 +3414,7 @@ function normalizeSave(g) {
     if (r.d < MIN_ROOM_SIZE) r.d = MIN_ROOM_SIZE;
   });
   const out = Object.assign(newGame(), g);
+  if (g.guide === undefined) out.guide = 'done'; // 已經在玩的存檔不用教
   if (!Array.isArray(g.newsSeen)) out.newsSeen = []; // 舊存檔：還沒看過任何公告，要讓她看到這次更新了什麼
   /* 補償也要發給「已經存在的存檔」——只改 newGame() 的話，
      她那台已經有存檔了，newGame() 根本不會再跑，一毛都拿不到。
@@ -7950,6 +7956,81 @@ function drawActHint(ctx, now) {
   drawFloatIcon(ctx, p.x, p.y - k * 10, actEmoji(actHint.key), Math.sin(k * Math.PI));
 }
 
+/* ===== 👇 第一次玩的小手教學 =====
+   妹妹看不懂字，所以不寫說明，用一隻會上下跳的手指著「現在要點哪裡」：
+   ① 摸摸蛋（孵出來）→ ② 把家具放進房間（我的東西 → 點家具 → 放這裡）→ ③ 打開商店。
+   做到了就自己換下一步，不用按「下一步」；全部做完就不再出現。
+   只有新開的存檔才有（舊存檔讀進來直接當作學過了）。
+   爸媽送包裹的時候、有視窗、休息、出門時先藏起來。 */
+const GUIDE_SAY = { egg: '摸摸蛋，牠就會孵出來喔！', place: '來把家具放進房間吧！', shop: '去商店看看還有什麼！' };
+/* 第一次看要等一下：sellMode 宣告在後面那一段 <script>，一載入就去讀會當掉整個畫面迴圈；
+   guideTick 也整個包 try，教學出錯頂多手不見，遊戲照玩 */
+let guideNext = performance.now() + 1500, guideSaid = null, guideScrolled = null;
+function guideAdvance() {
+  if (G.guide === 'egg' && !isEgg()) G.guide = 'place';
+  if (G.guide === 'place' && G.rooms.some(r => r.items.length)) G.guide = 'shop';
+  if (G.guide === 'place' && !Object.keys(G.inv).some(id => G.inv[id] > 0) && !hold) G.guide = 'shop'; // 沒有家具可以放
+  if (G.guide === 'shop' && tab === 'shop') {
+    G.guide = 'done';
+    saveGame();
+    toast('🎉 學會了！接下來自己慢慢布置吧');
+    fufuSay('我會布置了！', 2600);
+  }
+}
+// 現在要指的地方（螢幕座標）；null＝這一刻不用指
+function guideTarget() {
+  const rectOf = node => {
+    if (!node || node.hidden || !node.offsetParent) return null;
+    const r = node.getBoundingClientRect();
+    if (!r.width || r.bottom < 0 || r.top > innerHeight) return null;
+    return { x: r.left + r.width / 2, y: r.top + 4 };
+  };
+  const tabBtn = name => rectOf(document.querySelector('#tabs button[data-tab="' + name + '"]'));
+  if (G.guide === 'egg') {
+    if (hold) return null;
+    const r = canvas.getBoundingClientRect(), k = petScale(), p = iso(pet.x, pet.y, pet.z || 0);
+    return { x: r.left + view.ox + p.x * view.scale, y: r.top + view.oy + (p.y - 30 * k) * view.scale };
+  }
+  if (G.guide === 'place') {
+    if (hold) {
+      // 平板／手機：指「✓ 放這裡」；用滑鼠的（沒有那顆按鈕）：指著拿著的家具，點下去就放好
+      const b = rectOf($('#btnPlace'));
+      if (b || hold.x == null) return b;
+      const r = canvas.getBoundingClientRect(), p = iso(hold.x + .5, hold.y + .5, 0);
+      return { x: r.left + view.ox + p.x * view.scale, y: r.top + view.oy + (p.y - 30) * view.scale };
+    }
+    if (tab !== 'inv' || sellMode) return tabBtn('inv');
+    /* 手機上家具卡片常常在面板下面看不到：捲過去（同一張卡片只捲一次，她自己往下滑不會被拉回來） */
+    const card = document.querySelector('#tabBody .grid .card');
+    if (card && card !== guideScrolled) {
+      guideScrolled = card;
+      const body = $('#tabBody'), br = body.getBoundingClientRect(), cr = card.getBoundingClientRect();
+      if (cr.bottom > Math.min(br.bottom, innerHeight) || cr.top < br.top) body.scrollTop += cr.top - br.top - 40;
+    }
+    return rectOf(card);
+  }
+  if (G.guide === 'shop') return hold ? null : tabBtn('shop');
+  return null;
+}
+function guideTick(now) {
+  try { guideTickInner(now); } catch (e) { const h = $('#guideHand'); if (h) h.hidden = true; }
+}
+function guideTickInner(now) {
+  const hand = $('#guideHand');
+  if (!hand) return;
+  if (G.guide === 'done' || !G.guide) { hand.hidden = true; return; }
+  if (now < guideNext) return;
+  guideNext = now + 100;
+  const busy = !G.openGift || giftVisit.state !== 'none' || G.away || !$('#modal').hidden || resting;
+  if (!busy) guideAdvance();
+  const t = busy || G.guide === 'done' ? null : guideTarget();
+  hand.hidden = !t;
+  if (!t) return;
+  hand.style.left = t.x + 'px';
+  hand.style.top = t.y + 'px';
+  if (guideSaid !== G.guide) { guideSaid = G.guide; if (GUIDE_SAY[G.guide]) fufuSay(GUIDE_SAY[G.guide], 3200); }
+}
+
 let lastFrame = performance.now(), nextPetTick = 0, nextCard = 0;
 // 一格畫面的遊戲邏輯。休息中整個暫停（也比較省電）；回傳有沒有動
 function gameStep(dt, now) {
@@ -7960,6 +8041,7 @@ function gameStep(dt, now) {
   visitorTick(dt, now);
   supplyTick(now);
   giftTick(now);
+  guideTick(now);
   if (now > nextPetTick) { nextPetTick = now + 5000; if (petTick()) saveGame(); }
   if (now > nextCard) { nextCard = now + 300; updatePetCard(); }
   if (hold) $('#btnPlace').disabled = !hold.ok; // 放不下的位置，「放這裡」按鈕變灰

@@ -2260,6 +2260,69 @@
     G = keepG; G.away = keepAway; G.openGift = true; saveGame(); giftReset();
     $('#modal').hidden = true;
 
+    /* 64 👇 第一次玩的小手教學：只有新存檔有；摸蛋 → 放家具（我的東西 → 點家具 → 放這裡）→ 打開商店；
+       做到了自動下一步；包裹還沒開／有視窗時不出現；做完存起來不再出現 */
+    var oldG2 = JSON.parse(JSON.stringify(G)); delete oldG2.guide;
+    var oldG2n = normalizeSave(oldG2);
+    if (!oldG2n || oldG2n.guide !== 'done') fails.push('已經在玩的存檔也跑出新手教學');
+    if (newGame().guide !== 'egg') fails.push('新存檔沒有新手教學');
+    var keepG3 = G, hand = $('#guideHand');
+    var near = function(t, x, y){ return t && !hand.hidden && Math.abs(parseFloat(hand.style.left) - x) < 30 && Math.abs(parseFloat(hand.style.top) - y) < 40; };
+    var center = function(node){ var r = node.getBoundingClientRect(); return [r.left + r.width / 2, r.top + 4]; };
+    G = newGame(); G.away = null; cancelHold(); openTab('inv'); $('#modal').hidden = true; giftReset();
+    guideNext = 0; guideTick(performance.now());
+    if (!hand.hidden) fails.push('包裹還沒打開，小手就出來了');
+    claimOpenGift(); giftReset(); $('#modal').hidden = true;
+    if (!isEgg()) fails.push('（教學測試）主要的寵物不是蛋');
+    guideNext = 0; guideTick(performance.now());
+    var cr = canvas.getBoundingClientRect(), pp = iso(pet.x, pet.y, 0);
+    if (hand.hidden) fails.push('新存檔打開包裹後，小手沒有出來指蛋');
+    else if (Math.abs(parseFloat(hand.style.left) - (cr.left + view.ox + pp.x * view.scale)) > 30) fails.push('小手沒有指著蛋');
+    $('#modal').hidden = false; guideNext = 0; guideTick(performance.now());
+    if (!hand.hidden) fails.push('有視窗開著，小手還浮在上面');
+    $('#modal').hidden = true;
+    // 孵出來 → 放家具
+    G.pet.stage = 'baby';
+    openTab('shop'); guideNext = 0; guideTick(performance.now());
+    if (G.guide !== 'place') fails.push('蛋孵出來了，教學沒有換到放家具（' + G.guide + '）');
+    var invB = document.querySelector('#tabs button[data-tab="inv"]'), ci = center(invB);
+    if (!near(true, ci[0], ci[1])) fails.push('不在「我的東西」時，小手沒有指「我的東西」');
+    openTab('inv'); $('#tabBody').scrollTop = 99999; guideScrolled = null; guideNext = 0; guideTick(performance.now());
+    var bR = $('#tabBody').getBoundingClientRect(), c0 = document.querySelector('#tabBody .grid .card').getBoundingClientRect();
+    if (c0.top < bR.top - 1 || c0.bottom > bR.bottom + 1) fails.push('家具卡片在面板外面，教學沒有捲過去');
+    var card1 = document.querySelector('#tabBody .grid .card'), cc = card1 && center(card1);
+    if (!cc || !near(true, cc[0], cc[1])) fails.push('在「我的東西」時，小手沒有指家具');
+    startHoldFromInv(Object.keys(G.inv).filter(function(id){ return G.inv[id] > 0; })[0]);
+    guideNext = 0; guideTick(performance.now());
+    if ($('#btnPlace').getBoundingClientRect().width) {     // 觸控：有「✓ 放這裡」
+      var cp = center($('#btnPlace'));
+      if (!near(true, cp[0], cp[1])) fails.push('拿著家具時，小手沒有指「放這裡」');
+    } else {                                                // 滑鼠：指著拿著的家具
+      var gpp = iso(hold.x + .5, hold.y + .5, 0);
+      if (!near(true, cr.left + view.ox + gpp.x * view.scale, cr.top + view.oy + (gpp.y - 30) * view.scale)) fails.push('拿著家具時，小手沒有指著家具');
+    }
+    // 觸控的版本：讓「✓ 放這裡」顯示出來，小手要指它
+    $('#btnPlace').style.display = 'inline-block';
+    guideNext = 0; guideTick(performance.now());
+    var cp2 = center($('#btnPlace'));
+    if (!near(true, cp2[0], cp2[1])) fails.push('平板上拿著家具時，小手沒有指「✓ 放這裡」');
+    $('#btnPlace').style.display = '';
+    cancelHold();
+    G.rooms[0].items.push({ uid: 999, id: 'wood_bed', x: 0, y: 0, rot: 0 });
+    guideNext = 0; guideTick(performance.now());
+    if (G.guide !== 'shop') fails.push('放好家具，教學沒有換到商店（' + G.guide + '）');
+    var cs = center(document.querySelector('#tabs button[data-tab="shop"]'));
+    if (!near(true, cs[0], cs[1])) fails.push('小手沒有指「商店」');
+    openTab('shop'); guideNext = 0; guideTick(performance.now());
+    if (G.guide !== 'done' || !hand.hidden) fails.push('打開商店後教學沒有結束');
+    var reG3 = normalizeSave(JSON.parse(localStorage.getItem(SAVE_KEY)));
+    if (!reG3 || reG3.guide !== 'done') fails.push('教學做完沒有存起來（下次又要教一次）');
+    // 出錯也不能讓畫面停住
+    var realIso = iso; G.guide = 'egg'; G.pet.stage = 'egg';
+    iso = function(){ throw new Error('x'); };
+    try { guideNext = 0; guideTick(performance.now()); } catch (e) { fails.push('教學出錯會讓整個畫面停住'); } finally { iso = realIso; }
+    G = keepG3; $('#guideHand').hidden = true; openTab('inv'); saveGame();
+
     /* ㊾ 更新公告：舊存檔要看到、新存檔不用看、看過不再跳、有別的視窗時不要蓋掉、
        設定頁可以再看；新進商店的家具兩週內掛「新」，買過就不掛 */
     var oldSave = JSON.parse(JSON.stringify(G)); delete oldSave.newsSeen;
