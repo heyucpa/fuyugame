@@ -1644,11 +1644,14 @@ Object.assign(FURNITURE_USE, {
   bunny_cushion: { use: 'sit', seats: [{ x: .5, y: .6, z: 10 }], front: [0, 1] },
   strawberry_sofa: { use: 'sit', seats: [{ x: .64, y: .62, z: 28 }, { x: 1.36, y: .62, z: 28 }], front: [0, 1] },
   cloud_sofa: { use: 'sit', seats: [{ x: .64, y: .62, z: 26 }, { x: 1.36, y: .62, z: 26 }], front: [0, 1] },
-  candy_bed: { use: 'lie', pillow: { x: 1, y: .62, z: 30 } }
+  candy_bed: { use: 'lie', pillow: { x: 1, y: .62, z: 30 } },
+  lemon_bed: { use: 'lie', pillow: { x: 1, y: .62, z: 30 } },
+  lemon_chair: { use: 'sit', seats: [{ x: .5, y: .55, z: 24 }], front: [0, 1] }
 });
 Object.assign(FURNITURE_ACT, { cream_wardrobe: 'dress', rainbow_shelf: 'read', cake_shelf: 'snack', unicorn_rocker: 'toys' });
 Object.assign(PET_BEDS, {
   candy_bed: { x: 1.2, y: 2.2, z: 30, withKid: true },
+  lemon_bed: { x: 1.2, y: 2.2, z: 30, withKid: true },
   pet_castle: { x: 1, y: 1, z: 16 },
   cat_tower: { x: .5, y: .5, z: 51 }
 });
@@ -3550,6 +3553,7 @@ function removeSlot(id) {
     localStorage.removeItem(slotSave(id));
     localStorage.removeItem(slotUndo(id));
     localStorage.removeItem('myHouse_photos:' + id); // 那一格的照片也一起刪
+    ['myHouse_lastBackup:', 'myHouse_firstSeen:', 'myHouseGame_rescue:'].forEach(k => localStorage.removeItem(k + id)); // 之後新開的存檔可能用到同一個編號，不能接到舊的紀錄
   } catch (e) {}
   if (id === localStorage.getItem(CUR_KEY)) {
     try { localStorage.setItem(CUR_KEY, rest[0].id); } catch (e) {}
@@ -3678,7 +3682,7 @@ function openGiftBox() {
     });
     card.querySelector('.gift-tx').replaceWith(box);
     btn.textContent = '謝謝爸爸媽媽！';
-    btn.onclick = () => { $('#modal').hidden = true; stopSpeak(); fufuSay('謝謝爸爸媽媽！', 2400); setTimeout(() => maybeShowNews(), 1500); };
+    btn.onclick = () => { $('#modal').hidden = true; stopSpeak(); fufuSay('謝謝爸爸媽媽！', 2400); }; // 公告由 giftThanks 叫（被休息畫面關掉也一樣）
     try { speak('包裹裡面有十萬元裝潢費，還有一顆寵物蛋，摸摸牠就會孵出來喔！'); } catch (e) {}
   };
   card.appendChild(btn);
@@ -3744,7 +3748,7 @@ function maybeShowNews(tries) {
   if (!G.openGift && SAVE_LOCKED == null) return;
   const list = unseenNews();
   if (!list.length || tries > 20) return;
-  if (!$('#modal').hidden || (typeof resting !== 'undefined' && resting) || (typeof hold !== 'undefined' && hold)) { setTimeout(() => maybeShowNews(tries + 1), 3000); return; }
+  if (!$('#modal').hidden || (typeof resting !== 'undefined' && resting) || (typeof hold !== 'undefined' && hold)) { setTimeout(() => maybeShowNews(tries + (resting ? 0 : 1)), 3000); return; } // 休息中不算次數：休息完還要記得跳
   openNews(list);
 }
 
@@ -5428,7 +5432,7 @@ function itemLook(def, rot, it, parts) {
   const fire = st && st.fireUntil > now;
   const tapK = st && st.tapAt && now - st.tapAt < 320 ? Math.sin((now - st.tapAt) / 320 * Math.PI) * 5 : 0;
   let out = parts.map((p, i) => {
-    if (tapK) p = Object.assign({}, p, { z: p.z + tapK });
+    if (tapK) p = Object.assign({}, p, p.k === 'ramp' ? { zHi: p.zHi + tapK, zLo: p.zLo + tapK } : { z: p.z + tapK });
     if (p.screen && active) return Object.assign({}, p, { c: SCREEN_COLORS[(Math.floor(t * 4) + i) % SCREEN_COLORS.length] });
     if (p.spin && active) return Object.assign({}, p, { c: Math.floor(t * 6) % 2 ? '#8fd3f4' : '#ffffff' });
     if (p.fire && fire) return Object.assign({}, p, { r: p.r + 3 + Math.sin(t * 12) * 1.5, c: Math.sin(t * 9) > 0 ? '#ffb347' : '#ff7a3c' });
@@ -7972,6 +7976,7 @@ function giftDrop(now) {
   for (let i = 0; i < room.w; i++) for (let j = 0; j < room.d; j++) {
     if (blk[i][j] || (i === kid[0] && j === kid[1])) continue;
     if (giftVisit.actors.some(({ a }) => Math.floor(a.x) === i && Math.floor(a.y) === j)) continue;
+    if ([pet].concat(compList()).some(a => a && Math.floor(a.x) === i && Math.floor(a.y) === j)) continue; // 也不要放在寵物腳下
     const d = Math.abs(i - kid[0]) + Math.abs(j - kid[1]);
     if (d < best) { best = d; spot = [i, j]; }
   }
@@ -7990,6 +7995,7 @@ function giftThanks(now) {
   giftVisit.state = 'thanks'; giftVisit.byeStep = 0;
   giftVisit.byeAt = now + 2200; giftVisit.actAt = now + 7000;
   giftVisit.actors.forEach(({ a }) => { a.happyUntil = now + 2000; a.squishV = -6; });
+  if (giftVisit.spec && giftVisit.spec.id === 'parents') setTimeout(() => maybeShowNews(), 1500);
 }
 function giftByeTick(now) {
   const bye = giftVisit.spec.bye;
@@ -8372,6 +8378,8 @@ function keepPhoto(data) {
   if (list.length >= PHOTO_MAX) return 'full';
   list.unshift({ id: photoId(), at: Date.now(), place: photoPlaceName(), data });
   if (!savePhotos(list)) return 'space';
+  // 照片塞得下、遊戲卻存不進去了：照片不能把存檔的位子吃掉，這張先不要
+  if (SAVE_LOCKED == null && !saveGame()) { savePhotos(list.slice(1)); saveGame(); return 'space'; }
   sessionLog.photos = (sessionLog.photos || 0) + 1;
   return 'ok';
 }
@@ -8532,7 +8540,7 @@ const THEMES = [
     { icon: '🍪', label: '同一間換上餅乾地板', test: () => anyRoom(r => r.wall === 'wp_candy' && r.floor === 'fl_cookie') },
     { icon: '🧁', label: '同一間再放 2 樣甜點風家具', test: () => anyRoom(r => r.wall === 'wp_candy' && r.floor === 'fl_cookie' && r.items.filter(it => (FURN_BY_ID[it.id] || {}).theme === 'sweet').length >= 2) }] },
   { id: 'petland', icon: '🐾', title: '寵物天地', desc: '把寵物屋布置得舒舒服服', steps: [
-    { icon: '🛏️', label: '寵物屋有 3 個寵物床、小屋或城堡', test: () => petHouseRoom().items.filter(it => PET_BEDS[it.id] && !PET_BEDS[it.id].withKid).length >= 3 },
+    { icon: '🏰', label: '寵物屋放一個寵物城堡或貓跳台', test: () => petHouseRoom().items.some(it => it.id === 'pet_castle' || it.id === 'cat_tower') },
     { icon: '🧸', label: '寵物屋有 2 樣玩具', test: () => petHouseRoom().items.filter(it => furnKind(it.id) === 'toy').length >= 2 }] },
   { id: 'goodnight', icon: '🌙', title: '晚安房間', desc: '床、夜燈、地毯，準備睡覺囉', steps: [
     { icon: '🛏️', label: '有一張床', test: () => anyRoom(r => r.items.some(it => FURNITURE_USE[it.id] && FURNITURE_USE[it.id].use === 'lie' && !FURNITURE_USE[it.id].bath)) },
@@ -9507,11 +9515,12 @@ function guideTarget() {
       const r = canvas.getBoundingClientRect(), p = iso(hold.x + .5, hold.y + .5, 0);
       return { x: r.left + view.ox + p.x * view.scale, y: r.top + view.oy + (p.y - 30) * view.scale };
     }
-    if (tab !== 'inv' || sellMode) return tabBtn('inv');
-    /* 手機上家具卡片常常在面板下面看不到：捲過去（同一張卡片只捲一次，她自己往下滑不會被拉回來） */
+    if (tab !== 'inv' || sellMode) { guideScrolled = null; return tabBtn('inv'); }
+    /* 手機上家具卡片常常在面板下面看不到：捲過去（每次打開「我的東西」只捲一次——
+       畫面重畫會換一張新的卡片，用卡片記的話會一直把她拉回來） */
     const card = document.querySelector('#tabBody .grid .card');
-    if (card && card !== guideScrolled) {
-      guideScrolled = card;
+    if (card && guideScrolled !== 'place') {
+      guideScrolled = 'place';
       const body = $('#tabBody'), br = body.getBoundingClientRect(), cr = card.getBoundingClientRect();
       if (cr.bottom > Math.min(br.bottom, innerHeight) || cr.top < br.top) body.scrollTop += cr.top - br.top - 40;
     }
@@ -9884,6 +9893,7 @@ function updateHoldUI() {
 canvas.addEventListener('pointerdown', e => {
   if (e.button !== 0 || hold || !$('#itemMenu').hidden || !$('#foodMenu').hidden) return;
   const w = toWorld(e);
+  if (giftBoxHit(w)) return;   // 包裹在寵物旁邊：先算點包裹（pointerup 會打開）
   if (petHit(w)) petPressStart(w, performance.now());
   else { const a = compHit(w); if (!a) return; compPressStart(a, w, performance.now()); }
   try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* 不支援就算了 */ }
@@ -10308,6 +10318,9 @@ function showRest(until) {
     resting = true;
     stopSpeak();
     try { stopMusicBox(); } catch (e) {}
+    // 相簿滿了正在選要換哪張：剛拍的那張先記著，休息完再問一次（不然照片就不見了）
+    const swapImg = !$('#modal').hidden && $('#modalCard').querySelector('img.photo-new');
+    restPhoto = swapImg ? swapImg.src : null;
     if (typeof closeGameWindow === 'function' && !$('#modal').hidden) { try { closeGameWindow(); } catch (e) {} $('#modal').hidden = true; }
     Sound.play('click');
   }
@@ -10335,6 +10348,7 @@ function sessionSummary() {
 function stopSpeak() { try { if (canSpeak()) speechSynthesis.cancel(); } catch (e) {} }
 // 視窗不管是怎麼關掉的（按好、點旁邊、被休息畫面關），都順便停止朗讀
 try { new MutationObserver(() => { if ($('#modal').hidden) stopSpeak(); }).observe($('#modal'), { attributes: true, attributeFilter: ['hidden'] }); } catch (e) {}
+var restPhoto = null;
 function endRest() {
   const ov = document.getElementById('restOverlay');
   if (ov) ov.hidden = true;
@@ -10345,6 +10359,7 @@ function endRest() {
   G.pet.lastTick = now; G.kid.lastTick = now;
   saveGame();
   fufuSay('休息好了！我們繼續玩吧～', 3000);
+  if (restPhoto) { const d = restPhoto; restPhoto = null; if ($('#modal').hidden) openPhotoSwap(d); }
 }
 // 家長密碼：沒有設密碼就直接通過；設了就要輸入對
 function askPin(why, ok) {

@@ -2554,6 +2554,71 @@
       if (!(full > countFills(Object.assign({}, sp, { sparkle: false })))) fails.push(sp.name + ' 沒有一閃一閃的星星');
     });
 
+    /* 86 檢查出來的小問題（第三批）：檸檬床、檸檬椅能用；寵物天地第一步不能一開始就完成；滑梯點一下會跳；
+       刪存檔連帶的紀錄也刪掉；照片不能吃掉存檔的位子；休息畫面不能吃掉公告和剛拍的照片；包裹不放在寵物腳下 */
+    try {
+      if (!FURNITURE_USE.lemon_bed || FURNITURE_USE.lemon_bed.use !== 'lie' || !PET_BEDS.lemon_bed) fails.push('檸檬床不能躺、寵物也不能上去睡');
+      if (!FURNITURE_USE.lemon_chair || FURNITURE_USE.lemon_chair.use !== 'sit') fails.push('檸檬椅不能坐');
+      // 寵物天地：預設寵物屋就有 5 個床／小屋，第一步不能一開始就打勾
+      var phR = petHouseRoom(), phSave86 = phR.items;
+      try {
+        phR.items = phSave86.filter(function(it){ return it.id !== 'pet_castle' && it.id !== 'cat_tower'; });
+        var plStep = THEMES.find(function(t){ return t.id === 'petland'; }).steps[0];
+        if (plStep.test()) fails.push('寵物天地第一步，一開始的寵物屋就已經完成了');
+        phR.items = phR.items.concat([{ uid: 99086, id: 'pet_castle', x: 0, y: 0, rot: 0 }]);
+        if (!plStep.test()) fails.push('寵物天地：放了寵物城堡還是沒有完成');
+      } finally { phR.items = phSave86; }
+      // 滑梯的弧形底座點一下也要跟著跳
+      var rampDef = Object.values(FURN_BY_ID).find(function(d){ return (d.parts || []).some(function(q){ return q.k === 'ramp'; }); });
+      if (!rampDef) fails.push('測試找不到有斜坡的家具');
+      else {
+        itemState.t86 = { tapAt: performance.now() - 160 };
+        var lk = itemLook(rampDef, 0, { uid: 't86' }, rampDef.parts), ri = rampDef.parts.findIndex(function(q){ return q.k === 'ramp'; });
+        if (!(lk[ri].zHi > rampDef.parts[ri].zHi && lk[ri].zLo > rampDef.parts[ri].zLo)) fails.push('點滑梯，斜坡的部分沒有跟著跳');
+        delete itemState.t86;
+      }
+      // 刪存檔：備份提醒、第一次玩的時間、救援檔都要一起刪（之後新開的格子可能用到同一個編號）
+      var sid = addSlot('測試86');
+      ['myHouse_lastBackup:', 'myHouse_firstSeen:', 'myHouseGame_rescue:'].forEach(function(k){ localStorage.setItem(k + sid, '1'); });
+      removeSlot(sid);
+      ['myHouse_lastBackup:', 'myHouse_firstSeen:', 'myHouseGame_rescue:'].forEach(function(k){ if (localStorage.getItem(k + sid) != null) fails.push('刪掉存檔後，' + k + ' 還留著'); });
+      // 照片塞得進去、遊戲卻存不了：這張照片要退掉
+      var realSave86 = saveGame, n86 = loadPhotos().length;
+      if (n86 < PHOTO_MAX) {
+        saveGame = function(){ return false; };
+        var r86;
+        try { r86 = keepPhoto('data:image/png;base64,AAAA'); } finally { saveGame = realSave86; }
+        if (r86 !== 'space' || loadPhotos().length !== n86) fails.push('照片把存檔的位子吃掉了，照片還是留著（' + r86 + '）');
+      }
+      // 爸媽的謝謝：不管視窗是怎麼關掉的，都要接著跳公告
+      var realNews = maybeShowNews, realST = window.setTimeout, newsN = 0;
+      maybeShowNews = function(){ newsN++; };
+      window.setTimeout = function(f){ f(); return 0; };
+      try { giftVisit.spec = GIFT_SPECS[0]; giftThanks(performance.now()); } finally { window.setTimeout = realST; maybeShowNews = realNews; giftReset(); }
+      if (newsN !== 1) fails.push('爸媽謝謝之後沒有接著跳公告');
+      // 相簿滿了正在選：休息畫面跳出來，休息完要再問一次
+      var realToast86 = toast; toast = function(){};
+      try {
+        openPhotoSwap('data:image/png;base64,BBBB');
+        showRest(Date.now() + 60000);
+        if (!$('#modal').hidden) fails.push('休息畫面沒有把相簿視窗關掉');
+        endRest();
+        var pn = document.querySelector('#modalCard img.photo-new');
+        if ($('#modal').hidden || !pn || pn.src.indexOf('BBBB') < 0) fails.push('休息完，剛拍的照片不見了');
+      } finally { toast = realToast86; $('#modal').hidden = true; resting = false; var ro = document.getElementById('restOverlay'); if (ro) ro.hidden = true; }
+      // 包裹：不要放在寵物腳下
+      if (!G.away) {
+        var px86 = pet.x, py86 = pet.y, realSnd = Sound.play; Sound.play = function(){};
+        try {
+          giftVisit.spec = GIFT_SPECS[0]; giftVisit.actors = [];
+          giftDrop(performance.now());
+          var b1 = giftVisit.box; pet.x = Math.floor(b1.x) + .5; pet.y = Math.floor(b1.y) + .5;
+          giftDrop(performance.now());
+          if (Math.floor(giftVisit.box.x) === Math.floor(pet.x) && Math.floor(giftVisit.box.y) === Math.floor(pet.y)) fails.push('包裹放在寵物腳下，點不到包裹');
+        } finally { pet.x = px86; pet.y = py86; Sound.play = realSnd; giftReset(); }
+      }
+    } catch (e) { fails.push('第三批小問題測試出錯：' + e.message); }
+
     /* 85 小遊戲的問題：結束後畫面迴圈要停、杯子蛋糕做對一個不能連點多次、玩到一半可以離開、關掉視窗後烤餅乾不會自己給錢 */
     var realToast22 = toast; toast = function(){};
     try {
