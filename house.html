@@ -3093,6 +3093,36 @@ function scaledPrice(p) {
 })();
 const FURN_BY_ID = Object.fromEntries(FURNITURE.map(f => [f.id, f]));
 PLACE_FURNITURE.forEach(f => { FURN_BY_ID[f.id] = f; }); // 親戚家專用的家具（不在商店、圖鑑裡）
+/* 🏆 集滿獎盃：任何一種圖鑑集滿，就送一座只有集滿才拿得到的獎盃（可以擺地上、也可以擺桌上）。
+   不放進 FURNITURE：不然家具圖鑑要集滿還得先拿到家具獎盃，永遠集不滿。
+   價格 0＝不能賣（辛苦集來的，不要一不小心賣掉）。 */
+const TROPHY_SETS = [
+  { id: 'furn', name: '家具', icon: '🛋️', color: '#c98a3a' },
+  { id: 'pet', name: '寵物', icon: '🐾', color: '#ff9ec4' },
+  { id: 'friend', name: '好朋友', icon: '🐻', color: '#7bd389' },
+  { id: 'animal', name: '動物', icon: '🐮', color: '#a0d8ff' },
+  { id: 'fish', name: '魚', icon: '🐟', color: '#3f8ee0' },
+  { id: 'bfly', name: '蝴蝶', icon: '🦋', color: '#b18cff' },
+  { id: 'comic', name: '漫畫', icon: '📚', color: '#ff6b6b' },
+  { id: 'sticker', name: '貼紙', icon: '⭐', color: '#ffd35c' },
+  { id: 'theme', name: '小主題', icon: '🏅', color: '#e7a94a' }
+];
+const TROPHY_GOLD = '#f2c14e';
+TROPHY_SETS.forEach(t => {
+  t.item = 'trophy_' + t.id;
+  FURN_BY_ID[t.item] = { id: t.item, name: t.name + '獎盃', price: 0, theme: 'modern', w: 1, d: 1, gift: true, trophy: true,
+    parts: [
+      { x: .36, y: .36, w: .28, d: .28, z: 0, h: 4, c: '#5a3a22' },
+      { x: .4, y: .4, w: .2, d: .2, z: 4, h: 2, c: t.color },
+      { x: .46, y: .46, w: .08, d: .08, z: 6, h: 6, c: TROPHY_GOLD },
+      { k: 'ball', x: .5, y: .5, z: 17, r: 6, c: TROPHY_GOLD },
+      { k: 'ball', x: .33, y: .5, z: 18, r: 2, c: TROPHY_GOLD },
+      { k: 'ball', x: .67, y: .5, z: 18, r: 2, c: TROPHY_GOLD },
+      { x: .43, y: .43, w: .14, d: .14, z: 22, h: 1.5, c: '#ffe58a' },
+      { k: 'ball', x: .5, y: .64, z: 17, r: 2.4, c: t.color }
+    ] };
+  ON_TABLE.push(t.item);
+});
 </script>
 <script>
 // 遊戲狀態、存檔、經濟與評分
@@ -3336,7 +3366,8 @@ function newGame() {
   const g = {
     bells: START_BELLS - OPEN_GIFT_BELLS, // 剩下的由開幕包裹給
     openGift: false,                       // 🎁 新版開幕包裹打開了沒
-    guide: 'egg',                          // 第一次玩的小手教學走到哪一步（egg→place→shop→done）
+    guide: 'egg',
+    trophies: {},                          // 🏆 拿過的集滿獎盃 {set id: true}                          // 第一次玩的小手教學走到哪一步（egg→place→shop→done）
     earned: 0,
     inv: { wood_bed: 1, wood_chair: 1, wood_table: 1, plant_s: 1 },
     walls: ['wp_cream'],
@@ -8099,6 +8130,7 @@ function gameStep(dt, now) {
   supplyTick(now);
   giftTick(now);
   guideTick(now);
+  if (typeof checkTrophies === 'function') try { checkTrophies(now); } catch (e) {}
   if (now > nextPetTick) { nextPetTick = now + 5000; if (petTick()) saveGame(); }
   if (now > nextCard) { nextCard = now + 300; updatePetCard(); }
   if (hold) $('#btnPlace').disabled = !hold.ok; // 放不下的位置，「放這裡」按鈕變灰
@@ -9244,7 +9276,10 @@ function tabEarn(body) {
 function tabBook(body) {
   const got = FURNITURE.filter(f => G.seen[f.id]).length;
   const count = o => Object.keys(o || {}).length;
+  const tc = id => trophyCount(id);
   const sections = [
+    ['dexTrophy', '🏆', '獎盃', count(G.trophies), TROPHY_SETS.length],
+    ['dexPet', '🐾', '寵物', tc('pet')[0], PET_SPECIES.length],
     ['dexFurn', '🛋️', '家具', got, FURNITURE.length],
     ['dexFish', '🐟', '魚', FISH.filter(f => G.fish[f.name]).length, FISH.length],
     ['dexFriend', '🐻', '好朋友', NEIGHBORS.filter(n => G.friends[n.id]).length, NEIGHBORS.length],
@@ -9258,12 +9293,28 @@ function tabBook(body) {
   const sum = el('div', 'dex-sum');
   sections.forEach(([id, icon, name, n, all]) => {
     const b = el('button', 'dex-chip' + (n >= all ? ' full' : ''));
-    b.append(el('span', 'dex-ic', icon), el('span', 'dex-nm', name), el('span', 'dex-n', `${n}/${all}`));
+    b.append(el('span', 'dex-ic', n >= all && id !== 'dexTrophy' ? '🏆' : icon), el('span', 'dex-nm', name), el('span', 'dex-n', `${n}/${all}`));
     b.onclick = () => { const t = document.getElementById(id); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
     sum.appendChild(b);
   });
   body.appendChild(sum);
   const sec = (id, text) => { const h = h3(text); h.id = id; return h; };
+  // 🏆 獎盃架：每一種圖鑑集滿送一座。還沒拿到的淡淡的，寫還差幾個——看得到目標
+  body.appendChild(sec('dexTrophy', `🏆 獎盃 ${count(G.trophies)} / ${TROPHY_SETS.length}`));
+  body.appendChild(note('每一種圖鑑集滿，就會拿到一座獎盃，可以擺在房間或桌上。閱讀護照蓋滿會拿到獎狀。'));
+  const trG = el('div', 'grid');
+  TROPHY_SETS.forEach(t => {
+    const has = !!(G.trophies || {})[t.id], [n, all] = trophyCount(t.id);
+    const c = el('div', 'card dex' + (has ? '' : ' dim'));
+    c.appendChild(thumb(FURN_BY_ID[t.item]));
+    c.appendChild(el('div', 'nm', `${t.icon} ${t.name}`));
+    c.appendChild(el('div', 'pr', has ? '集滿了！' : `還差 ${all - n} 個`));
+    trG.appendChild(c);
+  });
+  body.appendChild(trG);
+  body.appendChild(sec('dexPet', `🐾 寵物圖鑑 ${tc('pet')[0]} / ${PET_SPECIES.length}`));
+  body.appendChild(note('寵物蛋摸一摸就會孵出來。「寵物」分頁可以買新的蛋。'));
+  body.appendChild(petDexGrid());
   body.appendChild(sec('dexFurn', `🛋️ 家具圖鑑 ${got} / ${FURNITURE.length}`));
   body.appendChild(note('買過、或搖樹掉下來拿到的家具，就會收進圖鑑。淡淡的是還沒收集到的。'));
   const grid = el('div', 'grid');
@@ -9670,8 +9721,12 @@ function tabPets(body) {
   body.appendChild(egg);
 
   // 寵物圖鑑
+  body.appendChild(h3(`寵物圖鑑 ${collectedSpecies().size} / ${PET_SPECIES.length}`));
+  body.appendChild(petDexGrid());
+}
+// 寵物圖鑑的格子：「寵物」分頁跟「📖 圖鑑」分頁共用
+function petDexGrid() {
   const got = collectedSpecies();
-  body.appendChild(h3(`寵物圖鑑 ${got.size} / ${PET_SPECIES.length}`));
   const dex = el('div', 'grid');
   const owned = {};
   G.pets.forEach(p => { if (p.stage !== 'egg') owned[p.species] = (owned[p.species] || 0) + 1; });
@@ -9684,7 +9739,7 @@ function tabPets(body) {
     if (s.rare) c.appendChild(el('span', 'tag', '⭐稀有'));
     dex.appendChild(c);
   });
-  body.appendChild(dex);
+  return dex;
 }
 
 // ── 台詞編輯 ──
@@ -11103,6 +11158,42 @@ const STICKERS = ['⭐', '🌟', '💯', '🌈', '🍀', '🦄', '🐰', '🌸',
    ・正在玩小遊戲：不擋遊戲，先跳一行提示；大圖排隊，等小遊戲關掉再跳。
    ・一次拿到好幾樣：一個一個排隊跳（最多排 6 個，太多就丟掉最舊的）。
    opts：{ n, all } 收集進度；{ hatch: 蛋的畫面 } 先搖蛋、裂開，再跳出寵物。 */
+/* 🏆 每一種圖鑑現在收集幾個／一共幾個。圖鑑頁、獎盃都用這一份，數字才會一致 */
+function trophyCount(id) {
+  const c = o => Object.keys(o || {}).length;
+  switch (id) {
+    case 'furn': return [FURNITURE.filter(f => G.seen[f.id]).length, FURNITURE.length];
+    case 'pet': return [collectedSpecies().size, PET_SPECIES.length];
+    case 'friend': return [NEIGHBORS.filter(n => G.friends[n.id]).length, NEIGHBORS.length];
+    case 'animal': return [c(G.animals), ANIMAL_DEX().length];
+    case 'fish': return [FISH.filter(f => G.fish[f.name]).length, FISH.length];
+    case 'bfly': return [c(G.butterflies), BUTTERFLIES.length];
+    case 'comic': return [COMICS.filter(x => (G.comics || {})[x.title]).length, COMICS.length];
+    case 'sticker': return [STICKERS.filter(x => (G.stickers || {})[x]).length, STICKERS.length];
+    case 'theme': return [THEMES.filter(x => (G.themesDone || {})[x.id]).length, THEMES.length];
+  }
+  return [0, 1];
+}
+// 有圖鑑剛集滿就發獎盃（每 2 秒看一次，不管從哪裡拿到最後一個都接得到；已經集滿的舊存檔也補發）
+let nextTrophyCheck = 0;
+function checkTrophies(now) {
+  if (SAVE_LOCKED != null) return 0;
+  if (now != null) { if (now < nextTrophyCheck) return 0; nextTrophyCheck = now + 2000; }
+  const got = G.trophies = G.trophies || {};
+  let n = 0;
+  TROPHY_SETS.forEach(t => {
+    if (got[t.id]) return;
+    const [have, all] = trophyCount(t.id);
+    if (have < all) return;
+    got[t.id] = true;
+    addItem(t.item);
+    n++;
+    sessionLog.newThings.push('🏆 ' + t.name + '獎盃');
+    showcase(renderThumb(FURN_BY_ID[t.item], 150), `🏆 ${t.name}獎盃！`, `${t.icon} ${t.name}圖鑑集滿了！獎盃放進「我的東西」了`, { head: '🏆 集滿了！' });
+  });
+  if (n) saveGame();
+  return n;
+}
 const SC_QUEUE = [];
 const SC_MS = 3000, SC_HATCH_MS = 1300;
 function showcaseBlocked() { return !$('#modal').hidden && $('#modalCard').classList.contains('in-game'); }
@@ -11121,7 +11212,7 @@ function showcaseNext() {
   const card = el('div', 'sc-card');
   const pic = typeof visual === 'string' ? el('div', 'sc-emoji', visual) : visual;
   if (typeof visual !== 'string') pic.className = 'sc-pic';
-  const head = el('div', 'sc-new', opts.hatch ? '🥚 要孵出來了…' : '✨ 新的！');
+  const head = el('div', 'sc-new', opts.hatch ? '🥚 要孵出來了…' : (opts.head || '✨ 新的！'));
   const tl = el('div', 'sc-title', title), sb = el('div', 'sc-sub', sub || '');
   let bar = null;
   if (opts.all) {

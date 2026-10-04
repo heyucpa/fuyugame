@@ -2264,6 +2264,46 @@
     G = keepG; G.away = keepAway; G.openGift = true; saveGame(); giftReset();
     $('#modal').hidden = true;
 
+    /* 66 🏆 集滿獎盃：每種圖鑑集滿送一座（只送一次），放進我的東西；不能賣；可以擺桌上；
+       獎盃不算家具圖鑑（不然家具永遠集不滿）；圖鑑頁看得到寵物和獎盃架（還差幾個） */
+    var keepG5 = JSON.stringify(G);
+    var realToast6 = toast; toast = function(){};
+    try {
+      SC_QUEUE.length = 0; var o6 = document.getElementById('showcase'); if (o6) o6.remove();
+      G.trophies = {}; G.stickers = {};
+      STICKERS.slice(0, -1).forEach(function(x){ G.stickers[x] = 1; });
+      checkTrophies();
+      if (G.trophies.sticker) fails.push('貼紙還沒集滿就給獎盃');
+      G.stickers[STICKERS[STICKERS.length - 1]] = 1;
+      SC_QUEUE.length = 0; o6 = document.getElementById('showcase'); if (o6) o6.remove();
+      checkTrophies();
+      if (!G.trophies.sticker || !G.inv.trophy_sticker) fails.push('貼紙集滿沒有拿到獎盃');
+      var sb6 = document.getElementById('showcase');
+      if (!sb6 || !/貼紙獎盃/.test(sb6.textContent) || !/集滿了/.test(sb6.querySelector('.sc-new').textContent)) fails.push('拿到獎盃沒有跳「集滿了」大圖');
+      var inv6 = G.inv.trophy_sticker; checkTrophies();
+      if (G.inv.trophy_sticker !== inv6) fails.push('獎盃發了兩次');
+      if (furnSellBlock('trophy_sticker') == null) fails.push('獎盃可以賣掉');
+      if (!canSitOnTable('trophy_sticker')) fails.push('獎盃不能擺在桌上');
+      if (FURNITURE.some(function(f){ return /^trophy_/.test(f.id); })) fails.push('獎盃算進家具圖鑑了（家具會永遠集不滿）');
+      // 存起來、讀回來還在；房間裡擺獎盃讀得回來（不會被當成壞掉的存檔）
+      G.rooms[0].items.push({ uid: 9876, id: 'trophy_sticker', x: 0, y: 0, rot: 0 });
+      saveGame();
+      var re6 = normalizeSave(JSON.parse(localStorage.getItem(SAVE_KEY)));
+      if (!re6 || !re6.trophies.sticker) fails.push('擺了獎盃的存檔讀不回來');
+      // 已經集滿的舊存檔：補發
+      var old6 = JSON.parse(keepG5); delete old6.trophies; old6.themesDone = {}; THEMES.forEach(function(t){ old6.themesDone[t.id] = 1; });
+      G = normalizeSave(old6); checkTrophies();
+      if (!G.trophies.theme) fails.push('之前就集滿的存檔沒有補發獎盃');
+      // 圖鑑頁：獎盃架、寵物
+      openTab('book');
+      var shelf = document.getElementById('dexTrophy');
+      if (!shelf) fails.push('圖鑑沒有獎盃架');
+      if (!/還差 \d+ 個/.test($('#tabBody').textContent)) fails.push('獎盃架沒寫還差幾個');
+      var pH = document.getElementById('dexPet'), pG = pH && pH.nextElementSibling;
+      while (pG && !pG.classList.contains('grid') && pG.tagName !== 'H3') pG = pG.nextElementSibling;
+      if (!pG || !pG.classList.contains('grid') || pG.children.length !== PET_SPECIES.length) fails.push('圖鑑的寵物那一段沒有 ' + PET_SPECIES.length + ' 格');
+    } finally { toast = realToast6; G = normalizeSave(JSON.parse(keepG5)); saveGame(); SC_QUEUE.length = 0; var o7 = document.getElementById('showcase'); if (o7) o7.remove(); openTab('inv'); }
+
     /* 65 收集到新東西：每一種圖鑑都跳大圖（光芒、彩帶、進度條），重複的不跳；孵蛋先搖蛋再跳寵物；
        排隊一個一個跳；點一下可以關 */
     var scClear = function(){ SC_QUEUE.length = 0; var o = document.getElementById('showcase'); if (o) o.remove(); };
@@ -2771,11 +2811,11 @@
     G.comics = { '早餐': 1, '恐龍': 3 }; G.stickers = { '⭐': 1 }; G.butterflies = { red: 2, blue: 1, rainbow: 1 }; G.passport = { moon: 1, seed: 1 };
     openTab('book');
     var chips = [].map.call(document.querySelectorAll('#tabBody .dex-chip'), function(c){ return c.textContent; });
-    if (chips.length !== 9) fails.push('圖鑑總覽不是九種收集：' + chips.length);
+    if (chips.length !== 11) fails.push('圖鑑總覽不是 11 項（9 種收集＋寵物＋獎盃）：' + chips.length);
     [['漫畫', '2/12'], ['貼紙', '1/12'], ['蝴蝶', '3/6'], ['閱讀護照', '2/8']].forEach(function(p){
       if (!chips.some(function(t){ return t.indexOf(p[0]) >= 0 && t.indexOf(p[1]) >= 0; })) fails.push('圖鑑總覽的「' + p[0] + '」不是 ' + p[1] + '：' + chips.join(' | '));
     });
-    ['dexFurn','dexFish','dexFriend','dexAnimal','dexTheme','dexComic','dexSticker','dexBfly','dexPass'].forEach(function(id){
+    ['dexTrophy','dexPet','dexFurn','dexFish','dexFriend','dexAnimal','dexTheme','dexComic','dexSticker','dexBfly','dexPass'].forEach(function(id){
       if (!document.getElementById(id)) fails.push('圖鑑少了一段：' + id);
     });
     // 看過的漫畫點一下可以再看，但不能算成多看一次、也不能變成新的
