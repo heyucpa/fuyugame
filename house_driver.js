@@ -1326,6 +1326,53 @@
       fails.push('蝴蝶相簿顯示不對');
     var md8 = document.querySelector('#modal'); if (md8) md8.hidden = true;
 
+    /* 61 拍照：拍得出照片、留下來、最多 12 張（滿了要先刪）、可以刪、每個存檔格分開、壞掉／空間不夠不當掉 */
+    localStorage.removeItem(photoKey());
+    var shot = takePhoto();
+    if (!shot || shot.indexOf('data:image/jpeg') !== 0) fails.push('拍不出照片');
+    if (!document.querySelector('#modalCard .photo-big')) fails.push('拍完沒有預覽');
+    var keepBtn = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return /留下來/.test(b.textContent); })[0];
+    keepBtn.onclick();
+    if (loadPhotos().length !== 1) fails.push('按留下來，相簿沒有多一張');
+    if (shot.length > 120000) fails.push('一張照片太大了（' + Math.round(shot.length / 1024) + ' KB）');
+    for (var ph = 0; ph < 15; ph++) keepPhoto(shot);
+    if (loadPhotos().length !== PHOTO_MAX) fails.push('相簿超過 ' + PHOTO_MAX + ' 張（' + loadPhotos().length + '）');
+    if (keepPhoto(shot) !== 'full') fails.push('相簿滿了還說可以留');
+    // 滿了：從相簿刪一張，剛剛拍的自動放進去
+    var realConfirm2 = window.confirm; window.confirm = function(){ return true; };
+    try {
+      openAlbum(shot);
+      if (!/相簿滿了/.test(document.querySelector('#modalCard').textContent)) fails.push('相簿滿了沒有說明要先刪一張');
+      document.querySelector('#modalCard .photo-thumb').onclick();
+      var delB = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return /刪掉這張/.test(b.textContent); })[0];
+      var firstId = loadPhotos()[0].id;
+      delB.onclick();
+      var after = loadPhotos();
+      if (after.length !== PHOTO_MAX) fails.push('刪一張後，剛剛拍的沒有放進來（' + after.length + '）');
+      if (after.some(function(p){ return p.id === firstId; }) && after[0].id === firstId) fails.push('刪掉的那張還在');
+    } finally { window.confirm = realConfirm2; }
+    if (!deletePhoto(loadPhotos()[0].id) || loadPhotos().length !== PHOTO_MAX - 1) fails.push('刪照片沒有刪掉');
+    // 照片不會跑進備份檔
+    if (makeBackup().indexOf('data:image') >= 0) fails.push('照片跑進備份檔了（備份會變很肥）');
+    // 壞掉的相簿資料不當掉；空間不夠要說
+    localStorage.setItem(photoKey(), '{壞掉');
+    if (loadPhotos().length !== 0) fails.push('相簿資料壞掉時沒有當成空的');
+    var realSet2 = Storage.prototype.setItem;
+    Storage.prototype.setItem = function(){ throw new Error('full'); };
+    var kp; try { kp = keepPhoto(shot); } finally { Storage.prototype.setItem = realSet2; }
+    if (kp !== 'space') fails.push('空間不夠存照片時沒有說');
+    // 每個存檔格分開；刪掉存檔格時照片一起刪
+    if (photoKey().indexOf(curSlotId()) < 0) fails.push('照片沒有分存檔格放');
+    localStorage.setItem('myHouse_photos:zzslot', '[]');
+    var sl0 = slots(); saveSlots(sl0.concat([{ id: 'zzslot', name: '測試格' }]));
+    removeSlot('zzslot');
+    if (localStorage.getItem('myHouse_photos:zzslot') !== null) fails.push('刪掉存檔格，那一格的照片沒有一起刪');
+    saveSlots(sl0);
+    localStorage.removeItem(photoKey()); sessionLog.photos = 0;
+    $('#modal').hidden = true;
+    // 寵物卡的按鈕不要被擠成兩行
+    if (getComputedStyle($('#btnFeed')).whiteSpace !== 'nowrap') fails.push('寵物卡的按鈕會被擠成兩行');
+
     /* 60 沒有期限的小主題：選、看進度、做到了自動完成（只給一次）、出門類、換／不做、圖鑑 */
     G.away = null; G.theme = null; G.themesDone = {};
     var trm = G.rooms[G.cur], keepItems2 = trm.items, keepInv2 = JSON.stringify(G.inv);

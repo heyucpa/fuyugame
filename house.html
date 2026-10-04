@@ -389,6 +389,15 @@ button.pass { font: inherit; }
   background: #c0392b; color: #fff; border: none; border-radius: 999px; padding: 8px 16px; font-size: 14px; font-weight: 800;
   box-shadow: 0 4px 14px rgba(0,0,0,.25); }
 .save-warn[hidden] { display: none; }
+.photo-btn { position: absolute; right: 10px; bottom: 100px; z-index: 6; width: 46px; height: 46px; border-radius: 50%;
+  border: 2px solid var(--line); background: #fffaf0; font-size: 22px; box-shadow: 0 3px 10px rgba(0,0,0,.12); }
+.stage.holding .photo-btn { display: none; }
+.photo-flash { position: fixed; inset: 0; background: #fff; z-index: 120; pointer-events: none; animation: flashOut .45s ease-out forwards; }
+@keyframes flashOut { from { opacity: .9; } to { opacity: 0; } }
+.photo-big { width: 100%; border-radius: 10px; box-shadow: 0 4px 14px rgba(0,0,0,.15); margin: 4px 0 8px; }
+.photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.photo-thumb { padding: 0; border: 2px solid var(--line); border-radius: 10px; overflow: hidden; background: #fff; }
+.photo-thumb img { width: 100%; display: block; aspect-ratio: 4 / 3; object-fit: cover; }
 .theme-btn { position: absolute; right: 10px; bottom: 56px; z-index: 6; border: 2px solid #b18cff; background: #f6f0ff; color: #6a4bb0;
   border-radius: 999px; padding: 7px 14px; font-size: 14px; font-weight: 800; box-shadow: 0 3px 10px rgba(0,0,0,.12); max-width: 60%;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -454,6 +463,7 @@ button.pass { font: inherit; }
 .pc-bar b.low { background: #f09a7a; }
 .pc-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 8px; }
 .pc-btns button { border: none; background: var(--chip); border-radius: 9px; padding: 5px 0; font-size: 12px; }
+.pc-btns button { white-space: nowrap; } /* 圖示＋兩個字不要被擠成兩行 */
 .pc-btns button:hover { background: #e8d9bf; }
 .pc-btns.one { grid-template-columns: 1fr; margin-top: 5px; }
 .pc-head small { color: var(--muted); font-size: 11px; font-weight: 400; }
@@ -522,7 +532,7 @@ button.pass { font: inherit; }
   .hint { font-size: 12px; }
   .petcard { top: 8px; left: 8px; width: 140px; padding: 4px 6px 6px; font-size: 12px; }
   .pc-bar { margin-top: 3px; }
-  .pc-btns button { font-size: 11px; padding: 4px 0; }
+  .pc-btns button { font-size: 11px; padding: 4px 0; letter-spacing: -.5px; }
 }
 /* 平板（手指操作、螢幕夠大）：按鈕加大到手指好點的尺寸；提示文字可以換行，不要被切掉 */
 @media (pointer: coarse) and (min-width: 600px) {
@@ -568,6 +578,7 @@ button.pass { font: inherit; }
     <button class="zoom-btn" id="btnZoom" title="放大房間">🔍 放大</button>
     <button class="undo-btn" id="btnUndo" hidden>↩️ 復原</button>
     <button class="theme-btn" id="btnTheme">💡 小主題</button>
+    <button class="photo-btn" id="btnPhoto" title="拍照">📷</button>
     <div class="hint" id="hint">從「我的東西」點家具放進房間；點房間裡的家具可以搬動</div>
     <div class="itemmenu" id="itemMenu" hidden></div>
     <div class="petcard" id="petCard">
@@ -3130,6 +3141,7 @@ function removeSlot(id) {
   try {
     localStorage.removeItem(slotSave(id));
     localStorage.removeItem(slotUndo(id));
+    localStorage.removeItem('myHouse_photos:' + id); // 那一格的照片也一起刪
   } catch (e) {}
   if (id === localStorage.getItem(CUR_KEY)) {
     try { localStorage.setItem(CUR_KEY, rest[0].id); } catch (e) {}
@@ -3167,7 +3179,8 @@ const NEWS = [
     ['🌷', '桌上小物：小花瓶、相框、蠟燭、鬧鐘、小蛋糕、茶具、書、筆筒'],
     ['🎵', '音樂盒放在桌上可以聽音樂'],
     ['❄️', '雪花球放在桌上可以搖一搖'],
-    ['💡', '新的「小主題」：房間右下角點點看，沒有時間限制喔']
+    ['💡', '新的「小主題」：房間右下角點點看，沒有時間限制喔'],
+    ['📷', '可以拍照了！房間右邊的相機，最多留 12 張']
   ], newItems: ['flower_vase', 'photo_frame', 'aroma_candle', 'alarm_clock', 'small_cake', 'tea_set', 'book_stack', 'pencil_cup', 'snow_globe', 'music_box'] },
   { id: '2026-10-04-2', title: '小屋又更新了！', lines: [
     ['🛝', '溜滑梯、鞦韆真的可以玩了！沙坑會蓋沙堡'],
@@ -6625,6 +6638,124 @@ function drawNeighborBubble(ctx, a, n, say, alpha) {
   ctx.globalAlpha = 1;
 }
 
+/* ===== 📷 拍照 =====
+   把現在的畫面（房間、小可愛、寵物、在哪裡）拍成一張照片，留在遊戲的相簿裡。
+   - 不上傳、不放進備份檔（照片比存檔大很多，備份會變很肥）；家長可以一張一張存到裝置。
+   - 每個存檔格最多 12 張：滿了要先刪一張才能留新的，不會一直佔空間。
+   - 照片上只印日期和地點（遊戲裡的地名），不放任何真實資訊。 */
+const PHOTO_MAX = 12;
+const photoKey = () => 'myHouse_photos:' + curSlotId();
+function loadPhotos() {
+  try { const a = JSON.parse(localStorage.getItem(photoKey()) || '[]'); return Array.isArray(a) ? a.filter(p => p && typeof p.data === 'string') : []; }
+  catch (e) { return []; }
+}
+function savePhotos(list) {
+  try { localStorage.setItem(photoKey(), JSON.stringify(list)); return true; } catch (e) { return false; }
+}
+function photoPlaceName() { return G.away ? PLACES[G.away.place].name : (curRoom().name || '我的小屋'); }
+function snapPhoto() {
+  try { draw(); } catch (e) {}
+  const W = 360, H = Math.max(200, Math.min(320, Math.round(W * canvas.height / Math.max(1, canvas.width))));
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  g.fillStyle = '#fffaf0'; g.fillRect(0, 0, W, H);
+  const pad = 10, iw = W - pad * 2, ih = H - pad * 2 - 18;
+  // 畫面中間那一塊（房間）裁進來
+  const sw = canvas.width, sh = canvas.height, k = Math.max(iw / sw, ih / sh);
+  const cw = iw / k, chh = ih / k;
+  try { g.drawImage(canvas, (sw - cw) / 2, (sh - chh) / 2, cw, chh, pad, pad, iw, ih); } catch (e) {}
+  g.strokeStyle = '#e2d3b8'; g.lineWidth = 2; g.strokeRect(pad, pad, iw, ih);
+  const d = new Date();
+  g.fillStyle = '#8a7a66'; g.font = '12px sans-serif'; g.textBaseline = 'middle';
+  g.fillText(`📷 ${photoPlaceName()}`, pad, H - 14);
+  g.textAlign = 'right'; g.fillText(`${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`, W - pad, H - 14);
+  return c.toDataURL('image/jpeg', .72);
+}
+function takePhoto() {
+  if (resting || hold) return null;
+  const data = snapPhoto();
+  const fl = el('div', 'photo-flash'); document.body.appendChild(fl); setTimeout(() => fl.remove(), 450);
+  Sound.play('shake');
+  try { kidMakeFace('joy', 1500); } catch (e) {}
+  openPhotoPreview(data);
+  return data;
+}
+function keepPhoto(data) {
+  const list = loadPhotos();
+  if (list.length >= PHOTO_MAX) return 'full';
+  list.unshift({ id: Date.now().toString(36), at: Date.now(), place: photoPlaceName(), data });
+  if (!savePhotos(list)) return 'space';
+  sessionLog.photos = (sessionLog.photos || 0) + 1;
+  return 'ok';
+}
+function deletePhoto(id) {
+  const list = loadPhotos(), n = list.length;
+  const rest = list.filter(p => p.id !== id);
+  return rest.length < n && savePhotos(rest);
+}
+function openPhotoPreview(data) {
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', '📷 拍好了！'));
+  const img = document.createElement('img'); img.src = data; img.className = 'photo-big'; card.appendChild(img);
+  const n = loadPhotos().length;
+  card.appendChild(note(`相簿：${n} / ${PHOTO_MAX} 張`));
+  const keep = el('button', 'big', '💾 留下來');
+  keep.onclick = () => {
+    const r = keepPhoto(data);
+    if (r === 'ok') { toast('📷 放進相簿了'); openAlbum(); }
+    else if (r === 'full') { toast(`相簿滿了（${PHOTO_MAX} 張），先刪掉一張不要的`); openAlbum(data); }
+    else toast('空間不夠，先到相簿刪掉幾張');
+  };
+  const no = el('button', 'big alt', '🗑️ 不要了');
+  no.onclick = () => { $('#modal').hidden = true; };
+  card.append(keep, no);
+  $('#modal').hidden = false;
+}
+// 相簿：pending＝相簿滿了、等著要留下來的那一張（刪掉一張之後就可以留）
+function openAlbum(pending) {
+  const list = loadPhotos();
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  const x = el('button', 'modal-x', '✕'); x.onclick = () => { $('#modal').hidden = true; }; card.appendChild(x);
+  card.appendChild(el('h2', '', `📷 相簿 ${list.length} / ${PHOTO_MAX}`));
+  if (pending) card.appendChild(note('相簿滿了，點一張不要的刪掉，剛剛拍的就可以放進來。'));
+  if (!list.length) card.appendChild(note('還沒有照片。點房間右邊的「📷」拍一張吧！'));
+  const grid = el('div', 'photo-grid');
+  list.forEach(p => {
+    const b = el('button', 'photo-thumb');
+    const im = document.createElement('img'); im.src = p.data; im.alt = p.place || '';
+    b.appendChild(im);
+    b.onclick = () => openPhoto(p.id, pending);
+    grid.appendChild(b);
+  });
+  card.appendChild(grid);
+  $('#modal').hidden = false;
+}
+function openPhoto(id, pending) {
+  const p = loadPhotos().find(q => q.id === id);
+  if (!p) { openAlbum(pending); return; }
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  const img = document.createElement('img'); img.src = p.data; img.className = 'photo-big'; card.appendChild(img);
+  const d = new Date(p.at || 0);
+  card.appendChild(note(`${p.place || ''}　${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`));
+  const back = el('button', 'big alt', '⬅️ 回相簿');
+  back.onclick = () => openAlbum(pending);
+  const del = el('button', 'big alt', '🗑️ 刪掉這張');
+  del.onclick = () => {
+    if (!confirm('要刪掉這張照片嗎？刪掉就沒有了喔。')) return;
+    deletePhoto(id);
+    toast('刪掉了');
+    if (pending && keepPhoto(pending) === 'ok') { toast('📷 剛剛拍的放進相簿了'); pending = null; }
+    openAlbum(pending);
+  };
+  const dl = el('button', 'big alt', '⬇️ 存到裝置（大人）');
+  dl.onclick = () => { try { const a = document.createElement('a'); a.href = p.data; a.download = '我的小屋照片-' + (p.place || '') + '.jpg'; document.body.appendChild(a); a.click(); a.remove(); } catch (e) { toast('這台機器存不了'); } };
+  card.append(back, del, dl);
+  $('#modal').hidden = false;
+}
+
 /* ===== 💡 沒有期限的小主題 =====
    想做的時候點「💡 小主題」選一個；沒有倒數、沒有每天要做、可以換、可以不做。
    做到了遊戲自己會發現：跳出「🏅 完成小主題！」，給一點點零用錢、記在圖鑑。
@@ -8160,6 +8291,7 @@ function setBigRoom(on) {
 }
 $('#btnUndo').onclick = () => doUndo();
 $('#btnTheme').onclick = () => { Sound.play('click'); openThemes(); };
+$('#btnPhoto').onclick = () => takePhoto();
 setTimeout(() => { try { refreshThemeBtn(); } catch (e) {} }, 0);
 $('#btnZoom').onclick = () => { setBigRoom(!document.body.classList.contains('bigroom')); Sound.play('click'); };
 if (lsGet(BIG_KEY) === '1') setBigRoom(true);
@@ -8282,6 +8414,7 @@ function sessionSummary() {
   if (acts.length) rows.push(acts.slice(0, 4).map(k => ACTIVITIES[k].label).join('　'));
   if (sessionLog.met.length) rows.push('👋 遇見了' + sessionLog.met.join('、'));
   if (sessionLog.placed) rows.push(`🛋️ 布置了 ${sessionLog.placed} 樣家具`);
+  if (sessionLog.photos) rows.push(`📷 拍了 ${sessionLog.photos} 張照片`);
   if (sessionLog.newThings.length) rows.push('✨ 新收集：' + sessionLog.newThings.slice(0, 3).join('、'));
   const books = Object.keys(sessionLog.acts).filter(k => k.startsWith('book:')).length;
   if (books) rows.push(`📖 看了 ${books} 本繪本`);
@@ -8781,6 +8914,12 @@ function tabBook(body) {
     ag.appendChild(c);
   });
   body.appendChild(ag);
+
+  // 📷 相簿入口
+  body.appendChild(sec('dexPhoto', `📷 相簿 ${loadPhotos().length} / ${PHOTO_MAX}`));
+  const ab = el('button', 'big alt', '📷 打開相簿');
+  ab.onclick = () => openAlbum();
+  body.appendChild(ab);
 
   // 🏅 小主題：做過的有獎牌
   body.appendChild(sec('dexTheme', `🏅 小主題 ${count(G.themesDone)} / ${THEMES.length}`));
