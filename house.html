@@ -3699,29 +3699,38 @@ function curRoom() {
   if (G.away && G.away.place === 'pethouse') return petHouseRoom();
   return G.away ? PLACES[G.away.place].rooms[G.away.idx] : G.rooms[G.cur];
 }
-/* 🐾 寵物屋的擺設可以自己搬、轉向（家長：可以自己選位置和方向，但不能賣掉）。
-   寵物屋本身寫在 PLACES 裡（大家共用的預設擺法），每個存檔自己的擺法記在 G.petHouse：
-   {uid: {id, x, y, rot}}。換了存檔（G 換掉）就重新套一次。
-   以後寵物屋的擺設改版，對不上的那件就用新的預設位置，不會壞。 */
+/* 🐾 寵物屋可以自己布置（家長：小孩還是想要自己佈置）：跟家裡的房間一樣可以搬、轉向、收起來、
+   放自己的家具、搬牆上的東西。寵物屋本身寫在 PLACES 裡（新存檔的預設擺法），
+   每個存檔自己的擺法存在 G.petHouse = { items, wallItems }；換了存檔（G 換掉）就重新套一次。
+   上一版只存「預設那幾件的位置」{uid: {id,x,y,rot}}，讀到舊格式就照舊套位置。
+   不認得的家具（改版拿掉的）直接略過，寵物屋不是存檔核心，不因為這個鎖住存檔。 */
 let phAppliedFor = null, phDefault = null;
 function petHouseRoom() {
   const room = PLACES.pethouse.rooms[0];
   if (phAppliedFor !== G) {
     phAppliedFor = G;
-    if (!phDefault) phDefault = JSON.stringify(room.items);
-    room.items = JSON.parse(phDefault);
-    const saved = G.petHouse;
-    if (saved && typeof saved === 'object') room.items.forEach(it => {
-      const s = saved[it.uid];
-      if (s && s.id === it.id && [s.x, s.y, s.rot].every(v => Number.isInteger(v))) { it.x = s.x; it.y = s.y; it.rot = ((s.rot % 4) + 4) % 4; }
-    });
+    if (!phDefault) phDefault = JSON.stringify({ items: room.items, wallItems: room.wallItems });
+    const def = JSON.parse(phDefault), saved = G.petHouse;
+    const okInt = v => Number.isInteger(v);
+    const okItem = it => it && typeof it.id === 'string' && FURN_BY_ID[it.id] && okInt(it.uid);
+    if (saved && Array.isArray(saved.items)) {
+      room.items = saved.items.filter(it => okItem(it) && okInt(it.x) && okInt(it.y))
+        .map(it => ({ uid: it.uid, id: it.id, x: it.x, y: it.y, rot: ((it.rot || 0) % 4 + 4) % 4, top: (it.top && FURN_BY_ID[it.top]) ? it.top : null }));
+      room.wallItems = (Array.isArray(saved.wallItems) ? saved.wallItems : []).filter(it => okItem(it) && (it.side === 'L' || it.side === 'R') && okInt(it.pos))
+        .map(it => ({ uid: it.uid, id: it.id, side: it.side, pos: it.pos }));
+    } else {
+      room.items = def.items; room.wallItems = def.wallItems;
+      if (saved && typeof saved === 'object') room.items.forEach(it => { // 上一版的格式
+        const s = saved[it.uid];
+        if (s && s.id === it.id && [s.x, s.y, s.rot].every(okInt)) { it.x = s.x; it.y = s.y; it.rot = ((s.rot % 4) + 4) % 4; }
+      });
+    }
   }
   return room;
 }
 function savePetHouse() {
-  const room = petHouseRoom(), out = {};
-  room.items.forEach(it => { out[it.uid] = { id: it.id, x: it.x, y: it.y, rot: it.rot || 0 }; });
-  G.petHouse = out;
+  const room = petHouseRoom();
+  G.petHouse = { items: JSON.parse(JSON.stringify(room.items)), wallItems: JSON.parse(JSON.stringify(room.wallItems || [])) };
 }
 // 目前所在房間的代號（角色、寵物用來判斷有沒有換房間）
 function roomKey() { return G.away ? `${G.away.place}:${G.away.idx}` : G.cur; }
@@ -6091,7 +6100,57 @@ function phUpdate(dt, now) {
     const a = phActor(i), egg = G.pets[i].stage === 'egg';
     a.t += dt;
     actorSpring(a, dt, now, egg);
-    if (!egg) actorWalk(a, dt, now, room, blk, .15); // 大多自己逛，偶爾跑來找小可愛
+    if (egg) return;
+    if (a.sleep) { phNapTick(a, now, room); return; }
+    if (a.napTo != null && !a.path.length) phNapArrive(a, now, room);
+    else if (a.napTo == null && !a.path.length && now > a.idleUntil && !hold && Math.random() < PH_NAP_CHANCE) phNapGo(a, room);
+    actorWalk(a, dt, now, room, blk, .15); // 大多自己逛，偶爾跑來找小可愛
+  });
+}
+/* 寵物屋裡的寵物會自己去寵物小屋、寵物床睡一下（家長：買的寵物小屋也可以讓寵物進去住）。
+   一張床一次一隻；睡 15～30 秒醒來；床被搬走就醒來；點睡著的會叫醒、開心一下。 */
+var PH_NAP_CHANCE = .35;   // var：測試要改它
+function phBedTaken(uid, me) {
+  if (pet.sleep && pet.sleep.uid === uid) return true;
+  return Object.values(phActors).some(o => o !== me && ((o.sleep && o.sleep.uid === uid) || o.napTo === uid));
+}
+function phNapGo(a, room) {
+  const beds = room.items.filter(it => PET_BEDS[it.id] && !PET_BEDS[it.id].withKid && !phBedTaken(it.uid, a));
+  if (!beds.length) return false;
+  const it = beds[Math.floor(Math.random() * beds.length)];
+  const path = findPathToItem(room, Math.floor(a.x), Math.floor(a.y), it);
+  if (!path) return false;
+  a.napTo = it.uid; a.path = path.slice(0, 12);
+  return true;
+}
+function phNapArrive(a, now, room) {
+  const it = room.items.find(x => x.uid === a.napTo);
+  a.napTo = null;
+  if (!it || phBedTaken(it.uid, a)) return;
+  const def = FURN_BY_ID[it.id], fp = footprint(def, it.rot);
+  if (!(a.x > it.x - 1.6 && a.x < it.x + fp.w + 1.6 && a.y > it.y - 1.6 && a.y < it.y + fp.d + 1.6)) return;
+  const spot = PET_BEDS[it.id], p = rotatePoint(def, it.rot, spot.x, spot.y);
+  a.sleep = { uid: it.uid, snap: `${it.x},${it.y},${it.rot}`, lx: p.x, ly: p.y, z: spot.z, until: now + 15000 + Math.random() * 15000, zzzAt: now + 900 };
+  a.x = it.x + p.x; a.y = it.y + p.y; a.z = spot.z; a.path = []; a.squishV = -4;
+}
+function phNapTick(a, now, room) {
+  const s = a.sleep, it = room.items.find(x => x.uid === s.uid);
+  if (!it || `${it.x},${it.y},${it.rot}` !== s.snap || now > s.until) { phWake(a, room); return; }
+  if (now > s.zzzAt) { s.zzzAt = now + 1600; petBurst({ kind: 'emoji', emoji: '💤', spread: 8 }, 1, a); }
+}
+function phWake(a, room) {
+  a.sleep = null; a.z = 0;
+  const c = nearestFree(room || curRoom(), a.x, a.y);
+  if (c) { a.x = c[0] + .5; a.y = c[1] + .5; }
+  a.squishV = -6; a.idleUntil = performance.now() + 4000;
+}
+// 睡在床上的跟床一起畫（排前後才不會被床蓋住）
+function phOccupants() {
+  if (!inPetHouse()) return [];
+  const fine = p => Object.assign({}, p, { hunger: 100, clean: 100, mood: 100 });
+  return phList().map(i => phActors[i]).filter(a => a && a.sleep).map(a => {
+    const st = fine(G.pets[a.idx]);
+    return { uid: a.sleep.uid, pose: 'pet', lx: a.sleep.lx, ly: a.sleep.ly, z: a.sleep.z, h: 26 * stageOf(st).scale, draw: ctx => drawPetActor(ctx, a, st) };
   });
 }
 /* 🧺 重複的寵物可以賣掉（家長：寵物屋這邊可以選擇把重複的寵物賣掉）。
@@ -6152,7 +6211,7 @@ function openDupSell() {
 function phDrawEntries() {
   if (!inPetHouse()) return [];
   const fine = p => Object.assign({}, p, { hunger: 100, clean: 100, mood: 100 });
-  return phList().map(i => actorDrawEntry(phActor(i), fine(G.pets[i])));
+  return phList().filter(i => !phActor(i).sleep).map(i => actorDrawEntry(phActor(i), fine(G.pets[i])));
 }
 function phHit(w) {
   if (!inPetHouse()) return null;
@@ -6165,6 +6224,8 @@ function phHit(w) {
 // 點寵物屋裡的寵物：開心一下（不改數值），旁邊冒出「照顧牠／一起逛」
 function phTap(i, e) {
   const a = phActor(i), p = G.pets[i], now = performance.now(), egg = p.stage === 'egg';
+  if (a.sleep) phWake(a); // 睡著的點了會醒來
+  a.napTo = null;
   a.happyUntil = now + 1500; a.squishV = -6; a.idleUntil = now + 2500; a.path = [];
   if (egg) {
     /* 蛋：在寵物屋摸一摸也會孵出來（家長同意：在哪裡摸都可以，蛋本來就不用餵）。
@@ -8233,7 +8294,10 @@ function toast(msg) {
   setTimeout(() => el.remove(), 2600);
 }
 function fmt(n) { return n.toLocaleString('zh-TW'); }
-function commit() { saveGame(); refreshTop(); renderTab(); requestDraw(); }
+function commit() {
+  if (G.away && G.away.place === 'pethouse') savePetHouse(); // 寵物屋的擺法跟著存檔
+  saveGame(); refreshTop(); renderTab(); requestDraw();
+}
 function requestDraw() { dirty = true; }
 
 const thumbCache = {};
@@ -8297,7 +8361,7 @@ function draw() {
   const c = iso(room.w / 2, room.d / 2);
   ctx.ellipse(c.x, c.y + 18, (room.w + room.d) * TW / 4 + 20, (room.w + room.d) * TH / 4 + 14, 0, 0, Math.PI * 2);
   ctx.fill();
-  drawRoom(ctx, room, { ghost: hold, hoverUid: hold ? null : hoverUid, showGrid: !!hold, extras: [fufuDrawEntry()].concat(petDrawEntries(), visitorDrawEntries(), hostDrawEntries(), supplyDrawEntries(), giftDrawEntries(), phDrawEntries()), occupants: [fufuOccupant(), petOccupant(), visitorOccupant()] });
+  drawRoom(ctx, room, { ghost: hold, hoverUid: hold ? null : hoverUid, showGrid: !!hold, extras: [fufuDrawEntry()].concat(petDrawEntries(), visitorDrawEntries(), hostDrawEntries(), supplyDrawEntries(), giftDrawEntries(), phDrawEntries()), occupants: [fufuOccupant(), petOccupant(), visitorOccupant()].concat(phOccupants()) });
   petDrawOverlay(ctx);
   visitorDrawOverlay(ctx, performance.now());
   drawAmbient(ctx, performance.now());
@@ -8586,7 +8650,7 @@ function moveGhost(w) {
 // ── 拿起／放下 ──
 // 親戚家的擺設是固定的
 function awayNoEdit() {
-  if (!G.away || G.away.place === 'pethouse') return false; // 寵物屋的擺設可以自己搬
+  if (!G.away || G.away.place === 'pethouse') return false; // 寵物屋可以自己布置
   toast(`這是${PLACES[G.away.place].name}，不能搬家具喔！回家再布置吧`);
   return true;
 }
@@ -8614,7 +8678,6 @@ function doUndo() {
   return true;
 }
 function startHoldFromInv(id) {
-  if (G.away && G.away.place === 'pethouse') { toast('寵物屋只能搬裡面原本的東西，自己的家具放在家裡喔'); return; }
   if (awayNoEdit()) return;
   cancelHold();
   snapUndo();
@@ -8635,7 +8698,7 @@ function startHoldFromInv(id) {
   updateHoldUI();
 }
 function startHoldWall(it) {
-  if (G.away) { awayNoEdit() || toast('牆上的東西不能搬喔'); return; }
+  if (awayNoEdit()) return;
   Sound.play('pickUp');
   cancelHold();
   snapUndo();
@@ -8656,7 +8719,6 @@ function startHoldFromRoom(it) {
 }
 function placeHold() {
   if (!hold || !hold.ok) { toast('這裡放不下喔'); Sound.play('miss'); return; }
-  if (G.away && G.away.place === 'pethouse' && !hold.fromUid) { cancelHold(); return; } // 寵物屋不能放自己的家具
   Sound.play('place');
   const room = curRoom(), onWall = hold.def.layer === 'wall';
   const spot = onWall ? { side: hold.side, pos: hold.pos } : { x: hold.x, y: hold.y, rot: hold.rot };
@@ -8671,7 +8733,6 @@ function placeHold() {
     fufuSay(pickLine('newItem', { 家具: hold.def.name }));
     sessionLog.placed++;
   }
-  if (G.away && G.away.place === 'pethouse') savePetHouse(); // 記下這個存檔自己的寵物屋擺法
   hold = null;
   updateHoldUI();
   commit();
@@ -8692,7 +8753,6 @@ function rotateHold() {
 }
 function storeHold() {
   if (!hold) return;
-  if (G.away && G.away.place === 'pethouse') { toast('寵物屋的東西不能收起來喔，幫牠換個位置吧！'); return; }
   if (hold.fromUid) addItem(hold.def.id);
   toast(`${hold.def.name} 收起來了`);
   hold = null;
@@ -8795,7 +8855,6 @@ const isTouchDevice = () => window.matchMedia && window.matchMedia('(pointer: co
 function updateHoldUI() {
   $('.stage').classList.toggle('holding', !!hold);
   $('#holdActions').hidden = !hold;
-  $('#btnStore').hidden = !!(G.away && G.away.place === 'pethouse'); // 寵物屋的東西不能收起來
   const onWall = hold && hold.def.layer === 'wall', touch = isTouchDevice();
   $('#btnRotate').firstChild.textContent = onWall ? '↻ 換牆' : '↻ 旋轉';
   $('#hint').textContent = !hold
@@ -8924,11 +8983,7 @@ function showItemMenu(it, e) {
     if (isEgg()) { toast('蛋還不會走路喔～'); return; }
     petGoNap(it, false);
   });
-  if (G.away && G.away.place === 'pethouse') { // 寵物屋：可以搬、轉向，但不能收起來（也就不能賣）
-    add('✋ 搬動', () => startHoldFromRoom(it));
-    openMenu(entries, e); return;
-  }
-  if (G.away) { openMenu(entries, e); return; } // 親戚家只能用，不能搬、不能收
+  if (G.away && !inPetHouse()) { openMenu(entries, e); return; } // 親戚家只能用，不能搬、不能收（寵物屋跟家裡一樣）
   /* 桌上放一樣小東西。一張桌子只放一樣——不然會疊在一起、會穿過桌面。
      收納裡沒有可以放的東西時就不顯示這一項，免得點了跳出空選單。 */
   if (canHaveTop(it.id)) {
@@ -8989,7 +9044,7 @@ canvas.addEventListener('pointerup', e => {
   if (fufuHit(w)) { if (fufu.pose && fufu.pose.type === 'lie') fufuPoke(); else showKidMenu(e); return; } // 睡覺中點她就叫醒
   const it = pickItem(w);
   if (it) { if (canUse(it)) showItemMenu(it, e); else if (!G.away || inPetHouse()) startHoldFromRoom(it); return; }
-  const wi = G.away ? null : pickWallItem(w);
+  const wi = G.away && !inPetHouse() ? null : pickWallItem(w);
   if (wi) { startHoldWall(wi); return; }
   const g = toGrid(w), room = curRoom();
   if (g.gx >= 0 && g.gy >= 0 && g.gx < room.w && g.gy < room.d) {
@@ -9000,7 +9055,7 @@ canvas.addEventListener('pointerup', e => {
 canvas.addEventListener('contextmenu', e => {
   e.preventDefault();
   hideItemMenu();
-  if (G.away) return;
+  if (G.away && !inPetHouse()) return;
   if (hold) { storeHold(); return; }
   const wi = pickItem(toWorld(e)) ? null : pickWallItem(toWorld(e));
   if (wi) {
