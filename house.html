@@ -6107,8 +6107,14 @@ function phUpdate(dt, now) {
     actorSpring(a, dt, now, egg);
     if (egg) return;
     if (a.sleep) { phNapTick(a, now, room); return; }
+    if (a.play) { phPlayTick(a, now, room); return; }
     if (a.napTo != null && !a.path.length) phNapArrive(a, now, room);
-    else if (a.napTo == null && !a.path.length && now > a.idleUntil && !hold && Math.random() < PH_NAP_CHANCE) phNapGo(a, room);
+    else if (a.playTo != null && !a.path.length) phPlayArrive(a, now, room);
+    else if (a.napTo == null && a.playTo == null && !a.path.length && now > a.idleUntil && !hold && Math.random() < PH_NAP_CHANCE) {
+      // 一半去睡、一半去玩玩具（只有其中一種就做那一種）
+      if (Math.random() < PH_PLAY_SHARE) phPlayGo(a, room) || phNapGo(a, room);
+      else phNapGo(a, room) || phPlayGo(a, room);
+    }
     actorWalk(a, dt, now, room, blk, .15); // 大多自己逛，偶爾跑來找小可愛
   });
 }
@@ -6149,6 +6155,44 @@ function phWake(a, room) {
   if (c) { a.x = c[0] + .5; a.y = c[1] + .5; }
   a.squishV = -6; a.idleUntil = performance.now() + 4000;
 }
+/* 寵物屋裡的寵物也會去玩玩具（家長：寵物屋的寵物也會去玩玩具）：
+   走到玩具旁邊，對著玩具一跳一跳 6～10 秒，冒 🎵／💕／⭐，玩具也跟著輕輕跳。
+   玩具＝「玩具」類的家具（大熊玩偶、玩具箱、鋼琴、公仔、機器人…），自己買來放進寵物屋的也算。 */
+var PH_PLAY_SHARE = .5;   // var：測試要改它
+const PH_PLAY_FX = { piano: '🎵', teddy: '💕', toybox: '⭐', robot_toy: '✨', mini_figure: '⭐', game_cart: '🎮' };
+const isPetToy = it => furnKind(it.id) === 'toy';
+function phPlayGo(a, room) {
+  const toys = room.items.filter(isPetToy);
+  if (!toys.length) return false;
+  const it = toys[Math.floor(Math.random() * toys.length)];
+  const path = findPathToItem(room, Math.floor(a.x), Math.floor(a.y), it);
+  if (!path) return false;
+  a.playTo = it.uid; a.path = path.slice(0, 12);
+  return true;
+}
+function phPlayArrive(a, now, room) {
+  const it = room.items.find(x => x.uid === a.playTo);
+  a.playTo = null;
+  if (!it) return;
+  const def = FURN_BY_ID[it.id], fp = footprint(def, it.rot);
+  if (!(a.x > it.x - 1.6 && a.x < it.x + fp.w + 1.6 && a.y > it.y - 1.6 && a.y < it.y + fp.d + 1.6)) return;
+  const cx = it.x + fp.w / 2, cy = it.y + fp.d / 2, dx = cx - a.x, dy = cy - a.y;
+  if (Math.abs(dx - dy) > .01) a.facing = dx - dy > 0 ? 1 : -1; // 面向玩具
+  a.play = { uid: it.uid, snap: `${it.x},${it.y},${it.rot}`, until: now + 6000 + Math.random() * 4000, hopAt: now, fxAt: now + 300, fx: PH_PLAY_FX[it.id] || '⭐' };
+  a.path = [];
+}
+function phPlayTick(a, now, room) {
+  const pl = a.play, it = room.items.find(x => x.uid === pl.uid);
+  if (!it || `${it.x},${it.y},${it.rot}` !== pl.snap || now > pl.until) { phPlayStop(a, now); return; }
+  if (now > pl.hopAt) { pl.hopAt = now + 650; a.squishV = -6; a.happyUntil = now + 700; }
+  if (now > pl.fxAt) {
+    pl.fxAt = now + 1300;
+    petBurst({ kind: 'emoji', emoji: pl.fx, spread: 14 }, 1, a);
+    stateOf(it.uid).tapAt = now;                   // 玩具也輕輕跳一下
+  }
+}
+function phPlayStop(a, now) { a.play = null; a.idleUntil = (now || performance.now()) + 3000; }
+
 // 睡在床上的跟床一起畫（排前後才不會被床蓋住）
 function phOccupants() {
   if (!inPetHouse()) return [];
@@ -6230,7 +6274,8 @@ function phHit(w) {
 function phTap(i, e) {
   const a = phActor(i), p = G.pets[i], now = performance.now(), egg = p.stage === 'egg';
   if (a.sleep) phWake(a); // 睡著的點了會醒來
-  a.napTo = null;
+  if (a.play) phPlayStop(a, now);
+  a.napTo = null; a.playTo = null;
   a.happyUntil = now + 1500; a.squishV = -6; a.idleUntil = now + 2500; a.path = [];
   if (egg) {
     /* 蛋：在寵物屋摸一摸也會孵出來（家長同意：在哪裡摸都可以，蛋本來就不用餵）。

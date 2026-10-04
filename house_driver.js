@@ -2336,10 +2336,10 @@
       G = normalizeSave(JSON.parse(saved12)); G.away = null; phReset();
       G.pets = [newPet('mochi', 'kid', 'M'), newPet(PET_SPECIES[1].id, 'kid', 'N')]; G.activePet = 0; G.pet = G.pets[0]; G.companions = [];
       enterPetHouse();
-      var napKeep = PH_NAP_CHANCE; PH_NAP_CHANCE = 1;
+      var napKeep = PH_NAP_CHANCE, shareKeep = PH_PLAY_SHARE; PH_NAP_CHANCE = 1; PH_PLAY_SHARE = 0;
       var tN = performance.now() + 10000, slept = null;
       for (var nf = 0; nf < 1500 && !slept; nf++) { gameStep(1 / 60, tN + nf * 17); var aN = phActors[1]; if (aN && aN.sleep) slept = aN; }
-      PH_NAP_CHANCE = napKeep;
+      PH_NAP_CHANCE = napKeep; PH_PLAY_SHARE = shareKeep;
       if (!slept) fails.push('寵物屋的寵物不會去寵物床／小屋睡覺');
       else {
         var bedIt = curRoom().items.filter(function(x){ return x.uid === slept.sleep.uid; })[0];
@@ -2352,6 +2352,31 @@
         if (!drewSlept) fails.push('睡著的寵物畫面上看不到（沒有跟床一起畫）');
         phTap(1, { clientX: 10, clientY: 10 }); hideItemMenu();
         if (slept.sleep) fails.push('點睡著的寵物沒有醒來');
+      }
+      // 玩玩具：一定去玩的時候，走到玩具旁邊一跳一跳、冒符號、玩具也跳；時間到停；點了停
+      phReset(); G.away = null; enterPetHouse();
+      var toyIt = curRoom().items.filter(function(x){ return furnKind(x.id) === 'toy'; })[0];
+      if (!toyIt) fails.push('（測試）寵物屋裡沒有玩具');
+      var nk = PH_NAP_CHANCE, pk = PH_PLAY_SHARE; PH_NAP_CHANCE = 1; PH_PLAY_SHARE = 1;
+      var tP = performance.now() + 50000, player = null;
+      for (var pf3 = 0; pf3 < 1500 && !player; pf3++) { gameStep(1 / 60, tP + pf3 * 17); var aP = phActors[1]; if (aP && aP.play) player = aP; }
+      PH_NAP_CHANCE = nk; PH_PLAY_SHARE = pk;
+      if (!player) fails.push('寵物屋的寵物不會去玩玩具');
+      else {
+        var pIt = curRoom().items.filter(function(x){ return x.uid === player.play.uid; })[0];
+        if (!pIt || furnKind(pIt.id) !== 'toy') fails.push('寵物玩的不是玩具：' + (pIt && pIt.id));
+        var fp3 = footprint(FURN_BY_ID[pIt.id], pIt.rot);
+        if (!(player.x > pIt.x - 1.6 && player.x < pIt.x + fp3.w + 1.6 && player.y > pIt.y - 1.6 && player.y < pIt.y + fp3.d + 1.6)) fails.push('寵物沒有走到玩具旁邊就開始玩');
+        var px0 = player.x, py0 = player.y, tP2 = tP + pf3 * 17;
+        for (var pf4 = 1; pf4 <= 120; pf4++) gameStep(1 / 60, tP2 + pf4 * 17);
+        if (player.x !== px0 || player.y !== py0) fails.push('寵物玩玩具的時候自己走掉了');
+        if (!player.particles.length) fails.push('寵物玩玩具沒有冒出符號');
+        if (!(stateOf(pIt.uid).tapAt > tP2)) fails.push('寵物玩玩具，玩具沒有跟著跳');
+        phTap(1, { clientX: 10, clientY: 10 }); hideItemMenu();
+        if (player.play) fails.push('點正在玩的寵物，牠沒有停下來');
+        player.play = { uid: pIt.uid, snap: pIt.x + ',' + pIt.y + ',' + pIt.rot, until: 0, hopAt: 0, fxAt: 0, fx: '⭐' };
+        phPlayTick(player, performance.now(), curRoom());
+        if (player.play) fails.push('玩玩具時間到了沒有停');
       }
     } finally { toast = realToast12; cancelHold(); hideItemMenu(); G = normalizeSave(JSON.parse(keepG12)); saveGame(); phReset(); refreshTop(); updateHoldUI(); }
 
