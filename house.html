@@ -3358,11 +3358,53 @@ function openGiftBox() {
 function claimOpenGift() {
   if (G.openGift) return null;
   G.openGift = true;
+  G.openGiftAt = Date.now();               // 搬新家的親戚：教學沒做完的話，從這裡算 10 分鐘
   G.bells += OPEN_GIFT_BELLS;              // 禮物不算「賺到的」
   const i = addEgg();
   switchMainPet(i);
   commit();
   return i;
+}
+/* 叔叔／阿婆的包裹：打開才給家具（家具第一次拿到會跳「新的！」大圖）。
+   沒有 ✕：關掉的話包裹還在地上，再點還可以開。 */
+function openWelcomeBox(id) {
+  const sp = giftSpecById(id);
+  if (!sp || !sp.wanted()) return;
+  Sound.play('click');
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', sp.title));
+  const env = el('div', 'gift-env', '🎁');
+  card.appendChild(env);
+  card.appendChild(el('p', 'gift-tx', '搬新家的禮物！'));
+  const btn = el('button', 'big news-ok', '🎁 打開包裹');
+  btn.onclick = () => {
+    const fid = claimWelcome(id);
+    if (!fid) { $('#modal').hidden = true; return; }
+    giftVisit.box = null;
+    Sound.play('coin');
+    env.classList.add('open');
+    const def = FURN_BY_ID[fid], row = el('div', 'news-row');
+    const pic = thumb(def); pic.className = 'news-ic';
+    row.append(pic, el('span', 'news-tx', `${def.name}！放進「我的東西」了`));
+    const box = el('div', 'news'); box.appendChild(row);
+    card.querySelector('.gift-tx').replaceWith(box);
+    btn.textContent = sp.thanks;
+    btn.onclick = () => { $('#modal').hidden = true; stopSpeak(); fufuSay(sp.thanks, 2400); };
+    try { speak(`${sp.people()[0].short}送你${def.name}！`); } catch (e) {}
+  };
+  card.appendChild(btn);
+  $('#modal').hidden = false;
+}
+// 真正給家具：先記「送過了」再給，不會拿兩次
+function claimWelcome(id) {
+  const sp = giftSpecById(id);
+  if (!sp || !sp.wanted()) return null;
+  G.welcome[id] = true;
+  const fid = sp.pick();
+  addItem(fid);
+  commit();
+  return fid;
 }
 // 打開遊戲一會兒之後才跳（等畫面、休息畫面都穩定）；別的視窗開著就晚一點再試
 function maybeShowNews(tries) {
@@ -3380,7 +3422,8 @@ function newGame() {
     bells: START_BELLS - OPEN_GIFT_BELLS, // 剩下的由開幕包裹給
     openGift: false,                       // 🎁 新版開幕包裹打開了沒
     guide: 'egg',
-    trophies: {},                          // 🏆 拿過的集滿獎盃 {set id: true}                          // 第一次玩的小手教學走到哪一步（egg→place→shop→done）
+    trophies: {},                          // 🏆 拿過的集滿獎盃 {set id: true}
+    welcome: { at: 0, uncle: false, grandma: false }, // 🏠 搬新家：叔叔、阿婆來送禮了沒（at＝教學做完的時間）                          // 第一次玩的小手教學走到哪一步（egg→place→shop→done）
     earned: 0,
     inv: { wood_bed: 1, wood_chair: 1, wood_table: 1, plant_s: 1 },
     walls: ['wp_cream'],
@@ -3483,6 +3526,7 @@ function normalizeSave(g) {
   });
   const out = Object.assign(newGame(), g);
   if (g.guide === undefined) out.guide = 'done'; // 已經在玩的存檔不用教
+  if (!g.welcome) out.welcome = { at: 0, uncle: true, grandma: true }; // 已經在玩的存檔不算搬新家
   if (!Array.isArray(g.newsSeen)) out.newsSeen = []; // 舊存檔：還沒看過任何公告，要讓她看到這次更新了什麼
   /* 補償也要發給「已經存在的存檔」——只改 newGame() 的話，
      她那台已經有存檔了，newGame() 根本不會再跑，一毛都拿不到。
@@ -6621,19 +6665,76 @@ function supplyDrawEntries() {
 
    錢跟蛋要點了包裹才真的給（claimOpenGift）。包裹沒有存進存檔：
    還沒打開就關掉遊戲，下次爸爸媽媽會再送來一次，不會拿不到也不會拿兩次。 */
-const giftVisit = { state: 'none', actors: [], alpha: 0, box: null, actAt: 0, startAt: 0, says: [] };
+const giftVisit = { state: 'none', actors: [], alpha: 0, box: null, actAt: 0, startAt: 0, says: [], spec: null };
 const GIFT_LINES = ['新版小屋開幕囉！恭喜恭喜！', '這是爸爸媽媽送你的包裹，打開看看！'];
-function giftWanted() { return !G.openGift && SAVE_LOCKED == null; }
+const GIFT_REMIND_MS = 15000;
+const GIFT_REMIND = ['點一下包裹就會打開喔！', '打開看看裡面有什麼～'];
+const GIFT_BYE = ['不客氣！好好布置你的小屋喔～', '寵物蛋要好好照顧喔！'];
+
+/* ===== 🏠 搬新家：叔叔、阿婆也來送禮 =====
+   家長的原則：來家裡的大人只有家人（爸爸、媽媽、叔叔、阿婆）；老師、館員、園長只待在自己的地方。
+   只有新存檔、只來一次（搬新家賀禮），不然禮物太多、錢太好賺。
+   等小手教學做完才來（不打斷她學）：做完 3 分鐘叔叔、6 分鐘阿婆。
+   教學一直沒做完的話，打開爸媽的包裹約 10 分鐘後叔叔也會來，不會永遠等不到。
+   送的是她還沒有的家具（3,000 以內）：叔叔送現代風、玩具；阿婆送自然風、植物。 */
+const WELCOME_MS = { uncle: 3 * 60000, grandma: 6 * 60000 };
+const WELCOME_FALLBACK_MS = 7 * 60000;   // 教學沒做完：打開包裹後當作 7 分鐘時做完 → 叔叔約 10 分鐘、阿婆約 13 分鐘
+const WELCOME_MAX_PRICE = 3000;
+function welcomeBase() {
+  const w = G.welcome || {};
+  const a = w.at || Infinity, b = G.openGiftAt ? G.openGiftAt + WELCOME_FALLBACK_MS : Infinity;
+  return Math.min(a, b);
+}
+function welcomeDue(id) {
+  const w = G.welcome || {};
+  if (w[id] !== false) return false;                         // 舊存檔、已經送過
+  if (id === 'grandma' && w.uncle === false) return false;   // 叔叔先來
+  return Date.now() >= welcomeBase() + WELCOME_MS[id];
+}
+// 從這一類挑一件她還沒有的；都有了就從這一類隨便挑
+function welcomePick(test) {
+  const pool = FURNITURE.filter(f => !f.gift && f.price <= WELCOME_MAX_PRICE && test(f));
+  const fresh = pool.filter(f => !G.seen[f.id]);
+  const list = fresh.length ? fresh : pool;
+  return list.length ? list[Math.floor(Math.random() * list.length)].id : 'plant_s';
+}
+/* 每一種「家人送包裹」：誰來、說什麼、打開是什麼。爸媽排第一個。 */
+const GIFT_SPECS = [
+  { id: 'parents', people: () => PARENTS, draw: 'parent', carry: 'dad',
+    wanted: () => !G.openGift, due: () => true,
+    lines: GIFT_LINES, remind: GIFT_REMIND, bye: GIFT_BYE, open: () => openGiftBox() },
+  { id: 'uncle', people: () => [HOSTS.uncle], draw: 'host',
+    wanted: () => (G.welcome || {}).uncle === false, due: () => welcomeDue('uncle'),
+    lines: ['搬新家恭喜啊！叔叔來看你囉～', '叔叔帶了禮物，打開看看！'], remind: ['點一下包裹看看～'],
+    bye: ['不客氣！有空來叔叔家看漫畫喔～'], thanks: '謝謝叔叔！', title: '📦 叔叔送的包裹',
+    pick: () => welcomePick(f => f.theme === 'modern' || furnKind(f.id) === 'toy'), open: () => openWelcomeBox('uncle') },
+  { id: 'grandma', people: () => [HOSTS.grandma], draw: 'host',
+    wanted: () => (G.welcome || {}).grandma === false, due: () => welcomeDue('grandma'),
+    lines: ['阿婆來看你囉！新家好漂亮～', '這是阿婆送你的，打開看看！'], remind: ['乖孫，點一下包裹喔～'],
+    bye: ['阿婆家的果園等你來玩喔～'], thanks: '謝謝阿婆！', title: '📦 阿婆送的包裹',
+    pick: () => welcomePick(f => f.theme === 'nature' || furnKind(f.id) === 'plant'), open: () => openWelcomeBox('grandma') }
+];
+const giftSpecById = id => GIFT_SPECS.find(s => s.id === id);
+// 現在這一份包裹（正在送、或地上那一份）還要不要；沒有在送的時候看「下一份」
+function giftWanted() {
+  if (SAVE_LOCKED != null) return false;
+  const sp = giftVisit.spec;
+  return sp ? sp.wanted() : !G.openGift;
+}
+function giftNextSpec() { return SAVE_LOCKED != null ? null : GIFT_SPECS.find(s => s.wanted() && s.due()) || null; }
 // 可以開始走進來了嗎：在自己家、沒有視窗、沒在休息、沒在搬家具、沒有人在送小安素
 function giftCanStart() {
   return !G.away && $('#modal').hidden && !(typeof resting !== 'undefined' && resting) && !hold && !sup.who;
 }
-function giftArrive(now) {
+function giftArrive(now, spec) {
+  spec = spec || GIFT_SPECS[0];
+  giftVisit.spec = spec;
+  const people = spec.people();
   const room = curRoom();
   const c = nearestFree(room, room.w - .5, room.d - .5) || [0, 0];
   /* 兩個人各走到她旁邊、一人站一邊（不要疊在一起，也不要站在她身上） */
   const kid = fufuTile(), blk = blockedGrid(room), taken = [kid.join()], targets = [];
-  PARENTS.forEach(() => {
+  people.forEach(() => {
     let best = null, bd = Infinity;
     for (let i = 0; i < room.w; i++) for (let j = 0; j < room.d; j++) {
       if (blk[i][j] || taken.includes(i + ',' + j)) continue;
@@ -6644,7 +6745,7 @@ function giftArrive(now) {
     }
     best = best || c; taken.push(best.join()); targets.push(best);
   });
-  giftVisit.actors = PARENTS.map((who, i) => {
+  giftVisit.actors = people.map((who, i) => {
     const a = { room: roomKey(), x: c[0] + .5, y: c[1] + .5, z: 0, path: [], t: i * .4, facing: -1,
                 idleUntil: 0, blinkAt: 0, squish: 0, squishV: -6, lean: 0, leanV: 0,
                 press: null, happyUntil: now + 1500, particles: [] };
@@ -6657,7 +6758,7 @@ function giftArrive(now) {
   giftVisit.state = 'in'; giftVisit.alpha = 0; giftVisit.box = null; giftVisit.says = [];
   giftVisit.startAt = now; giftVisit.actAt = now + 6000;    // 最久六秒一定放下包裹
 }
-function giftSay(i, text, ms) { giftVisit.says[i] = { text, until: performance.now() + (ms || 3400) }; }
+function giftSay(i, text, ms) { i = i % Math.max(1, giftVisit.actors.length); giftVisit.says[i] = { text, until: performance.now() + (ms || 3400) }; }
 function giftDrop(now) {
   const room = curRoom();
   const kid = fufuTile();
@@ -6673,14 +6774,12 @@ function giftDrop(now) {
   spot = spot || nearestFree(room, kid[0] + .5, kid[1] + .5) || [0, 0];
   giftVisit.box = { room: roomKey(), x: spot[0] + .5, y: spot[1] + .5, at: now };
   Sound.play('coin');
-  giftSay(0, GIFT_LINES[0], 3200);
-  setTimeout(() => { if (giftVisit.state !== 'none') giftSay(1, GIFT_LINES[1], 3600); }, 1600);
+  const lines = giftVisit.spec.lines;
+  giftSay(0, lines[0], 3200);
+  setTimeout(() => { if (giftVisit.state !== 'none') giftSay(1, lines[1], 3600); }, giftVisit.actors.length > 1 ? 1600 : 3300);
   setTimeout(() => { if (giftVisit.box && !fufu.pose) fufuSay('哇！是包裹！', 2400); }, 3400);
   giftVisit.state = 'drop'; giftVisit.actAt = now + 5200;
 }
-const GIFT_REMIND_MS = 15000;
-const GIFT_REMIND = ['點一下包裹就會打開喔！', '打開看看裡面有什麼～'];
-const GIFT_BYE = ['不客氣！好好布置你的小屋喔～', '寵物蛋要好好照顧喔！'];
 // 她說了謝謝：兩個人開心跳一下、回一句話，過一會兒才走
 // 等她的「謝謝爸爸媽媽！」說完（對話框才不會疊在一起），媽媽先回、爸爸再回
 function giftThanks(now) {
@@ -6689,8 +6788,9 @@ function giftThanks(now) {
   giftVisit.actors.forEach(({ a }) => { a.happyUntil = now + 2000; a.squishV = -6; });
 }
 function giftByeTick(now) {
-  if (giftVisit.byeStep === 0 && now > giftVisit.byeAt) { giftVisit.byeStep = 1; giftSay(0, GIFT_BYE[0], 2600); }
-  else if (giftVisit.byeStep === 1 && now > giftVisit.byeAt + 2000) { giftVisit.byeStep = 2; giftSay(1, GIFT_BYE[1], 2600); }
+  const bye = giftVisit.spec.bye;
+  if (giftVisit.byeStep === 0 && now > giftVisit.byeAt) { giftVisit.byeStep = 1; giftSay(0, bye[0], 2600); }
+  else if (giftVisit.byeStep === 1 && now > giftVisit.byeAt + 2000 && bye[1]) { giftVisit.byeStep = 2; giftSay(1, bye[1], 2600); }
 }
 function giftLeave(now) {
   const room = curRoom();
@@ -6700,7 +6800,7 @@ function giftLeave(now) {
 }
 function giftTick(now) {
   if (giftVisit.state === 'none') {
-    if (!giftWanted()) { giftVisit.box = null; return; }
+    if (giftVisit.box && !giftWanted()) { giftVisit.box = null; giftVisit.spec = null; }
     if (giftVisit.box) { // 包裹在地上等她點；她換房間或出門回來，包裹跟著她
       if (giftVisit.box.room !== roomKey() && !G.away) {
         const room = curRoom(), c = nearestFree(room, Math.round(fufu.x) + 1, Math.round(fufu.y)) || [0, 0];
@@ -6708,15 +6808,19 @@ function giftTick(now) {
       }
       return;
     }
+    const next = giftNextSpec();
+    if (!next) { giftVisit.spec = null; return; }
     if (!giftVisit.startAt) giftVisit.startAt = now + 2000;      // 一打開遊戲先等兩秒，畫面穩了再進來
     if (now < giftVisit.startAt || !giftCanStart()) return;
-    giftArrive(now);
+    giftArrive(now, next);
     return;
   }
   const room = curRoom();
-  if (G.away || giftVisit.actors[0].a.room !== roomKey()) { // 她走掉了：爸媽先把包裹放下就走
+  if (G.away || giftVisit.actors[0].a.room !== roomKey()) { // 她走掉了：先把包裹放下就走
+    const keepSpec = giftVisit.spec, still = giftWanted();
     giftReset();
-    if (!giftWanted()) return;                    // 已經打開了，不用再放
+    if (!still) return;                           // 已經打開了，不用再放
+    giftVisit.spec = keepSpec;
     if (!G.away) { const c = nearestFree(room, Math.round(fufu.x) + 1, Math.round(fufu.y)) || [0, 0]; giftVisit.box = { room: roomKey(), x: c[0] + .5, y: c[1] + .5, at: now }; }
     else giftVisit.box = { room: 'home', x: 0, y: 0, at: now };
     return;
@@ -6741,8 +6845,9 @@ function giftTick(now) {
     if (!giftWanted()) {
       if ($('#modal').hidden) giftThanks(now);
     } else if (now > giftVisit.actAt) {
-      const i = giftVisit.remind = ((giftVisit.remind || 0) + 1) % 2;
-      giftSay(i, GIFT_REMIND[i], 3400);
+      const n = giftVisit.actors.length, rm = giftVisit.spec.remind;
+      const i = giftVisit.remind = ((giftVisit.remind || 0) + 1) % n;
+      giftSay(i, rm[(giftVisit.remindN = (giftVisit.remindN || 0) + 1) % rm.length], 3400);
       giftVisit.actors[i].a.squishV = -5;
       giftVisit.actAt = now + GIFT_REMIND_MS;
     }
@@ -6752,10 +6857,10 @@ function giftTick(now) {
   } else if (giftVisit.state === 'out') {
     if (giftVisit.actors.every(({ a }) => !a.path.length) || now > giftVisit.actAt) { giftVisit.state = 'gone'; }
   } else if (giftVisit.state === 'gone') {
-    if (giftVisit.alpha <= 0) { giftVisit.state = 'none'; giftVisit.actors = []; giftVisit.says = []; giftVisit.startAt = 0; }
+    if (giftVisit.alpha <= 0) { giftVisit.state = 'none'; giftVisit.actors = []; giftVisit.says = []; giftVisit.startAt = 0; giftVisit.spec = null; }
   }
 }
-function giftReset() { giftVisit.state = 'none'; giftVisit.actors = []; giftVisit.says = []; giftVisit.box = null; giftVisit.startAt = 0; }
+function giftReset() { giftVisit.state = 'none'; giftVisit.actors = []; giftVisit.says = []; giftVisit.box = null; giftVisit.startAt = 0; giftVisit.spec = null; }
 function giftBoxHere() { return giftVisit.box && giftVisit.box.room === roomKey() && !G.away ? giftVisit.box : null; }
 function giftBoxHit(w) {
   const b = giftBoxHere();
@@ -6781,7 +6886,9 @@ function drawGiftBox(ctx) {
 function giftDrawEntries() {
   const out = [];
   if (giftVisit.state !== 'none') giftVisit.actors.forEach(({ who, a }) => out.push({ x: a.x - .2, y: a.y - .2, w: .4, d: .4, z: 0, h: 30 * SUP_K,
-    drawFn: ctx => drawParentActor(ctx, a, who, giftVisit.alpha, giftVisit.state === 'in' && who.id === 'dad') }));
+    drawFn: ctx => giftVisit.spec && giftVisit.spec.draw === 'host'
+      ? drawNeighborActor(ctx, a, who, giftVisit.alpha, false, giftVisit.state === 'thanks')
+      : drawParentActor(ctx, a, who, giftVisit.alpha, giftVisit.state === 'in' && who.id === 'dad') }));
   const b = giftBoxHere();
   if (b) out.push({ x: b.x - .3, y: b.y - .3, w: .6, d: .6, z: 0, h: 30, drawFn: drawGiftBox });
   return out;
@@ -8073,6 +8180,7 @@ function guideAdvance() {
   if (G.guide === 'place' && !Object.keys(G.inv).some(id => G.inv[id] > 0) && !hold) G.guide = 'shop'; // 沒有家具可以放
   if (G.guide === 'shop' && tab === 'shop') {
     G.guide = 'done';
+    if (G.welcome && !G.welcome.at) G.welcome.at = Date.now(); // 叔叔、阿婆從這時候開始算
     saveGame();
     toast('🎉 學會了！接下來自己慢慢布置吧');
     fufuSay('我會布置了！', 2600);
@@ -8616,7 +8724,7 @@ canvas.addEventListener('pointerup', e => {
     placeHold();
     return;
   }
-  if (giftBoxHit(w)) { openGiftBox(); return; }
+  if (giftBoxHit(w)) { (giftVisit.spec || GIFT_SPECS[0]).open(); return; }
   if (visitorHit(w)) { openMenu(visitorMenuEntries(), e); return; }
   if (hostHit(w)) { openMenu(hostMenuEntries(), e); return; }
   const fa = farmHit(w);

@@ -2264,6 +2264,84 @@
     G = keepG; G.away = keepAway; G.openGift = true; saveGame(); giftReset();
     $('#modal').hidden = true;
 
+    /* 68 🏠 搬新家：叔叔、阿婆也來送包裹（只有家人會來家裡）。只有新存檔、只來一次；
+       教學做完 3 分鐘叔叔、6 分鐘阿婆；教學沒做完的話打開爸媽包裹 10 分鐘後也會來；
+       送她還沒有的家具（3,000 以內，叔叔現代／玩具、阿婆自然／植物）；打開才給；說謝謝才走 */
+    var FAMILY = ['mom', 'dad', 'uncle', 'grandma'];
+    GIFT_SPECS.forEach(function(sp){ sp.people().forEach(function(pp){ if (FAMILY.indexOf(pp.id) < 0) fails.push('來家裡送禮的「' + pp.id + '」不是家人'); }); });
+    var oldW = JSON.parse(JSON.stringify(G)); delete oldW.welcome;
+    var oldWn = normalizeSave(oldW);
+    if (!oldWn || oldWn.welcome.uncle !== true || oldWn.welcome.grandma !== true) fails.push('已經在玩的存檔也算搬新家（叔叔阿婆會跑來）');
+    var keepG6 = JSON.stringify(G), keepFufu6 = [fufu.x, fufu.y, fufu.pose, fufu.path];
+    var realToast7 = toast; toast = function(){};
+    try {
+      G = newGame(); G.away = null; cancelHold(); giftReset(); $('#modal').hidden = true; SC_QUEUE.length = 0;
+      fufu.pose = null; fufu.path = []; fufu.x = 2.5; fufu.y = 2.5;
+      claimOpenGift(); $('#modal').hidden = true; giftReset();
+      if (welcomeDue('uncle')) fails.push('教學還沒做完、包裹剛打開，叔叔就來了');
+      G.openGiftAt = Date.now() - 9 * 60000;
+      if (welcomeDue('uncle')) fails.push('教學沒做完，打開包裹 9 分鐘叔叔就來了（要 10 分鐘）');
+      G.openGiftAt = Date.now() - 11 * 60000;
+      if (!welcomeDue('uncle')) fails.push('教學一直沒做完，10 分鐘後叔叔還是不會來');
+      G.openGiftAt = Date.now();
+      G.welcome.at = Date.now() - 2 * 60000;
+      if (welcomeDue('uncle')) fails.push('教學做完 2 分鐘叔叔就來了（要 3 分鐘）');
+      G.welcome.at = Date.now() - 7 * 60000;
+      if (!welcomeDue('uncle')) fails.push('教學做完 7 分鐘叔叔還沒來');
+      if (welcomeDue('grandma')) fails.push('叔叔還沒來，阿婆先來了');
+      var tw = performance.now();
+      giftTick(tw); giftTick(tw + 2100);
+      if (giftVisit.state !== 'in' || !giftVisit.spec || giftVisit.spec.id !== 'uncle' || giftVisit.actors.length !== 1 || giftVisit.actors[0].who.id !== 'uncle') fails.push('叔叔沒有走進來（' + giftVisit.state + '／' + (giftVisit.spec && giftVisit.spec.id) + '）');
+      else {
+        if (giftDrawEntries().length !== 1) fails.push('叔叔沒有被畫出來');
+        for (var w1 = 0; w1 < 1500 && giftVisit.state !== 'wait'; w1++) giftTick(tw + 2200 + w1 * 1000 / 60);
+        if (giftVisit.state !== 'wait' || !giftBoxHere()) fails.push('叔叔沒有放下包裹等她（' + giftVisit.state + '）');
+        if (!giftVisit.says[0] || !/叔叔/.test(giftVisit.says[0].text)) fails.push('叔叔放包裹時沒有說話');
+        if (G.welcome.uncle !== false) fails.push('包裹還沒打開就算送過了');
+        var bxw = giftBoxHere(), bpw = iso(bxw.x, bxw.y, 0), rw = canvas.getBoundingClientRect();
+        canvas.dispatchEvent(new PointerEvent('pointerup', { clientX: rw.left + bpw.x * view.scale + view.ox, clientY: rw.top + (bpw.y - 12) * view.scale + view.oy, bubbles: true }));
+        if ($('#modal').hidden || !/叔叔送的包裹/.test($('#modalCard').textContent)) fails.push('點叔叔的包裹沒有打開「叔叔送的包裹」');
+        var seenBefore = JSON.stringify(G.seen);
+        var ob = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return /打開包裹/.test(b.textContent); })[0];
+        if (ob) ob.onclick();
+        if (G.welcome.uncle !== true) fails.push('打開叔叔的包裹沒有記起來');
+        var gotId = Object.keys(G.seen).filter(function(k){ return JSON.parse(seenBefore)[k] !== true; })[0];
+        var gd = gotId && FURN_BY_ID[gotId];
+        if (!gd) fails.push('叔叔的包裹裡沒有新的家具');
+        else {
+          if (gd.price > WELCOME_MAX_PRICE) fails.push('叔叔送的家具太貴（' + gd.price + '）');
+          if (!(gd.theme === 'modern' || furnKind(gd.id) === 'toy')) fails.push('叔叔送的不是現代風或玩具：' + gd.name);
+        }
+        giftTick(tw + 60000);
+        if (giftVisit.state !== 'wait') fails.push('她還在看包裹，叔叔就先走了');
+        var tb = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return /謝謝叔叔/.test(b.textContent); })[0];
+        if (!tb) fails.push('沒有「謝謝叔叔！」');
+        else tb.onclick();
+        giftTick(tw + 60100);
+        if (giftVisit.state !== 'thanks') fails.push('說了謝謝叔叔，叔叔沒有回話');
+        for (var w2 = 0; w2 < 2000 && giftVisit.state !== 'none'; w2++) giftTick(tw + 60200 + w2 * 1000 / 60);
+        if (giftVisit.state !== 'none') fails.push('叔叔走不掉（' + giftVisit.state + '）');
+        giftTick(tw + 200000);
+        if (giftVisit.state !== 'none') fails.push('叔叔送過了又來一次（或阿婆太早來）');
+      }
+      // 阿婆：叔叔來過、時間到了才來；送自然風或植物
+      G.welcome.at = Date.now() - 7 * 60000;
+      if (!welcomeDue('grandma')) fails.push('叔叔來過、過了 6 分鐘，阿婆還不來');
+      if (giftNextSpec() !== giftSpecById('grandma')) fails.push('下一個來的不是阿婆');
+      var gs2 = JSON.stringify(G.seen), gid = claimWelcome('grandma'), gd2 = FURN_BY_ID[gid];
+      if (!gd2 || !(gd2.theme === 'nature' || furnKind(gid) === 'plant')) fails.push('阿婆送的不是自然風或植物：' + (gd2 && gd2.name));
+      if (JSON.parse(gs2)[gid]) fails.push('阿婆送了她已經有的家具');
+      if (claimWelcome('grandma') !== null) fails.push('阿婆的包裹可以開兩次');
+      var tooExp = 0; for (var wp = 0; wp < 300; wp++) { if (FURN_BY_ID[welcomePick(function(){ return true; })].price > WELCOME_MAX_PRICE) tooExp++; }
+      if (tooExp) fails.push('搬新家禮物會挑到超過 ' + WELCOME_MAX_PRICE + ' 的家具');
+      if (giftNextSpec()) fails.push('叔叔阿婆都送過了，還有人要來');
+    } finally {
+      toast = realToast7; giftReset(); $('#modal').hidden = true; SC_QUEUE.length = 0;
+      var o9 = document.getElementById('showcase'); if (o9) o9.remove();
+      fufu.x = keepFufu6[0]; fufu.y = keepFufu6[1]; fufu.pose = keepFufu6[2]; fufu.path = keepFufu6[3];
+      G = normalizeSave(JSON.parse(keepG6)); saveGame();
+    }
+
     /* 67 💾 備份獨立成一個分頁（家長：從設定移出來）：設定頁不再有備份；寫上次備份幾天前；
        超過 7 天分頁上有紅點；存成檔案之後紅點消失；存不進去的紅色提醒帶到備份頁 */
     var bkTab = document.querySelector('#tabs button[data-tab="backup"]');
@@ -2480,6 +2558,7 @@
     if (!near(true, cs[0], cs[1])) fails.push('小手沒有指「商店」');
     openTab('shop'); guideNext = 0; guideTick(performance.now());
     if (G.guide !== 'done' || !hand.hidden) fails.push('打開商店後教學沒有結束');
+    if (!G.welcome || !(G.welcome.at > 0)) fails.push('教學做完沒有記時間（叔叔阿婆不知道什麼時候來）');
     var reG3 = normalizeSave(JSON.parse(localStorage.getItem(SAVE_KEY)));
     if (!reG3 || reG3.guide !== 'done') fails.push('教學做完沒有存起來（下次又要教一次）');
     // 出錯也不能讓畫面停住
