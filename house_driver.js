@@ -85,7 +85,7 @@
     localStorage.removeItem(UNDO_KEY);
 
     // ⑤ 備份那一頁：按鈕要在、貼垃圾按還原不可以動到存檔
-    openTab('save');
+    openTab('backup');
     var body = document.querySelector('#tabBody');
     var btns = [].slice.call(body.querySelectorAll('button')).map(function(b){ return b.textContent; });
     ['複製備份','存成檔案','還原'].forEach(function(t){
@@ -108,10 +108,10 @@
       return [].slice.call(document.querySelectorAll('#tabBody h3'))
         .some(function(h){ return h.textContent.indexOf('\u23ea') >= 0; }); };
     localStorage.removeItem(UNDO_KEY);
-    openTab('save');
+    openTab('backup');
     if (undoHead()) fails.push('沒有東西可以反悔，卻顯示了反悔那一塊');
     localStorage.setItem(UNDO_KEY, makeBackup());
-    openTab('save');
+    openTab('backup');
     if (!undoHead()) fails.push('有上一份可以反悔，卻沒顯示反悔那一塊');
     localStorage.removeItem(UNDO_KEY);
 
@@ -1475,7 +1475,7 @@
     var asks = [], realConfirm = window.confirm, realApply = applyBackup, applied = 0;
     applyBackup = function(){ applied++; return false; };   // 不真的寫入（會重新整理頁面）
     try {
-      openTab('save');
+      openTab('backup');
       var box9 = document.querySelector('#tabBody textarea');
       var rsB = [].filter.call(document.querySelectorAll('#tabBody button'), function(b){ return /還原/.test(b.textContent) && !/強制/.test(b.textContent); })[0];
       window.confirm = function(m){ asks.push(m); return asks.length < 2; };
@@ -1520,7 +1520,7 @@
     var tl5 = [], realToast5 = toast; toast = function(m){ tl5.push(m); };
     try {
       if (freshBackup() !== null) fails.push('存檔被鎖住時還產生備份（畫面上的不是她的進度）');
-      openTab('save');
+      openTab('backup');
       var dlB = [].filter.call(document.querySelectorAll('#tabBody button'), function(b){ return /存成檔案/.test(b.textContent); })[0];
       var realDl2 = downloadText, dlCalled = 0; downloadText = function(){ dlCalled++; };
       try { dlB.onclick(); } finally { downloadText = realDl2; }
@@ -2140,7 +2140,7 @@
       closeGameWindow();
     });
     // (5) 備份要用按下去那一刻的最新進度
-    openTab('save');
+    openTab('backup');
     G.bells = 777777;
     var realDl = downloadText, got = null;
     downloadText = function(t){ got = t; };
@@ -2263,6 +2263,43 @@
     fufu.x = keepFufu[0]; fufu.y = keepFufu[1]; fufu.pose = keepFufu[2]; fufu.path = keepFufu[3];
     G = keepG; G.away = keepAway; G.openGift = true; saveGame(); giftReset();
     $('#modal').hidden = true;
+
+    /* 67 💾 備份獨立成一個分頁（家長：從設定移出來）：設定頁不再有備份；寫上次備份幾天前；
+       超過 7 天分頁上有紅點；存成檔案之後紅點消失；存不進去的紅色提醒帶到備份頁 */
+    var bkTab = document.querySelector('#tabs button[data-tab="backup"]');
+    if (!bkTab || !/💾/.test(bkTab.textContent) || !/備份/.test(bkTab.textContent)) fails.push('沒有「💾 備份」分頁');
+    openTab('save');
+    if (/複製備份|存成檔案|把備份放回來/.test($('#tabBody').textContent)) fails.push('設定頁還留著備份（應該移到備份分頁）');
+    if (!/重新開始/.test($('#tabBody').textContent) || !/開一個新存檔/.test($('#tabBody').textContent)) fails.push('設定頁的存檔、重新開始不見了');
+    var keepLB = lsGet(backupKey()), keepFS = lsGet(firstSeenKey());
+    try {
+      localStorage.removeItem(backupKey()); lsSet(firstSeenKey(), String(Date.now() - 8 * 864e5));
+      refreshBackupDot();
+      if (!bkTab.classList.contains('dot')) fails.push('8 天沒備份，分頁上沒有紅點');
+      openTab('backup');
+      if (!/還沒有備份過/.test($('#tabBody .backup-state').textContent) || !$('#tabBody .backup-state').classList.contains('due')) fails.push('沒備份過，備份頁沒有提醒');
+      lsSet(firstSeenKey(), String(Date.now() - 2 * 864e5)); refreshBackupDot();
+      if (bkTab.classList.contains('dot')) fails.push('才 2 天就掛紅點');
+      lsSet(firstSeenKey(), String(Date.now() - 8 * 864e5)); refreshBackupDot();
+      var dlB3 = [].filter.call(document.querySelectorAll('#tabBody button'), function(b){ return /存成檔案/.test(b.textContent); })[0];
+      var realDl3 = downloadText; downloadText = function(){};
+      try { dlB3.onclick(); } finally { downloadText = realDl3; }
+      if (bkTab.classList.contains('dot')) fails.push('存成檔案之後紅點沒有消失');
+      openTab('backup');
+      if (!/今天備份過了/.test($('#tabBody .backup-state').textContent)) fails.push('備份完沒有寫「今天備份過了」');
+      lsSet(backupKey(), String(Date.now() - 10 * 864e5)); refreshBackupDot(); openTab('backup');
+      if (!bkTab.classList.contains('dot') || !/10 天前/.test($('#tabBody .backup-state').textContent)) fails.push('上次備份 10 天前：沒有紅點或沒寫幾天前');
+      // 存不進去的紅色提醒：點了要到備份頁
+      showSaveWarn('fail'); openTab('inv');
+      document.getElementById('saveWarn').onclick();
+      if (tab !== 'backup') fails.push('「進度沒有存好」的提醒點了沒有到備份頁');
+      if (!/💾 備份/.test(document.getElementById('saveWarn').textContent)) fails.push('「進度沒有存好」的提醒沒說去「💾 備份」');
+      showSaveWarn(null);
+    } finally {
+      if (keepLB == null) localStorage.removeItem(backupKey()); else lsSet(backupKey(), keepLB);
+      if (keepFS == null) localStorage.removeItem(firstSeenKey()); else lsSet(firstSeenKey(), keepFS);
+      refreshBackupDot(); openTab('inv');
+    }
 
     /* 66 🏆 集滿獎盃：每種圖鑑集滿送一座（只送一次），放進我的東西；不能賣；可以擺桌上；
        獎盃不算家具圖鑑（不然家具永遠集不滿）；圖鑑頁看得到寵物和獎盃架（還差幾個） */
@@ -3066,7 +3103,7 @@
      不是只檢查「標籤在不在」——「存成檔案」存得出來卻匯不回來的話，
      那個檔案等於白存。 */
   try {
-    openTab('save');
+    openTab('backup');
     var fb = document.querySelector('#tabBody input[type="file"]');
     var tb = document.querySelector('#tabBody textarea');
     if (!fb) { fails.push('備份頁沒有「選檔案」'); return report(); }
