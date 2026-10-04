@@ -562,13 +562,13 @@ button.pass { font: inherit; }
       <div class="pc-head"><span>👧 <b id="kidNameLbl">小可愛</b></span><button id="pcToggle" title="收合">－</button></div>
       <div class="pc-body">
         <div class="pc-bar" title="小可愛的飽足"><span>🍙</span><i><b id="barKid"></b></i></div>
-        <div class="pc-btns one"><button id="btnKidEat">吃東西</button></div>
+        <div class="pc-btns one"><button id="btnKidEat">🍙 吃東西</button></div>
         <div class="pc-sub">🐾 <b id="petNameLbl">圓圓</b></div>
         <div class="pc-bar" title="飽足"><span>🍎</span><i><b id="barHunger"></b></i></div>
         <div class="pc-bar" title="乾淨"><span>🫧</span><i><b id="barClean"></b></i></div>
         <div class="pc-bar" title="心情"><span>💗</span><i><b id="barMood"></b></i></div>
         <div class="pc-btns">
-          <button id="btnFeed">餵食</button><button id="btnBath">洗澡</button><button id="btnCall">叫牠</button>
+          <button id="btnFeed">🍎 餵食</button><button id="btnBath">🛁 洗澡</button><button id="btnCall">👋 叫牠</button>
         </div>
       </div>
     </div>
@@ -3300,6 +3300,9 @@ function normalizeSave(g) {
       || (r.w != null && !num(r.w)) || (r.d != null && !num(r.d)))) return null;
   if (g.rooms.some(r => (r.items || []).some(it => !isObj(it) || typeof it.id !== 'string' || !num(it.x) || !num(it.y))
       || (r.wallItems || []).some(it => !isObj(it) || typeof it.id !== 'string'))) return null;
+  /* 房間裡有「不存在的家具」：畫畫、點選的時候會當掉。不偷偷刪掉（存檔不能壞），
+     當成讀不出來，交給鎖住＋救援流程。以後真的要改家具 id，要另外寫轉換。 */
+  if (g.rooms.some(r => (r.items || []).some(it => !FURN_BY_ID[it.id]) || (r.wallItems || []).some(it => !FURN_BY_ID[it.id]))) return null;
   if ((g.bells != null && !num(g.bells)) || (g.inv != null && !isObj(g.inv))
       || (g.pets != null && !Array.isArray(g.pets)) || (g.cur != null && !num(g.cur))) return null;
   g.rooms.forEach(r => {
@@ -7831,8 +7834,11 @@ function showKidMenu(e) {
 }
 // 桌上的音樂盒：叮叮咚咚一小段旋律；雪花球：搖一搖，雪花飄起來
 const MUSIC_BOX_TUNE = [2, 1, 0, 1, 2, 2, 2, 1, 1, 1, 2, 3, 3];
+let musicBoxTimers = [];
+function stopMusicBox() { musicBoxTimers.forEach(t => clearTimeout(t)); musicBoxTimers = []; }
 function playMusicBox(it) {
-  MUSIC_BOX_TUNE.forEach((n, i) => setTimeout(() => { Sound.play('note', n); if (i % 3 === 0) fufuBurst('🎵'); }, i * 330));
+  stopMusicBox();
+  musicBoxTimers = MUSIC_BOX_TUNE.map((n, i) => setTimeout(() => { if (resting) return; Sound.play('note', n); if (i % 3 === 0) fufuBurst('🎵'); }, i * 330));
   stateOf(it.uid).tapAt = performance.now();
   fufuSay('好好聽的音樂～', 3000);
   return MUSIC_BOX_TUNE.length;
@@ -8105,10 +8111,15 @@ function showRest(until) {
       el('div', 'rest-time', ''), el('div', 'rest-done', ''), el('div', 'rest-sub', `${charName()}和寵物們也在睡覺喔，等一下見！`));
     const bye = el('button', 'rest-bye', '👋 存好了，今天先玩到這裡');
     bye.onclick = () => {
-      saveGame();
-      ov.querySelector('.rest-title').textContent = '掰掰！進度都存好了';
-      ov.querySelector('.rest-tips').textContent = '可以把平板收起來囉～\n下次見！';
-      bye.hidden = true;
+      // 真的存好了才說存好了；存不進去要請大人幫忙（不能跟紅色警告互相打架）
+      if (saveGame()) {
+        ov.querySelector('.rest-title').textContent = '掰掰！進度都存好了';
+        ov.querySelector('.rest-tips').textContent = '可以把平板收起來囉～\n下次見！';
+        bye.hidden = true;
+      } else {
+        ov.querySelector('.rest-title').textContent = '⚠️ 進度還沒存好';
+        ov.querySelector('.rest-tips').textContent = '先不要關掉喔！\n請找大人到「⚙️ 設定」幫忙備份';
+      }
     };
     ov.appendChild(bye);
     const unlock = el('button', 'rest-parent', '👨‍👩‍👧 家長提早結束');
@@ -8119,6 +8130,7 @@ function showRest(until) {
   if (!resting) {
     resting = true;
     stopSpeak();
+    try { stopMusicBox(); } catch (e) {}
     if (typeof closeGameWindow === 'function' && !$('#modal').hidden) { try { closeGameWindow(); } catch (e) {} $('#modal').hidden = true; }
     Sound.play('click');
   }
@@ -9007,10 +9019,10 @@ function tabPets(body) {
 // UNDO_KEY / SAVE_KEY 在存檔格那一段就算好了（跟著「現在玩哪一格」走）
 const SAVE_TAG = 'myHouse-save';
 
-function makeBackup() {
+function makeBackup(data) {
   return JSON.stringify({ tag: SAVE_TAG, v: 1,
     at: new Date().toISOString().slice(0, 16).replace('T', ' '),
-    data: localStorage.getItem(SAVE_KEY) || '' });
+    data: data != null ? data : (localStorage.getItem(SAVE_KEY) || '') });
 }
 // 回傳 { data, at } 或 null。壞掉的字串一定要擋下來，不能半套蓋上去
 function readBackup(txt) {
@@ -9040,7 +9052,16 @@ function applyBackup(txt) {
 }
 
 // 按下複製／下載的那一刻才產生備份（頁面開著的時候寵物等狀態還在變）
-function freshBackup() { saveGame(); return makeBackup(); }
+/* 按下複製／下載的那一刻才產生備份（頁面開著的時候寵物等狀態還在變）。
+   存檔寫不進去的時候（紅色警告正在叫家長備份），不能拿儲存區裡比較舊的那份充數——
+   直接用畫面上「現在」的進度做備份，那才是最新的。
+   只有一種情況不給：存檔讀不出來被鎖住，畫面上的根本不是她的進度，回傳 null。 */
+function freshBackup() {
+  if (SAVE_LOCKED != null) return null;
+  if (saveGame()) return makeBackup();
+  return makeBackup(JSON.stringify(G));
+}
+const BACKUP_LOCKED_MSG = '這份紀錄讀不出來，請到上面的「⚠️ 處理」下載原始資料';
 function tabSave(body) {
   const code = makeBackup();
   if (SAVE_LOCKED != null) { // 讀不出來的紀錄：處理按鈕放最上面
@@ -9116,13 +9137,15 @@ function tabSave(body) {
   const copy = el('button', 'big', '📋 複製備份');
   copy.onclick = async () => {
     Sound.play('click');
+    const txt = freshBackup();
+    if (txt == null) { toast(BACKUP_LOCKED_MSG); return; }
     try {
-      await navigator.clipboard.writeText(freshBackup());
+      await navigator.clipboard.writeText(txt);
       toast('複製好了，貼到記事本存起來');
     } catch (e) {
       // clipboard 在非 https 或舊 Safari 會沒有／被擋，一定要留後路，
       // 不然按下去完全沒反應，她會以為壞掉
-      box.value = freshBackup(); box.focus(); box.select();
+      box.value = txt; box.focus(); box.select();
       toast('請長按下面的框→拷貝');
     }
   };
@@ -9131,9 +9154,11 @@ function tabSave(body) {
   const dl = el('button', 'big alt', '💾 存成檔案（電腦比較好用）');
   dl.onclick = () => {
     Sound.play('click');
+    const txt = freshBackup();
+    if (txt == null) { toast(BACKUP_LOCKED_MSG); return; }
     try {
-      downloadText(freshBackup(), '我的小屋備份-' + today() + '.json');
-      toast('存好了');
+      downloadText(txt, '我的小屋備份-' + today() + '.json');
+      toast('備份檔存好了');
     } catch (e) { toast('這台機器存不了檔案，請用上面那顆複製'); }
   };
   body.appendChild(dl);

@@ -1326,6 +1326,72 @@
       fails.push('蝴蝶相簿顯示不對');
     var md8 = document.querySelector('#modal'); if (md8) md8.hidden = true;
 
+    /* 58 ChatGPT 第二次核對的三個問題＋兩個小建議 */
+    var realSetI = Storage.prototype.setItem, failSave = function(){ Storage.prototype.setItem = function(){ throw new Error('full'); }; }, okSave = function(){ Storage.prototype.setItem = realSetI; };
+    // P0：存不進去的時候，「今天先玩到這裡」不能說存好了
+    saveRestCfg({ on: true, play: 20, rest: 5, pin: '' });
+    forceRestNow();
+    var ovB = document.getElementById('restOverlay'), byeB2 = ovB.querySelector('.rest-bye');
+    byeB2.hidden = false;
+    failSave();
+    try { byeB2.onclick(); } finally { okSave(); }
+    if (/存好了/.test(ovB.querySelector('.rest-title').textContent)) fails.push('存檔失敗時「今天先玩到這裡」還說進度存好了');
+    if (byeB2.hidden) fails.push('存檔失敗時把「今天先玩到這裡」藏起來了（應該可以再按一次）');
+    byeB2.onclick();
+    if (!/存好了/.test(ovB.querySelector('.rest-title').textContent)) fails.push('存檔成功時沒有說存好了');
+    localStorage.removeItem(REST_STATE_KEY); localStorage.removeItem(REST_CFG_KEY); endRest(); resting = false; ovB.remove();
+    // P0：存不進去的時候，備份要用畫面上最新的進度，不能拿儲存區的舊版充數
+    saveGame();
+    G.bells = 424242;
+    failSave();
+    var fb2;
+    try { fb2 = freshBackup(); } finally { okSave(); }
+    var fbData = fb2 && readBackup(fb2);
+    if (!fbData || JSON.parse(fbData.data).bells !== 424242) fails.push('存檔失敗時，備份不是畫面上最新的進度');
+    // 存檔讀不出來（被鎖住）：不給備份，也不說複製好了
+    SAVE_LOCKED = '{壞掉';
+    var tl5 = [], realToast5 = toast; toast = function(m){ tl5.push(m); };
+    try {
+      if (freshBackup() !== null) fails.push('存檔被鎖住時還產生備份（畫面上的不是她的進度）');
+      openTab('save');
+      var dlB = [].filter.call(document.querySelectorAll('#tabBody button'), function(b){ return /存成檔案/.test(b.textContent); })[0];
+      var realDl2 = downloadText, dlCalled = 0; downloadText = function(){ dlCalled++; };
+      try { dlB.onclick(); } finally { downloadText = realDl2; }
+      if (dlCalled || tl5.some(function(m){ return /存好了/.test(m); })) fails.push('存檔被鎖住時，下載備份還是說存好了');
+    } finally { toast = realToast5; SAVE_LOCKED = null; }
+    G.bells = 100000; saveGame();
+    // P1：房間裡有不存在的家具 → 當成讀不出來（鎖住保護），不是當成正常存檔
+    var bad6 = JSON.parse(JSON.stringify(G));
+    bad6.rooms[0].items = [{ uid: 1, id: 'no_such_furniture_xyz', x: 0, y: 0, rot: 0 }];
+    if (normalizeSave(JSON.parse(JSON.stringify(bad6))) !== null) fails.push('有不存在的家具的存檔被當成正常存檔');
+    var bad7 = JSON.parse(JSON.stringify(G)); bad7.rooms[0].wallItems = [{ uid: 2, id: 'no_such_wall_xyz', side: 'L', pos: 0 }];
+    if (normalizeSave(JSON.parse(JSON.stringify(bad7))) !== null) fails.push('有不存在的掛飾的存檔被當成正常存檔');
+    var goodRaw2 = localStorage.getItem(SAVE_KEY);
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(bad6));
+      loadGame();
+      if (SAVE_LOCKED == null) fails.push('讀到有不存在的家具的存檔，沒有鎖住保護');
+    } finally { SAVE_LOCKED = null; localStorage.setItem(SAVE_KEY, goodRaw2); localStorage.removeItem(rescueKey()); }
+    // P2：音樂盒在休息開始時停下來
+    var mbNotes = 0, realPlay3 = Sound.play, pending = [], realST3 = window.setTimeout, realCT3 = window.clearTimeout;
+    window.setTimeout = function(f){ pending.push(f); return pending.length; };
+    window.clearTimeout = function(id){ if (id) pending[id - 1] = null; };
+    Sound.play = function(n){ if (n === 'note') mbNotes++; };
+    try {
+      playMusicBox({ uid: 99801 });
+      saveRestCfg({ on: true, play: 20, rest: 5, pin: '' });
+      forceRestNow();
+      pending.forEach(function(f){ if (f) try { f(); } catch(e){} });
+    } finally { window.setTimeout = realST3; window.clearTimeout = realCT3; Sound.play = realPlay3; }
+    if (mbNotes) fails.push('開始休息了，音樂盒還在響（' + mbNotes + ' 個音）');
+    localStorage.removeItem(REST_STATE_KEY); localStorage.removeItem(REST_CFG_KEY); endRest(); resting = false;
+    var ovC = document.getElementById('restOverlay'); if (ovC) ovC.remove();
+    // 寵物卡的按鈕有圖示（妹妹看圖就懂）
+    ['#btnKidEat', '#btnFeed', '#btnBath', '#btnCall'].forEach(function(sel){
+      var tx = ($(sel) || {}).textContent || '';
+      if (!/^\p{Extended_Pictographic}/u.test(tx)) fails.push(sel + ' 前面沒有圖示：' + tx);
+    });
+
     /* 57 桌上小物：商店買得到、可以放上桌、音樂盒會唱歌、雪花球會飄雪、縮圖看得清楚 */
     DESK_TOYS.forEach(function(id){
       var d = FURN_BY_ID[id];
