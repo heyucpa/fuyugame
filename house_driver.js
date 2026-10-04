@@ -1397,6 +1397,48 @@
     else fails.push('找不到「重新開始」按鈕');
     confirmReset = realReset; window.prompt = realPrompt2;
     localStorage.removeItem(REST_CFG_KEY);              // 回到預設，後面的測試要用
+    // 寬限中打開新的小遊戲：直接開始休息（等一下下）
+    saveRestCfg({ on: true, play: 20, rest: 5, pin: '' });
+    var rs = restState(); rs.dueAt = Date.now() - 1000; rs.restUntil = 0; saveRestState(rs);
+    var realFRN = forceRestNow, frn = 0; forceRestNow = function(){ frn++; };
+    var realST = window.setTimeout; window.setTimeout = function(f){ f(); return 0; };
+    try { openMemoryGame(); } finally { window.setTimeout = realST; forceRestNow = realFRN; }
+    if (!frn) fails.push('時間到了還能開新的一局小遊戲');
+    closeGameWindow(); localStorage.removeItem(REST_STATE_KEY); localStorage.removeItem(REST_CFG_KEY);
+    if ($('#modalCard').classList.contains('in-game')) fails.push('關掉小遊戲之後還標著「正在玩」');
+    // 繪本 🔊：念出這一頁；按過一次之後翻頁自動念
+    var spoken = [], realSS = window.speechSynthesis, realSU = window.SpeechSynthesisUtterance;
+    Object.defineProperty(window, 'SpeechSynthesisUtterance', { value: function(t){ this.text = t; }, configurable: true, writable: true });
+    Object.defineProperty(window, 'speechSynthesis', { value: { cancel: function(){}, speak: function(u){ spoken.push(u.text); } }, configurable: true, writable: true });
+    try {
+      openStorybook('brave');
+      openStorybook.test.next();                         // 翻到第一頁
+      if (spoken.length) fails.push('還沒按🔊就自己念了');
+      var sayB = document.querySelector('#modalCard .book-say');
+      if (!sayB) fails.push('繪本沒有🔊聽故事');
+      else {
+        var braveB = STORYBOOKS.filter(function(b){ return b.id === 'brave'; })[0];
+        sayB.onclick();
+        if (spoken[0] !== braveB.pages[0][1]) fails.push('🔊 念的不是這一頁：' + spoken[0]);
+        openStorybook.test.next();
+        if (spoken.length !== 2 || spoken[1] !== braveB.pages[1][1].replace(/[「」]/g, '')) fails.push('按過🔊之後，翻頁沒有自動念：' + spoken.join('|'));
+      }
+      openStorybook('moon');
+      if (spoken.length !== 2) fails.push('換一本書也自動念了（應該要再按一次🔊）');
+    } finally {
+      Object.defineProperty(window, 'speechSynthesis', { value: realSS, configurable: true, writable: true });
+      Object.defineProperty(window, 'SpeechSynthesisUtterance', { value: realSU, configurable: true, writable: true });
+      $('#modal').hidden = true;
+    }
+    // 難度：每個選難度的地方都有星星，第一個標成最簡單
+    [openCupGame, openMoleGame, openCoinGame, openPuzzleGame, openQuizGame].forEach(function(fn){
+      fn();
+      var lbs = document.querySelectorAll('#modalCard .lv-btn');
+      var stars = [].map.call(lbs, function(b){ var st = b.querySelector('.lv-stars'); return st ? st.textContent.length : 0; });
+      if (!lbs.length || stars.some(function(n, i){ return n !== (i + 1) * '⭐'.length; })) fails.push(fn.name + ' 的難度沒有一、二、三顆星：' + stars);
+      if (!lbs[0] || !lbs[0].classList.contains('easy')) fails.push(fn.name + ' 最簡單的沒有標出來');
+      closeGameWindow();
+    });
     // (5) 備份要用按下去那一刻的最新進度
     openTab('save');
     G.bells = 777777;
@@ -1488,16 +1530,30 @@
       if (Math.abs(G.pet.lastTick - Date.now()) > 3000) fails.push('休息完寵物的肚子沒有重新算（休息時會變餓）');
       // 玩小遊戲時時間到：等她玩完；但最多再等 3 分鐘
       restReset(); T = 2e12; restTick(T, true);
-      $('#modal').hidden = false;
+      $('#modal').hidden = false; $('#modalCard').classList.add('in-game');
       T = playFor(T, 20 * 60 + 30);
       if (resting) fails.push('正在玩小遊戲，時間一到就被打斷');
-      $('#modal').hidden = true; restTick(T + 1000, true);
+      $('#modal').hidden = true; $('#modalCard').classList.remove('in-game'); restTick(T + 1000, true);
       if (!resting) fails.push('小遊戲玩完了還沒休息');
+      // 看繪本（不是小遊戲）不給寬限
+      restReset(); T = 2.5e12; restTick(T, true);
+      $('#modal').hidden = false; $('#modalCard').classList.remove('in-game');
+      T = playFor(T, 20 * 60 + 30);
+      if (!resting) fails.push('看繪本的時候也一直不用休息（只有小遊戲才能等）');
+      $('#modal').hidden = true;
+      // 寬限中（時間到了、正在等這一局玩完）不能再開新的一局
+      restReset(); T = 2.7e12; restTick(T, true);
+      $('#modal').hidden = false; $('#modalCard').classList.add('in-game');
+      T = playFor(T, 20 * 60 + 30);
+      if (!restIsDue()) fails.push('時間到了卻沒有進入寬限');
+      forceRestNow();
+      if (!resting) fails.push('寬限中叫 forceRestNow 沒有開始休息');
+      $('#modalCard').classList.remove('in-game'); $('#modal').hidden = true;
       restReset(); T = 3e12; restTick(T, true);
-      $('#modal').hidden = false;
+      $('#modal').hidden = false; $('#modalCard').classList.add('in-game');
       T = playFor(T, 20 * 60 + 3 * 60 + 30);
       if (!resting) fails.push('一直開著小遊戲，超過 3 分鐘還是不用休息');
-      $('#modal').hidden = true;
+      $('#modal').hidden = true; $('#modalCard').classList.remove('in-game');
       // 畫面看不到（切到別的 App）不算時間
       restReset(); T = 4e12; restTick(T, true);
       T = playFor(T, 30 * 60, false);

@@ -355,6 +355,8 @@ button.pass { font: inherit; }
   padding: 14px 18px; min-width: 92px;
 }
 .lv-n { font-size: 17px; font-weight: 800; }
+.lv-stars { font-size: 15px; letter-spacing: -1px; }
+.lv-btn.easy { border-color: #5fae7c; box-shadow: 0 0 0 3px rgba(95,174,124,.25); }
 .lv-p { font-size: 12px; color: var(--muted); }
 .puz-board { display: grid; gap: 2px; margin: 0 auto; background: var(--line); border-radius: 10px; overflow: hidden; }
 .puz-tile { background-repeat: no-repeat; cursor: pointer; position: relative; }
@@ -377,7 +379,7 @@ button.pass { font: inherit; }
 .rest-title { font-size: 26px; font-weight: 800; }
 .rest-tips { font-size: 18px; line-height: 1.8; white-space: pre-line; }
 .rest-time { font-size: 40px; font-weight: 800; font-variant-numeric: tabular-nums; color: #ffe08a; }
-.rest-sub { font-size: 15px; opacity: .85; }
+.rest-sub { font-size: 15px; opacity: .85; white-space: pre-line; line-height: 1.7; }
 .rest-parent { margin-top: 18px; background: rgba(255,255,255,.15); color: #fff; border: 1px solid rgba(255,255,255,.4); border-radius: 999px; padding: 6px 14px; font-size: 13px; }
 .news { display: flex; flex-direction: column; gap: 8px; margin: 6px 0 12px; }
 .news-row { display: flex; align-items: center; gap: 10px; background: #fffaf0; border: 2px solid var(--line); border-radius: 14px; padding: 8px 10px; }
@@ -7474,8 +7476,9 @@ function restTick(now, visible) {
   }
   if (left <= 0) {
     if (!s.dueAt) s.dueAt = now;
-    const inGame = !$('#modal').hidden;
-    if (!inGame || now - s.dueAt >= REST_GRACE_MS) { // 正在玩小遊戲就等她玩完，最多再等 3 分鐘
+    // 只有「正在玩的一局小遊戲」可以等（看繪本、公告這些不算），最多再等 3 分鐘
+    const inGame = !$('#modal').hidden && $('#modalCard').classList.contains('in-game');
+    if (!inGame || now - s.dueAt >= REST_GRACE_MS) {
       s.restUntil = now + c.rest * 60000;
       s.played = 0; s.dueAt = 0; s.warned = false;
       saveRestState(s);
@@ -7485,13 +7488,21 @@ function restTick(now, visible) {
   }
   saveRestState(s);
 }
+// 時間已經到了、正在等她玩完這一局
+function restIsDue() { const c = restCfg(); return c.on && restState().dueAt > 0; }
+function forceRestNow() {
+  const c = restCfg(), s = restState(), now = Date.now();
+  s.restUntil = now + c.rest * 60000; s.played = 0; s.dueAt = 0; s.warned = false;
+  saveRestState(s);
+  showRest(s.restUntil);
+}
 function showRest(until) {
   let ov = document.getElementById('restOverlay');
   if (!ov) {
     ov = el('div', 'rest-overlay'); ov.id = 'restOverlay';
     ov.append(el('div', 'rest-zz', '😴'), el('div', 'rest-title', '眼睛累了，我們休息一下吧！'),
       el('div', 'rest-tips', '💧 去喝水\n👀 看看窗外遠的地方\n🙆 伸伸懶腰'),
-      el('div', 'rest-time', ''), el('div', 'rest-sub', `${charName()}和寵物們也在睡覺喔，等一下見！`));
+      el('div', 'rest-time', ''), el('div', 'rest-sub', `${charName()}和寵物們也在睡覺喔，等一下見！\n今天也可以先玩到這裡，進度都存好了 👋`));
     const unlock = el('button', 'rest-parent', '👨‍👩‍👧 家長提早結束');
     unlock.onclick = () => askPin('提早結束休息', () => { const s = restState(); s.restUntil = 0; s.lastSeen = Date.now(); saveRestState(s); endRest(); });
     ov.appendChild(unlock);
@@ -8679,6 +8690,8 @@ let fishTimer = null;
 function openFishing() {
   closeGameWindow();          // 先把上一個遊戲（如果有）清乾淨
   const card = $('#modalCard');
+  card.classList.add('in-game');
+  if (restIsDue()) setTimeout(forceRestNow, 0);
   card.innerHTML = '';
   card.appendChild(el('h2', '', '🎣 釣魚'));
   card.appendChild(note('指針進入綠色區域時按「拉竿」（或空白鍵）。'));
@@ -8783,8 +8796,9 @@ function openGameWindow(title, howTo) {
   closeGameWindow();
   const card = $('#modalCard');
   card.innerHTML = '';
-  card.classList.add('game-card');
+  card.classList.add('game-card', 'in-game');
   card.appendChild(el('h2', '', title));
+  if (restIsDue()) setTimeout(forceRestNow, 0); // 時間已經到了（在寬限中）：不能再開新的一局
   card.appendChild(note(howTo));
   const stage = el('div', 'game-stage');
   card.appendChild(stage);
@@ -8797,7 +8811,7 @@ function openGameWindow(title, howTo) {
 }
 function closeGameWindow() {
   if (gameCleanup) { gameCleanup(); gameCleanup = null; }
-  $('#modalCard').classList.remove('game-card');
+  $('#modalCard').classList.remove('game-card', 'in-game');
   $('#modal').hidden = true;
 }
 function gameButtons(w, again) {
@@ -9087,8 +9101,8 @@ function openCupGame() {
   w.status.textContent = '要幾個杯子？';
   leaveButton(w);
   const row = el('div', 'lv-row');
-  CUP_LEVELS.forEach(L => {
-    const b = el('button', 'lv-btn');
+  CUP_LEVELS.forEach((L, i) => {
+    const b = levelButton(i);
     b.append(el('span', 'lv-n', L.name), el('span', 'lv-p', `一次 💰 ${L.per}`));
     b.onclick = () => { Sound.play('click'); w.stage.innerHTML = ''; playCupGame(w, L); };
     row.appendChild(b);
@@ -9560,14 +9574,21 @@ function playRace(w, L) {
   })();
 }
 
+/* 難度按鈕：前面一排星星（⭐ 簡單、⭐⭐、⭐⭐⭐ 難），妹妹不用看字也知道哪個比較簡單；
+   最簡單的那顆用綠框特別標出來 */
+function levelButton(i) {
+  const b = el('button', 'lv-btn' + (i === 0 ? ' easy' : ''));
+  b.appendChild(el('span', 'lv-stars', '⭐'.repeat(i + 1)));
+  return b;
+}
 // 三種難度的選單，三個遊戲共用
 function pickLevelRow(w, levels, sub, play) {
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   w.status.textContent = '選一個難度';
   leaveButton(w);
   const row = el('div', 'lv-row');
-  levels.forEach(L => {
-    const b = el('button', 'lv-btn');
+  levels.forEach((L, i) => {
+    const b = levelButton(i);
     b.append(el('span', 'lv-n', L.name), el('span', 'lv-p', sub(L)));
     b.onclick = () => { Sound.play('click'); play(L); };
     row.appendChild(b);
@@ -10116,7 +10137,7 @@ const STORYBOOKS = [
 ];
 function openStorybook(id) {
   const book = STORYBOOKS.find(b => b.id === id) || STORYBOOKS[Math.floor(Math.random() * STORYBOOKS.length)];
-  let page = -1; // -1 是封面
+  let page = -1, readAloud = false; // -1 是封面
   const card = $('#modalCard');
   function show() {
     card.innerHTML = '';
@@ -10130,6 +10151,15 @@ function openStorybook(id) {
     card.appendChild(pg);
     const row = el('div', 'book-btns');
     if (page >= 0) { const prev = el('button', 'big alt', '⬅️'); prev.onclick = () => { page--; show(); }; row.appendChild(prev); }
+    // 🔊 聽故事：妹妹還不太認字。按過一次之後，翻頁會自動念下一頁
+    const pageText = page < 0 ? book.title : book.pages[page][1];
+    if (canSpeak()) {
+      const say = el('button', 'big alt book-say', '🔊');
+      say.title = '聽故事';
+      say.onclick = () => { readAloud = true; speak(pageText); };
+      row.appendChild(say);
+      if (readAloud) speak(pageText);
+    }
     const last = page === book.pages.length - 1;
     const next = el('button', 'big', last ? '看完了！' : page < 0 ? '翻開 ➡️' : '➡️');
     next.onclick = () => { if (last) finishBook(book); else { page++; Sound.play('click'); show(); } };
@@ -10139,6 +10169,18 @@ function openStorybook(id) {
   }
   openStorybook.test = { book, next: () => card.querySelector('.book-btns button:last-child').onclick(), page: () => page };
   show();
+}
+// 念出來（iPad／iPhone 都有內建中文語音）。不支援的機器就不顯示按鈕
+const canSpeak = () => typeof window.speechSynthesis !== 'undefined' && typeof window.SpeechSynthesisUtterance !== 'undefined';
+function speak(text) {
+  if (!canSpeak()) return false;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(String(text).replace(/[「」]/g, ''));
+    u.lang = 'zh-TW'; u.rate = .9; u.pitch = 1.1;
+    speechSynthesis.speak(u);
+    return true;
+  } catch (e) { return false; }
 }
 // 看完最後一頁才蓋章（翻一半就關掉不算）
 function finishBook(book) {
@@ -10480,8 +10522,8 @@ function openCoinGame() {
     w.status.textContent = '選一個難度';
     leaveButton(w);
     const row = el('div', 'lv-row');
-    COIN_LEVELS.forEach(L => {
-      const b = el('button', 'lv-btn');
+    COIN_LEVELS.forEach((L, i) => {
+      const b = levelButton(i);
       b.append(el('span', 'lv-n', L.name), el('span', 'lv-p', `一顆 💰 ${L.mul * 20}`));
       b.onclick = () => { Sound.play('click'); play(L); };
       row.appendChild(b);
@@ -10707,8 +10749,8 @@ function openPuzzleGame() {
     w.status.textContent = '選一個難度';
     leaveButton(w);
     const row = el('div', 'lv-row');
-    PUZZLE_LEVELS.forEach(L => {
-      const b = el('button', 'lv-btn');
+    PUZZLE_LEVELS.forEach((L, i) => {
+      const b = levelButton(i);
       b.append(el('span', 'lv-n', L.name), el('span', 'lv-p', `💰 ${fmt(L.pay)}`));
       b.onclick = () => { Sound.play('click'); play(L); };
       row.appendChild(b);
