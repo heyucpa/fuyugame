@@ -1391,7 +1391,27 @@
     var full0 = JSON.stringify(loadPhotos().map(function(q){ return q.id; }));
     takePhoto();
     if (JSON.stringify(loadPhotos().map(function(q){ return q.id; })) !== full0) fails.push('相簿滿了，拍照自動刪掉舊照片');
-    if ($('#modal').hidden || !/相簿滿了/.test($('#modalCard').textContent)) fails.push('相簿滿了，拍照沒有叫她先刪一張');
+    if ($('#modal').hidden || !/相簿滿了/.test($('#modalCard').textContent)) fails.push('相簿滿了，拍照沒有問要不要換');
+    // 選「不要這張新的」：相簿不變
+    var noNew = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return /不要這張新的/.test(b.textContent); })[0];
+    if (!noNew) fails.push('相簿滿了沒有「不要這張新的」');
+    else { noNew.onclick(); if (JSON.stringify(loadPhotos().map(function(q){ return q.id; })) !== full0 || !$('#modal').hidden) fails.push('選不要新的，相簿卻變了（或視窗沒關）'); }
+    // 換掉其中一張：先點舊的（還不會刪），再按「換掉這張」
+    takePhoto();
+    if (!document.querySelector('#modalCard .photo-new')) fails.push('換照片畫面沒有顯示新拍的');
+    var thumbs = document.querySelectorAll('#modalCard .photo-thumb'), swapB = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return /換掉這張/.test(b.textContent); })[0];
+    if (thumbs.length !== PHOTO_MAX || !swapB) fails.push('換照片畫面沒有 ' + PHOTO_MAX + ' 張舊的或沒有「換掉這張」');
+    else {
+      if (!swapB.disabled) fails.push('還沒選要換哪一張，「換掉這張」就可以按');
+      var oldIds = loadPhotos().map(function(q){ return q.id; }), victim = oldIds[3];
+      thumbs[3].onclick();
+      if (loadPhotos().length !== PHOTO_MAX || loadPhotos().map(function(q){ return q.id; }).indexOf(victim) < 0) fails.push('只是點了一張舊的，就被刪掉了');
+      if (!thumbs[3].classList.contains('pick')) fails.push('點了要換的那張沒有標出來');
+      swapB.onclick();
+      var after2 = loadPhotos();
+      if (after2.length !== PHOTO_MAX || after2.some(function(q){ return q.id === victim; })) fails.push('換照片之後張數不對，或舊的那張還在');
+      if (after2.filter(function(q){ return oldIds.indexOf(q.id) < 0; }).length !== 1) fails.push('換照片之後新的那張沒有進相簿');
+    }
     $('#modal').hidden = true;
     localStorage.removeItem(photoKey()); keepPhoto(shot);
     if (shot.length > 120000) fails.push('一張照片太大了（' + Math.round(shot.length / 1024) + ' KB）');

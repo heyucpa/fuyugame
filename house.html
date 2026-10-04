@@ -423,6 +423,9 @@ button.pass { font: inherit; }
 .photo-big { width: 100%; border-radius: 10px; box-shadow: 0 4px 14px rgba(0,0,0,.15); margin: 4px 0 8px; }
 .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .photo-thumb { padding: 0; border: 2px solid var(--line); border-radius: 10px; overflow: hidden; background: #fff; }
+.photo-thumb.pick { border-color: #e8505b; box-shadow: 0 0 0 3px #e8505b; position: relative; }
+.photo-thumb.pick::after { content: '✕'; position: absolute; top: 2px; right: 6px; color: #fff; font-weight: 900; text-shadow: 0 0 3px #e8505b, 0 0 3px #e8505b; }
+.photo-new { border: 3px solid #ffd35c; width: 62%; display: block; margin: 4px auto 6px; }
 .photo-thumb img { width: 100%; display: block; aspect-ratio: 4 / 3; object-fit: cover; }
 .theme-btn { position: absolute; right: 10px; bottom: 56px; z-index: 6; border: 2px solid #b18cff; background: #f6f0ff; color: #6a4bb0;
   border-radius: 999px; padding: 7px 14px; font-size: 14px; font-weight: 800; box-shadow: 0 3px 10px rgba(0,0,0,.12); max-width: 60%;
@@ -7791,7 +7794,7 @@ function takePhoto() {
      相簿滿了才跳原本的視窗，讓她刪一張不要的再放進來（不自動刪舊的，怕刪到她喜歡的）。 */
   const r = keepPhoto(data);
   if (r === 'ok') showPhotoPop(data);
-  else if (r === 'full') { toast(`相簿滿了（${PHOTO_MAX} 張），先刪掉一張不要的`); openAlbum(data); }
+  else if (r === 'full') openPhotoSwap(data);
   else toast('空間不夠，先到相簿刪掉幾張');
   return data;
 }
@@ -7807,10 +7810,12 @@ function showPhotoPop(data) {
   setTimeout(() => box.remove(), PHOTO_POP_MS);
   return box;
 }
+// 照片的 id：時間＋一點亂數（同一毫秒拍兩張也不會撞號，刪一張才不會連另一張一起刪）
+const photoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 function keepPhoto(data) {
   const list = loadPhotos();
   if (list.length >= PHOTO_MAX) return 'full';
-  list.unshift({ id: Date.now().toString(36), at: Date.now(), place: photoPlaceName(), data });
+  list.unshift({ id: photoId(), at: Date.now(), place: photoPlaceName(), data });
   if (!savePhotos(list)) return 'space';
   sessionLog.photos = (sessionLog.photos || 0) + 1;
   return 'ok';
@@ -7840,6 +7845,51 @@ function openPhotoPreview(data) {
   $('#modal').hidden = false;
 }
 // 相簿：pending＝相簿滿了、等著要留下來的那一張（刪掉一張之後就可以留）
+/* 相簿滿了：選要不要留新照片（家長：可以選擇要留，或是刪掉原來的其中一張）。
+   上面是剛拍的，下面是 12 張舊的：點一張舊的（變紅框、打 ✕），再按「🔁 換掉這張」；
+   或按「🗑️ 不要這張新的」。分兩步，小手點錯一張也不會馬上刪掉。 */
+function replacePhoto(oldId, data) {
+  const list = loadPhotos(), rest = list.filter(q => q.id !== oldId);
+  if (rest.length === list.length) return false;
+  rest.unshift({ id: photoId(), at: Date.now(), place: photoPlaceName(), data });
+  if (!savePhotos(rest)) return false;
+  sessionLog.photos = (sessionLog.photos || 0) + 1;
+  return true;
+}
+function openPhotoSwap(data) {
+  const list = loadPhotos();
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', '📷 相簿滿了！'));
+  const img = document.createElement('img'); img.src = data; img.className = 'photo-big photo-new'; card.appendChild(img);
+  card.appendChild(note(`相簿最多 ${PHOTO_MAX} 張。要留這張新的，就點下面一張不要的換掉。`));
+  let pick = null;
+  const grid = el('div', 'photo-grid');
+  const swap = el('button', 'big', '🔁 換掉這張');
+  swap.disabled = true;
+  list.forEach(p => {
+    const b = el('button', 'photo-thumb');
+    const im = document.createElement('img'); im.src = p.data; im.alt = p.place || '';
+    b.appendChild(im);
+    b.onclick = () => {
+      pick = p.id;
+      grid.querySelectorAll('.photo-thumb').forEach(t => t.classList.toggle('pick', t === b));
+      swap.disabled = false;
+      Sound.play('click');
+    };
+    grid.appendChild(b);
+  });
+  card.appendChild(grid);
+  swap.onclick = () => {
+    if (!pick) return;
+    if (replacePhoto(pick, data)) { toast('📷 換好了，新的放進相簿了'); $('#modal').hidden = true; }
+    else toast('空間不夠，換不進去');
+  };
+  const no = el('button', 'big alt', '🗑️ 不要這張新的');
+  no.onclick = () => { $('#modal').hidden = true; toast('新拍的沒有留'); };
+  card.append(swap, no);
+  $('#modal').hidden = false;
+}
 function openAlbum(pending) {
   const list = loadPhotos();
   const card = $('#modalCard');
