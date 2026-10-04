@@ -1326,6 +1326,57 @@
       fails.push('蝴蝶相簿顯示不對');
     var md8 = document.querySelector('#modal'); if (md8) md8.hidden = true;
 
+    /* 56 圖書館照照片改：壁畫、矮書櫃、紅圓桌＋藍地毯、蛋形座椅、踏凳、平板閱讀桌、兔子立牌、展示板；
+       平板看電子書、館員說故事（一打開就念）；外觀照照片畫但不寫字 */
+    var LR = PLACES.library.rooms[0];
+    ['library_mural','low_shelf','story_rug','round_red_table','egg_seat','egg_seat_g','step_stool','tablet_table','bunny_sign','display_board'].forEach(function(id){
+      if (!FURN_BY_ID[id]) fails.push('沒有 ' + id);
+      if (FURNITURE.some(function(f){ return f.id === id; })) fails.push(id + ' 跑進商店了');
+      var inRoom = LR.items.some(function(it){ return (it.id || it[0]) === id; }) || LR.wallItems.some(function(it){ return (it.id || it[0]) === id; });
+      if (!inRoom) fails.push('圖書館裡沒有擺 ' + id);
+    });
+    if (LR.floor !== 'fl_lib' || FLOORS.some(function(f){ return f.id === 'fl_lib'; })) fails.push('圖書館地板不對或跑進商店');
+    if (ACTIVITIES[FURNITURE_ACT.tablet_table].open !== 'story') fails.push('平板閱讀桌不能看電子書');
+    if (ACTIVITIES[FURNITURE_ACT.round_red_table].open !== 'storytime') fails.push('紅色圓桌不能聽館員說故事');
+    if (!FURNITURE_USE.egg_seat || !FURNITURE_USE.egg_seat_g || !FURNITURE_USE.step_stool) fails.push('蛋形座椅、踏凳不能坐');
+    // 館員說故事：一打開就念；自己看繪本不會自己念
+    var sp3 = [], realSS3 = window.speechSynthesis, realSU3 = window.SpeechSynthesisUtterance;
+    Object.defineProperty(window, 'SpeechSynthesisUtterance', { value: function(t){ this.text = t; }, configurable: true, writable: true });
+    Object.defineProperty(window, 'speechSynthesis', { value: { cancel: function(){}, speak: function(u){ sp3.push(u.text); } }, configurable: true, writable: true });
+    try {
+      openNextStorybook({ aloud: true });
+      if (!sp3.length) fails.push('館員說故事沒有念出來');
+      $('#modal').hidden = true; sp3 = [];
+      openNextStorybook();
+      if (sp3.length) fails.push('自己看繪本也自動念了（應該按🔊才念）');
+      $('#modal').hidden = true;
+      G.away = { place: 'library', idx: 0 }; host.n = HOSTS.librarian;
+      if (!/說故事/.test(hostMenuEntries().map(function(e){ return e[0]; }).join('|'))) fails.push('館員的選單沒有說故事');
+      host.n = null; G.away = null;
+    } finally {
+      Object.defineProperty(window, 'speechSynthesis', { value: realSS3, configurable: true, writable: true });
+      Object.defineProperty(window, 'SpeechSynthesisUtterance', { value: realSU3, configurable: true, writable: true });
+    }
+    // 外觀：不寫字、放得進畫面、去圖書館的路上會出現
+    var lcv = document.createElement('canvas'); lcv.width = 360; lcv.height = 240;
+    var lg = lcv.getContext('2d'), lw = [];
+    lg.fillText = function(t){ lw.push(t); }; lg.strokeText = function(t){ lw.push(t); };
+    drawTripLibrary(lg, 360, 240, (360 - LIBRARY_W) / 2);
+    if (lw.length) fails.push('圖書館外觀寫了字：' + lw.join('、'));
+    if ((360 - LIBRARY_W) / 2 < 0) fails.push('圖書館外觀太寬');
+    var calledLib = 0, realDTL = drawTripLibrary;
+    drawTripLibrary = function(){ calledLib++; };
+    var realPN = performance.now.bind(performance), pnCalls = 0, base4 = realPN();
+    performance.now = function(){ pnCalls++; return base4 + (pnCalls > 1 ? 2000 : 0); };   // 第一下是出發、之後已經走了 2 秒
+    try {
+      walkTrip('圖書館', function(){}, 'library');
+    } finally { performance.now = realPN; drawTripLibrary = realDTL; if (typeof tripDone === 'function') tripDone(); }
+    if (!calledLib) fails.push('去圖書館的路上沒有看到圖書館');
+    var calledLib2 = 0; drawTripLibrary = function(){ calledLib2++; };
+    pnCalls = 0; performance.now = function(){ pnCalls++; return base4 + (pnCalls > 1 ? 2000 : 0); };
+    try { walkTrip('公園', function(){}, 'park'); } finally { performance.now = realPN; drawTripLibrary = realDTL; if (typeof tripDone === 'function') tripDone(); }
+    if (calledLib2) fails.push('去公園的路上也出現圖書館');
+
     /* 55 每個地點：空地都走得到、能玩的東西都走得到也點得到、點地板不會被樹／路燈這種不能玩的東西攔住
        （你回報：公園的愛心點不到、大樹後面走不過去） */
     Object.keys(PLACES).forEach(function(pk){ PLACES[pk].rooms.forEach(function(rm3, ri){

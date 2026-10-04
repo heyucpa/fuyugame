@@ -1143,6 +1143,8 @@ const PLACE_FLOORS = [
   { id: 'fl_terrazzo', name: '磨石子地', pattern: 'check', a: '#d9d9d4', b: '#d2d2cc', speckle: ['#9a9a94', '#f4f4f0', '#b5a99a'] },
   // 公園：草地，中間一條水泥步道，前面一角是紅白格子的磚地（照片參考）
   { id: 'fl_park', name: '公園草地', pattern: 'check', a: '#8fc27a', b: '#86b972', path: [4, 6], plaza: [6, 8, 10, 10] },
+  // 圖書館：亮亮的米色地板（照片裡打蠟的地板）
+  { id: 'fl_lib', name: '圖書館地板', pattern: 'check', a: '#efe6cf', b: '#e9dfc5' },
   { id: 'fl_track', name: '操場跑道', pattern: 'track', a: '#5fae6f', b: '#55a265', lane: ['#2f6fd1', '#4a9be8'], stripe: '#e98a9a', lanes: 4, laneW: .9 }
 ];
 const floorById = id => FLOORS.find(x => x.id === id) || PLACE_FLOORS.find(x => x.id === id);
@@ -1762,6 +1764,62 @@ const PLACE_FURNITURE = [
       ctx.fillText('🤫', W / 2, H / 2);
       ctx.textAlign = 'start';
     } },
+  // ── 圖書館（照片參考）：彩色大壁畫、矮白書櫃、紅色圓桌＋藍色圓地毯、彩色蛋形座椅、
+  //    黃色小踏凳、一長排平板電腦、粉紅兔子立牌、綠色展示板
+  { id: 'library_mural', name: '海洋大壁畫', theme: 'cute', w: 6, h: 46, z: 50, layer: 'wall', d: 1, parts: [],
+    draw(ctx, W, H) {
+      const sky = ctx.createLinearGradient(0, 0, 0, H);
+      sky.addColorStop(0, '#ffe08a'); sky.addColorStop(.45, '#7ec9e8'); sky.addColorStop(1, '#2f6fd1');
+      ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#ff9f3a'; ctx.beginPath(); ctx.arc(W * .82, H * .25, 7, 0, Math.PI * 2); ctx.fill();   // 太陽
+      for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; ctx.fillRect(W * .82 + Math.cos(a) * 9 - .6, H * .25 + Math.sin(a) * 9 - .6, 1.6, 1.6); }
+      ['#ffffff', '#bfe6f2', '#e8f6ff'].forEach((c, k) => { // 一層一層的浪
+        ctx.strokeStyle = c; ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let x = 0; x <= W; x += 4) { const y = H * (.5 + k * .14) + Math.sin(x / 9 + k * 2) * 3; x ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+        ctx.stroke();
+      });
+      [[.15, .7, '#ff6b4a'], [.38, .82, '#ffd35c'], [.6, .66, '#ff8fb1'], [.3, .58, '#7bd389']].forEach(([fx, fy, c]) => { // 魚
+        ctx.fillStyle = c;
+        ctx.beginPath(); ctx.ellipse(W * fx, H * fy, 6, 3, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(W * fx - 5, H * fy); ctx.lineTo(W * fx - 10, H * fy - 3); ctx.lineTo(W * fx - 10, H * fy + 3); ctx.fill();
+      });
+      [[.05, '#ff6b9a'], [.95, '#b18cff'], [.5, '#ffa53a']].forEach(([fx, c]) => { // 大花
+        ctx.fillStyle = c;
+        for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; ctx.beginPath(); ctx.arc(W * fx + Math.cos(a) * 4, H * .18 + Math.sin(a) * 4, 3, 0, Math.PI * 2); ctx.fill(); }
+        ctx.fillStyle = '#ffd35c'; ctx.beginPath(); ctx.arc(W * fx, H * .18, 2.5, 0, Math.PI * 2); ctx.fill();
+      });
+    } },
+  { id: 'low_shelf', name: '矮書櫃', theme: 'modern', w: 2, d: 1,
+    parts: [{ x: 0, y: .1, w: 2, d: .7, z: 0, h: 40, c: '#f4f4f0' }, { x: 0, y: .1, w: 2, d: .7, z: 19, h: 2, c: '#dedbd3' }]
+      .concat([2, 22].map((z, r) => ['#e8505b', '#3f8ee0', '#7bd389', '#ffd35c', '#b18cff', '#ffa53a', '#ff9ec4', '#6bb6ff']
+        .map((c, i) => ({ x: .08 + i * .23, y: .77, w: .18, d: .05, z: z + 1, h: 14 - ((i + r) % 3) * 2, c }))).flat()) },
+  { id: 'story_rug', name: '藍色圓地毯', theme: 'cute', w: 3, d: 3, layer: 'floor',
+    parts: [{ x: .4, y: 0, w: 2.2, d: 3, z: 0, h: 1.2, c: '#3d63b8' }, { x: 0, y: .4, w: 3, d: 2.2, z: 0, h: 1.2, c: '#3d63b8' },
+            { x: .2, y: .2, w: 2.6, d: 2.6, z: 0, h: 1.1, c: '#3d63b8' }] },
+  { id: 'round_red_table', name: '紅色圓桌', theme: 'cute', w: 2, d: 2,
+    parts: [{ x: .9, y: .9, w: .2, d: .2, z: 0, h: 28, c: '#d6d3cc' }, { x: .55, y: .55, w: .9, d: .9, z: 0, h: 3, c: '#d6d3cc' }]
+      .concat([{ x: .3, y: 0, w: 1.4, d: 2 }, { x: 0, y: .3, w: 2, d: 1.4 }, { x: .12, y: .12, w: 1.76, d: 1.76 }].map(b => Object.assign({ z: 28, h: 4, c: '#e0453a' }, b))) },
+  { id: 'egg_seat', name: '彩色蛋形座椅', theme: 'cute', w: 1, d: 1,
+    parts: [{ k: 'ball', x: .5, y: .5, z: 10, r: 11, c: '#ff8fb1' }, { x: .25, y: .25, w: .5, d: .5, z: 14, h: 3, c: '#ffd1df' }] },
+  { id: 'egg_seat_g', name: '彩色蛋形座椅', theme: 'cute', w: 1, d: 1,
+    parts: [{ k: 'ball', x: .5, y: .5, z: 10, r: 11, c: '#5fbf7a' }, { x: .25, y: .25, w: .5, d: .5, z: 14, h: 3, c: '#c8efd2' }] },
+  { id: 'step_stool', name: '黃色小踏凳', theme: 'cute', w: 1, d: 1,
+    parts: [{ x: .2, y: .2, w: .6, d: .6, z: 0, h: 14, c: '#ffd35c' }, { x: .35, y: .78, w: .3, d: .03, z: 4, h: 6, c: '#f0b92a' }] },
+  { id: 'tablet_table', name: '平板閱讀桌', theme: 'modern', w: 3, d: 1,
+    parts: tableParts({ leg: '#c9ccd0', top: '#f2f2ef' }, 3, 1)
+      .concat([.35, 1.15, 1.95, 2.6].map(x => [
+        { x, y: .45, w: .35, d: .25, z: 36, h: 4, c: '#2b2f36' },                // 黑色立架
+        { x, y: .3, w: .35, d: .04, z: 40, h: 9, c: '#9fd4f2' },                 // 平板
+        { x: x + .05, y: .2, w: .25, d: .02, z: 36, h: 14, c: '#b9f2c0' }        // 綠色壓克力隔板
+      ]).flat()) },
+  { id: 'bunny_sign', name: '粉紅兔子立牌', theme: 'cute', w: 1, d: 1,
+    parts: [{ x: .3, y: .45, w: .4, d: .08, z: 0, h: 34, c: '#ff5fb0' },
+            { x: .22, y: .45, w: .14, d: .08, z: 34, h: 16, c: '#ff9ec4' }, { x: .64, y: .45, w: .14, d: .08, z: 34, h: 16, c: '#ff9ec4' },
+            { k: 'ball', x: .5, y: .5, z: 28, r: 4, c: '#3f8ee0' }] },
+  { id: 'display_board', name: '綠色展示板', theme: 'nature', w: 1, d: 1,
+    parts: [{ x: .1, y: .4, w: .8, d: .1, z: 0, h: 50, c: '#4fae5a' }, { x: .2, y: .5, w: .6, d: .02, z: 22, h: 22, c: '#fffaf0' },
+            { k: 'ball', x: .4, y: .52, z: 36, r: 3, c: '#ffa53a' }, { x: .3, y: .52, w: .4, d: .01, z: 26, h: 4, c: '#7bc874' }] },
   { id: 'apple_tree', name: '蘋果樹', theme: 'nature', w: 2, d: 2, parts: treeParts('#5fa15a', '#6db866', '#e8505b') },
   { id: 'orange_tree', name: '橘子樹', theme: 'nature', w: 2, d: 2, parts: treeParts('#4f9150', '#5fa15a', '#ffa53a') },
   { id: 'banana_tree', name: '香蕉樹', theme: 'nature', w: 2, d: 2, parts: treeParts('#7bd389', '#8fe09a', '#ffd35c') }
@@ -1784,6 +1842,8 @@ Object.assign(ACTIVITIES, {
   // 圖書館
   findbook: { label: '🔎 幫忙找書', name: '找書', fx: '📚', open: 'shelf', lines: ['這本要放哪裡呢？', '書好多喔！', '要排整齊～'] },
   storybook: { label: '📖 看繪本', name: '看繪本', fx: '📖', open: 'story', lines: ['這本看起來好好看！', '要小聲看喔', '我來翻下一頁～'] },
+  ebook: { label: '📱 平板看電子書', name: '看電子書', fx: '📱', open: 'story', lines: ['平板也可以看繪本！', '輕輕滑一下就翻頁～'] },
+  storytime: { label: '👂 聽館員說故事', name: '聽故事', fx: '🎵', open: 'storytime', lines: ['我要坐好聽故事～', '館員要說故事了！'] },
   passport: { label: '📗 閱讀護照', name: '看閱讀護照', fx: '📗', open: 'passport', lines: ['我蓋了幾個章呢？', '要把護照蓋滿！'] },
   // 公園
   pondfish: { label: '🎣 池塘釣魚', name: '釣魚', fx: '🫧', open: 'fish', lines: ['魚會不會上鉤呢？', '要安靜等喔～', '池塘裡有小鴨子！'] },
@@ -1806,11 +1866,14 @@ Object.assign(FURNITURE_ACT, {
   comic_shelf: 'comic', comic_pile: 'comic', arcade: 'arcade', console_tv: 'videogame', tea_table: 'tea',
   fruit_basket: 'fruit', fruit_crate: 'fruit', apple_tree: 'pick', orange_tree: 'pick', banana_tree: 'pick',
   gaming_desk: 'pcgame', figure_shelf: 'figures', barn: 'farmcare', hay_bale: 'hay', trough: 'trough',
-  lib_shelf: 'findbook', story_stand: 'storybook', lib_counter: 'passport',
+  lib_shelf: 'findbook', low_shelf: 'findbook', story_stand: 'storybook', lib_counter: 'passport', tablet_table: 'ebook', round_red_table: 'storytime',
   pond: 'pondfish', flower_bed: 'bfly', display_tank: 'tank', heart_sculpture: 'heart', sandbox: 'sand', picnic_mat: 'picnic', fountain: 'fountain', icecream_cart: 'icecream',
   school_desk: 'lesson', school_desk_b: 'lesson', teacher_desk: 'homework', slide: 'slide', swing: 'swing', flagpole: 'flag', finish_flag: 'run'
 });
 FURNITURE_USE.park_bench = { use: 'sit', seats: [{ x: .55, y: .55, z: 20 }, { x: 1.45, y: .55, z: 20 }], front: [0, 1] };
+FURNITURE_USE.egg_seat = { use: 'sit', seats: [{ x: .5, y: .5, z: 17 }], front: [0, 1] };
+FURNITURE_USE.egg_seat_g = FURNITURE_USE.egg_seat;
+FURNITURE_USE.step_stool = { use: 'sit', seats: [{ x: .5, y: .5, z: 14 }], front: [0, 1] };
 FURNITURE_USE.school_chair = { use: 'sit', seats: [{ x: .5, y: .55, z: 24 }], front: [0, 1] };
 FURNITURE_USE.gaming_chair = { use: 'sit', seats: [{ x: .5, y: .55, z: 26 }], front: [0, 1] };
 // 上面新加的事情也要有台詞類別（前面產生 act_ 台詞時它們還不存在）
@@ -1865,13 +1928,15 @@ const PLACES = {
   ] },
   /* 圖書館：大書架（找書）、繪本架（看繪本、蓋閱讀護照）、借書櫃台、閱讀桌、繪本角 */
   library: { name: '圖書館', host: 'librarian', emoji: '📚', desc: '看繪本、蓋閱讀護照、幫忙找書！', rooms: [
-    { name: '圖書館', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_wood', items: [
-      ['lib_shelf', 0, 0], ['lib_shelf', 2, 0], ['lib_shelf', 4, 0], ['lib_counter', 7, 0], ['plant_l', 9, 0],
-      ['lib_shelf', 0, 3, 1], ['lib_shelf', 0, 5, 1],
-      ['dining_chair', 5, 3], ['dining_table', 5, 4], ['dining_chair', 6, 6, 2], ['globe', 8, 4],
-      ['rainbow_rug', 2, 8], ['story_stand', 2, 7], ['story_stand', 3, 7], ['beanbag', 2, 8], ['beanbag', 3, 9],
-      ['plant_l', 9, 9]
-    ], wallItems: [['quiet_sign', 'L', 1], ['window', 'L', 7], ['quiet_sign', 'R', 7], ['wall_clock', 'R', 9]] }
+    // 照片參考：後牆一整片彩色海洋壁畫，下面是矮書櫃；中間藍色圓地毯上一張紅色圓桌；
+    // 彩色蛋形座椅、黃色小踏凳；一長排平板閱讀桌；粉紅兔子立牌、綠色展示板、借書櫃台
+    { name: '圖書館', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_lib', items: [
+      ['low_shelf', 0, 0], ['low_shelf', 2, 0], ['low_shelf', 4, 0], ['low_shelf', 6, 0], ['lib_counter', 8, 0],
+      ['lib_shelf', 0, 2, 1], ['lib_shelf', 0, 4, 1], ['display_board', 9, 2],
+      ['story_rug', 3, 3], ['round_red_table', 4, 4], ['step_stool', 3, 5], ['egg_seat', 6, 3], ['egg_seat_g', 6, 6],
+      ['story_stand', 1, 7], ['story_stand', 2, 7], ['bunny_sign', 0, 9],
+      ['tablet_table', 6, 8], ['egg_seat', 3, 9]
+    ], wallItems: [['library_mural', 'R', 1], ['quiet_sign', 'R', 8], ['window', 'L', 6], ['quiet_sign', 'L', 1]] }
   ] },
   /* 公園：一大片草地，有池塘（可以釣魚）、花圃（拍蝴蝶）、野餐墊、噴水池、冰淇淋車 */
   park: { name: '公園', host: 'ranger', emoji: '🌳', desc: '看大戰車、玩沙溜滑梯、拍蝴蝶、找松鼠！', rooms: [
@@ -3028,7 +3093,8 @@ const NEWS = [
     ['⭐', '小遊戲的星星越多越難，綠框的最簡單'],
     ['🦋', '公園有蝴蝶在飛、魚會跳出水面'],
     ['💬', '叔叔、阿婆、老師都會記得你上次做了什麼'],
-    ['🐾', '每隻寵物有自己的個性']
+    ['🐾', '每隻寵物有自己的個性'],
+    ['📚', '圖書館變漂亮了！坐到紅色圓桌，館員會說故事給你聽']
   ], newItems: [] },
   { id: '2026-10-04', title: '小屋更新了！', lines: [
     ['🏫', '可以去學校、公園、圖書館玩了！點上面的「🚗 出門」'],
@@ -4773,7 +4839,7 @@ function fufuStartAct(key, now, it, auto) {
   else if (a.sound !== 'note') Sound.play('pickUp');
   if (a.tab) openTab(a.tab);
   if (a.open) setTimeout(() => { // 叔叔的電腦、阿婆的穀倉：打開那裡專屬的小遊戲
-    const fn = { brick: openBrickGame, mole: openMoleGame, race: openRaceGame, farm: openFarmGame, hay: () => openStackGame('hay'), quiz: openQuizGame, run: openRunGame, fish: openFishing, bfly: openButterflyGame, shelf: openShelfGame, story: openNextStorybook, passport: openPassport }[a.open] || openFarmGame;
+    const fn = { brick: openBrickGame, mole: openMoleGame, race: openRaceGame, farm: openFarmGame, hay: () => openStackGame('hay'), quiz: openQuizGame, run: openRunGame, fish: openFishing, bfly: openButterflyGame, shelf: openShelfGame, story: openNextStorybook, passport: openPassport, storytime: () => openNextStorybook({ aloud: true }) }[a.open] || openFarmGame;
     if ($('#modal').hidden) fn();
   }, 1300);
   if (a.game) setTimeout(() => { // 大型電玩：隨機開一個小遊戲
@@ -6670,6 +6736,7 @@ function hostMenuEntries() {
   }
   if (host.n.id === 'librarian') {
     list.push(['📖 一起看繪本', openNextStorybook]);
+    list.push(['👂 請館員說故事', () => openNextStorybook({ aloud: true })]);
     list.push(['📗 閱讀護照', openPassport]);
     list.push(['🔎 幫忙找書', openShelfGame]);
   }
@@ -6822,6 +6889,7 @@ function walkTrip(label, done, dest) {
       g.beginPath(); g.arc(tx, H - 82, 13, 0, Math.PI * 2); g.fill();
     }
     // 去學校：後半段學校從右邊出現，最後停在前面
+    if (dest === 'library' && p > .35) drawTripLibrary(g, W, H, W + 20 - Math.min(1, (p - .35) / .5) * (W + 20 - (W - LIBRARY_W) / 2));
     if (dest === 'school' && p > .35) drawTripSchool(g, W, H, W + 20 - Math.min(1, (p - .35) / .5) * (W + 20 - (W - SCHOOL_W) / 2)); // 最後停在正中間
     // 路面的虛線
     g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 3;
@@ -6951,6 +7019,46 @@ function drawTripSchool(g, W, H, x) {
   });
   // 紅磚地
   g.fillStyle = '#b5644f'; g.fillRect(x - 10, base, BW + 20, 8);
+  g.restore();
+}
+
+/* 過場裡的圖書館外觀：照照片畫（米色磁磚樓、二樓彎彎的陽台、柱子撐著弧形雨遮、
+   一樓大玻璃窗、兩旁的大海報、中間玻璃門），名字的招牌留白、海報不寫字。 */
+const LIBRARY_W = 250;
+function drawTripLibrary(g, W, H, x) {
+  const base = H - 56, BW = LIBRARY_W, cx = x + BW / 2;
+  g.save();
+  g.fillStyle = '#e8ddcc'; g.fillRect(x, base - 152, BW, 152);                           // 主樓（三層）
+  g.fillStyle = '#d9cdb9'; g.fillRect(x - 3, base - 156, BW + 6, 5);                     // 屋頂
+  g.strokeStyle = 'rgba(150,130,110,.18)'; g.lineWidth = 1;
+  for (let yy = base - 150; yy < base; yy += 6) { g.beginPath(); g.moveTo(x, yy); g.lineTo(x + BW, yy); g.stroke(); } // 磁磚
+  // 二樓彎彎的陽台
+  g.fillStyle = '#e3c7bf';
+  g.beginPath(); g.moveTo(x + 30, base - 112); g.quadraticCurveTo(cx, base - 132, x + BW - 30, base - 112);
+  g.lineTo(x + BW - 30, base - 88); g.quadraticCurveTo(cx, base - 104, x + 30, base - 88); g.closePath(); g.fill();
+  g.fillStyle = '#5b6470';
+  for (let i = 0; i < 7; i++) { const wx = x + 48 + i * 23; g.fillRect(wx, base - 140 + Math.abs(i - 3) * 3, 14, 10); } // 頂樓的窗
+  // 弧形雨遮和柱子
+  g.fillStyle = '#d9c3b8';
+  g.beginPath(); g.moveTo(x + 36, base - 84); g.quadraticCurveTo(cx, base - 100, x + BW - 36, base - 84); g.lineTo(x + BW - 40, base - 76); g.quadraticCurveTo(cx, base - 90, x + 40, base - 76); g.closePath(); g.fill();
+  [.2, .4, .6, .8].forEach(f => { g.fillStyle = '#c9a99c'; g.fillRect(x + BW * f - 4, base - 80, 8, 80); });
+  // 一樓的大玻璃窗
+  g.fillStyle = '#3e4a58';
+  g.fillRect(x + BW * .26, base - 66, BW * .1, 34); g.fillRect(x + BW * .64, base - 66, BW * .1, 34);
+  g.fillStyle = 'rgba(255,255,255,.25)'; g.fillRect(x + BW * .27, base - 64, 4, 30); g.fillRect(x + BW * .65, base - 64, 4, 30);
+  // 中間玻璃門＋留白的招牌
+  g.fillStyle = '#c9cdd2'; g.fillRect(cx - 26, base - 50, 52, 6);
+  g.fillStyle = '#9fb7c8'; g.fillRect(cx - 18, base - 40, 36, 40);
+  g.strokeStyle = '#6b7a88'; g.lineWidth = 1.5; g.strokeRect(cx - 18, base - 40, 36, 40);
+  g.beginPath(); g.moveTo(cx, base - 40); g.lineTo(cx, base); g.stroke();
+  g.fillStyle = '#d64a3a'; g.fillRect(cx - 26, base - 38, 5, 22); g.fillRect(cx + 21, base - 38, 5, 22); // 門邊紅色春聯（不寫字）
+  // 兩旁的大海報（畫一群小朋友在看書的樣子，不寫字）
+  [[x + 4, '#cfe2ee'], [x + BW - 40, '#d9ecf4']].forEach(([px, c]) => {
+    g.fillStyle = c; g.fillRect(px, base - 100, 36, 60);
+    g.fillStyle = '#6b8aa6';
+    for (let i = 0; i < 6; i++) { g.beginPath(); g.arc(px + 7 + (i % 3) * 11, base - 82 + Math.floor(i / 3) * 20, 4, 0, Math.PI * 2); g.fill(); }
+  });
+  g.fillStyle = '#b5644f'; g.fillRect(x - 10, base, BW + 20, 6);                         // 門口的地
   g.restore();
 }
 
@@ -10583,9 +10691,9 @@ const STORYBOOKS = [
   { id: 'night',  title: '睡不著',     cover: '⭐', pages: [['🌃', '晚上，我睡不著。'], ['⭐', '我數星星：一顆、兩顆……'], ['🐑', '數到第十隻小羊……'], ['😴', '呼——呼——晚安。']] },
   { id: 'share',  title: '一顆蘋果',   cover: '🍎', pages: [['🍎', '小熊撿到一顆蘋果。'], ['🐰🐿️', '朋友們也好想吃。'], ['🍽️', '小熊請爸爸幫忙，把蘋果切成好幾片。'], ['😋', '大家一起吃，更好吃！']] }
 ];
-function openStorybook(id) {
+function openStorybook(id, aloud) {
   const book = STORYBOOKS.find(b => b.id === id) || STORYBOOKS[Math.floor(Math.random() * STORYBOOKS.length)];
-  let page = -1, readAloud = false; // -1 是封面
+  let page = -1, readAloud = !!aloud; // -1 是封面
   const card = $('#modalCard');
   function show() {
     card.innerHTML = '';
@@ -10672,11 +10780,12 @@ function openPassport() {
   $('#modal').hidden = false;
 }
 // 繪本架：先給還沒看過的
-function openNextStorybook() {
+// opts.aloud：館員說故事（紅色圓桌）——一打開就念，妹妹不用自己讀
+function openNextStorybook(opts) {
   const pass = G.passport || {};
   const fresh = STORYBOOKS.filter(b => !pass[b.id]);
   const pool = fresh.length ? fresh : STORYBOOKS;
-  openStorybook(pool[Math.floor(Math.random() * pool.length)].id);
+  openStorybook(pool[Math.floor(Math.random() * pool.length)].id, opts && opts.aloud === true);
 }
 
 /* ── 🔎 找書：把書放回對的書架 ──
