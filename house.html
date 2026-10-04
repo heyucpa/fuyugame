@@ -3096,8 +3096,13 @@ PLACE_FURNITURE.forEach(f => { FURN_BY_ID[f.id] = f; }); // 親戚家專用的�
 /* 🏆 集滿獎盃：任何一種圖鑑集滿，就送一座只有集滿才拿得到的獎盃（可以擺地上、也可以擺桌上）。
    不放進 FURNITURE：不然家具圖鑑要集滿還得先拿到家具獎盃，永遠集不滿。
    價格 0＝不能賣（辛苦集來的，不要一不小心賣掉）。 */
+/* 家具有 88 件，只有「全部集滿」一座太遠了（家長：家具要集滿還蠻難的）。
+   分成銅 20、銀 45、金＝全部三座：第一座很快拿得到，後面一直有下一個目標。
+   'furn' 這個 id 留給金獎盃（最早的版本就是它）。 */
 const TROPHY_SETS = [
-  { id: 'furn', name: '家具', icon: '🛋️', color: '#c98a3a' },
+  { id: 'furn20', name: '家具', tier: '銅', need: 20, icon: '🥉', color: '#c98a3a', cup: '#c98a5a' },
+  { id: 'furn45', name: '家具', tier: '銀', need: 45, icon: '🥈', color: '#c98a3a', cup: '#cfd6de' },
+  { id: 'furn', name: '家具', tier: '金', icon: '🥇', color: '#c98a3a' },
   { id: 'pet', name: '寵物', icon: '🐾', color: '#ff9ec4' },
   { id: 'friend', name: '好朋友', icon: '🐻', color: '#7bd389' },
   { id: 'animal', name: '動物', icon: '🐮', color: '#a0d8ff' },
@@ -3110,14 +3115,16 @@ const TROPHY_SETS = [
 const TROPHY_GOLD = '#f2c14e';
 TROPHY_SETS.forEach(t => {
   t.item = 'trophy_' + t.id;
-  FURN_BY_ID[t.item] = { id: t.item, name: t.name + '獎盃', price: 0, theme: 'modern', w: 1, d: 1, gift: true, trophy: true,
+  const gold = t.cup || TROPHY_GOLD;
+  t.full = t.name + (t.tier || '') + '獎盃';
+  FURN_BY_ID[t.item] = { id: t.item, name: t.full, price: 0, theme: 'modern', w: 1, d: 1, gift: true, trophy: true,
     parts: [
       { x: .36, y: .36, w: .28, d: .28, z: 0, h: 4, c: '#5a3a22' },
       { x: .4, y: .4, w: .2, d: .2, z: 4, h: 2, c: t.color },
-      { x: .46, y: .46, w: .08, d: .08, z: 6, h: 6, c: TROPHY_GOLD },
-      { k: 'ball', x: .5, y: .5, z: 17, r: 6, c: TROPHY_GOLD },
-      { k: 'ball', x: .33, y: .5, z: 18, r: 2, c: TROPHY_GOLD },
-      { k: 'ball', x: .67, y: .5, z: 18, r: 2, c: TROPHY_GOLD },
+      { x: .46, y: .46, w: .08, d: .08, z: 6, h: 6, c: gold },
+      { k: 'ball', x: .5, y: .5, z: 17, r: 6, c: gold },
+      { k: 'ball', x: .33, y: .5, z: 18, r: 2, c: gold },
+      { k: 'ball', x: .67, y: .5, z: 18, r: 2, c: gold },
       { x: .43, y: .43, w: .14, d: .14, z: 22, h: 1.5, c: '#ffe58a' },
       { k: 'ball', x: .5, y: .64, z: 17, r: 2.4, c: t.color }
     ] };
@@ -9301,14 +9308,14 @@ function tabBook(body) {
   const sec = (id, text) => { const h = h3(text); h.id = id; return h; };
   // 🏆 獎盃架：每一種圖鑑集滿送一座。還沒拿到的淡淡的，寫還差幾個——看得到目標
   body.appendChild(sec('dexTrophy', `🏆 獎盃 ${count(G.trophies)} / ${TROPHY_SETS.length}`));
-  body.appendChild(note('每一種圖鑑集滿，就會拿到一座獎盃，可以擺在房間或桌上。閱讀護照蓋滿會拿到獎狀。'));
+  body.appendChild(note('每一種圖鑑集滿，就會拿到一座獎盃，可以擺在房間或桌上。家具分成三座：收集 20 件銅、45 件銀、全部集滿金。閱讀護照蓋滿會拿到獎狀。'));
   const trG = el('div', 'grid');
   TROPHY_SETS.forEach(t => {
     const has = !!(G.trophies || {})[t.id], [n, all] = trophyCount(t.id);
     const c = el('div', 'card dex' + (has ? '' : ' dim'));
     c.appendChild(thumb(FURN_BY_ID[t.item]));
-    c.appendChild(el('div', 'nm', `${t.icon} ${t.name}`));
-    c.appendChild(el('div', 'pr', has ? '集滿了！' : `還差 ${all - n} 個`));
+    c.appendChild(el('div', 'nm', `${t.icon} ${t.name}${t.tier ? '・' + t.tier : ''}`));
+    c.appendChild(el('div', 'pr', has ? (t.need ? `${t.need} 件達成！` : '集滿了！') : `還差 ${all - n} 個`));
     trG.appendChild(c);
   });
   body.appendChild(trG);
@@ -11163,6 +11170,10 @@ function trophyCount(id) {
   const c = o => Object.keys(o || {}).length;
   switch (id) {
     case 'furn': return [FURNITURE.filter(f => G.seen[f.id]).length, FURNITURE.length];
+    case 'furn20': case 'furn45': {
+      const need = TROPHY_SETS.find(t => t.id === id).need;
+      return [Math.min(need, FURNITURE.filter(f => G.seen[f.id]).length), need];
+    }
     case 'pet': return [collectedSpecies().size, PET_SPECIES.length];
     case 'friend': return [NEIGHBORS.filter(n => G.friends[n.id]).length, NEIGHBORS.length];
     case 'animal': return [c(G.animals), ANIMAL_DEX().length];
@@ -11188,8 +11199,10 @@ function checkTrophies(now) {
     got[t.id] = true;
     addItem(t.item);
     n++;
-    sessionLog.newThings.push('🏆 ' + t.name + '獎盃');
-    showcase(renderThumb(FURN_BY_ID[t.item], 150), `🏆 ${t.name}獎盃！`, `${t.icon} ${t.name}圖鑑集滿了！獎盃放進「我的東西」了`, { head: '🏆 集滿了！' });
+    sessionLog.newThings.push('🏆 ' + t.full);
+    showcase(renderThumb(FURN_BY_ID[t.item], 150), `🏆 ${t.full}！`,
+      t.need ? `${t.icon} 家具收集到 ${t.need} 件了！獎盃放進「我的東西」了` : `${t.icon} ${t.name}圖鑑集滿了！獎盃放進「我的東西」了`,
+      { head: t.need ? '🏆 好厲害！' : '🏆 集滿了！' });
   });
   if (n) saveGame();
   return n;

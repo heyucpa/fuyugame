@@ -2303,6 +2303,24 @@
       while (pG && !pG.classList.contains('grid') && pG.tagName !== 'H3') pG = pG.nextElementSibling;
       if (!pG || !pG.classList.contains('grid') || pG.children.length !== PET_SPECIES.length) fails.push('圖鑑的寵物那一段沒有 ' + PET_SPECIES.length + ' 格');
     } finally { toast = realToast6; G = normalizeSave(JSON.parse(keepG5)); saveGame(); SC_QUEUE.length = 0; var o7 = document.getElementById('showcase'); if (o7) o7.remove(); openTab('inv'); }
+    // 家具分三座：20 件銅、45 件銀、全部金；一次跨過好幾個門檻，每一座都要給
+    toast = function(){};
+    try {
+      G.trophies = {}; G.seen = {};
+      FURNITURE.slice(0, 19).forEach(function(f){ G.seen[f.id] = true; });
+      checkTrophies();
+      if (G.trophies.furn20) fails.push('家具 19 件就給銅獎盃');
+      G.seen[FURNITURE[19].id] = true; checkTrophies();
+      if (!G.trophies.furn20 || !G.inv.trophy_furn20) fails.push('家具 20 件沒有銅獎盃');
+      if (G.trophies.furn45 || G.trophies.furn) fails.push('家具 20 件就給了銀或金獎盃');
+      if (FURN_BY_ID.trophy_furn20.name !== '家具銅獎盃' || FURN_BY_ID.trophy_furn.name !== '家具金獎盃') fails.push('家具獎盃名字不對：' + FURN_BY_ID.trophy_furn20.name + '／' + FURN_BY_ID.trophy_furn.name);
+      FURNITURE.forEach(function(f){ G.seen[f.id] = true; }); checkTrophies();
+      if (!G.trophies.furn45 || !G.trophies.furn) fails.push('家具全部集滿，銀、金獎盃沒有都給');
+      G.trophies = {}; G.seen = {}; FURNITURE.slice(0, 30).forEach(function(f){ G.seen[f.id] = true; });
+      openTab('book');
+      var silver = [].filter.call(document.querySelectorAll('#tabBody .card.dex'), function(c){ return /家具・銀/.test(c.textContent); })[0];
+      if (!silver || !/還差 15 個/.test(silver.textContent)) fails.push('家具 30 件時，銀獎盃沒寫還差 15 個');
+    } finally { toast = realToast6; G = normalizeSave(JSON.parse(keepG5)); saveGame(); SC_QUEUE.length = 0; var o8 = document.getElementById('showcase'); if (o8) o8.remove(); openTab('inv'); }
 
     /* 65 收集到新東西：每一種圖鑑都跳大圖（光芒、彩帶、進度條），重複的不跳；孵蛋先搖蛋再跳寵物；
        排隊一個一個跳；點一下可以關 */
