@@ -1375,12 +1375,25 @@
 
     /* 61 拍照：拍得出照片、留下來、最多 12 張（滿了要先刪）、可以刪、每個存檔格分開、壞掉／空間不夠不當掉 */
     localStorage.removeItem(photoKey());
+    $('#modal').hidden = true;
     var shot = takePhoto();
     if (!shot || shot.indexOf('data:image/jpeg') !== 0) fails.push('拍不出照片');
-    if (!document.querySelector('#modalCard .photo-big')) fails.push('拍完沒有預覽');
-    var keepBtn = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return /留下來/.test(b.textContent); })[0];
-    keepBtn.onclick();
-    if (loadPhotos().length !== 1) fails.push('按留下來，相簿沒有多一張');
+    // 拍完直接放進相簿、照片放大一下自己消失（不跳視窗、不用按「留下來」）
+    if (loadPhotos().length !== 1) fails.push('拍完沒有自動放進相簿');
+    var pop = document.getElementById('photoPop');
+    if (!pop || !pop.querySelector('img')) fails.push('拍完照片沒有放大出現');
+    if (!$('#modal').hidden) fails.push('拍完還跳出視窗（要自己消失）');
+    if (pop && getComputedStyle(pop).pointerEvents !== 'none') fails.push('放大的照片會擋住點擊');
+    if (PHOTO_POP_MS > 3000) fails.push('放大的照片停太久');
+    if (pop) pop.remove();
+    // 相簿滿了：跳相簿讓她刪一張（不自動刪舊的）
+    for (var phF = 0; phF < PHOTO_MAX; phF++) keepPhoto(shot);
+    var full0 = JSON.stringify(loadPhotos().map(function(q){ return q.id; }));
+    takePhoto();
+    if (JSON.stringify(loadPhotos().map(function(q){ return q.id; })) !== full0) fails.push('相簿滿了，拍照自動刪掉舊照片');
+    if ($('#modal').hidden || !/相簿滿了/.test($('#modalCard').textContent)) fails.push('相簿滿了，拍照沒有叫她先刪一張');
+    $('#modal').hidden = true;
+    localStorage.removeItem(photoKey()); keepPhoto(shot);
     if (shot.length > 120000) fails.push('一張照片太大了（' + Math.round(shot.length / 1024) + ' KB）');
     for (var ph = 0; ph < 15; ph++) keepPhoto(shot);
     if (loadPhotos().length !== PHOTO_MAX) fails.push('相簿超過 ' + PHOTO_MAX + ' 張（' + loadPhotos().length + '）');

@@ -413,6 +413,13 @@ button.pass { font: inherit; }
 .stage.holding .photo-btn { display: none; }
 .photo-flash { position: fixed; inset: 0; background: #fff; z-index: 120; pointer-events: none; animation: flashOut .45s ease-out forwards; }
 @keyframes flashOut { from { opacity: .9; } to { opacity: 0; } }
+.photo-pop { position: fixed; left: 50%; top: 45%; z-index: 85; pointer-events: none; transform: translate(-50%, -50%);
+  background: #fff; padding: 10px 10px 8px; border-radius: 14px; box-shadow: 0 12px 34px rgba(0,0,0,.3); text-align: center;
+  width: min(320px, calc(100vw - 40px)); animation: photoIn .3s cubic-bezier(.2,1.5,.4,1); transition: transform .45s ease-in, opacity .45s ease-in; }
+.photo-pop img { width: 100%; border-radius: 8px; display: block; }
+.photo-pop-tx { font-weight: 800; color: #4a3b2a; margin-top: 6px; font-size: 14px; }
+.photo-pop.away { transform: translate(calc(50vw - 80px), 25vh) scale(.12); opacity: 0; }
+@keyframes photoIn { from { transform: translate(-50%, -50%) scale(.4) rotate(-6deg); opacity: 0; } }
 .photo-big { width: 100%; border-radius: 10px; box-shadow: 0 4px 14px rgba(0,0,0,.15); margin: 4px 0 8px; }
 .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .photo-thumb { padding: 0; border: 2px solid var(--line); border-radius: 10px; overflow: hidden; background: #fff; }
@@ -7780,8 +7787,25 @@ function takePhoto() {
   const fl = el('div', 'photo-flash'); document.body.appendChild(fl); setTimeout(() => fl.remove(), 450);
   Sound.play('shake');
   try { kidMakeFace('joy', 1500); } catch (e) {}
-  openPhotoPreview(data);
+  /* 家長：照片放大閃一下就自動存進相簿、自己消失（不用再按「留下來」）。
+     相簿滿了才跳原本的視窗，讓她刪一張不要的再放進來（不自動刪舊的，怕刪到她喜歡的）。 */
+  const r = keepPhoto(data);
+  if (r === 'ok') showPhotoPop(data);
+  else if (r === 'full') { toast(`相簿滿了（${PHOTO_MAX} 張），先刪掉一張不要的`); openAlbum(data); }
+  else toast('空間不夠，先到相簿刪掉幾張');
   return data;
+}
+// 拍好的照片在畫面中間放大一下，然後縮小飛向右邊的相機鈕、消失（不擋操作）
+const PHOTO_POP_MS = 1800;
+function showPhotoPop(data) {
+  const old = document.getElementById('photoPop'); if (old) old.remove();
+  const box = el('div', 'photo-pop'); box.id = 'photoPop';
+  const img = document.createElement('img'); img.src = data;
+  box.append(img, el('div', 'photo-pop-tx', `📷 放進相簿了（${loadPhotos().length} / ${PHOTO_MAX}）`));
+  document.body.appendChild(box);
+  setTimeout(() => box.classList.add('away'), PHOTO_POP_MS - 450);
+  setTimeout(() => box.remove(), PHOTO_POP_MS);
+  return box;
 }
 function keepPhoto(data) {
   const list = loadPhotos();
