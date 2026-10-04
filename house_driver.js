@@ -1326,6 +1326,90 @@
       fails.push('蝴蝶相簿顯示不對');
     var md8 = document.querySelector('#modal'); if (md8) md8.hidden = true;
 
+    /* ㊿ ChatGPT 檢查出來的四個問題＋兩個建議 */
+    // (1) 讀不出來的存檔：不能被新遊戲蓋掉、要另外留一份、存檔要回報失敗、畫面要提醒
+    var goodRaw = localStorage.getItem(SAVE_KEY);
+    try {
+      localStorage.setItem(SAVE_KEY, '{這不是 JSON');
+      var g2 = loadGame();
+      if (SAVE_LOCKED !== '{這不是 JSON') fails.push('讀不出來的存檔沒有被鎖住保護');
+      if (localStorage.getItem(rescueKey()) !== '{這不是 JSON') fails.push('讀不出來的存檔沒有另外留一份');
+      var keepG = G; G = g2;
+      if (saveGame() !== false) fails.push('鎖住的時候 saveGame 還說存好了');
+      if (localStorage.getItem(SAVE_KEY) !== '{這不是 JSON') fails.push('讀不出來的存檔被新遊戲蓋掉了');
+      var warnB = document.getElementById('saveWarn');
+      if (!warnB || warnB.hidden) fails.push('存檔被鎖住，畫面上沒有提醒');
+      openRescue();
+      var rt = document.querySelector('#modalCard').textContent;
+      if (!/下載原始資料/.test(rt) || !/重新開始/.test(rt)) fails.push('讀不出來的處理畫面少了選項');
+      $('#modal').hidden = true;
+      G = keepG;
+    } finally { SAVE_LOCKED = null; localStorage.setItem(SAVE_KEY, goodRaw); localStorage.removeItem(rescueKey()); }
+    if (saveGame() !== true) fails.push('正常的時候 saveGame 沒有回報成功');
+    if (!document.getElementById('saveWarn').hidden) fails.push('存好了，提醒還掛著');
+    // 存不進去（空間滿了等等）也要回報、要提醒
+    var realSet = Storage.prototype.setItem;
+    Storage.prototype.setItem = function(){ throw new Error('full'); };
+    var sgFail;
+    try { sgFail = saveGame(); } finally { Storage.prototype.setItem = realSet; }
+    if (sgFail !== false || document.getElementById('saveWarn').hidden) fails.push('存不進去的時候沒有回報或沒有提醒');
+    saveGame();
+    // 型態壞掉的資料不能當成舊版收下來，也不能讓程式當掉
+    var badShapes = [{ rooms: [{ items: {} }] }, { rooms: [{ items: [{ id: 1, x: 0, y: 0 }] }] }, { rooms: [{ items: [] }], bells: 'abc' }, { rooms: [{ wallItems: 'x' }] }];
+    badShapes.forEach(function(b, i){
+      try { if (normalizeSave(JSON.parse(JSON.stringify(b))) !== null) fails.push('壞掉的資料 #' + i + ' 被當成舊版收下了'); }
+      catch(e) { fails.push('壞掉的資料 #' + i + ' 讓 normalizeSave 當掉：' + e.message); }
+      try { if (readBackup(JSON.stringify({ tag: SAVE_TAG, data: JSON.stringify(b) })) !== null) fails.push('壞掉的備份 #' + i + ' 被接受了'); }
+      catch(e) { fails.push('壞掉的備份 #' + i + ' 讓匯入當掉：' + e.message); }
+    });
+    if (!normalizeSave({ rooms: [{ name: '客廳', w: 6, d: 6 }] })) fails.push('只少欄位的舊版存檔被當成壞掉');
+    // 驗證沒涵蓋到的怪欄位（hairOwned 是數字）會讓 normalizeSave 丟錯：匯入要接住、不能整頁當掉
+    try { if (readBackup(JSON.stringify({ tag: SAVE_TAG, data: JSON.stringify({ rooms: [{}], hairOwned: 5 }) })) !== null) fails.push('怪欄位的備份被接受了'); }
+    catch(e) { fails.push('怪欄位的備份讓匯入當掉：' + e.message); }
+    // (2) 釣魚被別的視窗／休息畫面關掉，動畫和按鍵也要清乾淨
+    var realAdd = document.addEventListener, realRemove = document.removeEventListener, added = [], removed = [];
+    document.addEventListener = function(t, f){ if (t === 'keydown') added.push(f); return realAdd.apply(this, arguments); };
+    document.removeEventListener = function(t, f){ if (t === 'keydown') removed.push(f); return realRemove.apply(this, arguments); };
+    try {
+      openFishing();
+      if (typeof gameCleanup !== 'function') fails.push('釣魚沒有登記清理工作');
+      closeGameWindow();                                 // 休息提醒用的就是這個
+      if (!added.length || added.some(function(f){ return removed.indexOf(f) < 0; })) fails.push('釣魚被關掉後，空白鍵事件還留著');
+      if (fishTimer) fails.push('釣魚被關掉後，動畫還在跑');
+      openFishing(); openFishing();                      // 連開兩次：上一個要先清掉
+      closeGameWindow();
+      if (added.some(function(f){ return removed.indexOf(f) < 0; })) fails.push('連開兩次釣魚，事件累積起來了');
+    } finally { document.addEventListener = realAdd; document.removeEventListener = realRemove; }
+    // (3) 家長密碼每次都要問
+    var prompts = 0, realPrompt2 = window.prompt;
+    saveRestCfg({ on: true, play: 20, rest: 5, pin: '4321' });
+    window.prompt = function(){ prompts++; return '4321'; };
+    var okN = 0;
+    askPin('a', function(){ okN++; }); askPin('b', function(){ okN++; });
+    if (prompts !== 2 || okN !== 2) fails.push('家長密碼輸入一次後就不再問（問了 ' + prompts + ' 次）');
+    // 危險的按鈕也要密碼：重新開始
+    var realReset = confirmReset, resetCalled = 0;
+    confirmReset = function(){ resetCalled++; };
+    window.prompt = function(){ return '0000'; };
+    openTab('save');
+    var resetBtn = [].filter.call(document.querySelectorAll('#tabBody button'), function(b){ return /重新開始（清除存檔）/.test(b.textContent); })[0];
+    if (resetBtn) { resetBtn.onclick(); if (resetCalled) fails.push('密碼錯了還能按「重新開始」'); window.prompt = function(){ return '4321'; }; resetBtn.onclick(); if (!resetCalled) fails.push('密碼對了卻不能按「重新開始」'); }
+    else fails.push('找不到「重新開始」按鈕');
+    confirmReset = realReset; window.prompt = realPrompt2;
+    localStorage.removeItem(REST_CFG_KEY);              // 回到預設，後面的測試要用
+    // (5) 備份要用按下去那一刻的最新進度
+    openTab('save');
+    G.bells = 777777;
+    var realDl = downloadText, got = null;
+    downloadText = function(t){ got = t; };
+    try {
+      var dlBtn = [].filter.call(document.querySelectorAll('#tabBody button'), function(b){ return /存成檔案/.test(b.textContent); })[0];
+      dlBtn.onclick();
+    } finally { downloadText = realDl; }
+    var gotSave = got && readBackup(got);
+    if (!gotSave || JSON.parse(gotSave.data).bells !== 777777) fails.push('下載的備份不是最新的進度');
+    G.bells = 100000; saveGame();
+
     /* ㊾ 更新公告：舊存檔要看到、新存檔不用看、看過不再跳、有別的視窗時不要蓋掉、
        設定頁可以再看；新進商店的家具兩週內掛「新」，買過就不掛 */
     var oldSave = JSON.parse(JSON.stringify(G)); delete oldSave.newsSeen;

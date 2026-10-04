@@ -383,6 +383,10 @@ button.pass { font: inherit; }
 .news-row { display: flex; align-items: center; gap: 10px; background: #fffaf0; border: 2px solid var(--line); border-radius: 14px; padding: 8px 10px; }
 .news-ic { font-size: 30px; flex: none; }
 .news-tx { font-size: 15px; font-weight: 700; color: #4a3b2a; line-height: 1.4; }
+.save-warn { position: fixed; left: 50%; top: 8px; transform: translateX(-50%); z-index: 90; max-width: calc(100% - 24px);
+  background: #c0392b; color: #fff; border: none; border-radius: 999px; padding: 8px 16px; font-size: 14px; font-weight: 800;
+  box-shadow: 0 4px 14px rgba(0,0,0,.25); }
+.save-warn[hidden] { display: none; }
 .zoom-btn { display: none; position: absolute; top: 8px; right: 8px; z-index: 6; border: 2px solid var(--line);
   background: rgba(255,250,240,.92); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 700; }
 /* ③ 提示條玩過幾次就不顯示（拿著家具的時候還是會出現，那時候需要它） */
@@ -3077,21 +3081,38 @@ function newKid() {
   return { hunger: 90, height: KID_START_HEIGHT, lastTick: Date.now() };
 }
 
+/* 讀不出來的存檔：以前會直接開新遊戲，接著一存檔就把原本的紀錄蓋掉了。
+   現在：原文留在 SAVE_LOCKED（也另外複製一份到 rescue），這一輪不自動存檔，
+   跳出畫面讓家長選：下載原始資料、用備份還原、換一格、或這一格重新開始。 */
+var SAVE_LOCKED = null;
+const rescueKey = () => 'myHouseGame_rescue:' + curSlotId();
 function loadGame() {
+  let raw = null;
+  try { raw = localStorage.getItem(SAVE_KEY); } catch (e) { raw = null; }
+  if (!raw) return newGame();
   try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (raw) {
-      const g = JSON.parse(raw);
-      const ok = normalizeSave(g);
-      if (ok) return ok;
-    }
-  } catch (e) { /* 無法讀取就開新遊戲 */ }
+    const ok = normalizeSave(JSON.parse(raw));
+    if (ok) return ok;
+  } catch (e) { /* 下面當成壞掉處理 */ }
+  SAVE_LOCKED = raw;
+  try { localStorage.setItem(rescueKey(), raw); } catch (e) { /* 存不下就算了，原文還在原位 */ }
   return newGame();
 }
 
 // 補齊舊版存檔缺少的欄位；格式不對回傳 null
 function normalizeSave(g) {
   if (!g || typeof g !== 'object' || !Array.isArray(g.rooms) || !g.rooms.length) return null;
+  /* 舊版少欄位可以補；「型態不對」是壞掉的資料，不能當成舊版收下來
+     （例如 items 變成物件，後面一跑 forEach 就整個當掉）。 */
+  const isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
+  const num = v => typeof v === 'number' && isFinite(v);
+  if (g.rooms.some(r => !isObj(r)
+      || (r.items != null && !Array.isArray(r.items)) || (r.wallItems != null && !Array.isArray(r.wallItems))
+      || (r.w != null && !num(r.w)) || (r.d != null && !num(r.d)))) return null;
+  if (g.rooms.some(r => (r.items || []).some(it => !isObj(it) || typeof it.id !== 'string' || !num(it.x) || !num(it.y))
+      || (r.wallItems || []).some(it => !isObj(it) || typeof it.id !== 'string'))) return null;
+  if ((g.bells != null && !num(g.bells)) || (g.inv != null && !isObj(g.inv))
+      || (g.pets != null && !Array.isArray(g.pets)) || (g.cur != null && !num(g.cur))) return null;
   g.rooms.forEach(r => {
     r.wallItems = r.wallItems || []; // 舊存檔沒有掛飾欄位
     r.items = r.items || [];
@@ -3176,6 +3197,7 @@ function buyAndWear(id) {
 })();
 
 let G = loadGame();
+if (SAVE_LOCKED != null) setTimeout(openRescue, 300);
 // 上次玩到現在隔了幾小時（在第一次結算之前記下來，給「好久不見」用）
 const hoursAway = (Date.now() - Math.max(G.pet.lastTick || 0, G.kid.lastTick || 0)) / 3600000;
 /* 讀完立刻存一次。normalizeSave 裡的補欄位與補償如果沒有馬上落地，
@@ -3183,8 +3205,51 @@ const hoursAway = (Date.now() - Math.max(G.pet.lastTick || 0, G.kid.lastTick || 
    補償那一筆更糟：旗標沒存下來，下次開又補一次。 */
 saveGame();
 
+// 回傳有沒有存成功。存不了的時候畫面上會一直掛著提醒，不能讓她玩完才發現沒存到
 function saveGame() {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(G)); } catch (e) { /* 私密視窗等情況存不了 */ }
+  if (SAVE_LOCKED != null) { showSaveWarn('locked'); return false; }
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(G)); }
+  catch (e) { showSaveWarn('fail'); return false; } // 私密視窗、空間滿了等等
+  showSaveWarn(null);
+  return true;
+}
+function showSaveWarn(kind) {
+  let b = document.getElementById('saveWarn');
+  if (!kind) { if (b) b.hidden = true; return; }
+  if (!b) {
+    b = document.createElement('button'); b.id = 'saveWarn'; b.className = 'save-warn';
+    b.onclick = () => (SAVE_LOCKED != null ? openRescue() : openTab('save'));
+    document.body.appendChild(b);
+  }
+  b.textContent = kind === 'locked'
+    ? '⚠️ 這份紀錄讀不出來，現在玩的不會存檔。請家長點這裡處理'
+    : '⚠️ 進度沒有存好！請家長到「⚙️ 設定」先備份';
+  b.hidden = false;
+}
+function downloadText(text, name) {
+  const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function openRescue() {
+  if (SAVE_LOCKED == null) return;
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', '⚠️ 這份紀錄暫時讀不出來'));
+  card.appendChild(note('紀錄沒有被刪掉，也另外留了一份。現在玩的不會存檔，免得把它蓋掉。請家長選一個：'));
+  const b1 = el('button', 'big', '⬇️ 下載原始資料（給大人保存）');
+  b1.onclick = () => { try { downloadText(SAVE_LOCKED, '我的小屋-讀不出來的紀錄-' + today() + '.json'); toast('下載好了'); } catch (e) { toast('這台機器存不了檔案'); } };
+  const b2 = el('button', 'big alt', '↩️ 用備份還原／換別的存檔格');
+  b2.onclick = () => { $('#modal').hidden = true; openTab('save'); };
+  const b3 = el('button', 'big alt', '🆕 這一格重新開始');
+  b3.onclick = () => askPin('這一格重新開始', () => {
+    if (!confirm('確定要讓這一格重新開始嗎？\n讀不出來的那份已經另外留著，之後還可以下載。')) return;
+    SAVE_LOCKED = null; saveGame(); $('#modal').hidden = true; toast('重新開始了！');
+  });
+  card.append(b1, b2, b3);
+  $('#modal').hidden = false;
 }
 
 function today() {
@@ -7455,10 +7520,10 @@ function endRest() {
 // 家長密碼：沒有設密碼就直接通過；設了就要輸入對
 function askPin(why, ok) {
   const c = restCfg();
-  if (!c.pin || restUnlocked) { ok(); return; }
+  if (!c.pin) { ok(); return; } // 每次都要輸入：只輸入一次就整段免驗證，小朋友就可以自己改
   const v = window.prompt(`${why}：請輸入家長密碼（4 位數字）`);
   if (v === null) return;
-  if (v.trim() === c.pin) { restUnlocked = true; ok(); }
+  if (v.trim() === c.pin) ok();
   else toast('密碼不對喔');
 }
 // 設定分頁裡的「⏰ 休息提醒」
@@ -8315,7 +8380,7 @@ function readBackup(txt) {
   let g;
   try { g = JSON.parse(o.data); } catch (e) { return null; }
   // 真的是這個遊戲的存檔才收：normalizeSave 會把舊版缺的欄位補齊，格式不對回傳 null
-  if (!normalizeSave(g)) return null;
+  try { if (!normalizeSave(g)) return null; } catch (e) { return null; } // 格式怪的備份不能讓整頁當掉
   return { data: o.data, at: o.at || '' };
 }
 const hasUndo = () => !!readBackup(localStorage.getItem(UNDO_KEY));
@@ -8334,8 +8399,15 @@ function applyBackup(txt) {
   return true;
 }
 
+// 按下複製／下載的那一刻才產生備份（頁面開著的時候寵物等狀態還在變）
+function freshBackup() { saveGame(); return makeBackup(); }
 function tabSave(body) {
   const code = makeBackup();
+  if (SAVE_LOCKED != null) { // 讀不出來的紀錄：處理按鈕放最上面
+    const rb = el('button', 'big', '⚠️ 這份紀錄讀不出來，按這裡處理');
+    rb.onclick = openRescue;
+    body.appendChild(rb);
+  }
   const nb = el('button', 'mini', '📣 看最近的更新');
   nb.onclick = () => openNews(NEWS.slice(0, 1));
   body.appendChild(nb);
@@ -8384,12 +8456,12 @@ function tabSave(body) {
 
   if (list.length > 1) {
     const del = el('button', 'mini', '🗑️ 刪掉「' + curSlotName() + '」這一間');
-    del.onclick = () => {
+    del.onclick = () => askPin('刪掉存檔格', () => {
       if (!confirm('要刪掉「' + curSlotName() + '」整間房子嗎？\n\n' +
                    '這一格的錢、家具、寵物全部都會不見。\n' +
                    '（刪掉的那一格救不回來，建議先存成檔案）')) return;
       if (removeSlot(cur)) location.reload();
-    };
+    });
     body.appendChild(del);
   }
 
@@ -8405,12 +8477,12 @@ function tabSave(body) {
   copy.onclick = async () => {
     Sound.play('click');
     try {
-      await navigator.clipboard.writeText(code);
+      await navigator.clipboard.writeText(freshBackup());
       toast('複製好了，貼到記事本存起來');
     } catch (e) {
       // clipboard 在非 https 或舊 Safari 會沒有／被擋，一定要留後路，
       // 不然按下去完全沒反應，她會以為壞掉
-      box.value = code; box.focus(); box.select();
+      box.value = freshBackup(); box.focus(); box.select();
       toast('請長按下面的框→拷貝');
     }
   };
@@ -8420,11 +8492,7 @@ function tabSave(body) {
   dl.onclick = () => {
     Sound.play('click');
     try {
-      const url = URL.createObjectURL(new Blob([code], { type: 'application/json' }));
-      const a = document.createElement('a');
-      a.href = url; a.download = '我的小屋備份-' + today() + '.json';
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      downloadText(freshBackup(), '我的小屋備份-' + today() + '.json');
       toast('存好了');
     } catch (e) { toast('這台機器存不了檔案，請用上面那顆複製'); }
   };
@@ -8466,27 +8534,27 @@ function tabSave(body) {
   }
 
   const restore = el('button', 'big', '↩️ 還原');
-  restore.onclick = () => {
+  restore.onclick = () => askPin('用備份蓋掉現在的進度', () => {
     const s = readBackup(box.value);
     if (!s) { toast('這段不是小屋的備份，沒有動到任何東西'); return; }
     if (!confirm('要用這一份備份蓋掉現在的進度嗎？\n\n備份時間：' + (s.at || '不詳'))) return;
     if (!applyBackup(box.value)) { toast('寫不進去，沒有動到任何東西'); return; }
     location.reload();   // 整個重讀最乾淨，G 跟畫面都會跟著換
-  };
+  });
   body.appendChild(restore);
 
   if (hasUndo()) {
     body.appendChild(h3('⏪ 反悔'));
     body.appendChild(note('上一次還原之前的那一份還留著。'));
     const undo = el('button', 'big alt', '把上一份換回來');
-    undo.onclick = () => {
+    undo.onclick = () => askPin('換回上一份', () => {
       const s = readBackup(localStorage.getItem(UNDO_KEY));
       if (!s) return;
       if (!confirm('要換回上一份嗎？（' + (s.at || '不詳') + '）')) return;
       // applyBackup 自己會先收起現況，所以按兩次就是來回切
       if (!applyBackup(localStorage.getItem(UNDO_KEY))) { toast('寫不進去'); return; }
       location.reload();
-    };
+    });
     body.appendChild(undo);
   }
 
@@ -8495,7 +8563,7 @@ function tabSave(body) {
     '清掉之前會自動留一份，上面的「把上一份換回來」還救得回來。'));
   const reset = el('button', 'big', '重新開始（清除存檔）');
   reset.style.background = 'var(--warn)';
-  reset.onclick = confirmReset;
+  reset.onclick = () => askPin('重新開始（清除存檔）', confirmReset);
   body.appendChild(reset);
 
   /* ── 版本與強制更新 ──
@@ -8609,6 +8677,7 @@ function tabTalk(body) {
 // ── 釣魚小遊戲 ──
 let fishTimer = null;
 function openFishing() {
+  closeGameWindow();          // 先把上一個遊戲（如果有）清乾淨
   const card = $('#modalCard');
   card.innerHTML = '';
   card.appendChild(el('h2', '', '🎣 釣魚'));
@@ -8678,10 +8747,11 @@ function openFishing() {
   }
   function onKey(e) { if (e.code === 'Space') { e.preventDefault(); doPull(); } }
   pull.onclick = doPull;
+  /* 動畫和空白鍵統一交給 gameCleanup：休息提醒、別的遊戲打開時呼叫 closeGameWindow()
+     才清得掉（以前只有「回家」按鈕會清，被休息畫面關掉時動畫和按鍵還留著） */
+  gameCleanup = () => { active = false; cancelAnimationFrame(fishTimer); fishTimer = null; document.removeEventListener('keydown', onKey); };
   close.onclick = () => {
-    cancelAnimationFrame(fishTimer);
-    document.removeEventListener('keydown', onKey);
-    $('#modal').hidden = true;
+    closeGameWindow();
     renderTab();
   };
   document.addEventListener('keydown', onKey);
