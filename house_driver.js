@@ -1326,6 +1326,106 @@
       fails.push('蝴蝶相簿顯示不對');
     var md8 = document.querySelector('#modal'); if (md8) md8.hidden = true;
 
+    /* 52 第一輪 UX：可以玩的東西冒提示、點了有回應、目的地圖示、復原上一步、新收集大圖、休息前的今天成果 */
+    G.away = null; closeGameWindow(); $('#modal').hidden = true; hideUndo();
+    var rmU = G.rooms[G.cur];
+    // ④ 復原：從收納放一張床 → 復原 → 床回到收納、房間沒有那張床
+    G.inv.wood_bed = (G.inv.wood_bed || 0) + 1;
+    var invBefore = G.inv.wood_bed, nBefore = rmU.items.length;
+    startHoldFromInv('wood_bed');
+    if (!hold || !hold.ok) { for (var hx = 0; hx < rmU.w && !(hold && hold.ok); hx++) for (var hy = 0; hy < rmU.d; hy++) { hold.x = hx; hold.y = hy; hold.ok = canPlace(rmU, hold.def, hx, hy, 0, null); if (hold.ok) break; } }
+    placeHold();
+    if (rmU.items.length !== nBefore + 1) fails.push('復原測試：床沒有放下去');
+    if ($('#btnUndo').hidden) fails.push('放好家具後沒有出現「復原」');
+    $('#btnUndo').onclick();
+    if (rmU.items.length !== nBefore || G.inv.wood_bed !== invBefore) fails.push('按復原沒有把床收回來（' + rmU.items.length + '/' + nBefore + '，收納 ' + G.inv.wood_bed + '/' + invBefore + '）');
+    if (!$('#btnUndo').hidden) fails.push('復原完按鈕還在');
+    // 搬動 → 復原回原位
+    var mv = rmU.items[0];
+    if (mv) {
+      var ox2 = mv.x, oy2 = mv.y, ouid = mv.uid;
+      startHoldFromRoom(mv);
+      var moved = false;
+      for (var mx = 0; mx < rmU.w && !moved; mx++) for (var my = 0; my < rmU.d; my++) { if ((mx !== ox2 || my !== oy2) && canPlace(rmU, hold.def, mx, my, hold.rot, hold.fromUid)) { hold.x = mx; hold.y = my; hold.ok = true; moved = true; break; } }
+      placeHold();
+      $('#btnUndo').onclick();
+      var back = rmU.items.filter(function(x){ return x.uid === ouid; })[0];
+      if (!back || back.x !== ox2 || back.y !== oy2) fails.push('搬動之後按復原，家具沒有回到原位');
+    }
+    // 拿起來又取消：什麼都沒改，不要出現復原
+    if (rmU.items[0]) { startHoldFromRoom(rmU.items[0]); cancelHold(); offerUndo(); if (!$('#btnUndo').hidden) fails.push('拿起來又放回去（取消），之後還留著可以復原的東西'); hideUndo(); }
+    // ② 點家具會跳一下
+    var tapIt = rmU.items[0];
+    if (tapIt) {
+      var tDef = FURN_BY_ID[tapIt.id], base2 = getParts(tDef, tapIt.rot || 0);
+      showItemMenu(tapIt, { clientX: 10, clientY: 10 }); hideItemMenu();
+      stateOf(tapIt.uid).tapAt = performance.now() - 160;
+      var bounced = itemLook(tDef, tapIt.rot || 0, tapIt, base2);
+      if (!(bounced[0].z > base2[0].z + 2)) fails.push('點到的家具沒有跳一下');
+    }
+    // 目的地圖示：小可愛走過去做事的時候，那件家具上面有那件事的圖示
+    var icons = [], realFI = drawFloatIcon;
+    drawFloatIcon = function(c, x, y, e, a){ icons.push(e); };
+    try {
+      travelArrive('park'); var rdd2 = document.getElementById('roomDoors'); if (rdd2) rdd2.remove();
+      var sbx = curRoom().items.filter(function(x){ return x.id === 'sandbox'; })[0];
+      fufu.task = { uid: sbx.uid, act: 'sand' }; fufu.path = [[1, 1]];
+      draw();                                            // 真的畫一次（不是直接叫 drawTargetMarker）
+      if (icons.indexOf(actEmoji('sand')) < 0) fails.push('走去玩沙的時候，沙坑上面沒有🏖️圖示');
+      fufu.task = null; fufu.path = [];
+      // ① 提示：只提示還沒做過的事；做過的不再提示
+      G.usedActs = {};
+      actHint.at = -1e9; icons = [];
+      drawActHint(ctx, performance.now());
+      actHint.at = performance.now() - 1300;
+      drawActHint(ctx, performance.now());
+      if (!icons.length) fails.push('可以玩的東西沒有冒出提示圖示');
+      G.usedActs = {}; Object.keys(ACTIVITIES).forEach(function(k){ G.usedActs[k] = 1; });
+      actHint.at = -1e9; icons = [];
+      drawActHint(ctx, performance.now()); actHint.at = performance.now() - 1300; drawActHint(ctx, performance.now());
+      if (icons.length) fails.push('每一件都做過了，還一直冒提示');
+      G.usedActs = {};
+      fufuStartAct('sand', performance.now(), sbx, false); fufu.act = null;
+      if (!G.usedActs.sand) fails.push('玩過沙，沒有記成「做過了」');
+      G.usedActs = {};
+      fufuStartAct('sand', performance.now(), sbx, true); fufu.act = null;
+      if (G.usedActs.sand) fails.push('小可愛自己閒晃去玩，也算成她做過了');
+    } finally { drawFloatIcon = realFI; G.away = null; G.usedActs = {}; }
+    // ⑤ 新收集：大圖展示，重複的不展示
+    var sc0 = document.getElementById('showcase'); if (sc0) sc0.remove();
+    G.animals = {};
+    meetAnimal(VISIT_ANIMALS[0]);
+    if (!document.getElementById('showcase')) fails.push('遇到新動物沒有大圖展示');
+    document.getElementById('showcase') && document.getElementById('showcase').remove();
+    meetAnimal(VISIT_ANIMALS[0]);
+    if (document.getElementById('showcase')) fails.push('重複遇到同一隻也跳大圖');
+    var fishBefore = JSON.stringify(G.fish);
+    var newFish = FISH.filter(function(f){ return !G.fish[f.name]; })[0];
+    if (newFish) {
+      catchFish(newFish); if (!document.getElementById('showcase')) fails.push('釣到新的魚沒有大圖展示');
+      document.getElementById('showcase') && document.getElementById('showcase').remove();
+      catchFish(newFish); if (document.getElementById('showcase')) fails.push('釣到同一種魚也跳大圖');
+    }
+    var sc1 = document.getElementById('showcase'); if (sc1) sc1.remove();
+    G.animals = {};
+    // ⑧ 休息畫面：今天做了什麼、存好了先玩到這裡
+    sessionLog.acts = { slide: 1, 'book:moon': 1 }; sessionLog.newThings = ['🐷 小豬']; sessionLog.placed = 2; sessionLog.earned0 = G.earned - 500;
+    var sum = sessionSummary();
+    if (!/溜滑梯/.test(sum) || !/1 本繪本/.test(sum) || !/小豬/.test(sum) || !/布置了 2 樣/.test(sum)) fails.push('今天做了的內容不對：' + sum);
+    sessionLog.acts = {}; sessionLog.newThings = []; sessionLog.placed = 0; sessionLog.earned0 = G.earned;
+    if (sessionSummary() !== '') fails.push('什麼都沒做也有「今天做了」');
+    saveRestCfg({ on: true, play: 20, rest: 5, pin: '' });
+    sessionLog.acts = { slide: 1 };
+    forceRestNow();
+    var ovR = document.getElementById('restOverlay');
+    if (!/溜滑梯/.test(ovR.querySelector('.rest-done').textContent)) fails.push('休息畫面沒有顯示今天做了什麼');
+    var byeB = ovR.querySelector('.rest-bye');
+    if (!byeB) fails.push('休息畫面沒有「今天先玩到這裡」');
+    else { byeB.onclick(); if (!/掰掰/.test(ovR.querySelector('.rest-title').textContent)) fails.push('按了今天先玩到這裡沒有說掰掰'); }
+    localStorage.removeItem(REST_STATE_KEY); localStorage.removeItem(REST_CFG_KEY); endRest(); resting = false;
+    ovR.remove();
+    sessionLog.acts = {};
+
     /* 51 場景動畫：溜滑梯爬上去滑下來、鞦韆座位擺、沙堡一層一層、池塘的魚和鴨子會動、野餐點心變少；
        冷卻中動畫照演、不跳「等幾分鐘」（零用錢的才說） */
     travelArrive('park'); var rdd = document.getElementById('roomDoors'); if (rdd) rdd.remove();
@@ -1560,7 +1660,7 @@
     $('#modal').hidden = true;
     maybeShowNews();
     if ($('#modal').hidden || !document.querySelector('#modalCard .news')) fails.push('有沒看過的公告卻沒有跳出來');
-    else if (document.querySelectorAll('#modalCard .news-ic').length !== NEWS[0].lines.length) fails.push('公告每一行前面沒有圖示');
+    else if (document.querySelectorAll('#modalCard .news-ic').length !== NEWS.slice(0, 2).reduce(function(n, x){ return n + x.lines.length; }, 0)) fails.push('公告每一行前面沒有圖示（或沒有同時顯示最近兩次更新）');
     if (unseenNews().length) fails.push('看過公告還算沒看過');
     var reloaded = normalizeSave(JSON.parse(localStorage.getItem(SAVE_KEY)));
     if (unseenNews(reloaded).length) fails.push('看過公告沒有存起來，下次打開又會跳');

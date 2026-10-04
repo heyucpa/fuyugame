@@ -389,6 +389,23 @@ button.pass { font: inherit; }
   background: #c0392b; color: #fff; border: none; border-radius: 999px; padding: 8px 16px; font-size: 14px; font-weight: 800;
   box-shadow: 0 4px 14px rgba(0,0,0,.25); }
 .save-warn[hidden] { display: none; }
+.undo-btn { position: absolute; left: 10px; bottom: 56px; z-index: 6; border: 2px solid #e7a94a; background: #fff6df; color: #a26d12;
+  border-radius: 999px; padding: 8px 16px; font-size: 15px; font-weight: 800; box-shadow: 0 3px 10px rgba(0,0,0,.15); }
+.undo-btn[hidden] { display: none; }
+.showcase { position: fixed; left: 50%; top: 42%; transform: translate(-50%, -50%); z-index: 80; pointer-events: none;
+  background: #fffaf0; border: 4px solid #ffd35c; border-radius: 22px; padding: 14px 26px; text-align: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25); animation: scPop .35s ease-out, scOut .4s ease-in 2.2s forwards; }
+.sc-new { font-size: 16px; font-weight: 800; color: #e7a94a; }
+.sc-emoji { font-size: 72px; line-height: 1.2; }
+.sc-pic { width: 120px; height: auto; display: block; margin: 4px auto; }
+.sc-title { font-size: 22px; font-weight: 800; color: #4a3b2a; }
+.sc-sub { font-size: 13px; color: var(--muted); }
+@keyframes scPop { from { transform: translate(-50%, -50%) scale(.5); opacity: 0; } }
+@keyframes scOut { to { opacity: 0; transform: translate(-50%, -50%) scale(.9); } }
+.rest-done { font-size: 15px; line-height: 1.8; white-space: pre-line; background: rgba(255,255,255,.12); border-radius: 14px; padding: 8px 16px; }
+.rest-done:empty { display: none; }
+.rest-bye { background: #ffe08a; color: #4a3b2a; border: none; border-radius: 999px; padding: 10px 20px; font-size: 16px; font-weight: 800; }
+.rest-bye[hidden] { display: none; }
 .zoom-btn { display: none; position: absolute; top: 8px; right: 8px; z-index: 6; border: 2px solid var(--line);
   background: rgba(255,250,240,.92); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 700; }
 /* ③ 提示條玩過幾次就不顯示（拿著家具的時候還是會出現，那時候需要它） */
@@ -532,6 +549,7 @@ button.pass { font: inherit; }
   <section class="stage">
     <canvas id="view"></canvas>
     <button class="zoom-btn" id="btnZoom" title="放大房間">🔍 放大</button>
+    <button class="undo-btn" id="btnUndo" hidden>↩️ 復原</button>
     <div class="hint" id="hint">從「我的東西」點家具放進房間；點房間裡的家具可以搬動</div>
     <div class="itemmenu" id="itemMenu" hidden></div>
     <div class="petcard" id="petCard">
@@ -2998,6 +3016,13 @@ const START_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-04-2', title: '小屋又更新了！', lines: [
+    ['🛝', '溜滑梯、鞦韆真的可以玩了！沙坑會蓋沙堡'],
+    ['💡', '可以玩的東西會冒出小圖示，點點看'],
+    ['↩️', '家具放錯了？按「復原」就回來了'],
+    ['🔊', '繪本可以聽故事了'],
+    ['⭐', '小遊戲的星星越多越難，綠框的最簡單']
+  ], newItems: [] },
   { id: '2026-10-04', title: '小屋更新了！', lines: [
     ['🏫', '可以去學校、公園、圖書館玩了！點上面的「🚗 出門」'],
     ['🐮', '阿婆家的小農場會有動物跑來玩，收集動物圖鑑'],
@@ -3073,6 +3098,7 @@ function newGame() {
        本來沒寫這一行：新開的存檔沒有旗標，第二次打開時被當成舊存檔，
        她花剩多少都會被補回 10 萬——每開一間新的就白送一次錢。 */
     newsSeen: NEWS.map(n => n.id), // 新開的存檔不用看以前的更新公告
+    usedActs: {},                  // 做過哪些事（做過的就不再冒提示圖示）
     topup100k: true,
     supplyAt: Date.now(),                       // 上次送小安素的時間
     supplyWho: 0,                               // 下一次輪到誰送（媽媽、爸爸輪流）
@@ -3741,6 +3767,7 @@ function rollFish() {
   return FISH[0];
 }
 function catchFish(f) {
+  if (!G.fish[f.name]) { showcase('🐟', f.name, '魚類圖鑑'); sessionLog.newThings.push('🐟 ' + f.name); }
   G.fish[f.name] = (G.fish[f.name] || 0) + 1;
   addBells(f.price);
 }
@@ -4605,7 +4632,9 @@ function itemLook(def, rot, it, parts) {
   const alwaysMoving = def.id === 'fishtank' || def.id === 'pond'; // 池塘：魚一直游、小鴨子一直漂
   if (!active && !st && !alwaysMoving) return parts;
   const fire = st && st.fireUntil > now;
+  const tapK = st && st.tapAt && now - st.tapAt < 320 ? Math.sin((now - st.tapAt) / 320 * Math.PI) * 5 : 0;
   let out = parts.map((p, i) => {
+    if (tapK) p = Object.assign({}, p, { z: p.z + tapK });
     if (p.screen && active) return Object.assign({}, p, { c: SCREEN_COLORS[(Math.floor(t * 4) + i) % SCREEN_COLORS.length] });
     if (p.spin && active) return Object.assign({}, p, { c: Math.floor(t * 6) % 2 ? '#8fd3f4' : '#ffffff' });
     if (p.fire && fire) return Object.assign({}, p, { r: p.r + 3 + Math.sin(t * 12) * 1.5, c: Math.sin(t * 9) > 0 ? '#ffb347' : '#ff7a3c' });
@@ -4699,6 +4728,11 @@ function fufuStartAct(key, now, it, auto) {
     Sound.play('coin');
   } else fufuSay(pickLine('act_' + key, { 時間: timeText() }), 3000);
   if (key === 'fruit') G.kid.hunger = clampStat(G.kid.hunger + 15); // 阿婆的水果免費吃
+  if (!auto) { // 做過的事記下來（不再提示）；也記進今天的成果
+    G.usedActs = G.usedActs || {};
+    G.usedActs[key] = 1;
+    if (!sessionLog.acts[key]) sessionLog.acts[key] = 1;
+  }
   if (!auto) relativePerk(key); // 親戚家的事情：吃點心、喝茶、幫忙做事…（她自己點的才算）
   if (a.sound === 'bath') Sound.play('bath');
   else if (a.sound !== 'note') Sound.play('pickUp');
@@ -6436,6 +6470,8 @@ function meetAnimal(n) {
   const isNew = !dex[n.id];
   dex[n.id] = (dex[n.id] || 0) + 1;
   if (isNew) {
+    showcase(renderNeighborPortrait(n, 120, 108, false), `${n.emoji || ''} ${n.name}`, `動物圖鑑 ${Object.keys(dex).length} / ${ANIMAL_DEX().length}`);
+    sessionLog.newThings.push(`${n.emoji || '🐾'} ${n.name}`);
     toast(`✨ 新的動物：${n.emoji || ''}${n.name}！（動物圖鑑 ${Object.keys(dex).length} / ${ANIMAL_DEX().length}）`);
     Sound.play('coin');
   }
@@ -7014,7 +7050,55 @@ function draw() {
   drawRoom(ctx, room, { ghost: hold, hoverUid: hold ? null : hoverUid, showGrid: !!hold, extras: [fufuDrawEntry()].concat(petDrawEntries(), visitorDrawEntries(), hostDrawEntries(), supplyDrawEntries()), occupants: [fufuOccupant(), petOccupant(), visitorOccupant()] });
   petDrawOverlay(ctx);
   visitorDrawOverlay(ctx, performance.now());
+  drawTargetMarker(ctx, performance.now());
+  drawActHint(ctx, performance.now());
   fufuDrawBubble(ctx, performance.now());
+}
+const actEmoji = key => (ACTIVITIES[key] ? ACTIVITIES[key].label.split(' ')[0] : '✨');
+// 小在空中的小圖示（點了東西、可以玩的東西都用這個）
+function drawFloatIcon(ctx, x, y, emoji, alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = 'rgba(255,250,240,.95)'; ctx.strokeStyle = 'rgba(74,59,42,.35)'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x - 4, y + 11); ctx.lineTo(x, y + 18); ctx.lineTo(x + 4, y + 11); ctx.fill();
+  ctx.font = '15px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(emoji, x, y + 1);
+  ctx.restore();
+}
+function itemTopAt(it) {
+  const def = FURN_BY_ID[it.id], fp = footprint(def, it.rot || 0);
+  return iso(it.x + fp.w / 2, it.y + fp.d / 2, itemHeight(def) + 14);
+}
+// 小可愛正在走過去做事：目的地上面一直有那件事的圖示，知道她要去哪裡
+function drawTargetMarker(ctx, now) {
+  const task = fufu.task;
+  if (!task || !task.act || !fufu.path.length) return;
+  const it = curRoom().items.find(x => x.uid === task.uid);
+  if (!it) return;
+  const p = itemTopAt(it);
+  drawFloatIcon(ctx, p.x, p.y - Math.abs(Math.sin(now / 250)) * 5, actEmoji(task.act), 1);
+}
+/* ① 可以玩的東西偶爾冒出小圖示（🛝、📖、🎣…），她才知道哪裡可以點。
+   一次只冒一個；做過一次的那種事就不再提示，畫面不會一直閃。 */
+const actHint = { at: 0, uid: null, key: null };
+function drawActHint(ctx, now) {
+  if (hold || resting || !$('#modal').hidden) return;
+  const room = curRoom();
+  if (now - actHint.at > 7000) {
+    const used = G.usedActs || {};
+    const cands = room.items.filter(it => FURNITURE_ACT[it.id] && !used[FURNITURE_ACT[it.id]]);
+    actHint.at = now;
+    const c = cands.length ? cands[Math.floor(Math.random() * cands.length)] : null;
+    actHint.uid = c ? c.uid : null; actHint.key = c ? FURNITURE_ACT[c.id] : null;
+  }
+  if (!actHint.uid) return;
+  const it = room.items.find(x => x.uid === actHint.uid);
+  if (!it) { actHint.uid = null; return; }
+  const k = (now - actHint.at) / 2600;
+  if (k > 1) return;
+  const p = itemTopAt(it);
+  drawFloatIcon(ctx, p.x, p.y - k * 10, actEmoji(actHint.key), Math.sin(k * Math.PI));
 }
 
 let lastFrame = performance.now(), nextPetTick = 0, nextCard = 0;
@@ -7106,9 +7190,40 @@ function awayNoEdit() {
   toast(`這是${PLACES[G.away.place].name}，不能搬家具喔！回家再布置吧`);
   return true;
 }
+/* ===== ↩️ 復原上一步 =====
+   放錯、收錯家具很挫折。改家具之前先記一份房間和收納的樣子，
+   做完之後 20 秒內房間左下角有「↩️ 復原」可以按（只記最近一步）。 */
+let pendingUndo = null, undoSnap = null, undoTimer = 0;
+function snapUndo() {
+  if (G.away) return;
+  const r = G.rooms[G.cur];
+  pendingUndo = { cur: G.cur, items: JSON.stringify(r.items), wallItems: JSON.stringify(r.wallItems || []), inv: JSON.stringify(G.inv) };
+}
+function offerUndo() {
+  if (!pendingUndo) return;
+  undoSnap = pendingUndo; pendingUndo = null;
+  const b = $('#btnUndo');
+  if (b) b.hidden = false;
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(hideUndo, 20000);
+}
+function hideUndo() { undoSnap = null; const b = $('#btnUndo'); if (b) b.hidden = true; }
+function doUndo() {
+  const u = undoSnap;
+  if (hold) cancelHold();
+  if (!u || G.away || G.cur !== u.cur) { hideUndo(); return false; }
+  const r = G.rooms[u.cur];
+  r.items = JSON.parse(u.items); r.wallItems = JSON.parse(u.wallItems); G.inv = JSON.parse(u.inv);
+  hideUndo();
+  toast('↩️ 復原了');
+  Sound.play('click');
+  commit();
+  return true;
+}
 function startHoldFromInv(id) {
   if (awayNoEdit()) return;
   cancelHold();
+  snapUndo();
   const room = curRoom();
   if (FURN_BY_ID[id].layer === 'wall') {
     const def = FURN_BY_ID[id];
@@ -7129,6 +7244,7 @@ function startHoldWall(it) {
   if (awayNoEdit()) return;
   Sound.play('pickUp');
   cancelHold();
+  snapUndo();
   const room = curRoom();
   room.wallItems = room.wallItems.filter(x => x.uid !== it.uid);
   hold = { def: FURN_BY_ID[it.id], side: it.side, pos: it.pos, ok: true, fromUid: it.uid, orig: it };
@@ -7138,6 +7254,7 @@ function startHoldFromRoom(it) {
   if (awayNoEdit()) return;
   Sound.play('pickUp');
   cancelHold();
+  snapUndo();
   const room = curRoom();
   room.items = room.items.filter(x => x.uid !== it.uid);
   hold = { def: FURN_BY_ID[it.id], rot: it.rot, x: it.x, y: it.y, ok: true, fromUid: it.uid, orig: it };
@@ -7157,10 +7274,12 @@ function placeHold() {
     if (!G.inv[hold.def.id]) delete G.inv[hold.def.id];
     list.push(Object.assign({ uid: G.uid++, id: hold.def.id }, spot));
     fufuSay(pickLine('newItem', { 家具: hold.def.name }));
+    sessionLog.placed++;
   }
   hold = null;
   updateHoldUI();
   commit();
+  offerUndo();
 }
 function rotateHold() {
   if (!hold) return;
@@ -7182,9 +7301,11 @@ function storeHold() {
   hold = null;
   updateHoldUI();
   commit();
+  offerUndo();
 }
 function cancelHold() {
   if (!hold) return;
+  pendingUndo = null; // 沒有改到東西，不用復原
   if (hold.fromUid) (hold.def.layer === 'wall' ? curRoom().wallItems : curRoom().items).push(hold.orig);
   hold = null;
   updateHoldUI();
@@ -7347,8 +7468,10 @@ function openTopPicker(it) {
     const def = FURN_BY_ID[id];
     if (!def) return;
     grid.appendChild(furnCard(def, '有 ×' + G.inv[id], () => {
+      snapUndo();
       if (!takeItem(id)) return;
       it.top = id;
+      setTimeout(offerUndo, 0);
       $('#modal').hidden = true;
       Sound.play('place');
       toast(`${def.name} 放到桌上了`);
@@ -7375,6 +7498,8 @@ function showKidMenu(e) {
   ], e);
 }
 function showItemMenu(it, e) {
+  stateOf(it.uid).tapAt = performance.now(); // 點到的家具輕輕跳一下，知道有點到
+  Sound.play('click');
   const def = FURN_BY_ID[it.id], use = FURNITURE_USE[it.id], act = FURNITURE_ACT[it.id];
   const entries = [];
   const add = (label, fn) => entries.push([label, fn]);
@@ -7391,10 +7516,12 @@ function showItemMenu(it, e) {
     if (it.top) {
       const tdef = FURN_BY_ID[it.top];
       add(`⬇️ 把${tdef ? tdef.name : '桌上的東西'}收起來`, () => {
+        snapUndo();
         if (it.top) addItem(it.top);
         it.top = null;
         toast('收起來了');
         commit();
+        offerUndo();
       });
     } else {
       const can = ON_TABLE.filter(id => G.inv[id] > 0);
@@ -7406,10 +7533,12 @@ function showItemMenu(it, e) {
   }
   add('✋ 搬動', () => startHoldFromRoom(it));
   add('📦 收起來', () => {
+    snapUndo();
     curRoom().items = curRoom().items.filter(x => x.uid !== it.uid);
     addItem(it.id);
     toast(`${def.name} 收起來了`);
     commit();
+    offerUndo();
   });
   openMenu(entries, e);
 }
@@ -7452,20 +7581,24 @@ canvas.addEventListener('contextmenu', e => {
   if (hold) { storeHold(); return; }
   const wi = pickItem(toWorld(e)) ? null : pickWallItem(toWorld(e));
   if (wi) {
+    snapUndo();
     curRoom().wallItems = curRoom().wallItems.filter(x => x.uid !== wi.uid);
     addItem(wi.id);
     toast(`${FURN_BY_ID[wi.id].name} 收起來了`);
+    setTimeout(offerUndo, 0);
     hoverUid = null;
     commit();
     return;
   }
   const it = pickItem(toWorld(e));
   if (it) {
+    snapUndo();
     curRoom().items = curRoom().items.filter(x => x.uid !== it.uid);
     addItem(it.id);
     toast(`${FURN_BY_ID[it.id].name} 收起來了`);
     hoverUid = null;
     commit();
+    offerUndo();
   }
 });
 document.addEventListener('keydown', e => {
@@ -7537,6 +7670,7 @@ function setBigRoom(on) {
   if (b) b.textContent = on ? '🔍 縮小' : '🔍 放大';
   lsSet(BIG_KEY, on ? '1' : '0');
 }
+$('#btnUndo').onclick = () => doUndo();
 $('#btnZoom').onclick = () => { setBigRoom(!document.body.classList.contains('bigroom')); Sound.play('click'); };
 if (lsGet(BIG_KEY) === '1') setBigRoom(true);
 const hintRuns = Number(lsGet(HINT_KEY) || 0) + 1;
@@ -7570,6 +7704,8 @@ function restState() {
 function saveRestState(s) { lsSet(REST_STATE_KEY, JSON.stringify(s)); }
 // 用 var：畫面的 loop 在載入時就先跑第一格（比這一行早），let 會在那時候丟錯、讓整段程式停掉
 var resting = false, restUnlocked = false;
+// 這次打開遊戲之後做了什麼（給休息畫面的「今天做了」用；不存檔）
+var sessionLog = { acts: {}, newThings: [], placed: 0, earned0: null };
 
 // 每秒呼叫一次。now、visible 可以從外面給（測試用）
 function restTick(now, visible) {
@@ -7618,7 +7754,15 @@ function showRest(until) {
     ov = el('div', 'rest-overlay'); ov.id = 'restOverlay';
     ov.append(el('div', 'rest-zz', '😴'), el('div', 'rest-title', '眼睛累了，我們休息一下吧！'),
       el('div', 'rest-tips', '💧 去喝水\n👀 看看窗外遠的地方\n🙆 伸伸懶腰'),
-      el('div', 'rest-time', ''), el('div', 'rest-sub', `${charName()}和寵物們也在睡覺喔，等一下見！\n今天也可以先玩到這裡，進度都存好了 👋`));
+      el('div', 'rest-time', ''), el('div', 'rest-done', ''), el('div', 'rest-sub', `${charName()}和寵物們也在睡覺喔，等一下見！`));
+    const bye = el('button', 'rest-bye', '👋 存好了，今天先玩到這裡');
+    bye.onclick = () => {
+      saveGame();
+      ov.querySelector('.rest-title').textContent = '掰掰！進度都存好了';
+      ov.querySelector('.rest-tips').textContent = '可以把平板收起來囉～\n下次見！';
+      bye.hidden = true;
+    };
+    ov.appendChild(bye);
     const unlock = el('button', 'rest-parent', '👨‍👩‍👧 家長提早結束');
     unlock.onclick = () => askPin('提早結束休息', () => { const s = restState(); s.restUntil = 0; s.lastSeen = Date.now(); saveRestState(s); endRest(); });
     ov.appendChild(unlock);
@@ -7629,9 +7773,23 @@ function showRest(until) {
     if (typeof closeGameWindow === 'function' && !$('#modal').hidden) { try { closeGameWindow(); } catch (e) {} $('#modal').hidden = true; }
     Sound.play('click');
   }
+  ov.querySelector('.rest-done').textContent = sessionSummary();
   const left = Math.max(0, Math.ceil((until - Date.now()) / 1000));
   ov.querySelector('.rest-time').textContent = `還要休息 ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
   ov.hidden = false;
+}
+// 「今天做了」：最多四行，用圖示開頭（妹妹看圖就懂）
+function sessionSummary() {
+  const rows = [];
+  const acts = Object.keys(sessionLog.acts).filter(k => ACTIVITIES[k]);
+  if (acts.length) rows.push(acts.slice(0, 4).map(k => ACTIVITIES[k].label).join('　'));
+  const books = Object.keys(sessionLog.acts).filter(k => k.startsWith('book:')).length;
+  if (books) rows.push(`📖 看了 ${books} 本繪本`);
+  if (sessionLog.newThings.length) rows.push('✨ 新收集：' + sessionLog.newThings.slice(0, 3).join('、'));
+  if (sessionLog.placed) rows.push(`🛋️ 布置了 ${sessionLog.placed} 樣家具`);
+  const earned = sessionLog.earned0 == null ? 0 : G.earned - sessionLog.earned0;
+  if (earned > 0) rows.push(`💰 賺了 ${fmt(earned)}`);
+  return rows.length ? '今天做了：\n' + rows.slice(0, 4).join('\n') : '';
 }
 function endRest() {
   const ov = document.getElementById('restOverlay');
@@ -7688,6 +7846,7 @@ function restSettings(body) {
   body.appendChild(pinBtn);
 }
 setInterval(() => { try { restTick(); } catch (e) { /* 提醒出錯也不能讓遊戲壞掉 */ } }, 1000);
+setTimeout(() => { if (sessionLog.earned0 == null) sessionLog.earned0 = G.earned; }, 0);
 
 </script>
 <script>
@@ -9848,6 +10007,18 @@ function openComic(again) {
 /* ── ⭐ 老師的貼紙 ──
    交作業拿到一張，先給還沒有的，收集 12 張。 */
 const STICKERS = ['⭐', '🌟', '💯', '🌈', '🍀', '🦄', '🐰', '🌸', '🍓', '🎀', '🏅', '👍'];
+function showcase(visual, title, sub) {
+  /* ⑤ 收集到新東西：畫面中間跳出大圖 2.5 秒（不擋操作），知道自己真的拿到了 */
+  const old = document.getElementById('showcase');
+  if (old) old.remove();
+  const box = el('div', 'showcase'); box.id = 'showcase';
+  const pic = typeof visual === 'string' ? el('div', 'sc-emoji', visual) : visual;
+  if (typeof visual !== 'string') pic.className = 'sc-pic';
+  box.append(el('div', 'sc-new', '✨ 新的！'), pic, el('div', 'sc-title', title), el('div', 'sc-sub', sub || ''));
+  document.body.appendChild(box);
+  setTimeout(() => box.remove(), 2600);
+  return box;
+}
 function giveSticker() {
   const have = G.stickers = G.stickers || {};
   const fresh = STICKERS.filter(s => !have[s]);
@@ -9855,6 +10026,7 @@ function giveSticker() {
   const s = pool[Math.floor(Math.random() * pool.length)];
   const isNew = !have[s];
   have[s] = (have[s] || 0) + 1;
+  if (isNew) sessionLog.newThings.push(s + ' 貼紙');
   saveGame();
   return { s, isNew };
 }
@@ -10165,6 +10337,12 @@ function playButterfly(w, L) {
     gameCleanup();
     const album = G.butterflies = G.butterflies || {};
     const fresh = Object.keys(got).filter(id => !album[id]);
+    if (fresh.length) {
+      const b0 = BUTTERFLIES.find(b => b.id === fresh[0]), cv = document.createElement('canvas');
+      cv.width = 120; cv.height = 100; drawButterfly(cv.getContext('2d'), 60, 52, b0, 1.2, 2.6);
+      showcase(cv, b0.name, `蝴蝶相簿 ${Object.keys(album).length + fresh.length} / ${BUTTERFLIES.length}`);
+      fresh.forEach(id => sessionLog.newThings.push('🦋 ' + BUTTERFLIES.find(b => b.id === id).name));
+    }
     Object.keys(got).forEach(id => { album[id] = (album[id] || 0) + got[id]; });
     const bells = payReward(w, photos * 15 * L.mul);
     const names = fresh.map(id => BUTTERFLIES.find(b => b.id === id).name);
@@ -10304,6 +10482,7 @@ function finishBook(book) {
   const pass = G.passport = G.passport || {};
   const isNew = !pass[book.id];
   pass[book.id] = (pass[book.id] || 0) + 1;
+  sessionLog.acts['book:' + book.id] = 1;
   const n = Object.keys(pass).length;
   if (isNew && n === STORYBOOKS.length) { // 八本都看完：館員送獎狀
     addItem('certificate');
