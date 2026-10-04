@@ -2786,6 +2786,13 @@
     stg.classList.add('holding');
     if (!hintShown()) fails.push('拿著家具的時候提示條不見了');
     stg.classList.remove('holding', 'hint-off');
+    // 平常那句提示：前 3 次、15 秒後自己收起來；拿著家具還是要看得到
+    if (HINT_RUNS > 3 || HINT_SHOW_MS > 20000) fails.push('提示條出現太多次或太久（' + HINT_RUNS + ' 次、' + HINT_SHOW_MS + ' 毫秒）');
+    hideIdleHint();
+    if (hintShown()) fails.push('時間到了提示條沒有收起來');
+    stg.classList.add('holding');
+    if (!hintShown()) fails.push('提示條收起來後，拿著家具卻看不到怎麼放');
+    stg.classList.remove('holding', 'hint-off');
     // 房間被高度卡住的時候，收起提示條房間要變大
     var cv2 = document.getElementById('view'), keep2 = cv2.getAttribute('style');
     cv2.style.width = '900px'; cv2.style.height = '300px';

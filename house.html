@@ -8851,9 +8851,10 @@ document.querySelectorAll('#tabs button').forEach(b => { b.onclick = () => openT
 
 /* ===== 手機上讓房間大一點 =====
    ① 「🔍 放大」：面板收成一排分頁，房間佔滿畫面；點任何分頁就打開面板。記住上次的選擇。
-   ③ 提示條只在前幾次打開遊戲時顯示（拿著家具時一定顯示）。
+   ③ 提示條只在前 3 次打開遊戲時顯示、而且 15 秒後就收起來（家長：這句不用一直出現）；
+      拿著家具時一定顯示（那時候「怎麼放」的說明最有用）。
    記在這台裝置的瀏覽器裡就好（不是存檔的一部分），讀寫失敗也不影響遊戲。 */
-const BIG_KEY = 'myHouse_bigRoom', HINT_KEY = 'myHouse_hintRuns', HINT_RUNS = 5;
+const BIG_KEY = 'myHouse_bigRoom', HINT_KEY = 'myHouse_hintRuns', HINT_RUNS = 3, HINT_SHOW_MS = 15000;
 const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* 私密瀏覽之類，算了 */ } };
 function setBigRoom(on) {
@@ -8872,7 +8873,13 @@ $('#btnZoom').onclick = () => { setBigRoom(!document.body.classList.contains('bi
 if (lsGet(BIG_KEY) === '1') setBigRoom(true);
 const hintRuns = Number(lsGet(HINT_KEY) || 0) + 1;
 lsSet(HINT_KEY, String(hintRuns));
+// 收起平常那句提示（房間跟著變大）；拿著家具時 CSS 還是會顯示
+function hideIdleHint() {
+  $('.stage').classList.add('hint-off');
+  try { computeView(); requestDraw(); } catch (e) {}
+}
 if (hintRuns > HINT_RUNS) $('.stage').classList.add('hint-off');
+else setTimeout(hideIdleHint, HINT_SHOW_MS);
 function hintShown() { const h = $('#hint'); return !!(h && h.offsetParent); }
 
 /* ===== ⏰ 休息提醒 =====
