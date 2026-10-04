@@ -1737,6 +1737,19 @@
     });
     G.away = keepAway2;
 
+    /* ㊻ 蓋房間頁的說明要跟真的規則一樣（以前寫「最多 3 隻」，其實是 5 隻）；蓋滿了就不要再說「每多蓋一間」 */
+    var keepRooms = G.rooms; G.away = null;
+    G.rooms = [keepRooms[0]];
+    openTab('build');
+    var bt = document.querySelector('#tabBody').textContent;
+    var realMax = Math.min(MAX_PETS_OUT, 1 + ROOM_NAMES.length);
+    if (bt.indexOf('最多 ' + realMax + ' 隻') < 0) fails.push('蓋房間頁寫的寵物上限不對（應該是 ' + realMax + ' 隻）');
+    G.rooms = ROOM_NAMES.map(function(){ return keepRooms[0]; });
+    if (petsOutLimit() !== realMax) fails.push('房間全蓋好，寵物上限不是 ' + realMax);
+    openTab('build');
+    bt = document.querySelector('#tabBody').textContent;
+    if (/每多蓋一間/.test(bt) || !/全部蓋好/.test(bt)) fails.push('房間全蓋好了，還在說每多蓋一間');
+    G.rooms = keepRooms; G.cur = 0;
     // ⑦ 其他分頁沒被改壞
     ['inv','shop','dress','pets','build','earn','book','talk','save'].forEach(function(t){
       try { openTab(t); if (!document.querySelector('#tabBody').children.length)

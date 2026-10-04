@@ -7547,7 +7547,7 @@ function tabBuild(body) {
   } else body.appendChild(note('這間已經是最大尺寸了。'));
 
   body.appendChild(h3('增加房間'));
-  if (G.rooms.length < MAX_PETS_OUT) body.appendChild(note('每多蓋一間房間，就能多帶一隻寵物出來一起玩（最多 3 隻）。'));
+  if (G.rooms.length < ROOM_NAMES.length) body.appendChild(note(`每多蓋一間房間，就能多帶一隻寵物出來一起玩（最多 ${Math.min(MAX_PETS_OUT, 1 + ROOM_NAMES.length)} 隻）。`));
   if (G.rooms.length >= ROOM_NAMES.length) body.appendChild(note('房間已經全部蓋好了！'));
   else if (!canAddRoom()) body.appendChild(note(`先把「${G.rooms[0].name}」擴建到 6×6，才能蓋新房間。`));
   else {
