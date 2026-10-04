@@ -9961,24 +9961,8 @@ function tabPets(body) {
         };
         c.appendChild(go);
       }
-      /* 買太多可以送回寵物店，拿回一半的蛋錢。
-         刻意只給「現在沒在照顧的」那幾隻——要送走正在照顧的那隻，
-         得先把別隻設成照顧中。多一步，就不會手滑送掉她最寶貝的那一隻。
-         最後一隻也不給送，不然她會變成一隻寵物都沒有。 */
-      if (G.pets.length > 1) {
-        const bye = el('button', 'mini', '👋 送回店裡');
-        bye.onclick = () => {
-          if (!confirm(`要把「${petNameOf(p)}」送回寵物店嗎？\n\n` +
-                       `會拿回 💰 ${fmt(sellValue(EGG_PRICE))}。\n` +
-                       '送走之後就不在你家了喔。')) return;
-          const nm = petNameOf(p);
-          if (!releasePet(i)) return;
-          Sound.play('coin');
-          toast(`${nm}回寵物店了，拿回 💰 ${fmt(sellValue(EGG_PRICE))}`);
-          commit();
-        };
-        c.appendChild(bye);
-      }
+      /* 以前這裡有「👋 送回店裡」：家長說小孩會不小心碰到，拿掉了。
+         releasePet() 留著（之後如果要做成家長專用的再接回來）。 */
     }
     grid.appendChild(c);
   });
@@ -9996,11 +9980,10 @@ function tabPets(body) {
      萬一先買到重複的就永遠湊不滿圖鑑了。 */
   /* 收齊之後還是可以買，但要先問一次——再買只會孵出重複的，
      而重複的在這個遊戲裡沒有用途。她有十萬塊，不問的話
-     會一路點出三十幾顆沒意義的蛋。買錯了可以在下面送回寵物店。 */
+     會一路點出三十幾顆沒意義的蛋。 */
   body.appendChild(note(left
     ? `孵出來的寶寶是隨機的，會先孵出還沒有的種類（還有 ${left} 種沒有）。蛋上的斑點顏色是小提示喔！`
-    : `${PET_SPECIES.length} 種都收集到了 🎉　再買的話會孵出重複的，` +
-      `不想要可以送回寵物店，拿回 💰 ${fmt(sellValue(EGG_PRICE))}。`));
+    : `${PET_SPECIES.length} 種都收集到了 🎉　再買的話會孵出重複的喔。`));
   const egg = el('button', 'big',
     left ? `🥚 買一顆寵物蛋　💰 ${fmt(EGG_PRICE)}` : `🥚 再買一顆（會重複）　💰 ${fmt(EGG_PRICE)}`);
   egg.disabled = G.bells < EGG_PRICE;

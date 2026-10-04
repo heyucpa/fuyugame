@@ -2264,6 +2264,14 @@
     G = keepG; G.away = keepAway; G.openGift = true; saveGame(); giftReset();
     $('#modal').hidden = true;
 
+    /* 71 寵物分頁沒有「送回店裡」（家長：小孩會不小心碰到） */
+    var keepPets9 = JSON.stringify([G.pets, G.activePet, G.companions]);
+    G.pets = [newPet('mochi', 'kid', 'A'), newPet('mochi', 'kid', 'B')]; G.activePet = 0; G.pet = G.pets[0]; G.companions = [];
+    openTab('pets');
+    if (/送回店裡|送回寵物店/.test($('#tabBody').textContent)) fails.push('寵物分頁還有「送回店裡」');
+    var kp9 = JSON.parse(keepPets9); G.pets = kp9[0]; G.activePet = kp9[1]; G.companions = kp9[2]; G.pet = G.pets[G.activePet];
+    openTab('inv');
+
     /* 70 🔊 iPad 沒聲音：手指放開（touchend／click）也要開聲音；interrupted 也要重新開；靜音模式下也要能播 */
     var realAc = Sound._t.getAc(), resumes = 0;
     var fakeAc = { state: 'interrupted', resume: function(){ resumes++; this.state = 'running'; return Promise.resolve(); } };
