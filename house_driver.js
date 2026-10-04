@@ -1326,6 +1326,63 @@
       fails.push('蝴蝶相簿顯示不對');
     var md8 = document.querySelector('#modal'); if (md8) md8.hidden = true;
 
+    /* 60 沒有期限的小主題：選、看進度、做到了自動完成（只給一次）、出門類、換／不做、圖鑑 */
+    G.away = null; G.theme = null; G.themesDone = {};
+    var trm = G.rooms[G.cur], keepItems2 = trm.items, keepInv2 = JSON.stringify(G.inv);
+    trm.items = [];
+    openThemes();
+    var picks = document.querySelectorAll('#modalCard .theme-pick');
+    if (picks.length !== 3) fails.push('小主題沒有給三個選擇（' + picks.length + '）');
+    if (!/先不要/.test(document.querySelector('#modalCard').textContent)) fails.push('小主題沒有「先不要」');
+    $('#modal').hidden = true;
+    startTheme('flowers');
+    refreshThemeBtn();
+    if (!/花花房間 0\/1/.test($('#btnTheme').textContent)) fails.push('小主題按鈕沒有顯示進度：' + $('#btnTheme').textContent);
+    if (themeTick()) fails.push('還沒做就完成了');
+    var b0t = G.bells;
+    trm.items = [{ uid: 99901, id: 'plant_s', x: 0, y: 0, rot: 0 }, { uid: 99902, id: 'cactus', x: 1, y: 0, rot: 0 }, { uid: 99903, id: 'wood_table', x: 2, y: 2, rot: 0, top: 'flower_vase' }];
+    if (!themeTick()) fails.push('放了三樣花和植物（含桌上的花瓶），沒有完成');
+    if (G.bells - b0t !== THEME_REWARD) fails.push('完成小主題的零用錢不對：' + (G.bells - b0t));
+    if (G.theme) fails.push('完成之後主題沒有清掉');
+    if (!G.themesDone.flowers) fails.push('完成的小主題沒有記在圖鑑');
+    var b1t = G.bells; themeTick();
+    if (G.bells !== b1t) fails.push('完成之後又一直給錢');
+    var scT = document.getElementById('showcase'); if (scT) scT.remove();
+    // 下午茶：桌上點心＋椅子
+    startTheme('teatime');
+    trm.items = [{ uid: 99911, id: 'wood_table', x: 0, y: 0, rot: 0, top: 'small_cake' }];
+    if (themeProgress(THEME_BY_ID.teatime).done !== 1) fails.push('下午茶：有點心沒椅子，進度應該是 1/2');
+    trm.items.push({ uid: 99912, id: 'wood_chair', x: 0, y: 2, rot: 0 });
+    if (!themeTick()) fails.push('下午茶：點心＋椅子沒有完成');
+    // 出門類：帶寵物去公園、去三個地方
+    startTheme('explorer');
+    ['park', 'school', 'library'].forEach(function(pl){ travelArrive(pl); var r8 = document.getElementById('roomDoors'); if (r8) r8.remove(); });
+    G.away = null;
+    if (!themeTick()) fails.push('去了三個地方，「出門走走」沒有完成');
+    startTheme('petwalk');
+    var stg2 = G.pet.stage; G.pet.stage = 'egg';
+    travelArrive('park'); G.away = null;
+    if (themeTick()) fails.push('帶著還是蛋的寵物去公園也算完成');
+    G.pet.stage = stg2;
+    travelArrive('park'); G.away = null;
+    if (!themeTick()) fails.push('帶寵物去公園沒有完成');
+    // 沒有期限：主題裡沒有任何時間限制；可以換、可以不做
+    THEMES.forEach(function(t){ if (t.deadline || t.expires || t.days) fails.push(t.title + ' 有時間限制'); });
+    startTheme('style'); openThemes();
+    var dropB = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return /先不要做了/.test(b.textContent); })[0];
+    if (!dropB) fails.push('進行中的小主題沒有「先不要做了」');
+    else { dropB.onclick(); if (G.theme) fails.push('按了先不要做了，主題還在'); }
+    // 存檔裡記得現在在做哪一個
+    startTheme('bedroom'); saveGame();
+    var rl = normalizeSave(JSON.parse(localStorage.getItem(SAVE_KEY)));
+    if (!rl.theme || rl.theme.id !== 'bedroom') fails.push('現在的小主題沒有存起來');
+    // 圖鑑
+    openTab('book');
+    if (!document.getElementById('dexTheme') || !/花花房間/.test(document.querySelector('#tabBody').textContent)) fails.push('圖鑑沒有小主題那一段');
+    G.theme = null; G.themesDone = {}; trm.items = keepItems2; G.inv = JSON.parse(keepInv2); G.away = null; saveGame(); refreshThemeBtn();
+    var scT2 = document.getElementById('showcase'); if (scT2) scT2.remove();
+    $('#modal').hidden = true;
+
     /* 59 還原備份的防呆：備份比現在舊、或是另一個人的，要清楚警告、確認兩次 */
     saveGame();
     var curG = JSON.parse(JSON.stringify(G));
@@ -2393,15 +2450,15 @@
     G.comics = { '早餐': 1, '恐龍': 3 }; G.stickers = { '⭐': 1 }; G.butterflies = { red: 2, blue: 1, rainbow: 1 }; G.passport = { moon: 1, seed: 1 };
     openTab('book');
     var chips = [].map.call(document.querySelectorAll('#tabBody .dex-chip'), function(c){ return c.textContent; });
-    if (chips.length !== 8) fails.push('圖鑑總覽不是八種收集：' + chips.length);
+    if (chips.length !== 9) fails.push('圖鑑總覽不是九種收集：' + chips.length);
     [['漫畫', '2/12'], ['貼紙', '1/12'], ['蝴蝶', '3/6'], ['閱讀護照', '2/8']].forEach(function(p){
       if (!chips.some(function(t){ return t.indexOf(p[0]) >= 0 && t.indexOf(p[1]) >= 0; })) fails.push('圖鑑總覽的「' + p[0] + '」不是 ' + p[1] + '：' + chips.join(' | '));
     });
-    ['dexFurn','dexFish','dexFriend','dexAnimal','dexComic','dexSticker','dexBfly','dexPass'].forEach(function(id){
+    ['dexFurn','dexFish','dexFriend','dexAnimal','dexTheme','dexComic','dexSticker','dexBfly','dexPass'].forEach(function(id){
       if (!document.getElementById(id)) fails.push('圖鑑少了一段：' + id);
     });
     // 看過的漫畫點一下可以再看，但不能算成多看一次、也不能變成新的
-    var tiles = document.querySelectorAll('#tabBody .dex-tile');
+    var tiles = document.querySelectorAll('#tabBody .dex-tile:not(.theme-tile)');
     var seenTile = [].filter.call(tiles, function(t){ return !t.disabled; });
     if (seenTile.length !== 2 || [].filter.call(tiles, function(t){ return t.disabled; }).length !== 10) fails.push('漫畫格子：看過 2 本可以點、其他 10 本不能點（' + seenTile.length + '）');
     else {
