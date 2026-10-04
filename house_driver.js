@@ -1704,7 +1704,8 @@
     if (!both) fails.push('在自己家，樹擋住床的地方點不到樹（樹要能搬）');
     else if (pickItem(both) !== homeTree) fails.push('在自己家，點樹（後面有床）點到的不是樹（樹要能搬）');
     hr.items = keepItems;
-    // 新收集大圖：小遊戲進行中不要擋住
+    // 新收集大圖：小遊戲進行中不要擋住；等小遊戲關掉再跳（排隊）
+    SC_QUEUE.length = 0; var scOld = document.getElementById('showcase'); if (scOld) scOld.remove();
     openMemoryGame();
     var realToast4 = toast, tt4 = [];
     toast = function(m){ tt4.push(m); };
@@ -1713,6 +1714,9 @@
       if (document.getElementById('showcase')) fails.push('小遊戲進行中，新收集大圖擋住了遊戲');
       if (!tt4.some(function(m){ return /新的/.test(m); })) fails.push('小遊戲進行中拿到新東西，連提示都沒有');
     } finally { toast = realToast4; closeGameWindow(); G.animals = {}; }
+    showcaseNext();
+    if (!document.getElementById('showcase')) fails.push('小遊戲關掉後，排隊的新收集大圖沒有跳出來');
+    var scQ = document.getElementById('showcase'); if (scQ) scQ.remove(); SC_QUEUE.length = 0;
     // 朗讀：可以按🔇關掉；關掉繪本就停
     var cancels = 0, spoken2 = [];
     var realSS2 = window.speechSynthesis, realSU2 = window.SpeechSynthesisUtterance;
@@ -2259,6 +2263,72 @@
     fufu.x = keepFufu[0]; fufu.y = keepFufu[1]; fufu.pose = keepFufu[2]; fufu.path = keepFufu[3];
     G = keepG; G.away = keepAway; G.openGift = true; saveGame(); giftReset();
     $('#modal').hidden = true;
+
+    /* 65 收集到新東西：每一種圖鑑都跳大圖（光芒、彩帶、進度條），重複的不跳；孵蛋先搖蛋再跳寵物；
+       排隊一個一個跳；點一下可以關 */
+    var scClear = function(){ SC_QUEUE.length = 0; var o = document.getElementById('showcase'); if (o) o.remove(); };
+    var scShown = function(re, label, needBar){
+      var b = document.getElementById('showcase');
+      if (!b) { fails.push(label + '：沒有跳大圖'); return; }
+      if (re && !re.test(b.textContent)) fails.push(label + '：大圖寫的不對（' + b.textContent.slice(0, 40) + '）');
+      if (needBar !== false && !b.querySelector('.sc-bar')) fails.push(label + '：沒有圖鑑進度條');
+      if (!b.querySelector('.sc-rays') || b.querySelectorAll('.sc-bit').length < 8) fails.push(label + '：沒有光芒或彩帶');
+    };
+    var keepG4 = JSON.stringify(G), keepAway4 = G.away;
+    var realToast5 = toast; toast = function(){};
+    try {
+      $('#modal').hidden = true;
+      // 家具：第一次拿到才跳；已經有的不跳
+      var fNew = FURNITURE.filter(function(f){ return !G.seen[f.id] && !f.gift; })[0];
+      scClear(); addItem(fNew.id); scShown(new RegExp(fNew.name + '[\\s\\S]*家具圖鑑'), '新家具');
+      scClear(); addItem(fNew.id);
+      if (document.getElementById('showcase')) fails.push('已經有的家具又跳大圖');
+      // 漫畫、貼紙、閱讀護照、好朋友、魚
+      G.comics = {}; scClear(); openComic(); scShown(/漫畫 1 \/ /, '新漫畫'); $('#modal').hidden = true;
+      G.stickers = {}; scClear(); giveSticker(); scShown(/貼紙 1 \/ /, '新貼紙');
+      G.passport = {}; scClear(); finishBook(STORYBOOKS[0]); scShown(/閱讀護照 1 \/ /, '閱讀護照新章');
+      scClear(); finishBook(STORYBOOKS[0]);
+      if (document.getElementById('showcase')) fails.push('看過的書又跳大圖');
+      G.friends = {}; scClear(); newFriendShowcase(NEIGHBORS[0]); scShown(/好朋友 0 \/ |新朋友/, '新朋友');
+      G.fish = {}; scClear(); catchFish(FISH[1]); scShown(/小丑魚[\s\S]*魚類圖鑑 1 \//, '新的魚');
+      if (document.querySelector('#showcase .sc-emoji').textContent !== '🐠') fails.push('小丑魚的大圖不是 🐠');
+      // 排隊：一次拿兩樣，先跳第一個，關掉後跳第二個
+      G.fish = {}; scClear(); catchFish(FISH[0]); catchFish(FISH[2]);
+      if (SC_QUEUE.length !== 1) fails.push('一次拿兩樣沒有排隊（排了 ' + SC_QUEUE.length + ' 個）');
+      document.getElementById('showcase').onclick();
+      var waitQ = document.getElementById('showcase');
+      // 點了要淡出 0.3 秒才拿掉，直接當作淡出完
+      if (waitQ && waitQ.classList.contains('out')) { waitQ.remove(); showcaseNext(); }
+      if (!document.getElementById('showcase') || !/竹筴魚/.test(document.getElementById('showcase').textContent)) fails.push('點掉第一個後，排隊的第二個沒有跳出來');
+      // 孵蛋：先搖蛋（還不能點掉），之後跳寵物
+      scClear();
+      var eggI = addEgg(); G.activePet = eggI; G.pet = G.pets[eggI];
+      var spNew = PET_SPECIES_BY_ID[G.pet.species];
+      G.pet.growth = PET_STAGE_BY_ID.egg.next - 1; pet.lastGrowAt = 0;
+      petGainGrowth(5, 0);
+      var hb = document.getElementById('showcase');
+      if (!hb || !hb.querySelector('.sc-egg')) fails.push('孵蛋沒有先搖蛋的動畫');
+      else {
+        hb.onclick();
+        if (hb.classList.contains('out')) fails.push('蛋還在搖就可以點掉（還沒看到寵物）');
+      }
+    } finally { toast = realToast5; scClear(); G = normalizeSave(JSON.parse(keepG4)); G.away = keepAway4; saveGame(); }
+    // 孵蛋：時間到換成寵物
+    (function(){
+      var tg = JSON.stringify(G);
+      var i2 = addEgg(); G.activePet = i2; G.pet = G.pets[i2]; G.pet.growth = PET_STAGE_BY_ID.egg.next - 1; pet.lastGrowAt = 0;
+      SC_QUEUE.length = 0; var o = document.getElementById('showcase'); if (o) o.remove();
+      petGainGrowth(5, 0);
+      var hb2 = document.getElementById('showcase');
+      if (hb2 && hb2._reveal) hb2._reveal();
+      if (!hb2 || hb2.querySelector('.sc-egg') || !hb2.querySelector('.sc-pic') || !/寵物圖鑑|又多一個/.test(hb2.textContent)) fails.push('孵蛋動畫結束沒有跳出寵物大圖');
+      else {
+        if (!/孵出來了/.test(hb2.textContent)) fails.push('孵蛋大圖沒有寫「孵出來了」');
+        hb2.onclick(); if (!hb2.classList.contains('out')) fails.push('寵物跳出來之後點了關不掉');
+      }
+      if (hb2) hb2.remove();
+      G = normalizeSave(JSON.parse(tg)); saveGame();
+    })();
 
     /* 64 👇 第一次玩的小手教學：只有新存檔有；摸蛋 → 放家具（我的東西 → 點家具 → 放這裡）→ 打開商店；
        做到了自動下一步；包裹還沒開／有視窗時不出現；做完存起來不再出現 */

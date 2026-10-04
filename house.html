@@ -415,15 +415,34 @@ button.pass { font: inherit; }
 .guide-hand { position: fixed; z-index: 9; font-size: 42px; line-height: 1; pointer-events: none;
   transform: translate(-50%, -100%); animation: guideBob .8s ease-in-out infinite; filter: drop-shadow(0 2px 3px rgba(0,0,0,.25)); }
 @keyframes guideBob { 0%,100% { margin-top: -6px; } 50% { margin-top: 4px; } }
-.showcase { position: fixed; left: 50%; top: 42%; transform: translate(-50%, -50%); z-index: 80; pointer-events: none;
-  background: #fffaf0; border: 4px solid #ffd35c; border-radius: 22px; padding: 14px 26px; text-align: center;
-  box-shadow: 0 10px 30px rgba(0,0,0,.25); animation: scPop .35s ease-out, scOut .4s ease-in 2.2s forwards; }
-.sc-new { font-size: 16px; font-weight: 800; color: #e7a94a; }
-.sc-emoji { font-size: 72px; line-height: 1.2; }
-.sc-pic { width: 120px; height: auto; display: block; margin: 4px auto; }
-.sc-title { font-size: 22px; font-weight: 800; color: #4a3b2a; }
-.sc-sub { font-size: 13px; color: var(--muted); }
-@keyframes scPop { from { transform: translate(-50%, -50%) scale(.5); opacity: 0; } }
+.showcase { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; cursor: pointer;
+  background: radial-gradient(circle at 50% 45%, rgba(255,244,214,.75), rgba(60,40,20,.35) 70%);
+  animation: scFade .25s ease-out; }
+.showcase.out { animation: scGone .35s ease-in forwards; }
+.sc-rays { position: absolute; left: 50%; top: 45%; width: 520px; height: 520px; margin: -260px 0 0 -260px; border-radius: 50%; pointer-events: none;
+  background: repeating-conic-gradient(rgba(255,214,92,.55) 0 10deg, rgba(255,214,92,0) 10deg 22.5deg);
+  -webkit-mask: radial-gradient(circle, #000 25%, transparent 68%); mask: radial-gradient(circle, #000 25%, transparent 68%);
+  animation: scSpin 8s linear infinite; }
+.sc-card { position: relative; background: #fffaf0; border: 4px solid #ffd35c; border-radius: 24px; padding: 14px 26px 16px; text-align: center;
+  box-shadow: 0 12px 34px rgba(0,0,0,.28); max-width: calc(100vw - 40px); animation: scPop .45s cubic-bezier(.2,1.6,.4,1); }
+.sc-new { font-size: 18px; font-weight: 800; color: #e7a94a; letter-spacing: 2px; }
+.sc-emoji { font-size: 96px; line-height: 1.15; }
+.sc-pic { width: 150px; height: auto; display: block; margin: 4px auto; image-rendering: auto; }
+.sc-title { font-size: 24px; font-weight: 800; color: #4a3b2a; }
+.sc-sub { font-size: 14px; color: var(--muted); margin-top: 2px; }
+.sc-bar { height: 10px; border-radius: 6px; background: #f1e6cf; margin: 8px auto 0; width: 180px; overflow: hidden; }
+.sc-bar i { display: block; height: 100%; background: linear-gradient(90deg, #ffd35c, #ff9f5a); border-radius: 6px; transition: width .8s ease-out .3s; }
+.sc-bit { position: absolute; left: 50%; top: 45%; font-size: 22px; pointer-events: none; animation: scBurst 1.4s ease-out forwards; }
+.sc-egg { font-size: 96px; line-height: 1.15; display: inline-block; animation: scWobble .3s ease-in-out infinite; }
+.sc-egg.crack { animation: scCrack .25s ease-in forwards; }
+@keyframes scFade { from { opacity: 0; } }
+@keyframes scGone { to { opacity: 0; } }
+@keyframes scSpin { to { transform: rotate(360deg); } }
+@keyframes scPop { from { transform: scale(.3); opacity: 0; } }
+@keyframes scBurst { from { transform: translate(-50%, -50%) scale(.4); opacity: 1; }
+  to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.1) rotate(var(--r)); opacity: 0; } }
+@keyframes scWobble { 0%,100% { transform: rotate(-12deg); } 50% { transform: rotate(12deg); } }
+@keyframes scCrack { to { transform: scale(1.5); opacity: 0; filter: brightness(2); } }
 @keyframes scOut { to { opacity: 0; transform: translate(-50%, -50%) scale(.9); } }
 .rest-done { font-size: 15px; line-height: 1.8; white-space: pre-line; background: rgba(255,255,255,.12); border-radius: 14px; padding: 8px 16px; }
 .rest-done:empty { display: none; }
@@ -2350,6 +2369,11 @@ const Sound = (() => {
     stack() { tone({ f0: 330, f1: 220, dur: .1, type: 'triangle', vol: .35 }); },
     // 敲門：叩叩
     knock() { [0, .16].forEach(at => { tone({ f0: 210, f1: 150, dur: .08, type: 'triangle', vol: .5, at }); noise({ dur: .05, vol: .2, freq: 700, at }); }); },
+    // 收集到新東西：叮叮叮～噹（上行琶音＋亮亮的尾巴）
+    fanfare() { [523, 659, 784, 1047].forEach((f, i) => tone({ f0: f, dur: .16, type: 'triangle', vol: .3, at: i * .09 }));
+                tone({ f0: 1047, dur: .5, type: 'triangle', vol: .28, at: .38 }); tone({ f0: 1568, dur: .45, type: 'sine', vol: .14, at: .42 }); },
+    // 蛋殼裂開「喀啦」
+    crack() { noise({ dur: .08, vol: .35, freq: 3000 }); noise({ dur: .1, vol: .25, freq: 2200, at: .09 }); },
     perfect() { [880, 1175].forEach((f, i) => tone({ f0: f, dur: .12, type: 'triangle', vol: .3, at: i * .07 })); },
     // 小可愛說話：像動物森友會那樣的嘰哩咕嚕
     talk(text) {
@@ -3600,8 +3624,16 @@ function spend(n) {
   return true;
 }
 function addItem(id, n) {
+  const isNew = !G.seen[id];
   G.inv[id] = (G.inv[id] || 0) + (n || 1);
   G.seen[id] = true;
+  // 第一次拿到這件家具：收進家具圖鑑（只算圖鑑裡有的；親戚家專用的不算）
+  if (isNew && FURNITURE.some(f => f.id === id) && typeof showcase === 'function') {
+    try {
+      const def = FURN_BY_ID[id], nF = FURNITURE.filter(f => G.seen[f.id]).length;
+      showcase(renderThumb(def, 150), def.name, `🛋️ 家具圖鑑 ${nF} / ${FURNITURE.length}`, { n: nF, all: FURNITURE.length });
+    } catch (e) {}
+  }
 }
 // 從收納拿走一件；沒有就回傳 false（放桌上、放地上都走這裡）
 function takeItem(id) {
@@ -4021,8 +4053,14 @@ function rollFish() {
   for (const f of FISH) { if ((r -= f.weight) < 0) return f; }
   return FISH[0];
 }
+// 收集大圖用的小圖示（G.fish 是用名字記的，名字不能改，所以另外對照）
+const FISH_EMOJI = { 小丑魚: '🐠', 金魚: '🐠', 鯨鯊: '🦈', 空罐頭: '🥫', 河豚: '🐡', 章魚: '🐙', 舊靴子: '👢', 寶箱: '💎' };
 function catchFish(f) {
-  if (!G.fish[f.name]) { showcase('🐟', f.name, '魚類圖鑑'); sessionLog.newThings.push('🐟 ' + f.name); }
+  if (!G.fish[f.name]) {
+    const n = FISH.filter(x => G.fish[x.name]).length + 1;
+    showcase(FISH_EMOJI[f.name] || '🐟', f.name, `🐟 魚類圖鑑 ${n} / ${FISH.length}`, { n, all: FISH.length });
+    sessionLog.newThings.push('🐟 ' + f.name);
+  }
   G.fish[f.name] = (G.fish[f.name] || 0) + 1;
   addBells(f.price);
 }
@@ -5606,8 +5644,16 @@ function celebrateStage(up, p, a) {
   petBurst({ kind: 'emoji', emoji: '✨', spread: 60 }, 6, a);
   petBurst({ kind: 'heart', spread: 50 }, 5, a);
   if (up.from === 'egg') {
-    fufuSay(pickLine('petHatch', { 寵物: name }), 3500);
-    toast(`🎉 孵出來了！是${sp.name}${sp.rare ? '（稀有！）' : ''}${up.firstOfSpecies ? '，圖鑑多了一種！' : ''}`);
+    // 孵蛋：畫面中間先搖蛋、喀啦裂開，再跳出寵物大圖（重複的種類也演，只是不算圖鑑進度）
+    try {
+      const nP = collectedSpecies().size, all = PET_SPECIES.length;
+      showcase(renderPetPortrait(p, 150, 140), `是${sp.name}！${sp.rare ? '（稀有！）' : ''}`,
+        up.firstOfSpecies ? `🐾 寵物圖鑑 ${nP} / ${all}` : '圖鑑裡已經有了，又多一個好朋友！',
+        up.firstOfSpecies ? { hatch: true, n: nP, all } : { hatch: true });
+    } catch (e) {}
+    // 蛋還在搖的時候先不要說是什麼（會爆雷），裂開之後再說
+    const hatchMsg = `🎉 孵出來了！是${sp.name}${sp.rare ? '（稀有！）' : ''}${up.firstOfSpecies ? '，圖鑑多了一種！' : ''}`;
+    setTimeout(() => { fufuSay(pickLine('petHatch', { 寵物: name }), 3500); toast(hatchMsg); }, SC_HATCH_MS);
   } else {
     fufuSay(pickLine('petGrow', { 寵物: name }), 3500);
     toast(`🎉 ${name}長成${PET_STAGE_BY_ID[up.to].name}了！`);
@@ -6283,9 +6329,11 @@ function visitorArrive(now) {
   vis.leaveAt = now + VISIT_STAY_MS;
   vis.nextTalkAt = now + 9000;
   vis.chat = null; vis.seat = null; vis.seatTask = null;
+  const firstVisit = !G.friends[n.id];
   G.friends[n.id] = (G.friends[n.id] || 0) + 1;
   saveGame();
   Sound.play('knock');
+  if (firstVisit) newFriendShowcase(n);
   toast(`🚪 叩叩！${n.name}來找${charName()}玩了！`);
   visSay(pickLine('visitorHello', visVars()));
   setTimeout(() => { if (vis.who === n && !fufu.pose) fufuSay(pickLine('kidWelcome', visVars()), 2800); }, 1800);
@@ -6809,6 +6857,13 @@ function endChat(talked) {
   if (talked) { vis.leaveAt = now + 12000; didSomething(); saveGame(); } // 聊完再待一下就回家
 }
 
+// 第一次來家裡玩的好朋友：收進好朋友圖鑑
+function newFriendShowcase(n) {
+  try {
+    const nN = NEIGHBORS.filter(x => G.friends[x.id]).length;
+    showcase(renderNeighborPortrait(n, 150, 135, false), `新朋友：${n.name}`, `🐻 好朋友 ${nN} / ${NEIGHBORS.length}`, { n: nN, all: NEIGHBORS.length });
+  } catch (e) {}
+}
 // ── 點鄰居 ──
 function visitorHit(w) {
   if (!vis.who || vis.state !== 'visit') return false;
@@ -7079,7 +7134,8 @@ function themeTick() {
   G.theme = null;
   addBells(THEME_REWARD);
   sessionLog.newThings.push('🏅 ' + t.title);
-  showcase(t.icon, '完成小主題！', `${t.title}　💰 +${THEME_REWARD}`);
+  const nT = Object.keys(G.themesDone).length;
+  showcase(t.icon, '完成小主題！', `${t.title}　💰 +${THEME_REWARD}　🏅 ${nT} / ${THEMES.length}`, { n: nT, all: THEMES.length });
   Sound.play('coin');
   try { kidMakeFace('joy', 2500); } catch (e) {}
   fufuSay(`「${t.title}」完成了！好開心～`, 3200);
@@ -7240,7 +7296,8 @@ function meetAnimal(n) {
   rememberFor('grandma', 'animal', n.name);
   if (isNew) {
     try { kidMakeFace('wow', 1800); } catch (e) {}
-    showcase(renderNeighborPortrait(n, 120, 108, false), `${n.emoji || ''} ${n.name}`, `動物圖鑑 ${Object.keys(dex).length} / ${ANIMAL_DEX().length}`);
+    showcase(renderNeighborPortrait(n, 150, 135, false), `${n.emoji || ''} ${n.name}`, `🐮 動物圖鑑 ${Object.keys(dex).length} / ${ANIMAL_DEX().length}`,
+             { n: Object.keys(dex).length, all: ANIMAL_DEX().length });
     sessionLog.newThings.push(`${n.emoji || '🐾'} ${n.name}`);
     toast(`✨ 新的動物：${n.emoji || ''}${n.name}！（動物圖鑑 ${Object.keys(dex).length} / ${ANIMAL_DEX().length}）`);
     Sound.play('coin');
@@ -7443,7 +7500,7 @@ function walkTrip(label, done, dest) {
     } else if (ev.kind === 'friend') {
       const list = NEIGHBORS.filter(Boolean);
       const n = list[Math.floor(Math.random() * list.length)];
-      if (n) { G.friends[n.id] = (G.friends[n.id] || 0) + 1; ev.who = n.short; }
+      if (n) { const first = !G.friends[n.id]; G.friends[n.id] = (G.friends[n.id] || 0) + 1; ev.who = n.short; if (first) newFriendShowcase(n); }
     }
   }
   function finish() {
@@ -11015,6 +11072,7 @@ function openComic(again) {
     cm = pool[Math.floor(Math.random() * pool.length)];
     isNew = !seen[cm.title];
     seen[cm.title] = (seen[cm.title] || 0) + 1;
+    if (isNew) { const nC = Object.keys(seen).length; showcase(cm.panels[0][0], cm.title, `📚 漫畫 ${nC} / ${COMICS.length}`, { n: nC, all: COMICS.length }); }
     rememberFor('uncle', 'comic', cm.title);
     saveGame();
   }
@@ -11040,18 +11098,79 @@ function openComic(again) {
 /* ── ⭐ 老師的貼紙 ──
    交作業拿到一張，先給還沒有的，收集 12 張。 */
 const STICKERS = ['⭐', '🌟', '💯', '🌈', '🍀', '🦄', '🐰', '🌸', '🍓', '🎀', '🏅', '👍'];
-function showcase(visual, title, sub) {
-  /* ⑤ 收集到新東西：畫面中間跳出大圖 2.5 秒（不擋操作），知道自己真的拿到了。
-     正在玩小遊戲的時候不跳大圖（會擋住遊戲），改成一行提示 */
-  if (!$('#modal').hidden && $('#modalCard').classList.contains('in-game')) { toast(`✨ 新的！${title}`); return null; }
-  const old = document.getElementById('showcase');
-  if (old) old.remove();
+/* ⑤ 收集到新東西：畫面中間跳出大圖＋光芒＋彩帶＋音效，下面一條「圖鑑收集進度」。
+   小孩最喜歡收集，所以要讓她「看見」自己拿到了。點一下或 3 秒後自己關。
+   ・正在玩小遊戲：不擋遊戲，先跳一行提示；大圖排隊，等小遊戲關掉再跳。
+   ・一次拿到好幾樣：一個一個排隊跳（最多排 6 個，太多就丟掉最舊的）。
+   opts：{ n, all } 收集進度；{ hatch: 蛋的畫面 } 先搖蛋、裂開，再跳出寵物。 */
+const SC_QUEUE = [];
+const SC_MS = 3000, SC_HATCH_MS = 1300;
+function showcaseBlocked() { return !$('#modal').hidden && $('#modalCard').classList.contains('in-game'); }
+function showcase(visual, title, sub, opts) {
+  if (showcaseBlocked()) toast(`✨ 新的！${title}`);
+  SC_QUEUE.push({ visual, title, sub, opts: opts || {} });
+  if (SC_QUEUE.length > 6) SC_QUEUE.shift();   // 一次拿太多：留最新的，最舊的只剩上面那行提示
+  return showcaseNext();
+}
+function showcaseNext() {
+  if (!SC_QUEUE.length || document.getElementById('showcase')) return null;
+  if (showcaseBlocked() || (typeof resting !== 'undefined' && resting)) { setTimeout(showcaseNext, 700); return null; }
+  const { visual, title, sub, opts } = SC_QUEUE.shift();
   const box = el('div', 'showcase'); box.id = 'showcase';
+  box.appendChild(el('div', 'sc-rays'));
+  const card = el('div', 'sc-card');
   const pic = typeof visual === 'string' ? el('div', 'sc-emoji', visual) : visual;
   if (typeof visual !== 'string') pic.className = 'sc-pic';
-  box.append(el('div', 'sc-new', '✨ 新的！'), pic, el('div', 'sc-title', title), el('div', 'sc-sub', sub || ''));
+  const head = el('div', 'sc-new', opts.hatch ? '🥚 要孵出來了…' : '✨ 新的！');
+  const tl = el('div', 'sc-title', title), sb = el('div', 'sc-sub', sub || '');
+  let bar = null;
+  if (opts.all) {
+    bar = el('div', 'sc-bar'); const fill = el('i', ''); bar.appendChild(fill);
+    // 從「上一個」長到「現在」，看得到進度往前跑
+    fill.style.width = Math.max(0, (opts.n - 1) / opts.all * 100) + '%';
+    setTimeout(() => { fill.style.width = Math.min(100, opts.n / opts.all * 100) + '%'; }, 30);
+  }
+  const burst = () => {
+    for (let i = 0; i < 16; i++) {
+      const b = el('span', 'sc-bit', ['✨', '⭐', '🎉', '💛', '🌟'][i % 5]);
+      const ang = i / 16 * Math.PI * 2, d = 120 + Math.random() * 80;
+      b.style.setProperty('--dx', Math.cos(ang) * d + 'px'); b.style.setProperty('--dy', Math.sin(ang) * d + 'px');
+      b.style.setProperty('--r', (Math.random() * 360 - 180) + 'deg');
+      box.appendChild(b);
+    }
+    Sound.play('fanfare');
+  };
+  let ms = SC_MS;
+  if (opts.hatch) { // 先搖蛋，喀啦裂開，再換成寵物
+    const egg = el('div', 'sc-egg', '🥚');
+    card.append(head, egg);
+    Sound.play('shake');
+    setTimeout(() => { egg.classList.add('crack'); Sound.play('crack'); }, SC_HATCH_MS - 250);
+    const reveal = () => {
+      if (!egg.parentNode) return;
+      head.textContent = '🎉 孵出來了！';
+      egg.replaceWith(pic);
+      card.append(tl, sb); if (bar) card.appendChild(bar);
+      burst();
+    };
+    box._reveal = reveal; // 測試用：不用真的等
+    setTimeout(reveal, SC_HATCH_MS);
+    ms += SC_HATCH_MS;
+  } else {
+    card.append(head, pic, tl, sb); if (bar) card.appendChild(bar);
+    burst();
+  }
+  box.appendChild(card);
+  let done = false;
+  const close = () => {
+    if (done) return; done = true;
+    box.classList.add('out');
+    setTimeout(() => { box.remove(); showcaseNext(); }, 300);
+  };
+  // 孵蛋的時候前一秒半不給點掉（不然還沒看到寵物就關了）
+  box.onclick = () => { if (!opts.hatch || box.querySelector('.sc-title')) close(); };
   document.body.appendChild(box);
-  setTimeout(() => box.remove(), 2600);
+  setTimeout(close, ms);
   return box;
 }
 function giveSticker() {
@@ -11061,6 +11180,7 @@ function giveSticker() {
   const s = pool[Math.floor(Math.random() * pool.length)];
   const isNew = !have[s];
   have[s] = (have[s] || 0) + 1;
+  if (isNew) { const nS = Object.keys(have).length; showcase(s, '新貼紙！', `⭐ 貼紙 ${nS} / ${STICKERS.length}`, { n: nS, all: STICKERS.length }); }
   rememberFor('teacher', 'sticker', s);
   if (isNew) sessionLog.newThings.push(s + ' 貼紙');
   saveGame();
@@ -11374,9 +11494,13 @@ function playButterfly(w, L) {
     const album = G.butterflies = G.butterflies || {};
     const fresh = Object.keys(got).filter(id => !album[id]);
     if (fresh.length) {
-      const b0 = BUTTERFLIES.find(b => b.id === fresh[0]), cv = document.createElement('canvas');
-      cv.width = 120; cv.height = 100; drawButterfly(cv.getContext('2d'), 60, 52, b0, 1.2, 2.6);
-      showcase(cv, b0.name, `蝴蝶相簿 ${Object.keys(album).length + fresh.length} / ${BUTTERFLIES.length}`);
+      // 每一隻新的都跳一次（排隊），進度條一格一格往前
+      fresh.forEach((id, i) => {
+        const b0 = BUTTERFLIES.find(b => b.id === id), cv = document.createElement('canvas');
+        cv.width = 120; cv.height = 100; drawButterfly(cv.getContext('2d'), 60, 52, b0, 1.2, 2.6);
+        const n = Object.keys(album).length + i + 1;
+        showcase(cv, b0.name, `🦋 蝴蝶相簿 ${n} / ${BUTTERFLIES.length}`, { n, all: BUTTERFLIES.length });
+      });
       fresh.forEach(id => sessionLog.newThings.push('🦋 ' + BUTTERFLIES.find(b => b.id === id).name));
     }
     Object.keys(got).forEach(id => { album[id] = (album[id] || 0) + got[id]; });
@@ -11527,6 +11651,7 @@ function finishBook(book) {
   sessionLog.acts['book:' + book.id] = 1;
   rememberFor('librarian', 'book', book.title);
   const n = Object.keys(pass).length;
+  if (isNew) showcase('📗', book.title, `閱讀護照 ${n} / ${STORYBOOKS.length}（蓋了一個新章）`, { n, all: STORYBOOKS.length });
   if (isNew && n === STORYBOOKS.length) { // 八本都看完：館員送獎狀
     addItem('certificate');
     toast('🏅 閱讀護照蓋滿了！館員送你一張獎狀（放進「我的東西」了）');
