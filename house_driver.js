@@ -2403,6 +2403,41 @@
       if (phMode) fails.push('離開寵物屋，活動還沒結束');
     } finally { toast = realToast13; takePhoto = realTake; if (phMode) phModeEnd(); hideItemMenu(); G = normalizeSave(JSON.parse(keepG13)); saveGame(); phReset(); refreshTop(); refreshDupBtn(); $('#modal').hidden = true; }
 
+    /* 77 寵物屋原本的擺設是非賣品：收進我的東西也不能賣；搬到別的房間再收起來還是非賣品；自己買的一樣可以賣 */
+    var keepG15 = JSON.stringify(G), realToast15 = toast; toast = function(){};
+    try {
+      G = normalizeSave(JSON.parse(keepG15)); G.away = null; G.petHouse = null; G.noSell = {}; G.inv = {}; cancelHold(); $('#modal').hidden = true;
+      enterPetHouse();
+      var ph15 = curRoom().items.filter(function(x){ return x.id === 'pet_house'; })[0];
+      startHoldFromRoom(ph15); storeHold();
+      if (G.inv.pet_house !== 1) fails.push('（測試）寵物小屋沒收進我的東西');
+      if (furnSellBlock('pet_house') !== '非賣品') fails.push('寵物屋原本的寵物小屋收起來後可以賣');
+      openTab('inv');
+      if (!/非賣品/.test($('#tabBody').textContent)) fails.push('我的東西沒有標「非賣品」');
+      // 自己買一個：多的那個可以賣，原本那個還是不能
+      G.inv.pet_house = 2;
+      if (furnSellBlock('pet_house') !== null) fails.push('自己買的寵物小屋不能賣');
+      sellFurniture('pet_house');
+      if (G.inv.pet_house !== 1 || furnSellBlock('pet_house') !== '非賣品') fails.push('賣掉自己買的之後，原本的變成可以賣了');
+      // 拿到客廳放，再收起來：還是非賣品
+      leavePetHouse(0);
+      startHoldFromInv('pet_house');
+      var put15 = false, r15 = curRoom();
+      for (var x15 = 0; x15 < r15.w && !put15; x15++) for (var y15 = 0; y15 < r15.d && !put15; y15++) { hold.x = x15; hold.y = y15; hold.ok = canPlace(r15, hold.def, x15, y15, hold.rot, null); if (hold.ok) { placeHold(); put15 = true; } }
+      var placed15 = r15.items.filter(function(x){ return x.id === 'pet_house'; }).pop();
+      if (!placed15 || !placed15.ns) fails.push('非賣品放到客廳沒有記號');
+      if ((G.noSell.pet_house || 0) !== 0) fails.push('非賣品拿出來放了，數量沒有扣');
+      // 右鍵（或收起來）收回去：還是非賣品
+      r15.items = r15.items.filter(function(x){ return x.uid !== placed15.uid; }); storeRoomItem(placed15);
+      if (furnSellBlock('pet_house') !== '非賣品') fails.push('非賣品繞一圈收回來就可以賣了');
+      // 存檔讀回來還記得
+      saveGame(); var re15 = normalizeSave(JSON.parse(localStorage.getItem(SAVE_KEY)));
+      if (!re15 || re15.noSell.pet_house !== 1) fails.push('非賣品的記錄沒有存起來');
+      var bad15 = JSON.parse(localStorage.getItem(SAVE_KEY)); bad15.noSell = 'x';
+      var badN = normalizeSave(bad15);
+      if (!badN || typeof badN.noSell !== 'object' || typeof badN.noSell === 'string') fails.push('非賣品記錄壞掉時沒有修好');
+    } finally { toast = realToast15; cancelHold(); G = normalizeSave(JSON.parse(keepG15)); saveGame(); phReset(); refreshTop(); openTab('inv'); }
+
     /* 76 音樂多兩首（共 6 首）：每首 64 拍、音名都認得；小可愛躺上床，照顧中的寵物一定跳上來抱著睡、先滾一滾；
        寵物屋沒有玩具：原地跳舞或跑去找小可愛 */
     var SG = Sound._t.songs, NT = Sound._t.notes;

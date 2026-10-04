@@ -3520,7 +3520,8 @@ function newGame() {
     guide: 'egg',                          // 第一次玩的小手教學走到哪一步（egg→place→shop→done）
     guideAsked: false,                     // 問過要不要小手教學了沒
     trophies: {},                          // 🏆 拿過的集滿獎盃 {set id: true}
-    petHouse: null,                        // 🐾 寵物屋自己的擺法 {uid: {id, x, y, rot}}；null＝預設
+    petHouse: null,                        // 🐾 寵物屋自己的擺法 {items, wallItems}；null＝預設
+    noSell: {},                            // 非賣品（寵物屋原本的擺設）在「我的東西」裡各有幾件 {id: n}
     welcome: { at: 0, uncle: false, grandma: false }, // 🏠 搬新家：叔叔、阿婆來送禮了沒（at＝教學做完的時間）
     earned: 0,
     inv: { wood_bed: 1, wood_chair: 1, wood_table: 1, plant_s: 1 },
@@ -3624,6 +3625,7 @@ function normalizeSave(g) {
   });
   const out = Object.assign(newGame(), g);
   if (g.guide === undefined) out.guide = 'done'; // 已經在玩的存檔不用教
+  if (!out.noSell || typeof out.noSell !== 'object' || Array.isArray(out.noSell)) out.noSell = {};
   if (g.guideAsked === undefined && out.guide !== 'egg') out.guideAsked = true; // 教到一半的不要再問
   if (!g.welcome) out.welcome = { at: 0, uncle: true, grandma: true }; // 已經在玩的存檔不算搬新家
   if (!Array.isArray(g.newsSeen)) out.newsSeen = []; // 舊存檔：還沒看過任何公告，要讓她看到這次更新了什麼
@@ -3778,9 +3780,9 @@ function petHouseRoom() {
     const okItem = it => it && typeof it.id === 'string' && FURN_BY_ID[it.id] && okInt(it.uid);
     if (saved && Array.isArray(saved.items)) {
       room.items = saved.items.filter(it => okItem(it) && okInt(it.x) && okInt(it.y))
-        .map(it => ({ uid: it.uid, id: it.id, x: it.x, y: it.y, rot: ((it.rot || 0) % 4 + 4) % 4, top: (it.top && FURN_BY_ID[it.top]) ? it.top : null }));
+        .map(it => Object.assign({ uid: it.uid, id: it.id, x: it.x, y: it.y, rot: ((it.rot || 0) % 4 + 4) % 4, top: (it.top && FURN_BY_ID[it.top]) ? it.top : null }, it.ns ? { ns: true } : {}));
       room.wallItems = (Array.isArray(saved.wallItems) ? saved.wallItems : []).filter(it => okItem(it) && (it.side === 'L' || it.side === 'R') && okInt(it.pos))
-        .map(it => ({ uid: it.uid, id: it.id, side: it.side, pos: it.pos }));
+        .map(it => Object.assign({ uid: it.uid, id: it.id, side: it.side, pos: it.pos }, it.ns ? { ns: true } : {}));
     } else {
       room.items = def.items; room.wallItems = def.wallItems;
       if (saved && typeof saved === 'object') room.items.forEach(it => { // 上一版的格式
@@ -3845,6 +3847,16 @@ function spend(n) {
   if (G.bells < n) return false;
   G.bells -= n;
   return true;
+}
+/* 🐾 寵物屋原本的擺設是「非賣品」（家長：寵物屋的東西不能賣掉，預設為非賣品）。
+   收進「我的東西」以後跟一般家具混在一起，所以用「數量」記：G.noSell[id]＝這種家具有幾件是非賣品。
+   ・寵物屋原本那幾件（uid 是負的）、或身上有 ns 記號的，收起來時 noSell +1；
+   ・從「我的東西」拿出來放時，先拿非賣品那幾件（放好的那件身上記 ns，之後再收起來還是非賣品）；
+   ・賣的時候：我的東西裡這種家具的數量 ≤ 非賣品數量，就不能賣。 */
+const isNoSellItem = it => !!it && (it.ns || it.uid < 0);
+function storeRoomItem(it) {
+  addItem(it.id);
+  if (isNoSellItem(it)) { G.noSell = G.noSell || {}; G.noSell[it.id] = (G.noSell[it.id] || 0) + 1; }
 }
 function addItem(id, n) {
   const isNew = !G.seen[id];
@@ -4122,6 +4134,7 @@ function sellValue(price) { return Math.floor(price / 2); }
 // 回傳不能賣的原因；可以賣回傳 null
 function furnSellBlock(id) {
   if (!G.inv[id]) return '沒有了';
+  if (G.inv[id] <= ((G.noSell || {})[id] || 0)) return '非賣品';
   return FURN_BY_ID[id].price ? null : '不能賣';
 }
 function foodSellBlock(id) { return G.food[id] ? null : '沒有了'; }
@@ -9148,12 +9161,14 @@ function placeHold() {
   const spot = onWall ? { side: hold.side, pos: hold.pos } : { x: hold.x, y: hold.y, rot: hold.rot };
   const list = onWall ? room.wallItems : room.items;
   if (hold.fromUid) {
-    list.push(Object.assign({ uid: hold.fromUid, id: hold.def.id }, spot));
+    list.push(Object.assign({ uid: hold.fromUid, id: hold.def.id }, isNoSellItem(hold.orig) ? { ns: true } : {}, spot));
   } else {
     if (!G.inv[hold.def.id]) { cancelHold(); return; }
     G.inv[hold.def.id]--;
     if (!G.inv[hold.def.id]) delete G.inv[hold.def.id];
-    list.push(Object.assign({ uid: G.uid++, id: hold.def.id }, spot));
+    const ns = G.noSell && G.noSell[hold.def.id] > 0;   // 先拿非賣品那幾件出來放
+    if (ns) { G.noSell[hold.def.id]--; if (!G.noSell[hold.def.id]) delete G.noSell[hold.def.id]; }
+    list.push(Object.assign({ uid: G.uid++, id: hold.def.id }, ns ? { ns: true } : {}, spot));
     fufuSay(pickLine('newItem', { 家具: hold.def.name }));
     sessionLog.placed++;
   }
@@ -9177,7 +9192,7 @@ function rotateHold() {
 }
 function storeHold() {
   if (!hold) return;
-  if (hold.fromUid) addItem(hold.def.id);
+  if (hold.fromUid) storeRoomItem(hold.orig || { id: hold.def.id, uid: hold.fromUid });
   toast(`${hold.def.name} 收起來了`);
   hold = null;
   updateHoldUI();
@@ -9435,7 +9450,7 @@ function showItemMenu(it, e) {
   add('📦 收起來', () => {
     snapUndo();
     curRoom().items = curRoom().items.filter(x => x.uid !== it.uid);
-    addItem(it.id);
+    storeRoomItem(it);
     toast(`${def.name} 收起來了`);
     commit();
     offerUndo();
@@ -9486,7 +9501,7 @@ canvas.addEventListener('contextmenu', e => {
   if (wi) {
     snapUndo();
     curRoom().wallItems = curRoom().wallItems.filter(x => x.uid !== wi.uid);
-    addItem(wi.id);
+    storeRoomItem(wi);
     toast(`${FURN_BY_ID[wi.id].name} 收起來了`);
     setTimeout(offerUndo, 0);
     hoverUid = null;
@@ -9497,7 +9512,7 @@ canvas.addEventListener('contextmenu', e => {
   if (it) {
     snapUndo();
     curRoom().items = curRoom().items.filter(x => x.uid !== it.uid);
-    addItem(it.id);
+    storeRoomItem(it);
     toast(`${FURN_BY_ID[it.id].name} 收起來了`);
     hoverUid = null;
     commit();
@@ -9928,7 +9943,9 @@ function tabInv(body) {
       const def = FURN_BY_ID[id];
       grid.appendChild(sellMode
         ? sellCard(thumb(def), def.name, def.price, furnSellBlock(id), G.inv[id], () => sellFurniture(id))
-        : furnCard(def, THEME_NAMES[def.theme], () => startHoldFromInv(id), G.inv[id]));
+        : (() => { const c = furnCard(def, THEME_NAMES[def.theme], () => startHoldFromInv(id), G.inv[id]);
+                   if ((G.noSell || {})[id]) c.appendChild(el('span', 'tag', '非賣品'));
+                   return c; })());
     });
     body.appendChild(grid);
   }
