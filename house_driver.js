@@ -2398,11 +2398,15 @@
       if (!pet.sleep) fails.push('（測試）寵物沒有躺上床');
       else {
         if (!(pet.rollUntil > nowB)) fails.push('寵物上床沒有滾一滾');
+        // 滾的時候比不滾的時候多轉一次（角度剛好接近 0 的瞬間也算）
         var rot14 = 0, realRot = CanvasRenderingContext2D.prototype.rotate;
-        CanvasRenderingContext2D.prototype.rotate = function(r){ if (Math.abs(r) > .05) rot14++; return realRot.apply(this, arguments); };
-        pet.rollUntil = performance.now() + 2000;
-        try { drawPetActor(canvas.getContext('2d'), Object.assign({}, pet, { t: 1 }), G.pet); } finally { CanvasRenderingContext2D.prototype.rotate = realRot; }
-        if (!rot14) fails.push('寵物在床上滾的時候畫面沒有轉');
+        CanvasRenderingContext2D.prototype.rotate = function(r){ rot14++; return realRot.apply(this, arguments); };
+        var c14 = canvas.getContext('2d'), rotNo, rotYes;
+        try {
+          pet.rollUntil = 0; rot14 = 0; drawPetActor(c14, Object.assign({}, pet, { t: 1 }), G.pet); rotNo = rot14;
+          pet.rollUntil = performance.now() + 2000; rot14 = 0; drawPetActor(c14, Object.assign({}, pet, { t: 1 }), G.pet); rotYes = rot14;
+        } finally { CanvasRenderingContext2D.prototype.rotate = realRot; }
+        if (!(rotYes > rotNo)) fails.push('寵物在床上滾的時候畫面沒有轉');
       }
       pet.sleep = null; pet.z = 0; pet.task = null; pet.rollUntil = 0;
       // 寵物屋沒有玩具：去跳舞或找小可愛

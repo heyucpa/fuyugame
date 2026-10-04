@@ -1698,9 +1698,14 @@ const PLACE_FURNITURE = [
       { x: .6, y: .75, w: .1, d: .1, z: 0, h: 58, c: '#e8505b' },
       { x: .05, y: .15, w: .65, d: .7, z: 52, h: 5, c: '#ffd35c' },    // 平台
       { x: .05, y: .15, w: .65, d: .06, z: 57, h: 12, c: '#ff9ec4' },   // 欄杆
-      { x: .05, y: .79, w: .65, d: .06, z: 57, h: 12, c: '#ff9ec4' }
-    ].concat([0, 1, 2, 3, 4, 5, 6, 7].map(i => ({ x: .7 + i * .28, y: .22, w: .3, d: .56, z: 48 - i * 6.6, h: 5, c: '#6bb6ff' }))) // 滑道一階一階往下
-     .concat([0, 1, 2, 3].map(i => ({ x: .08, y: .9, w: .6, d: .04, z: 8 + i * 12, h: 3, c: '#ffffff' }))) },     // 梯子
+      { x: .05, y: .79, w: .65, d: .06, z: 57, h: 12, c: '#ff9ec4' },
+      /* 滑道：一整片平滑的斜面（以前用 8 塊方塊一階一階往下，家長說看起來像樓梯）。
+         ramp：從 hi 那一邊（xl＝x 小的那一邊）頂面高 zHi，平順降到另一邊 zLo，厚度 t。 */
+      { k: 'ramp', x: .7, y: .24, w: 2.25, d: .52, zHi: 57, zLo: 5, t: 4, dir: 'xl', c: '#6bb6ff' },
+      { k: 'ramp', x: .7, y: .2, w: 2.25, d: .05, zHi: 64, zLo: 11, t: 7, dir: 'xl', c: '#3f8ee0' },   // 兩邊的護欄
+      { k: 'ramp', x: .7, y: .75, w: 2.25, d: .05, zHi: 64, zLo: 11, t: 7, dir: 'xl', c: '#3f8ee0' },
+      { x: 1.78, y: .42, w: .1, d: .16, z: 0, h: 31, c: '#e8505b' }                                       // 滑道中間的支柱
+    ].concat([0, 1, 2, 3].map(i => ({ x: .08, y: .9, w: .6, d: .04, z: 8 + i * 12, h: 3, c: '#ffffff' }))) },     // 梯子
   { id: 'swing', name: '鞦韆', theme: 'cute', w: 2, d: 1,
     parts: [
       { x: .05, y: .45, w: .12, d: .12, z: 0, h: 72, c: '#7bd389' },
@@ -2622,6 +2627,21 @@ function drawBox(ctx, x, y, w, d, z, h, color) {
   poly(ctx, top, color, line);
 }
 
+// 斜面（溜滑梯的滑道）：四個角的頂面高度不一樣，畫法跟 drawBox 一樣（前面、右面、頂面）
+function drawRamp(ctx, x, y, p) {
+  const w = p.w, d = p.d, hi = p.zHi, lo = p.zLo, t = p.t;
+  const top = (cx, cy) => { // cx, cy：0＝x/y 小的那邊、1＝大的那邊
+    if (p.dir === 'xl') return cx ? lo : hi;
+    if (p.dir === 'xh') return cx ? hi : lo;
+    if (p.dir === 'yl') return cy ? lo : hi;
+    return cy ? hi : lo;
+  };
+  const A = top(0, 0), B = top(1, 0), C = top(1, 1), D = top(0, 1);
+  const line = 'rgba(40,30,20,.18)';
+  poly(ctx, [iso(x, y + d, D - t), iso(x + w, y + d, C - t), iso(x + w, y + d, C), iso(x, y + d, D)], shade(p.c, .84), line);
+  poly(ctx, [iso(x + w, y, B - t), iso(x + w, y + d, C - t), iso(x + w, y + d, C), iso(x + w, y, B)], shade(p.c, .7), line);
+  poly(ctx, [iso(x, y, A), iso(x + w, y, B), iso(x + w, y + d, C), iso(x, y + d, D)], p.c, line);
+}
 function drawBall(ctx, x, y, z, r, color) {
   const p = iso(x, y, z);
   ctx.beginPath();
@@ -2638,8 +2658,10 @@ function drawBall(ctx, x, y, z, r, color) {
 
 // ── 旋轉與排序 ──
 // 轉 90 度：原本朝前（+y）的正面改朝右前（+x），第一次旋轉就看得到正面
+const RAMP_ROT = { xl: 'yh', xh: 'yl', yl: 'xl', yh: 'xh' }; // 轉 90 度：x 小的那邊變成 y 大的那邊
 function rotatePart(p, W) {
   if (p.k === 'ball') return Object.assign({}, p, { x: p.y, y: W - p.x });
+  if (p.k === 'ramp') return Object.assign({}, p, { x: p.y, y: W - p.x - p.w, w: p.d, d: p.w, dir: RAMP_ROT[p.dir] });
   return Object.assign({}, p, { x: p.y, y: W - p.x - p.w, w: p.d, d: p.w });
 }
 
@@ -2660,6 +2682,7 @@ function toBounds(p) {
     const s = p.r / TW;
     return { x: p.x - s, y: p.y - s, w: s * 2, d: s * 2, z: p.z - p.r, h: p.r * 2, src: p };
   }
+  if (p.k === 'ramp') { const lo = Math.min(p.zHi, p.zLo) - p.t; return { x: p.x, y: p.y, w: p.w, d: p.d, z: lo, h: Math.max(p.zHi, p.zLo) - lo, src: p }; }
   return { x: p.x, y: p.y, w: p.w, d: p.d, z: p.z, h: p.h, src: p };
 }
 
@@ -2716,12 +2739,13 @@ function topParts(def, rot, it) {
 }
 
 function itemHeight(def) {
-  return def.parts.reduce((m, p) => Math.max(m, p.k === 'ball' ? p.z + p.r : p.z + p.h), 0);
+  return def.parts.reduce((m, p) => Math.max(m, p.k === 'ball' ? p.z + p.r : p.k === 'ramp' ? Math.max(p.zHi, p.zLo) : p.z + p.h), 0);
 }
 
 function drawPart(ctx, p, gx, gy) {
   ctx.globalAlpha = (ctx.__baseAlpha || 1) * (p.a || 1);
   if (p.k === 'ball') drawBall(ctx, gx + p.x, gy + p.y, p.z, p.r, p.c);
+  else if (p.k === 'ramp') drawRamp(ctx, gx + p.x, gy + p.y, p);
   else drawBox(ctx, gx + p.x, gy + p.y, p.w, p.d, p.z, p.h, p.c);
   ctx.globalAlpha = ctx.__baseAlpha || 1;
 }
