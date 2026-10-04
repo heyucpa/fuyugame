@@ -5760,6 +5760,13 @@ function celebrateStage(up, p, a) {
   petBurst({ kind: 'emoji', emoji: '✨', spread: 60 }, 6, a);
   petBurst({ kind: 'heart', spread: 50 }, 5, a);
   if (up.from === 'egg') {
+    /* 新孵出來的：還有位置就自動「一起逛」跟在她身邊（家長：孵出新寵物會想馬上一起玩）。
+       照顧中那隻自己孵的不用；位置滿了就留在寵物屋。 */
+    const pi = G.pets.indexOf(p);
+    if (pi >= 0 && pi !== G.activePet && !G.companions.includes(pi) && canAddCompanion()) {
+      G.companions.push(pi);
+      try { compArrive(pi); } catch (e) {}
+    }
     // 孵蛋：畫面中間先搖蛋、喀啦裂開，再跳出寵物大圖（重複的種類也演，只是不算圖鑑進度）
     try {
       const nP = collectedSpecies().size, all = PET_SPECIES.length;

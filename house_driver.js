@@ -2345,7 +2345,17 @@
       else if (taps > 10) fails.push('在寵物屋孵蛋要摸太多下（' + taps + '）');
       var hs = document.getElementById('showcase');
       if (!hs || !hs.querySelector('.sc-egg')) fails.push('在寵物屋孵蛋沒有搖蛋、裂開的大圖');
-      if (phList().indexOf(eggI2) < 0) fails.push('在寵物屋孵出來的寶寶不見了（跟照顧中的同種也要留著）');
+      // 還有位置：新孵出來的自動一起逛（不在寵物屋清單，跟在她身邊）
+      if (petsOutLimit() > 1 && G.companions.indexOf(eggI2) < 0) fails.push('新孵出來的寵物沒有自動一起逛');
+      // 位置滿了：留在寵物屋（就算跟照顧中的同種也要看得到）
+      G.companions = []; G.pets.push(newPet('mochi', 'kid', 'Z')); G.companions = [2];
+      G.pets[eggI2].stage = 'egg'; G.pets[eggI2].growth = 0; delete G.pets[eggI2].hatchedAt;
+      var limKeep = petsOutLimit; petsOutLimit = function(){ return 2; };
+      try {
+        var tapsB = 0; while (G.pets[eggI2].stage === 'egg' && tapsB < 30) { eA.lastGrowAt = 0; phTap(eggI2, { clientX: 10, clientY: 10 }); tapsB++; }
+        if (G.companions.indexOf(eggI2) >= 0) fails.push('位置滿了還把新孵出來的帶出去');
+        if (phList().indexOf(eggI2) < 0) fails.push('在寵物屋孵出來的寶寶不見了（跟照顧中的同種也要留著）');
+      } finally { petsOutLimit = limKeep; }
       if (G.activePet !== 0) fails.push('在寵物屋孵蛋，照顧中的寵物被換掉了');
       if (hs) hs.remove(); SC_QUEUE.length = 0; hideItemMenu();
       // 重複的同一種只出來一隻；已經在房間裡（照顧中）的那一種也不用再出來；蛋每顆都放
