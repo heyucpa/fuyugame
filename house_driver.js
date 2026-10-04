@@ -1591,7 +1591,7 @@
     if (/粉紅圓點/.test(shopTxt) || !/薄荷條紋/.test(shopTxt)) fails.push('商店的壁紙沒有排除已經有的');
     var mint = [].filter.call(document.querySelectorAll('#tabBody .card'), function(c){ return /薄荷條紋/.test(c.textContent); })[0];
     var bShop = G.bells;
-    if (mint) { mint.onclick(); if (curRoom().wall !== 'wp_stripe' || G.walls.indexOf('wp_stripe') < 0 || bShop - G.bells !== 1500) fails.push('商店買壁紙沒有換上或扣錢不對'); }
+    if (mint) { mint.onclick(); if (curRoom().wall !== 'wp_stripe' || G.walls.indexOf('wp_stripe') < 0 || bShop - G.bells !== WALLPAPERS.filter(function(w){ return w.id === 'wp_stripe'; })[0].price) fails.push('商店買壁紙沒有換上或扣錢不對'); }
     // 在別人家：我的東西、商店都不能換壁紙
     G.away = { place: 'uncle', idx: 0 };
     openTab('inv');
@@ -1750,6 +1750,18 @@
     bt = document.querySelector('#tabBody').textContent;
     if (/每多蓋一間/.test(bt) || !/全部蓋好/.test(bt)) fails.push('房間全蓋好了，還在說每多蓋一間');
     G.rooms = keepRooms; G.cur = 0;
+    /* ㊼ 價格：全部買齊（四間房擴建到最大＋每樣一個）要在 15～20 萬之間（大約玩兩小時），
+       不能有東西變成免費、價格要是整數好看的數字 */
+    var sumP = function(l){ return l.reduce(function(s2, x){ return s2 + (x.price || 0); }, 0); };
+    var allCost = NEW_ROOM_COST.reduce(function(a2, b2){ return a2 + b2; }, 0)
+      + ROOM_NAMES.length * Object.values(EXPAND_COST).reduce(function(a2, b2){ return a2 + b2; }, 0)
+      + sumP(FURNITURE.filter(function(d){ return !d.gift; })) + sumP(WALLPAPERS) + sumP(FLOORS) + sumP(CLOTHES) + sumP(HAIR_STYLES);
+    if (allCost < 150000 || allCost > 200000) fails.push('全部買齊要 ' + allCost + '，不在 15～20 萬');
+    [FURNITURE, WALLPAPERS, FLOORS, CLOTHES, HAIR_STYLES].forEach(function(l){ l.forEach(function(x){
+      if (typeof x.price !== 'number') return;
+      if (x.price % 50) fails.push(x.name + ' 的價格不是整數好看的數字：' + x.price);
+    }); });
+    if (EGG_PRICE > 1500) fails.push('寵物蛋還是太貴：' + EGG_PRICE);
     // ⑦ 其他分頁沒被改壞
     ['inv','shop','dress','pets','build','earn','book','talk','save'].forEach(function(t){
       try { openTab(t); if (!document.querySelector('#tabBody').children.length)

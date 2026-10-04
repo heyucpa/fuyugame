@@ -1208,9 +1208,9 @@ const fishTier = f => FISH_TIERS.findIndex(t => f.price <= t.max);
 // 115.9.17 起一開始就是 6×6（4×4 太擠），擴建也調便宜
 const ROOM_SIZES = [6, 8, 10];
 const MIN_ROOM_SIZE = ROOM_SIZES[0];
-const EXPAND_COST = { 8: 8000, 10: 25000 };
+const EXPAND_COST = { 8: 3200, 10: 10000 }; // 116.10 調成原本的四折（見下面 PRICE_SCALE）
 // 115.9.18 調降：一週玩一小時的節奏，臥室約 1～2 週、餐廳再 3～4 週蓋得起來；閣樓是長期目標
-const NEW_ROOM_COST = [15000, 25000, 40000]; // 第 2、3、4 間房
+const NEW_ROOM_COST = [6000, 10000, 16000]; // 第 2、3、4 間房（四折）
 const ROOM_NAMES = ['客廳', '臥室', '餐廳', '閣樓']; // 預設名稱；玩家可以在「台詞」分頁改
 /* 可以同時帶出來的寵物數 = 1 + 房間數，最多 5 隻；只有主要那隻需要照顧。
    本來是 min(3, 房間數)，一開始只有一間房就等於一隻都帶不出來，
@@ -2004,7 +2004,7 @@ const PET_STAGES = [
   { id: 'adult', name: '大朋友', next: null, scale: 1.18 }
 ];
 const PET_STAGE_BY_ID = Object.fromEntries(PET_STAGES.map(s => [s.id, s]));
-const EGG_PRICE = 2500;
+const EGG_PRICE = 1000; // 四折
 // 照顧一次加多少成長；摸摸、捏捏有冷卻時間，連點不會長得比較快
 const GROWTH = { pat: 1, squish: 1, feed: 4, bath: 4, game: 6, eggPat: 2, patCooldownMs: 2000, eggCooldownMs: 800,
   play: 3, playCooldownMs: 15000 }; // play：小可愛陪寵物玩
@@ -2825,6 +2825,26 @@ const LEMON = { // 原木→檸檬黃
   });
 })();
 
+/* ===== 價格打四折 =====
+   原本全部買齊（四間房擴建到最大＋每樣東西一個）要 45 萬，開局只有 10 萬，
+   小朋友會覺得目標太遠、玩起來灰心，家長也不希望要玩很久。
+   調成四折：全部買齊大約 18 萬，還差 8 萬左右，大概玩兩個小時。
+   家具、壁紙、地板、衣服、髮型在這裡統一打折（取整到 50 或 100，價格比較好看）；
+   房間、擴建、寵物蛋直接改在上面的常數。食物是消耗品，不打折。 */
+const PRICE_SCALE = .4;
+function scaledPrice(p) {
+  if (!p) return 0;
+  const v = p * PRICE_SCALE;
+  return v < 1000 ? Math.max(50, Math.round(v / 50) * 50) : Math.round(v / 100) * 100;
+}
+(() => {
+  const done = new Set();
+  [FURNITURE, WALLPAPERS, FLOORS, CLOTHES, HAIR_STYLES].forEach(list => list.forEach(x => {
+    if (done.has(x) || typeof x.price !== 'number') return;
+    done.add(x);
+    x.price = scaledPrice(x.price);
+  }));
+})();
 const FURN_BY_ID = Object.fromEntries(FURNITURE.map(f => [f.id, f]));
 PLACE_FURNITURE.forEach(f => { FURN_BY_ID[f.id] = f; }); // 親戚家專用的家具（不在商店、圖鑑裡）
 </script>
