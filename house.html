@@ -3874,6 +3874,9 @@ function collectedSpecies() {
 }
 // 買蛋：孵出來的種類先決定好（優先還沒收集到的），蛋上的斑點顏色會透露一點線索
 function buyEgg() {
+  // 每一種都有了（蛋裡的也算）就不賣了；之後新增種類就又可以買
+  const have = new Set(G.pets.map(p => p.species));
+  if (!PET_SPECIES.some(s => !have.has(s.id))) return null;
   if (!spend(EGG_PRICE)) return null;
   return addEgg();
 }
@@ -3903,9 +3906,11 @@ function releasePet(i) {
   G.activePet = Math.max(0, Math.min(G.pets.length - 1, G.activePet));
   G.pet = G.pets[G.activePet];
   fixCompanions(G);
-  addBells(sellValue(EGG_PRICE));
+  addBells(PET_SELL_PRICE);
   return true;
 }
+// 重複的寵物賣回店裡：原價（家長：重複的寵物賣回去可以原價）
+const PET_SELL_PRICE = EGG_PRICE;
 
 // 換一隻帶出來玩；在寵物屋休息的不會餓
 // 原本一起逛的那隻變成主要時，舊的主要那隻換去一起逛（蛋不會走路，就回寵物屋）
@@ -6183,7 +6188,7 @@ function openDupSell() {
   card.appendChild(el('h2', '', '🧺 重複的寵物'));
   const groups = dupGroups();
   if (!groups.length) card.appendChild(note('沒有重複的寵物了！'));
-  else card.appendChild(note(`同一種有好幾隻的，可以賣一隻給寵物店，拿回 💰 ${fmt(sellValue(EGG_PRICE))}。每一種一定會留一隻；照顧中、一起逛的不會被賣。`));
+  else card.appendChild(note(`同一種有好幾隻的，可以賣一隻給寵物店，拿回 💰 ${fmt(PET_SELL_PRICE)}（買蛋的原價）。每一種一定會留一隻；照顧中、一起逛的不會被賣。`));
   groups.forEach(g => {
     const sp = PET_SPECIES_BY_ID[g.species], row = el('div', 'dup-row');
     row.appendChild(renderPetPortrait(G.pets[g.pick], 52, 48));
@@ -6191,11 +6196,11 @@ function openDupSell() {
     const sell = el('button', 'mini', `💰 賣掉一隻`);
     sell.onclick = () => {
       const p = G.pets[g.pick];
-      if (!confirm(`要把一隻「${petNameOf(p)}」（${PET_STAGE_BY_ID[p.stage].name}）賣給寵物店嗎？\n\n會拿到 💰 ${fmt(sellValue(EGG_PRICE))}，牠會去找新主人喔。`)) return;
+      if (!confirm(`要把一隻「${petNameOf(p)}」（${PET_STAGE_BY_ID[p.stage].name}）賣給寵物店嗎？\n\n會拿到 💰 ${fmt(PET_SELL_PRICE)}，牠會去找新主人喔。`)) return;
       if (!releasePet(g.pick)) return;
       phReset();                        // 索引都往前移了，寵物屋裡的重新排
       Sound.play('coin');
-      toast(`${sp.name}去找新主人了，拿到 💰 ${fmt(sellValue(EGG_PRICE))}`);
+      toast(`${sp.name}去找新主人了，拿到 💰 ${fmt(PET_SELL_PRICE)}`);
       commit();
       openDupSell();                    // 清單重畫（可能還有別的重複）
     };
@@ -10176,29 +10181,20 @@ function tabPets(body) {
   const left = PET_SPECIES.filter(s => !have.has(s.id)).length;
   const hatched = collectedSpecies();
   const inEggs = PET_SPECIES.filter(s => !hatched.has(s.id) && have.has(s.id)).length;
-  /* 收齊了就不給買。買蛋本來就是「優先孵還沒有的種類」，
-     收齊之後再買只會孵出重複的，而重複的在這個遊戲裡完全沒有用途
-     （不能繁殖、不能交換、不會加分），只會變成一長串列表，
-     而且她有十萬塊，不擋的話會買出三十幾顆沒意義的蛋。
-     條件用「還有沒有沒收集到的」而不是數顆數：數顆數的話，
-     萬一先買到重複的就永遠湊不滿圖鑑了。 */
-  /* 收齊之後還是可以買，但要先問一次——再買只會孵出重複的，
-     而重複的在這個遊戲裡沒有用途。她有十萬塊，不問的話
-     會一路點出三十幾顆沒意義的蛋。 */
+  /* 每一種都有了（蛋裡的也算）就不能再買（家長：買到 18 種就好，不然小孩會一直買到重複的）。
+     之後如果新增寵物種類，left 會變回大於 0，就又可以買了。 */
   body.appendChild(note(left
-    ? `孵出來的寶寶是隨機的，會先孵出還沒有的種類（還有 ${left} 種沒有）。蛋上的斑點顏色是小提示喔！` +
+    ? `孵出來的寶寶是隨機的，一定是還沒有的種類（還有 ${left} 種沒有）。蛋上的斑點顏色是小提示喔！` +
       (inEggs ? `\n另外有 ${inEggs} 種新的寵物在你的蛋裡面，摸一摸讓牠們孵出來！` : '')
     : inEggs
-      ? `剩下 ${inEggs} 種新的寵物都在你的蛋裡面了，摸一摸讓牠們孵出來吧！（寵物屋裡也可以摸）再買的話會孵出重複的喔。`
-      : `${PET_SPECIES.length} 種都收集到了 🎉　再買的話會孵出重複的喔。`));
+      ? `剩下 ${inEggs} 種新的寵物都在你的蛋裡面了，摸一摸讓牠們孵出來吧！（寵物屋裡也可以摸）`
+      : `${PET_SPECIES.length} 種都收集到了 🎉　寵物蛋賣完了，之後有新的寵物會再進貨喔！`));
   const egg = el('button', 'big',
-    left ? `🥚 買一顆寵物蛋　💰 ${fmt(EGG_PRICE)}` : `🥚 再買一顆（會重複）　💰 ${fmt(EGG_PRICE)}`);
-  egg.disabled = G.bells < EGG_PRICE;
+    left ? `🥚 買一顆寵物蛋　💰 ${fmt(EGG_PRICE)}` : '🥚 寵物蛋賣完了');
+  egg.disabled = !left || G.bells < EGG_PRICE;
   egg.onclick = () => {
-    if (!left && !confirm((inEggs ? `剩下 ${inEggs} 種新的寵物都在你的蛋裡面了，先讓牠們孵出來吧！` : `${PET_SPECIES.length} 種都收集到了。`) + '\n\n' +
-        '再買一顆的話，孵出來會是已經有的種類喔。要買嗎？')) return;
     const i = buyEgg();
-    if (i == null) { toast('鈴錢不夠，去賺一點吧！'); return; }
+    if (i == null) { toast(left ? '鈴錢不夠，去賺一點吧！' : '寵物蛋賣完了'); return; }
     Sound.play('coin');
     switchMainPet(i);
     toast('買到一顆寵物蛋！摸摸牠讓牠孵出來吧');

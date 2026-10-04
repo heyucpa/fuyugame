@@ -221,9 +221,18 @@
     G.pets = PET_SPECIES.map(function(sp){ return newPet(sp.id, 'kid', sp.name); });
     G.activePet = 0; G.pet = G.pets[0]; G.companions = [];
     var n0 = G.pets.length;
-    // 收齊了還是買得到
-    if (buyEgg() === null) fails.push('收齊了就完全買不到蛋了');
-    if (G.pets.length !== n0 + 1) fails.push('買了蛋卻沒有多一隻');
+    // 每一種都有了就不能再買（家長：不然會一直買到重複的）
+    var bb0 = G.bells;
+    if (buyEgg() !== null || G.pets.length !== n0 || G.bells !== bb0) fails.push('18 種都有了還能買蛋（或被扣錢）');
+    // 蛋裡的也算：剩下的種類都在還沒孵的蛋裡，也不能再買
+    G.pets[5].stage = 'egg';
+    if (buyEgg() !== null) fails.push('剩下的種類都在蛋裡了還能買蛋');
+    // 之後新增寵物種類：又可以買，而且一定孵出新的那一種
+    PET_SPECIES.push({ id: '__new', name: '新寵物', weight: 1 }); PET_SPECIES_BY_ID.__new = PET_SPECIES[PET_SPECIES.length - 1];
+    try {
+      var gotNew = buyEgg();
+      if (gotNew === null || G.pets[gotNew].species !== '__new') fails.push('新增寵物種類之後，買不到蛋或孵出來不是新的那一種');
+    } finally { PET_SPECIES.pop(); delete PET_SPECIES_BY_ID.__new; }
     // 還沒收齊的時候，孵出來一定是新的種類
     G.pets = [newPet('mochi', 'kid', 'a')]; G.activePet = 0; G.pet = G.pets[0]; G.companions = [];
     var got = buyEgg();
@@ -256,7 +265,7 @@
       fails.push('一起逛的變成別隻寵物了');
     if (G.companions.some(function(x){ return !G.pets[x]; }))
       fails.push('一起逛的名單指到不存在的寵物');
-    if (G.bells !== sellValue(EGG_PRICE)) fails.push('送回寵物店沒有拿回一半的蛋錢');
+    if (G.bells !== EGG_PRICE) fails.push('重複的寵物賣回店裡不是原價（' + G.bells + '）');
     // 最後一隻不能送，不然她會一隻寵物都沒有
     G.pets = [newPet('mochi','kid','唯一')]; G.activePet = 0; G.pet = G.pets[0]; G.companions = [];
     if (releasePet(0)) fails.push('最後一隻竟然送得走');
@@ -2370,7 +2379,7 @@
         window.confirm = function(){ return false; }; sellB.onclick();
         if (G.pets.length !== n0) fails.push('按了「取消」還是賣掉了');
         window.confirm = function(){ return true; }; sellB.onclick();
-        if (G.pets.length !== n0 - 1 || G.bells !== b0 + sellValue(EGG_PRICE)) fails.push('賣重複的寵物沒有拿到錢或沒有少一隻');
+        if (G.pets.length !== n0 - 1 || G.bells !== b0 + EGG_PRICE) fails.push('賣重複的寵物沒有拿到原價或沒有少一隻');
         if (G.pets.some(function(pp){ return pp.name === 'A2'; })) fails.push('賣掉的不是最小的那隻');
         if (G.pet.name !== 'B1' || G.companions.map(function(c){ return G.pets[c].name; }).join() !== 'B2') fails.push('賣了之後照顧中／一起逛的跑掉了');
         // 再賣一隻 A，剩一隻就不能再賣
@@ -2392,9 +2401,13 @@
     var ptx = $('#tabBody').textContent;
     if (/18 種都收集到了/.test(ptx)) fails.push('還有 5 種在蛋裡沒孵，卻寫「18 種都收集到了」');
     if (!/5 種新的寵物都在你的蛋裡面/.test(ptx)) fails.push('沒有說剩下的種類在蛋裡面、要摸一摸讓牠們孵出來');
+    var eggBtn10 = [].filter.call(document.querySelectorAll('#tabBody button'), function(b){ return /寵物蛋/.test(b.textContent); })[0];
+    if (!eggBtn10 || !eggBtn10.disabled) fails.push('剩下的種類都在蛋裡，買蛋按鈕還可以按');
     G.pets.forEach(function(pp){ pp.stage = 'kid'; });
     openTab('pets');
     if (!/18 種都收集到了/.test($('#tabBody').textContent)) fails.push('真的全部孵出來了，沒有寫「都收集到了」');
+    var eggBtn11 = [].filter.call(document.querySelectorAll('#tabBody button'), function(b){ return /寵物蛋/.test(b.textContent); })[0];
+    if (!eggBtn11 || !eggBtn11.disabled || !/賣完/.test(eggBtn11.textContent)) fails.push('18 種都有了，買蛋按鈕沒有變成「賣完了」');
     var kp10 = JSON.parse(keepPets10); G.pets = kp10[0]; G.activePet = kp10[1]; G.companions = kp10[2]; G.pet = G.pets[G.activePet];
     openTab('inv');
 
