@@ -1326,6 +1326,30 @@
       fails.push('蝴蝶相簿顯示不對');
     var md8 = document.querySelector('#modal'); if (md8) md8.hidden = true;
 
+    /* 55 每個地點：空地都走得到、能玩的東西都走得到也點得到、點地板不會被樹／路燈這種不能玩的東西攔住
+       （你回報：公園的愛心點不到、大樹後面走不過去） */
+    Object.keys(PLACES).forEach(function(pk){ PLACES[pk].rooms.forEach(function(rm3, ri){
+      G.away = { place: pk, idx: ri }; var room3 = curRoom(); computeView();
+      var where3 = PLACES[pk].name + rm3.name, blk3 = blockedGrid(room3);
+      var st3 = nearestFree(room3, room3.w / 2, room3.d - 1.5) || [1, 1], seen3 = {}, q4 = [st3];
+      seen3[st3[0] + ',' + st3[1]] = 1;
+      while (q4.length) { var c4 = q4.shift(); [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){ var x = c4[0] + d[0], y = c4[1] + d[1];
+        if (x < 0 || y < 0 || x >= room3.w || y >= room3.d || blk3[x][y] || seen3[x + ',' + y]) return; seen3[x + ',' + y] = 1; q4.push([x, y]); }); }
+      for (var x3 = 0; x3 < room3.w; x3++) for (var y3 = 0; y3 < room3.d; y3++) {
+        if (!blk3[x3][y3] && !seen3[x3 + ',' + y3]) fails.push(where3 + '：空地 ' + x3 + ',' + y3 + ' 走不進去');
+        if (!blk3[x3][y3]) { var g4 = pickItem(iso(x3 + .5, y3 + .5, 0)); if (g4 && !canUse(g4)) fails.push(where3 + '：點地板 ' + x3 + ',' + y3 + ' 被' + g4.id + '攔住（走不過去）'); }
+      }
+      room3.items.forEach(function(it3){
+        if (!canUse(it3)) return;
+        if (!findPathToItem(room3, st3[0], st3[1], it3)) fails.push(where3 + '：走不到 ' + it3.id + '（' + it3.x + ',' + it3.y + '）');
+        var d3 = FURN_BY_ID[it3.id], fp3 = footprint(d3, it3.rot || 0), h3 = itemHeight(d3), n3 = 0, hit3 = 0;
+        for (var a3 = .1; a3 < 1; a3 += .2) for (var b3 = .1; b3 < 1; b3 += .2) for (var z3 = 0; z3 <= h3; z3 += Math.max(4, h3 / 5)) { n3++; if (pickItem(iso(it3.x + fp3.w * a3, it3.y + fp3.d * b3, z3)) === it3) hit3++; }
+        var need3 = FURNITURE_ACT[it3.id] ? .35 : .15;   // 能做事的要很好點；椅子在桌子後面被擋一點沒關係
+        if (hit3 / n3 < need3) fails.push(where3 + '：' + it3.id + '（' + it3.x + ',' + it3.y + '）被前面的東西擋住，只有 ' + Math.round(hit3 / n3 * 100) + '% 點得到');
+      });
+    }); });
+    G.away = null;
+
     /* 54 你回報的：公園的愛心拍照點不到（被前面的大樹擋住）。在別人家點到不能玩的東西，要穿過去點後面能玩的 */
     travelArrive('park'); var rd6 = document.getElementById('roomDoors'); if (rd6) rd6.remove();
     computeView();

@@ -1841,7 +1841,7 @@ const PLACES = {
       ['comic_shelf', 0, 0], ['figure_shelf', 2, 0], ['figure_shelf', 3, 0], ['comic_pile', 4, 0], ['arcade', 5, 0], ['arcade', 6, 0], ['fridge', 7, 0],
       ['console_tv', 0, 3, 1], ['gray_rug', 1, 2, 1], ['sofa', 3, 2, 3], ['beanbag', 5, 4], ['beanbag', 6, 5],
       ['gaming_desk', 0, 6, 1], ['gaming_chair', 1, 6, 3],
-      ['comic_shelf', 6, 2], ['comic_pile', 5, 2], ['comic_pile', 7, 3], ['comic_pile', 4, 6], ['comic_pile', 6, 7]
+      ['comic_shelf', 0, 1, 1], ['comic_pile', 5, 2], // 高的漫畫櫃靠左牆，不要擋住後面的大型電玩 ['comic_pile', 7, 3], ['comic_pile', 4, 6], ['comic_pile', 6, 7]
     ], wallItems: [['anime_poster', 'L', 0], ['game_poster', 'L', 1], ['star_lights', 'L', 4], ['anime_poster', 'R', 4]] }
   ] },
   grandma: { name: '阿婆家', host: 'grandma', emoji: '🐐', desc: '水果、小果園，還有小牛小羊！', rooms: [
@@ -1849,7 +1849,7 @@ const PLACES = {
       ['cupboard', 0, 0], ['fridge', 2, 0], ['kitchen', 3, 0], ['fruit_crate', 6, 0], ['fruit_crate', 7, 0],
       ['fireplace', 0, 3, 1], ['rocking_chair', 2, 3, 3], ['tea_table', 2, 5],
       ['dining_table', 4, 3], ['dining_chair', 4, 2], ['dining_chair', 5, 5, 2],
-      ['fruit_basket', 3, 6], ['fruit_basket', 6, 6], ['leaf_rug', 1, 5], ['plant_l', 7, 7]
+      ['fruit_basket', 3, 6], ['fruit_basket', 6, 6], ['leaf_rug', 1, 5], ['plant_l', 0, 7] // 大盆栽放左前角，不要擋住水果籃、水果箱
     ], wallItems: [['wall_clock', 'R', 5], ['art_flower', 'L', 2], ['window', 'L', 6]] },
     { name: '果園', w: 10, d: 10, wall: 'wp_forest', floor: 'fl_grass', items: [
       ['apple_tree', 1, 1], ['orange_tree', 4, 1], ['apple_tree', 7, 1],
@@ -1857,7 +1857,7 @@ const PLACES = {
       ['sunflower', 9, 9], ['sunflower', 8, 9], ['log_stool', 4, 5]
     ], wallItems: [] },
     { name: '小農場', w: 10, d: 10, wall: 'wp_forest', floor: 'fl_grass', items: [
-      ['barn', 0, 0], ['hay_bale', 2, 0], ['hay_bale', 3, 0], ['hay_bale', 2, 1], ['trough', 5, 0],
+      ['barn', 0, 0], ['hay_bale', 2, 0], ['hay_bale', 3, 0], ['hay_bale', 4, 0], ['trough', 5, 0], // 稻草排一排，每一捆都走得到
       ['sunflower', 8, 0], ['sunflower', 9, 0], ['log_stool', 6, 6],
       ['fence', 0, 9], ['fence', 1, 9], ['fence', 2, 9], ['fence', 3, 9], ['fence', 6, 9], ['fence', 7, 9], ['fence', 8, 9], ['fence', 9, 9],
       ['fence', 9, 5, 1], ['fence', 9, 6, 1], ['fence', 9, 7, 1], ['fence', 9, 8, 1]
@@ -7280,10 +7280,10 @@ function pickItem(w) {
     return { x: it.x, y: it.y, w: fp.w, d: fp.d, z: 0, h: def.layer === 'floor' ? 2 : itemHeight(def), it, flat: def.layer === 'floor' };
   });
   const order = sortBoxes(entries.filter(e => !e.flat)).reverse().concat(entries.filter(e => e.flat));
-  /* 在別人家（公園、學校…）：點到的是樹、路燈這種「不能做事」的東西，
-     後面又剛好有可以玩的（愛心雕塑被大樹擋住），就讓她點到可以玩的那個。
+  /* 在別人家（公園、學校…）：樹、路燈、圍籬這種「不能做事」的東西完全不攔點擊——
+     點下去就當作點地板（走過去），後面有可以玩的就點到那個。
+     以前點到樹的後面（樹冠蓋住的草地）什麼都不會發生，像走不過去。
      在自己家不這樣做：樹也要能點來搬。 */
-  let first = null;
   for (const e of order) {
     const p = new Path2D(), pts = [
       iso(e.x, e.y, e.h), iso(e.x + e.w, e.y, e.h), iso(e.x + e.w, e.y, 0),
@@ -7292,12 +7292,9 @@ function pickItem(w) {
     p.moveTo(pts[0].x, pts[0].y);
     pts.slice(1).forEach(q => p.lineTo(q.x, q.y));
     p.closePath();
-    if (pickCtx.isPointInPath(p, w.x, w.y)) {
-      if (!G.away || canUse(e.it)) return e.it;
-      if (!first) first = e.it;
-    }
+    if (pickCtx.isPointInPath(p, w.x, w.y) && (!G.away || canUse(e.it))) return e.it;
   }
-  return first;
+  return null;
 }
 
 // 掛飾：滑鼠在畫面右半邊就掛右上牆，左半邊掛左上牆
