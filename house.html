@@ -2042,7 +2042,15 @@ const PLACES = {
       ['shade_tree', 0, 3], ['park_bench', 2, 4], ['shade_tree', 8, 3], ['park_bench', 5, 4],
       ['finish_flag', 9, 6]
     ], wallItems: [] }
-  ] }
+  ] },
+  /* 🐾 寵物屋：在家裡，不用出門（inHouse），不在出門選單裡。免費、不佔房間數、不能放自己的家具。
+     沒帶出來的寵物都在這裡走來走去，可以來看看、摸摸（不用餵、數值不會變）。 */
+  pethouse: { name: '寵物屋', emoji: '🐾', inHouse: true, desc: '沒帶出來的寵物都在這裡休息', rooms: [
+    { name: '寵物屋', w: 8, d: 8, wall: 'wp_pink', floor: 'fl_check', items: [
+      ['pet_house', 0, 0], ['pet_house', 2, 0], ['pet_bed', 4, 0], ['pet_bed', 5, 0], ['plant_l', 7, 0],
+      ['rainbow_rug', 2, 3], ['leaf_rug', 5, 4], ['teddy', 7, 3], ['pet_bed', 0, 6], ['fishtank', 7, 7]
+    ], wallItems: [['art_flower', 'L', 2], ['window', 'R', 3], ['star_lights', 'L', 5]] }
+  ] },
 };
 // ── 親戚的禮物（115.9.19 謝會）：每次去都會送，同一位親戚 1 小時內只送一次，避免來回跑刷禮物 ──
 const GIFT_COOLDOWN_MS = 3600000;
@@ -5815,6 +5823,7 @@ function petUpdate(dt, now) {
   actorEnterRoom(pet, room);
   actorSpring(pet, dt, now, isEgg());
   compUpdate(dt, now, room);
+  phUpdate(dt, now);
 
   if (isEgg()) return; // 蛋不會走路也不會餓
 
@@ -5969,6 +5978,82 @@ function compPressEnd(now) {
     if (up) celebrateStage(up, p, a);
   }
   saveGame();
+}
+
+/* ── 🐾 寵物屋裡的寵物 ──
+   沒在照顧、也沒一起逛的寵物（含蛋）。只在寵物屋裡出現，自己走來走去；
+   點了只會開心（跳一下、冒愛心、叫一聲），不會改任何數值，也不會長大——
+   「去看看牠們」就好，照顧還是要帶出來。蛋不會走，待在原地，點了會搖一搖。
+   同時最多 12 隻，太多會擠、平板也會變慢。 */
+const PH_MAX = 12;
+const phActors = {};
+function inPetHouse() { return !!(G.away && G.away.place === 'pethouse'); }
+function phList() {
+  return G.pets.map((p, i) => i).filter(i => i !== G.activePet && !G.companions.includes(i)).slice(0, PH_MAX);
+}
+function phReset() { Object.keys(phActors).forEach(k => delete phActors[k]); }
+function phActor(i) {
+  if (!phActors[i]) {
+    const room = curRoom(), blk = blockedGrid(room);
+    // 隨便找一格空地（不要全部擠在一起）
+    let c = null;
+    for (let t = 0; t < 30 && !c; t++) {
+      const x = Math.floor(Math.random() * room.w), y = Math.floor(Math.random() * room.d);
+      if (!blk[x][y]) c = [x, y];
+    }
+    c = c || nearestFree(room, room.w / 2, room.d / 2) || [1, 1];
+    phActors[i] = { idx: i, room: roomKey(), x: c[0] + .5, y: c[1] + .5, z: 0, path: [], t: Math.random() * 5, facing: 1,
+      idleUntil: performance.now() + Math.random() * 3000, blinkAt: 0, squish: 0, squishV: 0, lean: 0, leanV: 0,
+      press: null, happyUntil: 0, particles: [] };
+  }
+  return phActors[i];
+}
+function phUpdate(dt, now) {
+  if (!inPetHouse()) { if (Object.keys(phActors).length) phReset(); return; }
+  const list = phList();
+  Object.keys(phActors).forEach(k => { if (!list.includes(+k)) delete phActors[k]; }); // 被帶出去了
+  const room = curRoom(), blk = blockedGrid(room);
+  list.forEach(i => {
+    const a = phActor(i), egg = G.pets[i].stage === 'egg';
+    a.t += dt;
+    actorSpring(a, dt, now, egg);
+    if (!egg) actorWalk(a, dt, now, room, blk, .15); // 大多自己逛，偶爾跑來找小可愛
+  });
+}
+function phDrawEntries() {
+  if (!inPetHouse()) return [];
+  const fine = p => Object.assign({}, p, { hunger: 100, clean: 100, mood: 100 });
+  return phList().map(i => actorDrawEntry(phActor(i), fine(G.pets[i])));
+}
+function phHit(w) {
+  if (!inPetHouse()) return null;
+  const i = phList().find(i => {
+    const a = phActor(i), p = iso(a.x, a.y), k = stageOf(G.pets[i]).scale;
+    return w.x > p.x - 17 * k && w.x < p.x + 17 * k && w.y > p.y - 32 * k && w.y < p.y + 5;
+  });
+  return i == null ? null : i;
+}
+// 點寵物屋裡的寵物：開心一下（不改數值），旁邊冒出「照顧牠／一起逛」
+function phTap(i, e) {
+  const a = phActor(i), p = G.pets[i], now = performance.now(), egg = p.stage === 'egg';
+  a.happyUntil = now + 1500; a.squishV = -6; a.idleUntil = now + 2500; a.path = [];
+  if (egg) { a.lean = .5; Sound.play('boing'); }
+  else { Sound.play('petHappy'); petBurst({ kind: 'heart' }, 3, a); }
+  const name = petNameOf(p), entries = [];
+  entries.push([`⭐ 照顧${name}`, () => {
+    const old = G.activePet;
+    switchMainPet(i);
+    pet.x = a.x; pet.y = a.y; pet.room = roomKey(); pet.path = [];
+    // 原本照顧的那隻如果回到寵物屋，就從牠原本的位置開始走
+    if (phList().includes(old)) { const o = phActor(old); o.x = a.x; o.y = a.y; }
+    fufuSay(pickLine('petSwitch', { 寵物: petName() }));
+    toast(`現在照顧${petName()}`);
+    commit();
+  }]);
+  if (!egg) entries.push(canAddCompanion()
+    ? ['🐾 一起逛', () => { toggleCompanion(i); compArrive(i); Sound.play('petHappy'); toast(`${name}一起出來玩！`); commit(); }]
+    : ['🐾 一起逛（位置滿了）', () => toast(petsOutLimit() > 1 ? `最多同時 ${petsOutLimit()} 隻` : '蓋第二間房間就能多帶一隻')]);
+  openMenu(entries, e);
 }
 
 function petCallOver() {
@@ -7931,7 +8016,7 @@ function openTravelMenu() {
     card.appendChild(b);
   };
   if (G.away) pick(el('div', 'place-emoji', '🏠'), '🏠 回家', '回到自己的小屋', goHome, false);
-  Object.entries(PLACES).forEach(([id, pl]) => {
+  Object.entries(PLACES).filter(([, pl]) => !pl.inHouse).forEach(([id, pl]) => {
     const here = !!(G.away && G.away.place === id);
     const icon = pl.host && HOSTS[pl.host] ? renderNeighborPortrait(HOSTS[pl.host], 64, 58, false) : el('div', 'place-emoji', pl.emoji);
     pick(icon, `${pl.emoji} ${pl.name}${here ? '（你在這裡）' : ''}`, pl.desc, () => travelTo(id), here);
@@ -8071,7 +8156,7 @@ function draw() {
   const c = iso(room.w / 2, room.d / 2);
   ctx.ellipse(c.x, c.y + 18, (room.w + room.d) * TW / 4 + 20, (room.w + room.d) * TH / 4 + 14, 0, 0, Math.PI * 2);
   ctx.fill();
-  drawRoom(ctx, room, { ghost: hold, hoverUid: hold ? null : hoverUid, showGrid: !!hold, extras: [fufuDrawEntry()].concat(petDrawEntries(), visitorDrawEntries(), hostDrawEntries(), supplyDrawEntries(), giftDrawEntries()), occupants: [fufuOccupant(), petOccupant(), visitorOccupant()] });
+  drawRoom(ctx, room, { ghost: hold, hoverUid: hold ? null : hoverUid, showGrid: !!hold, extras: [fufuDrawEntry()].concat(petDrawEntries(), visitorDrawEntries(), hostDrawEntries(), supplyDrawEntries(), giftDrawEntries(), phDrawEntries()), occupants: [fufuOccupant(), petOccupant(), visitorOccupant()] });
   petDrawOverlay(ctx);
   visitorDrawOverlay(ctx, performance.now());
   drawAmbient(ctx, performance.now());
@@ -8753,6 +8838,7 @@ canvas.addEventListener('pointerup', e => {
     return;
   }
   if (giftBoxHit(w)) { (giftVisit.spec || GIFT_SPECS[0]).open(); return; }
+  { const ph = phHit(w); if (ph != null) { phTap(ph, e); return; } }
   if (visitorHit(w)) { openMenu(visitorMenuEntries(), e); return; }
   if (hostHit(w)) { openMenu(hostMenuEntries(), e); return; }
   const fa = farmHit(w);
@@ -8825,6 +8911,12 @@ function refreshTop() {
     btn.onclick = fn;
     tabs.appendChild(btn);
   };
+  if (G.away && PLACES[G.away.place].inHouse) { // 在寵物屋：自己家的房間直接走回去（不用走路過場）
+    G.rooms.forEach((r, i) => add(r.name, false, () => leavePetHouse(i)));
+    add('🐾 寵物屋', true, () => {});
+    add('🚗 出門', false, () => { cancelHold(); openTravelMenu(); }, 'go');
+    return;
+  }
   if (G.away) { // 在親戚家：回家按鈕＋那個地方的房間
     add('🏠 回家', false, goHome, 'go');
     PLACES[G.away.place].rooms.forEach((r, i) => add(r.name, i === G.away.idx, () => goPlaceRoom(i)));
@@ -8836,7 +8928,26 @@ function refreshTop() {
     if (i !== G.cur) roomDoors(r.name);
     G.cur = i; commit();
   }));
+  add('🐾 寵物屋', false, enterPetHouse);
   add('🚗 出門', false, () => { cancelHold(); openTravelMenu(); }, 'go');
+}
+function enterPetHouse() {
+  cancelHold(); hideItemMenu();
+  if (fufu.pose) fufuStandUp(false);
+  roomDoors('寵物屋');
+  G.away = { place: 'pethouse', idx: 0 };
+  host.n = null;
+  phReset();
+  const n = phList().length;
+  fufuSay(n ? '來看大家囉！' : '寵物屋現在空空的～', 2600);
+  commit();
+}
+function leavePetHouse(i) {
+  cancelHold(); hideItemMenu();
+  if (fufu.pose) fufuStandUp(false);
+  roomDoors(G.rooms[i].name);
+  G.away = null; G.cur = i;
+  commit();
 }
 
 function openTab(name) {

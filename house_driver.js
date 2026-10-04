@@ -2264,6 +2264,66 @@
     G = keepG; G.away = keepAway; G.openGift = true; saveGame(); giftReset();
     $('#modal').hidden = true;
 
+    /* 69 🐾 寵物屋：在家裡（不用出門、不在出門選單）、免費不佔房間數；沒帶出來的寵物（含蛋）在裡面走來走去；
+       點了只開心、數值不變、不會長大；可以直接「照顧牠」或「一起逛」；回房間不用走路過場 */
+    var keepG7 = JSON.stringify(G);
+    var realToast8 = toast; toast = function(){};
+    try {
+      G = normalizeSave(JSON.parse(keepG7)); G.away = null; G.cur = 0; cancelHold(); $('#modal').hidden = true;
+      G.pets = [newPet('mochi', 'kid', 'A'), newPet('mochi', 'baby', 'B'), newPet('mochi', 'kid', 'C'), newPet('mochi', 'egg', '')];
+      G.activePet = 0; G.pet = G.pets[0]; G.companions = [2];
+      var rooms0 = G.rooms.length, lim0 = petsOutLimit();
+      openTravelMenu();
+      if (/寵物屋/.test($('#modalCard').textContent)) fails.push('寵物屋跑進出門選單了（它在家裡）');
+      $('#modal').hidden = true;
+      refreshTop();
+      var phBtn = [].filter.call(document.querySelectorAll('#roomTabs button'), function(b){ return /寵物屋/.test(b.textContent); })[0];
+      if (!phBtn) fails.push('家裡的房間列沒有「🐾 寵物屋」');
+      else phBtn.onclick();
+      if (!inPetHouse() || curRoom().name !== '寵物屋') fails.push('點了寵物屋沒有進去');
+      if (G.rooms.length !== rooms0 || petsOutLimit() !== lim0) fails.push('寵物屋佔了房間數（會影響能帶幾隻寵物）');
+      var lst = phList();
+      if (lst.join() !== '1,3') fails.push('寵物屋裡的寵物不對（應該是沒照顧、沒一起逛的，含蛋）：' + lst.join());
+      var nowP = performance.now();
+      for (var pf = 0; pf < 120; pf++) gameStep(1 / 60, nowP + pf * 17);
+      if (phDrawEntries().length !== 2) fails.push('寵物屋裡的寵物沒有畫出來（' + phDrawEntries().length + '）');
+      var eggA = phActor(3), ex = eggA.x, ey = eggA.y;
+      for (var pf2 = 0; pf2 < 600; pf2++) gameStep(1 / 60, nowP + 3000 + pf2 * 17);
+      if (eggA.x !== ex || eggA.y !== ey) fails.push('寵物屋裡的蛋自己走來走去');
+      // 點一下：開心，但數值、成長都不變
+      var pB = G.pets[1], before = JSON.stringify([pB.hunger, pB.clean, pB.mood, pB.growth, pB.stage]);
+      var pM = G.pet, beforeM = JSON.stringify([pM.hunger, pM.clean, pM.mood, pM.growth]);
+      var aB = phActor(1), ppB = iso(aB.x, aB.y), rB = canvas.getBoundingClientRect();
+      if (phHit({ x: ppB.x, y: ppB.y - 10 }) !== 1) fails.push('點寵物屋裡的寵物點不到');
+      canvas.dispatchEvent(new PointerEvent('pointerup', { clientX: rB.left + ppB.x * view.scale + view.ox, clientY: rB.top + (ppB.y - 10) * view.scale + view.oy, bubbles: true }));
+      if (JSON.stringify([pB.hunger, pB.clean, pB.mood, pB.growth, pB.stage]) !== before) fails.push('在寵物屋點寵物，數值或成長變了（應該只是去看看）');
+      if (JSON.stringify([pM.hunger, pM.clean, pM.mood, pM.growth]) !== beforeM) fails.push('在寵物屋點寵物，照顧中那隻的數值變了');
+      if (!(aB.happyUntil > performance.now())) fails.push('在寵物屋點寵物沒有開心的反應');
+      var mItems = [].map.call(document.querySelectorAll('#itemMenu button'), function(b){ return b.textContent; });
+      if (!mItems.some(function(t){ return /照顧/.test(t); }) || !mItems.some(function(t){ return /一起逛/.test(t); })) fails.push('寵物屋的寵物選單沒有「照顧牠／一起逛」：' + mItems.join('|'));
+      var careB = [].filter.call(document.querySelectorAll('#itemMenu button'), function(b){ return /照顧/.test(b.textContent); })[0];
+      if (careB) careB.onclick();
+      if (G.activePet !== 1) fails.push('在寵物屋按「照顧牠」沒有換過來');
+      if (phList().indexOf(1) >= 0) fails.push('換成照顧的那隻還留在寵物屋清單');
+      hideItemMenu();
+      // 最多 12 隻
+      G.pets = []; for (var pn = 0; pn < 16; pn++) G.pets.push(newPet('mochi', 'kid', 'P' + pn));
+      G.activePet = 0; G.pet = G.pets[0]; G.companions = [];
+      if (phList().length !== PH_MAX || PH_MAX > 12) fails.push('寵物屋同時超過 12 隻');
+      // 回自己家的房間：不用走路過場，回到點的那間
+      refreshTop();
+      var backB = [].filter.call(document.querySelectorAll('#roomTabs button'), function(b){ return b.textContent === G.rooms[0].name; })[0];
+      if (!backB) fails.push('寵物屋的房間列沒有回自己房間的按鈕');
+      else backB.onclick();
+      if (G.away || G.cur !== 0) fails.push('從寵物屋回房間沒有回來');
+      gameStep(1 / 60, nowP + 20000);
+      if (Object.keys(phActors).length) fails.push('離開寵物屋，裡面的寵物還在算');
+      // 存檔讀回來（在寵物屋時存的）
+      G.away = { place: 'pethouse', idx: 0 }; saveGame();
+      var reP = normalizeSave(JSON.parse(localStorage.getItem(SAVE_KEY)));
+      if (!reP || reP.away !== null) fails.push('在寵物屋存的檔讀不回來（或重新打開沒有回到自己家）');
+    } finally { toast = realToast8; hideItemMenu(); G = normalizeSave(JSON.parse(keepG7)); saveGame(); phReset(); refreshTop(); }
+
     /* 68 🏠 搬新家：叔叔、阿婆也來送包裹（只有家人會來家裡）。只有新存檔、只來一次；
        教學做完 3 分鐘叔叔、6 分鐘阿婆；教學沒做完的話打開爸媽包裹 10 分鐘後也會來；
        送她還沒有的家具（3,000 以內，叔叔現代／玩具、阿婆自然／植物）；打開才給；說謝謝才走 */
