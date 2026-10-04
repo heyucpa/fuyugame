@@ -3421,9 +3421,10 @@ function newGame() {
   const g = {
     bells: START_BELLS - OPEN_GIFT_BELLS, // 剩下的由開幕包裹給
     openGift: false,                       // 🎁 新版開幕包裹打開了沒
-    guide: 'egg',
+    guide: 'egg',                          // 第一次玩的小手教學走到哪一步（egg→place→shop→done）
+    guideAsked: false,                     // 問過要不要小手教學了沒
     trophies: {},                          // 🏆 拿過的集滿獎盃 {set id: true}
-    welcome: { at: 0, uncle: false, grandma: false }, // 🏠 搬新家：叔叔、阿婆來送禮了沒（at＝教學做完的時間）                          // 第一次玩的小手教學走到哪一步（egg→place→shop→done）
+    welcome: { at: 0, uncle: false, grandma: false }, // 🏠 搬新家：叔叔、阿婆來送禮了沒（at＝教學做完的時間）
     earned: 0,
     inv: { wood_bed: 1, wood_chair: 1, wood_table: 1, plant_s: 1 },
     walls: ['wp_cream'],
@@ -3526,6 +3527,7 @@ function normalizeSave(g) {
   });
   const out = Object.assign(newGame(), g);
   if (g.guide === undefined) out.guide = 'done'; // 已經在玩的存檔不用教
+  if (g.guideAsked === undefined && out.guide !== 'egg') out.guideAsked = true; // 教到一半的不要再問
   if (!g.welcome) out.welcome = { at: 0, uncle: true, grandma: true }; // 已經在玩的存檔不算搬新家
   if (!Array.isArray(g.newsSeen)) out.newsSeen = []; // 舊存檔：還沒看過任何公告，要讓她看到這次更新了什麼
   /* 補償也要發給「已經存在的存檔」——只改 newGame() 的話，
@@ -8221,6 +8223,30 @@ function guideTarget() {
   if (G.guide === 'shop') return hold ? null : tabBtn('shop');
   return null;
 }
+/* 問要不要小手教學。妹妹看不懂字：兩顆大按鈕，一個是 👇 一個是 🙅，按了念出來。
+   選「不用」就跟教學做完一樣（叔叔、阿婆從這時候開始算時間）。設定裡可以再打開。 */
+function setGuide(on) {
+  G.guideAsked = true;
+  if (on) { G.guide = 'egg'; guideSaid = null; guideScrolled = null; }
+  else {
+    G.guide = 'done';
+    if (G.welcome && !G.welcome.at) G.welcome.at = Date.now();
+    $('#guideHand').hidden = true;
+  }
+  saveGame();
+}
+function openGuideAsk() {
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', '👇 要小手教你怎麼玩嗎？'));
+  card.appendChild(el('div', 'gift-env', '👇'));
+  const yes = el('button', 'big news-ok', '👇 要，教我！');
+  yes.onclick = () => { $('#modal').hidden = true; setGuide(true); Sound.play('click'); try { speak('好！跟著小手點點看！'); } catch (e) {} };
+  const no = el('button', 'big alt', '🙅 不用，我自己玩');
+  no.onclick = () => { $('#modal').hidden = true; setGuide(false); Sound.play('click'); toast('想再看小手教學，到「⚙️ 設定」打開'); };
+  card.append(yes, no);
+  $('#modal').hidden = false;
+}
 function guideTick(now) {
   try { guideTickInner(now); } catch (e) { const h = $('#guideHand'); if (h) h.hidden = true; }
 }
@@ -8231,6 +8257,8 @@ function guideTickInner(now) {
   if (now < guideNext) return;
   guideNext = now + 100;
   const busy = !G.openGift || giftVisit.state !== 'none' || G.away || !$('#modal').hidden || resting;
+  // 第一次要開始教之前先問她要不要（家長：小手教學可以選擇要或不要）
+  if (!busy && !G.guideAsked) { hand.hidden = true; openGuideAsk(); return; }
   if (!busy) guideAdvance();
   const t = busy || G.guide === 'done' ? null : guideTarget();
   hand.hidden = !t;
@@ -10097,6 +10125,17 @@ function tabSave(body) {
   nb.onclick = () => openNews(NEWS.slice(0, 1));
   body.appendChild(nb);
   restSettings(body);
+  // 👇 小手教學：可以關掉，也可以再打開重看一次
+  body.appendChild(h3('👇 小手教學'));
+  const gOn = G.guide !== 'done';
+  const gf = el('div', 'filter');
+  [['開', true], ['關', false]].forEach(([t, on]) => {
+    const b = el('button', gOn === on ? 'on' : '', t);
+    b.onclick = () => { if (gOn !== on) { setGuide(on); toast(on ? '小手會再教一次' : '小手教學關掉了'); } renderTab(); };
+    gf.appendChild(b);
+  });
+  body.appendChild(gf);
+  body.appendChild(note(gOn ? '小手會指著要點的地方：摸蛋 → 放家具 → 逛商店。' : '想再看一次，按「開」。已經做過的步驟會自動跳過。'));
 
   /* ── 存檔格 ──
      兩個小孩各玩各的。每一格是完全獨立的一間房子，互不影響。 */

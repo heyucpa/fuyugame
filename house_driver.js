@@ -2505,10 +2505,14 @@
 
     /* 64 👇 第一次玩的小手教學：只有新存檔有；摸蛋 → 放家具（我的東西 → 點家具 → 放這裡）→ 打開商店；
        做到了自動下一步；包裹還沒開／有視窗時不出現；做完存起來不再出現 */
-    var oldG2 = JSON.parse(JSON.stringify(G)); delete oldG2.guide;
+    var oldG2 = JSON.parse(JSON.stringify(G)); delete oldG2.guide; delete oldG2.guideAsked;
     var oldG2n = normalizeSave(oldG2);
     if (!oldG2n || oldG2n.guide !== 'done') fails.push('已經在玩的存檔也跑出新手教學');
     if (newGame().guide !== 'egg') fails.push('新存檔沒有新手教學');
+    var mid = JSON.parse(JSON.stringify(G)); mid.guide = 'place'; delete mid.guideAsked;
+    var midN = normalizeSave(mid);
+    if (!midN || !midN.guideAsked) fails.push('已經教到一半的存檔又要問一次要不要教');
+    if (!oldG2n.guideAsked) fails.push('已經在玩的存檔會被問要不要小手教學');
     var keepG3 = G, hand = $('#guideHand');
     var near = function(t, x, y){ return t && !hand.hidden && Math.abs(parseFloat(hand.style.left) - x) < 30 && Math.abs(parseFloat(hand.style.top) - y) < 40; };
     var center = function(node){ var r = node.getBoundingClientRect(); return [r.left + r.width / 2, r.top + 4]; };
@@ -2517,6 +2521,26 @@
     if (!hand.hidden) fails.push('包裹還沒打開，小手就出來了');
     claimOpenGift(); giftReset(); $('#modal').hidden = true;
     if (!isEgg()) fails.push('（教學測試）主要的寵物不是蛋');
+    // 先問要不要：選「不用」就結束、叔叔阿婆開始算時間；設定裡可以再打開
+    guideNext = 0; guideTick(performance.now());
+    var askNo = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return /不用/.test(b.textContent); })[0];
+    var askYes = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return /要，教我/.test(b.textContent); })[0];
+    if ($('#modal').hidden || !askNo || !askYes) fails.push('開始小手教學前沒有問要不要');
+    if (!hand.hidden) fails.push('還沒選要不要，小手就出來了');
+    if (askNo) {
+      askNo.onclick();
+      if (G.guide !== 'done' || !G.guideAsked) fails.push('選「不用」，教學沒有關掉');
+      if (!(G.welcome.at > 0)) fails.push('選「不用」，叔叔阿婆不知道什麼時候來');
+      guideNext = 0; guideTick(performance.now());
+      if (!hand.hidden || !$('#modal').hidden) fails.push('選「不用」之後，小手或問題又跑出來');
+      openTab('save');
+      var gOnB = [].filter.call(document.querySelectorAll('#tabBody .filter button'), function(b){ return b.textContent === '開' && b.parentNode.previousElementSibling && /小手/.test(b.parentNode.previousElementSibling.textContent); })[0];
+      if (!gOnB) fails.push('設定裡沒有小手教學的開關');
+      else { gOnB.onclick(); if (G.guide !== 'egg') fails.push('設定裡打開小手教學沒有重新開始'); }
+      openTab('inv');
+    }
+    if (G.guide !== 'egg') { G.guide = 'egg'; G.guideAsked = true; }
+    G.welcome.at = 0;
     guideNext = 0; guideTick(performance.now());
     var cr = canvas.getBoundingClientRect(), pp = iso(pet.x, pet.y, 0);
     if (hand.hidden) fails.push('新存檔打開包裹後，小手沒有出來指蛋');
