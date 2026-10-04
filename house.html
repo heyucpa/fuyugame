@@ -3592,6 +3592,16 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-04T20:00', title: '好多新東西！', lines: [
+    ['🍰', '新的「甜點」風格家具：杯子蛋糕椅、糖果床、草莓沙發…'],
+    ['🦄', '雲朵沙發、獨角獸搖搖馬、愛心鏡子、彩虹書櫃'],
+    ['🏰', '寵物城堡、寵物跳台，寵物會去睡喔'],
+    ['💡', '小主題變多了：甜點屋、公主房、寵物天地…'],
+    ['🐠', '新的小遊戲：撈金魚、烤餅乾、杯子蛋糕店'],
+    ['🌟', '超級稀有的寵物：爸比龍、媽咪鳳'],
+    ['🦴', '寵物的新點心：骨頭']
+  ], newItems: ['cupcake_chair', 'macaron_table', 'donut_rug', 'candy_bed', 'icecream_lamp', 'cake_shelf', 'lollipop_tree', 'strawberry_sofa', 'cookie_jar', 'cream_wardrobe',
+                'cloud_sofa', 'unicorn_rocker', 'star_lamp', 'heart_mirror', 'rainbow_shelf', 'bunny_cushion', 'pet_castle', 'cat_tower'] },
   { id: '2026-10-04T12:00', title: '商店來了新東西！', lines: [
     ['🌷', '桌上小物：小花瓶、相框、蠟燭、鬧鐘、小蛋糕、茶具、書、筆筒'],
     ['🎵', '音樂盒放在桌上可以聽音樂'],
@@ -6545,7 +6555,7 @@ function phFunGo(a, room) {
   }
   const t = phFreeSpots(room, fufu.x, fufu.y, 1)[0];
   if (!t) return false;
-  a.playTo = 'kid'; a.path = findPath(room, Math.floor(a.x), Math.floor(a.y), t[0], t[1]).slice(0, 12);
+  a.playTo = 'kid'; a.path = findPath(room, Math.floor(a.x), Math.floor(a.y), t[0], t[1]);   // 走到她旁邊（不截短，不然遠的走不到）
   return true;
 }
 function phPlayArrive(a, now, room) {
@@ -10796,7 +10806,10 @@ function tabEarn(body) {
     ['🎯', '彈弓丟蘋果', openSlingGame],
     ['🧩', '拼圖', openPuzzleGame],
     ['🪙', '接金幣', openCoinGame],
-    ['⚪', '彈珠台', openMarbleGame]].forEach(([icon, label, fn]) => {
+    ['⚪', '彈珠台', openMarbleGame],
+    ['🐠', '撈金魚', openScoopGame],
+    ['🍪', '烤餅乾', openBakeGame],
+    ['🧁', '杯子蛋糕店', openCupcakeGame]].forEach(([icon, label, fn]) => {
     const b = el('button', 'game-pick');
     b.append(el('span', 'gi', icon), el('span', '', label));
     b.onclick = () => { Sound.play('click'); fn(); };
@@ -13639,6 +13652,229 @@ function openFarmGame() {
    小一的妹妹玩簡單的，姊姊想拚就玩快的。
 
    掉下來的有金幣也有炸彈：全部都是金幣的話，閉著眼睛左右掃就滿分了。 */
+/* ===== 新的賺錢小遊戲（家長：賺錢的小遊戲可以再多一些）=====
+   三個都只要「點」，不用看字：撈金魚、烤餅乾、杯子蛋糕店。 */
+// ── 🐠 撈金魚：點水裡游的魚，金色的魚比較多錢 ──
+const SCOOP_LEVELS = [
+  { name: '慢慢來', sec: 30, speed: 40, n: 5, gold: .2, mul: 1 },
+  { name: '普通',   sec: 30, speed: 70, n: 6, gold: .18, mul: 2 },
+  { name: '好快！', sec: 30, speed: 105, n: 7, gold: .15, mul: 3 }
+];
+function openScoopGame() {
+  const w = openGameWindow('🐠 撈金魚', '點水裡游來游去的魚，撈起來！金色的魚一隻算三隻喔。');
+  pickLevelRow(w, SCOOP_LEVELS, L => `一隻 💰 ${15 * L.mul}`, L => playScoop(w, L));
+}
+function playScoop(w, L) {
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const W = 320, H = 320, { c, g, pos } = gameCanvas(w.stage, W, H);
+  let fish = [], got = 0, left = L.sec, raf = 0, ended = false, last = performance.now(), splash = [];
+  const spawn = () => {
+    const a = Math.random() * Math.PI * 2;
+    fish.push({ x: 60 + Math.random() * 200, y: 70 + Math.random() * 180, a, gold: Math.random() < L.gold, t: Math.random() * 6 });
+  };
+  for (let i = 0; i < L.n; i++) spawn();
+  const tick = setInterval(() => { if (ended) return; left--; status(); if (left <= 0) finish(); }, 1000);
+  gameCleanup = () => { cancelAnimationFrame(raf); clearInterval(tick); };
+  const status = () => { w.status.textContent = `${L.name}　還有 ${left} 秒　撈到 ${got} 隻`; };
+  status();
+  const scoop = f => {
+    fish = fish.filter(q => q !== f);
+    got += f.gold ? 3 : 1;
+    splash.push({ x: f.x, y: f.y, t: 0, gold: f.gold });
+    Sound.play(f.gold ? 'perfect' : 'splash');
+    status();
+    setTimeout(() => { if (!ended) spawn(); }, 500);
+  };
+  c.addEventListener('pointerdown', e => {
+    if (ended) return;
+    const p = pos(e);
+    const f = fish.find(q => Math.hypot(q.x - p.x, q.y - p.y) < 26);
+    if (f) scoop(f);
+  });
+  function finish() {
+    if (ended) return;
+    ended = true; clearInterval(tick);
+    const bells = payReward(w, got * 15 * L.mul);
+    w.status.textContent = `撈到 ${got} 隻！💰 +${fmt(bells)}`;
+    toast(`🐠 撈到 ${got} 隻，拿到 💰 ${fmt(bells)}`);
+    gameButtons(w, () => pickLevelRow(w, SCOOP_LEVELS, L2 => `一隻 💰 ${15 * L2.mul}`, L2 => playScoop(w, L2)));
+  }
+  openScoopGame.test = { finish, scoop, fish: () => fish, level: L, got: () => got };
+  (function frame(now) {
+    now = now || performance.now();
+    const dt = Math.max(0, Math.min(.05, (now - last) / 1000)); last = now;
+    if (!ended) fish.forEach(f => {
+      f.t += dt;
+      if (Math.random() < .02) f.a += (Math.random() - .5) * 1.6;      // 偶爾轉彎
+      f.x += Math.cos(f.a) * L.speed * dt; f.y += Math.sin(f.a) * L.speed * dt;
+      if (f.x < 40 || f.x > W - 40) { f.a = Math.PI - f.a; f.x = Math.max(40, Math.min(W - 40, f.x)); }
+      if (f.y < 50 || f.y > H - 40) { f.a = -f.a; f.y = Math.max(50, Math.min(H - 40, f.y)); }
+    });
+    g.clearRect(0, 0, W, H);
+    g.fillStyle = '#f6efe2'; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#7ec8e8'; g.beginPath(); g.ellipse(W / 2, H / 2 + 15, 150, 130, 0, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#e8505b'; g.lineWidth = 8; g.stroke();
+    g.fillStyle = 'rgba(255,255,255,.25)'; g.beginPath(); g.ellipse(W / 2 - 50, H / 2 - 40, 50, 18, -.3, 0, Math.PI * 2); g.fill();
+    fish.forEach(f => {
+      const dir = Math.cos(f.a) >= 0 ? 1 : -1, wig = Math.sin(f.t * 10) * 3;
+      g.save(); g.translate(f.x, f.y); g.scale(dir, 1);
+      g.fillStyle = f.gold ? '#ffd35c' : '#ff7a59';
+      g.beginPath(); g.ellipse(0, 0, 15, 9, 0, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.moveTo(-12, 0); g.lineTo(-24, -8 + wig); g.lineTo(-24, 8 + wig); g.closePath(); g.fill();
+      g.fillStyle = '#fff'; g.beginPath(); g.arc(7, -2, 3, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#333'; g.beginPath(); g.arc(8, -2, 1.5, 0, Math.PI * 2); g.fill();
+      if (f.gold) { g.fillStyle = '#fff6c7'; g.beginPath(); g.arc(-2, -3, 2, 0, Math.PI * 2); g.fill(); }
+      g.restore();
+    });
+    splash = splash.filter(sp => (sp.t += dt) < .6);
+    splash.forEach(sp => { g.strokeStyle = sp.gold ? '#ffd35c' : '#ffffff'; g.lineWidth = 2; g.beginPath(); g.arc(sp.x, sp.y, 10 + sp.t * 40, 0, Math.PI * 2); g.stroke(); });
+    raf = requestAnimationFrame(frame);
+  })();
+}
+
+// ── 🍪 烤餅乾：條子跑到金黃色的地方就點，太晚會烤焦 ──
+const BAKE_LEVELS = [
+  { name: '慢慢來', speed: .28, zone: .2, mul: 1 },
+  { name: '普通',   speed: .4,  zone: .15, mul: 2 },
+  { name: '好快！', speed: .55, zone: .11, mul: 3 }
+];
+const BAKE_N = 8;
+function openBakeGame() {
+  const w = openGameWindow('🍪 烤餅乾', '餅乾在烤箱裡慢慢變色，烤到金黃色（綠色那一格）的時候點一下拿出來！太晚會烤焦喔。');
+  pickLevelRow(w, BAKE_LEVELS, L => `一片 💰 ${20 * L.mul}`, L => playBake(w, L));
+}
+function playBake(w, L) {
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const W = 320, H = 300, { c, g } = gameCanvas(w.stage, W, H);
+  let round = 0, score = 0, k = 0, raf = 0, ended = false, last = performance.now(), result = null, resultAt = 0, zoneAt = .62;
+  const tray = [];
+  gameCleanup = () => cancelAnimationFrame(raf);
+  const status = () => { w.status.textContent = `${L.name}　第 ${Math.min(round + 1, BAKE_N)} / ${BAKE_N} 片　得到 ${score} 分`; };
+  const next = () => { round++; k = 0; result = null; zoneAt = .5 + Math.random() * .25; if (round >= BAKE_N) finish(); else status(); };
+  // 拿出來：在金黃色（zone）裡 2 分、差一點 1 分、太早或烤焦 0 分
+  const take = () => {
+    if (ended || result) return;
+    const d = Math.abs(k - (zoneAt + L.zone / 2));
+    const pts = d <= L.zone / 2 ? 2 : d <= L.zone ? 1 : 0;
+    score += pts; tray.push(pts === 2 ? '#e9b45c' : pts === 1 ? '#d99a45' : (k > zoneAt ? '#6b4b35' : '#f3e2b8'));
+    result = pts === 2 ? '完美！' : pts === 1 ? '還不錯' : (k > zoneAt ? '烤焦了…' : '還沒熟');
+    resultAt = performance.now();
+    Sound.play(pts === 2 ? 'perfect' : pts === 1 ? 'coin' : 'miss');
+    status();
+    setTimeout(() => { if (!ended) next(); }, 700);
+  };
+  c.addEventListener('pointerdown', take);
+  status();
+  function finish() {
+    if (ended) return;
+    ended = true;
+    const bells = payReward(w, score * 10 * L.mul);
+    w.status.textContent = `烤好 ${tray.length} 片，得到 ${score} 分！💰 +${fmt(bells)}`;
+    toast(`🍪 烤餅乾 ${score} 分，拿到 💰 ${fmt(bells)}`);
+    gameButtons(w, () => pickLevelRow(w, BAKE_LEVELS, L2 => `一片 💰 ${20 * L2.mul}`, L2 => playBake(w, L2)));
+  }
+  openBakeGame.test = { finish, take, setK: v => { k = v; }, zone: () => [zoneAt, zoneAt + L.zone], score: () => score, round: () => round, level: L };
+  (function frame(now) {
+    now = now || performance.now();
+    const dt = Math.max(0, Math.min(.05, (now - last) / 1000)); last = now;
+    if (!ended && !result) { k += L.speed * dt; if (k >= 1) take(); }
+    g.clearRect(0, 0, W, H);
+    g.fillStyle = '#f6efe2'; g.fillRect(0, 0, W, H);
+    // 烤箱
+    g.fillStyle = '#9aa3ad'; g.fillRect(70, 30, 180, 140); g.fillStyle = '#3a3240'; g.fillRect(85, 45, 150, 110);
+    g.fillStyle = `rgba(255,160,60,${.25 + k * .4})`; g.fillRect(85, 45, 150, 110);
+    // 餅乾（顏色跟著烤的程度變）
+    const col = k < zoneAt ? `rgb(${243 - k * 20},${226 - k * 60},${184 - k * 120})` : k < zoneAt + L.zone ? '#e9b45c' : `rgb(${Math.max(90, 233 - (k - zoneAt) * 400)},${Math.max(60, 180 - (k - zoneAt) * 330)},${Math.max(40, 92 - (k - zoneAt) * 150)})`;
+    g.fillStyle = col; g.beginPath(); g.arc(160, 100, 34, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#5a3a22'; [[-12, -8], [10, -12], [0, 8], [14, 10], [-14, 12]].forEach(([dx, dy]) => { g.beginPath(); g.arc(160 + dx, 100 + dy, 3.5, 0, Math.PI * 2); g.fill(); });
+    // 進度條：綠色是金黃色的時候
+    g.fillStyle = '#e4d8c3'; g.fillRect(40, 190, 240, 22);
+    g.fillStyle = '#7bd389'; g.fillRect(40 + zoneAt * 240, 190, L.zone * 240, 22);
+    g.fillStyle = '#e8505b'; g.fillRect(40 + Math.min(1, k) * 240 - 2, 184, 4, 34);
+    // 烤好的放盤子
+    tray.forEach((cl, i) => { g.fillStyle = cl; g.beginPath(); g.arc(50 + i * 31, 255, 13, 0, Math.PI * 2); g.fill(); });
+    if (result && performance.now() - resultAt < 700) { g.fillStyle = '#4a3b2a'; g.font = 'bold 22px sans-serif'; g.textAlign = 'center'; g.fillText(result, 160, 24); }
+    raf = requestAnimationFrame(frame);
+  })();
+}
+
+// ── 🧁 杯子蛋糕店：客人想要什麼，就點一樣的奶油和裝飾 ──
+const CUPCAKE_CREAMS = [['#ffb3c7', '草莓'], ['#fff5e6', '香草'], ['#8a5a33', '巧克力'], ['#b8ecd7', '薄荷']];
+const CUPCAKE_TOPS = ['🍓', '🍒', '⭐', '🫐'];
+const CUPCAKE_LEVELS = [
+  { name: '慢慢來', sec: 45, n: 2, mul: 1 },
+  { name: '普通',   sec: 45, n: 3, mul: 2 },
+  { name: '好忙！', sec: 40, n: 4, mul: 3 }
+];
+function openCupcakeGame() {
+  const w = openGameWindow('🧁 杯子蛋糕店', '看客人想要的杯子蛋糕，先點一樣顏色的奶油，再點一樣的裝飾，做好就給客人！');
+  pickLevelRow(w, CUPCAKE_LEVELS, L => `一個 💰 ${25 * L.mul}`, L => playCupcake(w, L));
+}
+function playCupcake(w, L) {
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const W = 320, H = 340, { c, g, pos } = gameCanvas(w.stage, W, H);
+  let want = null, cream = null, top = null, made = 0, left = L.sec, ended = false, raf = 0, happyAt = 0, oopsAt = 0;
+  const newOrder = () => { want = { cream: Math.floor(Math.random() * L.n), top: Math.floor(Math.random() * L.n) }; cream = null; top = null; };
+  newOrder();
+  const tick = setInterval(() => { if (ended) return; left--; status(); if (left <= 0) finish(); }, 1000);
+  gameCleanup = () => { cancelAnimationFrame(raf); clearInterval(tick); };
+  const status = () => { w.status.textContent = `${L.name}　還有 ${left} 秒　做好 ${made} 個`; };
+  status();
+  const btnX = i => 160 + (i - (L.n - 1) / 2) * 70;
+  const pick = (kind, i) => {
+    if (ended) return;
+    if (kind === 'cream') { cream = i; top = null; Sound.play('click'); return; }
+    if (cream == null) return;
+    top = i;
+    if (cream === want.cream && top === want.top) { made++; happyAt = performance.now(); Sound.play('coin'); status(); setTimeout(() => { if (!ended) newOrder(); }, 500); }
+    else { oopsAt = performance.now(); Sound.play('miss'); setTimeout(() => { if (!ended) { cream = null; top = null; } }, 400); }
+  };
+  c.addEventListener('pointerdown', e => {
+    const p = pos(e);
+    for (let i = 0; i < L.n; i++) {
+      if (Math.hypot(p.x - btnX(i), p.y - 250) < 26) return pick('cream', i);
+      if (Math.hypot(p.x - btnX(i), p.y - 308) < 26) return pick('top', i);
+    }
+  });
+  function finish() {
+    if (ended) return;
+    ended = true; clearInterval(tick);
+    const bells = payReward(w, made * 25 * L.mul);
+    w.status.textContent = `做好 ${made} 個杯子蛋糕！💰 +${fmt(bells)}`;
+    toast(`🧁 做好 ${made} 個，拿到 💰 ${fmt(bells)}`);
+    gameButtons(w, () => pickLevelRow(w, CUPCAKE_LEVELS, L2 => `一個 💰 ${25 * L2.mul}`, L2 => playCupcake(w, L2)));
+  }
+  openCupcakeGame.test = { finish, pick, want: () => want, made: () => made, level: L };
+  const drawCupcake = (x, y, s, cr, tp) => {
+    g.fillStyle = '#ff9ec4'; g.beginPath(); g.moveTo(x - 20 * s, y); g.lineTo(x + 20 * s, y); g.lineTo(x + 14 * s, y + 26 * s); g.lineTo(x - 14 * s, y + 26 * s); g.closePath(); g.fill();
+    if (cr != null) { g.fillStyle = CUPCAKE_CREAMS[cr][0]; [[-12, -2, 12], [12, -2, 12], [0, -10, 14], [0, -22, 9]].forEach(([dx, dy, r]) => { g.beginPath(); g.arc(x + dx * s, y + dy * s, r * s, 0, Math.PI * 2); g.fill(); }); }
+    if (tp != null) { g.font = `${Math.round(18 * s)}px sans-serif`; g.textAlign = 'center'; g.fillText(CUPCAKE_TOPS[tp], x, y - 26 * s); }
+  };
+  (function frame() {
+    const now = performance.now();
+    g.clearRect(0, 0, W, H);
+    g.fillStyle = '#fff4f7'; g.fillRect(0, 0, W, H);
+    // 客人（想要的放在對話框裡）
+    g.fillStyle = '#ffd1e0'; g.beginPath(); g.arc(50, 70, 26, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#4a2f35'; g.beginPath(); g.arc(42, 66, 3, 0, Math.PI * 2); g.arc(58, 66, 3, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#4a2f35'; g.lineWidth = 2; g.beginPath(); g.arc(50, 74, 7, now - happyAt < 600 ? 0 : Math.PI * .15, now - happyAt < 600 ? Math.PI : Math.PI * .85); g.stroke();
+    g.fillStyle = '#fff'; g.strokeStyle = '#e5aec2'; g.beginPath(); g.ellipse(170, 60, 70, 46, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+    if (want) drawCupcake(170, 58, .9, want.cream, want.top);
+    // 正在做的
+    g.fillStyle = now - oopsAt < 400 ? '#ffe0e0' : '#fffaf0'; g.fillRect(110, 120, 100, 90);
+    drawCupcake(160, 165, 1, cream, top);
+    // 奶油、裝飾按鈕
+    for (let i = 0; i < L.n; i++) {
+      g.fillStyle = CUPCAKE_CREAMS[i][0]; g.strokeStyle = cream === i ? '#e8505b' : '#d8c8b8'; g.lineWidth = 3;
+      g.beginPath(); g.arc(btnX(i), 250, 22, 0, Math.PI * 2); g.fill(); g.stroke();
+      g.fillStyle = '#fff'; g.strokeStyle = '#d8c8b8'; g.lineWidth = 2;
+      g.beginPath(); g.arc(btnX(i), 308, 22, 0, Math.PI * 2); g.fill(); g.stroke();
+      g.font = '22px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#000'; g.fillText(CUPCAKE_TOPS[i], btnX(i), 309); g.textBaseline = 'alphabetic';
+    }
+    raf = requestAnimationFrame(frame);
+  })();
+}
+
 const COIN_LEVELS = [
   { name: '慢慢來', sec: 30, fall: 90,  gap: 900, bomb: .12, mul: 1 },
   { name: '普通',   sec: 30, fall: 140, gap: 700, bomb: .18, mul: 2 },

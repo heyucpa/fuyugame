@@ -579,10 +579,10 @@
     var sv = document.querySelector('#tabBody').textContent;
     if (sv.indexOf('強制更新') < 0) fails.push('設定分頁沒有「強制更新」');
     if (sv.indexOf('這一份的日期') < 0) fails.push('設定分頁沒有顯示版本日期');
-    // 十個小遊戲都要在清單上，而且每一顆都叫得出對應的函式
+    // 十三個小遊戲都要在清單上（116.10 加了撈金魚、烤餅乾、杯子蛋糕店）
     openTab('earn');
     var picks = document.querySelectorAll('.game-pick');
-    if (picks.length !== 10) fails.push('小遊戲清單有 ' + picks.length + ' 個，應該是 10 個');
+    if (picks.length !== 13) fails.push('小遊戲清單有 ' + picks.length + ' 個，應該是 13 個');
     ['拼圖', '接金幣', '彈珠台'].forEach(function(nm){
       if (![].slice.call(picks).some(function(b){ return b.textContent.indexOf(nm) >= 0; }))
         fails.push('小遊戲清單裡找不到「' + nm + '」');
@@ -2553,6 +2553,52 @@
       if (!(full > countFills(Object.assign({}, sp, { sparkle: false })))) fails.push(sp.name + ' 沒有一閃一閃的星星');
     });
 
+    /* 83 新的賺錢小遊戲：撈金魚、烤餅乾、杯子蛋糕店（在賺錢分頁、選難度、玩得到錢、可以離開） */
+    var realToast19 = toast; toast = function(){};
+    var bells19 = G.bells;
+    try {
+      openTab('earn');
+      ['撈金魚', '烤餅乾', '杯子蛋糕店'].forEach(function(nm){ if (![].some.call(document.querySelectorAll('#tabBody .game-pick'), function(b){ return b.textContent.indexOf(nm) >= 0; })) fails.push('賺錢分頁沒有「' + nm + '」'); });
+      var lvClick = function(i){ var b = document.querySelectorAll('#modalCard .lv-btn')[i || 0]; if (b) b.onclick(); return !!b; };
+      // 🐠
+      openScoopGame();
+      if (!/不想玩了/.test($('#modalCard').textContent)) fails.push('撈金魚選難度時不能離開');
+      lvClick(1);
+      var T1 = openScoopGame.test, f1 = T1.fish();
+      if (f1.length < 5) fails.push('撈金魚的魚太少（' + f1.length + '）');
+      f1[0].gold = true; T1.scoop(f1[0]); var f2 = T1.fish()[0]; f2.gold = false; T1.scoop(f2);
+      if (T1.got() !== 4) fails.push('撈金魚：撈一隻金魚＋一隻普通的不是 4 隻（' + T1.got() + '）');
+      var b1 = G.bells; T1.finish();
+      if (G.bells - b1 !== 4 * 15 * T1.level.mul) fails.push('撈金魚的錢不對（' + (G.bells - b1) + '）');
+      closeGameWindow();
+      // 🍪
+      openBakeGame(); lvClick(0);
+      var T2 = openBakeGame.test, z = T2.zone();
+      T2.setK((z[0] + z[1]) / 2); T2.take();
+      if (T2.score() !== 2) fails.push('烤餅乾：剛好金黃色拿出來不是 2 分（' + T2.score() + '）');
+      T2.take();
+      if (T2.score() !== 2) fails.push('烤餅乾：同一片拿兩次算了兩次分');
+      var b2 = G.bells; T2.finish();
+      if (G.bells - b2 !== 2 * 10 * T2.level.mul) fails.push('烤餅乾的錢不對（' + (G.bells - b2) + '）');
+      closeGameWindow();
+      openBakeGame(); lvClick(0); var T3 = openBakeGame.test; T3.setK(.99); T3.take();
+      if (T3.score() !== 0) fails.push('烤餅乾：烤焦了還有分');
+      closeGameWindow();
+      // 🧁
+      openCupcakeGame(); lvClick(2);
+      var T4 = openCupcakeGame.test, wnt = T4.want();
+      T4.pick('top', wnt.top);
+      if (T4.made() !== 0) fails.push('杯子蛋糕：還沒擠奶油就算做好了');
+      T4.pick('cream', (wnt.cream + 1) % T4.level.n); T4.pick('top', wnt.top);
+      if (T4.made() !== 0) fails.push('杯子蛋糕：奶油顏色錯了也算做好');
+      T4.pick('cream', wnt.cream); T4.pick('top', wnt.top);
+      if (T4.made() !== 1) fails.push('杯子蛋糕：做對了沒有算');
+      var b4 = G.bells; T4.finish();
+      if (G.bells - b4 !== 25 * T4.level.mul) fails.push('杯子蛋糕的錢不對（' + (G.bells - b4) + '）');
+      closeGameWindow();
+    } catch (e) { fails.push('新的小遊戲出錯：' + e.message); }
+    finally { toast = realToast19; closeGameWindow(); G.bells = bells19; saveGame(); openTab('inv'); }
+
     /* 82 小主題第二批：空房間做不到、照說明布置就做得到 */
     var keepG18 = JSON.stringify(G);
     try {
@@ -2904,7 +2950,8 @@
       if (lst.join() !== '1,3') fails.push('寵物屋裡的寵物不對（應該是沒照顧、沒一起逛的，含蛋）：' + lst.join());
       var nowP = performance.now();
       for (var pf = 0; pf < 120; pf++) gameStep(1 / 60, nowP + pf * 17);
-      if (phDrawEntries().length !== 2) fails.push('寵物屋裡的寵物沒有畫出來（' + phDrawEntries().length + '）');
+      var shown69 = phDrawEntries().length + phOccupants().length;   // 睡在床上的是跟床一起畫
+      if (shown69 !== 2) fails.push('寵物屋裡的寵物沒有畫出來（' + shown69 + '）');
       var eggA = phActor(3), ex = eggA.x, ey = eggA.y;
       for (var pf2 = 0; pf2 < 600; pf2++) gameStep(1 / 60, nowP + 3000 + pf2 * 17);
       if (eggA.x !== ex || eggA.y !== ey) fails.push('寵物屋裡的蛋自己走來走去');
