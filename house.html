@@ -1170,9 +1170,13 @@ const FURN_KINDS = [
   { id: 'bath',  icon: '🚿', name: '衛浴' },
   { id: 'wall',  icon: '🖼️', name: '牆上' },
   { id: 'pet',   icon: '🐾', name: '寵物' },
+  { id: 'desk',  icon: '🌷', name: '桌上' },   // 放在桌上的小東西
   { id: 'deco',  icon: '🏮', name: '佈置' }
 ];
 const FURN_KIND_OF = {
+  // 桌上小物
+  flower_vase: 'desk', photo_frame: 'desk', aroma_candle: 'desk', alarm_clock: 'desk', small_cake: 'desk',
+  tea_set: 'desk', book_stack: 'desk', pencil_cup: 'desk', snow_globe: 'desk', music_box: 'desk',
   // 睡覺
   wood_bed: 'sleep', cute_bed: 'sleep', lemon_bed: 'sleep',
   nightstand: 'sleep', pink_nightstand: 'sleep', lemon_nightstand: 'sleep',
@@ -2555,7 +2559,9 @@ const TABLE_TOPS = ['wood_table', 'cute_table', 'lemon_table', 'dining_table',
                     'dresser', 'cupboard', 'kitchen'];
 // 適合放桌上的小東西：本來就是 1×1，單獨佔一格地板反而奇怪
 const ON_TABLE = ['game_cart', 'mini_figure', 'comic_book', 'robot_toy',
-                  'plant_s', 'cactus', 'fishtank', 'globe'];
+                  'plant_s', 'cactus', 'fishtank', 'globe',
+                  // 桌上小物（DESK_TOYS；這裡比它早，所以直接寫名字）
+                  'flower_vase', 'photo_frame', 'aroma_candle', 'alarm_clock', 'small_cake', 'tea_set', 'book_stack', 'pencil_cup', 'snow_globe', 'music_box'];
 const canHaveTop = id => TABLE_TOPS.indexOf(id) >= 0;
 const canSitOnTable = id => ON_TABLE.indexOf(id) >= 0;
 
@@ -2870,10 +2876,20 @@ function renderThumb(def, size) {
     def.draw(ctx, w, h);
     return c;
   }
-  const W = (def.w + def.d) * TW / 2, H = (def.w + def.d) * TH / 2 + itemHeight(def);
+  /* 很小的東西（桌上小物、小公仔…）只佔格子中間一點點，照格子大小縮會小到看不清楚：
+     改成照「零件實際的範圍」放大。一般家具的零件幾乎填滿格子，維持原本的縮圖。 */
+  let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+  def.parts.forEach(p => {
+    const r = p.k === 'ball' ? p.r / 32 : 0;
+    x0 = Math.min(x0, p.x - r); x1 = Math.max(x1, p.x + (p.w || 0) + r);
+    y0 = Math.min(y0, p.y - r); y1 = Math.max(y1, p.y + (p.d || 0) + r);
+  });
+  const small = def.parts.length && x1 - x0 < def.w * .7 && y1 - y0 < def.d * .7;
+  const bw = small ? x1 - x0 : def.w, bd = small ? y1 - y0 : def.d, cx = small ? (x0 + x1) / 2 : def.w / 2, cy = small ? (y0 + y1) / 2 : def.d / 2;
+  const W = (bw + bd) * TW / 2, H = (bw + bd) * TH / 2 + itemHeight(def);
   const s = Math.min(size / (W + 8), size / (H + 8)) * dpr;
-  ctx.setTransform(s, 0, 0, s, c.width / 2 - ((def.w - def.d) * TW / 4) * s,
-    c.height / 2 + (itemHeight(def) / 2 - (def.w + def.d) * TH / 4) * s);
+  const pc = iso(cx, cy, itemHeight(def) / 2);
+  ctx.setTransform(s, 0, 0, s, c.width / 2 - pc.x * s, c.height / 2 - pc.y * s);
   drawItem(ctx, def, 0, 0, 0);
   return c;
 }
@@ -2941,6 +2957,50 @@ const LEMON = { // 原木→檸檬黃
       id: id, name: name, price: price, theme: 'cute', parts: recolor(b.parts, map) }));
   });
 })();
+
+/* ===== 桌上小物（116.10）=====
+   書桌、床頭櫃、梳妝台可以放的小東西，商店買得到，放上去房間更像「自己的房間」。
+   都是 1×1、做得很小，放桌上時自動擺在桌子中央。價格寫原價，下面統一打四折。
+   音樂盒、雪花球放在桌上還可以玩：點桌子就有「聽音樂盒」「搖一搖」。 */
+FURNITURE.push(
+  { id: 'flower_vase', name: '小花瓶', price: 500, theme: 'cute', w: 1, d: 1, parts: [
+    { x: .42, y: .42, w: .16, d: .16, z: 0, h: 10, c: '#6bb6ff' },
+    { x: .49, y: .49, w: .02, d: .02, z: 10, h: 7, c: '#4f9150' }, { x: .44, y: .5, w: .02, d: .02, z: 10, h: 5, c: '#4f9150' },
+    { k: 'ball', x: .5, y: .5, z: 19, r: 3, c: '#ff8fb1' }, { k: 'ball', x: .44, y: .52, z: 16, r: 2.6, c: '#ffd35c' }, { k: 'ball', x: .56, y: .47, z: 16, r: 2.6, c: '#ffffff' }] },
+  { id: 'photo_frame', name: '小相框', price: 500, theme: 'wood', w: 1, d: 1, parts: [
+    { x: .36, y: .46, w: .28, d: .06, z: 0, h: 13, c: '#c9925a' },
+    { x: .39, y: .515, w: .22, d: .01, z: 2, h: 9, c: '#bfe6f2' },
+    { k: 'ball', x: .5, y: .53, z: 7, r: 2, c: '#ff9ec4' }] },
+  { id: 'aroma_candle', name: '香氛蠟燭', price: 400, theme: 'cute', w: 1, d: 1, parts: [
+    { x: .42, y: .42, w: .16, d: .16, z: 0, h: 8, c: '#fff1c2' }, { x: .42, y: .42, w: .16, d: .16, z: 3, h: 2, c: '#ff9ec4' },
+    { x: .495, y: .495, w: .01, d: .01, z: 8, h: 2, c: '#3a3240' }, { k: 'ball', x: .5, y: .5, z: 12, r: 1.8, c: '#ffb347', fire: true }] },
+  { id: 'alarm_clock', name: '小鬧鐘', price: 600, theme: 'cute', w: 1, d: 1, parts: [
+    { x: .38, y: .44, w: .24, d: .12, z: 0, h: 11, c: '#e8505b' }, { x: .41, y: .555, w: .18, d: .01, z: 2, h: 7, c: '#ffffff' },
+    { k: 'ball', x: .4, y: .5, z: 13, r: 2.4, c: '#ffd35c' }, { k: 'ball', x: .6, y: .5, z: 13, r: 2.4, c: '#ffd35c' }] },
+  { id: 'small_cake', name: '小蛋糕', price: 500, theme: 'cute', w: 1, d: 1, parts: [
+    { x: .36, y: .36, w: .28, d: .28, z: 0, h: 1, c: '#ffffff' }, { x: .39, y: .39, w: .22, d: .22, z: 1, h: 7, c: '#fff4e6' },
+    { x: .39, y: .39, w: .22, d: .22, z: 8, h: 2, c: '#ff9ec4' }, { k: 'ball', x: .5, y: .5, z: 12, r: 2, c: '#e8505b' }] },
+  { id: 'tea_set', name: '茶具組', price: 800, theme: 'wood', w: 1, d: 1, parts: [
+    { x: .3, y: .3, w: .4, d: .4, z: 0, h: 1, c: '#c9925a' },
+    { k: 'ball', x: .44, y: .44, z: 6, r: 5, c: '#ffffff' }, { x: .52, y: .42, w: .1, d: .04, z: 6, h: 2, c: '#ffffff' },
+    { k: 'ball', x: .44, y: .44, z: 11.5, r: 1.6, c: '#6bb6ff' },
+    { x: .58, y: .58, w: .08, d: .08, z: 1, h: 3.5, c: '#ffffff' }] },
+  { id: 'book_stack', name: '一疊書', price: 400, theme: 'wood', w: 1, d: 1, parts: [
+    { x: .34, y: .38, w: .32, d: .24, z: 0, h: 3, c: '#3f8ee0' }, { x: .36, y: .36, w: .3, d: .24, z: 3, h: 3, c: '#e8505b' },
+    { x: .35, y: .4, w: .28, d: .22, z: 6, h: 3, c: '#7bd389' }, { x: .37, y: .38, w: .26, d: .22, z: 9, h: 2.5, c: '#ffd35c' }] },
+  { id: 'pencil_cup', name: '筆筒', price: 300, theme: 'modern', w: 1, d: 1, parts: [
+    { x: .43, y: .43, w: .14, d: .14, z: 0, h: 9, c: '#7bd389' },
+    { x: .45, y: .46, w: .02, d: .02, z: 9, h: 6, c: '#e8505b' }, { x: .5, y: .48, w: .02, d: .02, z: 9, h: 8, c: '#3f8ee0' },
+    { x: .53, y: .5, w: .02, d: .02, z: 9, h: 5, c: '#ffd35c' }] },
+  { id: 'snow_globe', name: '雪花球', price: 900, theme: 'cute', w: 1, d: 1, parts: [
+    { x: .4, y: .4, w: .2, d: .2, z: 0, h: 4, c: '#8a5a33' },
+    { k: 'ball', x: .5, y: .5, z: 10, r: 6.5, c: '#d9f1ff', a: .75 },
+    { k: 'ball', x: .5, y: .5, z: 8, r: 2.6, c: '#5fa15a' }, { k: 'ball', x: .47, y: .5, z: 13, r: 1, c: '#ffffff' }] },
+  { id: 'music_box', name: '音樂盒', price: 1200, theme: 'cute', w: 1, d: 1, parts: [
+    { x: .34, y: .38, w: .32, d: .24, z: 0, h: 7, c: '#b18cff' }, { x: .34, y: .36, w: .32, d: .04, z: 7, h: 10, c: '#d8c8ff' },
+    { x: .49, y: .49, w: .02, d: .02, z: 7, h: 4, c: '#ffd35c' }, { k: 'ball', x: .5, y: .5, z: 13, r: 2.2, c: '#ff9ec4' }] }
+);
+const DESK_TOYS = ['flower_vase', 'photo_frame', 'aroma_candle', 'alarm_clock', 'small_cake', 'tea_set', 'book_stack', 'pencil_cup', 'snow_globe', 'music_box'];
 
 /* ===== 價格打四折 =====
    原本全部買齊（四間房擴建到最大＋每樣東西一個）要 45 萬，開局只有 10 萬，
@@ -3085,6 +3145,11 @@ const START_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-04T12:00', title: '商店來了新東西！', lines: [
+    ['🌷', '桌上小物：小花瓶、相框、蠟燭、鬧鐘、小蛋糕、茶具、書、筆筒'],
+    ['🎵', '音樂盒放在桌上可以聽音樂'],
+    ['❄️', '雪花球放在桌上可以搖一搖']
+  ], newItems: ['flower_vase', 'photo_frame', 'aroma_candle', 'alarm_clock', 'small_cake', 'tea_set', 'book_stack', 'pencil_cup', 'snow_globe', 'music_box'] },
   { id: '2026-10-04-2', title: '小屋又更新了！', lines: [
     ['🛝', '溜滑梯、鞦韆真的可以玩了！沙坑會蓋沙堡'],
     ['💡', '可以玩的東西會冒出小圖示，點點看'],
@@ -4788,6 +4853,10 @@ function itemLook(def, rot, it, parts) {
     if (left > .2) extra.push({ x: 1.15, y: 1.05, w: .3, d: .22, z: 1.5, h: 6 * left + 1, c: '#ffffff' }, { x: 1.15, y: 1.05, w: .3, d: .22, z: 7.5 * left + 2.5, h: 1, c: '#e8505b' });
     if (left > .5) extra.push({ k: 'ball', x: .6, y: 1.4, z: 4, r: 3, c: '#c58b62' }, { k: 'ball', x: .78, y: 1.5, z: 4, r: 3, c: '#c58b62' });
     extra.push(...puffs(2, t, .8, (ph, i) => ({ k: 'ball', x: .9 + i * .3, y: .9, z: 12 + ph * 20, r: 2.5, c: '#ff9ec4', a: 1 - ph })));
+  }
+  if (st && st.snowUntil > now && it.top === 'snow_globe') { // 雪花球搖過：雪花在桌上飄
+    const h = itemHeight(def) + 4, k = (st.snowUntil - now) / 4000;
+    extra.push(...puffs(5, t, .9, (ph, i) => ({ k: 'ball', x: def.w / 2 - .12 + (i % 3) * .12, y: def.d / 2, z: h + 14 - ph * 12, r: 1.2, c: '#ffffff', a: k * (1 - ph * .5) })));
   }
   if (st && st.paint && def.id === 'easel') // 畫布上一筆一筆多出顏色
     for (let i = 0; i < st.paint; i++) extra.push({ x: .2 + (i * .37) % .5, y: .52, w: .14, d: .01, z: 28 + (i * 11) % 28, h: 6, c: SCREEN_COLORS[i % SCREEN_COLORS.length] });
@@ -7748,6 +7817,20 @@ function showKidMenu(e) {
     ['📖 去念書', () => fufuGoFind('study')]
   ], e);
 }
+// 桌上的音樂盒：叮叮咚咚一小段旋律；雪花球：搖一搖，雪花飄起來
+const MUSIC_BOX_TUNE = [2, 1, 0, 1, 2, 2, 2, 1, 1, 1, 2, 3, 3];
+function playMusicBox(it) {
+  MUSIC_BOX_TUNE.forEach((n, i) => setTimeout(() => { Sound.play('note', n); if (i % 3 === 0) fufuBurst('🎵'); }, i * 330));
+  stateOf(it.uid).tapAt = performance.now();
+  fufuSay('好好聽的音樂～', 3000);
+  return MUSIC_BOX_TUNE.length;
+}
+function shakeSnowGlobe(it) {
+  const st = stateOf(it.uid);
+  st.snowUntil = performance.now() + 4000; st.tapAt = performance.now();
+  Sound.play('bath');
+  fufuSay('雪花飄起來了！', 2600);
+}
 function showItemMenu(it, e) {
   stateOf(it.uid).tapAt = performance.now(); // 點到的家具輕輕跳一下，知道有點到
   Sound.play('click');
@@ -7766,6 +7849,8 @@ function showItemMenu(it, e) {
   if (canHaveTop(it.id)) {
     if (it.top) {
       const tdef = FURN_BY_ID[it.top];
+      if (it.top === 'music_box') add('🎵 聽音樂盒', () => playMusicBox(it));
+      if (it.top === 'snow_globe') add('❄️ 搖一搖雪花球', () => shakeSnowGlobe(it));
       add(`⬇️ 把${tdef ? tdef.name : '桌上的東西'}收起來`, () => {
         snapUndo();
         if (it.top) addItem(it.top);

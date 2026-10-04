@@ -1326,6 +1326,46 @@
       fails.push('蝴蝶相簿顯示不對');
     var md8 = document.querySelector('#modal'); if (md8) md8.hidden = true;
 
+    /* 57 桌上小物：商店買得到、可以放上桌、音樂盒會唱歌、雪花球會飄雪、縮圖看得清楚 */
+    DESK_TOYS.forEach(function(id){
+      var d = FURN_BY_ID[id];
+      if (!d) { fails.push('沒有 ' + id); return; }
+      if (d.gift || !FURNITURE.some(function(f){ return f.id === id; })) fails.push(d.name + ' 商店買不到');
+      if (!canSitOnTable(id)) fails.push(d.name + ' 不能放上桌');
+      if (furnKind(id) !== 'desk') fails.push(d.name + ' 不在「桌上」分類');
+      if (!(d.price > 0 && d.price <= 500 && d.price % 50 === 0)) fails.push(d.name + ' 的價格怪怪的：' + d.price);
+    });
+    shopKind = 'desk'; shopTheme = 'all'; G.away = null; openTab('shop');
+    var deskCards = document.querySelectorAll('#tabBody .grid .card');
+    if (deskCards.length !== DESK_TOYS.length) fails.push('商店「桌上」不是 ' + DESK_TOYS.length + ' 樣（' + deskCards.length + '）');
+    shopKind = 'all';
+    // 縮圖：小東西要放大到看得清楚（有畫到的像素夠多）
+    var inked = function(def){ var c5 = renderThumb(def, 64), d5 = c5.getContext('2d').getImageData(0, 0, c5.width, c5.height).data, n5 = 0; for (var q5 = 3; q5 < d5.length; q5 += 4) if (d5[q5] > 0) n5++; return n5 / (c5.width * c5.height); };
+    DESK_TOYS.forEach(function(id){ var r5 = inked(FURN_BY_ID[id]); if (r5 < .12) fails.push(FURN_BY_ID[id].name + ' 的縮圖太小，看不清楚（' + Math.round(r5 * 100) + '%）'); });
+    if (Math.abs(inked(FURN_BY_ID.wood_bed) - inked(FURN_BY_ID.wood_bed)) > 0) fails.push('縮圖不穩定');
+    // 放上桌、音樂盒、雪花球
+    var dr = G.rooms[G.cur], keepIt = dr.items, deskIt = { uid: 99701, id: 'desk', x: 0, y: 0, rot: 0 };
+    dr.items = [deskIt];
+    G.inv.music_box = 1;
+    openTopPicker(deskIt);
+    var mbCard = [].filter.call(document.querySelectorAll('#modalCard .card'), function(c){ return /音樂盒/.test(c.textContent); })[0];
+    if (!mbCard) fails.push('放桌上的選單裡沒有音樂盒');
+    else { mbCard.onclick(); if (deskIt.top !== 'music_box') fails.push('音樂盒放不上桌'); }
+    var menuOf = function(it){ var lbls = [], realAdd = null; var real = openMenu; openMenu = function(entries){ lbls = entries.map(function(e){ return e[0]; }); }; try { showItemMenu(it, { clientX: 5, clientY: 5 }); } finally { openMenu = real; } return lbls.join('|'); };
+    if (!/聽音樂盒/.test(menuOf(deskIt))) fails.push('桌上有音樂盒，點桌子沒有「聽音樂盒」');
+    var notes = 0, realPlay2 = Sound.play, realST2 = window.setTimeout;
+    Sound.play = function(n){ if (n === 'note') notes++; };
+    window.setTimeout = function(f){ f(); return 0; };
+    try { playMusicBox(deskIt); } finally { Sound.play = realPlay2; window.setTimeout = realST2; }
+    if (notes < 8) fails.push('音樂盒只響了 ' + notes + ' 個音（要一小段旋律）');
+    deskIt.top = 'snow_globe';
+    if (!/搖一搖/.test(menuOf(deskIt))) fails.push('桌上有雪花球，點桌子沒有「搖一搖」');
+    var dDef = FURN_BY_ID.desk, nBefore5 = itemLook(dDef, 0, deskIt, getParts(dDef, 0)).length;
+    shakeSnowGlobe(deskIt);
+    if (!(itemLook(dDef, 0, deskIt, getParts(dDef, 0)).length > nBefore5)) fails.push('搖了雪花球沒有飄雪');
+    stateOf(deskIt.uid).snowUntil = 0;
+    dr.items = keepIt; delete G.inv.music_box; $('#modal').hidden = true; hideItemMenu();
+
     /* 56 圖書館照照片改：壁畫、矮書櫃、紅圓桌＋藍地毯、蛋形座椅、踏凳、平板閱讀桌、兔子立牌、展示板；
        平板看電子書、館員說故事（一打開就念）；外觀照照片畫但不寫字 */
     var LR = PLACES.library.rooms[0];
