@@ -548,7 +548,8 @@ button.pass { font: inherit; }
 .news-hist { border: 2px solid var(--line); border-radius: 14px; background: #fff; margin-bottom: 8px; }
 .news-hist > summary { cursor: pointer; padding: 10px 12px; font-weight: 700; font-size: 16px; list-style: none; display: flex; align-items: center; gap: 8px; }
 .news-hist > summary::-webkit-details-marker { display: none; }
-.news-hist > summary .nh-when { margin-left: auto; font-weight: 400; font-size: 13px; color: var(--muted); }
+.news-hist > summary .nh-ics { font-weight: 400; letter-spacing: 1px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; min-width: 0; flex: 1; }
+.news-hist > summary .nh-when { flex: none;  margin-left: auto; font-weight: 400; font-size: 13px; color: var(--muted); }
 .news-hist > summary::after { content: '▼'; font-size: 12px; color: var(--muted); }
 .news-hist[open] > summary::after { content: '▲'; }
 .news-hist .news { padding: 0 10px 10px; }
@@ -3619,9 +3620,9 @@ const NEWS = [
   ], newItems: ['flower_vase', 'photo_frame', 'aroma_candle', 'alarm_clock', 'small_cake', 'tea_set', 'book_stack', 'pencil_cup', 'snow_globe', 'music_box'] },
   { id: '2026-10-04-2', title: '小屋又更新了！', lines: [
     ['🛝', '溜滑梯、鞦韆真的可以玩了！沙坑會蓋沙堡'],
-    ['💡', '可以玩的東西會冒出小圖示，點點看'],
+    ['💡', '可以玩的東西會冒出小圖示，點點看', 'info'],
     ['🔊', '繪本可以聽故事了'],
-    ['⭐', '小遊戲的星星越多越難，綠框的最簡單'],
+    ['⭐', '小遊戲的星星越多越難，綠框的最簡單', 'info'],
     ['🦋', '公園有蝴蝶在飛、魚會跳出水面'],
     ['💬', '叔叔、阿婆、老師都會記得你上次做了什麼'],
     ['🐾', '每隻寵物有自己的個性'],
@@ -3630,9 +3631,9 @@ const NEWS = [
   { id: '2026-10-04', title: '小屋更新了！', lines: [
     ['🏫', '可以去學校、公園、圖書館玩了！點上面的「🚗 出門」'],
     ['🐮', '阿婆家的小農場會有動物跑來玩，收集動物圖鑑'],
-    ['🏷️', '東西都變便宜了！'],
+    ['🏷️', '東西都變便宜了！', 'info'],
     ['📖', '圖鑑可以看到所有收集'],
-    ['😴', '玩一陣子要休息一下，眼睛才不會累喔']
+    ['😴', '玩一陣子要休息一下，眼睛才不會累喔', 'info']
   ], newItems: [] }
 ];
 const NEWS_FRESH_DAYS = 14;
@@ -3667,7 +3668,10 @@ function openNews(list) {
   Sound.play('coin');
 }
 /* 📜 更新紀錄（家長：公告跳太快來不及看，想知道上次、上上次更新了什麼）。
-   每一次更新一張卡，最新的打開、其他收起來，點標題打開。🔊 可以念給妹妹聽。 */
+   每一次更新一張卡，最新的打開、其他收起來，點標題打開。🔊 可以念給妹妹聽。
+   只列最近 10 次；內容只放「新增了什麼好玩的」——公告裡的說明、提醒（標了 'info' 的那幾行）不列。 */
+const NEWS_HIST_MAX = 10;
+const newsFunLines = n => n.lines.filter(l => l[2] !== 'info');
 function newsWhen(n) {
   const id = n.id.replace(/^(\d{4}-\d\d-\d\d)-\d+$/, '$1');   // 同一天第二次：2026-10-04-2
   const d = new Date(id.length === 10 ? id + 'T00:00' : id);
@@ -3681,17 +3685,21 @@ function openNewsHistory() {
   x.onclick = () => { $('#modal').hidden = true; };
   card.appendChild(x);
   card.appendChild(el('h2', '', '📜 更新紀錄'));
-  NEWS.forEach((n, i) => {
+  const list = NEWS.slice(0, NEWS_HIST_MAX);
+  card.appendChild(note('最近 ' + list.length + ' 次更新，新增了這些好玩的東西：'));
+  list.forEach((n, i) => {
     const d = document.createElement('details');
     d.className = 'news-hist';
     if (i === 0) d.open = true;
     const sm = document.createElement('summary');
-    sm.append(el('span', '', (i === 0 ? '🆕 ' : '') + `第 ${NEWS.length - i} 次：${n.title}`), el('span', 'nh-when', newsWhen(n)));
+    const fun = newsFunLines(n);
+    // 收起來的時候也看得出這次有什麼：標題旁邊排一排圖示
+    sm.append(el('span', '', (i === 0 ? '🆕 ' : '') + `第 ${NEWS.length - i} 次`), el('span', 'nh-ics', fun.map(l => l[0]).join('')), el('span', 'nh-when', newsWhen(n)));
     d.appendChild(sm);
     const box = el('div', 'news');
-    n.lines.forEach(([ic, tx]) => { const r = el('div', 'news-row'); r.append(el('span', 'news-ic', ic), el('span', 'news-tx', tx)); box.appendChild(r); });
+    fun.forEach(([ic, tx]) => { const r = el('div', 'news-row'); r.append(el('span', 'news-ic', ic), el('span', 'news-tx', tx)); box.appendChild(r); });
     const say = el('button', 'mini', '🔊 念給我聽');
-    say.onclick = () => { try { speak(n.title + '。' + n.lines.map(l => l[1]).join('。')); } catch (e) {} };
+    say.onclick = () => { try { speak('新增了：' + fun.map(l => l[1]).join('。')); } catch (e) {} };
     box.appendChild(say);
     d.appendChild(box);
     card.appendChild(d);
