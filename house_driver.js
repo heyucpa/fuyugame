@@ -2264,6 +2264,44 @@
     G = keepG; G.away = keepAway; G.openGift = true; saveGame(); giftReset();
     $('#modal').hidden = true;
 
+    /* 73 🧺 寵物屋裡可以賣重複的寵物：只有在寵物屋、有重複時才出現；每種至少留一隻；
+       照顧中、一起逛、蛋不會被賣；先賣最小的；要確認；拿回半價 */
+    var keepG11 = JSON.stringify(G), realConfirm11 = window.confirm, realToast11 = toast;
+    toast = function(){};
+    try {
+      G = normalizeSave(JSON.parse(keepG11)); G.away = null; $('#modal').hidden = true;
+      var spA = PET_SPECIES[0].id, spB = PET_SPECIES[1].id;
+      G.pets = [newPet(spA, 'adult', 'A1'), newPet(spA, 'baby', 'A2'), newPet(spA, 'kid', 'A3'), newPet(spB, 'kid', 'B1'), newPet(spB, 'kid', 'B2'), newPet(spA, 'egg', '')];
+      G.activePet = 3; G.pet = G.pets[3]; G.companions = [4];
+      refreshDupBtn();
+      if (!$('#btnDup').hidden) fails.push('不在寵物屋也出現「重複的寵物」按鈕');
+      enterPetHouse(); refreshDupBtn();
+      if ($('#btnDup').hidden) fails.push('寵物屋有重複的寵物，卻沒有「重複的寵物」按鈕');
+      var gs = dupGroups();
+      if (gs.length !== 1 || gs[0].species !== spA) fails.push('重複的清單不對（B 兩隻都在照顧／一起逛，不能賣）：' + JSON.stringify(gs));
+      else if (G.pets[gs[0].pick].name !== 'A2') fails.push('沒有先賣最小的（寶寶）：' + G.pets[gs[0].pick].name);
+      $('#btnDup').onclick();
+      var sellB = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return /賣掉一隻/.test(b.textContent); })[0];
+      if (!sellB) fails.push('重複的寵物清單沒有「賣掉一隻」');
+      else {
+        var b0 = G.bells, n0 = G.pets.length;
+        window.confirm = function(){ return false; }; sellB.onclick();
+        if (G.pets.length !== n0) fails.push('按了「取消」還是賣掉了');
+        window.confirm = function(){ return true; }; sellB.onclick();
+        if (G.pets.length !== n0 - 1 || G.bells !== b0 + sellValue(EGG_PRICE)) fails.push('賣重複的寵物沒有拿到錢或沒有少一隻');
+        if (G.pets.some(function(pp){ return pp.name === 'A2'; })) fails.push('賣掉的不是最小的那隻');
+        if (G.pet.name !== 'B1' || G.companions.map(function(c){ return G.pets[c].name; }).join() !== 'B2') fails.push('賣了之後照顧中／一起逛的跑掉了');
+        // 再賣一隻 A，剩一隻就不能再賣
+        var sellB2 = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return /賣掉一隻/.test(b.textContent); })[0];
+        if (sellB2) sellB2.onclick();
+        if (G.pets.filter(function(pp){ return pp.species === spA && pp.stage !== 'egg'; }).length !== 1) fails.push('同一種沒有留下最後一隻');
+        if (!G.pets.some(function(pp){ return pp.stage === 'egg'; })) fails.push('還沒孵的蛋被賣掉了');
+        if (dupGroups().length) fails.push('沒有重複了還列在清單上');
+        refreshDupBtn();
+        if (!$('#btnDup').hidden) fails.push('沒有重複了，按鈕還在');
+      }
+    } finally { window.confirm = realConfirm11; toast = realToast11; $('#modal').hidden = true; G = normalizeSave(JSON.parse(keepG11)); saveGame(); phReset(); refreshDupBtn(); refreshTop(); }
+
     /* 72 圖鑑沒集滿、剩下的種類都在還沒孵的蛋裡：不能寫「都收集到了」（家長：13/18 卻顯示全滿） */
     var keepPets10 = JSON.stringify([G.pets, G.activePet, G.companions]);
     G.pets = PET_SPECIES.map(function(sp, k){ return newPet(sp.id, k < 13 ? 'kid' : 'egg', ''); });

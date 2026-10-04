@@ -389,6 +389,11 @@ button.pass { font: inherit; }
   background: #c0392b; color: #fff; border: none; border-radius: 999px; padding: 8px 16px; font-size: 14px; font-weight: 800;
   box-shadow: 0 4px 14px rgba(0,0,0,.25); }
 .save-warn[hidden] { display: none; }
+.dup-btn { position: absolute; left: 10px; bottom: 100px; z-index: 6; border: 2px solid #e7a94a; background: #fff6df; color: #a26d12;
+  border-radius: 999px; padding: 6px 12px; font-weight: 800; font-size: 14px; }
+.stage.holding .dup-btn { display: none; }
+.dup-row { display: flex; align-items: center; gap: 10px; background: #fffaf0; border: 2px solid var(--line); border-radius: 14px; padding: 8px 10px; margin-bottom: 8px; }
+.dup-row .dup-tx { flex: 1; font-weight: 700; color: #4a3b2a; }
 .photo-btn { position: absolute; right: 10px; bottom: 100px; z-index: 6; width: 46px; height: 46px; border-radius: 50%;
   border: 2px solid var(--line); background: #fffaf0; font-size: 22px; box-shadow: 0 3px 10px rgba(0,0,0,.12); }
 .stage.holding .photo-btn { display: none; }
@@ -611,6 +616,7 @@ button.pass { font: inherit; }
     <button class="undo-btn" id="btnUndo" hidden>↩️ 復原</button>
     <button class="theme-btn" id="btnTheme">💡 小主題</button>
     <button class="photo-btn" id="btnPhoto" title="拍照">📷</button>
+    <button class="dup-btn" id="btnDup" hidden>🧺 重複的寵物</button>
     <div class="hint" id="hint">從「我的東西」點家具放進房間；點房間裡的家具可以搬動</div>
     <div class="itemmenu" id="itemMenu" hidden></div>
     <div class="petcard" id="petCard">
@@ -6047,6 +6053,7 @@ function phActor(i) {
   return phActors[i];
 }
 function phUpdate(dt, now) {
+  refreshDupBtn(now);
   if (!inPetHouse()) { if (Object.keys(phActors).length) phReset(); return; }
   const list = phList();
   Object.keys(phActors).forEach(k => { if (!list.includes(+k)) delete phActors[k]; }); // 被帶出去了
@@ -6057,6 +6064,61 @@ function phUpdate(dt, now) {
     actorSpring(a, dt, now, egg);
     if (!egg) actorWalk(a, dt, now, room, blk, .15); // 大多自己逛，偶爾跑來找小可愛
   });
+}
+/* 🧺 重複的寵物可以賣掉（家長：寵物屋這邊可以選擇把重複的寵物賣掉）。
+   之前每隻寵物卡上都有「送回店裡」，小孩會不小心碰到，所以改成：
+   ・只在寵物屋裡、而且真的有重複時才出現一顆「🧺 重複的寵物」；
+   ・點了先開一個清單，每一種再按「賣掉一隻」，最後還要確認一次；
+   ・每一種至少留一隻；照顧中、一起逛的、還沒孵的蛋都不會被賣；
+   ・先賣掉長得最小的（寶寶），長大的留著。 */
+function dupGroups() {
+  const by = {};
+  G.pets.forEach((p, i) => { if (p.stage !== 'egg') (by[p.species] = by[p.species] || []).push(i); });
+  const order = { baby: 0, kid: 1, adult: 2 };
+  return Object.keys(by).filter(sp => by[sp].length > 1).map(sp => {
+    const can = by[sp].filter(i => i !== G.activePet && !G.companions.includes(i))
+      .sort((a, b) => (order[G.pets[a].stage] - order[G.pets[b].stage]) || (G.pets[a].growth - G.pets[b].growth) || (b - a));
+    return { species: sp, total: by[sp].length, pick: can[0] };
+  }).filter(g => g.pick != null);
+}
+let nextDupCheck = 0;
+function refreshDupBtn(now) {
+  if (now != null && now < nextDupCheck) return;
+  nextDupCheck = (now || performance.now()) + 500;
+  const b = $('#btnDup'); if (!b) return;
+  b.hidden = !(inPetHouse() && dupGroups().length);
+}
+function openDupSell() {
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  const x = el('button', 'modal-x', '✕'); x.onclick = () => { $('#modal').hidden = true; }; card.appendChild(x);
+  card.appendChild(el('h2', '', '🧺 重複的寵物'));
+  const groups = dupGroups();
+  if (!groups.length) card.appendChild(note('沒有重複的寵物了！'));
+  else card.appendChild(note(`同一種有好幾隻的，可以賣一隻給寵物店，拿回 💰 ${fmt(sellValue(EGG_PRICE))}。每一種一定會留一隻；照顧中、一起逛的不會被賣。`));
+  groups.forEach(g => {
+    const sp = PET_SPECIES_BY_ID[g.species], row = el('div', 'dup-row');
+    row.appendChild(renderPetPortrait(G.pets[g.pick], 52, 48));
+    row.appendChild(el('div', 'dup-tx', `${sp.name}　共 ${g.total} 隻`));
+    const sell = el('button', 'mini', `💰 賣掉一隻`);
+    sell.onclick = () => {
+      const p = G.pets[g.pick];
+      if (!confirm(`要把一隻「${petNameOf(p)}」（${PET_STAGE_BY_ID[p.stage].name}）賣給寵物店嗎？\n\n會拿到 💰 ${fmt(sellValue(EGG_PRICE))}，牠會去找新主人喔。`)) return;
+      if (!releasePet(g.pick)) return;
+      phReset();                        // 索引都往前移了，寵物屋裡的重新排
+      Sound.play('coin');
+      toast(`${sp.name}去找新主人了，拿到 💰 ${fmt(sellValue(EGG_PRICE))}`);
+      commit();
+      openDupSell();                    // 清單重畫（可能還有別的重複）
+    };
+    row.appendChild(sell);
+    card.appendChild(row);
+  });
+  const ok = el('button', 'big alt', '好了');
+  ok.onclick = () => { $('#modal').hidden = true; };
+  card.appendChild(ok);
+  $('#modal').hidden = false;
+  refreshDupBtn();
 }
 function phDrawEntries() {
   if (!inPetHouse()) return [];
@@ -9029,6 +9091,7 @@ function setBigRoom(on) {
 $('#btnUndo').onclick = () => doUndo();
 $('#btnTheme').onclick = () => { Sound.play('click'); openThemes(); };
 $('#btnPhoto').onclick = () => takePhoto();
+$('#btnDup').onclick = () => { Sound.play('click'); openDupSell(); };
 setTimeout(() => { try { refreshThemeBtn(); } catch (e) {} }, 0);
 $('#btnZoom').onclick = () => { setBigRoom(!document.body.classList.contains('bigroom')); Sound.play('click'); };
 if (lsGet(BIG_KEY) === '1') setBigRoom(true);
