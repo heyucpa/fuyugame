@@ -319,7 +319,7 @@
       fails.push('設定分頁沒有「重新開始」');
 
     /* ⑩.8 寵物跟髮型的數量與資料完整性 */
-    if (PET_SPECIES.length !== 20) fails.push('寵物變成 ' + PET_SPECIES.length + ' 種了');
+    if (PET_SPECIES.length !== 22) fails.push('寵物變成 ' + PET_SPECIES.length + ' 種了');
     var pid = {};
     PET_SPECIES.forEach(function(sp){
       if (pid[sp.id]) fails.push('寵物 id 重複：' + sp.id);
@@ -2552,6 +2552,22 @@
       if (!(full > countFills(Object.assign({}, sp, { wings: null })) + 3)) fails.push(sp.name + ' 沒有畫出翅膀');
       if (!(full > countFills(Object.assign({}, sp, { sparkle: false })))) fails.push(sp.name + ' 沒有一閃一閃的星星');
     });
+
+    /* 80 極稀有：爸比龍（眼鏡、大角、翅膀、大一號）、媽咪鳳（羽冠、彩虹尾巴、愛心腮紅）；最難孵；圖鑑標「🌟極稀有」 */
+    var legends = PET_SPECIES.filter(function(s){ return s.legend; });
+    if (legends.map(function(s){ return s.name; }).sort().join() !== '媽咪鳳,爸比龍') fails.push('極稀有不是爸比龍、媽咪鳳：' + legends.map(function(s){ return s.name; }).join());
+    var minW = Math.min.apply(null, PET_SPECIES.filter(function(s){ return !s.legend; }).map(function(s){ return s.weight; }));
+    legends.forEach(function(sp){ if (!(sp.weight < minW)) fails.push(sp.name + ' 沒有比其他寵物更難孵'); });
+    var cnt = function(spx){ var c = document.createElement('canvas'); c.width = c.height = 90; var g = c.getContext('2d'); g.translate(45, 70);
+      var n = 0; ['fill', 'stroke'].forEach(function(m){ var o = g[m].bind(g); g[m] = function(){ n++; return o.apply(null, arguments); }; }); drawCreature(g, spx, { happy: true, clean: 100 }); return n; };
+    var papa = PET_SPECIES_BY_ID.papadragon, mama = PET_SPECIES_BY_ID.mamaphoenix;
+    if (!(cnt(papa) > cnt(Object.assign({}, papa, { glasses: null })) + 2)) fails.push('爸比龍沒有畫眼鏡');
+    if (!(cnt(mama) > cnt(Object.assign({}, mama, { rainbowTail: false })) + 5)) fails.push('媽咪鳳沒有彩虹尾巴');
+    if (!(cnt(mama) > cnt(Object.assign({}, mama, { crest: null })) + 2)) fails.push('媽咪鳳沒有羽冠');
+    openTab('book');
+    var legTags = [].filter.call(document.querySelectorAll('#tabBody .tag.legend'), function(t){ return /極稀有/.test(t.textContent); });
+    if (legTags.length !== 2) fails.push('圖鑑沒有標「🌟極稀有」（' + legTags.length + '）');
+    openTab('inv');
 
     /* 78 一起逛的寵物也跟著上床睡（第二隻以後也要）；不同位置；跟床一起畫；她起床就起來 */
     var keepG16 = JSON.stringify(G), keepFufu16 = [fufu.x, fufu.y, fufu.pose, fufu.path];
