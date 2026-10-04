@@ -119,8 +119,8 @@
        重點是「已經存在的存檔也要拿得到」——
        只改 newGame() 的話，她那台有存檔就一毛都拿不到。
        而且只能補一次，不能每次開都補。 */
-    if (newGame().bells !== START_BELLS)
-      fails.push('開局金幣不是 ' + START_BELLS);
+    if (newGame().bells + OPEN_GIFT_BELLS !== START_BELLS)
+      fails.push('開局金幣（含開幕紅包）不是 ' + START_BELLS);
     var old = normalizeSave(Object.assign(JSON.parse(mark), { bells: 3000, topup100k: undefined }));
     if (!old) fails.push('舊存檔讀不回來');
     else {
@@ -2135,6 +2135,40 @@
     var gotSave = got && readBackup(got);
     if (!gotSave || JSON.parse(gotSave.data).bells !== 777777) fails.push('下載的備份不是最新的進度');
     G.bells = 100000; saveGame();
+
+    /* 63 🧧 新版開幕禮：每格一次、10 萬＋一顆蛋；新格拆完剛好 10 萬（不會一開始就 20 萬）；
+       舊存檔也拿得到；紅包比公告先跳；沒有 ✕、不會被不小心關掉；拆完存起來不再拿 */
+    var gOld = JSON.parse(JSON.stringify(G)); delete gOld.openGift; gOld.bells = 3456; gOld.topup100k = true;
+    var gOldN = normalizeSave(gOld);
+    if (!gOldN || gOldN.openGift !== false) fails.push('已經在玩的存檔拿不到開幕紅包');
+    if (gOldN && gOldN.bells !== 3456) fails.push('還沒拆紅包，錢就先變了');
+    var gDone = normalizeSave(Object.assign(JSON.parse(JSON.stringify(G)), { openGift: true }));
+    if (!gDone || gDone.openGift !== true) fails.push('拆過的紅包讀回來又可以拆');
+    var keepG = G;
+    G = newGame(); G.newsSeen = [];
+    $('#modal').hidden = false; $('#modalCard').innerHTML = '<p id="busy2">小遊戲中</p>';
+    maybeShowNews();
+    if (!document.getElementById('busy2')) fails.push('紅包把正在開的視窗蓋掉了');
+    $('#modal').hidden = true;
+    maybeShowNews();
+    var envBtn = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return /打開紅包/.test(b.textContent); })[0];
+    if (!envBtn || document.querySelector('#modalCard .news-ic')) fails.push('紅包沒有比更新公告先跳出來');
+    if (document.querySelector('#modalCard .modal-x')) fails.push('紅包有 ✕（會不小心關掉、拿不到）');
+    var pets0 = G.pets.length;
+    if (envBtn) envBtn.onclick();
+    if (G.bells !== START_BELLS) fails.push('新的存檔格拆完紅包不是 ' + START_BELLS + '（' + G.bells + '）');
+    if (G.pets.length !== pets0 + 1 || G.pet.stage !== 'egg') fails.push('紅包沒有送寵物蛋，或蛋沒有變成主要照顧的那隻');
+    if (G.pets[G.pets.length - 1].species === 'mochi') fails.push('紅包的蛋沒有優先孵出還沒收集到的');
+    if (G.earned !== 0) fails.push('紅包的錢被算成「賺到的」');
+    if (!/100,000/.test($('#modalCard').textContent)) fails.push('拆開後沒寫拿到多少');
+    var reG = normalizeSave(JSON.parse(localStorage.getItem(SAVE_KEY)));
+    if (!reG || !reG.openGift) fails.push('拆過紅包沒有存起來');
+    if (claimOpenGift() !== null || G.bells !== START_BELLS) fails.push('紅包可以拆第二次');
+    var okEnv = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return /去布置/.test(b.textContent); })[0];
+    if (!okEnv) fails.push('拆完沒有關掉的按鈕');
+    else { okEnv.onclick(); if (!$('#modal').hidden) fails.push('拆完關不掉'); }
+    G = keepG; G.openGift = true; saveGame();
+    $('#modal').hidden = true;
 
     /* ㊾ 更新公告：舊存檔要看到、新存檔不用看、看過不再跳、有別的視窗時不要蓋掉、
        設定頁可以再看；新進商店的家具兩週內掛「新」，買過就不掛 */

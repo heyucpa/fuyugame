@@ -487,6 +487,10 @@ button.pass { font: inherit; }
   max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overflow-y: auto; position: relative; }
 .modal-x { position: absolute; top: 8px; right: 8px; width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--line);
   background: #fff; font-size: 16px; font-weight: 800; color: var(--muted); z-index: 2; }
+.gift-env { font-size: 96px; text-align: center; line-height: 1.1; margin: 4px 0; animation: giftWiggle 1s ease-in-out infinite; }
+.gift-env.open { display: none; }
+.gift-tx { text-align: center; font-size: 18px; font-weight: 700; color: #4a3b2a; margin: 4px 0 12px; }
+@keyframes giftWiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-8deg); } 75% { transform: rotate(8deg); } }
 .news-older { font-size: 14px; color: var(--muted); margin: -4px 0 10px; line-height: 1.6; }
 .news-ok { position: sticky; bottom: -20px; box-shadow: 0 -8px 12px var(--panel); }
 .modal-card h2 { margin: 0 0 8px; }
@@ -3176,6 +3180,11 @@ function slotInfo(id) {
    137 件家具全部買一輪要 227,970，10 萬大約是四成——
    夠一次弄得有樣子，又不會一次玩完、沒東西可以賺。 */
 const START_BELLS = 100000;
+/* 🧧 新版開幕禮：每個存檔格各發一次，10 萬裝潢費＋一顆隨機寵物蛋。
+   新開的存檔格：開局的 10 萬就是這個紅包發的（開局先 0，拆紅包才拿到），
+   不然新格會一開始就有 20 萬，差不多可以一次把商店買光。
+   已經在玩的存檔格：舊存檔沒有 openGift 欄位 → 補進來是 false → 拆了多 10 萬。 */
+const OPEN_GIFT_BELLS = 100000;
 
 /* ===== 📣 更新公告 =====
    之後每次加了新東西，就在最上面加一筆。每個存檔格第一次打開會跳出來一次
@@ -3241,9 +3250,53 @@ function openNews(list) {
   saveGame();
   Sound.play('coin');
 }
+/* 🧧 拆紅包。妹妹看不懂字：大圖示＋拆開的時候念出來。
+   只有一顆「打開紅包」按鈕、沒有 ✕——錢跟蛋要拆了才拿到，不能不小心關掉。 */
+function openGiftEnvelope() {
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', '🎉 新版小屋開幕！'));
+  const env = el('div', 'gift-env', '🧧');
+  card.appendChild(env);
+  card.appendChild(el('p', 'gift-tx', '有一個紅包要給你！'));
+  const btn = el('button', 'big news-ok', '🧧 打開紅包');
+  btn.onclick = () => {
+    const egg = claimOpenGift();
+    if (egg == null) { $('#modal').hidden = true; return; }
+    Sound.play('coin');
+    env.classList.add('open');
+    env.textContent = '';
+    const box = el('div', 'news');
+    [['💰', '裝潢費 ' + OPEN_GIFT_BELLS.toLocaleString() + ' 鈴錢'], ['🥚', '一顆寵物蛋！摸摸牠就會孵出來']].forEach(([ic, tx]) => {
+      const r = el('div', 'news-row'); r.append(el('span', 'news-ic', ic), el('span', 'news-tx', tx)); box.appendChild(r);
+    });
+    card.querySelector('.gift-tx').replaceWith(box);
+    btn.textContent = '好！去布置囉';
+    btn.onclick = () => { $('#modal').hidden = true; stopSpeak(); setTimeout(() => maybeShowNews(), 600); };
+    try { speak('新版開幕禮物！十萬元裝潢費，還有一顆寵物蛋，摸摸牠就會孵出來喔！'); } catch (e) {}
+  };
+  card.appendChild(btn);
+  $('#modal').hidden = false;
+}
+/* 真正發禮物：先記「拆過了」再發，同一格不會拿兩次。
+   蛋跟買的一樣：優先孵出還沒收集到的種類，直接變成主要照顧的那隻。 */
+function claimOpenGift() {
+  if (G.openGift) return null;
+  G.openGift = true;
+  G.bells += OPEN_GIFT_BELLS;              // 禮物不算「賺到的」
+  const i = addEgg();
+  switchMainPet(i);
+  commit();
+  return i;
+}
 // 打開遊戲一會兒之後才跳（等畫面、休息畫面都穩定）；別的視窗開著就晚一點再試
 function maybeShowNews(tries) {
   tries = tries || 0;
+  if (!G.openGift && SAVE_LOCKED == null) { // 紅包先拆，拆完再看公告
+    if (!$('#modal').hidden || (typeof resting !== 'undefined' && resting) || (typeof hold !== 'undefined' && hold)) { setTimeout(() => maybeShowNews(tries), 3000); return; }
+    openGiftEnvelope();
+    return;
+  }
   const list = unseenNews();
   if (!list.length || tries > 20) return;
   if (!$('#modal').hidden || (typeof resting !== 'undefined' && resting) || (typeof hold !== 'undefined' && hold)) { setTimeout(() => maybeShowNews(tries + 1), 3000); return; }
@@ -3252,7 +3305,8 @@ function maybeShowNews(tries) {
 
 function newGame() {
   const g = {
-    bells: START_BELLS,
+    bells: START_BELLS - OPEN_GIFT_BELLS, // 剩下的由開幕紅包發
+    openGift: false,                       // 🧧 新版開幕禮拆過了沒
     earned: 0,
     inv: { wood_bed: 1, wood_chair: 1, wood_table: 1, plant_s: 1 },
     walls: ['wp_cream'],
@@ -3475,7 +3529,7 @@ function openRescue() {
   const b3 = el('button', 'big alt', '🆕 這一格重新開始');
   b3.onclick = () => askPin('這一格重新開始', () => {
     if (!confirm('確定要讓這一格重新開始嗎？\n讀不出來的那份已經另外留著，之後還可以下載。')) return;
-    SAVE_LOCKED = null; saveGame(); $('#modal').hidden = true; toast('重新開始了！');
+    SAVE_LOCKED = null; saveGame(); $('#modal').hidden = true; toast('重新開始了！'); setTimeout(() => maybeShowNews(), 1200);
   });
   card.append(b1, b2, b3);
   $('#modal').hidden = false;
@@ -3621,10 +3675,13 @@ function collectedSpecies() {
 }
 // 買蛋：孵出來的種類先決定好（優先還沒收集到的），蛋上的斑點顏色會透露一點線索
 function buyEgg() {
+  if (!spend(EGG_PRICE)) return null;
+  return addEgg();
+}
+function addEgg() {
   const have = new Set(G.pets.map(p => p.species));
   const fresh = PET_SPECIES.filter(s => !have.has(s.id));
   const pool = fresh.length ? fresh : PET_SPECIES;
-  if (!spend(EGG_PRICE)) return null;
   let r = Math.random() * pool.reduce((a, s) => a + s.weight, 0), pick = pool[0];
   for (const s of pool) { if ((r -= s.weight) < 0) { pick = s; break; } }
   G.pets.push(newPet(pick.id, 'egg', ''));
@@ -9028,7 +9085,7 @@ function confirmReset() {
       close();
       // 清掉之前整份收起來，到「備份」分頁按「把上一份換回來」就回得去
       try { localStorage.setItem(UNDO_KEY, makeBackup()); } catch (e) {}
-      G = newGame(); cancelHold(); hold = null; updateHoldUI(); commit();
+      G = newGame(); cancelHold(); hold = null; updateHoldUI(); commit(); setTimeout(() => maybeShowNews(), 1200);
       toast('已經重新開始了（「備份」分頁可以反悔）');
     };
     const back = el('button', 'big', '不要，我要繼續玩');
