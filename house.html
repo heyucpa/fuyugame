@@ -461,7 +461,13 @@ button.pass { font: inherit; }
 
 .modal { position: fixed; inset: 0; background: rgba(40,30,20,.45); display: grid; place-items: center; z-index: 10; padding: 16px; }
 .modal[hidden] { display: none; }
-.modal-card { background: var(--panel); border-radius: 18px; padding: 20px; width: min(420px, 100%); text-align: center; }
+.modal-card { background: var(--panel); border-radius: 18px; padding: 20px; width: min(420px, 100%); text-align: center;
+  /* 內容比螢幕高的時候可以捲，下面的按鈕才按得到（手機上公告關不掉就是這個） */
+  max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overflow-y: auto; position: relative; }
+.modal-x { position: absolute; top: 8px; right: 8px; width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--line);
+  background: #fff; font-size: 16px; font-weight: 800; color: var(--muted); z-index: 2; }
+.news-older { font-size: 14px; color: var(--muted); margin: -4px 0 10px; line-height: 1.6; }
+.news-ok { position: sticky; bottom: -20px; box-shadow: 0 -8px 12px var(--panel); }
 .modal-card h2 { margin: 0 0 8px; }
 
 .fishbar { position: relative; height: 34px; background: #cfe6f3; border-radius: 999px; margin: 16px 0; overflow: hidden; }
@@ -3180,13 +3186,19 @@ function openNews(list) {
   list = list && list.length ? list : NEWS.slice(0, 1);
   const card = $('#modalCard');
   card.innerHTML = '';
+  /* 手機上要一眼看完：最新那一次完整列出，之前沒看過的只用一排圖示帶過。
+     右上角有 ✕、「好！去玩囉」固定在最下面——內容再長都關得掉。 */
+  const x = el('button', 'modal-x', '✕');
+  x.title = '關掉';
+  x.onclick = () => { $('#modal').hidden = true; };
+  card.appendChild(x);
   card.appendChild(el('h2', '', '✨ ' + list[0].title));
-  list.slice(0, 2).forEach(n => {
-    const box = el('div', 'news');
-    n.lines.forEach(([ic, tx]) => { const r = el('div', 'news-row'); r.append(el('span', 'news-ic', ic), el('span', 'news-tx', tx)); box.appendChild(r); });
-    card.appendChild(box);
-  });
-  const ok = el('button', 'big', '好！去玩囉');
+  const box = el('div', 'news');
+  list[0].lines.forEach(([ic, tx]) => { const r = el('div', 'news-row'); r.append(el('span', 'news-ic', ic), el('span', 'news-tx', tx)); box.appendChild(r); });
+  card.appendChild(box);
+  const older = list.slice(1).map(n => n.lines.map(l => l[0]).join('')).join('');
+  if (older) card.appendChild(el('div', 'news-older', '之前也更新了：' + older));
+  const ok = el('button', 'big news-ok', '好！去玩囉');
   ok.onclick = () => { $('#modal').hidden = true; };
   card.appendChild(ok);
   $('#modal').hidden = false;

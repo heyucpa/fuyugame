@@ -1928,7 +1928,22 @@
     $('#modal').hidden = true;
     maybeShowNews();
     if ($('#modal').hidden || !document.querySelector('#modalCard .news')) fails.push('有沒看過的公告卻沒有跳出來');
-    else if (document.querySelectorAll('#modalCard .news-ic').length !== NEWS.slice(0, 2).reduce(function(n, x){ return n + x.lines.length; }, 0)) fails.push('公告每一行前面沒有圖示（或沒有同時顯示最近兩次更新）');
+    else {
+      if (document.querySelectorAll('#modalCard .news-ic').length !== NEWS[0].lines.length) fails.push('公告每一行前面沒有圖示（最新一次要完整列出）');
+      if (NEWS.length > 1 && !document.querySelector('#modalCard .news-older')) fails.push('之前沒看過的更新沒有用一排圖示帶過');
+      var xBtn = document.querySelector('#modalCard .modal-x');
+      if (!xBtn) fails.push('公告右上角沒有 ✕');
+      var mcS = getComputedStyle($('#modalCard'));
+      if (mcS.overflowY !== 'auto' || mcS.maxHeight === 'none') fails.push('視窗太高時不能捲（手機上會按不到下面的按鈕）');
+      if (getComputedStyle(document.querySelector('#modalCard .news-ok')).position !== 'sticky') fails.push('「好！去玩囉」沒有固定在最下面');
+      // 小手機（高 560）：關閉按鈕都要在畫面裡
+      var cv6 = $('#modal'); cv6.style.height = '560px';
+      var okR = document.querySelector('#modalCard .news-ok').getBoundingClientRect(), xR = xBtn.getBoundingClientRect();
+      cv6.style.height = '';
+      if (xR.top < 0 || xR.bottom > window.innerHeight) fails.push('公告的 ✕ 跑到畫面外');
+      xBtn.onclick(); if (!$('#modal').hidden) fails.push('按 ✕ 關不掉公告');
+      $('#modal').hidden = false;
+    }
     if (unseenNews().length) fails.push('看過公告還算沒看過');
     var reloaded = normalizeSave(JSON.parse(localStorage.getItem(SAVE_KEY)));
     if (unseenNews(reloaded).length) fails.push('看過公告沒有存起來，下次打開又會跳');
