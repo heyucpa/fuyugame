@@ -2264,6 +2264,20 @@
     G = keepG; G.away = keepAway; G.openGift = true; saveGame(); giftReset();
     $('#modal').hidden = true;
 
+    /* 72 圖鑑沒集滿、剩下的種類都在還沒孵的蛋裡：不能寫「都收集到了」（家長：13/18 卻顯示全滿） */
+    var keepPets10 = JSON.stringify([G.pets, G.activePet, G.companions]);
+    G.pets = PET_SPECIES.map(function(sp, k){ return newPet(sp.id, k < 13 ? 'kid' : 'egg', ''); });
+    G.activePet = 0; G.pet = G.pets[0]; G.companions = [];
+    openTab('pets');
+    var ptx = $('#tabBody').textContent;
+    if (/18 種都收集到了/.test(ptx)) fails.push('還有 5 種在蛋裡沒孵，卻寫「18 種都收集到了」');
+    if (!/5 種新的寵物都在你的蛋裡面/.test(ptx)) fails.push('沒有說剩下的種類在蛋裡面、要摸一摸讓牠們孵出來');
+    G.pets.forEach(function(pp){ pp.stage = 'kid'; });
+    openTab('pets');
+    if (!/18 種都收集到了/.test($('#tabBody').textContent)) fails.push('真的全部孵出來了，沒有寫「都收集到了」');
+    var kp10 = JSON.parse(keepPets10); G.pets = kp10[0]; G.activePet = kp10[1]; G.companions = kp10[2]; G.pet = G.pets[G.activePet];
+    openTab('inv');
+
     /* 71 寵物分頁沒有「送回店裡」（家長：小孩會不小心碰到） */
     var keepPets9 = JSON.stringify([G.pets, G.activePet, G.companions]);
     G.pets = [newPet('mochi', 'kid', 'A'), newPet('mochi', 'kid', 'B')]; G.activePet = 0; G.pet = G.pets[0]; G.companions = [];

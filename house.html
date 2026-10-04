@@ -9991,8 +9991,14 @@ function tabPets(body) {
 
   // 寵物蛋
   body.appendChild(h3('寵物蛋'));
+  /* 蛋在買的時候就決定好會孵出什麼了。「還差幾種」要分開算：
+     left＝連蛋裡的都算進去還差幾種（決定再買會不會重複）；
+     inEggs＝還沒孵、但蛋裡就是新種類的（以前把這些算成「收集到了」，
+     家長看到圖鑑 13/18 卻寫「18 種都收集到了」）。 */
   const have = new Set(G.pets.map(p => p.species));
   const left = PET_SPECIES.filter(s => !have.has(s.id)).length;
+  const hatched = collectedSpecies();
+  const inEggs = PET_SPECIES.filter(s => !hatched.has(s.id) && have.has(s.id)).length;
   /* 收齊了就不給買。買蛋本來就是「優先孵還沒有的種類」，
      收齊之後再買只會孵出重複的，而重複的在這個遊戲裡完全沒有用途
      （不能繁殖、不能交換、不會加分），只會變成一長串列表，
@@ -10003,13 +10009,16 @@ function tabPets(body) {
      而重複的在這個遊戲裡沒有用途。她有十萬塊，不問的話
      會一路點出三十幾顆沒意義的蛋。 */
   body.appendChild(note(left
-    ? `孵出來的寶寶是隨機的，會先孵出還沒有的種類（還有 ${left} 種沒有）。蛋上的斑點顏色是小提示喔！`
-    : `${PET_SPECIES.length} 種都收集到了 🎉　再買的話會孵出重複的喔。`));
+    ? `孵出來的寶寶是隨機的，會先孵出還沒有的種類（還有 ${left} 種沒有）。蛋上的斑點顏色是小提示喔！` +
+      (inEggs ? `\n另外有 ${inEggs} 種新的寵物在你的蛋裡面，摸一摸讓牠們孵出來！` : '')
+    : inEggs
+      ? `剩下 ${inEggs} 種新的寵物都在你的蛋裡面了，摸一摸讓牠們孵出來吧！（寵物屋裡也可以摸）再買的話會孵出重複的喔。`
+      : `${PET_SPECIES.length} 種都收集到了 🎉　再買的話會孵出重複的喔。`));
   const egg = el('button', 'big',
     left ? `🥚 買一顆寵物蛋　💰 ${fmt(EGG_PRICE)}` : `🥚 再買一顆（會重複）　💰 ${fmt(EGG_PRICE)}`);
   egg.disabled = G.bells < EGG_PRICE;
   egg.onclick = () => {
-    if (!left && !confirm(`${PET_SPECIES.length} 種都收集到了。\n\n` +
+    if (!left && !confirm((inEggs ? `剩下 ${inEggs} 種新的寵物都在你的蛋裡面了，先讓牠們孵出來吧！` : `${PET_SPECIES.length} 種都收集到了。`) + '\n\n' +
         '再買一顆的話，孵出來會是已經有的種類喔。要買嗎？')) return;
     const i = buyEgg();
     if (i == null) { toast('鈴錢不夠，去賺一點吧！'); return; }
