@@ -2333,6 +2333,21 @@
       if (G.activePet !== 1) fails.push('在寵物屋按「照顧牠」沒有換過來');
       if (phList().indexOf(1) >= 0) fails.push('換成照顧的那隻還留在寵物屋清單');
       hideItemMenu();
+      // 蛋：在寵物屋摸一摸也會孵出來；孵出來的寶寶留在寵物屋（就算是重複的種類）
+      G.pets = [newPet('mochi', 'kid', 'M'), newPet('mochi', 'egg', '')]; G.activePet = 0; G.pet = G.pets[0]; G.companions = [];
+      SC_QUEUE.length = 0; var oE = document.getElementById('showcase'); if (oE) oE.remove();
+      var eggI2 = 1, eA = phActor(eggI2), taps = 0;
+      hideItemMenu(); phTap(eggI2, { clientX: 10, clientY: 10 });
+      if (!$('#itemMenu').hidden) fails.push('摸蛋時跳出選單（要連點很多下會很煩）');
+      hideItemMenu(); G.pets[eggI2].growth = 0;
+      while (G.pets[eggI2].stage === 'egg' && taps < 30) { eA.lastGrowAt = 0; phTap(eggI2, { clientX: 10, clientY: 10 }); taps++; }
+      if (G.pets[eggI2].stage === 'egg') fails.push('在寵物屋摸蛋不會孵化');
+      else if (taps > 10) fails.push('在寵物屋孵蛋要摸太多下（' + taps + '）');
+      var hs = document.getElementById('showcase');
+      if (!hs || !hs.querySelector('.sc-egg')) fails.push('在寵物屋孵蛋沒有搖蛋、裂開的大圖');
+      if (phList().indexOf(eggI2) < 0) fails.push('在寵物屋孵出來的寶寶不見了（跟照顧中的同種也要留著）');
+      if (G.activePet !== 0) fails.push('在寵物屋孵蛋，照顧中的寵物被換掉了');
+      if (hs) hs.remove(); SC_QUEUE.length = 0; hideItemMenu();
       // 重複的同一種只出來一隻；已經在房間裡（照顧中）的那一種也不用再出來；蛋每顆都放
       G.pets = [newPet('mochi', 'kid', 'M'), newPet('mochi', 'kid', 'M2'), newPet(sp2, 'kid', 'X'), newPet(sp2, 'adult', 'X2'), newPet(sp2, 'baby', 'X3'), newPet('mochi', 'egg', ''), newPet('mochi', 'egg', '')];
       G.activePet = 0; G.pet = G.pets[0]; G.companions = [];

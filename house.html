@@ -3821,7 +3821,7 @@ function addPetGrowth(amount, p) {
   p.stage = to;
   p.growth = 0;
   if (from === 'egg') { // 剛孵出來：狀態不錯、開始跟著時間變化
-    Object.assign(p, { hunger: 80, clean: 90, mood: 90, lastTick: Date.now() });
+    Object.assign(p, { hunger: 80, clean: 90, mood: 90, lastTick: Date.now(), hatchedAt: Date.now() });
   }
   return { from, to, firstOfSpecies };
 }
@@ -6011,14 +6011,16 @@ function inPetHouse() { return !!(G.away && G.away.place === 'pethouse'); }
    其他重複的還在寵物分頁看得到、換得出來。 */
 function phList() {
   const seen = new Set([G.activePet].concat(G.companions).map(i => G.pets[i]).filter(p => p && p.stage !== 'egg').map(p => p.species));
-  return G.pets.map((p, i) => i).filter(i => {
+  // 剛在寵物屋孵出來的排前面：就算是重複的種類，也要留在原地讓她看到（不然孵出來就不見了）
+  const fresh = i => (Date.now() - (G.pets[i].hatchedAt || 0)) < 10 * 60000 ? 0 : 1;
+  return G.pets.map((p, i) => i).sort((a, b) => fresh(a) - fresh(b) || a - b).filter(i => {
     if (i === G.activePet || G.companions.includes(i)) return false;
     const p = G.pets[i];
     if (p.stage === 'egg') return true;
-    if (seen.has(p.species)) return false;
+    if (seen.has(p.species) && fresh(i)) return false;
     seen.add(p.species);
     return true;
-  }).slice(0, PH_MAX);
+  }).slice(0, PH_MAX).sort((a, b) => a - b);
 }
 function phReset() { Object.keys(phActors).forEach(k => delete phActors[k]); }
 function phActor(i) {
@@ -6066,8 +6068,20 @@ function phHit(w) {
 function phTap(i, e) {
   const a = phActor(i), p = G.pets[i], now = performance.now(), egg = p.stage === 'egg';
   a.happyUntil = now + 1500; a.squishV = -6; a.idleUntil = now + 2500; a.path = [];
-  if (egg) { a.lean = .5; Sound.play('boing'); }
-  else { Sound.play('petHappy'); petBurst({ kind: 'heart' }, 3, a); }
+  if (egg) {
+    /* 蛋：在寵物屋摸一摸也會孵出來（家長同意：在哪裡摸都可以，蛋本來就不用餵）。
+       一樣約 8 下、有冷卻；孵出來播搖蛋、裂開的大圖，寶寶留在寵物屋走來走去。
+       摸蛋要連點很多下，所以不跳選單（要照顧牠去寵物分頁）。 */
+    a.lean = .5; Sound.play('boing');
+    if (now - (a.lastGrowAt || 0) >= GROWTH.eggCooldownMs) {
+      a.lastGrowAt = now;
+      const up = addPetGrowth(GROWTH.eggPat, p);
+      if (up) celebrateStage(up, p, a);
+      else saveGame();
+    }
+    return;
+  }
+  Sound.play('petHappy'); petBurst({ kind: 'heart' }, 3, a);
   const name = petNameOf(p), entries = [];
   entries.push([`⭐ 照顧${name}`, () => {
     const old = G.activePet;
@@ -6079,7 +6093,7 @@ function phTap(i, e) {
     toast(`現在照顧${petName()}`);
     commit();
   }]);
-  if (!egg) entries.push(canAddCompanion()
+  entries.push(canAddCompanion()
     ? ['🐾 一起逛', () => { toggleCompanion(i); compArrive(i); Sound.play('petHappy'); toast(`${name}一起出來玩！`); commit(); }]
     : ['🐾 一起逛（位置滿了）', () => toast(petsOutLimit() > 1 ? `最多同時 ${petsOutLimit()} 隻` : '蓋第二間房間就能多帶一隻')]);
   openMenu(entries, e);
