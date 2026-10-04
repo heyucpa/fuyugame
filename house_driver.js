@@ -319,7 +319,7 @@
       fails.push('設定分頁沒有「重新開始」');
 
     /* ⑩.8 寵物跟髮型的數量與資料完整性 */
-    if (PET_SPECIES.length !== 18) fails.push('寵物變成 ' + PET_SPECIES.length + ' 種了');
+    if (PET_SPECIES.length !== 20) fails.push('寵物變成 ' + PET_SPECIES.length + ' 種了');
     var pid = {};
     PET_SPECIES.forEach(function(sp){
       if (pid[sp.id]) fails.push('寵物 id 重複：' + sp.id);
@@ -2380,7 +2380,7 @@
       if (walkers.slice(1).some(function(a){ return !a.sleep; })) fails.push('沒點到的沒等時間到就醒了');
       refreshDupBtn();
       if (!/叫大家起床/.test($('#btnCallAll').textContent)) fails.push('睡覺時按鈕沒有變成「☀️ 叫大家起床」');
-      if (!(phMode.until - phMode.start === PH_SLEEP_MS)) fails.push('睡覺沒有設定幾分鐘後自己起床');
+      if (!(Math.abs(phMode.until - phMode.start - PH_SLEEP_MS) < 1)) fails.push('睡覺沒有設定幾分鐘後自己起床');
       // 時間到：全部起床
       phMode.until = 0; t13 = run13(2, t13);
       if (phMode || walkers.some(function(a){ return a.sleep; }) || !$('#nightShade').hidden) fails.push('睡覺時間到，大家沒有起床、天沒亮');
@@ -2522,6 +2522,36 @@
       var badN = normalizeSave(bad15);
       if (!badN || typeof badN.noSell !== 'object' || typeof badN.noSell === 'string') fails.push('非賣品記錄壞掉時沒有修好');
     } finally { toast = realToast15; cancelHold(); G = normalizeSave(JSON.parse(keepG15)); saveGame(); phReset(); refreshTop(); openTab('inv'); }
+
+    /* 79 寵物食物加骨頭（只給寵物吃）；多兩隻特別的寵物（翅膀、閃亮亮、光環，比稀有更難孵） */
+    if (!FOOD_BY_ID.bone || FOOD_BY_ID.bone.emoji !== '🦴') fails.push('寵物食物沒有骨頭');
+    var keepFood17 = JSON.stringify([G.food, G.kidFood, G.kid.hunger, G.bells]);
+    try {
+      G.bells = 99999; G.food = {}; shopKind = 'food'; shopTheme = 'all'; openTab('shop');
+      var boneCard = [].filter.call(document.querySelectorAll('#tabBody .card'), function(c){ return /骨頭/.test(c.textContent); })[0];
+      if (!boneCard) fails.push('商店買不到骨頭');
+      else { boneCard.onclick(); if (G.food.bone !== 1) fails.push('買了骨頭沒有進寵物食物'); }
+      G.food.bone = 2;
+      showFoodMenu('kid');
+      if (/骨頭/.test($('#foodMenu').textContent)) fails.push('小可愛的食物選單出現骨頭（她不啃骨頭）');
+      $('#foodMenu').hidden = true;
+      if (feedKid('bone', 'pet') !== null) fails.push('小可愛可以吃骨頭');
+      showFoodMenu('pet');
+      if (!/骨頭/.test($('#foodMenu').textContent)) fails.push('寵物的食物選單沒有骨頭');
+      $('#foodMenu').hidden = true;
+    } finally { var kf17 = JSON.parse(keepFood17); G.food = kf17[0]; G.kidFood = kf17[1]; G.kid.hunger = kf17[2]; G.bells = kf17[3]; shopKind = 'all'; openTab('inv'); }
+    var specials = PET_SPECIES.filter(function(s){ return s.special; });
+    if (specials.length !== 2) fails.push('特別的寵物不是兩隻');
+    specials.forEach(function(sp){
+      if (!sp.wings || !sp.sparkle || !sp.rare) fails.push(sp.name + ' 沒有翅膀／閃亮亮／稀有');
+      if (!(sp.weight < 3)) fails.push(sp.name + ' 沒有比稀有更難孵到');
+      // 畫得出來，而且比拿掉翅膀／拿掉星星的版本多畫了東西
+      var countFills = function(spx){ var c = document.createElement('canvas'); c.width = c.height = 80; var g = c.getContext('2d'); g.translate(40, 60);
+        var n = 0, rf = g.fill.bind(g); g.fill = function(){ n++; return rf.apply(null, arguments); }; drawCreature(g, spx, { happy: true, clean: 100 }); return n; };
+      var full = countFills(sp);
+      if (!(full > countFills(Object.assign({}, sp, { wings: null })) + 3)) fails.push(sp.name + ' 沒有畫出翅膀');
+      if (!(full > countFills(Object.assign({}, sp, { sparkle: false })))) fails.push(sp.name + ' 沒有一閃一閃的星星');
+    });
 
     /* 78 一起逛的寵物也跟著上床睡（第二隻以後也要）；不同位置；跟床一起畫；她起床就起來 */
     var keepG16 = JSON.stringify(G), keepFufu16 = [fufu.x, fufu.y, fufu.pose, fufu.path];
@@ -2753,13 +2783,13 @@
     G.activePet = 0; G.pet = G.pets[0]; G.companions = [];
     openTab('pets');
     var ptx = $('#tabBody').textContent;
-    if (/18 種都收集到了/.test(ptx)) fails.push('還有 5 種在蛋裡沒孵，卻寫「18 種都收集到了」');
-    if (!/5 種新的寵物都在你的蛋裡面/.test(ptx)) fails.push('沒有說剩下的種類在蛋裡面、要摸一摸讓牠們孵出來');
+    if (new RegExp(PET_SPECIES.length + ' 種都收集到了').test(ptx)) fails.push('還有幾種在蛋裡沒孵，卻寫「都收集到了」');
+    if (!new RegExp((PET_SPECIES.length - 13) + ' 種新的寵物都在你的蛋裡面').test(ptx)) fails.push('沒有說剩下的種類在蛋裡面、要摸一摸讓牠們孵出來');
     var eggBtn10 = [].filter.call(document.querySelectorAll('#tabBody button'), function(b){ return /寵物蛋/.test(b.textContent); })[0];
     if (!eggBtn10 || !eggBtn10.disabled) fails.push('剩下的種類都在蛋裡，買蛋按鈕還可以按');
     G.pets.forEach(function(pp){ pp.stage = 'kid'; });
     openTab('pets');
-    if (!/18 種都收集到了/.test($('#tabBody').textContent)) fails.push('真的全部孵出來了，沒有寫「都收集到了」');
+    if (!new RegExp(PET_SPECIES.length + ' 種都收集到了').test($('#tabBody').textContent)) fails.push('真的全部孵出來了，沒有寫「都收集到了」');
     var eggBtn11 = [].filter.call(document.querySelectorAll('#tabBody button'), function(b){ return /寵物蛋/.test(b.textContent); })[0];
     if (!eggBtn11 || !eggBtn11.disabled || !/賣完/.test(eggBtn11.textContent)) fails.push('18 種都有了，買蛋按鈕沒有變成「賣完了」');
     var kp10 = JSON.parse(keepPets10); G.pets = kp10[0]; G.activePet = kp10[1]; G.companions = kp10[2]; G.pet = G.pets[G.activePet];

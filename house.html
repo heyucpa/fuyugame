@@ -2183,7 +2183,9 @@ const FOODS = [
   { id: 'pudding', name: '布丁', emoji: '🍮', price: 250, hunger: 22, mood: 8 },
   { id: 'cake', name: '草莓蛋糕', emoji: '🍰', price: 400, hunger: 35, mood: 15 },
   // 小安素：小可愛跟寵物都喝得到，所以兩邊的食物櫃都要有
-  { id: 'xiaoansu', name: '小安素', emoji: '🥤', price: 300, hunger: 20, mood: 4, grow: .3 }
+  { id: 'xiaoansu', name: '小安素', emoji: '🥤', price: 300, hunger: 20, mood: 4, grow: .3 },
+  // 骨頭（家長：寵物食物可以加骨頭）：只有寵物吃（petOnly），小可愛的食物選單不會出現
+  { id: 'bone', name: '骨頭', emoji: '🦴', price: 180, hunger: 25, mood: 8, petOnly: true }
 ];
 const FOOD_BY_ID = Object.fromEntries(FOODS.map(f => [f.id, f]));
 
@@ -2211,7 +2213,12 @@ const PET_SPECIES = [
   { id: 'marshpig', name: '棉花糖豬', body: '#ffd9e6', edge: '#e5aec2', belly: '#fff2f7', inner: '#ff9ec4', ears: 'curl', fluffy: true, weight: 10 },
   { id: 'sodapeng', name: '蘇打企鵝', body: '#9fd8ee', edge: '#6fb0cc', belly: '#ffffff', inner: '#6fb0cc', ears: 'none', beak: true, weight: 10 },
   { id: 'pancakeotter', name: '煎餅獺', body: '#e8c489', edge: '#c09a5c', belly: '#fff3dc', inner: '#c09a5c', ears: 'round', weight: 10 },
-  { id: 'rainbowuni', name: '彩虹獨角獸', body: '#f3dcff', edge: '#c69ae0', belly: '#fff2fb', inner: '#8fd4f0', ears: 'horns', starMark: true, rare: true, weight: 3 }
+  { id: 'rainbowuni', name: '彩虹獨角獸', body: '#f3dcff', edge: '#c69ae0', belly: '#fff2fb', inner: '#8fd4f0', ears: 'horns', starMark: true, rare: true, weight: 3 },
+  /* 第三批：兩隻「特別」的（家長：再多兩隻寵物，特別）。
+     跟其他寵物不一樣的地方：有小翅膀（wings）、身邊一直閃亮亮（sparkle），天使兔頭上還有光環（halo）。
+     比稀有的更難孵到（weight 2）。 */
+  { id: 'angelbunny', name: '天使兔', body: '#fffaf2', edge: '#e6d3a8', belly: '#ffffff', inner: '#ffd6e6', ears: 'long', wings: '#ffffff', halo: '#ffd35c', sparkle: true, rare: true, special: true, weight: 2 },
+  { id: 'galaxydragon', name: '銀河龍', body: '#5b4b9e', edge: '#3c2f75', belly: '#a99ae0', inner: '#ffe066', ears: 'horns', wings: '#8f7fe0', starMark: true, sparkle: true, rare: true, special: true, weight: 2 }
 ];
 const PET_SPECIES_BY_ID = Object.fromEntries(PET_SPECIES.map(s => [s.id, s]));
 // next：要累積多少成長才進入下一階段；scale：畫面大小
@@ -4064,7 +4071,7 @@ function kidHeightScale() { // 畫面上的大小：成長值越高畫得大一�
 function feedKid(foodId, src) {
   const stock = src === 'pet' ? G.food : G.kidFood;
   const f = (src === 'pet' ? FOOD_BY_ID : KID_FOOD_BY_ID)[foodId];
-  if (!f || !stock[foodId]) return null;
+  if (!f || !stock[foodId] || f.petOnly) return null;   // 小可愛不啃骨頭
   stock[foodId]--;
   if (!stock[foodId]) delete stock[foodId];
   G.kid.hunger = clampStat(G.kid.hunger + f.hunger);
@@ -5836,7 +5843,8 @@ const PET_TRAIT_OF = {
   penguin: 'fish', sodapeng: 'fish', matchafrog: 'fish', pancakeotter: 'fish', cat: 'fish', grapeocto: 'fish',
   chick: 'sand', peachmouse: 'sand', marshpig: 'sand', cocoadog: 'sand',
   bunny: 'shy', sheep: 'shy', mochi: 'shy', bear: 'shy',
-  dragon: 'jump', starfox: 'jump', strawcow: 'jump', rainbowuni: 'jump'
+  dragon: 'jump', starfox: 'jump', strawcow: 'jump', rainbowuni: 'jump',
+  angelbunny: 'shy', galaxydragon: 'jump'
 };
 const petTrait = () => (G.pet && PET_TRAIT_OF[G.pet.species]) || 'jump';
 const PET_TRAIT_NAMES = { fish: '愛看魚', sand: '愛玩沙', shy: '有點害羞', jump: '很活潑' };
@@ -6385,12 +6393,30 @@ function phGoTo(a, room, t) {
   if (a.sleep) phWake(a, room);
   a.path = (Math.floor(a.x) === t[0] && Math.floor(a.y) === t[1]) ? [] : findPath(room, Math.floor(a.x), Math.floor(a.y), t[0], t[1]);
 }
-const atGoal = a => !a.goal || (!a.path.length && Math.floor(a.x) === a.goal[0] && Math.floor(a.y) === a.goal[1]);
+const atGoal = a => {
+  if (!a.goal) return true;
+  if (a.path.length) return false;
+  // 路走完了卻沒到（中途被擋住）：就在這裡算到了，不要永遠卡著
+  if (Math.floor(a.x) !== a.goal[0] || Math.floor(a.y) !== a.goal[1]) a.goal = [Math.floor(a.x), Math.floor(a.y)];
+  return true;
+};
 // 找 n 個不重複的空格，越靠近 (cx, cy) 越先（排除小可愛腳下）
 function phFreeSpots(room, cx, cy, n, filter) {
   const blk = blockedGrid(room), kid = fufuTile(), out = [];
+  // 只挑走得到的格子（被家具圍住的角落不算），不然寵物會卡在半路，跳舞、音樂會都排不好
+  const reach = new Set(), q = [kid];
+  reach.add(kid[0] + ',' + kid[1]);
+  while (q.length) {
+    const [i, j] = q.shift();
+    [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([di, dj]) => {
+      const ni = i + di, nj = j + dj, k = ni + ',' + nj;
+      if (ni < 0 || nj < 0 || ni >= room.w || nj >= room.d || blk[ni][nj] || reach.has(k)) return;
+      reach.add(k); q.push([ni, nj]);
+    });
+  }
   for (let i = 0; i < room.w; i++) for (let j = 0; j < room.d; j++) {
     if (blk[i][j] || (i === kid[0] && j === kid[1])) continue;
+    if (!reach.has(i + ',' + j)) continue;
     if (filter && !filter(i, j)) continue;
     out.push([i, j, Math.hypot(i + .5 - cx, j + .5 - cy)]);
   }
@@ -6469,12 +6495,8 @@ function phCallAll(id) {
   } else if (id === 'birthday') {
     const c = phFreeSpots(room, fufu.x + 1, fufu.y + 1, 1)[0] || fufuTile();
     phMode.cake = { x: c[0], y: c[1], lit: true };
-    const ring = [];
-    for (let k = 0; k < list.length; k++) {
-      const ang = k / list.length * Math.PI * 2;
-      const sp = phFreeSpots(room, c[0] + .5 + Math.cos(ang) * 1.6, c[1] + .5 + Math.sin(ang) * 1.6, 1, (i2, j2) => !(i2 === c[0] && j2 === c[1]) && !ring.some(q => q[0] === i2 && q[1] === j2))[0];
-      ring.push(sp || c);
-    }
+    // 圍在蛋糕旁邊：離蛋糕最近的空格（家具擋住的話也不會跑太遠）
+    const ring = phFreeSpots(room, c[0] + .5, c[1] + .5, list.length, (i2, j2) => !(i2 === c[0] && j2 === c[1]));
     list.forEach((a, k) => phGoTo(a, room, ring[k]));
     phMode.dur = 45000;
     setTimeout(() => { if (phMode && phMode.id === 'birthday') Sound.play('tune', PH_HAPPY_SONG); }, 600);
@@ -6587,18 +6609,19 @@ function phModeTick(now) {
     try { Sound.play('note', [0, 1, 2, 3][Math.floor(now / 1000) % 4]); } catch (e) {}
     if (!fufu.pose && !fufu.path.length) fufu.jumpT = .35;   // 小可愛也一起跳
   }
-  if (m.id === 'snack' && m.snacks.every(q => !q.left)) { fufuSay('大家吃飽飽！', 2200); phModeEnd(); return; }
-  if (m.id === 'sleep' && m.start != null && now > m.start + 1500 && phWalkers().every(a => a.woke)) { phModeEnd(); return; } // 一隻一隻都叫醒了
+  if (m.id === 'snack' && m.snacks.every(q => !q.left)) { fufuSay('大家吃飽飽！', 2200); phModeEnd(now); return; }
+  if (m.id === 'sleep' && m.start != null && now > m.start + 1500 && phWalkers().every(a => a.woke)) { phModeEnd(now); return; } // 一隻一隻都叫醒了
   if (m.id === 'bubble') phBubbleTick(now);
-  if (now > m.until) phModeEnd();
+  if (now > m.until) phModeEnd(now);
 }
-function phModeEnd() {
+function phModeEnd(nowArg) {
   const was = phMode; phMode = null;
   $('.stage').classList.remove('night'); $('#nightShade').hidden = true;
-  const now = performance.now();
+  const now = nowArg || performance.now();   // 從畫面迴圈結束時用迴圈的時鐘
   Object.values(phActors).forEach(a => {
-    a.goal = null; a.modeBed = null; a.eatAt = 0; a.idleUntil = now + 2000 + Math.random() * 2000;
+    a.goal = null; a.modeBed = null; a.eatAt = 0;
     if (was && was.id === 'sleep' && a.sleep) { phWake(a); a.squishV = -7; }
+    a.idleUntil = now + 2000 + Math.random() * 2000;   // 要在 phWake 之後設（phWake 也會改它），剛醒先站一下
     a.woke = false; a.hidden = false; a.note = null;
   });
   if (was && was.id === 'sleep') { fufuSay('早安！', 2000); Sound.play('petHappy'); }
@@ -7048,6 +7071,17 @@ function drawCreature(ctx, sp, look) {
     });
   }
 
+  // 特別寵物：背後一對小翅膀（輕輕拍）
+  if (sp.wings) {
+    const flap = Math.sin(performance.now() / 160) * .18;
+    ctx.fillStyle = sp.wings; ctx.strokeStyle = edge; ctx.lineWidth = L;
+    [-1, 1].forEach(s => {
+      ctx.save(); ctx.translate(s * 12, -13); ctx.rotate(s * (.5 + flap));
+      ctx.beginPath(); ctx.ellipse(s * 5, -2, 7, 4.2, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(s * 3, 2, 5, 3, .3 * s, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.restore();
+    });
+  }
   // 橘子龍：背上的小刺
   if (sp.spikes) {
     ctx.fillStyle = inner; ctx.strokeStyle = edge; ctx.lineWidth = L;
@@ -7086,6 +7120,18 @@ function drawCreature(ctx, sp, look) {
     [-4, 0, 4].forEach(x => { ctx.beginPath(); ctx.moveTo(x, -19.5); ctx.lineTo(x * .9, -16); ctx.stroke(); });
   }
   if (sp.starMark) star(ctx, 0, -17, 2.6, inner);
+  if (sp.halo) { // 天使兔：頭上的光環
+    ctx.strokeStyle = sp.halo; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.ellipse(0, -36 + Math.sin(performance.now() / 400) * 1, 7, 2.4, 0, 0, Math.PI * 2); ctx.stroke();
+  }
+  if (sp.sparkle) { // 身邊一直有小星星一閃一閃
+    const tt = performance.now() / 1000;
+    [[-17, -20, 0], [16, -24, 1.7], [18, -6, 3.1], [-18, -6, 4.4]].forEach(([x, y, ph]) => {
+      const a = (Math.sin(tt * 3 + ph) + 1) / 2;
+      if (a < .25) return;
+      ctx.globalAlpha = a; star(ctx, x, y, 1.6 + a * 1.4, '#ffe066'); ctx.globalAlpha = 1;
+    });
+  }
   if (sp.spots) { // 小牛：黑色花斑
     ctx.fillStyle = '#3a3240';
     [[-10, -14, 2.8, 2.2], [9, -6, 2.6, 2], [7, -17, 2, 1.6]].forEach(([x, y, rx, ry]) => { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, .3, 0, Math.PI * 2); ctx.fill(); });
@@ -9518,7 +9564,7 @@ function showFoodMenu(who) {
     if (!ids.length) return;
     if (title && any) { const t = document.createElement('div'); t.className = 'menu-sub'; t.textContent = title; menu.appendChild(t); }
     any = true;
-    ids.forEach(id => {
+    ids.filter(id => !(who === 'kid' && table[id].petOnly)).forEach(id => {   // 骨頭這種只給寵物吃
       const f = table[id], b = document.createElement('button');
       b.textContent = `${f.emoji} ${f.name} ×${stock[id]}${who === 'kid' && f.grow ? '　💪' : ''}`;
       b.onclick = () => { menu.hidden = true; if (who === 'kid') kidEat(id, src); else petFeed(id); commit(); };

@@ -116,7 +116,7 @@
     if (localStorage.getItem(SAVE_KEY) !== before) fails.push('B：還原之後存檔跟原本差了一個字以上');
     G = loadGame();
     checkHealth('B 還原後');
-    [['寵物數', G.pets.length, 18], ['照顧中', G.activePet, 3], ['房間數', G.rooms.length, 3],
+    [['寵物數', G.pets.length, PET_SPECIES.length], ['照顧中', G.activePet, 3], ['房間數', G.rooms.length, 3],
      ['桌上卡帶', G.rooms[0].items[0].top, 'game_cart'], ['桌上地球儀', G.rooms[0].items[1].top, 'globe'],
      ['髮型', G.hair.style, 'twin'], ['髮色', G.hair.color, 'pink'], ['頭飾', G.outfit.head, 'santa_hat'],
      ['寶箱', G.fish['寶箱'], 1], ['錢', G.bells, 54321], ['名字', G.charName, '姊姊的小可愛'],
