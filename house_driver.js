@@ -120,7 +120,7 @@
        只改 newGame() 的話，她那台有存檔就一毛都拿不到。
        而且只能補一次，不能每次開都補。 */
     if (newGame().bells + OPEN_GIFT_BELLS !== START_BELLS)
-      fails.push('開局金幣（含開幕紅包）不是 ' + START_BELLS);
+      fails.push('開局金幣（含開幕包裹）不是 ' + START_BELLS);
     var old = normalizeSave(Object.assign(JSON.parse(mark), { bells: 3000, topup100k: undefined }));
     if (!old) fails.push('舊存檔讀不回來');
     else {
@@ -2136,38 +2136,96 @@
     if (!gotSave || JSON.parse(gotSave.data).bells !== 777777) fails.push('下載的備份不是最新的進度');
     G.bells = 100000; saveGame();
 
-    /* 63 🧧 新版開幕禮：每格一次、10 萬＋一顆蛋；新格拆完剛好 10 萬（不會一開始就 20 萬）；
-       舊存檔也拿得到；紅包比公告先跳；沒有 ✕、不會被不小心關掉；拆完存起來不再拿 */
+    /* 63 🎁 新版開幕禮：爸爸媽媽一起走進來、把包裹放在她旁邊，點包裹才打開（不是跳出來的視窗——家長怕像詐騙）。
+       每格一次、10 萬＋一顆蛋；新格打開後剛好 10 萬；舊存檔也拿得到；
+       爸媽送包裹時公告不跳、小安素不送；她換房間包裹跟著她；包裹沒開就關遊戲，下次會再送 */
     var gOld = JSON.parse(JSON.stringify(G)); delete gOld.openGift; gOld.bells = 3456; gOld.topup100k = true;
     var gOldN = normalizeSave(gOld);
-    if (!gOldN || gOldN.openGift !== false) fails.push('已經在玩的存檔拿不到開幕紅包');
-    if (gOldN && gOldN.bells !== 3456) fails.push('還沒拆紅包，錢就先變了');
+    if (!gOldN || gOldN.openGift !== false) fails.push('已經在玩的存檔拿不到開幕包裹');
+    if (gOldN && gOldN.bells !== 3456) fails.push('還沒打開包裹，錢就先變了');
     var gDone = normalizeSave(Object.assign(JSON.parse(JSON.stringify(G)), { openGift: true }));
-    if (!gDone || gDone.openGift !== true) fails.push('拆過的紅包讀回來又可以拆');
-    var keepG = G;
-    G = newGame(); G.newsSeen = [];
-    $('#modal').hidden = false; $('#modalCard').innerHTML = '<p id="busy2">小遊戲中</p>';
-    maybeShowNews();
-    if (!document.getElementById('busy2')) fails.push('紅包把正在開的視窗蓋掉了');
+    if (!gDone || gDone.openGift !== true) fails.push('打開過的包裹讀回來又可以開');
+    var keepG = G, keepAway = G.away;
+    G = newGame(); G.newsSeen = []; G.supplyAt = Date.now(); giftReset(); supplyGone();
+    var keepFufu = [fufu.x, fufu.y, fufu.pose, fufu.path]; fufu.pose = null; fufu.path = []; fufu.x = 2.5; fufu.y = 2.5;
     $('#modal').hidden = true;
     maybeShowNews();
-    var envBtn = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return /打開紅包/.test(b.textContent); })[0];
-    if (!envBtn || document.querySelector('#modalCard .news-ic')) fails.push('紅包沒有比更新公告先跳出來');
-    if (document.querySelector('#modalCard .modal-x')) fails.push('紅包有 ✕（會不小心關掉、拿不到）');
+    if (!$('#modal').hidden) fails.push('包裹還沒開，更新公告就先跳出來（會擋住爸爸媽媽）');
+    if (typeof openGiftEnvelope === 'function') fails.push('還留著跳出來的紅包視窗');
+    var t0 = performance.now();
+    giftTick(t0); giftTick(t0 + 500);
+    if (giftVisit.state !== 'none') fails.push('一打開遊戲爸媽就衝進來（要先等一下）');
+    $('#modal').hidden = false; giftTick(t0 + 3000);
+    if (giftVisit.state !== 'none') fails.push('有視窗開著，爸媽還是走進來');
+    $('#modal').hidden = true; giftTick(t0 + 3100);
+    if (giftVisit.state !== 'in' || giftVisit.actors.length !== 2) fails.push('爸爸媽媽沒有一起走進來（' + giftVisit.state + '，' + giftVisit.actors.length + ' 人）');
+    else {
+      var ids = giftVisit.actors.map(function(x){ return x.who.id; }).sort().join();
+      if (ids !== 'dad,mom') fails.push('走進來的不是爸爸跟媽媽：' + ids);
+      if (giftDrawEntries().length !== 2) fails.push('爸爸媽媽沒有被畫出來');
+      G.supplyAt = 0; G.kidFood = {}; G.food = {}; nextSupplyCheck = 0;
+      supplyTick(t0 + 3200);
+      if (sup.who) fails.push('爸媽送包裹的時候，又有人進來送小安素');
+      supplyGone(); G.supplyAt = Date.now();
+      // 走過去：最久六秒一定放下包裹
+      for (var gi = 1; gi < 600 && giftVisit.state === 'in'; gi++) giftTick(t0 + 3100 + gi * 1000 / 60); // 一格畫面一格畫面走
+      if (giftVisit.state !== 'drop' || !giftVisit.box) fails.push('爸爸媽媽沒有把包裹放下（' + giftVisit.state + '）');
+      if (G.openGift || G.bells !== 0) fails.push('包裹還沒點開，錢就已經給了');
+      if (!giftVisit.says[0]) fails.push('爸媽放下包裹時沒有說話');
+      var pa = giftVisit.actors.map(function(x){ return Math.floor(x.a.x) + ',' + Math.floor(x.a.y); });
+      var pq = giftVisit.actors.map(function(x){ return [Math.floor(x.a.x), Math.floor(x.a.y)]; });
+      if (Math.abs((pq[0][0] - pq[0][1]) - (pq[1][0] - pq[1][1])) < 2) fails.push('爸爸媽媽在畫面上一前一後（一個擋住另一個）');
+      if (pa.indexOf(Math.floor(fufu.x) + ',' + Math.floor(fufu.y)) >= 0) fails.push('爸媽站在她身上');
+      if (giftVisit.box && Math.floor(giftVisit.box.x) === Math.floor(fufu.x) && Math.floor(giftVisit.box.y) === Math.floor(fufu.y)) fails.push('包裹放在她腳下（點不到）');
+      for (var gj = 0; gj < 600 && giftVisit.state !== 'none'; gj++) giftTick(t0 + 20000 + gj * 50);
+      if (giftVisit.state !== 'none') fails.push('爸爸媽媽走不掉（卡在家裡）：' + giftVisit.state);
+      if (!giftBoxHere()) fails.push('爸媽走了以後包裹不見了');
+    }
+    // 換房間：包裹跟著她；出門的時候不畫
+    if (G.rooms.length < 2) G.rooms.push(JSON.parse(JSON.stringify(G.rooms[0])));
+    G.cur = 1; giftTick(t0 + 60000);
+    if (!giftBoxHere()) fails.push('她換房間，包裹沒有跟過來');
+    G.cur = 0; giftTick(t0 + 60100);
+    G.away = { place: 'uncle', idx: 0 };
+    if (giftBoxHere()) fails.push('在叔叔家也看得到自己家的包裹');
+    G.away = null; giftTick(t0 + 60200);
+    if (!giftBoxHere()) fails.push('從叔叔家回來，包裹不見了');
+    // 點包裹：用畫面座標點下去
+    var bx = giftBoxHere(), bp = iso(bx.x, bx.y, 0);
+    if (!giftBoxHit({ x: bp.x, y: bp.y - 12 })) fails.push('點包裹點不到');
+    if (giftBoxHit({ x: bp.x + 200, y: bp.y })) fails.push('點旁邊也算點到包裹');
     var pets0 = G.pets.length;
-    if (envBtn) envBtn.onclick();
-    if (G.bells !== START_BELLS) fails.push('新的存檔格拆完紅包不是 ' + START_BELLS + '（' + G.bells + '）');
-    if (G.pets.length !== pets0 + 1 || G.pet.stage !== 'egg') fails.push('紅包沒有送寵物蛋，或蛋沒有變成主要照顧的那隻');
-    if (G.pets[G.pets.length - 1].species === 'mochi') fails.push('紅包的蛋沒有優先孵出還沒收集到的');
-    if (G.earned !== 0) fails.push('紅包的錢被算成「賺到的」');
-    if (!/100,000/.test($('#modalCard').textContent)) fails.push('拆開後沒寫拿到多少');
+    var r1 = canvas.getBoundingClientRect();
+    canvas.dispatchEvent(new PointerEvent('pointerup', { clientX: r1.left + bp.x * view.scale + view.ox, clientY: r1.top + (bp.y - 12) * view.scale + view.oy, bubbles: true }));
+    var openBtn = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return /打開包裹/.test(b.textContent); })[0];
+    if ($('#modal').hidden || !openBtn) fails.push('點了包裹沒有打開');
+    if (document.querySelector('#modalCard .modal-x')) fails.push('包裹視窗有 ✕（會不小心關掉）');
+    if (!/爸爸媽媽/.test($('#modalCard').textContent)) fails.push('包裹沒寫是爸爸媽媽送的');
+    if (openBtn) openBtn.onclick();
+    if (G.bells !== START_BELLS) fails.push('新的存檔格打開包裹後不是 ' + START_BELLS + '（' + G.bells + '）');
+    if (G.pets.length !== pets0 + 1 || G.pet.stage !== 'egg') fails.push('包裹沒有送寵物蛋，或蛋沒有變成主要照顧的那隻');
+    if (G.pets[G.pets.length - 1].species === 'mochi') fails.push('包裹的蛋沒有優先孵出還沒收集到的');
+    if (G.earned !== 0) fails.push('包裹的錢被算成「賺到的」');
+    if (!/100,000/.test($('#modalCard').textContent)) fails.push('打開後沒寫拿到多少');
+    if (giftBoxHere()) fails.push('打開了包裹還在地上');
     var reG = normalizeSave(JSON.parse(localStorage.getItem(SAVE_KEY)));
-    if (!reG || !reG.openGift) fails.push('拆過紅包沒有存起來');
-    if (claimOpenGift() !== null || G.bells !== START_BELLS) fails.push('紅包可以拆第二次');
-    var okEnv = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return /去布置/.test(b.textContent); })[0];
-    if (!okEnv) fails.push('拆完沒有關掉的按鈕');
-    else { okEnv.onclick(); if (!$('#modal').hidden) fails.push('拆完關不掉'); }
-    G = keepG; G.openGift = true; saveGame();
+    if (!reG || !reG.openGift) fails.push('打開過包裹沒有存起來');
+    if (claimOpenGift() !== null || G.bells !== START_BELLS) fails.push('包裹可以開第二次');
+    giftTick(t0 + 90000); giftTick(t0 + 99000);
+    if (giftVisit.state !== 'none') fails.push('打開過了爸媽又送來一次');
+    var okEnv = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return /謝謝/.test(b.textContent); })[0];
+    if (!okEnv) fails.push('打開後沒有關掉的按鈕');
+    else { okEnv.onclick(); if (!$('#modal').hidden) fails.push('打開後關不掉'); }
+    // 爸媽的對話框沒有鄰居在的時候也要畫（以前的 bug：只有鄰居在才畫）
+    var drew = 0, realNB = drawNeighborBubble;
+    if (visitorDrawEntries().length) fails.push('（測試前提）房間裡有鄰居');
+    sup.who = PARENTS[0]; sup.a = { x: 1, y: 1, z: 0, path: [] }; sup.say = '測試'; sup.sayUntil = performance.now() + 9999;
+    drawNeighborBubble = function(){ drew++; };
+    try { visitorDrawOverlay(canvas.getContext('2d'), performance.now()); } finally { drawNeighborBubble = realNB; }
+    supplyGone();
+    if (!drew) fails.push('沒有鄰居來玩的時候，爸媽說的話不會顯示');
+    fufu.x = keepFufu[0]; fufu.y = keepFufu[1]; fufu.pose = keepFufu[2]; fufu.path = keepFufu[3];
+    G = keepG; G.away = keepAway; G.openGift = true; saveGame(); giftReset();
     $('#modal').hidden = true;
 
     /* ㊾ 更新公告：舊存檔要看到、新存檔不用看、看過不再跳、有別的視窗時不要蓋掉、
