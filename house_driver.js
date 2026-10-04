@@ -23,7 +23,9 @@
     if (!document.querySelector('link[rel="manifest"]')) fails.push('沒有 manifest（加不了主畫面）');
     if (!document.querySelector('meta[name="apple-mobile-web-app-capable"]'))
       fails.push('沒有 apple-mobile-web-app-capable（加到主畫面不會全螢幕）');
-    if (!document.querySelector('link[rel="apple-touch-icon"]')) fails.push('沒有主畫面圖示');
+    var ati = document.querySelector('link[rel="apple-touch-icon"]');
+    if (!ati) fails.push('沒有主畫面圖示');
+    else if (ati.getAttribute('href').indexOf('data:image/png') !== 0) fails.push('主畫面圖示不是 PNG（iPad 不認 SVG，會變成綠底一個字）');
     if (!document.title) fails.push('沒有標題');
     if (document.querySelector('body > title')) fails.push('<title> 還留在 <body> 裡面');
     // 整份要自足：連出去的話離線就玩不了，而且小孩的平板常常沒網路
