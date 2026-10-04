@@ -3400,6 +3400,7 @@ saveGame();
 // 回傳有沒有存成功。存不了的時候畫面上會一直掛著提醒，不能讓她玩完才發現沒存到
 function saveGame() {
   if (SAVE_LOCKED != null) { showSaveWarn('locked'); return false; }
+  G.savedAt = Date.now(); // 記下存檔時間：還原備份時拿來比「哪一份比較新」
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(G)); }
   catch (e) { showSaveWarn('fail'); return false; } // 私密視窗、空間滿了等等
   showSaveWarn(null);
@@ -9051,6 +9052,25 @@ function applyBackup(txt) {
   return true;
 }
 
+/* 還原前的防呆：比較備份和現在的進度。
+   備份比較舊（存的時間比較早，或累計賺到的錢比較少——那個數字只會變多），
+   或是角色名字不一樣（姊妹拿錯對方的備份），就清楚列出兩邊，要確認兩次。 */
+function backupFacts(g) {
+  const items = g.rooms.reduce((n, r) => n + r.items.length + (r.wallItems || []).length, 0);
+  return { at: g.savedAt || 0, earned: g.earned || 0, items, pets: (g.pets || []).length, rooms: g.rooms.length,
+           name: (g.charName || '').trim() || DEFAULT_CHAR_NAME };
+}
+function compareBackup(s) {
+  let g = null;
+  try { g = normalizeSave(JSON.parse(s.data)); } catch (e) { g = null; }
+  if (!g) return null;
+  const b = backupFacts(g), c = backupFacts(G);
+  const older = (b.at && c.at && b.at < c.at - 60000) || b.earned < c.earned;
+  const otherKid = b.name !== c.name;
+  const row = (t, f) => `${t}：${f.at ? new Date(f.at).toLocaleString('zh-TW', { hour12: false }) : '（舊版沒有記時間）'}\n　　${f.name}・累計賺到 💰${fmt(f.earned)}・家具 ${f.items} 件・寵物 ${f.pets} 隻`;
+  return { older, otherKid, text: row('備份', b) + '\n' + row('現在', c) };
+}
+
 // 按下複製／下載的那一刻才產生備份（頁面開著的時候寵物等狀態還在變）
 /* 按下複製／下載的那一刻才產生備份（頁面開著的時候寵物等狀態還在變）。
    存檔寫不進去的時候（紅色警告正在叫家長備份），不能拿儲存區裡比較舊的那份充數——
@@ -9179,7 +9199,10 @@ function tabSave(body) {
     // 讀進來先驗一次就告訴她結果，不要讓她按了「還原」才發現選錯檔案
     r.onload = () => {
       if (!putBackup(String(r.result))) toast('這個檔案不是小屋的備份');
-      else toast('讀好了，按下面的「還原」');
+      else {
+        const cmp = compareBackup(readBackup(String(r.result)));
+        toast(cmp && cmp.older ? '讀好了，但⚠️ 這份比現在的進度舊，還原前請確認' : cmp && cmp.otherKid ? '讀好了，但⚠️ 這份的角色名字跟現在不一樣' : '讀好了，按下面的「還原」');
+      }
     };
     r.onerror = () => toast('這個檔案讀不出來');
     r.readAsText(f);
@@ -9202,7 +9225,12 @@ function tabSave(body) {
   restore.onclick = () => askPin('用備份蓋掉現在的進度', () => {
     const s = readBackup(box.value);
     if (!s) { toast('這段不是小屋的備份，沒有動到任何東西'); return; }
-    if (!confirm('要用這一份備份蓋掉現在的進度嗎？\n\n備份時間：' + (s.at || '不詳'))) return;
+    const cmp = compareBackup(s);
+    if (cmp && (cmp.older || cmp.otherKid)) {
+      const why = [cmp.older ? '⚠️ 這份備份比現在的進度「舊」！' : '', cmp.otherKid ? '⚠️ 這份備份的角色名字跟現在的不一樣，是不是拿到另一個人的？' : ''].filter(Boolean).join('\n');
+      if (!confirm(why + '\n\n' + cmp.text + '\n\n現在的進度會先留一份，之後可以用「把上一份換回來」救回來。\n還是要用這份備份嗎？')) return;
+      if (!confirm('再確認一次：真的要用這份備份蓋掉現在的進度嗎？')) return;
+    } else if (!confirm('要用這一份備份蓋掉現在的進度嗎？\n\n' + (cmp ? cmp.text : '備份時間：' + (s.at || '不詳')))) return;
     if (!applyBackup(box.value)) { toast('寫不進去，沒有動到任何東西'); return; }
     location.reload();   // 整個重讀最乾淨，G 跟畫面都會跟著換
   });

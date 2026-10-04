@@ -1326,6 +1326,40 @@
       fails.push('蝴蝶相簿顯示不對');
     var md8 = document.querySelector('#modal'); if (md8) md8.hidden = true;
 
+    /* 59 還原備份的防呆：備份比現在舊、或是另一個人的，要清楚警告、確認兩次 */
+    saveGame();
+    var curG = JSON.parse(JSON.stringify(G));
+    var mkB = function(mod){ var g9 = JSON.parse(JSON.stringify(curG)); mod(g9); return makeBackup(JSON.stringify(g9)); };
+    var oldB = mkB(function(g9){ g9.earned = Math.max(0, curG.earned - 5000); g9.savedAt = curG.savedAt - 86400000; });
+    var newB = mkB(function(g9){ g9.earned = curG.earned + 5000; g9.savedAt = curG.savedAt + 60000 * 5; });
+    var kidB = mkB(function(g9){ g9.earned = curG.earned + 10; g9.savedAt = curG.savedAt + 600000; g9.charName = '另一個小孩'; });
+    var c1 = compareBackup(readBackup(oldB)), c2 = compareBackup(readBackup(newB)), c3 = compareBackup(readBackup(kidB));
+    if (!c1 || !c1.older) fails.push('比較舊的備份沒有被認出來');
+    if (!c2 || c2.older) fails.push('比較新的備份被當成舊的');
+    if (!c3 || !c3.otherKid) fails.push('名字不一樣的備份（姊妹拿錯）沒有被認出來');
+    if (c1 && (!/備份：/.test(c1.text) || !/現在：/.test(c1.text) || !/累計賺到/.test(c1.text))) fails.push('比較的內容沒有列出兩邊');
+    // 實際按還原：舊的要確認兩次；第二次按取消就不能動到存檔
+    var asks = [], realConfirm = window.confirm, realApply = applyBackup, applied = 0;
+    applyBackup = function(){ applied++; return false; };   // 不真的寫入（會重新整理頁面）
+    try {
+      openTab('save');
+      var box9 = document.querySelector('#tabBody textarea');
+      var rsB = [].filter.call(document.querySelectorAll('#tabBody button'), function(b){ return /還原/.test(b.textContent) && !/強制/.test(b.textContent); })[0];
+      window.confirm = function(m){ asks.push(m); return asks.length < 2; };
+      box9.value = oldB; rsB.onclick();
+      if (asks.length !== 2 || !/舊/.test(asks[0])) fails.push('還原比較舊的備份沒有清楚警告、確認兩次（問了 ' + asks.length + ' 次）');
+      if (applied) fails.push('第二次按取消，還是把舊備份寫進去了');
+      asks = []; applied = 0;
+      window.confirm = function(m){ asks.push(m); return true; };
+      box9.value = newB; rsB.onclick();
+      if (asks.length !== 1 || /舊/.test(asks[0])) fails.push('還原比較新的備份也跳舊的警告');
+      if (applied !== 1) fails.push('確認後沒有還原比較新的備份');
+      asks = [];
+      box9.value = kidB; rsB.onclick();
+      if (asks.length !== 2 || !/名字/.test(asks[0])) fails.push('拿到另一個人的備份沒有警告');
+    } finally { window.confirm = realConfirm; applyBackup = realApply; }
+    if (!(G.savedAt > 0)) fails.push('存檔沒有記存的時間');
+
     /* 58 ChatGPT 第二次核對的三個問題＋兩個小建議 */
     var realSetI = Storage.prototype.setItem, failSave = function(){ Storage.prototype.setItem = function(){ throw new Error('full'); }; }, okSave = function(){ Storage.prototype.setItem = realSetI; };
     // P0：存不進去的時候，「今天先玩到這裡」不能說存好了
