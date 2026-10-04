@@ -13637,7 +13637,8 @@ function openScoopGame() {
   pickLevelRow(w, SCOOP_LEVELS, L => `一隻 💰 ${15 * L.mul}`, L => playScoop(w, L));
 }
 function playScoop(w, L) {
-  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  if (gameCleanup) { gameCleanup(); gameCleanup = null; }   // 「再玩一次」：先把上一局停乾淨
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);   // 玩到一半也可以不玩了
   const W = 320, H = 320, { c, g, pos } = gameCanvas(w.stage, W, H);
   let fish = [], got = 0, left = L.sec, raf = 0, ended = false, last = performance.now(), splash = [];
   const spawn = () => {
@@ -13646,7 +13647,7 @@ function playScoop(w, L) {
   };
   for (let i = 0; i < L.n; i++) spawn();
   const tick = setInterval(() => { if (ended) return; left--; status(); if (left <= 0) finish(); }, 1000);
-  gameCleanup = () => { cancelAnimationFrame(raf); clearInterval(tick); };
+  gameCleanup = () => { ended = true; cancelAnimationFrame(raf); clearInterval(tick); };
   const status = () => { w.status.textContent = `${L.name}　還有 ${left} 秒　撈到 ${got} 隻`; };
   status();
   const scoop = f => {
@@ -13700,7 +13701,7 @@ function playScoop(w, L) {
     });
     splash = splash.filter(sp => (sp.t += dt) < .6);
     splash.forEach(sp => { g.strokeStyle = sp.gold ? '#ffd35c' : '#ffffff'; g.lineWidth = 2; g.beginPath(); g.arc(sp.x, sp.y, 10 + sp.t * 40, 0, Math.PI * 2); g.stroke(); });
-    raf = requestAnimationFrame(frame);
+    if (!ended || splash.length) raf = requestAnimationFrame(frame);   // 結束就停（以前會一直跑）
   })();
 }
 
@@ -13716,11 +13717,13 @@ function openBakeGame() {
   pickLevelRow(w, BAKE_LEVELS, L => `一片 💰 ${20 * L.mul}`, L => playBake(w, L));
 }
 function playBake(w, L) {
-  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  if (gameCleanup) { gameCleanup(); gameCleanup = null; }
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
   const W = 320, H = 300, { c, g } = gameCanvas(w.stage, W, H);
   let round = 0, score = 0, k = 0, raf = 0, ended = false, last = performance.now(), result = null, resultAt = 0, zoneAt = .62;
-  const tray = [];
-  gameCleanup = () => cancelAnimationFrame(raf);
+  const tray = [], timers = [];
+  // 視窗被關掉（不想玩、休息時間到）：計時器也要停，不然 0.7 秒後還會自己算完、給錢
+  gameCleanup = () => { ended = true; cancelAnimationFrame(raf); timers.forEach(clearTimeout); };
   const status = () => { w.status.textContent = `${L.name}　第 ${Math.min(round + 1, BAKE_N)} / ${BAKE_N} 片　得到 ${score} 分`; };
   const next = () => { round++; k = 0; result = null; zoneAt = .5 + Math.random() * .25; if (round >= BAKE_N) finish(); else status(); };
   // 拿出來：在金黃色（zone）裡 2 分、差一點 1 分、太早或烤焦 0 分
@@ -13733,7 +13736,7 @@ function playBake(w, L) {
     resultAt = performance.now();
     Sound.play(pts === 2 ? 'perfect' : pts === 1 ? 'coin' : 'miss');
     status();
-    setTimeout(() => { if (!ended) next(); }, 700);
+    timers.push(setTimeout(() => { if (!ended) next(); }, 700));
   };
   c.addEventListener('pointerdown', take);
   status();
@@ -13745,7 +13748,7 @@ function playBake(w, L) {
     toast(`🍪 烤餅乾 ${score} 分，拿到 💰 ${fmt(bells)}`);
     gameButtons(w, () => pickLevelRow(w, BAKE_LEVELS, L2 => `一片 💰 ${20 * L2.mul}`, L2 => playBake(w, L2)));
   }
-  openBakeGame.test = { finish, take, setK: v => { k = v; }, zone: () => [zoneAt, zoneAt + L.zone], score: () => score, round: () => round, level: L };
+  openBakeGame.test = { finish, take, setK: v => { k = v; }, zone: () => [zoneAt, zoneAt + L.zone], score: () => score, round: () => round, setRound: v => { round = v; }, ended: () => ended, timers: () => timers.length, level: L };
   (function frame(now) {
     now = now || performance.now();
     const dt = Math.max(0, Math.min(.05, (now - last) / 1000)); last = now;
@@ -13766,7 +13769,7 @@ function playBake(w, L) {
     // 烤好的放盤子
     tray.forEach((cl, i) => { g.fillStyle = cl; g.beginPath(); g.arc(50 + i * 31, 255, 13, 0, Math.PI * 2); g.fill(); });
     if (result && performance.now() - resultAt < 700) { g.fillStyle = '#4a3b2a'; g.font = 'bold 22px sans-serif'; g.textAlign = 'center'; g.fillText(result, 160, 24); }
-    raf = requestAnimationFrame(frame);
+    if (!ended) raf = requestAnimationFrame(frame);
   })();
 }
 
@@ -13783,23 +13786,26 @@ function openCupcakeGame() {
   pickLevelRow(w, CUPCAKE_LEVELS, L => `一個 💰 ${25 * L.mul}`, L => playCupcake(w, L));
 }
 function playCupcake(w, L) {
-  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  if (gameCleanup) { gameCleanup(); gameCleanup = null; }
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
   const W = 320, H = 340, { c, g, pos } = gameCanvas(w.stage, W, H);
-  let want = null, cream = null, top = null, made = 0, left = L.sec, ended = false, raf = 0, happyAt = 0, oopsAt = 0;
-  const newOrder = () => { want = { cream: Math.floor(Math.random() * L.n), top: Math.floor(Math.random() * L.n) }; cream = null; top = null; };
+  let want = null, cream = null, top = null, made = 0, left = L.sec, ended = false, raf = 0, happyAt = 0, oopsAt = 0, busy = false, resetT = 0;
+  // busy：做對了要等 0.5 秒才換下一個客人，這段時間再點不能重複算
+  const newOrder = () => { want = { cream: Math.floor(Math.random() * L.n), top: Math.floor(Math.random() * L.n) }; cream = null; top = null; busy = false; };
   newOrder();
   const tick = setInterval(() => { if (ended) return; left--; status(); if (left <= 0) finish(); }, 1000);
-  gameCleanup = () => { cancelAnimationFrame(raf); clearInterval(tick); };
+  gameCleanup = () => { ended = true; cancelAnimationFrame(raf); clearInterval(tick); clearTimeout(resetT); };
   const status = () => { w.status.textContent = `${L.name}　還有 ${left} 秒　做好 ${made} 個`; };
   status();
   const btnX = i => 160 + (i - (L.n - 1) / 2) * 70;
   const pick = (kind, i) => {
-    if (ended) return;
+    if (ended || busy) return;
+    clearTimeout(resetT);   // 上一次點錯的「清掉」還沒到時間：她已經在選新的了，不要清掉
     if (kind === 'cream') { cream = i; top = null; Sound.play('click'); return; }
     if (cream == null) return;
     top = i;
-    if (cream === want.cream && top === want.top) { made++; happyAt = performance.now(); Sound.play('coin'); status(); setTimeout(() => { if (!ended) newOrder(); }, 500); }
-    else { oopsAt = performance.now(); Sound.play('miss'); setTimeout(() => { if (!ended) { cream = null; top = null; } }, 400); }
+    if (cream === want.cream && top === want.top) { made++; busy = true; happyAt = performance.now(); Sound.play('coin'); status(); resetT = setTimeout(() => { if (!ended) newOrder(); }, 500); }
+    else { oopsAt = performance.now(); Sound.play('miss'); resetT = setTimeout(() => { if (!ended) { cream = null; top = null; } }, 400); }
   };
   c.addEventListener('pointerdown', e => {
     const p = pos(e);
@@ -13843,7 +13849,7 @@ function playCupcake(w, L) {
       g.beginPath(); g.arc(btnX(i), 308, 22, 0, Math.PI * 2); g.fill(); g.stroke();
       g.font = '22px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#000'; g.fillText(CUPCAKE_TOPS[i], btnX(i), 309); g.textBaseline = 'alphabetic';
     }
-    raf = requestAnimationFrame(frame);
+    if (!ended) raf = requestAnimationFrame(frame);
   })();
 }
 

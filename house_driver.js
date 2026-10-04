@@ -2554,6 +2554,31 @@
       if (!(full > countFills(Object.assign({}, sp, { sparkle: false })))) fails.push(sp.name + ' 沒有一閃一閃的星星');
     });
 
+    /* 85 小遊戲的問題：結束後畫面迴圈要停、杯子蛋糕做對一個不能連點多次、玩到一半可以離開、關掉視窗後烤餅乾不會自己給錢 */
+    var realToast22 = toast; toast = function(){};
+    try {
+      [['Scoop', 1], ['Bake', 0], ['Cupcake', 0]].forEach(function(gm){
+        window['open' + gm[0] + 'Game'](); document.querySelectorAll('#modalCard .lv-btn')[gm[1]].onclick();
+        if (![].some.call(document.querySelectorAll('#modalCard button'), function(b){ return /不想玩了/.test(b.textContent); })) fails.push(gm[0] + '：玩到一半沒有「不想玩了」');
+        window['open' + gm[0] + 'Game'].test.finish();
+      });
+      closeGameWindow();
+      // 杯子蛋糕：做對之後連點 4 下只算 1 個
+      openCupcakeGame(); document.querySelectorAll('#modalCard .lv-btn')[0].onclick();
+      var T22 = openCupcakeGame.test, w22 = T22.want();
+      T22.pick('cream', w22.cream); T22.pick('top', w22.top); T22.pick('top', w22.top); T22.pick('top', w22.top); T22.pick('top', w22.top);
+      if (T22.made() !== 1) fails.push('杯子蛋糕：做對一個連點，算了 ' + T22.made() + ' 個');
+      closeGameWindow();
+      // 烤餅乾：最後一片拿出來後馬上關掉視窗（休息時間到），不能自己算完給錢
+      openBakeGame(); document.querySelectorAll('#modalCard .lv-btn')[0].onclick();
+      var T23 = openBakeGame.test; T23.setRound(BAKE_N - 1); var z23 = T23.zone(); T23.setK((z23[0] + z23[1]) / 2); T23.take();
+      if (T23.timers() < 1) fails.push('烤餅乾測試：拿出最後一片後沒有排下一步（測試本身不對）');
+      if (T23.ended()) fails.push('烤餅乾測試：還沒關視窗就結束了（測試本身不對）');
+      closeGameWindow();
+      if (!T23.ended()) fails.push('烤餅乾關掉視窗後，還是自己算完給了錢');
+    } catch (e) { fails.push('小遊戲問題測試出錯：' + e.message); }
+    finally { toast = realToast22; closeGameWindow(); }
+
     /* 84 檢查出來的問題（第一批）：搬桌子、收桌子，桌上的東西不能不見；重新開始時手上拿的不能掉進新存檔；
        賣掉重複寵物後，舊的選單不能動到別隻；大家睡覺時床被搬走，寵物改睡地上；蛋糕在第一格前就吹熄也會結束 */
     var keepG20 = JSON.stringify(G), realToast20 = toast, keepPet20 = [pet.x, pet.y, pet.room, pet.path, pet.sleep, pet.task, pet.z]; toast = function(){};
