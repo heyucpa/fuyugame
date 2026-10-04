@@ -2390,7 +2390,8 @@
       if (phMode || walkers.some(function(a){ return a.sleep; })) fails.push('按「☀️ 叫大家起床」，大家沒有起床');
       // 💃 跳舞
       phCallAll('dance');
-      t13 = run13(500, t13);
+      t13 = run13(700, t13);   // 寵物屋變 10×10，走過來要久一點
+      if (!phMode || !phMode.gathered) fails.push('跳舞：圍好之後沒有開始算時間（大房間裡會走一走就結束）');
       var far = walkers.filter(function(a){ return Math.hypot(a.x - fufu.x, a.y - fufu.y) > 3.6; }).length;
       if (far) fails.push('跳舞時有 ' + far + ' 隻沒有圍在小可愛旁邊');
       var hops = 0; walkers.forEach(function(a){ a.beatAt = 0; }); run13(40, t13); walkers.forEach(function(a){ if (a.beatAt > t13) hops++; });
@@ -2552,6 +2553,63 @@
       if (!(full > countFills(Object.assign({}, sp, { wings: null })) + 3)) fails.push(sp.name + ' 沒有畫出翅膀');
       if (!(full > countFills(Object.assign({}, sp, { sparkle: false })))) fails.push(sp.name + ' 沒有一閃一閃的星星');
     });
+
+    /* 84 檢查出來的問題（第一批）：搬桌子、收桌子，桌上的東西不能不見；重新開始時手上拿的不能掉進新存檔；
+       賣掉重複寵物後，舊的選單不能動到別隻；大家睡覺時床被搬走，寵物改睡地上；蛋糕在第一格前就吹熄也會結束 */
+    var keepG20 = JSON.stringify(G), realToast20 = toast, keepPet20 = [pet.x, pet.y, pet.room, pet.path, pet.sleep, pet.task, pet.z]; toast = function(){};
+    try {
+      G = normalizeSave(JSON.parse(keepG20)); G.away = null; G.cur = 0; cancelHold(); $('#modal').hidden = true;
+      var rm20 = G.rooms[0]; rm20.items = [{ uid: 501, id: 'wood_table', x: 2, y: 2, rot: 0, top: 'small_cake' }]; G.inv = {};
+      // 搬桌子：桌上的蛋糕跟著
+      startHoldFromRoom(rm20.items[0]); hold.x = 4; hold.y = 4; hold.ok = canPlace(rm20, hold.def, 4, 4, 0, hold.fromUid); placeHold();
+      var t20 = rm20.items.filter(function(x){ return x.uid === 501; })[0];
+      if (!t20 || t20.top !== 'small_cake') fails.push('搬桌子之後，桌上的東西不見了');
+      // 收桌子（選單的收起來、拿起來再收）：桌上的東西回到我的東西
+      startHoldFromRoom(t20); storeHold();
+      if (G.inv.wood_table !== 1 || G.inv.small_cake !== 1) fails.push('收桌子時，桌上的東西沒有一起收回來：' + JSON.stringify(G.inv));
+      rm20.items = [{ uid: 502, id: 'wood_table', x: 2, y: 2, rot: 0, top: 'tea_set' }]; G.inv = {};
+      storeRoomItem(rm20.items[0]);
+      if (G.inv.tea_set !== 1) fails.push('收起來（選單）時，桌上的東西沒有一起收回來');
+      // 重新開始時手上拿著東西：不能掉進新存檔
+      rm20.items = [{ uid: 503, id: 'wood_chair', x: 1, y: 1, rot: 0 }];
+      startHoldFromRoom(rm20.items[0]);
+      var realReset20 = confirmReset;
+      cancelHold(); hold = null; G = newGame(); giftReset();   // 跟 confirmReset 裡的順序一樣（先放回去再換）
+      if (G.rooms[0].items.some(function(x){ return x.uid === 503; })) fails.push('重新開始時，手上拿的東西掉進新存檔');
+      G = normalizeSave(JSON.parse(keepG20));
+      // 舊的寵物選單：賣掉重複的之後再按，不能動到別隻
+      G.away = null; G.pets = [newPet('mochi', 'kid', 'M'), newPet('bunny', 'kid', 'B1'), newPet('bunny', 'baby', 'B2'), newPet('bear', 'kid', 'T')];
+      G.activePet = 0; G.pet = G.pets[0]; G.companions = []; enterPetHouse();
+      var iT = 3; phActor(iT); phTap(iT, { clientX: 50, clientY: 50 });
+      var careB20 = [].filter.call(document.querySelectorAll('#itemMenu button'), function(b){ return /照顧/.test(b.textContent); })[0];
+      openDupSell(); $('#modal').hidden = true;
+      if (!$('#itemMenu').hidden) fails.push('打開重複寵物清單時，舊的寵物選單沒關掉');
+      releasePet(2);   // 賣掉 B2：熊的號碼從 3 變 2
+      if (careB20) careB20.onclick();
+      if (G.pet.name !== 'T') fails.push('賣掉重複寵物後按舊選單，照顧到別隻了：' + G.pet.name);
+      // 大家睡覺時床被收起來：那隻改睡地上，畫得出來
+      leavePetHouse(0); G.petHouse = null; phAppliedFor = null; phReset();
+      G.pets = [newPet('mochi', 'kid', 'M'), newPet('bunny', 'kid', 'A'), newPet('bear', 'kid', 'B')]; G.activePet = 0; G.pet = G.pets[0]; G.companions = [];
+      enterPetHouse(); phCallAll('sleep');
+      var t21 = performance.now() + 500000; for (var f21 = 0; f21 < 1500; f21++) gameStep(1 / 60, t21 + f21 * 17);
+      var onBed = phWalkers().filter(function(a){ return a.sleep && a.sleep.uid != null; })[0];
+      if (onBed) {
+        var bedU = onBed.sleep.uid; curRoom().items = curRoom().items.filter(function(x){ return x.uid !== bedU; });
+        gameStep(1 / 60, t21 + 1600 * 17);
+        if (!onBed.sleep || onBed.sleep.uid != null) fails.push('大家睡覺時床被收起來，睡在上面的寵物沒有改睡地上');
+        var shown21 = phDrawEntries().filter(function(e){ return e.drawFn; }).length;
+        if (shown21 < 1) fails.push('床被收起來後，寵物看不到');
+      } else fails.push('（測試）沒有寵物睡在床上');
+      phModeEnd();
+      // 蛋糕在第一格之前就吹熄：還是會結束
+      phCallAll('birthday'); var ck21 = phMode.cake, cp21 = iso(ck21.x + .5, ck21.y + .5, 0);
+      var hitAt21 = performance.now(); phCakeHit({ x: cp21.x, y: cp21.y - 14 });
+      gameStep(1 / 60, hitAt21 + 17);
+      if (!phMode || !(phMode.until <= hitAt21 + 6000)) fails.push('第一格之前吹蠟燭，生日派對不會很快結束（until 被蓋掉了）');
+      phModeEnd(); leavePetHouse(0);
+    } catch (e) { fails.push('檢查出來的問題（第一批）測試出錯：' + e.message); }
+    finally { toast = realToast20; cancelHold(); hideItemMenu(); if (phMode) phModeEnd(); G = normalizeSave(JSON.parse(keepG20)); saveGame(); phReset(); refreshTop(); $('#modal').hidden = true;
+      pet.x = keepPet20[0]; pet.y = keepPet20[1]; pet.room = keepPet20[2]; pet.path = keepPet20[3]; pet.sleep = keepPet20[4]; pet.task = keepPet20[5]; pet.z = keepPet20[6]; }
 
     /* 83 新的賺錢小遊戲：撈金魚、烤餅乾、杯子蛋糕店（在賺錢分頁、選難度、玩得到錢、可以離開） */
     var realToast19 = toast; toast = function(){};

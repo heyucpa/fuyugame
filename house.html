@@ -4091,6 +4091,7 @@ function spend(n) {
 const isNoSellItem = it => !!it && (it.ns || it.uid < 0);
 function storeRoomItem(it) {
   addItem(it.id);
+  if (it.top) addItem(it.top);   // 桌上放的東西一起收回來（以前會不見）
   if (isNoSellItem(it)) { G.noSell = G.noSell || {}; G.noSell[it.id] = (G.noSell[it.id] || 0) + 1; }
 }
 function addItem(id, n) {
@@ -6438,7 +6439,7 @@ function phList() {
     return true;
   }).slice(0, PH_MAX).sort((a, b) => a - b);
 }
-function phReset() { Object.keys(phActors).forEach(k => delete phActors[k]); }
+function phReset() { Object.keys(phActors).forEach(k => delete phActors[k]); try { hideItemMenu(); } catch (e) {} }
 function phActor(i) {
   if (!phActors[i]) {
     const room = curRoom(), blk = blockedGrid(room);
@@ -6669,7 +6670,7 @@ function phCallAll(id) {
   if (!list.length) { toast('寵物屋裡現在沒有寵物喔'); return false; }
   if (phMode) phModeEnd();
   if (fufu.pose) fufuStandUp(false);
-  phMode = { id, start: null, dur: 30000 };   // 時間在第一格畫面才開始算（跟畫面迴圈用同一個時鐘）
+  phMode = { id, start: null, dur: 30000, until: Infinity };   // 時間在第一格畫面才開始算（跟畫面迴圈用同一個時鐘）
   list.forEach(a => { a.napTo = null; a.playTo = null; a.play = null; if (a.sleep) phWake(a, room); }); // 原本要去睡／去玩的先取消（不然床會被「預約」住）
   if (id === 'sleep') {
     const beds = room.items.filter(it => PET_BEDS[it.id] && !PET_BEDS[it.id].withKid && !(pet.sleep && pet.sleep.uid === it.uid));
@@ -6690,12 +6691,12 @@ function phCallAll(id) {
     fufuSay('大家晚安～', 2400);
   } else if (id === 'dance') {
     phGather('dance');
-    phMode.dur = 12000;
+    phMode.dur = 20000;   // 圍好之後再跳 10 秒（見 phModeTick），這是最久的上限
     fufuSay('一起來跳舞！', 2400);
   } else if (id === 'snack') {
     const spots = phFreeSpots(room, fufu.x, fufu.y, Math.min(6, list.length + 1)).sort(() => Math.random() - .5);
     phMode.snacks = spots.map(s => ({ x: s[0], y: s[1], left: 1 }));
-    list.forEach((a, k) => phGoTo(a, room, spots[k % spots.length]));
+    list.forEach((a, k) => phGoTo(a, room, spots.length ? spots[k % spots.length] : [Math.floor(a.x), Math.floor(a.y)]));
     phMode.dur = 15000;
     Sound.play('sand');
     fufuSay('點心時間！', 2400);
@@ -6723,7 +6724,7 @@ function phCallAll(id) {
     phMode.cake = { x: c[0], y: c[1], lit: true };
     // 圍在蛋糕旁邊：離蛋糕最近的空格（家具擋住的話也不會跑太遠）
     const ring = phFreeSpots(room, c[0] + .5, c[1] + .5, list.length, (i2, j2) => !(i2 === c[0] && j2 === c[1]));
-    list.forEach((a, k) => phGoTo(a, room, ring[k]));
+    list.forEach((a, k) => phGoTo(a, room, ring[k] || [Math.floor(a.x), Math.floor(a.y)]));   // 空位不夠的待在原地
     phMode.dur = 45000;
     setTimeout(() => { if (phMode && phMode.id === 'birthday') Sound.play('tune', PH_HAPPY_SONG); }, 600);
     fufuSay('祝大家生日快樂！吹蠟燭吧！', 2800);
@@ -6744,6 +6745,10 @@ function phModeActor(a, now, room, blk, dt) {
   const m = phMode;
   if (m.id === 'sleep') {
     if (a.woke) return false;   // 被點醒的那隻：照平常一樣逛（其他的繼續睡）
+    if (a.sleep && a.sleep.uid != null) {   // 床被搬走或收起來：改趴在旁邊的地上睡（不然會看不到、點不到）
+      const bed = room.items.find(x => x.uid === a.sleep.uid);
+      if (!bed || `${bed.x},${bed.y},${bed.rot}` !== a.sleep.snap) { phWake(a, room); a.idleUntil = Infinity; a.sleep = { uid: null, floor: true, until: Infinity, zzzAt: now + 600 }; }
+    }
     if (a.sleep) { if (now > a.sleep.zzzAt) { a.sleep.zzzAt = now + 1600; petBurst({ kind: 'emoji', emoji: '💤', spread: 8 }, 1, a); } return true; }
     if (!a.path.length) {
       const it = a.modeBed != null && room.items.find(x => x.uid === a.modeBed);
@@ -6819,7 +6824,7 @@ function phModeActor(a, now, room, blk, dt) {
 }
 function phModeTick(now) {
   const m = phMode;
-  if (m.start == null) { m.start = now; m.until = now + m.dur; }
+  if (m.start == null) { m.start = now; m.until = Math.min(m.until, now + m.dur); }   // 第一格之前就結束的（點蛋糕、找到全部）不要被蓋掉
   if (m.id === 'train') {
     const t = fufuTile(), last = m.trail[m.trail.length - 1];
     if (t[0] !== last[0] || t[1] !== last[1]) { m.trail.push(t); if (m.trail.length > 20) m.trail.shift(); }
@@ -6830,6 +6835,8 @@ function phModeTick(now) {
     const t = fufuTile();
     if (m.center && (t[0] !== m.center[0] || t[1] !== m.center[1]) && !fufu.path.length) phGather(m.id); // 她被叫去別的地方：大家跟過去
   }
+  // 跳舞：大家圍好了（或等了 8 秒）才開始算 10 秒，不然大房間裡走過來就跳完了
+  if (m.id === 'dance' && !m.gathered && m.start != null && (phWalkers().every(atGoal) || now > m.start + 8000)) { m.gathered = true; m.until = now + 10000; }
   if (m.id === 'dance' && now > (m.beatAt || 0)) {
     m.beatAt = now + 1000;
     try { Sound.play('note', [0, 1, 2, 3][Math.floor(now / 1000) % 4]); } catch (e) {}
@@ -6883,7 +6890,7 @@ function phModeTap(a, now) {
     a.hidden = false; a.found = true; a.goal = null; a.idleUntil = now + 2000;
     a.squishV = -9; a.happyUntil = now + 2000; petBurst({ kind: 'heart' }, 4, a); Sound.play('perfect');
     m.found++;
-    if (m.found >= m.total) {
+    if (phWalkers().every(o => !o.hidden)) {   // 用現在還躲著的算（中途有寵物孵出來或被帶走，總數會變）
       m.allFound = true;
       phWalkers().forEach(o => { o.squishV = -8; petBurst({ kind: 'emoji', emoji: '🎉', spread: 20 }, 2, o); });
       Sound.play('fanfare'); fufuSay('全部找到了！好厲害！', 2600);
@@ -7034,6 +7041,7 @@ function refreshDupBtn(now) {
   }
 }
 function openDupSell() {
+  hideItemMenu();   // 寵物的選單用的是賣之前的號碼，先關掉
   const card = $('#modalCard');
   card.innerHTML = '';
   const x = el('button', 'modal-x', '✕'); x.onclick = () => { $('#modal').hidden = true; }; card.appendChild(x);
@@ -7109,9 +7117,12 @@ function phTap(i, e) {
   }
   Sound.play('petHappy'); petBurst({ kind: 'heart' }, 3, a);
   const name = petNameOf(p), entries = [];
+  // 選單開著的時候寵物清單可能變了（例如賣掉重複的）：用寵物本身找回現在的位置，不要用舊的號碼
+  const cur = () => G.pets.indexOf(p);
   entries.push([`⭐ 照顧${name}`, () => {
-    const old = G.activePet;
-    switchMainPet(i);
+    const old = G.activePet, j = cur();
+    if (j < 0 || j === G.activePet) return;
+    switchMainPet(j);
     pet.x = a.x; pet.y = a.y; pet.room = roomKey(); pet.path = [];
     // 原本照顧的那隻如果回到寵物屋，就從牠原本的位置開始走
     if (phList().includes(old)) { const o = phActor(old); o.x = a.x; o.y = a.y; }
@@ -7120,7 +7131,7 @@ function phTap(i, e) {
     commit();
   }]);
   entries.push(canAddCompanion()
-    ? ['🐾 一起逛', () => { toggleCompanion(i); compArrive(i); Sound.play('petHappy'); toast(`${name}一起出來玩！`); commit(); }]
+    ? ['🐾 一起逛', () => { const j = cur(); if (j < 0 || !toggleCompanion(j)) return; compArrive(j); Sound.play('petHappy'); toast(`${name}一起出來玩！`); commit(); }]
     : ['🐾 一起逛（位置滿了）', () => toast(petsOutLimit() > 1 ? `最多同時 ${petsOutLimit()} 隻` : '蓋第二間房間就能多帶一隻')]);
   openMenu(entries, e);
 }
@@ -9720,7 +9731,8 @@ function placeHold() {
   const spot = onWall ? { side: hold.side, pos: hold.pos } : { x: hold.x, y: hold.y, rot: hold.rot };
   const list = onWall ? room.wallItems : room.items;
   if (hold.fromUid) {
-    list.push(Object.assign({ uid: hold.fromUid, id: hold.def.id }, isNoSellItem(hold.orig) ? { ns: true } : {}, spot));
+    list.push(Object.assign({ uid: hold.fromUid, id: hold.def.id }, isNoSellItem(hold.orig) ? { ns: true } : {},
+      hold.orig && hold.orig.top ? { top: hold.orig.top } : {}, spot));   // 搬桌子：桌上的東西跟著（以前會不見）
   } else {
     if (!G.inv[hold.def.id]) { cancelHold(); return; }
     G.inv[hold.def.id]--;
@@ -10969,7 +10981,9 @@ function confirmReset() {
       close();
       // 清掉之前整份收起來，到「備份」分頁按「把上一份換回來」就回得去
       try { localStorage.setItem(UNDO_KEY, makeBackup()); } catch (e) {}
-      G = newGame(); cancelHold(); hold = null; updateHoldUI(); commit(); setTimeout(() => maybeShowNews(), 1200);
+      // 先把手上拿的放回「舊的」房間再換存檔（不然會掉進新的存檔裡）；家人送禮、教學、寵物屋也從頭來
+      cancelHold(); hold = null; hideItemMenu();
+      G = newGame(); giftReset(); guideSaid = null; guideScrolled = null; if (phMode) phModeEnd(); phReset(); updateHoldUI(); commit(); setTimeout(() => maybeShowNews(), 1200);
       toast('已經重新開始了（「備份」分頁可以反悔）');
     };
     const back = el('button', 'big', '不要，我要繼續玩');
