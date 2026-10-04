@@ -6085,11 +6085,56 @@ function compUpdate(dt, now, room) {
   Object.keys(comps).forEach(k => { if (!G.companions.includes(+k)) delete comps[k]; }); // 回寵物屋的不用再算
   if (!G.companions.length) return;
   const blk = blockedGrid(room);
-  compList().forEach(a => {
+  const bed = kidBedItem(room);
+  compList().forEach((a, k) => {
     a.t += dt;
     actorEnterRoom(a, room);
     actorSpring(a, dt, now, false);
+    if (compBedTick(a, k, bed, now, room)) return;   // 跟小可愛一起睡
     if (!a.press) actorWalk(a, dt, now, room, blk, .6); // 比主要那隻更黏小可愛
+  });
+}
+/* 一起逛的寵物也跟著上床睡（家長：只有第一隻會跟著睡，第二隻以後都沒有）。
+   小可愛躺上床（不是浴缸）：每一隻走到床邊，排在她身邊不同的位置睡，先滾一滾；她起床就跟著起來。 */
+const COMP_BED_SPOTS = [[1.65, 2.25], [.7, 2.35], [1.5, 2.75], [.85, 1.8], [1.6, 1.75]]; // 床（2×3）上、她身邊的位置（沒轉向時）
+function kidBedItem(room) {
+  const ps = fufu.pose;
+  if (!ps || ps.type !== 'lie' || ps.bath) return null;
+  const it = room.items.find(x => x.uid === ps.uid);
+  return it && PET_BEDS[it.id] && PET_BEDS[it.id].withKid ? it : null;
+}
+function compBedTick(a, k, bed, now, room) {
+  if (a.bedSleep) {
+    if (!bed || bed.uid !== a.bedSleep.uid) { // 她起床了：跟著起來
+      a.bedSleep = null; a.z = 0; a.toBed = null;
+      const c = nearestFree(room, a.x, a.y); if (c) { a.x = c[0] + .5; a.y = c[1] + .5; }
+      a.squishV = -6; a.idleUntil = now + 1500;
+      return false;
+    }
+    if (now > a.bedSleep.zzzAt) { a.bedSleep.zzzAt = now + 1700; petBurst({ kind: 'emoji', emoji: '💤', spread: 8 }, 1, a); }
+    return true;
+  }
+  if (!bed || a.press) { a.toBed = null; return false; }
+  if (a.toBed !== bed.uid) {      // 走到床邊
+    a.toBed = bed.uid;
+    a.path = (findPathToItem(room, Math.floor(a.x), Math.floor(a.y), bed) || []);
+    a.bedAt = now + 6000;         // 走不到的話最多等 6 秒就直接跳上去
+  }
+  if (a.path.length && now < a.bedAt) return false;   // 還在走（交給 actorWalk）
+  const def = FURN_BY_ID[bed.id], sp = COMP_BED_SPOTS[k % COMP_BED_SPOTS.length], pz = PET_BEDS[bed.id].z;
+  const p = rotatePoint(def, bed.rot, sp[0] * def.w / 2, sp[1] * def.d / 3);
+  a.bedSleep = { uid: bed.uid, lx: p.x, ly: p.y, z: pz, zzzAt: now + 2800 };
+  a.x = bed.x + p.x; a.y = bed.y + p.y; a.z = pz; a.path = [];
+  a.squishV = -5; a.rollUntil = now + PET_ROLL_MS;
+  return true;
+}
+// 一起逛的寵物睡在床上時，跟床一起畫（不然會被床蓋住）
+function compOccupants() {
+  const fine = p => Object.assign({}, p, { hunger: 100, clean: 100, mood: 100 });
+  return compList().filter(a => a.bedSleep).map(a => {
+    const st = fine(G.pets[a.idx]);
+    return { uid: a.bedSleep.uid, pose: 'pet', lx: a.bedSleep.lx, ly: a.bedSleep.ly, z: a.bedSleep.z, h: 26 * stageOf(st).scale,
+             draw: ctx => drawPetActor(ctx, Object.assign({}, a, { sleep: a.rollUntil > performance.now() ? null : a.bedSleep }), st) };
   });
 }
 // 剛帶出來：出現在小可愛旁邊
@@ -7145,7 +7190,7 @@ function petDrawEntries() {
   // 一起逛的不用照顧，一律畫成乾乾淨淨、心情好的樣子
   const fine = p => Object.assign({}, p, { hunger: 100, clean: 100, mood: 100 });
   const main = pet.sleep ? [] : [actorDrawEntry(pet, G.pet)]; // 睡在家具上時由 petOccupant 畫
-  return main.concat(compList().map(a => actorDrawEntry(a, fine(G.pets[a.idx]))));
+  return main.concat(compList().filter(a => !a.bedSleep).map(a => actorDrawEntry(a, fine(G.pets[a.idx]))));
 }
 
 /* 在床上滾來滾去（家長：寵物也可以在床上滾來滾去）：剛躺上床的前兩秒半左右搖晃翻滾，之後才睡著。
@@ -9012,7 +9057,7 @@ function draw() {
   const c = iso(room.w / 2, room.d / 2);
   ctx.ellipse(c.x, c.y + 18, (room.w + room.d) * TW / 4 + 20, (room.w + room.d) * TH / 4 + 14, 0, 0, Math.PI * 2);
   ctx.fill();
-  drawRoom(ctx, room, { ghost: hold, hoverUid: hold ? null : hoverUid, showGrid: !!hold, extras: [fufuDrawEntry()].concat(petDrawEntries(), visitorDrawEntries(), hostDrawEntries(), supplyDrawEntries(), giftDrawEntries(), phDrawEntries()), occupants: [fufuOccupant(), petOccupant(), visitorOccupant()].concat(phOccupants()) });
+  drawRoom(ctx, room, { ghost: hold, hoverUid: hold ? null : hoverUid, showGrid: !!hold, extras: [fufuDrawEntry()].concat(petDrawEntries(), visitorDrawEntries(), hostDrawEntries(), supplyDrawEntries(), giftDrawEntries(), phDrawEntries()), occupants: [fufuOccupant(), petOccupant(), visitorOccupant()].concat(phOccupants(), compOccupants()) });
   petDrawOverlay(ctx);
   visitorDrawOverlay(ctx, performance.now());
   drawAmbient(ctx, performance.now());

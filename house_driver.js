@@ -2523,6 +2523,35 @@
       if (!badN || typeof badN.noSell !== 'object' || typeof badN.noSell === 'string') fails.push('非賣品記錄壞掉時沒有修好');
     } finally { toast = realToast15; cancelHold(); G = normalizeSave(JSON.parse(keepG15)); saveGame(); phReset(); refreshTop(); openTab('inv'); }
 
+    /* 78 一起逛的寵物也跟著上床睡（第二隻以後也要）；不同位置；跟床一起畫；她起床就起來 */
+    var keepG16 = JSON.stringify(G), keepFufu16 = [fufu.x, fufu.y, fufu.pose, fufu.path];
+    try {
+      G = normalizeSave(JSON.parse(keepG16)); G.away = null; G.cur = 0; cancelHold();
+      G.rooms = [G.rooms[0], JSON.parse(JSON.stringify(G.rooms[0])), JSON.parse(JSON.stringify(G.rooms[0])), JSON.parse(JSON.stringify(G.rooms[0]))];
+      var rm16 = G.rooms[0];
+      rm16.items = [{ uid: 8801, id: 'wood_bed', x: 1, y: 0, rot: 0 }];
+      G.pets = [newPet('mochi', 'kid', 'M'), newPet(PET_SPECIES[1].id, 'kid', 'A'), newPet(PET_SPECIES[2].id, 'kid', 'B'), newPet(PET_SPECIES[3].id, 'kid', 'C')];
+      G.activePet = 0; G.pet = G.pets[0]; G.companions = [1, 2, 3];
+      [1, 2, 3].forEach(function(i){ compArrive(i); });
+      fufu.path = []; fufu.pose = { type: 'lie', uid: 8801, snap: '1,0,0', lx: 1, ly: 1.5, z: 30, bath: false, until: Infinity, snoreAt: Infinity };
+      var t16 = performance.now() + 300000;
+      for (var f16 = 0; f16 < 700; f16++) { var cl = compList(); cl.forEach(function(a){ a.t += 0; }); compUpdate(1 / 60, t16 + f16 * 17, rm16); }
+      var cls = compList();
+      if (cls.length !== 3 || !cls.every(function(a){ return a.bedSleep; })) fails.push('一起逛的寵物沒有全部跟著上床睡（' + cls.filter(function(a){ return a.bedSleep; }).length + '/' + cls.length + '）');
+      var spots16 = cls.map(function(a){ return a.x.toFixed(2) + ',' + a.y.toFixed(2); });
+      if (new Set(spots16).size !== spots16.length) fails.push('一起睡的寵物疊在同一個位置');
+      if (!cls.every(function(a){ return a.x >= 1 && a.x <= 3 && a.y >= 0 && a.y <= 3; })) fails.push('一起睡的寵物不在床上');
+      if (compOccupants().length !== 3) fails.push('一起睡的寵物沒有跟床一起畫');
+      if (petDrawEntries().length !== 1) fails.push('一起睡的寵物畫了兩次');
+      var drawn16 = {}, realDPA16 = drawPetActor;
+      drawPetActor = function(ctx, a){ if (a && a.idx != null) drawn16[a.idx] = (drawn16[a.idx] || 0) + 1; return realDPA16.apply(this, arguments); };
+      try { draw(); } finally { drawPetActor = realDPA16; }
+      if ([1, 2, 3].some(function(i){ return drawn16[i] !== 1; })) fails.push('一起睡的寵物畫面上沒畫出來（或畫兩次）：' + JSON.stringify(drawn16));
+      fufu.pose = null;
+      compUpdate(1 / 60, t16 + 800 * 17, rm16);
+      if (compList().some(function(a){ return a.bedSleep || a.z; })) fails.push('小可愛起床了，一起睡的寵物還躺著');
+    } finally { fufu.x = keepFufu16[0]; fufu.y = keepFufu16[1]; fufu.pose = keepFufu16[2]; fufu.path = keepFufu16[3]; G = normalizeSave(JSON.parse(keepG16)); saveGame(); }
+
     /* 76 音樂多兩首（共 6 首）：每首 64 拍、音名都認得；小可愛躺上床，照顧中的寵物一定跳上來抱著睡、先滾一滾；
        寵物屋沒有玩具：原地跳舞或跑去找小可愛 */
     var SG = Sound._t.songs, NT = Sound._t.notes;
