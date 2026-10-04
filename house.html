@@ -2433,6 +2433,8 @@ const Sound = (() => {
     stack() { tone({ f0: 330, f1: 220, dur: .1, type: 'triangle', vol: .35 }); },
     // 敲門：叩叩
     knock() { [0, .16].forEach(at => { tone({ f0: 210, f1: 150, dur: .08, type: 'triangle', vol: .5, at }); noise({ dur: .05, vol: .2, freq: 700, at }); }); },
+    freq(f) { tone({ f0: f, dur: .4, type: 'triangle', vol: .45 }); },           // 寵物音樂會：一個音
+    tune(list) { let at = 0; (list || []).forEach(([f, b]) => { tone({ f0: f, dur: b * .42, type: 'triangle', vol: .32, at }); at += b * .45; }); }, // 一小段旋律
     // 收集到新東西：叮叮叮～噹（上行琶音＋亮亮的尾巴）
     fanfare() { [523, 659, 784, 1047].forEach((f, i) => tone({ f0: f, dur: .16, type: 'triangle', vol: .3, at: i * .09 }));
                 tone({ f0: 1047, dur: .5, type: 'triangle', vol: .28, at: .38 }); tone({ f0: 1568, dur: .45, type: 'sine', vol: .14, at: .42 }); },
@@ -6193,7 +6195,8 @@ function phUpdate(dt, now) {
     else if (a.playTo != null && !a.path.length) phPlayArrive(a, now, room);
     else if (a.napTo == null && a.playTo == null && !a.path.length && now > a.idleUntil && !hold && Math.random() < PH_NAP_CHANCE) {
       // 一半去睡、一半去玩玩具（只有其中一種就做那一種）
-      if (Math.random() < PH_PLAY_SHARE) (Math.random() < PH_FUN_SHARE ? phFunGo(a, room) : phPlayGo(a, room) || phFunGo(a, room)) || phNapGo(a, room);
+      const noNap = a.woke;   // 大家睡覺時被點醒的那隻：去玩，不要又睡回去
+      if (noNap || Math.random() < PH_PLAY_SHARE) (Math.random() < PH_FUN_SHARE ? phFunGo(a, room) : phPlayGo(a, room) || phFunGo(a, room)) || (!noNap && phNapGo(a, room));
       else phNapGo(a, room) || phPlayGo(a, room);
     }
     actorWalk(a, dt, now, room, blk, .15); // 大多自己逛，偶爾跑來找小可愛
@@ -6317,12 +6320,19 @@ function phPlayStop(a, now) { a.play = null; a.idleUntil = (now || performance.n
    🚂 跟我走：排成一列跟著小可愛走，像小火車，30 秒或再按一次就解散。
    只有寵物屋裡的寵物（蛋不參加）。離開寵物屋就結束。 */
 let phMode = null;
+/* endLabel：活動進行中，「📣 叫大家」那顆按鈕變成什麼（按了就結束這個活動） */
 const PH_MODES = [
-  { id: 'sleep', icon: '💤', name: '大家去睡覺' },
+  { id: 'sleep', icon: '💤', name: '大家去睡覺', endLabel: '☀️ 叫大家起床' },
   { id: 'dance', icon: '💃', name: '一起跳舞' },
   { id: 'snack', icon: '🍪', name: '點心時間' },
-  { id: 'train', icon: '🚂', name: '跟我走' }
+  { id: 'train', icon: '🚂', name: '跟我走', endLabel: '🚂 解散' },
+  { id: 'hide', icon: '🙈', name: '捉迷藏', endLabel: '🙈 不玩了' },
+  { id: 'concert', icon: '🎵', name: '寵物音樂會', endLabel: '🎵 結束音樂會' },
+  { id: 'bubble', icon: '🫧', name: '泡泡派對' },
+  { id: 'birthday', icon: '🎂', name: '生日派對' },
+  { id: 'hats', icon: '🎀', name: '戴帽子', endLabel: '🎀 戴好了' }
 ];
+const PH_SLEEP_MS = 120000;   // 叫大家去睡覺：沒被點醒的，2 分鐘後自己起床
 function phWalkers() { return phList().filter(i => G.pets[i].stage !== 'egg').map(phActor); }
 function phGoTo(a, room, t) {
   a.goal = t; a.idleUntil = Infinity; a.napTo = null; a.playTo = null;
@@ -6378,7 +6388,7 @@ function phCallAll(id) {
       if (bed) { a.modeBed = bed.uid; const path = findPathToItem(room, Math.floor(a.x), Math.floor(a.y), bed); a.goal = null; a.idleUntil = Infinity; a.path = path || []; if (a.sleep) phWake(a, room); a.play = null; }
       else { a.modeBed = null; phGoTo(a, room, floor[(k - beds.length) % Math.max(1, floor.length)] || [Math.floor(a.x), Math.floor(a.y)]); }
     });
-    phMode.dur = Infinity;
+    phMode.dur = PH_SLEEP_MS;
     $('.stage').classList.add('night'); $('#nightShade').hidden = false;
     fufuSay('大家晚安～', 2400);
   } else if (id === 'dance') {
@@ -6392,6 +6402,41 @@ function phCallAll(id) {
     phMode.dur = 15000;
     Sound.play('sand');
     fufuSay('點心時間！', 2400);
+  } else if (id === 'hide') {
+    // 🙈 躲到家具後面（家具擋在前面的那一格），她去點找出來
+    const spots = phHideSpots(room, list.length);
+    list.forEach((a, k) => { phGoTo(a, room, spots[k] || [Math.floor(a.x), Math.floor(a.y)]); a.hidden = false; });
+    phMode.dur = 120000; phMode.found = 0; phMode.total = list.length;
+    fufuSay('1、2、3……躲好了沒？', 2600);
+  } else if (id === 'concert') {
+    // 🎵 排成一排，每一隻是一個音（Do Re Mi…），點哪隻哪隻唱
+    const kid = fufuTile();
+    let spots = phFreeSpots(room, kid[0] + .5, kid[1] + 1.5, list.length, (i, j) => j === Math.min(room.d - 1, kid[1] + 1));
+    spots = spots.concat(phFreeSpots(room, kid[0] + .5, kid[1] + 1.5, list.length).filter(s2 => !spots.some(f => f[0] === s2[0] && f[1] === s2[1])));
+    const sorted = spots.slice(0, list.length).sort((p1, p2) => (p1[0] - p1[1]) - (p2[0] - p2[1]));   // 畫面上由左到右
+    list.forEach((a, k) => { phGoTo(a, room, sorted[k] || kid); a.note = k % PH_SCALE.length; });
+    phMode.dur = 180000;
+    fufuSay('音樂會開始！點點看大家', 2600);
+  } else if (id === 'bubble') {
+    phMode.bubbles = []; phMode.spawnAt = 0; phMode.dur = 25000;
+    list.forEach(a => { a.goal = null; a.idleUntil = Infinity; });
+    fufuSay('泡泡派對！', 2200);
+  } else if (id === 'birthday') {
+    const c = phFreeSpots(room, fufu.x + 1, fufu.y + 1, 1)[0] || fufuTile();
+    phMode.cake = { x: c[0], y: c[1], lit: true };
+    const ring = [];
+    for (let k = 0; k < list.length; k++) {
+      const ang = k / list.length * Math.PI * 2;
+      const sp = phFreeSpots(room, c[0] + .5 + Math.cos(ang) * 1.6, c[1] + .5 + Math.sin(ang) * 1.6, 1, (i2, j2) => !(i2 === c[0] && j2 === c[1]) && !ring.some(q => q[0] === i2 && q[1] === j2))[0];
+      ring.push(sp || c);
+    }
+    list.forEach((a, k) => phGoTo(a, room, ring[k]));
+    phMode.dur = 45000;
+    setTimeout(() => { if (phMode && phMode.id === 'birthday') Sound.play('tune', PH_HAPPY_SONG); }, 600);
+    fufuSay('祝大家生日快樂！吹蠟燭吧！', 2800);
+  } else if (id === 'hats') {
+    phMode.dur = 600000;
+    fufuSay('點大家，幫牠們戴帽子！', 2600);
   } else if (id === 'train') {
     phMode.trail = [fufuTile()];
     list.forEach(a => { a.goal = null; a.idleUntil = Infinity; a.path = []; if (a.sleep) phWake(a, room); a.play = null; a.napTo = null; a.playTo = null; });
@@ -6405,6 +6450,7 @@ function phCallAll(id) {
 function phModeActor(a, now, room, blk, dt) {
   const m = phMode;
   if (m.id === 'sleep') {
+    if (a.woke) return false;   // 被點醒的那隻：照平常一樣逛（其他的繼續睡）
     if (a.sleep) { if (now > a.sleep.zzzAt) { a.sleep.zzzAt = now + 1600; petBurst({ kind: 'emoji', emoji: '💤', spread: 8 }, 1, a); } return true; }
     if (!a.path.length) {
       const it = a.modeBed != null && room.items.find(x => x.uid === a.modeBed);
@@ -6437,6 +6483,38 @@ function phModeActor(a, now, room, blk, dt) {
     if (next) phGoTo(a, room, [next.x, next.y]);
     return true;
   }
+  if (m.id === 'hide') {
+    if (!a.hidden && !a.found) {
+      if (!atGoal(a)) { actorWalk(a, dt, now, room, blk, 0); return true; }
+      a.hidden = true;   // 躲好了
+    }
+    if (a.hidden) return true;
+    return false;        // 找到的就照平常逛
+  }
+  if (m.id === 'concert') {
+    if (!atGoal(a)) actorWalk(a, dt, now, room, blk, 0);
+    else a.facing = 1;
+    return true;
+  }
+  if (m.id === 'bubble') {
+    // 追最近的泡泡（泡泡在空中，寵物跳起來撲）
+    const b = m.bubbles.filter(q => !q.popped).sort((p1, p2) => Math.hypot(p1.x - a.x, p1.y - a.y) - Math.hypot(p2.x - a.x, p2.y - a.y))[0];
+    if (b && !a.path.length) {
+      const t = [Math.max(0, Math.min(room.w - 1, Math.floor(b.x))), Math.max(0, Math.min(room.d - 1, Math.floor(b.y)))];
+      if (!blk[t[0]][t[1]] && (Math.floor(a.x) !== t[0] || Math.floor(a.y) !== t[1])) a.path = findPath(room, Math.floor(a.x), Math.floor(a.y), t[0], t[1]).slice(0, 6);
+    }
+    if (b && Math.hypot(b.x - a.x, b.y - a.y) < .7 && now > (a.pounceAt || 0)) { a.pounceAt = now + 500; a.squishV = -8; phBubblePop(b, a); }
+    actorWalk(a, dt, now, room, blk, 0);
+    return true;
+  }
+  if (m.id === 'birthday') {
+    if (!atGoal(a)) { actorWalk(a, dt, now, room, blk, 0); return true; }
+    const c = m.cake, dx = c.x + .5 - a.x, dy = c.y + .5 - a.y;
+    if (Math.abs(dx - dy) > .01) a.facing = dx - dy > 0 ? 1 : -1;
+    if (!c.lit && now > (a.beatAt || 0)) { a.beatAt = now + 450; a.squishV = -7; a.happyUntil = now + 500; }
+    return true;
+  }
+  if (m.id === 'hats') return false;   // 戴帽子：照平常逛，點了換帽子
   if (m.id === 'train') {
     const list = phWalkers(), k = list.indexOf(a), tr = m.trail;
     const t = tr[Math.max(0, tr.length - 2 - k)];
@@ -6453,6 +6531,7 @@ function phModeTick(now) {
     const t = fufuTile(), last = m.trail[m.trail.length - 1];
     if (t[0] !== last[0] || t[1] !== last[1]) { m.trail.push(t); if (m.trail.length > 20) m.trail.shift(); }
   }
+  if (m.id === 'concert' || m.id === 'birthday') fufu.idleUntil = now + 1500;   // 音樂會、生日派對：小可愛也留在原地
   if (m.id === 'dance') {
     fufu.idleUntil = now + 1500;                     // 小可愛留在原地（不要自己走開）
     const t = fufuTile();
@@ -6464,6 +6543,8 @@ function phModeTick(now) {
     if (!fufu.pose && !fufu.path.length) fufu.jumpT = .35;   // 小可愛也一起跳
   }
   if (m.id === 'snack' && m.snacks.every(q => !q.left)) { fufuSay('大家吃飽飽！', 2200); phModeEnd(); return; }
+  if (m.id === 'sleep' && m.start != null && now > m.start + 1500 && phWalkers().every(a => a.woke)) { phModeEnd(); return; } // 一隻一隻都叫醒了
+  if (m.id === 'bubble') phBubbleTick(now);
   if (now > m.until) phModeEnd();
 }
 function phModeEnd() {
@@ -6473,8 +6554,130 @@ function phModeEnd() {
   Object.values(phActors).forEach(a => {
     a.goal = null; a.modeBed = null; a.eatAt = 0; a.idleUntil = now + 2000 + Math.random() * 2000;
     if (was && was.id === 'sleep' && a.sleep) { phWake(a); a.squishV = -7; }
+    a.woke = false; a.hidden = false; a.note = null;
   });
   if (was && was.id === 'sleep') { fufuSay('早安！', 2000); Sound.play('petHappy'); }
+  if (was && was.id === 'hide' && !was.allFound) fufuSay('大家出來囉～', 2000);
+}
+const PH_SCALE = [523, 587, 659, 698, 784, 880, 988, 1047];
+const PH_SCALE_NAME = ['Do', 'Re', 'Mi', 'Fa', 'Sol', 'La', 'Si', 'Do'];
+// 生日快樂歌（[頻率, 拍]）
+const PH_HAPPY_SONG = [[392, .75], [392, .25], [440, 1], [392, 1], [523, 1], [494, 2],
+  [392, .75], [392, .25], [440, 1], [392, 1], [587, 1], [523, 2],
+  [392, .75], [392, .25], [784, 1], [659, 1], [523, 1], [494, 1], [440, 2],
+  [698, .75], [698, .25], [659, 1], [523, 1], [587, 1], [523, 2]];
+const PH_HATS = ['🎉', '🌸', '🎀', '👑', '🎩', null];
+/* 躲的地方：前面（畫面上靠近她的那一側，x+1 或 y+1）擋著東西的空格，越靠後面越好；不夠就隨便找離她遠的空格 */
+function phHideSpots(room, n) {
+  const blk = blockedGrid(room), kid = fufuTile(), out = [];
+  for (let i = 0; i < room.w; i++) for (let j = 0; j < room.d; j++) {
+    if (blk[i][j] || (i === kid[0] && j === kid[1])) continue;
+    const cover = (i + 1 < room.w && blk[i + 1][j]) || (j + 1 < room.d && blk[i][j + 1]);
+    out.push([i, j, (cover ? 0 : 10) + (i + j) * .1 - Math.hypot(i - kid[0], j - kid[1]) * .05 + Math.random() * .5]);
+  }
+  return out.sort((p1, p2) => p1[2] - p2[2]).slice(0, n).map(q => [q[0], q[1]]);
+}
+// 活動中點寵物：回傳 true＝已經處理（不跳一般的選單）
+function phModeTap(a, now) {
+  const m = phMode;
+  if (m.id === 'sleep' && a.sleep && !a.woke) {      // 點到哪隻、只有那隻起床
+    phWake(a); a.woke = true; a.squishV = -7; a.happyUntil = now + 1500; a.idleUntil = now + 2000;
+    petBurst({ kind: 'emoji', emoji: '☀️', spread: 10 }, 1, a); Sound.play('petHappy');
+    return true;
+  }
+  if (m.id === 'hide' && a.hidden) {                // 找到了！
+    a.hidden = false; a.found = true; a.goal = null; a.idleUntil = now + 2000;
+    a.squishV = -9; a.happyUntil = now + 2000; petBurst({ kind: 'heart' }, 4, a); Sound.play('perfect');
+    m.found++;
+    if (m.found >= m.total) {
+      m.allFound = true;
+      phWalkers().forEach(o => { o.squishV = -8; petBurst({ kind: 'emoji', emoji: '🎉', spread: 20 }, 2, o); });
+      Sound.play('fanfare'); fufuSay('全部找到了！好厲害！', 2600);
+      m.until = Math.min(m.until, now + 2500);
+    } else fufuSay(`找到 ${m.found} 隻了！`, 1400);
+    return true;
+  }
+  if (m.id === 'concert' && a.note != null) {        // 點哪隻唱哪個音
+    Sound.play('freq', PH_SCALE[a.note]);
+    a.squishV = -8; a.happyUntil = now + 600;
+    petBurst({ kind: 'emoji', emoji: PH_SCALE_NAME[a.note], spread: 6 }, 1, a);
+    return true;
+  }
+  if (m.id === 'hats') {                             // 點一下換一頂
+    const k = PH_HATS.indexOf(a.hat === undefined ? null : a.hat);
+    a.hat = PH_HATS[(k + 1) % PH_HATS.length];
+    a.squishV = -7; a.happyUntil = now + 800; Sound.play('pickUp');
+    return true;
+  }
+  return false;
+}
+// ── 🫧 泡泡 ──
+function phBubbleTick(now) {
+  const m = phMode, room = curRoom();
+  if (now > m.spawnAt && m.bubbles.filter(b => !b.popped).length < 10 && now < m.until - 3000) {
+    m.spawnAt = now + 700;
+    const s2 = phFreeSpots(room, Math.random() * room.w, Math.random() * room.d, 1)[0];
+    if (s2) m.bubbles.push({ x: s2[0] + .2 + Math.random() * .6, y: s2[1] + .2 + Math.random() * .6, z: 6, born: now, r: 7 + Math.random() * 5 });
+  }
+  m.bubbles.forEach(b => { if (!b.popped) { b.z = 6 + (now - b.born) / 1000 * 7; if (b.z > 70) b.popped = now; } });
+  m.bubbles = m.bubbles.filter(b => !b.popped || now - b.popped < 350);
+}
+function phBubblePop(b, by) {
+  if (b.popped) return;
+  b.popped = performance.now();
+  phMode.pops = (phMode.pops || 0) + 1;
+  if (by) phMode.petPops = (phMode.petPops || 0) + 1;
+  try { Sound.play('perfect'); } catch (e) {}
+  if (by) petBurst({ kind: 'emoji', emoji: '✨', spread: 10 }, 1, by);
+}
+function phBubbleHit(w) {
+  const b = phMode.bubbles.find(q => { if (q.popped) return false; const p = iso(q.x, q.y, q.z); return Math.hypot(w.x - p.x, w.y - p.y) < q.r + 8; });
+  if (!b) return false;
+  phBubblePop(b, null);
+  return true;
+}
+// ── 🎂 蛋糕 ──
+function phCakeHit(w) {
+  const c = phMode.cake; if (!c || !c.lit) return false;
+  const p = iso(c.x + .5, c.y + .5, 0);
+  if (Math.hypot(w.x - p.x, w.y - (p.y - 14)) > 26) return false;
+  c.lit = false;
+  const now = performance.now();
+  Sound.play('fanfare');
+  phWalkers().forEach(o => { o.squishV = -8; petBurst({ kind: 'emoji', emoji: Math.random() < .5 ? '🎉' : '✨', spread: 18 }, 2, o); });
+  fufuSay('生日快樂！🎉', 2400);
+  phMode.until = Math.min(phMode.until, now + 5000);
+  return true;
+}
+// 地上的東西：點心、泡泡、蛋糕
+function phModeEntries() {
+  if (!phMode) return [];
+  const m = phMode, out = phSnackEntries();
+  if (m.id === 'bubble') m.bubbles.forEach(b => out.push({ x: b.x - .1, y: b.y - .1, w: .2, d: .2, z: b.z - b.r / 2, h: b.r,
+    drawFn: ctx => {
+      const p = iso(b.x, b.y, b.z), pop = b.popped ? Math.max(0, Math.min(1, (performance.now() - b.popped) / 350)) : 0;
+      ctx.save(); ctx.globalAlpha = 1 - pop;
+      ctx.beginPath(); ctx.arc(p.x, p.y, b.r * (1 + pop * .8), 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(190,230,255,.35)'; ctx.fill(); ctx.strokeStyle = 'rgba(120,180,230,.8)'; ctx.lineWidth = 1.2; ctx.stroke();
+      ctx.beginPath(); ctx.arc(p.x - b.r * .35, p.y - b.r * .35, b.r * .25, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.fill();
+      ctx.restore();
+    } }));
+  if (m.id === 'birthday' && m.cake) {
+    const c = m.cake;
+    out.push({ x: c.x + .2, y: c.y + .2, w: .6, d: .6, z: 0, h: 30, drawFn: ctx => {
+      // 自己畫的兩層蛋糕＋三根蠟燭（不靠表情符號，平板上一定看得到）
+      const x0 = c.x + .2, y0 = c.y + .2;
+      drawBox(ctx, x0, y0, .6, .6, 0, 9, '#fff1e6');
+      drawBox(ctx, x0, y0, .6, .6, 9, 2, '#ff9ec4');
+      drawBox(ctx, x0 + .1, y0 + .1, .4, .4, 11, 7, '#fff8f0');
+      drawBox(ctx, x0 + .1, y0 + .1, .4, .4, 18, 2, '#ff9ec4');
+      [[.2, .3], [.3, .2], [.35, .38]].forEach(([dx, dy], k) => {
+        drawBox(ctx, x0 + .1 + dx - .02, y0 + .1 + dy - .02, .04, .04, 20, 8, ['#6bb6ff', '#ffd35c', '#7bd389'][k]);
+        if (c.lit) drawBall(ctx, x0 + .1 + dx, y0 + .1 + dy, 31 + Math.sin(performance.now() / 110 + k) * 1.2, 2.6, '#ffb03a');
+      });
+    } });
+  }
+  return out;
 }
 function openCallAll() {
   const card = $('#modalCard');
@@ -6532,7 +6735,8 @@ function refreshDupBtn(now) {
   const c = $('#btnCallAll');
   if (c) {
     c.hidden = !inPetHouse();
-    c.textContent = phMode && phMode.id === 'train' ? '🚂 解散' : '📣 叫大家';
+    const md = phMode && PH_MODES.find(m => m.id === phMode.id);
+    c.textContent = md && md.endLabel ? md.endLabel : '📣 叫大家';
   }
 }
 function openDupSell() {
@@ -6570,7 +6774,15 @@ function openDupSell() {
 function phDrawEntries() {
   if (!inPetHouse()) return [];
   const fine = p => Object.assign({}, p, { hunger: 100, clean: 100, mood: 100 });
-  return phList().filter(i => !phActor(i).sleep || !phActor(i).sleep.uid).map(i => actorDrawEntry(phActor(i), fine(G.pets[i]))).concat(phSnackEntries());
+  return phList().filter(i => !phActor(i).sleep || !phActor(i).sleep.uid).map(i => {
+    const a = phActor(i), e = actorDrawEntry(a, fine(G.pets[i])), base = e.drawFn;
+    e.drawFn = ctx => {
+      if (a.hidden) { ctx.save(); ctx.globalAlpha = .35; base(ctx); ctx.restore(); }   // 躲起來：只看得到淡淡的一點
+      else base(ctx);
+      if (a.hat) { const p = iso(a.x, a.y, a.z || 0), k = stageOf(G.pets[i]).scale; ctx.save(); ctx.font = Math.round(16 * k) + 'px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillText(a.hat, p.x, p.y - 26 * k); ctx.restore(); }
+    };
+    return e;
+  }).concat(phModeEntries());
 }
 function phHit(w) {
   if (!inPetHouse()) return null;
@@ -6583,6 +6795,7 @@ function phHit(w) {
 // 點寵物屋裡的寵物：開心一下（不改數值），旁邊冒出「照顧牠／一起逛」
 function phTap(i, e) {
   const a = phActor(i), p = G.pets[i], now = performance.now(), egg = p.stage === 'egg';
+  if (phMode && !egg && phModeTap(a, now)) return;   // 活動中：點寵物有活動自己的反應
   if (a.sleep) phWake(a); // 睡著的點了會醒來
   if (a.play) phPlayStop(a, now);
   a.napTo = null; a.playTo = null;
@@ -7009,6 +7222,7 @@ function petDrawOverlay(ctx) {
     ctx.textAlign = 'start';
   }
   [pet].concat(compList()).forEach(a => drawParticles(ctx, a));
+  if (inPetHouse()) phList().forEach(i => { if (phActors[i]) drawParticles(ctx, phActors[i]); }); // 寵物屋裡的 💤🎵💕（以前沒畫出來）
 }
 function drawParticles(ctx, pet) {
   pet.particles.forEach(q => {
@@ -9474,7 +9688,8 @@ canvas.addEventListener('pointerup', e => {
     placeHold();
     return;
   }
-  if (phMode && phMode.id === 'sleep') { phModeEnd(); return; } // 大家在睡覺：點畫面就天亮
+  if (phMode && phMode.id === 'bubble' && phBubbleHit(w)) return;   // 點泡泡：破掉
+  if (phMode && phMode.id === 'birthday' && phCakeHit(w)) return;   // 點蛋糕：吹蠟燭
   if (giftBoxHit(w)) { (giftVisit.spec || GIFT_SPECS[0]).open(); return; }
   { const ph = phHit(w); if (ph != null) { phTap(ph, e); return; } }
   if (visitorHit(w)) { openMenu(visitorMenuEntries(), e); return; }
@@ -9619,7 +9834,8 @@ $('#btnPhoto').onclick = () => takePhoto();
 $('#btnDup').onclick = () => { Sound.play('click'); openDupSell(); };
 $('#btnCallAll').onclick = () => {
   Sound.play('click');
-  if (phMode && phMode.id === 'train') { phModeEnd(); toast('🚂 解散！'); refreshDupBtn(); return; }
+  const md = phMode && PH_MODES.find(m => m.id === phMode.id);
+  if (md && md.endLabel) { phModeEnd(); refreshDupBtn(); return; }   // 進行中的活動：按一下結束
   openCallAll();
 };
 setTimeout(() => { try { refreshThemeBtn(); } catch (e) {} }, 0);

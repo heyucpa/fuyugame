@@ -2338,7 +2338,7 @@
       enterPetHouse(); refreshDupBtn();
       if ($('#btnCallAll').hidden) fails.push('寵物屋沒有「📣 叫大家」');
       $('#btnCallAll').onclick();
-      if ($('#modalCard').querySelectorAll('.call-pick').length !== 4 || /大合照/.test($('#modalCard').textContent)) fails.push('叫大家不是四個選項（大合照要拿掉）');
+      if ($('#modalCard').querySelectorAll('.call-pick').length !== 9 || /大合照/.test($('#modalCard').textContent)) fails.push('叫大家不是九個選項（大合照要拿掉）');
       $('#modal').hidden = true;
       var walkers = phWalkers(), egg13 = phActor(9), ex13 = [egg13.x, egg13.y];
       if (walkers.length !== 7) fails.push('（測試）寵物屋裡的寵物數量不對：' + walkers.length);
@@ -2365,9 +2365,29 @@
         if (pet.sleep) { fails.push('照顧中的寵物擠到別隻睡著的床上'); pet.sleep = null; pet.z = 0; }
         pet.sleep = keepPS;
       }
+      // 點空的地方：不會叫醒大家
       var r13 = canvas.getBoundingClientRect();
       canvas.dispatchEvent(new PointerEvent('pointerup', { clientX: r13.left + 5, clientY: r13.top + 5, bubbles: true }));
-      if (phMode || walkers.some(function(a){ return a.sleep; }) || !$('#nightShade').hidden) fails.push('點畫面沒有天亮、大家沒醒');
+      if (!phMode || walkers.some(function(a){ return !a.sleep; })) fails.push('點空的地方，大家就醒了（要點到哪隻才醒哪隻）');
+      // 點一隻：只有那隻起床，其他繼續睡
+      var w0 = walkers[0], wi0 = phList().filter(function(i){ return phActors[i] === w0; })[0];
+      phTap(wi0, { clientX: 10, clientY: 10 }); hideItemMenu();
+      if (w0.sleep) fails.push('點了睡著的寵物，牠沒有起床');
+      if (walkers.slice(1).some(function(a){ return !a.sleep; })) fails.push('點一隻，其他的也一起醒了');
+      var nk3 = PH_NAP_CHANCE, pk3 = PH_PLAY_SHARE; PH_NAP_CHANCE = 1; PH_PLAY_SHARE = 0;   // 一定想去睡的時候也不能睡回去
+      try { t13 = run13(300, t13); } finally { PH_NAP_CHANCE = nk3; PH_PLAY_SHARE = pk3; }
+      if (w0.sleep) fails.push('叫醒的那隻又睡回去了');
+      if (walkers.slice(1).some(function(a){ return !a.sleep; })) fails.push('沒點到的沒等時間到就醒了');
+      refreshDupBtn();
+      if (!/叫大家起床/.test($('#btnCallAll').textContent)) fails.push('睡覺時按鈕沒有變成「☀️ 叫大家起床」');
+      if (!(phMode.until - phMode.start === PH_SLEEP_MS)) fails.push('睡覺沒有設定幾分鐘後自己起床');
+      // 時間到：全部起床
+      phMode.until = 0; t13 = run13(2, t13);
+      if (phMode || walkers.some(function(a){ return a.sleep; }) || !$('#nightShade').hidden) fails.push('睡覺時間到，大家沒有起床、天沒亮');
+      if (PH_SLEEP_MS > 180000) fails.push('睡覺要睡太久才自己起床');
+      // ☀️ 按鈕：全部起床
+      phCallAll('sleep'); t13 = run13(1500, t13); refreshDupBtn(); $('#btnCallAll').onclick();
+      if (phMode || walkers.some(function(a){ return a.sleep; })) fails.push('按「☀️ 叫大家起床」，大家沒有起床');
       // 💃 跳舞
       phCallAll('dance');
       t13 = run13(500, t13);
@@ -2395,6 +2415,71 @@
       fufu.idleUntil = 0;
       $('#btnCallAll').onclick();
       if (phMode) fails.push('按「解散」沒有結束跟我走');
+      // 🙈 捉迷藏：躲好（淡淡的）、點到才找到、全部找到放煙火結束
+      phCallAll('hide'); t13 = run13(700, t13);
+      if (!walkers.every(function(a){ return a.hidden; })) fails.push('捉迷藏：有的沒躲好（' + walkers.filter(function(a){ return !a.hidden; }).length + ' 隻）');
+      var alphas = [], realDPA2 = drawPetActor;
+      drawPetActor = function(ctx){ alphas.push(ctx.globalAlpha); return realDPA2.apply(this, arguments); };
+      try { draw(); } finally { drawPetActor = realDPA2; }
+      if (!alphas.some(function(x){ return x < .6; })) fails.push('捉迷藏：躲起來的看起來跟平常一樣（沒有變淡）');
+      walkers.forEach(function(a, k){ var ix = phList().filter(function(i){ return phActors[i] === a; })[0]; phTap(ix, { clientX: 1, clientY: 1 }); hideItemMenu(); });
+      if (!phMode || !phMode.allFound || phMode.found !== walkers.length) fails.push('捉迷藏：全部點到了卻沒有「全部找到」');
+      t13 = run13(200, t13);
+      if (phMode) fails.push('捉迷藏：全部找到之後沒結束');
+      // 🎵 音樂會：排成一排，點哪隻唱哪個音（不同音），不跳選單
+      var played = [], realPlay = Sound.play;
+      Sound.play = function(n, arg){ if (n === 'freq') played.push(arg); return realPlay.apply(this, arguments); };
+      try {
+        phCallAll('concert'); t13 = run13(600, t13);
+        walkers.forEach(function(a){ var ix = phList().filter(function(i){ return phActors[i] === a; })[0]; phTap(ix, { clientX: 1, clientY: 1 }); });
+      } finally { Sound.play = realPlay; }
+      if (new Set(played).size !== Math.min(walkers.length, 8)) fails.push('音樂會：每隻沒有唱不同的音（' + played.join(',') + '）');
+      if (!$('#itemMenu').hidden) fails.push('音樂會：點寵物跳出選單');
+      refreshDupBtn(); $('#btnCallAll').onclick();
+      if (phMode) fails.push('音樂會按「結束」沒有結束');
+      // 🫧 泡泡：會冒泡泡、點得破、寵物會撲、時間到結束
+      phCallAll('bubble'); t13 = run13(300, t13);
+      var bb = phMode && phMode.bubbles.filter(function(q){ return !q.popped; })[0];
+      if (!bb) fails.push('泡泡派對沒有泡泡');
+      else {
+        var bp2 = iso(bb.x, bb.y, bb.z), rB2 = canvas.getBoundingClientRect();
+        canvas.dispatchEvent(new PointerEvent('pointerup', { clientX: rB2.left + bp2.x * view.scale + view.ox, clientY: rB2.top + bp2.y * view.scale + view.oy, bubbles: true }));
+        if (!bb.popped) fails.push('點泡泡沒有破');
+        t13 = run13(900, t13);
+        if (!(phMode && phMode.petPops)) fails.push('寵物不會撲泡泡');
+      }
+      t13 = run13(800, t13);
+      if (phMode) fails.push('泡泡派對沒結束');
+      // 🎂 生日：圍著蛋糕、點蛋糕吹蠟燭、結束
+      phCallAll('birthday'); t13 = run13(600, t13);
+      var ck = phMode && phMode.cake;
+      if (!ck || !ck.lit) fails.push('生日派對沒有點蠟燭的蛋糕');
+      else {
+        var farC = walkers.filter(function(a){ return Math.hypot(a.x - ck.x - .5, a.y - ck.y - .5) > 3.2; }).length;
+        if (farC) fails.push('生日派對：有 ' + farC + ' 隻沒有圍著蛋糕');
+        var cp2 = iso(ck.x + .5, ck.y + .5, 0);
+        if (!phCakeHit({ x: cp2.x, y: cp2.y - 14 }) || ck.lit) fails.push('點蛋糕沒有吹熄蠟燭');
+        t13 = run13(400, t13);
+        if (phMode) fails.push('吹完蠟燭沒結束');
+      }
+      // 🎀 戴帽子：點一下換一頂、會畫出來、按「戴好了」結束但帽子還在
+      phCallAll('hats');
+      var hx = phList().filter(function(i){ return phActors[i] === walkers[0]; })[0];
+      phTap(hx, { clientX: 1, clientY: 1 }); var h1 = walkers[0].hat; phTap(hx, { clientX: 1, clientY: 1 }); var h2 = walkers[0].hat;
+      if (!h1 || h1 === h2) fails.push('戴帽子：點了沒有換帽子');
+      if (!$('#itemMenu').hidden) fails.push('戴帽子：點寵物跳出選單');
+      var texts = [], realFT = CanvasRenderingContext2D.prototype.fillText;
+      CanvasRenderingContext2D.prototype.fillText = function(t){ texts.push(t); return realFT.apply(this, arguments); };
+      try { draw(); } finally { CanvasRenderingContext2D.prototype.fillText = realFT; }
+      if (texts.indexOf(h2) < 0) fails.push('戴帽子：帽子沒有畫出來');
+      refreshDupBtn(); $('#btnCallAll').onclick();
+      if (phMode || walkers[0].hat !== h2) fails.push('按「戴好了」沒有結束，或帽子不見了');
+      // 寵物屋寵物的 💤🎵💕 有畫出來
+      walkers[1].particles.push({ kind: 'emoji', emoji: '🧪', x: 0, y: 0, vx: 0, vy: 0, age: 0, life: 2 });
+      var t2 = [], realFT2 = CanvasRenderingContext2D.prototype.fillText;
+      CanvasRenderingContext2D.prototype.fillText = function(t){ t2.push(t); return realFT2.apply(this, arguments); };
+      try { draw(); } finally { CanvasRenderingContext2D.prototype.fillText = realFT2; }
+      if (t2.indexOf('🧪') < 0) fails.push('寵物屋寵物冒的符號（💤🎵💕）沒有畫出來');
       // 不改數值、不花錢、不用食物
       if (JSON.stringify(G.pets.slice(1).map(function(p){ return [p.hunger, p.clean, p.mood, p.growth]; })) !== stats0) fails.push('叫大家改到了寵物屋寵物的數值');
       if (G.bells !== bells0 || JSON.stringify([G.food, G.kidFood]) !== food0) fails.push('點心時間花了錢或用掉了食物');
