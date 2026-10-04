@@ -2189,19 +2189,13 @@
       if (Math.abs((pq[0][0] - pq[0][1]) - (pq[1][0] - pq[1][1])) < 2) fails.push('爸爸媽媽在畫面上一前一後（一個擋住另一個）');
       if (pa.indexOf(Math.floor(fufu.x) + ',' + Math.floor(fufu.y)) >= 0) fails.push('爸媽站在她身上');
       if (giftVisit.box && Math.floor(giftVisit.box.x) === Math.floor(fufu.x) && Math.floor(giftVisit.box.y) === Math.floor(fufu.y)) fails.push('包裹放在她腳下（點不到）');
-      for (var gj = 0; gj < 600 && giftVisit.state !== 'none'; gj++) giftTick(t0 + 20000 + gj * 50);
-      if (giftVisit.state !== 'none') fails.push('爸爸媽媽走不掉（卡在家裡）：' + giftVisit.state);
-      if (!giftBoxHere()) fails.push('爸媽走了以後包裹不見了');
+      // 放下之後不會自己走：站在旁邊等她打開，每隔一陣子提醒一次
+      for (var gj = 0; gj < 400; gj++) giftTick(t0 + 20000 + gj * 100);
+      if (giftVisit.state !== 'wait' || giftVisit.actors.length !== 2) fails.push('包裹還沒打開，爸媽就走了（' + giftVisit.state + '）');
+      if (!giftBoxHere()) fails.push('包裹放下後不見了');
+      var said = giftVisit.says.filter(function(x){ return x && GIFT_REMIND.indexOf(x.text) >= 0; }).length;
+      if (!said) fails.push('等很久沒打開，爸媽沒有提醒');
     }
-    // 換房間：包裹跟著她；出門的時候不畫
-    if (G.rooms.length < 2) G.rooms.push(JSON.parse(JSON.stringify(G.rooms[0])));
-    G.cur = 1; giftTick(t0 + 60000);
-    if (!giftBoxHere()) fails.push('她換房間，包裹沒有跟過來');
-    G.cur = 0; giftTick(t0 + 60100);
-    G.away = { place: 'uncle', idx: 0 };
-    if (giftBoxHere()) fails.push('在叔叔家也看得到自己家的包裹');
-    G.away = null; giftTick(t0 + 60200);
-    if (!giftBoxHere()) fails.push('從叔叔家回來，包裹不見了');
     // 點包裹：用畫面座標點下去
     var bx = giftBoxHere(), bp = iso(bx.x, bx.y, 0);
     if (!giftBoxHit({ x: bp.x, y: bp.y - 12 })) fails.push('點包裹點不到');
@@ -2220,14 +2214,40 @@
     if (G.earned !== 0) fails.push('包裹的錢被算成「賺到的」');
     if (!/100,000/.test($('#modalCard').textContent)) fails.push('打開後沒寫拿到多少');
     if (giftBoxHere()) fails.push('打開了包裹還在地上');
+    giftTick(t0 + 61000); giftTick(t0 + 62000);
+    if (giftVisit.state !== 'wait') fails.push('她還在看包裹裡面，爸媽就先走了（' + giftVisit.state + '）');
     var reG = normalizeSave(JSON.parse(localStorage.getItem(SAVE_KEY)));
     if (!reG || !reG.openGift) fails.push('打開過包裹沒有存起來');
     if (claimOpenGift() !== null || G.bells !== START_BELLS) fails.push('包裹可以開第二次');
-    giftTick(t0 + 90000); giftTick(t0 + 99000);
-    if (giftVisit.state !== 'none') fails.push('打開過了爸媽又送來一次');
     var okEnv = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return /謝謝/.test(b.textContent); })[0];
     if (!okEnv) fails.push('打開後沒有關掉的按鈕');
     else { okEnv.onclick(); if (!$('#modal').hidden) fails.push('打開後關不掉'); }
+    giftTick(t0 + 63000);
+    if (giftVisit.state !== 'thanks') fails.push('說了謝謝，爸媽沒有回話（' + giftVisit.state + '）');
+    else {
+      if (giftVisit.says[0] && GIFT_BYE.indexOf(giftVisit.says[0].text) >= 0) fails.push('她的「謝謝」還沒說完，爸媽就搶著回話（對話框疊在一起）');
+      giftTick(t0 + 65500);
+      if (!giftVisit.says[0] || GIFT_BYE.indexOf(giftVisit.says[0].text) < 0) fails.push('爸媽回的話不對');
+      if (giftVisit.state !== 'thanks') fails.push('爸媽話還沒說完就走了');
+    }
+    for (var gk = 0; gk < 1500 && giftVisit.state !== 'none'; gk++) giftTick(t0 + 63100 + gk * 1000 / 60);
+    if (giftVisit.state !== 'none') fails.push('說完謝謝，爸媽走不掉（' + giftVisit.state + '）');
+    giftTick(t0 + 200000); giftTick(t0 + 210000);
+    if (giftVisit.state !== 'none') fails.push('打開過了爸媽又送來一次（說完謝謝之後）');
+    // 爸媽在旁邊等的時候她換房間：爸媽先走，包裹跟著她；出門的時候不畫、回來還在
+    G.openGift = false; giftReset();
+    giftTick(t0 + 300000); for (var gm = 0; gm < 1500 && giftVisit.state !== 'wait'; gm++) giftTick(t0 + 303000 + gm * 1000 / 60);
+    if (giftVisit.state !== 'wait') fails.push('（換房間測試）爸媽沒有進來等');
+    if (G.rooms.length < 2) G.rooms.push(JSON.parse(JSON.stringify(G.rooms[0])));
+    G.cur = 1; giftTick(t0 + 320000); giftTick(t0 + 320100);
+    if (!giftBoxHere()) fails.push('她換房間，包裹沒有跟過來');
+    G.cur = 0; giftTick(t0 + 320200);
+    G.away = { place: 'uncle', idx: 0 };
+    if (giftBoxHere()) fails.push('在叔叔家也看得到自己家的包裹');
+    G.away = null; giftTick(t0 + 320300);
+    if (!giftBoxHere()) fails.push('從叔叔家回來，包裹不見了');
+    G.openGift = true; giftTick(t0 + 320400);
+    if (giftBoxHere()) fails.push('打開過了，包裹還留在地上');
     // 爸媽的對話框沒有鄰居在的時候也要畫（以前的 bug：只有鄰居在才畫）
     var drew = 0, realNB = drawNeighborBubble;
     if (visitorDrawEntries().length) fails.push('（測試前提）房間裡有鄰居');
