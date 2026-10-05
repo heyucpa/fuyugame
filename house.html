@@ -13581,6 +13581,13 @@ function tabBackup(body) {
     const rb = el('button', 'big', '⚠️ 這份紀錄讀不出來，按這裡處理');
     rb.onclick = openRescue;
     body.appendChild(rb);
+  } else {
+    const rc = rescueCopy(); // 之前讀不出來時留下的那一份還沒換回來
+    if (rc && !rc.same) {
+      const fb = el('button', 'big', '🛟 找回之前讀不出來時留下的紀錄');
+      fb.onclick = () => openRescueRestore(rc);
+      body.appendChild(fb);
+    }
   }
   const last = lastBackupAt(), days = daysSinceBackup();
   const st = el('div', 'backup-state' + (backupDue() ? ' due' : ''),
@@ -13703,6 +13710,13 @@ function tabSave(body) {
     const rb = el('button', 'big', '⚠️ 這份紀錄讀不出來，按這裡處理');
     rb.onclick = openRescue;
     body.appendChild(rb);
+  } else {
+    const rc = rescueCopy(); // 之前讀不出來時留下的那一份還沒換回來
+    if (rc && !rc.same) {
+      const fb = el('button', 'big', '🛟 找回之前讀不出來時留下的紀錄');
+      fb.onclick = () => openRescueRestore(rc);
+      body.appendChild(fb);
+    }
   }
   // 家長：版本和強制更新放最上面（說「更新了」的時候最常用）
   /* ── 版本與強制更新（放在設定最上面）──
@@ -14320,6 +14334,67 @@ function openSeasonNotice(se) {
   Sound.play('fanfare');
   try { speak(n.title); } catch (e) {}
 }
+/* ===== 🛟 找回「讀不出來」那時候留下的紀錄 =====
+   存檔讀不出來時，原文會另外留一份（rescueKey）。如果家長按了「重新開始」，
+   或修好之前已經開始玩新的一份，就從這裡換回去（家長：「剛才玩的存檔沒有了 傷心」）。
+   換回去之前，現在的這份會先存成「可以反悔」的那一份（跟還原備份一樣）。 */
+function rescueCopy() {
+  let raw = null, cur = null;
+  try { raw = localStorage.getItem(rescueKey()); cur = localStorage.getItem(SAVE_KEY); } catch (e) {}
+  if (!raw) return null;
+  let g = null;
+  try { g = normalizeSave(JSON.parse(raw)); } catch (e) { g = null; }
+  if (!g) return null;
+  return { raw, g, same: cur === raw, key: raw.length + ':' + (g.savedAt || 0) };
+}
+function rescueSummary(g) {
+  const p = g.pets[g.activePet] || g.pets[0], d = g.savedAt ? new Date(g.savedAt) : null;
+  return `👧 ${(g.charName || '').trim() || DEFAULT_CHAR_NAME}　🐾 ${p ? petNameOf(p) : '—'}（共 ${g.pets.length} 隻）　💰 ${fmt(g.bells)}　🏠 ${g.rooms.length} 間房間`
+    + (d ? `　🕒 ${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}` : '');
+}
+function openRescueRestore(rc) {
+  rc = rc || rescueCopy();
+  if (!rc) { toast('沒有找到之前留下的紀錄'); return; }
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', '🛟 找到之前讀不出來的那份紀錄了！'));
+  card.appendChild(note('那時候讀不出來的紀錄有另外留著，現在已經讀得出來了。要換回那一份嗎？（現在這份也會先留著，換錯了可以在「💾 備份」反悔）'));
+  const box = el('div', 'news');
+  [['🛟', '那一份：' + rescueSummary(rc.g)], ['🎮', '現在的：' + rescueSummary(G)]].forEach(([ic, tx]) => {
+    const r = el('div', 'news-row'); r.append(el('span', 'news-ic', ic), el('span', 'news-tx', tx)); box.appendChild(r);
+  });
+  card.appendChild(box);
+  const back = el('button', 'big', '↩️ 換回那一份');
+  back.onclick = () => askPin('換回之前的紀錄', () => {
+    if (!confirm('換回之前的那份紀錄嗎？\n現在這份會先留著，之後可以在「💾 備份」反悔。')) return;
+    if (!restoreRescue(rc)) { toast('寫不進去，請先「⬇️ 下載」保存'); return; }
+    location.reload();
+  });
+  const keep = el('button', 'big alt', '保留現在的');
+  keep.onclick = () => { G.rescueSeen = rc.key; saveGame(); $('#modal').hidden = true; toast('那一份還留著，之後可以在「💾 備份」找回來'); };
+  const dl = el('button', 'mini', '⬇️ 下載那一份（給大人保存）');
+  dl.onclick = () => { try { downloadText(rc.raw, '我的小屋-找回的紀錄-' + today() + '.json'); } catch (e) { toast('這台機器存不了檔案'); } };
+  card.append(back, keep, dl);
+  $('#modal').hidden = false;
+}
+// 真的寫進去（抽出來給走查驗；按鈕之後會重新載入）
+function restoreRescue(rc) {
+  try {
+    localStorage.setItem(UNDO_KEY, makeBackup());
+    localStorage.setItem(SAVE_KEY, rc.raw);
+    localStorage.removeItem(rescueKey());
+  } catch (e) { return false; }
+  return true;
+}
+// 打開遊戲時：有留下的那一份、跟現在的不一樣、還沒按過「保留現在的」→ 問一次
+function maybeRescueOffer(tries) {
+  tries = tries || 0;
+  if (SAVE_LOCKED != null || tries > 20) return;
+  const rc = rescueCopy();
+  if (!rc || rc.same || G.rescueSeen === rc.key) return;
+  if (!$('#modal').hidden || introPlaying || document.getElementById('showcase')) { setTimeout(() => maybeRescueOffer(tries + 1), 2000); return; }
+  openRescueRestore(rc);
+}
 function maybePlayIntro() {
   if (G.introSeen || SAVE_LOCKED != null || introPlaying) return;
   playIntro();
@@ -14329,6 +14404,7 @@ function maybePlayIntro() {
 refreshTop();
 renderTab();
 setTimeout(() => maybeOpening(), 300);
+setTimeout(() => maybeRescueOffer(), 900);
 setTimeout(() => maybeShowNews(), 1500);
 setTimeout(() => maybeSeasonNotice(), 2500);
 updateHoldUI();
