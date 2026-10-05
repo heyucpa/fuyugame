@@ -2749,10 +2749,27 @@
       if (!G.away || G.away.place !== 'amusement' || !host.n || host.n.id !== 'amuse') fails.push('去遊樂園沒有兔兔姊姊迎接');
       if (lineList('hostAmuse').map(function(l){ return l.split('{名字}').join(charName()); }).indexOf(pickLine(hostLineKey(), { 名字: charName() })) < 0) fails.push('兔兔姊姊沒有說遊樂園的話');
       var rmA = curRoom(), byId = function(id){ return rmA.items.find(function(x){ return x.id === id; }); };
-      ['carousel', 'ferris_wheel', 'cotton_cart', 'balloon_stand'].forEach(function(id){ if (!byId(id)) fails.push('遊樂園沒有 ' + id); });
+      ['carousel', 'ferris_wheel', 'cotton_cart', 'balloon_stand', 'teacup_ride', 'popcorn_cart'].forEach(function(id){ if (!byId(id)) fails.push('遊樂園沒有 ' + id); });
+      if (rmA.wallItems.filter(function(w){ return w.id === 'pennant'; }).length < 2) fails.push('遊樂園牆上沒有三角旗');
+      // 遊客：三位動物朋友在逛、拿氣球，點了會說話
+      if (!host.crowd || host.crowd.length !== 3) fails.push('遊樂園沒有遊客（' + (host.crowd && host.crowd.length) + '）');
+      else {
+        var cr0 = host.crowd[0], q0 = iso(cr0.a.x, cr0.a.y, 0);
+        var hitC = crowdHit({ x: q0.x, y: q0.y - 10 });
+        if (!hitC) fails.push('點遊客點不到');
+        // 用手點（走點擊流程）：把遊客移到空地、其他人移開
+        var rmC = curRoom(), farC = nearestFree(rmC, 1.5, 7.5) || [1, 7];
+        cr0.a.x = farC[0] + .5; cr0.a.y = farC[1] + .5; cr0.a.path = []; cr0.say = null;
+        host.crowd.slice(1).forEach(function(o){ o.a.x = -9; o.a.y = -9; }); host.a.x = -9; host.a.y = -9;
+        var qc = iso(cr0.a.x, cr0.a.y, 0), rC = canvas.getBoundingClientRect();
+        canvas.dispatchEvent(new PointerEvent('pointerup', { clientX: rC.left + qc.x * view.scale + view.ox, clientY: rC.top + (qc.y - 12) * view.scale + view.oy, bubbles: true }));
+        hideItemMenu();
+        if (!cr0.say) fails.push('用手點遊客，遊客沒有說話');
+        if (hostDrawEntries().length < 4) fails.push('遊客沒有畫出來');
+      }
       if (FURNITURE_ACT.ticket_booth !== 'ticket' || !ACTIVITIES.ticket) fails.push('售票亭點了不能買門票');
       // 旋轉木馬、摩天輪：真的坐上去，位置會動，摩天輪會升高
-      [['carousel', 'carousel'], ['ferris', 'ferris_wheel']].forEach(function(pr){
+      [['carousel', 'carousel'], ['ferris', 'ferris_wheel'], ['teacup', 'teacup_ride']].forEach(function(pr){
         fufu.act = null; fufu.ride = null; fufu.pose = null;
         var t0 = performance.now();
         fufuStartAct(pr[0], t0, byId(pr[1]), true);
@@ -2769,8 +2786,11 @@
       var cc0 = G.kidFood.cotton_candy || 0;
       relativePerk('cotton');
       if ((G.kidFood.cotton_candy || 0) !== cc0 + 1 || G.bells !== 4900) fails.push('遊樂園買棉花糖沒有花錢或沒拿到');
+      delete (G.actCD || {}).popcorn; var pc0 = G.kidFood.popcorn || 0, bp = G.bells;
+      relativePerk('popcorn');
+      if ((G.kidFood.popcorn || 0) !== pc0 + 1 || G.bells !== bp - 80) fails.push('遊樂園買爆米花沒有花錢或沒拿到');
       openTab('shop');
-      if ([].some.call(document.querySelectorAll('#tabBody .card .nm'), function(n){ return n.textContent === '棉花糖'; })) fails.push('商店也在賣棉花糖（應該只有遊樂園有）');
+      if ([].some.call(document.querySelectorAll('#tabBody .card .nm'), function(n){ return n.textContent === '棉花糖' || n.textContent === '爆米花'; })) fails.push('商店也在賣棉花糖／爆米花（應該只有遊樂園有）');
       openTab('inv');
       if (ACT_PROPS.balloon !== 'balloon') fails.push('拿氣球的時候手上沒有氣球');
       goHome();

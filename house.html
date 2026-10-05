@@ -2216,6 +2216,40 @@ const PLACE_FURNITURE = [
       { k: 'ball', x: .5, y: .7, z: 62, r: 8, c: '#7bd389' },
       { k: 'ball', x: .5, y: .5, z: 72, r: 8, c: '#ff9ec4' }
     ] },
+  // 🎏 遊樂園牆上的三角旗（掛在牆上，畫法跟其他掛飾一樣）
+  { id: 'pennant', name: '三角旗', price: 0, theme: 'cute', w: 2, h: 18, z: 70, layer: 'wall', parts: [], d: 1,
+  draw(ctx, W, H) {
+    ctx.strokeStyle = '#8a7a64'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(1, 3); ctx.quadraticCurveTo(W / 2, 9, W - 1, 3); ctx.stroke();
+    const cs = ['#ff6b6b', '#ffd35c', '#6bb6ff', '#7bd389', '#ff9ec4', '#b18cff'];
+    for (let i = 0; i < 6; i++) { const x = 4 + i * (W - 8) / 5, y = 3 + Math.sin(i / 5 * Math.PI) * 5; ctx.fillStyle = cs[i]; ctx.beginPath(); ctx.moveTo(x - 4, y); ctx.lineTo(x + 4, y); ctx.lineTo(x, y + 9); ctx.closePath(); ctx.fill(); }
+  } },
+  // ☕ 咖啡杯：坐進杯子裡轉圈圈
+  { id: 'teacup_ride', name: '咖啡杯', theme: 'cute', w: 2, d: 2,
+    parts: [
+      { x: .05, y: .05, w: 1.9, d: 1.9, z: 0, h: 5, c: '#b8ecd7' },
+      { x: .9, y: .9, w: .2, d: .2, z: 5, h: 14, c: '#f2c14e' },
+      { k: 'ball', x: 1, y: 1, z: 22, r: 5, c: '#ff6b6b' },
+      { k: 'ball', x: .5, y: .55, z: 12, r: 9, c: '#ff9ec4', toy: true },
+      { k: 'ball', x: 1.5, y: .55, z: 12, r: 9, c: '#6bb6ff', toy: true },
+      { k: 'ball', x: 1, y: 1.5, z: 12, r: 9, c: '#ffd35c', toy: true },
+      { k: 'ball', x: .5, y: .55, z: 18, r: 6, c: '#fff4f8' },
+      { k: 'ball', x: 1.5, y: .55, z: 18, r: 6, c: '#eef6ff' },
+      { k: 'ball', x: 1, y: 1.5, z: 18, r: 6, c: '#fffbe6' }
+    ] },
+  // 🍿 爆米花車
+  { id: 'popcorn_cart', name: '爆米花車', theme: 'cute', w: 2, d: 1,
+    parts: [
+      { k: 'ball', x: .3, y: .85, z: 5, r: 5, c: '#3a3240' },
+      { k: 'ball', x: 1.7, y: .85, z: 5, r: 5, c: '#3a3240' },
+      { x: .05, y: .15, w: 1.9, d: .7, z: 6, h: 26, c: '#e8505b' },
+      { x: .05, y: .84, w: 1.9, d: .02, z: 14, h: 8, c: '#ffffff' },
+      { x: .3, y: .25, w: 1.4, d: .5, z: 32, h: 22, c: '#fff8e8' },
+      { k: 'ball', x: .6, y: .5, z: 50, r: 6, c: '#fff1b8' },
+      { k: 'ball', x: 1, y: .45, z: 53, r: 7, c: '#ffffff' },
+      { k: 'ball', x: 1.4, y: .5, z: 50, r: 6, c: '#fff1b8' },
+      { x: .2, y: .15, w: 1.6, d: .7, z: 56, h: 5, c: '#e8505b' }
+    ] },
   // 🎟️ 售票亭：窗戶裡有兔子售票員，屋頂上一張大門票（家長看不出是什麼，改得一看就懂）
   { id: 'ticket_booth', name: '售票亭', theme: 'cute', w: 2, d: 1,
     parts: [
@@ -2370,6 +2404,8 @@ Object.assign(ACTIVITIES, {
   carousel: { label: '🎠 坐旋轉木馬', name: '坐旋轉木馬', fx: '🎵', lines: ['轉呀轉～', '木馬上上下下的！', '好好玩喔！', '再一圈！'] },
   ferris: { label: '🎡 坐摩天輪', name: '坐摩天輪', fx: '✨', lines: ['好高喔！看得好遠～', '我看到我家了！', '慢慢轉上去了～', '雲好近喔！'] },
   cotton: { label: '🍭 買棉花糖', name: '買棉花糖', fx: '🍭', lines: ['軟軟的、甜甜的～', '粉紅色的棉花糖！', '像雲一樣！'] },
+  teacup: { label: '☕ 坐咖啡杯', name: '坐咖啡杯', fx: '💫', lines: ['轉呀轉，頭暈暈～', '咖啡杯轉好快！', '哇～世界在轉圈圈！'] },
+  popcorn: { label: '🍿 買爆米花', name: '買爆米花', fx: '🍿', lines: ['好香喔！', '甜甜的爆米花～', '咔滋咔滋！'] },
   ticket: { label: '🎟️ 買門票', name: '買門票', fx: '🎟️', lines: ['兔兔，我要一張門票！', '拿到門票了，今天要玩什麼呢？', '門票上有星星章耶！'] },
   balloon: { label: '🎈 拿一顆氣球', name: '拿氣球', fx: '🎈', lines: ['我要紅色的！', '氣球飄飄的～', '要抓好，不要飛走喔！'] },
   // 學校
@@ -2386,7 +2422,7 @@ Object.assign(FURNITURE_ACT, {
   gaming_desk: 'pcgame', figure_shelf: 'figures', barn: 'farmcare', hay_bale: 'hay', trough: 'trough',
   lib_shelf: 'findbook', low_shelf: 'findbook', story_stand: 'storybook', lib_counter: 'passport', tablet_table: 'ebook', round_red_table: 'storytime',
   pond: 'pondfish', flower_bed: 'bfly', display_tank: 'tank', heart_sculpture: 'heart', sandbox: 'sand', picnic_mat: 'picnic', fountain: 'fountain', icecream_cart: 'icecream',
-  carousel: 'carousel', ferris_wheel: 'ferris', cotton_cart: 'cotton', balloon_stand: 'balloon', ticket_booth: 'ticket',
+  carousel: 'carousel', ferris_wheel: 'ferris', cotton_cart: 'cotton', balloon_stand: 'balloon', ticket_booth: 'ticket', teacup_ride: 'teacup', popcorn_cart: 'popcorn',
   school_desk: 'lesson', school_desk_b: 'lesson', teacher_desk: 'homework', slide: 'slide', swing: 'swing', flagpole: 'flag', finish_flag: 'run'
 });
 FURNITURE_USE.park_bench = { use: 'sit', seats: [{ x: .55, y: .55, z: 20 }, { x: 1.45, y: .55, z: 20 }], front: [0, 1] };
@@ -2477,9 +2513,9 @@ const PLACES = {
   amusement: { name: '遊樂園', host: 'amuse', emoji: '🎡', desc: '坐旋轉木馬、摩天輪，買棉花糖、拿氣球！', rooms: [
     { name: '遊樂園', w: 10, d: 10, wall: 'wp_candy', floor: 'fl_amuse', items: [
       ['ferris_wheel', 0, 0], ['street_lamp', 4, 0], ['ticket_booth', 6, 0], ['balloon_stand', 9, 0],
-      ['carousel', 5, 3], ['shade_tree', 0, 3], ['flower_bed', 0, 6],
+      ['carousel', 5, 3], ['shade_tree', 0, 3], ['teacup_ride', 8, 4], ['popcorn_cart', 2, 6], ['flower_bed', 0, 6],
       ['park_bench', 2, 8, 0], ['cotton_cart', 6, 8], ['street_lamp', 9, 9], ['flower_bed', 8, 7]
-    ], wallItems: [] }
+    ], wallItems: [['pennant', 'L', 1], ['pennant', 'L', 5], ['pennant', 'R', 1], ['pennant', 'R', 6]] }
   ] },
   /* 學校：教室＋操場。一般的學校樣子，沒有校名、校徽（去識別化） */
   school: { name: '學校', host: 'teacher', emoji: '🏫', desc: '上課小考、溜滑梯、盪鞦韆，還有貓頭鷹老師！', rooms: [
@@ -2617,6 +2653,7 @@ const KID_FOODS = [
   { id: 'bento', name: '便當', emoji: '🍱', price: 350, hunger: 50, grow: 0 },
   { id: 'ice_cream', name: '冰淇淋', emoji: '🍦', price: 200, hunger: 8, grow: 0 },
   { id: 'cotton_candy', name: '棉花糖', emoji: '🍭', price: 100, hunger: 8, grow: 0, placeOnly: true },   // 遊樂園才買得到
+  { id: 'popcorn', name: '爆米花', emoji: '🍿', price: 80, hunger: 10, grow: 0, placeOnly: true },
   { id: 'hw_candy', name: '萬聖節糖果', emoji: '🍬', price: 60, hunger: 5, grow: 0, season: 'halloween' },
   { id: 'shrink', name: '變小藥水', emoji: '🧪', price: 1000, hunger: 0, grow: 0, potion: true }
 ];
@@ -3945,7 +3982,8 @@ const NEWS = [
   { id: '2026-10-08T09:00', title: '新地方：遊樂園！🎡', lines: [
     ['🎡', '「🚗 出門」可以去遊樂園了！兔兔姊姊在門口迎接'],
     ['🎠', '旋轉木馬、摩天輪真的可以坐上去轉一圈'],
-    ['🍭', '棉花糖車可以買棉花糖，氣球攤可以拿一顆氣球'],
+    ['🍭', '棉花糖車可以買棉花糖、爆米花車可以買爆米花，氣球攤可以拿一顆氣球'],
+    ['☕', '還有咖啡杯可以坐，轉呀轉～動物朋友也會來逛遊樂園'],
     ['🏠', '寵物捉迷藏多了「家裡」：躲在沙發、床、衣櫃、窗簾後面']
   ], newItems: [] },
   { id: '2026-10-07T15:00', title: '新的小遊戲：寵物捉迷藏！🌳', lines: [
@@ -6515,6 +6553,7 @@ const RIDES = {
   slide: { dur: 4800 },
   swing: { dur: 6000 },
   carousel: { dur: 7000 },   // 🎠 坐在木馬上繞圈圈、上下跳
+  teacup: { dur: 6000 },     // ☕ 坐在杯子裡轉圈圈
   ferris: { dur: 9000 }      // 🎡 坐上車廂，慢慢轉上去再轉下來
 };
 const lerp = (a, b, k) => a + (b - a) * Math.max(0, Math.min(1, k));
@@ -6545,6 +6584,9 @@ function ridePos(now) {
   } else if (r.key === 'carousel') {
     const a = t * 1.3;
     lx = 1.5 + Math.cos(a) * 1.05; ly = 1.5 + Math.sin(a) * 1.05; z = 16 + Math.abs(Math.sin(t * 4)) * 6; sit = true;
+  } else if (r.key === 'teacup') {
+    const a = t * 3.2;   // 轉得比木馬快
+    lx = 1 + Math.cos(a) * .55; ly = 1 + Math.sin(a) * .55; z = 12; sit = true; cheer = t > 4.5;
   } else if (r.key === 'ferris') {
     const k = Math.min(1, t / 9), a = Math.PI / 2 + k * Math.PI * 2;   // 從最下面出發，轉一圈
     lx = 1.5 + Math.cos(a) * 1.2; ly = .9; z = 70 - Math.sin(a) * 52 - 12; sit = true; cheer = k > .4 && k < .6;
@@ -9533,7 +9575,7 @@ function hostSay(text, ms) {
 }
 function hostTick(dt, now) {
   const want = G.away && HOSTS[PLACES[G.away.place].host];
-  if (!want) { host.n = null; host.a = null; host.pets = null; return; }
+  if (!want) { host.n = null; host.a = null; host.pets = null; host.crowd = null; return; }
   const room = curRoom();
   if (host.n !== want) { // 剛到：親戚在門口附近迎接
     const c = nearestFree(room, room.w / 2, room.d - 1.5) || [1, 1];
@@ -9543,6 +9585,12 @@ function hostTick(dt, now) {
     host.nextTalkAt = now + 2500;
     host.memSaid = false;
     // 朋友家：對方的寵物也在家裡走來走去
+    // 🎡 遊樂園：還有三位動物朋友在逛（拿著氣球），比較熱鬧
+    host.crowd = G.away.place === 'amusement' ? NEIGHBORS.slice().sort(() => Math.random() - .5).slice(0, 3).map((n, i) => {
+      const c3 = nearestFree(room, 2 + i * 3, 6 + (i % 2) * 2) || c;
+      return { n, balloon: ['#ff6b6b', '#6bb6ff', '#ffd35c'][i], a: { room: roomKey(), x: c3[0] + .5, y: c3[1] + .5, z: 0, path: [], t: Math.random() * 5, facing: 1,
+        idleUntil: now + 1000 + Math.random() * 3000, blinkAt: 0, squish: 0, squishV: 0, lean: 0, leanV: 0, press: null, happyUntil: 0, particles: [] } };
+    }) : [];
     host.pets = (want.pets || []).map(([species, stage, name], i) => {
       const c2 = nearestFree(room, 1 + (i * 2) % Math.max(1, room.w - 2), 1 + Math.floor(i / 3) * 2) || c;
       return { p: { species, stage, name, clean: 100, mood: 100, hunger: 100, growth: 0 },
@@ -9578,6 +9626,7 @@ function hostTick(dt, now) {
     if (Math.random() < .5) setTimeout(() => { if (host.n) fufuSay(pickLine('kidReply'), 2600); }, 3000);
   }
   actorWalk(a, dt, now, room, blockedGrid(room), .5);
+  (host.crowd || []).forEach(({ a: ca }) => { ca.t += dt; actorEnterRoom(ca, room); actorSpring(ca, dt, now, false); actorWalk(ca, dt, now, room, blockedGrid(room), .15); });
   (host.pets || []).forEach(({ a: pa }) => { pa.t += dt; actorEnterRoom(pa, room); actorSpring(pa, dt, now, false); actorWalk(pa, dt, now, room, blockedGrid(room), .3); });
   farmTick(dt, now, room);
 }
@@ -9747,6 +9796,7 @@ function hostDrawEntries() {
   const list = [host.n.girl
     ? { x: host.a.x - .2, y: host.a.y - .2, w: .4, d: .4, z: 0, h: 64, drawFn: ctx => drawFriendGirl(ctx, host.a, host.n) }
     : { x: host.a.x - .2, y: host.a.y - .2, w: .4, d: .4, z: 0, h: 30 * VISITOR_K, drawFn: ctx => drawNeighborActor(ctx, host.a, host.n, 1, false, false) }];
+  (host.crowd || []).forEach(cr => { if (cr.a.room === roomKey()) list.push({ x: cr.a.x - .2, y: cr.a.y - .2, w: .4, d: .4, z: 0, h: 30 * VISITOR_K, drawFn: ctx => { drawNeighborActor(ctx, cr.a, cr.n, 1, false, false); drawCrowdBalloon(ctx, cr); } }); });
   (host.pets || []).forEach(({ a, p }) => { if (a.room === roomKey()) list.push({ x: a.x - .15, y: a.y - .15, w: .3, d: .3, z: 0, h: 26 * lookScale(p), drawFn: ctx => drawPetActor(ctx, a, p) }); });
   farm.actors.forEach(({ n, a }) => list.push({ x: a.x - .2, y: a.y - .2, w: .4, d: .4, z: 0, h: 30 * (n.k || FARM_K), drawFn: ctx => drawNeighborActor(ctx, a, n, 1, false, false, n.k || FARM_K) }));
   return list;
@@ -9755,6 +9805,7 @@ function hostDrawOverlay(ctx, now) {
   if (!host.n) return;
   farm.actors.forEach(({ a }) => drawParticles(ctx, a));
   (host.pets || []).forEach(({ a }) => drawParticles(ctx, a));
+  (host.crowd || []).forEach(cr => { drawParticles(ctx, cr.a); if (cr.say && now < cr.sayUntil) drawNeighborBubble(ctx, cr.a, cr.n, cr.say, 1); });
   drawParticles(ctx, host.a);
   if (!host.say || now > host.sayUntil) { host.say = null; return; }
   drawNeighborBubble(ctx, host.a, host.n, host.say, 1);
@@ -10660,6 +10711,27 @@ function friendPetHit(w) {
     return w.x > q.x - 15 * k && w.x < q.x + 15 * k && w.y > q.y - 28 * k && w.y < q.y + 4;
   }) || null;
 }
+// 🎈 遊客手上的氣球
+function drawCrowdBalloon(ctx, cr) {
+  const p = iso(cr.a.x, cr.a.y, 0), k = VISITOR_K, sw = Math.sin(cr.a.t * 2) * 2;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(80,70,60,.6)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(p.x + 10 * k, p.y - 14 * k); ctx.quadraticCurveTo(p.x + 14 * k + sw, p.y - 30 * k, p.x + 12 * k + sw, p.y - 44 * k); ctx.stroke();
+  ctx.fillStyle = cr.balloon; ctx.beginPath(); ctx.ellipse(p.x + 12 * k + sw, p.y - 51 * k, 7 * k, 8.5 * k, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.beginPath(); ctx.ellipse(p.x + 10 * k + sw, p.y - 54 * k, 2 * k, 3 * k, -.4, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+const CROWD_LINES = ['遊樂園好好玩！', '我剛剛坐了摩天輪！', '你也來玩呀？', '棉花糖好甜喔～', '等一下要不要一起坐咖啡杯？', '我最喜歡旋轉木馬了！'];
+function crowdHit(w) {
+  return (host.crowd || []).find(cr => { const q = iso(cr.a.x, cr.a.y, 0), k = VISITOR_K; return w.x > q.x - 16 * k && w.x < q.x + 16 * k && w.y > q.y - 32 * k && w.y < q.y + 4; }) || null;
+}
+function crowdTalk(cr) {
+  const now = performance.now();
+  cr.say = CROWD_LINES[Math.floor(Math.random() * CROWD_LINES.length)]; cr.sayUntil = now + 3000;
+  cr.a.happyUntil = now + 1500; cr.a.squishV = -6; cr.a.path = [];
+  Sound.play('talk', cr.say);
+  setTimeout(() => { if (host.crowd && host.crowd.includes(cr)) fufuSay(pickLine('kidReply'), 2400); }, 2200);
+}
 function patFriendPet(fp) {
   const now = performance.now();
   fp.a.squishV = -8; fp.a.happyUntil = now + 1500; fp.a.path = [];
@@ -11529,6 +11601,7 @@ canvas.addEventListener('pointerup', e => {
   { const ph = phHit(w); if (ph != null) { phTap(ph, e); return; } }
   if (visitorHit(w)) { openMenu(visitorMenuEntries(), e); return; }
   { const fp = friendPetHit(w); if (fp) { patFriendPet(fp); return; } }
+  { const cr = crowdHit(w); if (cr) { crowdTalk(cr); return; } }
   if (hostHit(w)) { openMenu(hostMenuEntries(), e); return; }
   const fa = farmHit(w);
   if (fa) { openMenu(farmMenuEntries(fa), e); return; }
@@ -14200,6 +14273,7 @@ const RELATIVE_PERKS = {
   // 冰淇淋是用買的（不用等冷卻），比商店便宜一點
   icecream: { who: 'park', buy: { cost: 150, kidFood: 'ice_cream' } },
   cotton: { who: 'amusement', buy: { cost: 100, kidFood: 'cotton_candy' } },
+  popcorn: { who: 'amusement', buy: { cost: 80, kidFood: 'popcorn' } },
   homework: { who: 'school', sticker: true, cd: 3 * 60000, say: '老師說我寫得很棒！' }, // 只給貼紙不給錢，等 3 分鐘就好
   slide:    { who: ['school', 'park'], pet: 15, say: '咻～寵物也跟著溜下來了！', toast: '🛝 好好玩，寵物心情 +15' },
   swing:    { who: 'school', pet: 10, say: '盪好高喔！', toast: '🪢 盪鞦韆，寵物心情 +10' }
