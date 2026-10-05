@@ -561,6 +561,8 @@ button.pass { font: inherit; }
 .grow-dex { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
 .grow-row { display: grid; grid-template-columns: minmax(0, 64px) repeat(3, minmax(0, 1fr)); align-items: center; gap: 6px; background: #fff; border: 2px solid var(--line); border-radius: 14px; padding: 4px 8px; }
 .invite-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.invite-who { text-align: center; font-size: 13px; color: var(--muted); margin-top: -4px; }
+.invite-name { width: 100%; box-sizing: border-box; font-size: 16px; padding: 8px 10px; border: 2px solid var(--line); border-radius: 10px; margin: 4px 0 8px; }
 .invite-pic { display: flex; justify-content: center; margin: 4px 0; }
 .invite-code { width: 100%; box-sizing: border-box; height: 64px; font-size: 12px; border: 2px solid var(--line); border-radius: 10px; padding: 6px; margin: 6px 0; word-break: break-all; }
 .grow-row.kid { grid-template-columns: minmax(0, 64px) repeat(4, minmax(0, 1fr)); }
@@ -4063,6 +4065,8 @@ function normalizeSave(g) {
   if (!out.noSell || typeof out.noSell !== 'object' || Array.isArray(out.noSell)) out.noSell = {};
   if (g.guideAsked === undefined && out.guide !== 'egg') out.guideAsked = true; // 教到一半的不要再問
   if (!g.welcome) out.welcome = { at: 0, uncle: true, grandma: true }; // 已經在玩的存檔不算搬新家
+  if (out.inviteFrom != null && typeof out.inviteFrom !== 'string') delete out.inviteFrom;
+  if (out.inviteId != null && !(typeof out.inviteId === 'string' && /^[a-z0-9]{6,20}$/.test(out.inviteId))) delete out.inviteId;
   if (out.kid && out.kid.small && !(isObj(out.kid.small) && num(out.kid.small.until))) delete out.kid.small;
   (out.pets || []).forEach(q => { if (q && q.small != null && !num(q.small)) delete q.small; });
   if (!isObj(g.growDex)) { out.growDex = {}; growDexSync(out, true); } else growDexSync(out, false);
@@ -9706,7 +9710,7 @@ function openTravelMenu() {
   // 🏡 收到邀請卡的家（姊姊／妹妹的家）
   loadInvites().forEach(inv => {
     const here = !!(G.away && G.away.place === 'friend' && PLACES.friend && PLACES.friend.inviteAt === inv.at && PLACES.friend.inviteName === inv.n);
-    pick(renderInviteGirl(inv, 64, 58), `🏡 ${inv.n}的家${here ? '（你在這裡）' : ''}`, `邀請卡（${inviteDate(inv.at)}）・房間 ${inv.r.length} 間・寵物 ${inv.pn.length} 隻`, () => visitFriend(inv), here);
+    pick(renderInviteGirl(inv, 64, 58), `🏡 ${inviteWho(inv)}的家${here ? '（你在這裡）' : ''}`, `${inv.f ? inv.n + '・' : ''}邀請卡（${inviteDate(inv.at)}）・房間 ${inv.r.length} 間・寵物 ${inv.pn.length} 隻`, () => visitFriend(inv), here);
   });
   const row = el('div', 'invite-row');
   const mk = el('button', 'big alt', '💌 做邀請卡');
@@ -9734,8 +9738,9 @@ const INVITE_STAGE_K = { kinder: 1, school: 1.08, big: 1.15 };
 function makeInvite() {
   // 只帶照顧中的和一起逛的（家長：跟她自己在家看到的一樣，不要一大群擠在房間裡）
   const pets = [G.pet].concat((G.companions || []).map(i => G.pets[i])).filter(p => p && p.stage !== 'egg').slice(0, 8);
+  if (!G.inviteId) { G.inviteId = Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); saveGame(); }
   return {
-    v: 1, at: Date.now(), n: charName(),
+    v: 1, at: Date.now(), n: charName(), f: G.inviteFrom || '', id: G.inviteId,
     o: Object.assign({}, G.outfit), h: Object.assign({}, G.hair || DEFAULT_HAIR), s: kidStage().id,
     pn: pets.map(p => [p.species, p.stage, petNameOf(p)]),
     r: G.rooms.map(r => ({
@@ -9771,7 +9776,8 @@ function cleanInvite(x) {
   if (!rooms.length) return null;
   const pn = (Array.isArray(x.pn) ? x.pn : []).slice(0, 8).filter(a => Array.isArray(a) && PET_SPECIES_BY_ID[a[0]] && GROW_STAGES.includes(a[1]))
     .map(a => [a[0], a[1], str(a[2], 10)]);
-  return { v: 1, at: Number.isFinite(x.at) ? x.at : 0, n: str(x.n, 10) || '朋友', o, h, s: KID_STAGE_BY_ID[x.s] ? x.s : 'kinder', pn, r: rooms };
+  return { v: 1, at: Number.isFinite(x.at) ? x.at : 0, n: str(x.n, 10) || '朋友', f: str(x.f, 6),
+    id: typeof x.id === 'string' && /^[a-z0-9]{6,20}$/.test(x.id) ? x.id : '', o, h, s: KID_STAGE_BY_ID[x.s] ? x.s : 'kinder', pn, r: rooms };
 }
 // 打包成網址可以放的字串：z＝壓縮過、j＝沒壓縮（舊瀏覽器沒有 CompressionStream）
 const b64url = bytes => { let t = ''; for (let i = 0; i < bytes.length; i += 8192) t += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192)); return btoa(t).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
@@ -9803,13 +9809,18 @@ function inviteCodeFrom(text) {
   const m = /[#&?]visit=([A-Za-z0-9_-]+)/.exec(t) || /^([zj][A-Za-z0-9_-]{20,})$/.exec(t);
   return m ? m[1] : null;
 }
+// 寄件人：做邀請卡時選的「姊姊／妹妹／其他名字」；舊的卡沒有就用角色名字
+function inviteWho(inv) { return inv.f || inv.n; }
+const isOwnInvite = inv => !!(inv.id && G.inviteId && inv.id === G.inviteId);
 function inviteLink(code) { return location.href.split('#')[0] + '#visit=' + code; }
 function inviteDate(at) { const d = new Date(at || 0); return at ? `${d.getMonth() + 1}/${d.getDate()}` : '—'; }
 function loadInvites() {
   try { const l = JSON.parse(localStorage.getItem(INVITE_KEY) || '[]'); return Array.isArray(l) ? l.map(cleanInvite).filter(Boolean) : []; } catch (e) { return []; }
 }
 function saveInvite(inv) {
-  const list = loadInvites().filter(x => x.n !== inv.n);
+  // 同一個人（同一個存檔編號）寄來的新卡蓋掉舊卡；舊的卡沒有編號，就看寄件人＋名字
+  const same = x => inv.id ? x.id === inv.id : (!x.id && inviteWho(x) === inviteWho(inv) && x.n === inv.n);
+  const list = loadInvites().filter(x => !same(x));
   list.unshift(inv);
   try { localStorage.setItem(INVITE_KEY, JSON.stringify(list.slice(0, INVITE_MAX))); return true; } catch (e) { return false; }
 }
@@ -9827,24 +9838,52 @@ function renderInviteGirl(inv, w, h) {
 let friendUid = -500000;
 function visitFriend(inv) {
   PLACES.friend = {
-    name: `${inv.n}的家`, emoji: '🏡', host: 'friend', invite: true, inviteAt: inv.at, inviteName: inv.n, desc: '收到邀請卡的家',
+    name: `${inviteWho(inv)}的家`, emoji: '🏡', host: 'friend', invite: true, inviteAt: inv.at, inviteName: inv.n, desc: '收到邀請卡的家',
     rooms: inv.r.map(r => ({
-      name: `${inv.n}的${r.n}`, w: r.w, d: r.d, wall: r.wp, floor: r.fl,   // 「姊姊的客廳」：一看就知道不是自己家
+      name: `${inviteWho(inv)}的${r.n}`, w: r.w, d: r.d, wall: r.wp, floor: r.fl,   // 「姊姊的客廳」：一看就知道不是自己家
       items: r.i.map(([id, x, y, rot, top]) => ({ uid: friendUid--, id, x, y, rot, top: top || null })),
       wallItems: r.wi.map(([id, side, pos]) => ({ uid: friendUid--, id, side, pos }))
     }))
   };
-  HOSTS.friend = { id: 'friend', name: inv.n, short: inv.n, girl: { outfit: inviteOutfit(inv), hair: inv.h, stage: inv.s }, pets: inv.pn };
+  HOSTS.friend = { id: 'friend', name: inv.n, short: inviteWho(inv), girl: { outfit: inviteOutfit(inv), hair: inv.h, stage: inv.s }, pets: inv.pn };
   if (G.away && G.away.place === 'friend') { G.away = null; host.n = null; } // 從一個朋友家直接去另一個
   travelTo('friend');
 }
-function openInviteMaker() {
+// 做邀請卡之前先選「我是誰」（家長：要知道寄來的是姊姊、妹妹，還是其他朋友）。選一次就記住
+function openInviteFrom(after) {
   const card = $('#modalCard');
   card.innerHTML = '';
-  card.appendChild(el('h2', '', '💌 邀請卡'));
+  card.appendChild(el('h2', '', '💌 這張邀請卡是誰寄的？'));
+  const set = v => { G.inviteFrom = v; saveGame(); (after || openInviteMaker)(); };
+  [['👧 姊姊', '姊姊'], ['👧 妹妹', '妹妹']].forEach(([label, v]) => {
+    const b = el('button', 'big' + (G.inviteFrom === v ? '' : ' alt'), label);
+    b.onclick = () => set(v);
+    card.appendChild(b);
+  });
+  card.appendChild(note('不是姊姊、妹妹（例如寄給其他朋友）：在下面寫自己的名字。'));
+  const inp = document.createElement('input');
+  inp.className = 'invite-name'; inp.maxLength = 6; inp.placeholder = '自己的名字（最多 6 個字）';
+  if (G.inviteFrom && G.inviteFrom !== '姊姊' && G.inviteFrom !== '妹妹') inp.value = G.inviteFrom;
+  card.appendChild(inp);
+  const own = el('button', 'big alt', '✏️ 用這個名字');
+  own.onclick = () => { const v = inp.value.trim().slice(0, 6); if (!v) { toast('先寫一個名字喔'); return; } set(v); };
+  card.appendChild(own);
+  const no = el('button', 'big alt', '不做了');
+  no.onclick = () => { $('#modal').hidden = true; };
+  card.appendChild(no);
+  $('#modal').hidden = false;
+}
+function openInviteMaker() {
+  if (!G.inviteFrom) { openInviteFrom(); return; }
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', `💌 ${G.inviteFrom}的邀請卡`));
   const inv = makeInvite();
   const pic = el('div', 'invite-pic'); pic.appendChild(renderInviteGirl(inv, 90, 110)); card.appendChild(pic);
-  card.appendChild(el('p', 'gift-tx', `邀請大家來「${charName()}的家」玩！`));
+  card.appendChild(el('p', 'gift-tx', `邀請大家來「${G.inviteFrom}的家」玩！`));
+  const chg = el('button', 'mini', `寄件人：${G.inviteFrom}（換一個）`);
+  chg.onclick = () => openInviteFrom();
+  card.appendChild(chg);
   card.appendChild(note(`🏠 房間 ${inv.r.length} 間・🐾 寵物 ${inv.pn.length} 隻。請爸爸媽媽幫忙，用 LINE 把邀請卡傳給姊姊／妹妹。對方點開連結（或在「🚗 出門 → 📥 收到邀請卡」貼上）就能來玩。來玩只能看、不能搬，不會改到你的東西。之後重新布置，要再做一張新的邀請卡喔。`));
   const box = document.createElement('textarea');
   box.className = 'invite-code'; box.readOnly = true; box.value = '做邀請卡中…';
@@ -9867,7 +9906,7 @@ function openInviteMaker() {
     };
     copy.onclick = doCopy;
     send.onclick = () => {
-      if (navigator.share) navigator.share({ title: '小屋邀請卡', text: `${charName()}邀請你來我家玩！🏡`, url: link }).catch(() => {});
+      if (navigator.share) navigator.share({ title: '小屋邀請卡', text: `${G.inviteFrom}邀請你來我家玩！🏡`, url: link }).catch(() => {});
       else doCopy();
     };
   });
@@ -9888,8 +9927,7 @@ function openInvitePaste() {
     decodeInvite(code).then(inv => {
       ok.disabled = false;
       if (!inv) { toast('這張邀請卡打不開（可能沒有複製完整）'); return; }
-      saveInvite(inv);
-      openInviteWelcome(inv);
+      receiveInvite(inv);
     });
   };
   const no = el('button', 'big alt', '不用了');
@@ -9897,12 +9935,30 @@ function openInvitePaste() {
   card.append(ok, no);
   $('#modal').hidden = false;
 }
+function receiveInvite(inv) {
+  if (isOwnInvite(inv)) {
+    const card = $('#modalCard');
+    card.innerHTML = '';
+    card.appendChild(el('h2', '', '💌 這是你自己的邀請卡喔！'));
+    card.appendChild(note('這張邀請卡是從這個存檔做的，要傳給姊姊、妹妹或朋友，她們打開才會來你家玩。'));
+    const ok = el('button', 'big', '好');
+    ok.onclick = () => { $('#modal').hidden = true; };
+    card.appendChild(ok);
+    $('#modal').hidden = false;
+    return false;
+  }
+  saveInvite(inv);
+  openInviteWelcome(inv);
+  return true;
+}
 function openInviteWelcome(inv) {
   const card = $('#modalCard');
   card.innerHTML = '';
-  card.appendChild(el('h2', '', `💌 ${inv.n}寄來邀請卡！`));
+  const who = inviteWho(inv);
+  card.appendChild(el('h2', '', `💌 ${who}寄來邀請卡！`));
   const pic = el('div', 'invite-pic'); pic.appendChild(renderInviteGirl(inv, 90, 110)); card.appendChild(pic);
-  card.appendChild(el('p', 'gift-tx', `要去${inv.n}的家玩嗎？`));
+  if (inv.f) card.appendChild(el('div', 'invite-who', `（${inv.n}的家）`));
+  card.appendChild(el('p', 'gift-tx', `要去${who}的家玩嗎？`));
   card.appendChild(note(`🏠 房間 ${inv.r.length} 間・🐾 寵物 ${inv.pn.length} 隻。以後在「🚗 出門」也可以再去。`));
   const go = el('button', 'big', '🏡 現在去');
   go.onclick = () => { $('#modal').hidden = true; visitFriend(inv); };
@@ -9921,8 +9977,7 @@ function checkInviteHash(tries) {
   try { history.replaceState(null, '', location.href.split('#')[0]); } catch (e) {}
   decodeInvite(code).then(inv => {
     if (!inv) { toast('這張邀請卡打不開（可能沒有複製完整）'); return; }
-    saveInvite(inv);
-    openInviteWelcome(inv);
+    receiveInvite(inv);
   });
 }
 setTimeout(() => checkInviteHash(), 2500);

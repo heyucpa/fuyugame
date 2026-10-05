@@ -2596,10 +2596,39 @@
       if (inviteCodeFrom('看這裡 ' + inviteLink(pc)) !== pc || inviteCodeFrom(pc) !== pc || inviteCodeFrom('隨便的字') !== null) fails.push('貼上的邀請卡連結認不出來');
       // 最多記 4 張，同一個名字新的蓋掉舊的
       localStorage.removeItem(INVITE_KEY);
-      ['甲', '乙', '丙', '丁', '戊'].forEach(function(nm, i){ var x = cleanInvite(mine); x.n = nm; x.at = i; saveInvite(x); });
-      var x2 = cleanInvite(mine); x2.n = '戊'; x2.at = 99; saveInvite(x2);
+      ['甲', '乙', '丙', '丁', '戊'].forEach(function(nm, i){ var x = cleanInvite(mine); x.n = nm; x.at = i; x.id = 'test90' + i; saveInvite(x); });
+      var x2 = cleanInvite(mine); x2.n = '戊'; x2.at = 99; x2.id = 'test904'; saveInvite(x2);
       var li = loadInvites();
       if (li.length !== 4 || li[0].n !== '戊' || li[0].at !== 99 || li.some(function(x){ return x.n === '甲'; })) fails.push('邀請卡清單：數量或順序不對（' + li.map(function(x){ return x.n; }).join(',') + '）');
+      // 寄件人（家長：要知道是姊姊、妹妹，還是其他朋友）：兩個人角色都叫「小可愛」也分得出來，不會互相蓋掉
+      localStorage.removeItem(INVITE_KEY);
+      var sA = cleanInvite(mine); sA.n = '小可愛'; sA.f = '姊姊'; sA.id = 'sisterbig1';
+      var sB = cleanInvite(mine); sB.n = '小可愛'; sB.f = '妹妹'; sB.id = 'sistersml1';
+      saveInvite(sA); saveInvite(sB);
+      var lAB = loadInvites();
+      if (lAB.length !== 2 || inviteWho(lAB[0]) !== '妹妹' || inviteWho(lAB[1]) !== '姊姊') fails.push('姊姊、妹妹角色同名，邀請卡互相蓋掉或分不出是誰');
+      openTravelMenu();
+      var tmAB = $('#modalCard').textContent;
+      if (!/姊姊的家/.test(tmAB) || !/妹妹的家/.test(tmAB)) fails.push('出門選單看不出是姊姊還是妹妹的家');
+      openInviteWelcome(sA);
+      if (!/姊姊寄來邀請卡/.test($('#modalCard').textContent) || !/小可愛的家/.test($('#modalCard').textContent)) fails.push('收到邀請卡沒有寫是誰寄的');
+      $('#modal').hidden = true;
+      // 自己的邀請卡：不收進清單，說「這是你自己的」
+      var own = cleanInvite(mine); own.id = G.inviteId;
+      if (receiveInvite(own) || loadInvites().length !== 2 || !/自己的邀請卡/.test($('#modalCard').textContent)) fails.push('點到自己的邀請卡，被當成別人的收下了');
+      $('#modal').hidden = true;
+      // 做邀請卡：還沒選寄件人先問，選了就記住、卡上寫寄件人
+      var keepFrom = G.inviteFrom; delete G.inviteFrom;
+      openInviteMaker();
+      if (!/是誰寄的/.test($('#modalCard').textContent)) fails.push('做邀請卡沒有先問是誰寄的');
+      var bSis = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return /妹妹/.test(b.textContent); })[0];
+      if (bSis) bSis.onclick();
+      if (G.inviteFrom !== '妹妹' || !/妹妹的邀請卡/.test($('#modalCard').textContent) || makeInvite().f !== '妹妹') fails.push('選了寄件人，邀請卡上沒有寫');
+      $('#modal').hidden = true;
+      if (keepFrom) G.inviteFrom = keepFrom; else delete G.inviteFrom;
+      localStorage.removeItem(INVITE_KEY);
+      ['甲', '乙', '丙', '丁', '戊'].forEach(function(nm, i){ var x = cleanInvite(mine); x.n = nm; x.at = i; x.id = 'test90' + i; saveInvite(x); });
+      saveInvite(x2);
       // 出門選單看得到收到的邀請卡、做邀請卡、收到邀請卡
       openTravelMenu();
       var tm = $('#modalCard').textContent;
@@ -2642,7 +2671,7 @@
       if (JSON.stringify({ rooms: G.rooms, pets: G.pets, bells: G.bells, inv: G.inv }) !== before) fails.push('去朋友家玩，改到了自己的存檔');
       // 用連結打開：收下邀請卡、網址上的那一串拿掉
       localStorage.removeItem(INVITE_KEY);
-      var pc2 = encodeInvitePlain(Object.assign({}, mine, { n: '妹妹' }));
+      var pc2 = encodeInvitePlain(Object.assign({}, mine, { n: '妹妹', id: 'otherkid1' }));
       try { history.replaceState(null, '', location.href.split('#')[0] + '#visit=' + pc2); } catch (eH) {}
       checkInviteHash(30);
       pendingChecks.push(function(){
