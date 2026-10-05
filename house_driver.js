@@ -2710,6 +2710,33 @@
       toast = realToast96; showcaseBlocked = realBlk96; SC_QUEUE.length = 0; openTab('inv'); commit();
     }
 
+    /* 97 小可愛長大的速度＋防狂點：同一件事 2 分鐘才算一次、兩件事之間 15 秒、一天最多長一階 */
+    var keep97 = JSON.stringify({ kid: G.kid, day: G.kidGrowDay || null });
+    try {
+      G.kid.height = 136; delete G.kid.small; G.kidGrowDay = null;
+      var t97 = Date.now() + 10 * 86400000;   // 跟前面的測試錯開（不受前面做過的事影響）
+      var h0 = G.kid.height;
+      for (var i97 = 0; i97 < 20; i97++) kidActGrowth('tv', t97 + i97 * 6000);   // 一直點電視 2 分鐘
+      if (Math.abs(G.kid.height - h0 - KID_ACT_GROW) > .001) fails.push('一直點同一個家具一直長大（長了 ' + (G.kid.height - h0).toFixed(2) + '）');
+      var h1 = G.kid.height;
+      kidActGrowth('piano', t97 + 121000); kidActGrowth('read', t97 + 125000);   // 換家具亂點：15 秒內第二件不算
+      if (Math.abs(G.kid.height - h1 - KID_ACT_GROW) > .001) fails.push('一直換家具亂點，每一件都算長大');
+      kidActGrowth('paint', t97 + 145000);
+      if (Math.abs(G.kid.height - h1 - KID_ACT_GROW * 2) > .001) fails.push('隔一段時間做別的事，沒有長大');
+      // 真的點家具做事（走 fufuStartAct）：要經過防狂點那一關
+      var realKAG = kidActGrowth, viaGuard = 0; kidActGrowth = function(){ viaGuard++; };
+      try { fufu.act = null; fufuStartAct('read', performance.now(), { uid: -97, id: 'bookshelf', x: 0, y: 0, rot: 0 }, false); } finally { kidActGrowth = realKAG; fufu.act = null; }
+      if (viaGuard !== 1) fails.push('點家具做事沒有經過防狂點');
+      // 一天最多長一階
+      G.kidGrowDay = null; G.kid.height = 136;
+      for (var j97 = 0; j97 < 60; j97++) kidAddGrowth(.5);
+      if (Math.abs(G.kid.height - 136 - KID_GROW_DAY_MAX) > .01) fails.push('一天長超過上限（長了 ' + (G.kid.height - 136).toFixed(2) + '）');
+      G.kidGrowDay.d = '昨天';
+      var hy = G.kid.height; kidAddGrowth(.5);
+      if (Math.abs(G.kid.height - hy - .5) > .001) fails.push('換一天之後還是不能長大');
+    } catch (e) { fails.push('長大速度測試出錯：' + e.message); }
+    finally { var k97 = JSON.parse(keep97); G.kid = k97.kid; G.kidGrowDay = k97.day; if (!G.kidGrowDay) delete G.kidGrowDay; }
+
     /* 95 🎡 遊樂園：出門選單有、兔兔姊姊迎接、旋轉木馬和摩天輪真的坐上去轉、棉花糖要花錢買、氣球拿在手上；棉花糖商店不賣 */
     var realToast95 = toast, realWalk95 = walkTrip, keep95 = { bells: G.bells, kf: JSON.stringify(G.kidFood), cd: JSON.stringify(G.actCD || {}) };
     toast = function(){};

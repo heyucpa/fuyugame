@@ -4314,6 +4314,7 @@ function normalizeSave(g) {
   if (g.guideAsked === undefined && out.guide !== 'egg') out.guideAsked = true; // 教到一半的不要再問
   if (!g.welcome) out.welcome = { at: 0, uncle: true, grandma: true }; // 已經在玩的存檔不算搬新家
   if (out.seasonDex != null && !isObj(out.seasonDex)) delete out.seasonDex;
+  if (out.kidGrowDay != null && !(isObj(out.kidGrowDay) && typeof out.kidGrowDay.d === 'string' && num(out.kidGrowDay.n))) delete out.kidGrowDay;
   if (out.flowerDex != null && !isObj(out.flowerDex)) delete out.flowerDex;
   if (out.garden != null && !isObj(out.garden)) delete out.garden;
   if (isObj(out.garden)) Object.keys(out.garden).forEach(k => { const v = out.garden[k]; if (!isObj(v) || !Number.isInteger(v.s) || v.s < 0 || v.s > 4) delete out.garden[k]; });
@@ -4763,8 +4764,25 @@ function kidGrowPct() {
   return n ? Math.max(0, Math.min(1, (G.kid.height - s.at) / (n.at - s.at))) : 1;
 }
 // 加成長值；跨過一個階段回傳 {from, to, newDex}
+/* 長大的速度（家長選「快」：每週玩一小時左右，大約一週長一階）＋防狂點：
+   ・做一件事 +0.25；同一件事要隔 2 分鐘才再算、任兩件事之間至少隔 15 秒（一直點同一個家具沒用）
+   ・一天最多長 KID_GROW_DAY_MAX（＝一階），連吃很多小安素也一樣 */
+const KID_GROW_DAY_MAX = 10, KID_ACT_GROW = .25, KID_ACT_SAME_MS = 120000, KID_ACT_GAP_MS = 15000, KID_BOOK_GROW = .5;
+const kidActLast = {};
+let kidActAny = 0;
+function kidActGrowth(key, now) {
+  now = now || Date.now();
+  if (now - kidActAny < KID_ACT_GAP_MS || now - (kidActLast[key] || 0) < KID_ACT_SAME_MS) return null;
+  kidActLast[key] = now; kidActAny = now;
+  return kidGainGrowth(KID_ACT_GROW);
+}
 function kidAddGrowth(amount) {
   if (!amount) return null;
+  const d = today();
+  if (!G.kidGrowDay || G.kidGrowDay.d !== d) G.kidGrowDay = { d, n: 0 };
+  amount = Math.min(amount, KID_GROW_DAY_MAX - G.kidGrowDay.n);   // 今天長夠了就先不長
+  if (amount <= 0) return null;
+  G.kidGrowDay.n = Math.round((G.kidGrowDay.n + amount) * 100) / 100;
   const from = kidStage();
   G.kid.height = Math.min(KID_MAX_HEIGHT, Math.round((G.kid.height + amount) * 100) / 100);
   const to = kidStage();
@@ -6167,7 +6185,7 @@ function fufuStartAct(key, now, it, auto) {
     if (!sessionLog.acts[key]) sessionLog.acts[key] = 1;
     if (G.away && G.away.place === 'park' && PARK_MEM_LINES[key]) rememberFor('ranger', 'act', key);
   }
-  if (!auto) kidGainGrowth(.1);  // 陪寵物玩、看書、畫畫…做什麼都會慢慢長大
+  if (!auto) kidActGrowth(key);  // 陪寵物玩、看書、畫畫…做什麼都會慢慢長大（有防狂點）
   if (!auto) relativePerk(key); // 親戚家的事情：吃點心、喝茶、幫忙做事…（她自己點的才算）
   if (a.sound === 'bath') Sound.play('bath');
   else if (a.sound !== 'note') Sound.play('pickUp');
@@ -14885,7 +14903,7 @@ function finishBook(book) {
   const isNew = !pass[book.id];
   pass[book.id] = (pass[book.id] || 0) + 1;
   sessionLog.acts['book:' + book.id] = 1;
-  kidGainGrowth(.3);
+  kidGainGrowth(KID_BOOK_GROW);
   rememberFor('librarian', 'book', book.title);
   const n = Object.keys(pass).length;
   if (isNew) showcase('📗', book.title, `閱讀護照 ${n} / ${STORYBOOKS.length}（蓋了一個新章）`, { n, all: STORYBOOKS.length });
