@@ -2570,14 +2570,16 @@ const PLACES = {
     // 照片參考：綠桌墊的課桌一排一排、桌邊掛紅藍布袋，後面一排置物櫃和書櫃，
     // 牆上有注音布告欄、窗戶有綠色窗簾，地板是磨石子
     { name: '教室', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_terrazzo', items: [
-      // 116.10 房間變 10×10：課桌椅拉開成三排兩列，中間留走道
-      ['teacher_desk', 1, 1], ['cubby_lockers', 4, 0], ['cubby_lockers', 6, 0], ['bookshelf', 0, 8, 1],
-      ['school_desk', 2, 3], ['school_desk_b', 5, 3], ['school_desk', 8, 3],
-      // 椅子轉 180 度：坐下來臉朝黑板
-      ['school_chair', 2, 4, 2], ['school_chair', 5, 4, 2], ['school_chair', 8, 4, 2],
-      ['school_desk_b', 2, 6], ['school_desk', 5, 6], ['school_desk_b', 8, 6],
-      ['school_chair', 2, 7, 2], ['school_chair', 5, 7, 2], ['school_chair', 8, 7, 2]
-    ], wallItems: [['blackboard', 'L', 1], ['zhuyin_board', 'L', 5], ['class_window', 'R', 2], ['class_window', 'R', 5], ['wall_clock', 'R', 8]] },
+      /* 家長：課桌要面對黑板、置物櫃放在椅子後面。
+         黑板在左邊牆（x＝0）：老師的桌子在黑板前面，學生的桌子在前、椅子在後（x 大的那邊），
+         椅子轉 270 度，坐下來臉朝黑板；置物櫃放在最後面（椅子後方）。 */
+      ['bookshelf', 0, 0, 1], ['teacher_desk', 1, 3, 1],
+      ['school_desk', 3, 2, 3], ['school_desk_b', 3, 4, 3], ['school_desk', 3, 6, 3],
+      ['school_chair', 4, 2, 3], ['school_chair', 4, 4, 3], ['school_chair', 4, 6, 3],
+      ['school_desk_b', 6, 2, 3], ['school_desk', 6, 4, 3], ['school_desk_b', 6, 6, 3],
+      ['school_chair', 7, 2, 3], ['school_chair', 7, 4, 3], ['school_chair', 7, 6, 3],
+      ['cubby_lockers', 9, 2, 1], ['cubby_lockers', 9, 5, 1]
+    ], wallItems: [['blackboard', 'L', 3], ['zhuyin_board', 'L', 7], ['class_window', 'R', 2], ['class_window', 'R', 5], ['wall_clock', 'R', 8]] },
     // 前面四道藍色跑道（第 6~9 排），後面是球場；樹和長椅在球場邊（照片參考）
     { name: '操場', w: 10, d: 10, wall: 'wp_forest', floor: 'fl_track', items: [
       ['flagpole', 1, 1], ['slide', 3, 1], ['swing', 7, 1],

@@ -4866,20 +4866,23 @@
       if (!ps.some(function(p){ return p.c === '#2f9e7a' && p.z >= 24; })) fails.push(id + ' 不是綠色桌墊');
     });
     if (FURN_BY_ID.school_desk.parts[8].c === FURN_BY_ID.school_desk_b.parts[8].c) fails.push('兩種課桌的布袋同一個顏色');
-    // 椅子在課桌後面一格、轉 180 度（坐下來臉朝黑板，黑板在左牆＝靠 y 小的那邊）
-    var deskAt = {};
+    /* 黑板在左牆（畫面左上那面＝x＝0 的牆）。椅子在課桌後面一格（x＋1）、轉 270 度（rot 3），
+       坐下來臉朝黑板（家長：以前課桌是朝窗戶那面牆）；置物櫃放在最後面、椅子的後方。 */
+    if (!CR.wallItems.some(function(w){ return (w.id || w[0]) === 'blackboard' && (w.side || w[1]) === 'L'; })) fails.push('黑板不在左牆');
+    var deskAt = {}, maxChairX = 0;
     CR.items.forEach(function(it){ var id = it.id || it[0]; if (/^school_desk/.test(id)) deskAt[(it.x != null ? it.x : it[1]) + ',' + (it.y != null ? it.y : it[2])] = 1; });
     CR.items.forEach(function(it){
       var id = it.id || it[0]; if (id !== 'school_chair') return;
       var x = it.x != null ? it.x : it[1], y = it.y != null ? it.y : it[2], rot = it.rot != null ? it.rot : (it[3] || 0);
-      if (!deskAt[x + ',' + (y - 1)]) fails.push('椅子 (' + x + ',' + y + ') 前面沒有課桌');
-      if (rot !== 2) fails.push('椅子 (' + x + ',' + y + ') 沒有轉向黑板（rot ' + rot + '）');
+      maxChairX = Math.max(maxChairX, x);
+      if (!deskAt[(x - 1) + ',' + y]) fails.push('椅子 (' + x + ',' + y + ') 前面（靠黑板那邊）沒有課桌');
+      var f = rotateDir(rot, 0, 1);
+      if (!(f.dx < 0 && f.dy === 0)) fails.push('椅子 (' + x + ',' + y + ') 坐下來沒有面對黑板（rot ' + rot + '）');
     });
-    // 教室的書櫃、置物櫃要靠牆（擺在教室中間會擋住課桌，看起來也怪）
     CR.items.forEach(function(it){
-      var id = it.id || it[0]; if (id !== 'bookshelf' && id !== 'cubby_lockers') return;
-      var x = it.x != null ? it.x : it[1], y = it.y != null ? it.y : it[2];
-      if (x !== 0 && y !== 0) fails.push('教室的 ' + id + ' 沒有靠牆（' + x + ',' + y + '）');
+      var id = it.id || it[0], x = it.x != null ? it.x : it[1], y = it.y != null ? it.y : it[2];
+      if (id === 'cubby_lockers' && x <= maxChairX) fails.push('置物櫃沒有放在椅子後面（' + x + ',' + y + '）');
+      if (id === 'bookshelf' && x !== 0 && y !== 0) fails.push('教室的書櫃沒有靠牆（' + x + ',' + y + '）');
     });
     Object.keys(PLACES).forEach(function(pk){
       PLACES[pk].rooms.forEach(function(r){
