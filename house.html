@@ -553,6 +553,12 @@ button.pass { font: inherit; }
 .pc-btns.one { grid-template-columns: 1fr; margin-top: 5px; }
 .pc-head small { color: var(--muted); font-size: 11px; font-weight: 400; }
 .pc-sub { margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--line); font-size: 12px; }
+.pc-name { font: inherit; font-weight: 800; background: none; border: none; padding: 0 2px; color: inherit; cursor: pointer; border-bottom: 1px dashed #c9b9a6; touch-action: manipulation; }
+.namer-pic { display: flex; justify-content: center; }
+.namer-chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 6px 0 10px; }
+.namer-chip { font: inherit; font-size: 15px; padding: 6px 12px; border-radius: 16px; border: 2px solid var(--line); background: #fffaf0; touch-action: manipulation; }
+.namer-chip.old { background: #f1ecff; border-color: #c7b8f0; }
+.namer-in { font-size: 20px !important; text-align: center; }
 .actions button { border: none; background: #fff; border-radius: 999px; padding: 6px 12px; box-shadow: 0 2px 6px rgba(0,0,0,.15); font-size: 13px; white-space: nowrap; }
 .actions { max-width: calc(100% - 24px); flex-wrap: wrap; justify-content: center; }
 .actions .place { display: none; background: var(--accent); color: var(--accent-ink); font-weight: 700; }
@@ -752,7 +758,7 @@ button.pass { font: inherit; }
         <div class="pc-bar" title="乾淨"><span>🧼</span><i><b id="barKidClean"></b></i></div>
         <div class="pc-bar" title="心情"><span>💗</span><i><b id="barKidMood"></b></i></div>
         <div class="pc-btns one"><button id="btnKidEat">🍙 吃東西</button></div>
-        <div class="pc-sub">🐾 <b id="petNameLbl">圓圓</b></div>
+        <div class="pc-sub">🐾 <button id="petNameLbl" class="pc-name" title="點一下幫牠取名字">圓圓</button></div>
         <div class="pc-bar grow" id="growRow" title="長大"><span>🌱</span><i><b id="barGrow"></b></i></div>
         <div class="pc-bar" title="飽足"><span>🍎</span><i><b id="barHunger"></b></i></div>
         <div class="pc-bar" title="乾淨"><span>🧼</span><i><b id="barClean"></b></i></div>
@@ -4105,6 +4111,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-13T09:00', title: '幫寵物取名字更好玩了！🏷️', lines: [
+    ['👆', '點小卡上寵物的名字（或寵物分頁的名字）就能取名字'],
+    ['🎲', '不知道取什麼？有名字點子可以直接點，還能換一批'],
+    ['💜', '以前叫過的名字會留著，想換回去點一下就好'],
+    ['🥚', '蛋孵出來的時候，會問你要幫牠取什麼名字']
+  ], newItems: [] },
   { id: '2026-10-12T20:00', title: '動物朋友也會寫訪客簿了！🐾', lines: [
     ['🐻', '動物鄰居來家裡玩，回家的時候會在訪客簿留一句話'],
     ['🍯', '每位朋友都有自己的小印章（熊熊是蜂蜜、兔兔是紅蘿蔔…）'],
@@ -4586,6 +4598,7 @@ function normalizeSave(g) {
     const q = Object.assign(newPet(), p);
     if (!PET_SPECIES_BY_ID[q.species]) q.species = 'mochi';
     if (!PET_STAGE_BY_ID[q.stage]) q.stage = 'kid';
+    if (q.oldNames != null) { q.oldNames = (Array.isArray(q.oldNames) ? q.oldNames : []).filter(n => typeof n === 'string' && n.trim()).map(n => n.slice(0, 10)).slice(0, PET_OLD_NAMES_MAX); if (!q.oldNames.length) delete q.oldNames; }
     return q;
   });
   out.activePet = Math.max(0, Math.min(out.pets.length - 1, g.activePet || 0));
@@ -7217,6 +7230,7 @@ function celebrateStage(up, p, a) {
     // 蛋還在搖的時候先不要說是什麼（會爆雷），裂開之後再說
     const hatchMsg = `🎉 孵出來了！是${sp.name}${sp.rare ? '（稀有！）' : ''}${up.firstOfSpecies ? '，圖鑑多了一種！' : ''}`;
     setTimeout(() => { fufuSay(pickLine('petHatch', { 寵物: name }), 3500); toast(hatchMsg); }, SC_HATCH_MS);
+    if (!p.name) askNameAfterHatch(p);
   } else {
     fufuSay(pickLine('petGrow', { 寵物: name }), 3500);
     try {
@@ -11838,6 +11852,7 @@ function setBar(sel, value) {
 function updatePetCard() {
   const st = G.pet;
   $('#petNameLbl').textContent = petName();
+  $('#petNameLbl').onclick = () => { if ($('#modal').hidden) openPetNamer(G.activePet); };
   $('#kidNameLbl').textContent = charName();
   setBar('#barKid', G.kid.hunger);
   setBar('#barKidMood', G.kid.mood != null ? G.kid.mood : 80);
@@ -13294,7 +13309,11 @@ function tabPets(body) {
   pic.appendChild(renderPetPortrait(cur, 110, 100));
   head.appendChild(pic);
   const info = el('div', 'pet-info');
-  info.appendChild(el('div', 'pet-name', petName()));
+  const pnm = el('div', 'pet-name', petName() + ' ');
+  const pnb = el('button', 'mini', '🏷️ 取名字');
+  pnb.onclick = () => openPetNamer(G.activePet);
+  pnm.appendChild(pnb);
+  info.appendChild(pnm);
   info.appendChild(el('div', 'pet-kind', cur.stage === 'egg' ? '還不知道會孵出什麼寶寶' : `${sp.name}・${st.name}・${({ fish: '🐟', sand: '🏖️', shy: '🙈', jump: '🎉' })[PET_TRAIT_OF[sp.id] || 'jump']} ${PET_TRAIT_NAMES[PET_TRAIT_OF[sp.id] || 'jump']}`));
   if (st.next) {
     const bar = el('div', 'grow-bar'), fill = el('b', '');
@@ -13330,7 +13349,10 @@ function tabPets(body) {
     const active = i === G.activePet, comp = isCompanion(i), egg = p.stage === 'egg';
     const c = el('div', 'card' + (active ? ' cur' : comp ? ' comp' : ''));
     c.appendChild(renderPetPortrait(p, 60, 54));
-    c.appendChild(el('div', 'nm', petNameOf(p)));
+    const nmEl = el('button', 'nm pc-name', petNameOf(p));
+    nmEl.title = '點一下取名字';
+    nmEl.onclick = () => openPetNamer(i);
+    c.appendChild(nmEl);
     c.appendChild(el('div', 'pr', active ? '⭐ 照顧中' : comp ? '🐾 一起逛' : PET_STAGE_BY_ID[p.stage].name));
     if (!active) {
       const main = el('button', 'mini', '⭐ 照顧牠');
@@ -13819,7 +13841,9 @@ function tabTalk(body) {
     pn.value = p.name || '';
     pn.placeholder = p.stage === 'egg' ? '神秘的蛋（孵出來再取也可以）' : PET_SPECIES_BY_ID[p.species].name;
     pn.maxLength = 10;
+    let before = p.name || '';
     pn.oninput = () => { p.name = pn.value; saveGame(); updatePetCard(); };
+    pn.onchange = () => { rememberOldName(p, before, pn.value); before = pn.value; saveGame(); };
     row.appendChild(pn);
     if (i === G.activePet) row.appendChild(el('span', 'name-tag', '照顧中'));
     body.appendChild(row);
@@ -13836,6 +13860,83 @@ function tabTalk(body) {
     body.appendChild(rn);
   });
   body.appendChild(note('名字隨時都可以改。清空就會用回原本的名字。'));
+}
+
+/* 🏷️ 幫寵物取名字（家長：小朋友很愛幫寵物換名字）
+   點小卡上的名字、寵物分頁的 🏷️、或剛孵出來的時候就會打開。
+   妹妹還不太會打字：下面有 🎲 名字點子可以直接點；以前叫過的名字也留著（最多 6 個），想換回去點一下就好。 */
+const PET_NAME_IDEAS = ['布丁', '麻糬', '湯圓', '糖糖', '餅乾', '棉花', '豆花', '奶茶', 'QQ', '皮皮', '咕嚕', '毛毛', '泡芙', '可可', '果凍', '小星星',
+  '雪球', '芝麻', '地瓜', '蜜蜜', '球球', '噗噗', '妞妞', '小熊軟糖', '牛奶糖', '月亮', '彩虹', '蘋果', '草莓', '小雲朵'];
+const PET_OLD_NAMES_MAX = 6;
+function rememberOldName(p, oldName, newName) {
+  oldName = (oldName || '').trim(); newName = (newName || '').trim();
+  if (!oldName || oldName === newName) return;
+  p.oldNames = [oldName].concat((p.oldNames || []).filter(n => n !== oldName && n !== newName)).slice(0, PET_OLD_NAMES_MAX);
+}
+function openPetNamer(i, opts) {
+  const p = G.pets[i];
+  if (!p) return;
+  opts = opts || {};
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', opts.hatch ? '🎉 孵出來了！幫牠取個名字吧' : '🏷️ 幫牠取名字'));
+  const pic = el('div', 'namer-pic');
+  try { pic.appendChild(renderPetPortrait(p, 110, 100)); } catch (e) {}
+  card.appendChild(pic);
+  const inp = el('input', 'textin namer-in');
+  inp.value = p.name || '';
+  inp.placeholder = p.stage === 'egg' ? '神秘的蛋' : PET_SPECIES_BY_ID[p.species].name;
+  inp.maxLength = 10;
+  card.appendChild(inp);
+  const chipRow = (cls, names) => {
+    const row = el('div', 'namer-chips');
+    names.forEach(n => { const c = el('button', 'namer-chip' + cls, n); c.onclick = () => { inp.value = n; Sound.play('click'); }; row.appendChild(c); });
+    return row;
+  };
+  if ((p.oldNames || []).length) { card.appendChild(note('以前叫過：')); card.appendChild(chipRow(' old', p.oldNames)); }
+  card.appendChild(note('🎲 名字點子：'));
+  const pick = () => {
+    const taken = new Set(G.pets.map(q => q.name));
+    return PET_NAME_IDEAS.filter(n => !taken.has(n)).sort(() => Math.random() - .5).slice(0, 6);
+  };
+  let ideas = chipRow('', pick());
+  card.appendChild(ideas);
+  const more = el('button', 'big alt', '🎲 換一批');
+  more.onclick = () => { const nx = chipRow('', pick()); ideas.replaceWith(nx); ideas = nx; Sound.play('click'); };
+  const ok = el('button', 'big', '就叫這個！');
+  ok.onclick = () => {
+    const oldName = p.name || '', nm = inp.value.trim().slice(0, 10);
+    $('#modal').hidden = true;
+    if (nm === oldName.trim()) return;
+    rememberOldName(p, oldName, nm);
+    p.name = nm;
+    saveGame(); updatePetCard();
+    try { renderTab(); } catch (e) {}
+    Sound.play('petHappy');
+    const shown = petNameOf(p);
+    if (i === G.activePet && p.stage !== 'egg') { pet.happyUntil = performance.now() + 2500; pet.squishV = -9; try { petBurst({ kind: 'heart', spread: 50 }, 5, pet); } catch (e) {} }
+    fufuSay(`${shown}！好好聽的名字～`, 3000);
+    toast(`🏷️ 牠現在叫「${shown}」了！`);
+  };
+  const row = el('div', 'book-btns');
+  const no = el('button', 'big alt', opts.hatch ? '等一下再取' : '不改了');
+  no.onclick = () => { $('#modal').hidden = true; };
+  row.append(more, ok);
+  card.append(row, no);
+  $('#modal').hidden = false;
+  setTimeout(() => { try { if (!opts.hatch) inp.focus(); } catch (e) {} }, 50);
+}
+// 孵出來：大圖演完、畫面空出來再問名字（最多等 30 秒，正在玩別的就算了）
+function askNameAfterHatch(p) {
+  let tries = 0;
+  const t = setInterval(() => {
+    tries++;
+    const i = G.pets.indexOf(p);
+    if (i < 0 || p.name || tries > 30) { clearInterval(t); return; }
+    if (document.getElementById('showcase') || SC_QUEUE.length || !$('#modal').hidden) return;
+    clearInterval(t);
+    openPetNamer(i, { hatch: true });
+  }, 1000);
 }
 
 /* 💬 台詞（家長）：在設定裡，要家長密碼才打開（沒設密碼就直接打開）。
