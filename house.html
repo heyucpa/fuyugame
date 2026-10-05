@@ -561,6 +561,7 @@ button.pass { font: inherit; }
 .grow-dex { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
 .grow-row { display: grid; grid-template-columns: minmax(0, 64px) repeat(3, minmax(0, 1fr)); align-items: center; gap: 6px; background: #fff; border: 2px solid var(--line); border-radius: 14px; padding: 4px 8px; }
 .invite-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.season-box { background: #fff4e6; border: 2px dashed #f0902f; border-radius: 16px; padding: 4px 10px 10px; margin-bottom: 12px; }
 .invite-who { text-align: center; font-size: 13px; color: var(--muted); margin-top: -4px; }
 .invite-name { width: 100%; box-sizing: border-box; font-size: 16px; padding: 8px 10px; border: 2px solid var(--line); border-radius: 10px; margin: 4px 0 8px; }
 .invite-pic { display: flex; justify-content: center; margin: 4px 0; }
@@ -1676,7 +1677,8 @@ Object.assign(FURN_KIND_OF, {
   cupcake_chair: 'sit', macaron_table: 'sit', strawberry_sofa: 'sit', cloud_sofa: 'sit', bunny_cushion: 'sit',
   candy_bed: 'sleep', cream_wardrobe: 'sleep', cake_shelf: 'eat', cookie_jar: 'desk',
   donut_rug: 'deco', icecream_lamp: 'deco', lollipop_tree: 'deco', star_lamp: 'deco', heart_mirror: 'wall',
-  unicorn_rocker: 'toy', rainbow_shelf: 'study', pet_castle: 'pet', cat_tower: 'pet'
+  unicorn_rocker: 'toy', rainbow_shelf: 'study', pet_castle: 'pet', cat_tower: 'pet',
+  pumpkin_lamp: 'deco', ghost_plush: 'toy', candy_bucket: 'deco', pumpkin_chair: 'sit', witch_cauldron: 'eat', bat_garland: 'wall'
 });
 Object.assign(FURNITURE_USE, {
   cupcake_chair: { use: 'sit', seats: [{ x: .5, y: .55, z: 22 }], front: [0, 1] },
@@ -1684,10 +1686,11 @@ Object.assign(FURNITURE_USE, {
   strawberry_sofa: { use: 'sit', seats: [{ x: .64, y: .62, z: 28 }, { x: 1.36, y: .62, z: 28 }], front: [0, 1] },
   cloud_sofa: { use: 'sit', seats: [{ x: .64, y: .62, z: 26 }, { x: 1.36, y: .62, z: 26 }], front: [0, 1] },
   candy_bed: { use: 'lie', pillow: { x: 1, y: .62, z: 30 } },
+  pumpkin_chair: { use: 'sit', seats: [{ x: .5, y: .6, z: 20 }], front: [0, 1] },
   lemon_bed: { use: 'lie', pillow: { x: 1, y: .62, z: 30 } },
   lemon_chair: { use: 'sit', seats: [{ x: .5, y: .55, z: 24 }], front: [0, 1] }
 });
-Object.assign(FURNITURE_ACT, { cream_wardrobe: 'dress', rainbow_shelf: 'read', cake_shelf: 'snack', unicorn_rocker: 'toys' });
+Object.assign(FURNITURE_ACT, { pumpkin_lamp: 'light', ghost_plush: 'hug', witch_cauldron: 'cook', cream_wardrobe: 'dress', rainbow_shelf: 'read', cake_shelf: 'snack', unicorn_rocker: 'toys' });
 Object.assign(PET_BEDS, {
   candy_bed: { x: 1.2, y: 2.2, z: 30, withKid: true },
   lemon_bed: { x: 1.2, y: 2.2, z: 30, withKid: true },
@@ -2432,6 +2435,8 @@ Object.values(PLACES).forEach(pl => {
   }));
 });
 LINE_TYPES.push(
+  { key: 'visitorTrick', label: '萬聖節：動物朋友來玩', hint: '可用 {名字}', lines: ['不給糖就搗蛋！🎃', '{名字}，不給糖就搗蛋喔！', '嘿嘿，你看我的萬聖節打扮！要給我糖果嗎？', '咚咚咚～不給糖就搗蛋！'] },
+  { key: 'visitorCandy', label: '萬聖節：拿到糖果', hint: '可用 {名字}', lines: ['哇！謝謝{名字}的糖果！', '好甜喔～這個送你！', '耶！拿到糖果了！我也有東西送你～'] },
   { key: 'hostFriend', label: '姊姊／妹妹在自己家說的話', hint: '可用 {名字}', lines: ['{名字}，歡迎來我家玩！', '你看，這是我布置的房間！', '我的寵物很可愛吧？摸摸看！', '我們一起跳舞好不好？', '要不要坐下來休息一下？', '下次換我去你家玩！', '想玩什麼都可以喔～'] },
   { key: 'hostUncle', label: '叔叔說的話', hint: '可用 {名字}', lines: ['歡迎來叔叔家！漫畫隨便看～', '功課寫完了嗎？寫完叔叔陪你打一局！', '這台電玩是叔叔小時候玩的喔', '看漫畫也要讓眼睛休息一下喔', '要不要跟叔叔比賽？', '叔叔最近在看這本，超好看！'] },
   { key: 'hostLibrarian', label: '館員說的話', hint: '可用 {名字}', lines: ['{名字}，歡迎來圖書館～', '在圖書館要小聲說話喔 🤫', '繪本架上有好看的書喔', '看完的書要放回原來的地方', '閱讀護照蓋滿可以拿獎狀喔', '要不要幫我把書放回書架？'] },
@@ -2487,6 +2492,7 @@ const KID_FOODS = [
   { id: 'sandwich', name: '三明治', emoji: '🥪', price: 180, hunger: 25, grow: 0 },
   { id: 'bento', name: '便當', emoji: '🍱', price: 350, hunger: 50, grow: 0 },
   { id: 'ice_cream', name: '冰淇淋', emoji: '🍦', price: 200, hunger: 8, grow: 0 },
+  { id: 'hw_candy', name: '萬聖節糖果', emoji: '🍬', price: 60, hunger: 5, grow: 0, season: 'halloween' },
   { id: 'shrink', name: '變小藥水', emoji: '🧪', price: 1000, hunger: 0, grow: 0, potion: true }
 ];
 const KID_FOOD_BY_ID = Object.fromEntries(KID_FOODS.map(f => [f.id, f]));
@@ -3553,6 +3559,78 @@ function scaledPrice(p) {
   }));
 })();
 const FURN_BY_ID = Object.fromEntries(FURNITURE.map(f => [f.id, f]));
+/* ===== 🎃 節日活動（依照真實日期）=====
+   節日期間商店最上面有「限定」：家具、頭飾、糖果；動物朋友會打扮來玩。
+   限定家具不算在一般的家具圖鑑（過了節日買不到，不然家具金獎盃會永遠拿不到），
+   收在另一本「🎃 節日收藏」，錯過了明年還有。 */
+const SEASONS = [
+  // from／to：月、日（含頭含尾）
+  { id: 'halloween', name: '萬聖節', icon: '🎃', from: [10, 1], to: [11, 1], clothes: ['pumpkin_clip', 'devil_horns', 'witch_hat'], food: 'hw_candy',
+    costumes: ['🎃', '👻', '🧙', '🦇'] }
+];
+var SEASON_TODAY = null;   // 測試用：指定今天是幾月幾日 [月, 日]
+function seasonNow() {
+  const d = new Date(), md = SEASON_TODAY || [d.getMonth() + 1, d.getDate()];
+  const v = md[0] * 100 + md[1];
+  return SEASONS.find(se => v >= se.from[0] * 100 + se.from[1] && v <= se.to[0] * 100 + se.to[1]) || null;
+}
+const SEASON_FURNITURE = [
+  { id: 'pumpkin_lamp', name: '南瓜燈', price: 1200, theme: 'cute', w: 1, d: 1, season: 'halloween',
+    parts: [
+      { k: 'ball', x: .5, y: .5, z: 11, r: 12, c: '#f0902f' },
+      { k: 'ball', x: .38, y: .5, z: 11, r: 9, c: '#e8822a' },
+      { k: 'ball', x: .62, y: .5, z: 11, r: 9, c: '#e8822a' },
+      { x: .46, y: .46, w: .08, d: .08, z: 21, h: 6, c: '#5f8a3a' },
+      { k: 'ball', x: .64, y: .78, z: 14, r: 2.2, c: '#ffe066', shade: true },
+      { k: 'ball', x: .8, y: .62, z: 14, r: 2.2, c: '#ffe066', shade: true },
+      { k: 'ball', x: .76, y: .76, z: 8, r: 2, c: '#ffe066', shade: true }
+    ] },
+  { id: 'ghost_plush', name: '小幽靈玩偶', price: 900, theme: 'cute', w: 1, d: 1, season: 'halloween',
+    parts: [
+      { k: 'ball', x: .5, y: .5, z: 6, r: 10, c: '#ffffff' },
+      { k: 'ball', x: .5, y: .5, z: 17, r: 9, c: '#ffffff' },
+      { k: 'ball', x: .34, y: .7, z: 4, r: 4, c: '#f4f4f8' },
+      { k: 'ball', x: .7, y: .34, z: 4, r: 4, c: '#f4f4f8' },
+      { k: 'ball', x: .66, y: .8, z: 19, r: 1.6, c: '#3a3240' },
+      { k: 'ball', x: .8, y: .66, z: 19, r: 1.6, c: '#3a3240' },
+      { k: 'ball', x: .78, y: .82, z: 15, r: 1.6, c: '#ff9ec4' }
+    ] },
+  { id: 'candy_bucket', name: '糖果桶', price: 600, theme: 'cute', w: 1, d: 1, season: 'halloween',
+    parts: [
+      { x: .26, y: .26, w: .48, d: .48, z: 0, h: 14, c: '#f0902f' },
+      { x: .26, y: .26, w: .48, d: .48, z: 14, h: 2, c: '#3a3240' },
+      { k: 'ball', x: .4, y: .45, z: 18, r: 3, c: '#ff6b6b' },
+      { k: 'ball', x: .58, y: .4, z: 18, r: 3, c: '#7bd389' },
+      { k: 'ball', x: .5, y: .6, z: 19, r: 3, c: '#b18cff' },
+      { k: 'ball', x: .62, y: .62, z: 17, r: 2.5, c: '#ffe066' }
+    ] },
+  { id: 'pumpkin_chair', name: '南瓜椅', price: 1500, theme: 'cute', w: 1, d: 1, season: 'halloween',
+    parts: [
+      { k: 'ball', x: .5, y: .55, z: 9, r: 12, c: '#f0902f' },
+      { x: .15, y: .5, w: .7, d: .2, z: 16, h: 4, c: '#e8822a' },
+      { x: .2, y: .08, w: .6, d: .16, z: 8, h: 26, c: '#e07a1f' },
+      { x: .46, y: .1, w: .08, d: .1, z: 34, h: 5, c: '#5f8a3a' }
+    ] },
+  { id: 'witch_cauldron', name: '魔女鍋', price: 1800, theme: 'cute', w: 1, d: 1, season: 'halloween',
+    parts: [
+      { k: 'ball', x: .5, y: .5, z: 10, r: 12, c: '#3a3240' },
+      { x: .2, y: .2, w: .6, d: .6, z: 18, h: 3, c: '#4b4458' },
+      { k: 'ball', x: .45, y: .48, z: 23, r: 4, c: '#7bd389' },
+      { k: 'ball', x: .6, y: .58, z: 24, r: 3, c: '#a3e0b0' },
+      { k: 'ball', x: .52, y: .62, z: 27, r: 2, c: '#c9f5d4' }
+    ] },
+  { id: 'bat_garland', name: '蝙蝠彩旗', price: 800, theme: 'cute', w: 2, h: 20, z: 66, season: 'halloween', layer: 'wall', parts: [], d: 1,
+    draw(ctx, W, H) {
+      ctx.strokeStyle = '#8a7a64'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(2, 4); ctx.quadraticCurveTo(W / 2, 12, W - 2, 4); ctx.stroke();
+      for (let i = 0; i < 4; i++) {
+        const x = 6 + i * (W - 12) / 3, y = 4 + Math.sin((i / 3) * Math.PI) * 7;
+        ctx.fillStyle = i % 2 ? '#f0902f' : '#4b3b6b';
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 6, y + 2); ctx.lineTo(x - 3, y + 5); ctx.lineTo(x, y + 3); ctx.lineTo(x + 3, y + 5); ctx.lineTo(x + 6, y + 2); ctx.closePath(); ctx.fill();
+      }
+    } }
+];
+SEASON_FURNITURE.forEach(d => { FURN_BY_ID[d.id] = d; });
 PLACE_FURNITURE.forEach(f => { FURN_BY_ID[f.id] = f; }); // 親戚家專用的家具（不在商店、圖鑑裡）
 /* 🏆 集滿獎盃：任何一種圖鑑集滿，就送一座只有集滿才拿得到的獎盃（可以擺地上、也可以擺桌上）。
    不放進 FURNITURE：不然家具圖鑑要集滿還得先拿到家具獎盃，永遠集不滿。
@@ -3722,6 +3800,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-06T15:00', title: '萬聖節活動開始了！🎃', lines: [
+    ['🎃', '10 月是萬聖節！商店最上面有限定家具：南瓜燈、小幽靈玩偶、南瓜椅、魔女鍋…'],
+    ['🍬', '動物朋友會打扮來玩：「不給糖就搗蛋！」點牠給糖果，牠會回送禮物'],
+    ['🧙', '巫師帽、南瓜髮夾、小惡魔角也在限定區'],
+    ['📖', '新的「🎃 節日收藏」圖鑑。錯過了也沒關係，明年還會再來']
+  ], newItems: [] },
   { id: '2026-10-06T09:00', title: '可以去姊姊、妹妹家玩了！', lines: [
     ['💌', '「🚗 出門」多了「做邀請卡」：把自己的家做成一張邀請卡'],
     ['📱', '請爸爸媽媽用 LINE 傳給姊姊或妹妹，點開就能來你家玩'],
@@ -4065,6 +4149,7 @@ function normalizeSave(g) {
   if (!out.noSell || typeof out.noSell !== 'object' || Array.isArray(out.noSell)) out.noSell = {};
   if (g.guideAsked === undefined && out.guide !== 'egg') out.guideAsked = true; // 教到一半的不要再問
   if (!g.welcome) out.welcome = { at: 0, uncle: true, grandma: true }; // 已經在玩的存檔不算搬新家
+  if (out.seasonDex != null && !isObj(out.seasonDex)) delete out.seasonDex;
   if (out.inviteFrom != null && typeof out.inviteFrom !== 'string') delete out.inviteFrom;
   if (out.inviteId != null && !(typeof out.inviteId === 'string' && /^[a-z0-9]{6,20}$/.test(out.inviteId))) delete out.inviteId;
   if (out.kid && out.kid.small && !(isObj(out.kid.small) && num(out.kid.small.until))) delete out.kid.small;
@@ -8088,7 +8173,10 @@ function visitorArrive(now) {
   Sound.play('knock');
   if (firstVisit) newFriendShowcase(n);
   toast(`🚪 叩叩！${n.name}來找${charName()}玩了！`);
-  visSay(kidStateLine('vis:' + n.id, true) || pickLine('visitorHello', visVars()));
+  const se0 = seasonNow();
+  vis.costume = se0 && se0.costumes ? se0.costumes[NEIGHBORS.indexOf(n) % se0.costumes.length] : null;
+  vis.gotCandy = false;
+  visSay(kidStateLine('vis:' + n.id, true) || (se0 && se0.id === 'halloween' ? pickLine('visitorTrick', visVars()) : pickLine('visitorHello', visVars())));
   setTimeout(() => { if (vis.who === n && !fufu.pose) fufuSay(pickLine('kidWelcome', visVars()), 2800); }, 1800);
   // 走到小可愛附近
   const [ti, tj] = fufuTile();
@@ -8115,7 +8203,7 @@ function visitorGift() {
   let what;
   if (r < .4) { const b = 100 * (1 + Math.floor(Math.random() * 3)); addBells(b); what = `${b} 鈴錢`; }
   else if (r < .7) { const fl = FOODS.filter(x => !x.potion), f = fl[Math.floor(Math.random() * fl.length)]; G.food[f.id] = (G.food[f.id] || 0) + 1; what = `${f.emoji}${f.name}`; }
-  else { const fl = KID_FOODS.filter(x => !x.potion), f = fl[Math.floor(Math.random() * fl.length)]; G.kidFood[f.id] = (G.kidFood[f.id] || 0) + 1; what = `${f.emoji}${f.name}`; }
+  else { const fl = KID_FOODS.filter(x => !x.potion && !x.season), f = fl[Math.floor(Math.random() * fl.length)]; G.kidFood[f.id] = (G.kidFood[f.id] || 0) + 1; what = `${f.emoji}${f.name}`; }
   setTimeout(() => {
     visSay(pickLine('visitorGift', visVars()), 2400);
     toast(`🎁 ${vis.who ? vis.who.short : '鄰居'}送你${what}！`);
@@ -8699,14 +8787,39 @@ function visitorDance() {
   fufuDance();
   vis.danceUntil = performance.now() + 6000;
 }
+// 🍬 萬聖節：給來玩的動物朋友糖果，牠會回送一個小禮物（限定家具還沒收集的優先）
+function visitorGiveCandy() {
+  if (vis.gotCandy) { visSay('謝謝，我已經有糖果了！', 2200); return; }
+  if (!(G.kidFood.hw_candy > 0)) { toast('🍬 沒有糖果了，商店最上面的「萬聖節限定」可以買'); visSay('下次要準備糖果喔～嘿嘿', 2400); return; }
+  G.kidFood.hw_candy--; if (!G.kidFood.hw_candy) delete G.kidFood.hw_candy;
+  vis.gotCandy = true;
+  const a = vis.a, now = performance.now();
+  a.squishV = -9; a.happyUntil = now + 2500;
+  petBurst({ kind: 'emoji', emoji: '🍬', spread: 20 }, 3, a);
+  Sound.play('coin');
+  visSay(pickLine('visitorCandy', visVars()), 2600);
+  // 回禮：還沒收集的限定家具（三成），不然鈴錢
+  const fresh = SEASON_FURNITURE.filter(d => d.season === 'halloween' && !(G.seasonDex || {})[d.id]);
+  setTimeout(() => {
+    if (fresh.length && Math.random() < .3) {
+      const def = fresh[Math.floor(Math.random() * fresh.length)];
+      addItem(def.id);
+      G.seasonDex = Object.assign({}, G.seasonDex, { [def.id]: true });
+      const n2 = seasonDexCount(), all = SEASON_FURNITURE.length;
+      try { showcase(renderThumb(def, 150), def.name, `🎃 節日收藏 ${n2} / ${all}（動物朋友送的！）`, { n: n2, all }); } catch (e) {}
+    } else { const b = 200 + 100 * Math.floor(Math.random() * 3); addBells(b); toast(`🎁 ${vis.who ? vis.who.short : '朋友'}回送你 ${b} 鈴錢！`); }
+    saveGame(); commit();
+  }, 1200);
+}
 function visitorMenuEntries() {
   const s = vis.who.short;
-  return [
+  const se = seasonNow();
+  return (se && se.id === 'halloween' ? [[`🍬 給${s}糖果${G.kidFood.hw_candy ? '（' + G.kidFood.hw_candy + '）' : ''}`, visitorGiveCandy]] : []).concat([
     [`💬 跟${s}聊天`, visitorTalk],
     [`☕ 請${s}坐下聊天`, visitorStartChat],
     ['💃 一起跳舞', visitorDance],
     ['👋 說再見', () => visitorLeave(performance.now())]
-  ];
+  ]);
 }
 
 // ── 繪圖 ──
@@ -10027,6 +10140,11 @@ function visitorDrawOverlay(ctx, now) {
   giftDrawOverlay(ctx, now);
   if (!vis.who) return;
   drawParticles(ctx, vis.a);
+  if (vis.costume && !vis.seat) { // 🎃 打扮：頭上戴著
+    const p = iso(vis.a.x, vis.a.y, vis.a.z || 0);
+    ctx.save(); ctx.globalAlpha = vis.alpha; ctx.font = '18px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText(vis.costume, p.x + 6, p.y - 30 * VISITOR_K); ctx.restore();
+  }
   if (!vis.say || now > vis.sayUntil) { vis.say = null; return; }
   drawNeighborBubble(ctx, vis.a, vis.who, vis.say, vis.alpha);
 }
@@ -11387,8 +11505,43 @@ function foodShopGrid(list, stock, buy, subText) {
   return fg;
 }
 
+function seasonShop(body, se) {
+  const box = el('div', 'season-box');
+  box.appendChild(el('h3', '', `${se.icon} ${se.name}限定（只賣到 ${se.to[0]}/${se.to[1]}）`));
+  const grid = el('div', 'grid');
+  SEASON_FURNITURE.filter(d => d.season === se.id).forEach(def => {
+    const card = furnCard(def, '💰 ' + fmt(def.price), () => {
+      if (!buyFurniture(def.id)) { toast('鈴錢不夠，去賺一點吧！'); return; }
+      Sound.play('coin');
+      const isNew = !(G.seasonDex || {})[def.id];
+      G.seasonDex = Object.assign({}, G.seasonDex, { [def.id]: true });
+      toast(`買了「${def.name}」，放進「我的東西」了`);
+      if (isNew) { const n = seasonDexCount(), all = SEASON_FURNITURE.length; try { showcase(renderThumb(def, 150), def.name, `${se.icon} 節日收藏 ${n} / ${all}`, { n, all }); } catch (e) {} }
+      commit();
+    }, G.inv[def.id]);
+    if (G.bells < def.price) card.classList.add('dim');
+    card.appendChild(el('span', 'tag new', '限定'));
+    grid.appendChild(card);
+  });
+  se.clothes.forEach(id => {
+    const c = CLOTHES_BY_ID[id];
+    if (!c) return;
+    const card = el('button', 'card' + (G.bells < c.price && !ownsClothes(id) ? ' dim' : ''));
+    card.appendChild(renderGirl(Object.assign({}, G.outfit, { [c.slot]: id }), 64, 78));
+    card.appendChild(el('div', 'nm', c.name));
+    card.appendChild(el('div', 'pr', ownsClothes(id) ? '有了（去換裝穿）' : '💰 ' + fmt(c.price)));
+    card.onclick = () => { if (ownsClothes(id)) { openTab('dress'); return; } if (!spend(c.price)) { toast('鈴錢不夠，去賺一點吧！'); return; } G.wardrobe.push(id); Sound.play('coin'); toast(`買了「${c.name}」，去「換裝」穿上吧！`); commit(); };
+    grid.appendChild(card);
+  });
+  box.appendChild(grid);
+  const fd = KID_FOOD_BY_ID[se.food];
+  if (fd) box.appendChild(foodShopGrid([fd], G.kidFood, buyKidFood, () => '動物朋友來的時候可以給'));
+  body.appendChild(box);
+}
+function seasonDexCount() { return SEASON_FURNITURE.filter(d => (G.seasonDex || {})[d.id]).length; }
 function tabShop(body) {
   body.appendChild(h3('小狸商店'));
+  { const se = seasonNow(); if (se) seasonShop(body, se); }
   // 第一排：她在想的事（我要一張床）。第二排：想湊風格加成的時候才用
   const f = el('div', 'filter kinds');
   [['all', '', '全部'], ['food', '🍎', '食物'], ['paper', '🎨', '壁紙地板']]
@@ -11424,7 +11577,7 @@ function tabShop(body) {
      不然點了風格，畫面看起來完全沒變（家具在很下面） */
   if (shopKind === 'food' || (shopKind === 'all' && shopTheme === 'all')) {
     body.appendChild(h3(`${charName()}的食物`));
-    body.appendChild(foodShopGrid(KID_FOODS, G.kidFood, buyKidFood,
+    body.appendChild(foodShopGrid(KID_FOODS.filter(f => !f.season), G.kidFood, buyKidFood,
       food => food.potion ? '變小 10 分鐘' : food.grow ? '💪 健康長大' : `飽足+${food.hunger}`));
     body.appendChild(h3(`寵物食物（${charName()}也可以吃）`));
     body.appendChild(foodShopGrid(FOODS, G.food, buyFood, food => food.potion ? '寵物變回寶寶 10 分鐘' : `飽足+${food.hunger}`));
@@ -11613,6 +11766,7 @@ function tabBook(body) {
     ['dexTrophy', '🏆', '獎盃', count(G.trophies), TROPHY_SETS.length],
     ['dexPet', '🐾', '寵物', tc('pet')[0], PET_SPECIES.length],
     ['dexGrow', '🌱', '成長', growDexCount(), growDexAll()],
+    ['dexSeason', '🎃', '節日', seasonDexCount(), SEASON_FURNITURE.length],
     ['dexFurn', '🛋️', '家具', got, FURNITURE.length],
     ['dexFish', '🐟', '魚', FISH.filter(f => G.fish[f.name]).length, FISH.length],
     ['dexFriend', '🐻', '好朋友', NEIGHBORS.filter(n => G.friends[n.id]).length, NEIGHBORS.length],
@@ -11651,6 +11805,18 @@ function tabBook(body) {
   body.appendChild(sec('dexGrow', `🌱 成長圖鑑 ${growDexCount()} / ${growDexAll()}`));
   body.appendChild(note(`${charName()}吃營養的東西、做各種事、看繪本，會慢慢長大。寵物有寶寶、小朋友、大朋友三個樣子，養大就會收進來。還有一格隱藏的喔！`));
   body.appendChild(growDexGrid());
+  body.appendChild(sec('dexSeason', `🎃 節日收藏 ${seasonDexCount()} / ${SEASON_FURNITURE.length}`));
+  body.appendChild(note('節日限定的家具（萬聖節是 10 月）。錯過了也沒關係，明年還會再來。'));
+  { const sg = el('div', 'grid');
+    SEASON_FURNITURE.forEach(def => {
+      const has = !!(G.seasonDex || {})[def.id];
+      const c = el('div', 'card dex' + (has ? '' : ' dim'));
+      c.appendChild(thumb(def));
+      c.appendChild(el('div', 'nm', has ? def.name : '？？？'));
+      c.appendChild(el('div', 'pr', has ? '收集到了' : `${(SEASONS.find(x => x.id === def.season) || {}).icon || ''} 節日限定`));
+      sg.appendChild(c);
+    });
+    body.appendChild(sg); }
   body.appendChild(sec('dexFurn', `🛋️ 家具圖鑑 ${got} / ${FURNITURE.length}`));
   body.appendChild(note('買過、或搖樹掉下來拿到的家具，就會收進圖鑑。淡淡的是還沒收集到的。'));
   const grid = el('div', 'grid');

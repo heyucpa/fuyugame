@@ -7,6 +7,7 @@
      她玩的東西不見過一次了，備份如果是壞的，等於沒有備份。 */
   var fails=[], errs=[], pendingChecks=[];  // pendingChecks：要等非同步（MutationObserver 之類）跑完才能驗的
   window.addEventListener('error', function(e){ errs.push(String(e.message)); });
+  SEASON_TODAY = [6, 1];   // 走查一律當作沒有節日（不然 10 月跑跟 6 月跑結果不一樣）；節日的測試自己切換
 
   function restore(raw){ if(raw===null) localStorage.removeItem(SAVE_KEY);
                          else localStorage.setItem(SAVE_KEY, raw); }
@@ -2565,6 +2566,68 @@
       if (!(full > countFills(Object.assign({}, sp, { sparkle: false })))) fails.push(sp.name + ' 沒有一閃一閃的星星');
     });
 
+    /* 91 🎃 萬聖節（依照日期）：商店最上面有限定、動物朋友打扮來玩、給糖果會回禮、收進節日收藏；過了就不賣 */
+    var keep91 = { kf: JSON.stringify(G.kidFood), inv: JSON.stringify(G.inv), sd: JSON.stringify(G.seasonDex || {}), bells: G.bells, seen: JSON.stringify(G.seen) };
+    var realToast91 = toast, realBlk91 = showcaseBlocked; toast = function(){}; showcaseBlocked = function(){ return false; };
+    try {
+      SEASON_TODAY = [10, 15];
+      if (!seasonNow() || seasonNow().id !== 'halloween') fails.push('10/15 不是萬聖節');
+      SEASON_TODAY = [11, 2]; if (seasonNow()) fails.push('11/2 還在萬聖節');
+      SEASON_TODAY = [9, 30]; if (seasonNow()) fails.push('9/30 就開始萬聖節');
+      SEASON_TODAY = [10, 1]; if (!seasonNow()) fails.push('10/1 沒開始萬聖節');
+      SEASON_TODAY = [11, 1]; if (!seasonNow()) fails.push('11/1 萬聖節就結束了（應該含當天）');
+      // 限定家具：畫得出來、不算在一般家具圖鑑（不然家具金獎盃過了節日就拿不到）
+      SEASON_FURNITURE.forEach(function(d){ if (FURNITURE.indexOf(d) >= 0) fails.push('限定家具「' + d.name + '」被算進一般家具圖鑑'); try { thumb(d); } catch (eT) { fails.push('限定家具「' + d.name + '」畫不出來：' + eT.message); } });
+      // 商店：節日時最上面有限定區；平常沒有
+      SEASON_TODAY = [10, 15]; openTab('shop');
+      var sb = document.querySelector('#tabBody .season-box');
+      if (!sb || !/萬聖節限定/.test(sb.textContent) || sb.querySelectorAll('.card').length !== SEASON_FURNITURE.length + 3 + 1) fails.push('萬聖節的商店沒有限定區（或數量不對）');
+      // 買限定家具：收進節日收藏、跳出大圖
+      G.bells = 99999; delete G.seasonDex; SC_QUEUE.length = 0; var o91 = document.getElementById('showcase'); if (o91) o91.remove();
+      var c0 = sb.querySelector('.card'); c0.onclick();
+      if (seasonDexCount() !== 1 || !G.inv[SEASON_FURNITURE[0].id]) fails.push('買了限定家具，沒有收進節日收藏');
+      var s91 = document.getElementById('showcase');
+      if (!s91 || !/節日收藏 1/.test(s91.textContent)) fails.push('買到新的限定家具沒有跳出大圖');
+      if (s91) s91.remove(); SC_QUEUE.length = 0;
+      SEASON_TODAY = [6, 1]; openTab('shop');
+      if (document.querySelector('#tabBody .season-box')) fails.push('不是節日，商店還在賣限定');
+      if ([].some.call(document.querySelectorAll('#tabBody .card .nm'), function(n){ return n.textContent === '萬聖節糖果'; })) fails.push('不是節日，還在賣萬聖節糖果');
+      // 圖鑑：節日收藏一格一格
+      openTab('book');
+      if (!document.getElementById('dexSeason') || !/節日收藏 1 \//.test(document.getElementById('dexSeason').textContent)) fails.push('圖鑑沒有節日收藏');
+      // 動物朋友：打扮、說「不給糖就搗蛋」、給糖果會回禮
+      SEASON_TODAY = [10, 31];
+      G.away = null; vis.who = null; vis.nextAt = 0; $('#modal').hidden = true;
+      var realR91 = Math.random; Math.random = function(){ return 0; };   // 回禮固定送限定家具
+      try {
+        visitorArrive(performance.now());
+        if (!vis.who) fails.push('萬聖節測試：動物朋友沒有來');
+        else {
+          if (!vis.costume) fails.push('萬聖節的動物朋友沒有打扮');
+          var ents91 = visitorMenuEntries();
+          if (!/給.*糖果/.test(ents91[0][0])) fails.push('萬聖節點動物朋友，沒有「給糖果」');
+          G.kidFood.hw_candy = 2; var b91 = seasonDexCount();
+          var realST91 = window.setTimeout; window.setTimeout = function(f){ f(); return 0; };
+          try { visitorGiveCandy(); } finally { window.setTimeout = realST91; }
+          if (G.kidFood.hw_candy !== 1 || !vis.gotCandy) fails.push('給糖果沒有用掉一顆');
+          if (seasonDexCount() !== b91 + 1) fails.push('給糖果之後，動物朋友沒有回送限定家具');
+          visitorGiveCandy();
+          if (G.kidFood.hw_candy !== 1) fails.push('同一位動物朋友可以一直拿糖果');
+          draw();
+        }
+      } finally { Math.random = realR91; }
+      vis.who = null; var s92 = document.getElementById('showcase'); if (s92) s92.remove(); SC_QUEUE.length = 0;
+      SEASON_TODAY = [6, 1];
+      vis.nextAt = 0; visitorArrive(performance.now());
+      if (vis.costume) fails.push('不是節日，動物朋友還在打扮');
+      vis.who = null;
+    } catch (e) { fails.push('萬聖節測試出錯：' + e.message + ' ' + (e.stack || '').split('\n')[1]); }
+    finally {
+      SEASON_TODAY = [6, 1]; vis.who = null; toast = realToast91; showcaseBlocked = realBlk91; SC_QUEUE.length = 0;
+      G.kidFood = JSON.parse(keep91.kf); G.inv = JSON.parse(keep91.inv); G.seasonDex = JSON.parse(keep91.sd); G.bells = keep91.bells; G.seen = JSON.parse(keep91.seen);
+      $('#modal').hidden = true; openTab('inv');
+    }
+
     /* 90 去姊姊／妹妹家玩（邀請卡）：姊姊 iPad、妹妹電腦，用連結傳過去；別人做的資料要檢查；去玩不能改到任何人的存檔 */
     var inv90 = null, link90 = null, dec90 = null, keepInv90 = localStorage.getItem(INVITE_KEY), realWalk90 = walkTrip, realToast90 = toast;
     try {
@@ -4036,10 +4099,10 @@
     G.away = { place: 'grandma', idx: 2 }; farm.actors = []; farm.spot = null;
     var t0 = performance.now();
     farmTick(.016, t0, curRoom());
-    var vis = farm.actors.filter(function(f){ return f.visitor; });
-    if (vis.length !== 1) fails.push('小農場來玩的動物不是一隻（' + vis.length + '）');
+    var visF = farm.actors.filter(function(f){ return f.visitor; });
+    if (visF.length !== 1) fails.push('小農場來玩的動物不是一隻（' + visF.length + '）');
     else {
-      var firstVis = vis[0];
+      var firstVis = visF[0];
       farmTick(.016, t0 + 1000, curRoom());
       if (farm.actors.filter(function(f){ return f.visitor; })[0] !== firstVis) fails.push('來玩的動物一秒就換了');
       farmTick(.016, t0 + FARM_VISIT_MS + 1000, curRoom());
@@ -4204,7 +4267,7 @@
     G.comics = { '早餐': 1, '恐龍': 3 }; G.stickers = { '⭐': 1 }; G.butterflies = { red: 2, blue: 1, rainbow: 1 }; G.passport = { moon: 1, seed: 1 };
     openTab('book');
     var chips = [].map.call(document.querySelectorAll('#tabBody .dex-chip'), function(c){ return c.textContent; });
-    if (chips.length !== 12) fails.push('圖鑑總覽不是 12 項（9 種收集＋寵物＋成長＋獎盃）：' + chips.length);
+    if (chips.length !== 13) fails.push('圖鑑總覽不是 13 項（9 種收集＋寵物＋成長＋節日＋獎盃）：' + chips.length);
     [['漫畫', '2/12'], ['貼紙', '1/12'], ['蝴蝶', '3/6'], ['閱讀護照', '2/8']].forEach(function(p){
       if (!chips.some(function(t){ return t.indexOf(p[0]) >= 0 && t.indexOf(p[1]) >= 0; })) fails.push('圖鑑總覽的「' + p[0] + '」不是 ' + p[1] + '：' + chips.join(' | '));
     });
