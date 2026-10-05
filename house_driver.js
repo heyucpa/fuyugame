@@ -2891,7 +2891,7 @@
       if (!G.away || G.away.place !== 'amusement' || !host.n || host.n.id !== 'amuse') fails.push('去遊樂園沒有兔兔姊姊迎接');
       if (lineList('hostAmuse').map(function(l){ return l.split('{名字}').join(charName()); }).indexOf(pickLine(hostLineKey(), { 名字: charName() })) < 0) fails.push('兔兔姊姊沒有說遊樂園的話');
       var rmA = curRoom(), byId = function(id){ return rmA.items.find(function(x){ return x.id === id; }); };
-      ['carousel', 'ferris_wheel', 'cotton_cart', 'balloon_stand', 'teacup_ride', 'popcorn_cart', 'roller_coaster'].forEach(function(id){ if (!byId(id)) fails.push('遊樂園沒有 ' + id); });
+      ['carousel', 'ferris_wheel', 'cotton_cart', 'balloon_stand', 'teacup_ride', 'roller_coaster'].forEach(function(id){ if (!byId(id)) fails.push('遊樂園沒有 ' + id); });
       if (rmA.wallItems.filter(function(w){ return w.id === 'pennant'; }).length < 2) fails.push('遊樂園牆上沒有三角旗');
       // 遊客：三位動物朋友在逛、拿氣球，點了會說話
       if (!host.crowd || host.crowd.length !== 3) fails.push('遊樂園沒有遊客（' + (host.crowd && host.crowd.length) + '）');
@@ -2936,6 +2936,14 @@
       var cc0 = G.kidFood.cotton_candy || 0;
       relativePerk('cotton');
       if ((G.kidFood.cotton_candy || 0) !== cc0 + 1 || G.bells !== 4900) fails.push('遊樂園買棉花糖沒有花錢或沒拿到');
+      if (byId('popcorn_cart')) fails.push('爆米花車還在（應該合進點心車）');
+      // 點心車：選單有棉花糖、爆米花、冰淇淋
+      var cartIt = byId('cotton_cart'), seen = [], realOM = openMenu; openMenu = function(entries){ seen = entries.map(function(e){ return e[0]; }); };
+      try { showItemMenu(cartIt, { clientX: 10, clientY: 10 }); } finally { openMenu = realOM; }
+      if (!seen.some(function(l){ return /棉花糖/.test(l); }) || !seen.some(function(l){ return /爆米花/.test(l); }) || !seen.some(function(l){ return /冰淇淋/.test(l); })) fails.push('點心車的選單沒有棉花糖、爆米花、冰淇淋三種（' + seen.join('／') + '）');
+      delete (G.actCD || {}).icecream; var ic0 = G.kidFood.ice_cream || 0, bi = G.bells;
+      relativePerk('icecream');
+      if ((G.kidFood.ice_cream || 0) !== ic0 + 1 || G.bells !== bi - 150) fails.push('遊樂園的點心車買不到冰淇淋');
       delete (G.actCD || {}).popcorn; var pc0 = G.kidFood.popcorn || 0, bp = G.bells;
       relativePerk('popcorn');
       if ((G.kidFood.popcorn || 0) !== pc0 + 1 || G.bells !== bp - 80) fails.push('遊樂園買爆米花沒有花錢或沒拿到');

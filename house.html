@@ -2220,7 +2220,8 @@ const PLACE_FURNITURE = [
       const a = i / 8 * Math.PI * 2;
       return { k: 'ball', x: 1.5 + Math.cos(a) * 1.2, y: .55, z: 64 + Math.sin(a) * 52, r: 6.5, c: ['#ff6b6b', '#ffd35c', '#6bb6ff', '#7bd389', '#ff9ec4', '#b18cff', '#ffa53a', '#6bd3d3'][i] };
     })) },
-  { id: 'cotton_cart', name: '棉花糖車', theme: 'cute', w: 2, d: 1,
+  // 🍭 點心車（家長：爆米花、冰淇淋合在一台，點了選要買什麼，遊樂園才不會太擠）
+  { id: 'cotton_cart', name: '點心車', theme: 'cute', w: 2, d: 1,
     parts: [
       { k: 'ball', x: .3, y: .85, z: 5, r: 5, c: '#3a3240' },
       { k: 'ball', x: 1.7, y: .85, z: 5, r: 5, c: '#3a3240' },
@@ -2230,9 +2231,11 @@ const PLACE_FURNITURE = [
       { x: 1.84, y: .45, w: .06, d: .06, z: 32, h: 26, c: '#d6d3cc' },
       { x: -.05, y: .05, w: 2.1, d: .9, z: 58, h: 4, c: '#ff9ec4' },
       { x: -.05, y: .05, w: 2.1, d: .9, z: 62, h: 2, c: '#ffffff' },
-      { k: 'ball', x: .6, y: .45, z: 44, r: 8, c: '#ffc2dc' },
-      { k: 'ball', x: 1, y: .45, z: 46, r: 8, c: '#c9b8ff' },
-      { k: 'ball', x: 1.4, y: .45, z: 44, r: 8, c: '#ffc2dc' }
+      { k: 'ball', x: .5, y: .45, z: 44, r: 8, c: '#ffc2dc' },              // 棉花糖
+      { x: .85, y: .3, w: .3, d: .3, z: 32, h: 10, c: '#e8505b' },            // 爆米花桶
+      { k: 'ball', x: 1, y: .45, z: 46, r: 6, c: '#fff1b8' },
+      { x: 1.38, y: .38, w: .1, d: .1, z: 32, h: 8, c: '#e8c99a' },           // 冰淇淋
+      { k: 'ball', x: 1.43, y: .43, z: 43, r: 5, c: '#b8ecd7' }
     ] },
   { id: 'balloon_stand', name: '氣球攤', theme: 'cute', w: 1, d: 1,
     parts: [
@@ -2561,7 +2564,7 @@ const PLACES = {
   amusement: { name: '遊樂園', host: 'amuse', emoji: '🎡', desc: '坐旋轉木馬、摩天輪，買棉花糖、拿氣球！', rooms: [
     { name: '遊樂園', w: 10, d: 10, wall: 'wp_candy', floor: 'fl_amuse', items: [
       ['ferris_wheel', 0, 0], ['street_lamp', 4, 0], ['ticket_booth', 6, 0], ['balloon_stand', 9, 0],
-      ['carousel', 5, 3], ['roller_coaster', 0, 2], ['teacup_ride', 8, 4], ['popcorn_cart', 2, 6],
+      ['carousel', 5, 3], ['roller_coaster', 0, 2], ['teacup_ride', 8, 4],
       ['park_bench', 2, 8, 0], ['cotton_cart', 6, 8], ['street_lamp', 9, 9], ['flower_bed', 8, 7]
     ], wallItems: [['pennant', 'L', 1], ['pennant', 'L', 5], ['pennant', 'R', 1], ['pennant', 'R', 6]] }
   ] },
@@ -4027,6 +4030,10 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-10T15:00', title: '遊樂園的點心車！', lines: [
+    ['🍭', '棉花糖、爆米花、冰淇淋合成一台「點心車」，點它選要買什麼'],
+    ['🏫', '學校教室重新擺過：大家的桌子都面對黑板了']
+  ], newItems: [] },
   { id: '2026-10-10T09:00', title: '遊樂園有雲霄飛車了！🎢', lines: [
     ['🎢', '遊樂園左邊多了雲霄飛車：從車站出發，爬到最高點再咻地衝下來！'],
     ['🙌', '衝下來的時候小可愛會舉手歡呼']
@@ -11673,6 +11680,7 @@ function showItemMenu(it, e) {
   const add = (label, fn) => entries.push([label, fn]);
   if (use) add(use.use === 'lie' ? (use.bath ? '🛁 泡澡' : '😴 躺下睡覺') : '🪑 坐下', () => fufuGoUse(it));
   if (act) add(ACTIVITIES[act].label, () => fufuGoUse(it, false, act));
+  if (it.id === 'cotton_cart') { add(ACTIVITIES.popcorn.label, () => fufuGoUse(it, false, 'popcorn')); add('🍦 買冰淇淋', () => fufuGoUse(it, false, 'icecream')); }   // 🍭 點心車：選要買什麼
   if (it.id === 'planter') { // 🌱 花盆：長到哪裡、多久可以再澆；開花了可以剪下來插花
     const gs = gardenOf(it.uid), left = Math.max(0, Math.ceil((gs.w + GARDEN_WAIT_MS - Date.now()) / 1000));
     const fl = FLOWER_BY_ID[gs.f];
@@ -14677,7 +14685,7 @@ const RELATIVE_PERKS = {
   sand:     { who: 'park', pet: 10, say: '寵物也在沙子裡打滾！', toast: '🏖️ 玩沙，寵物心情 +10' },
   bfly:     { who: 'park', pet: 10, toast: '🌸 聞聞花香，寵物心情 +10' },
   // 冰淇淋是用買的（不用等冷卻），比商店便宜一點
-  icecream: { who: 'park', buy: { cost: 150, kidFood: 'ice_cream' } },
+  icecream: { who: ['park', 'amusement'], buy: { cost: 150, kidFood: 'ice_cream' } },
   cotton: { who: 'amusement', buy: { cost: 100, kidFood: 'cotton_candy' } },
   popcorn: { who: 'amusement', buy: { cost: 80, kidFood: 'popcorn' } },
   homework: { who: 'school', sticker: true, cd: 3 * 60000, say: '老師說我寫得很棒！' }, // 只給貼紙不給錢，等 3 分鐘就好
