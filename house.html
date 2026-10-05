@@ -1692,20 +1692,20 @@ Object.assign(PET_BEDS, {
 // 小可愛自己會做的事（點她就會跳出選單）
 LINE_TYPES.push(
   // 🧪 變小藥水：變小、變成小寶寶、變回來。大人（叔叔、阿婆、老師…）和動物朋友看到也會說
-  { key: 'kidShrink', label: '喝了變小藥水', lines: ['咕嚕咕嚕…咦？我變小了！', '哇，衣服變大了！', '我變回幼稚園的樣子了耶～'] },
+  { key: 'kidShrink', label: '喝了變小藥水', lines: ['咕嚕咕嚕…咦？我變小了！', '哇，衣服變大了！', '我變回小芽芽了耶～'] },
   { key: 'kidBaby', label: '變成小寶寶', lines: ['咿呀～', 'ㄚㄚ！噗噗～', '嘻嘻～咿咿呀呀'] },
   { key: 'babyReply', label: '小寶寶回答', lines: ['咿呀～', 'ㄚㄚ！', '噗噗～', '嘻嘻～', '啊嗚～', '咕咕～'] },
   { key: 'babyMilk', label: '小寶寶喝奶奶', lines: ['咕嚕咕嚕～', '奶奶好好喝～', '嗯嗯嗯～（喝得好開心）'] },
   { key: 'babyCant', label: '小寶寶做不到', lines: ['小寶寶還太小了，長大再玩～', '咿呀？（小寶寶爬不上去）', '這個要等變回來才能玩喔'] },
   { key: 'kidBack', label: '變回來了', lines: ['我變回來了！', '咻～長回來了！', '還是原本的樣子最好～'] },
-  { key: 'hostSmall', label: '大人看到她變小', hint: '可用 {名字}', lines: ['咦？{名字}怎麼變小了？', '{名字}好像變回幼稚園的樣子了！', '哎呀，是不是喝了什麼神奇的東西？', '變小的{名字}也好可愛～'] },
+  { key: 'hostSmall', label: '大人看到她變小', hint: '可用 {名字}', lines: ['咦？{名字}怎麼變小了？', '{名字}好像變回小芽芽了！', '哎呀，是不是喝了什麼神奇的東西？', '變小的{名字}也好可愛～'] },
   { key: 'hostBaby', label: '大人看到小寶寶', hint: '可用 {名字}', lines: ['哎呀，{名字}變成小寶寶了！', '小寶寶要不要喝奶奶？', '來，抱抱～小寶寶好乖', '咕咕咕～小寶寶笑了！', '小寶寶爬得好快喔！', '噓～小寶寶的奶嘴不要掉了'] },
   { key: 'hostBack', label: '大人看到她變回來', hint: '可用 {名字}', lines: ['{名字}變回來了！', '哇，又長回來了！', '小寶寶時間結束囉～', '剛剛那個小寶寶是{名字}嗎？好可愛！'] },
   { key: 'visitorBaby', label: '動物朋友看到小寶寶', hint: '可用 {名字}', lines: ['哇！{名字}變成小寶寶了！', '小寶寶，我們一起爬爬！', '{名字}好小好可愛喔！', '我來保護小寶寶！'] },
   { key: 'visitorBack', label: '動物朋友看到她變回來', hint: '可用 {名字}', lines: ['{名字}變回來了！又可以一起跑跑跳跳了！', '剛剛的小寶寶是你嗎？', '歡迎回來～'] },
   { key: 'petShrink', label: '寵物喝了變小藥水', hint: '可用 {寵物}', lines: ['{寵物}變回寶寶了！好小好可愛～', '哇，{寵物}變成小寶寶了！', '{寵物}小小的，好想抱抱'] },
   { key: 'petBack', label: '寵物變回來', hint: '可用 {寵物}', lines: ['{寵物}變回來了！', '{寵物}又長回來了～'] },
-  { key: 'kidStageUp', label: '小可愛長大了', hint: '可用 {階段}', lines: ['我變成{階段}了！', '我長大了耶！', '我是{階段}囉～'] }
+  { key: 'kidStageUp', label: '小可愛長大了', hint: '可用 {階段}', lines: ['{階段}！我長大了！', '我長大了耶！', '又長大一點了～'] }
 );
 // 每位大人看到小寶寶，還會說一句自己的話
 const HOST_BABY_EXTRA = {
@@ -2458,16 +2458,17 @@ const KID_DECAY_MIN = .15;
 const KID_START_HEIGHT = 135;
 const KID_MAX_HEIGHT = 165;
 /* 小可愛的成長階段（家長：小孩也要分階段長大、看得到進度）。不講身高，只說「成長」。
-   head／body：頭跟身體的比例——幼稚園頭大大、身體短短，大姊姊身體長一點。 */
+   head／body：頭跟身體的比例——小芽芽頭大大、身體短短，開花了身體長一點。
+   名稱用植物長大的比喻（家長：不要叫幼稚園、小學生，制服不一樣）；grown：長大大圖的標題 */
 const KID_STAGES = [
-  { id: 'kinder', name: '幼稚園', icon: '🧸', at: 135, head: 1.1, body: .86, pic: .84 },
-  { id: 'school', name: '小學生', icon: '🎒', at: 145, head: 1, body: 1, pic: .93 },
-  { id: 'big', name: '大姊姊', icon: '🌟', at: 155, head: .96, body: 1.1, pic: 1 }
+  { id: 'kinder', name: '小芽芽', icon: '🌱', grown: '變成🌱小芽芽了', at: 135, head: 1.1, body: .86, pic: .84 },
+  { id: 'school', name: '小花苞', icon: '🌷', grown: '變成🌷小花苞了', at: 145, head: 1, body: 1, pic: .93 },
+  { id: 'big', name: '開花了', icon: '🌸', grown: '🌸開花了', at: 155, head: .96, body: 1.1, pic: 1 }
 ];
 const KID_STAGE_BY_ID = Object.fromEntries(KID_STAGES.map(s => [s.id, s]));
 // 成長圖鑑裡小可愛那一排：三個階段＋喝藥水才看得到的小寶寶
 const KID_DEX = ['kinder', 'school', 'big', 'baby'];
-const KID_DEX_NAMES = { kinder: '幼稚園', school: '小學生', big: '大姊姊', baby: '小寶寶' };
+const KID_DEX_NAMES = { kinder: '小芽芽', school: '小花苞', big: '開花了', baby: '小寶寶' };
 // 🧪 神秘變小藥水：暫時變小 10 分鐘（或去床上睡一覺就變回來）
 const SMALL_MS = 10 * 60000;
 // grow：吃一次增加多少成長值（畫面只說「會健康長大、壯壯的」，不顯示數字）
@@ -3719,7 +3720,7 @@ const NEWS = [
     ['🙈', '寵物屋捉迷藏：一直找不到的寵物會偷偷晃一下，再久一點頭上會冒出 ❓']
   ], newItems: [] },
   { id: '2026-10-05T12:00', title: '小可愛也會長大了！', lines: [
-    ['🌱', '小可愛也有長大的進度條：幼稚園 → 小學生 → 大姊姊'],
+    ['🌱', '小可愛也有長大的進度條：🌱小芽芽 → 🌷小花苞 → 🌸開花了'],
     ['🧪', '商店有「變小藥水」：喝了變小 10 分鐘，再喝一瓶會變成小寶寶'],
     ['👶', '小寶寶用爬的、含著奶嘴、喝奶奶，叔叔阿婆看到都會說話喔'],
     ['🐾', '寵物也有變小藥水，可以變回寶寶的樣子'],
@@ -3958,7 +3959,7 @@ function newGame() {
     lines: {},               // 玩家自訂台詞 {key: [句子...]}
     charName: DEFAULT_CHAR_NAME,
     pets: [newPet('mochi', 'kid', DEFAULT_PET_NAME)], // 收集到的寵物（含還沒孵的蛋）
-    growDex: { 'mochi:kid': true, 'girl:kinder': true }, // 🌱 成長圖鑑：一開始那隻是小朋友、小可愛是幼稚園
+    growDex: { 'mochi:kid': true, 'girl:kinder': true }, // 🌱 成長圖鑑：一開始那隻是小朋友、小可愛是小芽芽
     activePet: 0,                                      // 目前帶出來玩的是第幾隻；G.pet 指向牠
     companions: [],                                    // 一起跟著逛的寵物（G.pets 的索引），不會餓也不會髒
     friends: {},                                       // 來玩過的動物鄰居 {id: 來玩幾次}
@@ -4485,7 +4486,7 @@ function petTick() {
 // ── 小可愛吃東西、慢慢長大（成長值不顯示在畫面上）──
 function kidStageAt(h) { let s = KID_STAGES[0]; KID_STAGES.forEach(x => { if (h >= x.at) s = x; }); return s; }
 function kidStage() { return kidStageAt(G.kid.height); }
-// 這個階段長了多少（0～1）；大姊姊就是滿的
+// 這個階段長了多少（0～1）；開花了就是滿的
 function kidGrowPct() {
   const s = kidStage(), n = KID_STAGES[KID_STAGES.indexOf(s) + 1];
   return n ? Math.max(0, Math.min(1, (G.kid.height - s.at) / (n.at - s.at))) : 1;
@@ -4507,7 +4508,7 @@ function kidGainGrowth(amount) {
 // 喝了變小藥水：small = {until, baby}；時間到或睡一覺就變回來
 function kidSmall() { const s = G.kid.small; return s && s.until > Date.now() ? s : null; }
 function kidBaby() { const s = kidSmall(); return !!(s && s.baby); }
-// 畫的時候用哪個階段的樣子（變小了：幼稚園；小寶寶另外畫）
+// 畫的時候用哪個階段的樣子（變小了：小芽芽；小寶寶另外畫）
 function kidLookStage() { return kidSmall() ? 'kinder' : kidStage().id; }
 // 寵物變小：p.small＝到什麼時候。小朋友、大朋友暫時變回寶寶的樣子（真正的階段跟成長值不變）
 function lookStage(p) { return p && p.small && p.small > Date.now() && (p.stage === 'kid' || p.stage === 'adult') ? 'baby' : p.stage; }
@@ -4846,7 +4847,7 @@ function drawGirl(ctx, o) {
   drawHeadwear(ctx, o, fit.head);
   ctx.restore();
 }
-/* 👶 小寶寶（喝了變小藥水、本來就是幼稚園）：用爬的，嘴巴含著奶嘴，穿寶寶裝（不能換衣服）。
+/* 👶 小寶寶（喝了變小藥水、本來就是小芽芽）：用爬的，嘴巴含著奶嘴，穿寶寶裝（不能換衣服）。
    臉朝右（跟 drawGirl 一樣，外面用 scale 翻面）。headOnly：躺在床上只畫頭，頭的中心在 (0, -46)。 */
 function drawBabyKid(ctx, o) {
   const L = GIRL.line, t = o.t || 0, cr = o.walking ? Math.sin(t * 9) : 0, hair = hairOf(o);
@@ -6224,7 +6225,7 @@ function fufuAnchor() {
 }
 
 /* 🧪 小可愛喝變小藥水：
-   ・幼稚園以上 → 暫時變回幼稚園的樣子；已經是幼稚園（或已經變小了）再喝 → 變成小寶寶
+   ・小花苞以上 → 暫時變回小芽芽的樣子；已經是小芽芽（或已經變小了）再喝 → 變成小寶寶
    ・已經是小寶寶：不用喝（藥水不會被用掉）
    ・10 分鐘後、或去床上睡一覺，就變回來。真正的成長不會不見。 */
 function kidDrinkPotion(foodId) {
@@ -6247,7 +6248,7 @@ function kidDrinkPotion(foodId) {
       baby ? `${charName()}變成小寶寶了！` : `${charName()}變小了！`, isNew, baby ? '👶 咿呀～' : '🧪 變小了！');
   } catch (e) {}
   toast(baby ? '👶 變成小寶寶了！用爬的、喝奶奶。10 分鐘後、或去床上睡一覺就會變回來'
-    : '🧪 變回幼稚園的樣子了！再喝一瓶會變成小寶寶。10 分鐘後、或睡一覺就變回來');
+    : '🧪 變回小芽芽的樣子了！再喝一瓶會變成小寶寶。10 分鐘後、或睡一覺就變回來');
   saveGame();
   return true;
 }
@@ -6316,9 +6317,9 @@ function celebrateKidStage(up) {
     const a = renderKidStage(up.from, 90, 110); a.className = 'grow-from';
     const b = renderKidStage(up.to, 140, 170); b.className = 'grow-to';
     box.append(a, el('span', 'grow-arrow', '➜'), b);
-    showcase(box, `${charName()}變成${to.icon}${to.name}了！`, up.newDex ? `🌱 成長圖鑑 ${nG} / ${all}` : '又長大了！',
+    showcase(box, `${charName()}${to.grown}！`, up.newDex ? `🌱 成長圖鑑 ${nG} / ${all}` : '又長大了！',
       up.newDex ? { head: '🌱 長大了！', n: nG, all } : { head: '🌱 長大了！' });
-  } catch (e) { toast(`🌱 ${charName()}變成${to.name}了！`); }
+  } catch (e) { toast(`${charName()}${to.grown}！`); }
   saveGame();
 }
 // 小可愛某個階段的樣子（成長圖鑑、長大的大圖）：穿現在的衣服、現在的髮型
@@ -10268,7 +10269,7 @@ function updatePetCard() {
   else $('#kidStageLbl').textContent = ks.name;
   $('#barKidGrow').style.width = Math.round(kidGrowPct() * 100) + '%';
   $('#kidGrowRow').classList.toggle('max', ks.id === 'big');
-  $('#kidGrowRow').title = ks.id === 'big' ? '已經是大姊姊了！' : `長成${KID_STAGES[KID_STAGES.indexOf(ks) + 1].name}：${Math.round(kidGrowPct() * 100)}%`;
+  $('#kidGrowRow').title = ks.id === 'big' ? '已經開花了！' : `下一個：${KID_STAGES[KID_STAGES.indexOf(ks) + 1].icon}${KID_STAGES[KID_STAGES.indexOf(ks) + 1].name}（${Math.round(kidGrowPct() * 100)}%）`;
   setBar('#barHunger', st.hunger);
   setBar('#barClean', st.clean);
   setBar('#barMood', st.mood);
@@ -11727,7 +11728,7 @@ function tabPets(body) {
 // 成長圖鑑：一種寵物一排，寶寶 → 小朋友 → 大朋友。還沒孵到的種類整排都是剪影
 function growDexGrid() {
   const wrap = el('div', 'grow-dex');
-  { // 小可愛：幼稚園、小學生、大姊姊，還有喝藥水才看得到的小寶寶
+  { // 小可愛：小芽芽、小花苞、開花了，還有喝藥水才看得到的小寶寶
     const row = el('div', 'grow-row kid');
     row.appendChild(el('div', 'gr-nm', '👧 ' + charName()));
     let n = 0;

@@ -2572,7 +2572,7 @@
     try {
       var normalMax = Math.max.apply(null, KID_FOODS.concat(FOODS).filter(function(f){ return !f.potion; }).map(function(f){ return f.price; }));
       if (KID_FOOD_BY_ID.shrink.price < normalMax * 2 || FOOD_BY_ID.shrink_pet.price < normalMax * 2) fails.push('變小藥水沒有比一般東西貴');
-      // 小可愛：大姊姊 → 變小（幼稚園），跳出「原本 ➜ 變小」
+      // 小可愛：開花了 → 變小（小芽芽），跳出「原本 ➜ 變小」
       G.kid.height = 160; delete G.kid.small; G.kidFood.shrink = 3; clearSC();
       kidEat('shrink', 'kid');
       var s1 = document.getElementById('showcase');
@@ -2611,29 +2611,33 @@
     var kid88 = JSON.stringify(G.kid), kf88 = JSON.stringify(G.kidFood), pf88 = JSON.stringify(G.food), gd88 = JSON.stringify(G.growDex), ps88 = G.pet.stage, pg88 = G.pet.growth;
     var realToast88 = toast, realBlk88 = showcaseBlocked; toast = function(){}; showcaseBlocked = function(){ return false; };
     try {
+      // 階段名稱不用學校的稱呼（家長：制服不一樣）；台詞、公告、圖鑑也不能出現
+      var schoolWords = /幼稚園|小學生/;
+      if (KID_STAGES.some(function(k){ return schoolWords.test(k.name + k.grown); }) || ['kidShrink', 'hostSmall', 'kidStageUp'].some(function(k){ return lineList(k).some(function(l){ return schoolWords.test(l); }); })
+          || NEWS.some(function(n){ return n.lines.some(function(l){ return schoolWords.test(l[1]); }); })) fails.push('小可愛的階段還在用「幼稚園／小學生」的叫法');
       if (kidStageAt(135).id !== 'kinder' || kidStageAt(146).id !== 'school' || kidStageAt(160).id !== 'big') fails.push('小可愛的三個階段分界不對');
       // 長大：跨過一個階段 → 收進成長圖鑑、跳出「原本 → 長大後」
       G.kid.height = 144.95; delete G.kid.small; delete (G.growDex || {})['girl:school'];
       SC_QUEUE.length = 0; var sc0 = document.getElementById('showcase'); if (sc0) sc0.remove();
       var up88 = kidGainGrowth(.1);
-      if (!up88 || up88.from !== 'kinder' || up88.to !== 'school' || !up88.newDex || !G.growDex['girl:school']) fails.push('小可愛從幼稚園長成小學生，沒有收進成長圖鑑');
+      if (!up88 || up88.from !== 'kinder' || up88.to !== 'school' || !up88.newDex || !G.growDex['girl:school']) fails.push('小可愛從小芽芽長成小花苞，沒有收進成長圖鑑');
       var sc88 = document.getElementById('showcase');
-      if (!sc88 || sc88.querySelectorAll('.grow-pic canvas').length !== 2 || !/小學生/.test(sc88.textContent)) fails.push('小可愛長大沒有跳出「原本 → 長大後」的大圖');
+      if (!sc88 || sc88.querySelectorAll('.grow-pic canvas').length !== 2 || !/小花苞/.test(sc88.textContent)) fails.push('小可愛長大沒有跳出「原本 → 長大後」的大圖');
       if (sc88) sc88.remove(); SC_QUEUE.length = 0;
       // 吃營養的東西長大，也會跳出大圖
       G.kid.height = 154.8; G.kidFood.xiaoansu = 1;
       kidEat('xiaoansu', 'kid');
       var scF = document.getElementById('showcase');
-      if (kidStage().id !== 'big' || !scF || !/大姊姊/.test(scF.textContent)) fails.push('喝小安素長成大姊姊，沒有跳出長大的大圖');
+      if (kidStage().id !== 'big' || !scF || !/開花了/.test(scF.textContent)) fails.push('喝小安素長成開花了，沒有跳出長大的大圖');
       if (scF) scF.remove(); SC_QUEUE.length = 0;
       // 小卡：階段名稱＋進度條
       G.kid.height = 150; updatePetCard();
-      if ($('#kidStageLbl').textContent !== '小學生') fails.push('小卡沒有寫小可愛現在的階段：' + $('#kidStageLbl').textContent);
+      if ($('#kidStageLbl').textContent !== '小花苞') fails.push('小卡沒有寫小可愛現在的階段：' + $('#kidStageLbl').textContent);
       if (Math.abs(parseFloat($('#barKidGrow').style.width) - 50) > 1) fails.push('小可愛的長大進度條不對：' + $('#barKidGrow').style.width);
-      // 喝藥水：小學生 → 暫時變成幼稚園的樣子
+      // 喝藥水：小花苞 → 暫時變成小芽芽的樣子
       G.kidFood.shrink = 2;
       if (!kidEat('shrink', 'kid')) fails.push('喝不了變小藥水');
-      if (!kidSmall() || kidBaby() || kidLookStage() !== 'kinder' || kidHeightScale() !== 1) fails.push('喝了藥水沒有變回幼稚園的樣子');
+      if (!kidSmall() || kidBaby() || kidLookStage() !== 'kinder' || kidHeightScale() !== 1) fails.push('喝了藥水沒有變回小芽芽的樣子');
       if (kidStage().id !== 'school' || G.kid.height !== 150) fails.push('喝了藥水，真正的成長不見了');
       if (G.kidFood.shrink !== 1) fails.push('藥水沒有用掉一瓶');
       if (!/變小了/.test(($('#kidStageLbl') && (updatePetCard(), $('#kidStageLbl').textContent)) || '')) fails.push('小卡沒有顯示「變小了」和剩下的時間');
@@ -2663,7 +2667,7 @@
       if (!kidStateLine('vis:x', true)) fails.push('動物朋友看到小寶寶沒有說話');
       fufu.path = []; draw(); // 小寶寶畫得出來
       var kb = renderKidStage('baby', 70, 60).toDataURL(), kk = renderKidStage('kinder', 70, 84).toDataURL();
-      if (kb === kk) fails.push('小寶寶跟幼稚園畫出來一樣');
+      if (kb === kk) fails.push('小寶寶跟小芽芽畫出來一樣');
       // 時間到：變回來；接下來遇到的人說「變回來了」，每個人只說一次
       G.kid.small.until = Date.now() - 1; smallTick();
       if (G.kid.small || kidBaby()) fails.push('藥水時間到了沒有變回來');
