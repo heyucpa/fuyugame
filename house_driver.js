@@ -2556,6 +2556,90 @@
       if (!(full > countFills(Object.assign({}, sp, { sparkle: false })))) fails.push(sp.name + ' 沒有一閃一閃的星星');
     });
 
+    /* 88 小可愛長大、變小藥水、小寶寶（家長：小孩分階段長大看得到進度；藥水暫時變小，最小再喝變小寶寶；
+       小寶寶用爬的、吃奶嘴、不能換裝；叔叔阿婆看到要說話，變回來也要說） */
+    var kid88 = JSON.stringify(G.kid), kf88 = JSON.stringify(G.kidFood), pf88 = JSON.stringify(G.food), gd88 = JSON.stringify(G.growDex), ps88 = G.pet.stage, pg88 = G.pet.growth;
+    var realToast88 = toast, realBlk88 = showcaseBlocked; toast = function(){}; showcaseBlocked = function(){ return false; };
+    try {
+      if (kidStageAt(135).id !== 'kinder' || kidStageAt(146).id !== 'school' || kidStageAt(160).id !== 'big') fails.push('小可愛的三個階段分界不對');
+      // 長大：跨過一個階段 → 收進成長圖鑑、跳出「原本 → 長大後」
+      G.kid.height = 144.95; delete G.kid.small; delete (G.growDex || {})['girl:school'];
+      SC_QUEUE.length = 0; var sc0 = document.getElementById('showcase'); if (sc0) sc0.remove();
+      var up88 = kidGainGrowth(.1);
+      if (!up88 || up88.from !== 'kinder' || up88.to !== 'school' || !up88.newDex || !G.growDex['girl:school']) fails.push('小可愛從幼稚園長成小學生，沒有收進成長圖鑑');
+      var sc88 = document.getElementById('showcase');
+      if (!sc88 || sc88.querySelectorAll('.grow-pic canvas').length !== 2 || !/小學生/.test(sc88.textContent)) fails.push('小可愛長大沒有跳出「原本 → 長大後」的大圖');
+      if (sc88) sc88.remove(); SC_QUEUE.length = 0;
+      // 吃營養的東西長大，也會跳出大圖
+      G.kid.height = 154.8; G.kidFood.xiaoansu = 1;
+      kidEat('xiaoansu', 'kid');
+      var scF = document.getElementById('showcase');
+      if (kidStage().id !== 'big' || !scF || !/大姊姊/.test(scF.textContent)) fails.push('喝小安素長成大姊姊，沒有跳出長大的大圖');
+      if (scF) scF.remove(); SC_QUEUE.length = 0;
+      // 小卡：階段名稱＋進度條
+      G.kid.height = 150; updatePetCard();
+      if ($('#kidStageLbl').textContent !== '小學生') fails.push('小卡沒有寫小可愛現在的階段：' + $('#kidStageLbl').textContent);
+      if (Math.abs(parseFloat($('#barKidGrow').style.width) - 50) > 1) fails.push('小可愛的長大進度條不對：' + $('#barKidGrow').style.width);
+      // 喝藥水：小學生 → 暫時變成幼稚園的樣子
+      G.kidFood.shrink = 2;
+      if (!kidEat('shrink', 'kid')) fails.push('喝不了變小藥水');
+      if (!kidSmall() || kidBaby() || kidLookStage() !== 'kinder' || kidHeightScale() !== 1) fails.push('喝了藥水沒有變回幼稚園的樣子');
+      if (kidStage().id !== 'school' || G.kid.height !== 150) fails.push('喝了藥水，真正的成長不見了');
+      if (G.kidFood.shrink !== 1) fails.push('藥水沒有用掉一瓶');
+      if (!/變小了/.test(($('#kidStageLbl') && (updatePetCard(), $('#kidStageLbl').textContent)) || '')) fails.push('小卡沒有顯示「變小了」和剩下的時間');
+      // 再喝一瓶：變成小寶寶（收進成長圖鑑的隱藏格）
+      delete G.growDex['girl:baby'];
+      kidEat('shrink', 'kid');
+      if (!kidBaby() || !G.growDex['girl:baby'] || G.kidFood.shrink) fails.push('再喝一瓶沒有變成小寶寶');
+      var scB = document.getElementById('showcase'); if (scB) scB.remove(); SC_QUEUE.length = 0;
+      G.kidFood.shrink = 1;
+      if (kidEat('shrink', 'kid') || G.kidFood.shrink !== 1) fails.push('已經是小寶寶，藥水還被喝掉了');
+      // 小寶寶：不能彈鋼琴、溜滑梯；只喝奶奶；不能換衣服；說話咿咿呀呀
+      fufu.act = null; fufuStartAct('piano', performance.now(), { uid: -88, id: 'piano', x: 0, y: 0, rot: 0 }, false);
+      if (fufu.act) fails.push('小寶寶還可以彈鋼琴');
+      fufuStartAct('slide', performance.now(), { uid: -88, id: 'slide', x: 0, y: 0, rot: 0 }, false);
+      if (fufu.act || fufu.ride) fails.push('小寶寶還可以溜滑梯');
+      $('#foodMenu').hidden = true; showFoodMenu('kid');
+      var fb = $('#foodMenu').querySelectorAll('button');
+      if (fb.length !== 1 || !/喝奶奶/.test(fb[0].textContent)) fails.push('小寶寶的食物選單不是只有奶奶');
+      else { G.kid.hunger = 30; fb[0].onclick(); if (G.kid.hunger !== 55) fails.push('小寶寶喝奶奶沒有變飽'); }
+      $('#foodMenu').hidden = true;
+      openTab('dress');
+      if (!/小寶寶只能穿寶寶裝/.test($('#tabBody').textContent) || document.querySelectorAll('#tabBody .card').length) fails.push('小寶寶還可以換衣服');
+      openTab('inv');
+      if (lineList('babyReply').indexOf(pickLine('kidReply')) < 0) fails.push('小寶寶回答鄰居還是說大人的話');
+      var hb = kidStateLine('uncle');
+      if (lineList('hostBaby').concat(HOST_BABY_EXTRA.uncle).map(function(l){ return l.split('{名字}').join(charName()); }).indexOf(hb) < 0) fails.push('叔叔看到小寶寶沒有說小寶寶的話：' + hb);
+      if (!kidStateLine('vis:x', true)) fails.push('動物朋友看到小寶寶沒有說話');
+      fufu.path = []; draw(); // 小寶寶畫得出來
+      var kb = renderKidStage('baby', 70, 60).toDataURL(), kk = renderKidStage('kinder', 70, 84).toDataURL();
+      if (kb === kk) fails.push('小寶寶跟幼稚園畫出來一樣');
+      // 時間到：變回來；接下來遇到的人說「變回來了」，每個人只說一次
+      G.kid.small.until = Date.now() - 1; smallTick();
+      if (G.kid.small || kidBaby()) fails.push('藥水時間到了沒有變回來');
+      var back = kidStateLine('grandma');
+      if (lineList('hostBack').map(function(l){ return l.split('{名字}').join(charName()); }).indexOf(back) < 0) fails.push('變回來之後，阿婆沒有說「變回來了」：' + back);
+      if (kidStateLine('grandma')) fails.push('「變回來了」同一個人一直說');
+      if (!kidStateLine('teacher')) fails.push('變回來之後，老師沒有說「變回來了」');
+      if (!kidStateLine('vis:bear', true)) fails.push('變回來之後，動物朋友沒有說「變回來了」');
+      // 寵物喝藥水：暫時變回寶寶的樣子，真正的階段不變
+      G.pet.stage = 'adult'; G.pet.growth = 0; G.food.shrink_pet = 1;
+      if (!petFeed('shrink_pet')) fails.push('寵物喝不了變小藥水');
+      if (lookStage(G.pet) !== 'baby' || G.pet.stage !== 'adult' || lookScale(G.pet) !== PET_STAGE_BY_ID.baby.scale) fails.push('寵物喝了藥水沒有變回寶寶的樣子');
+      G.food.shrink_pet = 1;
+      if (petFeed('shrink_pet') || G.food.shrink_pet !== 1) fails.push('寵物已經是寶寶，藥水還被喝掉');
+      G.pet.small = Date.now() - 1; smallTick();
+      if (G.pet.small || lookStage(G.pet) !== 'adult') fails.push('寵物藥水時間到了沒有變回來');
+      // 存檔：壞掉的變小資料清掉
+      var bad88 = JSON.parse(JSON.stringify(G)); bad88.kid.small = 'x'; bad88.pets[0].small = 'y';
+      var nb88 = normalizeSave(bad88);
+      if (!nb88 || nb88.kid.small || nb88.pets[0].small) fails.push('存檔裡壞掉的變小資料沒有清掉');
+    } catch (e) { fails.push('小可愛長大／變小藥水測試出錯：' + e.message + ' ' + (e.stack || '').split('\n')[1]); }
+    finally {
+      G.kid = JSON.parse(kid88); G.kidFood = JSON.parse(kf88); G.food = JSON.parse(pf88); G.growDex = JSON.parse(gd88); G.pet.stage = ps88; G.pet.growth = pg88; delete G.pet.small;
+      toast = realToast88; showcaseBlocked = realBlk88; SC_QUEUE.length = 0; var sc9 = document.getElementById('showcase'); if (sc9) sc9.remove(); $('#foodMenu').hidden = true; updatePetCard();
+    }
+
     /* 87 長大（家長：要看得到往下一階段的進度、長大要有動畫＋放大圖片、長大的樣子也能收集＝成長圖鑑） */
     try {
       if (!(newGame().growDex || {})['mochi:kid']) fails.push('新遊戲的成長圖鑑沒有一開始那隻（小朋友）');
@@ -2564,7 +2648,8 @@
       old87.pets = [newPet('mochi', 'adult', 'x'), newPet(PET_SPECIES[1].id, 'baby', 'y'), newPet(PET_SPECIES[2].id, 'egg', '')];
       old87.activePet = 0; old87.companions = [];
       var n87 = normalizeSave(old87);
-      if (!n87 || growDexCount(n87) !== 4) fails.push('舊存檔補成長圖鑑，數量不對：' + (n87 && growDexCount(n87)));
+      var girl87 = n87 ? KID_DEX.filter(function(st){ return n87.growDex[growKey('girl', st)]; }).length : 0;
+      if (!n87 || growDexCount(n87) - girl87 !== 4) fails.push('舊存檔補成長圖鑑，寵物的數量不對：' + (n87 && growDexCount(n87) - girl87));
       // 長大：收進成長圖鑑、跳出「長大了」的大圖
       var keepDex = JSON.stringify(G.growDex || {}), sp87 = PET_SPECIES[3].id;
       var p87 = newPet(sp87, 'baby', 't87'); G.pets.push(p87);
@@ -2598,11 +2683,11 @@
       openTab('book');
       if (!document.getElementById('dexGrow')) fails.push('圖鑑頁沒有成長圖鑑');
       var rows87 = document.querySelectorAll('#tabBody .grow-row');
-      if (rows87.length !== PET_SPECIES.length) fails.push('成長圖鑑排數不對：' + rows87.length);
-      else if ([].some.call(rows87, function(r){ return r.querySelectorAll('.gr-cell').length !== 3; })) fails.push('成長圖鑑每排不是三格');
+      if (rows87.length !== PET_SPECIES.length + 1) fails.push('成長圖鑑排數不對（寵物＋小可愛）：' + rows87.length);
+      else if ([].some.call(rows87, function(r, i){ return r.querySelectorAll('.gr-cell').length !== (i === 0 ? 4 : 3); })) fails.push('成長圖鑑：小可愛那排要四格、寵物每排三格');
       var lit87 = document.querySelectorAll('#tabBody .grow-row .gr-cell:not(.dim)').length;
       if (lit87 !== growDexCount()) fails.push('成長圖鑑亮起來的格數（' + lit87 + '）跟收集數（' + growDexCount() + '）不一樣');
-      if (trophyCount('grow')[1] !== PET_SPECIES.length * 3) fails.push('成長獎盃的總數不對');
+      if (trophyCount('grow')[1] !== PET_SPECIES.length * 3 + 4) fails.push('成長獎盃的總數不對');
       // 寶寶有圍兜、跟小朋友畫出來不一樣
       var pb = renderPetPortrait({ species: 'mochi', stage: 'baby', growth: 0 }, 60, 54).toDataURL(), pk = renderPetPortrait({ species: 'mochi', stage: 'kid', growth: 0 }, 60, 54).toDataURL();
       if (pb === pk) fails.push('寶寶跟小朋友畫出來一模一樣');

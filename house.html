@@ -515,6 +515,7 @@ button.pass { font: inherit; }
 .pc-bar i { flex: 1; height: 9px; background: #efe4d0; border-radius: 999px; overflow: hidden; }
 .pc-bar b { display: block; height: 100%; width: 50%; background: #7cc38e; border-radius: 999px; transition: width .4s, background .4s; }
 .pc-bar b.low { background: #f09a7a; }
+.pc-stage { font-size: 11px; color: var(--muted); font-weight: 400; }
 .pc-bar.grow b { background: linear-gradient(90deg, #ffb3c7, #ff7fa3); }
 .pc-bar.grow.max b { background: linear-gradient(90deg, #ffe08a, #f2c14e); }
 .sc-pic.grow-pic { width: auto; }
@@ -556,6 +557,7 @@ button.pass { font: inherit; }
 @keyframes giftWiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-8deg); } 75% { transform: rotate(8deg); } }
 .grow-dex { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
 .grow-row { display: grid; grid-template-columns: minmax(0, 64px) repeat(3, minmax(0, 1fr)); align-items: center; gap: 6px; background: #fff; border: 2px solid var(--line); border-radius: 14px; padding: 4px 8px; }
+.grow-row.kid { grid-template-columns: minmax(0, 64px) repeat(4, minmax(0, 1fr)); }
 .grow-row.full { border-color: #f2c14e; background: #fffaf0; }
 .grow-row .gr-nm { font-weight: 700; font-size: 13px; }
 .grow-row .gr-cell { display: flex; flex-direction: column; align-items: center; }
@@ -669,9 +671,10 @@ button.pass { font: inherit; }
     <div class="hint" id="hint">從「我的東西」點家具放進房間；點房間裡的家具可以搬動</div>
     <div class="itemmenu" id="itemMenu" hidden></div>
     <div class="petcard" id="petCard">
-      <div class="pc-head"><span>👧 <b id="kidNameLbl">小可愛</b></span><button id="pcToggle" title="收合">－</button></div>
+      <div class="pc-head"><span><span id="kidStageIc">🧸</span> <b id="kidNameLbl">小可愛</b> <small id="kidStageLbl" class="pc-stage"></small></span><button id="pcToggle" title="收合">－</button></div>
       <div class="pc-body">
         <div class="pc-bar" title="小可愛的飽足"><span>🍙</span><i><b id="barKid"></b></i></div>
+        <div class="pc-bar grow" id="kidGrowRow" title="長大"><span>🌱</span><i><b id="barKidGrow"></b></i></div>
         <div class="pc-btns one"><button id="btnKidEat">🍙 吃東西</button></div>
         <div class="pc-sub">🐾 <b id="petNameLbl">圓圓</b></div>
         <div class="pc-bar grow" id="growRow" title="長大"><span>🌱</span><i><b id="barGrow"></b></i></div>
@@ -1685,6 +1688,46 @@ Object.assign(PET_BEDS, {
 });
 // 小可愛自己會做的事（點她就會跳出選單）
 LINE_TYPES.push(
+  // 🧪 變小藥水：變小、變成小寶寶、變回來。大人（叔叔、阿婆、老師…）和動物朋友看到也會說
+  { key: 'kidShrink', label: '喝了變小藥水', lines: ['咕嚕咕嚕…咦？我變小了！', '哇，衣服變大了！', '我變回幼稚園的樣子了耶～'] },
+  { key: 'kidBaby', label: '變成小寶寶', lines: ['咿呀～', 'ㄚㄚ！噗噗～', '嘻嘻～咿咿呀呀'] },
+  { key: 'babyReply', label: '小寶寶回答', lines: ['咿呀～', 'ㄚㄚ！', '噗噗～', '嘻嘻～', '啊嗚～', '咕咕～'] },
+  { key: 'babyMilk', label: '小寶寶喝奶奶', lines: ['咕嚕咕嚕～', '奶奶好好喝～', '嗯嗯嗯～（喝得好開心）'] },
+  { key: 'babyCant', label: '小寶寶做不到', lines: ['小寶寶還太小了，長大再玩～', '咿呀？（小寶寶爬不上去）', '這個要等變回來才能玩喔'] },
+  { key: 'kidBack', label: '變回來了', lines: ['我變回來了！', '咻～長回來了！', '還是原本的樣子最好～'] },
+  { key: 'hostSmall', label: '大人看到她變小', hint: '可用 {名字}', lines: ['咦？{名字}怎麼變小了？', '{名字}好像變回幼稚園的樣子了！', '哎呀，是不是喝了什麼神奇的東西？', '變小的{名字}也好可愛～'] },
+  { key: 'hostBaby', label: '大人看到小寶寶', hint: '可用 {名字}', lines: ['哎呀，{名字}變成小寶寶了！', '小寶寶要不要喝奶奶？', '來，抱抱～小寶寶好乖', '咕咕咕～小寶寶笑了！', '小寶寶爬得好快喔！', '噓～小寶寶的奶嘴不要掉了'] },
+  { key: 'hostBack', label: '大人看到她變回來', hint: '可用 {名字}', lines: ['{名字}變回來了！', '哇，又長回來了！', '小寶寶時間結束囉～', '剛剛那個小寶寶是{名字}嗎？好可愛！'] },
+  { key: 'visitorBaby', label: '動物朋友看到小寶寶', hint: '可用 {名字}', lines: ['哇！{名字}變成小寶寶了！', '小寶寶，我們一起爬爬！', '{名字}好小好可愛喔！', '我來保護小寶寶！'] },
+  { key: 'visitorBack', label: '動物朋友看到她變回來', hint: '可用 {名字}', lines: ['{名字}變回來了！又可以一起跑跑跳跳了！', '剛剛的小寶寶是你嗎？', '歡迎回來～'] },
+  { key: 'petShrink', label: '寵物喝了變小藥水', hint: '可用 {寵物}', lines: ['{寵物}變回寶寶了！好小好可愛～', '哇，{寵物}變成小寶寶了！', '{寵物}小小的，好想抱抱'] },
+  { key: 'petBack', label: '寵物變回來', hint: '可用 {寵物}', lines: ['{寵物}變回來了！', '{寵物}又長回來了～'] },
+  { key: 'kidStageUp', label: '小可愛長大了', hint: '可用 {階段}', lines: ['我變成{階段}了！', '我長大了耶！', '我是{階段}囉～'] }
+);
+// 每位大人看到小寶寶，還會說一句自己的話
+const HOST_BABY_EXTRA = {
+  uncle: ['叔叔變魔術給小寶寶看！', '小寶寶，叔叔的電腦不能吃喔～'],
+  grandma: ['小寶寶乖乖，阿婆抱抱～', '阿婆煮稀飯給小寶寶吃'],
+  teacher: ['小寶寶也來上課呀？', '小寶寶坐好，我們來唱歌～'],
+  ranger: ['小寶寶看，蝴蝶飛過去了！', '小寶寶不要爬到池塘邊喔'],
+  librarian: ['小寶寶要聽故事嗎？', '噓～小寶寶在圖書館要小聲喔']
+};
+// 她現在變小、是小寶寶、剛變回來：大人和動物朋友先說這個。who：誰在說（變回來的話每個人只說一次）
+function kidStateLine(who, animal) {
+  const vars = { 名字: charName() };
+  if (kidBaby()) {
+    const ex = !animal && HOST_BABY_EXTRA[who];
+    return ex && Math.random() < .4 ? ex[Math.floor(Math.random() * ex.length)] : pickLine(animal ? 'visitorBaby' : 'hostBaby', vars);
+  }
+  if (kidSmall()) return animal ? pickLine('visitorBaby', vars) : pickLine('hostSmall', vars);
+  const k = G.kid;
+  if (k.backAt && Date.now() - k.backAt < 3600000 && !(k.backSaid || {})[who]) {
+    k.backSaid = Object.assign({}, k.backSaid, { [who]: 1 });
+    return pickLine(animal ? 'visitorBack' : 'hostBack', vars);
+  }
+  return null;
+}
+LINE_TYPES.push(
   { key: 'dance', label: '跳舞的時候', lines: ['轉圈圈～', '一起來跳舞！', '啦啦啦，跳跳跳', '看我的新舞步！', '左三圈，右三圈～', '好開心喔！'] },
   { key: 'playPet', label: '陪寵物玩', hint: '可用 {寵物}', lines: ['{寵物}，我們來玩！', '抓到你了，{寵物}！', '{寵物}好會跳喔！', '{寵物}，來追我呀～', '跟{寵物}玩好開心！', '{寵物}，握手！'] },
   { key: 'playEgg', label: '陪蛋玩', lines: ['快快孵出來喔～', '蛋蛋暖呼呼的', '裡面是誰呢？'] },
@@ -2411,6 +2454,19 @@ const KID_DECAY_MIN = .15;
 // 成長值（內部數字，畫面上不顯示）：越高角色畫得越大一點。沿用 height 欄位名稱以相容舊存檔
 const KID_START_HEIGHT = 135;
 const KID_MAX_HEIGHT = 165;
+/* 小可愛的成長階段（家長：小孩也要分階段長大、看得到進度）。不講身高，只說「成長」。
+   head／body：頭跟身體的比例——幼稚園頭大大、身體短短，大姊姊身體長一點。 */
+const KID_STAGES = [
+  { id: 'kinder', name: '幼稚園', icon: '🧸', at: 135, head: 1.1, body: .86, pic: .84 },
+  { id: 'school', name: '小學生', icon: '🎒', at: 145, head: 1, body: 1, pic: .93 },
+  { id: 'big', name: '大姊姊', icon: '🌟', at: 155, head: .96, body: 1.1, pic: 1 }
+];
+const KID_STAGE_BY_ID = Object.fromEntries(KID_STAGES.map(s => [s.id, s]));
+// 成長圖鑑裡小可愛那一排：三個階段＋喝藥水才看得到的小寶寶
+const KID_DEX = ['kinder', 'school', 'big', 'baby'];
+const KID_DEX_NAMES = { kinder: '幼稚園', school: '小學生', big: '大姊姊', baby: '小寶寶' };
+// 🧪 神秘變小藥水：暫時變小 10 分鐘（或去床上睡一覺就變回來）
+const SMALL_MS = 10 * 60000;
 // grow：吃一次增加多少成長值（畫面只說「會健康長大、壯壯的」，不顯示數字）
 const KID_FOODS = [
   { id: 'xiaoansu', name: '小安素', emoji: '🥤', price: 300, hunger: 20, grow: .5 },
@@ -2420,7 +2476,8 @@ const KID_FOODS = [
   { id: 'orange', name: '橘子', emoji: '🍊', price: 80, hunger: 10, grow: .1 },
   { id: 'sandwich', name: '三明治', emoji: '🥪', price: 180, hunger: 25, grow: 0 },
   { id: 'bento', name: '便當', emoji: '🍱', price: 350, hunger: 50, grow: 0 },
-  { id: 'ice_cream', name: '冰淇淋', emoji: '🍦', price: 200, hunger: 8, grow: 0 }
+  { id: 'ice_cream', name: '冰淇淋', emoji: '🍦', price: 200, hunger: 8, grow: 0 },
+  { id: 'shrink', name: '變小藥水', emoji: '🧪', price: 500, hunger: 0, grow: 0, potion: true }
 ];
 const KID_FOOD_BY_ID = Object.fromEntries(KID_FOODS.map(f => [f.id, f]));
 const FOODS = [
@@ -2433,7 +2490,8 @@ const FOODS = [
   // 小安素：小可愛跟寵物都喝得到，所以兩邊的食物櫃都要有
   { id: 'xiaoansu', name: '小安素', emoji: '🥤', price: 300, hunger: 20, mood: 4, grow: .3 },
   // 骨頭（家長：寵物食物可以加骨頭）：只有寵物吃（petOnly），小可愛的食物選單不會出現
-  { id: 'bone', name: '骨頭', emoji: '🦴', price: 180, hunger: 25, mood: 8, petOnly: true }
+  { id: 'bone', name: '骨頭', emoji: '🦴', price: 180, hunger: 25, mood: 8, petOnly: true },
+  { id: 'shrink_pet', name: '寵物變小藥水', emoji: '🧪', price: 500, hunger: 0, mood: 0, petOnly: true, potion: true }
 ];
 const FOOD_BY_ID = Object.fromEntries(FOODS.map(f => [f.id, f]));
 
@@ -2481,12 +2539,15 @@ const PET_STAGE_BY_ID = Object.fromEntries(PET_STAGES.map(s => [s.id, s]));
    G.growDex = { 'mochi:baby': true, ... }；長到那個階段就收進來，之後變小、送走也不會不見。 */
 const GROW_STAGES = ['baby', 'kid', 'adult'];
 const growKey = (species, stage) => species + ':' + stage;
-function growDexAll() { return PET_SPECIES.length * GROW_STAGES.length; }
-function growDexCount(g) { g = g || G; return PET_SPECIES.reduce((n, s) => n + GROW_STAGES.filter(st => (g.growDex || {})[growKey(s.id, st)]).length, 0); }
+function growDexAll() { return PET_SPECIES.length * GROW_STAGES.length + KID_DEX.length; }
+function growDexCount(g) {
+  g = g || G; const d = g.growDex || {};
+  return PET_SPECIES.reduce((n, s) => n + GROW_STAGES.filter(st => d[growKey(s.id, st)]).length, 0) + KID_DEX.filter(st => d[growKey('girl', st)]).length;
+}
 // 回傳這次是不是新收集到的
 function growDexAdd(species, stage, g) {
   g = g || G;
-  if (!GROW_STAGES.includes(stage) || !PET_SPECIES_BY_ID[species]) return false;
+  if (species === 'girl' ? !KID_DEX.includes(stage) : (!GROW_STAGES.includes(stage) || !PET_SPECIES_BY_ID[species])) return false;
   const d = g.growDex = g.growDex || {}, k = growKey(species, stage);
   if (d[k]) return false;
   d[k] = true;
@@ -2500,6 +2561,9 @@ function growDexSync(g, generous) {
     if (i < 0) return;
     (generous ? GROW_STAGES.slice(0, i + 1) : [p.stage]).forEach(st => growDexAdd(p.species, st, g));
   });
+  // 小可愛：現在的階段（generous：前面的階段也算）
+  const ki = KID_STAGES.indexOf(kidStageAt((g.kid && g.kid.height) || KID_START_HEIGHT));
+  (generous ? KID_STAGES.slice(0, ki + 1) : [KID_STAGES[ki]]).forEach(st => growDexAdd('girl', st.id, g));
 }
 const EGG_PRICE = 1000; // 四折
 // 照顧一次加多少成長；摸摸、捏捏有冷卻時間，連點不會長得比較快
@@ -2718,6 +2782,7 @@ const Sound = (() => {
     fanfare() { [523, 659, 784, 1047].forEach((f, i) => tone({ f0: f, dur: .16, type: 'triangle', vol: .3, at: i * .09 }));
                 tone({ f0: 1047, dur: .5, type: 'triangle', vol: .28, at: .38 }); tone({ f0: 1568, dur: .45, type: 'sine', vol: .14, at: .42 }); },
     // 蛋殼裂開「喀啦」
+    magic() { [784, 988, 1175, 1568, 1319].forEach((f, i) => tone({ f0: f, f1: f * 1.05, dur: .14, vol: .22, at: i * .07, vib: 20 })); }, // 🧪 變小、變回來：閃亮亮
     crack() { noise({ dur: .08, vol: .35, freq: 3000 }); noise({ dur: .1, vol: .25, freq: 2200, at: .09 }); },
     perfect() { [880, 1175].forEach((f, i) => tone({ f0: f, dur: .12, type: 'triangle', vol: .3, at: i * .07 })); },
     // 小可愛說話：像動物森友會那樣的嘰哩咕嚕
@@ -3645,6 +3710,13 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-05T12:00', title: '小可愛也會長大了！', lines: [
+    ['🌱', '小可愛也有長大的進度條：幼稚園 → 小學生 → 大姊姊'],
+    ['🧪', '商店有「變小藥水」：喝了變小 10 分鐘，再喝一瓶會變成小寶寶'],
+    ['👶', '小寶寶用爬的、含著奶嘴、喝奶奶，叔叔阿婆看到都會說話喔'],
+    ['🐾', '寵物也有變小藥水，可以變回寶寶的樣子'],
+    ['📖', '成長圖鑑多了小可愛那一排，還有一格隱藏的']
+  ], newItems: [] },
   { id: '2026-10-05T09:00', title: '寵物長大囉！', lines: [
     ['🌱', '寵物小卡多了一條長大的進度條，看得到快長大了沒'],
     ['🎉', '寵物長大的時候，畫面中間會跳出長大前、長大後的大圖'],
@@ -3878,7 +3950,7 @@ function newGame() {
     lines: {},               // 玩家自訂台詞 {key: [句子...]}
     charName: DEFAULT_CHAR_NAME,
     pets: [newPet('mochi', 'kid', DEFAULT_PET_NAME)], // 收集到的寵物（含還沒孵的蛋）
-    growDex: { 'mochi:kid': true },        // 🌱 成長圖鑑：一開始那隻是小朋友
+    growDex: { 'mochi:kid': true, 'girl:kinder': true }, // 🌱 成長圖鑑：一開始那隻是小朋友、小可愛是幼稚園
     activePet: 0,                                      // 目前帶出來玩的是第幾隻；G.pet 指向牠
     companions: [],                                    // 一起跟著逛的寵物（G.pets 的索引），不會餓也不會髒
     friends: {},                                       // 來玩過的動物鄰居 {id: 來玩幾次}
@@ -3970,6 +4042,8 @@ function normalizeSave(g) {
   if (!out.noSell || typeof out.noSell !== 'object' || Array.isArray(out.noSell)) out.noSell = {};
   if (g.guideAsked === undefined && out.guide !== 'egg') out.guideAsked = true; // 教到一半的不要再問
   if (!g.welcome) out.welcome = { at: 0, uncle: true, grandma: true }; // 已經在玩的存檔不算搬新家
+  if (out.kid && out.kid.small && !(isObj(out.kid.small) && num(out.kid.small.until))) delete out.kid.small;
+  (out.pets || []).forEach(q => { if (q && q.small != null && !num(q.small)) delete q.small; });
   if (!isObj(g.growDex)) { out.growDex = {}; growDexSync(out, true); } else growDexSync(out, false);
   if (!Array.isArray(g.newsSeen)) out.newsSeen = []; // 舊存檔：還沒看過任何公告，要讓她看到這次更新了什麼
   /* 補償也要發給「已經存在的存檔」——只改 newGame() 的話，
@@ -4254,6 +4328,7 @@ function lineList(key) {
   return (LINE_TYPES.find(t => t.key === key) || { lines: [''] }).lines;
 }
 function pickLine(key, vars) {
+  if ((key === 'kidReply' || key === 'kidEat') && typeof kidBaby === 'function' && G && kidBaby()) key = key === 'kidEat' ? 'babyMilk' : 'babyReply';
   const list = lineList(key);
   let text = list[Math.floor(Math.random() * list.length)] || '';
   Object.entries(vars || {}).forEach(([k, v]) => { text = text.split(`{${k}}`).join(v); });
@@ -4400,7 +4475,37 @@ function petTick() {
 }
 
 // ── 小可愛吃東西、慢慢長大（成長值不顯示在畫面上）──
+function kidStageAt(h) { let s = KID_STAGES[0]; KID_STAGES.forEach(x => { if (h >= x.at) s = x; }); return s; }
+function kidStage() { return kidStageAt(G.kid.height); }
+// 這個階段長了多少（0～1）；大姊姊就是滿的
+function kidGrowPct() {
+  const s = kidStage(), n = KID_STAGES[KID_STAGES.indexOf(s) + 1];
+  return n ? Math.max(0, Math.min(1, (G.kid.height - s.at) / (n.at - s.at))) : 1;
+}
+// 加成長值；跨過一個階段回傳 {from, to, newDex}
+function kidAddGrowth(amount) {
+  if (!amount) return null;
+  const from = kidStage();
+  G.kid.height = Math.min(KID_MAX_HEIGHT, Math.round((G.kid.height + amount) * 100) / 100);
+  const to = kidStage();
+  if (to === from) return null;
+  return { from: from.id, to: to.id, newDex: growDexAdd('girl', to.id) };
+}
+function kidGainGrowth(amount) {
+  const up = kidAddGrowth(amount);
+  if (up) celebrateKidStage(up);
+  return up;
+}
+// 喝了變小藥水：small = {until, baby}；時間到或睡一覺就變回來
+function kidSmall() { const s = G.kid.small; return s && s.until > Date.now() ? s : null; }
+function kidBaby() { const s = kidSmall(); return !!(s && s.baby); }
+// 畫的時候用哪個階段的樣子（變小了：幼稚園；小寶寶另外畫）
+function kidLookStage() { return kidSmall() ? 'kinder' : kidStage().id; }
+// 寵物變小：p.small＝到什麼時候。小朋友、大朋友暫時變回寶寶的樣子（真正的階段跟成長值不變）
+function lookStage(p) { return p && p.small && p.small > Date.now() && (p.stage === 'kid' || p.stage === 'adult') ? 'baby' : p.stage; }
+function lookScale(p) { return PET_STAGE_BY_ID[lookStage(p)].scale; }
 function kidHeightScale() { // 畫面上的大小：成長值越高畫得大一點點，最多大 17%
+  if (kidSmall()) return 1;
   return 1 + Math.min(KID_MAX_HEIGHT - KID_START_HEIGHT, Math.max(0, G.kid.height - KID_START_HEIGHT)) / 175;
 }
 // src 為 'pet' 時吃的是寵物食物（蘋果、牛奶、布丁這些小可愛也能吃）
@@ -4412,8 +4517,8 @@ function feedKid(foodId, src) {
   if (!stock[foodId]) delete stock[foodId];
   G.kid.hunger = clampStat(G.kid.hunger + f.hunger);
   const before = G.kid.height;
-  G.kid.height = Math.min(KID_MAX_HEIGHT, Math.round((G.kid.height + (f.grow || 0)) * 10) / 10);
-  return { grew: Math.round((G.kid.height - before) * 10) / 10 };
+  const up = kidAddGrowth(f.grow || 0);
+  return { grew: Math.round((G.kid.height - before) * 10) / 10, up };
 }
 function buyKidFood(id) {
   const f = KID_FOOD_BY_ID[id];
@@ -4716,10 +4821,55 @@ function kidMakeFace(kind, ms) { fufu.faceKind = kind; fufu.faceUntil = performa
 function drawGirl(ctx, o) {
   const swing = o.walking ? Math.sin(o.t * 11) : 0;
   const fit = outfitOf(o);
-  if (!o.headOnly) drawGirlBody(ctx, o, swing, fit);
-  if (o.prop && !o.back && !o.headOnly) drawProp(ctx, o.prop, o.t || 0); // 做事時手上拿的東西
+  /* 成長階段（只有小可愛會帶 stage）：身體從腳底往上拉長／縮短，頭跟著移到脖子上，頭的大小也變一點。
+     坐著的時候身體不拉（不然屁股會離開椅子），只改頭的大小。 */
+  const ks = o.stage && KID_STAGE_BY_ID[o.stage];
+  const bk = ks && !o.sit && !o.headOnly ? ks.body : 1, hk = ks ? ks.head : 1;
+  if (!o.headOnly) {
+    if (bk !== 1) { ctx.save(); ctx.scale(1, bk); }
+    drawGirlBody(ctx, o, swing, fit);
+    if (o.prop && !o.back) drawProp(ctx, o.prop, o.t || 0); // 做事時手上拿的東西
+    if (bk !== 1) ctx.restore();
+  }
+  ctx.save();
+  if (bk !== 1) ctx.translate(0, -33 * (bk - 1));
+  if (hk !== 1) { ctx.translate(0, -40); ctx.scale(hk, hk); ctx.translate(0, 40); }
   drawGirlHead(ctx, o);
   drawHeadwear(ctx, o, fit.head);
+  ctx.restore();
+}
+/* 👶 小寶寶（喝了變小藥水、本來就是幼稚園）：用爬的，嘴巴含著奶嘴，穿寶寶裝（不能換衣服）。
+   臉朝右（跟 drawGirl 一樣，外面用 scale 翻面）。headOnly：躺在床上只畫頭，頭的中心在 (0, -46)。 */
+function drawBabyKid(ctx, o) {
+  const L = GIRL.line, t = o.t || 0, cr = o.walking ? Math.sin(t * 9) : 0, hair = hairOf(o);
+  const suit = '#ffd6e6', suitDk = '#f5b5cc';
+  const head = (hx, hy, r) => {
+    ctx.beginPath(); ctx.arc(hx, hy, r, 0, Math.PI * 2); ctx.fillStyle = GIRL.skin; ctx.fill(); ctx.strokeStyle = L; ctx.lineWidth = .8; ctx.stroke();
+    ctx.beginPath(); ctx.arc(hx, hy, r + .2, Math.PI * 1.08, Math.PI * 1.92); ctx.closePath(); ctx.fillStyle = hair.c; ctx.fill();
+    ctx.beginPath(); ctx.arc(hx + 1, hy - r - 1.5, 2.2, Math.PI * .2, Math.PI * 1.7); ctx.strokeStyle = hair.c; ctx.lineWidth = 1.4; ctx.stroke(); // 一撮捲捲的頭髮
+    ctx.fillStyle = '#231c1c';
+    [hx - 2.6, hx + 3.4].forEach(ex => { if (o.blink) ctx.fillRect(ex - 1.5, hy + .5, 3, .9); else { ctx.beginPath(); ctx.ellipse(ex, hy + .8, 1.5, 1.9, 0, 0, Math.PI * 2); ctx.fill(); } });
+    ctx.fillStyle = GIRL.blush; [hx - 5.5, hx + 6.3].forEach(bx => { ctx.beginPath(); ctx.arc(bx, hy + 3.6, 2.1, 0, Math.PI * 2); ctx.fill(); });
+    // 奶嘴
+    ctx.fillStyle = '#ff8fb8'; ctx.beginPath(); ctx.ellipse(hx + .8, hy + 5.4, 3.2, 2.2, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(hx + .8, hy + 7.4, 1.6, 0, Math.PI * 2); ctx.stroke();
+  };
+  if (o.headOnly) { head(0, -46, 10.5); return; }
+  const bob = Math.abs(cr) * .8;
+  ctx.save(); ctx.translate(0, -bob);
+  ctx.strokeStyle = L; ctx.lineWidth = .8;
+  // 後面那隻手、膝蓋
+  ctx.fillStyle = GIRL.skin; ctx.beginPath(); ctx.ellipse(4 + cr * 1.6, -3.6, 2.3, 3.6, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = suitDk; ctx.beginPath(); ctx.ellipse(-7 - cr * 1.6, -3.4, 4.2, 3.4, 0, 0, Math.PI * 2); ctx.fill();
+  // 包尿布的屁股、身體
+  ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.ellipse(-8, -9.5, 6.5, 6.2, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = suit; ctx.beginPath(); ctx.ellipse(-.5, -9.5, 9, 6.2, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#ffffff'; [[-2, -11], [2.5, -8.5], [-4.5, -7]].forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, .9, 0, Math.PI * 2); ctx.fill(); }); // 寶寶裝的小點點
+  // 前面的膝蓋、手
+  ctx.fillStyle = suit; ctx.beginPath(); ctx.ellipse(-5 + cr * 1.6, -3.2, 4, 3.2, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = GIRL.skin; ctx.beginPath(); ctx.ellipse(6.5 - cr * 1.6, -3.4, 2.5, 3.8, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  head(10, -17, 9.5);
+  ctx.restore();
 }
 
 // ── 手上拿的東西（胸前、右手邊）──
@@ -5605,7 +5755,10 @@ function itemLook(def, rot, it, parts) {
 }
 
 // 在家具旁邊做事，大約 5 秒；auto＝她自己閒逛時做的（不算「做了一件事」）
+// 小寶寶可以做的事（其他的：「小寶寶還太小了」）
+const BABY_ACTS = ['toys', 'hug', 'fish', 'mirror', 'tv', 'light', 'wash', 'tank', 'heart', 'dance'];
 function fufuStartAct(key, now, it, auto) {
+  if (kidBaby() && !BABY_ACTS.includes(key)) { fufu.act = null; if (!auto) fufuSay(pickLine('babyCant'), 2800); return; }
   const a = ACTIVITIES[key], def = FURN_BY_ID[it.id], fp = footprint(def, it.rot);
   const dx = it.x + fp.w / 2 - fufu.x, dy = it.y + fp.d / 2 - fufu.y;
   fufu.facing = dx - dy >= 0 ? 1 : -1;
@@ -5643,6 +5796,7 @@ function fufuStartAct(key, now, it, auto) {
     if (!sessionLog.acts[key]) sessionLog.acts[key] = 1;
     if (G.away && G.away.place === 'park' && PARK_MEM_LINES[key]) rememberFor('ranger', 'act', key);
   }
+  if (!auto) kidGainGrowth(.1);  // 陪寵物玩、看書、畫畫…做什麼都會慢慢長大
   if (!auto) relativePerk(key); // 親戚家的事情：吃點心、喝茶、幫忙做事…（她自己點的才算）
   if (a.sound === 'bath') Sound.play('bath');
   else if (a.sound !== 'note') Sound.play('pickUp');
@@ -5757,6 +5911,7 @@ function fufuStartPose(now) {
   const it = room.items.find(x => x.uid === task.uid);
   if (!it) return;
   const def = FURN_BY_ID[it.id], use = FURNITURE_USE[it.id];
+  if (kidBaby() && use.use === 'sit') { fufuSay(pickLine('babyCant'), 2800); return; } // 小寶寶坐不上椅子；床、浴缸可以
   const pose = { type: use.use, uid: it.uid, snap: `${it.x},${it.y},${it.rot}` };
   if (use.use === 'sit') {
     const seat = use.seats[task.seat != null ? task.seat : Math.floor(Math.random() * use.seats.length)]; // 跟鄰居聊天時會指定座位
@@ -5777,6 +5932,7 @@ function fufuStartPose(now) {
   fufu.path = [];
   fufu.jumpT = .35;
   if (pose.type === 'lie' && !pose.bath) petMaybeJoinBed(it); // 寵物偶爾跳上床一起睡
+  if (pose.type === 'lie' && !pose.bath && G.kid.small) setTimeout(() => { if (fufu.pose === pose) kidUnshrink('sleep'); }, 3500); // 睡一覺就變回來
 }
 
 function fufuStandUp(talk) {
@@ -5948,9 +6104,16 @@ function fufuDraw(ctx) {
 
   const k = kidHeightScale(); // 長大後畫大一點
   ctx.save();
+  if (kidBaby()) { // 小寶寶在地上爬，不跳
+    ctx.translate(p.x, p.y - jump * .4 + 1);
+    ctx.scale(fufu.facing * 1.15, 1.15);
+    drawBabyKid(ctx, { t: fufu.t, walking, blink: fufuBlink() });
+    ctx.restore();
+    return;
+  }
   ctx.translate(p.x, p.y - hop - jump + 1);
   ctx.scale(fufu.facing * k, breathe * k);
-  drawGirl(ctx, { t: fufu.t, walking, back: fufu.back && (walking || !!fufu.act), blink: fufuBlink(), outfit: currentOutfit(), prop, face: kidFace() });
+  drawGirl(ctx, { t: fufu.t, walking, back: fufu.back && (walking || !!fufu.act), blink: fufuBlink(), outfit: currentOutfit(), prop, face: kidFace(), stage: kidLookStage() });
   ctx.restore();
 }
 
@@ -6004,11 +6167,11 @@ function drawRiding(ctx, rp) {
   if (rp.sit) {
     ctx.translate(p.x, p.y + 12 * k);
     ctx.scale(fufu.facing * k, k);
-    drawGirl(ctx, { t: fufu.t, sit: true, blink: fufuBlink(), outfit: currentOutfit(), face: kidFace() });
+    drawGirl(ctx, { t: fufu.t, sit: true, blink: fufuBlink(), outfit: currentOutfit(), face: kidFace(), stage: kidLookStage() });
   } else {
     ctx.translate(p.x, p.y);
     ctx.scale(fufu.facing * k, k);
-    drawGirl(ctx, { t: fufu.t, walking: !rp.cheer, blink: fufuBlink(), outfit: currentOutfit(), face: kidFace() });
+    drawGirl(ctx, { t: fufu.t, walking: !rp.cheer, blink: fufuBlink(), outfit: currentOutfit(), face: kidFace(), stage: kidLookStage() });
   }
   ctx.restore();
 }
@@ -6031,13 +6194,14 @@ function fufuDrawPosed(ctx) {
   if (pose.type === 'sit') {
     ctx.translate(p.x, p.y + 12 * k - jump); // 讓褲子底部剛好在座面上
     ctx.scale(pose.facing * k, (1 + Math.sin(fufu.t * 2.4) * .012) * k);
-    drawGirl(ctx, { t: fufu.t, sit: true, back: pose.back, blink: fufuBlink(), outfit: currentOutfit(), face: kidFace() });
+    drawGirl(ctx, { t: fufu.t, sit: true, back: pose.back, blink: fufuBlink(), outfit: currentOutfit(), face: kidFace(), stage: kidLookStage() });
   } else {
     // 頭靠在枕頭上、身體在棉被下，只畫頭，微微歪一邊
     ctx.translate(p.x, p.y - 6 - jump);
     ctx.rotate(-.3 + Math.sin(fufu.t * 1.2) * .03);
     ctx.translate(0, 46);
-    drawGirl(ctx, { t: 0, blink: true, headOnly: true, outfit: currentOutfit(), face: kidFace() });
+    if (kidBaby()) drawBabyKid(ctx, { t: 0, blink: true, headOnly: true });
+    else drawGirl(ctx, { t: 0, blink: true, headOnly: true, outfit: currentOutfit(), face: kidFace(), stage: kidLookStage() });
   }
   ctx.restore();
 }
@@ -6046,14 +6210,125 @@ function fufuDrawPosed(ctx) {
 function fufuAnchor() {
   const pose = fufu.pose;
   const k = kidHeightScale();
-  if (!pose) return { p: iso(fufu.x, fufu.y), h: FUFU_H * k };
+  if (!pose) return { p: iso(fufu.x, fufu.y), h: kidBaby() ? 34 : FUFU_H * k };
   if (pose.type === 'sit') { const p = iso(fufu.x, fufu.y, pose.z); return { p: { x: p.x, y: p.y + 12 * k }, h: FUFU_H * k }; }
   const p = iso(fufu.x, fufu.y, pose.z); return { p: { x: p.x, y: p.y + 4 }, h: 26 };
+}
+
+/* 🧪 小可愛喝變小藥水：
+   ・幼稚園以上 → 暫時變回幼稚園的樣子；已經是幼稚園（或已經變小了）再喝 → 變成小寶寶
+   ・已經是小寶寶：不用喝（藥水不會被用掉）
+   ・10 分鐘後、或去床上睡一覺，就變回來。真正的成長不會不見。 */
+function kidDrinkPotion(foodId) {
+  if (kidBaby()) { fufuSay(pickLine('babyReply'), 2400); toast('👶 已經是小寶寶了！10 分鐘後、或睡一覺就會變回來'); return false; }
+  if (!G.kidFood[foodId]) return false;
+  G.kidFood[foodId]--;
+  if (!G.kidFood[foodId]) delete G.kidFood[foodId];
+  const baby = !!kidSmall() || kidStage().id === 'kinder';
+  G.kid.small = { until: Date.now() + SMALL_MS, baby };
+  fufu.pose = null; fufu.act = null; fufu.ride = null; // 坐著、躺著、在做事都先停下來
+  Sound.play('magic');
+  fufuBurst('✨'); fufuBurst('🫧');
+  if (baby) {
+    fufuSay(pickLine('kidBaby'), 3000);
+    const isNew = growDexAdd('girl', 'baby');
+    try {
+      const nG = growDexCount(), all = growDexAll();
+      showcase(renderKidStage('baby', 150, 120), `${charName()}變成小寶寶了！`,
+        isNew ? `🌱 成長圖鑑 ${nG} / ${all}（隱藏的一格！）` : '10 分鐘後、或去床上睡一覺就會變回來', isNew ? { head: '👶 咿呀～', n: nG, all } : { head: '👶 咿呀～' });
+    } catch (e) {}
+    toast('👶 變成小寶寶了！用爬的、喝奶奶。10 分鐘後、或去床上睡一覺就會變回來');
+  } else {
+    fufuSay(pickLine('kidShrink'), 3000);
+    toast(`🧪 變回幼稚園的樣子了！再喝一瓶會變成小寶寶。10 分鐘後、或睡一覺就變回來`);
+  }
+  saveGame();
+  return true;
+}
+function kidUnshrink(why) {
+  if (!G.kid.small) return;
+  delete G.kid.small;
+  G.kid.backAt = Date.now(); G.kid.backSaid = {}; // 接下來遇到的人：說「變回來了！」
+  if (fufu.pose && fufu.pose.type === 'sit') fufu.pose = null;
+  fufuSay(why === 'sleep' ? '睡飽了…咦？我變回來了！' : pickLine('kidBack'), 3000);
+  fufuBurst('✨');
+  try { Sound.play('magic'); } catch (e) {}
+  toast(`✨ ${charName()}變回來了！`);
+  saveGame();
+}
+// 寵物喝變小藥水：小朋友、大朋友暫時變回寶寶的樣子（成長進度不會不見）
+function petDrinkPotion(foodId, p) {
+  p = p || G.pet;
+  if (lookStage(p) === 'baby' || p.stage === 'egg') { toast(`${petNameOf(p)}已經是寶寶了！`); return false; }
+  if (!G.food[foodId]) return false;
+  G.food[foodId]--;
+  if (!G.food[foodId]) delete G.food[foodId];
+  p.small = Date.now() + SMALL_MS;
+  Sound.play('magic');
+  petBurst({ kind: 'emoji', emoji: '✨', spread: 50 }, 6);
+  pet.squishV = -8; pet.happyUntil = performance.now() + 2000;
+  fufuSay(pickLine('petShrink', { 寵物: petNameOf(p) }), 3000);
+  toast(`🧪 ${petNameOf(p)}變回寶寶了！10 分鐘後會變回來`);
+  saveGame();
+  return true;
+}
+// 每秒檢查：藥水時間到了就變回來
+function smallTick() {
+  const now = Date.now();
+  if (G.kid.small && !(G.kid.small.until > now)) kidUnshrink('time');
+  G.pets.forEach((p, i) => {
+    if (!p.small || p.small > now) return;
+    delete p.small;
+    if (i === G.activePet) { petBurst({ kind: 'emoji', emoji: '✨', spread: 50 }, 6); fufuSay(pickLine('petBack', { 寵物: petNameOf(p) }), 2800); }
+    saveGame();
+  });
+}
+// 小可愛長大了：畫面中間「原本 → 長大後」的大圖，收進成長圖鑑
+function celebrateKidStage(up) {
+  const to = KID_STAGE_BY_ID[up.to];
+  fufuSay(pickLine('kidStageUp', { 階段: to.name }), 3500);
+  fufuBurst('✨');
+  try {
+    const nG = growDexCount(), all = growDexAll();
+    const box = el('div', 'grow-pic');
+    const a = renderKidStage(up.from, 90, 110); a.className = 'grow-from';
+    const b = renderKidStage(up.to, 140, 170); b.className = 'grow-to';
+    box.append(a, el('span', 'grow-arrow', '➜'), b);
+    showcase(box, `${charName()}變成${to.icon}${to.name}了！`, up.newDex ? `🌱 成長圖鑑 ${nG} / ${all}` : '又長大了！',
+      up.newDex ? { head: '🌱 長大了！', n: nG, all } : { head: '🌱 長大了！' });
+  } catch (e) { toast(`🌱 ${charName()}變成${to.name}了！`); }
+  saveGame();
+}
+// 小可愛某個階段的樣子（成長圖鑑、長大的大圖）：穿現在的衣服、現在的髮型
+function renderKidStage(stage, w, h, opts) {
+  const dpr = window.devicePixelRatio || 1;
+  const c = document.createElement('canvas');
+  c.width = w * dpr; c.height = h * dpr;
+  c.style.width = w + 'px'; c.style.height = h + 'px';
+  const g = c.getContext('2d');
+  if (stage === 'baby') {
+    const s = Math.min((w - 8) / 30, (h - 6) / 30) * dpr;
+    g.setTransform(s, 0, 0, s, c.width / 2 - 2 * s, c.height - 3 * dpr);
+    drawBabyKid(g, { t: 0, hair: G.hair });
+  } else {
+    const ks = KID_STAGE_BY_ID[stage], s = (h - 6) / 76 * dpr * ks.pic;
+    g.setTransform(s, 0, 0, s, c.width / 2, c.height - 3 * dpr);
+    drawGirl(g, { t: 0, outfit: currentOutfit(), hair: G.hair, stage });
+  }
+  if (opts && opts.silhouette) {
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.globalCompositeOperation = 'source-atop';
+    g.fillStyle = 'rgba(120,105,90,1)';
+    g.fillRect(0, 0, c.width, c.height);
+    g.globalCompositeOperation = 'source-over';
+  }
+  return c;
 }
 
 // 小可愛吃東西；小安素、鮮奶、青花菜是營養的食物，會慢慢長大（不顯示數字，也不說長高）
 // src 為 'pet' 時吃的是寵物食物
 function kidEat(foodId, src) {
+  if (src !== 'pet' && KID_FOOD_BY_ID[foodId] && KID_FOOD_BY_ID[foodId].potion) return kidDrinkPotion(foodId);
   const r = feedKid(foodId, src);
   if (!r) return false;
   const f = (src === 'pet' ? FOOD_BY_ID : KID_FOOD_BY_ID)[foodId];
@@ -6062,7 +6337,8 @@ function kidEat(foodId, src) {
   if (!fufu.pose) { fufu.jumpT = .35; fufu.back = false; }
   fufu.thinkUntil = 0;
   fufu.thinkAt = performance.now() + 20000;
-  if (r.grew) {
+  if (r.up) celebrateKidStage(r.up);
+  else if (r.grew) {
     fufuSay(pickLine('kidGrow'), 3000);
     toast(`${f.emoji} 好營養！${charName()}會健康、快快長大、壯壯的！💪`);
   } else {
@@ -6168,7 +6444,7 @@ const pet = {
 };
 
 const isEgg = () => G.pet.stage === 'egg';
-const petScale = () => stageOf(G.pet).scale;
+const petScale = () => lookScale(G.pet);
 
 // ── 小效果：愛心、泡泡、食物、星星 ──
 /* ===== 寵物個性 =====
@@ -6492,7 +6768,7 @@ function compOccupants() {
   const fine = p => Object.assign({}, p, { hunger: 100, clean: 100, mood: 100 });
   return compList().filter(a => a.bedSleep).map(a => {
     const st = fine(G.pets[a.idx]);
-    return { uid: a.bedSleep.uid, pose: 'pet', lx: a.bedSleep.lx, ly: a.bedSleep.ly, z: a.bedSleep.z, h: 26 * stageOf(st).scale,
+    return { uid: a.bedSleep.uid, pose: 'pet', lx: a.bedSleep.lx, ly: a.bedSleep.ly, z: a.bedSleep.z, h: 26 * lookScale(st),
              draw: ctx => drawPetActor(ctx, Object.assign({}, a, { sleep: a.rollUntil > performance.now() ? null : a.bedSleep }), st) };
   });
 }
@@ -6508,7 +6784,7 @@ function compArrive(i) {
 }
 function compHit(w) {
   return compList().find(a => {
-    const p = iso(a.x, a.y), k = stageOf(G.pets[a.idx]).scale;
+    const p = iso(a.x, a.y), k = lookScale(G.pets[a.idx]);
     return w.x > p.x - 17 * k && w.x < p.x + 17 * k && w.y > p.y - 32 * k && w.y < p.y + 5;
   }) || null;
 }
@@ -7132,7 +7408,7 @@ function phOccupants() {
   const fine = p => Object.assign({}, p, { hunger: 100, clean: 100, mood: 100 });
   return phList().map(i => phActors[i]).filter(a => a && a.sleep && a.sleep.uid != null).map(a => {
     const st = fine(G.pets[a.idx]);
-    return { uid: a.sleep.uid, pose: 'pet', lx: a.sleep.lx, ly: a.sleep.ly, z: a.sleep.z, h: 26 * stageOf(st).scale, draw: ctx => drawPetActor(ctx, a, st) };
+    return { uid: a.sleep.uid, pose: 'pet', lx: a.sleep.lx, ly: a.sleep.ly, z: a.sleep.z, h: 26 * lookScale(st), draw: ctx => drawPetActor(ctx, a, st) };
   });
 }
 /* 🧺 重複的寵物可以賣掉（家長：寵物屋這邊可以選擇把重複的寵物賣掉）。
@@ -7205,7 +7481,7 @@ function phDrawEntries() {
     e.drawFn = ctx => {
       if (a.hidden) { ctx.save(); ctx.globalAlpha = .35; base(ctx); ctx.restore(); }   // 躲起來：只看得到淡淡的一點
       else base(ctx);
-      if (a.hat) { const p = iso(a.x, a.y, a.z || 0), k = stageOf(G.pets[i]).scale; ctx.save(); ctx.font = Math.round(16 * k) + 'px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillText(a.hat, p.x, p.y - 26 * k); ctx.restore(); }
+      if (a.hat) { const p = iso(a.x, a.y, a.z || 0), k = lookScale(G.pets[i]); ctx.save(); ctx.font = Math.round(16 * k) + 'px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillText(a.hat, p.x, p.y - 26 * k); ctx.restore(); }
     };
     return e;
   }).concat(phModeEntries());
@@ -7213,7 +7489,7 @@ function phDrawEntries() {
 function phHit(w) {
   if (!inPetHouse()) return null;
   const i = phList().find(i => {
-    const a = phActor(i), p = iso(a.x, a.y), k = stageOf(G.pets[i]).scale;
+    const a = phActor(i), p = iso(a.x, a.y), k = lookScale(G.pets[i]);
     return w.x > p.x - 17 * k && w.x < p.x + 17 * k && w.y > p.y - 32 * k && w.y < p.y + 5;
   });
   return i == null ? null : i;
@@ -7347,6 +7623,7 @@ function eggNotYet() { toast('蛋還不用吃東西、洗澡喔～摸摸牠讓�
 
 function petFeed(foodId) {
   if (isEgg()) { eggNotYet(); return false; }
+  if (FOOD_BY_ID[foodId] && FOOD_BY_ID[foodId].potion) return petDrinkPotion(foodId);
   if (!feedPet(foodId)) return false;
   petWake(false);
   didSomething();
@@ -7578,12 +7855,12 @@ function renderPetPortrait(p, w, h, opts) {
   c.width = w * dpr; c.height = h * dpr;
   c.style.width = w + 'px'; c.style.height = h + 'px';
   const g = c.getContext('2d');
-  const sp = PET_SPECIES_BY_ID[p.species], st = PET_STAGE_BY_ID[p.stage];
+  const sp = PET_SPECIES_BY_ID[p.species], st = PET_STAGE_BY_ID[lookStage(p)];
   // 寵物含長耳朵、角大約 46 單位高；大朋友畫滿框，寶寶小一點，看得出大小差別
   const k = (h - 6) / 46 * dpr * (p.stage === 'egg' ? 1.25 : .8 + .2 * (st.scale / 1.18));
   g.setTransform(k, 0, 0, k, c.width / 2, c.height - 4 * dpr);
   if (p.stage === 'egg') drawEgg(g, sp, p.growth / st.next);
-  else drawCreature(g, sp, { happy: !(opts && opts.silhouette), clean: 100, adult: p.stage === 'adult', baby: p.stage === 'baby' && !(opts && opts.silhouette) });
+  else drawCreature(g, sp, { happy: !(opts && opts.silhouette), clean: 100, adult: lookStage(p) === 'adult', baby: lookStage(p) === 'baby' && !(opts && opts.silhouette) });
   if (opts && opts.silhouette) {
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.globalCompositeOperation = 'source-atop';
@@ -7595,7 +7872,7 @@ function renderPetPortrait(p, w, h, opts) {
 }
 
 function actorDrawEntry(a, st) {
-  const k = stageOf(st).scale;
+  const k = lookScale(st);
   return { x: a.x - .15, y: a.y - .15, w: .3, d: .3, z: 0, h: 26 * k, drawFn: ctx => drawPetActor(ctx, a, st) };
 }
 // 主要那隻加上一起逛的，全部交給 drawRoom 排前後
@@ -7621,7 +7898,7 @@ function drawPetActor(ctx, pet, st) {
 }
 function drawPetActorBody(ctx, pet, st) {
   const now = performance.now(), sp = PET_SPECIES_BY_ID[st.species];
-  const p = iso(pet.x, pet.y, pet.z || 0), k = stageOf(st).scale, asleep = !!pet.sleep;
+  const p = iso(pet.x, pet.y, pet.z || 0), k = lookScale(st), asleep = !!pet.sleep;
   const moving = pet.path.length > 0;
   const hop = moving ? Math.abs(Math.sin(pet.t * 9)) * 7 : 0;
   const s = pet.squish, sx = 1 + s * .8, sy = Math.max(.35, 1 - s);
@@ -7650,8 +7927,8 @@ function drawPetActorBody(ctx, pet, st) {
     blink: asleep || pet.t > pet.blinkAt, // 睡覺時閉眼
     fx: pet.facing * 1.5,
     clean: st.clean,
-    adult: st.stage === 'adult',
-    baby: st.stage === 'baby'
+    adult: lookStage(st) === 'adult',
+    baby: lookStage(st) === 'baby'
   });
   ctx.restore();
 
@@ -7758,7 +8035,7 @@ function visitorArrive(now) {
   Sound.play('knock');
   if (firstVisit) newFriendShowcase(n);
   toast(`🚪 叩叩！${n.name}來找${charName()}玩了！`);
-  visSay(pickLine('visitorHello', visVars()));
+  visSay(kidStateLine('vis:' + n.id, true) || pickLine('visitorHello', visVars()));
   setTimeout(() => { if (vis.who === n && !fufu.pose) fufuSay(pickLine('kidWelcome', visVars()), 2800); }, 1800);
   // 走到小可愛附近
   const [ti, tj] = fufuTile();
@@ -7784,8 +8061,8 @@ function visitorGift() {
   const r = Math.random();
   let what;
   if (r < .4) { const b = 100 * (1 + Math.floor(Math.random() * 3)); addBells(b); what = `${b} 鈴錢`; }
-  else if (r < .7) { const f = FOODS[Math.floor(Math.random() * FOODS.length)]; G.food[f.id] = (G.food[f.id] || 0) + 1; what = `${f.emoji}${f.name}`; }
-  else { const f = KID_FOODS[Math.floor(Math.random() * KID_FOODS.length)]; G.kidFood[f.id] = (G.kidFood[f.id] || 0) + 1; what = `${f.emoji}${f.name}`; }
+  else if (r < .7) { const fl = FOODS.filter(x => !x.potion), f = fl[Math.floor(Math.random() * fl.length)]; G.food[f.id] = (G.food[f.id] || 0) + 1; what = `${f.emoji}${f.name}`; }
+  else { const fl = KID_FOODS.filter(x => !x.potion), f = fl[Math.floor(Math.random() * fl.length)]; G.kidFood[f.id] = (G.kidFood[f.id] || 0) + 1; what = `${f.emoji}${f.name}`; }
   setTimeout(() => {
     visSay(pickLine('visitorGift', visVars()), 2400);
     toast(`🎁 ${vis.who ? vis.who.short : '鄰居'}送你${what}！`);
@@ -7816,7 +8093,7 @@ function visitorTick(dt, now) {
   if (now > vis.leaveAt && !vis.seat) { visitorLeave(now); return; }
   if (now > vis.nextTalkAt) { // 偶爾聊聊天、邀她出去玩
     vis.nextTalkAt = now + 11000 + Math.random() * 6000;
-    visSay(pickLine(Math.random() < .5 ? 'visitorInvite' : 'visitorChat', visVars()));
+    visSay(kidStateLine('vis:' + (vis.who ? vis.who.id : ''), true) || pickLine(Math.random() < .5 ? 'visitorInvite' : 'visitorChat', visVars()));
     if (Math.random() < .6) setTimeout(() => { if (vis.who && !vis.chat) fufuSay(pickLine('kidReply'), 2600); }, 2800);
   }
   if (!vis.seat) actorWalk(a, dt, now, room, blockedGrid(room), .7);
@@ -8837,7 +9114,7 @@ function hostTick(dt, now) {
     // 第一句先說「上次」的事：有人記得我，比隨機問候更像真的朋友
     const memLine = !host.memSaid ? hostMemoryLine(host.n.id) : null;
     host.memSaid = true;
-    hostSay(memLine || pickLine(hostLineKey(), { 名字: charName() }));
+    hostSay(kidStateLine(host.n.id) || memLine || pickLine(hostLineKey(), { 名字: charName() }));
     if (Math.random() < .5) setTimeout(() => { if (host.n) fufuSay(pickLine('kidReply'), 2600); }, 3000);
   }
   actorWalk(a, dt, now, room, blockedGrid(room), .5);
@@ -8969,7 +9246,7 @@ function hostMenuEntries() {
   const list = [
     [`💬 跟${s}聊天`, () => {
       host.a.happyUntil = now() + 1500; host.a.squishV = -5; host.nextTalkAt = now() + 12000;
-      hostSay(pickLine(hostLineKey(), { 名字: charName() }));
+      hostSay(kidStateLine(host.n.id) || pickLine(hostLineKey(), { 名字: charName() }));
       setTimeout(() => { if (host.n) fufuSay(pickLine('kidReply'), 2600); }, 3000);
     }],
     ['💃 一起跳舞', () => { fufuDance(); host.danceUntil = now() + 6000; }]
@@ -9703,6 +9980,7 @@ function guideTickInner(now) {
 
 let lastFrame = performance.now(), nextPetTick = 0, nextCard = 0;
 // 一格畫面的遊戲邏輯。休息中整個暫停（也比較省電）；回傳有沒有動
+var nextSmallTick = 0;
 function gameStep(dt, now) {
   if (resting) return false;
   fufuUpdate(dt, now);
@@ -9714,6 +9992,7 @@ function gameStep(dt, now) {
   guideTick(now);
   if (typeof checkTrophies === 'function') try { checkTrophies(now); } catch (e) {}
   if (now > nextPetTick) { nextPetTick = now + 5000; if (petTick()) saveGame(); }
+  if (now > nextSmallTick) { nextSmallTick = now + 1000; smallTick(); }
   if (now > nextCard) { nextCard = now + 300; updatePetCard(); }
   if (hold) $('#btnPlace').disabled = !hold.ok; // 放不下的位置，「放這裡」按鈕變灰
   draw(); // 小可愛一直在動，每幀都重畫
@@ -9946,6 +10225,14 @@ function updatePetCard() {
   $('#petNameLbl').textContent = petName();
   $('#kidNameLbl').textContent = charName();
   setBar('#barKid', G.kid.hunger);
+  // 小可愛：階段＋往下一個階段的進度；變小的時候顯示還剩幾分鐘
+  const ks = kidStage(), sm = kidSmall();
+  $('#kidStageIc').textContent = sm ? (sm.baby ? '👶' : '🧪') : ks.icon;
+  if (sm) { const left = Math.max(0, Math.ceil((sm.until - Date.now()) / 1000)); $('#kidStageLbl').textContent = `${sm.baby ? '小寶寶' : '變小了'} ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`; }
+  else $('#kidStageLbl').textContent = ks.name;
+  $('#barKidGrow').style.width = Math.round(kidGrowPct() * 100) + '%';
+  $('#kidGrowRow').classList.toggle('max', ks.id === 'big');
+  $('#kidGrowRow').title = ks.id === 'big' ? '已經是大姊姊了！' : `長成${KID_STAGES[KID_STAGES.indexOf(ks) + 1].name}：${Math.round(kidGrowPct() * 100)}%`;
   setBar('#barHunger', st.hunger);
   setBar('#barClean', st.clean);
   setBar('#barMood', st.mood);
@@ -9962,6 +10249,22 @@ function showFoodMenu(who) {
   if (!menu.hidden && menu.dataset.who === who) { menu.hidden = true; return; } // 再按一次就關掉
   menu.dataset.who = who;
   menu.innerHTML = '';
+  if (who === 'kid' && kidBaby()) { // 小寶寶只喝奶奶（不用錢）
+    const b = document.createElement('button');
+    b.textContent = '🍼 喝奶奶';
+    b.onclick = () => {
+      menu.hidden = true;
+      G.kid.hunger = clampStat(G.kid.hunger + 25);
+      Sound.play('eat'); fufu.jumpT = .35; fufuSay(pickLine('babyMilk'), 2600); fufuBurst('🍼');
+      saveGame(); commit();
+    };
+    menu.appendChild(b);
+    const card = $('#petCard').getBoundingClientRect(), stage = $('.stage').getBoundingClientRect();
+    menu.style.left = (card.left - stage.left) + 'px';
+    menu.style.top = (card.bottom - stage.top + 6) + 'px';
+    menu.hidden = false;
+    return;
+  }
   // 小可愛：自己的食物，再加上寵物食物（蘋果、牛奶、布丁這些她也能吃）
   const lists = who === 'kid'
     ? [[G.kidFood, KID_FOOD_BY_ID, 'kid', ''], [G.food, FOOD_BY_ID, 'pet', '寵物的食物也可以吃：']]
@@ -10758,9 +11061,9 @@ function tabShop(body) {
   if (shopKind === 'food' || (shopKind === 'all' && shopTheme === 'all')) {
     body.appendChild(h3(`${charName()}的食物`));
     body.appendChild(foodShopGrid(KID_FOODS, G.kidFood, buyKidFood,
-      food => food.grow ? '💪 健康長大' : `飽足+${food.hunger}`));
+      food => food.potion ? '變小 10 分鐘' : food.grow ? '💪 健康長大' : `飽足+${food.hunger}`));
     body.appendChild(h3(`寵物食物（${charName()}也可以吃）`));
-    body.appendChild(foodShopGrid(FOODS, G.food, buyFood, food => `飽足+${food.hunger}`));
+    body.appendChild(foodShopGrid(FOODS, G.food, buyFood, food => food.potion ? '寵物變回寶寶 10 分鐘' : `飽足+${food.hunger}`));
     if (shopKind === 'food') return;
     body.appendChild(h3('家具'));
   } else if (shopKind === 'all') body.appendChild(h3(`${THEME_ICONS[shopTheme]} ${THEME_NAMES[shopTheme]}風格的家具`));
@@ -10982,7 +11285,7 @@ function tabBook(body) {
   body.appendChild(note('寵物蛋摸一摸就會孵出來。「寵物」分頁可以買新的蛋。'));
   body.appendChild(petDexGrid());
   body.appendChild(sec('dexGrow', `🌱 成長圖鑑 ${growDexCount()} / ${growDexAll()}`));
-  body.appendChild(note('每一種寵物有寶寶、小朋友、大朋友三個樣子。把寵物養大，就會收進來。'));
+  body.appendChild(note(`${charName()}吃營養的東西、做各種事、看繪本，會慢慢長大。寵物有寶寶、小朋友、大朋友三個樣子，養大就會收進來。還有一格隱藏的喔！`));
   body.appendChild(growDexGrid());
   body.appendChild(sec('dexFurn', `🛋️ 家具圖鑑 ${got} / ${FURNITURE.length}`));
   body.appendChild(note('買過、或搖樹掉下來拿到的家具，就會收進圖鑑。淡淡的是還沒收集到的。'));
@@ -11178,6 +11481,12 @@ function renderGirl(ids, w, h, opts) {
 
 let dressBack = false; // 預覽看背面
 function tabDress(body) {
+  if (kidBaby()) {
+    body.appendChild(h3('👶 小寶寶裝'));
+    const pic = el('div', 'dress-preview'); pic.appendChild(renderKidStage('baby', 140, 110)); body.appendChild(pic);
+    body.appendChild(note('小寶寶只能穿寶寶裝喔！變回來（10 分鐘後、或去床上睡一覺）就可以換衣服了。'));
+    return;
+  }
   const name = charName();
   const head = el('div', 'dress-head');
   const preview = el('div', 'dress-preview');
@@ -11382,6 +11691,20 @@ function tabPets(body) {
 // 成長圖鑑：一種寵物一排，寶寶 → 小朋友 → 大朋友。還沒孵到的種類整排都是剪影
 function growDexGrid() {
   const wrap = el('div', 'grow-dex');
+  { // 小可愛：幼稚園、小學生、大姊姊，還有喝藥水才看得到的小寶寶
+    const row = el('div', 'grow-row kid');
+    row.appendChild(el('div', 'gr-nm', '👧 ' + charName()));
+    let n = 0;
+    KID_DEX.forEach(st => {
+      const has = !!(G.growDex || {})[growKey('girl', st)]; if (has) n++;
+      const c = el('div', 'gr-cell' + (has ? '' : ' dim'));
+      c.appendChild(renderKidStage(st, 70, st === 'baby' ? 60 : 84, { silhouette: !has }));
+      c.appendChild(el('div', 'gr-st', has || st !== 'baby' ? KID_DEX_NAMES[st] : '？？？'));
+      row.appendChild(c);
+    });
+    if (n === KID_DEX.length) row.classList.add('full');
+    wrap.appendChild(row);
+  }
   PET_SPECIES.forEach(s => {
     const row = el('div', 'grow-row');
     const n = GROW_STAGES.filter(st => (G.growDex || {})[growKey(s.id, st)]).length;
@@ -13473,6 +13796,7 @@ function finishBook(book) {
   const isNew = !pass[book.id];
   pass[book.id] = (pass[book.id] || 0) + 1;
   sessionLog.acts['book:' + book.id] = 1;
+  kidGainGrowth(.3);
   rememberFor('librarian', 'book', book.title);
   const n = Object.keys(pass).length;
   if (isNew) showcase('📗', book.title, `閱讀護照 ${n} / ${STORYBOOKS.length}（蓋了一個新章）`, { n, all: STORYBOOKS.length });
