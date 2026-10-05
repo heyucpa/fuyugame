@@ -620,6 +620,7 @@ button.pass { font: inherit; }
 .snap-row.rescue { border-color: #f2c14e; background: #fffbea; }
 .snap-txt { display: flex; flex-direction: column; flex: 1; min-width: 0; text-align: left; font-size: 12px; }
 .snap-txt b { font-size: 14px; }
+.picked-file { white-space: pre-line; font-weight: 700; }
 .snap-btns { display: flex; gap: 4px; flex: none; }
 .name-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .name-row canvas { flex: none; }
@@ -13595,6 +13596,13 @@ function makeBackup(data) {
 function readBackup(txt) {
   let o;
   try { o = JSON.parse(String(txt || '').trim()); } catch (e) { return null; }
+  /* 「讀不出來」畫面下載的原始資料（家長：下載了三個 json 卻放不回去）：那是存檔本身，不是包好的備份。
+     看起來是存檔（有 rooms）就直接當成備份裡面那一份。 */
+  if (o && !o.tag && Array.isArray(o.rooms)) {
+    try { if (!normalizeSave(JSON.parse(String(txt).trim()))) return null; } catch (e) { return null; }
+    const d = o.savedAt ? new Date(o.savedAt) : null;
+    return { data: String(txt).trim(), at: d ? `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}` : '' };
+  }
   if (!o || o.tag !== SAVE_TAG || typeof o.data !== 'string' || !o.data) return null;
   let g;
   try { g = JSON.parse(o.data); } catch (e) { return null; }
@@ -13748,8 +13756,11 @@ function tabBackup(body) {
     const r = new FileReader();
     // 讀進來先驗一次就告訴她結果，不要讓她按了「還原」才發現選錯檔案
     r.onload = () => {
-      if (!putBackup(String(r.result))) toast('這個檔案不是小屋的備份');
+      if (!putBackup(String(r.result))) { toast('這個檔案不是小屋的備份'); picked.textContent = `「${f.name}」不是小屋的備份`; }
       else {
+        // 選好就寫出這份裡面有什麼，好幾個檔案時比較得出哪一份是對的
+        const sb = readBackup(String(r.result));
+        picked.textContent = `📄 ${f.name}\n${snapSummary(sb.data) || ''}`;
         const cmp = compareBackup(readBackup(String(r.result)));
         toast(cmp && cmp.older ? '讀好了，但⚠️ 這份比現在的進度舊，還原前請確認' : cmp && cmp.otherKid ? '讀好了，但⚠️ 這份的角色名字跟現在不一樣' : '讀好了，按下面的「還原」');
       }
@@ -13759,6 +13770,8 @@ function tabBackup(body) {
     pick.value = '';   // 清掉才選得了同一個檔案第二次
   };
   body.appendChild(pick);
+  const picked = el('div', 'note picked-file');
+  body.appendChild(picked);
 
   const box = el('textarea', 'talkbox');
   box.rows = 4;
