@@ -552,6 +552,9 @@ button.pass { font: inherit; }
 .pc-btns button:hover { background: #e8d9bf; }
 .pc-btns.one { grid-template-columns: 1fr; margin-top: 5px; }
 .pc-head small { color: var(--muted); font-size: 11px; font-weight: 400; }
+.pc-moon { display: none; font-style: normal; font-size: 13px; margin-left: 3px; }
+.pc-bar.rested .pc-moon { display: inline; }
+.pc-bar.rested i { opacity: .55; }
 .pc-sub { margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--line); font-size: 12px; }
 .pc-name { font: inherit; font-weight: 800; background: none; border: none; padding: 0 2px; color: inherit; cursor: pointer; border-bottom: 1px dashed #c9b9a6; touch-action: manipulation; }
 .namer-pic { display: flex; justify-content: center; }
@@ -759,7 +762,7 @@ button.pass { font: inherit; }
       <div class="pc-head"><span><span id="kidStageIc">👧</span> <b id="kidNameLbl">小可愛</b> <small id="kidStageLbl" class="pc-stage"></small></span><button id="pcToggle" title="收合">－</button></div>
       <div class="pc-body">
         <!-- 跟下面寵物的順序一樣：🌱 長大、飽足、🧼 乾淨、💗 心情 -->
-        <div class="pc-bar grow" id="kidGrowRow" title="長大"><span>🌱</span><i><b id="barKidGrow"></b></i></div>
+        <div class="pc-bar grow" id="kidGrowRow" title="長大"><span>🌱</span><i><b id="barKidGrow"></b></i><em class="pc-moon">🌙</em></div>
         <div class="pc-bar" title="小可愛的飽足"><span>🍙</span><i><b id="barKid"></b></i></div>
         <div class="pc-bar" title="乾淨"><span>🧼</span><i><b id="barKidClean"></b></i></div>
         <div class="pc-bar" title="心情"><span>💗</span><i><b id="barKidMood"></b></i></div>
@@ -5149,6 +5152,7 @@ function kidActGrowth(key, now) {
   kidActLast[key] = now; kidActAny = now;
   return kidGainGrowth(KID_ACT_GROW);
 }
+const kidRestedToday = () => !!(G.kidGrowDay && G.kidGrowDay.d === today() && G.kidGrowDay.n >= KID_GROW_DAY_MAX);
 function kidAddGrowth(amount) {
   if (!amount) return null;
   const d = today();
@@ -11955,7 +11959,13 @@ function updatePetCard() {
   else $('#kidStageLbl').textContent = ks.name;
   $('#barKidGrow').style.width = Math.round(kidGrowPct() * 100) + '%';
   $('#kidGrowRow').classList.toggle('max', ks.id === 'big');
-  $('#kidGrowRow').title = ks.id === 'big' ? '已經 ⭐⭐⭐ 了！' : `下一顆星：${KID_STAGES[KID_STAGES.indexOf(ks) + 1].name}（${Math.round(kidGrowPct() * 100)}%）`;
+  /* 🌙 今天長夠了（一天最多長 KID_GROW_DAY_MAX）：成長條旁邊出現月亮，
+     不然停在同一格，小朋友會以為壞掉了。點一下也會說（iPad 沒有滑鼠移上去） */
+  const rested = ks.id !== 'big' && kidRestedToday();
+  $('#kidGrowRow').classList.toggle('rested', rested);
+  $('#kidGrowRow').title = ks.id === 'big' ? '已經 ⭐⭐⭐ 了！' : rested ? '🌙 今天長好多了，明天再繼續長'
+    : `下一顆星：${KID_STAGES[KID_STAGES.indexOf(ks) + 1].name}（${Math.round(kidGrowPct() * 100)}%）`;
+  $('#kidGrowRow').onclick = () => toast($('#kidGrowRow').title);
   setBar('#barHunger', st.hunger);
   setBar('#barClean', st.clean);
   setBar('#barMood', st.mood);
@@ -14512,7 +14522,7 @@ function snapSection(body) {
   };
   body.appendChild(man);
   const list = readSnaps();
-  if (!list.length) { body.appendChild(note('還沒有存檔紀錄。')); return; }
+  if (!list.length) body.appendChild(note('還沒有存檔紀錄。'));
   const box = el('div', 'snap-list');
   list.forEach(sn => {
     const sum = snapSummary(sn.raw);
@@ -14544,6 +14554,48 @@ function snapSection(body) {
     box.appendChild(row);
   });
   body.appendChild(box);
+  // 其他找得到的舊紀錄（家長：不小心按了重新開始）：反悔用的那份、加存檔格之前留的那份
+  const extra = olderCopies();
+  if (extra.length) {
+    body.appendChild(h3('🔍 其他找得到的舊紀錄'));
+    body.appendChild(note('這台電腦裡另外留著的舊紀錄。可能比較舊，看一下錢、寵物、房間數再決定要不要回去。'));
+    const eb = el('div', 'snap-list');
+    extra.forEach(x => {
+      const row = el('div', 'snap-row');
+      const t = el('div', 'snap-txt');
+      t.append(el('b', '', x.label), el('span', '', x.sum));
+      row.appendChild(t);
+      const go = el('button', 'mini', '↩️ 回到這份');
+      go.onclick = () => askPin('回到之前的存檔', () => {
+        if (!confirm(`回到「${x.label}」嗎？\n現在的進度會先留著，可以反悔。`)) return;
+        if (!restoreSnap(x.raw)) { toast('寫不進去'); return; }
+        location.reload();
+      });
+      const bt = el('div', 'snap-btns'); bt.appendChild(go); row.appendChild(bt);
+      eb.appendChild(row);
+    });
+    body.appendChild(eb);
+  }
+}
+// 存檔紀錄以外，這台機器上還找得到的舊紀錄（跟現在一樣的、讀不出來的不列）
+function olderCopies() {
+  const out = [], seen = new Set();
+  let cur = null; try { cur = localStorage.getItem(SAVE_KEY); } catch (e) {}
+  seen.add(cur); readSnaps().forEach(x => seen.add(x.raw));
+  const add = (label, raw) => {
+    if (!raw || seen.has(raw)) return;
+    const sum = snapSummary(raw);
+    if (!sum) return;
+    seen.add(raw); out.push({ label, raw, sum });
+  };
+  const fromBackup = k => { try { const b = readBackup(localStorage.getItem(k)); return b ? b.data : null; } catch (e) { return null; } };
+  try { add('🛟 讀不出來時留的那一份', localStorage.getItem(rescueKey())); } catch (e) {}
+  add('↩️ 反悔用的那份（上次還原之前的）', fromBackup(UNDO_KEY));
+  if (curSlotId() === 'p1') {
+    try { add('📦 很早以前的紀錄（加「存檔格」之前留的）', localStorage.getItem(LEGACY_KEY)); } catch (e) {}
+    add('📦 很早以前的反悔用那份', fromBackup('myHouseGame_undo'));
+  }
+  return out;
 }
 function maybePlayIntro() {
   if (G.introSeen || SAVE_LOCKED != null || introPlaying) return;
