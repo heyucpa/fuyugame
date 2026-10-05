@@ -2661,7 +2661,9 @@
     /* 94 🌳 寵物捉迷藏小遊戲：場景隨機、自己的寵物躲、點對才算、提示、全部找到有獎勵、四個場景都畫得出來 */
     var realToast94 = toast; toast = function(){};
     try {
-      // 四個場景、三種難度都畫得出來（第一格畫面是馬上畫的）
+      if (!PETHIDE_SCENES.some(function(sc){ return sc.id === 'home'; })) fails.push('寵物捉迷藏沒有「家裡」場景');
+      PETHIDE_SCENES.forEach(function(sc){ sc.props.forEach(function(k){ if (!PETHIDE_TOP[k]) fails.push('捉迷藏的「' + k + '」沒有高度'); }); });
+      // 每個場景、三種難度都畫得出來（第一格畫面是馬上畫的）
       PETHIDE_SCENES.forEach(function(sc, si){
         openPetHideGame(); playPetHide(openPetHideGame.w, PETHIDE_LEVELS[si % 3], sc.id);
         if (openPetHideGame.test.scene.id !== sc.id) fails.push('捉迷藏指定場景沒用：' + sc.id);
