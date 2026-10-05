@@ -2658,6 +2658,47 @@
       if (keep92.from) G.inviteFrom = keep92.from; else delete G.inviteFrom;
     }
 
+    /* 95 🎡 遊樂園：出門選單有、兔兔姊姊迎接、旋轉木馬和摩天輪真的坐上去轉、棉花糖要花錢買、氣球拿在手上；棉花糖商店不賣 */
+    var realToast95 = toast, realWalk95 = walkTrip, keep95 = { bells: G.bells, kf: JSON.stringify(G.kidFood), cd: JSON.stringify(G.actCD || {}) };
+    toast = function(){};
+    try {
+      openTravelMenu();
+      if (!/遊樂園/.test($('#modalCard').textContent)) fails.push('出門選單沒有遊樂園');
+      $('#modal').hidden = true;
+      walkTrip = function(l, d){ d(); }; G.away = null; travelTo('amusement');
+      var nowA = performance.now(); for (var ga = 0; ga < 10; ga++) gameStep(.05, nowA + ga * 50);
+      if (!G.away || G.away.place !== 'amusement' || !host.n || host.n.id !== 'amuse') fails.push('去遊樂園沒有兔兔姊姊迎接');
+      if (lineList('hostAmuse').map(function(l){ return l.split('{名字}').join(charName()); }).indexOf(pickLine(hostLineKey(), { 名字: charName() })) < 0) fails.push('兔兔姊姊沒有說遊樂園的話');
+      var rmA = curRoom(), byId = function(id){ return rmA.items.find(function(x){ return x.id === id; }); };
+      ['carousel', 'ferris_wheel', 'cotton_cart', 'balloon_stand'].forEach(function(id){ if (!byId(id)) fails.push('遊樂園沒有 ' + id); });
+      // 旋轉木馬、摩天輪：真的坐上去，位置會動，摩天輪會升高
+      [['carousel', 'carousel'], ['ferris', 'ferris_wheel']].forEach(function(pr){
+        fufu.act = null; fufu.ride = null; fufu.pose = null;
+        var t0 = performance.now();
+        fufuStartAct(pr[0], t0, byId(pr[1]), true);
+        var p1 = fufu.ride && ridePos(t0 + 500), fr = fufu.ride;
+        if (fr) fr.start -= 3000;
+        var p2 = fufu.ride && ridePos(t0 + 500);
+        if (!p1 || !p2 || (Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y) < .1 && Math.abs(p1.z - p2.z) < 5)) fails.push('坐' + pr[1] + '沒有動');
+        if (pr[0] === 'ferris' && p2 && !(p2.z > 60)) fails.push('摩天輪轉了 3 秒還沒升高（z=' + (p2 && p2.z) + '）');
+        draw();
+        fufu.act = null; fufu.ride = null;
+      });
+      // 棉花糖：在遊樂園買（花錢、拿到棉花糖）；商店不賣
+      G.bells = 5000; delete (G.actCD || {}).cotton;
+      var cc0 = G.kidFood.cotton_candy || 0;
+      relativePerk('cotton');
+      if ((G.kidFood.cotton_candy || 0) !== cc0 + 1 || G.bells !== 4900) fails.push('遊樂園買棉花糖沒有花錢或沒拿到');
+      openTab('shop');
+      if ([].some.call(document.querySelectorAll('#tabBody .card .nm'), function(n){ return n.textContent === '棉花糖'; })) fails.push('商店也在賣棉花糖（應該只有遊樂園有）');
+      openTab('inv');
+      if (ACT_PROPS.balloon !== 'balloon') fails.push('拿氣球的時候手上沒有氣球');
+      goHome();
+      relativePerk('cotton');
+      if ((G.kidFood.cotton_candy || 0) !== cc0 + 1) fails.push('不在遊樂園也能買到棉花糖');
+    } catch (e) { fails.push('遊樂園測試出錯：' + e.message + ' ' + (e.stack || '').split('\n')[1]); }
+    finally { toast = realToast95; walkTrip = realWalk95; G.away = null; fufu.act = null; fufu.ride = null; G.bells = keep95.bells; G.kidFood = JSON.parse(keep95.kf); G.actCD = JSON.parse(keep95.cd); }
+
     /* 94 🌳 寵物捉迷藏小遊戲：場景隨機、自己的寵物躲、點對才算、提示、全部找到有獎勵、四個場景都畫得出來 */
     var realToast94 = toast; toast = function(){};
     try {
