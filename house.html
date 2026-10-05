@@ -562,6 +562,15 @@ button.pass { font: inherit; }
 .grow-row { display: grid; grid-template-columns: minmax(0, 64px) repeat(3, minmax(0, 1fr)); align-items: center; gap: 6px; background: #fff; border: 2px solid var(--line); border-radius: 14px; padding: 4px 8px; }
 .invite-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
 .season-box { background: #fff4e6; border: 2px dashed #f0902f; border-radius: 16px; padding: 4px 10px 10px; margin-bottom: 12px; }
+.draw-pad { width: 100%; max-width: 480px; aspect-ratio: 3 / 2; display: block; margin: 4px auto; border: 3px solid var(--line); border-radius: 12px; touch-action: none; background: #fffdf8; cursor: crosshair; }
+.pad-pal { display: flex; justify-content: center; gap: 6px; margin: 6px 0; flex-wrap: wrap; }
+.pad-c { width: 34px; height: 34px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 0 2px var(--line); }
+.pad-c.on { box-shadow: 0 0 0 3px #3a3240; transform: scale(1.12); }
+.pad-tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px; }
+.pad-t { border: 2px solid var(--line); background: #fff; border-radius: 10px; padding: 8px 2px; font-size: 13px; }
+.pad-t.on { background: #ffe9b8; border-color: #e7a94a; }
+.card-draw { display: block; margin: 6px auto; border: 2px solid var(--line); border-radius: 10px; max-width: 100%; }
+.gb-row .card-draw { margin: 0 0 0 auto; }
 .gift-pick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 6px 0; }
 .gift-opt { display: flex; flex-direction: column; align-items: center; gap: 2px; border: 2px solid var(--line); background: #fff; border-radius: 14px; padding: 10px 4px; font-size: 14px; }
 .gift-opt .gi { font-size: 34px; }
@@ -3808,6 +3817,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-07T09:00', title: '卡片可以畫畫了！🎨', lines: [
+    ['🎨', '去朋友家送禮物時，可以在卡片上畫畫：iPad 用手指、電腦用滑鼠'],
+    ['🖍️', '8 種顏色、粗細兩種筆，畫錯了可以按「上一筆」'],
+    ['👣', '收到的畫會出現在訪客簿，點一下可以放大看']
+  ], newItems: [] },
   { id: '2026-10-06T20:00', title: '去朋友家可以送禮物了！', lines: [
     ['🎁', '在姊姊／妹妹家，點她的小可愛 →「送禮物」：餅乾、蛋糕、小花瓶、貼紙、卡片'],
     ['💌', '選一句想說的話，做成回禮卡，請爸爸媽媽傳回去'],
@@ -4164,7 +4178,8 @@ function normalizeSave(g) {
   if (!g.welcome) out.welcome = { at: 0, uncle: true, grandma: true }; // 已經在玩的存檔不算搬新家
   if (out.seasonDex != null && !isObj(out.seasonDex)) delete out.seasonDex;
   if (out.guestbook != null && !Array.isArray(out.guestbook)) delete out.guestbook;
-  if (Array.isArray(out.guestbook)) out.guestbook = out.guestbook.filter(e => isObj(e) && typeof e.g === 'string').slice(0, GUESTBOOK_MAX);
+  if (Array.isArray(out.guestbook)) out.guestbook = out.guestbook.filter(e => isObj(e) && typeof e.g === 'string').slice(0, GUESTBOOK_MAX)
+    .map(e => { if (e.d != null) { const d = cleanDrawing(e.d); if (d) e.d = d; else delete e.d; } return e; });
   if (out.inviteFrom != null && typeof out.inviteFrom !== 'string') delete out.inviteFrom;
   if (out.inviteId != null && !(typeof out.inviteId === 'string' && /^[a-z0-9]{6,20}$/.test(out.inviteId))) delete out.inviteId;
   if (out.kid && out.kid.small && !(isObj(out.kid.small) && num(out.kid.small.until))) delete out.kid.small;
@@ -10132,14 +10147,114 @@ const VISIT_GIFTS = [
 ];
 const VISIT_GIFT_BY_ID = Object.fromEntries(VISIT_GIFTS.map(g => [g.id, g]));
 const VISIT_MSGS = ['💖 好喜歡你的家！', '🐾 你的寵物好可愛！', '🎈 下次再一起玩！', '🌟 你布置得好漂亮！', '😊 謝謝你邀請我！', '🏡 下次來我家玩！'];
-const GUESTBOOK_MAX = 30;
+const GUESTBOOK_MAX = 30, GUESTBOOK_DRAW_MAX = 12;
+/* 🎨 卡片上的畫（家長：卡片要能手寫／畫畫，iPad 用手指、電腦用滑鼠）。
+   連結裡放不下圖片檔，所以記「每一筆的路線」：d = { s: [[顏色, 粗細, x0, y0, dx, dy, dx, dy…], …] }，
+   畫布固定 240×160；收到的人照著路線重畫。點數有上限，連結不會太長。 */
+const PAD_W = 240, PAD_H = 160, PAD_MAX_PTS = 1500, PAD_MAX_STROKES = 80;
+const PAD_COLORS = ['#3a3240', '#e8505b', '#ff8fb8', '#f0902f', '#f2c14e', '#5fae7c', '#5b84c4', '#9b72d0'];
+const PAD_SIZES = [3, 7];
+function padPoints(d) { return (d && d.s || []).reduce((n, st) => n + (st.length - 2) / 2, 0); }
+function drawCardStrokes(ctx, d, k) {
+  ctx.save(); ctx.scale(k, k);
+  ctx.fillStyle = '#fffdf8'; ctx.fillRect(0, 0, PAD_W, PAD_H);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  (d && d.s || []).forEach(st => {
+    ctx.strokeStyle = PAD_COLORS[st[0]]; ctx.fillStyle = PAD_COLORS[st[0]]; ctx.lineWidth = PAD_SIZES[st[1]];
+    let x = st[2], y = st[3];
+    if (st.length === 4) { ctx.beginPath(); ctx.arc(x, y, PAD_SIZES[st[1]] / 2, 0, Math.PI * 2); ctx.fill(); return; } // 點一下：一個點
+    ctx.beginPath(); ctx.moveTo(x, y);
+    for (let i = 4; i < st.length; i += 2) { x += st[i]; y += st[i + 1]; ctx.lineTo(x, y); }
+    ctx.stroke();
+  });
+  ctx.restore();
+}
+function renderCardDrawing(d, w) {
+  const dpr = window.devicePixelRatio || 1, h = Math.round(w * PAD_H / PAD_W);
+  const c = document.createElement('canvas');
+  c.width = w * dpr; c.height = h * dpr; c.style.width = w + 'px'; c.style.height = h + 'px'; c.className = 'card-draw';
+  drawCardStrokes(c.getContext('2d'), d, w * dpr / PAD_W);
+  return c;
+}
+// 別人畫的：每一筆都檢查（顏色、粗細、不能畫出框外、點數上限）
+function cleanDrawing(d) {
+  if (!d || typeof d !== 'object' || !Array.isArray(d.s)) return null;
+  const out = [];
+  let pts = 0;
+  for (const st of d.s.slice(0, PAD_MAX_STROKES)) {
+    if (!Array.isArray(st) || st.length < 4 || st.length % 2 || !st.every(Number.isInteger)) continue;
+    if (st[0] < 0 || st[0] >= PAD_COLORS.length || st[1] < 0 || st[1] >= PAD_SIZES.length) continue;
+    let x = st[2], y = st[3], ok = x >= 0 && x <= PAD_W && y >= 0 && y <= PAD_H;
+    for (let i = 4; ok && i < st.length; i += 2) { x += st[i]; y += st[i + 1]; ok = x >= 0 && x <= PAD_W && y >= 0 && y <= PAD_H; }
+    if (!ok) continue;
+    pts += (st.length - 2) / 2;
+    if (pts > PAD_MAX_PTS) break;
+    out.push(st.slice());
+  }
+  return out.length ? { s: out } : null;
+}
+// 畫畫板：done(畫好的 d 或 null)
+function openDrawPad(title, done) {
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', title));
+  const dpr = window.devicePixelRatio || 1;
+  const cv = document.createElement('canvas');
+  cv.className = 'draw-pad'; cv.width = PAD_W * 2 * dpr; cv.height = PAD_H * 2 * dpr;
+  card.appendChild(cv);
+  const g = cv.getContext('2d');
+  const strokes = [];
+  let col = 0, size = 0, cur = null, lx = 0, ly = 0;
+  const repaint = () => drawCardStrokes(g, { s: strokes }, cv.width / PAD_W);
+  const at = e => { const r = cv.getBoundingClientRect(); return [Math.max(0, Math.min(PAD_W, Math.round((e.clientX - r.left) / r.width * PAD_W))), Math.max(0, Math.min(PAD_H, Math.round((e.clientY - r.top) / r.height * PAD_H)))]; };
+  const full = () => padPoints({ s: strokes }) >= PAD_MAX_PTS;
+  cv.onpointerdown = e => {
+    e.preventDefault();
+    if (full()) { toast('畫好滿了！可以按「↩️ 上一筆」擦掉一些'); return; }
+    if (strokes.length >= PAD_MAX_STROKES) { toast('畫好多筆了！可以按「↩️ 上一筆」擦掉一些'); return; }
+    try { cv.setPointerCapture(e.pointerId); } catch (er) {}
+    const [x, y] = at(e);
+    cur = [col, size, x, y]; lx = x; ly = y; strokes.push(cur); repaint();
+  };
+  cv.onpointermove = e => {
+    if (!cur) return;
+    e.preventDefault();
+    const [x, y] = at(e);
+    if (Math.abs(x - lx) + Math.abs(y - ly) < 2 || full()) return;   // 太近的點不記（連結才不會太長）
+    cur.push(x - lx, y - ly); lx = x; ly = y; repaint();
+  };
+  cv.onpointerup = cv.onpointercancel = () => { cur = null; };
+  const pal = el('div', 'pad-pal');
+  PAD_COLORS.forEach((c, i) => {
+    const b = el('button', 'pad-c' + (i === col ? ' on' : ''));
+    b.style.background = c;
+    b.onclick = () => { col = i; pal.querySelectorAll('.pad-c').forEach((x, j) => x.classList.toggle('on', j === i)); };
+    pal.appendChild(b);
+  });
+  card.appendChild(pal);
+  const tools = el('div', 'pad-tools');
+  const sz = PAD_SIZES.map((w, i) => { const b = el('button', 'pad-t' + (i === size ? ' on' : ''), i ? '✏️ 粗' : '✏️ 細'); b.onclick = () => { size = i; sz.forEach((x, j) => x.classList.toggle('on', j === i)); }; return b; });
+  const undo = el('button', 'pad-t', '↩️ 上一筆'); undo.onclick = () => { strokes.pop(); repaint(); };
+  const clr = el('button', 'pad-t', '🗑️ 全部擦掉'); clr.onclick = () => { strokes.length = 0; repaint(); };
+  tools.append(...sz, undo, clr);
+  card.appendChild(tools);
+  const ok = el('button', 'big', '✅ 畫好了');
+  ok.onclick = () => done(strokes.length ? cleanDrawing({ s: strokes }) : null);
+  const skip = el('button', 'big alt', '不畫了');
+  skip.onclick = () => done(null);
+  card.append(ok, skip);
+  $('#modal').hidden = false;
+  repaint();
+  openDrawPad.test = { cv, strokes };
+}
 function giftCodeFrom(text) { const m = /[#&?]gift=([A-Za-z0-9_-]+)/.exec(String(text || '')); return m ? m[1] : null; }
 function giftLink(code) { return location.href.split('#')[0] + '#gift=' + code; }
-function makeGiftCard(giftId, msg) {
+function makeGiftCard(giftId, msg, drawing) {
   if (!G.inviteId) { G.inviteId = Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); saveGame(); }
   const hostInv = PLACES.friend || {};
   return { v: 1, t: 'gift', at: Date.now(), g: giftId, m: msg, to: hostInv.inviteId || '', toN: hostInv.inviteName || '',
-    f: G.inviteFrom || '', n: charName(), id: G.inviteId, o: Object.assign({}, G.outfit), h: Object.assign({}, G.hair || DEFAULT_HAIR), s: kidStage().id };
+    f: G.inviteFrom || '', n: charName(), id: G.inviteId, o: Object.assign({}, G.outfit), h: Object.assign({}, G.hair || DEFAULT_HAIR), s: kidStage().id,
+    d: drawing || undefined };
 }
 function cleanGiftCard(x) {
   if (!x || typeof x !== 'object' || x.v !== 1 || x.t !== 'gift' || !VISIT_GIFT_BY_ID[x.g] || !Number.isInteger(x.m) || x.m < 0 || x.m >= VISIT_MSGS.length) return null;
@@ -10147,7 +10262,8 @@ function cleanGiftCard(x) {
   const look = cleanInvite({ v: 1, r: [{}], n: x.n, f: x.f, id: x.id, o: x.o, h: x.h, s: x.s, at: x.at });
   if (!look) return null;
   const okId = v => typeof v === 'string' && /^[a-z0-9]{6,20}$/.test(v);
-  return { at: Number.isFinite(x.at) ? x.at : 0, g: x.g, m: x.m, to: okId(x.to) ? x.to : '', n: look.n, f: look.f, id: look.id, o: look.o, h: look.h, s: look.s };
+  const d = cleanDrawing(x.d);
+  return Object.assign({ at: Number.isFinite(x.at) ? x.at : 0, g: x.g, m: x.m, to: okId(x.to) ? x.to : '', n: look.n, f: look.f, id: look.id, o: look.o, h: look.h, s: look.s }, d ? { d } : {});
 }
 async function decodeGiftCard(code) { return cleanGiftCard(await decodePayload(code)); }
 // 收到回禮卡：記進訪客簿、（一天一次）拿到禮物、跳出誰送的
@@ -10168,13 +10284,15 @@ function receiveGiftCard(gc) {
   const rewarded = book.some(e => e.id === gc.id && e.got && new Date(e.at).toDateString() === day);
   let extra = '';
   if (!rewarded && gc.g !== 'card') { const r = gift.give(); if (gc.g === 'sticker' && r) extra = ` ${r}`; }
-  book.unshift({ at: gc.at, id: gc.id, n: gc.n, f: gc.f, g: gc.g, m: gc.m, o: gc.o, h: gc.h, s: gc.s, got: !rewarded && gc.g !== 'card', seen: Date.now() });
+  book.unshift(Object.assign({ at: gc.at, id: gc.id, n: gc.n, f: gc.f, g: gc.g, m: gc.m, o: gc.o, h: gc.h, s: gc.s, got: !rewarded && gc.g !== 'card', seen: Date.now() }, gc.d ? { d: gc.d } : {}));
   book.length = Math.min(book.length, GUESTBOOK_MAX);
+  book.forEach((e, i) => { if (i >= GUESTBOOK_DRAW_MAX) delete e.d; }); // 畫只留最近幾張（存檔才不會越來越大）
   saveGame(); commit();
   card.appendChild(el('h2', '', `🎁 ${who}來過你家！`));
   const pic = el('div', 'invite-pic'); pic.appendChild(renderInviteGirl(gc, 90, 110)); card.appendChild(pic);
   card.appendChild(el('div', 'gb-gift', gc.g === 'card' ? '💌 送你一張卡片' : `送你 ${gift.icon} ${gift.name}${extra}${rewarded ? '（今天已經收過她的禮物了，這次記在訪客簿）' : ''}`));
   card.appendChild(el('div', 'gb-msg', `「${VISIT_MSGS[gc.m]}」`));
+  if (gc.d) card.appendChild(renderCardDrawing(gc.d, 220));
   if (!rewarded && gc.g !== 'card') card.appendChild(note(gc.g === 'vase' ? '小花瓶放進「我的東西」了。' : gc.g === 'sticker' ? '貼紙收進圖鑑了。' : '放進寵物的食物了（小可愛也可以吃）。'));
   const ok = el('button', 'big', '謝謝！'); ok.onclick = () => { $('#modal').hidden = true; fufuSay(`謝謝${who}！`, 2600); }; card.appendChild(ok);
   const gb = el('button', 'big alt', '👣 看訪客簿'); gb.onclick = openGuestbook; card.appendChild(gb);
@@ -10194,6 +10312,7 @@ function openGuestbook() {
     const t = el('div', 'gb-txt');
     t.append(el('b', '', `${inviteWho(e)}　${inviteDate(e.at)}`), el('span', '', `${g.icon} ${e.g === 'card' ? '卡片' : g.name}・${VISIT_MSGS[e.m] || ''}`));
     row.appendChild(t);
+    if (e.d) { const dc = renderCardDrawing(e.d, 72); dc.onclick = () => { const big = renderCardDrawing(e.d, 260); big.onclick = () => big.remove(); row.after(big); }; row.appendChild(dc); }
     card.appendChild(row);
   });
   const ok = el('button', 'big alt', '好');
@@ -10225,7 +10344,7 @@ function openGiftMsg(giftId, who) {
   card.appendChild(el('h2', '', '💌 要跟她說什麼？'));
   VISIT_MSGS.forEach((m, i) => {
     const b = el('button', 'big alt', m);
-    b.onclick = () => openGiftCard(makeGiftCard(giftId, i), who);
+    b.onclick = () => openDrawPad('🎨 在卡片上畫畫（不畫也可以）', d => openGiftCard(makeGiftCard(giftId, i, d), who));
     card.appendChild(b);
   });
   $('#modal').hidden = false;
@@ -10236,6 +10355,7 @@ function openGiftCard(gc, who) {
   card.appendChild(el('h2', '', `🎁 給${who}的回禮卡`));
   card.appendChild(el('div', 'gb-gift', `${g.icon} ${g.name}`));
   card.appendChild(el('div', 'gb-msg', `「${VISIT_MSGS[gc.m]}」`));
+  if (gc.d) card.appendChild(renderCardDrawing(gc.d, 200));
   card.appendChild(note(`請爸爸媽媽幫忙，用 LINE 把這張回禮卡傳給${who}。她打開連結（或在「🚗 出門 → 📥 收到邀請卡」貼上）就會收到禮物，訪客簿也會記下你來過。`));
   const box = document.createElement('textarea');
   box.className = 'invite-code'; box.readOnly = true; box.value = '做回禮卡中…';

@@ -5,7 +5,7 @@
 
      最要緊的一條：備份出去再貼回來，進度要一模一樣。
      她玩的東西不見過一次了，備份如果是壞的，等於沒有備份。 */
-  var fails=[], errs=[], pendingChecks=[];  // pendingChecks：要等非同步（MutationObserver 之類）跑完才能驗的
+  var fails=[], errs=[], pendingChecks=[], notesPad = '';  // pendingChecks：要等非同步（MutationObserver 之類）跑完才能驗的
   window.addEventListener('error', function(e){ errs.push(String(e.message)); });
   SEASON_TODAY = [6, 1];   // 走查一律當作沒有節日（不然 10 月跑跟 6 月跑結果不一樣）；節日的測試自己切換
 
@@ -2587,7 +2587,22 @@
         var msgs = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return VISIT_MSGS.indexOf(b.textContent) >= 0; });
         if (msgs.length !== VISIT_MSGS.length) fails.push('送禮物：沒有選一句話的按鈕');
         else msgs[0].onclick();
+        // 🎨 畫畫板：用手指／滑鼠畫一筆（pointer 事件），畫好了 → 回禮卡上有畫
+        var pad = openDrawPad.test && openDrawPad.test.cv;
+        if (!pad || !$('#modalCard').contains(pad)) fails.push('選完話沒有出現畫畫板');
+        else {
+          var pr = pad.getBoundingClientRect(), pe = function(type, fx, fy){ pad.dispatchEvent(new PointerEvent(type, { clientX: pr.left + pr.width * fx, clientY: pr.top + pr.height * fy, pointerId: 1, bubbles: true })); };
+          pe('pointerdown', .1, .1); for (var k = 1; k <= 20; k++) pe('pointermove', .1 + k * .04, .1 + k * .03); pe('pointerup', .9, .7);
+          pe('pointerdown', .5, .9); pe('pointerup', .5, .9);   // 點一下：一個點
+          if (openDrawPad.test.strokes.length !== 2 || openDrawPad.test.strokes[0].length < 20) fails.push('畫畫板畫不出線（' + openDrawPad.test.strokes.length + ' 筆）');
+          var undoB = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return /上一筆/.test(b.textContent); })[0];
+          undoB.onclick();
+          if (openDrawPad.test.strokes.length !== 1) fails.push('畫畫板「上一筆」沒有擦掉');
+          var okB = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return /畫好了/.test(b.textContent); })[0];
+          okB.onclick();
+        }
         if (!/回禮卡/.test($('#modalCard').textContent)) fails.push('選完禮物沒有做出回禮卡');
+        if (!document.querySelector('#modalCard canvas.card-draw')) fails.push('回禮卡上沒有畫');
       }
       var gc92 = makeGiftCard('cookie', 0);
       if (gc92.to !== 'myhouse01' || gc92.f !== '妹妹') fails.push('回禮卡沒有寫要給誰、是誰送的');
@@ -2642,6 +2657,44 @@
       if (keep92.id) G.inviteId = keep92.id; else delete G.inviteId;
       if (keep92.from) G.inviteFrom = keep92.from; else delete G.inviteFrom;
     }
+
+    /* 93 卡片上的畫：連結不能太長、別人畫的要檢查、收到看得到、訪客簿只留最近幾張畫 */
+    try {
+      // 畫滿（一直畫）的卡，連結也不能太長
+      // 一條很長的螺旋線（比上限還多點）：檢查完要被截在上限內
+      var strokesBig = [], px = 120, py = 80, cur9 = [0, 1, px, py], n9 = 0;
+      for (var sp = 1; sp < PAD_MAX_PTS * 1.5; sp++) {
+        var a1 = sp * .15, r1 = Math.min(75, 3 + sp * .05), nx = Math.round(120 + Math.cos(a1) * r1), ny = Math.round(80 + Math.sin(a1) * r1 * .9);
+        cur9.push(nx - px, ny - py); px = nx; py = ny;
+        if (cur9.length > 200) { strokesBig.push(cur9); cur9 = [sp % 8, 1, px, py]; }
+      }
+      strokesBig.push(cur9);
+      var bigD = cleanDrawing({ s: strokesBig });
+      if (!bigD || padPoints(bigD) > PAD_MAX_PTS || padPoints(bigD) < PAD_MAX_PTS * .8) fails.push('畫畫的點數上限不對（' + (bigD && padPoints(bigD)) + '）');
+      window.__padPts = bigD && padPoints(bigD);
+      var gcBig = makeGiftCard('card', 0, bigD);
+      encodeInvite(gcBig).then(function(c){ window.__padLen = giftLink(c).length; });
+      pendingChecks.push(function(){ if (!(window.__padLen < 9000)) fails.push('畫滿的卡片，連結太長（' + window.__padLen + '）'); notesPad = '畫滿 ' + window.__padPts + ' 點 → 連結 ' + window.__padLen + ' 字'; });
+      // 別人畫的：顏色、粗細不對、畫出框外的那一筆不收
+      var dirty = cleanDrawing({ s: [[0, 0, 10, 10, 5, 5], [99, 0, 1, 1, 1, 1], [0, 9, 1, 1, 1, 1], [0, 0, 230, 150, 50, 50], [1, 1, 3.5, 2, 1, 1], 'x'] });
+      if (!dirty || dirty.s.length !== 1) fails.push('別人畫的畫，壞掉的筆畫沒有擋掉（' + (dirty && dirty.s.length) + '）');
+      if (cleanDrawing({ s: [] }) || cleanDrawing(null) || cleanDrawing({ s: 'x' })) fails.push('空的畫被當成有畫');
+      // 收到：畫出來
+      var keepGB = JSON.stringify(G.guestbook || []), keepId93 = G.inviteId, realToast93 = toast; toast = function(){};
+      try {
+        G.inviteId = 'myhouse93'; G.guestbook = [];
+        var gcD = cleanGiftCard(JSON.parse(JSON.stringify(Object.assign(makeGiftCard('card', 2, { s: [[1, 0, 10, 10, 20, 20, 20, 0]] }), { id: 'friend9300', to: 'myhouse93' }))));
+        if (!gcD || !gcD.d) fails.push('回禮卡上的畫，檢查完不見了');
+        receiveGiftCard(gcD);
+        if (!document.querySelector('#modalCard canvas.card-draw')) fails.push('收到回禮卡看不到畫');
+        if (!G.guestbook[0].d) fails.push('訪客簿沒有留下畫');
+        // 訪客簿只留最近幾張畫
+        for (var gi9 = 1; gi9 <= GUESTBOOK_DRAW_MAX + 3; gi9++) receiveGiftCard(cleanGiftCard(JSON.parse(JSON.stringify(Object.assign(makeGiftCard('card', 0, { s: [[0, 0, 5, 5, 1, 1]] }), { id: 'friend9300', to: 'myhouse93', at: Date.now() + gi9 * 1000 })))));
+        if (G.guestbook.filter(function(e){ return e.d; }).length > GUESTBOOK_DRAW_MAX) fails.push('訪客簿的畫越存越多（存檔會越來越大）');
+        openGuestbook();
+        if (!document.querySelector('#modalCard .gb-row canvas.card-draw')) fails.push('訪客簿看不到畫');
+      } finally { G.guestbook = JSON.parse(keepGB); if (keepId93) G.inviteId = keepId93; else delete G.inviteId; toast = realToast93; $('#modal').hidden = true; }
+    } catch (e) { fails.push('卡片畫畫測試出錯：' + e.message + ' ' + (e.stack || '').split('\n')[1]); }
 
     /* 91 🎃 萬聖節（依照日期）：商店最上面有限定、動物朋友打扮來玩、給糖果會回禮、收進節日收藏；過了就不賣 */
     var keep91 = { kf: JSON.stringify(G.kidFood), inv: JSON.stringify(G.inv), sd: JSON.stringify(G.seasonDex || {}), bells: G.bells, seen: JSON.stringify(G.seen) };
@@ -4573,7 +4626,7 @@
   function report(){
     var pre=document.createElement('pre'); pre.id='R';
     pre.textContent=['失敗 '+fails.length, 'JS 錯誤 '+errs.length, '',
-      fails.concat(errs).slice(0,15).join('\n')].join('\n');
+      fails.concat(errs).slice(0,15).join('\n'), notesPad].join('\n');
     document.body.innerHTML=''; document.body.appendChild(pre);
   }
 
