@@ -69,9 +69,15 @@ var e={}; SCENARIOS.forEach(function(sc){ e[sc.id]={};
   Object.keys(sc.endings).forEach(function(k,i){ if(i%2===0) e[sc.id][k]=1; }); });
 localStorage.setItem('theater-ends:p1', JSON.stringify(e));
 var doc=document.documentElement, res={};
+/* 被外框裁掉（overflow hidden／clip）的東西看不到，不算撐破：
+   小鎮點了「這個時段的事」會把地圖放大，地圖在框裡被裁掉——
+   以前只有在那個時段（例如傍晚的學校）跑測試才會誤報。 */
+function clipped(el){ for(var p=el.parentElement;p&&p!==doc;p=p.parentElement){
+    var o=getComputedStyle(p); if(/hidden|clip/.test(o.overflowX||o.overflow)&&p.getBoundingClientRect().right<=doc.clientWidth+0.5) return true; }
+  return false; }
 function scan(name){ var bad=[];
   document.querySelectorAll('*').forEach(function(el){
-    if(el.getBoundingClientRect().right > doc.clientWidth+0.5)
+    if(el.getBoundingClientRect().right > doc.clientWidth+0.5 && !clipped(el))
       bad.push(el.tagName.toLowerCase()+(typeof el.className==='string'&&el.className?'.'+el.className:'')); });
   if(bad.length) res[name]=bad.slice(0,3); }
 var sc=SCENARIOS.find(function(s){return s.id==='online';}), f=null;
