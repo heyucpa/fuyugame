@@ -296,6 +296,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .comic-p { animation: none; opacity: 1; } }
 @keyframes comicIn { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: none; } }
 .run-go { display: block; margin: 10px auto 0; font-size: 22px; padding: 14px 48px; touch-action: manipulation; }
+.run-row { display: flex; gap: 10px; justify-content: center; }
+.run-row .run-go { margin: 10px 0 0; flex: 1 1 0; padding: 14px 8px; min-width: 0; }
+.run-jump.run-cue { animation: runHint .45s ease-in-out infinite alternate; box-shadow: 0 0 0 4px #ffd35c; }
+@keyframes runHint { from { transform: scale(1); } to { transform: scale(1.08); } }
 .quiz { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 6px 0; }
 .quiz-q { font-size: 34px; font-weight: 800; color: #4a3b2a; letter-spacing: 1px; }
 .quiz-pics { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; font-size: 24px; min-height: 30px; max-width: 320px; }
@@ -4076,6 +4080,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-12T09:00', title: '操場賽跑變好玩了！🏃', lines: [
+    ['🚧', '跑道上有欄架：跑到前面按「🦘 跳！」跳過去（按鈕會閃）'],
+    ['⭐', '跑道上的星星吃到會咻一下加速'],
+    ['💫', '同學各有個性，跨欄還可能絆一下，有機會超車！'],
+    ['🏆', '跑完上頒獎台，還會記你最快跑幾秒']
+  ], newItems: [] },
   { id: '2026-10-11T20:00', title: '圖書館可以自由閱讀了！📚', lines: [
     ['📗', '閱讀護照八本都蓋滿之後，繪本架和館員說故事都可以自己挑想看的書'],
     ['🎲', '不知道看哪本？按「隨便一本」'],
@@ -4506,6 +4516,7 @@ function normalizeSave(g) {
   if (out.artWall != null) out.artWall = (Array.isArray(out.artWall) ? out.artWall : []).map(cleanDrawing).filter(Boolean).slice(0, 4);
   if (out.kidGrowDay != null && !(isObj(out.kidGrowDay) && typeof out.kidGrowDay.d === 'string' && num(out.kidGrowDay.n))) delete out.kidGrowDay;
   if (out.flowerDex != null && !isObj(out.flowerDex)) delete out.flowerDex;
+  if (out.runBest != null) { if (!isObj(out.runBest)) delete out.runBest; else Object.keys(out.runBest).forEach(k => { if (!(num(out.runBest[k]) && out.runBest[k] > 0)) delete out.runBest[k]; }); }
   if (out.garden != null && !isObj(out.garden)) delete out.garden;
   if (isObj(out.garden)) Object.keys(out.garden).forEach(k => { const v = out.garden[k]; if (!isObj(v) || !Number.isInteger(v.s) || v.s < 0 || v.s > 4) delete out.garden[k]; });
   if (out.guestbook != null && !Array.isArray(out.guestbook)) delete out.guestbook;
@@ -15319,71 +15330,188 @@ function playQuiz(w, L) {
 /* ===== 🏃 操場賽跑 =====
    照片參考：學校操場的藍色跑道（深藍、淺藍交錯，白線分道）。
    一直點「跑！」就會往前跑，跟熊熊阿布、兔兔米米、狐狸露露比賽。
-   不用看字：點越快跑越快，第幾名用獎牌表示。 */
+   不用看字：點越快跑越快，第幾名用獎牌表示。
+   只有一直點太單調，所以加了：
+     🚧 跨欄：跑到欄架前面會停住，要按「🦘 跳！」跳過去（快到的時候按鈕會閃、欄架上有⬆️）
+     ⭐ 星星：跑過去會咻一下往前衝
+     同學各有個性：兔兔先衝後累、熊熊後面才加速、狐狸一直穩穩跑；跨欄偶爾會絆一下 💫
+     寵物在旁邊加油、超過同學會跳「超車！」、最後上頒獎台，還會記每個難度的最快秒數 */
 const RUN_LEN = 100;
 const RUN_LEVELS = [
-  { name: '慢慢跑', speed: 4.6, mul: 1 },
-  { name: '普通',   speed: 6.6, mul: 2 },
-  { name: '運動會！', speed: 8.4, mul: 3 }
+  { name: '慢慢跑', speed: 4.6, mul: 1, hurdles: [36, 70] },
+  { name: '普通',   speed: 6.6, mul: 2, hurdles: [28, 52, 76] },
+  { name: '運動會！', speed: 8.4, mul: 3, hurdles: [22, 42, 62, 82] }
 ];
 const RUN_STEP = 1.6;                  // 點一下跑多遠
 const RUN_PRIZE = [200, 100, 50, 20];  // 第 1~4 名（再乘難度）
+const RUN_GAP = 1.2;                   // 沒跳的話停在欄架前面多遠
+const RUN_JUMP = { dist: 5, dur: .5, rest: .25 }; // 跳一次往前 5、落地後休息一下（一直按跳不會比跑快）
+const RUN_BOOST = { dist: 10, dur: .8 };          // ⭐ 加速
+const RUN_TRIP = .2, RUN_TRIP_S = .6;             // 同學跨欄絆到的機率、停多久
+// 同學的個性（平均起來跟原本一樣快）
+const RUN_STYLES = [
+  { say: '我先衝！',     f: x => x < 50 ? 1.15 : .89 },
+  { say: '後面看我的！', f: x => x < 50 ? .88 : 1.14 },
+  { say: '穩穩跑～',     f: () => 1 }
+];
 function openRunGame() {
-  const w = openGameWindow('🏃 操場賽跑', '一直點「跑！」（或點畫面）就會往前跑，點越快跑越快！跟同學比賽，看誰先到終點。');
+  const w = openGameWindow('🏃 操場賽跑', '一直點「跑！」往前跑，遇到欄架 🚧 按「🦘 跳！」跳過去，吃到 ⭐ 會加速！跟同學比賽，看誰先到終點。');
   pickLevelRow(w, RUN_LEVELS, L => `第一名 💰 ${RUN_PRIZE[0] * L.mul}`, L => playRun(w, L));
 }
 function playRun(w, L) {
   w.stage.innerHTML = '';
-  const W = 340, H = 260, { c, g } = gameCanvas(w.stage, W, H);
+  const W = 340, H = 290, { c, g } = gameCanvas(w.stage, W, H);
+  const row = el('div', 'run-row');
   const go = el('button', 'big run-go', '🏃 跑！');
-  w.stage.appendChild(go);
-  const mates = NEIGHBORS.filter(Boolean).slice(0, 3).map((n, i) => ({ n, x: 0, v: L.speed * (.9 + Math.random() * .15) * (1 - i * .03), done: 0 }));
+  const hop = el('button', 'big alt run-go run-jump', '🦘 跳！');
+  row.append(go, hop);
+  w.stage.appendChild(row);
+  const li = Math.max(0, RUN_LEVELS.indexOf(L));
+  const hurdles = (L.hurdles || []).slice();
+  const mates = NEIGHBORS.filter(Boolean).slice(0, 3).map((n, i) => ({ n, x: 0, v: L.speed * (.9 + Math.random() * .15) * (1 - i * .03), done: 0,
+    style: RUN_STYLES[i % RUN_STYLES.length], stun: 0, passed: 0 }));
+  // 星星放在自己的跑道上、離欄架遠一點
+  const stars = [];
+  for (let k = 0; k < 40 && stars.length < 2; k++) {
+    const x = 12 + Math.random() * 76;
+    if (hurdles.every(h => Math.abs(h - x) > 7) && stars.every(s => Math.abs(s.x - x) > 15)) stars.push({ x, got: false });
+  }
   let me = 0, myDone = false, order = [], ended = false, raf = 0, last = performance.now(), t = 0, countdown = 3, bounce = 0;
-  gameCleanup = () => cancelAnimationFrame(raf);
+  let jumpT = 0, restT = 0, boostT = 0, bumpT = 0, bumpSnd = 0, rank = 4, endT = 0, best = null, newBest = false;
+  const pops = [], confetti = [];
+  const onKey = e => {
+    if (e.key === ' ' || e.key === 'ArrowRight') { e.preventDefault(); tap(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); jump(); }
+  };
+  document.addEventListener('keydown', onKey);
+  gameCleanup = () => { cancelAnimationFrame(raf); document.removeEventListener('keydown', onKey); };
 
-  function tap() {
-    if (ended || countdown > 0) return;
-    me = Math.min(RUN_LEN, me + RUN_STEP);
-    bounce = 1;
+  const nextHurdle = () => hurdles.find(h => me <= h - RUN_GAP + 1e-6);
+  function pop(text, x, y, color) { pops.push({ text, x, y, color: color || '#fff', born: t }); }
+  function bump() {
+    bumpT = .35;
+    if (t - bumpSnd > .4) { bumpSnd = t; Sound.play('boing'); }
+  }
+  // 往前跑 dx；不是在空中的話，碰到欄架就停住
+  function advance(dx, air) {
+    let nx = Math.min(RUN_LEN, me + dx);
+    if (!air) for (const h of hurdles) if (me <= h - RUN_GAP + 1e-6 && nx > h - RUN_GAP) { nx = h - RUN_GAP; bump(); break; }
+    me = nx;
+    stars.forEach(s => {
+      if (!s.got && me >= s.x) { s.got = true; boostT = RUN_BOOST.dur; Sound.play('magic'); pop('⭐ 咻～', xOf(s.x), TOP + 3 * LANE_H - 4, '#ffe066'); }
+    });
     if (me >= RUN_LEN && !myDone) { myDone = true; order.push('me'); } // 用 true，不要存時間：t 可能剛好是 0
   }
+  function tap() {
+    if (ended || countdown > 0 || jumpT > 0) return;
+    advance(RUN_STEP, false);
+    bounce = 1;
+  }
+  function jump() {
+    if (ended || countdown > 0 || jumpT > 0 || restT > 0) return;
+    jumpT = RUN_JUMP.dur;
+    Sound.play('jump');
+  }
   go.onclick = tap;
+  hop.onclick = jump;
   c.addEventListener('pointerdown', tap);
+  function land() {
+    // 剛好落在欄架上：算跳過去（小小孩不要太計較）
+    const h = hurdles.find(h => me > h - RUN_GAP && me < h + .5);
+    if (h != null) me = Math.min(RUN_LEN, h + .5);
+    restT = RUN_JUMP.rest;
+  }
   function tick(dt) {
     if (ended) return;
     if (countdown > 0) { countdown -= dt; return; }
     t += dt;
+    if (jumpT > 0) {
+      const d = Math.min(dt, jumpT);
+      advance(RUN_JUMP.dist / RUN_JUMP.dur * d, true);
+      jumpT -= dt;
+      if (jumpT <= 0) { jumpT = 0; land(); }
+    } else if (restT > 0) restT = Math.max(0, restT - dt);
+    if (boostT > 0) { advance(RUN_BOOST.dist / RUN_BOOST.dur * Math.min(dt, boostT), jumpT > 0); boostT = Math.max(0, boostT - dt); }
+    bumpT = Math.max(0, bumpT - dt);
     mates.forEach(m => {
       if (m.x >= RUN_LEN) return;
-      m.x = Math.min(RUN_LEN, m.x + m.v * dt);
+      if (m.stun > 0) { m.stun -= dt; return; }
+      const before = m.x;
+      m.x = Math.min(RUN_LEN, m.x + m.v * m.style.f(m.x) * dt);
+      const h = hurdles.find(h => before < h && m.x >= h);
+      if (h != null && Math.random() < RUN_TRIP) { m.x = h; m.stun = RUN_TRIP_S; }
       if (m.x >= RUN_LEN) { m.done = t; order.push(m); }
     });
+    // 超車：名次往前就跳字
+    const r = 1 + mates.filter(m => m.x > me).length;
+    if (r < rank && t > .5 && !myDone) pop('超車！⬆️', xOf(me), TOP + 3 * LANE_H, '#ffd35c');
+    rank = r;
     // 自己跑到終點就結束（後面的不用等），或三個同學都到了也結束（最後一名）
     if (myDone || mates.every(m => m.x >= RUN_LEN)) finish();
   }
   function place() { const i = order.indexOf('me'); return i < 0 ? 4 : i + 1; }
+  // 最後名次：已經到終點的照順序，還沒到的照誰跑得遠
+  function standings() {
+    const rest = ['me'].concat(mates).filter(r => order.indexOf(r) < 0).sort((a, b) => (b === 'me' ? me : b.x) - (a === 'me' ? me : a.x));
+    return order.concat(rest);
+  }
   function finish() {
     if (ended) return;
-    ended = true;
+    ended = true; endT = t;
     const p = place();
+    if (myDone) {
+      const bests = G.runBest = Object.assign({}, G.runBest);
+      const sec = Math.round(t * 10) / 10;
+      best = bests[li];
+      if (!(best > 0) || sec < best) { newBest = best > 0; bests[li] = sec; best = sec; }
+    }
     const bells = payReward(w, RUN_PRIZE[p - 1] * L.mul);
     const medal = ['🥇', '🥈', '🥉', '🎽'][p - 1];
-    w.status.textContent = `${medal} 第 ${p} 名！💰 +${fmt(bells)}`;
+    const time = myDone ? `　⏱️ ${(Math.round(t * 10) / 10).toFixed(1)} 秒${newBest ? '　🎉 新紀錄！' : ''}` : '';
+    w.status.textContent = `${medal} 第 ${p} 名！💰 +${fmt(bells)}${time}`;
     toast(`🏃 賽跑第 ${p} 名 ${medal}，拿到 💰 ${fmt(bells)}`);
-    go.disabled = true;
+    Sound.play(p === 1 ? 'fanfare' : 'coin');
+    if (p <= 3) for (let k = 0; k < 40; k++) confetti.push({ x: Math.random() * W, y: -Math.random() * H * .6, v: 60 + Math.random() * 80, r: Math.random() * 6, c: ['#ff6b8b', '#ffd35c', '#5fd0ff', '#8be07a', '#c79bff'][k % 5] });
+    go.disabled = true; hop.disabled = true;
     gameButtons(w, openRunGame);
   }
-  openRunGame.test = { tap, tick, me: () => me, mates, place, finish, level: L, skipCountdown: () => { countdown = 0; } };
+  openRunGame.test = { tap, jump, tick, me: () => me, mates, place, finish, level: L, hurdles, stars, standings,
+                       jumping: () => jumpT > 0, skipCountdown: () => { countdown = 0; } };
 
-  const LANE_H = 50, TOP = 40, X0 = 30, X1 = W - 30;
+  const LANE_H = 50, TOP = 60, X0 = 30, X1 = W - 30;
   const xOf = d => X0 + (X1 - X0) * d / RUN_LEN;
+  const myOutfit = () => { const o = {}; OUTFIT_SLOTS.forEach(({ key }) => { o[key] = CLOTHES_BY_ID[G.outfit[key]]; }); return o; };
+  const pet = G.pet && G.pet.stage !== 'egg' ? PET_SPECIES_BY_ID[G.pet.species] : null;
+  function drawRunner(r, x, y, now, k) {
+    g.save(); g.translate(x, y);
+    if (r === 'me') { g.scale(.62 * k, .62 * k); drawGirl(g, { t: now / 1000, walking: countdown <= 0 && !ended, outfit: myOutfit(), hair: G.hair }); }
+    else { g.scale(.85 * k, .85 * k); drawNeighbor(g, r.n, { happy: r.x >= RUN_LEN || ended, fx: 1.5, clean: 100 }); }
+    g.restore();
+  }
   function frame(now) {
     now = now || performance.now();
     const dt = Math.max(0, Math.min(.05, (now - last) / 1000)); last = now;
     tick(dt);
+    if (ended) t += dt; // 結束後動畫繼續（頒獎台、彩帶）
     bounce = Math.max(0, bounce - dt * 6);
-    // 跑道：深藍淺藍交錯、白線分道，兩邊是草地
+    // 草地＋看台上的加油團
     g.fillStyle = '#5fae6f'; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#4c9a5c'; g.fillRect(0, 0, W, 34);
+    g.font = '16px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    ['📣', '👏', '🎉', '👏', '📣', '🎉', '👏'].forEach((e, i) => {
+      const x = 70 + i * 40, y = 18 - (countdown <= 0 ? Math.abs(Math.sin(now / 160 + i)) * 5 : 0);
+      g.fillText(e, x, y);
+    });
+    if (pet) { // 自己的寵物在左上角跳來跳去加油
+      g.save(); g.translate(24, 54 - Math.abs(Math.sin(now / 200)) * 6); g.scale(.8, .8);
+      drawCreature(g, pet, { happy: true, clean: 100, adult: lookStage(G.pet) === 'adult', baby: lookStage(G.pet) === 'baby' });
+      g.restore();
+      if (countdown <= 0 && !ended && Math.floor(now / 2200) % 2 === 0) {
+        g.fillStyle = 'rgba(255,255,255,.95)'; g.beginPath(); g.roundRect ? g.roundRect(46, 4, 54, 20, 8) : g.rect(46, 4, 54, 20); g.fill();
+        g.fillStyle = '#d9443c'; g.font = 'bold 12px sans-serif'; g.fillText('加油！', 73, 14);
+      }
+    }
+    // 跑道：深藍淺藍交錯、白線分道
     for (let i = 0; i < 4; i++) { g.fillStyle = i % 2 ? '#4a9be8' : '#2f6fd1'; g.fillRect(0, TOP + i * LANE_H, W, LANE_H); }
     g.fillStyle = '#ffffff';
     for (let i = 0; i <= 4; i++) g.fillRect(0, TOP + i * LANE_H - 1, W, 2);
@@ -15391,25 +15519,90 @@ function playRun(w, L) {
     for (let y = 0; y < LANE_H * 4; y += 8) for (let k = 0; k < 2; k++) {     // 終點：黑白格
       g.fillStyle = (y / 8 + k) % 2 ? '#222' : '#fff'; g.fillRect(X1 + k * 5, TOP + y, 5, 8);
     }
-    // 同學（上面三道）和自己（最下面一道）
-    mates.forEach((m, i) => {
-      g.save(); g.translate(xOf(m.x), TOP + i * LANE_H + LANE_H - 8); g.scale(.85, .85);
-      drawNeighbor(g, m.n, { happy: m.x >= RUN_LEN, fx: 1.5, clean: 100 });
-      g.restore();
+    // 欄架（每一道都有）：白色橫桿＋紅白腳
+    hurdles.forEach(h => {
+      const x = xOf(h);
+      for (let i = 0; i < 4; i++) {
+        const yb = TOP + i * LANE_H + LANE_H - 6;
+        g.fillStyle = '#d9443c'; g.fillRect(x - 1, yb - 20, 3, 20);
+        g.fillStyle = '#fff'; g.fillRect(x - 4, yb - 22, 9, 5);
+        g.fillStyle = '#d9443c'; g.fillRect(x - 1, yb - 21, 3, 3);
+      }
     });
-    g.save(); g.translate(xOf(me), TOP + 3 * LANE_H + LANE_H - 6 - bounce * 4); g.scale(.62, .62);
-    const outfit = {}; OUTFIT_SLOTS.forEach(({ key }) => { outfit[key] = CLOTHES_BY_ID[G.outfit[key]]; });
-    drawGirl(g, { t: now / 1000, walking: countdown <= 0 && !ended, outfit, hair: G.hair });
-    g.restore();
+    // 快到欄架：⬆️ 提示＋按鈕閃
+    const nh = nextHurdle();
+    const near = !ended && countdown <= 0 && jumpT <= 0 && nh != null && nh - RUN_GAP - me < 4.5;
+    hop.classList.toggle('run-cue', near);
+    if (near) { g.font = '20px sans-serif'; g.fillText('⬆️', xOf(nh), TOP + 3 * LANE_H + 6 - Math.abs(Math.sin(now / 150)) * 5); }
+    // 星星
+    g.font = '20px sans-serif';
+    stars.forEach(s => { if (!s.got) g.fillText('⭐', xOf(s.x), TOP + 3 * LANE_H + LANE_H / 2 + Math.sin(now / 250 + s.x) * 3); });
+    // 同學（上面三道）
+    mates.forEach((m, i) => {
+      const near = hurdles.find(h => Math.abs(m.x - h) < 2.5 && m.stun <= 0);
+      const lift = near != null ? Math.cos((m.x - near) / 2.5 * Math.PI / 2) * 14 : 0;
+      drawRunner(m, xOf(m.x), TOP + i * LANE_H + LANE_H - 8 - lift, now, 1);
+      if (m.stun > 0) { g.font = '14px sans-serif'; g.fillText('💫', xOf(m.x), TOP + i * LANE_H + 8); }
+      if (countdown <= 0 && t < 1.6 && !ended) { // 起跑時各說一句
+        g.font = 'bold 11px sans-serif'; g.fillStyle = 'rgba(255,255,255,.95)'; g.textAlign = 'left';
+        g.strokeStyle = 'rgba(20,40,90,.85)'; g.lineWidth = 3; g.strokeText(m.style.say, xOf(m.x) + 22, TOP + i * LANE_H + LANE_H / 2);
+        g.fillText(m.style.say, xOf(m.x) + 22, TOP + i * LANE_H + LANE_H / 2); g.textAlign = 'center';
+      }
+    });
+    // 自己（最下面一道）：跳的時候往上拋、加速時拖一條星星尾巴、撞到欄架抖一下
+    const air = jumpT > 0 ? Math.sin((1 - jumpT / RUN_JUMP.dur) * Math.PI) * 24 : 0;
+    const shake = bumpT > 0 ? Math.sin(now / 25) * 2 : 0;
+    if (boostT > 0) { g.fillStyle = 'rgba(255,224,102,.55)'; g.fillRect(xOf(me) - 40, TOP + 3 * LANE_H + 18, 34, 8); }
+    drawRunner('me', xOf(me) + shake, TOP + 3 * LANE_H + LANE_H - 6 - bounce * 4 - air, now, 1);
+    // 碼錶
+    g.font = 'bold 13px sans-serif'; g.fillStyle = '#fff'; g.textAlign = 'right';
+    g.fillText(`⏱️ ${(ended ? endT : t).toFixed(1)}`, W - 6, TOP - 12);
+    g.textAlign = 'center';
+    // 跳出來的字
+    for (let i = pops.length - 1; i >= 0; i--) {
+      const q = pops[i], age = t - q.born;
+      if (age > 1) { pops.splice(i, 1); continue; }
+      g.globalAlpha = 1 - age; g.fillStyle = q.color; g.font = 'bold 16px sans-serif';
+      g.fillText(q.text, q.x, q.y - age * 30); g.globalAlpha = 1;
+    }
     // 倒數
-    g.textAlign = 'center'; g.textBaseline = 'middle';
     if (countdown > 0) {
       g.fillStyle = 'rgba(255,255,255,.92)'; g.font = 'bold 56px sans-serif';
       g.fillText(String(Math.ceil(countdown)), W / 2, H / 2);
-    } else if (t < .6) { g.fillStyle = '#ffd35c'; g.font = 'bold 44px sans-serif'; g.fillText('開始！', W / 2, H / 2); }
+    } else if (t < .6 && !ended) { g.fillStyle = '#ffd35c'; g.font = 'bold 44px sans-serif'; g.fillText('開始！', W / 2, H / 2); }
+    // 頒獎台（結束一下下之後淡入）
+    if (ended && t - endT > .6) drawPodium(Math.min(1, (t - endT - .6) * 3), now);
+    if (confetti.length) {
+      confetti.forEach(p => { p.y += p.v * dt; p.r += dt * 4; if (p.y > H) p.y -= H; g.fillStyle = p.c; g.save(); g.translate(p.x, p.y); g.rotate(p.r); g.fillRect(-3, -2, 6, 4); g.restore(); });
+    }
     g.textAlign = 'start'; g.textBaseline = 'alphabetic';
-    if (!ended) w.status.textContent = countdown > 0 ? '準備…' : `${L.name}　點「跑！」一直跑！`;
+    if (!ended) w.status.textContent = countdown > 0 ? '準備…' : near ? `${L.name}　欄架！按「🦘 跳！」` : `${L.name}　點「跑！」一直跑！`;
     raf = requestAnimationFrame(frame);
+  }
+  function drawPodium(a, now) {
+    g.globalAlpha = a;
+    // 整片蓋掉跑道：上面天空、下面草地
+    g.fillStyle = '#8fd3ff'; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#5fae6f'; g.fillRect(0, H - 34, W, 34);
+    const S = standings(), cx = W / 2, base = H - 34;
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    const spots = [{ dx: 0, h: 96, m: '🥇', c: '#ffd35c' }, { dx: -100, h: 66, m: '🥈', c: '#dfe6ee' }, { dx: 100, h: 44, m: '🥉', c: '#e9b07a' }];
+    spots.forEach((sp, i) => {
+      const r = S[i]; if (!r) return;
+      const x = cx + sp.dx, top = base - sp.h;
+      g.fillStyle = sp.c; g.fillRect(x - 44, top, 88, sp.h);
+      g.fillStyle = 'rgba(0,0,0,.12)'; g.fillRect(x - 44, top, 88, 6);
+      g.fillStyle = '#5a4630'; g.font = 'bold 26px sans-serif'; g.fillText(String(i + 1), x, top + sp.h / 2 + 3);
+      drawRunner(r, x, top - 2 - (i === 0 ? Math.abs(Math.sin(now / 220)) * 6 : 0), now, r === 'me' ? 1.05 : .95);
+      g.font = '22px sans-serif'; g.fillText(sp.m, x, top - 74);
+    });
+    if (place() === 4) { // 第四名：站在旁邊的草地上揮手
+      drawRunner('me', W - 26, base + 22, now, .8);
+      g.font = '16px sans-serif'; g.fillText('🎽', W - 26, base - 30);
+    }
+    if (newBest) { g.fillStyle = '#d9443c'; g.font = 'bold 20px sans-serif'; g.fillText('🎉 新紀錄！', cx, 22); }
+    else if (best > 0) { g.fillStyle = '#2f4a6a'; g.font = 'bold 14px sans-serif'; g.fillText(`最快 ⏱️ ${best.toFixed(1)} 秒`, cx, 22); }
+    g.globalAlpha = 1;
   }
   raf = requestAnimationFrame(frame);
 }
