@@ -582,6 +582,13 @@ button.pass { font: inherit; }
 .gb-row { display: flex; align-items: center; gap: 10px; border: 2px solid var(--line); border-radius: 14px; background: #fff; padding: 4px 10px; margin-bottom: 6px; }
 .gb-txt { display: flex; flex-direction: column; font-size: 13px; }
 .gb-txt b { font-size: 15px; }
+.intro { position: fixed; inset: 0; z-index: 9999; background: #bfe3f5; cursor: pointer; transition: opacity .4s; }
+.intro canvas { width: 100%; height: 100%; display: block; }
+.intro.fade { opacity: .0; transition: opacity .9s; }
+.intro.out { opacity: 0; }
+.intro-skip { position: absolute; top: max(12px, env(safe-area-inset-top)); right: 12px; border: none; background: rgba(255,255,255,.85); border-radius: 999px; padding: 8px 16px; font-size: 16px; font-weight: 700; color: #3a3240; }
+.intro-cap { position: absolute; left: 0; right: 0; bottom: 14%; text-align: center; font-size: clamp(24px, 6vw, 44px); font-weight: 800; color: #7a4a2e; opacity: 0; transition: opacity .6s; text-shadow: 0 2px 0 #fff; }
+.intro-cap.on { opacity: 1; }
 .invite-who { text-align: center; font-size: 13px; color: var(--muted); margin-top: -4px; }
 .invite-name { width: 100%; box-sizing: border-box; font-size: 16px; padding: 8px 10px; border: 2px solid var(--line); border-radius: 10px; margin: 4px 0 8px; }
 .invite-pic { display: flex; justify-content: center; margin: 4px 0; }
@@ -734,6 +741,7 @@ button.pass { font: inherit; }
 // 遊戲資料：家具、壁紙、地板、魚、擴建價格
 // 家具 parts 單位：x/y/w/d 為格數（可小數），z/h 為像素高度
 'use strict';
+var introPlaying = false;   // 🎬 開場動畫播放中（遊戲迴圈一開始就會讀到，所以放在最前面宣告）
 
 function schoolDeskParts(bag) {
   return [
@@ -3988,6 +3996,10 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-09T15:00', title: '有開場動畫了！🎬', lines: [
+    ['🎬', '新的存檔第一次玩會有開場動畫：搬家小貨車開到新家！'],
+    ['⚙️', '想再看一次：「⚙️ 設定」最上面的「🎬 再看一次開場」']
+  ], newItems: [] },
   { id: '2026-10-09T09:00', title: '小可愛長大改用星星了！⭐', lines: [
     ['⭐', '小可愛長大用星星表示：⭐ → ⭐⭐ → ⭐⭐⭐，長大一次多一顆星'],
     ['🧪', '喝變小藥水的時候，星星會暫時少一顆'],
@@ -4257,7 +4269,7 @@ function maybeShowNews(tries) {
   if (!G.openGift && SAVE_LOCKED == null) return;
   const list = unseenNews();
   if (!list.length || tries > 20) return;
-  if (!$('#modal').hidden || (typeof resting !== 'undefined' && resting) || (typeof hold !== 'undefined' && hold)) { setTimeout(() => maybeShowNews(tries + (resting ? 0 : 1)), 3000); return; } // 休息中不算次數：休息完還要記得跳
+  if (!$('#modal').hidden || (typeof resting !== 'undefined' && resting) || (typeof hold !== 'undefined' && hold) || (typeof introPlaying !== 'undefined' && introPlaying)) { setTimeout(() => maybeShowNews(tries + (resting ? 0 : 1)), 3000); return; } // 休息中不算次數：休息完還要記得跳
   openNews(list);
 }
 
@@ -4285,6 +4297,7 @@ function newGame() {
     lines: {},               // 玩家自訂台詞 {key: [句子...]}
     charName: DEFAULT_CHAR_NAME,
     pets: [newPet('mochi', 'kid', DEFAULT_PET_NAME)], // 收集到的寵物（含還沒孵的蛋）
+    introSeen: false,                      // 🎬 開場動畫看過了沒（新存檔才播）
     growDex: { 'mochi:kid': true, 'girl:kinder': true }, // 🌱 成長圖鑑：一開始那隻是小朋友、小可愛是第一階
     activePet: 0,                                      // 目前帶出來玩的是第幾隻；G.pet 指向牠
     companions: [],                                    // 一起跟著逛的寵物（G.pets 的索引），不會餓也不會髒
@@ -4374,6 +4387,7 @@ function normalizeSave(g) {
   });
   const out = Object.assign(newGame(), g);
   if (g.guide === undefined) out.guide = 'done'; // 已經在玩的存檔不用教
+  if (g.introSeen === undefined) out.introSeen = true; // 已經在玩的存檔不自動播開場（設定裡可以重看）
   if (!out.noSell || typeof out.noSell !== 'object' || Array.isArray(out.noSell)) out.noSell = {};
   if (g.guideAsked === undefined && out.guide !== 'egg') out.guideAsked = true; // 教到一半的不要再問
   if (!g.welcome) out.welcome = { at: 0, uncle: true, grandma: true }; // 已經在玩的存檔不算搬新家
@@ -8909,6 +8923,7 @@ function giftLeave(now) {
   giftVisit.actors.forEach(({ a }) => { a.path = findPath(room, Math.floor(a.x), Math.floor(a.y), c[0], c[1]).slice(0, -1); });
 }
 function giftTick(now) {
+  if (introPlaying) return;   // 開場動畫播完，爸爸媽媽才來
   if (giftVisit.state === 'none') {
     if (giftVisit.box && !giftWanted()) { giftVisit.box = null; giftVisit.spec = null; }
     if (giftVisit.box) { // 包裹在地上等她點；她換房間或出門回來，包裹跟著她
@@ -11101,6 +11116,7 @@ function openGuideAsk() {
   $('#modal').hidden = false;
 }
 function guideTick(now) {
+  if (introPlaying) { const h = $('#guideHand'); if (h) h.hidden = true; return; }
   try { guideTickInner(now); } catch (e) { const h = $('#guideHand'); if (h) h.hidden = true; }
 }
 function guideTickInner(now) {
@@ -12660,7 +12676,7 @@ function confirmReset() {
       try { localStorage.setItem(UNDO_KEY, makeBackup()); } catch (e) {}
       // 先把手上拿的放回「舊的」房間再換存檔（不然會掉進新的存檔裡）；家人送禮、教學、寵物屋也從頭來
       cancelHold(); hold = null; hideItemMenu();
-      G = newGame(); giftReset(); guideSaid = null; guideScrolled = null; if (phMode) phModeEnd(); phReset(); updateHoldUI(); commit(); setTimeout(() => maybeShowNews(), 1200);
+      G = newGame(); giftReset(); guideSaid = null; guideScrolled = null; if (phMode) phModeEnd(); phReset(); updateHoldUI(); commit(); setTimeout(() => maybePlayIntro(), 300); setTimeout(() => maybeShowNews(), 1200);
       toast('已經重新開始了（「備份」分頁可以反悔）');
     };
     const back = el('button', 'big', '不要，我要繼續玩');
@@ -13224,6 +13240,9 @@ function tabSave(body) {
   const nb = el('button', 'mini', '📜 更新紀錄（以前更新了什麼）');
   nb.onclick = () => openNewsHistory();
   body.appendChild(nb);
+  const ib = el('button', 'mini', '🎬 再看一次開場');
+  ib.onclick = () => playIntro();
+  body.appendChild(ib);
   restSettings(body);
   // 👇 小手教學：可以關掉，也可以再打開重看一次
   body.appendChild(h3('👇 小手教學'));
@@ -13464,9 +13483,128 @@ function openFishing() {
   tick();
 }
 
+/* ===== 🎬 開場動畫（家長：第一次玩的時候要有開場）=====
+   大約 10 秒、四個畫面：搬家小貨車開過來 → 停在小屋前、小可愛抱著寵物蛋跳下車 →
+   推開門、空房間亮起來「這是我的新家！」→ 淡出，接著就是原本的「爸爸媽媽送包裹」。
+   ・只有新的存檔自動播（G.introSeen）；設定裡可以「🎬 再看一次開場」
+   ・右上角「跳過 ▶▶」，點畫面任何地方也可以跳過（小孩最想趕快動手）
+   ・播的時候爸媽送包裹、公告、小手教學都先等一下 */
+const INTRO_MS = 10500;
+function playIntro(onDone) {
+  if (introPlaying || document.getElementById('intro')) return;
+  introPlaying = true;
+  const box = el('div', 'intro'); box.id = 'intro';
+  const cv = document.createElement('canvas'); box.appendChild(cv);
+  const cap = el('div', 'intro-cap', '');
+  const skip = el('button', 'intro-skip', '跳過 ▶▶');
+  box.append(cap, skip);
+  document.body.appendChild(box);
+  const g = cv.getContext('2d'), start = performance.now();
+  let raf = 0, done = false, said = false, honk = false, door = false;
+  const finish = () => {
+    if (done) return; done = true;
+    cancelAnimationFrame(raf); box.classList.add('out'); box.style.pointerEvents = 'none';
+    introPlaying = false;   // 馬上算結束（畫面只是在淡出）
+    setTimeout(() => box.remove(), 400);
+    G.introSeen = true; saveGame();
+    try { stopSpeak(); } catch (e) {}
+    if (onDone) onDone();
+  };
+  box.onclick = finish;
+  playIntro.test = { finish, box };
+  const W = 400, H = 260;
+  const outfit = currentOutfit();
+  function frame(now) {
+    const t = now - start;
+    if (t >= INTRO_MS) { finish(); return; }
+    const dpr = window.devicePixelRatio || 1, cw = box.clientWidth || 400, ch = box.clientHeight || 300;
+    if (cv.width !== Math.round(cw * dpr) || cv.height !== Math.round(ch * dpr)) { cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr); }
+    const k = Math.min(cw / W, ch / H) * dpr;
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.fillStyle = '#bfe3f5'; g.fillRect(0, 0, cv.width, cv.height);
+    g.setTransform(k, 0, 0, k, (cv.width - W * k) / 2, (cv.height - H * k) / 2);
+    if (t < 5600) drawIntroOutside(g, t, outfit);
+    else drawIntroInside(g, t - 5600, outfit);
+    // 聲音、字幕
+    if (!honk && t > 300) { honk = true; try { Sound.play('jump'); } catch (e) {} }
+    if (!door && t > 5400) { door = true; try { Sound.play('knock'); } catch (e) {} }
+    if (!said && t > 6300) { said = true; cap.textContent = '這是我的新家！🏡'; cap.classList.add('on'); try { Sound.play('fanfare'); speak('這是我的新家！'); } catch (e) {} }
+    if (t > 9600) box.classList.add('fade');
+    raf = requestAnimationFrame(frame);
+  }
+  raf = requestAnimationFrame(frame);
+}
+// 外面：小路、小屋、搬家小貨車開過來；停好之後小可愛抱著蛋跳下車、走到門口
+function drawIntroOutside(g, t, outfit) {
+  const W = 400;
+  // 天空、太陽、雲
+  g.fillStyle = '#fff3b0'; g.beginPath(); g.arc(340, 50, 22, 0, Math.PI * 2); g.fill();
+  g.fillStyle = 'rgba(255,255,255,.85)';
+  [[60 + t / 90, 40], [200 + t / 120, 70]].forEach(([x, y]) => { x = (x % 460) - 30; g.beginPath(); g.arc(x, y, 12, 0, Math.PI * 2); g.arc(x + 14, y - 5, 15, 0, Math.PI * 2); g.arc(x + 30, y, 11, 0, Math.PI * 2); g.fill(); });
+  // 草地、小路
+  g.fillStyle = '#a7d98a'; g.fillRect(0, 170, W, 90);
+  g.fillStyle = '#d9cdb4'; g.fillRect(0, 205, W, 26);
+  g.fillStyle = '#fff'; for (let x = 0; x < W; x += 40) g.fillRect(x + 8, 216, 18, 3);
+  // 小屋
+  const hx = 250;
+  g.fillStyle = '#fff8ee'; g.fillRect(hx, 120, 100, 72);
+  g.fillStyle = '#ff6f8f'; g.beginPath(); g.moveTo(hx - 12, 124); g.lineTo(hx + 50, 78); g.lineTo(hx + 112, 124); g.closePath(); g.fill();
+  g.fillStyle = '#9fd8ff'; g.fillRect(hx + 12, 138, 20, 18); g.fillRect(hx + 68, 138, 20, 18);
+  const doorOpen = t > 5000;
+  g.fillStyle = doorOpen ? '#ffe9a8' : '#b97a56'; g.fillRect(hx + 40, 150, 22, 42);
+  g.fillStyle = '#7bd389'; [[hx - 8, 190], [hx + 108, 190]].forEach(([x, y]) => { g.beginPath(); g.arc(x, y - 6, 9, 0, Math.PI * 2); g.fill(); });
+  // 搬家小貨車：從左邊開過來，2.6 秒停在小屋前
+  const kk = Math.min(1, t / 2600), ease = 1 - Math.pow(1 - kk, 3), tx = -120 + ease * 250, bump = kk < 1 ? Math.abs(Math.sin(t / 60)) * 1.5 : 0;
+  g.save(); g.translate(tx, 0 - bump);
+  g.fillStyle = '#ffd35c'; g.fillRect(0, 168, 70, 42);                  // 貨箱
+  g.fillStyle = '#f0b93c'; g.fillRect(0, 168, 70, 6);
+  g.fillStyle = '#ff9ec4'; g.font = '18px sans-serif'; g.fillText('🏠', 24, 196);
+  g.fillStyle = '#6bb6ff'; g.fillRect(70, 182, 32, 28);                 // 車頭
+  g.fillStyle = '#d6f0ff'; g.fillRect(78, 186, 18, 12);
+  g.fillStyle = '#3a3240'; [[18, 212], [84, 212]].forEach(([x, y]) => { g.beginPath(); g.arc(x, y, 8, 0, Math.PI * 2); g.fill(); });
+  g.fillStyle = '#c0c7ce'; [[18, 212], [84, 212]].forEach(([x, y]) => { g.beginPath(); g.arc(x, y, 3, 0, Math.PI * 2); g.fill(); });
+  g.restore();
+  if (kk < 1) { g.fillStyle = 'rgba(200,200,200,.6)'; [0, 1, 2].forEach(i => { g.beginPath(); g.arc(tx - 8 - i * 10 - (t / 30 % 10), 205 - i * 4, 4 + i * 2, 0, Math.PI * 2); g.fill(); }); }
+  // 小可愛：停好之後跳下車，抱著寵物蛋走到門口
+  if (t > 2900) {
+    const w = Math.min(1, (t - 3300) / 1800), jx = t < 3300 ? 0 : w;
+    const x = 240 + jx * 52, y = 212 - (t < 3300 ? Math.sin((t - 2900) / 400 * Math.PI) * 14 : Math.abs(Math.sin(t / 110)) * 2);   // 從車子右邊跳下來
+    g.save(); g.translate(x, y); g.scale(.78, .78);
+    drawGirl(g, { t: t / 1000, walking: t > 3300 && w < 1, outfit, face: 'joy', stage: kidLookStage() });
+    // 抱在胸前的寵物蛋：大一點、有邊框（白色的蛋放在白制服上會看不見）
+    g.translate(4, -12); g.scale(.85, .85);
+    g.strokeStyle = '#c9a77a'; g.lineWidth = 2.4; g.beginPath(); g.ellipse(0, -14, 11, 14, 0, 0, Math.PI * 2); g.stroke();
+    drawEgg(g, PET_SPECIES_BY_ID.dragon || PET_SPECIES[0], 0);
+    g.restore();
+  }
+}
+// 屋子裡：空空的房間，光從門口灑進來，越來越亮，小可愛開心轉一圈
+function drawIntroInside(g, t, outfit) {
+  const W = 400, H = 260, k = Math.min(1, t / 1200);
+  g.fillStyle = '#f3e6cc'; g.fillRect(0, 0, W, 170);
+  g.fillStyle = '#d6a86f'; g.fillRect(0, 170, W, 90);
+  g.fillStyle = 'rgba(160,110,60,.25)'; for (let y = 180; y < H; y += 16) g.fillRect(0, y, W, 1.5);
+  g.fillStyle = '#9fd8ff'; g.fillRect(60, 60, 60, 50); g.fillRect(280, 60, 60, 50);
+  g.strokeStyle = '#fffaf0'; g.lineWidth = 4; [[60, 60], [280, 60]].forEach(([x, y]) => g.strokeRect(x, y, 60, 50));
+  // 光
+  const grd = g.createRadialGradient(200, 150, 10, 200, 150, 220);
+  grd.addColorStop(0, `rgba(255,248,200,${.75 * k})`); grd.addColorStop(1, 'rgba(255,248,200,0)');
+  g.fillStyle = grd; g.fillRect(0, 0, W, H);
+  // 亮晶晶
+  for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2 + t / 900, r = 70 + (i % 3) * 22; g.fillStyle = `rgba(255,215,90,${k})`; g.font = '14px sans-serif'; g.fillText('✨', 200 + Math.cos(a) * r - 7, 140 + Math.sin(a) * r * .55); }
+  g.save(); g.translate(200, 214); g.scale(Math.cos(t / 300) >= 0 ? .95 : -.95, .95);
+  drawGirl(g, { t: t / 1000, outfit, face: 'joy', stage: kidLookStage() });
+  g.restore();
+}
+function maybePlayIntro() {
+  if (G.introSeen || SAVE_LOCKED != null || introPlaying) return;
+  playIntro();
+}
+
 // ── 啟動 ──
 refreshTop();
 renderTab();
+setTimeout(() => maybePlayIntro(), 300);
 setTimeout(() => maybeShowNews(), 1500);
 updateHoldUI();
 resize();

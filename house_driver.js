@@ -7,7 +7,8 @@
      她玩的東西不見過一次了，備份如果是壞的，等於沒有備份。 */
   var fails=[], errs=[], pendingChecks=[], notesPad = '';  // pendingChecks：要等非同步（MutationObserver 之類）跑完才能驗的
   window.addEventListener('error', function(e){ errs.push(String(e.message)); });
-  SEASON_TODAY = [6, 1];   // 走查一律當作沒有節日（不然 10 月跑跟 6 月跑結果不一樣）；節日的測試自己切換
+  SEASON_TODAY = [6, 1];
+  G.introSeen = true;   // 開場動畫另外測（不然新存檔會先播十秒，擋住後面的走查）   // 走查一律當作沒有節日（不然 10 月跑跟 6 月跑結果不一樣）；節日的測試自己切換
 
   function restore(raw){ if(raw===null) localStorage.removeItem(SAVE_KEY);
                          else localStorage.setItem(SAVE_KEY, raw); }
@@ -2762,6 +2763,39 @@
       if (!(host.crowd || []).every(function(c){ return c.a.room === roomKey(); })) fails.push('去操場，同學沒有跟過來');
     } catch (e) { fails.push('路過的動物朋友測試出錯：' + e.message); }
     finally { walkTrip = realWalk98; G.away = null; host.n = null; }
+
+    /* 99 🎬 開場動畫：新存檔才播、舊存檔不自動播、播的時候爸媽包裹先等、可以跳過、設定可以重看 */
+    try {
+      if (newGame().introSeen !== false) fails.push('新存檔沒有標記要播開場');
+      var old99 = JSON.parse(JSON.stringify(G)); delete old99.introSeen;
+      if (normalizeSave(old99).introSeen !== true) fails.push('已經在玩的舊存檔也會自動播開場');
+      G.introSeen = false; maybePlayIntro();
+      var ib = document.getElementById('intro');
+      if (!ib || !introPlaying) fails.push('新存檔沒有播開場動畫');
+      // 播的時候，爸爸媽媽的包裹先不要來
+      var og99 = G.openGift, realSay99 = giftSay; G.openGift = false; giftReset(); giftSay = function(){};
+      try {
+        var t99 = performance.now(); for (var k99 = 1; k99 <= 5; k99++) giftTick(t99 + k99 * 600000);
+        if (giftVisit.state !== 'none') fails.push('開場動畫播的時候，爸媽的包裹就開始來了（' + giftVisit.state + '）');
+        // 對照：沒有在播開場的話，爸媽是會來的（確定上面那一條真的有測到）
+        introPlaying = false; giftReset(); for (var k98 = 1; k98 <= 5; k98++) giftTick(t99 + k98 * 600000); introPlaying = true;
+        if (giftVisit.state === 'none') fails.push('開場測試本身不對：沒播開場時爸媽也沒來');
+      } finally { giftSay = realSay99; G.openGift = og99; giftReset(); }
+      // 每個畫面都畫得出來
+      try { var c99 = document.createElement('canvas').getContext('2d'); [0, 1500, 3000, 4500, 5500].forEach(function(t){ drawIntroOutside(c99, t, currentOutfit()); }); [0, 2000, 4000].forEach(function(t){ drawIntroInside(c99, t, currentOutfit()); }); }
+      catch (eI) { fails.push('開場動畫有畫面畫不出來：' + eI.message); }
+      if (!ib || !ib.querySelector('.intro-skip') || !/跳過/.test(ib.textContent)) fails.push('開場動畫沒有「跳過」');
+      if (ib) ib.querySelector('.intro-skip').click();
+      if (introPlaying || (document.getElementById('intro') && !document.getElementById('intro').classList.contains('out'))) fails.push('按跳過沒有關掉開場');
+      if (G.introSeen !== true) fails.push('看過（跳過）開場之後，下次還會再播');
+      pendingChecks.push(function(){ if (document.getElementById('intro') || introPlaying) fails.push('開場動畫跳過之後還留在畫面上'); });
+      // 設定裡可以再看一次
+      openTab('save');
+      var rb = [].filter.call(document.querySelectorAll('#tabBody button'), function(b){ return /再看一次開場/.test(b.textContent); })[0];
+      if (!rb) fails.push('設定裡沒有「再看一次開場」');
+      openTab('inv');
+    } catch (e) { fails.push('開場動畫測試出錯：' + e.message); }
+    finally { G.introSeen = true; }
 
     /* 95 🎡 遊樂園：出門選單有、兔兔姊姊迎接、旋轉木馬和摩天輪真的坐上去轉、棉花糖要花錢買、氣球拿在手上；棉花糖商店不賣 */
     var realToast95 = toast, realWalk95 = walkTrip, keep95 = { bells: G.bells, kf: JSON.stringify(G.kidFood), cd: JSON.stringify(G.actCD || {}) };
