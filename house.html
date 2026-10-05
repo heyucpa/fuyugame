@@ -4076,6 +4076,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-11T20:00', title: '圖書館可以自由閱讀了！📚', lines: [
+    ['📗', '閱讀護照八本都蓋滿之後，繪本架和館員說故事都可以自己挑想看的書'],
+    ['🎲', '不知道看哪本？按「隨便一本」'],
+    ['👆', '閱讀護照裡看過的書，點一下就能再看一次']
+  ], newItems: [] },
   { id: '2026-10-11T15:00', title: '小可愛也有心情和乾淨了！', lines: [
     ['💗', '小可愛的小卡多了「心情」：做喜歡的事、坐遊樂設施、陪寵物玩，心情就會變好'],
     ['🧼', '玩沙、溜滑梯、跑步會弄髒，去浴缸泡澡就乾乾淨淨（洗手也會乾淨一點）'],
@@ -15648,32 +15653,48 @@ function finishBook(book) {
   saveGame();
   openPassport();
 }
-function openPassport() {
+// opts.pick：八本都看完的「自由閱讀」——點封面挑一本；opts.aloud：館員說故事（一打開就念）
+function openPassport(opts) {
+  opts = opts || {};
   const pass = G.passport || {};
+  const all = Object.keys(pass).length >= STORYBOOKS.length;
   const card = $('#modalCard');
   card.innerHTML = '';
-  card.appendChild(el('h2', '', '📗 閱讀護照'));
+  card.appendChild(el('h2', '', opts.pick ? (opts.aloud ? '👂 想聽哪一本？' : '📚 自由閱讀：想看哪一本？') : '📗 閱讀護照'));
   const grid = el('div', 'pass-grid');
   STORYBOOKS.forEach(b => {
-    const cell = el('div', 'pass' + (pass[b.id] ? ' done' : ''));
+    const has = !!pass[b.id];
+    const cell = el('button', 'pass' + (has ? ' done' : ''));
     cell.append(el('div', 'pass-cover', b.cover), el('span', '', b.title));
-    if (pass[b.id]) cell.appendChild(el('div', 'pass-stamp', '讀'));
+    if (has) { // 看過的點一下就能再看一次
+      cell.appendChild(el('div', 'pass-stamp', '讀'));
+      cell.onclick = () => { Sound.play('click'); openStorybook(b.id, opts.aloud === true); };
+    } else cell.disabled = true;
     grid.appendChild(cell);
   });
   card.appendChild(grid);
-  card.appendChild(note(`蓋了 ${Object.keys(pass).length} / ${STORYBOOKS.length} 個章　全部蓋滿可以拿獎狀！`));
-  const ok = el('button', 'big', '好');
+  card.appendChild(note(all ? '🏅 護照蓋滿了！現在可以自由閱讀：點封面挑一本想看的。'
+    : `蓋了 ${Object.keys(pass).length} / ${STORYBOOKS.length} 個章　全部蓋滿可以拿獎狀！看過的點一下可以再看一次。`));
+  const row = el('div', 'book-btns');
+  if (opts.pick) {
+    const any = el('button', 'big alt', '🎲 隨便一本');
+    any.onclick = () => openStorybook(STORYBOOKS[Math.floor(Math.random() * STORYBOOKS.length)].id, opts.aloud === true);
+    row.appendChild(any);
+  }
+  const ok = el('button', 'big', opts.pick ? '不看了' : '好');
   ok.onclick = () => { $('#modal').hidden = true; };
-  card.appendChild(ok);
+  row.appendChild(ok);
+  card.appendChild(row);
   $('#modal').hidden = false;
 }
-// 繪本架：先給還沒看過的
+// 繪本架：先給還沒看過的；八本都看完 → 自由閱讀，自己挑
 // opts.aloud：館員說故事（紅色圓桌）——一打開就念，妹妹不用自己讀
 function openNextStorybook(opts) {
   const pass = G.passport || {};
+  const aloud = !!(opts && opts.aloud === true);
   const fresh = STORYBOOKS.filter(b => !pass[b.id]);
-  const pool = fresh.length ? fresh : STORYBOOKS;
-  openStorybook(pool[Math.floor(Math.random() * pool.length)].id, opts && opts.aloud === true);
+  if (!fresh.length) { openPassport({ pick: true, aloud }); return; }
+  openStorybook(fresh[Math.floor(Math.random() * fresh.length)].id, aloud);
 }
 
 /* ── 🔎 找書：把書放回對的書架 ──
