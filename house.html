@@ -2856,13 +2856,15 @@ function growDexAdd(species, stage, g) {
   d[k] = true;
   return true;
 }
-// 現在養的每一隻，目前的階段都算收集到（generous：舊存檔的大朋友，前面的寶寶、小朋友也一起算——牠一定經過了）
-function growDexSync(g, generous) {
+/* 現在養的每一隻：目前的階段和前面的階段都算收集到（小朋友一定當過寶寶）。
+   家長發現：一開始那隻粉紅糰子送來的時候就是小朋友，寶寶那格永遠是灰的；
+   本來只有「完全沒有成長圖鑑的舊存檔」才補前面的階段，現在每次都補（跟小可愛一樣）。 */
+function growDexSync(g) {
   g = g || G;
   (g.pets || []).forEach(p => {
     const i = GROW_STAGES.indexOf(p.stage);
     if (i < 0) return;
-    (generous ? GROW_STAGES.slice(0, i + 1) : [p.stage]).forEach(st => growDexAdd(p.species, st, g));
+    GROW_STAGES.slice(0, i + 1).forEach(st => growDexAdd(p.species, st, g));
   });
   /* 小可愛一定是一階一階長大的：現在的階段跟前面每一個階段都算收集到（不管 generous）。
      家長發現：更新前她已經長大了，前一版的存檔又已經有成長圖鑑（只有寵物），
@@ -4453,7 +4455,7 @@ function newGame() {
     charName: DEFAULT_CHAR_NAME,
     pets: [newPet('mochi', 'kid', DEFAULT_PET_NAME)], // 收集到的寵物（含還沒孵的蛋）
     introSeen: false,                      // 🎬 開場動畫看過了沒（新存檔才播）
-    growDex: { 'mochi:kid': true, 'girl:kinder': true }, // 🌱 成長圖鑑：一開始那隻是小朋友、小可愛是第一階
+    growDex: { 'mochi:baby': true, 'mochi:kid': true, 'girl:kinder': true }, // 🌱 成長圖鑑：一開始那隻是小朋友（當過寶寶）、小可愛是第一階
     activePet: 0,                                      // 目前帶出來玩的是第幾隻；G.pet 指向牠
     companions: [],                                    // 一起跟著逛的寵物（G.pets 的索引），不會餓也不會髒
     friends: {},                                       // 來玩過的動物鄰居 {id: 來玩幾次}
@@ -4568,7 +4570,8 @@ function normalizeSave(g) {
   if (out.kid && !num(out.kid.mood)) out.kid.mood = 80;
   if (out.kid && !num(out.kid.clean)) out.kid.clean = 100;
   (out.pets || []).forEach(q => { if (q && q.small != null && !num(q.small)) delete q.small; });
-  if (!isObj(g.growDex)) { out.growDex = {}; growDexSync(out, true); } else growDexSync(out, false);
+  if (!isObj(g.growDex)) out.growDex = {};
+  growDexSync(out);
   if (!Array.isArray(g.newsSeen)) out.newsSeen = []; // 舊存檔：還沒看過任何公告，要讓她看到這次更新了什麼
   /* 補償也要發給「已經存在的存檔」——只改 newGame() 的話，
      她那台已經有存檔了，newGame() 根本不會再跑，一毛都拿不到。
