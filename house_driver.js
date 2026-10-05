@@ -2740,13 +2740,19 @@
     /* 98 公園、學校也有路過的動物朋友（遊樂園 3、公園 2、學校 3；親戚家沒有） */
     var realWalk98 = walkTrip; walkTrip = function(l, d){ d(); };
     try {
-      [['park', 2], ['school', 3], ['amusement', 3], ['uncle', 0]].forEach(function(pc){
+      [['park', 2], ['school', 3], ['amusement', 3], ['library', 2], ['uncle', 0]].forEach(function(pc){
         G.away = null; host.n = null; travelTo(pc[0]);
         var n98 = performance.now(); for (var g98 = 0; g98 < 6; g98++) gameStep(.05, n98 + g98 * 50);
         var cnt = (host.crowd || []).length;
         if (cnt !== pc[1]) fails.push(pc[0] + ' 的動物朋友應該有 ' + pc[1] + ' 位，現在 ' + cnt + ' 位');
         if (cnt) { crowdTalk(host.crowd[0]); if (CROWD_PLACES[pc[0]].lines.indexOf(host.crowd[0].say) < 0) fails.push(pc[0] + ' 的動物朋友說的話不是這個地方的'); }
         if (pc[0] !== 'amusement' && (host.crowd || []).some(function(c){ return c.balloon; })) fails.push(pc[0] + ' 的動物朋友也拿著氣球');
+        if (pc[0] === 'library') {
+          if (!(host.crowd || []).every(function(c){ return c.book && c.still; })) fails.push('圖書館的動物朋友沒有拿書、或會走來走去');
+          var lx = host.crowd.map(function(c){ return [c.a.x, c.a.y]; });
+          for (var gl = 0; gl < 80; gl++) gameStep(.05, n98 + 400 + gl * 50);
+          if (host.crowd.some(function(c, i){ return Math.abs(c.a.x - lx[i][0]) + Math.abs(c.a.y - lx[i][1]) > .01; })) fails.push('圖書館看書的動物朋友走來走去');
+        }
         draw();
       });
       // 學校：去操場，同學也跟著過去

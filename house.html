@@ -3996,7 +3996,8 @@ const NEWS = [
   { id: '2026-10-08T20:00', title: '外面變熱鬧了！', lines: [
     ['🎡', '遊樂園多了咖啡杯、爆米花車、三角旗，還有拿著氣球的動物遊客'],
     ['🌳', '公園有動物朋友在散步，點他們會跟你聊天'],
-    ['🏫', '學校有三位動物同學，會跟你一起去操場']
+    ['🏫', '學校有三位動物同學，會跟你一起去操場'],
+    ['📚', '圖書館有兩位安靜看書的動物朋友']
   ], newItems: [] },
   { id: '2026-10-08T15:00', title: '可以蓋陽台花園了！🌿', lines: [
     ['🌿', '「🏗️ 蓋房間」可以蓋陽台花園：天空、白色欄杆、木頭地板'],
@@ -9614,7 +9615,7 @@ function hostTick(dt, now) {
     const cfg = CROWD_PLACES[G.away.place];
     host.crowd = cfg ? NEIGHBORS.slice().sort(() => Math.random() - .5).slice(0, cfg.n).map((n, i) => {
       const c3 = nearestFree(room, 2 + i * 3, 6 + (i % 2) * 2) || c;
-      return { n, lines: cfg.lines, balloon: cfg.balloon ? ['#ff6b6b', '#6bb6ff', '#ffd35c'][i] : null, a: { room: roomKey(), x: c3[0] + .5, y: c3[1] + .5, z: 0, path: [], t: Math.random() * 5, facing: 1,
+      return { n, lines: cfg.lines, still: !!cfg.still, book: cfg.book ? ['#e8505b', '#6bb6ff', '#7bd389'][i] : null, balloon: cfg.balloon ? ['#ff6b6b', '#6bb6ff', '#ffd35c'][i] : null, a: { room: roomKey(), x: c3[0] + .5, y: c3[1] + .5, z: 0, path: [], t: Math.random() * 5, facing: 1,
         idleUntil: now + 1000 + Math.random() * 3000, blinkAt: 0, squish: 0, squishV: 0, lean: 0, leanV: 0, press: null, happyUntil: 0, particles: [] } };
     }) : [];
     host.pets = (want.pets || []).map(([species, stage, name], i) => {
@@ -9652,7 +9653,7 @@ function hostTick(dt, now) {
     if (Math.random() < .5) setTimeout(() => { if (host.n) fufuSay(pickLine('kidReply'), 2600); }, 3000);
   }
   actorWalk(a, dt, now, room, blockedGrid(room), .5);
-  (host.crowd || []).forEach(({ a: ca }) => { ca.t += dt; actorEnterRoom(ca, room); actorSpring(ca, dt, now, false); actorWalk(ca, dt, now, room, blockedGrid(room), .15); });
+  (host.crowd || []).forEach(cr => { const ca = cr.a; ca.t += dt; actorEnterRoom(ca, room); actorSpring(ca, dt, now, false); if (cr.still) ca.facing = 1; else actorWalk(ca, dt, now, room, blockedGrid(room), .15); });   // 看書的站著不動
   (host.pets || []).forEach(({ a: pa }) => { pa.t += dt; actorEnterRoom(pa, room); actorSpring(pa, dt, now, false); actorWalk(pa, dt, now, room, blockedGrid(room), .3); });
   farmTick(dt, now, room);
 }
@@ -9822,7 +9823,7 @@ function hostDrawEntries() {
   const list = [host.n.girl
     ? { x: host.a.x - .2, y: host.a.y - .2, w: .4, d: .4, z: 0, h: 64, drawFn: ctx => drawFriendGirl(ctx, host.a, host.n) }
     : { x: host.a.x - .2, y: host.a.y - .2, w: .4, d: .4, z: 0, h: 30 * VISITOR_K, drawFn: ctx => drawNeighborActor(ctx, host.a, host.n, 1, false, false) }];
-  (host.crowd || []).forEach(cr => { if (cr.a.room === roomKey()) list.push({ x: cr.a.x - .2, y: cr.a.y - .2, w: .4, d: .4, z: 0, h: 30 * VISITOR_K, drawFn: ctx => { drawNeighborActor(ctx, cr.a, cr.n, 1, false, false); if (cr.balloon) drawCrowdBalloon(ctx, cr); } }); });
+  (host.crowd || []).forEach(cr => { if (cr.a.room === roomKey()) list.push({ x: cr.a.x - .2, y: cr.a.y - .2, w: .4, d: .4, z: 0, h: 30 * VISITOR_K, drawFn: ctx => { drawNeighborActor(ctx, cr.a, cr.n, 1, false, false); if (cr.balloon) drawCrowdBalloon(ctx, cr); if (cr.book) drawCrowdBook(ctx, cr); } }); });
   (host.pets || []).forEach(({ a, p }) => { if (a.room === roomKey()) list.push({ x: a.x - .15, y: a.y - .15, w: .3, d: .3, z: 0, h: 26 * lookScale(p), drawFn: ctx => drawPetActor(ctx, a, p) }); });
   farm.actors.forEach(({ n, a }) => list.push({ x: a.x - .2, y: a.y - .2, w: .4, d: .4, z: 0, h: 30 * (n.k || FARM_K), drawFn: ctx => drawNeighborActor(ctx, a, n, 1, false, false, n.k || FARM_K) }));
   return list;
@@ -10747,11 +10748,22 @@ function drawCrowdBalloon(ctx, cr) {
   ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.beginPath(); ctx.ellipse(p.x + 10 * k + sw, p.y - 54 * k, 2 * k, 3 * k, -.4, 0, Math.PI * 2); ctx.fill();
   ctx.restore();
 }
+// 📖 看書的動物朋友：胸前一本打開的書，輕輕晃
+function drawCrowdBook(ctx, cr) {
+  const p = iso(cr.a.x, cr.a.y, 0), k = VISITOR_K, wob = Math.sin(cr.a.t * 1.5) * .05;
+  ctx.save(); ctx.translate(p.x, p.y - 15 * k); ctx.rotate(wob); ctx.scale(k, k);
+  ctx.fillStyle = cr.book; ctx.fillRect(-9, -6, 18, 11);
+  ctx.fillStyle = '#fffaf0'; ctx.fillRect(-8, -5.2, 7.6, 9.4); ctx.fillRect(.4, -5.2, 7.6, 9.4);
+  ctx.fillStyle = '#c9bfae'; [-3, -1, 1].forEach(y => { ctx.fillRect(-7, y, 6, .7); ctx.fillRect(1.5, y, 6, .7); });
+  ctx.restore();
+}
 const CROWD_LINES = ['遊樂園好好玩！', '我剛剛坐了摩天輪！', '你也來玩呀？', '棉花糖好甜喔～', '等一下要不要一起坐咖啡杯？', '我最喜歡旋轉木馬了！'];
 // 哪些地方有路過的動物朋友：幾位、拿不拿氣球、會說什麼
 const CROWD_PLACES = {
   amusement: { n: 3, balloon: true, lines: CROWD_LINES },
   park: { n: 2, lines: ['今天天氣好好喔！', '我看到松鼠了！', '要不要一起去看噴水池？', '公園的花好香～', '我剛剛溜滑梯了！', '散步好舒服喔～'] },
+  // 📚 圖書館：兩位安靜看書的動物朋友（站著不動、手上拿著書，說話小小聲）
+  library: { n: 2, book: true, still: true, lines: ['噓～我在看恐龍的書', '這本繪本好好看喔', '你也喜歡看書嗎？', '在圖書館要小聲一點喔～', '我在找公主的故事', '看完要放回書架喔'] },
   school: { n: 3, lines: ['下課要不要一起玩？', '老師今天好溫柔喔！', '你功課寫完了嗎？', '等一下一起去操場！', '我們來比賽跑步！', '我帶了點心，分你一半～'] }
 };
 function crowdHit(w) {
