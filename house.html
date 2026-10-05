@@ -606,6 +606,10 @@ button.pass { font: inherit; }
 .gb-row { display: flex; align-items: center; gap: 10px; border: 2px solid var(--line); border-radius: 14px; background: #fff; padding: 4px 10px; margin-bottom: 6px; }
 .gb-txt { display: flex; flex-direction: column; font-size: 13px; text-align: left; flex: 1; min-width: 0; }
 .gb-txt b { font-size: 15px; }
+.name-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.name-row canvas { flex: none; }
+.name-row .textin { flex: 1; min-width: 0; margin: 0; }
+.name-tag { flex: none; font-size: 12px; color: #fff; background: #7cc38e; border-radius: 10px; padding: 2px 8px; }
 .gb-txt .gb-acts { font-size: 14px; color: var(--muted); }
 .gb-stamp { margin-left: auto; font-size: 26px; width: 40px; height: 40px; flex: none; display: grid; place-items: center;
   border: 2px dashed #e8a0a0; border-radius: 50%; transform: rotate(-12deg); background: #fff7f5; }
@@ -12229,7 +12233,6 @@ function openTab(name) {
   setBigRoom(false);                  // 放大房間時點了分頁：把面板打開
   if (tab !== name) sellMode = false; // 換分頁就離開賣東西模式
   tab = name;
-  if (name !== tab) talkEdit = false;   // 離開這一頁，台詞自動鎖回去
   document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === name));
   renderTab();
 }
@@ -12524,7 +12527,6 @@ function renderTab() {
 
 // ── 賣回商店 ──
 let sellMode = false; // 切換分頁時會關掉（ui.js）
-let talkEdit = false;  // 台詞編輯模式；換分頁就鎖回去，不存進存檔
 
 function sellToggle(body, extraNote) {
   const b = el('button', 'sellbtn' + (sellMode ? ' on' : ''), sellMode ? '✓ 賣完了，回到一般模式' : '💰 賣回商店（半價）');
@@ -13774,6 +13776,12 @@ function tabSave(body) {
     body.appendChild(del);
   }
 
+  body.appendChild(h3('💬 台詞（家長）'));
+  body.appendChild(note('小可愛、寵物、鄰居說的話。要輸入家長密碼才能改。'));
+  const talkBtn = el('button', 'big alt', '💬 修改台詞');
+  talkBtn.onclick = () => askPin('修改台詞', openLineEditor);
+  body.appendChild(talkBtn);
+
   body.appendChild(h3('⚠️ 重新開始'));
   body.appendChild(note('把「' + curSlotName() + '」這個存檔清掉，從頭開始。' +
     '清掉之前會自動留一份，「💾 備份」分頁的「把上一份換回來」還救得回來。'));
@@ -13789,8 +13797,10 @@ function tabSave(body) {
     '一般用瀏覽器開的網站，七天沒玩存檔就可能被清掉。'));
 }
 
+/* 名字分頁：只放小孩自己會想改的名字（家長：台詞不太需要給小朋友修改）。
+   每一隻寵物都可以取名字（本來只能改正在照顧的那隻）。台詞搬到「設定 → 💬 台詞（家長）」。 */
 function tabTalk(body) {
-  body.appendChild(h3('角色名字'));
+  body.appendChild(h3('👧 小可愛的名字'));
   const name = el('input', 'textin');
   name.value = G.charName || '';
   name.placeholder = DEFAULT_CHAR_NAME;
@@ -13798,15 +13808,21 @@ function tabTalk(body) {
   name.oninput = () => { G.charName = name.value; saveGame(); updateHoldUI(); };
   body.appendChild(name);
 
-  body.appendChild(h3('寵物名字'));
-  const pname = el('input', 'textin');
-  pname.value = G.pet.name || '';
-  pname.placeholder = DEFAULT_PET_NAME;
-  pname.maxLength = 10;
-  pname.oninput = () => { G.pet.name = pname.value; saveGame(); updatePetCard(); };
-  body.appendChild(pname);
+  body.appendChild(h3('🐾 寵物的名字'));
+  G.pets.forEach((p, i) => {
+    const row = el('div', 'name-row');
+    try { row.appendChild(renderPetPortrait(p, 40, 40)); } catch (e) {}
+    const pn = el('input', 'textin');
+    pn.value = p.name || '';
+    pn.placeholder = p.stage === 'egg' ? '神秘的蛋（孵出來再取也可以）' : PET_SPECIES_BY_ID[p.species].name;
+    pn.maxLength = 10;
+    pn.oninput = () => { p.name = pn.value; saveGame(); updatePetCard(); };
+    row.appendChild(pn);
+    if (i === G.activePet) row.appendChild(el('span', 'name-tag', '照顧中'));
+    body.appendChild(row);
+  });
 
-  body.appendChild(h3('房間名字'));
+  body.appendChild(h3('🏠 房間的名字'));
   G.rooms.forEach((r, i) => {
     const rn = el('input', 'textin');
     rn.value = r.name;
@@ -13816,50 +13832,42 @@ function tabTalk(body) {
     rn.oninput = () => { renameRoom(i, rn.value); saveGame(); refreshTop(); };
     body.appendChild(rn);
   });
+  body.appendChild(note('名字隨時都可以改。清空就會用回原本的名字。'));
+}
 
-  /* 台詞預設是鎖住的。
-     名字（角色、寵物、房間）她想改隨時改，那是她的東西；
-     但台詞有幾十組、每組好幾行，小孩手指點進去一滑就整段不見，
-     而且不會發現，等到那隻寵物不說話了才知道。
-     要改就先按「✏️ 編輯」，離開這一頁就自動鎖回去。 */
-  body.appendChild(h3('小可愛說的話'));
-  const lock = el('button', 'big alt', talkEdit ? '🔒 改好了，鎖起來' : '✏️ 我要改台詞');
-  lock.onclick = () => { talkEdit = !talkEdit; Sound.play('click'); renderTab(); };
-  body.appendChild(lock);
-  body.appendChild(note(talkEdit
-    ? '每一行是一句話，會隨機挑一句說。清空就會用回預設的句子。改完記得按上面那顆鎖起來。'
-    : '這裡可以改小可愛、寵物、鄰居說的話。現在是鎖住的，要改請先按上面那顆。'));
-
+/* 💬 台詞（家長）：在設定裡，要家長密碼才打開（沒設密碼就直接打開）。
+   本來放在名字分頁、用一顆「✏️ 我要改台詞」鎖著，但小孩一樣按得開；
+   台詞有幾十組，手指一滑整段不見也不會發現。 */
+function openLineEditor() {
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', '💬 台詞（家長）'));
+  card.appendChild(note('每一行是一句話，會隨機挑一句說。清空就會用回預設的句子。改了就會存起來。'));
   LINE_TYPES.forEach(t => {
     const head = el('div', 'talkhead');
-    head.appendChild(el('h3', '', t.label + (t.hint && talkEdit ? `（${t.hint}）` : '')));
+    head.appendChild(el('h3', '', t.label + (t.hint ? `（${t.hint}）` : '')));
     const test = el('button', 'mini', '試說');
     test.onclick = () => fufuSay(pickLine(t.key, { 家具: '原木椅', 寵物: petName() }), 3000);
     head.appendChild(test);
-    body.appendChild(head);
-    const box = el('textarea', 'talkbox' + (talkEdit ? '' : ' locked'));
+    card.appendChild(head);
+    const box = el('textarea', 'talkbox');
     box.value = lineList(t.key).join('\n');
     box.rows = Math.min(6, Math.max(2, lineList(t.key).length));
-    box.readOnly = !talkEdit;
     box.oninput = () => {
-      if (!talkEdit) return;          // 鎖著就什麼都不寫，連存檔都不碰
       const lines = box.value.split('\n').map(x => x.trim()).filter(Boolean);
       if (lines.length) G.lines[t.key] = lines; else delete G.lines[t.key];
       saveGame();
     };
-    body.appendChild(box);
+    card.appendChild(box);
   });
   const reset = el('button', 'big alt', '全部恢復預設台詞');
   reset.onclick = () => {
-    if (confirm('確定要把所有台詞和名字恢復成預設嗎？')) {
-      G.lines = {};
-      G.charName = DEFAULT_CHAR_NAME;
-      saveGame();
-      updateHoldUI();
-      renderTab();
-    }
+    if (confirm('確定要把所有台詞恢復成預設嗎？')) { G.lines = {}; saveGame(); openLineEditor(); }
   };
-  body.appendChild(reset);
+  const ok = el('button', 'big', '好了');
+  ok.onclick = () => { $('#modal').hidden = true; };
+  card.append(reset, ok);
+  $('#modal').hidden = false;
 }
 
 // ── 釣魚小遊戲 ──
