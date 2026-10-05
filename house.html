@@ -3817,6 +3817,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-07T15:00', title: '新的小遊戲：寵物捉迷藏！🌳', lines: [
+    ['🌳', '「賺錢」裡的新遊戲：寵物們躲在森林、公園、海邊、花園'],
+    ['👂', '躲在樹後面、草叢裡、沙堡後面，看到露出來的耳朵就是牠！'],
+    ['❓', '找太久會有提示：躲著的地方會晃一下，再久一點冒出 ❓'],
+    ['🐾', '躲起來的是你自己養的寵物喔']
+  ], newItems: [] },
   { id: '2026-10-07T09:00', title: '卡片可以畫畫了！🎨', lines: [
     ['🎨', '去朋友家送禮物時，可以在卡片上畫畫：iPad 用手指、電腦用滑鼠'],
     ['🖍️', '8 種顏色、粗細兩種筆，畫錯了可以按「上一筆」'],
@@ -12035,7 +12041,8 @@ function tabEarn(body) {
     ['⚪', '彈珠台', openMarbleGame],
     ['🐠', '撈金魚', openScoopGame],
     ['🍪', '烤餅乾', openBakeGame],
-    ['🧁', '杯子蛋糕店', openCupcakeGame]].forEach(([icon, label, fn]) => {
+    ['🧁', '杯子蛋糕店', openCupcakeGame],
+    ['🌳', '寵物捉迷藏', openPetHideGame]].forEach(([icon, label, fn]) => {
     const b = el('button', 'game-pick');
     b.append(el('span', 'gi', icon), el('span', '', label));
     b.onclick = () => { Sound.play('click'); fn(); };
@@ -15016,6 +15023,121 @@ function playScoop(w, L) {
     splash = splash.filter(sp => (sp.t += dt) < .6);
     splash.forEach(sp => { g.strokeStyle = sp.gold ? '#ffd35c' : '#ffffff'; g.lineWidth = 2; g.beginPath(); g.arc(sp.x, sp.y, 10 + sp.t * 40, 0, Math.PI * 2); g.stroke(); });
     if (!ended || splash.length) raf = requestAnimationFrame(frame);   // 結束就停（以前會一直跑）
+  })();
+}
+
+// ── 🌳 寵物捉迷藏：森林、公園、海邊、花園隨機一個，自己的寵物躲在樹後、草叢、沙堡後面 ──
+const PETHIDE_LEVELS = [
+  { name: '慢慢來', sec: 60, n: 3, peek: 1, hint: 8, mul: 1 },
+  { name: '普通',   sec: 50, n: 4, peek: .6, hint: 10, mul: 2 },
+  { name: '好難！', sec: 45, n: 5, peek: .3, hint: 12, mul: 3 }
+];
+// 每個場景：天空、地面、8 個可以躲的地方（x, y＝東西底部；k＝種類）
+const PETHIDE_SCENES = [
+  { id: 'forest', name: '🌲 森林', sky: '#cfe8d8', ground: '#8fc27a', props: ['tree', 'bush', 'mushroom', 'log', 'tree', 'bush', 'mushroom', 'bush'] },
+  { id: 'park', name: '🌳 公園', sky: '#bfe3f5', ground: '#a7d98a', props: ['bush', 'bench', 'slide', 'flowerbed', 'bush', 'tree', 'bench', 'flowerbed'] },
+  { id: 'beach', name: '🏖️ 海邊', sky: '#bfe8ff', ground: '#f3dfae', sea: '#7ec8e8', props: ['umbrella', 'castle', 'rock', 'bucket', 'castle', 'rock', 'umbrella', 'rock'] },
+  { id: 'garden', name: '🌸 花園', sky: '#e8f4d8', ground: '#9fd38a', props: ['flowerbed', 'fence', 'pot', 'bush', 'flowerbed', 'pot', 'fence', 'bush'] }
+];
+const PETHIDE_SPOTS = [[62, 150], [160, 140], [258, 152], [100, 215], [218, 220], [52, 290], [160, 292], [268, 288]];
+const PETHIDE_SIDE = ['tree', 'umbrella', 'slide'];
+const PETHIDE_TOP = { tree: 70, bush: 34, mushroom: 36, log: 26, bench: 30, slide: 48, flowerbed: 26, umbrella: 62, castle: 40, rock: 30, bucket: 28, fence: 34, pot: 32 };
+function drawHideProp(g, k, x, y, wob) {
+  g.save(); g.translate(x, y); g.rotate(wob * .08);
+  const blob = (bx, by, r, c) => { g.fillStyle = c; g.beginPath(); g.arc(bx, by, r, 0, Math.PI * 2); g.fill(); };
+  const box = (bx, by, w, h, c) => { g.fillStyle = c; g.fillRect(bx, by, w, h); };
+  if (k === 'tree') { box(-7, -30, 14, 30, '#8a5a33'); blob(0, -50, 24, '#5fae6a'); blob(-16, -38, 16, '#6cbd76'); blob(16, -38, 16, '#6cbd76'); blob(16, -6, 10, '#5fae6a'); blob(28, -5, 9, '#6cbd76'); }
+  else if (k === 'bush') { blob(-14, -12, 14, '#5fae6a'); blob(14, -12, 14, '#5fae6a'); blob(0, -20, 16, '#6cbd76'); box(-26, -12, 52, 12, '#5fae6a'); }
+  else if (k === 'mushroom') { box(-7, -20, 14, 20, '#fff4e0'); g.fillStyle = '#e8505b'; g.beginPath(); g.ellipse(0, -22, 26, 15, 0, Math.PI, 0); g.fill(); blob(-10, -28, 3.5, '#fff'); blob(6, -32, 3, '#fff'); blob(14, -25, 2.5, '#fff'); }
+  else if (k === 'log') { box(-28, -24, 56, 24, '#9a6a3f'); g.fillStyle = '#c99a6a'; g.beginPath(); g.ellipse(28, -12, 6, 12, 0, 0, Math.PI * 2); g.fill(); }
+  else if (k === 'bench') { box(-30, -30, 60, 6, '#b07843'); box(-30, -18, 60, 6, '#b07843'); box(-26, -12, 5, 12, '#6b4a2e'); box(21, -12, 5, 12, '#6b4a2e'); box(-30, -30, 60, 22, 'rgba(176,120,67,.35)'); }
+  else if (k === 'slide') { box(-26, -48, 6, 48, '#e8505b'); box(-26, -48, 18, 6, '#e8505b'); g.fillStyle = '#ffd35c'; g.beginPath(); g.moveTo(-10, -46); g.lineTo(28, 0); g.lineTo(14, 0); g.lineTo(-22, -40); g.closePath(); g.fill(); box(-26, -30, 24, 30, 'rgba(232,80,91,.25)'); }
+  else if (k === 'flowerbed') { box(-30, -14, 60, 14, '#9a6a3f'); ['#ff6b6b', '#ffd35c', '#ff9ec4', '#b18cff', '#ff6b6b'].forEach((c, i) => { box(-24 + i * 12, -26, 3, 12, '#5f8a3a'); blob(-22.5 + i * 12, -27, 6, c); }); }
+  else if (k === 'umbrella') { box(-2, -58, 4, 58, '#8a7a64'); g.fillStyle = '#e8505b'; g.beginPath(); g.arc(0, -52, 30, Math.PI, 0); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(0, -82); g.lineTo(-12, -52); g.lineTo(12, -52); g.closePath(); g.fill(); box(-22, -14, 44, 14, '#f7d36b'); }
+  else if (k === 'castle') { box(-24, -26, 48, 26, '#e9c98a'); box(-24, -40, 12, 14, '#e9c98a'); box(12, -40, 12, 14, '#e9c98a'); box(-6, -36, 12, 10, '#e9c98a'); g.fillStyle = '#e8505b'; g.beginPath(); g.moveTo(0, -48); g.lineTo(8, -44); g.lineTo(0, -40); g.fill(); }
+  else if (k === 'rock') { g.fillStyle = '#a8a39a'; g.beginPath(); g.ellipse(0, -14, 28, 17, 0, 0, Math.PI * 2); g.fill(); blob(-8, -20, 5, '#bcb7ad'); }
+  else if (k === 'bucket') { g.fillStyle = '#6bb6ff'; g.beginPath(); g.moveTo(-20, -28); g.lineTo(20, -28); g.lineTo(15, 0); g.lineTo(-15, 0); g.closePath(); g.fill(); box(-20, -30, 40, 4, '#3f8ee0'); }
+  else if (k === 'fence') { for (let i = 0; i < 5; i++) { box(-28 + i * 12, -34, 8, 34, '#fff4e0'); g.fillStyle = '#fff4e0'; g.beginPath(); g.moveTo(-28 + i * 12, -34); g.lineTo(-24 + i * 12, -40); g.lineTo(-20 + i * 12, -34); g.fill(); } box(-30, -26, 60, 5, '#e8d9bf'); box(-30, -12, 60, 5, '#e8d9bf'); }
+  else if (k === 'pot') { g.fillStyle = '#d9784a'; g.beginPath(); g.moveTo(-20, -24); g.lineTo(20, -24); g.lineTo(14, 0); g.lineTo(-14, 0); g.closePath(); g.fill(); blob(-8, -30, 10, '#5fae6a'); blob(8, -30, 10, '#5fae6a'); blob(0, -36, 9, '#ff9ec4'); }
+  g.restore();
+}
+function openPetHideGame() {
+  const w = openGameWindow('🌳 寵物捉迷藏', '寵物們躲起來了！點樹、草叢、沙堡，找出躲在後面的寵物。看到露出來的耳朵就是牠！');
+  openPetHideGame.w = w;
+  pickLevelRow(w, PETHIDE_LEVELS, L => `${L.n} 隻・一隻 💰 ${20 * L.mul}`, L => playPetHide(w, L));
+}
+function playPetHide(w, L, sceneId) {
+  if (gameCleanup) { gameCleanup(); gameCleanup = null; }
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const W = 320, H = 330, { c, g, pos } = gameCanvas(w.stage, W, H);
+  const scene = PETHIDE_SCENES.find(x => x.id === sceneId) || PETHIDE_SCENES[Math.floor(Math.random() * PETHIDE_SCENES.length)];
+  // 自己養的寵物先躲（不夠就請別的種類來）
+  const mine = Array.from(new Set(G.pets.filter(p => p.stage !== 'egg').map(p => p.species)));
+  const others = PET_SPECIES.map(x => x.id).filter(id => !mine.includes(id)).sort(() => Math.random() - .5);
+  const species = mine.sort(() => Math.random() - .5).concat(others).slice(0, L.n);
+  const spots = PETHIDE_SPOTS.map((p, i) => ({ x: p[0], y: p[1], k: scene.props[i], pet: null, wob: 0, peek: false, hintAt: 0, q: false }));
+  const order = spots.map((_, i) => i).sort(() => Math.random() - .5);
+  species.forEach((sp, i) => { const s = spots[order[i]]; s.pet = sp; s.peek = Math.random() < L.peek; });
+  let found = 0, left = L.sec, raf = 0, ended = false, last = performance.now(), lastFind = performance.now(), msg = '';
+  const total = species.length, pops = [];
+  const status = () => { w.status.textContent = `${scene.name}　找到 ${found} / ${total} 隻　還有 ${left} 秒`; };
+  status();
+  const tick = setInterval(() => { if (ended) return; left--; status(); if (left <= 0) finish(); }, 1000);
+  gameCleanup = () => { ended = true; cancelAnimationFrame(raf); clearInterval(tick); };
+  const tapSpot = s => {
+    if (ended || !s) return;
+    if (s.pet && !s.found) {
+      s.found = true; found++; lastFind = performance.now();
+      pops.push({ x: s.x, y: s.y - PETHIDE_TOP[s.k], t: 0 });
+      Sound.play('perfect'); status();
+      if (found >= total) setTimeout(() => finish(), 900);
+    } else if (!s.found) { s.wob = 1; Sound.play('miss'); }
+  };
+  c.addEventListener('pointerdown', e => {
+    const p = pos(e);
+    const s = spots.slice().sort((a, b) => b.y - a.y).find(q => Math.abs(q.x - p.x) < 34 && p.y < q.y + 6 && p.y > q.y - PETHIDE_TOP[q.k] - 22);
+    tapSpot(s);
+  });
+  function finish() {
+    if (ended) return;
+    ended = true; clearInterval(tick);
+    const all = found >= total;
+    const bells = payReward(w, found * 20 * L.mul + (all ? 30 * L.mul : 0));
+    w.status.textContent = all ? `全部找到了！💰 +${fmt(bells)}` : `找到 ${found} 隻！💰 +${fmt(bells)}`;
+    toast(`🌳 寵物捉迷藏找到 ${found} 隻，拿到 💰 ${fmt(bells)}`);
+    if (!all) spots.forEach(s => { if (s.pet && !s.found) { s.found = true; s.shy = true; } }); // 時間到：大家自己跑出來
+    gameButtons(w, () => pickLevelRow(w, PETHIDE_LEVELS, L2 => `${L2.n} 隻・一隻 💰 ${20 * L2.mul}`, L2 => playPetHide(w, L2)));
+  }
+  openPetHideGame.test = { finish, tapSpot, spots: () => spots, found: () => found, scene, level: L, hintNow: now => hint(now) };
+  // 提示：好久沒找到 → 有寵物的那個東西晃一下 👀；再久一點冒 ❓
+  function hint(now) {
+    const since = (now - lastFind) / 1000;
+    if (since < L.hint) return;
+    const s = spots.find(q => q.pet && !q.found);
+    if (!s || now < s.hintAt) return;
+    s.hintAt = now + 1600; s.wob = .6;
+    if (since > L.hint * 2) s.q = true;
+  }
+  const drawPet = (sp, x, y, k, happy) => { g.save(); g.translate(x, y); g.scale(k, k); drawCreature(g, PET_SPECIES_BY_ID[sp], { happy, clean: 100 }); g.restore(); };
+  (function frame(now) {
+    now = now || performance.now();
+    const dt = Math.max(0, Math.min(.05, (now - last) / 1000)); last = now;
+    if (!ended) hint(now);
+    g.fillStyle = scene.sky; g.fillRect(0, 0, W, H);
+    g.fillStyle = scene.ground; g.fillRect(0, 95, W, H - 95);
+    if (scene.sea) { g.fillStyle = scene.sea; g.fillRect(0, 80, W, 30); }
+    g.fillStyle = 'rgba(255,255,255,.7)'; [[50, 30], [230, 45]].forEach(([cx, cy]) => { g.beginPath(); g.arc(cx, cy, 12, 0, Math.PI * 2); g.arc(cx + 14, cy - 4, 14, 0, Math.PI * 2); g.arc(cx + 28, cy, 11, 0, Math.PI * 2); g.fill(); });
+    spots.forEach(s => {
+      s.wob = Math.max(0, s.wob - dt * 2);
+      const wob = Math.sin(now / 50) * s.wob, top = PETHIDE_TOP[s.k];
+      // 耳朵從後面露出來：矮的東西從上面露耳朵；樹、陽傘、溜滑梯這種高的，從旁邊露出半個身體
+      if (s.pet && !s.found && s.peek) { if (PETHIDE_SIDE.includes(s.k)) drawPet(s.pet, s.x + 20, s.y - 2, .7, false); else drawPet(s.pet, s.x + 6, s.y - top + 18, .7, false); }
+      drawHideProp(g, s.k, s.x, s.y, wob);
+      if (s.found) { const pp = pops.find(q => q.x === s.x && q.y === s.y - top); const t = pp ? Math.min(1, (pp.t += dt) / .4) : 1; drawPet(s.pet, s.x, s.y - top * t - 4 + Math.abs(Math.sin(now / 160)) * -3, .8, !s.shy); if (!s.shy && pp && pp.t < 1.2) { g.font = '16px sans-serif'; g.textAlign = 'center'; g.fillText('💗', s.x + 14, s.y - top - 34 - pp.t * 20); } }
+      if (s.pet && !s.found && s.q) { g.font = '22px sans-serif'; g.textAlign = 'center'; g.fillText('❓', s.x, s.y - top - 12 + Math.sin(now / 200) * 3); }
+      else if (s.pet && !s.found && s.wob > .3) { g.font = '16px sans-serif'; g.textAlign = 'center'; g.fillText('👀', s.x + 18, s.y - top - 4); }
+    });
+    if (!ended || pops.some(q => q.t < 1.2)) raf = requestAnimationFrame(frame);
   })();
 }
 

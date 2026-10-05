@@ -585,7 +585,7 @@
     // 十三個小遊戲都要在清單上（116.10 加了撈金魚、烤餅乾、杯子蛋糕店）
     openTab('earn');
     var picks = document.querySelectorAll('.game-pick');
-    if (picks.length !== 13) fails.push('小遊戲清單有 ' + picks.length + ' 個，應該是 13 個');
+    if (picks.length !== 14) fails.push('小遊戲清單有 ' + picks.length + ' 個，應該是 14 個');
     ['拼圖', '接金幣', '彈珠台'].forEach(function(nm){
       if (![].slice.call(picks).some(function(b){ return b.textContent.indexOf(nm) >= 0; }))
         fails.push('小遊戲清單裡找不到「' + nm + '」');
@@ -2657,6 +2657,46 @@
       if (keep92.id) G.inviteId = keep92.id; else delete G.inviteId;
       if (keep92.from) G.inviteFrom = keep92.from; else delete G.inviteFrom;
     }
+
+    /* 94 🌳 寵物捉迷藏小遊戲：場景隨機、自己的寵物躲、點對才算、提示、全部找到有獎勵、四個場景都畫得出來 */
+    var realToast94 = toast; toast = function(){};
+    try {
+      // 四個場景、三種難度都畫得出來（第一格畫面是馬上畫的）
+      PETHIDE_SCENES.forEach(function(sc, si){
+        openPetHideGame(); playPetHide(openPetHideGame.w, PETHIDE_LEVELS[si % 3], sc.id);
+        if (openPetHideGame.test.scene.id !== sc.id) fails.push('捉迷藏指定場景沒用：' + sc.id);
+      });
+      closeGameWindow();
+      openPetHideGame(); document.querySelectorAll('#modalCard .lv-btn')[1].onclick();
+      var T = openPetHideGame.test, sp = T.spots(), hid = sp.filter(function(s){ return s.pet; });
+      if (hid.length !== PETHIDE_LEVELS[1].n) fails.push('捉迷藏躲的寵物數不對（' + hid.length + '）');
+      var mineSp = G.pets.filter(function(p){ return p.stage !== 'egg'; }).map(function(p){ return p.species; });
+      if (mineSp.length && !hid.some(function(s){ return mineSp.indexOf(s.pet) >= 0; })) fails.push('捉迷藏躲的不是自己的寵物');
+      // 點沒有寵物的：不算；點有寵物的：找到
+      var empty = sp.filter(function(s){ return !s.pet; })[0];
+      T.tapSpot(empty);
+      if (T.found() !== 0 || !(empty.wob > 0)) fails.push('點沒有寵物的地方，算找到了（或沒有晃一下）');
+      // 用手指點（走點擊流程）
+      var cv = document.querySelector('#modalCard canvas.game-canvas'), cr = cv.getBoundingClientRect();
+      cv.dispatchEvent(new PointerEvent('pointerdown', { clientX: cr.left + hid[0].x / 320 * cr.width, clientY: cr.top + (hid[0].y - 10) / 330 * cr.height, bubbles: true }));
+      if (T.found() !== 1 || !hid[0].found) fails.push('用手點躲著寵物的地方，沒有找到');
+      T.tapSpot(hid[0]);
+      if (T.found() !== 1) fails.push('同一隻點兩次算兩隻');
+      // 提示：很久沒找到 → 晃一下，再久冒 ❓
+      T.hintNow(performance.now() + PETHIDE_LEVELS[1].hint * 1000 + 100);
+      var hs = sp.filter(function(s){ return s.pet && !s.found; })[0];
+      if (!(hs.wob > 0)) fails.push('捉迷藏找太久，沒有提示');
+      hs.hintAt = 0; T.hintNow(performance.now() + PETHIDE_LEVELS[1].hint * 2000 + 100);
+      if (!hs.q) fails.push('捉迷藏找更久，沒有冒 ❓');
+      // 全部找到：有額外獎勵
+      var b0 = G.bells;
+      hid.forEach(function(s){ T.tapSpot(s); });
+      T.finish();
+      var expect = hid.length * 20 * PETHIDE_LEVELS[1].mul + 30 * PETHIDE_LEVELS[1].mul;
+      if (G.bells - b0 < expect) fails.push('寵物捉迷藏全部找到，鈴錢不對（' + (G.bells - b0) + ' / ' + expect + '）');
+      closeGameWindow();
+    } catch (e) { fails.push('寵物捉迷藏測試出錯：' + e.message + ' ' + (e.stack || '').split('\n')[1]); }
+    finally { toast = realToast94; closeGameWindow(); }
 
     /* 93 卡片上的畫：連結不能太長、別人畫的要檢查、收到看得到、訪客簿只留最近幾張畫 */
     try {
