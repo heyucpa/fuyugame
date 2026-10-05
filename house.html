@@ -9732,7 +9732,8 @@ const INVITE_KEY = 'myHouse_invites';
 const INVITE_MAX = 4;   // 最多記住幾張（同一個名字的新卡蓋掉舊卡）
 const INVITE_STAGE_K = { kinder: 1, school: 1.08, big: 1.15 };
 function makeInvite() {
-  const pets = [G.pet].concat(G.pets.filter(p => p !== G.pet)).filter(p => p.stage !== 'egg').slice(0, 8);
+  // 只帶照顧中的和一起逛的（家長：跟她自己在家看到的一樣，不要一大群擠在房間裡）
+  const pets = [G.pet].concat((G.companions || []).map(i => G.pets[i])).filter(p => p && p.stage !== 'egg').slice(0, 8);
   return {
     v: 1, at: Date.now(), n: charName(),
     o: Object.assign({}, G.outfit), h: Object.assign({}, G.hair || DEFAULT_HAIR), s: kidStage().id,
@@ -9828,7 +9829,7 @@ function visitFriend(inv) {
   PLACES.friend = {
     name: `${inv.n}的家`, emoji: '🏡', host: 'friend', invite: true, inviteAt: inv.at, inviteName: inv.n, desc: '收到邀請卡的家',
     rooms: inv.r.map(r => ({
-      name: r.n, w: r.w, d: r.d, wall: r.wp, floor: r.fl,
+      name: `${inv.n}的${r.n}`, w: r.w, d: r.d, wall: r.wp, floor: r.fl,   // 「姊姊的客廳」：一看就知道不是自己家
       items: r.i.map(([id, x, y, rot, top]) => ({ uid: friendUid--, id, x, y, rot, top: top || null })),
       wallItems: r.wi.map(([id, side, pos]) => ({ uid: friendUid--, id, side, pos }))
     }))

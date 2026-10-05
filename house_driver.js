@@ -2569,8 +2569,14 @@
     var inv90 = null, link90 = null, dec90 = null, keepInv90 = localStorage.getItem(INVITE_KEY), realWalk90 = walkTrip, realToast90 = toast;
     try {
       toast = function(){};
+      // 多養一隻在寵物屋（不是照顧中、也沒有一起逛）：不能被帶進邀請卡
+      var extra90 = newPet('sheep', 'adult', '在寵物屋的'); G.pets.push(extra90);
       var mine = makeInvite();
+      G.pets.splice(G.pets.indexOf(extra90), 1);
+      if (mine.pn.some(function(a){ return a[2] === '在寵物屋的'; })) fails.push('待在寵物屋的寵物也被帶進邀請卡');
       var c90 = cleanInvite(JSON.parse(JSON.stringify(mine)));
+      var wantPets = [G.pet].concat((G.companions || []).map(function(i){ return G.pets[i]; })).filter(function(p){ return p && p.stage !== 'egg'; });
+      if (mine.pn.length !== wantPets.length || (wantPets[0] && mine.pn[0][0] !== wantPets[0].species)) fails.push('邀請卡帶的寵物不是「照顧中＋一起逛的」（' + mine.pn.length + ' / ' + wantPets.length + '）');
       if (!c90 || c90.r.length !== G.rooms.length || c90.r[0].i.length !== G.rooms[0].items.length || c90.n !== charName()) fails.push('自己做的邀請卡，檢查完內容不一樣');
       // 壓縮 → 解開要一模一樣（非同步，最後再驗）
       encodeInvite(mine).then(function(code){ link90 = inviteLink(code); return decodeInvite(code); }).then(function(d){ dec90 = d || 'null'; });
@@ -2607,6 +2613,10 @@
       if (!G.away || G.away.place !== 'friend' || curRoom().items.length !== friend.r[0].i.length) fails.push('點了邀請卡沒有去到朋友家');
       var nowF = performance.now(); for (var gf = 0; gf < 20; gf++) gameStep(.05, nowF + gf * 50);
       if (!host.n || host.n.id !== 'friend' || !host.n.girl) fails.push('朋友家沒有對方的小可愛出來迎接');
+      refreshTop();
+      var tabsF = $('#roomTabs').textContent;
+      if (tabsF.indexOf('姊姊的' + friend.r[0].n) < 0) fails.push('朋友家的房間按鈕沒有寫「姊姊的…」：' + tabsF);
+      if (/寵物屋/.test(tabsF)) fails.push('朋友家出現寵物屋的按鈕');
       if (!host.pets || host.pets.length !== 2) fails.push('朋友家的寵物沒有出來（' + (host.pets && host.pets.length) + '）');
       var ents = hostDrawEntries();
       if (ents.length < 3) fails.push('朋友家：小可愛和寵物沒有畫出來');
