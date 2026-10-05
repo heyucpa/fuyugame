@@ -604,8 +604,14 @@ button.pass { font: inherit; }
 .gb-gift { text-align: center; font-size: 20px; font-weight: 700; margin: 6px 0; }
 .gb-msg { text-align: center; font-size: 17px; color: #c0577b; margin-bottom: 6px; }
 .gb-row { display: flex; align-items: center; gap: 10px; border: 2px solid var(--line); border-radius: 14px; background: #fff; padding: 4px 10px; margin-bottom: 6px; }
-.gb-txt { display: flex; flex-direction: column; font-size: 13px; }
+.gb-txt { display: flex; flex-direction: column; font-size: 13px; text-align: left; flex: 1; min-width: 0; }
 .gb-txt b { font-size: 15px; }
+.gb-txt .gb-acts { font-size: 14px; color: var(--muted); }
+.gb-stamp { margin-left: auto; font-size: 26px; width: 40px; height: 40px; flex: none; display: grid; place-items: center;
+  border: 2px dashed #e8a0a0; border-radius: 50%; transform: rotate(-12deg); background: #fff7f5; }
+.gb-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+.gb-tab { flex: 1; font: inherit; font-size: 14px; padding: 8px 4px; border-radius: 12px; border: 2px solid var(--line); background: #fffaf0; touch-action: manipulation; }
+.gb-tab.on { background: #ffe3e8; border-color: #e8a0a0; font-weight: 800; }
 .intro { position: fixed; inset: 0; z-index: 9999; background: #bfe3f5; cursor: pointer; transition: opacity .4s; }
 .intro canvas { width: 100%; height: 100%; display: block; }
 .intro.fade { opacity: .0; transition: opacity .9s; }
@@ -4093,6 +4099,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-12T20:00', title: '動物朋友也會寫訪客簿了！🐾', lines: [
+    ['🐻', '動物鄰居來家裡玩，回家的時候會在訪客簿留一句話'],
+    ['🍯', '每位朋友都有自己的小印章（熊熊是蜂蜜、兔兔是紅蘿蔔…）'],
+    ['☕', '一起聊天、跳舞、送糖果、收到禮物，都會記下來'],
+    ['💌', '姊妹的回禮卡在另一頁，不會被擠掉']
+  ], newItems: [] },
   { id: '2026-10-12T15:00', title: '叔叔家有冒險漫畫了！⚔️', lines: [
     ['🐉', '漫畫櫃多了四套冒險漫畫：公主鬥惡龍、小海盜找寶藏、太空小兔、魔法學校'],
     ['📖', '一頁四格，可以一頁一頁翻，按 🔊 會念給你聽'],
@@ -4540,6 +4552,10 @@ function normalizeSave(g) {
   if (out.garden != null && !isObj(out.garden)) delete out.garden;
   if (isObj(out.garden)) Object.keys(out.garden).forEach(k => { const v = out.garden[k]; if (!isObj(v) || !Number.isInteger(v.s) || v.s < 0 || v.s > 4) delete out.garden[k]; });
   if (out.guestbook != null && !Array.isArray(out.guestbook)) delete out.guestbook;
+  if (out.animalBook != null) out.animalBook = (Array.isArray(out.animalBook) ? out.animalBook : [])
+    .filter(e => isObj(e) && NEIGHBORS.some(n => n.id === e.id) && num(e.at) && typeof e.t === 'string' && e.t.length <= 80)
+    .map(e => ({ id: e.id, at: e.at, t: e.t, a: typeof e.a === 'string' ? e.a.slice(0, 20) : '', n: Number.isInteger(e.n) && e.n > 0 ? e.n : 1, ...(typeof e.g === 'string' ? { g: e.g.slice(0, 30) } : {}) }))
+    .slice(0, ANIMAL_BOOK_MAX);
   if (Array.isArray(out.guestbook)) out.guestbook = out.guestbook.filter(e => isObj(e) && typeof e.g === 'string').slice(0, GUESTBOOK_MAX)
     .map(e => { if (e.d != null) { const d = cleanDrawing(e.d); if (d) e.d = d; else delete e.d; } return e; });
   if (out.inviteFrom != null && typeof out.inviteFrom !== 'string') delete out.inviteFrom;
@@ -8722,6 +8738,7 @@ function visitorArrive(now) {
   const se0 = seasonNow();
   vis.costume = se0 && se0.costumes ? se0.costumes[NEIGHBORS.indexOf(n) % se0.costumes.length] : null;
   vis.gotCandy = false;
+  vis.did = {}; // 這次來做了什麼（回家時寫進訪客簿）
   visSay(kidStateLine('vis:' + n.id, true) || (se0 && se0.id === 'halloween' ? pickLine('visitorTrick', visVars()) : pickLine('visitorHello', visVars())));
   setTimeout(() => { if (vis.who === n && !fufu.pose) fufuSay(pickLine('kidWelcome', visVars()), 2800); }, 1800);
   // 走到小可愛附近
@@ -8734,7 +8751,45 @@ function visitorLeave(now) {
   endChat(false);
   vis.state = 'leaving';
   visSay(pickLine('visitorBye', visVars()), 2600);
-  visitorGift();
+  const gift = visitorGift();
+  animalGuestbook(vis.who, Object.assign({}, vis.did, gift ? { gift } : {}), !!vis.costume);
+}
+
+/* 🐾 訪客簿也記動物朋友（家長：訪客簿是不是也可以有動物朋友？）
+   鄰居回家的時候留一句話＋自己的小印章，看得出今天誰來過、一起做了什麼。
+   跟姊妹的回禮卡分開放（G.animalBook），動物一天來好幾次才不會把姊妹的卡片擠掉：
+   同一位朋友同一天只留一筆，再來就把次數 +1、留言換成最新的。 */
+const ANIMAL_BOOK_MAX = 24;
+const ANIMAL_STAMPS = { abu: '🍯', mimi: '🥕', lulu: '📚', qiqi: '🌰', meme: '☁️', wangwang: '🦴', miaomiao: '🐟', bobo: '❄️', nunu: '🍎', cici: '🍄', baobao: '🍃', diandian: '⭐' };
+const ANIMAL_BOOK_MSGS = {
+  chat:  ['謝謝你請我坐下來聊天！', '跟{名字}聊天好開心，下次再聊！'],
+  dance: ['一起跳舞好好玩！💃', '我們跳得好開心，腳都跳酸了！'],
+  candy: ['謝謝你的糖果！🍬', '糖果好甜，萬聖節快樂！🎃'],
+  pet:   ['{寵物}好可愛，下次還要跟牠玩！'],
+  any:   ['今天跟{名字}玩得好開心！', '你的家好舒服，下次還要來！', '謝謝{名字}，我好喜歡來你家玩！', '下次換你來我家玩喔！']
+};
+function animalGuestbook(n, did, costume) {
+  if (!n) return null;
+  did = did || {};
+  const key = did.candy ? 'candy' : did.dance ? 'dance' : did.chat ? 'chat' : Math.random() < .3 && G.pet && G.pet.stage !== 'egg' ? 'pet' : 'any';
+  const list = ANIMAL_BOOK_MSGS[key];
+  let t = list[Math.floor(Math.random() * list.length)];
+  Object.entries(visVars()).forEach(([k, v]) => { t = t.split(`{${k}}`).join(v); });
+  const acts = (did.chat ? '☕' : '') + (did.dance ? '💃' : '') + (did.candy ? '🍬' : '') + (costume ? '🎃' : '') + (did.gift ? '🎁' : '');
+  const book = G.animalBook = Array.isArray(G.animalBook) ? G.animalBook : [];
+  const now = Date.now(), day = new Date(now).toDateString();
+  const old = book.find(e => e.id === n.id && new Date(e.at).toDateString() === day);
+  let e;
+  if (old) { // 今天又來了：次數 +1、做過的事加起來、留言換新的
+    e = old; book.splice(book.indexOf(old), 1);
+    e.n = (e.n || 1) + 1; e.at = now; e.t = t;
+    e.a = Array.from(new Set(Array.from((e.a || '') + acts))).join('');
+    if (did.gift) e.g = did.gift;
+  } else e = Object.assign({ id: n.id, at: now, t, a: acts, n: 1 }, did.gift ? { g: did.gift } : {});
+  book.unshift(e);
+  book.length = Math.min(book.length, ANIMAL_BOOK_MAX);
+  saveGame();
+  return e;
 }
 function visitorGone(now) {
   vis.last = vis.who && vis.who.id;
@@ -8744,7 +8799,7 @@ function visitorGone(now) {
 
 // 回家時六成機率送禮物：鈴錢、寵物食物或小可愛的食物
 function visitorGift() {
-  if (Math.random() > .6) return;
+  if (Math.random() > .6) return null;
   const r = Math.random();
   let what;
   if (r < .4) { const b = 100 * (1 + Math.floor(Math.random() * 3)); addBells(b); what = `${b} 鈴錢`; }
@@ -8756,6 +8811,7 @@ function visitorGift() {
     Sound.play('coin');
   }, 900);
   saveGame(); refreshTop();
+  return what;
 }
 
 // ── 每一幀 ──
@@ -9307,7 +9363,7 @@ function endChat(talked) {
   }
   a.idleUntil = now + 2000;
   if (fufu.pose) fufu.pose.until = now + 2500;
-  if (talked) { vis.leaveAt = now + 12000; didSomething(); saveGame(); } // 聊完再待一下就回家
+  if (talked) { vis.leaveAt = now + 12000; if (vis.did) vis.did.chat = 1; didSomething(); saveGame(); } // 聊完再待一下就回家
 }
 
 // 第一次來家裡玩的好朋友：收進好朋友圖鑑
@@ -9333,6 +9389,7 @@ function visitorTalk() {
 function visitorDance() {
   fufuDance();
   vis.danceUntil = performance.now() + 6000;
+  if (vis.did) vis.did.dance = 1;
 }
 // 🍬 萬聖節：給來玩的動物朋友糖果，牠會回送一個小禮物（限定家具還沒收集的優先）
 function visitorGiveCandy() {
@@ -9340,6 +9397,7 @@ function visitorGiveCandy() {
   if (!(G.kidFood.hw_candy > 0)) { toast('🍬 沒有糖果了，商店最上面的「萬聖節限定」可以買'); visSay('下次要準備糖果喔～嘿嘿', 2400); return; }
   G.kidFood.hw_candy--; if (!G.kidFood.hw_candy) delete G.kidFood.hw_candy;
   vis.gotCandy = true;
+  if (vis.did) vis.did.candy = 1;
   const a = vis.a, now = performance.now();
   a.squishV = -9; a.happyUntil = now + 2500;
   petBurst({ kind: 'emoji', emoji: '🍬', spread: 20 }, 3, a);
@@ -10391,8 +10449,9 @@ function openTravelMenu() {
   pst.onclick = openInvitePaste;
   row.append(mk, pst);
   card.appendChild(row);
-  const gb = el('button', 'big alt', `👣 訪客簿${(G.guestbook || []).length ? '（' + G.guestbook.length + '）' : ''}`);
-  gb.onclick = openGuestbook;
+  const gbN = (G.guestbook || []).length + (G.animalBook || []).length;
+  const gb = el('button', 'big alt', `👣 訪客簿${gbN ? '（' + gbN + '）' : ''}`);
+  gb.onclick = () => openGuestbook();
   card.appendChild(gb);
   const no = el('button', 'big alt', '不去了');
   no.onclick = () => { $('#modal').hidden = true; };
@@ -10823,26 +10882,51 @@ function receiveGiftCard(gc) {
   if (gc.d) card.appendChild(renderCardDrawing(gc.d, 220));
   if (!rewarded && gc.g !== 'card') card.appendChild(note(gc.g === 'vase' ? '小花瓶放進「我的東西」了。' : gc.g === 'sticker' ? '貼紙收進圖鑑了。' : '放進寵物的食物了（小可愛也可以吃）。'));
   const ok = el('button', 'big', '謝謝！'); ok.onclick = () => { $('#modal').hidden = true; fufuSay(`謝謝${who}！`, 2600); }; card.appendChild(ok);
-  const gb = el('button', 'big alt', '👣 看訪客簿'); gb.onclick = openGuestbook; card.appendChild(gb);
+  const gb = el('button', 'big alt', '👣 看訪客簿'); gb.onclick = () => openGuestbook('card'); card.appendChild(gb);
   $('#modal').hidden = false;
   Sound.play('fanfare');
   return true;
 }
-function openGuestbook() {
+function openGuestbook(tab) {
   const card = $('#modalCard');
   card.innerHTML = '';
   card.appendChild(el('h2', '', '👣 訪客簿'));
   const book = Array.isArray(G.guestbook) ? G.guestbook : [];
-  if (!book.length) card.appendChild(note('還沒有人來留言喔。做一張邀請卡（🚗 出門 → 💌 做邀請卡）傳給姊姊、妹妹，她們來玩的時候可以送禮物給你！'));
-  book.forEach(e => {
-    const row = el('div', 'gb-row'), g = VISIT_GIFT_BY_ID[e.g] || VISIT_GIFTS[4];
-    try { row.appendChild(renderInviteGirl(cleanInvite({ v: 1, r: [{}], n: e.n, o: e.o, h: e.h, s: e.s }), 46, 54)); } catch (er) {}
-    const t = el('div', 'gb-txt');
-    t.append(el('b', '', `${inviteWho(e)}　${inviteDate(e.at)}`), el('span', '', `${g.icon} ${e.g === 'card' ? '卡片' : g.name}・${VISIT_MSGS[e.m] || ''}`));
-    row.appendChild(t);
-    if (e.d) { const dc = renderCardDrawing(e.d, 72); dc.onclick = () => { const big = renderCardDrawing(e.d, 260); big.onclick = () => big.remove(); row.after(big); }; row.appendChild(dc); }
-    card.appendChild(row);
+  const abook = Array.isArray(G.animalBook) ? G.animalBook : [];
+  // 預設打開最近有人留言的那一邊
+  if (tab !== 'animal' && tab !== 'card') tab = book.length && (!abook.length || (book[0].seen || book[0].at || 0) >= abook[0].at) ? 'card' : 'animal';
+  const tabs = el('div', 'gb-tabs');
+  [['animal', `🐾 動物朋友（${abook.length}）`], ['card', `💌 姊妹的卡片（${book.length}）`]].forEach(([k, label]) => {
+    const b = el('button', 'gb-tab' + (tab === k ? ' on' : ''), label);
+    b.onclick = () => { Sound.play('click'); openGuestbook(k); };
+    tabs.appendChild(b);
   });
+  card.appendChild(tabs);
+  if (tab === 'animal') {
+    if (!abook.length) card.appendChild(note('動物鄰居來家裡玩，回家的時候會在這裡留言、蓋上自己的小印章喔！'));
+    abook.forEach(e => {
+      const n = NEIGHBORS.find(x => x.id === e.id);
+      if (!n) return;
+      const row = el('div', 'gb-row');
+      try { row.appendChild(renderNeighborPortrait(n, 46, 54)); } catch (er) {}
+      const t = el('div', 'gb-txt');
+      t.append(el('b', '', `${n.name}　${inviteDate(e.at)}${e.n > 1 ? `・來了 ${e.n} 次` : ''}`), el('span', '', `「${e.t}」`));
+      if (e.a || e.g) t.appendChild(el('span', 'gb-acts', `${e.a || ''}${e.g ? `　送你 ${e.g}` : ''}`));
+      row.append(t, el('div', 'gb-stamp', ANIMAL_STAMPS[n.id] || '🐾'));
+      card.appendChild(row);
+    });
+  } else {
+    if (!book.length) card.appendChild(note('還沒有人來留言喔。做一張邀請卡（🚗 出門 → 💌 做邀請卡）傳給姊姊、妹妹，她們來玩的時候可以送禮物給你！'));
+    book.forEach(e => {
+      const row = el('div', 'gb-row'), g = VISIT_GIFT_BY_ID[e.g] || VISIT_GIFTS[4];
+      try { row.appendChild(renderInviteGirl(cleanInvite({ v: 1, r: [{}], n: e.n, o: e.o, h: e.h, s: e.s }), 46, 54)); } catch (er) {}
+      const t = el('div', 'gb-txt');
+      t.append(el('b', '', `${inviteWho(e)}　${inviteDate(e.at)}`), el('span', '', `${g.icon} ${e.g === 'card' ? '卡片' : g.name}・${VISIT_MSGS[e.m] || ''}`));
+      row.appendChild(t);
+      if (e.d) { const dc = renderCardDrawing(e.d, 72); dc.onclick = () => { const big = renderCardDrawing(e.d, 260); big.onclick = () => big.remove(); row.after(big); }; row.appendChild(dc); }
+      card.appendChild(row);
+    });
+  }
   const ok = el('button', 'big alt', '好');
   ok.onclick = () => { $('#modal').hidden = true; };
   card.appendChild(ok);
