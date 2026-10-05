@@ -515,6 +515,15 @@ button.pass { font: inherit; }
 .pc-bar i { flex: 1; height: 9px; background: #efe4d0; border-radius: 999px; overflow: hidden; }
 .pc-bar b { display: block; height: 100%; width: 50%; background: #7cc38e; border-radius: 999px; transition: width .4s, background .4s; }
 .pc-bar b.low { background: #f09a7a; }
+.pc-bar.grow b { background: linear-gradient(90deg, #ffb3c7, #ff7fa3); }
+.pc-bar.grow.max b { background: linear-gradient(90deg, #ffe08a, #f2c14e); }
+.sc-pic.grow-pic { width: auto; }
+.grow-pic { display: flex; align-items: flex-end; justify-content: center; gap: 4px; }
+.grow-pic .grow-from { opacity: .55; filter: saturate(.7); }
+.grow-pic .grow-arrow { font-size: 26px; color: #ff7fa3; margin-bottom: 40px; animation: growArrow 1s ease-in-out infinite; }
+.grow-pic .grow-to { animation: growPop .9s cubic-bezier(.3, 1.6, .5, 1) both .25s; }
+@keyframes growArrow { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(5px); } }
+@keyframes growPop { 0% { transform: scale(.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 .pc-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 8px; }
 .pc-btns button { border: none; background: var(--chip); border-radius: 9px; padding: 5px 0; font-size: 12px; }
 .pc-btns button { white-space: nowrap; } /* 圖示＋兩個字不要被擠成兩行 */
@@ -545,6 +554,15 @@ button.pass { font: inherit; }
 .gift-env.open { display: none; }
 .gift-tx { text-align: center; font-size: 18px; font-weight: 700; color: #4a3b2a; margin: 4px 0 12px; }
 @keyframes giftWiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-8deg); } 75% { transform: rotate(8deg); } }
+.grow-dex { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.grow-row { display: grid; grid-template-columns: minmax(0, 64px) repeat(3, minmax(0, 1fr)); align-items: center; gap: 6px; background: #fff; border: 2px solid var(--line); border-radius: 14px; padding: 4px 8px; }
+.grow-row.full { border-color: #f2c14e; background: #fffaf0; }
+.grow-row .gr-nm { font-weight: 700; font-size: 13px; }
+.grow-row .gr-cell { display: flex; flex-direction: column; align-items: center; }
+.grow-row .gr-cell canvas { max-width: 100%; height: auto !important; }
+.grow-row .gr-nm { overflow-wrap: anywhere; }
+.grow-row .gr-cell.dim { opacity: .45; }
+.grow-row .gr-st { font-size: 11px; color: var(--muted); }
 .news-hist { border: 2px solid var(--line); border-radius: 14px; background: #fff; margin-bottom: 8px; }
 .news-hist > summary { cursor: pointer; padding: 10px 12px; font-weight: 700; font-size: 16px; list-style: none; display: flex; align-items: center; gap: 8px; }
 .news-hist > summary::-webkit-details-marker { display: none; }
@@ -656,6 +674,7 @@ button.pass { font: inherit; }
         <div class="pc-bar" title="小可愛的飽足"><span>🍙</span><i><b id="barKid"></b></i></div>
         <div class="pc-btns one"><button id="btnKidEat">🍙 吃東西</button></div>
         <div class="pc-sub">🐾 <b id="petNameLbl">圓圓</b></div>
+        <div class="pc-bar grow" id="growRow" title="長大"><span>🌱</span><i><b id="barGrow"></b></i></div>
         <div class="pc-bar" title="飽足"><span>🍎</span><i><b id="barHunger"></b></i></div>
         <div class="pc-bar" title="乾淨"><span>🫧</span><i><b id="barClean"></b></i></div>
         <div class="pc-bar" title="心情"><span>💗</span><i><b id="barMood"></b></i></div>
@@ -2458,6 +2477,30 @@ const PET_STAGES = [
   { id: 'adult', name: '大朋友', next: null, scale: 1.18 }
 ];
 const PET_STAGE_BY_ID = Object.fromEntries(PET_STAGES.map(s => [s.id, s]));
+/* 🌱 成長圖鑑（家長：長大也要能收集）：每種寵物的寶寶、小朋友、大朋友各一格。
+   G.growDex = { 'mochi:baby': true, ... }；長到那個階段就收進來，之後變小、送走也不會不見。 */
+const GROW_STAGES = ['baby', 'kid', 'adult'];
+const growKey = (species, stage) => species + ':' + stage;
+function growDexAll() { return PET_SPECIES.length * GROW_STAGES.length; }
+function growDexCount(g) { g = g || G; return PET_SPECIES.reduce((n, s) => n + GROW_STAGES.filter(st => (g.growDex || {})[growKey(s.id, st)]).length, 0); }
+// 回傳這次是不是新收集到的
+function growDexAdd(species, stage, g) {
+  g = g || G;
+  if (!GROW_STAGES.includes(stage) || !PET_SPECIES_BY_ID[species]) return false;
+  const d = g.growDex = g.growDex || {}, k = growKey(species, stage);
+  if (d[k]) return false;
+  d[k] = true;
+  return true;
+}
+// 現在養的每一隻，目前的階段都算收集到（generous：舊存檔的大朋友，前面的寶寶、小朋友也一起算——牠一定經過了）
+function growDexSync(g, generous) {
+  g = g || G;
+  (g.pets || []).forEach(p => {
+    const i = GROW_STAGES.indexOf(p.stage);
+    if (i < 0) return;
+    (generous ? GROW_STAGES.slice(0, i + 1) : [p.stage]).forEach(st => growDexAdd(p.species, st, g));
+  });
+}
 const EGG_PRICE = 1000; // 四折
 // 照顧一次加多少成長；摸摸、捏捏有冷卻時間，連點不會長得比較快
 const GROWTH = { pat: 1, squish: 1, feed: 4, bath: 4, game: 6, eggPat: 2, patCooldownMs: 2000, eggCooldownMs: 800,
@@ -3451,7 +3494,8 @@ const TROPHY_SETS = [
   { id: 'bfly', name: '蝴蝶', icon: '🦋', color: '#b18cff' },
   { id: 'comic', name: '漫畫', icon: '📚', color: '#ff6b6b' },
   { id: 'sticker', name: '貼紙', icon: '⭐', color: '#ffd35c' },
-  { id: 'theme', name: '小主題', icon: '🏅', color: '#e7a94a' }
+  { id: 'theme', name: '小主題', icon: '🏅', color: '#e7a94a' },
+  { id: 'grow', name: '成長', icon: '🌱', color: '#7cc38e' }
 ];
 const TROPHY_GOLD = '#f2c14e';
 TROPHY_SETS.forEach(t => {
@@ -3601,6 +3645,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-05T09:00', title: '寵物長大囉！', lines: [
+    ['🌱', '寵物小卡多了一條長大的進度條，看得到快長大了沒'],
+    ['🎉', '寵物長大的時候，畫面中間會跳出長大前、長大後的大圖'],
+    ['🍼', '寵物寶寶戴著小圍兜，大朋友打著小領結'],
+    ['📖', '新的「成長圖鑑」：每種寵物的寶寶、小朋友、大朋友都可以收集，集滿有獎盃']
+  ], newItems: [] },
   { id: '2026-10-04T20:00', title: '好多新東西！', lines: [
     ['🍰', '新的「甜點」風格家具：杯子蛋糕椅、糖果床、草莓沙發…'],
     ['🦄', '雲朵沙發、獨角獸搖搖馬、愛心鏡子、彩虹書櫃'],
@@ -3828,6 +3878,7 @@ function newGame() {
     lines: {},               // 玩家自訂台詞 {key: [句子...]}
     charName: DEFAULT_CHAR_NAME,
     pets: [newPet('mochi', 'kid', DEFAULT_PET_NAME)], // 收集到的寵物（含還沒孵的蛋）
+    growDex: { 'mochi:kid': true },        // 🌱 成長圖鑑：一開始那隻是小朋友
     activePet: 0,                                      // 目前帶出來玩的是第幾隻；G.pet 指向牠
     companions: [],                                    // 一起跟著逛的寵物（G.pets 的索引），不會餓也不會髒
     friends: {},                                       // 來玩過的動物鄰居 {id: 來玩幾次}
@@ -3919,6 +3970,7 @@ function normalizeSave(g) {
   if (!out.noSell || typeof out.noSell !== 'object' || Array.isArray(out.noSell)) out.noSell = {};
   if (g.guideAsked === undefined && out.guide !== 'egg') out.guideAsked = true; // 教到一半的不要再問
   if (!g.welcome) out.welcome = { at: 0, uncle: true, grandma: true }; // 已經在玩的存檔不算搬新家
+  if (!isObj(g.growDex)) { out.growDex = {}; growDexSync(out, true); } else growDexSync(out, false);
   if (!Array.isArray(g.newsSeen)) out.newsSeen = []; // 舊存檔：還沒看過任何公告，要讓她看到這次更新了什麼
   /* 補償也要發給「已經存在的存檔」——只改 newGame() 的話，
      她那台已經有存檔了，newGame() 根本不會再跑，一毛都拿不到。
@@ -4231,10 +4283,11 @@ function addPetGrowth(amount, p) {
   const firstOfSpecies = from === 'egg' && !G.pets.some(o => o !== p && o.stage !== 'egg' && o.species === p.species);
   p.stage = to;
   p.growth = 0;
+  const newDex = growDexAdd(p.species, to);
   if (from === 'egg') { // 剛孵出來：狀態不錯、開始跟著時間變化
     Object.assign(p, { hunger: 80, clean: 90, mood: 90, lastTick: Date.now(), hatchedAt: Date.now() });
   }
-  return { from, to, firstOfSpecies };
+  return { from, to, firstOfSpecies, newDex };
 }
 function collectedSpecies() {
   return new Set(G.pets.filter(p => p.stage !== 'egg').map(p => p.species));
@@ -6197,9 +6250,24 @@ function celebrateStage(up, p, a) {
     setTimeout(() => { fufuSay(pickLine('petHatch', { 寵物: name }), 3500); toast(hatchMsg); }, SC_HATCH_MS);
   } else {
     fufuSay(pickLine('petGrow', { 寵物: name }), 3500);
-    toast(`🎉 ${name}長成${PET_STAGE_BY_ID[up.to].name}了！`);
+    try {
+      const nG = growDexCount(), all = growDexAll();
+      showcase(growPortrait(p, up.from, up.to), `${name}長成${PET_STAGE_BY_ID[up.to].name}了！`,
+        up.newDex ? `🌱 成長圖鑑 ${nG} / ${all}` : '又長大了！成長圖鑑裡已經有了',
+        up.newDex ? { head: '🌱 長大了！', n: nG, all } : { head: '🌱 長大了！' });
+    } catch (e) { toast(`🎉 ${name}長成${PET_STAGE_BY_ID[up.to].name}了！`); }
   }
   saveGame();
+}
+// 長大的大圖：左邊原本的樣子（小小的、淡淡的）→ 右邊長大後的樣子
+function growPortrait(p, from, to) {
+  const box = el('div', 'grow-pic');
+  const a = renderPetPortrait({ species: p.species, stage: from, growth: 0 }, 90, 84);
+  a.className = 'grow-from';
+  const b = renderPetPortrait({ species: p.species, stage: to, growth: 0 }, 150, 140);
+  b.className = 'grow-to';
+  box.append(a, el('span', 'grow-arrow', '➜'), b);
+  return box;
 }
 
 // ── 每一幀更新 ──
@@ -7468,6 +7536,12 @@ function drawCreature(ctx, sp, look) {
     else { ctx.arc(fx, ey + 3.5, 1.8, .15 * Math.PI, .85 * Math.PI); ctx.stroke(); }
   }
 
+  // 寶寶：脖子上的小圍兜（寶寶、小朋友、大朋友三個階段一眼看得出來）
+  if (look.baby) {
+    ctx.fillStyle = '#ffffff'; ctx.strokeStyle = edge; ctx.lineWidth = .8;
+    ctx.beginPath(); ctx.moveTo(-5.5, -4.5); ctx.quadraticCurveTo(0, -2.5, 5.5, -4.5); ctx.quadraticCurveTo(5, 2.5, 0, 3); ctx.quadraticCurveTo(-5, 2.5, -5.5, -4.5); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#ff8fb8'; ctx.beginPath(); ctx.arc(0, -.5, 1.3, 0, Math.PI * 2); ctx.fill();
+  }
   // 大朋友：脖子上的小領結
   if (look.adult) {
     ctx.fillStyle = edge;
@@ -7509,7 +7583,7 @@ function renderPetPortrait(p, w, h, opts) {
   const k = (h - 6) / 46 * dpr * (p.stage === 'egg' ? 1.25 : .8 + .2 * (st.scale / 1.18));
   g.setTransform(k, 0, 0, k, c.width / 2, c.height - 4 * dpr);
   if (p.stage === 'egg') drawEgg(g, sp, p.growth / st.next);
-  else drawCreature(g, sp, { happy: !(opts && opts.silhouette), clean: 100, adult: p.stage === 'adult' });
+  else drawCreature(g, sp, { happy: !(opts && opts.silhouette), clean: 100, adult: p.stage === 'adult', baby: p.stage === 'baby' && !(opts && opts.silhouette) });
   if (opts && opts.silhouette) {
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.globalCompositeOperation = 'source-atop';
@@ -7576,7 +7650,8 @@ function drawPetActorBody(ctx, pet, st) {
     blink: asleep || pet.t > pet.blinkAt, // 睡覺時閉眼
     fx: pet.facing * 1.5,
     clean: st.clean,
-    adult: st.stage === 'adult'
+    adult: st.stage === 'adult',
+    baby: st.stage === 'baby'
   });
   ctx.restore();
 
@@ -9874,6 +9949,12 @@ function updatePetCard() {
   setBar('#barHunger', st.hunger);
   setBar('#barClean', st.clean);
   setBar('#barMood', st.mood);
+  // 🌱 長大的進度：長到下一個階段還差多少；大朋友就整條金色
+  const sg = stageOf(st), gb = $('#barGrow'), row = $('#growRow');
+  const pct = sg.next ? Math.min(100, st.growth / sg.next * 100) : 100;
+  gb.style.width = pct + '%';
+  row.classList.toggle('max', !sg.next);
+  row.title = sg.next ? (st.stage === 'egg' ? `快孵出來了（${Math.round(st.growth)} / ${sg.next}）` : `長成${PET_STAGE_BY_ID[nextStageId(st.stage)].name}：${Math.round(st.growth)} / ${sg.next}`) : '已經是大朋友了！';
 }
 // who：'pet' 餵寵物、'kid' 給小可愛吃
 function showFoodMenu(who) {
@@ -10864,6 +10945,7 @@ function tabBook(body) {
   const sections = [
     ['dexTrophy', '🏆', '獎盃', count(G.trophies), TROPHY_SETS.length],
     ['dexPet', '🐾', '寵物', tc('pet')[0], PET_SPECIES.length],
+    ['dexGrow', '🌱', '成長', growDexCount(), growDexAll()],
     ['dexFurn', '🛋️', '家具', got, FURNITURE.length],
     ['dexFish', '🐟', '魚', FISH.filter(f => G.fish[f.name]).length, FISH.length],
     ['dexFriend', '🐻', '好朋友', NEIGHBORS.filter(n => G.friends[n.id]).length, NEIGHBORS.length],
@@ -10899,6 +10981,9 @@ function tabBook(body) {
   body.appendChild(sec('dexPet', `🐾 寵物圖鑑 ${tc('pet')[0]} / ${PET_SPECIES.length}`));
   body.appendChild(note('寵物蛋摸一摸就會孵出來。「寵物」分頁可以買新的蛋。'));
   body.appendChild(petDexGrid());
+  body.appendChild(sec('dexGrow', `🌱 成長圖鑑 ${growDexCount()} / ${growDexAll()}`));
+  body.appendChild(note('每一種寵物有寶寶、小朋友、大朋友三個樣子。把寵物養大，就會收進來。'));
+  body.appendChild(growDexGrid());
   body.appendChild(sec('dexFurn', `🛋️ 家具圖鑑 ${got} / ${FURNITURE.length}`));
   body.appendChild(note('買過、或搖樹掉下來拿到的家具，就會收進圖鑑。淡淡的是還沒收集到的。'));
   const grid = el('div', 'grid');
@@ -11293,6 +11378,25 @@ function tabPets(body) {
   const dexB = el('button', 'big alt', `📖 看寵物圖鑑（${collectedSpecies().size} / ${PET_SPECIES.length}）`);
   dexB.onclick = () => { openTab('book'); setTimeout(() => { const t = document.getElementById('dexPet'); if (t) t.scrollIntoView({ block: 'start' }); }, 0); };
   body.appendChild(dexB);
+}
+// 成長圖鑑：一種寵物一排，寶寶 → 小朋友 → 大朋友。還沒孵到的種類整排都是剪影
+function growDexGrid() {
+  const wrap = el('div', 'grow-dex');
+  PET_SPECIES.forEach(s => {
+    const row = el('div', 'grow-row');
+    const n = GROW_STAGES.filter(st => (G.growDex || {})[growKey(s.id, st)]).length;
+    row.appendChild(el('div', 'gr-nm', n ? s.name : '？？？'));
+    GROW_STAGES.forEach(st => {
+      const has = !!(G.growDex || {})[growKey(s.id, st)];
+      const c = el('div', 'gr-cell' + (has ? '' : ' dim'));
+      c.appendChild(renderPetPortrait({ species: s.id, stage: st, growth: 0 }, 76, 70, { silhouette: !has }));
+      c.appendChild(el('div', 'gr-st', PET_STAGE_BY_ID[st].name));
+      row.appendChild(c);
+    });
+    if (n === GROW_STAGES.length) row.classList.add('full');
+    wrap.appendChild(row);
+  });
+  return wrap;
 }
 // 寵物圖鑑的格子：「寵物」分頁跟「📖 圖鑑」分頁共用
 function petDexGrid() {
@@ -12224,7 +12328,7 @@ function playCupGame(w, L) {
     // 寵物先畫，杯子蓋在上面
     const pc = cups[petCup];
     g.save(); g.translate(pc.x, BASE_Y); g.scale(1.55 * K, 1.55 * K);
-    if (egg) drawEgg(g, sp, 0); else drawCreature(g, sp, { happy: phase === 'reveal', clean: 100, adult: G.pet.stage === 'adult' });
+    if (egg) drawEgg(g, sp, 0); else drawCreature(g, sp, { happy: phase === 'reveal', clean: 100, adult: G.pet.stage === 'adult', baby: G.pet.stage === 'baby' });
     g.restore();
     cups.forEach(drawCup);
     g.fillStyle = '#4a3b2a'; g.font = 'bold 17px "Noto Sans TC", "Microsoft JhengHei", sans-serif';
@@ -12790,6 +12894,7 @@ function trophyCount(id) {
       return [Math.min(need, FURNITURE.filter(f => G.seen[f.id]).length), need];
     }
     case 'pet': return [collectedSpecies().size, PET_SPECIES.length];
+    case 'grow': return [growDexCount(), growDexAll()];
     case 'friend': return [NEIGHBORS.filter(n => G.friends[n.id]).length, NEIGHBORS.length];
     case 'animal': return [c(G.animals), ANIMAL_DEX().length];
     case 'fish': return [FISH.filter(f => G.fish[f.name]).length, FISH.length];
@@ -12839,7 +12944,7 @@ function showcaseNext() {
   box.appendChild(el('div', 'sc-rays'));
   const card = el('div', 'sc-card');
   const pic = typeof visual === 'string' ? el('div', 'sc-emoji', visual) : visual;
-  if (typeof visual !== 'string') pic.className = 'sc-pic';
+  if (typeof visual !== 'string') pic.classList.add('sc-pic');   // 原本的 class 留著（長大的圖是一組「原本 → 長大」）
   const head = el('div', 'sc-new', opts.hatch ? '🥚 要孵出來了…' : (opts.head || '✨ 新的！'));
   const tl = el('div', 'sc-title', title), sb = el('div', 'sc-sub', sub || '');
   let bar = null;

@@ -2556,6 +2556,58 @@
       if (!(full > countFills(Object.assign({}, sp, { sparkle: false })))) fails.push(sp.name + ' 沒有一閃一閃的星星');
     });
 
+    /* 87 長大（家長：要看得到往下一階段的進度、長大要有動畫＋放大圖片、長大的樣子也能收集＝成長圖鑑） */
+    try {
+      if (!(newGame().growDex || {})['mochi:kid']) fails.push('新遊戲的成長圖鑑沒有一開始那隻（小朋友）');
+      // 舊存檔沒有成長圖鑑：大朋友的寵物，寶寶、小朋友、大朋友都算收集到
+      var old87 = JSON.parse(JSON.stringify(G)); delete old87.growDex;
+      old87.pets = [newPet('mochi', 'adult', 'x'), newPet(PET_SPECIES[1].id, 'baby', 'y'), newPet(PET_SPECIES[2].id, 'egg', '')];
+      old87.activePet = 0; old87.companions = [];
+      var n87 = normalizeSave(old87);
+      if (!n87 || growDexCount(n87) !== 4) fails.push('舊存檔補成長圖鑑，數量不對：' + (n87 && growDexCount(n87)));
+      // 長大：收進成長圖鑑、跳出「長大了」的大圖
+      var keepDex = JSON.stringify(G.growDex || {}), sp87 = PET_SPECIES[3].id;
+      var p87 = newPet(sp87, 'baby', 't87'); G.pets.push(p87);
+      delete (G.growDex || {})[growKey(sp87, 'kid')];
+      var c0 = growDexCount();
+      var up87 = addPetGrowth(PET_STAGE_BY_ID.baby.next, p87);
+      if (!up87 || up87.to !== 'kid' || !up87.newDex || !G.growDex[growKey(sp87, 'kid')] || growDexCount() !== c0 + 1) fails.push('寶寶長成小朋友，沒有收進成長圖鑑');
+      SC_QUEUE.length = 0; var scO = document.getElementById('showcase'); if (scO) scO.remove();
+      var realBlk = showcaseBlocked; showcaseBlocked = function(){ return false; };
+      try { celebrateStage(up87, p87); } finally { showcaseBlocked = realBlk; }
+      var sc87 = document.getElementById('showcase');
+      if (!sc87 || !sc87.querySelector('.grow-pic') || !/長成小朋友/.test(sc87.textContent) || !/成長圖鑑/.test(sc87.textContent)) fails.push('長大的時候沒有跳出放大的圖片');
+      else if (sc87.querySelectorAll('.grow-pic canvas').length !== 2) fails.push('長大的圖片沒有「原本 → 長大後」兩張');
+      if (sc87) sc87.remove(); SC_QUEUE.length = 0;
+      // 同一種再長一次：已經有了，不算新的
+      var p87b = newPet(sp87, 'baby', 't87b'); G.pets.push(p87b);
+      var up87b = addPetGrowth(999, p87b);
+      if (!up87b || up87b.newDex) fails.push('同一種寵物第二次長成小朋友，又算成新收集');
+      G.pets.splice(G.pets.indexOf(p87b), 1); G.pets.splice(G.pets.indexOf(p87), 1);
+      G.growDex = JSON.parse(keepDex);
+      // 主畫面小卡：🌱 進度條跟著長大的進度
+      var cur87 = G.pet, keepSt = cur87.stage, keepGr = cur87.growth;
+      try {
+        cur87.stage = 'kid'; cur87.growth = PET_STAGE_BY_ID.kid.next / 2; updatePetCard();
+        if (Math.abs(parseFloat($('#barGrow').style.width) - 50) > .5) fails.push('主畫面的長大進度條不對：' + $('#barGrow').style.width);
+        if ($('#growRow').classList.contains('max')) fails.push('還沒長到大朋友，進度條就變金色');
+        cur87.stage = 'adult'; cur87.growth = 0; updatePetCard();
+        if (!$('#growRow').classList.contains('max') || $('#barGrow').style.width !== '100%') fails.push('大朋友的進度條沒有變成滿的金色');
+      } finally { cur87.stage = keepSt; cur87.growth = keepGr; updatePetCard(); }
+      // 圖鑑頁：成長圖鑑一種一排、三格
+      openTab('book');
+      if (!document.getElementById('dexGrow')) fails.push('圖鑑頁沒有成長圖鑑');
+      var rows87 = document.querySelectorAll('#tabBody .grow-row');
+      if (rows87.length !== PET_SPECIES.length) fails.push('成長圖鑑排數不對：' + rows87.length);
+      else if ([].some.call(rows87, function(r){ return r.querySelectorAll('.gr-cell').length !== 3; })) fails.push('成長圖鑑每排不是三格');
+      var lit87 = document.querySelectorAll('#tabBody .grow-row .gr-cell:not(.dim)').length;
+      if (lit87 !== growDexCount()) fails.push('成長圖鑑亮起來的格數（' + lit87 + '）跟收集數（' + growDexCount() + '）不一樣');
+      if (trophyCount('grow')[1] !== PET_SPECIES.length * 3) fails.push('成長獎盃的總數不對');
+      // 寶寶有圍兜、跟小朋友畫出來不一樣
+      var pb = renderPetPortrait({ species: 'mochi', stage: 'baby', growth: 0 }, 60, 54).toDataURL(), pk = renderPetPortrait({ species: 'mochi', stage: 'kid', growth: 0 }, 60, 54).toDataURL();
+      if (pb === pk) fails.push('寶寶跟小朋友畫出來一模一樣');
+    } catch (e) { fails.push('長大測試出錯：' + e.message); }
+
     /* 86 檢查出來的小問題（第三批）：檸檬床、檸檬椅能用；寵物天地第一步不能一開始就完成；滑梯點一下會跳；
        刪存檔連帶的紀錄也刪掉；照片不能吃掉存檔的位子；休息畫面不能吃掉公告和剛拍的照片；包裹不放在寵物腳下 */
     try {
@@ -3888,7 +3940,7 @@
     G.comics = { '早餐': 1, '恐龍': 3 }; G.stickers = { '⭐': 1 }; G.butterflies = { red: 2, blue: 1, rainbow: 1 }; G.passport = { moon: 1, seed: 1 };
     openTab('book');
     var chips = [].map.call(document.querySelectorAll('#tabBody .dex-chip'), function(c){ return c.textContent; });
-    if (chips.length !== 11) fails.push('圖鑑總覽不是 11 項（9 種收集＋寵物＋獎盃）：' + chips.length);
+    if (chips.length !== 12) fails.push('圖鑑總覽不是 12 項（9 種收集＋寵物＋成長＋獎盃）：' + chips.length);
     [['漫畫', '2/12'], ['貼紙', '1/12'], ['蝴蝶', '3/6'], ['閱讀護照', '2/8']].forEach(function(p){
       if (!chips.some(function(t){ return t.indexOf(p[0]) >= 0 && t.indexOf(p[1]) >= 0; })) fails.push('圖鑑總覽的「' + p[0] + '」不是 ' + p[1] + '：' + chips.join(' | '));
     });
