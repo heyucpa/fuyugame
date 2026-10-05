@@ -700,7 +700,7 @@ button.pass { font: inherit; }
     <div class="hint" id="hint">從「我的東西」點家具放進房間；點房間裡的家具可以搬動</div>
     <div class="itemmenu" id="itemMenu" hidden></div>
     <div class="petcard" id="petCard">
-      <div class="pc-head"><span><span id="kidStageIc">🧸</span> <b id="kidNameLbl">小可愛</b> <small id="kidStageLbl" class="pc-stage"></small></span><button id="pcToggle" title="收合">－</button></div>
+      <div class="pc-head"><span><span id="kidStageIc">👧</span> <b id="kidNameLbl">小可愛</b> <small id="kidStageLbl" class="pc-stage"></small></span><button id="pcToggle" title="收合">－</button></div>
       <div class="pc-body">
         <div class="pc-bar" title="小可愛的飽足"><span>🍙</span><i><b id="barKid"></b></i></div>
         <div class="pc-bar grow" id="kidGrowRow" title="長大"><span>🌱</span><i><b id="barKidGrow"></b></i></div>
@@ -11338,7 +11338,7 @@ function updatePetCard() {
   setBar('#barKid', G.kid.hunger);
   // 小可愛：階段＋往下一個階段的進度；變小的時候顯示還剩幾分鐘
   const ks = kidStage(), sm = kidSmall();
-  $('#kidStageIc').textContent = sm ? (sm.baby ? '👶' : '🧪') : ks.icon;
+  $('#kidStageIc').textContent = sm ? (sm.baby ? '👶' : '🧪') : '👧';   // 🌱 只留給長大進度條用（家長：名字前面又一個 🌱 會重複）
   if (sm) { const left = Math.max(0, Math.ceil((sm.until - Date.now()) / 1000)); $('#kidStageLbl').textContent = `${sm.baby ? '小寶寶' : '變小了'} ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`; }
   else $('#kidStageLbl').textContent = ks.name;
   $('#barKidGrow').style.width = Math.round(kidGrowPct() * 100) + '%';

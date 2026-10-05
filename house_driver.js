@@ -3154,6 +3154,7 @@
       // 小卡：階段名稱＋進度條
       G.kid.height = 150; updatePetCard();
       if ($('#kidStageLbl').textContent !== '小花苞') fails.push('小卡沒有寫小可愛現在的階段：' + $('#kidStageLbl').textContent);
+      if ($('#kidStageIc').textContent !== '👧') fails.push('小卡名字前面的圖示不是 👧（' + $('#kidStageIc').textContent + '）');
       if (Math.abs(parseFloat($('#barKidGrow').style.width) - 50) > 1) fails.push('小可愛的長大進度條不對：' + $('#barKidGrow').style.width);
       // 喝藥水：小花苞 → 暫時變成小芽芽的樣子
       G.kidFood.shrink = 2;
