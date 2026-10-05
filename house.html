@@ -4596,6 +4596,7 @@ function trimSnaps() {
   return writeSnaps(list.filter(x => x.kind !== 'auto' || ++autoN <= 1));
 }
 var SAVE_LOCKED = null;
+var SAVE_LOCK_WHY = '';   // 讀不出來的原因（顯示在處理畫面上，家長拍照就知道是哪裡壞）
 const rescueKey = () => 'myHouseGame_rescue:' + curSlotId();
 function loadGame() {
   let raw = null;
@@ -4604,7 +4605,8 @@ function loadGame() {
   try {
     const ok = normalizeSave(JSON.parse(raw));
     if (ok) return ok;
-  } catch (e) { /* 下面當成壞掉處理 */ }
+    SAVE_LOCK_WHY = '格式不對';
+  } catch (e) { SAVE_LOCK_WHY = String((e && e.message) || e).slice(0, 120); /* 下面當成壞掉處理 */ }
   SAVE_LOCKED = raw;
   // 另外留一份原文。舊的那一格只在「還沒有」的時候寫（不要被下一次讀不出來蓋掉），全部另外記在存檔紀錄裡
   try { if (!localStorage.getItem(rescueKey())) localStorage.setItem(rescueKey(), raw); } catch (e) { /* 存不下就算了，原文還在原位 */ }
@@ -4784,6 +4786,20 @@ function downloadText(text, name) {
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+// 🔄 強制更新：清掉快取、拿掉 service worker、加一個用過就丟的參數重新載入（不動任何進度）
+async function forceUpdate() {
+  try {
+    if ('caches' in window) {
+      const ks = await caches.keys();
+      await Promise.all(ks.map(k => caches.delete(k)));
+    }
+    if (navigator.serviceWorker) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+  } catch (e) {}
+  location.replace(location.pathname + '?v=' + Date.now());
+}
 function openRescue() {
   if (SAVE_LOCKED == null) return;
   const card = $('#modalCard');
@@ -4799,7 +4815,12 @@ function openRescue() {
     if (!confirm('確定要讓這個存檔重新開始嗎？\n讀不出來的那份已經另外留著，之後還可以下載。')) return;
     SAVE_LOCKED = null; saveGame(); $('#modal').hidden = true; toast('重新開始了！'); setTimeout(() => maybeShowNews(), 1200);
   });
-  card.append(b1, b2, b3);
+  // 很多時候是瀏覽器還拿著舊版的遊戲（舊版有讀不出來的 bug）：先強制更新再試一次，不會動到紀錄
+  const b0 = el('button', 'big', '🔄 先更新遊戲再試一次（建議先按這個）');
+  b0.onclick = () => { b0.disabled = true; b0.textContent = '更新中…'; forceUpdate(); };
+  card.append(b0, b1, b2, b3);
+  const lm = new Date(document.lastModified);
+  card.appendChild(note(`遊戲版本：${isNaN(lm) ? document.lastModified : `${lm.getMonth() + 1}/${lm.getDate()} ${lm.getHours()}:${String(lm.getMinutes()).padStart(2, '0')}`}${SAVE_LOCK_WHY ? `　原因：${SAVE_LOCK_WHY}` : ''}`));
   $('#modal').hidden = false;
 }
 
@@ -13798,22 +13819,7 @@ function tabSave(body) {
   const lmText = isNaN(lm) ? document.lastModified : `${lm.getFullYear()}/${p2(lm.getMonth() + 1)}/${p2(lm.getDate())} ${p2(lm.getHours())}:${p2(lm.getMinutes())}`;
   body.appendChild(note('這一份的日期：' + lmText + '\n如果爸爸媽媽說更新了、你卻看不到新東西，按下面那顆。'));
   const upd = el('button', 'big alt', '🔄 強制更新（清掉快取重新下載）');
-  upd.onclick = async () => {
-    upd.disabled = true;
-    upd.textContent = '更新中…';
-    try {
-      if ('caches' in window) {
-        const ks = await caches.keys();
-        await Promise.all(ks.map(k => caches.delete(k)));
-      }
-      if (navigator.serviceWorker) {
-        const regs = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(regs.map(r => r.unregister()));
-      }
-    } catch (e) {}
-    // 加一個用過就丟的參數，確保不會再拿到舊的那一份
-    location.replace(location.pathname + '?v=' + Date.now());
-  };
+  upd.onclick = () => { upd.disabled = true; upd.textContent = '更新中…'; forceUpdate(); };
   body.appendChild(upd);
   body.appendChild(note('按了不會動到任何進度，只是把遊戲本身重新下載。'));
   const nb = el('button', 'mini', '📜 更新紀錄（以前更新了什麼）');
