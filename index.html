@@ -1001,7 +1001,7 @@ const REWARDS = [
   '跟自己擊掌 ✋',
   '摸自己的頭，誇自己 5 秒 🙌',
   '大喊自己的名字 3 次 📣',
-  '念「魔法咒語」ABRACADABRA 🪄',
+  '念「魔法咒語」ABRACADABRA ✨',
   '當公主轉一圈 👸',
   '對所有人飛吻一次 💋',
   '學戰士大喊「衝啊」⚔️',
@@ -1025,7 +1025,7 @@ const REWARDS = [
   '學蝴蝶飛 5 秒 🦋',
   '說 3 件你喜歡的事 💖',
   '對自己說「你好棒」5 次 ✨',
-  '學魔法師念咒語 5 秒 🪄',
+  '學魔法師念咒語 5 秒 ✨',
   '學公主走貓步 5 步 👠',
   '比剪刀手 ✌️ 5 秒不放',
   '跳起來歡呼一次 🙌',
@@ -1043,14 +1043,14 @@ const REWARDS = [
   '學爸爸大笑「哈哈哈」🤣',
   '唱「兩隻老虎」第一句 🎵',
   '大喊「我超會玩」3 次 🎯',
-  '假裝拿魔杖揮一揮 🪄',
+  '假裝拿魔杖揮一揮 🎩',
   '雙手向天空舉起 5 秒 🙌',
   '學公主端莊行禮 👸',
   '說 3 個你的興趣 💞',
   '學跳格子 3 格 🦘',
   '比一個拳頭歡呼 ✊',
   '大叫「我成功了！」🎯',
-  '對鏡子做 1 個鬼臉 🪞',
+  '對鏡子做 1 個鬼臉 😜',
 ];
 
 /* ===== 幼稚園程度題目：10 以內加減 ===== */
@@ -2660,10 +2660,10 @@ function winBgEmojis(emojis) {
 const WIN_THEMES = {
   anan: { color1: '#ff5a8a', color2: '#ff8fb8', cheerBg: 'linear-gradient(135deg,#ffd6e8 0%,#ffb7d8 50%,#ff8fb8 100%)', cheer: '公主獲勝！', subtitle: '💖 撒嬌冠軍誕生 💖', bgEmojis: ['🌸','💕','💖','👑','✨','💗','🎀'] },
   fanfan: { color1: '#ffaa00', color2: '#ffd23f', cheerBg: 'linear-gradient(135deg,#fff8c8 0%,#ffe055 50%,#ffd23f 100%)', cheer: '公主獲勝！', subtitle: '⭐ 黃金公主登基 ⭐', bgEmojis: ['⭐','💛','🦋','👑','✨','🌟','🌻'] },
-  mama: { color1: '#5e3a8e', color2: '#9b59b6', cheerBg: 'linear-gradient(135deg,#e8d8f8 0%,#c4a4e0 50%,#9b59b6 100%)', cheer: '魔法師大勝！', subtitle: '✨ 魔法照耀王國 ✨', bgEmojis: ['✨','🌟','🪄','💫','🔮','🌙','💜'] },
+  mama: { color1: '#5e3a8e', color2: '#9b59b6', cheerBg: 'linear-gradient(135deg,#e8d8f8 0%,#c4a4e0 50%,#9b59b6 100%)', cheer: '魔法師大勝！', subtitle: '✨ 魔法照耀王國 ✨', bgEmojis: ['✨','🌟','🎩','💫','🔮','🌙','💜'] },
   papa: { color1: '#c0392b', color2: '#e74c3c', cheerBg: 'linear-gradient(135deg,#fff2c8 0%,#ffd23f 50%,#e74c3c 100%)', cheer: '戰士凱旋！', subtitle: '⚔️ 勇者征服城堡 ⚔️', bgEmojis: ['⚔️','🛡️','🔥','💥','👑','🏆','🎖️'] },
   dog: { color1: '#8b5a2b', color2: '#d4a373', cheerBg: 'linear-gradient(135deg,#fff5e6 0%,#e0c3a0 50%,#a07050 100%)', cheer: '騎士凱旋！', subtitle: '🐶 忠犬守護王國 🛡️', bgEmojis: ['🐶','🦴','🛡️','⚔️','🏰','🎖️','🐾'] },
-  cat: { color1: '#3498db', color2: '#7fc1ed', cheerBg: 'linear-gradient(135deg,#e8f0ff 0%,#a8c8ff 50%,#5a8ad4 100%)', cheer: '法師獲勝！', subtitle: '🐱 神祕魔法降臨 ✨', bgEmojis: ['🐱','✨','🌟','🪄','💫','🌙','💎'] },
+  cat: { color1: '#3498db', color2: '#7fc1ed', cheerBg: 'linear-gradient(135deg,#e8f0ff 0%,#a8c8ff 50%,#5a8ad4 100%)', cheer: '法師獲勝！', subtitle: '🐱 神祕魔法降臨 ✨', bgEmojis: ['🐱','✨','🌟','🎩','💫','🌙','💎'] },
   panda: { color1: '#222222', color2: '#9aa0a6', cheerBg: 'linear-gradient(135deg,#f0f0f0 0%,#bbbbbb 50%,#444444 100%)', cheer: '國王登基！', subtitle: '🐼 王者風範君臨 👑', bgEmojis: ['🐼','👑','🎋','🏛️','💎','🏆','🎖️'] },
 };
 function getWinTheme() {
@@ -3097,7 +3097,7 @@ function renderGame() {
             <div class="emoji" style="position:relative;">${pIcon(p, '46px')}${state.skipTurn[i] ? cageOverlay() : ''}</div>
             <div class="name">${p.name}</div>
             <div class="stat">第 ${state.positions[i] + 1} 格 ・ <span class="coins">${COIN_ICON} ${state.coins[i]}</span></div>
-            <div class="ability-tag" title="${p.ability.desc}">${p.ability.emoji} ${p.ability.name} <span style="opacity:.7;">${p.ability.cost}🪙</span></div>
+            <div class="ability-tag" title="${p.ability.desc}">${p.ability.emoji} ${p.ability.name} <span style="opacity:.7;">${p.ability.cost}💰</span></div>
             ${state.shielded[i] ? `<div style="font-size:11px;color:#e85a92;font-weight:800;">🛡️ 護盾中</div>` : ''}
             ${state.fanfanArmed[i] ? `<div style="font-size:11px;color:#27ae60;font-weight:800;">🧠 智慧已啟動</div>` : ''}
           </div>

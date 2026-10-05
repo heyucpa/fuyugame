@@ -80,7 +80,7 @@ Object.assign(ART_SCENES, {
     GIRL(104, 118, 0.88, { pose: 'sit', mood: 'flat' }) +
     '<rect x="96" y="106" width="9" height="6" rx="2" fill="#e8909a" stroke="#33224a" stroke-width="1.2"/>' +
     '<g class="ring">' + EMO(70, 52, '💧', 14) + '</g>' +
-    EMO(140, 46, '🩹', 14)),
+    EMO(140, 46, '💊', 14)),
 
   'parkdare.lift': SVG('小女生扶著同學走，他又痛得坐回地上',
     PARKBG('dusk') + WALL(24, 96) +

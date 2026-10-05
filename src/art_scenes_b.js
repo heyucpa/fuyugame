@@ -39,7 +39,7 @@ Object.assign(ART_SCENES, {
     '<circle cx="106" cy="97" r="1.8" fill="#33224a"/>' +
     '<path d="M90 87 h12" stroke="#33224a" stroke-width="2.4" stroke-linecap="round"/>' +
     '<path d="M84 112 l0 5 M104 112 l0 5" stroke="#33224a" stroke-width="2.6" stroke-linecap="round"/>' +
-    EMO(88, 80, '🪙', 13) + '</g>'),
+    EMO(88, 80, '💰', 13) + '</g>'),
   'money.escape': SVG('小女生把事情老實告訴爸爸',
     BG('#f3f0ff', '#c9bfe0') + DAD(70, 118, 0.92, 'reachR') +
     GIRL(128, 118, 0.92, { pose: 'reachL' }) + SPEECH(140, 38, '💬') + EMO(30, 46, '💕', 14, 'twinkle')),
