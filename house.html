@@ -13055,6 +13055,36 @@ function tabSave(body) {
     rb.onclick = openRescue;
     body.appendChild(rb);
   }
+  // 家長：版本和強制更新放最上面（說「更新了」的時候最常用）
+  /* ── 版本與強制更新（放在設定最上面）──
+     加到主畫面的網頁 App 在 iOS 上有自己的一套快取，而且非常黏，
+     跟 Safari 不共用。她回報「新的小遊戲看不到」就是這個——
+     檔案早就更新了，她那台還在用舊的。
+     所以把版本顯示出來（用 document.lastModified，不需要任何建置步驟），
+     再給一顆真的清得掉快取的按鈕。 */
+  body.appendChild(h3('ℹ️ 版本與更新'));
+  const lm = new Date(document.lastModified), p2 = n => String(n).padStart(2, '0');
+  const lmText = isNaN(lm) ? document.lastModified : `${lm.getFullYear()}/${p2(lm.getMonth() + 1)}/${p2(lm.getDate())} ${p2(lm.getHours())}:${p2(lm.getMinutes())}`;
+  body.appendChild(note('這一份的日期：' + lmText + '\n如果爸爸媽媽說更新了、你卻看不到新東西，按下面那顆。'));
+  const upd = el('button', 'big alt', '🔄 強制更新（清掉快取重新下載）');
+  upd.onclick = async () => {
+    upd.disabled = true;
+    upd.textContent = '更新中…';
+    try {
+      if ('caches' in window) {
+        const ks = await caches.keys();
+        await Promise.all(ks.map(k => caches.delete(k)));
+      }
+      if (navigator.serviceWorker) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r => r.unregister()));
+      }
+    } catch (e) {}
+    // 加一個用過就丟的參數，確保不會再拿到舊的那一份
+    location.replace(location.pathname + '?v=' + Date.now());
+  };
+  body.appendChild(upd);
+  body.appendChild(note('按了不會動到任何進度，只是把遊戲本身重新下載。'));
   const nb = el('button', 'mini', '📜 更新紀錄（以前更新了什麼）');
   nb.onclick = () => openNewsHistory();
   body.appendChild(nb);
@@ -13131,34 +13161,6 @@ function tabSave(body) {
   reset.onclick = () => askPin('重新開始（清除存檔）', confirmReset);
   body.appendChild(reset);
 
-  /* ── 版本與強制更新 ──
-     加到主畫面的網頁 App 在 iOS 上有自己的一套快取，而且非常黏，
-     跟 Safari 不共用。她回報「新的小遊戲看不到」就是這個——
-     檔案早就更新了，她那台還在用舊的。
-     所以把版本顯示出來（用 document.lastModified，不需要任何建置步驟），
-     再給一顆真的清得掉快取的按鈕。 */
-  body.appendChild(h3('ℹ️ 版本'));
-  body.appendChild(note('這一份的日期：' + document.lastModified +
-    '\n如果我跟你說改了什麼、你卻看不到，按下面那顆。'));
-  const upd = el('button', 'big alt', '🔄 強制更新（清掉快取重新下載）');
-  upd.onclick = async () => {
-    upd.disabled = true;
-    upd.textContent = '更新中…';
-    try {
-      if ('caches' in window) {
-        const ks = await caches.keys();
-        await Promise.all(ks.map(k => caches.delete(k)));
-      }
-      if (navigator.serviceWorker) {
-        const regs = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(regs.map(r => r.unregister()));
-      }
-    } catch (e) {}
-    // 加一個用過就丟的參數，確保不會再拿到舊的那一份
-    location.replace(location.pathname + '?v=' + Date.now());
-  };
-  body.appendChild(upd);
-  body.appendChild(note('按了不會動到任何進度，只是把遊戲本身重新下載。'));
 
   body.appendChild(h3('📱 建議加到主畫面'));
   body.appendChild(note('用 Safari 開這一頁 → 分享鈕 → 「加入主畫面」。' +

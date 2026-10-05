@@ -4166,6 +4166,9 @@
     maybeShowNews();
     if (!$('#modal').hidden) fails.push('看過的公告又跳出來');
     openTab('save');
+    var firstH = document.querySelector('#tabBody h3');
+    if (!firstH || !/版本與更新/.test(firstH.textContent)) fails.push('設定最上面不是「版本與更新」：' + (firstH && firstH.textContent));
+    if (![].some.call(document.querySelectorAll('#tabBody button'), function(b){ return /強制更新/.test(b.textContent); })) fails.push('設定沒有強制更新');
     var nbtn = [].filter.call(document.querySelectorAll('#tabBody button'), function(b){ return /更新紀錄/.test(b.textContent); })[0];
     if (!nbtn) fails.push('設定頁沒有「更新紀錄」');
     else {
