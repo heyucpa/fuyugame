@@ -2615,6 +2615,11 @@
       var schoolWords = /幼稚園|小學生/;
       if (KID_STAGES.some(function(k){ return schoolWords.test(k.name + k.grown); }) || ['kidShrink', 'hostSmall', 'kidStageUp'].some(function(k){ return lineList(k).some(function(l){ return schoolWords.test(l); }); })
           || NEWS.some(function(n){ return n.lines.some(function(l){ return schoolWords.test(l[1]); }); })) fails.push('小可愛的階段還在用「幼稚園／小學生」的叫法');
+      // 前一版的存檔：已經有成長圖鑑（只有寵物），小可愛又已經長到開花了 → 小芽芽、小花苞也要補進來
+      var prev88 = JSON.parse(JSON.stringify(G)); prev88.growDex = { 'mochi:kid': true }; prev88.kid.height = 158; delete prev88.kid.small;
+      var np88 = normalizeSave(prev88);
+      if (!np88 || !['kinder', 'school', 'big'].every(function(st){ return np88.growDex[growKey('girl', st)]; })) fails.push('更新前就長大了：前面的階段（小芽芽、小花苞）沒有補進成長圖鑑');
+      if (np88 && np88.growDex['girl:baby']) fails.push('小寶寶那格不該自己補進來（要喝藥水）');
       if (kidStageAt(135).id !== 'kinder' || kidStageAt(146).id !== 'school' || kidStageAt(160).id !== 'big') fails.push('小可愛的三個階段分界不對');
       // 長大：跨過一個階段 → 收進成長圖鑑、跳出「原本 → 長大後」
       G.kid.height = 144.95; delete G.kid.small; delete (G.growDex || {})['girl:school'];

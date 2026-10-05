@@ -2565,9 +2565,11 @@ function growDexSync(g, generous) {
     if (i < 0) return;
     (generous ? GROW_STAGES.slice(0, i + 1) : [p.stage]).forEach(st => growDexAdd(p.species, st, g));
   });
-  // 小可愛：現在的階段（generous：前面的階段也算）
+  /* 小可愛一定是一階一階長大的：現在的階段跟前面每一個階段都算收集到（不管 generous）。
+     家長發現：更新前她已經長大了，前一版的存檔又已經有成長圖鑑（只有寵物），
+     如果只補「現在的階段」，小花苞那一格就永遠拿不到了。 */
   const ki = KID_STAGES.indexOf(kidStageAt((g.kid && g.kid.height) || KID_START_HEIGHT));
-  (generous ? KID_STAGES.slice(0, ki + 1) : [KID_STAGES[ki]]).forEach(st => growDexAdd('girl', st.id, g));
+  KID_STAGES.slice(0, ki + 1).forEach(st => growDexAdd('girl', st.id, g));
 }
 const EGG_PRICE = 1000; // 四折
 // 照顧一次加多少成長；摸摸、捏捏有冷卻時間，連點不會長得比較快
