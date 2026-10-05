@@ -612,6 +612,12 @@ button.pass { font: inherit; }
 .gb-row { display: flex; align-items: center; gap: 10px; border: 2px solid var(--line); border-radius: 14px; background: #fff; padding: 4px 10px; margin-bottom: 6px; }
 .gb-txt { display: flex; flex-direction: column; font-size: 13px; text-align: left; flex: 1; min-width: 0; }
 .gb-txt b { font-size: 15px; }
+.snap-list { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 12px; }
+.snap-row { display: flex; align-items: center; gap: 8px; border: 2px solid var(--line); border-radius: 12px; background: #fff; padding: 6px 10px; }
+.snap-row.rescue { border-color: #f2c14e; background: #fffbea; }
+.snap-txt { display: flex; flex-direction: column; flex: 1; min-width: 0; text-align: left; font-size: 12px; }
+.snap-txt b { font-size: 14px; }
+.snap-btns { display: flex; gap: 4px; flex: none; }
 .name-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .name-row canvas { flex: none; }
 .name-row .textin { flex: 1; min-width: 0; margin: 0; }
@@ -4111,6 +4117,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-13T15:00', title: '多了自動存檔和手動存檔！🕒', lines: [
+    ['🕒', '每次打開遊戲、之後每 10 分鐘會自動存一份'],
+    ['💾', '「💾 備份」裡可以按「手動存一份」'],
+    ['↩️', '萬一紀錄不見了或玩壞了，選一份「回到這份」就好'],
+    ['🛟', '讀不出來的紀錄也會留著，不會被蓋掉']
+  ], newItems: [] },
   { id: '2026-10-13T09:00', title: '幫寵物取名字更好玩了！🏷️', lines: [
     ['👆', '點小卡上寵物的名字（或寵物分頁的名字）就能取名字'],
     ['🎲', '不知道取什麼？有名字點子可以直接點，還能換一批'],
@@ -4535,6 +4547,54 @@ function cleanDrawing(d) {
   }
   return out.length ? { s: out } : null;
 }
+/* ===== 🕒 存檔紀錄：自動存一份、手動存一份，可以回到之前 =====
+   家長：「應該有自動存檔跟手動存檔的功能，剛才紀錄被刪除了」。
+   每一格存檔自己一串（SNAP_KEY），裡面是整份存檔的原文：
+     auto   每次打開遊戲、之後每 10 分鐘（有變才存），留最近 SNAP_MAX.auto 份
+     manual 家長／小孩按「💾 手動存一份」，留最近 SNAP_MAX.manual 份
+     rescue 讀不出來時的原文，留最近 SNAP_MAX.rescue 份（不會被下一次讀不出來蓋掉）
+   空間不夠時先丟最舊的自動存檔，絕對不能害主存檔存不進去。 */
+const SNAP_KEY = 'myHouseGame_snaps:' + curSlotId();
+const SNAP_MAX = { auto: 5, manual: 5, rescue: 3 };
+const SNAP_AUTO_MS = 10 * 60000;
+function readSnaps() {
+  try {
+    const a = JSON.parse(localStorage.getItem(SNAP_KEY));
+    return Array.isArray(a) ? a.filter(x => x && typeof x.raw === 'string' && x.raw && SNAP_MAX[x.kind] && typeof x.at === 'number') : [];
+  } catch (e) { return []; }
+}
+function writeSnaps(list) {
+  list = list.slice();
+  for (;;) {
+    try { localStorage.setItem(SNAP_KEY, JSON.stringify(list)); return true; }
+    catch (e) {
+      // 空間不夠：先丟最舊的自動存檔，再丟最舊的手動存檔（讀不出來的原文最後才丟）
+      const order = ['auto', 'manual', 'rescue'];
+      let gone = false;
+      for (const k of order) {
+        const olds = list.filter(x => x.kind === k);
+        if (olds.length > (k === 'rescue' ? 1 : 0)) { list.splice(list.indexOf(olds[olds.length - 1]), 1); gone = true; break; }
+      }
+      if (!gone) return false;
+    }
+  }
+}
+// 新的放最前面；同一種、內容一模一樣的不重複存
+function addSnap(kind, raw) {
+  if (!raw || !SNAP_MAX[kind]) return false;
+  let list = readSnaps();
+  if (list.some(x => x.kind === kind && x.raw === raw)) return false;
+  list.unshift({ kind, at: Date.now(), raw });
+  const keep = {};
+  list = list.filter(x => (keep[x.kind] = (keep[x.kind] || 0) + 1) <= SNAP_MAX[x.kind]);
+  return writeSnaps(list);
+}
+function delSnap(at) { writeSnaps(readSnaps().filter(x => x.at !== at)); }
+// 空間不夠讓主存檔存不進去時：自動存檔只留最新一份
+function trimSnaps() {
+  const list = readSnaps(); let autoN = 0;
+  return writeSnaps(list.filter(x => x.kind !== 'auto' || ++autoN <= 1));
+}
 var SAVE_LOCKED = null;
 const rescueKey = () => 'myHouseGame_rescue:' + curSlotId();
 function loadGame() {
@@ -4546,7 +4606,9 @@ function loadGame() {
     if (ok) return ok;
   } catch (e) { /* 下面當成壞掉處理 */ }
   SAVE_LOCKED = raw;
-  try { localStorage.setItem(rescueKey(), raw); } catch (e) { /* 存不下就算了，原文還在原位 */ }
+  // 另外留一份原文。舊的那一格只在「還沒有」的時候寫（不要被下一次讀不出來蓋掉），全部另外記在存檔紀錄裡
+  try { if (!localStorage.getItem(rescueKey())) localStorage.setItem(rescueKey(), raw); } catch (e) { /* 存不下就算了，原文還在原位 */ }
+  try { addSnap('rescue', raw); } catch (e) {}
   return newGame();
 }
 
@@ -4693,8 +4755,12 @@ saveGame();
 function saveGame() {
   if (SAVE_LOCKED != null) { showSaveWarn('locked'); return false; }
   G.savedAt = Date.now(); // 記下存檔時間：還原備份時拿來比「哪一份比較新」
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(G)); }
-  catch (e) { showSaveWarn('fail'); return false; } // 私密視窗、空間滿了等等
+  const txt = JSON.stringify(G);
+  try { localStorage.setItem(SAVE_KEY, txt); }
+  catch (e) { // 空間滿了：先把舊的自動存檔清掉再試一次；還是不行才警告（私密視窗等等）
+    try { trimSnaps(); localStorage.setItem(SAVE_KEY, txt); }
+    catch (e2) { showSaveWarn('fail'); return false; }
+  }
   showSaveWarn(null);
   return true;
 }
@@ -13589,6 +13655,8 @@ function tabBackup(body) {
       body.appendChild(fb);
     }
   }
+  snapSection(body);
+  body.appendChild(h3('📦 備份到別的地方'));
   const last = lastBackupAt(), days = daysSinceBackup();
   const st = el('div', 'backup-state' + (backupDue() ? ' due' : ''),
     last ? (days === 0 ? '✅ 今天備份過了' : (backupDue() ? `⚠️ 很久沒備份了：上次是 ${days} 天前` : `上次備份：${days} 天前`))
@@ -13770,6 +13838,9 @@ function tabSave(body) {
   /* ── 存檔格 ──
      兩個小孩各玩各的。每一格是完全獨立的一間房子，互不影響。 */
   body.appendChild(h3('💾 存檔：現在玩的是「' + curSlotName() + '」'));
+  const snapBtn = el('button', 'mini', '🕒 存檔紀錄（自動存、手動存、回到之前）');
+  snapBtn.onclick = () => openTab('backup');
+  body.appendChild(snapBtn);
   body.appendChild(note('最多 6 個存檔，像一般遊戲的存檔一樣，每個都會自動存。' +
     '每個存檔的錢、家具、寵物都是分開的，換別的存檔來玩，不會動到原本那個。'));
 
@@ -14341,6 +14412,7 @@ function openSeasonNotice(se) {
 function rescueCopy() {
   let raw = null, cur = null;
   try { raw = localStorage.getItem(rescueKey()); cur = localStorage.getItem(SAVE_KEY); } catch (e) {}
+  if (!raw) { const r = readSnaps().find(x => x.kind === 'rescue' && x.raw !== cur); raw = r ? r.raw : null; }
   if (!raw) return null;
   let g = null;
   try { g = normalizeSave(JSON.parse(raw)); } catch (e) { g = null; }
@@ -14395,6 +14467,78 @@ function maybeRescueOffer(tries) {
   if (!$('#modal').hidden || introPlaying || document.getElementById('showcase')) { setTimeout(() => maybeRescueOffer(tries + 1), 2000); return; }
   openRescueRestore(rc);
 }
+// 🕒 自動存一份：打開遊戲時（載入成功的那份）、之後每 10 分鐘（有變才存）
+function autoSnap() {
+  if (SAVE_LOCKED != null) return false;
+  let raw = null;
+  try { raw = localStorage.getItem(SAVE_KEY); } catch (e) {}
+  return raw ? addSnap('auto', raw) : false;
+}
+function snapSummary(raw) {
+  try { const g = normalizeSave(JSON.parse(raw)); return g ? rescueSummary(g) : null; } catch (e) { return null; }
+}
+function snapTime(at) {
+  const d = new Date(at), now = new Date(), same = d.toDateString() === now.toDateString();
+  return `${same ? '今天' : `${d.getMonth() + 1}/${d.getDate()}`} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+const SNAP_LABEL = { auto: '🕒 自動', manual: '💾 手動', rescue: '🛟 讀不出來時留的' };
+// 回到某一份：現在的先留成「可以反悔」那一份，再寫進去、重新載入
+function restoreSnap(raw) {
+  try {
+    if (!normalizeSave(JSON.parse(raw))) return false;
+    if (SAVE_LOCKED == null) addSnap('auto', localStorage.getItem(SAVE_KEY));
+    localStorage.setItem(UNDO_KEY, makeBackup());
+    localStorage.setItem(SAVE_KEY, raw);
+  } catch (e) { return false; }
+  return true;
+}
+function snapSection(body) {
+  body.appendChild(h3('🕒 存檔紀錄（可以回到之前）'));
+  body.appendChild(note('每次打開遊戲、之後每 10 分鐘會自動存一份；也可以自己按「手動存一份」。萬一紀錄不見了或玩壞了，選一份「回到這份」就好（現在的會先留著，可以反悔）。'));
+  const man = el('button', 'big', '💾 手動存一份（現在的進度）');
+  man.onclick = () => {
+    if (SAVE_LOCKED != null) { toast('這份紀錄讀不出來，現在玩的不能存'); return; }
+    saveGame();
+    let raw = null; try { raw = localStorage.getItem(SAVE_KEY); } catch (e) {}
+    const r = addSnap('manual', raw);
+    toast(r ? '💾 存好了！' : readSnaps().some(x => x.kind === 'manual' && x.raw === raw) ? '💾 跟上一份手動存的一樣，不用再存' : '存不進去（空間不夠）');
+    renderTab();
+  };
+  body.appendChild(man);
+  const list = readSnaps();
+  if (!list.length) { body.appendChild(note('還沒有存檔紀錄。')); return; }
+  const box = el('div', 'snap-list');
+  list.forEach(sn => {
+    const sum = snapSummary(sn.raw);
+    const row = el('div', 'snap-row' + (sn.kind === 'rescue' ? ' rescue' : ''));
+    const t = el('div', 'snap-txt');
+    t.append(el('b', '', `${SNAP_LABEL[sn.kind]}　${snapTime(sn.at)}`), el('span', '', sum || '（這份讀不出來，可以下載給大人保存）'));
+    row.appendChild(t);
+    const btns = el('div', 'snap-btns');
+    if (sum) {
+      const go = el('button', 'mini', '↩️ 回到這份');
+      go.onclick = () => askPin('回到之前的存檔', () => {
+        if (!confirm(`回到「${snapTime(sn.at)}」那一份嗎？\n現在的進度會先留著（在這裡和「反悔」都找得到）。`)) return;
+        if (!restoreSnap(sn.raw)) { toast('寫不進去'); return; }
+        location.reload();
+      });
+      btns.appendChild(go);
+    } else {
+      const dl = el('button', 'mini', '⬇️ 下載');
+      dl.onclick = () => { try { downloadText(sn.raw, '我的小屋-存檔紀錄-' + today() + '.json'); } catch (e) { toast('這台機器存不了檔案'); } };
+      btns.appendChild(dl);
+    }
+    if (sn.kind === 'manual') {
+      const del = el('button', 'mini', '🗑️');
+      del.title = '刪掉這份';
+      del.onclick = () => askPin('刪掉這份手動存檔', () => { if (confirm('刪掉這份手動存檔嗎？')) { delSnap(sn.at); renderTab(); } });
+      btns.appendChild(del);
+    }
+    row.appendChild(btns);
+    box.appendChild(row);
+  });
+  body.appendChild(box);
+}
 function maybePlayIntro() {
   if (G.introSeen || SAVE_LOCKED != null || introPlaying) return;
   playIntro();
@@ -14405,6 +14549,8 @@ refreshTop();
 renderTab();
 setTimeout(() => maybeOpening(), 300);
 setTimeout(() => maybeRescueOffer(), 900);
+setTimeout(() => autoSnap(), 3000);                 // 打開遊戲：存一份（載入成功的那份）
+setInterval(() => autoSnap(), SNAP_AUTO_MS);        // 之後每 10 分鐘（跟上一份一樣就不存）
 setTimeout(() => maybeShowNews(), 1500);
 setTimeout(() => maybeSeasonNotice(), 2500);
 updateHoldUI();
