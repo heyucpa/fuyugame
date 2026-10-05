@@ -560,6 +560,9 @@ button.pass { font: inherit; }
 @keyframes giftWiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-8deg); } 75% { transform: rotate(8deg); } }
 .grow-dex { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
 .grow-row { display: grid; grid-template-columns: minmax(0, 64px) repeat(3, minmax(0, 1fr)); align-items: center; gap: 6px; background: #fff; border: 2px solid var(--line); border-radius: 14px; padding: 4px 8px; }
+.invite-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.invite-pic { display: flex; justify-content: center; margin: 4px 0; }
+.invite-code { width: 100%; box-sizing: border-box; height: 64px; font-size: 12px; border: 2px solid var(--line); border-radius: 10px; padding: 6px; margin: 6px 0; word-break: break-all; }
 .grow-row.kid { grid-template-columns: minmax(0, 64px) repeat(4, minmax(0, 1fr)); }
 .grow-row.full { border-color: #f2c14e; background: #fffaf0; }
 .grow-row .gr-nm { font-weight: 700; font-size: 13px; }
@@ -2427,6 +2430,7 @@ Object.values(PLACES).forEach(pl => {
   }));
 });
 LINE_TYPES.push(
+  { key: 'hostFriend', label: '姊姊／妹妹在自己家說的話', hint: '可用 {名字}', lines: ['{名字}，歡迎來我家玩！', '你看，這是我布置的房間！', '我的寵物很可愛吧？摸摸看！', '我們一起跳舞好不好？', '要不要坐下來休息一下？', '下次換我去你家玩！', '想玩什麼都可以喔～'] },
   { key: 'hostUncle', label: '叔叔說的話', hint: '可用 {名字}', lines: ['歡迎來叔叔家！漫畫隨便看～', '功課寫完了嗎？寫完叔叔陪你打一局！', '這台電玩是叔叔小時候玩的喔', '看漫畫也要讓眼睛休息一下喔', '要不要跟叔叔比賽？', '叔叔最近在看這本，超好看！'] },
   { key: 'hostLibrarian', label: '館員說的話', hint: '可用 {名字}', lines: ['{名字}，歡迎來圖書館～', '在圖書館要小聲說話喔 🤫', '繪本架上有好看的書喔', '看完的書要放回原來的地方', '閱讀護照蓋滿可以拿獎狀喔', '要不要幫我把書放回書架？'] },
   { key: 'hostRanger', label: '園長說的話', hint: '可用 {名字}', lines: ['{名字}，歡迎來公園玩！', '花圃的蝴蝶今天好多喔', '公園的花不能摘，拍照就好囉', '池塘裡的魚很會躲喔', '垃圾要記得帶回家喔', '天氣好熱，要不要吃冰淇淋？', '要不要在草地上野餐？'] },
@@ -3716,6 +3720,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-06T09:00', title: '可以去姊姊、妹妹家玩了！', lines: [
+    ['💌', '「🚗 出門」多了「做邀請卡」：把自己的家做成一張邀請卡'],
+    ['📱', '請爸爸媽媽用 LINE 傳給姊姊或妹妹，點開就能來你家玩'],
+    ['🏡', '去別人家：她的小可愛會出來迎接，寵物也在家裡走來走去，點牠們會開心'],
+    ['🔒', '去別人家只能看、能坐、能玩，不會改到任何人的東西']
+  ], newItems: [] },
   { id: '2026-10-05T15:00', title: '變小也有大圖了！', lines: [
     ['🧪', '喝變小藥水的時候，畫面中間會轉一圈，跳出變小的大圖'],
     ['📖', '變小的樣子也會收進成長圖鑑（沒養過寶寶的寵物，喝藥水也能收集到）'],
@@ -8743,7 +8753,7 @@ function drawNeighborBubble(ctx, a, n, say, alpha) {
   const p = iso(a.x, a.y, a.z || 0), text = `${n.short}：${say}`;
   ctx.globalAlpha = Math.max(.2, alpha);
   ctx.font = '600 13px "Noto Sans TC", "Microsoft JhengHei", sans-serif';
-  const tw = ctx.measureText(text).width, bw = tw + 22, bh = 28, by = p.y - 34 * VISITOR_K - 12 - bh;
+  const tw = ctx.measureText(text).width, bw = tw + 22, bh = 28, by = p.y - (n.girl ? 70 : 34 * VISITOR_K) - 12 - bh;
   ctx.fillStyle = 'rgba(245,255,240,.97)'; ctx.strokeStyle = 'rgba(95,174,124,.8)'; ctx.lineWidth = 1.4;
   ctx.beginPath();
   ctx.roundRect(p.x - bw / 2, by, bw, bh, 12);
@@ -9110,7 +9120,7 @@ function hostMemoryLine(id) {
 
 // ── 親戚家：叔叔、阿婆在家裡陪小可愛（跟著她走，偶爾說話）──
 const host = { n: null, a: null, say: null, sayUntil: 0, nextTalkAt: 0, danceUntil: 0, nextHop: 0 };
-const HOST_LINE_KEYS = { uncle: 'hostUncle', grandma: 'hostGrandma', teacher: 'hostTeacher', ranger: 'hostRanger', librarian: 'hostLibrarian' };
+const HOST_LINE_KEYS = { friend: 'hostFriend', uncle: 'hostUncle', grandma: 'hostGrandma', teacher: 'hostTeacher', ranger: 'hostRanger', librarian: 'hostLibrarian' };
 const hostLineKey = () => HOST_LINE_KEYS[host.n.id] || 'hostGrandma';
 function hostSay(text, ms) {
   if (!text) return;
@@ -9119,7 +9129,7 @@ function hostSay(text, ms) {
 }
 function hostTick(dt, now) {
   const want = G.away && HOSTS[PLACES[G.away.place].host];
-  if (!want) { host.n = null; host.a = null; return; }
+  if (!want) { host.n = null; host.a = null; host.pets = null; return; }
   const room = curRoom();
   if (host.n !== want) { // 剛到：親戚在門口附近迎接
     const c = nearestFree(room, room.w / 2, room.d - 1.5) || [1, 1];
@@ -9128,6 +9138,13 @@ function hostTick(dt, now) {
       squish: 0, squishV: -6, lean: 0, leanV: 0, press: null, happyUntil: now + 2500, particles: [] };
     host.nextTalkAt = now + 2500;
     host.memSaid = false;
+    // 朋友家：對方的寵物也在家裡走來走去
+    host.pets = (want.pets || []).map(([species, stage, name], i) => {
+      const c2 = nearestFree(room, 1 + (i * 2) % Math.max(1, room.w - 2), 1 + Math.floor(i / 3) * 2) || c;
+      return { p: { species, stage, name, clean: 100, mood: 100, hunger: 100, growth: 0 },
+        a: { room: roomKey(), x: c2[0] + .5, y: c2[1] + .5, z: 0, path: [], t: Math.random() * 5, facing: 1, idleUntil: now + Math.random() * 3000,
+          blinkAt: 0, squish: 0, squishV: 0, lean: 0, leanV: 0, press: null, happyUntil: 0, particles: [] } };
+    });
     const mem = hostMemOf(want.id); mem.visits = (mem.visits || 0) + 1; saveGame();
     if (!sessionLog.met.includes(want.short)) sessionLog.met.push(want.short);
     // 剛到的時候送禮物（同一位親戚 1 小時內只送一次）
@@ -9157,6 +9174,7 @@ function hostTick(dt, now) {
     if (Math.random() < .5) setTimeout(() => { if (host.n) fufuSay(pickLine('kidReply'), 2600); }, 3000);
   }
   actorWalk(a, dt, now, room, blockedGrid(room), .5);
+  (host.pets || []).forEach(({ a: pa }) => { pa.t += dt; actorEnterRoom(pa, room); actorSpring(pa, dt, now, false); actorWalk(pa, dt, now, room, blockedGrid(room), .3); });
   farmTick(dt, now, room);
 }
 
@@ -9277,8 +9295,8 @@ function farmMenuEntries(f) {
 }
 function hostHit(w) {
   if (!host.n) return false;
-  const a = host.a, p = iso(a.x, a.y, 0), k = VISITOR_K;
-  return w.x > p.x - 18 * k && w.x < p.x + 18 * k && w.y > p.y - 32 * k && w.y < p.y + 5;
+  const a = host.a, p = iso(a.x, a.y, 0), k = VISITOR_K, h = host.n.girl ? 66 : 32 * k;
+  return w.x > p.x - 18 * k && w.x < p.x + 18 * k && w.y > p.y - h && w.y < p.y + 5;
 }
 function hostMenuEntries() {
   const s = host.n.short, now = () => performance.now();
@@ -9321,13 +9339,17 @@ function hostMenuEntries() {
 }
 function hostDrawEntries() {
   if (!host.n) return [];
-  const list = [{ x: host.a.x - .2, y: host.a.y - .2, w: .4, d: .4, z: 0, h: 30 * VISITOR_K, drawFn: ctx => drawNeighborActor(ctx, host.a, host.n, 1, false, false) }];
+  const list = [host.n.girl
+    ? { x: host.a.x - .2, y: host.a.y - .2, w: .4, d: .4, z: 0, h: 64, drawFn: ctx => drawFriendGirl(ctx, host.a, host.n) }
+    : { x: host.a.x - .2, y: host.a.y - .2, w: .4, d: .4, z: 0, h: 30 * VISITOR_K, drawFn: ctx => drawNeighborActor(ctx, host.a, host.n, 1, false, false) }];
+  (host.pets || []).forEach(({ a, p }) => { if (a.room === roomKey()) list.push({ x: a.x - .15, y: a.y - .15, w: .3, d: .3, z: 0, h: 26 * lookScale(p), drawFn: ctx => drawPetActor(ctx, a, p) }); });
   farm.actors.forEach(({ n, a }) => list.push({ x: a.x - .2, y: a.y - .2, w: .4, d: .4, z: 0, h: 30 * (n.k || FARM_K), drawFn: ctx => drawNeighborActor(ctx, a, n, 1, false, false, n.k || FARM_K) }));
   return list;
 }
 function hostDrawOverlay(ctx, now) {
   if (!host.n) return;
   farm.actors.forEach(({ a }) => drawParticles(ctx, a));
+  (host.pets || []).forEach(({ a }) => drawParticles(ctx, a));
   drawParticles(ctx, host.a);
   if (!host.say || now > host.sayUntil) { host.say = null; return; }
   drawNeighborBubble(ctx, host.a, host.n, host.say, 1);
@@ -9676,16 +9698,262 @@ function openTravelMenu() {
     card.appendChild(b);
   };
   if (G.away) pick(el('div', 'place-emoji', '🏠'), '🏠 回家', '回到自己的小屋', goHome, false);
-  Object.entries(PLACES).filter(([, pl]) => !pl.inHouse).forEach(([id, pl]) => {
+  Object.entries(PLACES).filter(([, pl]) => !pl.inHouse && !pl.invite).forEach(([id, pl]) => {
     const here = !!(G.away && G.away.place === id);
     const icon = pl.host && HOSTS[pl.host] ? renderNeighborPortrait(HOSTS[pl.host], 64, 58, false) : el('div', 'place-emoji', pl.emoji);
     pick(icon, `${pl.emoji} ${pl.name}${here ? '（你在這裡）' : ''}`, pl.desc, () => travelTo(id), here);
   });
+  // 🏡 收到邀請卡的家（姊姊／妹妹的家）
+  loadInvites().forEach(inv => {
+    const here = !!(G.away && G.away.place === 'friend' && PLACES.friend && PLACES.friend.inviteAt === inv.at && PLACES.friend.inviteName === inv.n);
+    pick(renderInviteGirl(inv, 64, 58), `🏡 ${inv.n}的家${here ? '（你在這裡）' : ''}`, `邀請卡（${inviteDate(inv.at)}）・房間 ${inv.r.length} 間・寵物 ${inv.pn.length} 隻`, () => visitFriend(inv), here);
+  });
+  const row = el('div', 'invite-row');
+  const mk = el('button', 'big alt', '💌 做邀請卡');
+  mk.onclick = openInviteMaker;
+  const pst = el('button', 'big alt', '📥 收到邀請卡');
+  pst.onclick = openInvitePaste;
+  row.append(mk, pst);
+  card.appendChild(row);
   const no = el('button', 'big alt', '不去了');
   no.onclick = () => { $('#modal').hidden = true; };
   card.appendChild(no);
   $('#modal').hidden = false;
 }
+/* ===== 🏡 去姊姊／妹妹家玩（邀請卡）=====
+   家長：姊姊用 iPad、妹妹用電腦，兩邊的存檔不在同一台。
+   沒有伺服器，所以用「邀請卡連結」：把自己的家（房間、寵物、小可愛的樣子）打包成一條連結，
+   爸爸媽媽用 LINE 傳過去；對方點開連結（或在「出門 → 收到邀請卡」貼上）就能去玩。
+   ・看到的是做邀請卡那一刻的家（像拍照帶過去），之後再布置要重做一張
+   ・去別人家只能用、不能搬（跟叔叔家一樣），不會改到任何人的存檔
+   ・連結是別人做的資料：每一樣都檢查過才用（不認得的家具略過、大小有上限、名字只當文字顯示）
+   ・iPad 從主畫面打開的小屋，跟 Safari 是分開的：點連結會開到 Safari，所以也可以複製連結、在小屋裡貼上 */
+const INVITE_KEY = 'myHouse_invites';
+const INVITE_MAX = 4;   // 最多記住幾張（同一個名字的新卡蓋掉舊卡）
+const INVITE_STAGE_K = { kinder: 1, school: 1.08, big: 1.15 };
+function makeInvite() {
+  const pets = [G.pet].concat(G.pets.filter(p => p !== G.pet)).filter(p => p.stage !== 'egg').slice(0, 8);
+  return {
+    v: 1, at: Date.now(), n: charName(),
+    o: Object.assign({}, G.outfit), h: Object.assign({}, G.hair || DEFAULT_HAIR), s: kidStage().id,
+    pn: pets.map(p => [p.species, p.stage, petNameOf(p)]),
+    r: G.rooms.map(r => ({
+      n: r.name || '', w: r.w, d: r.d, wp: r.wall, fl: r.floor,
+      i: (r.items || []).map(it => [it.id, it.x, it.y, it.rot || 0, it.top || 0]),
+      wi: (r.wallItems || []).map(it => [it.id, it.side, it.pos]) }))
+  };
+}
+// 別人做的資料：一樣一樣檢查，不對的換成預設或略過；整個不像邀請卡就回傳 null
+function cleanInvite(x) {
+  const isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
+  const int = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
+  const str = (v, max) => typeof v === 'string' ? v.trim().slice(0, max) : '';
+  if (!isObj(x) || x.v !== 1 || !Array.isArray(x.r) || !x.r.length) return null;
+  const o = {};
+  OUTFIT_SLOTS.forEach(({ key }) => {
+    const c = isObj(x.o) && CLOTHES_BY_ID[x.o[key]];
+    o[key] = c && c.slot === key ? c.id : DEFAULT_OUTFIT[key];
+  });
+  const h = isObj(x.h) && HAIR_BY_ID[x.h.style] && HAIR_COLOR_BY_ID[x.h.color] ? { style: x.h.style, color: x.h.color } : Object.assign({}, DEFAULT_HAIR);
+  const wps = new Set(WALLPAPERS.map(w => w.id)), fls = new Set(FLOORS.map(f => f.id));
+  const rooms = x.r.slice(0, 8).filter(isObj).map((r, ri) => {
+    const w = int(r.w, 4, 12) ? r.w : MIN_ROOM_SIZE, d = int(r.d, 4, 12) ? r.d : MIN_ROOM_SIZE;
+    return {
+      n: str(r.n, 10) || `房間 ${ri + 1}`, w, d,
+      wp: wps.has(r.wp) ? r.wp : WALLPAPERS[0].id, fl: fls.has(r.fl) ? r.fl : FLOORS[0].id,
+      i: (Array.isArray(r.i) ? r.i : []).slice(0, 200).filter(a => Array.isArray(a) && FURN_BY_ID[a[0]] && int(a[1], 0, w - 1) && int(a[2], 0, d - 1))
+        .map(a => [a[0], a[1], a[2], int(a[3], 0, 3) ? a[3] : 0, FURN_BY_ID[a[4]] ? a[4] : 0]),
+      wi: (Array.isArray(r.wi) ? r.wi : []).slice(0, 60).filter(a => Array.isArray(a) && FURN_BY_ID[a[0]] && (a[1] === 'L' || a[1] === 'R') && int(a[2], 0, 12))
+        .map(a => [a[0], a[1], a[2]])
+    };
+  });
+  if (!rooms.length) return null;
+  const pn = (Array.isArray(x.pn) ? x.pn : []).slice(0, 8).filter(a => Array.isArray(a) && PET_SPECIES_BY_ID[a[0]] && GROW_STAGES.includes(a[1]))
+    .map(a => [a[0], a[1], str(a[2], 10)]);
+  return { v: 1, at: Number.isFinite(x.at) ? x.at : 0, n: str(x.n, 10) || '朋友', o, h, s: KID_STAGE_BY_ID[x.s] ? x.s : 'kinder', pn, r: rooms };
+}
+// 打包成網址可以放的字串：z＝壓縮過、j＝沒壓縮（舊瀏覽器沒有 CompressionStream）
+const b64url = bytes => { let t = ''; for (let i = 0; i < bytes.length; i += 8192) t += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192)); return btoa(t).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+const unb64url = str => { const t = atob(str.replace(/-/g, '+').replace(/_/g, '/')); const b = new Uint8Array(t.length); for (let i = 0; i < t.length; i++) b[i] = t.charCodeAt(i); return b; };
+function encodeInvitePlain(obj) { return 'j' + b64url(new TextEncoder().encode(JSON.stringify(obj))); }
+async function encodeInvite(obj) {
+  if (typeof CompressionStream !== 'function') return encodeInvitePlain(obj);
+  try {
+    const st = new Blob([JSON.stringify(obj)]).stream().pipeThrough(new CompressionStream('deflate'));
+    return 'z' + b64url(new Uint8Array(await new Response(st).arrayBuffer()));
+  } catch (e) { return encodeInvitePlain(obj); }
+}
+async function decodeInvite(code) {
+  try {
+    if (typeof code !== 'string' || code.length > 200000) return null;
+    let text;
+    if (code[0] === 'j') text = new TextDecoder().decode(unb64url(code.slice(1)));
+    else if (code[0] === 'z') {
+      if (typeof DecompressionStream !== 'function') return null;
+      const st = new Blob([unb64url(code.slice(1))]).stream().pipeThrough(new DecompressionStream('deflate'));
+      text = await new Response(st).text();
+    } else return null;
+    return cleanInvite(JSON.parse(text));
+  } catch (e) { return null; }
+}
+// 從貼上的文字裡找出邀請卡：整條連結、或只有後面那一串都可以
+function inviteCodeFrom(text) {
+  const t = String(text || '').trim();
+  const m = /[#&?]visit=([A-Za-z0-9_-]+)/.exec(t) || /^([zj][A-Za-z0-9_-]{20,})$/.exec(t);
+  return m ? m[1] : null;
+}
+function inviteLink(code) { return location.href.split('#')[0] + '#visit=' + code; }
+function inviteDate(at) { const d = new Date(at || 0); return at ? `${d.getMonth() + 1}/${d.getDate()}` : '—'; }
+function loadInvites() {
+  try { const l = JSON.parse(localStorage.getItem(INVITE_KEY) || '[]'); return Array.isArray(l) ? l.map(cleanInvite).filter(Boolean) : []; } catch (e) { return []; }
+}
+function saveInvite(inv) {
+  const list = loadInvites().filter(x => x.n !== inv.n);
+  list.unshift(inv);
+  try { localStorage.setItem(INVITE_KEY, JSON.stringify(list.slice(0, INVITE_MAX))); return true; } catch (e) { return false; }
+}
+function inviteOutfit(inv) { const o = {}; OUTFIT_SLOTS.forEach(({ key }) => { o[key] = CLOTHES_BY_ID[inv.o[key]]; }); return o; }
+function renderInviteGirl(inv, w, h) {
+  const dpr = window.devicePixelRatio || 1;
+  const c = document.createElement('canvas');
+  c.width = w * dpr; c.height = h * dpr; c.style.width = w + 'px'; c.style.height = h + 'px';
+  const g = c.getContext('2d'), sc = (h - 6) / 76 * dpr;
+  g.setTransform(sc, 0, 0, sc, c.width / 2, c.height - 3 * dpr);
+  drawGirl(g, { t: 0, outfit: inviteOutfit(inv), hair: inv.h, stage: inv.s });
+  return c;
+}
+// 去收到邀請卡的那個家：當成一個「出門的地方」，主人是對方的小可愛
+let friendUid = -500000;
+function visitFriend(inv) {
+  PLACES.friend = {
+    name: `${inv.n}的家`, emoji: '🏡', host: 'friend', invite: true, inviteAt: inv.at, inviteName: inv.n, desc: '收到邀請卡的家',
+    rooms: inv.r.map(r => ({
+      name: r.n, w: r.w, d: r.d, wall: r.wp, floor: r.fl,
+      items: r.i.map(([id, x, y, rot, top]) => ({ uid: friendUid--, id, x, y, rot, top: top || null })),
+      wallItems: r.wi.map(([id, side, pos]) => ({ uid: friendUid--, id, side, pos }))
+    }))
+  };
+  HOSTS.friend = { id: 'friend', name: inv.n, short: inv.n, girl: { outfit: inviteOutfit(inv), hair: inv.h, stage: inv.s }, pets: inv.pn };
+  if (G.away && G.away.place === 'friend') { G.away = null; host.n = null; } // 從一個朋友家直接去另一個
+  travelTo('friend');
+}
+function openInviteMaker() {
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', '💌 邀請卡'));
+  const inv = makeInvite();
+  const pic = el('div', 'invite-pic'); pic.appendChild(renderInviteGirl(inv, 90, 110)); card.appendChild(pic);
+  card.appendChild(el('p', 'gift-tx', `邀請大家來「${charName()}的家」玩！`));
+  card.appendChild(note(`🏠 房間 ${inv.r.length} 間・🐾 寵物 ${inv.pn.length} 隻。請爸爸媽媽幫忙，用 LINE 把邀請卡傳給姊姊／妹妹。對方點開連結（或在「🚗 出門 → 📥 收到邀請卡」貼上）就能來玩。來玩只能看、不能搬，不會改到你的東西。之後重新布置，要再做一張新的邀請卡喔。`));
+  const box = document.createElement('textarea');
+  box.className = 'invite-code'; box.readOnly = true; box.value = '做邀請卡中…';
+  card.appendChild(box);
+  const send = el('button', 'big', '📤 傳送邀請卡'), copy = el('button', 'big alt', '📋 複製連結');
+  send.disabled = copy.disabled = true;
+  card.append(send, copy);
+  const close = el('button', 'big alt', '好');
+  close.onclick = () => { $('#modal').hidden = true; };
+  card.appendChild(close);
+  $('#modal').hidden = false;
+  encodeInvite(inv).then(code => {
+    const link = inviteLink(code);
+    box.value = link;
+    send.disabled = copy.disabled = false;
+    const doCopy = () => {
+      const done = () => toast('📋 連結複製好了，貼到 LINE 傳給對方吧！');
+      try { navigator.clipboard.writeText(link).then(done, () => { box.select(); document.execCommand('copy'); done(); }); }
+      catch (e) { box.select(); try { document.execCommand('copy'); done(); } catch (e2) {} }
+    };
+    copy.onclick = doCopy;
+    send.onclick = () => {
+      if (navigator.share) navigator.share({ title: '小屋邀請卡', text: `${charName()}邀請你來我家玩！🏡`, url: link }).catch(() => {});
+      else doCopy();
+    };
+  });
+}
+function openInvitePaste() {
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', '📥 收到邀請卡'));
+  card.appendChild(note('把收到的邀請卡連結貼在下面（在 LINE 裡長按連結 → 拷貝，再到這裡長按 → 貼上）。'));
+  const box = document.createElement('textarea');
+  box.className = 'invite-code'; box.placeholder = '把邀請卡連結貼在這裡';
+  card.appendChild(box);
+  const ok = el('button', 'big', '🏡 打開邀請卡');
+  ok.onclick = () => {
+    const code = inviteCodeFrom(box.value);
+    if (!code) { toast('這好像不是邀請卡耶，再貼一次看看'); return; }
+    ok.disabled = true;
+    decodeInvite(code).then(inv => {
+      ok.disabled = false;
+      if (!inv) { toast('這張邀請卡打不開（可能沒有複製完整）'); return; }
+      saveInvite(inv);
+      openInviteWelcome(inv);
+    });
+  };
+  const no = el('button', 'big alt', '不用了');
+  no.onclick = () => { $('#modal').hidden = true; };
+  card.append(ok, no);
+  $('#modal').hidden = false;
+}
+function openInviteWelcome(inv) {
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', `💌 ${inv.n}寄來邀請卡！`));
+  const pic = el('div', 'invite-pic'); pic.appendChild(renderInviteGirl(inv, 90, 110)); card.appendChild(pic);
+  card.appendChild(el('p', 'gift-tx', `要去${inv.n}的家玩嗎？`));
+  card.appendChild(note(`🏠 房間 ${inv.r.length} 間・🐾 寵物 ${inv.pn.length} 隻。以後在「🚗 出門」也可以再去。`));
+  const go = el('button', 'big', '🏡 現在去');
+  go.onclick = () => { $('#modal').hidden = true; visitFriend(inv); };
+  const later = el('button', 'big alt', '等一下再去');
+  later.onclick = () => { $('#modal').hidden = true; };
+  card.append(go, later);
+  $('#modal').hidden = false;
+  Sound.play('coin');
+}
+// 用連結打開遊戲（#visit=…）：收下邀請卡、把網址上的那一串拿掉，等畫面空下來再問要不要去
+function checkInviteHash(tries) {
+  const code = inviteCodeFrom(location.hash);
+  if (!code) return;
+  tries = tries || 0;
+  if (tries < 30 && (!$('#modal').hidden || resting || hold || document.getElementById('showcase'))) { setTimeout(() => checkInviteHash(tries + 1), 2000); return; }
+  try { history.replaceState(null, '', location.href.split('#')[0]); } catch (e) {}
+  decodeInvite(code).then(inv => {
+    if (!inv) { toast('這張邀請卡打不開（可能沒有複製完整）'); return; }
+    saveInvite(inv);
+    openInviteWelcome(inv);
+  });
+}
+setTimeout(() => checkInviteHash(), 2500);
+// 朋友家的主人：對方的小可愛（畫成女生，不是動物）
+function drawFriendGirl(ctx, a, n) {
+  const now = performance.now(), p = iso(a.x, a.y, a.z || 0), moving = a.path.length > 0;
+  const hop = moving ? Math.abs(Math.sin(a.t * 11)) * 2 : 0, k = INVITE_STAGE_K[n.girl.stage] || 1;
+  ctx.fillStyle = 'rgba(40,30,20,.22)';
+  ctx.beginPath(); ctx.ellipse(p.x, p.y, 14, 6, 0, 0, Math.PI * 2); ctx.fill();
+  if (a.t > a.blinkAt + .12) a.blinkAt = a.t + 2 + Math.random() * 3;
+  ctx.save();
+  ctx.translate(p.x, p.y - hop);
+  ctx.scale(a.facing * k, k);
+  drawGirl(ctx, { t: a.t, walking: moving, blink: a.t > a.blinkAt, outfit: n.girl.outfit, hair: n.girl.hair, stage: n.girl.stage, face: now < a.happyUntil ? 'joy' : null });
+  ctx.restore();
+}
+// 朋友家的寵物：在房間裡走來走去，點了會開心
+function friendPetHit(w) {
+  if (!host.n || !host.pets) return null;
+  return host.pets.find(({ a, p }) => {
+    const q = iso(a.x, a.y, 0), k = lookScale(p);
+    return w.x > q.x - 15 * k && w.x < q.x + 15 * k && w.y > q.y - 28 * k && w.y < q.y + 4;
+  }) || null;
+}
+function patFriendPet(fp) {
+  const now = performance.now();
+  fp.a.squishV = -8; fp.a.happyUntil = now + 1500; fp.a.path = [];
+  petBurst({ kind: 'heart' }, 3, fp.a);
+  Sound.play('petHappy');
+  fufuSay(`${fp.p.name || PET_SPECIES_BY_ID[fp.p.species].name}好可愛！`, 2200);
+}
+
 function visitorDrawEntries() {
   if (!vis.who || vis.seat) return [];
   const a = vis.a;
@@ -10535,6 +10803,7 @@ canvas.addEventListener('pointerup', e => {
   if (giftBoxHit(w)) { (giftVisit.spec || GIFT_SPECS[0]).open(); return; }
   { const ph = phHit(w); if (ph != null) { phTap(ph, e); return; } }
   if (visitorHit(w)) { openMenu(visitorMenuEntries(), e); return; }
+  { const fp = friendPetHit(w); if (fp) { patFriendPet(fp); return; } }
   if (hostHit(w)) { openMenu(hostMenuEntries(), e); return; }
   const fa = farmHit(w);
   if (fa) { openMenu(farmMenuEntries(fa), e); return; }

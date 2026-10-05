@@ -2565,6 +2565,87 @@
       if (!(full > countFills(Object.assign({}, sp, { sparkle: false })))) fails.push(sp.name + ' 沒有一閃一閃的星星');
     });
 
+    /* 90 去姊姊／妹妹家玩（邀請卡）：姊姊 iPad、妹妹電腦，用連結傳過去；別人做的資料要檢查；去玩不能改到任何人的存檔 */
+    var inv90 = null, link90 = null, dec90 = null, keepInv90 = localStorage.getItem(INVITE_KEY), realWalk90 = walkTrip, realToast90 = toast;
+    try {
+      toast = function(){};
+      var mine = makeInvite();
+      var c90 = cleanInvite(JSON.parse(JSON.stringify(mine)));
+      if (!c90 || c90.r.length !== G.rooms.length || c90.r[0].i.length !== G.rooms[0].items.length || c90.n !== charName()) fails.push('自己做的邀請卡，檢查完內容不一樣');
+      // 壓縮 → 解開要一模一樣（非同步，最後再驗）
+      encodeInvite(mine).then(function(code){ link90 = inviteLink(code); return decodeInvite(code); }).then(function(d){ dec90 = d || 'null'; });
+      pendingChecks.push(function(){
+        if (!dec90 || dec90 === 'null') fails.push('邀請卡打包之後解不開（' + dec90 + '）');
+        else if (JSON.stringify(dec90.r) !== JSON.stringify(c90.r) || dec90.n !== c90.n) fails.push('邀請卡打包再解開，內容不一樣');
+        if (!link90 || link90.indexOf('#visit=') < 0 || link90.length > 30000) fails.push('邀請卡連結不對或太長：' + (link90 && link90.length));
+      });
+      // 別人做的資料：不認得的家具略過、太大的房間縮回來、名字截短、壞掉的整張不收
+      var bad = JSON.parse(JSON.stringify(mine));
+      bad.n = '<b>好長好長好長好長好長的名字</b>'; bad.r[0].w = 999; bad.r[0].i.push(['no_such_thing', 1, 1, 0, 0], ['wood_bed', 50, 50, 0, 0]); bad.pn.push(['dragon_king', 'adult', 'x']); bad.o.top = 'ribbon';
+      var cb = cleanInvite(bad);
+      if (!cb || cb.n.length > 10 || cb.r[0].w !== MIN_ROOM_SIZE || cb.r[0].i.some(function(a){ return a[0] === 'no_such_thing' || a[1] >= cb.r[0].w; }) || cb.pn.some(function(a){ return a[0] === 'dragon_king'; }) || cb.o.top === 'ribbon')
+        fails.push('別人做的邀請卡，壞掉的部分沒有擋掉');
+      if (cleanInvite({ v: 2, r: [] }) || cleanInvite(null) || cleanInvite({ v: 1, r: [] }) || cleanInvite('x')) fails.push('不是邀請卡的東西被當成邀請卡');
+      var pc = encodeInvitePlain(mine);
+      if (inviteCodeFrom('看這裡 ' + inviteLink(pc)) !== pc || inviteCodeFrom(pc) !== pc || inviteCodeFrom('隨便的字') !== null) fails.push('貼上的邀請卡連結認不出來');
+      // 最多記 4 張，同一個名字新的蓋掉舊的
+      localStorage.removeItem(INVITE_KEY);
+      ['甲', '乙', '丙', '丁', '戊'].forEach(function(nm, i){ var x = cleanInvite(mine); x.n = nm; x.at = i; saveInvite(x); });
+      var x2 = cleanInvite(mine); x2.n = '戊'; x2.at = 99; saveInvite(x2);
+      var li = loadInvites();
+      if (li.length !== 4 || li[0].n !== '戊' || li[0].at !== 99 || li.some(function(x){ return x.n === '甲'; })) fails.push('邀請卡清單：數量或順序不對（' + li.map(function(x){ return x.n; }).join(',') + '）');
+      // 出門選單看得到收到的邀請卡、做邀請卡、收到邀請卡
+      openTravelMenu();
+      var tm = $('#modalCard').textContent;
+      if (!/戊的家/.test(tm) || !/做邀請卡/.test(tm) || !/收到邀請卡/.test(tm)) fails.push('出門選單沒有邀請卡的選項');
+      $('#modal').hidden = true;
+      // 去朋友家：主人是對方的小可愛、寵物在家裡、只能用不能搬、自己的存檔不變
+      var friend = cleanInvite(mine); friend.n = '姊姊'; friend.pn = [['mochi', 'adult', '圓圓'], ['cat', 'baby', '咪咪']];
+      var before = JSON.stringify({ rooms: G.rooms, pets: G.pets, bells: G.bells, inv: G.inv });
+      walkTrip = function(l, done){ done(); };
+      G.away = null; visitFriend(friend);
+      if (!G.away || G.away.place !== 'friend' || curRoom().items.length !== friend.r[0].i.length) fails.push('點了邀請卡沒有去到朋友家');
+      var nowF = performance.now(); for (var gf = 0; gf < 20; gf++) gameStep(.05, nowF + gf * 50);
+      if (!host.n || host.n.id !== 'friend' || !host.n.girl) fails.push('朋友家沒有對方的小可愛出來迎接');
+      if (!host.pets || host.pets.length !== 2) fails.push('朋友家的寵物沒有出來（' + (host.pets && host.pets.length) + '）');
+      var ents = hostDrawEntries();
+      if (ents.length < 3) fails.push('朋友家：小可愛和寵物沒有畫出來');
+      draw();
+      if (host.pets && host.pets[0]) {
+        var fpA = host.pets[0].a, q = iso(fpA.x, fpA.y, 0);
+        var hit = friendPetHit({ x: q.x, y: q.y - 8 });
+        if (!hit) fails.push('點朋友家的寵物點不到');
+        // 真的用手指點一下（走點擊的流程）：寵物要開心
+        var rmF = curRoom(), far = nearestFree(rmF, rmF.w - 1 - Math.floor(fufu.x) + .5, rmF.d - 1 - Math.floor(fufu.y) + .5) || [0, 0];
+        fpA.x = far[0] + .5; fpA.y = far[1] + .5; fpA.path = []; fpA.happyUntil = 0; host.pets.slice(1).forEach(function(o){ o.a.x = -9; o.a.y = -9; });
+        var qq = iso(fpA.x, fpA.y, 0), rF = canvas.getBoundingClientRect();
+        canvas.dispatchEvent(new PointerEvent('pointerup', { clientX: rF.left + qq.x * view.scale + view.ox, clientY: rF.top + (qq.y - 10) * view.scale + view.oy, bubbles: true }));
+        hideItemMenu();
+        if (!(fpA.happyUntil > performance.now())) fails.push('用手點朋友家的寵物，牠沒有開心');
+      }
+      var hq = iso(host.a.x, host.a.y, 0);
+      if (!hostHit({ x: hq.x, y: hq.y - 50 })) fails.push('點朋友家的小可愛（頭的位置）點不到');
+      if (!awayNoEdit()) fails.push('朋友家的家具竟然可以搬');
+      if (lineList('hostFriend').indexOf(pickLine(hostLineKey())) < 0 && lineList('hostFriend').map(function(l){ return l.split('{名字}').join(charName()); }).indexOf(pickLine(hostLineKey(), { 名字: charName() })) < 0) fails.push('朋友家的小可愛沒有說自己的話');
+      goHome();
+      if (G.away) fails.push('從朋友家回不了家');
+      if (JSON.stringify({ rooms: G.rooms, pets: G.pets, bells: G.bells, inv: G.inv }) !== before) fails.push('去朋友家玩，改到了自己的存檔');
+      // 用連結打開：收下邀請卡、網址上的那一串拿掉
+      localStorage.removeItem(INVITE_KEY);
+      var pc2 = encodeInvitePlain(Object.assign({}, mine, { n: '妹妹' }));
+      try { history.replaceState(null, '', location.href.split('#')[0] + '#visit=' + pc2); } catch (eH) {}
+      checkInviteHash(30);
+      pendingChecks.push(function(){
+        if (!loadInvites().some(function(x){ return x.n === '妹妹'; })) fails.push('用邀請卡連結打開，沒有收下邀請卡');
+        if (/visit=/.test(location.hash)) fails.push('用邀請卡連結打開後，網址上的邀請碼沒有拿掉');
+        $('#modal').hidden = true;
+      });
+    } catch (e) { fails.push('邀請卡測試出錯：' + e.message + ' ' + (e.stack || '').split('\n')[1]); }
+    finally {
+      walkTrip = realWalk90; toast = realToast90; G.away = null; $('#modal').hidden = true;
+      pendingChecks.push(function(){ if (keepInv90 == null) localStorage.removeItem(INVITE_KEY); else localStorage.setItem(INVITE_KEY, keepInv90); });
+    }
+
     /* 89 變小也有動畫＋圖片、收進成長圖鑑（不重複）；藥水比一般東西貴 */
     var kid89 = JSON.stringify(G.kid), kf89 = JSON.stringify(G.kidFood), pf89 = JSON.stringify(G.food), gd89 = JSON.stringify(G.growDex), ps89 = G.pet.stage;
     var realToast89 = toast, realBlk89 = showcaseBlocked; toast = function(){}; showcaseBlocked = function(){ return false; };
