@@ -2566,6 +2566,83 @@
       if (!(full > countFills(Object.assign({}, sp, { sparkle: false })))) fails.push(sp.name + ' 沒有一閃一閃的星星');
     });
 
+    /* 92 去朋友家送禮物（回禮卡）＋訪客簿：給對的人才收、同一張不重複、同一個人一天只拿一次禮物 */
+    var keep92 = { gb: JSON.stringify(G.guestbook || []), food: JSON.stringify(G.food), id: G.inviteId, from: G.inviteFrom, inv: JSON.stringify(G.inv) };
+    var realToast92 = toast, realWalk92 = walkTrip; toast = function(){};
+    try {
+      G.inviteId = 'myhouse01'; G.guestbook = [];
+      // 妹妹那台：去姊姊家（姊姊的邀請卡編號 myhouse01）→ 送餅乾、選第 0 句
+      var sisInv = cleanInvite(makeInvite()); sisInv.id = 'myhouse01'; sisInv.f = '姊姊';
+      G.inviteId = 'littlesis1'; G.inviteFrom = '妹妹';
+      walkTrip = function(l, d){ d(); }; G.away = null; visitFriend(sisInv);
+      var nowG = performance.now(); for (var gg = 0; gg < 10; gg++) gameStep(.05, nowG + gg * 50);
+      var hm = hostMenuEntries();
+      var giftEntry = hm.filter(function(e){ return /送禮物/.test(e[0]); })[0];
+      if (!giftEntry) fails.push('朋友家點她的小可愛，沒有「送禮物」');
+      else {
+        giftEntry[1]();
+        var opts = document.querySelectorAll('#modalCard .gift-opt');
+        if (opts.length !== VISIT_GIFTS.length) fails.push('送禮物的選項不對（' + opts.length + '）');
+        opts[0].onclick();
+        var msgs = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return VISIT_MSGS.indexOf(b.textContent) >= 0; });
+        if (msgs.length !== VISIT_MSGS.length) fails.push('送禮物：沒有選一句話的按鈕');
+        else msgs[0].onclick();
+        if (!/回禮卡/.test($('#modalCard').textContent)) fails.push('選完禮物沒有做出回禮卡');
+      }
+      var gc92 = makeGiftCard('cookie', 0);
+      if (gc92.to !== 'myhouse01' || gc92.f !== '妹妹') fails.push('回禮卡沒有寫要給誰、是誰送的');
+      goHome(); $('#modal').hidden = true;
+      // 打包 → 解開
+      var code92 = encodeInvitePlain(gc92);
+      if (giftCodeFrom(giftLink(code92)) !== code92) fails.push('回禮卡連結認不出來');
+      decodeGiftCard(code92).then(function(d){ window.__gc92 = d || 'null'; });
+      pendingChecks.push(function(){ if (!window.__gc92 || window.__gc92 === 'null' || window.__gc92.g !== 'cookie') fails.push('回禮卡打包之後解不開'); });
+      // 姊姊那台收到：記進訪客簿、拿到餅乾
+      G.inviteId = 'myhouse01'; G.inviteFrom = '姊姊';
+      var cg = cleanGiftCard(JSON.parse(JSON.stringify(gc92)));
+      var ck0 = G.food.cookie || 0;
+      if (!receiveGiftCard(cg) || G.guestbook.length !== 1 || (G.food.cookie || 0) !== ck0 + 1) fails.push('收到回禮卡沒有拿到禮物、或沒記進訪客簿');
+      if (!/妹妹來過你家/.test($('#modalCard').textContent)) fails.push('收到回禮卡沒有寫是誰來過');
+      // 同一張再打開：不重複
+      receiveGiftCard(cg);
+      if (G.guestbook.length !== 1 || (G.food.cookie || 0) !== ck0 + 1) fails.push('同一張回禮卡打開兩次，算了兩次');
+      // 同一天又一張：記進訪客簿，但不再給禮物
+      var cg2 = cleanGiftCard(Object.assign({}, gc92, { at: gc92.at + 1000 }));
+      receiveGiftCard(cg2);
+      if (G.guestbook.length !== 2 || (G.food.cookie || 0) !== ck0 + 1) fails.push('同一個人一天送很多次，禮物也拿很多次（可以刷禮物）');
+      // 給別人的：不收
+      var cg3 = cleanGiftCard(Object.assign({}, gc92, { to: 'someoneelse', at: gc92.at + 2000 }));
+      if (receiveGiftCard(cg3) || G.guestbook.length !== 2) fails.push('給別人的回禮卡也收下了');
+      // 自己做的：不收
+      var cg4 = cleanGiftCard(Object.assign({}, gc92, { id: 'myhouse01', at: gc92.at + 3000 }));
+      if (receiveGiftCard(cg4) || G.guestbook.length !== 2) fails.push('自己做的回禮卡被當成別人送的');
+      // 壞掉的回禮卡
+      if (cleanGiftCard({ v: 1, t: 'gift', g: 'gold_bar', m: 0 }) || cleanGiftCard({ v: 1, t: 'gift', g: 'cookie', m: 99 }) || cleanGiftCard(null)) fails.push('壞掉的回禮卡沒有擋掉');
+      // 訪客簿：出門選單看得到，打開有兩筆
+      openTravelMenu();
+      var gbBtn = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return /訪客簿/.test(b.textContent); })[0];
+      if (!gbBtn) fails.push('出門選單沒有訪客簿');
+      else { gbBtn.onclick(); if (document.querySelectorAll('#modalCard .gb-row').length !== 2) fails.push('訪客簿裡的紀錄數不對'); }
+      $('#modal').hidden = true;
+      // 用連結打開回禮卡
+      G.guestbook = [];
+      var code95 = encodeInvitePlain(Object.assign({}, gc92, { at: gc92.at + 5000, to: '', id: 'otherkid95' }));   // 不指定給誰（非同步跑完時存檔編號已經換回來）
+      try { history.replaceState(null, '', location.href.split('#')[0] + '#gift=' + code95); } catch (eH) {}
+      checkInviteHash(30);
+      pendingChecks.push(function(){
+        if (!(G.guestbook || []).length) fails.push('用回禮卡連結打開，沒有收到');
+        if (/gift=/.test(location.hash)) fails.push('回禮卡連結打開後，網址上的那一串沒有拿掉');
+        $('#modal').hidden = true;
+        G.guestbook = JSON.parse(keep92.gb);
+      });
+    } catch (e) { fails.push('送禮物測試出錯：' + e.message + ' ' + (e.stack || '').split('\n')[1]); }
+    finally {
+      toast = realToast92; walkTrip = realWalk92; G.away = null; $('#modal').hidden = true;
+      G.food = JSON.parse(keep92.food); G.inv = JSON.parse(keep92.inv);
+      if (keep92.id) G.inviteId = keep92.id; else delete G.inviteId;
+      if (keep92.from) G.inviteFrom = keep92.from; else delete G.inviteFrom;
+    }
+
     /* 91 🎃 萬聖節（依照日期）：商店最上面有限定、動物朋友打扮來玩、給糖果會回禮、收進節日收藏；過了就不賣 */
     var keep91 = { kf: JSON.stringify(G.kidFood), inv: JSON.stringify(G.inv), sd: JSON.stringify(G.seasonDex || {}), bells: G.bells, seen: JSON.stringify(G.seen) };
     var realToast91 = toast, realBlk91 = showcaseBlocked; toast = function(){}; showcaseBlocked = function(){ return false; };
