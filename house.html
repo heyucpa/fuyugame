@@ -723,6 +723,8 @@ button.pass { font: inherit; }
       <div class="pc-body">
         <div class="pc-bar" title="小可愛的飽足"><span>🍙</span><i><b id="barKid"></b></i></div>
         <div class="pc-bar grow" id="kidGrowRow" title="長大"><span>🌱</span><i><b id="barKidGrow"></b></i></div>
+        <div class="pc-bar" title="心情"><span>💗</span><i><b id="barKidMood"></b></i></div>
+        <div class="pc-bar" title="乾淨"><span>🧼</span><i><b id="barKidClean"></b></i></div>
         <div class="pc-btns one"><button id="btnKidEat">🍙 吃東西</button></div>
         <div class="pc-sub">🐾 <b id="petNameLbl">圓圓</b></div>
         <div class="pc-bar grow" id="growRow" title="長大"><span>🌱</span><i><b id="barGrow"></b></i></div>
@@ -2671,6 +2673,8 @@ Object.values(PLACES).forEach(pl => {
   }));
 });
 LINE_TYPES.push(
+  { key: 'kidBored', label: '小可愛心情不好的時候', lines: ['好無聊喔～想去玩', '要不要去公園玩？', '陪我玩一下嘛～', '想坐旋轉木馬…'] },
+  { key: 'kidDirty', label: '小可愛身上髒髒的時候', lines: ['身上髒髒的，想洗澡～', '手上都是沙子耶', '去浴缸泡個澡吧～', '洗乾淨才舒服！'] },
   { key: 'visitorTrick', label: '萬聖節：動物朋友來玩', hint: '可用 {名字}', lines: ['不給糖就搗蛋！🎃', '{名字}，不給糖就搗蛋喔！', '嘿嘿，你看我的萬聖節打扮！要給我糖果嗎？', '咚咚咚～不給糖就搗蛋！'] },
   { key: 'visitorCandy', label: '萬聖節：拿到糖果', hint: '可用 {名字}', lines: ['哇！謝謝{名字}的糖果！', '好甜喔～這個送你！', '耶！拿到糖果了！我也有東西送你～'] },
   { key: 'hostAmuse', label: '遊樂園的兔兔姊姊說的話', hint: '可用 {名字}', lines: ['{名字}，歡迎來遊樂園！', '旋轉木馬要開了喔，快來坐！', '摩天輪上面看得好遠喔！', '棉花糖甜甜的，要不要來一支？', '氣球攤的氣球可以拿一顆喔！', '排隊要排好喔～', '玩累了可以坐在椅子上休息'] },
@@ -2702,6 +2706,24 @@ const WELCOME_BACK_HOURS = 6; // 隔這麼久再打開，小可愛會說「好�
 
 // ── 小可愛自己也會餓：9 秒降 1，吃飽後大約 10 分鐘會餓（最低一樣停在 PET_MIN）──
 const KID_DECAY_MIN = .15;
+/* 💗 心情、🧼 乾淨（家長：小可愛也要像寵物一樣有心情、乾淨值；照建議做「溫和」的）
+   ・心情：做喜歡的事會上升；玩的時候很慢很慢地下降（1.5 分鐘 1 點），最低停在 KID_MOOD_MIN
+   ・乾淨：不會自己掉；玩沙、溜滑梯、跑步、農場的工作才會變髒；泡澡就乾淨、洗手乾淨一點
+   ・兩個都不影響長大、賺錢——只有表情（髒的時候臉上有一點灰）和說的話會不一樣 */
+const KID_MOOD_DECAY_MIN = 1.5, KID_MOOD_MIN = 30;
+const KID_DIRTY_ACTS = { sand: 15, slide: 6, run: 10, farmcare: 8, hay: 8, trough: 8, pick: 5, picnic: 5, swing: 3, coaster: 3 };
+function kidMoodUp(n) { G.kid.mood = clampStat((G.kid.mood != null ? G.kid.mood : 80) + n); }
+function kidDirty() { try { return G.kid.clean < 40; } catch (e) { return false; } }
+// 心情低、身上髒的時候，偶爾說一句（不要一直講）
+let kidStatusSaidAt = 0;
+function kidStatusLine(now) {
+  now = now || Date.now();
+  if (now - kidStatusSaidAt < 150000) return null;
+  const k = G.kid;
+  const line = k.clean < 40 ? pickLine('kidDirty') : k.mood < 40 ? pickLine('kidBored') : null;
+  if (line) kidStatusSaidAt = now;
+  return line;
+}
 // 成長值（內部數字，畫面上不顯示）：越高角色畫得越大一點。沿用 height 欄位名稱以相容舊存檔
 const KID_START_HEIGHT = 135;
 const KID_MAX_HEIGHT = 165;
@@ -4054,6 +4076,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-11T15:00', title: '小可愛也有心情和乾淨了！', lines: [
+    ['💗', '小可愛的小卡多了「心情」：做喜歡的事、坐遊樂設施、陪寵物玩，心情就會變好'],
+    ['🧼', '玩沙、溜滑梯、跑步會弄髒，去浴缸泡澡就乾乾淨淨（洗手也會乾淨一點）'],
+    ['😊', '不會有懲罰，只是髒髒的時候臉上會有一點灰喔']
+  ], newItems: [] },
   { id: '2026-10-11T09:00', title: '學校可以上課了！🔔', lines: [
     ['📣', '點老師 →「上課」：點名，叫到你的時候按「✋ 有！」'],
     ['✋', '數學課：加法、加減法、九九乘法，同學也會舉手搶答'],
@@ -4413,7 +4440,7 @@ function newPet(species, stage, name) {
     hunger: stage === 'egg' ? 100 : 80, clean: stage === 'egg' ? 100 : 90, mood: stage === 'egg' ? 100 : 80, lastTick: Date.now() };
 }
 function newKid() {
-  return { hunger: 90, height: KID_START_HEIGHT, lastTick: Date.now() };
+  return { hunger: 90, mood: 80, clean: 100, height: KID_START_HEIGHT, lastTick: Date.now() };
 }
 
 /* 讀不出來的存檔：以前會直接開新遊戲，接著一存檔就把原本的紀錄蓋掉了。
@@ -4482,6 +4509,8 @@ function normalizeSave(g) {
   if (out.inviteFrom != null && typeof out.inviteFrom !== 'string') delete out.inviteFrom;
   if (out.inviteId != null && !(typeof out.inviteId === 'string' && /^[a-z0-9]{6,20}$/.test(out.inviteId))) delete out.inviteId;
   if (out.kid && out.kid.small && !(isObj(out.kid.small) && num(out.kid.small.until))) delete out.kid.small;
+  if (out.kid && !num(out.kid.mood)) out.kid.mood = 80;
+  if (out.kid && !num(out.kid.clean)) out.kid.clean = 100;
   (out.pets || []).forEach(q => { if (q && q.small != null && !num(q.small)) delete q.small; });
   if (!isObj(g.growDex)) { out.growDex = {}; growDexSync(out, true); } else growDexSync(out, false);
   if (!Array.isArray(g.newsSeen)) out.newsSeen = []; // 舊存檔：還沒看過任何公告，要讓她看到這次更新了什麼
@@ -4907,7 +4936,9 @@ function petTick() {
   const kidMins = (now - (kid.lastTick || now)) / 60000;
   if (kidMins >= .05) {
     kid.hunger = decayStat(kid.hunger, kidMins, KID_DECAY_MIN);
+    if (kidMins <= AWAY_GAP_MIN) kid.mood = Math.max(KID_MOOD_MIN, clampStat((kid.mood != null ? kid.mood : 80) - kidMins / KID_MOOD_DECAY_MIN));   // 只有在玩的時候慢慢降；關著遊戲不降
     kid.lastTick = now;
+    if (!fufu.pose && !fufu.act && typeof fufuSay === 'function') { const ln = kidStatusLine(now); if (ln) fufuSay(ln, 3000); }
     changed = true;
   }
   return changed;
@@ -5303,6 +5334,10 @@ function drawGirl(ctx, o) {
   if (bk !== 1) ctx.translate(0, -33 * (bk - 1));
   if (hk !== 1) { ctx.translate(0, -40); ctx.scale(hk, hk); ctx.translate(0, 40); }
   drawGirlHead(ctx, o);
+  if (o.dirty && !o.back) { // 🧼 髒髒的：臉上、手上一點灰
+    ctx.fillStyle = 'rgba(120,95,70,.45)';
+    [[-7, -41, 2.2], [-4.5, -39, 1.4], [7.5, -43, 1.8]].forEach(([x, y, r]) => { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); });
+  }
   drawHeadwear(ctx, o, fit.head);
   ctx.restore();
 }
@@ -6347,6 +6382,11 @@ function fufuStartAct(key, now, it, auto) {
     if (G.away && G.away.place === 'park' && PARK_MEM_LINES[key]) rememberFor('ranger', 'act', key);
   }
   if (!auto) kidActGrowth(key);  // 陪寵物玩、看書、畫畫…做什麼都會慢慢長大（有防狂點）
+  if (!auto) {   // 💗 做喜歡的事，心情變好；🧼 有的會弄髒、洗手會乾淨一點
+    kidMoodUp(JOY_ACTS.includes(key) || RIDES[key] ? 10 : 6);
+    if (KID_DIRTY_ACTS[key]) G.kid.clean = clampStat((G.kid.clean != null ? G.kid.clean : 100) - KID_DIRTY_ACTS[key]);
+    if (key === 'wash') G.kid.clean = clampStat((G.kid.clean != null ? G.kid.clean : 100) + 25);
+  }
   if (!auto) relativePerk(key); // 親戚家的事情：吃點心、喝茶、幫忙做事…（她自己點的才算）
   if (a.sound === 'bath') Sound.play('bath');
   else if (a.sound !== 'note') Sound.play('pickUp');
@@ -6393,6 +6433,7 @@ function fufuStartPlayPet(now) {
   fufu.facing = dx - dy >= 0 ? 1 : -1;
   fufu.back = false;
   fufu.act = { key: 'playPet', until: now + 5000, nextFx: now, fxEvery: 700, n: 0 };
+  kidMoodUp(8);
   pet.idleUntil = now + 5500;
   if (isEgg()) {
     fufuSay(pickLine('playEgg'), 3000);
@@ -6474,7 +6515,7 @@ function fufuStartPose(now) {
     Object.assign(pose, { lx: p.x, ly: p.y, z: use.pillow.z, bath: !!use.bath });
     pose.until = now + 10000 + Math.random() * 8000;
     pose.snoreAt = now + 1200;
-    if (use.bath) fufuSay(pickLine('bath'));
+    if (use.bath) { fufuSay(pickLine('bath')); G.kid.clean = 100; kidMoodUp(5); }   // 🛁 泡澡：乾乾淨淨
   }
   fufu.pose = pose;
   fufu.x = it.x + pose.lx;
@@ -6663,7 +6704,7 @@ function fufuDraw(ctx) {
   }
   ctx.translate(p.x, p.y - hop - jump + 1);
   ctx.scale(fufu.facing * k, breathe * k);
-  drawGirl(ctx, { t: fufu.t, walking, back: fufu.back && (walking || !!fufu.act), blink: fufuBlink(), outfit: currentOutfit(), prop, face: kidFace(), stage: kidLookStage() });
+  drawGirl(ctx, { t: fufu.t, walking, back: fufu.back && (walking || !!fufu.act), blink: fufuBlink(), outfit: currentOutfit(), prop, face: kidFace(), stage: kidLookStage(), dirty: kidDirty() });
   ctx.restore();
 }
 
@@ -6773,7 +6814,7 @@ function fufuDrawPosed(ctx) {
   if (pose.type === 'sit') {
     ctx.translate(p.x, p.y + 12 * k - jump); // 讓褲子底部剛好在座面上
     ctx.scale(pose.facing * k, (1 + Math.sin(fufu.t * 2.4) * .012) * k);
-    drawGirl(ctx, { t: fufu.t, sit: true, back: pose.back, blink: fufuBlink(), outfit: currentOutfit(), face: kidFace(), stage: kidLookStage() });
+    drawGirl(ctx, { t: fufu.t, sit: true, back: pose.back, blink: fufuBlink(), outfit: currentOutfit(), face: kidFace(), stage: kidLookStage(), dirty: kidDirty() });
   } else {
     // 頭靠在枕頭上、身體在棉被下，只畫頭，微微歪一邊
     ctx.translate(p.x, p.y - 6 - jump);
@@ -11672,6 +11713,8 @@ function updatePetCard() {
   $('#petNameLbl').textContent = petName();
   $('#kidNameLbl').textContent = charName();
   setBar('#barKid', G.kid.hunger);
+  setBar('#barKidMood', G.kid.mood != null ? G.kid.mood : 80);
+  setBar('#barKidClean', G.kid.clean != null ? G.kid.clean : 100);
   // 小可愛：階段＋往下一個階段的進度；變小的時候顯示還剩幾分鐘
   const ks = kidStage(), sm = kidSmall();
   $('#kidStageIc').textContent = sm ? (sm.baby ? '👶' : '🧪') : '👧';   // 🌱 只留給長大進度條用（家長：名字前面又一個 🌱 會重複）

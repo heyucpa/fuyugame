@@ -2798,6 +2798,45 @@
     } catch (e) { fails.push('開場動畫測試出錯：' + e.message); }
     finally { G.introSeen = true; }
 
+    /* 105 小可愛的心情、乾淨（溫和版）：做喜歡的事心情上升、玩沙會髒、泡澡乾淨、心情最低 30、髒的時候臉上有灰、會說一句 */
+    var keep105 = JSON.stringify(G.kid);
+    try {
+      if (newGame().kid.mood == null || newGame().kid.clean !== 100) fails.push('新遊戲的小可愛沒有心情、乾淨');
+      var o105 = JSON.parse(JSON.stringify(G)); delete o105.kid.mood; delete o105.kid.clean;
+      var n105 = normalizeSave(o105);
+      if (!n105 || n105.kid.mood !== 80 || n105.kid.clean !== 100) fails.push('舊存檔沒有補上心情、乾淨');
+      // 做事：心情上升；玩沙變髒；洗手乾淨一點
+      G.kid.mood = 50; G.kid.clean = 100; fufu.act = null;
+      fufuStartAct('sand', performance.now(), { uid: -105, id: 'sandbox', x: 0, y: 0, rot: 0 }, false);
+      if (!(G.kid.mood > 50)) fails.push('做喜歡的事，心情沒有變好');
+      if (!(G.kid.clean < 100)) fails.push('玩沙沒有變髒');
+      var c105 = G.kid.clean; fufu.act = null;
+      fufuStartAct('wash', performance.now(), { uid: -106, id: 'bath_sink', x: 0, y: 0, rot: 0 }, false);
+      if (!(G.kid.clean > c105)) fails.push('洗手沒有乾淨一點');
+      fufu.act = null;
+      // 心情慢慢降，但最低 30；關著遊戲（離開很久）不降
+      G.kid.mood = 31; G.kid.lastTick = Date.now() - 50 * 1000; petTick();
+      if (G.kid.mood < KID_MOOD_MIN) fails.push('心情降到 30 以下');
+      G.kid.mood = 70; G.kid.lastTick = Date.now() - 3 * 3600000; petTick();
+      if (G.kid.mood !== 70) fails.push('關著遊戲的時候心情也在降');
+      // 髒的時候：臉上有灰（畫的時候多畫幾個點）、會說一句
+      G.kid.clean = 20;
+      if (!kidDirty()) fails.push('乾淨 20 不算髒');
+      var arcs = 0, c2 = document.createElement('canvas').getContext('2d'), realArc = c2.arc.bind(c2);
+      c2.arc = function(){ arcs++; return realArc.apply(null, arguments); };
+      drawGirl(c2, { t: 0, outfit: currentOutfit(), dirty: false }); var clean0 = arcs; arcs = 0;
+      drawGirl(c2, { t: 0, outfit: currentOutfit(), dirty: true });
+      if (arcs <= clean0) fails.push('髒的時候臉上沒有灰');
+      kidStatusSaidAt = 0;
+      var ln = kidStatusLine(Date.now());
+      if (lineList('kidDirty').indexOf(ln) < 0) fails.push('髒的時候沒有說想洗澡');
+      if (kidStatusLine(Date.now() + 1000)) fails.push('髒的時候一直講（應該隔一陣子才說）');
+      // 小卡有兩條
+      updatePetCard();
+      if (!document.getElementById('barKidMood') || !document.getElementById('barKidClean') || $('#barKidClean').style.width !== '20%') fails.push('小卡沒有心情、乾淨兩條（或數字不對）');
+    } catch (e) { fails.push('心情乾淨測試出錯：' + e.message + ' ' + (e.stack || '').split('\n')[1]); }
+    finally { G.kid = JSON.parse(keep105); fufu.act = null; kidStatusSaidAt = 0; updatePetCard(); }
+
     /* 104 不用太新的表情符號（家長的電腦是 Windows 10：2020 年以後的表情符號會變成方框／空白，例如照顧小牛小羊的「梳毛」） */
     (function(){
       var src = [].filter.call(document.querySelectorAll('script'), function(sc){ return sc.textContent.indexOf('house_driver_allow') < 0; }).map(function(sc){ return sc.textContent; }).join('\n');   // 只看遊戲本身（走查自己的字不算）
