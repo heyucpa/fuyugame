@@ -5360,7 +5360,9 @@ function drawGirlBody(ctx, o, swing, fit) {
   const pants = !dress && fit.bottom.style === 'pants';
   const legColor = pants ? fit.bottom.color : GIRL.skin;
   const shoe = (x, y) => drawShoe(ctx, fit.shoes, x, y, o.back);
-  if (o.sit) { // 坐著：腿短短地垂在椅子前緣，偶爾晃一下
+  if (o.sit && o.back) {
+    // 背對著坐：腿在身體前面，從後面看不到（家長：以前畫出腿和鞋子，鞋子踩在椅墊上，看起來像站在椅子上）
+  } else if (o.sit) { // 坐著：腿短短地垂在椅子前緣，偶爾晃一下
     [-4, 4].forEach((x, i) => {
       const kick = Math.max(0, Math.sin(o.t * 3 + i * Math.PI)) * 1.5;
       rr(ctx, x - 2.5, -12, 5, 7 - kick, 2, legColor, L);

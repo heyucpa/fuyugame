@@ -2797,6 +2797,19 @@
     } catch (e) { fails.push('開場動畫測試出錯：' + e.message); }
     finally { G.introSeen = true; }
 
+    /* 101 背對著坐在椅子上：不畫腿和鞋子（以前鞋子畫在椅墊上，看起來像站在椅子上） */
+    try {
+      var shoes = 0, realShoe = drawShoe; drawShoe = function(){ shoes++; return realShoe.apply(this, arguments); };
+      var c101 = document.createElement('canvas').getContext('2d');
+      try {
+        drawGirl(c101, { t: 0, sit: true, back: true, outfit: currentOutfit() });
+        var backShoes = shoes; shoes = 0;
+        drawGirl(c101, { t: 0, sit: true, back: false, outfit: currentOutfit() });
+        if (backShoes !== 0) fails.push('背對著坐，還畫出腳和鞋子（看起來像站在椅子上）');
+        if (shoes !== 2) fails.push('正面坐著，腳和鞋子沒有畫出來');
+      } finally { drawShoe = realShoe; }
+    } catch (e) { fails.push('坐下的樣子測試出錯：' + e.message); }
+
     /* 100 🏡 歡迎回家（依時間、寵物迎接、節日、提醒）＋🎃 節慶活動開始的大圖提醒（每個節日每年一次） */
     var keep100 = JSON.stringify({ garden: G.garden || {}, ss: G.seasonSeen || {}, og: G.openGift });
     try {
