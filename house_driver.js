@@ -2737,6 +2737,26 @@
     } catch (e) { fails.push('長大速度測試出錯：' + e.message); }
     finally { var k97 = JSON.parse(keep97); G.kid = k97.kid; G.kidGrowDay = k97.day; if (!G.kidGrowDay) delete G.kidGrowDay; }
 
+    /* 98 公園、學校也有路過的動物朋友（遊樂園 3、公園 2、學校 3；親戚家沒有） */
+    var realWalk98 = walkTrip; walkTrip = function(l, d){ d(); };
+    try {
+      [['park', 2], ['school', 3], ['amusement', 3], ['uncle', 0]].forEach(function(pc){
+        G.away = null; host.n = null; travelTo(pc[0]);
+        var n98 = performance.now(); for (var g98 = 0; g98 < 6; g98++) gameStep(.05, n98 + g98 * 50);
+        var cnt = (host.crowd || []).length;
+        if (cnt !== pc[1]) fails.push(pc[0] + ' 的動物朋友應該有 ' + pc[1] + ' 位，現在 ' + cnt + ' 位');
+        if (cnt) { crowdTalk(host.crowd[0]); if (CROWD_PLACES[pc[0]].lines.indexOf(host.crowd[0].say) < 0) fails.push(pc[0] + ' 的動物朋友說的話不是這個地方的'); }
+        if (pc[0] !== 'amusement' && (host.crowd || []).some(function(c){ return c.balloon; })) fails.push(pc[0] + ' 的動物朋友也拿著氣球');
+        draw();
+      });
+      // 學校：去操場，同學也跟著過去
+      G.away = null; host.n = null; travelTo('school');
+      var ns = performance.now(); for (var gs8 = 0; gs8 < 6; gs8++) gameStep(.05, ns + gs8 * 50);
+      goPlaceRoom(1); for (var gs9 = 0; gs9 < 6; gs9++) gameStep(.05, ns + 400 + gs9 * 50);
+      if (!(host.crowd || []).every(function(c){ return c.a.room === roomKey(); })) fails.push('去操場，同學沒有跟過來');
+    } catch (e) { fails.push('路過的動物朋友測試出錯：' + e.message); }
+    finally { walkTrip = realWalk98; G.away = null; host.n = null; }
+
     /* 95 🎡 遊樂園：出門選單有、兔兔姊姊迎接、旋轉木馬和摩天輪真的坐上去轉、棉花糖要花錢買、氣球拿在手上；棉花糖商店不賣 */
     var realToast95 = toast, realWalk95 = walkTrip, keep95 = { bells: G.bells, kf: JSON.stringify(G.kidFood), cd: JSON.stringify(G.actCD || {}) };
     toast = function(){};
