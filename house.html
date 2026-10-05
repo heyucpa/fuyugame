@@ -294,6 +294,17 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .comic-pic { font-size: 38px; line-height: 1.15; }
 .comic-txt { font-size: 14px; font-weight: 700; text-align: center; }
 @media (prefers-reduced-motion: reduce) { .comic-p { animation: none; opacity: 1; } }
+.adv-row { display: flex; gap: 10px; align-items: center; background: #fffaf0; border: 2px solid var(--line); border-radius: 12px; padding: 6px 8px; margin: 6px 0; }
+.adv-cover { font-size: 34px; flex: none; }
+.adv-info { flex: 1; min-width: 0; }
+.adv-title { font-weight: 800; margin-bottom: 4px; }
+.adv-eps { display: flex; gap: 6px; flex-wrap: wrap; }
+.adv-ep { font: inherit; font-size: 13px; padding: 6px 8px; border-radius: 10px; border: 2px solid var(--line); background: #fff; touch-action: manipulation; }
+.adv-ep.read { background: #e9f7ec; border-color: #7cc38e; }
+.adv-ep.next { background: #fff3c4; border-color: #f2c14e; animation: advNext 1s ease-in-out infinite alternate; }
+.adv-ep:disabled { opacity: .45; }
+@keyframes advNext { from { transform: scale(1); } to { transform: scale(1.07); } }
+@media (prefers-reduced-motion: reduce) { .adv-ep.next { animation: none; } }
 @keyframes comicIn { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: none; } }
 .run-go { display: block; margin: 10px auto 0; font-size: 22px; padding: 14px 48px; touch-action: manipulation; }
 .run-row { display: flex; gap: 10px; justify-content: center; }
@@ -3928,6 +3939,7 @@ const TROPHY_SETS = [
   { id: 'fish', name: '魚', icon: '🐟', color: '#3f8ee0' },
   { id: 'bfly', name: '蝴蝶', icon: '🦋', color: '#b18cff' },
   { id: 'comic', name: '漫畫', icon: '📚', color: '#ff6b6b' },
+  { id: 'adv', name: '冒險漫畫', icon: '⚔️', color: '#7a5cd6' },
   { id: 'sticker', name: '貼紙', icon: '⭐', color: '#ffd35c' },
   { id: 'theme', name: '小主題', icon: '🏅', color: '#e7a94a' },
   { id: 'grow', name: '成長', icon: '🌱', color: '#7cc38e' }
@@ -4080,6 +4092,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-12T15:00', title: '叔叔家有冒險漫畫了！⚔️', lines: [
+    ['🐉', '漫畫櫃多了四套冒險漫畫：公主鬥惡龍、小海盜找寶藏、太空小兔、魔法學校'],
+    ['📖', '一頁四格，可以一頁一頁翻，按 🔊 會念給你聽'],
+    ['✨', '一集一集看下去，看完才會開下一集；四格笑話也還在'],
+    ['🏆', '十二集全部看完可以拿冒險漫畫獎盃']
+  ], newItems: [] },
   { id: '2026-10-12T09:00', title: '操場賽跑變好玩了！🏃', lines: [
     ['🚧', '跑道上有欄架：跑到前面按「🦘 跳！」跳過去（按鈕會閃）'],
     ['⭐', '跑道上的星星吃到會咻一下加速'],
@@ -4516,6 +4534,7 @@ function normalizeSave(g) {
   if (out.artWall != null) out.artWall = (Array.isArray(out.artWall) ? out.artWall : []).map(cleanDrawing).filter(Boolean).slice(0, 4);
   if (out.kidGrowDay != null && !(isObj(out.kidGrowDay) && typeof out.kidGrowDay.d === 'string' && num(out.kidGrowDay.n))) delete out.kidGrowDay;
   if (out.flowerDex != null && !isObj(out.flowerDex)) delete out.flowerDex;
+  if (out.advComics != null && !isObj(out.advComics)) delete out.advComics;
   if (out.runBest != null) { if (!isObj(out.runBest)) delete out.runBest; else Object.keys(out.runBest).forEach(k => { if (!(num(out.runBest[k]) && out.runBest[k] > 0)) delete out.runBest[k]; }); }
   if (out.garden != null && !isObj(out.garden)) delete out.garden;
   if (isObj(out.garden)) Object.keys(out.garden).forEach(k => { const v = out.garden[k]; if (!isObj(v) || !Number.isInteger(v.s) || v.s < 0 || v.s > 4) delete out.garden[k]; });
@@ -12818,6 +12837,7 @@ function tabBook(body) {
     ['dexAnimal', '🐮', '動物', count(G.animals), ANIMAL_DEX().length],
     ['dexTheme', '🏅', '小主題', count(G.themesDone), THEMES.length],
     ['dexComic', '📚', '漫畫', count(G.comics), COMICS.length],
+    ['dexAdv', '⚔️', '冒險漫畫', advCount(), ADV_ALL],
     ['dexSticker', '⭐', '貼紙', count(G.stickers), STICKERS.length],
     ['dexBfly', '🦋', '蝴蝶', count(G.butterflies), BUTTERFLIES.length],
     ['dexPass', '📗', '閱讀護照', count(G.passport), STORYBOOKS.length]
@@ -12948,6 +12968,19 @@ function tabBook(body) {
     cg.appendChild(t);
   });
   body.appendChild(cg);
+
+  // ⚔️ 冒險漫畫：看過的可以點來再看一次
+  body.appendChild(sec('dexAdv', `⚔️ 冒險漫畫 ${advCount()} / ${ADV_ALL}`));
+  body.appendChild(note('在叔叔家的漫畫櫃，一集一集看下去。看過的點一下可以再看一次。'));
+  const advg = el('div', 'dex-tiles');
+  ADV_SERIES.forEach(se => se.eps.forEach((ep, i) => {
+    const has = !!(G.advComics || {})[advId(se, i)];
+    const t = el('button', 'dex-tile' + (has ? '' : ' none'));
+    t.append(el('div', 'dex-big', has ? se.cover : '？'), el('span', '', has ? `${se.title} ${i + 1}` : '還沒看過'));
+    if (has) t.onclick = () => openAdvComic(se.id, i, { again: true }); else t.disabled = true;
+    advg.appendChild(t);
+  }));
+  body.appendChild(advg);
 
   // ⭐ 老師的貼紙
   body.appendChild(sec('dexSticker', `⭐ 老師的貼紙 ${count(G.stickers)} / ${STICKERS.length}`));
@@ -14970,6 +15003,10 @@ function relativePerk(key) {
   const P = RELATIVE_PERKS[key];
   if (!P) return false;
   if (P.who && !(G.away && [].concat(P.who).includes(G.away.place))) return false; // who 可以是好幾個地方
+  if (P.comic) { // 漫畫櫃隨時可以看（四格笑話才要等，在漫畫櫃裡面算）
+    setTimeout(() => { if ($('#modal').hidden) openComicShelf(); }, 1200);
+    return true;
+  }
   if (P.buy) { // 用買的：錢夠就買，不夠就說
     const f = KID_FOOD_BY_ID[P.buy.kidFood];
     if (!spend(P.buy.cost)) { toast(`💰 錢不夠，${f.name}要 ${P.buy.cost}`); return false; }
@@ -14994,7 +15031,6 @@ function relativePerk(key) {
     Sound.play('coin');
   } else if (P.toast) toast(P.toast);
   if (P.say) setTimeout(() => fufuSay(P.say, 2800), 600);
-  if (P.comic) setTimeout(() => { if ($('#modal').hidden) openComic(); }, 1200);
   if (P.sticker) { // 貼紙先記下來，畫面晚一點再跳（她如果剛好在玩別的，貼紙也不會不見）
     const st = giveSticker();
     setTimeout(() => { if ($('#modal').hidden) openSticker(st); }, 1200);
@@ -15055,6 +15091,168 @@ function openComic(again) {
   $('#modal').hidden = false;
 }
 
+/* ── ⚔️ 叔叔的冒險漫畫 ──
+   家長：「看漫畫可以像圖書館看書一樣嗎？偏向冒險、奇幻的四格翻頁漫畫，例如公主鬥惡龍」
+   四套、每套三集，一集兩頁、一頁四格（跟四格笑話一樣的格子），可以一頁一頁翻、按 🔊 念出來。
+   要照順序看：看完第 1 集才開第 2 集（✨ 是下一集，🔒 還沒開）。
+   不用冷卻、隨時可以看；新的一集看完會跳收集、小可愛也會長大一點（跟看繪本一樣）。
+   冒險但不可怕：沒有人受傷，惡龍最後變朋友。 */
+const ADV_SERIES = [
+  { id: 'dragon', title: '公主鬥惡龍', cover: '🐉', eps: [
+    { title: '惡龍來了！', pages: [
+      [['🏰', '公主住在雲上的城堡'], ['🐉💨', '有一天，一隻大惡龍飛來了！'], ['👑❓', '惡龍把國王的皇冠搶走了'], ['👸😤', '公主說：「我去拿回來！」']],
+      [['🎒', '她帶了地圖、麵包和小手電筒'], ['🐴', '騎上白色小馬出發'], ['🌲🌲🌲', '前面是黑漆漆的大森林'], ['👸✨', '「不怕不怕，往前走！」']]] },
+    { title: '魔法森林', pages: [
+      [['🌲👀', '森林裡有好多眼睛在看她'], ['🦉', '原來是貓頭鷹爺爺'], ['🦉🗺️', '「惡龍住在火山上，要過兩座橋喔」'], ['👸🙏', '「謝謝爺爺！」']],
+      [['🌉', '第一座橋，搖搖晃晃'], ['🐸🌉', '第二座橋，青蛙要她猜謎'], ['🤔💡', '「什麼東西越洗越髒？」「水！」'], ['🌋', '終於看到火山了！']]] },
+    { title: '公主與惡龍', pages: [
+      [['🐉🔥', '惡龍噴出好大的火！'], ['👸🛡️', '公主拿盾牌擋住'], ['👸❓', '「你為什麼要搶皇冠？」'], ['🐉😢', '惡龍哭了：「因為沒有人跟我玩……」']],
+      [['🐉👑', '牠只是覺得皇冠亮亮的好漂亮'], ['👸🤝🐉', '「那我們當朋友吧！」'], ['🏰🎉', '公主帶著惡龍和皇冠回家'], ['🐉🎂', '現在惡龍每年都幫國王點生日蠟燭']]] }
+  ] },
+  { id: 'pirate', title: '小海盜找寶藏', cover: '⛵', eps: [
+    { title: '藏寶圖', pages: [
+      [['🍾', '海邊漂來一個瓶子'], ['📜', '裡面有一張舊舊的地圖'], ['🗺️❌', '上面畫著一個大大的叉叉'], ['😆⛵', '「是藏寶圖！出發！」']],
+      [['⛵🌊', '小海盜和鸚鵡開船出海'], ['🦜', '鸚鵡說：「往左！往左！」'], ['🌊🌊🌊', '浪好大，船搖來搖去'], ['🏝️', '看到一座小島了！']]] },
+    { title: '會唱歌的島', pages: [
+      [['🏝️🎵', '島上傳來奇怪的歌聲'], ['🦀🦀🦀', '原來是螃蟹合唱團'], ['🦀🎤', '「要過去，先跟我們一起唱！」'], ['🦜🎶', '鸚鵡唱得最大聲']],
+      [['🌴', '走過椰子樹林'], ['🐒🥥', '猴子丟椰子下來'], ['🥥😋', '「謝謝！剛好口渴了」'], ['⛰️❌', '大石頭上畫著叉叉！']]] },
+    { title: '寶箱裡是什麼？', pages: [
+      [['⛏️', '挖呀挖呀挖'], ['📦', '挖到一個大箱子！'], ['🔒', '可是箱子鎖住了'], ['🦜🗝️', '鸚鵡從瓶子裡叼出一把鑰匙']],
+      [['📦✨', '打開了！'], ['📷', '裡面是一本舊相簿'], ['👴⛵', '是老船長小時候冒險的照片'], ['📷😊', '小海盜也放一張進去，再把箱子埋好']]] }
+  ] },
+  { id: 'space', title: '太空小兔', cover: '🚀', eps: [
+    { title: '飛去月亮', pages: [
+      [['🐰🔭', '小兔每天晚上看月亮'], ['🥕🚀', '她用紅蘿蔔做了一台火箭'], ['⏳', '三、二、一……'], ['🚀💨', '發射！']],
+      [['🌍', '地球變得好小'], ['⭐⭐⭐', '星星就在旁邊'], ['🌕', '到月亮了！'], ['🐰💫', '在月亮上跳一下，飛好高！']]] },
+    { title: '外星朋友', pages: [
+      [['👽', '有一個綠綠的小朋友'], ['👽❓', '他說：「嗶嗶？」'], ['🐰🥕', '小兔請他吃紅蘿蔔'], ['👽😋', '「嗶嗶！好吃！」']],
+      [['👽🛸', '他帶小兔坐飛碟'], ['☄️', '差點撞到流星！'], ['🛸💨', '急轉彎，閃過去了'], ['🐰👽😆', '兩個人笑得好開心']]] },
+    { title: '回家', pages: [
+      [['🌌', '玩得好晚了'], ['🐰🏠', '小兔想回家了'], ['🚀🥕❗', '可是火箭的紅蘿蔔被吃光了！'], ['👽💡', '外星朋友想到辦法']],
+      [['🛸🚀', '飛碟推著火箭走'], ['🌍✨', '地球越來越近'], ['🐰🛏️', '小兔回到床上'], ['🌕👋', '月亮上有人在揮手']]] }
+  ] },
+  { id: 'magic', title: '魔法學校', cover: '🧹', eps: [
+    { title: '第一天上學', pages: [
+      [['🏫✨', '今天是魔法學校開學日'], ['🧹', '每個人都有一支掃把'], ['🧹😵', '我的掃把一直轉圈圈'], ['🧙‍♀️😊', '老師說：「慢慢來，跟它說你好」']],
+      [['🧹💬', '「掃把你好！」'], ['🧹⬆️', '掃把慢慢飄起來了'], ['🌤️', '我飛到樹那麼高！'], ['👏', '大家都在拍手']]] },
+    { title: '變錯了', pages: [
+      [['📖', '今天學變身魔法'], ['🐸➡️🤴', '要把青蛙變成王子'], ['✨💥', '砰！'], ['🐸👑', '結果青蛙只多了一頂皇冠']],
+      [['🐸😎', '青蛙覺得自己好帥'], ['🐸👑💨', '牠跳來跳去不肯拿下來'], ['😂', '全班笑成一團'], ['🧙‍♀️', '老師說：「這樣也很可愛嘛」']]] },
+    { title: '魔法比賽', pages: [
+      [['🏆', '學校舉辦魔法比賽'], ['🎆', '有人變出煙火'], ['🌈', '有人變出彩虹'], ['😰', '輪到我了，好緊張']],
+      [['🌱', '我變出一顆小種子'], ['🌳', '種子長成一棵大樹'], ['🍎🍎🍎', '樹上結滿蘋果'], ['🍎😋🏆', '大家一起吃，我得到「最好吃獎」！']]] }
+  ] }
+];
+const advId = (se, i) => se.id + (i + 1);
+const ADV_ALL = ADV_SERIES.reduce((n, se) => n + se.eps.length, 0);
+const advCount = () => ADV_SERIES.reduce((n, se) => n + se.eps.filter((e, i) => (G.advComics || {})[advId(se, i)]).length, 0);
+// 第 i 集開了沒：第 1 集一定開，後面要看完前一集
+const advOpen = (se, i) => i === 0 || !!(G.advComics || {})[advId(se, i - 1)];
+
+// 叔叔的漫畫櫃：冒險漫畫（自己挑、照順序）＋四格笑話（等 5 分鐘有一則新的）
+function openComicShelf() {
+  const adv = G.advComics || {};
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', '📚 叔叔的漫畫櫃'));
+  card.appendChild(note('⚔️ 冒險漫畫：點 ✨ 看下一集，看完一集才會開下一集喔'));
+  ADV_SERIES.forEach(se => {
+    const row = el('div', 'adv-row');
+    const info = el('div', 'adv-info');
+    info.append(el('div', 'adv-title', se.title));
+    const eps = el('div', 'adv-eps');
+    se.eps.forEach((ep, i) => {
+      const read = !!adv[advId(se, i)], open = advOpen(se, i);
+      const b = el('button', 'adv-ep' + (read ? ' read' : open ? ' next' : ''), `${read ? '✅' : open ? '✨' : '🔒'} 第${i + 1}集`);
+      b.title = ep.title;
+      if (open) b.onclick = () => { Sound.play('click'); openAdvComic(se.id, i); };
+      else b.disabled = true;
+      eps.appendChild(b);
+    });
+    info.appendChild(eps);
+    row.append(el('div', 'adv-cover', se.cover), info);
+    card.appendChild(row);
+  });
+  const ready = relativeReady('comic');
+  const joke = el('button', 'big alt adv-joke', ready ? '😆 看一則四格笑話' : `😆 新笑話 ⏳ ${relativeMinsLeft('comic')} 分鐘`);
+  joke.onclick = () => {
+    if (!relativeReady('comic')) { toast(`😆 叔叔說新的笑話等 ${relativeMinsLeft('comic')} 分鐘才畫好，先看冒險漫畫吧`); return; }
+    G.actCD = G.actCD || {}; G.actCD.comic = Date.now();
+    openComic();
+  };
+  const ok = el('button', 'big', '不看了');
+  ok.onclick = () => { $('#modal').hidden = true; };
+  const row = el('div', 'book-btns');
+  row.append(joke, ok);
+  card.appendChild(row);
+  $('#modal').hidden = false;
+}
+// 翻頁看一集：封面 → 兩頁四格。opts.again：從圖鑑重看（看完就關，不回漫畫櫃）
+function openAdvComic(seriesId, i, opts) {
+  const se = ADV_SERIES.find(x => x.id === seriesId) || ADV_SERIES[0];
+  const ep = se.eps[i] || se.eps[0];
+  let page = -1, readAloud = false;
+  const card = $('#modalCard');
+  function show() {
+    card.innerHTML = '';
+    if (page < 0) {
+      const pg = el('div', 'book-page');
+      pg.append(el('div', 'book-pic', se.cover), el('div', 'book-title', `⚔️ ${se.title}`), el('div', 'book-txt', `第 ${i + 1} 集「${ep.title}」`));
+      card.appendChild(pg);
+    } else {
+      card.appendChild(el('h2', '', `${se.title}　第 ${i + 1} 集`));
+      const grid = el('div', 'comic');
+      ep.pages[page].forEach(([pic, text], k) => {
+        const p = el('div', 'comic-p');
+        p.append(el('div', 'comic-pic', pic), el('div', 'comic-txt', text));
+        p.style.animationDelay = (k * .35) + 's';
+        grid.appendChild(p);
+      });
+      card.append(grid, el('div', 'book-no', `${page + 1} / ${ep.pages.length}`));
+    }
+    const row = el('div', 'book-btns');
+    if (page >= 0) { const prev = el('button', 'big alt', '⬅️'); prev.onclick = () => { page--; show(); }; row.appendChild(prev); }
+    const sayText = page < 0 ? `${se.title}，第${i + 1}集，${ep.title}` : ep.pages[page].map(p => p[1]).join('。');
+    if (canSpeak()) {
+      const say = el('button', 'big alt book-say', '🔊');
+      say.title = '念給我聽';
+      say.onclick = () => { readAloud = true; show(); };
+      row.appendChild(say);
+      if (readAloud) speak(sayText);
+      if (readAloud) {
+        const mute = el('button', 'big alt', '🔇');
+        mute.onclick = () => { readAloud = false; stopSpeak(); show(); };
+        row.appendChild(mute);
+      }
+    }
+    const last = page === ep.pages.length - 1;
+    const next = el('button', 'big', last ? '看完了！' : page < 0 ? '翻開 ➡️' : '➡️');
+    next.onclick = () => { if (last) { stopSpeak(); finishAdvComic(se, i, opts); } else { page++; Sound.play('click'); show(); } };
+    row.appendChild(next);
+    card.appendChild(row);
+    $('#modal').hidden = false;
+  }
+  openAdvComic.test = { se, ep, next: () => card.querySelector('.book-btns button:last-child').onclick(), page: () => page };
+  show();
+}
+function finishAdvComic(se, i, opts) {
+  const adv = G.advComics = G.advComics || {};
+  const id = advId(se, i), isNew = !adv[id];
+  adv[id] = (adv[id] || 0) + 1;
+  sessionLog.acts['adv:' + id] = 1;
+  if (isNew) {
+    kidGainGrowth(KID_BOOK_GROW);
+    const n = advCount();
+    showcase(se.cover, `${se.title} 第 ${i + 1} 集`, `⚔️ 冒險漫畫 ${n} / ${ADV_ALL}`, { n, all: ADV_ALL });
+    if (se.eps.every((e, k) => adv[advId(se, k)])) toast(`🎉《${se.title}》整套看完了！`);
+    else if (se.eps[i + 1]) toast(`✨ 第 ${i + 2} 集開了！`);
+  }
+  Sound.play('coin');
+  saveGame();
+  if (opts && opts.again) $('#modal').hidden = true;
+  else openComicShelf();
+}
+
 /* ── ⭐ 老師的貼紙 ──
    交作業拿到一張，先給還沒有的，收集 12 張。 */
 const STICKERS = ['⭐', '🌟', '💯', '🌈', '🍀', '🦄', '🐰', '🌸', '🍓', '🎀', '🏅', '👍'];
@@ -15079,6 +15277,7 @@ function trophyCount(id) {
     case 'fish': return [FISH.filter(f => G.fish[f.name]).length, FISH.length];
     case 'bfly': return [c(G.butterflies), BUTTERFLIES.length];
     case 'comic': return [COMICS.filter(x => (G.comics || {})[x.title]).length, COMICS.length];
+    case 'adv': return [advCount(), ADV_ALL];
     case 'sticker': return [STICKERS.filter(x => (G.stickers || {})[x]).length, STICKERS.length];
     case 'theme': return [THEMES.filter(x => (G.themesDone || {})[x.id]).length, THEMES.length];
   }
