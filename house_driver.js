@@ -2723,6 +2723,7 @@
       if (lineList('hostAmuse').map(function(l){ return l.split('{名字}').join(charName()); }).indexOf(pickLine(hostLineKey(), { 名字: charName() })) < 0) fails.push('兔兔姊姊沒有說遊樂園的話');
       var rmA = curRoom(), byId = function(id){ return rmA.items.find(function(x){ return x.id === id; }); };
       ['carousel', 'ferris_wheel', 'cotton_cart', 'balloon_stand'].forEach(function(id){ if (!byId(id)) fails.push('遊樂園沒有 ' + id); });
+      if (FURNITURE_ACT.ticket_booth !== 'ticket' || !ACTIVITIES.ticket) fails.push('售票亭點了不能買門票');
       // 旋轉木馬、摩天輪：真的坐上去，位置會動，摩天輪會升高
       [['carousel', 'carousel'], ['ferris', 'ferris_wheel']].forEach(function(pr){
         fufu.act = null; fufu.ride = null; fufu.pose = null;

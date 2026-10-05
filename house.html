@@ -2213,13 +2213,27 @@ const PLACE_FURNITURE = [
       { k: 'ball', x: .5, y: .7, z: 62, r: 8, c: '#7bd389' },
       { k: 'ball', x: .5, y: .5, z: 72, r: 8, c: '#ff9ec4' }
     ] },
+  // 🎟️ 售票亭：窗戶裡有兔子售票員，屋頂上一張大門票（家長看不出是什麼，改得一看就懂）
   { id: 'ticket_booth', name: '售票亭', theme: 'cute', w: 2, d: 1,
     parts: [
       { x: .1, y: .1, w: 1.8, d: .8, z: 0, h: 44, c: '#fff4e0' },
-      { x: .4, y: .88, w: 1.2, d: .04, z: 18, h: 18, c: '#9fd8ff' },
-      { x: 0, y: 0, w: 2, d: 1, z: 44, h: 5, c: '#e8505b' },
-      { x: .2, y: .2, w: 1.6, d: .6, z: 49, h: 5, c: '#ffffff' },
-      { x: .45, y: .4, w: 1.1, d: .2, z: 54, h: 5, c: '#e8505b' }
+      { x: .1, y: .86, w: 1.8, d: .04, z: 0, h: 14, c: '#ff9ec4' },          // 下面的粉紅色板子
+      { x: .35, y: .86, w: 1.3, d: .05, z: 16, h: 22, c: '#bfe3f5' },        // 窗戶
+      { k: 'ball', x: 1, y: .95, z: 25, r: 6, c: '#ffffff' },                // 兔子售票員的臉
+      { x: .9, y: .95, w: .05, d: .02, z: 30, h: 8, c: '#ffffff' },          // 兔耳朵
+      { x: 1.06, y: .95, w: .05, d: .02, z: 30, h: 8, c: '#ffffff' },
+      { k: 'ball', x: .96, y: 1, z: 26, r: 1, c: '#3a3240' },
+      { k: 'ball', x: 1.06, y: 1, z: 26, r: 1, c: '#3a3240' },
+      { x: .3, y: .95, w: 1.4, d: .08, z: 15, h: 2, c: '#c98d5a' },          // 窗口的小桌子
+      { x: 0, y: 0, w: 2, d: 1, z: 44, h: 4, c: '#e8505b' },                 // 紅白條紋遮陽棚
+      { x: .25, y: 0, w: .25, d: 1, z: 44.2, h: 4, c: '#ffffff' },
+      { x: .75, y: 0, w: .25, d: 1, z: 44.2, h: 4, c: '#ffffff' },
+      { x: 1.25, y: 0, w: .25, d: 1, z: 44.2, h: 4, c: '#ffffff' },
+      { x: 1.75, y: 0, w: .25, d: 1, z: 44.2, h: 4, c: '#ffffff' },
+      { x: .35, y: .45, w: 1.3, d: .1, z: 48, h: 18, c: '#ffd35c' },         // 屋頂上的大門票
+      { k: 'ball', x: .35, y: .5, z: 57, r: 3.5, c: '#e8505b' },             // 門票兩邊的小缺口
+      { k: 'ball', x: 1.65, y: .5, z: 57, r: 3.5, c: '#e8505b' },
+      { k: 'ball', x: 1, y: .56, z: 57, r: 4.5, c: '#ff6b6b' }               // 門票中間的星星章
     ] },
   { id: 'street_lamp', name: '路燈', theme: 'modern', w: 1, d: 1,
     parts: [
@@ -2353,6 +2367,7 @@ Object.assign(ACTIVITIES, {
   carousel: { label: '🎠 坐旋轉木馬', name: '坐旋轉木馬', fx: '🎵', lines: ['轉呀轉～', '木馬上上下下的！', '好好玩喔！', '再一圈！'] },
   ferris: { label: '🎡 坐摩天輪', name: '坐摩天輪', fx: '✨', lines: ['好高喔！看得好遠～', '我看到我家了！', '慢慢轉上去了～', '雲好近喔！'] },
   cotton: { label: '🍭 買棉花糖', name: '買棉花糖', fx: '🍭', lines: ['軟軟的、甜甜的～', '粉紅色的棉花糖！', '像雲一樣！'] },
+  ticket: { label: '🎟️ 買門票', name: '買門票', fx: '🎟️', lines: ['兔兔，我要一張門票！', '拿到門票了，今天要玩什麼呢？', '門票上有星星章耶！'] },
   balloon: { label: '🎈 拿一顆氣球', name: '拿氣球', fx: '🎈', lines: ['我要紅色的！', '氣球飄飄的～', '要抓好，不要飛走喔！'] },
   // 學校
   lesson: { label: '📝 上課小考', name: '上課', fx: '✏️', open: 'quiz', lines: ['老師說要專心聽喔', '這題我會！', '舉手回答問題～'] },
@@ -2368,7 +2383,7 @@ Object.assign(FURNITURE_ACT, {
   gaming_desk: 'pcgame', figure_shelf: 'figures', barn: 'farmcare', hay_bale: 'hay', trough: 'trough',
   lib_shelf: 'findbook', low_shelf: 'findbook', story_stand: 'storybook', lib_counter: 'passport', tablet_table: 'ebook', round_red_table: 'storytime',
   pond: 'pondfish', flower_bed: 'bfly', display_tank: 'tank', heart_sculpture: 'heart', sandbox: 'sand', picnic_mat: 'picnic', fountain: 'fountain', icecream_cart: 'icecream',
-  carousel: 'carousel', ferris_wheel: 'ferris', cotton_cart: 'cotton', balloon_stand: 'balloon',
+  carousel: 'carousel', ferris_wheel: 'ferris', cotton_cart: 'cotton', balloon_stand: 'balloon', ticket_booth: 'ticket',
   school_desk: 'lesson', school_desk_b: 'lesson', teacher_desk: 'homework', slide: 'slide', swing: 'swing', flagpole: 'flag', finish_flag: 'run'
 });
 FURNITURE_USE.park_bench = { use: 'sit', seats: [{ x: .55, y: .55, z: 20 }, { x: 1.45, y: .55, z: 20 }], front: [0, 1] };
