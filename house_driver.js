@@ -2658,6 +2658,58 @@
       if (keep92.from) G.inviteFrom = keep92.from; else delete G.inviteFrom;
     }
 
+    /* 96 🌿 陽台花園：蓋了不佔房間名額、牆是天空欄杆不能貼壁紙、送花盆；澆水長大（連點沒用）、開花收進花朵圖鑑、剪下來插花 */
+    var keep96 = JSON.stringify({ rooms: G.rooms, cur: G.cur, bells: G.bells, garden: G.garden || {}, fd: G.flowerDex || {}, inv: G.inv, walls: G.walls }), realToast96 = toast, realBlk96 = showcaseBlocked;
+    toast = function(){}; showcaseBlocked = function(){ return false; };
+    try {
+      G.away = null; G.bells = 99999; G.rooms = G.rooms.filter(function(r){ return r.kind !== 'balcony'; });
+      var nr0 = G.rooms.length, canBefore = canAddRoom();
+      if (!addBalcony() || !hasBalcony()) fails.push('蓋不了陽台花園');
+      if (addBalcony()) fails.push('陽台花園可以蓋兩個');
+      var bal = G.rooms.find(function(r){ return r.kind === 'balcony'; });
+      if (normalRooms() !== nr0 || canAddRoom() !== canBefore) fails.push('陽台花園佔掉了一般房間的名額');
+      if (!bal || bal.wall !== 'wp_balcony' || bal.items.filter(function(x){ return x.id === 'planter'; }).length !== 2) fails.push('陽台花園沒有天空欄杆、或沒有送兩個花盆');
+      G.cur = G.rooms.indexOf(bal); draw();
+      if (buyDeco('wall', 'wp_pink') || bal.wall !== 'wp_balcony') fails.push('陽台可以貼壁紙（應該是天空和欄杆）');
+      // 澆水：一次長一階，連點沒用；長到開花收進花朵圖鑑
+      var pl = bal.items[0]; G.garden = {}; G.flowerDex = {};
+      var t0 = Date.now();
+      if (gardenWater(pl, t0) !== 'grow' || gardenOf(pl.uid).s !== 1) fails.push('花盆澆水沒有長大');
+      if (gardenWater(pl, t0 + 1000) !== 'wait' || gardenOf(pl.uid).s !== 1) fails.push('花盆連續澆水一直長（可以連點）');
+      gardenWater(pl, t0 + GARDEN_WAIT_MS + 1); gardenWater(pl, t0 + GARDEN_WAIT_MS * 2 + 2);
+      SC_QUEUE.length = 0; var old96 = document.getElementById('showcase'); if (old96) old96.remove(); $('#modal').hidden = true;
+      var realST96 = window.setTimeout, realSC96 = showcase, sawBloom = '';
+      window.setTimeout = function(f){ f(); return 0; }; showcase = function(v, t, sub){ sawBloom = t + ' ' + sub; };   // 計時器馬上跑的話大圖也會馬上關掉，所以記下有沒有叫
+      var r4; try { r4 = gardenWater(pl, t0 + GARDEN_WAIT_MS * 3 + 3); } finally { window.setTimeout = realST96; showcase = realSC96; }
+      var g4 = gardenOf(pl.uid);
+      if (r4 !== 'bloom' || g4.s !== 4 || !FLOWER_BY_ID[g4.f] || !G.flowerDex[g4.f]) fails.push('花盆長到最後沒有開花、或沒收進花朵圖鑑');
+      if (gardenWater(pl, t0 + GARDEN_WAIT_MS * 9) !== 'full') fails.push('開花之後還一直長');
+      if (!/開花了/.test(sawBloom) || !/花朵圖鑑 1/.test(sawBloom)) fails.push('第一次開出這種花沒有跳出大圖（' + sawBloom + '）');
+      // 畫得出每一階段
+      [0, 1, 2, 3, 4].forEach(function(st){ G.garden[pl.uid] = { s: st, w: 0, f: 'pink' }; try { itemLook(FURN_BY_ID.planter, 0, pl, FURN_BY_ID.planter.parts); draw(); } catch (eD) { fails.push('花盆第 ' + st + ' 階畫不出來：' + eD.message); } });
+      if (gardenParts(pl).length <= gardenParts({ uid: -96 }).length) fails.push('開花的花盆看起來跟空的一樣');
+      // 剪下來插花：拿到花瓶、花盆變回土
+      var vase0 = G.inv.flower_vase || 0;
+      if (!gardenCut(pl) || (G.inv.flower_vase || 0) !== vase0 + 1 || gardenOf(pl.uid).s !== 0) fails.push('剪下來插花沒有拿到花瓶、或花盆沒有變回土');
+      if (gardenCut(pl)) fails.push('還沒開花就可以剪');
+      // 澆花這件事（走點擊流程）會讓花盆長大
+      G.garden = {}; fufu.act = null;
+      fufuStartAct('water', performance.now(), pl, false);
+      if (gardenOf(pl.uid).s !== 1) fails.push('小可愛去花盆澆花，花盆沒有長大');
+      fufu.act = null;
+      // 圖鑑有花朵
+      openTab('book');
+      if (!document.getElementById('dexFlower')) fails.push('圖鑑沒有花朵圖鑑');
+      // 存檔：壞掉的花盆資料清掉
+      var b96 = JSON.parse(JSON.stringify(G)); b96.garden = { 1: { s: 99 }, 2: 'x', 3: { s: 2, w: 0 } };
+      var n96 = normalizeSave(b96);
+      if (!n96 || n96.garden[1] || n96.garden[2] || !n96.garden[3]) fails.push('存檔裡壞掉的花盆資料沒有清掉');
+    } catch (e) { fails.push('陽台花園測試出錯：' + e.message + ' ' + (e.stack || '').split('\n')[1]); }
+    finally {
+      var k96 = JSON.parse(keep96); G.rooms = k96.rooms; G.cur = k96.cur; G.bells = k96.bells; G.garden = k96.garden; G.flowerDex = k96.fd; G.inv = k96.inv; G.walls = k96.walls;
+      toast = realToast96; showcaseBlocked = realBlk96; SC_QUEUE.length = 0; openTab('inv'); commit();
+    }
+
     /* 95 🎡 遊樂園：出門選單有、兔兔姊姊迎接、旋轉木馬和摩天輪真的坐上去轉、棉花糖要花錢買、氣球拿在手上；棉花糖商店不賣 */
     var realToast95 = toast, realWalk95 = walkTrip, keep95 = { bells: G.bells, kf: JSON.stringify(G.kidFood), cd: JSON.stringify(G.actCD || {}) };
     toast = function(){};
@@ -4480,7 +4532,7 @@
     G.comics = { '早餐': 1, '恐龍': 3 }; G.stickers = { '⭐': 1 }; G.butterflies = { red: 2, blue: 1, rainbow: 1 }; G.passport = { moon: 1, seed: 1 };
     openTab('book');
     var chips = [].map.call(document.querySelectorAll('#tabBody .dex-chip'), function(c){ return c.textContent; });
-    if (chips.length !== 13) fails.push('圖鑑總覽不是 13 項（9 種收集＋寵物＋成長＋節日＋獎盃）：' + chips.length);
+    if (chips.length !== 14) fails.push('圖鑑總覽不是 14 項（9 種收集＋寵物＋成長＋節日＋花朵＋獎盃）：' + chips.length);
     [['漫畫', '2/12'], ['貼紙', '1/12'], ['蝴蝶', '3/6'], ['閱讀護照', '2/8']].forEach(function(p){
       if (!chips.some(function(t){ return t.indexOf(p[0]) >= 0 && t.indexOf(p[1]) >= 0; })) fails.push('圖鑑總覽的「' + p[0] + '」不是 ' + p[1] + '：' + chips.join(' | '));
     });

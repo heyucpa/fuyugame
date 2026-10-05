@@ -889,6 +889,13 @@ const FURNITURE = [
   // ── 自然系 ──
   { id: 'plant_s', name: '小盆栽', price: 600, theme: 'nature', w: 1, d: 1,
     parts: plantParts('#c96f45', '#5fa15a', .8) },
+  // 🌱 種花盆：澆水會長大（土 → 發芽 → 小苗 → 花苞 → 開花），開什麼顏色的花是驚喜
+  { id: 'planter', name: '種花盆', price: 800, theme: 'nature', w: 1, d: 1,
+    parts: [
+      { x: .18, y: .18, w: .64, d: .64, z: 0, h: 16, c: '#c96f45' },
+      { x: .14, y: .14, w: .72, d: .72, z: 16, h: 3, c: '#b25f38' },
+      { x: .22, y: .22, w: .56, d: .56, z: 16, h: 2, c: '#6b4a2e', soil: true }
+    ] },
   { id: 'plant_l', name: '大型觀葉植物', price: 1800, theme: 'nature', w: 1, d: 1,
     parts: [
       { x: .28, y: .28, w: .44, d: .44, z: 0, h: 24, c: '#efe7d8' },
@@ -1485,6 +1492,7 @@ const PLACE_FLOORS = [
   { id: 'fl_park', name: '公園草地', pattern: 'check', a: '#8fc27a', b: '#86b972', path: [4, 6], plaza: [6, 8, 10, 10] },
   // 圖書館：亮亮的米色地板（照片裡打蠟的地板）
   { id: 'fl_lib', name: '圖書館地板', pattern: 'check', a: '#efe6cf', b: '#e9dfc5' },
+  { id: 'fl_deck', name: '陽台木平台', pattern: 'plank', a: '#c9a27a', b: '#b98f66' },
   { id: 'fl_amuse', name: '遊樂園廣場', pattern: 'check', a: '#ffe9d6', b: '#fff6e6' },
   { id: 'fl_track', name: '操場跑道', pattern: 'track', a: '#5fae6f', b: '#55a265', lane: ['#2f6fd1', '#4a9be8'], stripe: '#e98a9a', lanes: 4, laneW: .9 }
 ];
@@ -1539,7 +1547,7 @@ const FURN_KIND_OF = {
   teddy: 'toy', toybox: 'toy', mini_figure: 'toy', game_cart: 'toy',
   robot_toy: 'toy', piano: 'toy',
   // 植物
-  plant_s: 'plant', plant_l: 'plant', sunflower: 'plant', cactus: 'plant',
+  plant_s: 'plant', plant_l: 'plant', sunflower: 'plant', cactus: 'plant', planter: 'plant',
   // 衛浴
   bathtub: 'bath', toilet: 'bath', bath_sink: 'bath', bath_mat: 'bath',
   washer: 'bath', bath_mirror: 'bath', towel_rack: 'bath',
@@ -1687,7 +1695,7 @@ const FURNITURE_ACT = {
   kitchen: 'cook', stove: 'cook', fridge: 'snack', cupboard: 'dishes', dining_table: 'dishes',
   dresser: 'mirror', wardrobe: 'dress', coat_rack: 'dress', fishtank: 'fish', globe: 'globe',
   toybox: 'toys', teddy: 'hug', bath_sink: 'wash', washer: 'laundry', fireplace: 'warm',
-  plant_s: 'water', plant_l: 'water', sunflower: 'water', cactus: 'water',
+  plant_s: 'water', plant_l: 'water', sunflower: 'water', cactus: 'water', planter: 'water',
   clock: 'time', lamp: 'light', nightstand: 'light'
 };
 // 第四批家具的分類、用法（家具定義在上面 FURNITURE_4）
@@ -3276,10 +3284,21 @@ function rotateDir(rot, dx, dy) {
 }
 
 // ── 牆面與地板 ──
+// 🌿 陽台的「牆」：上面是天空和雲，下面一排白色欄杆（不在商店賣）
+const SPECIAL_WALLS = [{ id: 'wp_balcony', name: '陽台天空', price: 0, theme: 'nature', base: '#bfe3f5', alt: '#ffffff', pattern: 'balcony' }];
+const wallById = id => WALLPAPERS.find(x => x.id === id) || SPECIAL_WALLS.find(x => x.id === id);
 function wallPattern(ctx, wp, len) {
   ctx.fillStyle = wp.base;
   ctx.fillRect(0, 0, len, WALL_H);
   ctx.fillStyle = wp.alt || wp.base;
+  if (wp.pattern === 'balcony') {
+    ctx.fillStyle = 'rgba(255,255,255,.85)';
+    for (let u = 30; u < len; u += 90) { const v = WALL_H - 30 - (u % 3) * 10; [[0, 0, 9], [11, 3, 11], [23, 0, 8]].forEach(([dx, dv, r]) => { ctx.beginPath(); ctx.arc(u + dx, v + dv, r, 0, Math.PI * 2); ctx.fill(); }); }
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 34, len, 4); ctx.fillRect(0, 8, len, 3);       // 扶手、下面的橫桿
+    for (let u = 4; u < len; u += 10) ctx.fillRect(u, 8, 2.5, 28);  // 一根一根的欄杆
+    return;   // 陽台沒有踢腳板
+  }
   if (wp.pattern === 'stripe') {
     for (let u = 0; u < len; u += 16) ctx.fillRect(u, 0, 8, WALL_H);
   } else if (wp.pattern === 'dots') {
@@ -3446,7 +3465,7 @@ function drawFootprint(ctx, x, y, w, d, fill, stroke) {
 // room: {w,d,wall,floor,items:[{uid,id,x,y,rot}]}
 // opts: {ghost:{def,x,y,rot,ok}, hoverUid, showGrid}
 function drawRoom(ctx, room, opts) {
-  const wp = WALLPAPERS.find(x => x.id === room.wall) || WALLPAPERS[0];
+  const wp = wallById(room.wall) || WALLPAPERS[0];
   const fl = floorById(room.floor) || FLOORS[0];
   drawFloor(ctx, room, fl);
   drawWalls(ctx, room, wp);
@@ -3899,6 +3918,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-08T15:00', title: '可以蓋陽台花園了！🌿', lines: [
+    ['🌿', '「🏗️ 蓋房間」可以蓋陽台花園：天空、白色欄杆、木頭地板'],
+    ['🌱', '陽台送兩個種花盆，澆水就會長大：發芽、小苗、花苞、開花！'],
+    ['🌷', '開什麼顏色的花是驚喜，收進新的「花朵圖鑑」'],
+    ['✂️', '開花了可以剪下來插花，再重新種一次']
+  ], newItems: ['planter'] },
   { id: '2026-10-08T09:00', title: '新地方：遊樂園！🎡', lines: [
     ['🎡', '「🚗 出門」可以去遊樂園了！兔兔姊姊在門口迎接'],
     ['🎠', '旋轉木馬、摩天輪真的可以坐上去轉一圈'],
@@ -4271,6 +4296,9 @@ function normalizeSave(g) {
   if (g.guideAsked === undefined && out.guide !== 'egg') out.guideAsked = true; // 教到一半的不要再問
   if (!g.welcome) out.welcome = { at: 0, uncle: true, grandma: true }; // 已經在玩的存檔不算搬新家
   if (out.seasonDex != null && !isObj(out.seasonDex)) delete out.seasonDex;
+  if (out.flowerDex != null && !isObj(out.flowerDex)) delete out.flowerDex;
+  if (out.garden != null && !isObj(out.garden)) delete out.garden;
+  if (isObj(out.garden)) Object.keys(out.garden).forEach(k => { const v = out.garden[k]; if (!isObj(v) || !Number.isInteger(v.s) || v.s < 0 || v.s > 4) delete out.garden[k]; });
   if (out.guestbook != null && !Array.isArray(out.guestbook)) delete out.guestbook;
   if (Array.isArray(out.guestbook)) out.guestbook = out.guestbook.filter(e => isObj(e) && typeof e.g === 'string').slice(0, GUESTBOOK_MAX)
     .map(e => { if (e.d != null) { const d = cleanDrawing(e.d); if (d) e.d = d; else delete e.d; } return e; });
@@ -4801,6 +4829,7 @@ function buyFurniture(id) {
 }
 function buyDeco(kind, id) {
   if (G.away) return false; // 親戚家不能改
+  if (kind === 'wall' && curRoom().kind === 'balcony') { toast('陽台是天空和欄杆，沒有牆壁可以貼壁紙喔～地板可以換！'); return false; }
   const list = kind === 'wall' ? WALLPAPERS : FLOORS;
   const owned = kind === 'wall' ? G.walls : G.floors;
   const item = list.find(x => x.id === id);
@@ -4884,14 +4913,25 @@ function expandRoom() {
   room.w = room.d = n; // 往前方擴，原本擺好的家具位置不變
   return true;
 }
-function newRoomCost() { return NEW_ROOM_COST[G.rooms.length - 1]; }
-function canAddRoom() { return G.rooms.length < ROOM_NAMES.length && G.rooms[0].w >= 6; }
+// 一般房間的數量（🌿 陽台另外算，不佔客廳、臥室、餐廳、閣樓的名額）
+const normalRooms = () => G.rooms.filter(r => r.kind !== 'balcony').length;
+function newRoomCost() { return NEW_ROOM_COST[normalRooms() - 1]; }
+function canAddRoom() { return normalRooms() < ROOM_NAMES.length && G.rooms[0].w >= 6; }
+const BALCONY_COST = 8000;
+const hasBalcony = () => G.rooms.some(r => r.kind === 'balcony');
+function addBalcony() {
+  if (G.away || hasBalcony() || !spend(BALCONY_COST)) return false;
+  G.rooms.push({ name: '陽台花園', kind: 'balcony', w: 6, d: 6, wall: 'wp_balcony', floor: 'fl_deck',
+    items: [{ uid: G.uid++, id: 'planter', x: 0, y: 0, rot: 0 }, { uid: G.uid++, id: 'planter', x: 2, y: 0, rot: 0 }], wallItems: [] });
+  G.cur = G.rooms.length - 1;
+  return true;
+}
 // 房間名字清空時用回預設名稱
 function renameRoom(i, name) { G.rooms[i].name = (name || '').trim() || ROOM_NAMES[i] || '房間'; }
 function addRoom() {
   if (G.away) return false;
   if (!canAddRoom() || !spend(newRoomCost())) return false;
-  G.rooms.push({ name: ROOM_NAMES[G.rooms.length], w: 6, d: 6, wall: 'wp_cream', floor: 'fl_wood', items: [], wallItems: [] });
+  G.rooms.push({ name: ROOM_NAMES[normalRooms()], w: 6, d: 6, wall: 'wp_cream', floor: 'fl_wood', items: [], wallItems: [] });
   G.cur = G.rooms.length - 1;
   return true;
 }
@@ -5915,6 +5955,68 @@ const ACT_PROPS = {
   water: 'can', hug: 'teddy', videogame: 'pad', fruit: 'apple', tea: 'cup', hay: 'hay', pick: 'basket',
   trough: 'bucket', laundry: 'shirt', toys: 'ball', lesson: 'pencil', homework: 'book', balloon: 'balloon', cotton: 'cotton'
 };
+/* ===== 🌱 種花（陽台花園的花盆，其他房間的花盆也可以）=====
+   G.garden = { uid: { s: 階段 0～4, w: 上次澆水的時間, f: 開的花 } }
+   0 土 → 1 發芽 → 2 小苗 → 3 花苞 → 4 開花。每次澆水長一階，但同一盆要隔 2 分鐘才會再長（連點沒用）。
+   開花的顏色開花時才決定（驚喜），收進「🌷 花朵圖鑑」。開花之後可以剪下來，變成一個小花瓶，再重新種。 */
+const GARDEN_WAIT_MS = 2 * 60000;
+const FLOWERS = [
+  { id: 'red', name: '紅色鬱金香', icon: '🌷', c: '#ff6b6b', c2: '#ffb3b3' },
+  { id: 'yellow', name: '向日葵', icon: '🌻', c: '#ffd35c', c2: '#e0a020' },
+  { id: 'pink', name: '粉紅玫瑰', icon: '🌹', c: '#ff9ec4', c2: '#ffd1e0' },
+  { id: 'white', name: '小雛菊', icon: '🌼', c: '#ffffff', c2: '#ffe066' },
+  { id: 'purple', name: '紫色風信子', icon: '🪻', c: '#b18cff', c2: '#d8c4ff' },
+  { id: 'blue', name: '藍色繡球花', icon: '💠', c: '#6bb6ff', c2: '#bfe0ff' }
+];
+const FLOWER_BY_ID = Object.fromEntries(FLOWERS.map(f => [f.id, f]));
+const GARDEN_STAGE_NAMES = ['土', '發芽了', '小苗', '花苞', '開花了'];
+function gardenOf(uid) { G.garden = G.garden || {}; return (G.garden[uid] = G.garden[uid] || { s: 0, w: 0 }); }
+// 在花盆上澆水（澆花這件事做完會叫這裡）。回傳發生了什麼：'grow'、'bloom'、'wait'、'full'
+function gardenWater(it, now) {
+  now = now || Date.now();
+  const g = gardenOf(it.uid);
+  if (g.s >= 4) return 'full';
+  if (g.w && now - g.w < GARDEN_WAIT_MS) return 'wait';
+  g.w = now; g.s++;
+  if (g.s === 4) {
+    const f = FLOWERS[Math.floor(Math.random() * FLOWERS.length)];
+    g.f = f.id;
+    const isNew = !(G.flowerDex || {})[f.id];
+    G.flowerDex = Object.assign({}, G.flowerDex, { [f.id]: true });
+    setTimeout(() => {
+      fufuSay(`開花了！是${f.name}！`, 3200);
+      if (isNew) { const n = Object.keys(G.flowerDex).length; try { showcase(f.icon, `開花了！${f.name}`, `🌷 花朵圖鑑 ${n} / ${FLOWERS.length}`, { n, all: FLOWERS.length }); } catch (e) {} }
+    }, 900);
+    saveGame();
+    return 'bloom';
+  }
+  saveGame();
+  return 'grow';
+}
+// 開花的花盆：剪下來插花（變成一個小花瓶），花盆變回土
+function gardenCut(it) {
+  const g = gardenOf(it.uid);
+  if (g.s < 4) return false;
+  addItem('flower_vase');
+  G.garden[it.uid] = { s: 0, w: 0 };
+  saveGame();
+  return true;
+}
+function gardenParts(it) {
+  const g = (G.garden || {})[it.uid];
+  const s = g ? g.s : 0, f = g && FLOWER_BY_ID[g.f];
+  const out = [];
+  if (s >= 1) out.push({ x: .47, y: .47, w: .06, d: .06, z: 18, h: s === 1 ? 4 : s === 2 ? 10 : 16, c: '#5f8a3a' });
+  if (s === 1) out.push({ k: 'ball', x: .5, y: .5, z: 23, r: 2.5, c: '#7bd389' });
+  if (s >= 2) { out.push({ k: 'ball', x: .38, y: .5, z: 26, r: 3.5, c: '#7bd389' }, { k: 'ball', x: .62, y: .5, z: 28, r: 3.5, c: '#6cbd76' }); }
+  if (s === 3) out.push({ k: 'ball', x: .5, y: .5, z: 36, r: 4, c: '#9fd38a' });
+  if (s >= 4 && f) {
+    [[-.15, 0], [.15, 0], [0, -.15], [0, .15], [-.1, -.1], [.1, .1]].forEach(([dx, dy]) => out.push({ k: 'ball', x: .5 + dx, y: .5 + dy, z: 40, r: 6, c: f.c }));
+    out.push({ k: 'ball', x: .5, y: .5, z: 42, r: 4.2, c: f.c2 });
+  }
+  return out;
+}
+
 // 家具留下來的狀態（只在這次遊戲中記得）：{fireUntil, dishesUntil, lit, paint}
 const itemState = {};
 const stateOf = uid => (itemState[uid] = itemState[uid] || {});
@@ -5927,6 +6029,7 @@ function itemLook(def, rot, it, parts) {
   const active = fufu.act && fufu.act.uid === it.uid ? fufu.act.key : null;
   const st = itemState[it.uid];
   const alwaysMoving = def.id === 'fishtank' || def.id === 'pond'; // 池塘：魚一直游、小鴨子一直漂
+  if (def.id === 'planter') parts = parts.concat(gardenParts(it));   // 🌱 花盆：照長到哪裡畫芽、苗、花
   if (!active && !st && !alwaysMoving) return parts;
   const fire = st && st.fireUntil > now;
   const tapK = st && st.tapAt && now - st.tapAt < 320 ? Math.sin((now - st.tapAt) / 320 * Math.PI) * 5 : 0;
@@ -6034,6 +6137,12 @@ function fufuStartAct(key, now, it, auto) {
     Sound.play('coin');
   } else fufuSay(pickLine('act_' + key, { 時間: timeText() }), 3000);
   if (key === 'fruit') G.kid.hunger = clampStat(G.kid.hunger + 15); // 阿婆的水果免費吃
+  if (key === 'water' && it.id === 'planter') { // 🌱 花盆澆水：長大一階（要隔一下才會再長）
+    const r = gardenWater(it), gs = gardenOf(it.uid).s;
+    if (r === 'grow') setTimeout(() => { fufuSay(`${GARDEN_STAGE_NAMES[gs]}！快快長大～`, 2600); }, 1200);
+    else if (r === 'wait') setTimeout(() => { fufuSay('剛剛澆過水了，等一下再來澆～', 2600); }, 1200);
+    else if (r === 'full') setTimeout(() => { fufuSay('花開得好漂亮！可以剪下來插花喔', 2600); }, 1200);
+  }
   if (!auto) { // 做過的事記下來（不再提示）；也記進今天的成果
     G.usedActs = G.usedActs || {};
     G.usedActs[key] = 1;
@@ -10020,7 +10129,7 @@ function cleanInvite(x) {
     o[key] = c && c.slot === key ? c.id : DEFAULT_OUTFIT[key];
   });
   const h = isObj(x.h) && HAIR_BY_ID[x.h.style] && HAIR_COLOR_BY_ID[x.h.color] ? { style: x.h.style, color: x.h.color } : Object.assign({}, DEFAULT_HAIR);
-  const wps = new Set(WALLPAPERS.map(w => w.id)), fls = new Set(FLOORS.map(f => f.id));
+  const wps = new Set(WALLPAPERS.concat(SPECIAL_WALLS).map(w => w.id)), fls = new Set(FLOORS.map(f => f.id).concat(['fl_deck']));
   const rooms = x.r.slice(0, 8).filter(isObj).map((r, ri) => {
     const w = int(r.w, 4, 12) ? r.w : MIN_ROOM_SIZE, d = int(r.d, 4, 12) ? r.d : MIN_ROOM_SIZE;
     return {
@@ -11316,6 +11425,12 @@ function showItemMenu(it, e) {
   const add = (label, fn) => entries.push([label, fn]);
   if (use) add(use.use === 'lie' ? (use.bath ? '🛁 泡澡' : '😴 躺下睡覺') : '🪑 坐下', () => fufuGoUse(it));
   if (act) add(ACTIVITIES[act].label, () => fufuGoUse(it, false, act));
+  if (it.id === 'planter') { // 🌱 花盆：長到哪裡、多久可以再澆；開花了可以剪下來插花
+    const gs = gardenOf(it.uid), left = Math.max(0, Math.ceil((gs.w + GARDEN_WAIT_MS - Date.now()) / 1000));
+    const fl = FLOWER_BY_ID[gs.f];
+    if (gs.s >= 4 && fl) add(`✂️ 剪下${fl.icon}${fl.name}插花`, () => { if (gardenCut(it)) { toast(`🌷 剪下${fl.name}，放進花瓶了（在「我的東西」）`); fufuSay('好香喔～再種一次吧！', 2600); commit(); } });
+    else add(`🌱 現在：${GARDEN_STAGE_NAMES[gs.s]}${gs.s && left ? `（${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')} 後可以再澆水）` : '（可以澆水了）'}`, () => {});
+  }
   if (PET_BEDS[it.id] && !PET_BEDS[it.id].withKid) add(`💤 讓${petName()}睡這裡`, () => {
     if (isEgg()) { toast('蛋還不會走路喔～'); return; }
     petGoNap(it, false);
@@ -12069,12 +12184,12 @@ function tabBuild(body) {
   } else body.appendChild(note('這間已經是最大尺寸了。'));
 
   body.appendChild(h3('增加房間'));
-  if (G.rooms.length < ROOM_NAMES.length) body.appendChild(note(`每多蓋一間房間，就能多帶一隻寵物出來一起玩（最多 ${Math.min(MAX_PETS_OUT, 1 + ROOM_NAMES.length)} 隻）。`));
-  if (G.rooms.length >= ROOM_NAMES.length) body.appendChild(note('房間已經全部蓋好了！'));
+  if (normalRooms() < ROOM_NAMES.length) body.appendChild(note(`每多蓋一間房間，就能多帶一隻寵物出來一起玩（最多 ${Math.min(MAX_PETS_OUT, 1 + ROOM_NAMES.length)} 隻）。`));
+  if (normalRooms() >= ROOM_NAMES.length) body.appendChild(note('房間已經全部蓋好了！'));
   else if (!canAddRoom()) body.appendChild(note(`先把「${G.rooms[0].name}」擴建到 6×6，才能蓋新房間。`));
   else {
     const cost = newRoomCost();
-    const b = el('button', 'big alt', `蓋「${ROOM_NAMES[G.rooms.length]}」　💰 ${fmt(cost)}`);
+    const b = el('button', 'big alt', `蓋「${ROOM_NAMES[normalRooms()]}」　💰 ${fmt(cost)}`);
     b.disabled = G.bells < cost;
     b.onclick = () => {
       cancelHold();
@@ -12086,6 +12201,16 @@ function tabBuild(body) {
       commit();
     };
     body.appendChild(b);
+  }
+  // 🌿 陽台花園：另外蓋，不佔房間名額；送兩個種花盆
+  body.appendChild(h3('🌿 陽台花園'));
+  if (hasBalcony()) body.appendChild(note('陽台花園蓋好了！澆水讓花長大，開花了可以剪下來插花。'));
+  else {
+    body.appendChild(note('戶外的小陽台：天空、白色欄杆、木頭地板，送兩個種花盆。澆水花就會長大，開什麼顏色的花是驚喜喔！'));
+    const bb = el('button', 'big alt', `蓋「🌿 陽台花園」　💰 ${fmt(BALCONY_COST)}`);
+    bb.disabled = G.bells < BALCONY_COST;
+    bb.onclick = () => { cancelHold(); if (!addBalcony()) return; toast('🌿 陽台花園蓋好了！去花盆澆澆水吧'); fufuSay('哇，可以種花了！', 3000); commit(); };
+    body.appendChild(bb);
   }
   body.appendChild(h3('擴建價目'));
   Object.entries(EXPAND_COST).forEach(([s, c]) => {
@@ -12168,6 +12293,7 @@ function tabBook(body) {
     ['dexPet', '🐾', '寵物', tc('pet')[0], PET_SPECIES.length],
     ['dexGrow', '🌱', '成長', growDexCount(), growDexAll()],
     ['dexSeason', '🎃', '節日', seasonDexCount(), SEASON_FURNITURE.length],
+    ['dexFlower', '🌷', '花朵', FLOWERS.filter(f => (G.flowerDex || {})[f.id]).length, FLOWERS.length],
     ['dexFurn', '🛋️', '家具', got, FURNITURE.length],
     ['dexFish', '🐟', '魚', FISH.filter(f => G.fish[f.name]).length, FISH.length],
     ['dexFriend', '🐻', '好朋友', NEIGHBORS.filter(n => G.friends[n.id]).length, NEIGHBORS.length],
@@ -12206,6 +12332,17 @@ function tabBook(body) {
   body.appendChild(sec('dexGrow', `🌱 成長圖鑑 ${growDexCount()} / ${growDexAll()}`));
   body.appendChild(note(`${charName()}吃營養的東西、做各種事、看繪本，會慢慢長大。寵物有寶寶、小朋友、大朋友三個樣子，養大就會收進來。還有一格隱藏的喔！`));
   body.appendChild(growDexGrid());
+  body.appendChild(sec('dexFlower', `🌷 花朵圖鑑 ${FLOWERS.filter(f => (G.flowerDex || {})[f.id]).length} / ${FLOWERS.length}`));
+  body.appendChild(note('在花盆澆水，花就會長大。開什麼顏色的花是驚喜！（「🏗️ 蓋房間」可以蓋陽台花園，商店也有賣種花盆）'));
+  { const fg = el('div', 'grid');
+    FLOWERS.forEach(f => {
+      const has = !!(G.flowerDex || {})[f.id];
+      const c = el('div', 'card dex' + (has ? '' : ' dim'));
+      c.appendChild(el('div', 'emoji', has ? f.icon : '🌱'));
+      c.appendChild(el('div', 'nm', has ? f.name : '？？？'));
+      fg.appendChild(c);
+    });
+    body.appendChild(fg); }
   body.appendChild(sec('dexSeason', `🎃 節日收藏 ${seasonDexCount()} / ${SEASON_FURNITURE.length}`));
   body.appendChild(note('節日限定的家具（萬聖節是 10 月）。錯過了也沒關係，明年還會再來。'));
   { const sg = el('div', 'grid');
