@@ -727,7 +727,7 @@ button.pass { font: inherit; }
         <div class="pc-sub">🐾 <b id="petNameLbl">圓圓</b></div>
         <div class="pc-bar grow" id="growRow" title="長大"><span>🌱</span><i><b id="barGrow"></b></i></div>
         <div class="pc-bar" title="飽足"><span>🍎</span><i><b id="barHunger"></b></i></div>
-        <div class="pc-bar" title="乾淨"><span>🫧</span><i><b id="barClean"></b></i></div>
+        <div class="pc-bar" title="乾淨"><span>🧼</span><i><b id="barClean"></b></i></div>
         <div class="pc-bar" title="心情"><span>💗</span><i><b id="barMood"></b></i></div>
         <div class="pc-btns">
           <button id="btnFeed">🍎 餵食</button><button id="btnBath">🛁 洗澡</button><button id="btnCall">👋 叫牠</button>
@@ -1699,14 +1699,14 @@ const ACTIVITIES = {
   cook: { label: '🍳 煮東西', name: '煮東西', fx: '🍳', lines: ['今天煮什麼好呢？', '好香喔～', '小心燙喔！', '煎一顆荷包蛋', '加一點點鹽巴', '開飯囉！'] },
   snack: { label: '🧃 找點心', name: '找點心', fx: '🧃', lines: ['有什麼好吃的呢？', '冰冰涼涼的～', '只拿一個就好', '冰箱裡有好多東西', '先喝一口果汁'] },
   dishes: { label: '🍽️ 擺碗筷', name: '擺碗筷', fx: '🍽️', lines: ['幫忙擺碗筷～', '準備吃飯囉！', '一人一副碗筷', '我是小幫手！'] },
-  mirror: { label: '🪞 照鏡子', name: '照鏡子', fx: '💖', lines: ['今天也很可愛！', '頭髮整理好了～', '笑一個！', '這樣穿好看嗎？'] },
+  mirror: { label: '💖 照鏡子', name: '照鏡子', fx: '💖', lines: ['今天也很可愛！', '頭髮整理好了～', '笑一個！', '這樣穿好看嗎？'] },
   dress: { label: '👗 換衣服', name: '換衣服', fx: '👗', tab: 'dress', lines: ['要穿哪一件呢？', '來挑衣服囉～', '今天想穿漂亮一點'] },
-  fish: { label: '🐟 看金魚', name: '看金魚', fx: '🫧', lines: ['金魚游來游去', '小金魚你好～', '吐泡泡好可愛', '要不要吃飼料呀？'] },
+  fish: { label: '🐟 看金魚', name: '看金魚', fx: '💦', lines: ['金魚游來游去', '小金魚你好～', '吐泡泡好可愛', '要不要吃飼料呀？'] },
   globe: { label: '🌏 轉地球儀', name: '轉地球儀', fx: '🌏', lines: ['台灣在這裡！', '好想去旅行～', '地球轉呀轉', '日本好近喔', '海好大好大'] },
   toys: { label: '🧸 玩玩具', name: '玩玩具', fx: '🧸', lines: ['玩具好好玩！', '積木疊好高～', '玩完要收好喔', '來玩扮家家酒'] },
   hug: { label: '🤗 抱抱熊熊', name: '抱抱熊熊', fx: '💗', lines: ['熊熊抱抱～', '軟綿綿的', '熊熊是我的好朋友', '晚安熊熊'] },
-  wash: { label: '🧼 洗手', name: '洗手', fx: '🫧', sound: 'bath', lines: ['洗手手，搓搓搓', '洗乾淨了！', '手心手背都要洗', '吃飯前要洗手'] },
-  laundry: { label: '👕 洗衣服', name: '洗衣服', fx: '🫧', lines: ['衣服洗得香香的', '轟隆轟隆轉～', '幫忙做家事！', '襪子要翻過來'] },
+  wash: { label: '🧼 洗手', name: '洗手', fx: '💦', sound: 'bath', lines: ['洗手手，搓搓搓', '洗乾淨了！', '手心手背都要洗', '吃飯前要洗手'] },
+  laundry: { label: '👕 洗衣服', name: '洗衣服', fx: '💦', lines: ['衣服洗得香香的', '轟隆轟隆轉～', '幫忙做家事！', '襪子要翻過來'] },
   warm: { label: '🔥 烤火', name: '烤火', fx: '✨', lines: ['暖呼呼的～', '好溫暖喔', '手手不冷了', '劈哩啪啦的聲音好好聽'] },
   water: { label: '💧 澆花', name: '澆花', fx: '💧', lines: ['喝水水，快快長大～', '小花要開花喔', '葉子綠油油的', '一點點水就好'] },
   time: { label: '🕰️ 看時間', name: '看時間', fx: '🕰️', lines: ['現在是 {時間}！'] },
@@ -2466,10 +2466,10 @@ Object.assign(ACTIVITIES, {
   storytime: { label: '👂 聽館員說故事', name: '聽故事', fx: '🎵', open: 'storytime', lines: ['我要坐好聽故事～', '館員要說故事了！'] },
   passport: { label: '📗 閱讀護照', name: '看閱讀護照', fx: '📗', open: 'passport', lines: ['我蓋了幾個章呢？', '要把護照蓋滿！'] },
   // 公園
-  pondfish: { label: '🎣 池塘釣魚', name: '釣魚', fx: '🫧', open: 'fish', lines: ['魚會不會上鉤呢？', '要安靜等喔～', '池塘裡有小鴨子！'] },
+  pondfish: { label: '🎣 池塘釣魚', name: '釣魚', fx: '💦', open: 'fish', lines: ['魚會不會上鉤呢？', '要安靜等喔～', '池塘裡有小鴨子！'] },
   bfly: { label: '📷 拍蝴蝶', name: '拍蝴蝶', fx: '🦋', open: 'bfly', lines: ['好多蝴蝶！', '花好香喔～', '公園的花不能摘，用看的就好'] },
   picnic: { label: '🧺 野餐', name: '野餐', fx: '🥪', lines: ['在草地上吃東西好開心！', '三明治好好吃～', '風好舒服喔'] },
-  tank: { label: '🪖 看大戰車', name: '看戰車', fx: '✨', lines: ['好大的戰車喔！', '輪子好多個！', '這台不會動，是放在公園給大家看的', '只能看，不可以爬上去喔'] },
+  tank: { label: '🛡️ 看大戰車', name: '看戰車', fx: '✨', lines: ['好大的戰車喔！', '輪子好多個！', '這台不會動，是放在公園給大家看的', '只能看，不可以爬上去喔'] },
   heart: { label: '💗 愛心拍照', name: '愛心拍照', fx: '💗', lines: ['在愛心前面拍一張！', '比一個愛心～', '粉紅色的愛心好可愛！'] },
   sand: { label: '🏖️ 玩沙', name: '玩沙', fx: '✨', lines: ['我要蓋一座沙堡！', '沙子軟軟的～', '玩完要洗手喔'] },
   fountain: { label: '⛲ 看噴水池', name: '看噴水池', fx: '💦', lines: ['水噴得好高！', '亮晶晶的～', '小心不要弄濕喔'] },
@@ -2486,8 +2486,8 @@ Object.assign(ACTIVITIES, {
   // 學校
   lesson: { label: '📝 上課小考', name: '上課', fx: '✏️', open: 'quiz', lines: ['老師說要專心聽喔', '這題我會！', '舉手回答問題～'] },
   homework: { label: '📒 交作業', name: '交作業', fx: '⭐', lines: ['作業寫好了！', '老師請看～', '我有寫得很整齊喔'] },
-  slide: { label: '🛝 溜滑梯', name: '溜滑梯', fx: '✨', lines: ['咻～', '再溜一次！', '好好玩喔！'] },
-  swing: { label: '🪢 盪鞦韆', name: '盪鞦韆', fx: '✨', lines: ['盪好高喔！', '風吹得好舒服～', '推我一下～'] },
+  slide: { label: '🎢 溜滑梯', name: '溜滑梯', fx: '✨', lines: ['咻～', '再溜一次！', '好好玩喔！'] },
+  swing: { label: '🌀 盪鞦韆', name: '盪鞦韆', fx: '✨', lines: ['盪好高喔！', '風吹得好舒服～', '推我一下～'] },
   run: { label: '🏃 賽跑', name: '賽跑', fx: '💨', open: 'run', lines: ['預備——跑！', '我要跑第一名！', '加油加油！'] },
   flag: { label: '🚩 看升旗', name: '看升旗', fx: '🚩', lines: ['旗子好高喔', '立正站好！', '風吹得旗子飄飄的'] }
 });
@@ -4166,7 +4166,7 @@ const NEWS = [
     ['🐶', '多了 7 個小動物朋友會來家裡玩：狗狗、貓咪、企鵝、小豬、刺蝟、無尾熊、小鹿']
   ], newItems: ['flower_vase', 'photo_frame', 'aroma_candle', 'alarm_clock', 'small_cake', 'tea_set', 'book_stack', 'pencil_cup', 'snow_globe', 'music_box'] },
   { id: '2026-10-04-2', title: '小屋又更新了！', lines: [
-    ['🛝', '溜滑梯、鞦韆真的可以玩了！沙坑會蓋沙堡'],
+    ['🎢', '溜滑梯、鞦韆真的可以玩了！沙坑會蓋沙堡'],
     ['💡', '可以玩的東西會冒出小圖示，點點看', 'info'],
     ['🔊', '繪本可以聽故事了'],
     ['⭐', '小遊戲的星星越多越難，綠框的最簡單', 'info'],
@@ -6161,7 +6161,7 @@ const FLOWERS = [
   { id: 'yellow', name: '向日葵', icon: '🌻', c: '#ffd35c', c2: '#e0a020' },
   { id: 'pink', name: '粉紅玫瑰', icon: '🌹', c: '#ff9ec4', c2: '#ffd1e0' },
   { id: 'white', name: '小雛菊', icon: '🌼', c: '#ffffff', c2: '#ffe066' },
-  { id: 'purple', name: '紫色風信子', icon: '🪻', c: '#b18cff', c2: '#d8c4ff' },
+  { id: 'purple', name: '紫色風信子', icon: '💐', c: '#b18cff', c2: '#d8c4ff' },
   { id: 'blue', name: '藍色繡球花', icon: '💠', c: '#6bb6ff', c2: '#bfe0ff' }
 ];
 const FLOWER_BY_ID = Object.fromEntries(FLOWERS.map(f => [f.id, f]));
@@ -6808,7 +6808,7 @@ function kidDrinkPotion(foodId) {
   G.kid.small = { until: Date.now() + SMALL_MS, baby };
   fufu.pose = null; fufu.act = null; fufu.ride = null; // 坐著、躺著、在做事都先停下來
   Sound.play('magic');
-  fufuBurst('✨'); fufuBurst('🫧');
+  fufuBurst('✨'); fufuBurst('💦');
   const toLook = baby ? 'baby' : 'kinder';
   fufuSay(pickLine(baby ? 'kidBaby' : 'kidShrink'), 3000);
   // 收進成長圖鑑（已經有了就不會再多一格）
@@ -7602,7 +7602,7 @@ const PH_MODES = [
   { id: 'train', icon: '🚂', name: '跟我走', endLabel: '🚂 解散' },
   { id: 'hide', icon: '🙈', name: '捉迷藏', endLabel: '🙈 不玩了' },
   { id: 'concert', icon: '🎵', name: '寵物音樂會', endLabel: '🎵 結束音樂會' },
-  { id: 'bubble', icon: '🫧', name: '泡泡派對' },
+  { id: 'bubble', icon: '💭', name: '泡泡派對' },
   { id: 'birthday', icon: '🎂', name: '生日派對' },
   { id: 'hats', icon: '🎀', name: '戴帽子', endLabel: '🎀 戴好了' }
 ];
@@ -7919,7 +7919,7 @@ function phModeTap(a, now) {
   }
   return false;
 }
-// ── 🫧 泡泡 ──
+// ── 💦 泡泡 ──
 function phBubbleTick(now) {
   const m = phMode, room = curRoom();
   if (now > m.spawnAt && m.bubbles.filter(b => !b.popped).length < 10 && now < m.until - 3000) {
@@ -9557,11 +9557,11 @@ const THEMES = [
     { icon: '🌷', label: '一間房間有 3 樣花或植物（花瓶也算）', test: () => anyRoom(r => roomCount(r, PLANT_IDS) >= 3) }] },
   { id: 'reading', icon: '📚', title: '閱讀角落', desc: '做一個可以坐著看書的地方', steps: [
     { icon: '📚', label: '有書櫃或一疊書', test: () => anyRoom(r => roomCount(r, SHELF_IDS) >= 1) },
-    { icon: '🪑', label: '旁邊有椅子或沙發可以坐', test: () => anyRoom(r => roomCount(r, SHELF_IDS) >= 1 && hasSeat(r)) },
+    { icon: '💺', label: '旁邊有椅子或沙發可以坐', test: () => anyRoom(r => roomCount(r, SHELF_IDS) >= 1 && hasSeat(r)) },
     { icon: '💡', label: '再放一盞立燈', test: () => anyRoom(r => roomCount(r, SHELF_IDS) >= 1 && hasSeat(r) && roomCount(r, ['lamp']) >= 1) }] },
   { id: 'teatime', icon: '🍰', title: '下午茶', desc: '在桌上擺好點心，旁邊放椅子', steps: [
     { icon: '🍰', label: '桌上放小蛋糕或茶具', test: () => anyRoom(r => r.items.some(it => it.top === 'small_cake' || it.top === 'tea_set')) },
-    { icon: '🪑', label: '同一間有椅子', test: () => anyRoom(r => r.items.some(it => it.top === 'small_cake' || it.top === 'tea_set') && hasSeat(r)) }] },
+    { icon: '💺', label: '同一間有椅子', test: () => anyRoom(r => r.items.some(it => it.top === 'small_cake' || it.top === 'tea_set') && hasSeat(r)) }] },
   { id: 'bedroom', icon: '🛏️', title: '舒服的臥室', desc: '床、床頭櫃、地毯放在同一間', steps: [
     { icon: '🛏️', label: '有一張床', test: () => anyRoom(r => r.items.some(it => furnKind(it.id) === 'sleep' && FURNITURE_USE[it.id] && FURNITURE_USE[it.id].use === 'lie')) },
     { icon: '🧸', label: '同一間有床頭櫃和地毯', test: () => anyRoom(r => r.items.some(it => FURNITURE_USE[it.id] && FURNITURE_USE[it.id].use === 'lie' && !FURNITURE_USE[it.id].bath)
@@ -9590,9 +9590,9 @@ const THEMES = [
     { icon: '🌈', label: '彩虹地毯、彩虹掛飾、彩虹書櫃，放 2 樣在同一間', test: () => anyRoom(r => roomCount(r, ['rainbow_rug', 'rainbow_art', 'rainbow_shelf']) >= 2) }] },
   { id: 'concert', icon: '🎹', title: '小小音樂會', desc: '鋼琴旁邊放椅子，請大家來聽', steps: [
     { icon: '🎹', label: '有一台鋼琴', test: () => anyRoom(r => roomCount(r, ['piano']) >= 1) },
-    { icon: '🪑', label: '同一間有 2 個可以坐的地方', test: () => anyRoom(r => roomCount(r, ['piano']) >= 1 && r.items.filter(it => FURNITURE_USE[it.id] && FURNITURE_USE[it.id].use === 'sit').length >= 2) }] },
-  { id: 'garden', icon: '🪴', title: '室內花園', desc: '4 樣植物加上草地地毯', steps: [
-    { icon: '🪴', label: '一間房間有 4 樣花或植物', test: () => anyRoom(r => roomCount(r, PLANT_IDS) >= 4) },
+    { icon: '💺', label: '同一間有 2 個可以坐的地方', test: () => anyRoom(r => roomCount(r, ['piano']) >= 1 && r.items.filter(it => FURNITURE_USE[it.id] && FURNITURE_USE[it.id].use === 'sit').length >= 2) }] },
+  { id: 'garden', icon: '🌷', title: '室內花園', desc: '4 樣植物加上草地地毯', steps: [
+    { icon: '🌷', label: '一間房間有 4 樣花或植物', test: () => anyRoom(r => roomCount(r, PLANT_IDS) >= 4) },
     { icon: '🌿', label: '同一間有草地地毯', test: () => anyRoom(r => roomCount(r, PLANT_IDS) >= 4 && roomCount(r, ['leaf_rug']) >= 1) }] },
   { id: 'princess', icon: '👑', title: '夢幻公主房', desc: '公主床、獨角獸、愛心鏡子', steps: [
     { icon: '🛏️', label: '有公主床或糖果床', test: () => anyRoom(r => roomCount(r, ['cute_bed', 'candy_bed']) >= 1) },
@@ -9924,7 +9924,7 @@ function hostMenuEntries() {
     list.push(['🔔 上課（點名、數學、美勞、午睡）', openLessonMenu]);
     list.push(['📝 來小考', openQuizGame]);
     list.push(['🏃 跟同學賽跑', openRunGame]);
-    [['🏫 回教室', 0], ['🛝 一起去操場', 1]]
+    [['🏫 回教室', 0], ['🎢 一起去操場', 1]]
       .filter(([, i]) => i !== G.away.idx).forEach(([label, i]) => list.push([label, () => goPlaceRoom(i)]));
   }
   if (host.n.id === 'grandma') { // 阿婆帶你去其他地方
@@ -11282,7 +11282,7 @@ function drawTargetMarker(ctx, now) {
   const p = itemTopAt(it);
   drawFloatIcon(ctx, p.x, p.y - Math.abs(Math.sin(now / 250)) * 5, actEmoji(task.act), 1);
 }
-/* ① 可以玩的東西偶爾冒出小圖示（🛝、📖、🎣…），她才知道哪裡可以點。
+/* ① 可以玩的東西偶爾冒出小圖示（🎢、📖、🎣…），她才知道哪裡可以點。
    一次只冒一個；做過一次的那種事就不再提示，畫面不會一直閃。 */
 const actHint = { at: 0, uid: null, key: null };
 function drawActHint(ctx, now) {
@@ -11880,7 +11880,7 @@ function showItemMenu(it, e) {
   const def = FURN_BY_ID[it.id], use = FURNITURE_USE[it.id], act = FURNITURE_ACT[it.id];
   const entries = [];
   const add = (label, fn) => entries.push([label, fn]);
-  if (use) add(use.use === 'lie' ? (use.bath ? '🛁 泡澡' : '😴 躺下睡覺') : '🪑 坐下', () => fufuGoUse(it));
+  if (use) add(use.use === 'lie' ? (use.bath ? '🛁 泡澡' : '😴 躺下睡覺') : '💺 坐下', () => fufuGoUse(it));
   if (act) add(ACTIVITIES[act].label, () => fufuGoUse(it, false, act));
   if (it.id === 'cotton_cart') { add(ACTIVITIES.popcorn.label, () => fufuGoUse(it, false, 'popcorn')); add('🍦 買冰淇淋', () => fufuGoUse(it, false, 'icecream')); }   // 🍭 點心車：選要買什麼
   if (it.id === 'planter') { // 🌱 花盆：長到哪裡、多久可以再澆；開花了可以剪下來插花
@@ -12575,7 +12575,7 @@ function tabShop(body) {
   if (shopKind === 'all') shopDeco(body);
 }
 // 這一類商品裡，每個風格有幾樣（壁紙地板只算還沒買的）
-const THEME_ICONS = { wood: '🪵', cute: '🎀', modern: '🏙️', nature: '🌿', bath: '🛁', sweet: '🍰' };
+const THEME_ICONS = { wood: '🌲', cute: '🎀', modern: '🏙️', nature: '🌿', bath: '🛁', sweet: '🍰' };
 function shopThemeCounts(kind) {
   const c = {};
   const add = t => { c[t] = (c[t] || 0) + 1; };
@@ -12723,11 +12723,11 @@ function tabEarn(body) {
   body.appendChild(h3('小遊戲'));
   body.appendChild(note('每場 1 分鐘內玩完，分數越高拿到越多鈴錢。'));
   const games = el('div', 'game-list');
-  [['🃏', '翻牌配對', openMemoryGame], ['🧺', `${petName()}接水果`, openCatchGame], ['🫧', '戳泡泡', openBubbleGame],
+  [['🃏', '翻牌配對', openMemoryGame], ['🧺', `${petName()}接水果`, openCatchGame], ['💦', '戳泡泡', openBubbleGame],
     ['🥤', '杯子躲貓貓', openCupGame], ['🥞', '疊疊鬆餅', openStackGame], ['🎵', '跟著唱', openSimonGame],
     ['🎯', '彈弓丟蘋果', openSlingGame],
     ['🧩', '拼圖', openPuzzleGame],
-    ['🪙', '接金幣', openCoinGame],
+    ['💰', '接金幣', openCoinGame],
     ['⚪', '彈珠台', openMarbleGame],
     ['🐠', '撈金魚', openScoopGame],
     ['🍪', '烤餅乾', openBakeGame],
@@ -14267,7 +14267,7 @@ function openCatchGame() {
 
 // ── 3. 戳泡泡 ──
 function openBubbleGame() {
-  const w = openGameWindow('🫧 戳泡泡', '30 秒內點破越多泡泡越好！裡面有💰的泡泡分數比較多。');
+  const w = openGameWindow('💦 戳泡泡', '30 秒內點破越多泡泡越好！裡面有💰的泡泡分數比較多。');
   const W = 360, H = 420, { c, g, pos } = gameCanvas(w.stage, W, H);
   const COLORS = ['#ffb3c7', '#b3e0ff', '#c9f2b8', '#ffe39a', '#dcc8ff'];
   let bubbles = [], pops = [], score = 0, raf = 0, ended = false;
@@ -14764,7 +14764,7 @@ const RACE_LEVELS = [
   { name: '飆車！', speed: 300, gap: 600, mul: 3 }
 ];
 function openRaceGame() {
-  const w = openGameWindow('📺 賽車閃避', '點畫面左邊往左、右邊往右，躲開路障 🚧，吃到金幣 🪙！撞到 3 次就結束，最多 30 秒。');
+  const w = openGameWindow('📺 賽車閃避', '點畫面左邊往左、右邊往右，躲開路障 🚧，吃到金幣 💰！撞到 3 次就結束，最多 30 秒。');
   pickLevelRow(w, RACE_LEVELS, L => `一枚 💰 ${20 * L.mul}`, L => playRace(w, L));
 }
 function playRace(w, L) {
@@ -14817,7 +14817,7 @@ function playRace(w, L) {
         }
         return t.y < H + 30;
       });
-      w.status.textContent = `${L.name}　還有 ${left} 秒　❤️×${Math.max(0, lives)}　🪙×${coins}`;
+      w.status.textContent = `${L.name}　還有 ${left} 秒　❤️×${Math.max(0, lives)}　💰×${coins}`;
     }
     // 路面
     g.fillStyle = '#5d6470'; g.fillRect(0, 0, W, H);
@@ -14826,7 +14826,7 @@ function playRace(w, L) {
     [W * .35, W * .65].forEach(x => { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); });
     g.setLineDash([]);
     g.font = '30px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    things.forEach(t => g.fillText(t.coin ? '🪙' : '🚧', LANES[t.lane], t.y));
+    things.forEach(t => g.fillText(t.coin ? '💰' : '🚧', LANES[t.lane], t.y));
     // 車子：撞到的時候閃
     if (!(now < hurtUntil && Math.floor(now / 100) % 2)) {
       g.font = '40px sans-serif';
@@ -14891,8 +14891,8 @@ const RELATIVE_PERKS = {
   cotton: { who: 'amusement', buy: { cost: 100, kidFood: 'cotton_candy' } },
   popcorn: { who: 'amusement', buy: { cost: 80, kidFood: 'popcorn' } },
   homework: { who: 'school', sticker: true, cd: 3 * 60000, say: '老師說我寫得很棒！' }, // 只給貼紙不給錢，等 3 分鐘就好
-  slide:    { who: ['school', 'park'], pet: 15, say: '咻～寵物也跟著溜下來了！', toast: '🛝 好好玩，寵物心情 +15' },
-  swing:    { who: 'school', pet: 10, say: '盪好高喔！', toast: '🪢 盪鞦韆，寵物心情 +10' }
+  slide:    { who: ['school', 'park'], pet: 15, say: '咻～寵物也跟著溜下來了！', toast: '🎢 好好玩，寵物心情 +15' },
+  swing:    { who: 'school', pet: 10, say: '盪好高喔！', toast: '🌀 盪鞦韆，寵物心情 +10' }
 };
 
 // 冷卻時間：每件事可以自己設（cd），沒設就是 10 分鐘
@@ -14952,7 +14952,7 @@ const COMICS = [
   { title: '下雨天', panels: [['🌧️', '下雨了'], ['☂️', '帶了傘'], ['💨☂️', '風好大！'], ['☂️🙃', '傘翻過來了']] },
   { title: '貓咪', panels: [['📦', '買了新床給貓咪'], ['🛏️', '很軟很舒服喔'], ['🐱', '貓咪看了一眼'], ['🐱📦', '睡在紙箱裡']] },
   { title: '作業', panels: [['📒', '寫作業'], ['✏️', '好認真'], ['😴', '有點睏'], ['📒💤', '作業變枕頭']] },
-  { title: '魔術', panels: [['🎩', '我會變魔術'], ['🪄', '一、二、三'], ['🐇', '變出兔子！'], ['🐇🥕', '兔子把紅蘿蔔吃掉了']] },
+  { title: '魔術', panels: [['🎩', '我會變魔術'], ['✨', '一、二、三'], ['🐇', '變出兔子！'], ['🐇🥕', '兔子把紅蘿蔔吃掉了']] },
   { title: '比賽', panels: [['🐢🐇', '烏龜跟兔子賽跑'], ['🐇💨', '兔子跑好快'], ['🐇😴', '兔子睡著了'], ['🐢🏁', '烏龜：我只是來散步的']] },
   { title: '冰淇淋', panels: [['🍦', '買了冰淇淋'], ['☀️', '好熱喔'], ['🍦💧', '在融化！'], ['😋', '快點吃掉']] },
   { title: '照相', panels: [['📷', '來拍照'], ['😁', '笑一個'], ['🙈', '眼睛閉起來了'], ['📷😆', '再拍一張！']] },
@@ -15806,9 +15806,9 @@ function openBrickGame() {
 
 // ── 阿婆的照顧小牛小羊：頭上冒出想要的東西，選對工具再點牠 ──
 function openFarmGame() {
-  const w = openGameWindow('🐮 照顧小牛小羊', '小牛、小羊頭上會冒出想要的東西。先點下面的工具，再點那隻動物！45 秒內照顧越多次越好。');
+  const w = openGameWindow('🐮 照顧小牛小羊', '小牛、小羊頭上會冒出想要的東西（🌾 飼料、💧 喝水、🧽 刷毛）。先點下面的工具，再點那隻動物！45 秒內照顧越多次越好。');
   const W = 360, H = 280, { c, g, pos } = gameCanvas(w.stage, W, H);
-  const TOOLS = [['feed', '🌾', '飼料'], ['water', '💧', '喝水'], ['brush', '🪥', '梳毛']];
+  const TOOLS = [['feed', '🌾', '飼料'], ['water', '💧', '喝水'], ['brush', '🧽', '刷毛']];
   const animals = FARM_ANIMALS.map((sp, i) => ({ sp, x: 95 + i * 170, need: null, needUntil: 0, nextNeedAt: performance.now() + 800 + i * 900,
     happyUntil: 0, sadUntil: 0, hop: 0, hearts: [] }));
   let tool = null, score = 0, raf = 0, ended = false, timers = [];
@@ -15892,7 +15892,8 @@ function openFarmGame() {
         const t = TOOLS.find(x => x[0] === a.need), frac = Math.max(0, (a.needUntil - now) / 6000);
         g.fillStyle = 'rgba(255,255,255,.96)'; g.strokeStyle = frac < .35 ? '#e8505b' : 'rgba(74,59,42,.35)'; g.lineWidth = 2;
         g.beginPath(); g.arc(a.x + 30, 100, 22, 0, Math.PI * 2); g.fill(); g.stroke();
-        g.font = '24px "Segoe UI Emoji", sans-serif'; g.textBaseline = 'middle';
+        g.font = '24px "Segoe UI Emoji", "Apple Color Emoji", sans-serif'; g.textBaseline = 'middle';
+        g.fillStyle = '#4a3b2a';   // 用深色寫：萬一表情符號是黑白的，才不會白字畫在白圈圈上（以前圈圈看起來是空的）
         g.fillText(t[1], a.x + 30, 101);
       }
       g.font = '14px "Segoe UI Emoji", sans-serif';
@@ -16200,7 +16201,7 @@ function playBake(w, L) {
 
 // ── 🧁 杯子蛋糕店：客人想要什麼，就點一樣的奶油和裝飾 ──
 const CUPCAKE_CREAMS = [['#ffb3c7', '草莓'], ['#fff5e6', '香草'], ['#8a5a33', '巧克力'], ['#b8ecd7', '薄荷']];
-const CUPCAKE_TOPS = ['🍓', '🍒', '⭐', '🫐'];
+const CUPCAKE_TOPS = ['🍓', '🍒', '⭐', '🍇'];
 const CUPCAKE_LEVELS = [
   { name: '慢慢來', sec: 45, n: 2, mul: 1 },
   { name: '普通',   sec: 45, n: 3, mul: 2 },
@@ -16285,7 +16286,7 @@ const COIN_LEVELS = [
 ];
 
 function openCoinGame() {
-  const w = openGameWindow('🪙 接金幣', '手指按著籃子左右移動，接住掉下來的金幣。碰到炸彈會掉一顆喔！');
+  const w = openGameWindow('💰 接金幣', '手指按著籃子左右移動，接住掉下來的金幣。碰到炸彈會掉一顆喔！');
   pickLevel();
 
   function pickLevel() {
@@ -16329,7 +16330,7 @@ function openCoinGame() {
       clearInterval(tick);
       const bells = payReward(w, Math.max(0, got) * 20 * L.mul);
       w.status.textContent = `接到 ${got} 個！💰 +${fmt(bells)}`;
-      toast(`🪙 接到 ${got} 個，拿到 💰 ${fmt(bells)}`);
+      toast(`💰 接到 ${got} 個，拿到 💰 ${fmt(bells)}`);
       gameButtons(w, () => pickLevel());
     }
     openCoinGame.test = { finish: finish, hit: n => { got += n; }, level: L };

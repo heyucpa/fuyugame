@@ -8,6 +8,7 @@
   var fails=[], errs=[], pendingChecks=[], notesPad = '';  // pendingChecks：要等非同步（MutationObserver 之類）跑完才能驗的
   window.addEventListener('error', function(e){ errs.push(String(e.message)); });
   SEASON_TODAY = [6, 1];
+  var house_driver_allow = [];   // 走查自己用的字不算
   G.introSeen = true;   // 開場動畫另外測（不然新存檔會先播十秒，擋住後面的走查）   // 走查一律當作沒有節日（不然 10 月跑跟 6 月跑結果不一樣）；節日的測試自己切換
 
   function restore(raw){ if(raw===null) localStorage.removeItem(SAVE_KEY);
@@ -2796,6 +2797,15 @@
       openTab('inv');
     } catch (e) { fails.push('開場動畫測試出錯：' + e.message); }
     finally { G.introSeen = true; }
+
+    /* 104 不用太新的表情符號（家長的電腦是 Windows 10：2020 年以後的表情符號會變成方框／空白，例如照顧小牛小羊的「梳毛」） */
+    (function(){
+      var src = [].filter.call(document.querySelectorAll('script'), function(sc){ return sc.textContent.indexOf('house_driver_allow') < 0; }).map(function(sc){ return sc.textContent; }).join('\n');   // 只看遊戲本身（走查自己的字不算）
+      var bad = {};
+      for (var i = 0; i < src.length; i++) { var cp = src.codePointAt(i); if (cp > 0xffff) i++; if ((cp >= 0x1FA70 && cp <= 0x1FAFF) || cp === 0x1F6DD) bad[String.fromCodePoint(cp)] = 1; }
+      var list = Object.keys(bad).filter(function(ch){ return house_driver_allow.indexOf(ch) < 0; });
+      if (list.length) fails.push('用了 Windows 10 顯示不出來的表情符號：' + list.join(' '));
+    })();
 
     /* 103 教室上課：置物櫃門朝教室裡、老師有「上課」、點名／數學課／美勞課／午睡 */
     var keep103 = JSON.stringify({ bells: G.bells, art: G.artWall || null }), realWalk103 = walkTrip, realST103 = window.setTimeout, realSI103 = window.setInterval, realToast103 = toast;
