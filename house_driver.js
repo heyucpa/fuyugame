@@ -2425,6 +2425,15 @@
       drawPetActor = function(ctx){ alphas.push(ctx.globalAlpha); return realDPA2.apply(this, arguments); };
       try { draw(); } finally { drawPetActor = realDPA2; }
       if (!alphas.some(function(x){ return x < .6; })) fails.push('捉迷藏：躲起來的看起來跟平常一樣（沒有變淡）');
+      // 一直找不到：躲著的寵物身上會冒 ❓ 提示（測試把等待時間縮短）
+      var hints = [], realPB = petBurst, h1 = PH_HIDE_HINT1, h2 = PH_HIDE_HINT2;
+      PH_HIDE_HINT1 = 0; PH_HIDE_HINT2 = 0;
+      petBurst = function(o, n, a){ if (o && o.emoji === '❓') hints.push(a); return realPB.apply(this, arguments); };
+      try { t13 = run13(30, t13); } finally { petBurst = realPB; PH_HIDE_HINT1 = h1; PH_HIDE_HINT2 = h2; }
+      if (!walkers.every(function(a){ return hints.indexOf(a) >= 0; })) fails.push('捉迷藏：一直找不到的寵物沒有冒出 ❓ 提示');
+      hints = []; petBurst = function(o, n, a){ if (o && (o.emoji === '❓' || o.emoji === '👀')) hints.push(a); return realPB.apply(this, arguments); };
+      try { walkers.forEach(function(a){ a.hiddenAt = t13; a.hintAt = 0; }); t13 = run13(30, t13); } finally { petBurst = realPB; }
+      if (hints.length) fails.push('捉迷藏：才剛躲好就冒提示');
       walkers.forEach(function(a, k){ var ix = phList().filter(function(i){ return phActors[i] === a; })[0]; phTap(ix, { clientX: 1, clientY: 1 }); hideItemMenu(); });
       if (!phMode || !phMode.allFound || phMode.found !== walkers.length) fails.push('捉迷藏：全部點到了卻沒有「全部找到」');
       t13 = run13(200, t13);
@@ -2555,6 +2564,47 @@
       if (!(full > countFills(Object.assign({}, sp, { wings: null })) + 3)) fails.push(sp.name + ' 沒有畫出翅膀');
       if (!(full > countFills(Object.assign({}, sp, { sparkle: false })))) fails.push(sp.name + ' 沒有一閃一閃的星星');
     });
+
+    /* 89 變小也有動畫＋圖片、收進成長圖鑑（不重複）；藥水比一般東西貴 */
+    var kid89 = JSON.stringify(G.kid), kf89 = JSON.stringify(G.kidFood), pf89 = JSON.stringify(G.food), gd89 = JSON.stringify(G.growDex), ps89 = G.pet.stage;
+    var realToast89 = toast, realBlk89 = showcaseBlocked; toast = function(){}; showcaseBlocked = function(){ return false; };
+    var clearSC = function(){ SC_QUEUE.length = 0; var o = document.getElementById('showcase'); if (o) o.remove(); };
+    try {
+      var normalMax = Math.max.apply(null, KID_FOODS.concat(FOODS).filter(function(f){ return !f.potion; }).map(function(f){ return f.price; }));
+      if (KID_FOOD_BY_ID.shrink.price < normalMax * 2 || FOOD_BY_ID.shrink_pet.price < normalMax * 2) fails.push('變小藥水沒有比一般東西貴');
+      // 小可愛：大姊姊 → 變小（幼稚園），跳出「原本 ➜ 變小」
+      G.kid.height = 160; delete G.kid.small; G.kidFood.shrink = 3; clearSC();
+      kidEat('shrink', 'kid');
+      var s1 = document.getElementById('showcase');
+      if (!s1 || s1.querySelectorAll('.grow-pic.shrink canvas').length !== 2 || !/變小了/.test(s1.textContent)) fails.push('小可愛變小沒有跳出「原本 ➜ 變小」的大圖');
+      clearSC();
+      // 再喝：小寶寶（新的樣子收進圖鑑）
+      delete G.growDex['girl:baby']; var c89 = growDexCount();
+      kidEat('shrink', 'kid');
+      var s2 = document.getElementById('showcase');
+      if (!s2 || !/小寶寶/.test(s2.textContent) || !/新的樣子/.test(s2.textContent) || growDexCount() !== c89 + 1) fails.push('變成小寶寶沒有跳出大圖、或沒收進成長圖鑑');
+      clearSC();
+      // 變回來再喝兩瓶：一樣有大圖，可是圖鑑不會重複多一格
+      delete G.kid.small; G.kidFood.shrink = 2; c89 = growDexCount();
+      kidEat('shrink', 'kid'); clearSC(); kidEat('shrink', 'kid');
+      var s3 = document.getElementById('showcase');
+      if (!s3 || !/已經有了/.test(s3.textContent) || growDexCount() !== c89) fails.push('同一個變小的樣子又收了一次（圖鑑重複）');
+      clearSC(); delete G.kid.small;
+      // 寵物：沒養過寶寶的種類，喝藥水也能收集到寶寶的樣子
+      G.pet.stage = 'adult'; delete G.pet.small; G.food.shrink_pet = 2;
+      var bk = growKey(G.pet.species, 'baby'); delete G.growDex[bk]; c89 = growDexCount();
+      petFeed('shrink_pet');
+      var s4 = document.getElementById('showcase');
+      if (!s4 || s4.querySelectorAll('.grow-pic.shrink canvas').length !== 2 || !G.growDex[bk] || growDexCount() !== c89 + 1) fails.push('寵物變小沒有跳出大圖、或沒收進成長圖鑑');
+      clearSC(); delete G.pet.small; c89 = growDexCount();
+      petFeed('shrink_pet');
+      var s5 = document.getElementById('showcase');
+      if (!s5 || !/已經有了/.test(s5.textContent) || growDexCount() !== c89) fails.push('寵物變小的樣子收了兩次（圖鑑重複）');
+    } catch (e) { fails.push('變小動畫測試出錯：' + e.message); }
+    finally {
+      G.kid = JSON.parse(kid89); G.kidFood = JSON.parse(kf89); G.food = JSON.parse(pf89); G.growDex = JSON.parse(gd89); G.pet.stage = ps89; delete G.pet.small;
+      toast = realToast89; showcaseBlocked = realBlk89; clearSC(); updatePetCard();
+    }
 
     /* 88 小可愛長大、變小藥水、小寶寶（家長：小孩分階段長大看得到進度；藥水暫時變小，最小再喝變小寶寶；
        小寶寶用爬的、吃奶嘴、不能換裝；叔叔阿婆看到要說話，變回來也要說） */

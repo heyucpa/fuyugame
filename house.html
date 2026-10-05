@@ -522,6 +522,9 @@ button.pass { font: inherit; }
 .grow-pic { display: flex; align-items: flex-end; justify-content: center; gap: 4px; }
 .grow-pic .grow-from { opacity: .55; filter: saturate(.7); }
 .grow-pic .grow-arrow { font-size: 26px; color: #ff7fa3; margin-bottom: 40px; animation: growArrow 1s ease-in-out infinite; }
+.grow-pic.shrink .shrink-from { opacity: .55; filter: saturate(.7); }
+.grow-pic.shrink .shrink-to { animation: shrinkSpin 1s cubic-bezier(.3, 1.5, .5, 1) both .25s; }
+@keyframes shrinkSpin { 0% { transform: scale(1.8) rotate(-200deg); opacity: 0; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
 .grow-pic .grow-to { animation: growPop .9s cubic-bezier(.3, 1.6, .5, 1) both .25s; }
 @keyframes growArrow { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(5px); } }
 @keyframes growPop { 0% { transform: scale(.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
@@ -2477,7 +2480,7 @@ const KID_FOODS = [
   { id: 'sandwich', name: '三明治', emoji: '🥪', price: 180, hunger: 25, grow: 0 },
   { id: 'bento', name: '便當', emoji: '🍱', price: 350, hunger: 50, grow: 0 },
   { id: 'ice_cream', name: '冰淇淋', emoji: '🍦', price: 200, hunger: 8, grow: 0 },
-  { id: 'shrink', name: '變小藥水', emoji: '🧪', price: 500, hunger: 0, grow: 0, potion: true }
+  { id: 'shrink', name: '變小藥水', emoji: '🧪', price: 1000, hunger: 0, grow: 0, potion: true }
 ];
 const KID_FOOD_BY_ID = Object.fromEntries(KID_FOODS.map(f => [f.id, f]));
 const FOODS = [
@@ -2491,7 +2494,7 @@ const FOODS = [
   { id: 'xiaoansu', name: '小安素', emoji: '🥤', price: 300, hunger: 20, mood: 4, grow: .3 },
   // 骨頭（家長：寵物食物可以加骨頭）：只有寵物吃（petOnly），小可愛的食物選單不會出現
   { id: 'bone', name: '骨頭', emoji: '🦴', price: 180, hunger: 25, mood: 8, petOnly: true },
-  { id: 'shrink_pet', name: '寵物變小藥水', emoji: '🧪', price: 500, hunger: 0, mood: 0, petOnly: true, potion: true }
+  { id: 'shrink_pet', name: '寵物變小藥水', emoji: '🧪', price: 1000, hunger: 0, mood: 0, petOnly: true, potion: true }
 ];
 const FOOD_BY_ID = Object.fromEntries(FOODS.map(f => [f.id, f]));
 
@@ -3710,6 +3713,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-05T15:00', title: '變小也有大圖了！', lines: [
+    ['🧪', '喝變小藥水的時候，畫面中間會轉一圈，跳出變小的大圖'],
+    ['📖', '變小的樣子也會收進成長圖鑑（沒養過寶寶的寵物，喝藥水也能收集到）'],
+    ['🙈', '寵物屋捉迷藏：一直找不到的寵物會偷偷晃一下，再久一點頭上會冒出 ❓']
+  ], newItems: [] },
   { id: '2026-10-05T12:00', title: '小可愛也會長大了！', lines: [
     ['🌱', '小可愛也有長大的進度條：幼稚園 → 小學生 → 大姊姊'],
     ['🧪', '商店有「變小藥水」：喝了變小 10 分鐘，再喝一瓶會變成小寶寶'],
@@ -6225,23 +6233,21 @@ function kidDrinkPotion(foodId) {
   G.kidFood[foodId]--;
   if (!G.kidFood[foodId]) delete G.kidFood[foodId];
   const baby = !!kidSmall() || kidStage().id === 'kinder';
+  const fromLook = kidSmall() ? 'kinder' : kidStage().id;   // 變小之前的樣子（大圖左邊）
   G.kid.small = { until: Date.now() + SMALL_MS, baby };
   fufu.pose = null; fufu.act = null; fufu.ride = null; // 坐著、躺著、在做事都先停下來
   Sound.play('magic');
   fufuBurst('✨'); fufuBurst('🫧');
-  if (baby) {
-    fufuSay(pickLine('kidBaby'), 3000);
-    const isNew = growDexAdd('girl', 'baby');
-    try {
-      const nG = growDexCount(), all = growDexAll();
-      showcase(renderKidStage('baby', 150, 120), `${charName()}變成小寶寶了！`,
-        isNew ? `🌱 成長圖鑑 ${nG} / ${all}（隱藏的一格！）` : '10 分鐘後、或去床上睡一覺就會變回來', isNew ? { head: '👶 咿呀～', n: nG, all } : { head: '👶 咿呀～' });
-    } catch (e) {}
-    toast('👶 變成小寶寶了！用爬的、喝奶奶。10 分鐘後、或去床上睡一覺就會變回來');
-  } else {
-    fufuSay(pickLine('kidShrink'), 3000);
-    toast(`🧪 變回幼稚園的樣子了！再喝一瓶會變成小寶寶。10 分鐘後、或睡一覺就變回來`);
-  }
+  const toLook = baby ? 'baby' : 'kinder';
+  fufuSay(pickLine(baby ? 'kidBaby' : 'kidShrink'), 3000);
+  // 收進成長圖鑑（已經有了就不會再多一格）
+  const isNew = growDexAdd('girl', toLook);
+  try {
+    shrinkShowcase(renderKidStage(fromLook, 120, 145), renderKidStage(toLook, baby ? 100 : 80, baby ? 80 : 98),
+      baby ? `${charName()}變成小寶寶了！` : `${charName()}變小了！`, isNew, baby ? '👶 咿呀～' : '🧪 變小了！');
+  } catch (e) {}
+  toast(baby ? '👶 變成小寶寶了！用爬的、喝奶奶。10 分鐘後、或去床上睡一覺就會變回來'
+    : '🧪 變回幼稚園的樣子了！再喝一瓶會變成小寶寶。10 分鐘後、或睡一覺就變回來');
   saveGame();
   return true;
 }
@@ -6256,6 +6262,16 @@ function kidUnshrink(why) {
   toast(`✨ ${charName()}變回來了！`);
   saveGame();
 }
+/* 變小的大圖：左邊原本的樣子（大大的）➜ 右邊變小的樣子，轉一圈縮小（家長：變小也要有動畫和圖片，圖片也要能收集）。
+   isNew：這個樣子第一次收進成長圖鑑；已經有了就寫「圖鑑裡已經有了」，不會重複多一格。 */
+function shrinkShowcase(fromPic, toPic, title, isNew, head) {
+  const box = el('div', 'grow-pic shrink');
+  fromPic.className = 'shrink-from'; toPic.className = 'shrink-to';
+  box.append(fromPic, el('span', 'grow-arrow', '➜'), toPic);
+  const nG = growDexCount(), all = growDexAll();
+  showcase(box, title, isNew ? `🌱 成長圖鑑 ${nG} / ${all}（新的樣子！）` : '這個樣子圖鑑裡已經有了・10 分鐘後變回來',
+    isNew ? { head, n: nG, all } : { head });
+}
 // 寵物喝變小藥水：小朋友、大朋友暫時變回寶寶的樣子（成長進度不會不見）
 function petDrinkPotion(foodId, p) {
   p = p || G.pet;
@@ -6263,7 +6279,13 @@ function petDrinkPotion(foodId, p) {
   if (!G.food[foodId]) return false;
   G.food[foodId]--;
   if (!G.food[foodId]) delete G.food[foodId];
+  const fromStage = p.stage;
   p.small = Date.now() + SMALL_MS;
+  const isNew = growDexAdd(p.species, 'baby');   // 沒養過這種的寶寶：喝藥水也能收集到寶寶的樣子
+  try {
+    shrinkShowcase(renderPetPortrait({ species: p.species, stage: fromStage, growth: 0 }, 120, 112), renderPetPortrait({ species: p.species, stage: 'baby', growth: 0 }, 96, 90),
+      `${petNameOf(p)}變回寶寶了！`, isNew, '🧪 變小了！');
+  } catch (e) {}
   Sound.play('magic');
   petBurst({ kind: 'emoji', emoji: '✨', spread: 50 }, 6);
   pet.squishV = -8; pet.happyUntil = performance.now() + 2000;
@@ -7001,6 +7023,7 @@ function phPlayStop(a, now) { a.play = null; a.idleUntil = (now || performance.n
    只有寵物屋裡的寵物（蛋不參加）。離開寵物屋就結束。 */
 let phMode = null;
 /* endLabel：活動進行中，「📣 叫大家」那顆按鈕變成什麼（按了就結束這個活動） */
+var PH_HIDE_HINT1 = 15000, PH_HIDE_HINT2 = 30000;   // 捉迷藏：躲多久開始給提示（var：測試要改）
 const PH_MODES = [
   { id: 'sleep', icon: '💤', name: '大家去睡覺', endLabel: '☀️ 叫大家起床' },
   { id: 'dance', icon: '💃', name: '一起跳舞' },
@@ -7185,8 +7208,21 @@ function phModeActor(a, now, room, blk, dt) {
     if (!a.hidden && !a.found) {
       if (!atGoal(a)) { actorWalk(a, dt, now, room, blk, 0); return true; }
       a.hidden = true;   // 躲好了
+      a.hiddenAt = now;
     }
-    if (a.hidden) return true;
+    if (a.hidden) {
+      /* 一直找不到（家長：要不要跳出提示）：躲了 15 秒會偷偷晃一下、冒出 👀；
+         30 秒還沒找到，頭上冒 ❓、發出聲音，妹妹看圖就知道在哪 */
+      const since = now - (a.hiddenAt || now);
+      if (since > PH_HIDE_HINT1 && now > (a.hintAt || 0)) {
+        const strong = since > PH_HIDE_HINT2;
+        a.hintAt = now + (strong ? 1800 : 3500);
+        a.squishV = strong ? -6 : -3; a.leanV = (Math.random() < .5 ? -1 : 1) * (strong ? 50 : 30);
+        petBurst({ kind: 'emoji', emoji: strong ? '❓' : '👀', spread: 6 }, 1, a);
+        if (strong) Sound.play('petHappy');
+      }
+      return true;
+    }
     return false;        // 找到的就照平常逛
   }
   if (m.id === 'concert') {
