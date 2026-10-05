@@ -3565,7 +3565,11 @@ function drawRoom(ctx, room, opts) {
   if (opts.showGrid) drawGrid(ctx, room);
 
   const g = opts.ghost;
-  if (g) {
+  const onTable = g && g.table != null && room.items.find(x => x.uid === g.table);
+  if (onTable) { // 要放到桌上：整張桌子亮綠色
+    const tf = footprint(FURN_BY_ID[onTable.id], onTable.rot);
+    drawFootprint(ctx, onTable.x, onTable.y, tf.w, tf.d, 'rgba(90,200,120,.45)', '#3fa86a');
+  } else if (g) {
     const fp = footprint(g.def, g.rot);
     drawFootprint(ctx, g.x, g.y, fp.w, fp.d, g.ok ? 'rgba(90,200,120,.35)' : 'rgba(230,80,80,.35)', g.ok ? '#3fa86a' : '#d04545');
   }
@@ -3573,7 +3577,7 @@ function drawRoom(ctx, room, opts) {
   if (hov) drawFootprint(ctx, hov.x, hov.y, hov.w, hov.d, 'rgba(255,220,90,.3)', '#e8b43a');
 
   const draw = solid.slice();
-  if (g && g.def.layer !== 'floor') {
+  if (g && g.def.layer !== 'floor' && !onTable) {
     const fp = footprint(g.def, g.rot);
     draw.push({ x: g.x, y: g.y, w: fp.w, d: fp.d, z: 0, h: itemHeight(g.def), def: g.def, ghost: g });
   }
@@ -11238,6 +11242,13 @@ function moveGhost(w) {
   hold.x = Math.round(g.gx - fp.w / 2);
   hold.y = Math.round(g.gy - fp.d / 2);
   hold.ok = canPlace(curRoom(), hold.def, hold.x, hold.y, hold.rot, hold.fromUid);
+  /* 桌上小物（筆筒、花瓶、相框…）移到桌子上：直接放到桌上（家長：拿著筆筒放不上桌子，以前只能從桌子的選單放） */
+  hold.table = null; hold.tableFull = false;
+  if (canSitOnTable(hold.def.id)) {
+    const tx = Math.floor(g.gx), ty = Math.floor(g.gy);
+    const t = curRoom().items.find(it => it.uid !== hold.fromUid && canHaveTop(it.id) && (() => { const f = footprint(FURN_BY_ID[it.id], it.rot); return tx >= it.x && tx < it.x + f.w && ty >= it.y && ty < it.y + f.d; })());
+    if (t) { if (t.top) { hold.ok = false; hold.tableFull = true; } else { hold.table = t.uid; hold.ok = true; } }
+  }
 }
 
 // ── 拿起／放下 ──
@@ -11311,9 +11322,19 @@ function startHoldFromRoom(it) {
   updateHoldUI();
 }
 function placeHold() {
-  if (!hold || !hold.ok) { toast('這裡放不下喔'); Sound.play('miss'); return; }
+  if (!hold || !hold.ok) { toast(hold && hold.tableFull ? '桌上已經有東西了，換一張桌子吧' : '這裡放不下喔'); Sound.play('miss'); return; }
   Sound.play('place');
   const room = curRoom(), onWall = hold.def.layer === 'wall';
+  if (hold.table != null) { // 放到桌上
+    const t = room.items.find(x => x.uid === hold.table);
+    if (t && !t.top && (hold.fromUid || takeItem(hold.def.id))) {
+      t.top = hold.def.id;
+      toast(`${hold.def.name} 放到桌上了`);
+      if (!hold.fromUid) sessionLog.placed++;
+      hold = null; updateHoldUI(); commit();
+      return;
+    }
+  }
   const spot = onWall ? { side: hold.side, pos: hold.pos } : { x: hold.x, y: hold.y, rot: hold.rot };
   const list = onWall ? room.wallItems : room.items;
   if (hold.fromUid) {
@@ -11491,7 +11512,7 @@ function updateHoldUI() {
         : `點地板把「${hold.def.name}」移過去，再按「✓ 放這裡」`)
       : (onWall
         ? `正在掛「${hold.def.name}」：移到牆上點一下掛好，R 換另一面牆`
-        : `正在擺放「${hold.def.name}」：點地板放下，R 旋轉`);
+        : canSitOnTable(hold.def.id) ? `正在擺放「${hold.def.name}」：點桌子放在桌上，或點地板放下` : `正在擺放「${hold.def.name}」：點地板放下，R 旋轉`);
   requestDraw();
 }
 

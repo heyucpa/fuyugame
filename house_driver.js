@@ -2797,6 +2797,34 @@
     } catch (e) { fails.push('開場動畫測試出錯：' + e.message); }
     finally { G.introSeen = true; }
 
+    /* 102 桌上小物（筆筒…）拿著直接移到桌子上就能放（家長：筆筒放不上桌子） */
+    var keep102 = JSON.stringify({ rooms: G.rooms, inv: G.inv, cur: G.cur });
+    var realToast102 = toast, msg102 = ''; toast = function(m){ msg102 = m; };
+    try {
+      G.away = null; G.cur = 0; var rm = curRoom();
+      rm.items = [{ uid: 90201, id: 'wood_table', x: 2, y: 2, rot: 0 }];
+      G.inv.pencil_cup = 1; G.inv.flower_vase = 1;
+      var tw = iso(2.5, 2.5, 0);   // 桌子那一格的中心
+      startHoldFromInv('pencil_cup'); moveGhost({ x: tw.x, y: tw.y });
+      if (!hold || hold.table !== 90201 || !hold.ok) fails.push('拿著筆筒移到桌子上，沒有變成「可以放在桌上」');
+      draw();
+      placeHold();
+      var t102 = rm.items.find(function(x){ return x.uid === 90201; });
+      if (!t102 || t102.top !== 'pencil_cup' || G.inv.pencil_cup) fails.push('筆筒沒有放到桌上（或沒有從我的東西扣掉）');
+      if (rm.items.some(function(x){ return x.id === 'pencil_cup'; })) fails.push('筆筒被放到地板上，不是桌上');
+      // 桌上已經有東西：不能再放
+      startHoldFromInv('flower_vase'); moveGhost({ x: tw.x, y: tw.y });
+      if (hold.ok) fails.push('桌上已經有筆筒，花瓶還可以放上去');
+      placeHold();
+      if (!/桌上已經有東西/.test(msg102) || t102.top !== 'pencil_cup' || G.inv.flower_vase !== 1) fails.push('桌上有東西時，沒有說「桌上已經有東西了」');
+      cancelHold();
+      // 不是桌子的地方：照平常放在地上
+      startHoldFromInv('flower_vase'); var fw = iso(5.5, 5.5, 0); moveGhost({ x: fw.x, y: fw.y });
+      if (hold.table != null) fails.push('不是桌子的地方也當成桌上');
+      cancelHold();
+    } catch (e) { fails.push('桌上小物測試出錯：' + e.message); }
+    finally { cancelHold(); hold = null; var k102 = JSON.parse(keep102); G.rooms = k102.rooms; G.inv = k102.inv; G.cur = k102.cur; toast = realToast102; updateHoldUI(); commit(); }
+
     /* 101 背對著坐在椅子上：不畫腿和鞋子（以前鞋子畫在椅墊上，看起來像站在椅子上） */
     try {
       var shoes = 0, realShoe = drawShoe; drawShoe = function(){ shoes++; return realShoe.apply(this, arguments); };
