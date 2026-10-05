@@ -2891,7 +2891,7 @@
       if (!G.away || G.away.place !== 'amusement' || !host.n || host.n.id !== 'amuse') fails.push('去遊樂園沒有兔兔姊姊迎接');
       if (lineList('hostAmuse').map(function(l){ return l.split('{名字}').join(charName()); }).indexOf(pickLine(hostLineKey(), { 名字: charName() })) < 0) fails.push('兔兔姊姊沒有說遊樂園的話');
       var rmA = curRoom(), byId = function(id){ return rmA.items.find(function(x){ return x.id === id; }); };
-      ['carousel', 'ferris_wheel', 'cotton_cart', 'balloon_stand', 'teacup_ride', 'popcorn_cart'].forEach(function(id){ if (!byId(id)) fails.push('遊樂園沒有 ' + id); });
+      ['carousel', 'ferris_wheel', 'cotton_cart', 'balloon_stand', 'teacup_ride', 'popcorn_cart', 'roller_coaster'].forEach(function(id){ if (!byId(id)) fails.push('遊樂園沒有 ' + id); });
       if (rmA.wallItems.filter(function(w){ return w.id === 'pennant'; }).length < 2) fails.push('遊樂園牆上沒有三角旗');
       // 遊客：三位動物朋友在逛、拿氣球，點了會說話
       if (!host.crowd || host.crowd.length !== 3) fails.push('遊樂園沒有遊客（' + (host.crowd && host.crowd.length) + '）');
@@ -2911,7 +2911,7 @@
       }
       if (FURNITURE_ACT.ticket_booth !== 'ticket' || !ACTIVITIES.ticket) fails.push('售票亭點了不能買門票');
       // 旋轉木馬、摩天輪：真的坐上去，位置會動，摩天輪會升高
-      [['carousel', 'carousel'], ['ferris', 'ferris_wheel'], ['teacup', 'teacup_ride']].forEach(function(pr){
+      [['carousel', 'carousel'], ['ferris', 'ferris_wheel'], ['teacup', 'teacup_ride'], ['coaster', 'roller_coaster']].forEach(function(pr){
         fufu.act = null; fufu.ride = null; fufu.pose = null;
         var t0 = performance.now();
         fufuStartAct(pr[0], t0, byId(pr[1]), true);
@@ -2920,6 +2920,14 @@
         var p2 = fufu.ride && ridePos(t0 + 500);
         if (!p1 || !p2 || (Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y) < .1 && Math.abs(p1.z - p2.z) < 5)) fails.push('坐' + pr[1] + '沒有動');
         if (pr[0] === 'ferris' && p2 && !(p2.z > 60)) fails.push('摩天輪轉了 3 秒還沒升高（z=' + (p2 && p2.z) + '）');
+        if (pr[0] === 'coaster') {
+          if (!p2 || !p2.car) fails.push('坐雲霄飛車沒有車廂');
+          var itC = byId('roller_coaster'), look = itemLook(FURN_BY_ID.roller_coaster, 0, itC, FURN_BY_ID.roller_coaster.parts);
+          if (look.some(function(q){ return q.car; })) fails.push('坐雲霄飛車時，車站上還停著一台車廂');
+          // 去程會爬到最高點
+          var maxZ = 0; for (var cs = 0; cs <= 34; cs++) { fufu.ride.start = t0 + 500 - cs * 100; var rz = ridePos(t0 + 500); if (rz) maxZ = Math.max(maxZ, rz.z); }
+          if (maxZ < 70) fails.push('雲霄飛車沒有爬到最高點（最高 ' + maxZ + '）');
+        }
         draw();
         fufu.act = null; fufu.ride = null;
       });

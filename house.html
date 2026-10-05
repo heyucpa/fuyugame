@@ -1857,6 +1857,8 @@ const treeParts = (leaf, leaf2, fruit) => [
   { k: 'ball', x: 1.62, y: .8, z: 70, r: 5, c: fruit },
   { k: 'ball', x: 1.62, y: 1.2, z: 84, r: 5, c: fruit }
 ];
+// 🎢 雲霄飛車的軌道高度（y＝0～4 每一格邊上的高度）：車站在 y＝4，出發往後先過小山坡、衝下來、爬到最高點
+const COASTER_H = [14, 70, 18, 44, 12];
 const PLACE_FURNITURE = [
   { id: 'comic_shelf', name: '漫畫櫃', theme: 'modern', w: 2, d: 1,
     parts: [{ x: 0, y: 0, w: 2, d: .6, z: 0, h: 96, c: '#6b4b35' }].concat(comicRow(0, 6), comicRow(0, 36), comicRow(0, 66)) },
@@ -2250,6 +2252,25 @@ const PLACE_FURNITURE = [
     const cs = ['#ff6b6b', '#ffd35c', '#6bb6ff', '#7bd389', '#ff9ec4', '#b18cff'];
     for (let i = 0; i < 6; i++) { const x = 4 + i * (W - 8) / 5, y = 3 + Math.sin(i / 5 * Math.PI) * 5; ctx.fillStyle = cs[i]; ctx.beginPath(); ctx.moveTo(x - 4, y); ctx.lineTo(x + 4, y); ctx.lineTo(x, y + 9); ctx.closePath(); ctx.fill(); }
   } },
+  // 🎢 雲霄飛車（家長：遊樂園那一區改成雲霄飛車）：軌道沿著 y 有高有低，前面是車站；坐的時候車廂跟著她跑
+  { id: 'roller_coaster', name: '雲霄飛車', theme: 'cute', w: 2, d: 5,
+    parts: [].concat(
+      // 支架（白色柱子，高度跟著軌道）
+      COASTER_H.slice(0, 4).map((h, i) => ({ x: .93, y: i + .45, w: .14, d: .1, z: 0, h: Math.max(4, (h + COASTER_H[i + 1]) / 2 - 4), c: '#e9eef3' })),
+      // 軌道：一段一段斜坡
+      COASTER_H.slice(0, 4).map((h, i) => {
+        const a = h, b = COASTER_H[i + 1];
+        return { k: 'ramp', x: .55, y: i, w: .9, d: 1, zHi: Math.max(a, b), zLo: Math.min(a, b), t: 4, dir: a > b ? 'yl' : 'yh', c: ['#ff6b6b', '#ffd35c', '#6bb6ff', '#ff9ec4'][i] };
+      }),
+      [
+        { x: .3, y: 4, w: 1.4, d: 1, z: 0, h: 8, c: '#ffd35c' },                 // 車站月台
+        { x: .3, y: 4.85, w: 1.4, d: .1, z: 8, h: 6, c: '#ffffff' },
+        { x: .32, y: 4.1, w: .08, d: .08, z: 8, h: 34, c: '#e9eef3' },            // 車站的小屋頂
+        { x: 1.6, y: 4.1, w: .08, d: .08, z: 8, h: 34, c: '#e9eef3' },
+        { x: .25, y: 3.95, w: 1.5, d: .4, z: 42, h: 4, c: '#e8505b' },
+        { x: .6, y: 4.25, w: .8, d: .5, z: 8, h: 8, c: '#e8505b', car: true },     // 停在車站的車廂（坐上去時跟著她跑）
+        { k: 'ball', x: 1, y: 4.3, z: 18, r: 4, c: '#ffd35c', car: true }
+      ]) },
   // ☕ 咖啡杯：坐進杯子裡轉圈圈
   { id: 'teacup_ride', name: '咖啡杯', theme: 'cute', w: 2, d: 2,
     parts: [
@@ -2430,6 +2451,7 @@ Object.assign(ACTIVITIES, {
   carousel: { label: '🎠 坐旋轉木馬', name: '坐旋轉木馬', fx: '🎵', lines: ['轉呀轉～', '木馬上上下下的！', '好好玩喔！', '再一圈！'] },
   ferris: { label: '🎡 坐摩天輪', name: '坐摩天輪', fx: '✨', lines: ['好高喔！看得好遠～', '我看到我家了！', '慢慢轉上去了～', '雲好近喔！'] },
   cotton: { label: '🍭 買棉花糖', name: '買棉花糖', fx: '🍭', lines: ['軟軟的、甜甜的～', '粉紅色的棉花糖！', '像雲一樣！'] },
+  coaster: { label: '🎢 坐雲霄飛車', name: '坐雲霄飛車', fx: '💨', lines: ['哇啊啊啊～好快！', '衝下去了！', '好高喔！心臟碰碰跳～', '再坐一次！'] },
   teacup: { label: '☕ 坐咖啡杯', name: '坐咖啡杯', fx: '💫', lines: ['轉呀轉，頭暈暈～', '咖啡杯轉好快！', '哇～世界在轉圈圈！'] },
   popcorn: { label: '🍿 買爆米花', name: '買爆米花', fx: '🍿', lines: ['好香喔！', '甜甜的爆米花～', '咔滋咔滋！'] },
   ticket: { label: '🎟️ 買門票', name: '買門票', fx: '🎟️', lines: ['兔兔，我要一張門票！', '拿到門票了，今天要玩什麼呢？', '門票上有星星章耶！'] },
@@ -2448,7 +2470,7 @@ Object.assign(FURNITURE_ACT, {
   gaming_desk: 'pcgame', figure_shelf: 'figures', barn: 'farmcare', hay_bale: 'hay', trough: 'trough',
   lib_shelf: 'findbook', low_shelf: 'findbook', story_stand: 'storybook', lib_counter: 'passport', tablet_table: 'ebook', round_red_table: 'storytime',
   pond: 'pondfish', flower_bed: 'bfly', display_tank: 'tank', heart_sculpture: 'heart', sandbox: 'sand', picnic_mat: 'picnic', fountain: 'fountain', icecream_cart: 'icecream',
-  carousel: 'carousel', ferris_wheel: 'ferris', cotton_cart: 'cotton', balloon_stand: 'balloon', ticket_booth: 'ticket', teacup_ride: 'teacup', popcorn_cart: 'popcorn',
+  roller_coaster: 'coaster', carousel: 'carousel', ferris_wheel: 'ferris', cotton_cart: 'cotton', balloon_stand: 'balloon', ticket_booth: 'ticket', teacup_ride: 'teacup', popcorn_cart: 'popcorn',
   school_desk: 'lesson', school_desk_b: 'lesson', teacher_desk: 'homework', slide: 'slide', swing: 'swing', flagpole: 'flag', finish_flag: 'run'
 });
 FURNITURE_USE.park_bench = { use: 'sit', seats: [{ x: .55, y: .55, z: 20 }, { x: 1.45, y: .55, z: 20 }], front: [0, 1] };
@@ -2539,7 +2561,7 @@ const PLACES = {
   amusement: { name: '遊樂園', host: 'amuse', emoji: '🎡', desc: '坐旋轉木馬、摩天輪，買棉花糖、拿氣球！', rooms: [
     { name: '遊樂園', w: 10, d: 10, wall: 'wp_candy', floor: 'fl_amuse', items: [
       ['ferris_wheel', 0, 0], ['street_lamp', 4, 0], ['ticket_booth', 6, 0], ['balloon_stand', 9, 0],
-      ['carousel', 5, 3], ['shade_tree', 0, 3], ['teacup_ride', 8, 4], ['popcorn_cart', 2, 6], ['flower_bed', 0, 6],
+      ['carousel', 5, 3], ['roller_coaster', 0, 2], ['teacup_ride', 8, 4], ['popcorn_cart', 2, 6],
       ['park_bench', 2, 8, 0], ['cotton_cart', 6, 8], ['street_lamp', 9, 9], ['flower_bed', 8, 7]
     ], wallItems: [['pennant', 'L', 1], ['pennant', 'L', 5], ['pennant', 'R', 1], ['pennant', 'R', 6]] }
   ] },
@@ -4003,6 +4025,10 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-10T09:00', title: '遊樂園有雲霄飛車了！🎢', lines: [
+    ['🎢', '遊樂園左邊多了雲霄飛車：從車站出發，爬到最高點再咻地衝下來！'],
+    ['🙌', '衝下來的時候小可愛會舉手歡呼']
+  ], newItems: [] },
   { id: '2026-10-09T20:00', title: '每次回家都有小動畫！', lines: [
     ['🏡', '隔一陣子再打開，會有短短的「歡迎回家」：早上、白天、傍晚、晚上都不一樣'],
     ['🐾', '照顧中的寵物會從門口衝出來迎接你'],
@@ -6157,6 +6183,7 @@ const puffs = (n, t, speed, f) => Array.from({ length: n }, (_, i) => f((t * spe
 function itemLook(def, rot, it, parts) {
   const now = performance.now(), t = now / 1000;
   const active = fufu.act && fufu.act.uid === it.uid ? fufu.act.key : null;
+  if (active === 'coaster') parts = parts.filter(p => !p.car);   // 🎢 車廂跟著她跑了，車站上的那台先不畫
   const st = itemState[it.uid];
   const alwaysMoving = def.id === 'fishtank' || def.id === 'pond'; // 池塘：魚一直游、小鴨子一直漂
   if (def.id === 'planter') parts = parts.concat(gardenParts(it));   // 🌱 花盆：照長到哪裡畫芽、苗、花
@@ -6610,6 +6637,7 @@ const RIDES = {
   swing: { dur: 6000 },
   carousel: { dur: 7000 },   // 🎠 坐在木馬上繞圈圈、上下跳
   teacup: { dur: 6000 },     // ☕ 坐在杯子裡轉圈圈
+  coaster: { dur: 7600 },    // 🎢 從車站出發，沿著軌道衝到最後面再衝回來
   ferris: { dur: 9000 }      // 🎡 坐上車廂，慢慢轉上去再轉下來
 };
 const lerp = (a, b, k) => a + (b - a) * Math.max(0, Math.min(1, k));
@@ -6625,6 +6653,7 @@ function rideSfx(r, t) { // 動作到了那一刻才出聲（每段只響一次�
   if (r.key === 'slide' && t >= 2) once('w', 'whoosh');
   if (r.key === 'swing') { const k = Math.floor(t * 3.2 / Math.PI); if (k > 0 && k < 6) once('c' + k, 'creak'); }
 }
+function rideWorld(r, lx, ly, z) { const p = rotPoint(r.def, r.it.rot || 0, lx, ly); return { x: r.it.x + p.x, y: r.it.y + p.y, z }; }
 function ridePos(now) {
   const r = fufu.ride;
   if (!r || !fufu.act || fufu.act.key !== r.key) return null;
@@ -6640,6 +6669,16 @@ function ridePos(now) {
   } else if (r.key === 'carousel') {
     const a = t * 1.3;
     lx = 1.5 + Math.cos(a) * 1.05; ly = 1.5 + Math.sin(a) * 1.05; z = 16 + Math.abs(Math.sin(t * 4)) * 6; sit = true;
+  } else if (r.key === 'coaster') {
+    // 去：車站 y＝4.5 → 0.3（3.4 秒）；停一下；回：0.3 → 4.5（3.4 秒）。高度照軌道算
+    const go = t < 3.4 ? t / 3.4 : t < 4 ? 1 : Math.max(0, 1 - (t - 4) / 3.4);
+    const ease = go * go * (3 - 2 * go);
+    ly = 4.5 - ease * 4.2; lx = 1;
+    const yi = Math.max(0, Math.min(3.999, ly)), i0 = Math.floor(yi), f = yi - i0;
+    const yy = Math.min(4, ly);
+    z = (ly >= 4 ? COASTER_H[4] : COASTER_H[i0] + (COASTER_H[i0 + 1] - COASTER_H[i0]) * f) + 8;
+    sit = true; cheer = yy < 2.2 && yy > 1.2;   // 衝下來那一段舉手歡呼
+    return Object.assign(rideWorld(r, lx, ly, z), { sit, cheer, car: true });
   } else if (r.key === 'teacup') {
     const a = t * 3.2;   // 轉得比木馬快
     lx = 1 + Math.cos(a) * .55; ly = 1 + Math.sin(a) * .55; z = 12; sit = true; cheer = t > 4.5;
@@ -6658,6 +6697,11 @@ function drawRiding(ctx, rp) {
   ctx.fillStyle = 'rgba(40,30,20,.18)';
   const g = iso(rp.x, rp.y, 0);
   ctx.beginPath(); ctx.ellipse(g.x, g.y, 12, 5, 0, 0, Math.PI * 2); ctx.fill();
+  if (rp.car) { // 🎢 雲霄飛車的車廂：她坐在裡面
+    const c = iso(rp.x, rp.y, rp.z - 8);
+    ctx.fillStyle = '#e8505b'; ctx.beginPath(); ctx.ellipse(c.x, c.y, 15, 7, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ffd35c'; ctx.beginPath(); ctx.arc(c.x + 12, c.y - 2, 3, 0, Math.PI * 2); ctx.fill();
+  }
   ctx.save();
   if (rp.sit) {
     ctx.translate(p.x, p.y + 12 * k);
