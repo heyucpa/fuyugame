@@ -2797,6 +2797,47 @@
     } catch (e) { fails.push('開場動畫測試出錯：' + e.message); }
     finally { G.introSeen = true; }
 
+    /* 100 🏡 歡迎回家（依時間、寵物迎接、節日、提醒）＋🎃 節慶活動開始的大圖提醒（每個節日每年一次） */
+    var keep100 = JSON.stringify({ garden: G.garden || {}, ss: G.seasonSeen || {}, og: G.openGift });
+    try {
+      [[7, 'morning'], [13, 'day'], [17, 'evening'], [22, 'night'], [2, 'night']].forEach(function(h){ WELCOME_HOUR = h[0]; if (welcomeInfo().tod !== h[1]) fails.push(h[0] + ' 點的歡迎動畫不是' + h[1]); });
+      WELCOME_HOUR = null;
+      G.garden = {}; SEASON_TODAY = [6, 1];
+      var w0 = welcomeInfo();
+      if (w0.msg !== '歡迎回家！') fails.push('沒有事情的時候，歡迎動畫不是說「歡迎回家！」：' + w0.msg);
+      SEASON_TODAY = [10, 20];
+      if (!/萬聖節/.test(welcomeInfo().msg) || welcomeInfo().season !== 'halloween') fails.push('萬聖節的歡迎動畫沒有節日提醒');
+      G.garden = { 1: { s: 4, w: 0, f: 'red' } };
+      if (!/花開了/.test(welcomeInfo().msg)) fails.push('花開了，歡迎動畫沒有提醒');
+      G.garden = {};
+      // 每一種都畫得出來
+      var c100 = document.createElement('canvas').getContext('2d');
+      ['morning', 'day', 'evening', 'night'].forEach(function(td){ [0, 1200, 2500].forEach(function(t){ try { drawWelcome(c100, t, { tod: td, season: 'halloween', msg: 'x', pet: G.pet.stage !== 'egg' ? G.pet : null }); drawWelcome(c100, t, { tod: td, season: null, msg: 'x', pet: null }); } catch (eW) { fails.push('歡迎動畫畫不出來（' + td + '）：' + eW.message); } }); });
+      // 播的時候爸媽的包裹先等；可以跳過
+      playWelcome();
+      if (!introPlaying || !document.getElementById('intro')) fails.push('歡迎動畫沒有播');
+      var t100 = performance.now(), gs100 = giftVisit.state; for (var k100 = 1; k100 <= 3; k100++) giftTick(t100 + k100 * 600000);
+      if (giftVisit.state !== gs100) fails.push('歡迎動畫播的時候，爸媽的包裹就來了');
+      document.querySelector('#intro .intro-skip').click();
+      if (introPlaying) fails.push('歡迎動畫按跳過沒有結束');
+      giftReset();
+      // 節慶提醒：第一次跳大圖，同一年不再跳；按「去看限定商品」打開商店的限定區
+      G.seasonSeen = {}; G.openGift = true; $('#modal').hidden = true; SC_QUEUE.length = 0; var sc100 = document.getElementById('showcase'); if (sc100) sc100.remove(); resting = false; cancelHold(); hold = null;
+      maybeSeasonNotice();
+      if ($('#modal').hidden || !/萬聖節活動開始了/.test($('#modalCard').textContent)) fails.push('萬聖節開始，沒有跳出提醒大圖');
+      else {
+        var goB = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return /限定商品/.test(b.textContent); })[0];
+        goB.onclick();
+        if (!document.querySelector('#tabBody .season-box')) fails.push('按「去看限定商品」沒有打開限定區');
+      }
+      $('#modal').hidden = true;
+      maybeSeasonNotice();
+      if (!$('#modal').hidden) fails.push('萬聖節提醒同一年跳了兩次');
+      SEASON_TODAY = [6, 1]; G.seasonSeen = {}; maybeSeasonNotice();
+      if (!$('#modal').hidden) fails.push('不是節日也跳出節日提醒');
+    } catch (e) { fails.push('歡迎動畫／節慶提醒測試出錯：' + e.message + ' ' + (e.stack || '').split('\n')[1]); }
+    finally { var k100s = JSON.parse(keep100); G.garden = k100s.garden; G.seasonSeen = k100s.ss; G.openGift = k100s.og; SEASON_TODAY = [6, 1]; WELCOME_HOUR = null; $('#modal').hidden = true; introPlaying = false; var ib100 = document.getElementById('intro'); if (ib100) ib100.remove(); openTab('inv'); }
+
     /* 95 🎡 遊樂園：出門選單有、兔兔姊姊迎接、旋轉木馬和摩天輪真的坐上去轉、棉花糖要花錢買、氣球拿在手上；棉花糖商店不賣 */
     var realToast95 = toast, realWalk95 = walkTrip, keep95 = { bells: G.bells, kf: JSON.stringify(G.kidFood), cd: JSON.stringify(G.actCD || {}) };
     toast = function(){};

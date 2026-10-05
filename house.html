@@ -589,6 +589,9 @@ button.pass { font: inherit; }
 .intro-skip { position: absolute; top: max(12px, env(safe-area-inset-top)); right: 12px; border: none; background: rgba(255,255,255,.85); border-radius: 999px; padding: 8px 16px; font-size: 16px; font-weight: 700; color: #3a3240; }
 .intro-cap { position: absolute; left: 0; right: 0; bottom: 14%; text-align: center; font-size: clamp(24px, 6vw, 44px); font-weight: 800; color: #7a4a2e; opacity: 0; transition: opacity .6s; text-shadow: 0 2px 0 #fff; }
 .intro-cap.on { opacity: 1; }
+.intro.welcome .intro-cap { color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,.35); }
+.season-pics { font-size: 54px; text-align: center; letter-spacing: 6px; margin: 4px 0 -4px; }
+.season-until { text-align: center; font-size: 14px; color: var(--muted); margin: -6px 0 8px; }
 .invite-who { text-align: center; font-size: 13px; color: var(--muted); margin-top: -4px; }
 .invite-name { width: 100%; box-sizing: border-box; font-size: 16px; padding: 8px 10px; border: 2px solid var(--line); border-radius: 10px; margin: 4px 0 8px; }
 .invite-pic { display: flex; justify-content: center; margin: 4px 0; }
@@ -3996,6 +3999,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-09T20:00', title: '每次回家都有小動畫！', lines: [
+    ['🏡', '隔一陣子再打開，會有短短的「歡迎回家」：早上、白天、傍晚、晚上都不一樣'],
+    ['🐾', '照顧中的寵物會從門口衝出來迎接你'],
+    ['🌸', '花開了、蛋快孵了，也會提醒你'],
+    ['🎃', '節日活動開始的時候，會跳一張大圖告訴你']
+  ], newItems: [] },
   { id: '2026-10-09T15:00', title: '有開場動畫了！🎬', lines: [
     ['🎬', '新的存檔第一次玩會有開場動畫：搬家小貨車開到新家！'],
     ['⚙️', '想再看一次：「⚙️ 設定」最上面的「🎬 再看一次開場」']
@@ -4392,6 +4401,7 @@ function normalizeSave(g) {
   if (g.guideAsked === undefined && out.guide !== 'egg') out.guideAsked = true; // 教到一半的不要再問
   if (!g.welcome) out.welcome = { at: 0, uncle: true, grandma: true }; // 已經在玩的存檔不算搬新家
   if (out.seasonDex != null && !isObj(out.seasonDex)) delete out.seasonDex;
+  if (out.seasonSeen != null && !isObj(out.seasonSeen)) delete out.seasonSeen;
   if (out.kidGrowDay != null && !(isObj(out.kidGrowDay) && typeof out.kidGrowDay.d === 'string' && num(out.kidGrowDay.n))) delete out.kidGrowDay;
   if (out.flowerDex != null && !isObj(out.flowerDex)) delete out.flowerDex;
   if (out.garden != null && !isObj(out.garden)) delete out.garden;
@@ -13491,7 +13501,7 @@ function openFishing() {
    ・播的時候爸媽送包裹、公告、小手教學都先等一下 */
 const INTRO_MS = 10500;
 function playIntro(onDone) {
-  if (introPlaying || document.getElementById('intro')) return;
+  { const old = document.getElementById('intro'); if (introPlaying || (old && !old.classList.contains('out'))) return; if (old) old.remove(); }   // 上一個還在淡出：直接拿掉
   introPlaying = true;
   const box = el('div', 'intro'); box.id = 'intro';
   const cv = document.createElement('canvas'); box.appendChild(cv);
@@ -13596,6 +13606,149 @@ function drawIntroInside(g, t, outfit) {
   drawGirl(g, { t: t / 1000, outfit, face: 'joy', stage: kidLookStage() });
   g.restore();
 }
+/* ===== 🏡 歡迎回家（家長：一週玩兩三次，每次打開來個短短的、不一樣的開場）=====
+   隔 6 小時以上才打開才播，大約 3.5 秒、可以跳過。每次依當下情況組合：
+   ・真實時間：早上（日出、小鳥）、白天（藍天白雲）、傍晚（橘紅色天空）、晚上（月亮星星、窗戶亮燈）
+   ・照顧中的那隻寵物從門口衝出來迎接
+   ・節日：萬聖節門口有南瓜燈、蝙蝠飛過
+   ・有東西在等她：花開了、寵物蛋快孵了、節日活動 → 最後的字幕提醒；沒有就「歡迎回家！」 */
+const WELCOME_ANIM_MS = 3600;
+var WELCOME_HOUR = null;   // 測試用：指定現在幾點
+function welcomeInfo() {
+  const h = WELCOME_HOUR != null ? WELCOME_HOUR : new Date().getHours();
+  const tod = h >= 5 && h < 10 ? 'morning' : h >= 10 && h < 16 ? 'day' : h >= 16 && h < 19 ? 'evening' : 'night';
+  const se = seasonNow();
+  const bloom = Object.values(G.garden || {}).some(x => x && x.s >= 4);
+  const egg = G.pets.some(p => p.stage === 'egg' && p.growth >= PET_STAGE_BY_ID.egg.next * .5);
+  const msg = bloom ? '🌸 陽台的花開了！' : egg ? '🥚 寵物蛋快孵出來了！' : se ? `${se.icon} ${se.name}活動進行中！` : '歡迎回家！';
+  const pet = G.pet && G.pet.stage !== 'egg' ? G.pet : null;
+  return { tod, season: se && se.id, msg, pet };
+}
+function playWelcome(info) {
+  { const old = document.getElementById('intro'); if (introPlaying || (old && !old.classList.contains('out'))) return; if (old) old.remove(); }   // 上一個還在淡出：直接拿掉
+  info = info || welcomeInfo();
+  introPlaying = true;
+  const box = el('div', 'intro welcome'); box.id = 'intro';
+  const cv = document.createElement('canvas'); box.appendChild(cv);
+  const cap = el('div', 'intro-cap', '');
+  const skip = el('button', 'intro-skip', '跳過 ▶▶');
+  box.append(cap, skip);
+  document.body.appendChild(box);
+  const g = cv.getContext('2d'), start = performance.now();
+  let raf = 0, done = false, said = false, door = false;
+  const finish = () => {
+    if (done) return; done = true;
+    cancelAnimationFrame(raf); box.classList.add('out'); box.style.pointerEvents = 'none';
+    introPlaying = false;
+    setTimeout(() => box.remove(), 400);
+    try { stopSpeak(); } catch (e) {}
+  };
+  box.onclick = finish;
+  playWelcome.test = { finish, box, info };
+  const W = 400, H = 260;
+  function frame(now) {
+    const t = now - start;
+    if (t >= WELCOME_ANIM_MS) { finish(); return; }
+    const dpr = window.devicePixelRatio || 1, cw = box.clientWidth || 400, ch = box.clientHeight || 300;
+    if (cv.width !== Math.round(cw * dpr) || cv.height !== Math.round(ch * dpr)) { cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr); }
+    const k = Math.min(cw / W, ch / H) * dpr;
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.fillStyle = WELCOME_SKY[info.tod][1]; g.fillRect(0, 0, cv.width, cv.height);
+    g.setTransform(k, 0, 0, k, (cv.width - W * k) / 2, (cv.height - H * k) / 2);
+    drawWelcome(g, t, info);
+    if (!door && t > 900) { door = true; try { Sound.play(info.pet ? 'petHappy' : 'knock'); } catch (e) {} }
+    if (!said && t > 1900) { said = true; cap.textContent = info.msg; cap.classList.add('on'); try { speak(info.msg.replace(/^\S+\s/, '')); } catch (e) {} }
+    if (t > 3100) box.classList.add('fade');
+    raf = requestAnimationFrame(frame);
+  }
+  raf = requestAnimationFrame(frame);
+}
+// 天空的顏色：上、下
+const WELCOME_SKY = { morning: ['#ffd9b8', '#fff1d6'], day: ['#8fd0f5', '#cfeefc'], evening: ['#ff9e7a', '#ffd3a8'], night: ['#1f2a55', '#3b4a7a'] };
+function drawWelcome(g, t, info) {
+  const W = 400, H = 260, sky = WELCOME_SKY[info.tod], night = info.tod === 'night';
+  const grd = g.createLinearGradient(0, 0, 0, 170); grd.addColorStop(0, sky[0]); grd.addColorStop(1, sky[1]);
+  g.fillStyle = grd; g.fillRect(0, 0, W, 175);
+  // 太陽／月亮、星星、雲、小鳥
+  if (night) {
+    g.fillStyle = '#fff6c7'; g.beginPath(); g.arc(320, 50, 18, 0, Math.PI * 2); g.fill();
+    g.fillStyle = sky[0]; g.beginPath(); g.arc(328, 44, 16, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#fff6c7'; for (let i = 0; i < 18; i++) { const x = (i * 97) % W, y = 15 + (i * 53) % 110, tw = .5 + .5 * Math.sin(t / 200 + i); g.globalAlpha = tw; g.fillRect(x, y, 2, 2); } g.globalAlpha = 1;
+  } else {
+    const sy = info.tod === 'morning' ? 110 - t / 60 : info.tod === 'evening' ? 95 + t / 80 : 45;
+    g.fillStyle = info.tod === 'evening' ? '#ffb36b' : '#fff3b0'; g.beginPath(); g.arc(info.tod === 'morning' ? 70 : 330, sy, 20, 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.85)'; [[120 + t / 50, 40], [250 + t / 70, 70]].forEach(([x, y]) => { x = (x % 460) - 30; g.beginPath(); g.arc(x, y, 11, 0, Math.PI * 2); g.arc(x + 13, y - 5, 14, 0, Math.PI * 2); g.arc(x + 28, y, 10, 0, Math.PI * 2); g.fill(); });
+    if (info.tod === 'morning') { g.strokeStyle = '#6b5a4a'; g.lineWidth = 1.5; [0, 1].forEach(i => { const bx = 60 + t / 12 + i * 26, by = 60 + i * 12 + Math.sin(t / 120 + i) * 3, f = Math.sin(t / 80 + i) * 3; g.beginPath(); g.moveTo(bx - 6, by - f); g.quadraticCurveTo(bx - 3, by - 4, bx, by); g.quadraticCurveTo(bx + 3, by - 4, bx + 6, by - f); g.stroke(); }); }
+  }
+  // 草地、步道
+  g.fillStyle = night ? '#4f7a55' : '#a7d98a'; g.fillRect(0, 170, W, 90);
+  g.fillStyle = night ? '#8a8270' : '#e8dcc0'; g.beginPath(); g.moveTo(186, 192); g.lineTo(214, 192); g.lineTo(240, 260); g.lineTo(160, 260); g.closePath(); g.fill();
+  // 小屋（晚上窗戶亮燈）
+  const hx = 150;
+  g.fillStyle = '#fff8ee'; g.fillRect(hx, 112, 100, 80);
+  g.fillStyle = '#ff6f8f'; g.beginPath(); g.moveTo(hx - 12, 116); g.lineTo(hx + 50, 70); g.lineTo(hx + 112, 116); g.closePath(); g.fill();
+  g.fillStyle = night || info.tod === 'evening' ? '#ffe28a' : '#9fd8ff'; g.fillRect(hx + 12, 130, 20, 18); g.fillRect(hx + 68, 130, 20, 18);
+  const open = Math.min(1, Math.max(0, (t - 700) / 300));
+  g.fillStyle = '#ffe9a8'; g.fillRect(hx + 38, 148, 24, 44);
+  g.fillStyle = '#b97a56'; g.fillRect(hx + 38, 148, 24 * (1 - open * .8), 44);
+  // 🎃 萬聖節：門口兩顆南瓜燈、蝙蝠飛過
+  if (info.season === 'halloween') {
+    [[hx - 6, 190], [hx + 106, 190]].forEach(([x, y]) => { g.fillStyle = '#f0902f'; g.beginPath(); g.ellipse(x, y - 8, 11, 9, 0, 0, Math.PI * 2); g.fill(); g.fillStyle = '#ffe066'; g.fillRect(x - 5, y - 11, 3, 3); g.fillRect(x + 2, y - 11, 3, 3); g.fillRect(x - 4, y - 6, 8, 2); g.fillStyle = '#5f8a3a'; g.fillRect(x - 1, y - 19, 2, 4); });
+    g.fillStyle = night ? '#d8c4ff' : '#4b3b6b';
+    [0, 1, 2].forEach(i => { const bx = (40 + t / 9 + i * 90) % 440 - 20, by = 50 + i * 18 + Math.sin(t / 150 + i) * 6, f = Math.sin(t / 60 + i) * 4; g.beginPath(); g.moveTo(bx, by); g.lineTo(bx - 8, by - 4 - f); g.lineTo(bx - 4, by + 2); g.lineTo(bx, by); g.lineTo(bx + 4, by + 2); g.lineTo(bx + 8, by - 4 - f); g.closePath(); g.fill(); });
+  } else {
+    g.fillStyle = '#7bd389'; [[hx - 8, 190], [hx + 108, 190]].forEach(([x, y]) => { g.beginPath(); g.arc(x, y - 6, 9, 0, Math.PI * 2); g.fill(); });
+  }
+  // 寵物從門口衝出來，跳一跳、冒愛心
+  if (info.pet && t > 900) {
+    const k2 = Math.min(1, (t - 900) / 900), y = 190 + k2 * 45 - Math.abs(Math.sin(t / 110)) * 8, sc = (.9 + k2 * .5) * PET_STAGE_BY_ID[info.pet.stage].scale;
+    g.save(); g.translate(200, y); g.scale(sc, sc);
+    drawCreature(g, PET_SPECIES_BY_ID[info.pet.species], { happy: true, clean: 100, adult: info.pet.stage === 'adult', baby: info.pet.stage === 'baby' });
+    g.restore();
+    if (k2 >= 1) { g.font = '16px sans-serif'; g.fillStyle = '#ff6b9a'; [0, 1, 2].forEach(i => { const ht = ((t - 1800) / 600 + i / 3) % 1; g.globalAlpha = 1 - ht; g.fillText('💗', 186 + i * 14, 205 - ht * 40); }); g.globalAlpha = 1; }
+  }
+}
+// 打開遊戲時：第一次玩 → 開場動畫；隔 6 小時以上 → 歡迎回家
+function maybeOpening() {
+  if (SAVE_LOCKED != null || introPlaying) return;
+  if (!G.introSeen) playIntro();
+  else if (hoursAway >= WELCOME_BACK_HOURS) playWelcome();
+}
+
+/* ===== 🎃 節慶活動開始的提醒（家長：節慶活動時跳一張大圖提醒）=====
+   每個節日每年只跳一次；畫面空下來（沒有視窗、沒在播動畫、包裹拆過了）才跳。 */
+function seasonNoticeKey(se) { return se.id + '-' + new Date().getFullYear(); }
+function maybeSeasonNotice(tries) {
+  tries = tries || 0;
+  const se = seasonNow();
+  if (!se || SAVE_LOCKED != null || (G.seasonSeen || {})[seasonNoticeKey(se)] || tries > 30) return;
+  if (!G.openGift || !$('#modal').hidden || introPlaying || resting || hold || document.getElementById('showcase')) { setTimeout(() => maybeSeasonNotice(tries + 1), 4000); return; }
+  openSeasonNotice(se);
+}
+const SEASON_NOTICE = {
+  halloween: { pics: '🎃👻🦇🍬', title: '萬聖節活動開始了！', lines: [['🛒', '商店有萬聖節限定的家具和帽子'], ['🦊', '動物朋友會打扮來玩：「不給糖就搗蛋！」'], ['🍬', '給牠們糖果，會回送禮物喔'], ['📖', '收集「節日收藏」圖鑑']] }
+};
+function openSeasonNotice(se) {
+  const n = SEASON_NOTICE[se.id] || { pics: se.icon, title: `${se.name}活動開始了！`, lines: [] };
+  G.seasonSeen = Object.assign({}, G.seasonSeen, { [seasonNoticeKey(se)]: true });
+  saveGame();
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('div', 'season-pics', n.pics));
+  card.appendChild(el('h2', '', `${se.icon} ${n.title}`));
+  card.appendChild(el('div', 'season-until', `活動到 ${se.to[0]}/${se.to[1]}`));
+  const box = el('div', 'news');
+  n.lines.forEach(([ic, tx]) => { const r = el('div', 'news-row'); r.append(el('span', 'news-ic', ic), el('span', 'news-tx', tx)); box.appendChild(r); });
+  card.appendChild(box);
+  const go = el('button', 'big', '🛒 去看限定商品');
+  go.onclick = () => { $('#modal').hidden = true; shopKind = 'all'; shopTheme = 'all'; openTab('shop'); };
+  const ok = el('button', 'big alt', '好！');
+  ok.onclick = () => { $('#modal').hidden = true; };
+  card.append(go, ok);
+  $('#modal').hidden = false;
+  Sound.play('fanfare');
+  try { speak(n.title); } catch (e) {}
+}
 function maybePlayIntro() {
   if (G.introSeen || SAVE_LOCKED != null || introPlaying) return;
   playIntro();
@@ -13604,8 +13757,9 @@ function maybePlayIntro() {
 // ── 啟動 ──
 refreshTop();
 renderTab();
-setTimeout(() => maybePlayIntro(), 300);
+setTimeout(() => maybeOpening(), 300);
 setTimeout(() => maybeShowNews(), 1500);
+setTimeout(() => maybeSeasonNotice(), 2500);
 updateHoldUI();
 resize();
 // 好久沒來玩：小可愛開心打招呼
