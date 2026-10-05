@@ -2797,6 +2797,58 @@
     } catch (e) { fails.push('開場動畫測試出錯：' + e.message); }
     finally { G.introSeen = true; }
 
+    /* 103 教室上課：置物櫃門朝教室裡、老師有「上課」、點名／數學課／美勞課／午睡 */
+    var keep103 = JSON.stringify({ bells: G.bells, art: G.artWall || null }), realWalk103 = walkTrip, realST103 = window.setTimeout, realSI103 = window.setInterval, realToast103 = toast;
+    try {
+      PLACES.school.rooms[0].items.filter(function(it){ return it.id === 'cubby_lockers'; }).forEach(function(it){ var f = rotateDir(it.rot || 0, 0, 1); if (!(f.dx < 0)) fails.push('置物櫃的門沒有朝教室裡面（rot ' + it.rot + '）'); });
+      walkTrip = function(l, d){ d(); }; toast = function(){};
+      G.away = null; host.n = null; travelTo('school');
+      var n103 = performance.now(); for (var g103 = 0; g103 < 6; g103++) gameStep(.05, n103 + g103 * 50);
+      if (!hostMenuEntries().some(function(e){ return /上課/.test(e[0]); })) fails.push('老師的選單沒有「上課」');
+      openLessonMenu();
+      if (document.querySelectorAll('#modalCard .gift-opt').length !== 4) fails.push('上課選單不是四種課');
+      $('#modal').hidden = true;
+      // 回座位：同學坐在椅子上不亂跑、小可愛也坐下
+      lessonSeat();
+      var chairs = lessonChairs();
+      if (!(host.crowd || []).every(function(cr, i){ return cr.still && Math.floor(cr.a.x) === chairs[i].x && Math.floor(cr.a.y) === chairs[i].y; })) fails.push('上課時同學沒有回座位坐好');
+      if (!fufu.pose || fufu.pose.type !== 'sit') fails.push('上課時小可愛沒有坐到座位上');
+      lessonEnd();
+      // 點名：計時器馬上跑；叫到小可愛時出現「✋ 有！」，答了就結束、拿到 30
+      var q103 = []; window.setTimeout = function(f){ q103.push(f); return 0; };
+      var b0 = G.bells; lessonRollCall();
+      for (var qi = 0; qi < q103.length && qi < 50; qi++) { q103[qi](); if (document.getElementById('lessonHand')) break; }
+      var hand = document.getElementById('lessonHand');
+      if (!hand) fails.push('點名叫到小可愛時，沒有「✋ 有！」可以按');
+      else { hand.onclick(); for (var qj = qi + 1; qj < q103.length && qj < 80; qj++) q103[qj](); }
+      if (lesson || G.bells !== b0 + 30 || document.getElementById('lessonHand')) fails.push('點名答「有！」之後沒有結束或沒有拿到 30');
+      // 數學課：答對 5 題拿到 5 × 10
+      window.setTimeout = function(f){ f(); return 0; };
+      var b1 = G.bells; lessonMath();
+      document.querySelectorAll('#modalCard .lv-btn')[0].onclick();
+      for (var m103 = 0; m103 < 5; m103++) { var T = playMath.test; var btn = [].filter.call(T.opts.querySelectorAll('button'), function(b){ return b.textContent === String(T.ans); })[0]; if (!btn) { fails.push('數學課的選項裡沒有正確答案'); break; } btn.onclick(); }
+      if (G.bells - b1 !== 50) fails.push('數學課答對 5 題，鈴錢不對（' + (G.bells - b1) + '）');
+      var end = [].filter.call(document.querySelectorAll('#modalCard button'), function(b){ return /下課/.test(b.textContent); })[0];
+      if (end) end.onclick(); else fails.push('數學課最後沒有「下課囉」');
+      if (lesson) fails.push('數學課下課之後還在上課');
+      // 美勞課：畫完貼在作品牆
+      var realPad = openDrawPad; openDrawPad = function(t, done){ done({ s: [[1, 1, 10, 10, 30, 20]] }); };
+      try { G.artWall = []; lessonArt(); } finally { openDrawPad = realPad; }
+      if (!G.artWall || G.artWall.length !== 1) fails.push('美勞課畫的圖沒有貼到作品牆');
+      if (!PLACES.school.rooms[0].wallItems.some(function(w){ return (w.id || w[0]) === 'art_board'; })) fails.push('教室沒有作品牆');
+      draw();
+      // 午睡：變暗、冒 💤，時間到起床
+      window.setInterval = function(){ return 0; };
+      lessonNap();
+      if (lesson || document.getElementById('napDim')) fails.push('午睡時間到了沒有起床');
+    } catch (e) { fails.push('教室上課測試出錯：' + e.message + ' ' + (e.stack || '').split('\n')[1]); }
+    finally {
+      window.setTimeout = realST103; window.setInterval = realSI103; walkTrip = realWalk103; toast = realToast103;
+      lesson = null; var hb = document.getElementById('lessonHand'); if (hb) hb.remove(); var nd = document.getElementById('napDim'); if (nd) nd.remove();
+      closeGameWindow(); $('#modal').hidden = true; if (fufu.pose) fufuStandUp(false); G.away = null; host.n = null;
+      var k103 = JSON.parse(keep103); G.bells = k103.bells; if (k103.art) G.artWall = k103.art; else delete G.artWall;
+    }
+
     /* 102 桌上小物（筆筒…）拿著直接移到桌子上就能放（家長：筆筒放不上桌子） */
     var keep102 = JSON.stringify({ rooms: G.rooms, inv: G.inv, cur: G.cur });
     var realToast102 = toast, msg102 = ''; toast = function(m){ msg102 = m; };

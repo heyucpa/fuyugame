@@ -574,6 +574,15 @@ button.pass { font: inherit; }
 .pad-t.on { background: #ffe9b8; border-color: #e7a94a; }
 .card-draw { display: block; margin: 6px auto; border: 2px solid var(--line); border-radius: 10px; max-width: 100%; }
 .gb-row .card-draw { margin: 0 0 0 auto; }
+.lesson-hand { position: fixed; left: 50%; bottom: 22%; transform: translateX(-50%); z-index: 50; font-size: 26px; font-weight: 800; padding: 14px 28px; border: none; border-radius: 999px; background: #ffd35c; color: #3a3240; box-shadow: 0 4px 0 #e0a020; animation: handBob .8s ease-in-out infinite; }
+@keyframes handBob { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-6px); } }
+.nap-dim { position: fixed; inset: 0; z-index: 40; background: rgba(20,25,60,.45); pointer-events: none; display: flex; align-items: flex-start; justify-content: center; }
+.nap-z { font-size: 48px; margin-top: 18vh; animation: handBob 1.6s ease-in-out infinite; }
+.math-q { font-size: 40px; font-weight: 800; text-align: center; margin: 18px 0; }
+.math-opts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.math-opt { font-size: 30px; font-weight: 800; padding: 16px 0; border: 3px solid var(--line); border-radius: 16px; background: #fff; }
+.math-opt.ok { background: #b8ecd7; border-color: #5fae7c; }
+.math-opt.no { background: #ffd6d6; border-color: #e8505b; }
 .gift-pick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 6px 0; }
 .gift-opt { display: flex; flex-direction: column; align-items: center; gap: 2px; border: 2px solid var(--line); background: #fff; border-radius: 14px; padding: 10px 4px; font-size: 14px; }
 .gift-opt .gi { font-size: 34px; }
@@ -2038,6 +2047,21 @@ const PLACE_FURNITURE = [
       { x: .25, y: .3, w: .4, d: .3, z: 46, h: 2, c: '#ffd35c' },
       { k: 'ball', x: 1.5, y: .5, z: 41, r: 5, c: '#e8505b' }          // 蘋果
     ] },
+  // 🎨 美勞作品牆：貼著美勞課畫的最新兩張畫
+  { id: 'art_board', name: '作品牆', theme: 'cute', w: 2, h: 30, z: 44, layer: 'wall', d: 1, parts: [],
+    draw(ctx, W, H) {
+      ctx.fillStyle = '#c99a6a'; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#e8c99a'; ctx.fillRect(2, 2, W - 4, H - 4);
+      let art = []; try { art = Array.isArray(G.artWall) ? G.artWall.slice(0, 2) : []; } catch (e) { art = []; }   // G 還沒好（暫時死區）就先畫空的
+      const pw = (W - 12) / 2, ph = pw * PAD_H / PAD_W;
+      [0, 1].forEach(i => {
+        const x = 4 + i * (pw + 4), y = (H - ph) / 2;
+        ctx.save(); ctx.translate(x, y);
+        if (art[i]) drawCardStrokes(ctx, art[i], pw / PAD_W); else { ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.fillRect(0, 0, pw, ph); }
+        ctx.restore();
+        ctx.fillStyle = '#e8505b'; ctx.beginPath(); ctx.arc(x + pw / 2, y + 1, 1.6, 0, Math.PI * 2); ctx.fill();   // 圖釘
+      });
+    } },
   { id: 'blackboard', name: '黑板', theme: 'wood', w: 3, h: 30, z: 44, layer: 'wall', d: 1, parts: [],
     draw(ctx, W, H) {
       ctx.fillStyle = '#a8784a'; ctx.fillRect(0, 0, W, H);
@@ -2581,8 +2605,8 @@ const PLACES = {
       ['school_chair', 4, 2, 3], ['school_chair', 4, 4, 3], ['school_chair', 4, 6, 3],
       ['school_desk_b', 6, 2, 3], ['school_desk', 6, 4, 3], ['school_desk_b', 6, 6, 3],
       ['school_chair', 7, 2, 3], ['school_chair', 7, 4, 3], ['school_chair', 7, 6, 3],
-      ['cubby_lockers', 9, 2, 1], ['cubby_lockers', 9, 5, 1]
-    ], wallItems: [['blackboard', 'L', 3], ['zhuyin_board', 'L', 7], ['class_window', 'R', 2], ['class_window', 'R', 5], ['wall_clock', 'R', 8]] },
+      ['cubby_lockers', 9, 2, 3], ['cubby_lockers', 9, 5, 3]   // 門朝教室裡面（rot 3：朝 x 小的那邊＝學生那邊）
+    ], wallItems: [['art_board', 'R', 0], ['blackboard', 'L', 3], ['zhuyin_board', 'L', 7], ['class_window', 'R', 2], ['class_window', 'R', 5], ['wall_clock', 'R', 8]] },
     // 前面四道藍色跑道（第 6~9 排），後面是球場；樹和長椅在球場邊（照片參考）
     { name: '操場', w: 10, d: 10, wall: 'wp_forest', floor: 'fl_track', items: [
       ['flagpole', 1, 1], ['slide', 3, 1], ['swing', 7, 1],
@@ -4030,6 +4054,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-11T09:00', title: '學校可以上課了！🔔', lines: [
+    ['📣', '點老師 →「上課」：點名，叫到你的時候按「✋ 有！」'],
+    ['✋', '數學課：加法、加減法、九九乘法，同學也會舉手搶答'],
+    ['🎨', '美勞課：畫一張圖，會貼在教室的作品牆上'],
+    ['😴', '午睡時間：大家趴下來睡覺，鐘聲響了起床']
+  ], newItems: [] },
   { id: '2026-10-10T15:00', title: '遊樂園的點心車！', lines: [
     ['🍭', '棉花糖、爆米花、冰淇淋合成一台「點心車」，點它選要買什麼'],
     ['🏫', '學校教室重新擺過：大家的桌子都面對黑板了']
@@ -4441,6 +4471,7 @@ function normalizeSave(g) {
   if (!g.welcome) out.welcome = { at: 0, uncle: true, grandma: true }; // 已經在玩的存檔不算搬新家
   if (out.seasonDex != null && !isObj(out.seasonDex)) delete out.seasonDex;
   if (out.seasonSeen != null && !isObj(out.seasonSeen)) delete out.seasonSeen;
+  if (out.artWall != null) out.artWall = (Array.isArray(out.artWall) ? out.artWall : []).map(cleanDrawing).filter(Boolean).slice(0, 4);
   if (out.kidGrowDay != null && !(isObj(out.kidGrowDay) && typeof out.kidGrowDay.d === 'string' && num(out.kidGrowDay.n))) delete out.kidGrowDay;
   if (out.flowerDex != null && !isObj(out.flowerDex)) delete out.flowerDex;
   if (out.garden != null && !isObj(out.garden)) delete out.garden;
@@ -9890,6 +9921,7 @@ function hostMenuEntries() {
     list.push(['📖 蝴蝶相簿', openButterflyAlbum]);
   }
   if (host.n.id === 'teacher') {
+    list.push(['🔔 上課（點名、數學、美勞、午睡）', openLessonMenu]);
     list.push(['📝 來小考', openQuizGame]);
     list.push(['🏃 跟同學賽跑', openRunGame]);
     [['🏫 回教室', 0], ['🛝 一起去操場', 1]]
@@ -10801,6 +10833,176 @@ function openGiftCard(gc, who) {
     };
   });
 }
+/* ===== 🔔 教室的活動（家長：同學上課之類的）=====
+   點老師 →「上課」：📣 點名、✋ 數學課（搶答）、🎨 美勞課、😴 午睡。
+   上課的時候同學會走回座位坐好（不亂跑），小可愛也坐到自己的位子；下課就照平常逛。 */
+let lesson = null;
+function lessonChairs() { return curRoom().items.filter(it => it.id === 'school_chair'); }
+// 同學、小可愛都回座位
+function lessonSeat() {
+  const chairs = lessonChairs();
+  if (!chairs.length) return null;
+  const mine = chairs[chairs.length - 1];   // 小可愛坐最後一排旁邊那張（看得到大家）
+  (host.crowd || []).forEach((cr, i) => {
+    const ch = chairs[i];
+    if (!ch) return;
+    cr.prevStill = cr.still; cr.still = true;
+    cr.a.x = ch.x + .5; cr.a.y = ch.y + .5; cr.a.path = []; cr.a.squishV = -6; cr.a.facing = -1;
+  });
+  if (fufu.pose) fufuStandUp(false);
+  fufu.act = null; fufu.task = null;
+  fufu.x = mine.x + .5; fufu.y = mine.y + .5; fufu.path = [];
+  fufu.task = { uid: mine.uid };
+  try { fufuStartPose(performance.now()); if (fufu.pose) fufu.pose.until = performance.now() + 9e8; } catch (e) {}
+  if (host.a) { host.a.x = 1.5; host.a.y = 5.5; host.a.path = []; host.a.facing = 1; }   // 老師站在黑板前
+  return mine;
+}
+function lessonEnd(msg) {
+  (host.crowd || []).forEach(cr => { cr.still = !!cr.prevStill; cr.a.happyUntil = performance.now() + 1500; cr.a.squishV = -6; });
+  if (fufu.pose) fufu.pose.until = performance.now() + 1500;
+  lesson = null;
+  const ov = document.getElementById('napDim'); if (ov) ov.remove();
+  const hb = document.getElementById('lessonHand'); if (hb) hb.remove();
+  if (msg && host.n) hostSay(msg, 3000);
+  try { Sound.play('note', 4); } catch (e) {}
+}
+function openLessonMenu() {
+  if (!G.away || G.away.place !== 'school') return;
+  if (G.away.idx !== 0) goPlaceRoom(0);
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', '🔔 要上什麼課？'));
+  const grid = el('div', 'gift-pick');
+  [['📣', '點名', lessonRollCall], ['✋', '數學課', lessonMath], ['🎨', '美勞課', lessonArt], ['😴', '午睡', lessonNap]].forEach(([ic, nm, fn]) => {
+    const b = el('button', 'gift-opt'); b.append(el('span', 'gi', ic), el('span', '', nm));
+    b.onclick = () => { $('#modal').hidden = true; fn(); };
+    grid.appendChild(b);
+  });
+  card.appendChild(grid);
+  const no = el('button', 'big alt', '下次再上'); no.onclick = () => { $('#modal').hidden = true; }; card.appendChild(no);
+  $('#modal').hidden = false;
+}
+// 📣 點名：老師一個一個叫，同學說「有！」；叫到小可愛時，按「✋ 有！」
+function lessonRollCall() {
+  lessonSeat(); lesson = { kind: 'roll' };
+  const crowd = (host.crowd || []).slice(), step = 1500;
+  hostSay('上課囉！老師來點名～', 2200);
+  crowd.forEach((cr, i) => {
+    setTimeout(() => { if (!lesson) return; hostSay(`${cr.n.short}？`, 1300); }, 2200 + i * step);
+    setTimeout(() => { if (!lesson) return; cr.say = '有！✋'; cr.sayUntil = performance.now() + 1200; cr.a.squishV = -8; try { Sound.play('pickUp'); } catch (e) {} }, 2200 + i * step + 700);
+  });
+  setTimeout(() => {
+    if (!lesson) return;
+    hostSay(`${charName()}？`, 9000);
+    const b = el('button', 'lesson-hand', '✋ 有！'); b.id = 'lessonHand';
+    let done = false;
+    const answer = () => {
+      if (done) return; done = true; b.remove();
+      fufuSay('有！✋', 1800); fufu.jumpT = .35;
+      setTimeout(() => {
+        addBells(30); refreshTop();
+        lessonEnd('大家都到了，真棒！💰 +30');
+        toast('📣 點名完成！💰 +30');
+      }, 1200);
+    };
+    b.onclick = answer;
+    document.body.appendChild(b);
+    lesson.answer = answer;
+    setTimeout(() => { if (!done && lesson) { hostSay(`${charName()}在發呆嗎？`, 2000); answer(); } }, 9000);
+  }, 2200 + crowd.length * step + 200);
+}
+// ✋ 數學課（搶答）：三種難度，5 題；答對大家拍手
+const MATH_LEVELS = [
+  { name: '加法', make: () => { const a = 1 + Math.floor(Math.random() * 5), b = 1 + Math.floor(Math.random() * 5); return [`${a} ＋ ${b}`, a + b]; }, mul: 1 },
+  { name: '加減法', make: () => { const a = 5 + Math.floor(Math.random() * 15), b = 1 + Math.floor(Math.random() * 9); return Math.random() < .5 ? [`${a} ＋ ${b}`, a + b] : [`${a} － ${b}`, a - b]; }, mul: 2 },
+  { name: '九九乘法', make: () => { const a = 2 + Math.floor(Math.random() * 8), b = 2 + Math.floor(Math.random() * 8); return [`${a} × ${b}`, a * b]; }, mul: 3 }
+];
+function lessonMath() {
+  lessonSeat(); lesson = { kind: 'math' };
+  hostSay('數學課！會的人舉手搶答喔～', 2400);
+  const w = openGameWindow('✋ 數學課', '老師出題，選出正確的答案！同學也會一起舉手喔。');
+  const done = () => lessonEnd('今天的數學課上得好棒！');
+  w.btns.innerHTML = '';
+  const row = el('div', 'lv-row');
+  MATH_LEVELS.forEach(L => { const b = el('button', 'big lv-btn', `${L.name}　一題 💰 ${10 * L.mul}`); b.onclick = () => playMath(w, L, done); row.appendChild(b); });
+  w.stage.appendChild(row);
+  gameCleanup = () => { if (lesson && lesson.kind === 'math') lessonEnd(); };
+}
+function playMath(w, L, done) {
+  w.stage.innerHTML = '';
+  let n = 0, right = 0;
+  const q = el('div', 'math-q'), opts = el('div', 'math-opts');
+  w.stage.append(q, opts);
+  const next = () => {
+    if (n >= 5) {
+      const bells = payReward(w, right * 10 * L.mul);
+      w.status.textContent = `答對 ${right} / 5 題！💰 +${fmt(bells)}`;
+      q.textContent = right >= 4 ? '🎉 好厲害！' : '👏 很棒喔！';
+      opts.innerHTML = '';
+      const ok = el('button', 'big', '下課囉'); ok.onclick = () => { gameCleanup = null; closeGameWindow(); done(); }; opts.appendChild(ok);
+      return;
+    }
+    n++;
+    const [text, ans] = L.make();
+    q.textContent = `${text} ＝ ？`;
+    w.status.textContent = `第 ${n} / 5 題　答對 ${right} 題`;
+    (host.crowd || []).forEach((cr, i) => { if (Math.random() < .6) setTimeout(() => { cr.say = '✋'; cr.sayUntil = performance.now() + 1200; cr.a.squishV = -6; }, 300 + i * 250); });
+    const set = new Set([ans]); while (set.size < 3) set.add(Math.max(0, ans + Math.floor(Math.random() * 7) - 3));
+    opts.innerHTML = '';
+    Array.from(set).sort(() => Math.random() - .5).forEach(v => {
+      const b = el('button', 'math-opt', String(v));
+      b.onclick = () => {
+        opts.querySelectorAll('button').forEach(x => x.disabled = true);
+        if (v === ans) { right++; b.classList.add('ok'); Sound.play('perfect'); (host.crowd || []).forEach(cr => { cr.a.happyUntil = performance.now() + 1200; cr.a.squishV = -7; }); if (host.n) hostSay('答對了！大家拍拍手 👏', 1500); }
+        else { b.classList.add('no'); Sound.play('miss'); if (host.n) hostSay(`答案是 ${ans} 喔，沒關係～`, 1600); }
+        setTimeout(next, 900);
+      };
+      opts.appendChild(b);
+    });
+    playMath.test = { ans, opts, right: () => right, n: () => n };
+  };
+  next();
+}
+// 🎨 美勞課：用畫畫板畫一張，貼在教室的作品牆上
+function lessonArt() {
+  lessonSeat(); lesson = { kind: 'art' };
+  hostSay('美勞課！畫一張你喜歡的東西吧～', 2600);
+  setTimeout(() => {
+    if (!lesson) return;
+    openDrawPad('🎨 美勞課：畫一張圖', d => {
+      $('#modal').hidden = true;
+      if (!d) { lessonEnd('下次再畫也可以喔！'); return; }
+      G.artWall = [d].concat(Array.isArray(G.artWall) ? G.artWall : []).slice(0, 4);
+      giveSticker();
+      saveGame(); commit();
+      lessonEnd('畫得好棒！老師把它貼在作品牆上了 ⭐');
+      toast('🎨 你的畫貼在教室的作品牆上了！還送你一張貼紙');
+    });
+  }, 1200);
+}
+// 😴 午睡：大家趴下來睡、畫面變暗冒 💤，鐘聲響了起床伸懶腰
+const NAP_MS = 7000;
+function lessonNap() {
+  lessonSeat(); lesson = { kind: 'nap' };
+  hostSay('午睡時間到了，大家趴下來休息～', 2400);
+  const dim = el('div', 'nap-dim'); dim.id = 'napDim';
+  dim.appendChild(el('div', 'nap-z', '💤'));
+  document.body.appendChild(dim);
+  const zz = setInterval(() => {
+    if (!lesson || lesson.kind !== 'nap') { clearInterval(zz); return; }
+    (host.crowd || []).forEach(cr => petBurst({ kind: 'emoji', emoji: '💤', spread: 8 }, 1, cr.a));
+    fufu.thinkUntil = 0;
+  }, 1300);
+  setTimeout(() => {
+    clearInterval(zz);
+    if (!lesson || lesson.kind !== 'nap') return;
+    try { Sound.play('fanfare'); } catch (e) {}
+    G.kid.hunger = clampStat(G.kid.hunger);   // 睡飽了（不影響其他東西）
+    fufuSay('睡飽了～精神好好！', 2400);
+    lessonEnd('起床囉！伸個懶腰～');
+  }, NAP_MS);
+}
+
 // 朋友家的主人：對方的小可愛（畫成女生，不是動物）
 function drawFriendGirl(ctx, a, n) {
   const now = performance.now(), p = iso(a.x, a.y, a.z || 0), moving = a.path.length > 0;
