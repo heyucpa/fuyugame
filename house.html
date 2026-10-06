@@ -13657,6 +13657,9 @@ function tabBook(body) {
   // 🔤 注音卡：注音小遊戲答對就收集
   body.appendChild(sec('dexZhuyin', `🔤 注音卡 ${Object.keys(G.zhuyin || {}).length} / ${ZHUYIN.length}`));
   body.appendChild(note('在教室點「注音布告欄」玩注音小遊戲，答對的注音就會收集起來。'));
+  const zv = el('button', 'mini', '🔊 聲音不對？換念法');
+  zv.onclick = () => openZhuyinVoice();
+  body.appendChild(zv);
   const zg = el('div', 'zy-dex');
   ZHUYIN.forEach(z => {
     const has = !!(G.zhuyin || {})[z.sym];
@@ -14384,7 +14387,6 @@ function tabSave(body) {
   ib.onclick = () => playIntro();
   body.appendChild(ib);
   restSettings(body);
-  zhuyinSettings(body);
   // 👇 小手教學：可以關掉，也可以再打開重看一次
   body.appendChild(h3('👇 小手教學'));
   const gOn = G.guide !== 'done';
@@ -17120,17 +17122,22 @@ const ZY_MODE_KEY = 'myHouse_zyMode';
 const zyMode = () => { try { return localStorage.getItem(ZY_MODE_KEY) === 'char' ? 'char' : 'sym'; } catch (e) { return 'sym'; } };
 const zySound = (z, mode) => ((mode || zyMode()) === 'char' ? z.snd : z.sym);
 const zyPhrase = (z, mode) => { const sd = zySound(z, mode); return `${sd}，${z.word}的${sd}`; };
-// 設定：選念法＋每個注音都可以點來試聽
-function zhuyinSettings(body) {
-  body.appendChild(h3('🔤 注音念法'));
-  body.appendChild(note('注音小遊戲用電腦內建的語音念，每台聽起來不一樣。下面點幾個試聽，選聽起來對的那一種。'));
+/* 🔊 換念法（家長：這怎麼放在設定——它是注音遊戲自己的東西）
+   在注音小遊戲選難度的畫面、和圖鑑的「🔤 注音卡」都有一顆「聲音不對？換念法」，打開這個小視窗：
+   選念法＋每個注音都可以點來試聽。 */
+function openZhuyinVoice(back) {
+  const card = $('#modalCard');
+  card.classList.remove('game-card', 'in-game');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', '🔊 注音怎麼念'));
+  card.appendChild(note('用電腦內建的語音念，每台聽起來不一樣。點幾個試聽，選聽起來對的那一種。'));
   const m = zyMode(), row = el('div', 'filter');
   [['sym', '念注音（ㄊ）'], ['char', '念代表字（特）']].forEach(([k, label]) => {
     const b = el('button', m === k ? 'on' : '', label);
-    b.onclick = () => { try { localStorage.setItem(ZY_MODE_KEY, k); } catch (e) {} renderTab(); };
+    b.onclick = () => { try { localStorage.setItem(ZY_MODE_KEY, k); } catch (e) {} openZhuyinVoice(back); };
     row.appendChild(b);
   });
-  body.appendChild(row);
+  card.appendChild(row);
   const grid = el('div', 'zy-dex');
   ZHUYIN.forEach(z => {
     const t = el('button', 'zy-tile got');
@@ -17139,12 +17146,19 @@ function zhuyinSettings(body) {
     t.onclick = () => { try { speak(zyPhrase(z)); } catch (e) {} };
     grid.appendChild(t);
   });
-  body.appendChild(grid);
-  if (!canSpeak()) body.appendChild(note('⚠️ 這台機器沒有中文語音，注音小遊戲會念不出來。'));
+  card.appendChild(grid);
+  if (!canSpeak()) card.appendChild(note('⚠️ 這台機器沒有中文語音，注音小遊戲會念不出來。'));
+  const ok = el('button', 'big', '好了');
+  ok.onclick = () => { stopSpeak(); if (back) back(); else $('#modal').hidden = true; };
+  card.appendChild(ok);
+  $('#modal').hidden = false;
 }
 function openZhuyinGame() {
   const w = openGameWindow('🔤 注音小遊戲', '按 🔊 聽聽看，點出對的注音卡片！答錯沒關係，會再念一次。');
   pickLevelRow(w, ZHUYIN_LEVELS, L => `答對一題 💰 ${10 * L.mul}`, L => playZhuyin(w, L));
+  const vb = el('button', 'mini', '🔊 聲音不對？換念法');
+  vb.onclick = () => openZhuyinVoice(openZhuyinGame);
+  w.stage.appendChild(vb);
 }
 function playZhuyin(w, L) {
   const pool = ZHUYIN.slice(0, L.pool);
