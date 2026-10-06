@@ -4601,6 +4601,7 @@ function trimSnaps() {
   return writeSnaps(list.filter(x => x.kind !== 'auto' || ++autoN <= 1));
 }
 var SAVE_LOCKED = null;
+var SAVE_STALE = false, lastSaveTxt = null; // 別的分頁寫了同一格存檔（下面 storage 事件）
 var SAVE_LOCK_WHY = '';   // 讀不出來的原因（顯示在處理畫面上，家長拍照就知道是哪裡壞）
 const rescueKey = () => 'myHouseGame_rescue:' + curSlotId();
 function loadGame() {
@@ -4759,10 +4760,19 @@ const hoursAway = (Date.now() - Math.max(G.pet.lastTick || 0, G.kid.lastTick || 
 saveGame();
 
 // 回傳有沒有存成功。存不了的時候畫面上會一直掛著提醒，不能讓她玩完才發現沒存到
+/* 同一個存檔開在兩個分頁／視窗：另一邊還原了備份（或在玩），這一頁再存就會把它蓋回去
+   （家長：還原了 20 隻寵物，結果還是 2 隻）。聽到別的分頁寫了同一格，這一頁就不再存，請她重新載入。 */
+window.addEventListener('storage', e => {
+  if (e.key !== SAVE_KEY || e.newValue == null || e.newValue === lastSaveTxt) return;
+  SAVE_STALE = true;
+  showSaveWarn('stale');
+});
 function saveGame() {
+  if (SAVE_STALE) { showSaveWarn('stale'); return false; }
   if (SAVE_LOCKED != null) { showSaveWarn('locked'); return false; }
   G.savedAt = Date.now(); // 記下存檔時間：還原備份時拿來比「哪一份比較新」
   const txt = JSON.stringify(G);
+  lastSaveTxt = txt;
   try { localStorage.setItem(SAVE_KEY, txt); }
   catch (e) { // 空間滿了：先把舊的自動存檔清掉再試一次；還是不行才警告（私密視窗等等）
     try { trimSnaps(); localStorage.setItem(SAVE_KEY, txt); }
@@ -4776,10 +4786,11 @@ function showSaveWarn(kind) {
   if (!kind) { if (b) b.hidden = true; return; }
   if (!b) {
     b = document.createElement('button'); b.id = 'saveWarn'; b.className = 'save-warn';
-    b.onclick = () => (SAVE_LOCKED != null ? openRescue() : openTab('backup'));
+    b.onclick = () => (SAVE_STALE ? location.reload() : SAVE_LOCKED != null ? openRescue() : openTab('backup'));
     document.body.appendChild(b);
   }
-  b.textContent = kind === 'locked'
+  b.textContent = kind === 'stale' ? '⚠️ 遊戲在別的分頁／視窗被改過了，這一頁不會再存檔。按這裡重新載入'
+    : kind === 'locked'
     ? '⚠️ 這份紀錄讀不出來，現在玩的不會存檔。請家長點這裡處理'
     : '⚠️ 進度沒有存好！請家長到「💾 備份」先備份';
   b.hidden = false;
