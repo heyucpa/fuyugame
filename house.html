@@ -4190,7 +4190,7 @@ const NEWS = [
   { id: '2026-10-15T09:00', title: '遊樂園有搭乘動畫了！🎡', lines: [
     ['🎡', '摩天輪：慢慢升到最高，看得到雲、小鳥和城市'],
     ['🎢', '雲霄飛車：爬到最高點，再「呀～～」衝下來'],
-    ['🎠', '旋轉木馬、☕ 咖啡杯也有動畫，寵物也一起坐'],
+    ['🎠', '旋轉木馬、☕ 咖啡杯、溜滑梯、盪鞦韆也有動畫，寵物也一起來'],
     ['⏭', '點一下就可以跳過']
   ], newItems: [] },
   { id: '2026-10-14T20:00', title: '注音小遊戲！🔤', lines: [
@@ -16780,7 +16780,9 @@ const RIDE_FILMS = {
   ferris: { say: [[.35, '慢慢升上去了～'], [.62, '哇～好高喔！'], [.9, '再坐一次！']] },
   coaster: { say: [[.25, '喀、喀、喀…'], [.55, '呀～～～！'], [.88, '好刺激！']] },
   carousel: { say: [[.3, '叮叮咚～'], [.7, '跑快一點！']] },
-  teacup: { say: [[.3, '轉轉轉～'], [.85, '頭暈暈～']] }
+  teacup: { say: [[.3, '轉轉轉～'], [.85, '頭暈暈～']] },
+  slide: { say: [[.08, '爬上去囉～'], [.45, '咻～～！'], [.82, '再溜一次！']] },
+  swing: { say: [[.2, '用力盪～'], [.55, '盪好高喔！'], [.9, '好舒服～']] }
 };
 function rideFilmActors() {
   const outfit = {}; OUTFIT_SLOTS.forEach(({ key }) => { outfit[key] = CLOTHES_BY_ID[G.outfit[key]]; });
@@ -16920,6 +16922,52 @@ const RIDE_DRAW = {
     if (t > .75) { g.font = '22px sans-serif'; g.textAlign = 'center'; for (let i = 0; i < 4; i++) { const a = now / 200 + i * Math.PI / 2; g.fillText('💫', cx + side + Math.cos(a) * 40, cy - 40 + Math.sin(a) * 12); } }
     return { x: cx + side, y: cy - 70 };
   }
+};
+// 溜滑梯、盪鞦韆的搭乘動畫（家長：溜滑梯和盪鞦韆也要有動畫）
+RIDE_DRAW.slide = function (g, W, H, t, A, now) {
+  filmSky(g, W, H, '#9fdcff', '#eafaff');
+  filmCloud(g, 60 + now / 60 % 400, 50, 1); filmCloud(g, 320, 80, .8);
+  g.fillStyle = '#9fd38a'; g.fillRect(0, H - 40, W, 40);
+  // 滑梯：左邊梯子、上面平台、往右彎下來的滑道
+  const lx = 110, top = 90, gy = H - 40;
+  g.strokeStyle = '#6bb6ff'; g.lineWidth = 6;
+  g.beginPath(); g.moveTo(lx - 20, gy); g.lineTo(lx - 20, top); g.moveTo(lx + 10, gy); g.lineTo(lx + 10, top); g.stroke();
+  g.lineWidth = 4; for (let y = top + 20; y < gy; y += 26) { g.beginPath(); g.moveTo(lx - 20, y); g.lineTo(lx + 10, y); g.stroke(); }
+  g.fillStyle = '#ffd35c'; g.fillRect(lx - 30, top - 8, 70, 12);
+  const sx = x => { const u = (x - (lx + 40)) / 260; return top + 4 + (gy - 16 - top) * (u < 0 ? 0 : u > 1 ? 1 : (1 - Math.cos(u * Math.PI)) / 2); };
+  g.strokeStyle = '#ff6b8b'; g.lineWidth = 16; g.lineCap = 'round';
+  g.beginPath(); for (let x = lx + 40; x <= lx + 320; x += 8) { x === lx + 40 ? g.moveTo(x, sx(x)) : g.lineTo(x, sx(x)); } g.stroke();
+  g.lineCap = 'butt';
+  // 她：爬梯子 → 坐在上面 → 滑下來 → 跳起來歡呼
+  let x, y, arms = false, rot = 0;
+  if (t < .35) { const k = t / .35; x = lx - 5; y = gy - k * (gy - top + 8); }
+  else if (t < .45) { x = lx - 5 + (t - .35) / .1 * 45; y = top - 2; }
+  else if (t < .8) { const k = (t - .45) / .35, e = k * k; x = lx + 40 + e * 280; y = sx(x) + 10; arms = true; rot = Math.atan2(sx(x + 4) - sx(x - 4), 8) * .6; }
+  else { x = lx + 330; y = gy - 6 - Math.abs(Math.sin((t - .8) * 20)) * 14; arms = true; }
+  filmKid(g, A, x, y, .8, now / 1000, { arms, rot });
+  if (t > .45 && t < .8) { g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 3; for (let i = 0; i < 4; i++) { g.beginPath(); g.moveTo(x - 30 - i * 14, y - 30 + i * 8); g.lineTo(x - 70 - i * 14, y - 40 + i * 8); g.stroke(); } }
+  return { x, y: y - 70 };
+};
+RIDE_DRAW.swing = function (g, W, H, t, A, now) {
+  filmSky(g, W, H, '#ffe0b8', '#fff7e6');
+  g.fillStyle = 'rgba(255,200,120,.6)'; g.beginPath(); g.arc(W - 80, 70, 34, 0, Math.PI * 2); g.fill();
+  filmCloud(g, 40 + now / 80 % 300, 60, .9);
+  g.fillStyle = '#9fd38a'; g.fillRect(0, H - 40, W, 40);
+  // 鞦韆架
+  const px = W / 2, py = 40, L = 170;
+  g.strokeStyle = '#d9443c'; g.lineWidth = 8;
+  g.beginPath(); g.moveTo(px - 150, H - 40); g.lineTo(px - 110, py); g.lineTo(px + 110, py); g.lineTo(px + 150, H - 40); g.stroke();
+  // 慢慢盪高、最後慢慢停
+  const amp = Math.min(1, t / .3) * Math.min(1, (1 - t) / .25 + .2) * .9, a = Math.sin(t * Math.PI * 5) * amp;
+  const sx = px + Math.sin(a) * L, sy = py + Math.cos(a) * L;
+  g.strokeStyle = '#8a7a64'; g.lineWidth = 3; g.beginPath(); g.moveTo(px - 14, py); g.lineTo(sx - 14, sy); g.moveTo(px + 14, py); g.lineTo(sx + 14, sy); g.stroke();
+  g.save(); g.translate(sx, sy); g.rotate(-a);
+  g.fillStyle = '#8a5a33'; g.fillRect(-26, -4, 52, 8);
+  g.restore();
+  filmKid(g, A, sx, sy - 2, .8, now / 1000, { arms: Math.abs(a) > .6, rot: -a, noPet: true });
+  // 寵物在旁邊草地上看
+  if (A.pet) { g.save(); g.translate(px + 170, H - 40); g.scale(.55, .55); drawCreature(g, A.pet, { happy: true, clean: 100, adult: lookStage(G.pet) === 'adult', baby: lookStage(G.pet) === 'baby' }); g.restore(); }
+  return { x: sx, y: sy - 80 };
 };
 let rideFilmOn = null;
 function playRideFilm(key) {
