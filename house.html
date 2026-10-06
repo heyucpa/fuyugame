@@ -11550,6 +11550,24 @@ function lessonArt() {
 }
 // 😴 午睡：大家趴下來睡、畫面變暗冒 💤，鐘聲響了起床伸懶腰
 const NAP_MS = 7000;
+/* 午睡時偷偷爬起來（家長：老師會說回去睡覺）：
+   她不在位子上坐好（走開、去玩別的）→ 老師說話、同學噓她，然後帶她回位子趴好。
+   每次說的話不一樣，第三次以後老師會笑著說。 */
+const NAP_SNEAK_LINES = ['噓～還在午睡時間，回去睡覺喔！', '{名字}，趕快回位子上趴好～', '老師看到囉！睡飽了才有精神上課喔～', '呵呵，好啦好啦，再睡一下下就好～'];
+function napAwake() { return !(fufu.pose && fufu.pose.type === 'sit') || (fufu.path && fufu.path.length) || !!fufu.act; }
+function napSneakCheck(now) {
+  if (!lesson || lesson.kind !== 'nap' || !host.n) return false;
+  if (!napAwake() || now < (lesson.scoldUntil || 0)) return false;
+  const k = lesson.sneak = (lesson.sneak || 0) + 1;
+  lesson.scoldUntil = now + 4000;
+  hostSay(NAP_SNEAK_LINES[Math.min(k, NAP_SNEAK_LINES.length) - 1].replace('{名字}', charName()), 2800);
+  if (host.a) { host.a.squishV = -7; host.a.happyUntil = now + 1200; }
+  const cr = (host.crowd || [])[0];
+  if (cr) { cr.say = '噓～'; cr.sayUntil = now + 1800; }
+  setTimeout(() => { if (lesson && lesson.kind === 'nap') fufuSay(k >= 3 ? '嘿嘿，被發現了～' : '好啦，我回去睡～', 2200); }, 900);
+  setTimeout(() => { if (lesson && lesson.kind === 'nap') { lessonSeat(); fufu.thinkUntil = 0; } }, 1800);
+  return true;
+}
 function lessonNap() {
   lessonSeat(); lesson = { kind: 'nap' };
   hostSay('午睡時間到了，大家趴下來休息～', 2400);
@@ -11560,6 +11578,7 @@ function lessonNap() {
     if (!lesson || lesson.kind !== 'nap') { clearInterval(zz); return; }
     (host.crowd || []).forEach(cr => petBurst({ kind: 'emoji', emoji: '💤', spread: 8 }, 1, cr.a));
     fufu.thinkUntil = 0;
+    napSneakCheck(performance.now());
   }, 1300);
   setTimeout(() => {
     clearInterval(zz);
