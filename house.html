@@ -713,7 +713,10 @@ button.pass { font: inherit; }
 @keyframes shake { 20% { transform: rotate(-8deg); } 50% { transform: rotate(7deg); } 80% { transform: rotate(-4deg); } }
 
 .toasts { position: fixed; top: 64px; right: 16px; display: flex; flex-direction: column; gap: 6px; z-index: 20; }
-.toast { background: var(--ink); color: #fff; padding: 8px 14px; border-radius: 12px; font-size: 14px; animation: tin .25s; }
+.toast { background: var(--ink); color: #fff; padding: 8px 14px; border-radius: 12px; font-size: 14px; animation: tin .25s; display: flex; align-items: center; gap: 8px; pointer-events: auto; }
+.toast-say { font: inherit; font-size: 14px; background: rgba(255,255,255,.18); border: none; color: #fff; border-radius: 999px; padding: 2px 8px; cursor: pointer; }
+button { -webkit-touch-callout: none; }
+.spoke { outline: 3px solid #ffd35c !important; outline-offset: 2px; }
 @keyframes tin { from { opacity: 0; transform: translateY(-6px); } }
 
 /* 手機，以及直拿的平板：房間在上、面板在下（左右並排會把房間擠得很小） */
@@ -11862,13 +11865,46 @@ let shopKind = 'all';   // 商店的用途篩選（跟風格篩選各自獨立�
 let dirty = true;
 
 // ── 小工具 ──
+/* 提示字旁邊有 🔊（家長：妹妹不識字，提示字也能聽）。點了念出來，提示多留一下 */
 function toast(msg) {
   const el = document.createElement('div');
   el.className = 'toast';
-  el.textContent = msg;
+  const tx = document.createElement('span'); tx.textContent = msg; el.appendChild(tx);
+  let life = 2600;
+  if (canSpeakSafe()) {
+    const sp = document.createElement('button'); sp.className = 'toast-say'; sp.textContent = '🔊'; sp.title = '念給我聽';
+    sp.onclick = ev => { ev.stopPropagation(); speakPlain(msg); clearTimeout(el._t); el._t = setTimeout(() => el.remove(), 4000); };
+    el.appendChild(sp); life = 3600;
+  }
   $('#toasts').appendChild(el);
-  setTimeout(() => el.remove(), 2600);
+  el._t = setTimeout(() => el.remove(), life);
 }
+/* 🔊 按住任何按鈕 1 秒就念出上面的字（家長：妹妹不識字，很多地方要靠猜圖示）。
+   念的時候那一下不會真的按下去（放開也不會）；一般點一下照常。
+   表情符號不念（中文語音會把 🍎 念成「紅蘋果」之類的，反而亂）。 */
+const canSpeakSafe = () => { try { return canSpeak(); } catch (e) { return false; } };
+const plainText = t => String(t || '').replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}\u{20E3}]/gu, '').replace(/\s+/g, ' ').trim();
+function speakPlain(t) { const s = plainText(t); if (s) try { speak(s); } catch (e) {} return s; }
+const HOLD_SPEAK_MS = 900;
+let holdSpeak = null;
+document.addEventListener('pointerdown', e => {
+  if (!canSpeakSafe() || e.button === 2) return;
+  const el = e.target.closest && e.target.closest('button, .card, .place-pick, .lv-btn, .dex-tile, summary, .adv-ep, .gift-opt, .trick-cell, .zy-tile');
+  if (!el || el.closest('.toast') || el.disabled) return;
+  const label = el.getAttribute('aria-label') || el.title || el.textContent;
+  if (!plainText(label)) return;
+  holdSpeak = { el, x: e.clientX, y: e.clientY, t: setTimeout(() => {
+    holdSpeak = null;
+    const said = speakPlain(label);
+    if (!said) return;
+    el.classList.add('spoke'); setTimeout(() => el.classList.remove('spoke'), 900);
+    const eat = ev => { ev.stopPropagation(); ev.preventDefault(); };   // 念完放開的那一下不算按
+    el.addEventListener('click', eat, { capture: true, once: true });
+    setTimeout(() => el.removeEventListener('click', eat, { capture: true }), 1500);
+  }, HOLD_SPEAK_MS) };
+}, true);
+const holdSpeakCancel = e => { if (!holdSpeak) return; if (e.type === 'pointermove' && Math.hypot(e.clientX - holdSpeak.x, e.clientY - holdSpeak.y) < 8) return; clearTimeout(holdSpeak.t); holdSpeak = null; };
+['pointerup', 'pointercancel', 'pointermove'].forEach(t => document.addEventListener(t, holdSpeakCancel, true));
 function fmt(n) { return n.toLocaleString('zh-TW'); }
 function commit() {
   if (G.away && G.away.place === 'pethouse') savePetHouse(); // 寵物屋的擺法跟著存檔
