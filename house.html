@@ -4396,17 +4396,36 @@ function openNews(list) {
   x.title = '關掉';
   x.onclick = () => { $('#modal').hidden = true; };
   card.appendChild(x);
-  card.appendChild(el('h2', '', '✨ ' + list[0].title));
-  const box = el('div', 'news');
-  list[0].lines.forEach(([ic, tx]) => { const r = el('div', 'news-row'); r.append(el('span', 'news-ic', ic), el('span', 'news-tx', tx)); box.appendChild(r); });
-  card.appendChild(box);
-  const older = list.slice(1).map(n => n.lines.map(l => l[0]).join('')).join('');
-  if (older) card.appendChild(el('div', 'news-older', '之前也更新了：' + older));
+  /* 好幾次沒看過（家長：可以列出距離上次玩到現在總共更新了什麼嗎）：
+     每一次一張卡，標題都看得到，最新那次打開、其他點一下打開。只有一次就跟以前一樣直接列。 */
+  const rowsOf = n => { const box = el('div', 'news'); n.lines.forEach(([ic, tx]) => { const r = el('div', 'news-row'); r.append(el('span', 'news-ic', ic), el('span', 'news-tx', tx)); box.appendChild(r); }); return box; };
+  if (list.length === 1) {
+    card.appendChild(el('h2', '', '✨ ' + list[0].title));
+    card.appendChild(rowsOf(list[0]));
+  } else {
+    card.appendChild(el('h2', '', `✨ 上次玩到現在，更新了 ${list.length} 次！`));
+    card.appendChild(note('點標題可以打開看看：'));
+    list.forEach((n, i) => {
+      const d = document.createElement('details');
+      d.className = 'news-hist';
+      if (i === 0) d.open = true;
+      const sm = document.createElement('summary');
+      sm.append(el('span', '', (i === 0 ? '🆕 ' : '') + n.title), el('span', 'nh-ics', n.lines.map(l => l[0]).join('')), el('span', 'nh-when', newsWhen(n)));
+      d.appendChild(sm);
+      const box = rowsOf(n);
+      const say = el('button', 'mini', '🔊 念給我聽');
+      say.onclick = () => { try { speak(n.title + '。' + n.lines.map(l => l[1]).join('。')); } catch (e) {} };
+      box.appendChild(say);
+      d.appendChild(box);
+      card.appendChild(d);
+    });
+  }
   const ok = el('button', 'big news-ok', '好！去玩囉');
   ok.onclick = () => { $('#modal').hidden = true; };
   card.appendChild(ok);
   $('#modal').hidden = false;
   G.newsSeen = Array.from(new Set((G.newsSeen || []).concat(list.map(n => n.id))));
+  G.newsAt = Object.assign({}, G.newsAt); list.forEach(n => { if (!G.newsAt[n.id]) G.newsAt[n.id] = Date.now(); });
   saveGame();
   Sound.play('coin');
 }
@@ -4415,10 +4434,13 @@ function openNews(list) {
    只列最近 10 次；內容只放「新增了什麼好玩的」——公告裡的說明、提醒（標了 'info' 的那幾行）不列。 */
 const NEWS_HIST_MAX = 10;
 const newsFunLines = n => n.lines.filter(l => l[2] !== 'info');
+/* 公告的編號只是排順序用的（有的比今天還晚），不是真的日期。
+   顯示的是「這台第一次跳出這則公告的那天」（G.newsAt），沒記到的就不寫，免得看起來像「未來」。 */
 function newsWhen(n) {
-  const id = n.id.replace(/^(\d{4}-\d\d-\d\d)-\d+$/, '$1');   // 同一天第二次：2026-10-04-2
-  const d = new Date(id.length === 10 ? id + 'T00:00' : id);
-  return isNaN(d) ? '' : `${d.getMonth() + 1} 月 ${d.getDate()} 日`;
+  const at = (G.newsAt || {})[n.id];
+  if (!at) return '';
+  const d = new Date(at);
+  return `${d.getMonth() + 1} 月 ${d.getDate()} 日`;
 }
 function openNewsHistory() {
   const card = $('#modalCard');
@@ -4761,6 +4783,7 @@ function normalizeSave(g) {
   if (out.seasonDex != null && !isObj(out.seasonDex)) delete out.seasonDex;
   if (out.seasonSeen != null && !isObj(out.seasonSeen)) delete out.seasonSeen;
   if (out.zhuyin != null && !isObj(out.zhuyin)) delete out.zhuyin;
+  if (out.newsAt != null && !isObj(out.newsAt)) delete out.newsAt;
   if (out.trick != null && !(isObj(out.trick) && isObj(out.trick.got) && num(out.trick.y))) delete out.trick;
   if (out.artWall != null) out.artWall = (Array.isArray(out.artWall) ? out.artWall : []).map(cleanDrawing).filter(Boolean).slice(0, 4);
   if (out.kidGrowDay != null && !(isObj(out.kidGrowDay) && typeof out.kidGrowDay.d === 'string' && num(out.kidGrowDay.n))) delete out.kidGrowDay;
