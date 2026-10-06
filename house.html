@@ -528,6 +528,12 @@ button.pass { font: inherit; }
 .pc-head { display: flex; justify-content: space-between; align-items: center; }
 .pc-head button { border: none; background: none; font-size: 14px; padding: 0 4px; color: var(--muted); }
 .petcard.mini .pc-body { display: none; }
+/* 超寬螢幕（21:9）：房間是正方形，左右一定會剩空間——面板再寬一點（卡片變大），小卡移到房間左邊垂直置中 */
+@media (min-width: 2200px) and (orientation: landscape) {
+  .panel { width: clamp(500px, 24vw, 620px); }
+  .petcard { top: 50%; transform: translateY(-50%); left: 24px; width: 210px; font-size: 14px; padding: 8px 10px 10px; }
+  .petcard .pc-bar i { height: 11px; }
+}
 .pc-bar { display: flex; align-items: center; gap: 6px; margin-top: 5px; }
 .pc-bar span { width: 18px; text-align: center; font-size: 13px; }
 .pc-bar i { flex: 1; height: 9px; background: #efe4d0; border-radius: 999px; overflow: hidden; }
