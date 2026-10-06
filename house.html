@@ -13759,8 +13759,8 @@ function tabBackup(body) {
     rb.onclick = openRescue;
     body.appendChild(rb);
   } else {
-    const rc = rescueCopy(); // 之前讀不出來時留下的那一份還沒換回來
-    if (rc && !rc.same) {
+    const rc = rescueCopy(); // 之前讀不出來時留下的那一份還沒換回來（而且進度比現在多）
+    if (rc && !rc.same && rc.better) {
       const fb = el('button', 'big', '🛟 找回之前讀不出來時留下的紀錄');
       fb.onclick = () => openRescueRestore(rc);
       body.appendChild(fb);
@@ -13895,8 +13895,8 @@ function tabSave(body) {
     rb.onclick = openRescue;
     body.appendChild(rb);
   } else {
-    const rc = rescueCopy(); // 之前讀不出來時留下的那一份還沒換回來
-    if (rc && !rc.same) {
+    const rc = rescueCopy(); // 之前讀不出來時留下的那一份還沒換回來（而且進度比現在多）
+    if (rc && !rc.same && rc.better) {
       const fb = el('button', 'big', '🛟 找回之前讀不出來時留下的紀錄');
       fb.onclick = () => openRescueRestore(rc);
       body.appendChild(fb);
@@ -14518,7 +14518,14 @@ function rescueCopy() {
   let g = null;
   try { g = normalizeSave(JSON.parse(raw)); } catch (e) { g = null; }
   if (!g) return null;
-  return { raw, g, same: cur === raw, key: raw.length + ':' + (g.savedAt || 0) };
+  return { raw, g, same: cur === raw, key: raw.length + ':' + (g.savedAt || 0), better: rescueBetter(g, G) };
+}
+/* 那一份有沒有比現在的「更多進度」：累計賺到（只會變多）比較多，或寵物比較多。
+   家長回報：還原了 20 隻寵物的備份，重新載入後又跳「找到讀不出來的那份」（其實是 2 隻的新存檔），
+   按了換回去，還原就白做了。進度比較少的那份不主動問（「🔍 其他找得到的舊紀錄」裡還找得到）。 */
+function rescueBetter(a, b) {
+  if (!a || !b) return false;
+  return (a.earned || 0) > (b.earned || 0) || (a.pets || []).length > (b.pets || []).length;
 }
 function rescueSummary(g) {
   const p = g.pets[g.activePet] || g.pets[0], d = g.savedAt ? new Date(g.savedAt) : null;
@@ -14564,7 +14571,7 @@ function maybeRescueOffer(tries) {
   tries = tries || 0;
   if (SAVE_LOCKED != null || tries > 20) return;
   const rc = rescueCopy();
-  if (!rc || rc.same || G.rescueSeen === rc.key) return;
+  if (!rc || rc.same || !rc.better || G.rescueSeen === rc.key) return;
   if (!$('#modal').hidden || introPlaying || document.getElementById('showcase')) { setTimeout(() => maybeRescueOffer(tries + 1), 2000); return; }
   openRescueRestore(rc);
 }
