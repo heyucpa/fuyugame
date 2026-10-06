@@ -4029,7 +4029,11 @@ function slots() {
 function saveSlots(list) {
   try { localStorage.setItem(SLOTS_KEY, JSON.stringify(list)); } catch (e) {}
 }
+/* 這一頁在玩哪一格：載入時算一次就固定（SLOT_FIXED）。
+   本來每次都重讀 CUR_KEY——另一個分頁換了存檔格，這一頁的設定、找回、刪除就會動到別人的那一格。 */
+var SLOT_FIXED = null;
 function curSlotId() {
+  if (SLOT_FIXED) return SLOT_FIXED;
   const list = slots(), id = localStorage.getItem(CUR_KEY);
   return list.some(s => s.id === id) ? id : list[0].id;
 }
@@ -4048,24 +4052,32 @@ function curSlotName() {
   } catch (e) {}
 })();
 
-const SAVE_KEY = slotSave(curSlotId());
-const UNDO_KEY = slotUndo(curSlotId());
+SLOT_FIXED = curSlotId();
+const SAVE_KEY = slotSave(SLOT_FIXED);
+const UNDO_KEY = slotUndo(SLOT_FIXED);
+var RELOADING = false; // 還原／換格／刪格寫好之後要重新載入：這段時間不能再存（不然會把剛寫進去的蓋回去）
+function reloadNow() { RELOADING = true; location.reload(); }
 
 /* 換一格來玩。先把現在這格存好再換，然後整個重讀——
    G 跟畫面上所有東西都要跟著換，重讀是最不會漏的做法。 */
 function switchSlot(id) {
   if (id === curSlotId()) return;
-  saveGame();
+  if (!saveGame() && SAVE_LOCKED == null && !confirm('現在的進度沒有存好（空間可能不夠），還是要換存檔嗎？')) return;
   try { localStorage.setItem(CUR_KEY, id); } catch (e) { return; }
-  location.reload();
+  reloadNow();
 }
+// 編號不重複使用（刪掉的那格的存檔紀錄、找回的資料才不會跑進新的這一格）
+const SLOT_SEQ_KEY = 'myHouseGame_slotSeq';
 function addSlot(name) {
   const list = slots();
   let n = 1;
   list.forEach(s => { const m = /^p(\d+)$/.exec(s.id); if (m) n = Math.max(n, +m[1] + 1); });
+  try { n = Math.max(n, (parseInt(localStorage.getItem(SLOT_SEQ_KEY), 10) || 0) + 1); } catch (e) {}
   const id = 'p' + n;
-  list.push({ id: id, name: name || ('存檔 ' + n) });
+  list.push({ id: id, name: name || ('存檔 ' + (list.length + 1)) });
   saveSlots(list);
+  if (!slots().some(s => s.id === id)) return null; // 存不進去：不要換過去（會掉進別人的那一格）
+  try { localStorage.setItem(SLOT_SEQ_KEY, String(n)); } catch (e) {}
   return id;
 }
 function renameSlot(id, name) {
@@ -4075,14 +4087,26 @@ function renameSlot(id, name) {
   s.name = String(name || '').trim().slice(0, 10) || s.name;
   saveSlots(list);
 }
+const TRASH_KEY = 'myHouseGame_trash';
 // 刪掉一格。最後一格不給刪——刪完沒有任何一格可以玩
 function removeSlot(id) {
   const list = slots();
   if (list.length <= 1) return false;
   const rest = list.filter(s => s.id !== id);
   if (rest.length === list.length) return false;
-  saveSlots(rest);
+  // 刪掉之前留一份在「回收桶」（最多 2 份），「🔍 其他找得到的舊紀錄」找得到
   try {
+    const raw = localStorage.getItem(slotSave(id));
+    if (raw) {
+      let tr = []; try { tr = JSON.parse(localStorage.getItem(TRASH_KEY)) || []; } catch (e) {}
+      tr = [{ at: Date.now(), name: (list.find(s => s.id === id) || {}).name || '', raw }].concat(Array.isArray(tr) ? tr : []).slice(0, 2);
+      localStorage.setItem(TRASH_KEY, JSON.stringify(tr));
+    }
+  } catch (e) {}
+  saveSlots(rest);
+  if (id === curSlotId()) RELOADING = true;
+  try {
+    localStorage.removeItem('myHouseGame_snaps:' + id);
     localStorage.removeItem(slotSave(id));
     localStorage.removeItem(slotUndo(id));
     localStorage.removeItem('myHouse_photos:' + id); // 那一格的照片也一起刪
@@ -4129,7 +4153,7 @@ const NEWS = [
     ['🕒', '每次打開遊戲、之後每 10 分鐘會自動存一份'],
     ['💾', '「💾 備份」裡可以按「手動存一份」'],
     ['↩️', '萬一紀錄不見了或玩壞了，選一份「回到這份」就好'],
-    ['🛟', '讀不出來的紀錄也會留著，不會被蓋掉']
+    ['🆘', '讀不出來的紀錄也會留著，不會被蓋掉']
   ], newItems: [] },
   { id: '2026-10-13T09:00', title: '幫寵物取名字更好玩了！🏷️', lines: [
     ['👆', '點小卡上寵物的名字（或寵物分頁的名字）就能取名字'],
@@ -4571,7 +4595,8 @@ function readSnaps() {
     return Array.isArray(a) ? a.filter(x => x && typeof x.raw === 'string' && x.raw && SNAP_MAX[x.kind] && typeof x.at === 'number') : [];
   } catch (e) { return []; }
 }
-function writeSnaps(list) {
+// keep：一定要留著的那一份（剛加進來的），空間不夠也不能把它丟掉
+function writeSnaps(list, keep) {
   list = list.slice();
   for (;;) {
     try { localStorage.setItem(SNAP_KEY, JSON.stringify(list)); return true; }
@@ -4580,7 +4605,7 @@ function writeSnaps(list) {
       const order = ['auto', 'manual', 'reset', 'rescue'];
       let gone = false;
       for (const k of order) {
-        const olds = list.filter(x => x.kind === k);
+        const olds = list.filter(x => x.kind === k && x !== keep);
         if (olds.length > (k === 'rescue' ? 1 : 0)) { list.splice(list.indexOf(olds[olds.length - 1]), 1); gone = true; break; }
       }
       if (!gone) return false;
@@ -4592,16 +4617,30 @@ function addSnap(kind, raw) {
   if (!raw || !SNAP_MAX[kind]) return false;
   let list = readSnaps();
   if (list.some(x => x.kind === kind && x.raw === raw)) return false;
-  list.unshift({ kind, at: Date.now(), raw });
+  const item = { kind, at: Date.now(), raw };
+  list.unshift(item);
   const keep = {};
   list = list.filter(x => (keep[x.kind] = (keep[x.kind] || 0) + 1) <= SNAP_MAX[x.kind]);
-  return writeSnaps(list);
+  return writeSnaps(list, item) && readSnaps().some(x => x.kind === kind && x.raw === raw); // 讀回來確認真的有存到
 }
+// 這一份有沒有留在存檔紀錄裡（剛存的、或之前就有一樣的）
+const snapHas = raw => !!raw && readSnaps().some(x => x.raw === raw);
 function delSnap(at) { writeSnaps(readSnaps().filter(x => x.at !== at)); }
-// 空間不夠讓主存檔存不進去時：自動存檔只留最新一份
-function trimSnaps() {
+// 空間不夠讓主存檔存不進去時，一步一步騰出空間（level 越大丟越多；主存檔最重要）
+function trimSnaps(level) {
+  level = level || 0;
   const list = readSnaps(); let autoN = 0;
-  return writeSnaps(list.filter(x => x.kind !== 'auto' || ++autoN <= 1));
+  if (level === 0) return writeSnaps(list.filter(x => x.kind !== 'auto' || ++autoN <= 1));
+  if (level === 1) return writeSnaps(list.filter(x => x.kind !== 'auto'));
+  if (level === 2) { // 別的存檔格的自動存檔
+    try { Object.keys(localStorage).filter(k => k.startsWith('myHouseGame_snaps:') && k !== SNAP_KEY).forEach(k => {
+      let a = []; try { a = JSON.parse(localStorage.getItem(k)) || []; } catch (e) {}
+      localStorage.setItem(k, JSON.stringify((Array.isArray(a) ? a : []).filter(x => x && x.kind !== 'auto')));
+    }); } catch (e) {}
+    return true;
+  }
+  if (level === 3) { const m = {}; return writeSnaps(list.filter(x => x.kind === 'rescue' || (m[x.kind] = (m[x.kind] || 0) + 1) <= 1)); }
+  return false;
 }
 var SAVE_LOCKED = null;
 var SAVE_STALE = false, lastSaveTxt = null; // 別的分頁寫了同一格存檔（下面 storage 事件）
@@ -4795,11 +4834,12 @@ saveGame();
 /* 同一個存檔開在兩個分頁／視窗：另一邊還原了備份（或在玩），這一頁再存就會把它蓋回去
    （家長：還原了 20 隻寵物，結果還是 2 隻）。聽到別的分頁寫了同一格，這一頁就不再存，請她重新載入。 */
 window.addEventListener('storage', e => {
-  if (e.key !== SAVE_KEY || e.newValue == null || e.newValue === lastSaveTxt) return;
+  if (e.key !== SAVE_KEY || (e.newValue != null && e.newValue === lastSaveTxt)) return; // null：別的分頁把這一格刪掉了
   SAVE_STALE = true;
   showSaveWarn('stale');
 });
 function saveGame() {
+  if (RELOADING) return false;
   if (SAVE_STALE) { showSaveWarn('stale'); return false; }
   if (SAVE_LOCKED != null) { showSaveWarn('locked'); return false; }
   G.savedAt = Date.now(); // 記下存檔時間：還原備份時拿來比「哪一份比較新」
@@ -4807,8 +4847,9 @@ function saveGame() {
   lastSaveTxt = txt;
   try { localStorage.setItem(SAVE_KEY, txt); }
   catch (e) { // 空間滿了：先把舊的自動存檔清掉再試一次；還是不行才警告（私密視窗等等）
-    try { trimSnaps(); localStorage.setItem(SAVE_KEY, txt); }
-    catch (e2) { showSaveWarn('fail'); return false; }
+    let ok = false;
+    for (let lv = 0; lv <= 3 && !ok; lv++) { try { trimSnaps(lv); localStorage.setItem(SAVE_KEY, txt); ok = true; } catch (e2) {} }
+    if (!ok) { showSaveWarn('fail'); return false; }
   }
   showSaveWarn(null);
   return true;
@@ -4876,6 +4917,10 @@ function confirmTypedReset(title, raw, onYes) {
   doIt.onclick = () => {
     if (input.value.trim() !== '重新開始') return;
     try { addSnap('reset', raw); } catch (e) {}
+    if (!snapHas(raw)) { // 存不進存檔紀錄（空間不夠）：先下載一份才准清掉
+      if (!confirm('空間不夠，沒辦法在遊戲裡先留一份。\n按「確定」會先下載一份到電腦，再重新開始。')) return;
+      try { downloadText(raw, '我的小屋-重新開始之前-' + today() + '.json'); } catch (e) { alert('下載不了，沒有清掉任何東西'); return; }
+    }
     close();
     onYes();
   };
@@ -5200,8 +5245,12 @@ var PARENT_TAB = false, lastStageInput = 0;
 const PARENT_IDLE_MS = 10000;
 function parentPaused(now) {
   now = now || Date.now();
-  return PARENT_TAB && now - lastStageInput > PARENT_IDLE_MS && !document.body.classList.contains('bigroom');
+  const card = document.getElementById('modalCard'), modal = document.getElementById('modal');
+  const inGame = modal && !modal.hidden && card && card.classList.contains('in-game');
+  return PARENT_TAB && !inGame && now - lastStageInput > PARENT_IDLE_MS && !document.body.classList.contains('bigroom');
 }
+// 點了左邊面板以外的地方（房間、小卡、上面的按鈕、小遊戲）＝在玩，不算家長設定中
+document.addEventListener('pointerdown', e => { if (!(e.target && e.target.closest && e.target.closest('aside.panel'))) lastStageInput = Date.now(); }, true);
 function petTick() {
   const pet = G.pet, kid = G.kid, now = Date.now();
   if (parentPaused(now)) { pet.lastTick = now; kid.lastTick = now; return false; } // 暫停：時間不算進去
@@ -6676,7 +6725,7 @@ function fufuStartAct(key, now, it, auto) {
   if (a.tab) openTab(a.tab);
   if (a.open) setTimeout(() => { // 叔叔的電腦、阿婆的穀倉：打開那裡專屬的小遊戲
     const fn = { brick: openBrickGame, mole: openMoleGame, race: openRaceGame, farm: openFarmGame, hay: () => openStackGame('hay'), quiz: openQuizGame, run: openRunGame, fish: openFishing, bfly: openButterflyGame, shelf: openShelfGame, story: openNextStorybook, passport: openPassport, storytime: () => openNextStorybook({ aloud: true }) }[a.open] || openFarmGame;
-    if ($('#modal').hidden) fn();
+    if ($('#modal').hidden && !(typeof resting !== 'undefined' && resting)) fn();
   }, 1300);
   if (a.game) setTimeout(() => { // 大型電玩：隨機開一個小遊戲
     const games = [openMemoryGame, openCatchGame, openBubbleGame, openCupGame, openStackGame, openSimonGame];
@@ -11592,6 +11641,34 @@ function draw() {
 /* ===== 世界自己會動 =====
    沒有點任何東西的時候，場景裡也有事情在發生：花圃上有蝴蝶飛、樹上的葉子飄下來、
    池塘的魚偶爾跳出水面。都用時間算（不存狀態），每件家具用自己的 uid 錯開節奏。 */
+/* 蝴蝶：房間裡的花圃旁邊也會飛（drawAmbient），所以放在遊戲迴圈「之前」——
+   本來放在後面的 <script>，存檔停在有花圃的房間（遊樂園、自己買的花圃）一打開就整個卡住。 */
+const BUTTERFLIES = [
+  { id: 'red',    name: '紅蝴蝶', c: '#e8505b', c2: '#ffb3b8', w: 22 },
+  { id: 'yellow', name: '黃蝴蝶', c: '#ffcf3a', c2: '#fff1a8', w: 22 },
+  { id: 'blue',   name: '藍蝴蝶', c: '#3f8ee0', c2: '#a9d4ff', w: 18 },
+  { id: 'purple', name: '紫蝴蝶', c: '#9b6ad8', c2: '#dcc8ff', w: 16 },
+  { id: 'white',  name: '白蝴蝶', c: '#f4f4f0', c2: '#ffffff', w: 16 },
+  { id: 'rainbow', name: '彩虹蝴蝶', c: 'rainbow', c2: '#ffffff', w: 6 }
+];
+function pickButterfly() {
+  let r = Math.random() * BUTTERFLIES.reduce((a, b) => a + b.w, 0);
+  return BUTTERFLIES.find(b => (r -= b.w) < 0) || BUTTERFLIES[0];
+}
+function drawButterfly(g, x, y, sp, flap, s) {
+  g.save(); g.translate(x, y); g.scale(s || 1, s || 1);
+  const open = .35 + .65 * Math.abs(Math.sin(flap));
+  const col = sp.c === 'rainbow' ? (() => { const gr = g.createLinearGradient(-14, 0, 14, 0); ['#e8505b', '#ffcf3a', '#7bd389', '#3f8ee0', '#9b6ad8'].forEach((c, i) => gr.addColorStop(i / 4, c)); return gr; })() : sp.c;
+  [-1, 1].forEach(side => {
+    g.fillStyle = col; g.strokeStyle = 'rgba(60,40,40,.45)'; g.lineWidth = 1;
+    g.beginPath(); g.ellipse(side * 7 * open, -4, 8 * open, 7, side * .5, 0, Math.PI * 2); g.fill(); g.stroke();
+    g.fillStyle = sp.c2;
+    g.beginPath(); g.ellipse(side * 5 * open, 5, 5 * open, 4.5, -side * .4, 0, Math.PI * 2); g.fill(); g.stroke();
+  });
+  g.fillStyle = '#3a3240'; g.fillRect(-1.3, -8, 2.6, 16);
+  g.strokeStyle = '#3a3240'; g.beginPath(); g.moveTo(0, -8); g.lineTo(-4, -13); g.moveTo(0, -8); g.lineTo(4, -13); g.stroke();
+  g.restore();
+}
 const LEAF_TREES = ['shade_tree', 'apple_tree', 'orange_tree', 'banana_tree'];
 function drawAmbient(ctx, now) {
   const t = now / 1000;
@@ -11801,12 +11878,15 @@ function gameStep(dt, now) {
   dirty = false;
   return true;
 }
+// 先排下一幀再畫：某一幀出錯（例如後面的 <script> 還沒載入完）也不會讓整個遊戲停住；錯誤照樣報出來（同一種只報一次）
+const loopErrs = new Set();
 (function loop(now) {
+  requestAnimationFrame(loop);
   now = now || performance.now();
   const dt = Math.max(0, Math.min(.05, (now - lastFrame) / 1000));
   lastFrame = now;
-  gameStep(dt, now);
-  requestAnimationFrame(loop);
+  try { gameStep(dt, now); }
+  catch (e) { const k = String(e && e.message); if (!loopErrs.has(k)) { loopErrs.add(k); setTimeout(() => { throw e; }, 0); } }
 })();
 
 // ── 座標換算與點選 ──
@@ -12538,6 +12618,7 @@ var sessionLog = { acts: {}, newThings: [], placed: 0, earned0: null, met: [] };
 // 每秒呼叫一次。now、visible 可以從外面給（測試用）
 function restTick(now, visible) {
   now = now || Date.now();
+  updatePauseBadge(now);   // 提醒關掉時下面會提早 return，徽章還是要更新
   const c = restCfg(), s = restState();
   if (s.restUntil > now) { showRest(s.restUntil); return; }
   if (resting) endRest();
@@ -12548,7 +12629,6 @@ function restTick(now, visible) {
     if (s.lastSeen && now - s.lastSeen < 5000 && !parentPaused(now)) s.played += (now - s.lastSeen) / 1000; // 家長設定中不算玩的時間
     s.lastSeen = now;
   }
-  updatePauseBadge(now);
   const left = c.play * 60 - s.played;
   if (left <= REST_WARN_S && left > 0 && !s.warned) {
     s.warned = true;
@@ -13403,7 +13483,12 @@ function confirmReset() {
       close();
       // 清掉之前整份收起來，到「備份」分頁按「把上一份換回來」就回得去
       try { localStorage.setItem(UNDO_KEY, makeBackup()); } catch (e) {}
-      try { saveGame(); addSnap('reset', localStorage.getItem(SAVE_KEY)); } catch (e) {}
+      let before = null;
+      try { saveGame(); before = localStorage.getItem(SAVE_KEY); addSnap('reset', before); } catch (e) {}
+      if (before && !snapHas(before)) { // 存不進存檔紀錄：先下載一份才准清掉
+        if (!confirm('空間不夠，沒辦法在遊戲裡先留一份。\n按「確定」會先下載一份到電腦，再重新開始。')) return;
+        try { downloadText(before, '我的小屋-重新開始之前-' + today() + '.json'); } catch (e) { alert('下載不了，沒有清掉任何東西'); return; }
+      }
       // 先把手上拿的放回「舊的」房間再換存檔（不然會掉進新的存檔裡）；家人送禮、教學、寵物屋也從頭來
       cancelHold(); hold = null; hideItemMenu();
       G = newGame(); giftReset(); guideSaid = null; guideScrolled = null; if (phMode) phModeEnd(); phReset(); updateHoldUI(); commit(); setTimeout(() => maybePlayIntro(), 300); setTimeout(() => maybeShowNews(), 1200);
@@ -13762,6 +13847,7 @@ function applyBackup(txt) {
   const s = readBackup(txt);
   if (!s) return false;
   try {
+    try { if (SAVE_LOCKED == null) addSnap('reset', localStorage.getItem(SAVE_KEY)); } catch (e) {} // 反悔那一份只有一個；存檔紀錄裡也留一份
     localStorage.setItem(UNDO_KEY, makeBackup());
     localStorage.setItem(SAVE_KEY, s.data);
   } catch (e) { return false; }
@@ -13831,7 +13917,7 @@ function tabBackup(body) {
   } else {
     const rc = rescueCopy(); // 之前讀不出來時留下的那一份還沒換回來（而且進度比現在多）
     if (rc && !rc.same && rc.better) {
-      const fb = el('button', 'big', '🛟 找回之前讀不出來時留下的紀錄');
+      const fb = el('button', 'big', '🆘 找回之前讀不出來時留下的紀錄');
       fb.onclick = () => openRescueRestore(rc);
       body.appendChild(fb);
     }
@@ -13937,7 +14023,7 @@ function tabBackup(body) {
       if (!confirm('再確認一次：真的要用這份備份蓋掉現在的進度嗎？')) return;
     } else if (!confirm('要用這一份備份蓋掉現在的進度嗎？\n\n' + (cmp ? cmp.text : '備份時間：' + (s.at || '不詳')))) return;
     if (!applyBackup(box.value)) { toast('寫不進去，沒有動到任何東西'); return; }
-    location.reload();   // 整個重讀最乾淨，G 跟畫面都會跟著換
+    reloadNow();   // 整個重讀最乾淨，G 跟畫面都會跟著換
   });
   body.appendChild(restore);
 
@@ -13951,7 +14037,7 @@ function tabBackup(body) {
       if (!confirm('要換回上一份嗎？（' + (s.at || '不詳') + '）')) return;
       // applyBackup 自己會先收起現況，所以按兩次就是來回切
       if (!applyBackup(localStorage.getItem(UNDO_KEY))) { toast('寫不進去'); return; }
-      location.reload();
+      reloadNow();
     });
     body.appendChild(undo);
   }
@@ -13967,7 +14053,7 @@ function tabSave(body) {
   } else {
     const rc = rescueCopy(); // 之前讀不出來時留下的那一份還沒換回來（而且進度比現在多）
     if (rc && !rc.same && rc.better) {
-      const fb = el('button', 'big', '🛟 找回之前讀不出來時留下的紀錄');
+      const fb = el('button', 'big', '🆘 找回之前讀不出來時留下的紀錄');
       fb.onclick = () => openRescueRestore(rc);
       body.appendChild(fb);
     }
@@ -14046,7 +14132,8 @@ function tabSave(body) {
   add.onclick = () => {
     if (slots().length >= 6) { toast('最多 6 個存檔'); return; }
     Sound.play('click');
-    switchSlot(addSlot(''));     // 開好就直接換過去
+    const nid = addSlot(''); if (!nid) { toast('開不了新存檔（空間可能不夠）'); return; }
+    switchSlot(nid);     // 開好就直接換過去
   };
   body.appendChild(add);
 
@@ -14056,7 +14143,7 @@ function tabSave(body) {
       if (!confirm('要刪掉「' + curSlotName() + '」這個存檔嗎？\n\n' +
                    '這個存檔的錢、家具、寵物全部都會不見。\n' +
                    '（刪掉的存檔救不回來，建議先存成檔案）')) return;
-      if (removeSlot(cur)) location.reload();
+      if (removeSlot(cur)) reloadNow();
     });
     body.appendChild(del);
   }
@@ -14189,10 +14276,11 @@ function openPetNamer(i, opts) {
 function askNameAfterHatch(p) {
   let tries = 0;
   const t = setInterval(() => {
-    tries++;
     const i = G.pets.indexOf(p);
     if (i < 0 || p.name || tries > 30) { clearInterval(t); return; }
-    if (document.getElementById('showcase') || SC_QUEUE.length || !$('#modal').hidden) return;
+    if (resting || hold || !$('#modal').hidden) return;   // 休息、拿著家具、在玩別的：先等，不算次數（玩完還會問）
+    tries++;
+    if (document.getElementById('showcase') || SC_QUEUE.length) return;
     clearInterval(t);
     openPetNamer(i, { hatch: true });
   }, 1000);
@@ -14576,7 +14664,7 @@ function openSeasonNotice(se) {
   Sound.play('fanfare');
   try { speak(n.title); } catch (e) {}
 }
-/* ===== 🛟 找回「讀不出來」那時候留下的紀錄 =====
+/* ===== 🆘 找回「讀不出來」那時候留下的紀錄 =====
    存檔讀不出來時，原文會另外留一份（rescueKey）。如果家長按了「重新開始」，
    或修好之前已經開始玩新的一份，就從這裡換回去（家長：「剛才玩的存檔沒有了 傷心」）。
    換回去之前，現在的這份會先存成「可以反悔」的那一份（跟還原備份一樣）。 */
@@ -14607,10 +14695,10 @@ function openRescueRestore(rc) {
   if (!rc) { toast('沒有找到之前留下的紀錄'); return; }
   const card = $('#modalCard');
   card.innerHTML = '';
-  card.appendChild(el('h2', '', '🛟 找到之前讀不出來的那份紀錄了！'));
+  card.appendChild(el('h2', '', '🆘 找到之前讀不出來的那份紀錄了！'));
   card.appendChild(note('那時候讀不出來的紀錄有另外留著，現在已經讀得出來了。要換回那一份嗎？（現在這份也會先留著，換錯了可以在「💾 備份」反悔）'));
   const box = el('div', 'news');
-  [['🛟', '那一份：' + rescueSummary(rc.g)], ['🎮', '現在的：' + rescueSummary(G)]].forEach(([ic, tx]) => {
+  [['🆘', '那一份：' + rescueSummary(rc.g)], ['🎮', '現在的：' + rescueSummary(G)]].forEach(([ic, tx]) => {
     const r = el('div', 'news-row'); r.append(el('span', 'news-ic', ic), el('span', 'news-tx', tx)); box.appendChild(r);
   });
   card.appendChild(box);
@@ -14618,7 +14706,7 @@ function openRescueRestore(rc) {
   back.onclick = () => askPin('換回之前的紀錄', () => {
     if (!confirm('換回之前的那份紀錄嗎？\n現在這份會先留著，之後可以在「💾 備份」反悔。')) return;
     if (!restoreRescue(rc)) { toast('寫不進去，請先「⬇️ 下載」保存'); return; }
-    location.reload();
+    reloadNow();
   });
   const keep = el('button', 'big alt', '保留現在的');
   keep.onclick = () => { G.rescueSeen = rc.key; saveGame(); $('#modal').hidden = true; toast('那一份還留著，之後可以在「💾 備份」找回來'); };
@@ -14630,6 +14718,7 @@ function openRescueRestore(rc) {
 // 真的寫進去（抽出來給走查驗；按鈕之後會重新載入）
 function restoreRescue(rc) {
   try {
+    try { addSnap('reset', localStorage.getItem(SAVE_KEY)); } catch (e) {}
     localStorage.setItem(UNDO_KEY, makeBackup());
     localStorage.setItem(SAVE_KEY, rc.raw);
     localStorage.removeItem(rescueKey());
@@ -14659,12 +14748,12 @@ function snapTime(at) {
   const d = new Date(at), now = new Date(), same = d.toDateString() === now.toDateString();
   return `${same ? '今天' : `${d.getMonth() + 1}/${d.getDate()}`} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
-const SNAP_LABEL = { auto: '🕒 自動', manual: '💾 手動', rescue: '🛟 讀不出來時留的', reset: '🆕 重新開始之前的' };
+const SNAP_LABEL = { auto: '🕒 自動', manual: '💾 手動', rescue: '🆘 讀不出來時留的', reset: '🆕 重新開始之前的' };
 // 回到某一份：現在的先留成「可以反悔」那一份，再寫進去、重新載入
 function restoreSnap(raw) {
   try {
     if (!normalizeSave(JSON.parse(raw))) return false;
-    if (SAVE_LOCKED == null) addSnap('auto', localStorage.getItem(SAVE_KEY));
+    if (SAVE_LOCKED == null) addSnap('reset', localStorage.getItem(SAVE_KEY)); // 回去之前的進度：放在不會被自動存檔擠掉的那一類
     localStorage.setItem(UNDO_KEY, makeBackup());
     localStorage.setItem(SAVE_KEY, raw);
   } catch (e) { return false; }
@@ -14678,8 +14767,9 @@ function snapSection(body) {
     if (SAVE_LOCKED != null) { toast('這份紀錄讀不出來，現在玩的不能存'); return; }
     saveGame();
     let raw = null; try { raw = localStorage.getItem(SAVE_KEY); } catch (e) {}
-    const r = addSnap('manual', raw);
-    toast(r ? '💾 存好了！' : readSnaps().some(x => x.kind === 'manual' && x.raw === raw) ? '💾 跟上一份手動存的一樣，不用再存' : '存不進去（空間不夠）');
+    const had = readSnaps().some(x => x.kind === 'manual' && x.raw === raw);
+    const r = !had && addSnap('manual', raw);
+    toast(r ? '💾 存好了！' : had ? '💾 跟上一份手動存的一樣，不用再存' : '⚠️ 存不進去（空間不夠），請到下面「📋 複製備份」');
     renderTab();
   };
   body.appendChild(man);
@@ -14698,7 +14788,7 @@ function snapSection(body) {
       go.onclick = () => askPin('回到之前的存檔', () => {
         if (!confirm(`回到「${snapTime(sn.at)}」那一份嗎？\n現在的進度會先留著（在這裡和「反悔」都找得到）。`)) return;
         if (!restoreSnap(sn.raw)) { toast('寫不進去'); return; }
-        location.reload();
+        reloadNow();
       });
       btns.appendChild(go);
     } else {
@@ -14723,7 +14813,7 @@ function snapSection(body) {
     body.appendChild(note('這台電腦裡另外留著的舊紀錄。可能比較舊，看一下錢、寵物、房間數再決定要不要回去。'));
     const eb = el('div', 'snap-list');
     extra.forEach(x => {
-      const row = el('div', 'snap-row');
+      const row = el('div', 'snap-row extra');
       const t = el('div', 'snap-txt');
       t.append(el('b', '', x.label), el('span', '', x.sum));
       row.appendChild(t);
@@ -14731,7 +14821,7 @@ function snapSection(body) {
       go.onclick = () => askPin('回到之前的存檔', () => {
         if (!confirm(`回到「${x.label}」嗎？\n現在的進度會先留著，可以反悔。`)) return;
         if (!restoreSnap(x.raw)) { toast('寫不進去'); return; }
-        location.reload();
+        reloadNow();
       });
       const bt = el('div', 'snap-btns'); bt.appendChild(go); row.appendChild(bt);
       eb.appendChild(row);
@@ -14751,8 +14841,9 @@ function olderCopies() {
     seen.add(raw); out.push({ label, raw, sum });
   };
   const fromBackup = k => { try { const b = readBackup(localStorage.getItem(k)); return b ? b.data : null; } catch (e) { return null; } };
-  try { add('🛟 讀不出來時留的那一份', localStorage.getItem(rescueKey())); } catch (e) {}
+  try { add('🆘 讀不出來時留的那一份', localStorage.getItem(rescueKey())); } catch (e) {}
   add('↩️ 反悔用的那份（上次還原之前的）', fromBackup(UNDO_KEY));
+  try { (JSON.parse(localStorage.getItem(TRASH_KEY)) || []).forEach(t => t && add(`🗑️ 刪掉的存檔「${t.name || ''}」`, t.raw)); } catch (e) {}
   if (curSlotId() === 'p1') {
     try { add('📦 很早以前的紀錄（加「存檔格」之前留的）', localStorage.getItem(LEGACY_KEY)); } catch (e) {}
     add('📦 很早以前的反悔用那份', fromBackup('myHouseGame_undo'));
@@ -15654,7 +15745,7 @@ function relativePerk(key) {
   if (!P) return false;
   if (P.who && !(G.away && [].concat(P.who).includes(G.away.place))) return false; // who 可以是好幾個地方
   if (P.comic) { // 漫畫櫃隨時可以看（四格笑話才要等，在漫畫櫃裡面算）
-    setTimeout(() => { if ($('#modal').hidden) openComicShelf(); }, 1200);
+    setTimeout(() => { if ($('#modal').hidden && !resting) openComicShelf(); }, 1200);
     return true;
   }
   if (P.buy) { // 用買的：錢夠就買，不夠就說
@@ -16199,8 +16290,8 @@ const RUN_BOOST = { dist: 10, dur: .8 };          // ⭐ 加速
 const RUN_TRIP = .2, RUN_TRIP_S = .6;             // 同學跨欄絆到的機率、停多久
 // 同學的個性（平均起來跟原本一樣快）
 const RUN_STYLES = [
-  { say: '我先衝！',     f: x => x < 50 ? 1.15 : .89 },
-  { say: '後面看我的！', f: x => x < 50 ? .88 : 1.14 },
+  { say: '後面看我的！', f: x => x < 50 ? .88 : 1.14 },   // 熊熊：後面才加速
+  { say: '我先衝！',     f: x => x < 50 ? 1.15 : .89 },   // 兔兔：先衝後累
   { say: '穩穩跑～',     f: () => 1 }
 ];
 function openRunGame() {
@@ -16229,6 +16320,8 @@ function playRun(w, L) {
   let jumpT = 0, restT = 0, boostT = 0, bumpT = 0, bumpSnd = 0, rank = 4, endT = 0, best = null, newBest = false;
   const pops = [], confetti = [];
   const onKey = e => {
+    if (ended) return;   // 跑完了：不攔空白鍵（要能按「再玩一次」）
+    if (e.repeat) { if (e.key === ' ' || e.key === 'ArrowRight' || e.key === 'ArrowUp') e.preventDefault(); return; } // 按住不放不算（不然按住就秒贏）
     if (e.key === ' ' || e.key === 'ArrowRight') { e.preventDefault(); tap(); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); jump(); }
   };
@@ -16460,37 +16553,11 @@ function playRun(w, L) {
    蝴蝶在花叢裡飛來飛去，點一下就「喀嚓」拍一張；點到蜜蜂會被嚇一跳（扣一張）。
    公園的花不能摘、蝴蝶也不抓——用拍照的，拍完牠還是自由的。
    蝴蝶有六種顏色，拍過的會記在「蝴蝶相簿」，彩虹蝴蝶很少見。 */
-const BUTTERFLIES = [
-  { id: 'red',    name: '紅蝴蝶', c: '#e8505b', c2: '#ffb3b8', w: 22 },
-  { id: 'yellow', name: '黃蝴蝶', c: '#ffcf3a', c2: '#fff1a8', w: 22 },
-  { id: 'blue',   name: '藍蝴蝶', c: '#3f8ee0', c2: '#a9d4ff', w: 18 },
-  { id: 'purple', name: '紫蝴蝶', c: '#9b6ad8', c2: '#dcc8ff', w: 16 },
-  { id: 'white',  name: '白蝴蝶', c: '#f4f4f0', c2: '#ffffff', w: 16 },
-  { id: 'rainbow', name: '彩虹蝴蝶', c: 'rainbow', c2: '#ffffff', w: 6 }
-];
 const BFLY_LEVELS = [
   { name: '慢慢飛', n: 3, speed: 50, bee: 1, mul: 1 },
   { name: '普通',   n: 4, speed: 80, bee: 2, mul: 2 },
   { name: '飛好快！', n: 5, speed: 115, bee: 3, mul: 3 }
 ];
-function pickButterfly() {
-  let r = Math.random() * BUTTERFLIES.reduce((a, b) => a + b.w, 0);
-  return BUTTERFLIES.find(b => (r -= b.w) < 0) || BUTTERFLIES[0];
-}
-function drawButterfly(g, x, y, sp, flap, s) {
-  g.save(); g.translate(x, y); g.scale(s || 1, s || 1);
-  const open = .35 + .65 * Math.abs(Math.sin(flap));
-  const col = sp.c === 'rainbow' ? (() => { const gr = g.createLinearGradient(-14, 0, 14, 0); ['#e8505b', '#ffcf3a', '#7bd389', '#3f8ee0', '#9b6ad8'].forEach((c, i) => gr.addColorStop(i / 4, c)); return gr; })() : sp.c;
-  [-1, 1].forEach(side => {
-    g.fillStyle = col; g.strokeStyle = 'rgba(60,40,40,.45)'; g.lineWidth = 1;
-    g.beginPath(); g.ellipse(side * 7 * open, -4, 8 * open, 7, side * .5, 0, Math.PI * 2); g.fill(); g.stroke();
-    g.fillStyle = sp.c2;
-    g.beginPath(); g.ellipse(side * 5 * open, 5, 5 * open, 4.5, -side * .4, 0, Math.PI * 2); g.fill(); g.stroke();
-  });
-  g.fillStyle = '#3a3240'; g.fillRect(-1.3, -8, 2.6, 16);
-  g.strokeStyle = '#3a3240'; g.beginPath(); g.moveTo(0, -8); g.lineTo(-4, -13); g.moveTo(0, -8); g.lineTo(4, -13); g.stroke();
-  g.restore();
-}
 function openButterflyGame() {
   const w = openGameWindow('📷 拍蝴蝶', '點蝴蝶就會拍一張照片！小心不要點到蜜蜂 🐝。30 秒內拍越多越好，拍到新的蝴蝶會放進相簿。');
   pickLevelRow(w, BFLY_LEVELS, L => `一張 💰 ${15 * L.mul}`, L => playButterfly(w, L));
@@ -16657,7 +16724,7 @@ function openStorybook(id, aloud) {
       mute.onclick = () => { readAloud = false; stopSpeak(); show(); };
       row.appendChild(mute);
     }
-    next.onclick = () => { if (last) { stopSpeak(); finishBook(book); } else { page++; Sound.play('click'); show(); } };
+    next.onclick = () => { if (last) { stopSpeak(); finishBook(book, { aloud: !!aloud }); } else { page++; Sound.play('click'); show(); } };
     row.appendChild(next);
     card.appendChild(row);
     $('#modal').hidden = false;
@@ -16678,12 +16745,13 @@ function speak(text) {
   } catch (e) { return false; }
 }
 // 看完最後一頁才蓋章（翻一半就關掉不算）
-function finishBook(book) {
+function finishBook(book, opts) {
   const pass = G.passport = G.passport || {};
   const isNew = !pass[book.id];
   pass[book.id] = (pass[book.id] || 0) + 1;
   sessionLog.acts['book:' + book.id] = 1;
-  kidGainGrowth(KID_BOOK_GROW);
+  // 新的一本長多一點；重看的跟做其他事一樣（有冷卻），不然自由閱讀一直點同一本就能長滿一整天
+  if (isNew) kidGainGrowth(KID_BOOK_GROW); else kidActGrowth('book');
   rememberFor('librarian', 'book', book.title);
   const n = Object.keys(pass).length;
   if (isNew) showcase('📗', book.title, `閱讀護照 ${n} / ${STORYBOOKS.length}（蓋了一個新章）`, { n, all: STORYBOOKS.length });
@@ -16693,7 +16761,9 @@ function finishBook(book) {
   } else toast(isNew ? `📗 閱讀護照蓋了一個新章！（${n} / ${STORYBOOKS.length}）` : '📗 這本看過了，再看一次也很好看');
   Sound.play('coin');
   saveGame();
-  openPassport();
+  // 館員說故事那邊來的：回到護照（蓋滿就是挑書），點下一本照樣念出來
+  const all = Object.keys(pass).length >= STORYBOOKS.length;
+  openPassport({ aloud: !!(opts && opts.aloud), pick: all && !!(opts && opts.aloud) });
 }
 // opts.pick：八本都看完的「自由閱讀」——點封面挑一本；opts.aloud：館員說故事（一打開就念）
 function openPassport(opts) {
