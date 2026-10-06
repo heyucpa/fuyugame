@@ -525,7 +525,9 @@ button.pass { font: inherit; }
   padding: 6px 8px 8px; box-shadow: 0 4px 12px rgba(0,0,0,.08); font-size: 13px;
 }
 .stage.holding .petcard, .stage.holding .foodmenu { display: none; }
-.pc-head { display: flex; justify-content: space-between; align-items: center; }
+.pc-head { display: flex; justify-content: space-between; align-items: center; cursor: grab; user-select: none; -webkit-user-select: none; touch-action: none; }
+.petcard.dragging, .photo-btn.dragging, .theme-btn.dragging { opacity: .85; cursor: grabbing; box-shadow: 0 10px 24px rgba(0,0,0,.2); }
+.photo-btn, .theme-btn { touch-action: none; user-select: none; -webkit-user-select: none; }
 .pc-head button { border: none; background: none; font-size: 14px; padding: 0 4px; color: var(--muted); }
 .petcard.mini .pc-body { display: none; }
 /* 超寬螢幕（21:9）：房間是正方形，左右一定會剩空間——面板再寬一點（卡片變大），小卡移到房間左邊垂直置中 */
@@ -12515,6 +12517,65 @@ $('#btnKidEat').onclick = () => showFoodMenu('kid');
 $('#btnBath').onclick = () => { $('#foodMenu').hidden = true; petBath(); updatePetCard(); };
 $('#btnCall').onclick = () => { $('#foodMenu').hidden = true; petCallOver(); };
 $('#btnTrick').onclick = () => { $('#foodMenu').hidden = true; petTrick(); };
+/* ✋ 小卡、📷、💡 都可以拖（家長：這個可以自由拖拉嗎）。
+   位置記在這台機器（不進存檔）；拖出畫面會被夾回來；視窗大小變了也會夾回來。
+   按鈕要分得出「拖」跟「點」：移動超過 6px 才算拖，拖過的那一下不觸發 onclick。
+   小卡只有抓標題列才能拖（數值條、按鈕照常點）。 */
+const DRAG_POS_KEY = 'myHouse_dragPos';
+function dragPosAll() { try { return JSON.parse(localStorage.getItem(DRAG_POS_KEY) || '{}') || {}; } catch (e) { return {}; } }
+function makeDraggable(elm, handle, key) {
+  const stage = document.querySelector('.stage');
+  const clampTo = (x, y) => {
+    const sr = stage.getBoundingClientRect(), w = elm.offsetWidth, h = elm.offsetHeight;
+    return { x: Math.max(0, Math.min(sr.width - w, x)), y: Math.max(0, Math.min(sr.height - h, y)) };
+  };
+  const apply = (x, y) => {
+    const c = clampTo(x, y);
+    elm.style.left = c.x + 'px'; elm.style.top = c.y + 'px'; elm.style.right = 'auto'; elm.style.bottom = 'auto'; elm.style.transform = 'none';
+    return c;
+  };
+  const saved = dragPosAll()[key];
+  if (saved && typeof saved.x === 'number' && typeof saved.y === 'number') apply(saved.x, saved.y);
+  let st = null, dragged = false;
+  handle.addEventListener('pointerdown', e => {
+    if (e.button === 2 || (e.target.closest && e.target.closest('button') && e.target.closest('button') !== elm)) return;   // 小卡上的 ＋／－ 按鈕不算
+    const sr = stage.getBoundingClientRect(), r = elm.getBoundingClientRect();
+    st = { px: e.clientX, py: e.clientY, x: r.left - sr.left, y: r.top - sr.top, id: e.pointerId };
+    dragged = false;
+    try { handle.setPointerCapture(e.pointerId); } catch (err) {}   // 一按下就抓住：標題列很窄，手指一動就出去了，不先抓住就收不到移動
+  });
+  handle.addEventListener('pointermove', e => {
+    if (!st) return;
+    const dx = e.clientX - st.px, dy = e.clientY - st.py;
+    if (!dragged && Math.hypot(dx, dy) < 6) return;
+    if (!dragged) { dragged = true; elm.classList.add('dragging'); }
+    apply(st.x + dx, st.y + dy);
+    e.preventDefault();
+  });
+  const end = e => {
+    if (!st) return;
+    if (dragged) {
+      const sr = stage.getBoundingClientRect(), r = elm.getBoundingClientRect();
+      const all = dragPosAll(); all[key] = { x: Math.round(r.left - sr.left), y: Math.round(r.top - sr.top) };
+      try { localStorage.setItem(DRAG_POS_KEY, JSON.stringify(all)); } catch (err) {}
+      elm.classList.remove('dragging');
+      // 拖過的這一下不要觸發按鈕：吃掉接下來那個 click
+      const eat = ev => { ev.stopPropagation(); ev.preventDefault(); };
+      elm.addEventListener('click', eat, { capture: true, once: true });
+      setTimeout(() => elm.removeEventListener('click', eat, { capture: true }), 300);
+    }
+    try { handle.releasePointerCapture(st.id); } catch (err) {}
+    st = null;
+  };
+  handle.addEventListener('pointerup', end);
+  handle.addEventListener('pointercancel', end);
+  // 視窗變大小：夾回畫面裡
+  new ResizeObserver(() => { if (elm.style.left) { const r = elm.getBoundingClientRect(), sr = stage.getBoundingClientRect(); apply(r.left - sr.left, r.top - sr.top); } }).observe(stage);
+  return { apply, reset: () => { elm.style.left = elm.style.top = elm.style.right = elm.style.bottom = elm.style.transform = ''; const all = dragPosAll(); delete all[key]; try { localStorage.setItem(DRAG_POS_KEY, JSON.stringify(all)); } catch (err) {} } };
+}
+const dragCard = makeDraggable($('#petCard'), $('#petCard .pc-head'), 'petCard');
+const dragPhoto = makeDraggable($('#btnPhoto'), $('#btnPhoto'), 'photo');
+const dragTheme = makeDraggable($('#btnTheme'), $('#btnTheme'), 'theme');
 $('#pcToggle').onclick = () => {
   const c = $('#petCard');
   c.classList.toggle('mini');
@@ -14452,6 +14513,10 @@ function tabSave(body) {
   const nb = el('button', 'mini', '📜 更新紀錄（以前更新了什麼）');
   nb.onclick = () => openNewsHistory();
   body.appendChild(nb);
+  const rp = el('button', 'mini', '↩️ 小卡、📷、💡 位置歸位');
+  rp.title = '小卡和按鈕可以拖到喜歡的地方；拖亂了按這裡放回原位';
+  rp.onclick = () => { dragCard.reset(); dragPhoto.reset(); dragTheme.reset(); toast('放回原位了'); };
+  body.appendChild(rp);
   const ib = el('button', 'mini', '🎬 再看一次開場');
   ib.onclick = () => playIntro();
   body.appendChild(ib);
