@@ -13662,7 +13662,7 @@ function tabBook(body) {
     const has = !!(G.zhuyin || {})[z.sym];
     const t = el('button', 'zy-tile' + (has ? ' got' : ''));
     t.append(el('b', '', z.sym), el('span', '', has ? z.pic : '？'));
-    t.onclick = () => { if (has) { try { speak(`${z.snd}，${z.word}的${z.snd}`); } catch (e) {} } };
+    t.onclick = () => { if (has) { try { speak(zyPhrase(z)); } catch (e) {} } };
     t.disabled = !has;
     zg.appendChild(t);
   });
@@ -14384,6 +14384,7 @@ function tabSave(body) {
   ib.onclick = () => playIntro();
   body.appendChild(ib);
   restSettings(body);
+  zhuyinSettings(body);
   // 👇 小手教學：可以關掉，也可以再打開重看一次
   body.appendChild(h3('👇 小手教學'));
   const gOn = G.guide !== 'done';
@@ -17112,6 +17113,35 @@ const ZHUYIN_LEVELS = [
   { name: '全部注音', pool: ZHUYIN.length, opts: 4, pic: true, mul: 3 }
 ];
 const ZHUYIN_N = 8;
+/* 🔊 注音怎麼念（家長：發音不正確）：
+   'sym' 直接念注音符號（ㄊ，兔子的ㄊ）——預設；'char' 念代表字（特，兔子的特）。
+   每台電腦的中文語音不一樣，設定裡可以兩種都試聽、選聽起來對的那一種（存在這台機器）。 */
+const ZY_MODE_KEY = 'myHouse_zyMode';
+const zyMode = () => { try { return localStorage.getItem(ZY_MODE_KEY) === 'char' ? 'char' : 'sym'; } catch (e) { return 'sym'; } };
+const zySound = (z, mode) => ((mode || zyMode()) === 'char' ? z.snd : z.sym);
+const zyPhrase = (z, mode) => { const sd = zySound(z, mode); return `${sd}，${z.word}的${sd}`; };
+// 設定：選念法＋每個注音都可以點來試聽
+function zhuyinSettings(body) {
+  body.appendChild(h3('🔤 注音念法'));
+  body.appendChild(note('注音小遊戲用電腦內建的語音念，每台聽起來不一樣。下面點幾個試聽，選聽起來對的那一種。'));
+  const m = zyMode(), row = el('div', 'filter');
+  [['sym', '念注音（ㄊ）'], ['char', '念代表字（特）']].forEach(([k, label]) => {
+    const b = el('button', m === k ? 'on' : '', label);
+    b.onclick = () => { try { localStorage.setItem(ZY_MODE_KEY, k); } catch (e) {} renderTab(); };
+    row.appendChild(b);
+  });
+  body.appendChild(row);
+  const grid = el('div', 'zy-dex');
+  ZHUYIN.forEach(z => {
+    const t = el('button', 'zy-tile got');
+    t.append(el('b', '', z.sym), el('span', '', z.pic));
+    t.title = zyPhrase(z);
+    t.onclick = () => { try { speak(zyPhrase(z)); } catch (e) {} };
+    grid.appendChild(t);
+  });
+  body.appendChild(grid);
+  if (!canSpeak()) body.appendChild(note('⚠️ 這台機器沒有中文語音，注音小遊戲會念不出來。'));
+}
 function openZhuyinGame() {
   const w = openGameWindow('🔤 注音小遊戲', '按 🔊 聽聽看，點出對的注音卡片！答錯沒關係，會再念一次。');
   pickLevelRow(w, ZHUYIN_LEVELS, L => `答對一題 💰 ${10 * L.mul}`, L => playZhuyin(w, L));
@@ -17122,7 +17152,7 @@ function playZhuyin(w, L) {
   while (order.length < ZHUYIN_N) order.push(pool[Math.floor(Math.random() * pool.length)]);
   let n = 0, right = 0, tries = 0, ended = false, q = null;
   gameCleanup = () => { try { stopSpeak(); } catch (e) {} };
-  const sayQ = () => { if (!q) return; speak(L.pic ? q.word : `${q.snd}，${q.word}的${q.snd}`); };
+  const sayQ = () => { if (!q) return; speak(L.pic ? q.word : zyPhrase(q)); };
   function show() {
     if (n >= ZHUYIN_N) return finish();
     q = order[n]; tries = 0;
@@ -17155,7 +17185,7 @@ function playZhuyin(w, L) {
       G.zhuyin[q.sym] = (G.zhuyin[q.sym] || 0) + 1;
       b.classList.add('ok'); Sound.play('coin');
       w.status.textContent = `⭕ 對了！${q.pic} ${q.word} 的「${q.sym}」${isNew ? '　✨ 新的注音卡！' : ''}`;
-      try { speak(`對了！${q.word}的${q.snd}`); } catch (e) {}
+      try { speak(`對了！${q.word}的${zySound(q)}`); } catch (e) {}
       row.querySelectorAll('button').forEach(x => { x.disabled = true; });
       n++;
       setTimeout(() => { if (!ended) show(); }, 1500);
