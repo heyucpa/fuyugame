@@ -598,6 +598,7 @@ button.pass { font: inherit; }
 .pad-t.on { background: #ffe9b8; border-color: #e7a94a; }
 .card-draw { display: block; margin: 6px auto; border: 2px solid var(--line); border-radius: 10px; max-width: 100%; }
 .gb-row .card-draw { margin: 0 0 0 auto; }
+.gb-row .card-draw + .gb-stamp { margin-left: 6px; }
 .lesson-hand { position: fixed; left: 50%; bottom: 22%; transform: translateX(-50%); z-index: 50; font-size: 26px; font-weight: 800; padding: 14px 28px; border: none; border-radius: 999px; background: #ffd35c; color: #3a3240; box-shadow: 0 4px 0 #e0a020; animation: handBob .8s ease-in-out infinite; }
 @keyframes handBob { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-6px); } }
 .nap-dim { position: fixed; inset: 0; z-index: 40; background: rgba(20,25,60,.45); pointer-events: none; display: flex; align-items: flex-start; justify-content: center; }
@@ -4187,6 +4188,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-15T15:00', title: '動物朋友會在訪客簿畫畫了！🎨', lines: [
+    ['🎨', '動物朋友回家的時候，會在訪客簿留一張小畫'],
+    ['🍯', '每位畫自己喜歡的：熊熊畫蜂蜜罐、兔兔畫紅蘿蔔、企鵝畫雪花…'],
+    ['🔍', '點一下畫可以放大看']
+  ], newItems: [] },
   { id: '2026-10-15T09:00', title: '遊樂園有搭乘動畫了！🎡', lines: [
     ['🎡', '摩天輪：慢慢升到最高，看得到雲、小鳥和城市'],
     ['🎢', '雲霄飛車：爬到最高點，再「呀～～」衝下來'],
@@ -4795,7 +4801,7 @@ function normalizeSave(g) {
   if (out.guestbook != null && !Array.isArray(out.guestbook)) delete out.guestbook;
   if (out.animalBook != null) out.animalBook = (Array.isArray(out.animalBook) ? out.animalBook : [])
     .filter(e => isObj(e) && NEIGHBORS.some(n => n.id === e.id) && num(e.at) && typeof e.t === 'string' && e.t.length <= 80)
-    .map(e => ({ id: e.id, at: e.at, t: e.t, a: typeof e.a === 'string' ? e.a.slice(0, 20) : '', n: Number.isInteger(e.n) && e.n > 0 ? e.n : 1, ...(typeof e.g === 'string' ? { g: e.g.slice(0, 30) } : {}) }))
+    .map(e => { const d = e.d != null ? cleanDrawing(e.d) : null; return { id: e.id, at: e.at, t: e.t, a: typeof e.a === 'string' ? e.a.slice(0, 20) : '', n: Number.isInteger(e.n) && e.n > 0 ? e.n : 1, ...(typeof e.g === 'string' ? { g: e.g.slice(0, 30) } : {}), ...(d ? { d } : {}) }; })
     .slice(0, ANIMAL_BOOK_MAX);
   if (Array.isArray(out.guestbook)) out.guestbook = out.guestbook.filter(e => isObj(e) && typeof e.g === 'string').slice(0, GUESTBOOK_MAX)
     .map(e => { if (e.d != null) { const d = cleanDrawing(e.d); if (d) e.d = d; else delete e.d; } return e; });
@@ -9148,6 +9154,42 @@ const ANIMAL_BOOK_MSGS = {
   pet:   ['{寵物}好可愛，下次還要跟牠玩！'],
   any:   ['今天跟{名字}玩得好開心！', '你的家好舒服，下次還要來！', '謝謝{名字}，我好喜歡來你家玩！', '下次換你來我家玩喔！']
 };
+/* 🎨 動物朋友在訪客簿畫的小畫（家長：動物畫畫要做）
+   每位畫自己喜歡的東西（跟印章一樣），旁邊再畫一顆小愛心。
+   用跟回禮卡一樣的「一筆一筆」格式存（d = {s: [[顏色, 粗細, x0, y0, dx, dy…]]}），線條抖一點點，像手畫的，每次都不太一樣。
+   只留最近 ANIMAL_DRAW_MAX 張畫（存檔才不會越來越大）。 */
+const ANIMAL_DRAW_MAX = 12;
+function animalDoodle(id) {
+  const W = PAD_W, H = PAD_H, strokes = [];
+  const j = () => Math.round((Math.random() - .5) * 3);                         // 手抖
+  const line = (col, size, pts) => {
+    const p = pts.map(([x, y]) => [Math.max(2, Math.min(W - 2, Math.round(x) + j())), Math.max(2, Math.min(H - 2, Math.round(y) + j()))]);
+    const st = [col, size, p[0][0], p[0][1]];
+    for (let i = 1; i < p.length; i++) st.push(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]);
+    if (st.length >= 6) strokes.push(st);
+  };
+  const ring = (cx, cy, rx, ry, n, a0, a1) => { const out = []; n = n || 18; a0 = a0 || 0; a1 = a1 == null ? Math.PI * 2 : a1; for (let i = 0; i <= n; i++) { const a = a0 + (a1 - a0) * i / n; out.push([cx + Math.cos(a) * rx, cy + Math.sin(a) * ry]); } return out; };
+  const cx = W / 2 - 10 + j() * 4, cy = H / 2 + j() * 3;
+  const D = {
+    abu() { line(3, 1, ring(cx, cy + 10, 42, 38)); line(0, 0, [[cx - 34, cy - 18], [cx + 34, cy - 18]]); line(4, 1, [[cx - 20, cy - 16], [cx - 18, cy + 4]]); line(4, 1, [[cx + 6, cy - 16], [cx + 8, cy - 2]]); line(0, 0, [[cx - 12, cy + 14], [cx - 4, cy + 22], [cx + 6, cy + 12], [cx + 14, cy + 22]]); },   // 🍯 蜂蜜罐
+    mimi() { line(3, 1, [[cx - 14, cy - 30], [cx, cy + 50], [cx + 14, cy - 30], [cx - 14, cy - 30]]); [-10, 0, 10].forEach(dx => line(5, 1, [[cx + dx / 2, cy - 32], [cx + dx, cy - 58]])); line(0, 0, [[cx - 6, cy - 10], [cx + 4, cy - 10]]); line(0, 0, [[cx - 4, cy + 10], [cx + 4, cy + 10]]); },   // 🥕 紅蘿蔔
+    lulu() { line(6, 1, [[cx - 50, cy - 30], [cx, cy - 22], [cx + 50, cy - 30], [cx + 50, cy + 32], [cx, cy + 40], [cx - 50, cy + 32], [cx - 50, cy - 30]]); line(0, 0, [[cx, cy - 22], [cx, cy + 40]]); [-12, 0, 12].forEach(dy => { line(0, 0, [[cx - 40, cy + dy - 6], [cx - 10, cy + dy - 2]]); line(0, 0, [[cx + 10, cy + dy - 2], [cx + 40, cy + dy - 6]]); }); },   // 📚 書
+    qiqi() { line(0, 1, ring(cx, cy - 12, 36, 16, 16, Math.PI, Math.PI * 2)); line(0, 1, [[cx - 36, cy - 12], [cx + 36, cy - 12]]); line(0, 1, [[cx, cy - 28], [cx + 4, cy - 40]]); line(3, 1, ring(cx, cy + 12, 30, 30, 16, 0, Math.PI)); line(3, 1, [[cx - 30, cy + 12], [cx - 30, cy - 10]]); line(3, 1, [[cx + 30, cy + 12], [cx + 30, cy - 10]]); },   // 🌰 橡實
+    meme() { line(6, 1, ring(cx - 30, cy + 8, 22, 20, 12, Math.PI * .5, Math.PI * 1.6)); line(6, 1, ring(cx - 4, cy - 10, 28, 26, 14, Math.PI * 1.05, Math.PI * 1.95)); line(6, 1, ring(cx + 30, cy + 6, 22, 22, 12, Math.PI * 1.4, Math.PI * 2.5)); line(6, 1, [[cx - 30, cy + 28], [cx + 30, cy + 28]]); },   // ☁️ 雲
+    wangwang() { [[-40, -10], [-40, 14], [40, -10], [40, 14]].forEach(([dx, dy]) => line(0, 1, ring(cx + dx, cy + dy, 12, 12, 12))); line(0, 1, [[cx - 32, cy - 6], [cx + 32, cy - 6]]); line(0, 1, [[cx - 32, cy + 10], [cx + 32, cy + 10]]); },   // 🦴 骨頭
+    miaomiao() { line(6, 1, ring(cx - 6, cy, 44, 24, 18)); line(6, 1, [[cx + 36, cy], [cx + 62, cy - 20], [cx + 62, cy + 20], [cx + 36, cy]]); line(0, 1, ring(cx - 30, cy - 4, 3, 3, 6)); line(0, 0, [[cx - 14, cy + 8], [cx - 8, cy + 12], [cx - 2, cy + 8]]); },   // 🐟 魚
+    bobo() { for (let i = 0; i < 3; i++) { const a = i * Math.PI / 3; line(6, 1, [[cx - Math.cos(a) * 46, cy - Math.sin(a) * 46], [cx + Math.cos(a) * 46, cy + Math.sin(a) * 46]]); [-1, 1].forEach(sg => { const bx = cx + sg * Math.cos(a) * 30, by = cy + sg * Math.sin(a) * 30; line(6, 0, [[bx + Math.cos(a + 2.4 * sg) * 10, by + Math.sin(a + 2.4 * sg) * 10], [bx, by], [bx + Math.cos(a - 2.4 * sg) * 10, by + Math.sin(a - 2.4 * sg) * 10]]); }); } },   // ❄️ 雪花
+    nunu() { line(1, 1, ring(cx, cy + 6, 38, 36, 20)); line(0, 1, [[cx, cy - 28], [cx + 4, cy - 46]]); line(5, 1, [[cx + 4, cy - 40], [cx + 24, cy - 50], [cx + 30, cy - 36], [cx + 6, cy - 34]]); },   // 🍎 蘋果
+    cici() { line(1, 1, ring(cx, cy, 46, 34, 18, Math.PI, Math.PI * 2)); line(1, 1, [[cx - 46, cy], [cx + 46, cy]]); [[-20, -14], [6, -24], [24, -10]].forEach(([dx, dy]) => line(2, 1, ring(cx + dx, cy + dy, 5, 5, 8))); line(0, 1, [[cx - 14, cy], [cx - 14, cy + 36], [cx + 14, cy + 36], [cx + 14, cy]]); },   // 🍄 香菇
+    baobao() { line(5, 1, [[cx - 46, cy + 30], ...ring(cx, cy, 48, 26, 12, Math.PI * .85, Math.PI * 1.85), [cx + 46, cy - 30]]); line(5, 1, [[cx + 46, cy - 30], ...ring(cx, cy, 48, 26, 12, -Math.PI * .15, Math.PI * .85)]); line(5, 0, [[cx - 54, cy + 38], [cx + 40, cy - 26]]); },   // 🍃 葉子
+    diandian() { const pts = []; for (let i = 0; i <= 10; i++) { const r = i % 2 ? 20 : 48, a = -Math.PI / 2 + i * Math.PI / 5; pts.push([cx + Math.cos(a) * r, cy + 4 + Math.sin(a) * r]); } line(4, 1, pts); }   // ⭐ 星星
+  };
+  (D[id] || D.diandian)();
+  // 右上角一顆小愛心
+  const hx = W - 34, hy = 30;
+  line(2, 1, [[hx, hy + 14], [hx - 14, hy], [hx - 10, hy - 8], [hx - 3, hy - 8], [hx, hy - 2], [hx + 3, hy - 8], [hx + 10, hy - 8], [hx + 14, hy], [hx, hy + 14]]);
+  return cleanDrawing({ s: strokes });
+}
 function animalGuestbook(n, did, costume) {
   if (!n) return null;
   did = did || {};
@@ -9160,14 +9202,17 @@ function animalGuestbook(n, did, costume) {
   const now = Date.now(), day = new Date(now).toDateString();
   const old = book.find(e => e.id === n.id && new Date(e.at).toDateString() === day);
   let e;
-  if (old) { // 今天又來了：次數 +1、做過的事加起來、留言換新的
+  const d = animalDoodle(n.id);
+  if (old) { // 今天又來了：次數 +1、做過的事加起來、留言換新的、畫一張新的
     e = old; book.splice(book.indexOf(old), 1);
     e.n = (e.n || 1) + 1; e.at = now; e.t = t;
+    if (d) e.d = d;
     e.a = Array.from(new Set(Array.from((e.a || '') + acts))).join('');
     if (did.gift) e.g = did.gift;
-  } else e = Object.assign({ id: n.id, at: now, t, a: acts, n: 1 }, did.gift ? { g: did.gift } : {});
+  } else e = Object.assign({ id: n.id, at: now, t, a: acts, n: 1 }, did.gift ? { g: did.gift } : {}, d ? { d } : {});
   book.unshift(e);
   book.length = Math.min(book.length, ANIMAL_BOOK_MAX);
+  book.forEach((x, i) => { if (i >= ANIMAL_DRAW_MAX) delete x.d; }); // 畫只留最近幾張
   saveGame();
   return e;
 }
@@ -11342,7 +11387,13 @@ function openGuestbook(tab) {
       const t = el('div', 'gb-txt');
       t.append(el('b', '', `${n.name}　${inviteDate(e.at)}${e.n > 1 ? `・來了 ${e.n} 次` : ''}`), el('span', '', `「${e.t}」`));
       if (e.a || e.g) t.appendChild(el('span', 'gb-acts', `${e.a || ''}${e.g ? `　送你 ${e.g}` : ''}`));
-      row.append(t, el('div', 'gb-stamp', ANIMAL_STAMPS[n.id] || '🐾'));
+      row.appendChild(t);
+      if (e.d) { // 🎨 牠畫的畫：點一下放大
+        const dc = renderCardDrawing(e.d, 64); dc.title = `${n.short}畫的畫`;
+        dc.onclick = () => { const big = renderCardDrawing(e.d, 260); big.onclick = () => big.remove(); row.after(big); };
+        row.appendChild(dc);
+      }
+      row.appendChild(el('div', 'gb-stamp', ANIMAL_STAMPS[n.id] || '🐾'));
       card.appendChild(row);
     });
   } else {
