@@ -631,6 +631,19 @@ button.pass { font: inherit; }
 .trick-cell b { font-size: 13px; } .trick-cell span { font-size: 11px; color: var(--muted); }
 .trick-e { font-size: 30px; } .trick-cell:not(.got) .trick-e { opacity: .4; }
 .trick-big { font-size: 96px; text-align: center; line-height: 1.1; }
+.zy-q { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 4px 0 10px; }
+.zy-pic { font-size: 72px; line-height: 1.1; text-align: center; }
+.zy-word { font-size: 22px; font-weight: 800; }
+.zy-say { padding: 8px 18px !important; font-size: 16px !important; }
+.zy-cards { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.zy-card { font: inherit; font-size: 46px; font-weight: 800; width: 84px; height: 92px; border-radius: 18px; border: 3px solid var(--line); background: #fffaf0; color: #3a3240; touch-action: manipulation; cursor: pointer; }
+.zy-card.ok { background: #dff5e4; border-color: #5fae7c; }
+.zy-card.no { opacity: .35; }
+.zy-card.hint { border-color: #f2c14e; box-shadow: 0 0 0 4px #ffe58a; }
+.zy-dex { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 6px; margin: 6px 0 12px; }
+.zy-tile { font: inherit; border: 2px solid var(--line); border-radius: 12px; background: #fff; padding: 4px; display: flex; flex-direction: column; align-items: center; }
+.zy-tile b { font-size: 22px; } .zy-tile span { font-size: 18px; }
+.zy-tile:not(.got) { opacity: .45; }
 .snap-btns { display: flex; gap: 4px; flex: none; }
 .name-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .name-row canvas { flex: none; }
@@ -4169,6 +4182,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-14T20:00', title: '注音小遊戲！🔤', lines: [
+    ['🏫', '在教室點「注音布告欄」（或找老師）就能玩'],
+    ['🔊', '聽聽看、點出對的注音卡片，不用看字也會玩'],
+    ['🐰', '還可以看圖找第一個音：兔子的「ㄊ」'],
+    ['📖', '答對的注音會收集在圖鑑「🔤 注音卡」']
+  ], newItems: [] },
   { id: '2026-10-14T15:00', title: '備份可以一鍵傳到 LINE 了！📤', lines: [
     ['📤', '「💾 備份」按「傳到 LINE」，選 LINE 傳給自己就存好了'],
     ['👨‍👩‍👧', '超過 7 天沒備份，打開遊戲會提醒大人一次'],
@@ -4730,6 +4749,7 @@ function normalizeSave(g) {
   if (!g.welcome) out.welcome = { at: 0, uncle: true, grandma: true }; // 已經在玩的存檔不算搬新家
   if (out.seasonDex != null && !isObj(out.seasonDex)) delete out.seasonDex;
   if (out.seasonSeen != null && !isObj(out.seasonSeen)) delete out.seasonSeen;
+  if (out.zhuyin != null && !isObj(out.zhuyin)) delete out.zhuyin;
   if (out.trick != null && !(isObj(out.trick) && isObj(out.trick.got) && num(out.trick.y))) delete out.trick;
   if (out.artWall != null) out.artWall = (Array.isArray(out.artWall) ? out.artWall : []).map(cleanDrawing).filter(Boolean).slice(0, 4);
   if (out.kidGrowDay != null && !(isObj(out.kidGrowDay) && typeof out.kidGrowDay.d === 'string' && num(out.kidGrowDay.n))) delete out.kidGrowDay;
@@ -10384,6 +10404,7 @@ function hostMenuEntries() {
   if (host.n.id === 'teacher') {
     list.push(['🔔 上課（點名、數學、美勞、午睡）', openLessonMenu]);
     list.push(['📝 來小考', openQuizGame]);
+    list.push(['🔤 注音小遊戲', openZhuyinGame]);
     list.push(['🏃 跟同學賽跑', openRunGame]);
     [['🏫 回教室', 0], ['🎢 一起去操場', 1]]
       .filter(([, i]) => i !== G.away.idx).forEach(([label, i]) => list.push([label, () => goPlaceRoom(i)]));
@@ -12042,6 +12063,7 @@ function wallSpot(w, def) {
   const pos = Math.round(Math.abs(w.x) / (TW / 2) - def.w / 2);
   return { side, pos: Math.max(0, Math.min(wallLength(room, side) - def.w, pos)) };
 }
+const WALL_TAP = { zhuyin_board: () => openZhuyinGame() };
 function pickWallItem(w) {
   const room = curRoom();
   return room.wallItems.slice().reverse().find(it => {
@@ -12536,6 +12558,8 @@ canvas.addEventListener('pointerup', e => {
   if (it) { if (canUse(it)) showItemMenu(it, e); else if (!G.away || inPetHouse()) startHoldFromRoom(it); return; }
   const wi = G.away && !inPetHouse() ? null : pickWallItem(w);
   if (wi) { startHoldWall(wi); return; }
+  // 外面地方的牆上東西：有些點了可以玩（教室的注音布告欄）
+  if (G.away && !inPetHouse()) { const wt = pickWallItem(w); if (wt && WALL_TAP[wt.id]) { WALL_TAP[wt.id](); return; } }
   const g = toGrid(w), room = curRoom();
   if (g.gx >= 0 && g.gy >= 0 && g.gx < room.w && g.gy < room.d) {
     fufu.pendingSay = null;
@@ -13380,6 +13404,7 @@ function tabBook(body) {
     ['dexTheme', '🏅', '小主題', count(G.themesDone), THEMES.length],
     ['dexComic', '📚', '漫畫', count(G.comics), COMICS.length],
     ['dexAdv', '⚔️', '冒險漫畫', advCount(), ADV_ALL],
+    ['dexZhuyin', '🔤', '注音卡', Object.keys(G.zhuyin || {}).length, ZHUYIN.length],
     ['dexSticker', '⭐', '貼紙', count(G.stickers), STICKERS.length],
     ['dexBfly', '🦋', '蝴蝶', count(G.butterflies), BUTTERFLIES.length],
     ['dexPass', '📗', '閱讀護照', count(G.passport), STORYBOOKS.length]
@@ -13523,6 +13548,20 @@ function tabBook(body) {
     advg.appendChild(t);
   }));
   body.appendChild(advg);
+
+  // 🔤 注音卡：注音小遊戲答對就收集
+  body.appendChild(sec('dexZhuyin', `🔤 注音卡 ${Object.keys(G.zhuyin || {}).length} / ${ZHUYIN.length}`));
+  body.appendChild(note('在教室點「注音布告欄」玩注音小遊戲，答對的注音就會收集起來。'));
+  const zg = el('div', 'zy-dex');
+  ZHUYIN.forEach(z => {
+    const has = !!(G.zhuyin || {})[z.sym];
+    const t = el('button', 'zy-tile' + (has ? ' got' : ''));
+    t.append(el('b', '', z.sym), el('span', '', has ? z.pic : '？'));
+    t.onclick = () => { if (has) { try { speak(`${z.snd}，${z.word}的${z.snd}`); } catch (e) {} } };
+    t.disabled = !has;
+    zg.appendChild(t);
+  });
+  body.appendChild(zg);
 
   // ⭐ 老師的貼紙
   body.appendChild(sec('dexSticker', `⭐ 老師的貼紙 ${count(G.stickers)} / ${STICKERS.length}`));
@@ -16717,6 +16756,100 @@ function playRun(w, L) {
     g.globalAlpha = 1;
   }
   raf = requestAnimationFrame(frame);
+}
+
+/* ===== 🔤 注音小遊戲（家長：照建議做；給還不太認字的妹妹）=====
+   教室的注音布告欄點一下（或老師的選單）。完全不用看字：
+     ⭐   聽聽看：🔊 念「玻」→ 三張卡片點出 ㄅ（先學前 11 個聲母）
+     ⭐⭐  看圖找第一個音：🐰「兔子」→ 點 ㄊ（全部聲母）
+     ⭐⭐⭐ 聲母＋韻母混在一起，四張卡片
+   答對的注音會收集起來（圖鑑「🔤 注音卡」），答錯不扣錢，會再念一次讓她再試。 */
+const ZHUYIN = [
+  ['ㄅ', '玻', '包子', '🥟'], ['ㄆ', '坡', '葡萄', '🍇'], ['ㄇ', '摸', '貓咪', '🐱'], ['ㄈ', '佛', '飛機', '✈️'],
+  ['ㄉ', '得', '蛋', '🥚'], ['ㄊ', '特', '兔子', '🐰'], ['ㄋ', '訥', '牛', '🐮'], ['ㄌ', '勒', '鹿', '🦌'],
+  ['ㄍ', '哥', '狗', '🐶'], ['ㄎ', '科', '恐龍', '🦖'], ['ㄏ', '喝', '花', '🌸'], ['ㄐ', '基', '雞', '🐔'],
+  ['ㄑ', '欺', '青蛙', '🐸'], ['ㄒ', '希', '西瓜', '🍉'], ['ㄓ', '知', '豬', '🐷'], ['ㄔ', '吃', '船', '🚢'],
+  ['ㄕ', '詩', '書', '📖'], ['ㄖ', '日', '熱狗', '🌭'], ['ㄗ', '資', '嘴巴', '👄'], ['ㄘ', '疵', '草莓', '🍓'],
+  ['ㄙ', '思', '傘', '☂️'],
+  ['ㄚ', '啊', '阿姨', '👩'], ['ㄜ', '鵝', '鵝', '🦢'], ['ㄞ', '哀', '愛心', '❤️'], ['ㄢ', '安', '安全帽', '⛑️'],
+  ['ㄦ', '兒', '耳朵', '👂'], ['ㄧ', '衣', '衣服', '👕'], ['ㄨ', '屋', '烏龜', '🐢'], ['ㄩ', '迂', '魚', '🐟']
+].map(([sym, snd, word, pic]) => ({ sym, snd, word, pic }));
+const ZHUYIN_LEVELS = [
+  { name: '聽聽看', pool: 11, opts: 3, pic: false, mul: 1 },
+  { name: '看圖找音', pool: 21, opts: 3, pic: true, mul: 2 },
+  { name: '全部注音', pool: ZHUYIN.length, opts: 4, pic: true, mul: 3 }
+];
+const ZHUYIN_N = 8;
+function openZhuyinGame() {
+  const w = openGameWindow('🔤 注音小遊戲', '按 🔊 聽聽看，點出對的注音卡片！答錯沒關係，會再念一次。');
+  pickLevelRow(w, ZHUYIN_LEVELS, L => `答對一題 💰 ${10 * L.mul}`, L => playZhuyin(w, L));
+}
+function playZhuyin(w, L) {
+  const pool = ZHUYIN.slice(0, L.pool);
+  const order = pool.slice().sort(() => Math.random() - .5);
+  while (order.length < ZHUYIN_N) order.push(pool[Math.floor(Math.random() * pool.length)]);
+  let n = 0, right = 0, tries = 0, ended = false, q = null;
+  gameCleanup = () => { try { stopSpeak(); } catch (e) {} };
+  const sayQ = () => { if (!q) return; speak(L.pic ? q.word : `${q.snd}，${q.word}的${q.snd}`); };
+  function show() {
+    if (n >= ZHUYIN_N) return finish();
+    q = order[n]; tries = 0;
+    w.stage.innerHTML = '';
+    const top = el('div', 'zy-q');
+    if (L.pic) top.append(el('div', 'zy-pic', q.pic), el('div', 'zy-word', q.word));
+    else top.append(el('div', 'zy-pic', '👂'));
+    const say = el('button', 'big alt zy-say', '🔊 再聽一次');
+    say.onclick = sayQ;
+    top.appendChild(say);
+    w.stage.appendChild(top);
+    const others = pool.filter(z => z.sym !== q.sym).sort(() => Math.random() - .5).slice(0, L.opts - 1);
+    const cards = others.concat([q]).sort(() => Math.random() - .5);
+    const row = el('div', 'zy-cards');
+    cards.forEach(z => {
+      const b = el('button', 'zy-card', z.sym);
+      b.onclick = () => pick(z, b, row);
+      row.appendChild(b);
+    });
+    w.stage.appendChild(row);
+    w.status.textContent = `第 ${n + 1} / ${ZHUYIN_N} 題　答對 ${right}`;
+    sayQ();
+  }
+  function pick(z, b, row) {
+    if (ended || b.disabled) return;
+    if (z.sym === q.sym) {
+      if (tries === 0) right++;
+      G.zhuyin = G.zhuyin || {};
+      const isNew = !G.zhuyin[q.sym];
+      G.zhuyin[q.sym] = (G.zhuyin[q.sym] || 0) + 1;
+      b.classList.add('ok'); Sound.play('coin');
+      w.status.textContent = `⭕ 對了！${q.pic} ${q.word} 的「${q.sym}」${isNew ? '　✨ 新的注音卡！' : ''}`;
+      try { speak(`對了！${q.word}的${q.snd}`); } catch (e) {}
+      row.querySelectorAll('button').forEach(x => { x.disabled = true; });
+      n++;
+      setTimeout(() => { if (!ended) show(); }, 1500);
+    } else {
+      tries++;
+      b.classList.add('no'); b.disabled = true; Sound.play('miss');
+      w.status.textContent = '再聽一次，再試試看！';
+      if (tries >= 2) row.querySelectorAll('button').forEach(x => { if (x.textContent === q.sym) x.classList.add('hint'); });
+      setTimeout(sayQ, 500);
+    }
+  }
+  function finish() {
+    if (ended) return;
+    ended = true;
+    kidActGrowth('zhuyin');
+    const bells = payReward(w, right * 10 * L.mul);
+    const got = Object.keys(G.zhuyin || {}).length;
+    w.stage.innerHTML = '';
+    w.stage.appendChild(el('div', 'zy-pic', right >= ZHUYIN_N - 1 ? '🏆' : right >= ZHUYIN_N / 2 ? '🌟' : '👍'));
+    w.status.textContent = `答對 ${right} / ${ZHUYIN_N} 題！💰 +${fmt(bells)}　🔤 注音卡 ${got} / ${ZHUYIN.length}`;
+    try { speak(`答對${right}題，好棒！`); } catch (e) {}
+    gameButtons(w, openZhuyinGame);
+  }
+  openZhuyinGame.test = { q: () => q, n: () => n, right: () => right, answer: () => { const b = [...w.stage.querySelectorAll('.zy-card')].find(x => x.textContent === q.sym); if (b) b.onclick(); return b; },
+                          wrong: () => { const b = [...w.stage.querySelectorAll('.zy-card')].find(x => x.textContent !== q.sym && !x.disabled); if (b) b.onclick(); return b; }, finish, level: L };
+  show();
 }
 
 /* ===== 📷 公園拍蝴蝶 =====
