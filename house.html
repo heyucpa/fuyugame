@@ -555,6 +555,7 @@ button.pass { font: inherit; }
 .pc-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 8px; }
 .pc-btns button { border: none; background: var(--chip); border-radius: 9px; padding: 5px 0; font-size: 12px; }
 .pc-btns button { white-space: nowrap; } /* 圖示＋兩個字不要被擠成兩行 */
+#btnTrick { grid-column: 1 / -1; background: #ffe3b0; } /* 🎪 表演：大朋友才有，自己一排 */
 .pc-btns button:hover { background: #e8d9bf; }
 .pc-btns.one { grid-template-columns: 1fr; margin-top: 5px; }
 .pc-head small { color: var(--muted); font-size: 11px; font-weight: 400; }
@@ -809,7 +810,7 @@ button.pass { font: inherit; }
         <div class="pc-bar" title="乾淨"><span>🧼</span><i><b id="barClean"></b></i></div>
         <div class="pc-bar" title="心情"><span>💗</span><i><b id="barMood"></b></i></div>
         <div class="pc-btns">
-          <button id="btnFeed">🍎 餵食</button><button id="btnBath">🛁 洗澡</button><button id="btnCall">👋 叫牠</button>
+          <button id="btnFeed">🍎 餵食</button><button id="btnBath">🛁 洗澡</button><button id="btnCall">👋 叫牠</button><button id="btnTrick" hidden title="大朋友才會的才藝">🎪 表演</button>
         </div>
       </div>
     </div>
@@ -4194,6 +4195,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-16T09:00', title: '大朋友會表演才藝了！🎪', lines: [
+    ['🎪', '寵物長成大朋友，小卡上多一顆「表演」'],
+    ['🤸', '照個性學一招：活潑的翻跟斗、害羞的唱歌、愛看魚的轉圈圈、愛玩沙的扭扭舞'],
+    ['💗', '表演完寵物和小可愛都會很開心']
+  ], newItems: [] },
   { id: '2026-10-15T15:00', title: '動物朋友會在訪客簿畫畫了！🎨', lines: [
     ['🎨', '動物朋友回家的時候，會在訪客簿留一張小畫'],
     ['🍯', '每位畫自己喜歡的：熊熊畫蜂蜜罐、兔兔畫紅蘿蔔、企鵝畫雪花…'],
@@ -4795,6 +4801,7 @@ function normalizeSave(g) {
   if (out.seasonDex != null && !isObj(out.seasonDex)) delete out.seasonDex;
   if (out.seasonSeen != null && !isObj(out.seasonSeen)) delete out.seasonSeen;
   if (out.zhuyin != null && !isObj(out.zhuyin)) delete out.zhuyin;
+  if (out.tricks != null && !isObj(out.tricks)) delete out.tricks;
   if (out.newsAt != null && !isObj(out.newsAt)) delete out.newsAt;
   if (out.trick != null && !(isObj(out.trick) && isObj(out.trick.got) && num(out.trick.y))) delete out.trick;
   if (out.artWall != null) out.artWall = (Array.isArray(out.artWall) ? out.artWall : []).map(cleanDrawing).filter(Boolean).slice(0, 4);
@@ -7538,6 +7545,48 @@ const PET_TRAIT_OF = {
 };
 const petTrait = () => (G.pet && PET_TRAIT_OF[G.pet.species]) || 'jump';
 const PET_TRAIT_NAMES = { fish: '愛看魚', sand: '愛玩沙', shy: '有點害羞', jump: '很活潑' };
+/* 🎪 大朋友的才藝（家長：寵物長成大朋友會表演才藝，讓小朋友更想把寵物養大）
+   照個性學一招：活潑→翻跟斗、害羞→唱歌、愛看魚→轉圈圈、愛玩沙→扭扭舞。
+   小卡上多一顆「🎪 表演」（大朋友才有），點了就表演一段，寵物和小可愛都開心；20 秒一次。 */
+const PET_TRICKS = {
+  jump: { name: '翻跟斗', emoji: '🤸', fx: '⭐', dur: 1800 },
+  shy:  { name: '唱歌',   emoji: '🎤', fx: '🎵', dur: 2400 },
+  fish: { name: '轉圈圈', emoji: '🌀', fx: '✨', dur: 2000 },
+  sand: { name: '扭扭舞', emoji: '💃', fx: '💗', dur: 2400 }
+};
+const petTrickOf = species => PET_TRICKS[PET_TRAIT_OF[species] || 'jump'];
+const PET_TRICK_CD_MS = 20000;
+function petTrick() {
+  const now = performance.now(), p = G.pet;
+  if (!p || p.stage !== 'adult' || pet.trick) return false;
+  if (now < (pet.trickUntil || 0)) { fufuSay(`${petName()}還在喘氣，等一下再表演～`, 2200); return false; }
+  petWake(false); pet.task = null; pet.path = []; pet.idleUntil = now + 4000;
+  const tr = petTrickOf(p.species);
+  pet.trick = { kind: PET_TRAIT_OF[p.species] || 'jump', start: now, dur: tr.dur, nextFx: now, fx: tr.fx };
+  pet.trickUntil = now + PET_TRICK_CD_MS;
+  pet.happyUntil = now + tr.dur + 1500;
+  G.tricks = G.tricks || {};
+  const first = !G.tricks[p.species];
+  G.tricks[p.species] = (G.tricks[p.species] || 0) + 1;
+  patPet(10); kidMoodUp(6); kidActGrowth('trick');
+  Sound.play('petHappy');
+  setTimeout(() => { fufuSay(first ? `哇！${petName()}會${tr.name}！好厲害～` : pickLine('kidReply'), 2800); }, tr.dur * .6);
+  setTimeout(() => { try { Sound.play('perfect'); } catch (e) {} }, tr.dur);
+  if (first) toast(`🎪 ${petName()}學會了${tr.name}！（長成大朋友的寵物都會一招）`);
+  saveGame();
+  return true;
+}
+// 表演中的畫法：回傳要套在寵物上的位移、旋轉、左右縮放；結束就清掉
+function petTrickPose(a, now) {
+  const t = a.trick; if (!t) return null;
+  const k = (now - t.start) / t.dur;
+  if (k >= 1) { a.trick = null; petBurst({ kind: 'emoji', emoji: '🎉', spread: 40 }, 4, a); return null; }
+  if (now >= t.nextFx) { t.nextFx = now + 320; petBurst({ kind: 'emoji', emoji: t.fx, spread: 30 }, 1, a); }
+  if (t.kind === 'jump') return { dy: -Math.sin(k * Math.PI) * 42, rot: k * Math.PI * 2, sx: 1 };
+  if (t.kind === 'fish') return { dy: -Math.abs(Math.sin(k * Math.PI * 2)) * 8, rot: 0, sx: Math.cos(k * Math.PI * 4) || .05 };
+  if (t.kind === 'shy')  return { dy: -Math.abs(Math.sin(k * Math.PI * 6)) * 6, rot: Math.sin(k * Math.PI * 6) * .15, sx: 1 };
+  return { dx: Math.sin(k * Math.PI * 8) * 8, dy: 0, rot: Math.sin(k * Math.PI * 8) * .25, sx: 1 };   // sand 扭扭舞
+}
 // 小可愛在做事的時候，旁邊的寵物也有反應（第 n 次特效）
 function petReact(key, n) {
   try { if (isEgg() || pet.sleep) return null; } catch (e) { return null; }
@@ -8981,6 +9030,15 @@ function petDrawEntries() {
 const PET_ROLL_MS = 2600;
 function drawPetActor(ctx, pet, st) {
   const now = performance.now();
+  const tp = pet.trick ? petTrickPose(pet, now) : null;
+  if (tp) { // 🎪 表演中：翻、轉、扭
+    const p = iso(pet.x, pet.y, pet.z || 0), cy = p.y - 10;
+    ctx.save();
+    ctx.translate(p.x + (tp.dx || 0), cy + tp.dy);
+    ctx.rotate(tp.rot); ctx.scale(tp.sx, 1);
+    ctx.translate(-p.x, -cy);
+    try { return drawPetActorBody(ctx, Object.assign({}, pet, { sleep: null }), st); } finally { ctx.restore(); }
+  }
   if (!(pet.rollUntil > now)) return drawPetActorBody(ctx, pet, st);
   const p = iso(pet.x, pet.y, pet.z || 0), left = (pet.rollUntil - now) / PET_ROLL_MS;
   ctx.save();
@@ -12372,6 +12430,7 @@ function setBar(sel, value) {
 function updatePetCard() {
   const st = G.pet;
   $('#petNameLbl').textContent = petName();
+  $('#btnTrick').hidden = !(G.pet && G.pet.stage === 'adult');   // 🎪 大朋友才會表演
   $('#petNameLbl').onclick = () => { if ($('#modal').hidden) openPetNamer(G.activePet); };
   $('#kidNameLbl').textContent = charName();
   setBar('#barKid', G.kid.hunger);
@@ -12455,6 +12514,7 @@ $('#btnFeed').onclick = () => { if (G.pet.stage === 'egg') eggNotYet(); else sho
 $('#btnKidEat').onclick = () => showFoodMenu('kid');
 $('#btnBath').onclick = () => { $('#foodMenu').hidden = true; petBath(); updatePetCard(); };
 $('#btnCall').onclick = () => { $('#foodMenu').hidden = true; petCallOver(); };
+$('#btnTrick').onclick = () => { $('#foodMenu').hidden = true; petTrick(); };
 $('#pcToggle').onclick = () => {
   const c = $('#petCard');
   c.classList.toggle('mini');
@@ -13922,7 +13982,7 @@ function tabPets(body) {
     const nextName = PET_STAGE_BY_ID[nextStageId(cur.stage)].name;
     info.appendChild(el('div', 'grow-text', cur.stage === 'egg' ? `再摸摸牠，快孵出來了（${cur.growth}/${st.next}）` : `長成${nextName}還要照顧一下（${cur.growth}/${st.next}）`));
   } else {
-    info.appendChild(el('div', 'grow-text', '🎉 已經是大朋友了！'));
+    info.appendChild(el('div', 'grow-text', `🎉 已經是大朋友了！會${petTrickOf(cur.species).emoji} ${petTrickOf(cur.species).name}（小卡上按「🎪 表演」）`));
   }
   head.appendChild(info);
   body.appendChild(head);
