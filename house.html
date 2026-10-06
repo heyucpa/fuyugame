@@ -11787,6 +11787,7 @@ const canvas = $('#view'), ctx = canvas.getContext('2d');
 const pickCtx = document.createElement('canvas').getContext('2d');
 
 let view = { scale: 1, ox: 0, oy: 0 };
+const VIEW_MAX_SCALE = 3;
 const cam = { key: null, ox: 0 }; // 放大房間時，畫面跟著小可愛左右移動
 let hold = null;       // {def, rot, x, y, ok, fromUid, orig}
 let hoverUid = null;
@@ -11834,14 +11835,16 @@ function computeView() {
   const minY = iso(0, 0, WALL_H).y - 20, maxY = iso(room.w, room.d).y + 40;
   const hintH = hintShown() ? 50 : 12; // 提示條收起來，房間就可以往下長
   const fitW = r.width / (maxX - minX), fitH = (r.height - hintH) / (maxY - minY);
-  let scale = Math.min(fitW, fitH, 1.9);
+  /* 最多放大幾倍本來寫死 1.9——家長的 21:9 超寬螢幕上，房間只佔中間一小塊、兩邊空一大片。
+     大螢幕就讓它填滿高度（上限 3，再大線條會太粗）。家具是向量畫的，放大不會糊。 */
+  let scale = Math.min(fitW, fitH, VIEW_MAX_SCALE);
   let ox = r.width / 2 - (minX + maxX) / 2 * scale;
   /* 放大房間＋直立的手機：房間被「寬度」卡住，只給它更高的空間不會變大。
      所以放大時讓房間比螢幕寬（最多 1.7 倍），畫面左右跟著小可愛走，
      但不會捲到房間外面。換房間時直接跳過去，走路時慢慢跟。 */
   const follow = document.body.classList.contains('bigroom') && fitH > fitW * 1.05;
   if (follow) {
-    scale = Math.min(fitH, fitW * 1.7, 1.9);
+    scale = Math.min(fitH, fitW * 1.7, VIEW_MAX_SCALE);
     const fp = iso(fufu.x, fufu.y, 0);
     const lo = r.width - maxX * scale, hi = -minX * scale;
     const want = Math.max(lo, Math.min(hi, r.width / 2 - fp.x * scale));
