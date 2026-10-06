@@ -625,6 +625,12 @@ button.pass { font: inherit; }
 .pause-badge { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 5; background: rgba(58,50,64,.85); color: #fff;
   font-size: 13px; font-weight: 700; padding: 6px 14px; border-radius: 999px; pointer-events: none; white-space: nowrap; }
 @media (max-width: 700px) { .pause-badge { top: auto; bottom: 56px; font-size: 12px; } }
+.trick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 8px 0 12px; }
+.trick-cell { border: 2px dashed var(--line); border-radius: 14px; background: #fffaf0; padding: 8px 4px; text-align: center; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.trick-cell.got { border-style: solid; border-color: #f0902f; background: #fff3e2; }
+.trick-cell b { font-size: 13px; } .trick-cell span { font-size: 11px; color: var(--muted); }
+.trick-e { font-size: 30px; } .trick-cell:not(.got) .trick-e { opacity: .4; }
+.trick-big { font-size: 96px; text-align: center; line-height: 1.1; }
 .snap-btns { display: flex; gap: 4px; flex: none; }
 .name-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .name-row canvas { flex: none; }
@@ -3955,6 +3961,20 @@ const SEASON_FURNITURE = [
     } }
 ];
 SEASON_FURNITURE.forEach(d => { FURN_BY_ID[d.id] = d; });
+// 🎃 集糖卡集滿的獎品：商店買不到（gift），也不算在節日收藏（那本要用買的集）
+FURN_BY_ID.trick_lantern = { id: 'trick_lantern', name: '南瓜燈籠塔', price: 0, theme: 'cute', w: 1, d: 1, gift: true, trick: true,
+  parts: [
+    { x: .3, y: .3, w: .4, d: .4, z: 0, h: 3, c: '#5a3a22' },
+    { k: 'ball', x: .5, y: .5, z: 12, r: 11, c: '#f0902f' },
+    { k: 'ball', x: .5, y: .5, z: 29, r: 8, c: '#f5a54a' },
+    { k: 'ball', x: .5, y: .5, z: 41, r: 5.5, c: '#ffb85c' },
+    { x: .46, y: .46, w: .08, d: .08, z: 46, h: 5, c: '#5f8a3a' },
+    { k: 'ball', x: .7, y: .78, z: 13, r: 2.4, c: '#ffe066', shade: true },
+    { k: 'ball', x: .8, y: .66, z: 13, r: 2.4, c: '#ffe066', shade: true },
+    { k: 'ball', x: .68, y: .72, z: 30, r: 1.8, c: '#ffe066', shade: true },
+    { k: 'ball', x: .76, y: .64, z: 30, r: 1.8, c: '#ffe066', shade: true },
+    { k: 'ball', x: .64, y: .66, z: 42, r: 1.3, c: '#ffe066', shade: true }
+  ] };
 PLACE_FURNITURE.forEach(f => { FURN_BY_ID[f.id] = f; }); // 親戚家專用的家具（不在商店、圖鑑裡）
 /* 🏆 集滿獎盃：任何一種圖鑑集滿，就送一座只有集滿才拿得到的獎盃（可以擺地上、也可以擺桌上）。
    不放進 FURNITURE：不然家具圖鑑要集滿還得先拿到家具獎盃，永遠集不滿。
@@ -4149,6 +4169,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-14T09:00', title: '萬聖節：不給糖就搗蛋！🎃', lines: [
+    ['🎃', '到叔叔家、阿婆家、學校、圖書館、公園、遊樂園，點主人說「不給糖就搗蛋！」'],
+    ['🍭', '每一家給不一樣的糖，還會多 2 顆萬聖節糖果可以送給動物朋友'],
+    ['👻', '戴萬聖節的頭飾去，主人會稱讚你'],
+    ['🏮', '六家集滿，送你「南瓜燈籠塔」！（🚗 出門 → 萬聖節集糖卡）']
+  ], newItems: [] },
   { id: '2026-10-13T15:00', title: '多了自動存檔和手動存檔！🕒', lines: [
     ['🕒', '每次打開遊戲、之後每 10 分鐘會自動存一份'],
     ['💾', '「💾 備份」裡可以按「手動存一份」'],
@@ -4699,6 +4725,7 @@ function normalizeSave(g) {
   if (!g.welcome) out.welcome = { at: 0, uncle: true, grandma: true }; // 已經在玩的存檔不算搬新家
   if (out.seasonDex != null && !isObj(out.seasonDex)) delete out.seasonDex;
   if (out.seasonSeen != null && !isObj(out.seasonSeen)) delete out.seasonSeen;
+  if (out.trick != null && !(isObj(out.trick) && isObj(out.trick.got) && num(out.trick.y))) delete out.trick;
   if (out.artWall != null) out.artWall = (Array.isArray(out.artWall) ? out.artWall : []).map(cleanDrawing).filter(Boolean).slice(0, 4);
   if (out.kidGrowDay != null && !(isObj(out.kidGrowDay) && typeof out.kidGrowDay.d === 'string' && num(out.kidGrowDay.n))) delete out.kidGrowDay;
   if (out.flowerDex != null && !isObj(out.flowerDex)) delete out.flowerDex;
@@ -10332,6 +10359,7 @@ function hostMenuEntries() {
     ['💃 一起跳舞', () => { fufuDance(); host.danceUntil = now() + 6000; }]
   ];
   if (host.n.id === 'friend') list.push([`🎁 送禮物給${s}`, openGiftPicker]);
+  if (trickActive() && TRICK_CANDY[host.n.id]) list.unshift([trickGot(host.n.id) ? `🎃 集糖卡（${trickCount()} / ${TRICK_HOSTS.length}）` : '🎃 不給糖就搗蛋！', () => trickOrTreat(host.n.id)]);
   if (host.n.id === 'uncle') {
     list.push(['🕹️ 一起打地鼠', openMoleGame]);
     list.push(['📺 一起玩賽車', openRaceGame]);
@@ -10361,6 +10389,69 @@ function hostMenuEntries() {
       .filter(([, i]) => i !== G.away.idx).forEach(([label, i]) => list.push([label, () => goPlaceRoom(i)]));
   }
   return list;
+}
+/* ===== 🎃 萬聖節・不給糖就搗蛋（家長：照建議做）=====
+   萬聖節期間，到每個地方點主人說「不給糖就搗蛋！」，每一家給一種不同的糖（一年一家一次），
+   糖也會變成 2 顆萬聖節糖果（可以送給來玩的動物朋友）。六家集滿 → 南瓜燈籠塔＋大圖。
+   有戴萬聖節頭飾去，主人會稱讚。 */
+const TRICK_CANDY = {
+  uncle:     { e: '🍭', name: '彩虹棒棒糖', say: '哇，被抓到了！這支彩虹棒棒糖給你～' },
+  grandma:   { e: '🍡', name: '阿婆的糯米糰子', say: '阿婆自己做的糰子，甜甜的喔～' },
+  teacher:   { e: '🍬', name: '星星糖', say: '呵呵，乖孩子，老師給你一顆星星糖！' },
+  librarian: { e: '🍫', name: '書本巧克力', say: '噓～小聲一點，這塊巧克力給你。' },
+  ranger:    { e: '🍯', name: '蜂蜜糖', say: '汪！公園蜜蜂做的蜂蜜糖，送你！' },
+  amuse:     { e: '🧁', name: '南瓜杯子蛋糕', say: '遊樂園限定的南瓜杯子蛋糕～萬聖節快樂！' }
+};
+const TRICK_HOSTS = Object.keys(TRICK_CANDY);
+const trickActive = () => { const se = seasonNow(); return !!(se && se.id === 'halloween'); };
+const trickYear = () => new Date().getFullYear();
+function trickState() {
+  if (!G.trick || G.trick.y !== trickYear()) G.trick = { y: trickYear(), got: {}, prize: false };
+  return G.trick;
+}
+const trickGot = id => !!trickState().got[id];
+const trickCount = () => TRICK_HOSTS.filter(trickGot).length;
+function trickOrTreat(id) {
+  const c = TRICK_CANDY[id];
+  if (!c || !trickActive()) return false;
+  if (trickGot(id)) { openTrickCard(); return false; }
+  const st = trickState();
+  st.got[id] = Date.now();
+  G.kidFood.hw_candy = (G.kidFood.hw_candy || 0) + 2;
+  fufuSay('不給糖就搗蛋！🎃', 2400);
+  const se = seasonNow(), dressed = se && se.clothes && se.clothes.includes(G.outfit.head);
+  setTimeout(() => { if (host.n && host.n.id === id) { hostSay((dressed ? '哇，你打扮得好可愛！' : '') + c.say); host.a.happyUntil = performance.now() + 2500; host.a.squishV = -8; } }, 1100);
+  Sound.play('coin');
+  const n = trickCount();
+  showcase(el('div', 'trick-big', c.e), c.name, `🎃 萬聖節集糖卡 ${n} / ${TRICK_HOSTS.length}（還拿到 2 顆萬聖節糖果🍬）`, { n, all: TRICK_HOSTS.length, head: '🎃 拿到糖果了！' });
+  if (n === TRICK_HOSTS.length && !st.prize) {
+    st.prize = true;
+    addItem('trick_lantern');
+    showcase(renderThumb(FURN_BY_ID.trick_lantern, 150), '🎃 集糖卡集滿了！', '南瓜燈籠塔放進「我的東西」了，擺在家裡吧！', { head: '🎉 萬聖節快樂！' });
+  }
+  saveGame(); refreshTop();
+  return true;
+}
+function openTrickCard() {
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', `🎃 萬聖節集糖卡 ${trickCount()} / ${TRICK_HOSTS.length}`));
+  card.appendChild(note(trickActive()
+    ? '到每個地方點主人，說「🎃 不給糖就搗蛋！」就會拿到糖果。戴萬聖節的頭飾去，主人會稱讚你喔！集滿六家有獎品。'
+    : '萬聖節活動結束了，明年還可以再集一次！'));
+  const grid = el('div', 'trick-grid');
+  TRICK_HOSTS.forEach(id => {
+    const c = TRICK_CANDY[id], got = trickGot(id), pl = Object.values(PLACES).find(p => p.host === id);
+    const cell = el('div', 'trick-cell' + (got ? ' got' : ''));
+    cell.append(el('div', 'trick-e', got ? c.e : '❔'), el('b', '', pl ? `${pl.emoji} ${pl.name}` : HOSTS[id].name), el('span', '', got ? c.name : '還沒去'));
+    grid.appendChild(cell);
+  });
+  card.appendChild(grid);
+  if (trickState().prize) card.appendChild(note('🏮 已經拿到南瓜燈籠塔了！'));
+  const ok = el('button', 'big', '好');
+  ok.onclick = () => { $('#modal').hidden = true; };
+  card.appendChild(ok);
+  $('#modal').hidden = false;
 }
 function hostDrawEntries() {
   if (!host.n) return [];
@@ -10735,6 +10826,11 @@ function openTravelMenu() {
     const here = !!(G.away && G.away.place === 'friend' && PLACES.friend && PLACES.friend.inviteAt === inv.at && PLACES.friend.inviteName === inv.n);
     pick(renderInviteGirl(inv, 64, 58), `🏡 ${inviteWho(inv)}的家${here ? '（你在這裡）' : ''}`, `${inv.f ? inv.n + '・' : ''}邀請卡（${inviteDate(inv.at)}）・房間 ${inv.r.length} 間・寵物 ${inv.pn.length} 隻`, () => visitFriend(inv), here);
   });
+  if (trickActive()) {
+    const tb = el('button', 'big', `🎃 萬聖節集糖卡（${trickCount()} / ${TRICK_HOSTS.length}）`);
+    tb.onclick = openTrickCard;
+    card.appendChild(tb);
+  }
   const row = el('div', 'invite-row');
   const mk = el('button', 'big alt', '💌 做邀請卡');
   mk.onclick = openInviteMaker;
