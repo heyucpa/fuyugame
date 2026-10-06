@@ -644,6 +644,11 @@ button.pass { font: inherit; }
 .zy-tile { font: inherit; border: 2px solid var(--line); border-radius: 12px; background: #fff; padding: 4px; display: flex; flex-direction: column; align-items: center; }
 .zy-tile b { font-size: 22px; } .zy-tile span { font-size: 18px; }
 .zy-tile:not(.got) { opacity: .45; }
+.ride-film { position: absolute; inset: 0; z-index: 30; background: rgba(30,30,50,.55); display: flex; align-items: center; justify-content: center; cursor: pointer; animation: rideIn .3s ease; }
+.ride-film canvas { width: min(96%, 760px); aspect-ratio: 16 / 10; border-radius: 22px; box-shadow: 0 12px 40px rgba(0,0,0,.35); background: #fff; }
+.ride-film.out { opacity: 0; transition: opacity .3s; }
+.ride-skip { position: absolute; bottom: 14px; right: 18px; color: #fff; font-size: 13px; font-weight: 700; background: rgba(0,0,0,.35); padding: 4px 10px; border-radius: 999px; }
+@keyframes rideIn { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
 .snap-btns { display: flex; gap: 4px; flex: none; }
 .name-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .name-row canvas { flex: none; }
@@ -4182,6 +4187,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-15T09:00', title: '遊樂園有搭乘動畫了！🎡', lines: [
+    ['🎡', '摩天輪：慢慢升到最高，看得到雲、小鳥和城市'],
+    ['🎢', '雲霄飛車：爬到最高點，再「呀～～」衝下來'],
+    ['🎠', '旋轉木馬、☕ 咖啡杯也有動畫，寵物也一起坐'],
+    ['⏭', '點一下就可以跳過']
+  ], newItems: [] },
   { id: '2026-10-14T20:00', title: '注音小遊戲！🔤', lines: [
     ['🏫', '在教室點「注音布告欄」（或找老師）就能玩'],
     ['🔊', '聽聽看、點出對的注音卡片，不用看字也會玩'],
@@ -6757,6 +6768,7 @@ function fufuStartAct(key, now, it, auto) {
     fufu.ride = { key, it, def, start: now, dur: RIDES[key].dur, sfx: {} };
     fufu.act.until = now + RIDES[key].dur;
     fufu.back = false;
+    if (!auto && typeof playRideFilm === 'function') try { playRideFilm(key); } catch (e) {} // 🎬 遊樂園設施：先看一段搭乘動畫
   } else fufu.ride = null;
   if (key === 'pick') { // 阿婆的果園：摘水果（有次數限制，摘完要等水果長出來）
     const f = orchardPick(it.id);
@@ -16758,6 +16770,185 @@ function playRun(w, L) {
   raf = requestAnimationFrame(frame);
 }
 
+/* ===== 🎬 遊樂園設施的搭乘動畫（家長：摩天輪、雲霄飛車在房間裡繞看起來很弱）=====
+   她自己點遊樂設施時，畫面上蓋一段 4～5 秒的小動畫（點一下可以跳過），播完回到房間，效果照舊。
+   🎡 摩天輪：車廂慢慢轉到最高，看到雲、鳥、城市　🎢 雲霄飛車：爬坡→衝下來（速度線、晃動）
+   🎠 旋轉木馬：帳篷、燈、木馬上下跳　☕ 咖啡杯：越轉越快，最後頭暈暈 💫
+   寵物（照顧中那隻）也一起坐。 */
+const RIDE_FILM_MS = 4800;
+const RIDE_FILMS = {
+  ferris: { say: [[.35, '慢慢升上去了～'], [.62, '哇～好高喔！'], [.9, '再坐一次！']] },
+  coaster: { say: [[.25, '喀、喀、喀…'], [.55, '呀～～～！'], [.88, '好刺激！']] },
+  carousel: { say: [[.3, '叮叮咚～'], [.7, '跑快一點！']] },
+  teacup: { say: [[.3, '轉轉轉～'], [.85, '頭暈暈～']] }
+};
+function rideFilmActors() {
+  const outfit = {}; OUTFIT_SLOTS.forEach(({ key }) => { outfit[key] = CLOTHES_BY_ID[G.outfit[key]]; });
+  const pet = G.pet && G.pet.stage !== 'egg' ? PET_SPECIES_BY_ID[G.pet.species] : null;
+  return { outfit, pet };
+}
+// 畫坐著的小可愛（＋寵物）；x,y 是腳下，k 是大小
+function filmKid(g, A, x, y, k, t, opt) {
+  opt = opt || {};
+  g.save(); g.translate(x, y); g.scale(k, k);
+  if (opt.rot) g.rotate(opt.rot);
+  drawGirl(g, { t, sit: true, outfit: A.outfit, hair: G.hair, stage: kidLookStage() });
+  if (opt.arms) { // 舉手歡呼
+    g.strokeStyle = '#f2c9a8'; g.lineWidth = 4; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(-7, -30); g.lineTo(-14, -50); g.moveTo(7, -30); g.lineTo(14, -50); g.stroke();
+  }
+  g.restore();
+  if (A.pet && !opt.noPet) { g.save(); g.translate(x + 26 * k, y + 2 * k); g.scale(k * .55, k * .55); drawCreature(g, A.pet, { happy: true, clean: 100, adult: lookStage(G.pet) === 'adult', baby: lookStage(G.pet) === 'baby' }); g.restore(); }
+}
+function filmBubble(g, x, y, text) {
+  g.font = 'bold 16px sans-serif';
+  const w = g.measureText(text).width + 20;
+  g.fillStyle = 'rgba(255,255,255,.95)'; g.strokeStyle = '#3a3240'; g.lineWidth = 2;
+  g.beginPath(); (g.roundRect ? g.roundRect(x - w / 2, y - 30, w, 28, 12) : g.rect(x - w / 2, y - 30, w, 28)); g.fill(); g.stroke();
+  g.fillStyle = '#3a3240'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, x, y - 16);
+}
+function filmSky(g, W, H, top, bottom) {
+  const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, top); gr.addColorStop(1, bottom);
+  g.fillStyle = gr; g.fillRect(0, 0, W, H);
+}
+function filmCloud(g, x, y, s) {
+  g.fillStyle = 'rgba(255,255,255,.92)';
+  [[0, 0, 18], [16, -8, 16], [32, 0, 18], [16, 6, 16]].forEach(([dx, dy, r]) => { g.beginPath(); g.arc(x + dx * s, y + dy * s, r * s, 0, Math.PI * 2); g.fill(); });
+}
+const RIDE_DRAW = {
+  ferris(g, W, H, t, A, now) {
+    const lift = Math.sin(t * Math.PI);                       // 0 → 1（最高）→ 0
+    filmSky(g, W, H, lift > .5 ? '#5aa9e6' : '#8fd3ff', '#d9f2ff');
+    for (let i = 0; i < 4; i++) filmCloud(g, ((i * 160 + now / 40) % (W + 120)) - 60, 40 + i * 22 + (1 - lift) * 80, .8 + i * .1);
+    // 城市（越高看得越清楚、越小）
+    const by = H - 20 + (1 - lift) * 60;
+    for (let i = 0; i < 16; i++) { const bw = 26, bh = 30 + ((i * 37) % 50); g.fillStyle = ['#c9b8e8', '#b8d4f0', '#f0c9d8', '#cfe8c0'][i % 4]; g.fillRect(i * 32, by - bh * (.6 + lift * .4), bw, bh * (.6 + lift * .4)); }
+    // 摩天輪
+    const cx = W / 2, cy = H + 40 - lift * 60, R = 230, rot = t * Math.PI * .9 - Math.PI * .45;
+    g.strokeStyle = '#ff7fa3'; g.lineWidth = 6; g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.stroke();
+    g.lineWidth = 2; g.strokeStyle = '#ffb3c7';
+    for (let i = 0; i < 12; i++) { const a = rot + i * Math.PI / 6; g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); g.stroke(); }
+    for (let i = 1; i < 12; i++) { const a = rot + i * Math.PI / 6 - Math.PI / 2; const x = cx + Math.cos(a) * R, y = cy + Math.sin(a) * R; g.fillStyle = ['#ffd35c', '#7bd389', '#6bb6ff', '#b18cff'][i % 4]; g.beginPath(); g.arc(x, y + 14, 14, 0, Math.PI * 2); g.fill(); }
+    // 她的車廂：轉到最上面
+    const a0 = rot - Math.PI / 2, gx = cx + Math.cos(a0) * R, gy = cy + Math.sin(a0) * R;
+    // 車廂：吊桿＋屋頂＋窗戶，她坐在窗戶裡（下半身被車廂前面擋住）
+    const rr = (x, y, w, h, r, c) => { g.fillStyle = c; g.beginPath(); (g.roundRect ? g.roundRect(x, y, w, h, r) : g.rect(x, y, w, h)); g.fill(); };
+    g.strokeStyle = '#8a7a64'; g.lineWidth = 4; g.beginPath(); g.moveTo(gx, gy); g.lineTo(gx, gy + 12); g.stroke();
+    rr(gx - 58, gy + 10, 116, 16, 8, '#e8505b');                 // 屋頂
+    rr(gx - 50, gy + 24, 100, 70, 10, '#ff8fab');                // 車廂
+    rr(gx - 40, gy + 30, 80, 34, 8, '#dff4ff');                  // 窗戶（玻璃）
+    filmKid(g, A, gx - 8, gy + 74, .62, now / 1000, { arms: lift > .85 });
+    rr(gx - 50, gy + 60, 100, 34, 10, '#ff8fab');                // 車廂前面（擋住腳）
+    g.fillStyle = '#ffd35c'; g.fillRect(gx - 50, gy + 60, 100, 5);
+    if (lift > .8) { g.font = '20px sans-serif'; g.textAlign = 'center'; ['🐦', '✨', '🐦'].forEach((e, i) => g.fillText(e, gx - 120 + i * 120, gy - 40 + Math.sin(now / 300 + i) * 6)); }
+    return { x: gx, y: gy - 20 };
+  },
+  coaster(g, W, H, t, A, now) {
+    filmSky(g, W, H, '#7cc8ff', '#e6f6ff');
+    const scroll = t * 1500;
+    const trackY = x => { const u = x / 1500; return u < .45 ? H - 70 - u / .45 * 170 : u < .6 ? H - 240 + Math.pow((u - .45) / .15, 2) * 210 : H - 50 - Math.sin((u - .6) * 18) * 40; };
+    g.fillStyle = '#9fd38a'; for (let i = 0; i < 6; i++) { const x = ((i * 140 - scroll * .3) % 840 + 840) % 840 - 100; g.beginPath(); g.arc(x, H + 10, 90, Math.PI, 0); g.fill(); }
+    filmCloud(g, ((300 - scroll * .2) % (W + 100) + W + 100) % (W + 100) - 50, 50, 1);
+    // 軌道
+    g.strokeStyle = '#d9443c'; g.lineWidth = 6; g.beginPath();
+    for (let sx = -10; sx <= W + 10; sx += 6) { const y = trackY(scroll + sx - 160); sx === -10 ? g.moveTo(sx, y) : g.lineTo(sx, y); }
+    g.stroke();
+    g.strokeStyle = '#8a5a33'; g.lineWidth = 3;
+    for (let sx = -((scroll) % 40); sx <= W; sx += 40) { const y = trackY(scroll + sx - 160); g.beginPath(); g.moveTo(sx, y + 3); g.lineTo(sx, H); g.stroke(); }
+    // 車子（固定在畫面左邊，軌道往後跑）
+    const cx = 160, cy = trackY(scroll), slope = (trackY(scroll + 8) - trackY(scroll - 8)) / 16, ang = Math.atan(slope);
+    const fast = slope > .4, shake = fast ? Math.sin(now / 30) * 2 : 0;
+    g.save(); g.translate(cx, cy + shake); g.rotate(ang);
+    g.fillStyle = '#ffd35c'; (g.roundRect ? (g.beginPath(), g.roundRect(-46, -26, 92, 26, 10), g.fill()) : g.fillRect(-46, -26, 92, 26));
+    filmKid(g, A, -6, -16, .75, now / 1000, { arms: fast || t > .7 });
+    g.fillStyle = '#ffb000'; g.fillRect(-46, -14, 92, 12);
+    g.restore();
+    if (fast) { g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 3; for (let i = 0; i < 7; i++) { const y = 40 + i * 34 + (now / 5 % 34); g.beginPath(); g.moveTo(W, y); g.lineTo(W - 120, y + 20); g.stroke(); } }
+    return { x: cx + 30, y: cy - 70 };
+  },
+  carousel(g, W, H, t, A, now) {
+    filmSky(g, W, H, '#ffd9ec', '#fff3e0');
+    const cx = W / 2, top = 40;
+    // 帳篷
+    for (let i = 0; i < 10; i++) { g.fillStyle = i % 2 ? '#ff6b8b' : '#fff'; g.beginPath(); g.moveTo(cx, top - 20); g.lineTo(cx - 220 + i * 44, top + 50); g.lineTo(cx - 176 + i * 44, top + 50); g.closePath(); g.fill(); }
+    g.fillStyle = '#ffd35c'; g.fillRect(cx - 226, top + 50, 452, 14);
+    for (let i = 0; i < 16; i++) { g.fillStyle = (Math.floor(now / 250) + i) % 2 ? '#fff6a8' : '#ffb000'; g.beginPath(); g.arc(cx - 220 + i * 29, top + 57, 4, 0, Math.PI * 2); g.fill(); }
+    g.fillStyle = '#b18cff'; g.fillRect(cx - 230, H - 50, 460, 18);
+    // 木馬：繞圈（前面的大、後面的小）
+    const horses = [];
+    for (let i = 0; i < 5; i++) { const th = t * Math.PI * 2.2 + i * Math.PI * 2 / 5; horses.push({ i, th, d: Math.sin(th) }); }
+    horses.sort((a, b) => a.d - b.d).forEach(h => {
+      const x = cx + Math.cos(h.th) * 190, sc = .7 + (h.d + 1) * .2, bob = Math.sin(now / 260 + h.i) * 14, y = H - 90 + bob;
+      g.strokeStyle = '#ffd35c'; g.lineWidth = 3; g.beginPath(); g.moveTo(x, top + 64); g.lineTo(x, H - 50); g.stroke();
+      g.save(); g.translate(x, y); g.scale(sc, sc);
+      const body = ['#ffffff', '#ffe3ea', '#e3f0ff', '#fff4c8', '#e8ffe3'][h.i], mane = ['#ff8fab', '#b18cff', '#6bb6ff', '#f0902f', '#7bd389'][h.i];
+      g.strokeStyle = '#5a4630'; g.lineWidth = 2; g.lineJoin = 'round';
+      // 腳（前腳抬起來）
+      g.fillStyle = body;
+      [[-22, 0, -26, 30], [-10, 0, -12, 32], [14, 0, 24, 22], [24, 0, 34, 16]].forEach(([x1, y1, x2, y2]) => { g.lineWidth = 7; g.strokeStyle = '#5a4630'; g.beginPath(); g.moveTo(x1, y1 + 8); g.lineTo(x2, y2 + 8); g.stroke(); g.lineWidth = 5; g.strokeStyle = body; g.stroke(); });
+      g.lineWidth = 2; g.strokeStyle = '#5a4630';
+      g.beginPath(); g.ellipse(0, 0, 36, 17, 0, 0, Math.PI * 2); g.fill(); g.stroke();                 // 身體
+      g.beginPath(); g.moveTo(24, -8); g.lineTo(36, -34); g.lineTo(50, -30); g.lineTo(44, -6); g.closePath(); g.fill(); g.stroke(); // 脖子
+      g.beginPath(); g.ellipse(50, -36, 14, 9, .3, 0, Math.PI * 2); g.fill(); g.stroke();              // 頭
+      g.fillStyle = mane; g.beginPath(); g.moveTo(34, -40); g.quadraticCurveTo(26, -24, 22, -10); g.lineTo(28, -12); g.quadraticCurveTo(32, -26, 40, -38); g.fill(); // 鬃毛
+      g.beginPath(); g.moveTo(-34, -4); g.quadraticCurveTo(-52, 0, -48, 18); g.quadraticCurveTo(-42, 6, -34, 4); g.fill();          // 尾巴
+      g.fillStyle = '#3a3240'; g.beginPath(); g.arc(54, -38, 2, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#ffd35c'; g.fillRect(-12, -19, 24, 6);                                         // 馬鞍
+      if (h.i === 0) filmKid(g, A, -2, -10, .72, now / 1000, { arms: t > .6, noPet: true });
+      g.restore();
+    });
+    g.font = '18px sans-serif'; g.textAlign = 'center';
+    ['🎵', '🎶', '🎵'].forEach((e, i) => g.fillText(e, (i * 170 + now / 12) % W, 120 + Math.sin(now / 400 + i) * 20));
+    const me = horses.find(h => h.i === 0);
+    return { x: cx + Math.cos(me.th) * 190, y: H - 150 };
+  },
+  teacup(g, W, H, t, A, now) {
+    filmSky(g, W, H, '#c9f0ff', '#fff7e6');
+    const cx = W / 2, cy = H / 2 + 30, spin = t * t * 26;
+    // 地上的大盤子
+    g.fillStyle = '#ffe3ea'; g.beginPath(); g.ellipse(cx, cy + 60, 220, 50, 0, 0, Math.PI * 2); g.fill();
+    // 漩渦線
+    g.strokeStyle = 'rgba(107,182,255,.6)'; g.lineWidth = 3;
+    for (let i = 0; i < 6; i++) { const a = spin + i; g.beginPath(); g.arc(cx, cy, 120 + i * 8, a, a + 1.2); g.stroke(); }
+    // 杯子：先畫杯口裡面，再畫她，最後畫杯子前面（擋住下半身）
+    g.fillStyle = '#4f97df'; g.beginPath(); g.ellipse(cx, cy, 112, 32, 0, 0, Math.PI * 2); g.fill();     // 杯口（裡面暗一點）
+    const side = Math.sin(spin) * 28;
+    filmKid(g, A, cx + side, cy + 12, 1, now / 1000, { rot: Math.sin(spin * 2) * .08 });
+    g.fillStyle = '#6bb6ff'; g.beginPath(); g.moveTo(cx - 112, cy); g.ellipse(cx, cy, 112, 90, 0, Math.PI, 0, true); g.closePath(); g.fill();   // 杯身前面
+    g.strokeStyle = '#9fd0ff'; g.lineWidth = 6; g.beginPath(); g.ellipse(cx, cy, 112, 32, 0, 0, Math.PI); g.stroke();                        // 杯口邊緣（前半）
+    for (let i = 0; i < 6; i++) { const a = spin + i * Math.PI / 3, x = cx + Math.cos(a) * 80; if (Math.sin(a) > 0) { g.fillStyle = '#ffd35c'; g.beginPath(); g.arc(x, cy + 44 + Math.sin(a) * 10, 9, 0, Math.PI * 2); g.fill(); } }
+    if (t > .75) { g.font = '22px sans-serif'; g.textAlign = 'center'; for (let i = 0; i < 4; i++) { const a = now / 200 + i * Math.PI / 2; g.fillText('💫', cx + side + Math.cos(a) * 40, cy - 40 + Math.sin(a) * 12); } }
+    return { x: cx + side, y: cy - 70 };
+  }
+};
+let rideFilmOn = null;
+function playRideFilm(key) {
+  if (!RIDE_DRAW[key] || rideFilmOn || resting || !$('#modal').hidden) return false;
+  const stage = document.querySelector('.stage'); if (!stage) return false;
+  const box = el('div', 'ride-film'), c = document.createElement('canvas'), skip = el('div', 'ride-skip', '點一下跳過 ⏭');
+  box.append(c, skip); stage.appendChild(box);
+  const W = 480, H = 300, dpr = window.devicePixelRatio || 1;
+  c.width = W * dpr; c.height = H * dpr;
+  const g = c.getContext('2d'), A = rideFilmActors(), start = performance.now(), info = RIDE_FILMS[key];
+  let raf = 0, done = false;
+  const end = () => { if (done) return; done = true; cancelAnimationFrame(raf); box.classList.add('out'); setTimeout(() => box.remove(), 350); rideFilmOn = null; };
+  box.onclick = end;
+  rideFilmOn = { key, end };
+  if (key === 'coaster') setTimeout(() => { if (!done) Sound.play('whoosh'); }, RIDE_FILM_MS * .5);
+  (function frame(now) {
+    if (done) return;
+    now = now || performance.now();
+    const t = Math.min(1, (now - start) / RIDE_FILM_MS);
+    g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+    let at = null;
+    try { at = RIDE_DRAW[key](g, W, H, t, A, now); } catch (e) { end(); throw e; }
+    const line = info.say.filter(([k]) => t >= k).pop();
+    if (line && at) filmBubble(g, Math.max(70, Math.min(W - 70, at.x)), Math.max(40, at.y), line[1]);
+    if (t >= 1) { setTimeout(end, 250); return; }
+    raf = requestAnimationFrame(frame);
+  })();
+  return true;
+}
 /* ===== 🔤 注音小遊戲（家長：照建議做；給還不太認字的妹妹）=====
    教室的注音布告欄點一下（或老師的選單）。完全不用看字：
      ⭐   聽聽看：🔊 念「玻」→ 三張卡片點出 ㄅ（先學前 11 個聲母）
