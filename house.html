@@ -622,6 +622,9 @@ button.pass { font: inherit; }
 .snap-txt b { font-size: 14px; }
 .sell-q { white-space: pre-line; }
 .picked-file { white-space: pre-line; font-weight: 700; }
+.pause-badge { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 5; background: rgba(58,50,64,.85); color: #fff;
+  font-size: 13px; font-weight: 700; padding: 6px 14px; border-radius: 999px; pointer-events: none; white-space: nowrap; }
+@media (max-width: 700px) { .pause-badge { top: auto; bottom: 56px; font-size: 12px; } }
 .snap-btns { display: flex; gap: 4px; flex: none; }
 .name-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .name-row canvas { flex: none; }
@@ -5189,8 +5192,19 @@ function decayStat(value, mins, perMin) {
   const floor = mins > AWAY_GAP_MIN ? Math.min(value, AWAY_FLOOR) : PET_MIN;
   return Math.max(floor, clampStat(value - mins / perMin));
 }
+/* ⏸️ 家長設定中（家長：按設定或備份時，畫面中的人物要不要暫停？）
+   打開「⚙️ 設定」「💾 備份」的時候，肚子、乾淨、心情不往下掉，休息提醒也不計時——那段時間是大人在弄，不是小孩在玩。
+   人物照常走動（整個凍住會以為當掉）。
+   防小孩把設定頁開著繼續玩：10 秒內點過房間就不算暫停。 */
+var PARENT_TAB = false, lastStageInput = 0;
+const PARENT_IDLE_MS = 10000;
+function parentPaused(now) {
+  now = now || Date.now();
+  return PARENT_TAB && now - lastStageInput > PARENT_IDLE_MS && !document.body.classList.contains('bigroom');
+}
 function petTick() {
   const pet = G.pet, kid = G.kid, now = Date.now();
+  if (parentPaused(now)) { pet.lastTick = now; kid.lastTick = now; return false; } // 暫停：時間不算進去
   let changed = false;
   const mins = (now - (pet.lastTick || now)) / 60000;
   if (pet.stage === 'egg') { pet.lastTick = now; } // 蛋不會餓、不會髒
@@ -12140,6 +12154,7 @@ function updateHoldUI() {
 
 // ── 滑鼠與觸控 ──
 // ── 寵物：按住捏捏、點一下摸摸 ──
+canvas.addEventListener('pointerdown', () => { lastStageInput = Date.now(); updatePauseBadge(); }); // 有在點房間：不算家長設定中
 canvas.addEventListener('pointerdown', e => {
   if (e.button !== 0 || hold || !$('#itemMenu').hidden || !$('#foodMenu').hidden) return;
   const w = toWorld(e);
@@ -12433,6 +12448,7 @@ function openTab(name) {
   setBigRoom(false);                  // 放大房間時點了分頁：把面板打開
   if (tab !== name) sellMode = false; // 換分頁就離開賣東西模式
   tab = name;
+  PARENT_TAB = name === 'save' || name === 'backup';
   document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === name));
   renderTab();
 }
@@ -12446,6 +12462,19 @@ document.querySelectorAll('#tabs button').forEach(b => { b.onclick = () => openT
 const BIG_KEY = 'myHouse_bigRoom', HINT_KEY = 'myHouse_hintRuns', HINT_RUNS = 3, HINT_SHOW_MS = 15000;
 const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* 私密瀏覽之類，算了 */ } };
+function updatePauseBadge(now) {
+  let b = document.getElementById('pauseBadge');
+  const on = parentPaused(now);
+  if (!b) {
+    if (!on) return;
+    b = el('div', 'pause-badge', '⏸️ 家長設定中・暫停計時');
+    b.title = '肚子、乾淨、心情不會往下掉，休息提醒也不計時';
+    b.id = 'pauseBadge';
+    const st = document.querySelector('.stage'); if (!st) return;
+    st.appendChild(b);
+  }
+  b.hidden = !on;
+}
 function setBigRoom(on) {
   const was = document.body.classList.contains('bigroom');
   if (was === !!on) return;
@@ -12516,9 +12545,10 @@ function restTick(now, visible) {
   // 離開超過休息時間 → 算已經休息過
   if (s.lastSeen && now - s.lastSeen >= c.rest * 60000) { s.played = 0; s.dueAt = 0; s.warned = false; }
   if (visible === undefined ? document.visibilityState === 'visible' : visible) {
-    if (s.lastSeen && now - s.lastSeen < 5000) s.played += (now - s.lastSeen) / 1000;
+    if (s.lastSeen && now - s.lastSeen < 5000 && !parentPaused(now)) s.played += (now - s.lastSeen) / 1000; // 家長設定中不算玩的時間
     s.lastSeen = now;
   }
+  updatePauseBadge(now);
   const left = c.play * 60 - s.played;
   if (left <= REST_WARN_S && left > 0 && !s.warned) {
     s.warned = true;
