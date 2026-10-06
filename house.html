@@ -4169,6 +4169,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-14T15:00', title: '備份可以一鍵傳到 LINE 了！📤', lines: [
+    ['📤', '「💾 備份」按「傳到 LINE」，選 LINE 傳給自己就存好了'],
+    ['👨‍👩‍👧', '超過 7 天沒備份，打開遊戲會提醒大人一次'],
+    ['📥', '要用的時候，在「把備份放回來」選那個檔案']
+  ], newItems: [] },
   { id: '2026-10-14T09:00', title: '萬聖節：不給糖就搗蛋！🎃', lines: [
     ['🎃', '到叔叔家、阿婆家、學校、圖書館、公園、遊樂園，點主人說「不給糖就搗蛋！」'],
     ['🍭', '每一家給不一樣的糖，還會多 2 顆萬聖節糖果可以送給動物朋友'],
@@ -14012,6 +14017,47 @@ function daysSinceBackup() {
   return Math.floor((Date.now() - since) / 864e5);
 }
 function backupDue() { return daysSinceBackup() >= BACKUP_REMIND_DAYS; }
+/* 📤 一鍵傳到 LINE（家長：照建議做）：iPad／手機跳出分享選單，選 LINE 傳給自己就好。
+   用「檔案」分享：備份太長，當成文字貼到 LINE 會超過一則訊息的長度。
+   這台不能分享檔案（例如部分電腦瀏覽器）：改成存檔案到「下載」資料夾。 */
+async function shareBackup() {
+  const txt = freshBackup();
+  if (txt == null) { toast(BACKUP_LOCKED_MSG); return false; }
+  const name = `我的小屋備份-${curSlotName()}-${today()}.txt`;
+  try {
+    const file = new File([txt], name, { type: 'text/plain' });
+    if (navigator.canShare && navigator.share && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: '我的小屋備份' });
+      markBackedUp(); toast('📤 傳好了！要用的時候在「📥 把備份放回來」選這個檔案'); return true;
+    }
+  } catch (e) { if (e && e.name === 'AbortError') { toast('沒有傳出去（取消了）'); return false; } }
+  try {
+    downloadText(txt, name); markBackedUp();
+    toast('這台不能直接分享，已經存成檔案（在「下載」資料夾），可以拖到 LINE 傳給自己');
+    return true;
+  } catch (e) { toast('存不了，請用「📋 複製備份」'); return false; }
+}
+/* 很久沒備份：打開遊戲一陣子後提醒大人一次（一天最多一次，畫面空下來才跳） */
+const BACKUP_NAG_KEY = () => 'myHouse_backupNag:' + curSlotId();
+function maybeBackupNag(tries) {
+  tries = tries || 0;
+  if (tries > 30 || SAVE_LOCKED != null || !G.openGift || !backupDue() || lsGet(BACKUP_NAG_KEY()) === today()) return;
+  if (!$('#modal').hidden || introPlaying || resting || hold || document.getElementById('showcase') || document.getElementById('pinBox')) { setTimeout(() => maybeBackupNag(tries + 1), 5000); return; }
+  lsSet(BACKUP_NAG_KEY(), today());
+  const d = lastBackupAt() ? daysSinceBackup() : 0;
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', '👨‍👩‍👧 給大人：該備份囉'));
+  card.appendChild(note(d ? `「${curSlotName()}」已經 ${d} 天沒有備份了。` : `「${curSlotName()}」還沒有備份過。`));
+  card.appendChild(note('按一下就能傳到 LINE（傳給自己），萬一這台電腦／iPad 的資料不見了，還救得回來。'));
+  const go = el('button', 'big', '📤 傳到 LINE（分享）');
+  go.onclick = async () => { $('#modal').hidden = true; await shareBackup(); };
+  const later = el('button', 'big alt', '之後再說');
+  later.onclick = () => { $('#modal').hidden = true; };
+  card.append(go, later);
+  $('#modal').hidden = false;
+}
+setTimeout(() => { try { maybeBackupNag(); } catch (e) {} }, 15000);
 setTimeout(() => { try { refreshBackupDot(); } catch (e) {} }, 800); // 打開遊戲時看一次要不要掛紅點
 function refreshBackupDot() {
   const b = document.querySelector('#tabs button[data-tab="backup"]');
@@ -14031,6 +14077,11 @@ function tabBackup(body) {
       body.appendChild(fb);
     }
   }
+  // 最常用、最重要的：傳到 LINE（放最上面）
+  const share = el('button', 'big', '📤 傳到 LINE（備份到手機，最安心）');
+  share.onclick = () => { Sound.play('click'); shareBackup().then(ok => { if (ok) renderTab(); }); };
+  body.appendChild(share);
+  body.appendChild(note('按了會跳出分享選單，選 LINE 傳給自己就好。電腦上會存成檔案，可以拖到 LINE。'));
   snapSection(body);
   body.appendChild(h3('📦 備份到別的地方'));
   const last = lastBackupAt(), days = daysSinceBackup();
@@ -14047,7 +14098,7 @@ function tabBackup(body) {
     `💰 ${fmt(G.bells)}　·　⭐ ${fmt(totalScore())}　·　${(code.length / 1024).toFixed(1)} KB`);
   body.appendChild(info);
 
-  const copy = el('button', 'big', '📋 複製備份');
+  const copy = el('button', 'big alt', '📋 複製備份');
   copy.onclick = async () => {
     Sound.play('click');
     const txt = freshBackup();
