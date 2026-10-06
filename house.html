@@ -18526,7 +18526,7 @@ function openSlingGame() {
     if (!aim) return;
     if (pull() < 10) { aim = null; return; } // 拉太短不算
     const v = aimVel();
-    apple = { x: ANCHOR.x, y: ANCHOR.y, vx: v.vx, vy: v.vy, rest: 0 };
+    apple = { x: ANCHOR.x, y: ANCHOR.y, vx: v.vx, vy: v.vy, rest: 0, air: 0 };
     aim = null; shots--;
     Sound.play('jump');
     w.status.textContent = `第 ${level + 1} 關：還有 ${shots} 顆蘋果`;
@@ -18608,9 +18608,12 @@ function openSlingGame() {
         boxes.filter(b => !b.dead).forEach(b => hitBox(apple, b));
         balloons.filter(b => !b.popped).forEach(b => { if (Math.hypot(apple.x - b.x, apple.y - b.y) < R + b.r) pop(b); });
         if (apple.y + R > GY) { apple.y = GY - R; apple.vy *= -.35; apple.vx *= .7; } // 地上彈一下
-        const slow = Math.hypot(apple.vx, apple.vy) < 30 && apple.y + R >= GY - 1;
+        /* 幾乎不動就算停下來——不管是在地上還是停在木箱上面（家長回報：蘋果掉在箱子上面，遊戲卡住不換下一顆）。
+           停在箱子上會一直被重力壓著、小小地彈，所以速度門檻放寬一點；另外一顆最多飛 8 秒，當作保險。 */
+        apple.air += dt;
+        const slow = Math.hypot(apple.vx, apple.vy) < 45;
         apple.rest = slow ? apple.rest + dt : 0;
-        if (apple.rest > .5 || apple.x > W + 40 || apple.x < -40) nextShot();
+        if (apple.rest > .6 || apple.air > 8 || apple.x > W + 40 || apple.x < -40) nextShot();
         else if (balloons.every(b => b.popped)) nextShot();
       }
     }
@@ -18671,6 +18674,10 @@ function openSlingGame() {
     g.textAlign = 'start';
     raf = requestAnimationFrame(frame);
   }
+  // 給走查看的：把蘋果放在某個位置、直接跑物理（不畫）
+  openSlingGame.test = { boxes: () => boxes, shots: () => shots, apple: () => apple, level: () => level,
+    place: (x, y, vx, vy) => { apple = { x, y, vx: vx || 0, vy: vy || 0, rest: 0, air: 0 }; shots = Math.max(0, shots - 1); },
+    step: dt => { const saveRaf = window.requestAnimationFrame; window.requestAnimationFrame = () => 0; try { last = performance.now() - dt * 1000; frame(performance.now()); } finally { window.requestAnimationFrame = saveRaf; } } };
   function drawApple(x, y) {
     g.fillStyle = '#e8505b'; g.beginPath(); g.arc(x, y, R, 0, Math.PI * 2); g.fill();
     g.fillStyle = 'rgba(255,255,255,.45)'; g.beginPath(); g.arc(x - 3, y - 3.5, 2.6, 0, Math.PI * 2); g.fill();
