@@ -4750,6 +4750,35 @@ function buyAndWear(id) {
   } catch (e) {}
 })();
 
+/* 🔗 還原連結（家長：選檔案還原了好幾次都沒回來）：house.html#restore=<存檔 JSON 的 base64url>
+   在讀存檔「之前」就寫進去，頁面上什麼東西都還沒跑，別的視窗、跳出來的視窗都來不及把它蓋掉。
+   寫之前現在的進度先存進「🕒 存檔紀錄」（🆕 重新開始之前的那一類）和「反悔」那一份。 */
+var restoredByLink = null;
+(function restoreFromLink() {
+  const m = /^#restore=([A-Za-z0-9_-]+)$/.exec(location.hash || '');
+  if (!m) return;
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+  let raw = null, g = null;
+  try {
+    const b64 = m[1].replace(/-/g, '+').replace(/_/g, '/');
+    const bin = atob(b64 + '==='.slice((b64.length + 3) % 4));
+    raw = new TextDecoder().decode(Uint8Array.from(bin, ch => ch.charCodeAt(0)));
+    g = normalizeSave(JSON.parse(raw));
+  } catch (e) { g = null; }
+  if (!g) { restoredByLink = { fail: true }; return; }
+  const sum = `🐾 ${g.pets.length} 隻寵物　💰 ${g.bells}　🏠 ${g.rooms.length} 間房間`;
+  if (!confirm(`要用這個還原連結裡的紀錄嗎？\n${sum}\n\n現在的進度會先留一份（存檔紀錄、反悔都找得到）。`)) return;
+  try {
+    const cur = localStorage.getItem(SAVE_KEY);
+    if (cur && cur !== raw) {
+      try { addSnap('reset', cur); } catch (e) {}
+      try { localStorage.setItem(UNDO_KEY, JSON.stringify({ tag: 'myHouse-save', v: 1, at: new Date().toISOString().slice(0, 16).replace('T', ' '), data: cur })); } catch (e) {}
+    }
+    localStorage.setItem(SAVE_KEY, raw);
+    localStorage.removeItem(rescueKey());   // 讀不出來時留的那份不要再跳出來問
+    restoredByLink = { pets: g.pets.length, bells: g.bells };
+  } catch (e) { restoredByLink = { fail: true }; }
+})();
 let G = loadGame();
 if (SAVE_LOCKED != null) setTimeout(openRescue, 300);
 // 上次玩到現在隔了幾小時（在第一次結算之前記下來，給「好久不見」用）
@@ -14710,6 +14739,14 @@ refreshTop();
 renderTab();
 setTimeout(() => maybeOpening(), 300);
 setTimeout(() => maybeRescueOffer(), 900);
+setTimeout(() => { // 還原連結的結果：寫清楚讀到幾隻，家長一看就知道有沒有成功
+  if (!restoredByLink) return;
+  const r = restoredByLink; restoredByLink = null;
+  if (r.fail) { alert('⚠️ 這個還原連結讀不出來，沒有動到任何東西。'); return; }
+  const ok = SAVE_LOCKED == null && G.pets.length === r.pets;
+  alert(ok ? `✅ 還原好了！\n現在有 ${G.pets.length} 隻寵物、💰 ${fmt(G.bells)}。\n\n記得到「💾 備份」按「📋 複製備份」多留一份。`
+           : `⚠️ 還原後讀到的不對（寵物 ${G.pets.length} 隻，應該是 ${r.pets} 隻）${SAVE_LOCK_WHY ? '\n原因：' + SAVE_LOCK_WHY : ''}\n請把這個畫面拍給我。`);
+}, 600);
 setTimeout(() => autoSnap(), 3000);                 // 打開遊戲：存一份（載入成功的那份）
 setInterval(() => autoSnap(), SNAP_AUTO_MS);        // 之後每 10 分鐘（跟上一份一樣就不存）
 setTimeout(() => maybeShowNews(), 1500);
