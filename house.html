@@ -12587,20 +12587,52 @@ function askPin(why, ok) {
     if (v === null) return;
     if (v.trim() === c.pin) ok();
     else toast('密碼不對喔');
+  }, { forgot: true });
+}
+/* 🔑 忘記密碼（家長：忘記密碼的話怎麼辦）：
+   出一題「三位數 × 三位數」的乘法（大人用手機計算機一下就好，小朋友很難算出來），
+   答對就把密碼清掉，接著直接設新的。密碼只存在這台機器，沒有別的地方可以找回來。 */
+function forgotPin() {
+  const a = 120 + Math.floor(Math.random() * 870), b = 113 + Math.floor(Math.random() * 870);
+  forgotPin.test = a * b;
+  readPin(`忘記密碼（大人用）：請算出 ${a} × ${b} ＝ ？（答對就會清掉密碼，再設一個新的）`, v => {
+    if (v === null) return;
+    if (String(v).trim() !== String(a * b)) { toast('答案不對，密碼沒有清掉'); return; }
+    const c = restCfg(); c.pin = ''; saveRestCfg(c); restUnlocked = false;
+    toast('🔑 密碼清掉了，請設一個新的');
+    setNewPin();
+  }, { digits: 7 });
+}
+// 設新密碼：要輸入兩次一樣的才算（家長：第一次不小心打錯就麻煩了）
+function setNewPin() {
+  readPin('請輸入新的 4 位數家長密碼（留空＝不用密碼）', v => {
+    if (v === null) return;
+    const t = v.trim();
+    if (!t) { const c2 = restCfg(); c2.pin = ''; saveRestCfg(c2); restUnlocked = false; toast('已經取消家長密碼'); renderTab(); return; }
+    if (!/^\d{4}$/.test(t)) { toast('密碼要是 4 位數字'); return; }
+    readPin('請再輸入一次同樣的密碼（確認）', v2 => {
+      if (v2 === null) return;
+      if (v2.trim() !== t) { toast('兩次輸入的不一樣，密碼沒有改，請再設一次'); return; }
+      const c2 = restCfg(); c2.pin = t; saveRestCfg(c2); restUnlocked = false;
+      toast('🔑 家長密碼設好了，請記下來');
+      renderTab();
+    });
   });
 }
 /* 輸入密碼的小視窗。本來用瀏覽器的 prompt()，打的字會直接顯示出來，小孩在旁邊就看到了
    （家長：輸入密碼要預設隱藏）。改成自己的視窗：預設是 ●●●●，iPad 跳數字鍵盤，
    旁邊 👁 可以按著看一下（設新密碼時怕打錯）。
    疊在最上層（比休息畫面還高）：休息中、救援畫面上也會用到，不能把底下的視窗蓋掉。 */
-function readPin(msg, cb) {
+// opts.forgot：多一顆「忘記密碼？」；opts.digits：可以打幾位數（忘記密碼的算式答案比較長）
+function readPin(msg, cb, opts) {
+  opts = opts || {};
   const old = document.getElementById('pinBox'); if (old) old.remove();
   const ov = el('div', 'pin-ov'); ov.id = 'pinBox';
   const card = el('div', 'pin-card');
   card.appendChild(el('div', 'pin-msg', msg));
   const row = el('div', 'pin-row');
   const inp = el('input', 'pin-in');
-  inp.type = 'password'; inp.inputMode = 'numeric'; inp.pattern = '[0-9]*'; inp.maxLength = 4; inp.size = 4;
+  inp.type = opts.digits ? 'text' : 'password'; inp.inputMode = 'numeric'; inp.pattern = '[0-9]*'; inp.maxLength = opts.digits || 4; inp.size = opts.digits || 4;
   inp.autocomplete = 'off'; inp.setAttribute('autocorrect', 'off'); inp.setAttribute('autocapitalize', 'off');
   const eye = el('button', 'pin-eye', '👁');
   eye.type = 'button'; eye.title = '看一下密碼';
@@ -12613,6 +12645,11 @@ function readPin(msg, cb) {
   noB.onclick = () => done(null);
   inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); done(inp.value); } else if (e.key === 'Escape') done(null); };
   card.append(okB, noB);
+  if (opts.forgot) {
+    const fg = el('button', 'mini pin-forgot', '忘記密碼？');
+    fg.onclick = () => { ov.remove(); forgotPin(); };
+    card.appendChild(fg);
+  }
   ov.appendChild(card);
   document.body.appendChild(ov);
   setTimeout(() => { try { inp.focus(); } catch (e) {} }, 30);
@@ -12641,15 +12678,9 @@ function restSettings(body) {
     row('休息幾分鐘', REST_BREAK_OPTS, c.rest, (c2, v) => { c2.rest = v; });
   }
   const pinBtn = el('button', 'mini', c.pin ? '🔑 改家長密碼' : '🔑 設定家長密碼');
-  pinBtn.onclick = () => askPin('修改家長密碼', () => readPin('請輸入新的 4 位數家長密碼（留空＝不用密碼）', v => {
-    if (v === null) return;
-    const t = v.trim();
-    if (t && !/^\d{4}$/.test(t)) { toast('密碼要是 4 位數字'); return; }
-    const c2 = restCfg(); c2.pin = t; saveRestCfg(c2); restUnlocked = false;
-    toast(t ? '🔑 家長密碼設好了，請記下來' : '已經取消家長密碼');
-    renderTab();
-  }));
+  pinBtn.onclick = () => askPin('修改家長密碼', setNewPin);
   body.appendChild(pinBtn);
+  if (c.pin) body.appendChild(note('忘記密碼：要輸入密碼的地方都有「忘記密碼？」，大人答對一題乘法就能清掉重設。'));
 }
 setInterval(() => { try { restTick(); } catch (e) { /* 提醒出錯也不能讓遊戲壞掉 */ } }, 1000);
 setInterval(() => { try { if (!resting) { themeTick(); refreshThemeBtn(); } } catch (e) {} }, 1500);
