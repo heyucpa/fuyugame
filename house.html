@@ -4228,7 +4228,8 @@ const OPEN_GIFT_BELLS = 100000;
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
   { id: '2026-10-17T20:00', title: '升旗、看戰車也有動畫了！🚩', lines: [
-    ['🚩', '學校看升旗：全校排排站，旗子慢慢升到頂'],
+    ['🚩', '學校看升旗：全校排排站，貓頭鷹校旗慢慢升到頂'],
+    ['🎨', '點旗桿或找老師「設計校旗」，自己畫一面，升旗就升你畫的！'],
     ['🛡️', '公園看大戰車：有小朋友想偷偷爬上去，被園長阻止了'],
     ['⏭', '一樣點一下可以跳過']
   ], newItems: [] },
@@ -4858,6 +4859,7 @@ function normalizeSave(g) {
   if (out.newsAt != null && !isObj(out.newsAt)) delete out.newsAt;
   if (out.trick != null && !(isObj(out.trick) && isObj(out.trick.got) && num(out.trick.y))) delete out.trick;
   if (out.artWall != null) out.artWall = (Array.isArray(out.artWall) ? out.artWall : []).map(cleanDrawing).filter(Boolean).slice(0, 4);
+  if (out.schoolFlag != null) { const sf = cleanDrawing(out.schoolFlag); if (sf) out.schoolFlag = sf; else delete out.schoolFlag; }
   if (out.kidGrowDay != null && !(isObj(out.kidGrowDay) && typeof out.kidGrowDay.d === 'string' && num(out.kidGrowDay.n))) delete out.kidGrowDay;
   if (out.flowerDex != null && !isObj(out.flowerDex)) delete out.flowerDex;
   if (out.advComics != null && !isObj(out.advComics)) delete out.advComics;
@@ -10619,6 +10621,7 @@ function hostMenuEntries() {
     list.push(['🔔 上課（點名、數學、美勞、午睡）', openLessonMenu]);
     list.push(['📝 來小考', openQuizGame]);
     list.push(['🔤 注音小遊戲', openZhuyinGame]);
+    list.push(['🎨 設計校旗', openFlagDesigner]);
     list.push(['🏃 跟同學賽跑', openRunGame]);
     [['🏫 回教室', 0], ['🎢 一起去操場', 1]]
       .filter(([, i]) => i !== G.away.idx).forEach(([label, i]) => list.push([label, () => goPlaceRoom(i)]));
@@ -12818,6 +12821,10 @@ function showItemMenu(it, e) {
   const add = (label, fn) => entries.push([label, fn]);
   if (use) add(use.use === 'lie' ? (use.bath ? '🛁 泡澡' : '😴 躺下睡覺') : '💺 坐下', () => fufuGoUse(it));
   if (act) add(ACTIVITIES[act].label, () => fufuGoUse(it, false, act));
+  if (it.id === 'flagpole' && G.away && G.away.place === 'school') { // 🏳️ 自己設計校旗
+    add('🎨 設計校旗', openFlagDesigner);
+    if (G.schoolFlag) add('🏳️ 換回原本的校旗', () => { resetSchoolFlag(); });
+  }
   if (it.id === 'cotton_cart') { add(ACTIVITIES.popcorn.label, () => fufuGoUse(it, false, 'popcorn')); add('🍦 買冰淇淋', () => fufuGoUse(it, false, 'icecream')); }   // 🍭 點心車：選要買什麼
   if (it.id === 'planter') { // 🌱 花盆：長到哪裡、多久可以再澆；開花了可以剪下來插花
     const gs = gardenOf(it.uid), left = Math.max(0, Math.ceil((gs.w + GARDEN_WAIT_MS - Date.now()) / 1000));
@@ -17362,6 +17369,39 @@ RIDE_DRAW.climb = function (g, W, H, t, A, now) {
   filmKid(g, A, x, y, .8, now / 1000, { arms, rot });
   return { x, y: y - 70 };
 };
+/* 🏳️ 校旗（家長：國旗圖案換別的；預設的不要像任何國家的國旗）
+   預設：綠底、黃邊、中間貓頭鷹老師、下面一本打開的書——只屬於遊戲裡的學校。
+   小朋友可以自己畫（G.schoolFlag，跟卡片畫畫一樣的格式），升旗升的就是她畫的。 */
+function drawSchoolFlag(g, x, y, w, h, now) {
+  const wave = Math.sin(now / 150) * 3;
+  g.save();
+  g.translate(x, y); g.transform(1, wave / w * .6, 0, 1, 0, 0);   // 隨風微微斜
+  if (G.schoolFlag) {
+    g.fillStyle = '#fffaf0'; g.fillRect(0, 0, w, h);
+    g.save(); g.beginPath(); g.rect(0, 0, w, h); g.clip(); drawCardStrokes(g, G.schoolFlag, w / PAD_W); g.restore();
+    g.strokeStyle = '#ffd35c'; g.lineWidth = 3; g.strokeRect(1.5, 1.5, w - 3, h - 3);
+  } else {
+    g.fillStyle = '#5fae7c'; g.fillRect(0, 0, w, h);
+    g.strokeStyle = '#ffd35c'; g.lineWidth = 3; g.strokeRect(1.5, 1.5, w - 3, h - 3);
+    // 書：兩頁打開
+    g.fillStyle = '#fffaf0'; g.beginPath(); g.moveTo(w * .25, h * .78); g.quadraticCurveTo(w * .4, h * .7, w * .5, h * .76); g.quadraticCurveTo(w * .6, h * .7, w * .75, h * .78); g.lineTo(w * .75, h * .9); g.quadraticCurveTo(w * .6, h * .84, w * .5, h * .9); g.quadraticCurveTo(w * .4, h * .84, w * .25, h * .9); g.closePath(); g.fill();
+    g.strokeStyle = '#c9b9a6'; g.lineWidth = 1; g.beginPath(); g.moveTo(w * .5, h * .76); g.lineTo(w * .5, h * .9); g.stroke();
+    // 貓頭鷹老師
+    g.save(); g.translate(w * .5, h * .74); g.scale(h / 60, h / 60); drawNeighbor(g, HOSTS.teacher, { happy: true, clean: 100 }); g.restore();
+  }
+  g.restore();
+}
+// 🎨 設計校旗：用卡片的畫畫板；畫好存起來，升旗就升這一面
+function openFlagDesigner() {
+  openDrawPad('🎨 設計我們的校旗（不畫就用原本的）', d => {
+    if (!d) { toast('校旗沒有改'); return; }
+    G.schoolFlag = d; saveGame();
+    toast('🏳️ 校旗設計好了！去點旗桿看升旗～');
+    fufuSay('這是我畫的校旗！', 2800);
+    if (host.n && host.n.id === 'teacher') hostSay('畫得真好，升旗的時候就升這一面！', 3000);
+  });
+}
+function resetSchoolFlag() { delete G.schoolFlag; saveGame(); toast('校旗換回原本的了'); }
 // 畫一位動物朋友（腳底在 x,y）
 function filmNeighbor(g, n, x, y, k, look) {
   g.save(); g.translate(x, y); g.scale(k, k); drawNeighbor(g, n, Object.assign({ happy: true, clean: 100 }, look || {})); g.restore();
@@ -17374,9 +17414,8 @@ RIDE_DRAW.flag = function (g, W, H, t, A, now) {
   const px = 120, top = 40, base = H - 60;
   g.fillStyle = '#cfd6de'; g.fillRect(px - 3, top, 6, base - top); g.fillStyle = '#ffd35c'; g.beginPath(); g.arc(px, top - 4, 6, 0, Math.PI * 2); g.fill();
   const rise = Math.min(1, Math.max(0, (t - .05) / .6));
-  const fy = base - 40 - rise * (base - 40 - top - 10), wave = Math.sin(now / 150) * 4;
-  g.fillStyle = '#e8505b'; g.beginPath(); g.moveTo(px + 3, fy); g.quadraticCurveTo(px + 40, fy + wave, px + 78, fy + 4 + wave); g.lineTo(px + 78, fy + 44 + wave); g.quadraticCurveTo(px + 40, fy + 40 - wave, px + 3, fy + 44); g.closePath(); g.fill();
-  g.fillStyle = '#fff'; g.beginPath(); g.arc(px + 40, fy + 22, 7, 0, Math.PI * 2); g.fill();
+  const fy = base - 56 - rise * (base - 56 - top - 10);
+  drawSchoolFlag(g, px + 3, fy, 84, 56, now);
   if (t > .7) { g.font = '18px sans-serif'; g.textAlign = 'center'; ['🎵', '🎶'].forEach((e, i) => g.fillText(e, px + 110 + i * 40, fy - 10 + Math.sin(now / 300 + i) * 8)); }
   // 全校排排站（同學在後排小一點），老師在旁邊
   const bob = Math.abs(Math.sin(now / 420)) * 2;
