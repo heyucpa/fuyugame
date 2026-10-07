@@ -17397,6 +17397,7 @@ function drawSchoolFlag(g, x, y, w, h, now) {
 // 🎨 設計校旗：用卡片的畫畫板；畫好存起來，升旗就升這一面
 function openFlagDesigner() {
   openDrawPad('🎨 設計我們的校旗（不畫就用原本的）', d => {
+    $('#modal').hidden = true;   // 畫板是呼叫的人負責關（本來忘了關，畫完視窗一直留著）
     if (!d) { toast('校旗沒有改'); return; }
     G.schoolFlag = d; saveGame();
     toast('🏳️ 校旗設計好了！去點旗桿看升旗～');
