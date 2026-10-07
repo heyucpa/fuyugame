@@ -17370,7 +17370,7 @@ RIDE_DRAW.climb = function (g, W, H, t, A, now) {
   return { x, y: y - 70 };
 };
 /* 🏳️ 校旗（家長：國旗圖案換別的；預設的不要像任何國家的國旗）
-   預設：綠底、黃邊、中間貓頭鷹老師、下面一本打開的書——只屬於遊戲裡的學校。
+   預設：粉紅底、米白邊、角落兩顆小白心、中間貓頭鷹老師、下面一本打開的書——只屬於遊戲裡的學校（家長：底色改粉紅）。
    小朋友可以自己畫（G.schoolFlag，跟卡片畫畫一樣的格式），升旗升的就是她畫的。 */
 function drawSchoolFlag(g, x, y, w, h, now) {
   const wave = Math.sin(now / 150) * 3;
@@ -17381,8 +17381,11 @@ function drawSchoolFlag(g, x, y, w, h, now) {
     g.save(); g.beginPath(); g.rect(0, 0, w, h); g.clip(); drawCardStrokes(g, G.schoolFlag, w / PAD_W); g.restore();
     g.strokeStyle = '#ffd35c'; g.lineWidth = 3; g.strokeRect(1.5, 1.5, w - 3, h - 3);
   } else {
-    g.fillStyle = '#5fae7c'; g.fillRect(0, 0, w, h);
-    g.strokeStyle = '#ffd35c'; g.lineWidth = 3; g.strokeRect(1.5, 1.5, w - 3, h - 3);
+    g.fillStyle = '#ff9ec4'; g.fillRect(0, 0, w, h);
+    g.strokeStyle = '#fffaf0'; g.lineWidth = 3; g.strokeRect(1.5, 1.5, w - 3, h - 3);
+    // 角落兩顆小白心
+    const heart = (cx, cy, r) => { g.fillStyle = '#fffaf0'; g.beginPath(); g.moveTo(cx, cy + r); g.bezierCurveTo(cx - r * 1.6, cy - r * .2, cx - r * .6, cy - r * 1.4, cx, cy - r * .5); g.bezierCurveTo(cx + r * .6, cy - r * 1.4, cx + r * 1.6, cy - r * .2, cx, cy + r); g.fill(); };
+    heart(w * .14, h * .2, h * .08); heart(w * .86, h * .2, h * .08);
     // 書：兩頁打開
     g.fillStyle = '#fffaf0'; g.beginPath(); g.moveTo(w * .25, h * .78); g.quadraticCurveTo(w * .4, h * .7, w * .5, h * .76); g.quadraticCurveTo(w * .6, h * .7, w * .75, h * .78); g.lineTo(w * .75, h * .9); g.quadraticCurveTo(w * .6, h * .84, w * .5, h * .9); g.quadraticCurveTo(w * .4, h * .84, w * .25, h * .9); g.closePath(); g.fill();
     g.strokeStyle = '#c9b9a6'; g.lineWidth = 1; g.beginPath(); g.moveTo(w * .5, h * .76); g.lineTo(w * .5, h * .9); g.stroke();
