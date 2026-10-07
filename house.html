@@ -669,6 +669,12 @@ button.pass { font: inherit; }
 .daily-ic { font-size: 26px; flex: none; }
 .daily-big { font-size: 80px; text-align: center; }
 @media (max-width: 700px) { .daily-chip { top: auto; bottom: 100px; right: 10px; font-size: 12px; } }
+.flag-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; margin: 8px 0 12px; }
+.flag-tile { position: relative; border: 3px solid var(--line); border-radius: 14px; background: #fffaf0; padding: 6px; }
+.flag-tile.on { border-color: #5fae7c; background: #e9f7ec; }
+.flag-pick { font: inherit; font-size: 12px; background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; cursor: pointer; }
+.flag-pick canvas { border-radius: 6px; }
+.flag-del { position: absolute; top: 2px; right: 2px; padding: 2px 6px !important; }
 .snap-btns { display: flex; gap: 4px; flex: none; }
 .name-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .name-row canvas { flex: none; }
@@ -4229,7 +4235,7 @@ const OPEN_GIFT_BELLS = 100000;
 const NEWS = [
   { id: '2026-10-17T20:00', title: '升旗、看戰車也有動畫了！🚩', lines: [
     ['🚩', '學校看升旗：全校排排站，貓頭鷹校旗慢慢升到頂'],
-    ['🎨', '點旗桿或找老師「設計校旗」，自己畫一面，升旗就升你畫的！'],
+    ['🎨', '點旗桿或找老師「選校旗」：畫過的校旗都留著（最多 6 面），想升哪一面都可以選'],
     ['🛡️', '公園看大戰車：有小朋友想偷偷爬上去，被園長阻止了'],
     ['⏭', '一樣點一下可以跳過']
   ], newItems: [] },
@@ -4859,7 +4865,10 @@ function normalizeSave(g) {
   if (out.newsAt != null && !isObj(out.newsAt)) delete out.newsAt;
   if (out.trick != null && !(isObj(out.trick) && isObj(out.trick.got) && num(out.trick.y))) delete out.trick;
   if (out.artWall != null) out.artWall = (Array.isArray(out.artWall) ? out.artWall : []).map(cleanDrawing).filter(Boolean).slice(0, 4);
-  if (out.schoolFlag != null) { const sf = cleanDrawing(out.schoolFlag); if (sf) out.schoolFlag = sf; else delete out.schoolFlag; }
+  // 校旗收藏；舊版只有一面（schoolFlag）→ 搬進收藏
+  out.schoolFlags = (Array.isArray(out.schoolFlags) ? out.schoolFlags : []).map(cleanDrawing).filter(Boolean).slice(0, 6);
+  if (out.schoolFlag != null) { const sf = cleanDrawing(out.schoolFlag); if (sf && !out.schoolFlags.length) { out.schoolFlags.push(sf); out.schoolFlagIdx = 0; } delete out.schoolFlag; }
+  if (!(Number.isInteger(out.schoolFlagIdx) && out.schoolFlagIdx >= 0 && out.schoolFlagIdx < out.schoolFlags.length)) out.schoolFlagIdx = null;
   if (out.kidGrowDay != null && !(isObj(out.kidGrowDay) && typeof out.kidGrowDay.d === 'string' && num(out.kidGrowDay.n))) delete out.kidGrowDay;
   if (out.flowerDex != null && !isObj(out.flowerDex)) delete out.flowerDex;
   if (out.advComics != null && !isObj(out.advComics)) delete out.advComics;
@@ -10621,7 +10630,7 @@ function hostMenuEntries() {
     list.push(['🔔 上課（點名、數學、美勞、午睡）', openLessonMenu]);
     list.push(['📝 來小考', openQuizGame]);
     list.push(['🔤 注音小遊戲', openZhuyinGame]);
-    list.push(['🎨 設計校旗', openFlagDesigner]);
+    list.push(['🏳️ 選校旗／畫新的', openFlagPicker]);
     list.push(['🏃 跟同學賽跑', openRunGame]);
     [['🏫 回教室', 0], ['🎢 一起去操場', 1]]
       .filter(([, i]) => i !== G.away.idx).forEach(([label, i]) => list.push([label, () => goPlaceRoom(i)]));
@@ -12821,10 +12830,7 @@ function showItemMenu(it, e) {
   const add = (label, fn) => entries.push([label, fn]);
   if (use) add(use.use === 'lie' ? (use.bath ? '🛁 泡澡' : '😴 躺下睡覺') : '💺 坐下', () => fufuGoUse(it));
   if (act) add(ACTIVITIES[act].label, () => fufuGoUse(it, false, act));
-  if (it.id === 'flagpole' && G.away && G.away.place === 'school') { // 🏳️ 自己設計校旗
-    add('🎨 設計校旗', openFlagDesigner);
-    if (G.schoolFlag) add('🏳️ 換回原本的校旗', () => { resetSchoolFlag(); });
-  }
+  if (it.id === 'flagpole' && G.away && G.away.place === 'school') add('🏳️ 選校旗／畫新的', openFlagPicker);   // 🏳️ 校旗收藏
   if (it.id === 'cotton_cart') { add(ACTIVITIES.popcorn.label, () => fufuGoUse(it, false, 'popcorn')); add('🍦 買冰淇淋', () => fufuGoUse(it, false, 'icecream')); }   // 🍭 點心車：選要買什麼
   if (it.id === 'planter') { // 🌱 花盆：長到哪裡、多久可以再澆；開花了可以剪下來插花
     const gs = gardenOf(it.uid), left = Math.max(0, Math.ceil((gs.w + GARDEN_WAIT_MS - Date.now()) / 1000));
@@ -17372,13 +17378,19 @@ RIDE_DRAW.climb = function (g, W, H, t, A, now) {
 /* 🏳️ 校旗（家長：國旗圖案換別的；預設的不要像任何國家的國旗）
    預設：粉紅底、米白邊、角落兩顆小白心、中間貓頭鷹老師、下面一本打開的書——只屬於遊戲裡的學校（家長：底色改粉紅）。
    小朋友可以自己畫（G.schoolFlag，跟卡片畫畫一樣的格式），升旗升的就是她畫的。 */
-function drawSchoolFlag(g, x, y, w, h, now) {
+/* 校旗收藏（家長：畫新的不要把舊的蓋掉、要能自由選）：G.schoolFlags 最多 SCHOOL_FLAG_MAX 面，
+   G.schoolFlagIdx 是現在升的那一面（null＝原本的貓頭鷹校旗） */
+const SCHOOL_FLAG_MAX = 6;
+const schoolFlagList = () => Array.isArray(G.schoolFlags) ? G.schoolFlags : (G.schoolFlags = []);
+function curSchoolFlag() { const i = G.schoolFlagIdx; return Number.isInteger(i) && schoolFlagList()[i] ? schoolFlagList()[i] : null; }
+function drawSchoolFlag(g, x, y, w, h, now, d) {
+  if (d === undefined) d = curSchoolFlag();
   const wave = Math.sin(now / 150) * 3;
   g.save();
   g.translate(x, y); g.transform(1, wave / w * .6, 0, 1, 0, 0);   // 隨風微微斜
-  if (G.schoolFlag) {
+  if (d) {
     g.fillStyle = '#fffaf0'; g.fillRect(0, 0, w, h);
-    g.save(); g.beginPath(); g.rect(0, 0, w, h); g.clip(); drawCardStrokes(g, G.schoolFlag, w / PAD_W); g.restore();
+    g.save(); g.beginPath(); g.rect(0, 0, w, h); g.clip(); drawCardStrokes(g, d, w / PAD_W); g.restore();
     g.strokeStyle = '#ffd35c'; g.lineWidth = 3; g.strokeRect(1.5, 1.5, w - 3, h - 3);
   } else {
     g.fillStyle = '#ff9ec4'; g.fillRect(0, 0, w, h);
@@ -17394,18 +17406,57 @@ function drawSchoolFlag(g, x, y, w, h, now) {
   }
   g.restore();
 }
-// 🎨 設計校旗：用卡片的畫畫板；畫好存起來，升旗就升這一面
+// 🎨 畫一面新校旗：用卡片的畫畫板；畫好加進收藏、馬上升這一面
 function openFlagDesigner() {
-  openDrawPad('🎨 設計我們的校旗（不畫就用原本的）', d => {
+  if (schoolFlagList().length >= SCHOOL_FLAG_MAX) { toast(`已經有 ${SCHOOL_FLAG_MAX} 面校旗了，先刪掉一面再畫`); openFlagPicker(); return; }
+  openDrawPad('🎨 畫一面新的校旗', d => {
     $('#modal').hidden = true;   // 畫板是呼叫的人負責關（本來忘了關，畫完視窗一直留著）
-    if (!d) { toast('校旗沒有改'); return; }
-    G.schoolFlag = d; saveGame();
-    toast('🏳️ 校旗設計好了！去點旗桿看升旗～');
+    if (!d) { toast('沒有畫，校旗不變'); return; }
+    schoolFlagList().push(d); G.schoolFlagIdx = schoolFlagList().length - 1; saveGame();
+    toast(`🏳️ 新校旗加進收藏了（${schoolFlagList().length} / ${SCHOOL_FLAG_MAX}）！去點旗桿看升旗～`);
     fufuSay('這是我畫的校旗！', 2800);
     if (host.n && host.n.id === 'teacher') hostSay('畫得真好，升旗的時候就升這一面！', 3000);
   });
 }
-function resetSchoolFlag() { delete G.schoolFlag; saveGame(); toast('校旗換回原本的了'); }
+function flagThumb(d, w, h) {
+  const dpr = window.devicePixelRatio || 1, c = document.createElement('canvas');
+  c.width = w * dpr; c.height = h * dpr; c.style.width = w + 'px'; c.style.height = h + 'px';
+  const g = c.getContext('2d'); g.scale(dpr, dpr); drawSchoolFlag(g, 0, 0, w, h, 0, d);
+  return c;
+}
+// 🏳️ 選校旗：原本的＋畫過的都在這裡，點一面就換；可以刪、可以畫新的
+function openFlagPicker() {
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', '🏳️ 選校旗'));
+  card.appendChild(note(`點一面就升那一面。畫過的都留著（最多 ${SCHOOL_FLAG_MAX} 面）。`));
+  const grid = el('div', 'flag-grid');
+  const tile = (d, label, idx) => {
+    const t = el('div', 'flag-tile' + ((idx === null ? G.schoolFlagIdx == null || !curSchoolFlag() : G.schoolFlagIdx === idx) ? ' on' : ''));
+    const pick = el('button', 'flag-pick');
+    pick.append(flagThumb(d, 96, 64), el('span', '', label));
+    pick.onclick = () => { G.schoolFlagIdx = idx; saveGame(); Sound.play('click'); toast(`升旗會升「${label}」`); openFlagPicker(); };
+    t.appendChild(pick);
+    if (idx !== null) {
+      const del = el('button', 'mini flag-del', '🗑️');
+      del.title = '刪掉這面';
+      del.onclick = () => { if (!confirm(`要刪掉「${label}」嗎？`)) return; schoolFlagList().splice(idx, 1); if (G.schoolFlagIdx === idx) G.schoolFlagIdx = null; else if (G.schoolFlagIdx > idx) G.schoolFlagIdx--; saveGame(); openFlagPicker(); };
+      t.appendChild(del);
+    }
+    return t;
+  };
+  grid.appendChild(tile(null, '原本的校旗', null));
+  schoolFlagList().forEach((d, i) => grid.appendChild(tile(d, `校旗 ${i + 1}`, i)));
+  card.appendChild(grid);
+  const row = el('div', 'book-btns');
+  const draw = el('button', 'big', `🎨 畫一面新的${schoolFlagList().length >= SCHOOL_FLAG_MAX ? '（已滿，先刪一面）' : ''}`);
+  draw.onclick = openFlagDesigner;
+  const ok = el('button', 'big alt', '好');
+  ok.onclick = () => { $('#modal').hidden = true; };
+  row.append(draw, ok);
+  card.appendChild(row);
+  $('#modal').hidden = false;
+}
 // 畫一位動物朋友（腳底在 x,y）
 function filmNeighbor(g, n, x, y, k, look) {
   g.save(); g.translate(x, y); g.scale(k, k); drawNeighbor(g, n, Object.assign({ happy: true, clean: 100 }, look || {})); g.restore();
