@@ -4227,6 +4227,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-17T20:00', title: '升旗、看戰車也有動畫了！🚩', lines: [
+    ['🚩', '學校看升旗：全校排排站，旗子慢慢升到頂'],
+    ['🛡️', '公園看大戰車：有小朋友想偷偷爬上去，被園長阻止了'],
+    ['⏭', '一樣點一下可以跳過']
+  ], newItems: [] },
   { id: '2026-10-17T15:00', title: '學校操場有攀爬區了！🧗', lines: [
     ['🧗', '學校的溜滑梯換成攀爬區：黃色爬梯、彩色攀岩塊、藍色單槓'],
     ['🎬', '點了會爬到最上面歡呼，再爬下來'],
@@ -6863,7 +6868,10 @@ function fufuStartAct(key, now, it, auto) {
     fufu.back = false;
     if (!auto && typeof playRideFilm === 'function') try { playRideFilm(key); } catch (e) {} // 🎬 遊樂園設施：先看一段搭乘動畫
     if (!auto && typeof dailyHit === 'function') try { dailyHit('ride'); } catch (e) {}
-  } else fufu.ride = null;
+  } else {
+    fufu.ride = null;
+    if (!auto && (key === 'flag' || key === 'tank') && typeof playRideFilm === 'function') try { playRideFilm(key); } catch (e) {}   // 🎬 升旗、看戰車也有一段動畫
+  }
   if (key === 'pick') { // 阿婆的果園：摘水果（有次數限制，摘完要等水果長出來）
     const f = orchardPick(it.id);
     if (!f) { fufu.act = null; fufuSay(pickLine('orchardEmpty'), 3000); return; }
@@ -17134,6 +17142,8 @@ const RIDE_FILMS = {
   teacup: { say: [[.3, '轉轉轉～'], [.85, '頭暈暈～']] },
   slide: { say: [[.08, '爬上去囉～'], [.45, '咻～～！'], [.82, '再溜一次！']] },
   climb: { say: [[.1, '手抓好，腳踩穩～'], [.5, '爬到最上面了！'], [.85, '我是攀爬高手！']] },
+  flag: { say: [[.08, '立正站好！'], [.45, '旗子升上去了～'], [.85, '飄飄的好漂亮！']] },
+  tank: { say: [[.08, '好大的戰車喔！'], [.5, '咦？他們在爬…'], [.9, '只能看，不可以爬上去～']] },
   swing: { say: [[.2, '用力盪～'], [.55, '盪好高喔！'], [.9, '好舒服～']] }
 };
 function rideFilmActors() {
@@ -17146,7 +17156,7 @@ function filmKid(g, A, x, y, k, t, opt) {
   opt = opt || {};
   g.save(); g.translate(x, y); g.scale(k, k);
   if (opt.rot) g.rotate(opt.rot);
-  drawGirl(g, { t, sit: true, outfit: A.outfit, hair: G.hair, stage: kidLookStage() });
+  drawGirl(g, { t, sit: !opt.stand, walking: !!opt.walk, outfit: A.outfit, hair: G.hair, stage: kidLookStage() });
   if (opt.arms) { // 舉手歡呼
     g.strokeStyle = '#f2c9a8'; g.lineWidth = 4; g.lineCap = 'round';
     g.beginPath(); g.moveTo(-7, -30); g.lineTo(-14, -50); g.moveTo(7, -30); g.lineTo(14, -50); g.stroke();
@@ -17157,6 +17167,8 @@ function filmKid(g, A, x, y, k, t, opt) {
 function filmBubble(g, x, y, text) {
   g.font = 'bold 16px sans-serif';
   const w = g.measureText(text).width + 20;
+  const Wc = g.canvas.width / (window.devicePixelRatio || 1);
+  x = Math.max(w / 2 + 6, Math.min(Wc - w / 2 - 6, x));   // 夾在畫面裡，字再長也不會被切掉
   g.fillStyle = 'rgba(255,255,255,.95)'; g.strokeStyle = '#3a3240'; g.lineWidth = 2;
   g.beginPath(); (g.roundRect ? g.roundRect(x - w / 2, y - 30, w, 28, 12) : g.rect(x - w / 2, y - 30, w, 28)); g.fill(); g.stroke();
   g.fillStyle = '#3a3240'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, x, y - 16);
@@ -17349,6 +17361,65 @@ RIDE_DRAW.climb = function (g, W, H, t, A, now) {
   else { const k = (t - .8) / .2; x = x1 + 15 - (x1 - x0) * k; y = yAt(x - 15) - 4 - Math.abs(Math.sin(k * 7 * Math.PI)) * 6; rot = .3; }
   filmKid(g, A, x, y, .8, now / 1000, { arms, rot });
   return { x, y: y - 70 };
+};
+// 畫一位動物朋友（腳底在 x,y）
+function filmNeighbor(g, n, x, y, k, look) {
+  g.save(); g.translate(x, y); g.scale(k, k); drawNeighbor(g, n, Object.assign({ happy: true, clean: 100 }, look || {})); g.restore();
+}
+// 🚩 升旗（學校）：全校排排站、旗子慢慢升到頂、風吹飄飄
+RIDE_DRAW.flag = function (g, W, H, t, A, now) {
+  filmSky(g, W, H, '#9fd3ff', '#eaf6ff');
+  filmCloud(g, 70 + now / 90 % 420, 46, .9); filmCloud(g, 330, 70, .7);
+  g.fillStyle = '#7fbf6a'; g.fillRect(0, H - 60, W, 60); g.fillStyle = '#3f8ee0'; g.fillRect(0, H - 30, W, 30);   // 草地＋跑道
+  const px = 120, top = 40, base = H - 60;
+  g.fillStyle = '#cfd6de'; g.fillRect(px - 3, top, 6, base - top); g.fillStyle = '#ffd35c'; g.beginPath(); g.arc(px, top - 4, 6, 0, Math.PI * 2); g.fill();
+  const rise = Math.min(1, Math.max(0, (t - .05) / .6));
+  const fy = base - 40 - rise * (base - 40 - top - 10), wave = Math.sin(now / 150) * 4;
+  g.fillStyle = '#e8505b'; g.beginPath(); g.moveTo(px + 3, fy); g.quadraticCurveTo(px + 40, fy + wave, px + 78, fy + 4 + wave); g.lineTo(px + 78, fy + 44 + wave); g.quadraticCurveTo(px + 40, fy + 40 - wave, px + 3, fy + 44); g.closePath(); g.fill();
+  g.fillStyle = '#fff'; g.beginPath(); g.arc(px + 40, fy + 22, 7, 0, Math.PI * 2); g.fill();
+  if (t > .7) { g.font = '18px sans-serif'; g.textAlign = 'center'; ['🎵', '🎶'].forEach((e, i) => g.fillText(e, px + 110 + i * 40, fy - 10 + Math.sin(now / 300 + i) * 8)); }
+  // 全校排排站（同學在後排小一點），老師在旁邊
+  const bob = Math.abs(Math.sin(now / 420)) * 2;
+  [3, 4, 5, 6].forEach((i, k) => filmNeighbor(g, NEIGHBORS[i % NEIGHBORS.length], 230 + k * 52, base - 14 - bob, .62, { fx: 1.4 }));
+  filmKid(g, A, 300, base + 2, .8, now / 1000, { stand: true, arms: t > .45 && t < .7 });
+  filmNeighbor(g, HOSTS.teacher, W - 60, base, .95);
+  return { x: 300, y: base - 70 };
+};
+// 🛡️ 看大戰車（公園）：有小朋友想偷偷爬上去，被園長阻止（家長要的橋段）
+RIDE_DRAW.tank = function (g, W, H, t, A, now) {
+  filmSky(g, W, H, '#bfe6f2', '#eef9e8');
+  filmCloud(g, 60 + now / 80 % 380, 50, .9);
+  g.fillStyle = '#8cc47a'; g.fillRect(0, H - 60, W, 60);
+  g.fillStyle = '#b9b0a0'; g.fillRect(140, H - 70, 240, 12);   // 展示台
+  // 戰車：履帶、車身、砲塔、砲管
+  const tx = 160, ty = H - 70;
+  g.fillStyle = '#4b5a3f'; g.beginPath(); (g.roundRect ? g.roundRect(tx, ty - 44, 200, 36, 18) : g.rect(tx, ty - 44, 200, 36)); g.fill();
+  g.fillStyle = '#2f3a28'; for (let i = 0; i < 6; i++) { g.beginPath(); g.arc(tx + 24 + i * 30, ty - 26, 11, 0, Math.PI * 2); g.fill(); g.fillStyle = '#6b7a5a'; g.beginPath(); g.arc(tx + 24 + i * 30, ty - 26, 5, 0, Math.PI * 2); g.fill(); g.fillStyle = '#2f3a28'; }
+  g.fillStyle = '#5f7a4e'; g.beginPath(); g.moveTo(tx + 10, ty - 44); g.lineTo(tx + 190, ty - 44); g.lineTo(tx + 170, ty - 70); g.lineTo(tx + 30, ty - 70); g.closePath(); g.fill();
+  g.fillStyle = '#6f8a5c'; g.beginPath(); (g.roundRect ? g.roundRect(tx + 70, ty - 100, 70, 34, 10) : g.rect(tx + 70, ty - 100, 70, 34)); g.fill();
+  g.fillStyle = '#4b5a3f'; g.fillRect(tx + 130, ty - 92, 110, 9); g.fillRect(tx + 236, ty - 95, 12, 15);
+  g.fillStyle = '#e8505b'; g.beginPath(); g.arc(tx + 105, ty - 83, 7, 0, Math.PI * 2); g.fill();
+  // 她在左邊看
+  filmKid(g, A, 70, H - 58, .8, now / 1000, { stand: true, arms: t > .9 });
+  // 兩個小朋友：從右邊偷偷走過來（.15–.45）→ 一個開始爬履帶（.45–.6）→ 園長跑來（.55–.7）→ 跳下來鞠躬（.7–.85）→ 乖乖站好
+  const k1 = NEIGHBORS[0], k2 = NEIGHBORS[3], gy = H - 58;
+  let x1 = W + 30, y1 = gy, x2 = W + 60, y2 = gy, bow = false;
+  if (t >= .15 && t < .45) { const k = (t - .15) / .3; x1 = W + 30 - k * 220; x2 = W + 60 - k * 220; y1 = gy - Math.abs(Math.sin(k * 20)) * 3; y2 = gy - Math.abs(Math.sin(k * 20 + 1)) * 3; }
+  else if (t >= .45 && t < .7) { const k = Math.min(1, (t - .45) / .15); x1 = W - 190 - k * 20; y1 = gy - k * 44; x2 = W - 160; y2 = gy; }   // 爬上履帶
+  else if (t >= .7 && t < .85) { const k = (t - .7) / .15; x1 = W - 210 + k * 60; y1 = gy - (1 - k) * 44 + Math.abs(Math.sin(k * Math.PI)) * -10; x2 = W - 160 + k * 20; y2 = gy; bow = k > .5; }
+  else if (t >= .85) { x1 = W - 150; x2 = W - 120; y1 = y2 = gy; }
+  if (t >= .15) { filmNeighbor(g, k1, x1, y1, .8, bow ? { happy: false } : {}); filmNeighbor(g, k2, x2, y2, .8, bow ? { happy: false } : {}); }
+  if (t >= .45 && t < .7) { g.font = '16px sans-serif'; g.textAlign = 'center'; g.fillText('🤫', x2 + 20, y2 - 60); }
+  // 園長從右邊跑來
+  if (t >= .55) {
+    const k = Math.min(1, (t - .55) / .15), rx = W + 40 - k * 120, run = k < 1 ? Math.abs(Math.sin(now / 80)) * 5 : 0;
+    filmNeighbor(g, HOSTS.ranger, rx, gy - run, .95);
+    if (t >= .6 && t < .78) filmBubble(g, Math.min(W - 90, rx - 30), gy - 80, '汪！只能看，不可以爬喔～');
+    if (t >= .74 && t < .88) filmBubble(g, x1 + 10, y1 - 70, '對不起～');
+    if (t >= .88) filmBubble(g, rx - 30, gy - 80, '乖，一起在這裡看就好');
+  }
+  if (t >= .88) { g.font = '18px sans-serif'; g.textAlign = 'center'; g.fillText('✨', tx + 100, ty - 115 + Math.sin(now / 250) * 4); }
+  return { x: 110, y: H - 130 };
 };
 let rideFilmOn = null;
 function playRideFilm(key) {
