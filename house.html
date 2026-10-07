@@ -4274,7 +4274,7 @@ const NEWS = [
     ['🏫', '在教室點「注音布告欄」（或找老師）就能玩'],
     ['🔊', '聽聽看、點出對的注音卡片，不用看字也會玩'],
     ['🐰', '還可以看圖找第一個音：兔子的「ㄊ」'],
-    ['📖', '答對的注音會收集在圖鑑「🔤 注音卡」']
+    ['⭐', '答對有錢，玩越多題越熟']
   ], newItems: [] },
   { id: '2026-10-14T15:00', title: '備份可以一鍵傳到 LINE 了！📤', lines: [
     ['📤', '「💾 備份」按「傳到 LINE」，選 LINE 傳給自己就存好了'],
@@ -13755,7 +13755,6 @@ function tabBook(body) {
     ['dexTheme', '🏅', '小主題', count(G.themesDone), THEMES.length],
     ['dexComic', '📚', '漫畫', count(G.comics), COMICS.length],
     ['dexAdv', '⚔️', '冒險漫畫', advCount(), ADV_ALL],
-    ['dexZhuyin', '🔤', '注音卡', Object.keys(G.zhuyin || {}).length, ZHUYIN.length],
     ['dexSticker', '⭐', '貼紙', count(G.stickers), STICKERS.length],
     ['dexBfly', '🦋', '蝴蝶', count(G.butterflies), BUTTERFLIES.length],
     ['dexPass', '📗', '閱讀護照', count(G.passport), STORYBOOKS.length]
@@ -13899,23 +13898,6 @@ function tabBook(body) {
     advg.appendChild(t);
   }));
   body.appendChild(advg);
-
-  // 🔤 注音卡：注音小遊戲答對就收集
-  body.appendChild(sec('dexZhuyin', `🔤 注音卡 ${Object.keys(G.zhuyin || {}).length} / ${ZHUYIN.length}`));
-  body.appendChild(note('在教室點「注音布告欄」玩注音小遊戲，答對的注音就會收集起來。'));
-  const zv = el('button', 'mini', '🔊 聲音不對？換念法');
-  zv.onclick = () => openZhuyinVoice();
-  body.appendChild(zv);
-  const zg = el('div', 'zy-dex');
-  ZHUYIN.forEach(z => {
-    const has = !!(G.zhuyin || {})[z.sym];
-    const t = el('button', 'zy-tile' + (has ? ' got' : ''));
-    t.append(el('b', '', z.sym), el('span', '', has ? z.pic : '？'));
-    t.onclick = () => { if (has) { try { speak(zyPhrase(z)); } catch (e) {} } };
-    t.disabled = !has;
-    zg.appendChild(t);
-  });
-  body.appendChild(zg);
 
   // ⭐ 老師的貼紙
   body.appendChild(sec('dexSticker', `⭐ 老師的貼紙 ${count(G.stickers)} / ${STICKERS.length}`));
@@ -17635,7 +17617,7 @@ setInterval(() => { try { if (G.daily && G.daily.d !== today()) updateDailyChip(
      ⭐   聽聽看：🔊 念「玻」→ 三張卡片點出 ㄅ（先學前 11 個聲母）
      ⭐⭐  看圖找第一個音：🐰「兔子」→ 點 ㄊ（全部聲母）
      ⭐⭐⭐ 聲母＋韻母混在一起，四張卡片
-   答對的注音會收集起來（圖鑑「🔤 注音卡」），答錯不扣錢，會再念一次讓她再試。 */
+   答對只算錢、不收進圖鑑（家長：她已經學會了、姊姊不想玩），答錯不扣錢，會再念一次讓她再試。 */
 const ZHUYIN = [
   ['ㄅ', '玻', '包子', '🥟'], ['ㄆ', '坡', '葡萄', '🍇'], ['ㄇ', '摸', '貓咪', '🐱'], ['ㄈ', '佛', '飛機', '✈️'],
   ['ㄉ', '得', '蛋', '🥚'], ['ㄊ', '特', '兔子', '🐰'], ['ㄋ', '訥', '牛', '🐮'], ['ㄌ', '勒', '鹿', '🦌'],
@@ -17660,7 +17642,7 @@ const zyMode = () => { try { return localStorage.getItem(ZY_MODE_KEY) === 'char'
 const zySound = (z, mode) => ((mode || zyMode()) === 'char' ? z.snd : z.sym);
 const zyPhrase = (z, mode) => { const sd = zySound(z, mode); return `${sd}，${z.word}的${sd}`; };
 /* 🔊 換念法（家長：這怎麼放在設定——它是注音遊戲自己的東西）
-   在注音小遊戲選難度的畫面、和圖鑑的「🔤 注音卡」都有一顆「聲音不對？換念法」，打開這個小視窗：
+   在注音小遊戲選難度的畫面有一顆「聲音不對？換念法」，打開這個小視窗：
    選念法＋每個注音都可以點來試聽。 */
 function openZhuyinVoice(back) {
   const card = $('#modalCard');
@@ -17731,11 +17713,8 @@ function playZhuyin(w, L) {
     if (ended || b.disabled) return;
     if (z.sym === q.sym) {
       if (tries === 0) right++;
-      G.zhuyin = G.zhuyin || {};
-      const isNew = !G.zhuyin[q.sym];
-      G.zhuyin[q.sym] = (G.zhuyin[q.sym] || 0) + 1;
       b.classList.add('ok'); Sound.play('coin');
-      w.status.textContent = `⭕ 對了！${q.pic} ${q.word} 的「${q.sym}」${isNew ? '　✨ 新的注音卡！' : ''}`;
+      w.status.textContent = `⭕ 對了！${q.pic} ${q.word} 的「${q.sym}」`;
       try { speak(`對了！${q.word}的${zySound(q)}`); } catch (e) {}
       row.querySelectorAll('button').forEach(x => { x.disabled = true; });
       n++;
@@ -17754,10 +17733,9 @@ function playZhuyin(w, L) {
     kidActGrowth('zhuyin');
     try { dailyHit('zhuyin'); } catch (e) {}
     const bells = payReward(w, right * 10 * L.mul);
-    const got = Object.keys(G.zhuyin || {}).length;
     w.stage.innerHTML = '';
     w.stage.appendChild(el('div', 'zy-pic', right >= ZHUYIN_N - 1 ? '🏆' : right >= ZHUYIN_N / 2 ? '🌟' : '👍'));
-    w.status.textContent = `答對 ${right} / ${ZHUYIN_N} 題！💰 +${fmt(bells)}　🔤 注音卡 ${got} / ${ZHUYIN.length}`;
+    w.status.textContent = `答對 ${right} / ${ZHUYIN_N} 題！💰 +${fmt(bells)}`;
     try { speak(`答對${right}題，好棒！`); } catch (e) {}
     gameButtons(w, openZhuyinGame);
   }
