@@ -4241,6 +4241,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-18T09:00', title: '萬聖節派對＋找小幽靈！🎃👻', lines: [
+    ['👻', '每天有一隻小幽靈躲在家裡的某個房間，找到點一下拿 3 顆糖果'],
+    ['🎉', '房間擺 3 件萬聖節家具，點小可愛選「萬聖節派對」，朋友們都來跳舞'],
+    ['🍬', '派對結束每天第一次送 4 顆糖果，可以送給來玩的動物朋友'],
+    ['📅', '萬聖節活動到 11/1']
+  ], newItems: [] },
   { id: '2026-10-17T20:00', title: '升旗、看戰車也有動畫了！🚩', lines: [
     ['🚩', '學校看升旗：全校排排站，貓頭鷹校旗慢慢升到頂'],
     ['🎨', '點旗桿或找老師「選校旗」：畫過的校旗都留著（最多 6 面），想升哪一面都可以選'],
@@ -4889,6 +4895,8 @@ function normalizeSave(g) {
   if (out.seasonSeen != null && !isObj(out.seasonSeen)) delete out.seasonSeen;
   if (out.zhuyin != null && !isObj(out.zhuyin)) delete out.zhuyin;
   if (out.tricks != null && !isObj(out.tricks)) delete out.tricks;
+  if (out.ghost != null && !(isObj(out.ghost) && typeof out.ghost.d === 'string' && Number.isInteger(out.ghost.ri) && num(out.ghost.x) && num(out.ghost.y))) delete out.ghost;
+  if (out.partyDay != null && typeof out.partyDay !== 'string') delete out.partyDay;
   if (out.dailyPaid != null && typeof out.dailyPaid !== 'string') delete out.dailyPaid;
   if (out.daily != null && !(isObj(out.daily) && typeof out.daily.d === 'string' && Array.isArray(out.daily.ids))) delete out.daily;
   if (out.newsAt != null && !isObj(out.newsAt)) delete out.newsAt;
@@ -12089,7 +12097,7 @@ function draw() {
   const c = iso(room.w / 2, room.d / 2);
   ctx.ellipse(c.x, c.y + 18, (room.w + room.d) * TW / 4 + 20, (room.w + room.d) * TH / 4 + 14, 0, 0, Math.PI * 2);
   ctx.fill();
-  drawRoom(ctx, room, { ghost: hold, hoverUid: hold ? null : hoverUid, showGrid: !!hold, extras: [fufuDrawEntry()].concat(petDrawEntries(), visitorDrawEntries(), hostDrawEntries(), supplyDrawEntries(), giftDrawEntries(), phDrawEntries()), occupants: [fufuOccupant(), petOccupant(), visitorOccupant()].concat(phOccupants(), compOccupants()) });
+  drawRoom(ctx, room, { ghost: hold, hoverUid: hold ? null : hoverUid, showGrid: !!hold, extras: [fufuDrawEntry()].concat(petDrawEntries(), visitorDrawEntries(), (typeof ghostDrawEntries === 'function' ? ghostDrawEntries() : []), hostDrawEntries(),   /* 幽靈在後面的 script：第一幀可能還沒載入 */ supplyDrawEntries(), giftDrawEntries(), phDrawEntries()), occupants: [fufuOccupant(), petOccupant(), visitorOccupant()].concat(phOccupants(), compOccupants()) });
   petDrawOverlay(ctx);
   visitorDrawOverlay(ctx, performance.now());
   drawAmbient(ctx, performance.now());
@@ -12845,7 +12853,8 @@ function openTopPicker(it) {
 
 // 點小可愛：叫她做事
 function showKidMenu(e) {
-  openMenu([
+  const party = halloweenActive() && !G.away ? [[`🎉 萬聖節派對${halloweenDecoCount() >= HALLOWEEN_PARTY_NEED ? '' : `（要擺 ${HALLOWEEN_PARTY_NEED} 件萬聖節家具）`}`, startHalloweenParty]] : [];
+  openMenu(party.concat([
     ['👋 打招呼', fufuPoke],
     ['💃 跳舞', fufuDance],
     [`🐾 陪${petName()}玩`, fufuPlayPet],
@@ -12853,7 +12862,7 @@ function showKidMenu(e) {
     ['🛁 去洗澡', () => fufuGoFind('bath')],
     ['😴 去睡覺', () => fufuGoFind('sleep')],
     ['📖 去念書', () => fufuGoFind('study')]
-  ], e);
+  ]), e);
 }
 // 桌上的音樂盒：叮叮咚咚一小段旋律；雪花球：搖一搖，雪花飄起來
 const MUSIC_BOX_TUNE = [2, 1, 0, 1, 2, 2, 2, 1, 1, 1, 2, 3, 3];
@@ -12948,6 +12957,7 @@ canvas.addEventListener('pointerup', e => {
   if (phMode && phMode.id === 'birthday' && phCakeHit(w)) return;   // 點蛋糕：吹蠟燭
   if (giftBoxHit(w)) { (giftVisit.spec || GIFT_SPECS[0]).open(); return; }
   { const ph = phHit(w); if (ph != null) { phTap(ph, e); return; } }
+  if (typeof ghostHit === 'function' && ghostHit(w)) { findGhost(); return; }   // 👻 萬聖節找小幽靈
   if (visitorHit(w)) { openMenu(visitorMenuEntries(), e); return; }
   { const fp = friendPetHit(w); if (fp) { patFriendPet(fp); return; } }
   { const cr = crowdHit(w); if (cr) { crowdTalk(cr); return; } }
@@ -17189,6 +17199,7 @@ const RIDE_FILMS = {
   climb: { say: [[.1, '手抓好，腳踩穩～'], [.5, '爬到最上面了！'], [.85, '我是攀爬高手！']] },
   flag: { say: [[.08, '立正站好！'], [.45, '旗子升上去了～'], [.85, '飄飄的好漂亮！']] },
   tank: { say: [[.08, '好大的戰車喔！'], [.5, '咦？他們在爬…'], [.9, '只能看，不可以爬上去～']] },
+  party: { say: [[.08, '萬聖節派對開始！'], [.45, '不給糖就搗蛋～！'], [.85, '好好玩！謝謝大家～']] },
   swing: { say: [[.2, '用力盪～'], [.55, '盪好高喔！'], [.9, '好舒服～']] }
 };
 function rideFilmActors() {
@@ -17548,6 +17559,33 @@ RIDE_DRAW.tank = function (g, W, H, t, A, now) {
   if (t >= .88) { g.font = '18px sans-serif'; g.textAlign = 'center'; g.fillText('✨', tx + 100, ty - 115 + Math.sin(now / 250) * 4); }
   return { x: 110, y: H - 130 };
 };
+// 🎉 萬聖節派對：南瓜燈、蝙蝠彩旗、動物朋友打扮跳舞、彩帶
+RIDE_DRAW.party = function (g, W, H, t, A, now) {
+  filmSky(g, W, H, '#3b2a5e', '#7a4f9e');
+  g.fillStyle = '#ffe9a8'; g.beginPath(); g.arc(W - 70, 60, 30, 0, Math.PI * 2); g.fill();
+  for (let i = 0; i < 18; i++) { g.fillStyle = 'rgba(255,255,255,.8)'; g.fillRect((i * 97) % W, (i * 53) % 120, 2, 2); }   // 星星
+  // 蝙蝠彩旗
+  g.strokeStyle = '#8a7a64'; g.lineWidth = 2; g.beginPath(); g.moveTo(0, 30); g.quadraticCurveTo(W / 2, 80, W, 30); g.stroke();
+  for (let i = 0; i < 9; i++) { const x = 30 + i * (W - 60) / 8, y = 30 + Math.sin(i / 8 * Math.PI) * 26 + Math.sin(now / 200 + i) * 2; g.font = '20px sans-serif'; g.textAlign = 'center'; g.fillText(i % 2 ? '🦇' : '🎃', x, y + 14); }
+  g.fillStyle = '#4a3b6b'; g.fillRect(0, H - 70, W, 70);
+  g.fillStyle = '#6b4b9a'; for (let i = 0; i < 8; i++) g.fillRect(i * 64, H - 70, 32, 70);   // 地板格
+  // 南瓜燈
+  [60, W - 60].forEach((x, i) => { g.font = '40px sans-serif'; g.textAlign = 'center'; g.fillText('🎃', x, H - 78 + Math.sin(now / 300 + i) * 3); });
+  g.font = '28px sans-serif'; g.fillText('🍬', W / 2 - 150, H - 74); g.fillText('🍭', W / 2 + 150, H - 74);
+  // 客人：動物朋友打扮跳舞（t 越後面越多人）
+  const guests = [[1, 130, '🧙'], [4, 200, '👻'], [6, 280, '🦇'], [7, 350, '🎃']];
+  guests.forEach(([ni, x, hat], i) => {
+    if (t < .08 + i * .08) return;
+    const bob = Math.abs(Math.sin(now / 220 + i)) * 10;
+    filmNeighbor(g, NEIGHBORS[ni % NEIGHBORS.length], x, H - 20 - bob, .85, { fx: 1.5 });
+    g.font = '20px sans-serif'; g.textAlign = 'center'; g.fillText(hat, x + 8, H - 62 - bob);
+  });
+  filmKid(g, A, W / 2, H - 14 - Math.abs(Math.sin(now / 200)) * 8, .9, now / 1000, { stand: true, arms: true, walk: true });
+  // 彩帶
+  for (let i = 0; i < 26; i++) { const x = (i * 37 + now / 12 * (1 + i % 3 * .3)) % W, y = (now / 8 * (1 + i % 4 * .25) + i * 41) % H; g.fillStyle = ['#ff9ec4', '#ffd35c', '#7bd389', '#6bb6ff', '#f0902f'][i % 5]; g.fillRect(x, y, 5, 3); }
+  if (t > .5) { g.font = '28px sans-serif'; g.fillText(['🎆', '✨', '🎇'][Math.floor(now / 350) % 3], W / 2 + Math.sin(now / 500) * 120, 90); }
+  return { x: W / 2, y: H - 80 };
+};
 let rideFilmOn = null;
 function playRideFilm(key) {
   if (!RIDE_DRAW[key] || rideFilmOn || resting || !$('#modal').hidden) return false;
@@ -17664,6 +17702,78 @@ function openDaily() {
 }
 setTimeout(() => { try { updateDailyChip(); } catch (e) {} }, 1200);
 setInterval(() => { try { if (G.daily && G.daily.d !== today()) updateDailyChip(); } catch (e) {} }, 60000);   // 跨日：換新的
+/* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
+   🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
+      動物朋友全都打扮來跳舞放煙火，每天第一次結束時每位送一顆糖（4 顆萬聖節糖果）。
+   👻 小幽靈：每天一隻躲在家裡某個房間的某個角落（半透明、會飄），找到點一下拿 3 顆糖果，一天一次。 */
+const HALLOWEEN_PARTY_NEED = 3, GHOST_CANDY = 3, PARTY_CANDY = 4;
+const halloweenActive = () => { const se = seasonNow(); return !!(se && se.id === 'halloween'); };
+function halloweenDecoCount() {
+  const room = curRoom(); if (!room) return 0;
+  return (room.items || []).filter(it => (FURN_BY_ID[it.id] || {}).season === 'halloween').length
+       + (room.wallItems || []).filter(it => (FURN_BY_ID[it.id] || {}).season === 'halloween').length;
+}
+function startHalloweenParty() {
+  if (!halloweenActive() || G.away) return false;
+  const n = halloweenDecoCount();
+  if (n < HALLOWEEN_PARTY_NEED) { toast(`🎉 這個房間要先擺 ${HALLOWEEN_PARTY_NEED} 件萬聖節家具才能辦派對（現在 ${n} 件）`); return false; }
+  if (!playRideFilm('party')) return false;
+  const day = today(), first = G.partyDay !== day;
+  if (first) {
+    G.partyDay = day;
+    G.kidFood.hw_candy = (G.kidFood.hw_candy || 0) + PARTY_CANDY;
+    kidMoodUp(15); patPet(15);
+    setTimeout(() => { toast(`🍬 朋友們送了 ${PARTY_CANDY} 顆萬聖節糖果！`); Sound.play('coin'); }, 4300);
+    saveGame();
+  } else setTimeout(() => toast('🎉 派對好好玩！（糖果今天已經領過了，明天再辦還有）'), 4300);
+  return true;
+}
+function ensureGhost() {
+  if (!halloweenActive() || !G.openGift || SAVE_LOCKED != null || G.away) return null;
+  const d = today();
+  if (!G.ghost || G.ghost.d !== d) {
+    const ri = Math.floor(Math.random() * G.rooms.length), room = G.rooms[ri];
+    const blk = blockedGrid(room), spots = [];
+    for (let x = 0; x < room.w; x++) for (let y = 0; y < room.d; y++) if (!blk[x][y]) spots.push([x, y]);
+    const sp = spots.length ? spots[Math.floor(Math.random() * spots.length)] : [0, 0];
+    G.ghost = { d, ri, x: sp[0], y: sp[1], found: false };
+    saveGame();
+    setTimeout(() => toast('👻 今天有一隻小幽靈躲在家裡的某個房間，找找看！'), 1200);
+  }
+  return G.ghost;
+}
+const ghostHere = () => { const g = ensureGhost(); return g && !g.found && g.ri === G.cur && !G.away ? g : null; };
+function ghostDrawEntries() {
+  const g = ghostHere(); if (!g) return [];
+  return [{ x: g.x + .3, y: g.y + .3, w: .4, d: .4, z: 0, h: 26, drawFn: ctx => {
+    const now = performance.now(), p = iso(g.x + .5, g.y + .5, 0), bob = Math.sin(now / 420) * 3;
+    ctx.save(); ctx.globalAlpha = .55 + Math.sin(now / 600) * .12; ctx.translate(p.x, p.y - 14 + bob);
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, -4, 10, Math.PI, 0); ctx.lineTo(10, 10);
+    for (let i = 0; i < 4; i++) ctx.quadraticCurveTo(10 - i * 5 - 2.5, 14, 10 - (i + 1) * 5, 10); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#3a3240'; ctx.beginPath(); ctx.arc(-3.5, -5, 1.6, 0, Math.PI * 2); ctx.arc(3.5, -5, 1.6, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0, 0, 2, 2.6, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  } }];
+}
+function ghostHit(w) {
+  const g = ghostHere(); if (!g) return false;
+  const p = iso(g.x + .5, g.y + .5, 0);
+  return w.x > p.x - 18 && w.x < p.x + 18 && w.y > p.y - 36 && w.y < p.y + 6;
+}
+function findGhost() {
+  const g = ghostHere(); if (!g) return false;
+  g.found = true;
+  G.kidFood.hw_candy = (G.kidFood.hw_candy || 0) + GHOST_CANDY;
+  kidMoodUp(10);
+  Sound.play('fanfare');
+  try { for (let i = 0; i < 4; i++) fufuBurst('👻'); } catch (e) {}
+  fufuSay('找到你了！小幽靈！', 2800);
+  showcase(el('div', 'trick-big', '👻'), '找到小幽靈了！', `🎃 拿到 ${GHOST_CANDY} 顆萬聖節糖果！明天小幽靈會躲到別的地方`, { head: '👻 哇～' });
+  saveGame(); refreshTop();
+  return true;
+}
+setTimeout(() => { try { ensureGhost(); } catch (e) {} }, 2800);
+setInterval(() => { try { ensureGhost(); } catch (e) {} }, 60000);
 /* ===== 🔤 注音小遊戲（家長：照建議做；給還不太認字的妹妹）=====
    教室的注音布告欄點一下（或老師的選單）。完全不用看字：
      ⭐   聽聽看：🔊 念「玻」→ 三張卡片點出 ㄅ（先學前 11 個聲母）
