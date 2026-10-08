@@ -4156,7 +4156,7 @@ function slots() {
     const a = JSON.parse(localStorage.getItem(SLOTS_KEY));
     if (Array.isArray(a) && a.length && a.every(s => s && s.id))
       // 以前預設叫「第 1 間」，家長看不懂是什麼「間」；沒改過名字的，顯示成「存檔 1」
-      return a.map(s => { const m = /^第 (\d+) 間$/.exec(s.name || ''); return m ? Object.assign({}, s, { name: '存檔 ' + m[1] }) : s; });
+      return a.map(s => { if (typeof s.name !== 'string') s = Object.assign({}, s, { name: '' }); const m = /^第 (\d+) 間$/.exec(s.name || ''); return m ? Object.assign({}, s, { name: '存檔 ' + m[1] }) : s; });
   } catch (e) { /* 壞掉就當成沒有，用預設的一格 */ }
   return [{ id: 'p1', name: '存檔 1' }];
 }
@@ -4898,7 +4898,9 @@ function normalizeSave(g) {
   if (g.rooms.some(r => (r.items || []).some(it => !FURN_BY_ID[it.id]) || (r.wallItems || []).some(it => !FURN_BY_ID[it.id]))) return null;
   if ((g.bells != null && !num(g.bells)) || (g.inv != null && !isObj(g.inv))
       || (g.pets != null && !Array.isArray(g.pets)) || (g.cur != null && !num(g.cur))) return null;
-  g.rooms.forEach(r => {
+  g.rooms.forEach((r, ri) => {
+    // 名字被存成數字、物件：後面到處都會 .trim()，一個就會當掉。不是字串（或空白）就用預設名稱
+    if (typeof r.name !== 'string' || !r.name.trim()) r.name = ROOM_NAMES[ri] || '房間';
     r.wallItems = r.wallItems || []; // 舊存檔沒有掛飾欄位
     r.items = r.items || [];
     /* 桌上那樣東西：舊存檔沒有這個欄位；放了不存在的東西（改版拿掉了）
@@ -4986,6 +4988,7 @@ function normalizeSave(g) {
   const src = Array.isArray(g.pets) && g.pets.length ? g.pets : [Object.assign({ name: DEFAULT_PET_NAME }, g.pet || {})];
   out.pets = src.map(p => {
     const q = Object.assign(newPet(), p);
+    if (typeof q.name !== 'string') q.name = '';   // 寵物名字不是字串會讓 petName() 當掉
     if (!PET_SPECIES_BY_ID[q.species]) q.species = 'mochi';
     if (!PET_STAGE_BY_ID[q.stage]) q.stage = 'kid';
     if (q.oldNames != null) { q.oldNames = (Array.isArray(q.oldNames) ? q.oldNames : []).filter(n => typeof n === 'string' && n.trim()).map(n => n.slice(0, 10)).slice(0, PET_OLD_NAMES_MAX); if (!q.oldNames.length) delete q.oldNames; }
@@ -14769,11 +14772,14 @@ function tabSave(body) {
     '每個存檔的錢、家具、寵物都是分開的，換別的存檔來玩，不會動到原本那個。'));
 
   const list = slots(), cur = curSlotId();
+  let curNameEl = null, delBtn = null;
   list.forEach(s => {
     const info = slotInfo(s.id);
     const card = el('div', 'slotrow' + (s.id === cur ? ' on' : ''));
     const left = el('div', 'slotmain');
-    left.appendChild(el('div', 'slotname', (s.id === cur ? '▶ ' : '') + s.name));
+    const nmEl = el('div', 'slotname', (s.id === cur ? '▶ ' : '') + s.name);
+    if (s.id === cur) curNameEl = nmEl;
+    left.appendChild(nmEl);
     left.appendChild(el('div', 'slotsub', info
       ? `💰 ${fmt(info.bells)}　⭐ ${fmt(info.score)}　${info.rooms} 個房間・擺了 ${info.items} 件`
       : '還沒開始玩'));
@@ -14791,8 +14797,13 @@ function tabSave(body) {
   nm.value = curSlotName();
   nm.maxLength = 10;
   nm.placeholder = '幫這個存檔取名字（例如：姊姊、妹妹）';
-  nm.oninput = () => { renameSlot(cur, nm.value); };
-  nm.onblur = () => { renderTab(); };
+  /* 邊打邊改上面的名字。以前一離開輸入框就整頁重畫：馬上去點「開新存檔」會點不到
+     （按下去的按鈕在放開前被換掉了），要點第二次。 */
+  nm.oninput = () => {
+    renameSlot(cur, nm.value);
+    if (curNameEl) curNameEl.textContent = '▶ ' + curSlotName();
+    if (delBtn) delBtn.textContent = '🗑️ 刪掉「' + curSlotName() + '」這個存檔';
+  };
   body.appendChild(nm);
 
   const add = el('button', 'big alt', '＋ 開一個新存檔');
@@ -14806,6 +14817,7 @@ function tabSave(body) {
 
   if (list.length > 1) {
     const del = el('button', 'mini', '🗑️ 刪掉「' + curSlotName() + '」這個存檔');
+    delBtn = del;
     del.onclick = () => askPin('刪掉存檔', () => {
       if (!confirm('要刪掉「' + curSlotName() + '」這個存檔嗎？\n\n' +
                    '這個存檔的錢、家具、寵物全部都會不見。\n' +
