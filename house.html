@@ -1837,7 +1837,7 @@ Object.assign(FURN_KIND_OF, {
   candy_bed: 'sleep', cream_wardrobe: 'sleep', cake_shelf: 'eat', cookie_jar: 'desk',
   donut_rug: 'deco', icecream_lamp: 'deco', lollipop_tree: 'deco', star_lamp: 'deco', heart_mirror: 'wall',
   unicorn_rocker: 'toy', rainbow_shelf: 'study', pet_castle: 'pet', cat_tower: 'pet',
-  pumpkin_lamp: 'deco', ghost_plush: 'toy', candy_bucket: 'deco', pumpkin_chair: 'sit', witch_cauldron: 'eat', bat_garland: 'wall'
+  pumpkin_lamp: 'deco', ghost_plush: 'toy', candy_bucket: 'deco', pumpkin_chair: 'sit', witch_cauldron: 'eat', bat_garland: 'wall', clown_butler: 'deco', skeleton_count: 'deco'
 });
 Object.assign(FURNITURE_USE, {
   cupcake_chair: { use: 'sit', seats: [{ x: .5, y: .55, z: 22 }], front: [0, 1] },
@@ -3040,7 +3040,9 @@ const CLOTHES = [
   { id: 'long_jeans', slot: 'bottom', name: '牛仔長褲', price: 1200, style: 'pants', color: '#5b84c4' },
   { id: 'plaid_skirt', slot: 'bottom', name: '格子裙', price: 1300, style: 'skirt', color: '#c0504d', plaid: '#f2d16b' },
   { id: 'princess_shoes', slot: 'shoes', name: '公主鞋', price: 1100, style: 'princess', color: '#ff9ec4' },
-  { id: 'brown_boots', slot: 'shoes', name: '咖啡靴', price: 1200, style: 'boots', color: '#8a5a33' }
+  { id: 'brown_boots', slot: 'shoes', name: '咖啡靴', price: 1200, style: 'boots', color: '#8a5a33' },
+  // 🧛 照補習班那位骷髏伯爵做的小吸血鬼披風（黑外套、紅背心、紅裡子的披風）
+  { id: 'vampire_cape', slot: 'top', name: '小吸血鬼披風', price: 2000, style: 'cape', color: '#2b2433', trim: '#c4313a' }
 ];
 const CLOTHES_BY_ID = Object.fromEntries(CLOTHES.map(c => [c.id, c]));
 const DEFAULT_OUTFIT = { head: 'head_none', top: 'uniform', bottom: 'red_shorts', shoes: 'black_shoes' };
@@ -4022,6 +4024,45 @@ const SEASON_FURNITURE = [
       { k: 'ball', x: .6, y: .58, z: 24, r: 3, c: '#a3e0b0' },
       { k: 'ball', x: .52, y: .62, z: 27, r: 2, c: '#c9f5d4' }
     ] },
+  /* 🤡 小丑糖果管家、💀 骷髏伯爵：照補習班門口的擺設做的卡通版（家長給的照片）。
+     臉都畫成圓圓、笑瞇瞇的，不嚇人。小丑點了可以要糖果，骷髏的蠟燭在手電筒找幽靈時會亮。 */
+  { id: 'clown_butler', name: '小丑糖果管家', price: 2200, theme: 'cute', w: 1, d: 1, season: 'halloween',
+    parts: [
+      { x: .16, y: .28, w: .3, d: .44, z: 0, h: 5, c: '#d9433f' },
+      { x: .54, y: .28, w: .3, d: .44, z: 0, h: 5, c: '#d9433f' },
+      { x: .24, y: .34, w: .22, d: .3, z: 5, h: 18, c: '#4b7bd6' },
+      { x: .54, y: .34, w: .22, d: .3, z: 5, h: 18, c: '#7bc46a' },
+      { x: .2, y: .3, w: .6, d: .4, z: 23, h: 14, c: '#a32e3a' },
+      { k: 'ball', x: .5, y: .74, z: 31, r: 8, c: '#ffd23f' },
+      { k: 'ball', x: .5, y: .74, z: 36, r: 5, c: '#ff9ec4' },
+      { k: 'ball', x: .5, y: .6, z: 38, r: 3, c: '#ff8a3d' },
+      { k: 'ball', x: .5, y: .5, z: 46, r: 8.5, c: '#fffaf0' },
+      { k: 'ball', x: .7, y: .7, z: 46, r: 2.4, c: '#e8505b' },
+      { k: 'ball', x: .66, y: .8, z: 50, r: 1.4, c: '#3a3240' },
+      { k: 'ball', x: .8, y: .66, z: 50, r: 1.4, c: '#3a3240' },
+      { k: 'ball', x: .58, y: .84, z: 45, r: 1.6, c: '#ff9ec4' },
+      { k: 'ball', x: .84, y: .58, z: 45, r: 1.6, c: '#ff9ec4' },
+      { x: .3, y: .3, w: .4, d: .4, z: 52, h: 2, c: '#4a8fe0' },
+      { x: .36, y: .36, w: .28, d: .28, z: 54, h: 12, c: '#4a8fe0' },
+      { x: .36, y: .36, w: .28, d: .28, z: 56, h: 3, c: '#e8505b' }
+    ] },
+  { id: 'skeleton_count', name: '骷髏伯爵', price: 2200, theme: 'cute', w: 1, d: 1, season: 'halloween',
+    parts: [
+      { x: .22, y: .3, w: .24, d: .4, z: 0, h: 4, c: '#2b2433' },
+      { x: .54, y: .3, w: .24, d: .4, z: 0, h: 4, c: '#2b2433' },
+      { x: .22, y: .12, w: .56, d: .14, z: 6, h: 38, c: '#c4313a' },
+      { x: .26, y: .32, w: .48, d: .36, z: 4, h: 20, c: '#2b2433' },
+      { x: .24, y: .3, w: .52, d: .4, z: 24, h: 18, c: '#2b2433' },
+      { x: .4, y: .5, w: .2, d: .22, z: 26, h: 14, c: '#c4313a' },
+      { k: 'ball', x: .5, y: .72, z: 38, r: 2.2, c: '#fffaf0' },
+      { k: 'ball', x: .5, y: .5, z: 50, r: 8, c: '#ece9f2' },
+      { k: 'ball', x: .66, y: .8, z: 52, r: 2, c: '#3a3240' },
+      { k: 'ball', x: .8, y: .66, z: 52, r: 2, c: '#3a3240' },
+      { k: 'ball', x: .78, y: .8, z: 47, r: 1.4, c: '#ff9ec4' },
+      { x: .06, y: .5, w: .08, d: .08, z: 30, h: 16, c: '#d9a13a' },
+      { x: .04, y: .48, w: .12, d: .12, z: 46, h: 8, c: '#fffaf0' },
+      { k: 'ball', x: .1, y: .54, z: 56, r: 2.4, c: '#ffe066', shade: true }
+    ] },
   { id: 'bat_garland', name: '蝙蝠彩旗', price: 800, theme: 'cute', w: 2, h: 20, z: 66, season: 'halloween', layer: 'wall', parts: [], d: 1,
     draw(ctx, W, H) {
       ctx.strokeStyle = '#8a7a64'; ctx.lineWidth = 1;
@@ -4246,6 +4287,7 @@ const NEWS = [
     ['👻', '每天有一隻小幽靈躲在家裡的某個房間，找到點一下拿 3 顆糖果'],
     ['🎉', '房間擺 3 件萬聖節家具，點小可愛選「萬聖節派對」，朋友們都來跳舞'],
     ['🍬', '派對結束每天第一次送 4 顆糖果，可以送給來玩的動物朋友'],
+    ['🤡', '萬聖節新家具：小丑糖果管家（每天跟牠要糖果）、骷髏伯爵（手電筒找幽靈時蠟燭會亮、會幫你指方向）；換裝有小吸血鬼披風'],
     ['🔦', '點小可愛選「用手電筒找小幽靈」：房間暗下來，用手電筒照，照到才會現身！隨時可以按「🔆 開燈」'],
     ['📅', '萬聖節活動到 11/1']
   ], newItems: [] },
@@ -4899,6 +4941,7 @@ function normalizeSave(g) {
   if (out.tricks != null && !isObj(out.tricks)) delete out.tricks;
   if (out.ghost != null && !(isObj(out.ghost) && typeof out.ghost.d === 'string' && Number.isInteger(out.ghost.ri) && num(out.ghost.x) && num(out.ghost.y))) delete out.ghost;
   if (out.partyDay != null && typeof out.partyDay !== 'string') delete out.partyDay;
+  if (out.clownDay != null && typeof out.clownDay !== 'string') delete out.clownDay;
   if (out.dailyPaid != null && typeof out.dailyPaid !== 'string') delete out.dailyPaid;
   if (out.daily != null && !(isObj(out.daily) && typeof out.daily.d === 'string' && Array.isArray(out.daily.ids))) delete out.daily;
   if (out.newsAt != null && !isObj(out.newsAt)) delete out.newsAt;
@@ -6047,7 +6090,7 @@ function drawGirlBody(ctx, o, swing, fit) {
 
   // 手：從袖口垂下，走路時前後擺
   const sleeve = top.color;
-  const longSleeve = top.style === 'hoodie' || top.style === 'sweater' || top.style === 'jacket';
+  const longSleeve = top.style === 'hoodie' || top.style === 'sweater' || top.style === 'jacket' || top.style === 'cape';
   [-1, 1].forEach(side => {
     ctx.save();
     ctx.translate(side * 10.5, -31);
@@ -6192,6 +6235,14 @@ function drawTop(ctx, t, back) {
     ctx.fillRect(-.6, -32, 1.2, 15);
     ctx.fillRect(-9.5, -18.5, 19, 1.5);
     if (!back) { ctx.fillRect(-7.5, -27, 4, 1.2); } // 胸前小標誌
+  } else if (t.style === 'cape') { // 吸血鬼披風：前面看到紅背心＋兩側紅披風，背面是整片紅披風
+    if (back) { rr(ctx, -11.5, -33, 23, 22, 3, t.trim, L); ctx.fillStyle = 'rgba(0,0,0,.16)'; ctx.fillRect(-.6, -32, 1.2, 21); }
+    else {
+      ctx.fillStyle = t.trim; ctx.fillRect(-10, -31, 3, 15); ctx.fillRect(7, -31, 3, 15);
+      ctx.beginPath(); ctx.moveTo(-5, -32); ctx.lineTo(0, -21); ctx.lineTo(5, -32); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.moveTo(-2, -32); ctx.lineTo(0, -28); ctx.lineTo(2, -32); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#ffd35c'; [-27, -23.5].forEach(y => { ctx.beginPath(); ctx.arc(0, y, .8, 0, Math.PI * 2); ctx.fill(); });
+    }
   }
 }
 
@@ -6226,6 +6277,10 @@ function drawTopCollar(ctx, t, back) {
     ctx.fillStyle = t.trim; rr(ctx, -6, -33, 12, 2.5, 1.2, t.trim); // 白色小圓領
   } else if (t.style === 'jacket') {
     rr(ctx, -6, -34, 12, 3.5, 1.5, t.trim); // 立領
+  } else if (t.style === 'cape') {
+    ctx.fillStyle = t.trim; // 高高的紅立領，豎在脖子兩邊
+    ctx.beginPath(); ctx.moveTo(-8, -31); ctx.lineTo(-7, -38); ctx.lineTo(-2.5, -32); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(8, -31); ctx.lineTo(7, -38); ctx.lineTo(2.5, -32); ctx.closePath(); ctx.fill();
   } else {
     ctx.fillStyle = 'rgba(0,0,0,.1)'; rr(ctx, -4.5, -33, 9, 2, 1, 'rgba(0,0,0,.1)'); // 一般圓領
   }
@@ -12899,6 +12954,8 @@ function showItemMenu(it, e) {
   const add = (label, fn) => entries.push([label, fn]);
   if (use) add(use.use === 'lie' ? (use.bath ? '🛁 泡澡' : '😴 躺下睡覺') : '💺 坐下', () => fufuGoUse(it));
   if (act) add(ACTIVITIES[act].label, () => fufuGoUse(it, false, act));
+  if (it.id === 'clown_butler') { add('🍬 跟小丑要糖果', () => clownCandy(it)); add('🤫 偷摸一下牠的碗', () => clownPeek(it)); }   // 🤡 萬聖節
+  if (it.id === 'skeleton_count') add('🕯️ 跟骷髏伯爵打招呼', () => skeletonHi(it));
   if (it.id === 'flagpole' && G.away && G.away.place === 'school') add('🏳️ 選校旗／畫新的', openFlagPicker);   // 🏳️ 校旗收藏
   if (it.id === 'cotton_cart') { add(ACTIVITIES.popcorn.label, () => fufuGoUse(it, false, 'popcorn')); add('🍦 買冰淇淋', () => fufuGoUse(it, false, 'icecream')); }   // 🍭 點心車：選要買什麼
   if (it.id === 'planter') { // 🌱 花盆：長到哪裡、多久可以再澆；開花了可以剪下來插花
@@ -17795,6 +17852,39 @@ function findGhost() {
    幽靈只有被光照到才現身（旁邊亮小星星、嘻嘻一聲），點一下就找到。
    左上角永遠有「🔆 開燈」，隨時可以結束。小可愛找的時候緊張、被照到時驚訝（wow）、找到開心（joy）。
    30 秒還找不到，幽靈會在暗處輕輕揮手；60 秒會提示它在哪個房間。 */
+const CLOWN_CANDY = 2;
+function clownHop(it, n) { for (let i = 0; i < n; i++) setTimeout(() => { stateOf(it.uid).tapAt = performance.now(); }, i * 340); }
+function clownCandy(it) {   // 🤡 每天跟小丑管家要一次糖果
+  if (G.away || !halloweenActive()) { toast('🤡 小丑只有在萬聖節的自己家才會發糖果喔'); return false; }
+  const day = today();
+  if (G.clownDay === day) { fufuSay('小丑：「今天的糖果都給你了～明天再來！」', 3200); clownHop(it, 1); return false; }
+  G.clownDay = day;
+  G.kidFood.hw_candy = (G.kidFood.hw_candy || 0) + CLOWN_CANDY;
+  kidMoodUp(8); clownHop(it, 2); Sound.play('coin');
+  try { fufuBurst('🍬'); } catch (e) {}
+  fufuSay('小丑：「請你吃糖～萬聖節快樂！」', 3200);
+  toast(`🍬 小丑管家送了 ${CLOWN_CANDY} 顆萬聖節糖果！`);
+  saveGame(); refreshTop();
+  return true;
+}
+function clownPeek(it) {    // 🤫 碗上寫著「DO NOT TOUCH」，偷摸的話牠會嚇一跳、糖果灑出來（只是好玩，沒有獎勵）
+  clownHop(it, 3); Sound.play('boing');
+  try { for (let i = 0; i < 3; i++) fufuBurst('🍬'); } catch (e) {}
+  fufuSay('小丑：「哎呀！我的碗！哈哈哈～」', 3000);
+}
+function skeletonHi(it) {
+  stateOf(it.uid).tapAt = performance.now(); Sound.play('click');
+  fufuSay('骷髏伯爵：「晚安，小淑女～蠟燭給你照路。」', 3400);
+}
+function huntHelpers() {   // 目前房間裡的小丑、骷髏（螢幕座標）
+  const room = curRoom(), out = [];
+  ((room && room.items) || []).forEach(it => {
+    if (it.id !== 'clown_butler' && it.id !== 'skeleton_count') return;
+    const p = iso(it.x + .5, it.y + .5, 0);
+    out.push({ it, kind: it.id, x: view.ox + p.x * view.scale, y: view.oy + (p.y - 30) * view.scale });
+  });
+  return out;
+}
 const HUNT_R = 120;
 let hunt = null;
 const huntActive = () => !!hunt && !G.away && !hold && !resting;
@@ -17853,6 +17943,27 @@ function huntDrawDark(ctx) {
   ctx.fillStyle = wg; ctx.fillRect(hunt.x - R, hunt.y - R, R * 2, R * 2);
   // 光圈的邊
   ctx.strokeStyle = 'rgba(255,236,170,.35)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(hunt.x, hunt.y, R * .98, 0, Math.PI * 2); ctx.stroke();
+  // 🕯️ 骷髏的蠟燭是暖暖的光；🤡 被手電筒照到的小丑會鞠躬招呼（不是幽靈喔）
+  huntHelpers().forEach(h => {
+    if (h.kind === 'skeleton_count') {
+      const cg = ctx.createRadialGradient(h.x - 6, h.y - 8, 0, h.x - 6, h.y - 8, 70 * view.scale + 20);
+      cg.addColorStop(0, 'rgba(255,214,120,.5)'); cg.addColorStop(1, 'rgba(255,214,120,0)');
+      ctx.fillStyle = cg; ctx.fillRect(h.x - 120, h.y - 120, 240, 240);
+      if (g && !g.found && g.ri === G.cur && (now - hunt.t0) / 1000 > 10 && lit <= .1) {   // 蠟燭火光飄向幽靈那邊
+        const sp = ghostScreen(g);
+        for (let i = 1; i <= 3; i++) {
+          const f = i / 4 + ((now / 1800) % .25) * .5;
+          ctx.globalAlpha = .55; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+          ctx.fillText('✨', h.x + (sp.x - h.x) * f, h.y + (sp.y - h.y) * f);
+        }
+        ctx.globalAlpha = 1;
+        if (!hunt.skHint) { hunt.skHint = true; fufuSay('骷髏伯爵：「蠟燭的火光飄向那邊囉～」', 3600); }
+      }
+    } else if (!hunt.clown && Math.hypot(h.x - hunt.x, h.y - hunt.y) < HUNT_R * .6) {
+      hunt.clown = true; clownHop(h.it, 1);
+      fufuSay('小丑：「歡迎光臨～我是糖果管家，不是幽靈喔！」', 3600);
+    }
+  });
   // 暗處的提示：30 秒後幽靈輕輕揮手；越靠近光圈邊緣，邊上的小星星越多
   if (g) {
     const sp = ghostScreen(g), el2 = (now - hunt.t0) / 1000;
