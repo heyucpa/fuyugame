@@ -682,6 +682,7 @@ button.pass { font: inherit; }
 .flag-pick { font: inherit; font-size: 12px; background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; cursor: pointer; }
 .flag-pick canvas { border-radius: 6px; }
 .flag-del { position: absolute; top: 2px; right: 2px; padding: 2px 6px !important; }
+.hunt-off { position: absolute; bottom: 64px; left: 50%; transform: translateX(-50%); z-index: 8; font: inherit; font-size: 15px; font-weight: 800; border: 2px solid #ffd35c; background: #fff8dc; color: #6b4b12; border-radius: 999px; padding: 8px 16px; box-shadow: 0 3px 10px rgba(0,0,0,.25); cursor: pointer; touch-action: manipulation; min-height: 40px; }
 .snap-btns { display: flex; gap: 4px; flex: none; }
 .name-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .name-row canvas { flex: none; }
@@ -4245,6 +4246,7 @@ const NEWS = [
     ['👻', '每天有一隻小幽靈躲在家裡的某個房間，找到點一下拿 3 顆糖果'],
     ['🎉', '房間擺 3 件萬聖節家具，點小可愛選「萬聖節派對」，朋友們都來跳舞'],
     ['🍬', '派對結束每天第一次送 4 顆糖果，可以送給來玩的動物朋友'],
+    ['🔦', '點小可愛選「用手電筒找小幽靈」：房間暗下來，用手電筒照，照到才會現身！隨時可以按「🔆 開燈」'],
     ['📅', '萬聖節活動到 11/1']
   ], newItems: [] },
   { id: '2026-10-17T20:00', title: '升旗、看戰車也有動畫了！🚩', lines: [
@@ -6367,6 +6369,10 @@ function drawGirlHead(ctx, o) {
     ctx.beginPath(); ctx.moveTo(fx - 1.5, hy + 6.2); ctx.lineTo(fx + 1.5, hy + 6.2); ctx.stroke();
   } else if (o.face === 'wow') { // 喔！
     ctx.fillStyle = '#8a3b36'; ctx.beginPath(); ctx.ellipse(fx, hy + 6.2, 1.8, 2.4, 0, 0, Math.PI * 2); ctx.fill();
+  } else if (o.face === 'worried') { // 緊張（找幽靈的時候）：眉毛往中間皺、嘴巴彎彎的
+    ctx.lineWidth = 1.2;
+    [-1, 1].forEach(sg => { ctx.beginPath(); ctx.moveTo(sg * 8 + fx, hy - 4.2); ctx.lineTo(sg * 3 + fx, hy - 6); ctx.stroke(); });
+    ctx.beginPath(); ctx.moveTo(fx - 3, hy + 7); ctx.quadraticCurveTo(fx - 1.5, hy + 5.4, fx, hy + 7); ctx.quadraticCurveTo(fx + 1.5, hy + 8.6, fx + 3, hy + 7); ctx.stroke();
   } else {
     ctx.beginPath(); ctx.arc(fx, hy + 5.5, 3.2, .2 * Math.PI, .8 * Math.PI); ctx.stroke();
   }
@@ -12101,6 +12107,7 @@ function draw() {
   petDrawOverlay(ctx);
   visitorDrawOverlay(ctx, performance.now());
   drawAmbient(ctx, performance.now());
+  if (typeof huntDrawDark === 'function') huntDrawDark(ctx);   // 🔦 找幽靈：房間變暗、手電筒的光圈
   drawTargetMarker(ctx, performance.now());
   drawActHint(ctx, performance.now());
   fufuDrawBubble(ctx, performance.now());
@@ -12780,6 +12787,7 @@ function updateHoldUI() {
 // ── 寵物：按住捏捏、點一下摸摸 ──
 canvas.addEventListener('pointerdown', () => { lastStageInput = Date.now(); updatePauseBadge(); }); // 有在點房間：不算家長設定中
 canvas.addEventListener('pointerdown', e => {
+  if (typeof huntActive === 'function' && huntActive()) { huntMove(e); return; }   // 🔦 找幽靈的時候只照手電筒
   if (e.button !== 0 || hold || !$('#itemMenu').hidden || !$('#foodMenu').hidden) return;
   const w = toWorld(e);
   if (giftBoxHit(w)) return;   // 包裹在寵物旁邊：先算點包裹（pointerup 會打開）
@@ -12790,6 +12798,7 @@ canvas.addEventListener('pointerdown', e => {
 canvas.addEventListener('pointercancel', () => { petPressEnd(performance.now()); compPressEnd(performance.now()); });
 
 canvas.addEventListener('pointermove', e => {
+  if (typeof huntActive === 'function' && huntActive()) { huntMove(e); return; }
   const w = toWorld(e);
   if (pet.press) { petPressMove(w); return; }
   if (compPressing) { // 一起逛的寵物也可以捏捏、拉一拉
@@ -12854,7 +12863,8 @@ function openTopPicker(it) {
 // 點小可愛：叫她做事
 function showKidMenu(e) {
   const party = halloweenActive() && !G.away ? [[`🎉 萬聖節派對${halloweenDecoCount() >= HALLOWEEN_PARTY_NEED ? '' : `（要擺 ${HALLOWEEN_PARTY_NEED} 件萬聖節家具）`}`, startHalloweenParty]] : [];
-  openMenu(party.concat([
+  const gh = halloweenActive() && !G.away && ensureGhost() && !G.ghost.found ? [['👻 用手電筒找小幽靈', startGhostHunt]] : [];
+  openMenu(gh.concat(party).concat([
     ['👋 打招呼', fufuPoke],
     ['💃 跳舞', fufuDance],
     [`🐾 陪${petName()}玩`, fufuPlayPet],
@@ -12938,6 +12948,7 @@ function showItemMenu(it, e) {
 }
 
 canvas.addEventListener('pointerup', e => {
+  if (typeof huntActive === 'function' && huntActive()) { huntMove(e); huntTap(toWorld(e)); return; }
   if (e.button === 2) return;
   if (pet.press) { petPressEnd(performance.now()); return; }
   if (compPressing) { compPressEnd(performance.now()); return; }
@@ -17747,11 +17758,18 @@ function ghostDrawEntries() {
   const g = ghostHere(); if (!g) return [];
   return [{ x: g.x + .3, y: g.y + .3, w: .4, d: .4, z: 0, h: 26, drawFn: ctx => {
     const now = performance.now(), p = iso(g.x + .5, g.y + .5, 0), bob = Math.sin(now / 420) * 3;
-    ctx.save(); ctx.globalAlpha = .55 + Math.sin(now / 600) * .12; ctx.translate(p.x, p.y - 14 + bob);
+    const lit = hunt ? ghostLit(g) : 1;            // 🔦 找幽靈的時候要被光照到才看得見
+    if (hunt && lit <= 0.02) return;
+    ctx.save(); ctx.globalAlpha = hunt ? Math.min(1, .25 + lit * .75) : .55 + Math.sin(now / 600) * .12; ctx.translate(p.x, p.y - 14 + bob);
     ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, -4, 10, Math.PI, 0); ctx.lineTo(10, 10);
     for (let i = 0; i < 4; i++) ctx.quadraticCurveTo(10 - i * 5 - 2.5, 14, 10 - (i + 1) * 5, 10); ctx.closePath(); ctx.fill();
     ctx.fillStyle = '#3a3240'; ctx.beginPath(); ctx.arc(-3.5, -5, 1.6, 0, Math.PI * 2); ctx.arc(3.5, -5, 1.6, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(0, 0, 2, 2.6, 0, 0, Math.PI * 2); ctx.fill();
+    if (hunt && lit > .3) { // 被照到：害羞（臉紅、手摀臉）＋亮晶晶，不是兇的
+      ctx.fillStyle = 'rgba(255,120,150,.6)'; ctx.beginPath(); ctx.arc(-6.5, -1, 2.4, 0, Math.PI * 2); ctx.arc(6.5, -1, 2.4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.strokeStyle = '#d9d2c8'; ctx.lineWidth = .8;
+      [-1, 1].forEach(sg => { ctx.beginPath(); ctx.ellipse(sg * 5, -6, 3, 4, sg * .5, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); });
+      ctx.font = '11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('✨', -13, -14 + Math.sin(now / 150) * 2); ctx.fillText('✨', 13, -12 + Math.cos(now / 150) * 2);
+    } else { ctx.beginPath(); ctx.ellipse(0, 0, 2, 2.6, 0, 0, Math.PI * 2); ctx.fill(); }
     ctx.restore();
   } }];
 }
@@ -17771,6 +17789,79 @@ function findGhost() {
   showcase(el('div', 'trick-big', '👻'), '找到小幽靈了！', `🎃 拿到 ${GHOST_CANDY} 顆萬聖節糖果！明天小幽靈會躲到別的地方`, { head: '👻 哇～' });
   saveGame(); refreshTop();
   return true;
+}
+/* 🔦 手電筒找幽靈（家長：找小幽靈時房間暗下來、用手電筒；要有害怕驚嚇的表情但不能真的嚇到小孩）
+   房間蓋一層黃昏的紫藍色（還看得到家具輪廓），滑鼠／手指移到哪，哪裡就有一圈暖黃色的光。
+   幽靈只有被光照到才現身（旁邊亮小星星、嘻嘻一聲），點一下就找到。
+   左上角永遠有「🔆 開燈」，隨時可以結束。小可愛找的時候緊張、被照到時驚訝（wow）、找到開心（joy）。
+   30 秒還找不到，幽靈會在暗處輕輕揮手；60 秒會提示它在哪個房間。 */
+const HUNT_R = 120;
+let hunt = null;
+const huntActive = () => !!hunt && !G.away && !hold && !resting;
+function huntMove(e) {
+  if (!hunt) return;
+  const r = canvas.getBoundingClientRect();
+  hunt.x = e.clientX - r.left; hunt.y = e.clientY - r.top;
+}
+function ghostScreen(g) { const p = iso(g.x + .5, g.y + .5, 0); return { x: view.ox + p.x * view.scale, y: view.oy + (p.y - 12) * view.scale }; }
+function ghostLit(g) {   // 0（沒照到）～ 1（正中間）
+  if (!hunt || !g) return 0;
+  const sp = ghostScreen(g), d = Math.hypot(sp.x - hunt.x, sp.y - hunt.y);
+  return Math.max(0, Math.min(1, 1 - (d - HUNT_R * .5) / (HUNT_R * .5)));
+}
+function startGhostHunt() {
+  const g = ensureGhost();
+  if (!g || g.found || !halloweenActive() || G.away) return false;
+  hunt = { x: canvas.clientWidth / 2, y: canvas.clientHeight / 2, t0: performance.now(), lit: false, hinted: 0 };
+  const b = el('button', 'hunt-off', '🔆 開燈'); b.id = 'huntOff';
+  b.onclick = endGhostHunt;
+  document.querySelector('.stage').appendChild(b);
+  document.addEventListener('keydown', huntKey);
+  toast(g.ri === G.cur ? '🔦 滑鼠（手指）移動手電筒，照到幽靈就點牠！' : `🔦 小幽靈不在這個房間喔，換個房間找找看！`);
+  fufuSay('嗚…好暗喔，要小心…', 2600);
+  requestDraw();
+  return true;
+}
+function huntKey(e) { if (e.key === 'Escape') endGhostHunt(); }
+function endGhostHunt() {
+  hunt = null;
+  const b = document.getElementById('huntOff'); if (b) b.remove();
+  document.removeEventListener('keydown', huntKey);
+  try { kidMakeFace('happy', 10); } catch (e) {}
+  requestDraw();
+}
+function huntTap(w) {
+  const g = ghostHere();
+  if (g && ghostLit(g) > .25 && ghostHit(w)) { endGhostHunt(); findGhost(); try { kidMakeFace('joy', 3000); } catch (e) {} }
+}
+function huntDrawDark(ctx) {
+  if (!huntActive()) { if (hunt && (G.away || resting)) endGhostHunt(); return; }
+  const dpr = window.devicePixelRatio || 1, W = canvas.clientWidth, H = canvas.clientHeight, now = performance.now();
+  const g = ghostHere(), lit = g ? ghostLit(g) : 0;
+  // 表情：照到幽靈 → 驚訝；找的時候 → 緊張
+  try { kidMakeFace(lit > .3 ? 'wow' : 'worried', 400); } catch (e) {}
+  if (lit > .3 && !hunt.lit) { hunt.lit = true; Sound.play('magic'); setTimeout(() => Sound.play('petHappy'), 200); }
+  if (lit <= .1) hunt.lit = false;
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const R = HUNT_R + Math.sin(now / 300) * 3;
+  const gr = ctx.createRadialGradient(hunt.x, hunt.y, R * .35, hunt.x, hunt.y, R);
+  gr.addColorStop(0, 'rgba(30,20,70,0)'); gr.addColorStop(1, 'rgba(30,20,70,.66)');
+  ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+  const wg = ctx.createRadialGradient(hunt.x, hunt.y, 0, hunt.x, hunt.y, R * .8);
+  wg.addColorStop(0, 'rgba(255,236,170,.22)'); wg.addColorStop(1, 'rgba(255,236,170,0)');
+  ctx.fillStyle = wg; ctx.fillRect(hunt.x - R, hunt.y - R, R * 2, R * 2);
+  // 光圈的邊
+  ctx.strokeStyle = 'rgba(255,236,170,.35)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(hunt.x, hunt.y, R * .98, 0, Math.PI * 2); ctx.stroke();
+  // 暗處的提示：30 秒後幽靈輕輕揮手；越靠近光圈邊緣，邊上的小星星越多
+  if (g) {
+    const sp = ghostScreen(g), el2 = (now - hunt.t0) / 1000;
+    if (el2 > 30 && lit <= .1) { ctx.globalAlpha = .22 + Math.sin(now / 250) * .08; ctx.font = '20px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('👋', sp.x, sp.y - 20); ctx.globalAlpha = 1; }
+    const d = Math.hypot(sp.x - hunt.x, sp.y - hunt.y);
+    if (d < R * 1.6 && lit <= .1) { const a = Math.atan2(sp.y - hunt.y, sp.x - hunt.x); ctx.font = '14px sans-serif'; ctx.textAlign = 'center'; for (let i = 0; i < 3; i++) ctx.fillText('✨', hunt.x + Math.cos(a + (i - 1) * .22) * R * 1.03, hunt.y + Math.sin(a + (i - 1) * .22) * R * 1.03 + Math.sin(now / 200 + i) * 2); }
+    if (el2 > 60 && !hunt.hinted) { hunt.hinted = 1; toast(`👻 小幽靈在「${G.rooms[G.ghost.ri].name}」`); }
+  }
+  ctx.restore();
 }
 setTimeout(() => { try { ensureGhost(); } catch (e) {} }, 2800);
 setInterval(() => { try { ensureGhost(); } catch (e) {} }, 60000);
