@@ -4725,7 +4725,7 @@ function newKid() {
 /* 讀存檔（loadGame → normalizeSave）在這個 <script> 一載入就跑，
    用到的常數、函式一定要放在這裡（或更前面）：放在後面的 <script> 還沒執行到，會整個讀檔失敗、跳「紀錄讀不出來」。
    （116.10 出過一次：動物訪客簿、以前的名字的上限放在後面，有那些資料的存檔就讀不出來） */
-const GUESTBOOK_MAX = 30, GUESTBOOK_DRAW_MAX = 12;
+const GUESTBOOK_MAX = 30, GUESTBOOK_DRAW_MAX = 12, ANIMAL_DRAW_MAX = 12;   // 讀檔（normalizeSave）會用到，要放在前面的 script
 const ANIMAL_BOOK_MAX = 24;
 const PET_OLD_NAMES_MAX = 6;
 const PAD_W = 240, PAD_H = 160, PAD_MAX_PTS = 1500, PAD_MAX_STROKES = 80;
@@ -4773,6 +4773,7 @@ function writeSnaps(list, keep) {
       const order = ['auto', 'manual', 'reset', 'rescue'];
       let gone = false;
       for (const k of order) {
+        if (keep && keep.kind === 'auto' && k !== 'auto') break;   // 自動存檔只能擠掉更舊的自動存檔，不能把家長手動存的擠掉
         const olds = list.filter(x => x.kind === k && x !== keep);
         if (olds.length > (k === 'rescue' ? 1 : 0)) { list.splice(list.indexOf(olds[olds.length - 1]), 1); gone = true; break; }
       }
@@ -4856,10 +4857,29 @@ function normalizeSave(g) {
       if (it.top && !(FURN_BY_ID[it.top] && canHaveTop(it.id) && canSitOnTable(it.top))) it.top = null;
     });
     // 舊版的 4×4 房間免費升級成 6×6；往前方擴大，原本的家具位置不變
+    r.w = Math.min(30, Math.round(r.w || 0)); r.d = Math.min(30, Math.round(r.d || 0));   // 整數、最多 30（亂的大小會讓畫面當掉）
     if (r.w < MIN_ROOM_SIZE) r.w = MIN_ROOM_SIZE;
     if (r.d < MIN_ROOM_SIZE) r.d = MIN_ROOM_SIZE;
   });
   const out = Object.assign(newGame(), g);
+  /* 型態修補（第三輪檢查：存檔裡某個欄位被存成 null／NaN／錯的型態，會讓遊戲整個當掉）：
+     新遊戲有值的欄位，如果合併後型態不對（null、NaN、物件變陣列…），就用預設值。
+     rooms、pets 另外有更嚴格的檢查，這裡不碰。 */
+  const defaults = newGame();
+  Object.keys(defaults).forEach(k => {
+    if (k === 'rooms' || k === 'pets' || k === 'pet') return;
+    const d = defaults[k], v = out[k];
+    if (d == null || v === undefined) return;   // undefined＝舊版沒有這個欄位，後面各自有補的邏輯（例如補償旗標），不在這裡動
+    const bad = typeof d === 'number' ? !num(v)
+      : typeof d === 'string' ? typeof v !== 'string'
+      : typeof d === 'boolean' ? typeof v !== 'boolean'
+      : Array.isArray(d) ? !Array.isArray(v)
+      : !isObj(v);
+    if (bad) out[k] = d;
+  });
+  if (out.tree && (!num(out.tree.n) || out.tree.n < 0)) out.tree = defaults.tree;
+  if (out.orchard && (!num(out.orchard.n) || out.orchard.n < 0)) out.orchard = defaults.orchard;
+  if (typeof out.charName !== 'string') out.charName = DEFAULT_CHAR_NAME;
   if (g.guide === undefined) out.guide = 'done'; // 已經在玩的存檔不用教
   if (g.introSeen === undefined) out.introSeen = true; // 已經在玩的存檔不自動播開場（設定裡可以重看）
   if (!out.noSell || typeof out.noSell !== 'object' || Array.isArray(out.noSell)) out.noSell = {};
@@ -4878,6 +4898,8 @@ function normalizeSave(g) {
   out.schoolFlags = (Array.isArray(out.schoolFlags) ? out.schoolFlags : []).map(cleanDrawing).filter(Boolean).slice(0, 6);
   if (out.schoolFlag != null) { const sf = cleanDrawing(out.schoolFlag); if (sf && !out.schoolFlags.length) { out.schoolFlags.push(sf); out.schoolFlagIdx = 0; } delete out.schoolFlag; }
   if (!(Number.isInteger(out.schoolFlagIdx) && out.schoolFlagIdx >= 0 && out.schoolFlagIdx < out.schoolFlags.length)) out.schoolFlagIdx = null;
+  if (Array.isArray(out.guestbook)) out.guestbook.forEach((e, i) => { if (i >= GUESTBOOK_DRAW_MAX) delete e.d; });   // 畫只留最近幾張（從備份還原的也一樣）
+  if (Array.isArray(out.animalBook)) out.animalBook.forEach((e, i) => { if (i >= ANIMAL_DRAW_MAX) delete e.d; });
   if (out.kidGrowDay != null && !(isObj(out.kidGrowDay) && typeof out.kidGrowDay.d === 'string' && num(out.kidGrowDay.n))) delete out.kidGrowDay;
   if (out.flowerDex != null && !isObj(out.flowerDex)) delete out.flowerDex;
   if (out.advComics != null && !isObj(out.advComics)) delete out.advComics;
@@ -4916,21 +4938,21 @@ function normalizeSave(g) {
     if (q.oldNames != null) { q.oldNames = (Array.isArray(q.oldNames) ? q.oldNames : []).filter(n => typeof n === 'string' && n.trim()).map(n => n.slice(0, 10)).slice(0, PET_OLD_NAMES_MAX); if (!q.oldNames.length) delete q.oldNames; }
     return q;
   });
-  out.activePet = Math.max(0, Math.min(out.pets.length - 1, g.activePet || 0));
+  out.activePet = Number.isInteger(g.activePet) ? Math.max(0, Math.min(out.pets.length - 1, g.activePet)) : 0;
   out.pet = out.pets[out.activePet]; // 同一個物件，改 G.pet 就是改 pets 裡那隻
   fixCompanions(out);
   out.kid = Object.assign(newKid(), g.kid || {});
   out.away = null; // 重新打開遊戲一律在自己家
-  if (out.cur >= out.rooms.length) out.cur = 0;
+  if (!Number.isInteger(out.cur) || out.cur < 0 || out.cur >= out.rooms.length) out.cur = 0;
   // 衣服：補上預設款，穿著中的衣服若資料裡已不存在就換回預設
-  out.wardrobe = Array.from(new Set((g.wardrobe || []).concat(newGame().wardrobe))).filter(id => CLOTHES_BY_ID[id]);
+  out.wardrobe = Array.from(new Set((Array.isArray(g.wardrobe) ? g.wardrobe : []).concat(newGame().wardrobe))).filter(id => CLOTHES_BY_ID[id]);
   out.outfit = Object.assign({}, DEFAULT_OUTFIT, g.outfit || {});
   /* 舊存檔沒有髮型欄位，補上預設。髮型或髮色被刪掉（改版）就換回預設，
      不然會畫出一顆沒有顏色的頭。 */
   out.hair = Object.assign({}, DEFAULT_HAIR, g.hair || {});
   if (!HAIR_BY_ID[out.hair.style]) out.hair.style = DEFAULT_HAIR.style;
   if (!HAIR_COLOR_BY_ID[out.hair.color]) out.hair.color = DEFAULT_HAIR.color;
-  out.hairOwned = Array.from(new Set((g.hairOwned || [])
+  out.hairOwned = Array.from(new Set((Array.isArray(g.hairOwned) ? g.hairOwned : [])
     .concat(HAIR_STYLES.filter(h => !h.price).map(h => h.id))
     .concat([out.hair.style]))).filter(id => HAIR_BY_ID[id]);
   OUTFIT_SLOTS.forEach(({ key }) => {
@@ -9312,7 +9334,6 @@ const ANIMAL_BOOK_MSGS = {
    每位畫自己喜歡的東西（跟印章一樣），旁邊再畫一顆小愛心。
    用跟回禮卡一樣的「一筆一筆」格式存（d = {s: [[顏色, 粗細, x0, y0, dx, dy…]]}），線條抖一點點，像手畫的，每次都不太一樣。
    只留最近 ANIMAL_DRAW_MAX 張畫（存檔才不會越來越大）。 */
-const ANIMAL_DRAW_MAX = 12;
 function animalDoodle(id) {
   const W = PAD_W, H = PAD_H, strokes = [];
   const j = () => Math.round((Math.random() - .5) * 3);                         // 手抖
@@ -17586,7 +17607,7 @@ function dailyPick(day) {
 function dailyState() {
   const d = today();
   // dailyPaid：最後一次領獎的日子。把裝置日期調回去再調回來也不能重複領（家長沒回報，是檢查時想到的）
-  if (!G.daily || G.daily.d !== d) G.daily = { d, ids: dailyPick(d), n: {}, done: G.dailyPaid === d };
+  if (!G.daily || G.daily.d !== d || !G.daily.ids.every(id => DAILY_POOL.some(t => t.id === id))) G.daily = { d, ids: dailyPick(d), n: {}, done: G.dailyPaid === d };
   return G.daily;
 }
 const dailyTask = id => DAILY_POOL.find(t => t.id === id);
