@@ -12705,10 +12705,25 @@ function makeDraggable(elm, handle, key) {
 const dragCard = makeDraggable($('#petCard'), $('#petCard .pc-head'), 'petCard');
 const dragPhoto = makeDraggable($('#btnPhoto'), $('#btnPhoto'), 'photo');
 const dragTheme = makeDraggable($('#btnTheme'), $('#btnTheme'), 'theme');
-$('#pcToggle').onclick = () => {
+/* 小卡展開／收起：手機（窄螢幕）一開始是收起來的——展開會佔房間三分之一（家長：手機上先收起來）。
+   她自己按過之後就記住（這台機器、不進存檔）。 */
+const PC_MINI_KEY = 'myHouse_cardMini';
+function applyCardMini(mini) {
   const c = $('#petCard');
-  c.classList.toggle('mini');
-  $('#pcToggle').textContent = c.classList.contains('mini') ? '＋' : '－';
+  c.classList.toggle('mini', mini);
+  $('#pcToggle').textContent = mini ? '＋' : '－';
+  $('#pcToggle').title = mini ? '展開' : '收合';
+}
+function initCardMini() {
+  let pref = null; try { pref = localStorage.getItem(PC_MINI_KEY); } catch (e) {}
+  const narrow = window.matchMedia && window.matchMedia('(max-width: 700px)').matches;
+  applyCardMini(pref === '1' ? true : pref === '0' ? false : narrow);
+}
+initCardMini();
+$('#pcToggle').onclick = () => {
+  const mini = !$('#petCard').classList.contains('mini');
+  applyCardMini(mini);
+  try { localStorage.setItem(PC_MINI_KEY, mini ? '1' : '0'); } catch (e) {}
   $('#foodMenu').hidden = true;
 };
 
