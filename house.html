@@ -13567,7 +13567,7 @@ function tabInv(body) {
   const ids = Object.keys(G.inv).filter(id => G.inv[id] > 0);
   const foods = Object.keys(G.food).filter(id => G.food[id] > 0);
   sellToggle(body, '房間裡的家具要先收起來才能賣；正在用的壁紙地板也要先換成別的。');
-  if (!sellMode && !G.away) {   // ✨ 不會佈置也沒關係
+  if (!sellMode && !G.away && curRoom().kind !== 'balcony') {   // ✨ 不會佈置也沒關係
     const dec = el('button', 'big decor-btn', '✨ 一鍵佈置這個房間');
     dec.onclick = () => { Sound.play('click'); openDecor(); };
     body.appendChild(dec);
@@ -17992,7 +17992,7 @@ function decorUnstick() {   // 小可愛站的那格被擺了家具：移到最�
 }
 function decorThemeCount(theme) { return decorPool(theme).length; }
 function decorRun(theme, redo) {
-  if (G.away) return null;
+  if (G.away || curRoom().kind === 'balcony') return null;
   cancelHold();
   const room = curRoom(), sn = decorSnapshot(), before = roomScore(room).score;
   if (redo) {   // 全部收起來再擺（收起來的家具都先回到收納）
@@ -18012,6 +18012,7 @@ function decorRun(theme, redo) {
 }
 function openDecor() {
   if (awayNoEdit()) return;
+  if (curRoom().kind === 'balcony') { toast('🌱 陽台是花園，種花就好，不用佈置喔'); return; }   // 陽台有天空和花盆（花的成長跟著花盆），不能亂收、亂換
   cancelHold();
   const card = $('#modalCard');
   card.innerHTML = '';
