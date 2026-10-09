@@ -642,6 +642,8 @@ button.pass { font: inherit; }
 .pause-badge { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 5; background: rgba(58,50,64,.85); color: #fff;
   font-size: 13px; font-weight: 700; padding: 6px 14px; border-radius: 999px; pointer-events: none; white-space: nowrap; }
 @media (max-width: 700px) { .pause-badge { top: auto; bottom: 56px; font-size: 12px; } }
+.decor-cell { cursor: pointer; }
+.decor-btn { margin-bottom: 8px; background: linear-gradient(135deg, #ffb3d1, #b9a8ff); color: #fff; }
 .trick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 8px 0 12px; }
 .trick-cell { border: 2px dashed var(--line); border-radius: 14px; background: #fffaf0; padding: 8px 4px; text-align: center; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .trick-cell.got { border-style: solid; border-color: #f0902f; background: #fff3e2; }
@@ -4305,6 +4307,7 @@ const NEWS = [
     ['👻', '每天有一隻小幽靈躲在家裡的某個房間，找到點一下拿 3 顆糖果'],
     ['🎉', '房間擺 3 件萬聖節家具，點小可愛選「萬聖節派對」，朋友們都來跳舞'],
     ['🍬', '派對結束每天第一次送 4 顆糖果，可以送給來玩的動物朋友'],
+    ['✨', '「我的東西」最上面有「一鍵佈置這個房間」：選一個風格，就用你有的家具幫你擺好、換漂亮的壁紙地板，不喜歡可以換回原本'],
     ['🍬', '萬聖節糖果收集：一共拿到 12／30／60 顆糖，有小幽靈巫師帽、糖果大罐、小幽靈洋裝可以領（點小可愛看進度，糖果還是可以吃、可以送人）'],
     ['🤡', '萬聖節新家具：小丑糖果管家（每天跟牠要糖果）、骷髏伯爵（手電筒找幽靈時蠟燭會亮、會幫你指方向）；換裝有小吸血鬼披風'],
     ['🔦', '點小可愛選「用手電筒找小幽靈」：房間暗下來，用手電筒照，照到才會現身！隨時可以按「🔆 開燈」'],
@@ -13564,6 +13567,11 @@ function tabInv(body) {
   const ids = Object.keys(G.inv).filter(id => G.inv[id] > 0);
   const foods = Object.keys(G.food).filter(id => G.food[id] > 0);
   sellToggle(body, '房間裡的家具要先收起來才能賣；正在用的壁紙地板也要先換成別的。');
+  if (!sellMode && !G.away) {   // ✨ 不會佈置也沒關係
+    const dec = el('button', 'big decor-btn', '✨ 一鍵佈置這個房間');
+    dec.onclick = () => { Sound.play('click'); openDecor(); };
+    body.appendChild(dec);
+  }
   body.appendChild(h3('🛋️ 家具'));
   if (!ids.length) {
     body.appendChild(note('還沒有家具。去「商店」買家具，或到「賺錢」搖樹看看會不會掉東西下來。'));
@@ -17807,6 +17815,263 @@ function openDaily() {
 }
 setTimeout(() => { try { updateDailyChip(); } catch (e) {} }, 1200);
 setInterval(() => { try { if (G.daily && G.daily.d !== today()) updateDailyChip(); } catch (e) {} }, 60000);   // 跨日：換新的
+/* ===== ✨ 一鍵佈置（家長：妹妹不會佈置，但想要漂亮的房子）=====
+   選一個風格 → 用「收納裡已經有的」同風格家具自動擺好，再換上同風格的壁紙地板（有買過的話），評分也會加分。
+   ・房間已經有家具：可以「補上」（原本的一件都不動，只在空的地方加）或「全部重擺」（先收起來再擺，會問她）。
+   ・擺法的規矩：大件貼牆、桌子在中間、椅子圍著桌子（面向桌子）、前面留一格站的地方、全部的路要通、
+     家具最多佔房間 4 成，不會擠成一團。桌子沒有放東西就放一樣小東西。掛飾每面牆最多兩個。
+   ・擺完可以「換回原本」；錢、家具都不會多也不會少（沒擺進去的還在收納裡）。 */
+const DECOR_THEMES = ['wood', 'cute', 'modern', 'nature', 'sweet', 'bath'];
+const DECOR_FRONT = ['sleep', 'study', 'sit', 'eat', 'bath', 'toy'];   // 前面要留一格站的地方
+const DECOR_RANK = { sleep: 0, study: 1, sit: 2, eat: 3, bath: 4, toy: 5, pet: 6, plant: 7, deco: 8, desk: 9 };
+const DECOR_TABLES = ['wood_table', 'cute_table', 'lemon_table', 'macaron_table', 'dining_table'];
+const decorIsChair = def => /chair|stool|beanbag|cushion/.test(def.id) && def.w === 1 && def.d === 1;
+function decorFront(def, x, y, rot) {   // 家具正前方那一格
+  const fp = footprint(def, rot), f = rotateDir(rot, 0, 1);
+  if (f.dy === 1) return [x + (fp.w >> 1), y + fp.d];
+  if (f.dy === -1) return [x + (fp.w >> 1), y - 1];
+  if (f.dx === 1) return [x + fp.w, y + (fp.d >> 1)];
+  return [x - 1, y + (fp.d >> 1)];
+}
+function decorComps(room) {   // 能走的格子有幾塊互相不相通的區域、一共幾格
+  const g = blockedGrid(room), seen = g.map(c => c.map(() => false));
+  let comps = 0, free = 0;
+  for (let x = 0; x < room.w; x++) for (let y = 0; y < room.d; y++) {
+    if (g[x][y]) continue;
+    free++;
+    if (seen[x][y]) continue;
+    comps++; seen[x][y] = true;
+    const st = [[x, y]];
+    while (st.length) {
+      const [i, j] = st.pop();
+      [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([a, b]) => {
+        const ni = i + a, nj = j + b;
+        if (ni >= 0 && nj >= 0 && ni < room.w && nj < room.d && !g[ni][nj] && !seen[ni][nj]) { seen[ni][nj] = true; st.push([ni, nj]); }
+      });
+    }
+  }
+  return { comps, free };
+}
+function decorPool(theme, extraIds) {   // 這個風格、能自動擺的家具（收納裡的 + extraIds：重擺時先收起來的）
+  const out = [];
+  Object.keys(G.inv).forEach(id => {
+    const def = FURN_BY_ID[id];
+    if ((G.inv[id] > 0) && def && def.theme === theme && !def.season && !def.trick && !def.place) out.push(def);
+  });
+  return out;
+}
+function decorTake(def, spot, room) {   // 從收納拿一件擺進去（跟手動擺一樣：先拿非賣品那幾件）
+  if (!G.inv[def.id]) return null;
+  G.inv[def.id]--; if (!G.inv[def.id]) delete G.inv[def.id];
+  const ns = G.noSell && G.noSell[def.id] > 0;
+  if (ns) { G.noSell[def.id]--; if (!G.noSell[def.id]) delete G.noSell[def.id]; }
+  const it = Object.assign({ uid: G.uid++, id: def.id }, ns ? { ns: true } : {}, spot);
+  (def.layer === 'wall' ? room.wallItems : room.items).push(it);
+  return it;
+}
+function decorTry(room, def, x, y, rot, st, isChair) {
+  if (!canPlace(room, def, x, y, rot, null)) return false;
+  const fp = footprint(def, rot), floor = def.layer === 'floor';
+  if (floor) return true;
+  if (!isChair && st.reserved.some(([rx, ry]) => rx >= x && rx < x + fp.w && ry >= y && ry < y + fp.d)) return false;
+  if (st.cells + fp.w * fp.d > st.maxCells) return false;
+  const fc = !isChair && DECOR_FRONT.includes(furnKind(def.id)) ? decorFront(def, x, y, rot) : null;
+  if (fc && (fc[0] < 0 || fc[1] < 0 || fc[0] >= room.w || fc[1] >= room.d)) return false;
+  room.items.push({ uid: -999, id: def.id, x, y, rot });
+  let ok = true;
+  const c = decorComps(room);
+  if (c.comps > st.comps) ok = false;
+  if (ok && fc && blockedGrid(room)[fc[0]][fc[1]]) ok = false;
+  room.items.pop();
+  if (!ok) return false;
+  if (fc) st.reserved.push(fc);
+  return true;
+}
+function decorLand(room, def, x, y, rot, st) {   // 試過可以了：真的擺下去、更新狀態
+  const it = decorTake(def, { x, y, rot }, room);
+  if (!it) return null;
+  if (def.layer !== 'floor') { const fp = footprint(def, rot); st.cells += fp.w * fp.d; st.comps = decorComps(room).comps; }
+  return it;
+}
+function decorWallCands(room, def, side) {
+  const out = [], add = rot => {
+    const fp = footprint(def, rot);
+    if (rot === 0) for (let x = 0; x + fp.w <= room.w; x++) out.push([x, 0, 0]);
+    else for (let y = 0; y + fp.d <= room.d; y++) out.push([0, y, 1]);
+  };
+  if (side === 'L') { add(1); add(0); } else { add(0); add(1); }
+  return out;
+}
+function decorCenterCands(room, def) {
+  const out = [], cx = room.w / 2, cy = room.d / 2;
+  [0, 1].forEach(rot => {
+    const fp = footprint(def, rot);
+    for (let x = 0; x + fp.w <= room.w; x++) for (let y = 0; y + fp.d <= room.d; y++)
+      out.push([x, y, rot, Math.hypot(x + fp.w / 2 - cx, y + fp.d / 2 - cy) + (rot ? .01 : 0)]);
+  });
+  return out.sort((a, b) => a[3] - b[3]);
+}
+/* 在 room 裡擺 theme 風格的家具。回傳 { placed: 擺了幾件 }。 */
+function decorFill(room, theme) {
+  const st = { reserved: [], cells: 0, comps: 0, maxCells: Math.floor(room.w * room.d * .4) };
+  room.items.forEach(it => { const d = FURN_BY_ID[it.id]; if (d.layer !== 'floor') { const fp = footprint(d, it.rot); st.cells += fp.w * fp.d; } });
+  st.comps = decorComps(room).comps;
+  const have = id => room.items.some(it => it.id === id) || room.wallItems.some(it => it.id === id);
+  const pool = decorPool(theme);
+  let placed = 0, sideTurn = 0;
+  const sorted = list => list.slice().sort((a, b) => (DECOR_RANK[furnKind(a.id)] - DECOR_RANK[furnKind(b.id)]) || (b.w * b.d - a.w * a.d));
+  const tryList = (def, cands, isChair) => {
+    for (const c of cands) if (decorTry(room, def, c[0], c[1], c[2], st, isChair)) { if (decorLand(room, def, c[0], c[1], c[2], st)) { placed++; return true; } }
+    return false;
+  };
+  // 1) 地毯：放中間（一張）
+  const rug = pool.filter(d => d.layer === 'floor' && !have(d.id)).sort((a, b) => (b.w * b.d) - (a.w * a.d)).find(d => d.w <= room.w - 2 && d.d <= room.d - 2);
+  if (rug) tryList(rug, decorCenterCands(room, rug));
+  // 2) 桌子：放中間（一張）
+  const table = pool.find(d => DECOR_TABLES.includes(d.id) && !have(d.id));
+  if (table) tryList(table, decorCenterCands(room, table));
+  // 3) 其他：大件優先貼牆，兩面牆輪流擺
+  sorted(pool.filter(d => d.layer !== 'floor' && d.layer !== 'wall' && !DECOR_TABLES.includes(d.id) && !decorIsChair(d) && furnKind(d.id) !== 'desk' && !have(d.id)))
+    .forEach(d => { const side = sideTurn++ % 2 ? 'L' : 'R'; tryList(d, decorWallCands(room, d, side)); });
+  // 4) 椅子：圍在桌子、書桌旁邊，面向桌子
+  const targets = room.items.filter(it => canHaveTop(it.id) && ['sit', 'eat', 'study'].includes(furnKind(it.id)) && FURN_BY_ID[it.id].w * FURN_BY_ID[it.id].d >= 2);
+  pool.filter(decorIsChair).forEach(d => {
+    let left = Math.min(G.inv[d.id] || 0, 4);
+    targets.forEach(t => {
+      const td = FURN_BY_ID[t.id], fp = footprint(td, t.rot);
+      const spots = [[t.x + (fp.w >> 1), t.y + fp.d, 2], [t.x - 1, t.y + (fp.d >> 1), 1], [t.x + (fp.w >> 1), t.y - 1, 0], [t.x + fp.w, t.y + (fp.d >> 1), 3]];
+      for (const sp of spots) { if (left <= 0) break; if (decorTry(room, d, sp[0], sp[1], sp[2], st, true) && decorLand(room, d, sp[0], sp[1], sp[2], st)) { placed++; left--; } }
+    });
+    if (!targets.length && !have(d.id) && left > 0) tryList(d, decorWallCands(room, d, 'R'));
+  });
+  // 5) 桌子上放一樣小東西
+  const tops = pool.filter(d => furnKind(d.id) === 'desk' || (canSitOnTable(d.id) && d.w === 1 && d.d === 1 && furnKind(d.id) !== 'plant'));
+  room.items.filter(it => canHaveTop(it.id) && !it.top).forEach(t => {
+    const d = tops.find(x => G.inv[x.id] > 0 && canSitOnTable(x.id)); if (!d) return;
+    if (takeItem(d.id)) { t.top = d.id; placed++; }
+  });
+  // 6) 掛飾：每面牆最多兩個，放在牆的中間附近
+  let wallN = 0;
+  pool.filter(d => d.layer === 'wall' && !have(d.id)).forEach(d => {
+    if (wallN >= 4) return;
+    const sides = ['R', 'L'].map(sd => [sd, room.wallItems.filter(w => w.side === sd).length]).filter(a => a[1] < 2).sort((a, b) => a[1] - b[1]);
+    for (const [sd] of sides) {
+      const len = wallLength(room, sd), poss = [];
+      for (let pos = 0; pos + d.w <= len; pos++) poss.push(pos);
+      poss.sort((a, b) => Math.abs(a + d.w / 2 - len / 2) - Math.abs(b + d.w / 2 - len / 2));
+      const pos = poss.find(q => canPlaceWall(room, d, sd, q - 1, null) && canPlaceWall(room, d, sd, q + 1, null) && canPlaceWall(room, d, sd, q, null));
+      const pos2 = pos != null ? pos : poss.find(q => canPlaceWall(room, d, sd, q, null));
+      if (pos2 != null && decorTake(d, { side: sd, pos: pos2 }, room)) { placed++; wallN++; return; }
+    }
+  });
+  // 7) 小東西（植物、燈、玩偶）補在空的牆邊
+  sorted(pool.filter(d => d.layer !== 'floor' && d.layer !== 'wall' && !have(d.id) && !room.items.some(it => it.id === d.id) && furnKind(d.id) !== 'desk' && !DECOR_TABLES.includes(d.id) && !decorIsChair(d)))
+    .forEach(d => { if (G.inv[d.id] > 0) tryList(d, decorWallCands(room, d, sideTurn++ % 2 ? 'L' : 'R')); });
+  return { placed };
+}
+function decorSnapshot() {
+  const r = curRoom();
+  return { cur: G.cur, items: JSON.stringify(r.items), wallItems: JSON.stringify(r.wallItems), wall: r.wall, floor: r.floor, inv: JSON.stringify(G.inv), noSell: JSON.stringify(G.noSell || {}) };
+}
+function decorRestore(sn) {
+  if (!sn || G.cur !== sn.cur || G.away) return false;
+  const r = curRoom();
+  r.items = JSON.parse(sn.items); r.wallItems = JSON.parse(sn.wallItems); r.wall = sn.wall; r.floor = sn.floor;
+  G.inv = JSON.parse(sn.inv); G.noSell = JSON.parse(sn.noSell);
+  return true;
+}
+function decorUnstick() {   // 小可愛站的那格被擺了家具：移到最近的空格
+  try {
+    const room = curRoom(), blk = blockedGrid(room);
+    let tx = Math.floor(fufu.x), ty = Math.floor(fufu.y);
+    if (blk[tx] && !blk[tx][ty]) return;
+    let best = null, bd = 1e9;
+    for (let x = 0; x < room.w; x++) for (let y = 0; y < room.d; y++) if (!blk[x][y]) { const d = Math.hypot(x - fufu.x, y - fufu.y); if (d < bd) { bd = d; best = [x, y]; } }
+    if (best) { fufu.x = best[0] + .5; fufu.y = best[1] + .5; fufu.path = []; fufu.task = null; }
+  } catch (e) {}
+}
+function decorThemeCount(theme) { return decorPool(theme).length; }
+function decorRun(theme, redo) {
+  if (G.away) return null;
+  cancelHold();
+  const room = curRoom(), sn = decorSnapshot(), before = roomScore(room).score;
+  if (redo) {   // 全部收起來再擺（收起來的家具都先回到收納）
+    room.items.slice().forEach(it => storeRoomItem(it));
+    room.wallItems.slice().forEach(it => storeRoomItem(it));
+    room.items = []; room.wallItems = [];
+  }
+  const r = decorFill(room, theme);
+  // 壁紙、地板：有買過同風格的就換上（補上模式只在還是預設的時候換，不要動她自己選的）
+  const wp = WALLPAPERS.find(w => G.walls.includes(w.id) && w.theme === theme), fl = FLOORS.find(f => G.floors.includes(f.id) && f.theme === theme);
+  let looks = 0;
+  if (wp && room.wall !== wp.id && (redo || room.wall === 'wp_cream')) { room.wall = wp.id; looks++; }
+  if (fl && room.floor !== fl.id && (redo || room.floor === 'fl_wood')) { room.floor = fl.id; looks++; }
+  if (!r.placed && !looks) { decorRestore(sn); return { placed: 0, sn }; }
+  decorUnstick();
+  return { placed: r.placed, looks, before, after: roomScore(room).score, sn };
+}
+function openDecor() {
+  if (awayNoEdit()) return;
+  cancelHold();
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  const room = curRoom(), hasStuff = room.items.length + room.wallItems.length > 0;
+  card.appendChild(el('h2', '', `✨ 一鍵佈置「${room.name}」`));
+  card.appendChild(note('選一個風格，我來幫你擺！用的是「我的東西」裡已經有的家具。'));
+  const grid = el('div', 'trick-grid');
+  DECOR_THEMES.forEach(t => {
+    const n = decorThemeCount(t) + (room.items.concat(room.wallItems).filter(it => FURN_BY_ID[it.id].theme === t).length);
+    const cell = el('div', 'trick-cell decor-cell' + (n ? ' got' : ''));
+    cell.append(el('div', 'trick-e', THEME_ICONS[t] || '✨'), el('b', '', THEME_NAMES[t]), el('span', '', n ? `${n} 件` : '還沒有'));
+    cell.onclick = () => {
+      if (!n) { toast('這個風格的家具還沒有，去「商店」買一些吧！'); Sound.play('miss'); return; }
+      Sound.play('click');
+      if (!hasStuff) decorGo(t, false); else decorAsk(t);
+    };
+    grid.appendChild(cell);
+  });
+  card.appendChild(grid);
+  const no = el('button', 'big alt', '不用了');
+  no.onclick = () => { $('#modal').hidden = true; };
+  card.appendChild(no);
+  $('#modal').hidden = false;
+}
+function decorAsk(theme) {   // 房間裡已經有家具：補上，還是全部重擺
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', `${THEME_ICONS[theme] || '✨'} ${THEME_NAMES[theme]}風格`));
+  card.appendChild(note('這個房間已經有家具了，要怎麼擺？'));
+  const add = el('button', 'big', '➕ 幫我補上（原本擺的都不動）');
+  add.onclick = () => decorGo(theme, false);
+  const redo = el('button', 'big alt', '🔄 全部重擺（原本的先收起來）');
+  redo.onclick = () => decorGo(theme, true);
+  const back = el('button', 'big alt', '回上一頁');
+  back.onclick = openDecor;
+  card.append(add, redo, back);
+}
+function decorGo(theme, redo) {
+  const res = decorRun(theme, redo);
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  if (!res) { $('#modal').hidden = true; return; }
+  if (!res.placed && !res.looks) {
+    card.appendChild(el('h2', '', '🤔 擺不下了'));
+    card.appendChild(note(redo ? '這個風格沒有可以擺的家具喔。' : '房間已經很滿了，或是這個風格的家具都擺好了。想要更多就去「商店」買新的，或選「全部重擺」。'));
+    const ok = el('button', 'big', '好'); ok.onclick = () => { $('#modal').hidden = true; };
+    card.appendChild(ok); commit(); return;
+  }
+  Sound.play('fanfare');
+  try { fufuBurst('✨'); } catch (e) {}
+  fufuSay('哇～房間變好漂亮！', 3000);
+  kidMoodUp(10);
+  card.appendChild(el('h2', '', '✨ 佈置好了！'));
+  card.appendChild(note(`擺了 ${res.placed} 件${res.looks ? '，換了漂亮的壁紙地板' : ''}。漂亮度 ${res.before} → ${res.after}${res.after > res.before ? '　⬆️' : ''}`));
+  const ok = el('button', 'big', '👍 好漂亮！'); ok.onclick = () => { $('#modal').hidden = true; };
+  const undo = el('button', 'big alt', '↩️ 換回原本');
+  undo.onclick = () => { if (decorRestore(res.sn)) { toast('↩️ 換回原本的樣子了'); commit(); } $('#modal').hidden = true; };
+  card.append(ok, undo);
+  commit();
+}
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
       動物朋友全都打扮來跳舞放煙火，每天第一次結束時每位送一顆糖（4 顆萬聖節糖果）。
