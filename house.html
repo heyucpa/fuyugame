@@ -3045,6 +3045,13 @@ const CLOTHES = [
   { id: 'vampire_cape', slot: 'top', name: '小吸血鬼披風', price: 2000, style: 'cape', color: '#2b2433', trim: '#c4313a' }
 ];
 const CLOTHES_BY_ID = Object.fromEntries(CLOTHES.map(c => [c.id, c]));
+/* 🍬 萬聖節糖果收集的獎品衣服：商店買不到，不放進 CLOTHES（不然 price 0 會一開始就擁有、商店也會賣）。
+   只登記在 CLOTHES_BY_ID（存檔讀取、穿著才認得），換裝頁只列出「已經拿到」的。 */
+const PRIZE_CLOTHES = [
+  { id: 'ghost_hat', slot: 'head', name: '小幽靈巫師帽', price: 800, style: 'witchHat', color: '#f4f1ff', band: '#b9a8ff', prize: true },
+  { id: 'ghost_dress', slot: 'top', name: '小幽靈洋裝', price: 3000, style: 'dress', color: '#f4f1ff', trim: '#b9a8ff', dots: '#d9ccff', dress: true, prize: true }
+];
+PRIZE_CLOTHES.forEach(c => { CLOTHES_BY_ID[c.id] = c; });
 const DEFAULT_OUTFIT = { head: 'head_none', top: 'uniform', bottom: 'red_shorts', shoes: 'black_shoes' };
 
 /* ── 髮型與髮色 ──
@@ -4089,6 +4096,17 @@ FURN_BY_ID.trick_lantern = { id: 'trick_lantern', name: '南瓜燈籠塔', price
     { k: 'ball', x: .76, y: .64, z: 30, r: 1.8, c: '#ffe066', shade: true },
     { k: 'ball', x: .64, y: .66, z: 42, r: 1.3, c: '#ffe066', shade: true }
   ] };
+FURN_BY_ID.candy_jar = { id: 'candy_jar', name: '糖果大罐', price: 0, theme: 'cute', w: 1, d: 1, gift: true, trick: true,
+  parts: [
+    { x: .24, y: .24, w: .52, d: .52, z: 0, h: 20, c: '#d6ecff' },
+    { k: 'ball', x: .4, y: .42, z: 7, r: 4, c: '#ff6b6b' },
+    { k: 'ball', x: .6, y: .5, z: 6, r: 4, c: '#7bd389' },
+    { k: 'ball', x: .48, y: .62, z: 8, r: 4, c: '#b18cff' },
+    { k: 'ball', x: .62, y: .38, z: 11, r: 3.5, c: '#ffe066' },
+    { k: 'ball', x: .4, y: .6, z: 14, r: 3.5, c: '#ff9ec4' },
+    { x: .2, y: .2, w: .6, d: .6, z: 20, h: 4, c: '#f0902f' },
+    { k: 'ball', x: .5, y: .5, z: 27, r: 3, c: '#e8505b' }
+  ] };
 PLACE_FURNITURE.forEach(f => { FURN_BY_ID[f.id] = f; }); // 親戚家專用的家具（不在商店、圖鑑裡）
 /* 🏆 集滿獎盃：任何一種圖鑑集滿，就送一座只有集滿才拿得到的獎盃（可以擺地上、也可以擺桌上）。
    不放進 FURNITURE：不然家具圖鑑要集滿還得先拿到家具獎盃，永遠集不滿。
@@ -4287,6 +4305,7 @@ const NEWS = [
     ['👻', '每天有一隻小幽靈躲在家裡的某個房間，找到點一下拿 3 顆糖果'],
     ['🎉', '房間擺 3 件萬聖節家具，點小可愛選「萬聖節派對」，朋友們都來跳舞'],
     ['🍬', '派對結束每天第一次送 4 顆糖果，可以送給來玩的動物朋友'],
+    ['🍬', '萬聖節糖果收集：一共拿到 12／30／60 顆糖，有小幽靈巫師帽、糖果大罐、小幽靈洋裝可以領（點小可愛看進度，糖果還是可以吃、可以送人）'],
     ['🤡', '萬聖節新家具：小丑糖果管家（每天跟牠要糖果）、骷髏伯爵（手電筒找幽靈時蠟燭會亮、會幫你指方向）；換裝有小吸血鬼披風'],
     ['🔦', '點小可愛選「用手電筒找小幽靈」：房間暗下來，用手電筒照，照到才會現身！隨時可以按「🔆 開燈」'],
     ['📅', '萬聖節活動到 11/1']
@@ -4727,6 +4746,8 @@ function newGame() {
     uid: 1,
     lines: {},               // 玩家自訂台詞 {key: [句子...]}
     charName: DEFAULT_CHAR_NAME,
+    hwEarned: 0,        // 🍬 這個萬聖節一共拿到幾顆糖（買的、吃掉的不影響）
+    hwPrize: [],        // 已經領的糖果獎品 id
     pets: [newPet('mochi', 'kid', DEFAULT_PET_NAME)], // 收集到的寵物（含還沒孵的蛋）
     introSeen: false,                      // 🎬 開場動畫看過了沒（新存檔才播）
     growDex: { 'mochi:baby': true, 'mochi:kid': true, 'girl:kinder': true }, // 🌱 成長圖鑑：一開始那隻是小朋友（當過寶寶）、小可愛是第一階
@@ -4942,6 +4963,8 @@ function normalizeSave(g) {
   if (out.zhuyin != null && !isObj(out.zhuyin)) delete out.zhuyin;
   if (out.tricks != null && !isObj(out.tricks)) delete out.tricks;
   if (out.ghost != null && !(isObj(out.ghost) && typeof out.ghost.d === 'string' && Number.isInteger(out.ghost.ri) && num(out.ghost.x) && num(out.ghost.y))) delete out.ghost;
+  out.hwPrize = (Array.isArray(out.hwPrize) ? out.hwPrize : []).filter(x => typeof x === 'string');
+  if (!num(out.hwEarned) || out.hwEarned < 0) out.hwEarned = 0;
   if (out.partyDay != null && typeof out.partyDay !== 'string') delete out.partyDay;
   if (out.clownDay != null && typeof out.clownDay !== 'string') delete out.clownDay;
   if (out.dailyPaid != null && typeof out.dailyPaid !== 'string') delete out.dailyPaid;
@@ -5681,6 +5704,7 @@ function furnSellBlock(id) {
 function foodSellBlock(id) { return G.food[id] ? null : '沒有了'; }
 function clothesSellBlock(id) {
   const c = CLOTHES_BY_ID[id];
+  if (c.prize) return '糖果獎品';
   if (!c.price) return '一開始就有的';
   if (!ownsClothes(id)) return '還沒買';
   if (G.outfit[c.slot] === id) return '正在穿';
@@ -10771,7 +10795,7 @@ function trickOrTreat(id) {
   if (trickGot(id)) { openTrickCard(); return false; }
   const st = trickState();
   st.got[id] = Date.now();
-  G.kidFood.hw_candy = (G.kidFood.hw_candy || 0) + 2;
+  hwEarn(2);
   fufuSay('不給糖就搗蛋！🎃', 2400);
   const se = seasonNow(), dressed = se && se.clothes && se.clothes.includes(G.outfit.head);
   setTimeout(() => { if (host.n && host.n.id === id) { hostSay((dressed ? '哇，你打扮得好可愛！' : '') + c.say); host.a.happyUntil = performance.now() + 2500; host.a.squishV = -8; } }, 1100);
@@ -12921,7 +12945,8 @@ function openTopPicker(it) {
 // 點小可愛：叫她做事
 function showKidMenu(e) {
   const party = halloweenActive() && !G.away ? [[`🎉 萬聖節派對${halloweenDecoCount() >= HALLOWEEN_PARTY_NEED ? '' : `（要擺 ${HALLOWEEN_PARTY_NEED} 件萬聖節家具）`}`, startHalloweenParty]] : [];
-  const gh = halloweenActive() && !G.away && ensureGhost() && !G.ghost.found ? [['👻 用手電筒找小幽靈', startGhostHunt]] : [];
+  const gh = (halloweenActive() && !G.away && ensureGhost() && !G.ghost.found ? [['👻 用手電筒找小幽靈', startGhostHunt]] : [])
+    .concat(halloweenActive() || G.hwEarned ? [[`🍬 糖果收集（${G.hwEarned || 0} 顆）`, openHwPrizes]] : []);
   openMenu(gh.concat(party).concat([
     ['👋 打招呼', fufuPoke],
     ['💃 跳舞', fufuDance],
@@ -14219,7 +14244,7 @@ function tabDress(body) {
   OUTFIT_SLOTS.forEach(slot => {
     body.appendChild(h3(slot.name));
     const grid = el('div', 'grid');
-    CLOTHES.filter(c => c.slot === slot.key).forEach(item => {
+    CLOTHES.concat(PRIZE_CLOTHES.filter(c => ownsClothes(c.id))).filter(c => c.slot === slot.key).forEach(item => {
       const has = ownsClothes(item.id), wearing = G.outfit[slot.key] === item.id;
       if (sellMode) {
         if (!has) return; // 賣東西時只列出自己有的
@@ -17786,6 +17811,47 @@ setInterval(() => { try { if (G.daily && G.daily.d !== today()) updateDailyChip(
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
       動物朋友全都打扮來跳舞放煙火，每天第一次結束時每位送一顆糖（4 顆萬聖節糖果）。
    👻 小幽靈：每天一隻躲在家裡某個房間的某個角落（半透明、會飄），找到點一下拿 3 顆糖果，一天一次。 */
+/* 🍬 糖果收集：不管吃掉還是送人，「一共拿到」的糖果數（G.hwEarned）一直累積，到了就領獎品。
+   （糖果本身還是拿來吃、拿來送朋友，不用花掉，所以不會跟吃糖搶。） */
+const HW_PRIZES = [
+  { need: 12, id: 'ghost_hat', kind: 'clothes', icon: '👻🎩' },
+  { need: 30, id: 'candy_jar', kind: 'furn', icon: '🍬🍭' },
+  { need: 60, id: 'ghost_dress', kind: 'clothes', icon: '👻👗' }
+];
+const hwPrizeName = pz => (pz.kind === 'furn' ? FURN_BY_ID[pz.id] : CLOTHES_BY_ID[pz.id]).name;
+function hwEarn(n) {
+  G.kidFood.hw_candy = (G.kidFood.hw_candy || 0) + n;
+  G.hwEarned = (G.hwEarned || 0) + n;
+  let k = 0;
+  HW_PRIZES.forEach(pz => {
+    if (G.hwEarned < pz.need || G.hwPrize.includes(pz.id)) return;
+    G.hwPrize.push(pz.id);
+    if (pz.kind === 'furn') addItem(pz.id); else if (!G.wardrobe.includes(pz.id)) G.wardrobe.push(pz.id);
+    const where = pz.kind === 'furn' ? '放進「我的東西」了，擺在家裡吧！' : '放進「換裝」了，去穿穿看！';
+    setTimeout(() => {
+      try { showcase(pz.kind === 'furn' ? renderThumb(FURN_BY_ID[pz.id], 150) : renderGirl(Object.assign({}, G.outfit, { [CLOTHES_BY_ID[pz.id].slot]: pz.id }), 110, 130), '🍬 糖果收集獎品：' + hwPrizeName(pz), `一共拿到 ${pz.need} 顆糖了！${where}`, { head: '🎉 萬聖節快樂！' }); } catch (e) { toast('🍬 拿到糖果收集獎品：' + hwPrizeName(pz)); }
+    }, 1800 + 1500 * k++);
+  });
+}
+function openHwPrizes() {
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  const n = G.hwEarned || 0;
+  card.appendChild(el('h2', '', `🍬 糖果收集 ${n} 顆`));
+  card.appendChild(note('找幽靈、辦派對、跟小丑要糖、集糖卡都會拿到糖果。拿到的糖果可以吃、可以送朋友，不會用掉，累積到了就有獎品！'));
+  const grid = el('div', 'trick-grid');
+  HW_PRIZES.forEach(pz => {
+    const got = G.hwPrize.includes(pz.id);
+    const cell = el('div', 'trick-cell' + (got ? ' got' : ''));
+    cell.append(el('div', 'trick-e', got ? pz.icon : '❔'), el('b', '', hwPrizeName(pz)), el('span', '', got ? '已經拿到' : `${Math.min(n, pz.need)} / ${pz.need} 顆`));
+    grid.appendChild(cell);
+  });
+  card.appendChild(grid);
+  const ok = el('button', 'big', '好');
+  ok.onclick = () => { $('#modal').hidden = true; };
+  card.appendChild(ok);
+  $('#modal').hidden = false;
+}
 const HALLOWEEN_PARTY_NEED = 3, GHOST_CANDY = 3, PARTY_CANDY = 4;
 const halloweenActive = () => { const se = seasonNow(); return !!(se && se.id === 'halloween'); };
 function halloweenDecoCount() {
@@ -17801,7 +17867,7 @@ function startHalloweenParty() {
   const day = today(), first = G.partyDay !== day;
   if (first) {
     G.partyDay = day;
-    G.kidFood.hw_candy = (G.kidFood.hw_candy || 0) + PARTY_CANDY;
+    hwEarn(PARTY_CANDY);
     kidMoodUp(15); patPet(15);
     setTimeout(() => { toast(`🍬 朋友們送了 ${PARTY_CANDY} 顆萬聖節糖果！`); Sound.play('coin'); }, 4300);
     saveGame();
@@ -17850,7 +17916,7 @@ function ghostHit(w) {
 function findGhost() {
   const g = ghostHere(); if (!g) return false;
   g.found = true;
-  G.kidFood.hw_candy = (G.kidFood.hw_candy || 0) + GHOST_CANDY;
+  hwEarn(GHOST_CANDY);
   kidMoodUp(10);
   Sound.play('fanfare');
   try { for (let i = 0; i < 4; i++) fufuBurst('👻'); } catch (e) {}
@@ -17871,7 +17937,7 @@ function clownCandy(it) {   // 🤡 每天跟小丑管家要一次糖果
   const day = today();
   if (G.clownDay === day) { fufuSay('小丑：「今天的糖果都給你了～明天再來！」', 3200); clownHop(it, 1); return false; }
   G.clownDay = day;
-  G.kidFood.hw_candy = (G.kidFood.hw_candy || 0) + CLOWN_CANDY;
+  hwEarn(CLOWN_CANDY);
   kidMoodUp(8); clownHop(it, 2); Sound.play('coin');
   try { fufuBurst('🍬'); } catch (e) {}
   fufuSay('小丑：「請你吃糖～萬聖節快樂！」', 3200);
