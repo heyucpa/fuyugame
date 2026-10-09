@@ -4968,6 +4968,8 @@ function normalizeSave(g) {
   if (out.ghost != null && !(isObj(out.ghost) && typeof out.ghost.d === 'string' && Number.isInteger(out.ghost.ri) && num(out.ghost.x) && num(out.ghost.y))) delete out.ghost;
   out.hwPrize = (Array.isArray(out.hwPrize) ? out.hwPrize : []).filter(x => typeof x === 'string');
   if (!num(out.hwEarned) || out.hwEarned < 0) out.hwEarned = 0;
+  if (out.ghost && (!Number.isInteger(out.ghost.n) || out.ghost.n < 1 || out.ghost.n > 9)) out.ghost.n = 1;
+  if (out.ghost && out.ghost.foundAt != null && !num(out.ghost.foundAt)) delete out.ghost.foundAt;
   if (out.partyDay != null && typeof out.partyDay !== 'string') delete out.partyDay;
   if (out.clownDay != null && typeof out.clownDay !== 'string') delete out.clownDay;
   if (out.dailyPaid != null && typeof out.dailyPaid !== 'string') delete out.dailyPaid;
@@ -18140,15 +18142,28 @@ function startHalloweenParty() {
   } else setTimeout(() => toast('🎉 派對好好玩！（糖果今天已經領過了，明天再辦還有）'), 4300);
   return true;
 }
+const GHOST_PER_DAY = 2;   // 一天可以找幾隻（找到一隻，過一下子又有一隻躲到別的房間）
+function ghostSpot(avoidRi) {   // 隨機挑一個房間（盡量跟 avoidRi 不同）和一個空格
+  let ri = Math.floor(Math.random() * G.rooms.length);
+  if (ri === avoidRi && G.rooms.length > 1) ri = (ri + 1 + Math.floor(Math.random() * (G.rooms.length - 1))) % G.rooms.length;
+  const room = G.rooms[ri], blk = blockedGrid(room), spots = [];
+  for (let x = 0; x < room.w; x++) for (let y = 0; y < room.d; y++) if (!blk[x][y]) spots.push([x, y]);
+  const sp = spots.length ? spots[Math.floor(Math.random() * spots.length)] : [0, 0];
+  return { ri, x: sp[0], y: sp[1] };
+}
+function ghostAgain(prev) {   // 找到之後：今天還有名額就換一隻躲起來
+  if (!G.ghost || G.ghost !== prev || !prev.found || (prev.n || 1) >= GHOST_PER_DAY || prev.d !== today() || !halloweenActive() || G.away) return false;
+  G.ghost = Object.assign({ d: prev.d, found: false, n: (prev.n || 1) + 1 }, ghostSpot(prev.ri));
+  saveGame();
+  toast('👻 咦？好像還有一隻小幽靈躲起來了，再找找看！');
+  return true;
+}
 function ensureGhost() {
   if (!halloweenActive() || !G.openGift || SAVE_LOCKED != null || G.away) return null;
   const d = today();
+  if (G.ghost && G.ghost.d === d && G.ghost.found && Date.now() - (G.ghost.foundAt || 0) > 4000) ghostAgain(G.ghost);   // 找到之後等不及（關掉再開）也會有下一隻
   if (!G.ghost || G.ghost.d !== d || !G.rooms[G.ghost.ri]) {
-    const ri = Math.floor(Math.random() * G.rooms.length), room = G.rooms[ri];
-    const blk = blockedGrid(room), spots = [];
-    for (let x = 0; x < room.w; x++) for (let y = 0; y < room.d; y++) if (!blk[x][y]) spots.push([x, y]);
-    const sp = spots.length ? spots[Math.floor(Math.random() * spots.length)] : [0, 0];
-    G.ghost = { d, ri, x: sp[0], y: sp[1], found: false };
+    G.ghost = Object.assign({ d, found: false, n: 1 }, ghostSpot(-1));
     saveGame();
     setTimeout(() => toast('👻 今天有一隻小幽靈躲在家裡的某個房間，找找看！'), 1200);
   }
@@ -18181,13 +18196,14 @@ function ghostHit(w) {
 }
 function findGhost() {
   const g = ghostHere(); if (!g) return false;
-  g.found = true;
+  g.found = true; g.foundAt = Date.now();
   hwEarn(GHOST_CANDY);
   kidMoodUp(10);
   Sound.play('fanfare');
   try { for (let i = 0; i < 4; i++) fufuBurst('👻'); } catch (e) {}
   fufuSay('找到你了！小幽靈！', 2800);
-  showcase(el('div', 'trick-big', '👻'), '找到小幽靈了！', `🎃 拿到 ${GHOST_CANDY} 顆萬聖節糖果！明天小幽靈會躲到別的地方`, { head: '👻 哇～' });
+  setTimeout(() => { try { ghostAgain(g); } catch (e) {} }, 4500);
+  showcase(el('div', 'trick-big', '👻'), '找到小幽靈了！', `🎃 拿到 ${GHOST_CANDY} 顆萬聖節糖果！${(g.n || 1) < GHOST_PER_DAY ? '好像還有一隻小幽靈躲起來了～' : '今天找完了，明天小幽靈會躲到別的地方'}`, { head: '👻 哇～' });
   saveGame(); refreshTop();
   return true;
 }
