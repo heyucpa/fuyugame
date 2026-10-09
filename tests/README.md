@@ -1,0 +1,12 @@
+# 測試
+
+在有 Playwright（`NODE_PATH=$(npm root -g)`）和 Chromium 的環境用 node 跑。
+
+| 檔案 | 檢查什麼 |
+|---|---|
+| `run_driver.sh` | 跑根目錄的 `house_driver.js`（上百項功能檢查）。有 8 項是「預期值過時」（跑步名次、圖鑑項目數、公告圖示、漫畫格子、備份欄位、休息密碼等），不是遊戲壞掉，之後有空再對齊 |
+| `compat.js` | 從歷史上 12 個舊版本各存一份進度，用現在的版本讀，鈴錢、家具、寵物、名字都不能變（先用 `git show <commit>:house.html > tests/old/v_<commit>.html` 備好舊版） |
+| `inv_safe.js` | 收到邀請碼、去朋友家玩、回家：存檔前後比對，只能多一個 `myHouse_invites` |
+| `inv_fuzz.js` | 400 張亂改過的邀請卡＋壞掉的連結：不能當掉、不能污染、不能改到自己的進度 |
+| `roundtrip.js` | 有新功能的存檔連續重新載入 3 次，進度不變 |
+| `layout.js` | iPad 橫直、手機橫直、超寬螢幕、一般筆電：不能橫向捲動、視窗不能超出畫面 |

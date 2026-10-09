@@ -5062,6 +5062,55 @@
     var allCost = NEW_ROOM_COST.reduce(function(a2, b2){ return a2 + b2; }, 0)
       + ROOM_NAMES.length * Object.values(EXPAND_COST).reduce(function(a2, b2){ return a2 + b2; }, 0)
       + sumP(FURNITURE.filter(function(d){ return !d.gift; })) + sumP(WALLPAPERS) + sumP(FLOORS) + sumP(CLOTHES) + sumP(HAIR_STYLES);
+    // ✨ 一鍵佈置
+    (function(){
+      var keep = JSON.stringify({ rooms: G.rooms, inv: G.inv, noSell: G.noSell, walls: G.walls, floors: G.floors, cur: G.cur, uid: G.uid }); var realSC = showcase; showcase = function(){};
+      try {
+        G.away = null; hold = null;
+        var count = function(id){ var n = G.inv[id] || 0; G.rooms.forEach(function(r){ r.items.forEach(function(it){ if (it.id === id) n++; if (it.top === id) n++; }); r.wallItems.forEach(function(it){ if (it.id === id) n++; }); }); return n; };
+        var ids = []; FURNITURE.forEach(function(f){ if (!f.season && !f.gift) ids.push(f.id); });
+        var check = function(label, room){
+          room.items.forEach(function(a, i){ var d = FURN_BY_ID[a.id], fp = footprint(d, a.rot); if (a.x < 0 || a.y < 0 || a.x + fp.w > room.w || a.y + fp.d > room.d) fails.push(label + '：家具跑出房間 ' + a.id);
+            room.items.forEach(function(b, j){ if (j <= i) return; var e = FURN_BY_ID[b.id]; if ((d.layer === 'floor') !== (e.layer === 'floor')) return; var gp = footprint(e, b.rot); if (a.x < b.x + gp.w && b.x < a.x + fp.w && a.y < b.y + gp.d && b.y < a.y + fp.d) fails.push(label + '：家具重疊 ' + a.id + '/' + b.id); }); });
+          ['R', 'L'].forEach(function(sd){ var l = room.wallItems.filter(function(w){ return w.side === sd; }); if (l.length > 2) fails.push(label + '：一面牆掛太多'); l.forEach(function(w, i){ var d = FURN_BY_ID[w.id]; if (w.pos < 0 || w.pos + d.w > wallLength(room, sd)) fails.push(label + '：掛飾超出牆'); l.forEach(function(v, j){ if (j > i && w.pos < v.pos + FURN_BY_ID[v.id].w && v.pos < w.pos + d.w) fails.push(label + '：掛飾重疊'); }); }); });
+          var c = decorComps(room); if (c.comps > 1) fails.push(label + '：路被擋住，分成 ' + c.comps + ' 塊');
+          var cells = 0; room.items.forEach(function(it){ var d = FURN_BY_ID[it.id]; if (d.layer !== 'floor') { var fp = footprint(d, it.rot); cells += fp.w * fp.d; } });
+          if (cells > room.w * room.d * .4 + 1) fails.push(label + '：家具佔太滿 ' + cells);
+        };
+        [[6, 6], [4, 4], [10, 8], [3, 3]].forEach(function(sz){
+          ['wood', 'cute', 'modern', 'nature', 'sweet', 'bath'].forEach(function(theme){
+            [false, true].forEach(function(redo){
+              G.cur = 0; var room = G.rooms[0]; room.w = sz[0]; room.d = sz[1]; room.items = []; room.wallItems = []; room.wall = 'wp_cream'; room.floor = 'fl_wood';
+              G.inv = {}; G.noSell = {}; ids.forEach(function(id){ G.inv[id] = FURN_BY_ID[id].theme === theme ? 2 : 1; });
+              G.walls = WALLPAPERS.map(function(w){ return w.id; }); G.floors = FLOORS.map(function(f){ return f.id; });
+              if (redo) {
+                var o = ids.filter(function(id){ var d = FURN_BY_ID[id]; return d.theme !== theme && !d.layer && d.w * d.d === 1; }).slice(0, 3);
+                o.forEach(function(id, i){ G.inv[id]--; room.items.push({ uid: G.uid++, id: id, x: i * 2, y: 3, rot: 0 }); });
+              }
+              var inv0 = {}; ids.forEach(function(id){ inv0[id] = count(id); });
+              var label = theme + (redo ? '重擺' : '補上') + sz.join('x');
+              var res = decorRun(theme, redo);
+              if (!res) { fails.push(label + '：一鍵佈置沒有結果'); return; }
+              check(label, room);
+              ids.forEach(function(id){ if (count(id) !== inv0[id]) fails.push(label + '：家具數量變了 ' + id + ' ' + inv0[id] + '→' + count(id)); });
+              if (sz[0] >= 6 && res.placed < 2) fails.push(label + '：幾乎沒擺東西（' + res.placed + '）');
+              if (redo) { var sn = res.sn; if (!decorRestore(sn)) fails.push(label + '：換回原本失敗'); else if (JSON.stringify(room.items) !== sn.items) fails.push(label + '：換回原本不一樣'); }
+              draw();
+            });
+          });
+        });
+        G.cur = 0; var rm = G.rooms[0]; rm.w = 6; rm.d = 6; rm.items = [{ uid: 9001, id: 'wood_bed', x: 0, y: 0, rot: 0 }]; rm.wallItems = [];
+        G.inv = { wood_chair: 1, wood_table: 1 }; var r2 = decorRun('wood', false);
+        if (!rm.items.some(function(it){ return it.uid === 9001 && it.x === 0 && it.y === 0 && it.rot === 0; })) fails.push('補上動到原本的家具');
+        if (!r2.placed) fails.push('補上沒有加東西');
+        rm.items = []; G.inv = {}; var r3 = decorRun('cute', false); if (r3.placed || rm.items.length) fails.push('沒有家具也擺了東西');
+        G.away = { place: 'school', idx: 0 }; if (decorRun('wood', false) !== null) fails.push('在外面也能一鍵佈置'); G.away = null;
+        openDecor(); $('#modal').hidden = true;
+        G.rooms.push({ name: '陽台花園', kind: 'balcony', w: 6, d: 6, wall: 'wp_balcony', floor: 'fl_deck', items: [{ uid: 9100, id: 'planter', x: 0, y: 0, rot: 0 }], wallItems: [] }); G.cur = G.rooms.length - 1;
+        if (decorRun('nature', true) !== null) fails.push('陽台也能一鍵佈置'); if (G.rooms[G.cur].wall !== 'wp_balcony' || G.rooms[G.cur].items.length !== 1) fails.push('一鍵佈置動到陽台'); G.rooms.pop(); G.cur = 0;
+      } catch (e) { fails.push('一鍵佈置測試出錯：' + e.message + ' ' + (e.stack || '').split('\n')[1]); }
+      finally { var k = JSON.parse(keep); G.rooms = k.rooms; G.inv = k.inv; G.noSell = k.noSell; G.walls = k.walls; G.floors = k.floors; G.cur = k.cur; G.uid = k.uid; showcase = realSC; }
+    })();
     // 116.10 家長要多加家具（第四批），全部買齊從約 18 萬變約 20 萬；上限放到 22 萬
     if (allCost < 150000 || allCost > 220000) fails.push('全部買齊要 ' + allCost + '，不在 15～22 萬');
     [FURNITURE, WALLPAPERS, FLOORS, CLOTHES, HAIR_STYLES].forEach(function(l){ l.forEach(function(x){
