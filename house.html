@@ -6762,7 +6762,7 @@ function fufuWalkTo(ti, tj) {
 }
 
 // ── 使用家具：坐、躺（FURNITURE_USE）、在旁邊做事（FURNITURE_ACT）、寵物床（PET_BEDS）──
-function canUse(it) { return !!(FURNITURE_USE[it.id] || FURNITURE_ACT[it.id] || PET_BEDS[it.id]); }
+function canUse(it) { return !!((!G.away && (it.id === 'clown_butler' || it.id === 'skeleton_count')) || FURNITURE_USE[it.id] || FURNITURE_ACT[it.id] || PET_BEDS[it.id]); }
 
 // act 省略時是坐、躺；有 act 時走到旁邊做那件事
 function fufuGoUse(it, quiet, act) {
@@ -17811,7 +17811,7 @@ function startHalloweenParty() {
 function ensureGhost() {
   if (!halloweenActive() || !G.openGift || SAVE_LOCKED != null || G.away) return null;
   const d = today();
-  if (!G.ghost || G.ghost.d !== d) {
+  if (!G.ghost || G.ghost.d !== d || !G.rooms[G.ghost.ri]) {
     const ri = Math.floor(Math.random() * G.rooms.length), room = G.rooms[ri];
     const blk = blockedGrid(room), spots = [];
     for (let x = 0; x < room.w; x++) for (let y = 0; y < room.d; y++) if (!blk[x][y]) spots.push([x, y]);
@@ -17914,6 +17914,7 @@ function ghostLit(g) {   // 0（沒照到）～ 1（正中間）
 function startGhostHunt() {
   const g = ensureGhost();
   if (!g || g.found || !halloweenActive() || G.away) return false;
+  if (hunt) endGhostHunt();   // 已經在找了（例如暫停後又點選單）：先收掉舊的，不然會留下兩顆「開燈」
   hunt = { x: canvas.clientWidth / 2, y: canvas.clientHeight / 2, t0: performance.now(), lit: false, hinted: 0 };
   const b = el('button', 'hunt-off', '🔆 開燈'); b.id = 'huntOff';
   b.onclick = endGhostHunt;
@@ -17938,6 +17939,7 @@ function huntTap(w) {
 }
 function huntDrawDark(ctx) {
   if (!huntActive()) { if (hunt && (G.away || resting)) endGhostHunt(); return; }
+  if (!halloweenActive()) { endGhostHunt(); return; }   // 萬聖節過了（半夜跨日）：自動開燈
   const dpr = window.devicePixelRatio || 1, W = canvas.clientWidth, H = canvas.clientHeight, now = performance.now();
   const g = ghostHere(), lit = g ? ghostLit(g) : 0;
   // 表情：照到幽靈 → 驚訝；找的時候 → 緊張
@@ -17982,8 +17984,10 @@ function huntDrawDark(ctx) {
     if (el2 > 30 && lit <= .1) { ctx.globalAlpha = .22 + Math.sin(now / 250) * .08; ctx.font = '20px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('👋', sp.x, sp.y - 20); ctx.globalAlpha = 1; }
     const d = Math.hypot(sp.x - hunt.x, sp.y - hunt.y);
     if (d < R * 1.6 && lit <= .1) { const a = Math.atan2(sp.y - hunt.y, sp.x - hunt.x); ctx.font = '14px sans-serif'; ctx.textAlign = 'center'; for (let i = 0; i < 3; i++) ctx.fillText('✨', hunt.x + Math.cos(a + (i - 1) * .22) * R * 1.03, hunt.y + Math.sin(a + (i - 1) * .22) * R * 1.03 + Math.sin(now / 200 + i) * 2); }
-    if (el2 > 60 && !hunt.hinted) { hunt.hinted = 1; toast(`👻 小幽靈在「${G.rooms[G.ghost.ri].name}」`); }
   }
+  // 60 秒還沒找到、而且幽靈在別的房間：告訴她是哪個房間（要放在 if (g) 外面，幽靈不在這個房間時 g 是空的）
+  const gAny = G.ghost && !G.ghost.found ? G.ghost : null;
+  if (gAny && gAny.ri !== G.cur && G.rooms[gAny.ri] && (now - hunt.t0) / 1000 > 60 && !hunt.hinted) { hunt.hinted = 1; toast(`👻 小幽靈躲在「${G.rooms[gAny.ri].name}」`); }
   ctx.restore();
 }
 setTimeout(() => { try { ensureGhost(); } catch (e) {} }, 2800);
