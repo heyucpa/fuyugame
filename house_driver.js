@@ -4205,9 +4205,10 @@
     try {
       localStorage.removeItem(backupKey()); lsSet(firstSeenKey(), String(Date.now() - 8 * 864e5));
       refreshBackupDot();
-      if (!bkTab.classList.contains('dot')) fails.push('8 天沒備份，分頁上沒有紅點');
+      if (bkTab.classList.contains('dot')) fails.push('家長說備份存本機就好：不該再掛紅點');
       openTab('backup');
-      if (!/還沒有備份過/.test($('#tabBody .backup-state').textContent) || !$('#tabBody .backup-state').classList.contains('due')) fails.push('沒備份過，備份頁沒有提醒');
+      if (!/還沒有傳到別的地方/.test($('#tabBody .backup-state').textContent) || $('#tabBody .backup-state').classList.contains('due')) fails.push('沒傳過別的地方，備份頁的狀態不對（不該是紅色提醒）');
+      var firstBtn = $('#tabBody button'); if (!/手動存一份/.test([].map.call(document.querySelectorAll('#tabBody button.big'), function(b){ return b.textContent; })[0] || '')) fails.push('備份頁第一顆應該是本機的「手動存一份」，不是傳到 LINE');
       lsSet(firstSeenKey(), String(Date.now() - 2 * 864e5)); refreshBackupDot();
       if (bkTab.classList.contains('dot')) fails.push('才 2 天就掛紅點');
       lsSet(firstSeenKey(), String(Date.now() - 8 * 864e5)); refreshBackupDot();
@@ -4218,7 +4219,7 @@
       openTab('backup');
       if (!/今天備份過了/.test($('#tabBody .backup-state').textContent)) fails.push('備份完沒有寫「今天備份過了」');
       lsSet(backupKey(), String(Date.now() - 10 * 864e5)); refreshBackupDot(); openTab('backup');
-      if (!bkTab.classList.contains('dot') || !/10 天前/.test($('#tabBody .backup-state').textContent)) fails.push('上次備份 10 天前：沒有紅點或沒寫幾天前');
+      if (bkTab.classList.contains('dot') || !/10 天前/.test($('#tabBody .backup-state').textContent)) fails.push('上次傳到別的地方 10 天前：不該有紅點、要寫幾天前');
       // 存不進去的紅色提醒：點了要到備份頁
       showSaveWarn('fail'); openTab('inv');
       document.getElementById('saveWarn').onclick();

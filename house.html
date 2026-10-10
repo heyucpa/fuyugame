@@ -14649,7 +14649,10 @@ function daysSinceBackup() {
   }
   return Math.floor((Date.now() - since) / 864e5);
 }
-function backupDue() { return daysSinceBackup() >= BACKUP_REMIND_DAYS; }
+/* 家長：備份預設存在本機就好、不用傳到 LINE。
+   本機的「存檔紀錄」每次打開遊戲、每 10 分鐘就自動存一份，所以不再跳「該備份囉」的視窗、也不掛紅點。
+   傳到 LINE／複製／存成檔案還是在「備份」分頁，想用的時候再用。 */
+function backupDue() { return false; }
 /* 📤 一鍵傳到 LINE（家長：照建議做）：iPad／手機跳出分享選單，選 LINE 傳給自己就好。
    用「檔案」分享：備份太長，當成文字貼到 LINE 會超過一則訊息的長度。
    這台不能分享檔案（例如部分電腦瀏覽器）：改成存檔案到「下載」資料夾。 */
@@ -14710,19 +14713,17 @@ function tabBackup(body) {
       body.appendChild(fb);
     }
   }
-  // 最常用、最重要的：傳到 LINE（放最上面）
-  const share = el('button', 'big', '📤 傳到 LINE（備份到手機，最安心）');
+  snapSection(body);   // 本機的存檔紀錄放最上面（預設就是這個，自動存、可以手動再存一份）
+  body.appendChild(h3('📦 備份到別的地方（想要的話）'));
+  const share = el('button', 'big alt', '📤 傳到 LINE（備份到手機）');
   share.onclick = () => { Sound.play('click'); shareBackup().then(ok => { if (ok) renderTab(); }); };
   body.appendChild(share);
-  body.appendChild(note('按了會跳出分享選單，選 LINE 傳給自己就好。電腦上會存成檔案，可以拖到 LINE。'));
-  snapSection(body);
-  body.appendChild(h3('📦 備份到別的地方'));
+  body.appendChild(note('不一定要做。按了會跳出分享選單，選 LINE 傳給自己就好。電腦上會存成檔案，可以拖到 LINE。'));
   const last = lastBackupAt(), days = daysSinceBackup();
   const st = el('div', 'backup-state' + (backupDue() ? ' due' : ''),
-    last ? (days === 0 ? '✅ 今天備份過了' : (backupDue() ? `⚠️ 很久沒備份了：上次是 ${days} 天前` : `上次備份：${days} 天前`))
-         : (backupDue() ? '⚠️ 這個存檔還沒有備份過，建議現在備份一次' : '這個存檔還沒有備份過'));
+    last ? (days === 0 ? '✅ 今天備份過了' : `上次傳到別的地方：${days} 天前`)
+         : '還沒有傳到別的地方（本機有自動存檔紀錄）');
   body.appendChild(st);
-  body.appendChild(note('建議每個禮拜備份一次。超過 7 天沒備份，「💾 備份」這顆按鈕會出現紅點提醒。'));
   body.appendChild(h3('📤 把「' + curSlotName() + '」複製起來'));
   body.appendChild(note('她玩的東西只存在這一台機器的這個瀏覽器裡。換裝置、' +
     '清掉網站資料，紀錄就會不見，而且沒有辦法救回來。' +
