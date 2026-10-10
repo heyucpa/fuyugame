@@ -609,7 +609,10 @@ button.pass { font: inherit; }
 .pad-pal { display: flex; justify-content: center; gap: 6px; margin: 6px 0; flex-wrap: wrap; }
 .pad-c { width: 34px; height: 34px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 0 2px var(--line); }
 .pad-c.on { box-shadow: 0 0 0 3px #3a3240; transform: scale(1.12); }
-.pad-tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px; }
+.pad-tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 14px; }
+.pad-clear { display: block; margin: 0 auto 12px; border: 2px dashed #d9b3b3; background: #fff7f7; color: #a86a6a; border-radius: 10px; padding: 6px 12px; font-size: 12px; }
+.pad-clear.arm { background: #ffe0e0; border-color: #e0605a; color: #b3261e; font-weight: 800; }
+.run-keys { font-size: 12px; color: #8a7a64; text-align: center; margin-top: 4px; }
 .pad-t { border: 2px solid var(--line); background: #fff; border-radius: 10px; padding: 8px 2px; font-size: 13px; }
 .pad-t.on { background: #ffe9b8; border-color: #e7a94a; }
 .card-draw { display: block; margin: 6px auto; border: 2px solid var(--line); border-radius: 10px; max-width: 100%; }
@@ -11585,9 +11588,23 @@ function openDrawPad(title, done) {
   const tools = el('div', 'pad-tools');
   const sz = PAD_SIZES.map((w, i) => { const b = el('button', 'pad-t' + (i === size ? ' on' : ''), i ? '✏️ 粗' : '✏️ 細'); b.onclick = () => { size = i; sz.forEach((x, j) => x.classList.toggle('on', j === i)); }; return b; });
   const undo = el('button', 'pad-t', '↩️ 上一筆'); undo.onclick = () => { strokes.pop(); repaint(); };
-  const clr = el('button', 'pad-t', '🗑️ 全部擦掉'); clr.onclick = () => { strokes.length = 0; repaint(); };
-  tools.append(...sz, undo, clr);
+  tools.append(...sz, undo);
   card.appendChild(tools);
+  /* 「全部擦掉」不要跟「上一筆」排在一起（畫了很久，手一滑按到就全沒了）：放在另一排、顏色淡淡的，
+     而且要按兩次——第一次變成「再按一次才擦掉」，3 秒內沒再按就變回來。 */
+  const clr = el('button', 'pad-clear', '🗑️ 全部擦掉');
+  let clrTimer = 0;
+  clr.onclick = () => {
+    if (!strokes.length) { toast('還沒有畫東西喔'); return; }
+    if (!clr.classList.contains('arm')) {
+      clr.classList.add('arm'); clr.textContent = '⚠️ 再按一次才會全部擦掉';
+      clrTimer = setTimeout(() => { clr.classList.remove('arm'); clr.textContent = '🗑️ 全部擦掉'; }, 3000);
+      return;
+    }
+    clearTimeout(clrTimer); clr.classList.remove('arm'); clr.textContent = '🗑️ 全部擦掉';
+    strokes.length = 0; repaint();
+  };
+  card.appendChild(clr);
   const ok = el('button', 'big', '✅ 畫好了');
   ok.onclick = () => done(strokes.length ? cleanDrawing({ s: strokes }) : null);
   const skip = el('button', 'big alt', '不畫了');
@@ -17067,6 +17084,7 @@ function playRun(w, L) {
   const hop = el('button', 'big alt run-go run-jump', '🦘 跳！');
   row.append(go, hop);
   w.stage.appendChild(row);
+  if (window.matchMedia && matchMedia('(hover: hover)').matches) w.stage.appendChild(el('div', 'run-keys', '用鍵盤：空白鍵（或 →）＝ 跑，↑（或 W）＝ 跳'));
   const li = Math.max(0, RUN_LEVELS.indexOf(L));
   const hurdles = (L.hurdles || []).slice();
   const mates = NEIGHBORS.filter(Boolean).slice(0, 3).map((n, i) => ({ n, x: 0, v: L.speed * (.9 + Math.random() * .15) * (1 - i * .03), done: 0,
@@ -17082,9 +17100,9 @@ function playRun(w, L) {
   const pops = [], confetti = [];
   const onKey = e => {
     if (ended) return;   // 跑完了：不攔空白鍵（要能按「再玩一次」）
-    if (e.repeat) { if (e.key === ' ' || e.key === 'ArrowRight' || e.key === 'ArrowUp') e.preventDefault(); return; } // 按住不放不算（不然按住就秒贏）
+    if (e.repeat) { if (e.key === ' ' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') e.preventDefault(); return; } // 按住不放不算（不然按住就秒贏）
     if (e.key === ' ' || e.key === 'ArrowRight') { e.preventDefault(); tap(); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); jump(); }
+    else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') { e.preventDefault(); jump(); }
   };
   document.addEventListener('keydown', onKey);
   gameCleanup = () => { cancelAnimationFrame(raf); document.removeEventListener('keydown', onKey); };
