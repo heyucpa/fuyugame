@@ -645,6 +645,8 @@ button.pass { font: inherit; }
 .pause-badge { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 5; background: rgba(58,50,64,.85); color: #fff;
   font-size: 13px; font-weight: 700; padding: 6px 14px; border-radius: 999px; pointer-events: none; white-space: nowrap; }
 @media (max-width: 700px) { .pause-badge { top: auto; bottom: 56px; font-size: 12px; } }
+.modal-card.in-game, .modal-card.in-game * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.nosel, .nosel * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .decor-cell { cursor: pointer; }
 .decor-btn { margin-bottom: 8px; background: linear-gradient(135deg, #ffb3d1, #b9a8ff); color: #fff; }
 .island { position: absolute; inset: 0; z-index: 9; background: #74c8ea; touch-action: none; overflow: hidden; }
@@ -11580,8 +11582,15 @@ function openDrawPad(title, done) {
   const repaint = () => drawCardStrokes(g, { s: strokes }, cv.width / PAD_W);
   const at = e => { const r = cv.getBoundingClientRect(); return [Math.max(0, Math.min(PAD_W, Math.round((e.clientX - r.left) / r.width * PAD_W))), Math.max(0, Math.min(PAD_H, Math.round((e.clientY - r.top) / r.height * PAD_H)))]; };
   const full = () => padPoints({ s: strokes }) >= PAD_MAX_PTS;
+  /* 畫的時候手滑到旁邊會把字「反白」（選取）：畫畫板裡的東西全部不能選取；
+     按住畫的時候，連畫面上其他的字也不給選（放開就恢復）。 */
+  const noSel = ev => ev.preventDefault();
+  const stopNoSel = () => { document.removeEventListener('selectstart', noSel); };
+  cv.addEventListener('selectstart', noSel);
   cv.onpointerdown = e => {
     e.preventDefault();
+    document.addEventListener('selectstart', noSel);
+    try { const sel = window.getSelection && window.getSelection(); if (sel) sel.removeAllRanges(); } catch (er) {}
     if (full()) { toast('畫好滿了！可以按「↩️ 上一筆」擦掉一些'); return; }
     if (strokes.length >= PAD_MAX_STROKES) { toast('畫好多筆了！可以按「↩️ 上一筆」擦掉一些'); return; }
     try { cv.setPointerCapture(e.pointerId); } catch (er) {}
@@ -11595,7 +11604,7 @@ function openDrawPad(title, done) {
     if (Math.abs(x - lx) + Math.abs(y - ly) < 2 || full()) return;   // 太近的點不記（連結才不會太長）
     cur.push(x - lx, y - ly); lx = x; ly = y; repaint();
   };
-  cv.onpointerup = cv.onpointercancel = () => { cur = null; };
+  cv.onpointerup = cv.onpointercancel = () => { cur = null; stopNoSel(); };
   const pal = el('div', 'pad-pal');
   PAD_COLORS.forEach((c, i) => {
     const b = el('button', 'pad-c' + (i === col ? ' on' : ''));
@@ -11629,6 +11638,7 @@ function openDrawPad(title, done) {
   const skip = el('button', 'big alt', '不畫了');
   skip.onclick = () => done(null);
   card.append(ok, skip);
+  [...card.children].forEach(c => c.classList.add('nosel'));   // 畫畫板整張卡片都不能反白
   $('#modal').hidden = false;
   repaint();
   openDrawPad.test = { cv, strokes };
