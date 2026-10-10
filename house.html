@@ -9823,7 +9823,9 @@ const GIFT_SPECS = [
     lines: ['這禮拜的零用錢來囉！', '要存起來，慢慢買喔～'], remind: ['點一下信封就會打開喔！', '打開看看～'],
     bye: ['不客氣！下禮拜再見～', '要好好用喔！'], thanks: '謝謝爸爸媽媽！', title: '💌 爸爸媽媽送的零用錢', open: () => openAllowanceBox() }
 ];
-const allowanceWanted = () => { const a = G.allow; return !!(a && a.on && a.amt > 0 && G.openGift && a.paid !== allowPeriod(a.day)); };
+const allowDate = str => { const m = /^(\d+)-(\d+)-(\d+)$/.exec(str || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3]).getTime() : 0; };
+// 只有「領的那天比最近的送錢日還舊」才領：電腦時間被調到未來又調回來，不會再多領一次
+const allowanceWanted = () => { const a = G.allow; return !!(a && a.on && a.amt > 0 && G.openGift && allowDate(a.paid) < allowDate(allowPeriod(a.day))); };
 function openAllowanceBox() {
   if (!allowanceWanted()) return;
   Sound.play('click');
@@ -9884,7 +9886,7 @@ function giftWanted() {
 function giftNextSpec() { return SAVE_LOCKED != null ? null : GIFT_SPECS.find(s => s.wanted() && s.due()) || null; }
 // 可以開始走進來了嗎：在自己家、沒有視窗、沒在休息、沒在搬家具、沒有人在送小安素
 function giftCanStart() {
-  return !G.away && $('#modal').hidden && !(typeof resting !== 'undefined' && resting) && !hold && !sup.who;
+  return !G.away && $('#modal').hidden && !(typeof resting !== 'undefined' && resting) && !hold && !sup.who && !document.querySelector('.stage.island-on');   // 小島開著的時候爸媽不要在底下偷偷進來
 }
 function giftArrive(now, spec) {
   spec = spec || GIFT_SPECS[0];
@@ -11662,10 +11664,10 @@ function openDrawPad(title, done) {
   cv.addEventListener('selectstart', noSel);
   cv.onpointerdown = e => {
     e.preventDefault();
-    document.addEventListener('selectstart', noSel);
-    try { const sel = window.getSelection && window.getSelection(); if (sel) sel.removeAllRanges(); } catch (er) {}
     if (full()) { toast('畫好滿了！可以按「↩️ 上一筆」擦掉一些'); return; }
     if (strokes.length >= PAD_MAX_STROKES) { toast('畫好多筆了！可以按「↩️ 上一筆」擦掉一些'); return; }
+    document.addEventListener('selectstart', noSel);   // 真的開始畫才擋（不然提早 return 沒人把它拿掉）
+    try { const sel = window.getSelection && window.getSelection(); if (sel) sel.removeAllRanges(); } catch (er) {}
     try { cv.setPointerCapture(e.pointerId); } catch (er) {}
     const [x, y] = at(e);
     cur = [col, size, x, y]; lx = x; ly = y; strokes.push(cur); repaint();
@@ -12880,7 +12882,7 @@ function showFoodMenu(who) {
   let any = false;
   const potions = [];
   lists.forEach(([stock, table, src, title]) => {
-    const ids = Object.keys(stock).filter(id => stock[id] > 0);
+    const ids = Object.keys(stock).filter(id => stock[id] > 0 && !(who === 'kid' && table[id].petOnly));   // 骨頭這種只給寵物吃的先濾掉，沒有可以吃的就不要出現標題
     if (!ids.length) return;
     if (title && any) { const t = document.createElement('div'); t.className = 'menu-sub'; t.textContent = title; menu.appendChild(t); }
     any = true;
@@ -18074,10 +18076,11 @@ function decorTry(room, def, x, y, rot, st, isChair) {
   if (fc && (fc[0] < 0 || fc[1] < 0 || fc[0] >= room.w || fc[1] >= room.d)) return false;
   room.items.push({ uid: -999, id: def.id, x, y, rot });
   let ok = true;
-  const c = decorComps(room);
-  if (c.comps > st.comps) ok = false;
-  if (ok && fc && blockedGrid(room)[fc[0]][fc[1]]) ok = false;
-  room.items.pop();
+  try {
+    const c = decorComps(room);
+    if (c.comps > st.comps) ok = false;
+    if (ok && fc && blockedGrid(room)[fc[0]][fc[1]]) ok = false;
+  } finally { room.items.pop(); }   // 就算中間出錯，暫時放的那件也一定要拿掉
   if (!ok) return false;
   if (fc) st.reserved.push(fc);
   return true;
@@ -18400,7 +18403,7 @@ function openIsland() {
   cv.addEventListener('pointerdown', islDown); cv.addEventListener('pointermove', islMove);
   cv.addEventListener('pointerup', islUp); cv.addEventListener('pointercancel', islUp);
   const MOVE_KEYS = ['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'];
-  isl.kd = e => { const k = (e.key || '').toLowerCase(); if (k === 'escape') { closeIsland(); return; } if (MOVE_KEYS.includes(k) && $('#modal').hidden) { isl.keys[k] = true; e.preventDefault(); } };
+  isl.kd = e => { const k = (e.key || '').toLowerCase(); if (k === 'escape') { if ($('#modal').hidden) closeIsland(); return; } if (MOVE_KEYS.includes(k) && $('#modal').hidden) { isl.keys[k] = true; e.preventDefault(); } };
   isl.ku = e => { delete isl.keys[(e.key || '').toLowerCase()]; };
   document.addEventListener('keydown', isl.kd); document.addEventListener('keyup', isl.ku);
   Sound.play('jump');
@@ -18438,7 +18441,7 @@ function islTap(e, hold) {
   const t = islTile(e), m = isl.m;
   isl.keys = {};
   if (hold && isl.pressTile && t.x === isl.pressTile.x && t.y === isl.pressTile.y) return;   // 手指還按在原來那一格：不要重新找路
-  if (hold) isl.pending = null;
+  if (hold) { isl.pending = null; isl.pressTile = null; }
   if (!hold) {
     const nb = isl.npcs.find(q => Math.hypot(q.x - t.fx, q.y - 0.5 - t.fy) < 1.0);
     if (nb) {
@@ -18451,7 +18454,7 @@ function islTap(e, hold) {
     if (b) { isl.pending = { type: 'enter', id: b.id }; isl.skipDoor = null; if (!islWalkTo((x, y) => x === b.door[0] && y === b.door[1])) isl.pending = null; Sound.play('click'); return; }
     if (t.x >= 0 && t.y >= 0 && t.x < m.W && t.y < m.H && m.tree[t.y][t.x]) {
       isl.pending = { type: 'tree', x: t.x, y: t.y };
-      if (Math.abs(Math.floor(isl.x) - t.x) + Math.abs(Math.floor(isl.y) - t.y) === 1 || !islWalkTo((x, y) => Math.abs(x - t.x) + Math.abs(y - t.y) === 1)) { isl.path = []; if (Math.hypot(isl.x - t.x - .5, isl.y - t.y - .5) < 2.2) islDoPending(); }
+      if (Math.abs(Math.floor(isl.x) - t.x) + Math.abs(Math.floor(isl.y) - t.y) === 1 || !islWalkTo((x, y) => Math.abs(x - t.x) + Math.abs(y - t.y) === 1)) { isl.path = []; if (Math.hypot(isl.x - t.x - .5, isl.y - t.y - .5) < 2.2) islDoPending(); else isl.pending = null; }
       return;
     }
     if (t.x >= 0 && t.y >= 0 && t.x < m.W && t.y < m.H && m.flower[t.y][t.x] && !isl.picked[t.x + ',' + t.y]) {
@@ -18756,6 +18759,7 @@ function playEnglish(w, L, week) {
     gameButtons(w, openEnglishGame);
   };
   const next = () => {
+    if (ended) return;   // 視窗已經關了（離開、回家）：不要再結算、不要再給錢
     if (n >= picks.length) { finish(); return; }
     const cur = picks[n++];
     w.status.textContent = `第 ${n} / ${picks.length} 題　答對 ${right} 題`;

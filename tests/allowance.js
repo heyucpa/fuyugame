@@ -19,8 +19,8 @@ const { chromium } = require('playwright');
     // 壞存檔
     [null, 'x', 5, {on:'y',day:9,amt:-1,paid:3}, {on:false,day:2,amt:99999,paid:'a'}].forEach((v,i)=>{ const g=JSON.parse(JSON.stringify(G)); g.allow=v; const n=normalizeSave(g).allow; if(!n||typeof n.on!=='boolean'||!(n.day>=0&&n.day<=6)||!(n.amt>=0&&n.amt<=10000)||typeof n.paid!=='string') (out.bad=out.bad||[]).push(i); });
     // 爸媽真的會來（走進房間、放信封）
-    G.allow={on:true,day:dow,amt:3000,paid:''}; G.away=null; giftReset(); for(let i=0;i<400 && giftVisit.state==='none';i++){ giftTick(performance.now()+i*20); await wait(0); }
-    out.spec = giftVisit.spec && giftVisit.spec.id; out.state = giftVisit.state;
+    G.allow={on:true,day:dow,amt:3000,paid:''}; G.away=null; giftReset(); for(let i=0;i<400 && giftVisit.state==='none';i++){ $('#modal').hidden=true; giftTick(performance.now()+i*20); await wait(0); }
+    out.spec = giftVisit.spec && giftVisit.spec.id; out.state = giftVisit.state; out.dbg = JSON.stringify({wanted:allowanceWanted(), canStart:giftCanStart(), modal:$('#modal').hidden, hold:!!hold, startAt:giftVisit.startAt, intro:introPlaying, resting:resting});
     giftReset(); G.allow.paid=allowPeriod(dow);
     // 設定畫面
     openTab('save'); out.btn=[...document.querySelectorAll('#tabBody button')].some(x=>/調整零用錢/.test(x.textContent)); openAllowanceSettings(); out.settingsOpen=!$('#modal').hidden; $('#modal').hidden=true;
