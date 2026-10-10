@@ -12787,18 +12787,27 @@ function showFoodMenu(who) {
     ? [[G.kidFood, KID_FOOD_BY_ID, 'kid', ''], [G.food, FOOD_BY_ID, 'pet', '寵物的食物也可以吃：']]
     : [[G.food, FOOD_BY_ID, 'pet', '']];
   let any = false;
+  const potions = [];
   lists.forEach(([stock, table, src, title]) => {
     const ids = Object.keys(stock).filter(id => stock[id] > 0);
     if (!ids.length) return;
     if (title && any) { const t = document.createElement('div'); t.className = 'menu-sub'; t.textContent = title; menu.appendChild(t); }
     any = true;
-    ids.filter(id => !(who === 'kid' && table[id].petOnly)).forEach(id => {   // 骨頭這種只給寵物吃
+    // 藥水（變小藥水）排在最下面：不要夾在食物中間被誤點（先吃的食物在上面、藥水放最後）
+    const ok = ids.filter(id => !(who === 'kid' && table[id].petOnly));   // 骨頭這種只給寵物吃
+    const mk = id => {
       const f = table[id], b = document.createElement('button');
       b.textContent = `${f.emoji} ${f.name} ×${stock[id]}${who === 'kid' && f.grow ? '　💪' : ''}`;
       b.onclick = () => { menu.hidden = true; if (who === 'kid') kidEat(id, src); else petFeed(id); commit(); };
-      menu.appendChild(b);
-    });
+      return b;
+    };
+    ok.filter(id => !table[id].potion).forEach(id => menu.appendChild(mk(id)));
+    ok.filter(id => table[id].potion).forEach(id => potions.push(mk(id)));
   });
+  if (potions.length) {
+    if (any) { const t = document.createElement('div'); t.className = 'menu-sub'; t.textContent = '🧪 藥水：'; menu.appendChild(t); }
+    potions.forEach(b => menu.appendChild(b));
+  }
   if (!any) {
     const b = document.createElement('button');
     b.textContent = '沒有食物了，去商店買 →';
