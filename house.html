@@ -11431,7 +11431,16 @@ const isOwnInvite = inv => !!(inv.id && G.inviteId && inv.id === G.inviteId);
 /* 📧 用 Email 寄（家長：姊姊的 iPad 沒有 LINE，但可以收 email）。
    mailto 會打開這台機器的信件程式（iPad 的「郵件」、電腦的預設信箱），信的內容已經填好，只要填收件人按寄出。 */
 function mailtoLink(subject, text, link) { return 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(text + '\n\n' + link + '\n'); }
+const isIosDevice = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+// 電腦（家長：妹妹用網頁版 Gmail，沒有設定預設的信件程式，mailto 會沒反應）：改開 Gmail 網頁的寫信畫面，內容填好；iPad／手機照舊用信件程式
+const mailLabel = () => isIosDevice() ? '📧 用 Email 寄' : '📧 用 Gmail 寄';
+function gmailLink(subject, text, link) { return 'https://mail.google.com/mail/?view=cm&fs=1&su=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(text + '\n\n' + link + '\n'); }
 function sendByMail(subject, text, link) {
+  if (!isIosDevice()) {
+    let w = null; try { w = window.open(gmailLink(subject, text, link), '_blank', 'noopener'); } catch (e) {}
+    toast(w ? '📧 Gmail 寫信畫面開好了，填收件人按寄出就好' : '📧 沒有打開 Gmail（可能被擋掉了），請按「📋 複製連結」，貼到信裡寄出');
+    return;
+  }
   try { const a = document.createElement('a'); a.href = mailtoLink(subject, text, link); a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => a.remove(), 500); } catch (e) {}
   toast('📧 如果沒有跳出信件，請按「📋 複製連結」，貼到信裡寄出');
 }
@@ -11511,7 +11520,7 @@ function openInviteMaker() {
   const box = document.createElement('textarea');
   box.className = 'invite-code'; box.readOnly = true; box.value = '做邀請卡中…';
   card.appendChild(box);
-  const send = el('button', 'big', '📤 傳送邀請卡'), mail = el('button', 'big alt', '📧 用 Email 寄'), copy = el('button', 'big alt', '📋 複製連結');
+  const send = el('button', 'big', '📤 傳送邀請卡'), mail = el('button', 'big alt', mailLabel()), copy = el('button', 'big alt', '📋 複製連結');
   send.disabled = mail.disabled = copy.disabled = true;
   card.append(send, mail, copy);
   const close = el('button', 'big alt', '好');
@@ -11598,7 +11607,7 @@ function openInviteWelcome(inv) {
 /* 📲 iPad：點信裡的連結會開到 Safari，可是姊姊的進度在「主畫面的小屋」，兩邊的存檔是分開的。
    在 Safari 打開的話，先問一聲：複製起來、回小屋 App 貼上（進度才對），或就在 Safari 看。 */
 function isIosBrowserTab() {
-  const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const ios = isIosDevice();
   const standalone = navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
   return ios && !standalone;
 }
@@ -11910,7 +11919,7 @@ function openGiftCard(gc, who) {
   const box = document.createElement('textarea');
   box.className = 'invite-code'; box.readOnly = true; box.value = '做回禮卡中…';
   card.appendChild(box);
-  const send = el('button', 'big', '📤 傳送回禮卡'), mail = el('button', 'big alt', '📧 用 Email 寄'), copy = el('button', 'big alt', '📋 複製連結');
+  const send = el('button', 'big', '📤 傳送回禮卡'), mail = el('button', 'big alt', mailLabel()), copy = el('button', 'big alt', '📋 複製連結');
   send.disabled = mail.disabled = copy.disabled = true;
   const close = el('button', 'big alt', '好'); close.onclick = () => { $('#modal').hidden = true; };
   card.append(send, mail, copy, close);

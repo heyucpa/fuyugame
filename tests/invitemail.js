@@ -10,19 +10,25 @@ const IPAD = 'Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15
     const out={}; G.guide='done'; $('#modal').hidden=true; G.inviteFrom='妹妹';
     const m = mailtoLink('主旨 測試', '內容\n第二行', 'https://x.test/house.html#visit=abc_DEF-123'); out.mailto = m.length<2000 && m.startsWith('mailto:?subject=') && decodeURIComponent(m).includes('#visit=abc_DEF-123');
     openInviteMaker(); await new Promise(r=>setTimeout(r,300));
-    const btns=[...document.querySelectorAll('#modalCard button')].map(x=>x.textContent); out.btns=btns.filter(t=>/Email|複製連結|傳送/.test(t));
-    const clicks=[]; document.addEventListener('click', e=>{ const a=e.target.closest&&e.target.closest('a[href^="mailto:"]'); if(a){ clicks.push(a.href); e.preventDefault(); } }, true);
-    [...document.querySelectorAll('#modalCard button')].find(x=>/Email/.test(x.textContent)).click(); await new Promise(r=>setTimeout(r,100));
-    out.mailClick = clicks.length===1 && /^mailto:\?subject=/.test(clicks[0]) && decodeURIComponent(clicks[0]).includes('#visit=');
+    const btns=[...document.querySelectorAll('#modalCard button')].map(x=>x.textContent); out.btns=btns.filter(t=>/Gmail|Email|複製連結|傳送/.test(t));
     out.link = document.querySelector('#modalCard textarea').value;
     return out; });
   console.log(JSON.stringify(r));
+  // 電腦：Gmail 網頁寫信（新分頁）
+  const opened = []; await p.exposeFunction('__open', u=>opened.push(u));
+  const g = await p.evaluate(async()=>{ window.open = (u)=>{ window.__open(u); return {}; }; $('#modal').hidden=true; openInviteMaker(); await new Promise(r=>setTimeout(r,300));
+    const label=[...document.querySelectorAll('#modalCard button')].map(x=>x.textContent).find(t=>/Gmail|Email/.test(t)); [...document.querySelectorAll('#modalCard button')].find(x=>/Gmail|Email/.test(x.textContent)).click(); await new Promise(r=>setTimeout(r,100)); return label; });
+  console.log('電腦寄信按鈕', g, JSON.stringify(opened.map(u=>u.slice(0,60))), opened.length===1 && /^https:\/\/mail\.google\.com\/mail\/\?view=cm/.test(opened[0]) && decodeURIComponent(opened[0]).includes('#visit='));
   const link = r.link;
   // iPad、Safari（不是主畫面 App）：先問
   const c2 = await b.newContext({viewport:{width:1100,height:760}, userAgent: IPAD}); const q = await c2.newPage(); const e2=[]; q.on('pageerror',e=>e2.push(e.message));
   await q.goto('about:blank'); await q.goto(link); await q.waitForTimeout(3500);
   const a = await q.evaluate(()=>({ asked: !$('#modal').hidden && /小屋」App/.test($('#modalCard').innerText), btns:[...document.querySelectorAll('#modalCard button')].map(x=>x.textContent) }));
   await q.getByText('就在這裡').click(); await q.waitForTimeout(800);
+  const mm = await q.evaluate(async()=>{ G.inviteFrom='姊姊'; G.guide='done'; $('#modal').hidden=true; const clicks=[]; document.addEventListener('click', e=>{ const a=e.target.closest&&e.target.closest('a[href^="mailto:"]'); if(a){ clicks.push(a.href); e.preventDefault(); } }, true);
+    openInviteMaker(); await new Promise(r=>setTimeout(r,300)); const lab=[...document.querySelectorAll('#modalCard button')].map(x=>x.textContent).find(t=>/Email|Gmail/.test(t)); [...document.querySelectorAll('#modalCard button')].find(x=>/Email|Gmail/.test(x.textContent)).click(); await new Promise(r=>setTimeout(r,100));
+    return { lab, ok: clicks.length===1 && /^mailto:\?subject=/.test(clicks[0]) && decodeURIComponent(clicks[0]).includes('#visit=') }; });
+  console.log('iPad 寄信', JSON.stringify(mm));
   const a2 = await q.evaluate(()=>({ welcome: !$('#modal').hidden && /邀請卡/.test($('#modalCard').innerText), saved: (JSON.parse(localStorage.getItem('myHouse_invites')||'[]')).length }));
   console.log('iPad Safari', JSON.stringify(a), '→ 就在這裡', JSON.stringify(a2), e2);
   // iPad 主畫面 App（standalone）：直接收下
