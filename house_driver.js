@@ -587,7 +587,7 @@
     // 十三個小遊戲都要在清單上（116.10 加了撈金魚、烤餅乾、杯子蛋糕店）
     openTab('earn');
     var picks = document.querySelectorAll('.game-pick');
-    if (picks.length !== 14) fails.push('小遊戲清單有 ' + picks.length + ' 個，應該是 14 個');
+    if (picks.length !== 15) fails.push('小遊戲清單有 ' + picks.length + ' 個，應該是 15 個（含英文單字）');
     ['拼圖', '接金幣', '彈珠台'].forEach(function(nm){
       if (![].slice.call(picks).some(function(b){ return b.textContent.indexOf(nm) >= 0; }))
         fails.push('小遊戲清單裡找不到「' + nm + '」');
