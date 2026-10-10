@@ -8,11 +8,14 @@ const { chromium } = require('playwright');
   // 從畫布按下去，拖到旁邊的標題、按鈕、卡片外面
   await p.mouse.move(cv.x+50, cv.y+50); await p.mouse.down();
   await p.mouse.move(cv.x+200, cv.y+120, {steps:5}); await p.mouse.move(cv.x+200, cv.y-60, {steps:5}); await p.mouse.move(cv.x+100, cv.y+cv.height+80, {steps:8}); await p.mouse.move(cv.x-200, cv.y+cv.height+120, {steps:8});
+  const strokes = await p.evaluate(()=>openDrawPad.test.strokes.length);
+  const lockedModal = await p.evaluate(()=>document.querySelector('#modal').classList.contains('nosel'));
   const during = await p.evaluate(()=>String(getSelection()).length); await p.mouse.up();
   // 連點兩下旁邊的字
   const h2 = await p.locator('#modalCard h2').boundingBox(); await p.mouse.dblclick(h2.x+h2.width/2, h2.y+h2.height/2); await p.mouse.click(h2.x+20,h2.y+10,{clickCount:3});
   const after = await p.evaluate(()=>String(getSelection()).length);
   // 關掉畫板後，別的視窗還是能選字（備份框要能貼上）
   const ok = await p.evaluate(()=>{ $('#modal').hidden=true; openTab('backup'); const ta=document.querySelector('#tabBody textarea'); return getComputedStyle(ta).userSelect; });
-  console.log('拖曳中被選到的字數', during, '點兩下三下之後', after, '備份框 user-select', ok, errs); await b.close();
+  const unlocked = await p.evaluate(()=>{ document.querySelector('#modalCard button.big').click(); return !document.querySelector('#modal').classList.contains('nosel'); });
+  console.log('畫出幾筆', strokes, '視窗鎖定', lockedModal, '按完成後解除', unlocked, '拖曳中被選到的字數', during, '點兩下三下之後', after, '備份框 user-select', ok, errs); await b.close();
 })();

@@ -11584,6 +11584,7 @@ function openDrawPad(title, done) {
   const full = () => padPoints({ s: strokes }) >= PAD_MAX_PTS;
   /* 畫的時候手滑到旁邊會把字「反白」（選取）：畫畫板裡的東西全部不能選取；
      按住畫的時候，連畫面上其他的字也不給選（放開就恢復）。 */
+  const md = $('#modal');
   const noSel = ev => ev.preventDefault();
   const stopNoSel = () => { document.removeEventListener('selectstart', noSel); };
   cv.addEventListener('selectstart', noSel);
@@ -11634,11 +11635,19 @@ function openDrawPad(title, done) {
   };
   card.appendChild(clr);
   const ok = el('button', 'big', '✅ 畫好了');
-  ok.onclick = () => done(strokes.length ? cleanDrawing({ s: strokes }) : null);
+  const unlock = () => { md.classList.remove('nosel'); stopNoSel(); };
+  ok.onclick = () => { unlock(); done(strokes.length ? cleanDrawing({ s: strokes }) : null); };
   const skip = el('button', 'big alt', '不畫了');
-  skip.onclick = () => done(null);
+  skip.onclick = () => { unlock(); done(null); };
   card.append(ok, skip);
   [...card.children].forEach(c => c.classList.add('nosel'));   // 畫畫板整張卡片都不能反白
+  /* iPad：手指按住不放會跳出「拷貝／查詢／翻譯」、字和畫布都被選起來（家長拍的照片）。
+     整個視窗都設成不能選取、擋掉長按選單；視窗一關（不管從哪裡關）就恢復，不然別的視窗打字會有問題。 */
+  md.classList.add('nosel');
+  new MutationObserver((m, ob) => { if (md.hidden) { md.classList.remove('nosel'); stopNoSel(); ob.disconnect(); } }).observe(md, { attributes: true, attributeFilter: ['hidden'] });
+  cv.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+  cv.addEventListener('contextmenu', e => e.preventDefault());
+  card.addEventListener('contextmenu', e => e.preventDefault());
   $('#modal').hidden = false;
   repaint();
   openDrawPad.test = { cv, strokes };
