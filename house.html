@@ -11428,6 +11428,13 @@ function inviteCodeFrom(text) {
 // 寄件人：做邀請卡時選的「姊姊／妹妹／其他名字」；舊的卡沒有就用角色名字
 function inviteWho(inv) { return inv.f || inv.n; }
 const isOwnInvite = inv => !!(inv.id && G.inviteId && inv.id === G.inviteId);
+/* 📧 用 Email 寄（家長：姊姊的 iPad 沒有 LINE，但可以收 email）。
+   mailto 會打開這台機器的信件程式（iPad 的「郵件」、電腦的預設信箱），信的內容已經填好，只要填收件人按寄出。 */
+function mailtoLink(subject, text, link) { return 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(text + '\n\n' + link + '\n'); }
+function sendByMail(subject, text, link) {
+  try { const a = document.createElement('a'); a.href = mailtoLink(subject, text, link); a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => a.remove(), 500); } catch (e) {}
+  toast('📧 如果沒有跳出信件，請按「📋 複製連結」，貼到信裡寄出');
+}
 function inviteLink(code) { return location.href.split('#')[0] + '#visit=' + code; }
 function inviteDate(at) { const d = new Date(at || 0); return at ? `${d.getMonth() + 1}/${d.getDate()}` : '—'; }
 function loadInvites() {
@@ -11500,13 +11507,13 @@ function openInviteMaker() {
   const chg = el('button', 'mini', `寄件人：${G.inviteFrom}（換一個）`);
   chg.onclick = () => openInviteFrom();
   card.appendChild(chg);
-  card.appendChild(note(`🏠 房間 ${inv.r.length} 間・🐾 寵物 ${inv.pn.length} 隻。請爸爸媽媽幫忙，用 LINE 把邀請卡傳給姊姊／妹妹。對方點開連結（或在「🚗 出門 → 📥 收到邀請卡」貼上）就能來玩。來玩只能看、不能搬，不會改到你的東西。之後重新布置，要再做一張新的邀請卡喔。`));
+  card.appendChild(note(`🏠 房間 ${inv.r.length} 間・🐾 寵物 ${inv.pn.length} 隻。請爸爸媽媽幫忙，用 Email 或 LINE 把邀請卡傳給姊姊／妹妹。對方點開連結（或在「🚗 出門 → 📥 收到邀請卡」貼上）就能來玩。來玩只能看、不能搬，不會改到你的東西。之後重新布置，要再做一張新的邀請卡喔。`));
   const box = document.createElement('textarea');
   box.className = 'invite-code'; box.readOnly = true; box.value = '做邀請卡中…';
   card.appendChild(box);
-  const send = el('button', 'big', '📤 傳送邀請卡'), copy = el('button', 'big alt', '📋 複製連結');
-  send.disabled = copy.disabled = true;
-  card.append(send, copy);
+  const send = el('button', 'big', '📤 傳送邀請卡'), mail = el('button', 'big alt', '📧 用 Email 寄'), copy = el('button', 'big alt', '📋 複製連結');
+  send.disabled = mail.disabled = copy.disabled = true;
+  card.append(send, mail, copy);
   const close = el('button', 'big alt', '好');
   close.onclick = () => { $('#modal').hidden = true; };
   card.appendChild(close);
@@ -11514,9 +11521,10 @@ function openInviteMaker() {
   encodeInvite(inv).then(code => {
     const link = inviteLink(code);
     box.value = link;
-    send.disabled = copy.disabled = false;
+    send.disabled = mail.disabled = copy.disabled = false;
+    mail.onclick = () => sendByMail('小屋邀請卡', `${G.inviteFrom}邀請你來我家玩！🏡\n收到的人：打開主畫面的小屋 → 🚗 出門 → 📥 收到邀請卡，貼上下面的連結（也可以直接點連結）：`, link);
     const doCopy = () => {
-      const done = () => toast('📋 連結複製好了，貼到 LINE 傳給對方吧！');
+      const done = () => toast('📋 連結複製好了，貼到信裡或 LINE 傳給對方吧！');
       try { navigator.clipboard.writeText(link).then(done, () => { box.select(); document.execCommand('copy'); done(); }); }
       catch (e) { box.select(); try { document.execCommand('copy'); done(); } catch (e2) {} }
     };
@@ -11531,7 +11539,7 @@ function openInvitePaste() {
   const card = $('#modalCard');
   card.innerHTML = '';
   card.appendChild(el('h2', '', '📥 收到邀請卡'));
-  card.appendChild(note('把收到的邀請卡或回禮卡連結貼在下面（在 LINE 裡長按連結 → 拷貝，再到這裡長按 → 貼上）。'));
+  card.appendChild(note('把收到的邀請卡或回禮卡連結貼在下面（在信件或 LINE 裡長按連結 → 拷貝，再到這裡長按 → 貼上）。'));
   const box = document.createElement('textarea');
   box.className = 'invite-code'; box.placeholder = '把邀請卡連結貼在這裡';
   card.appendChild(box);
@@ -11587,12 +11595,44 @@ function openInviteWelcome(inv) {
   Sound.play('coin');
 }
 // 用連結打開遊戲（#visit=…）：收下邀請卡、把網址上的那一串拿掉，等畫面空下來再問要不要去
+/* 📲 iPad：點信裡的連結會開到 Safari，可是姊姊的進度在「主畫面的小屋」，兩邊的存檔是分開的。
+   在 Safari 打開的話，先問一聲：複製起來、回小屋 App 貼上（進度才對），或就在 Safari 看。 */
+function isIosBrowserTab() {
+  const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const standalone = navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+  return ios && !standalone;
+}
+function askOpenInApp(fullLink, go) {
+  const card = $('#modalCard');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', '📲 要在「小屋」App 裡打開喔'));
+  card.appendChild(note('你現在是在 Safari 看到的。姊姊的小屋進度在「主畫面的小屋」裡，要在那邊打開才會收到。'));
+  const steps = el('div', 'news');
+  [['1️⃣', '按下面「📋 複製邀請卡」'], ['2️⃣', '回到主畫面，打開「小屋」'], ['3️⃣', '按「🚗 出門」→「📥 收到邀請卡」，長按貼上']].forEach(([ic, tx]) => {
+    const r = el('div', 'news-row'); r.append(el('span', 'news-ic', ic), el('span', 'news-tx', tx)); steps.appendChild(r);
+  });
+  card.appendChild(steps);
+  const cp = el('button', 'big', '📋 複製邀請卡');
+  cp.onclick = async () => {
+    try { await navigator.clipboard.writeText(fullLink); toast('📋 複製好了！回到「小屋」App 貼上'); }
+    catch (e) { const t = document.createElement('textarea'); t.className = 'invite-code'; t.value = fullLink; card.insertBefore(t, cp); t.select(); toast('請長按框裡的字 → 拷貝'); }
+  };
+  const here = el('button', 'big alt', '🌐 就在這裡（Safari）打開');
+  here.onclick = () => { $('#modal').hidden = true; go(); };
+  card.append(cp, here);
+  $('#modal').hidden = false;
+}
 function checkInviteHash(tries) {
   const code = inviteCodeFrom(location.hash), gcode = giftCodeFrom(location.hash);
   if (!code && !gcode) return;
+  const fullLink = location.href;
   tries = tries || 0;
   if (tries < 30 && (!$('#modal').hidden || resting || hold || document.getElementById('showcase'))) { setTimeout(() => checkInviteHash(tries + 1), 2000); return; }
   try { history.replaceState(null, '', location.href.split('#')[0]); } catch (e) {}
+  if (isIosBrowserTab()) { askOpenInApp(fullLink, () => handleInviteCodes(code, gcode)); return; }
+  handleInviteCodes(code, gcode);
+}
+function handleInviteCodes(code, gcode) {
   if (gcode) { decodeGiftCard(gcode).then(gc => { if (!gc) toast('這張回禮卡打不開（可能沒有複製完整）'); else receiveGiftCard(gc); }); return; }
   decodeInvite(code).then(inv => {
     if (!inv) { toast('這張邀請卡打不開（可能沒有複製完整）'); return; }
@@ -11866,22 +11906,23 @@ function openGiftCard(gc, who) {
   card.appendChild(el('div', 'gb-gift', `${g.icon} ${g.name}`));
   card.appendChild(el('div', 'gb-msg', `「${VISIT_MSGS[gc.m]}」`));
   if (gc.d) card.appendChild(renderCardDrawing(gc.d, 200));
-  card.appendChild(note(`請爸爸媽媽幫忙，用 LINE 把這張回禮卡傳給${who}。她打開連結（或在「🚗 出門 → 📥 收到邀請卡」貼上）就會收到禮物，訪客簿也會記下你來過。`));
+  card.appendChild(note(`請爸爸媽媽幫忙，用 Email 或 LINE 把這張回禮卡傳給${who}。她打開連結（或在「🚗 出門 → 📥 收到邀請卡」貼上）就會收到禮物，訪客簿也會記下你來過。`));
   const box = document.createElement('textarea');
   box.className = 'invite-code'; box.readOnly = true; box.value = '做回禮卡中…';
   card.appendChild(box);
-  const send = el('button', 'big', '📤 傳送回禮卡'), copy = el('button', 'big alt', '📋 複製連結');
-  send.disabled = copy.disabled = true;
+  const send = el('button', 'big', '📤 傳送回禮卡'), mail = el('button', 'big alt', '📧 用 Email 寄'), copy = el('button', 'big alt', '📋 複製連結');
+  send.disabled = mail.disabled = copy.disabled = true;
   const close = el('button', 'big alt', '好'); close.onclick = () => { $('#modal').hidden = true; };
-  card.append(send, copy, close);
+  card.append(send, mail, copy, close);
   $('#modal').hidden = false;
   if (host.n && host.a) { host.a.happyUntil = performance.now() + 2500; host.a.squishV = -8; hostSay(`哇！謝謝你的${g.name}！`, 3000); }
   encodeInvite(gc).then(code => {
     const link = giftLink(code);
     box.value = link;
-    send.disabled = copy.disabled = false;
+    send.disabled = mail.disabled = copy.disabled = false;
+    mail.onclick = () => sendByMail('小屋回禮卡', `${G.inviteFrom || charName()}送你一個禮物！🎁\n收到的人：打開主畫面的小屋 → 🚗 出門 → 📥 收到邀請卡，貼上下面的連結（也可以直接點連結）：`, link);
     const doCopy = () => {
-      const done = () => toast('📋 連結複製好了，貼到 LINE 傳給對方吧！');
+      const done = () => toast('📋 連結複製好了，貼到信裡或 LINE 傳給對方吧！');
       try { navigator.clipboard.writeText(link).then(done, () => { box.select(); document.execCommand('copy'); done(); }); }
       catch (e) { box.select(); try { document.execCommand('copy'); done(); } catch (e2) {} }
     };
