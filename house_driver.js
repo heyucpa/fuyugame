@@ -797,7 +797,8 @@
     var outBtn = topBtns.filter(function(b){ return /出門/.test(b.textContent); })[0];
     if (!outBtn) fails.push('在叔叔家上面沒有「出門」');
     else {
-      outBtn.onclick();
+      outBtn.onclick();   // 現在「出門」先打開小島，清單在島上的「🚗 快速出門」
+      if (!isl) fails.push('按「出門」沒有打開小島'); else { document.querySelector('.isl-fast').click(); closeIsland(); }
       var picks = [].slice.call(document.querySelectorAll('#modalCard .place-pick'));
       var pUncle = picks.filter(function(b){ return /叔叔家/.test(b.textContent); })[0];
       var pGrand = picks.filter(function(b){ return /阿婆家/.test(b.textContent); })[0];
