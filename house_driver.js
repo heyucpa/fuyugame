@@ -4249,7 +4249,8 @@
       if (!sb6 || !/貼紙獎盃/.test(sb6.textContent) || !/集滿了/.test(sb6.querySelector('.sc-new').textContent)) fails.push('拿到獎盃沒有跳「集滿了」大圖');
       var inv6 = G.inv.trophy_sticker; checkTrophies();
       if (G.inv.trophy_sticker !== inv6) fails.push('獎盃發了兩次');
-      if (furnSellBlock('trophy_sticker') == null) fails.push('獎盃可以賣掉');
+      if (furnSellBlock('trophy_sticker') != null) fails.push('獎盃不能賣（現在家長要它可以賣，要確認兩次）');
+      if (FURN_BY_ID.trophy_sticker.price !== 0) fails.push('獎盃的價格不是 0（會讓評分、全部買齊的錢變多）');
       if (!canSitOnTable('trophy_sticker')) fails.push('獎盃不能擺在桌上');
       if (FURNITURE.some(function(f){ return /^trophy_/.test(f.id); })) fails.push('獎盃算進家具圖鑑了（家具會永遠集不滿）');
       // 存起來、讀回來還在；房間裡擺獎盃讀得回來（不會被當成壞掉的存檔）

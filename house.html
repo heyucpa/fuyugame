@@ -4146,7 +4146,7 @@ TROPHY_SETS.forEach(t => {
   t.item = 'trophy_' + t.id;
   const gold = t.cup || TROPHY_GOLD;
   t.full = t.name + (t.tier || '') + '獎盃';
-  FURN_BY_ID[t.item] = { id: t.item, name: t.full, price: 0, theme: 'modern', w: 1, d: 1, gift: true, trophy: true,
+  FURN_BY_ID[t.item] = { id: t.item, name: t.full, price: 0, sellPrice: t.id === 'furn20' ? 300 : t.id === 'furn45' ? 600 : t.id === 'furn' ? 1500 : 500, theme: 'modern', w: 1, d: 1, gift: true, trophy: true,
     parts: [
       { x: .36, y: .36, w: .28, d: .28, z: 0, h: 4, c: '#5a3a22' },
       { x: .4, y: .4, w: .2, d: .2, z: 4, h: 2, c: t.color },
@@ -4981,6 +4981,7 @@ function normalizeSave(g) {
   if (!num(out.hwEarned) || out.hwEarned < 0) out.hwEarned = 0;
   if (out.ghost && (!Number.isInteger(out.ghost.n) || out.ghost.n < 1 || out.ghost.n > 9)) out.ghost.n = 1;
   if (out.ghost && out.ghost.foundAt != null && !num(out.ghost.foundAt)) delete out.ghost.foundAt;
+  if (out.gameBonusDay != null && typeof out.gameBonusDay !== 'string') delete out.gameBonusDay;
   if (out.partyDay != null && typeof out.partyDay !== 'string') delete out.partyDay;
   if (out.clownDay != null && typeof out.clownDay !== 'string') delete out.clownDay;
   if (out.dailyPaid != null && typeof out.dailyPaid !== 'string') delete out.dailyPaid;
@@ -5715,7 +5716,7 @@ function sellValue(price) { return Math.floor(price / 2); }
 function furnSellBlock(id) {
   if (!G.inv[id]) return '沒有了';
   if (G.inv[id] <= ((G.noSell || {})[id] || 0)) return '非賣品';
-  return FURN_BY_ID[id].price ? null : '不能賣';
+  return FURN_BY_ID[id].price || FURN_BY_ID[id].sellPrice ? null : '不能賣';
 }
 function foodSellBlock(id) { return G.food[id] ? null : '沒有了'; }
 function clothesSellBlock(id) {
@@ -5741,7 +5742,7 @@ function sellFurniture(id) {
   if (furnSellBlock(id)) return 0;
   G.inv[id]--;
   if (!G.inv[id]) delete G.inv[id];
-  const v = sellValue(FURN_BY_ID[id].price);
+  const v = FURN_BY_ID[id].trophy ? FURN_BY_ID[id].sellPrice : sellValue(FURN_BY_ID[id].price);
   G.bells += v;
   return v;
 }
@@ -13580,6 +13581,41 @@ function confirmSell(name, price, doSell) {
   $('#modal').hidden = false;
 }
 
+/* 🏆 賣獎盃：賣掉就拿不回來了（圖鑑還記得拿過，但不會再發第二座），所以要確認兩次，
+   而且有設家長密碼的話要先輸入。價格固定（銅 300、銀 600、金 1500、其他 500）。 */
+function trophySellCard(def, id) {
+  const block = furnSellBlock(id);
+  const c = el('button', 'card' + (block ? ' dim' : ' sellable'));
+  c.appendChild(thumb(def));
+  c.appendChild(el('div', 'nm', def.name));
+  c.appendChild(el('div', 'pr', block || `賣 💰 ${fmt(def.sellPrice)}`));
+  if (G.inv[id]) c.appendChild(el('span', 'ct', '×' + G.inv[id]));
+  c.onclick = () => {
+    if (block) { toast(`「${def.name}」${block}，不能賣`); return; }
+    askPin('賣獎盃', () => {
+      const card = $('#modalCard');
+      card.innerHTML = '';
+      card.appendChild(el('h2', '', '🏆 要賣掉獎盃嗎？'));
+      card.appendChild(el('p', 'sell-q', `「${def.name}」`));
+      const info = el('div', 'sell-info');
+      info.append(el('div', '', `可以拿到　💰 ${fmt(def.sellPrice)}`), el('div', 'muted', '⚠️ 賣掉就拿不回來了，也不會再發第二座（圖鑑還是記得你拿過）'));
+      card.appendChild(info);
+      const yes = el('button', 'big warnbtn', '我知道了，賣掉');
+      const no = el('button', 'big alt', '不要，留著');
+      yes.onclick = () => {
+        yes.disabled = true;
+        const got = sellFurniture(id);
+        $('#modal').hidden = true;
+        if (got) { Sound.play('coin'); toast(`賣掉「${def.name}」，拿到 ${fmt(got)} 鈴錢`); }
+        commit();
+      };
+      no.onclick = () => { $('#modal').hidden = true; Sound.play('click'); };
+      card.append(no, yes);   // 「不要，留著」放前面（比較容易按到）
+      $('#modal').hidden = false;
+    });
+  };
+  return c;
+}
 function sellCard(visual, name, price, block, count, onSell) {
   const c = el('button', 'card' + (block ? ' dim' : ' sellable'));
   c.appendChild(visual);
@@ -13611,7 +13647,7 @@ function tabInv(body) {
     ids.forEach(id => {
       const def = FURN_BY_ID[id];
       grid.appendChild(sellMode
-        ? sellCard(thumb(def), def.name, def.price, furnSellBlock(id), G.inv[id], () => sellFurniture(id))
+        ? (def.trophy ? trophySellCard(def, id) : sellCard(thumb(def), def.name, def.price, furnSellBlock(id), G.inv[id], () => sellFurniture(id)))
         : (() => { const c = furnCard(def, THEME_NAMES[def.theme], () => startHoldFromInv(id), G.inv[id]);
                    if ((G.noSell || {})[id]) c.appendChild(el('span', 'tag', '非賣品'));
                    return c; })());
@@ -13910,7 +13946,7 @@ function tabEarn(body) {
   body.appendChild(fishBtn);
 
   body.appendChild(h3('小遊戲'));
-  body.appendChild(note('每場 1 分鐘內玩完，分數越高拿到越多鈴錢。'));
+  body.appendChild(note(`每場 1 分鐘內玩完，分數越高拿到越多鈴錢。${G.gameBonusDay === today() ? '（今天的雙倍已經用過了，明天再來！）' : '🎁 今天第一場獎金雙倍！'}`));
   const games = el('div', 'game-list');
   [['🃏', '翻牌配對', openMemoryGame], ['🧺', `${petName()}接水果`, openCatchGame], ['💦', '戳泡泡', openBubbleGame],
     ['🥤', '杯子躲貓貓', openCupGame], ['🥞', '疊疊鬆餅', openStackGame], ['🎵', '跟著唱', openSimonGame],
@@ -15678,6 +15714,9 @@ function leaveButton(w) {
   w.btns.appendChild(b);
 }
 function payReward(w, bells, extra) {
+  // 🎁 每天第一場有拿到錢的小遊戲，獎金雙倍（不增加整體的錢，只是讓她每天都想先玩一場）
+  const dbl = bells > 0 && G.gameBonusDay !== today();
+  if (dbl) { G.gameBonusDay = today(); bells *= 2; setTimeout(() => toast('🎁 今天第一場小遊戲，獎金雙倍！'), 600); }
   addBells(bells);
   try { dailyHit('game'); } catch (e) {}
   didSomething(); // 玩完一場小遊戲，樹長回一顆果子
@@ -15729,8 +15768,7 @@ function openMemoryGame() {
         Sound.play('petHappy');
         status();
         if (found === icons.length) {
-          const bells = Math.max(200, 1200 - (moves - icons.length) * 60);
-          payReward(w, bells);
+          const bells = payReward(w, Math.max(200, 1200 - (moves - icons.length) * 60));   // 回傳的才是真的拿到的（第一場會雙倍）
           w.status.textContent = `🎉 全部配對完成！${moves} 步，拿到 ${fmt(bells)} 鈴錢`;
           fufuSay('好厲害！');
           gameButtons(w, openMemoryGame);
