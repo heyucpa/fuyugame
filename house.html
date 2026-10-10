@@ -654,6 +654,24 @@ button.pass { font: inherit; }
 .island-tip { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); background: rgba(255,255,255,.92); color: #5a4630; font-weight: 700; font-size: 14px; padding: 8px 16px; border-radius: 999px; box-shadow: 0 3px 10px rgba(0,0,0,.18); pointer-events: none; transition: opacity 1.2s; max-width: 90%; text-align: center; }
 .island-tip.fade { opacity: 0; }
 .island-on .petcard, .island-on .zoom-btn, .island-on .theme-btn, .island-on .photo-btn, .island-on .dup-btn, .island-on .call-btn, .island-on .hint, .island-on .itemmenu, .island-on .actions { display: none !important; }
+.en-weeks { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 10px; }
+.en-week { border: 2px solid var(--line); background: #fff; border-radius: 999px; padding: 6px 12px; font-size: 14px; font-weight: 700; min-height: 36px; }
+.en-week.on { background: #ffe9b8; border-color: #e7a94a; }
+.en-q { text-align: center; min-height: 52px; margin-bottom: 8px; }
+.en-say { font-size: 20px; padding: 12px 18px; }
+.en-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.en-opt { display: flex; flex-direction: column; align-items: center; gap: 2px; border: 3px solid var(--line); background: #fff; border-radius: 16px; padding: 10px 6px; min-height: 96px; }
+.en-pic { font-size: 46px; line-height: 1.15; } .en-zh { font-size: 12px; color: #8a7a64; }
+.en-opt.ok { background: #d9f5df; border-color: #4fae63; } .en-opt.no { background: #ffe0e0; border-color: #e0605a; }
+.en-bigpic { font-size: 72px; line-height: 1.1; } .en-bigpic.zhonly { font-size: 40px; font-weight: 800; padding: 14px 0; }
+.en-meaning { font-size: 15px; font-weight: 700; color: #6b5a44; margin-bottom: 4px; }
+.en-slots { display: flex; gap: 6px; justify-content: center; margin: 10px 0 14px; flex-wrap: wrap; }
+.en-slot { width: 40px; height: 48px; border-bottom: 4px solid #c9b79a; font-size: 30px; font-weight: 800; text-align: center; line-height: 48px; text-transform: lowercase; }
+.en-slot.ok { color: #2f7d4a; border-color: #4fae63; } .en-slot.done { background: #e9f9ec; border-radius: 8px; }
+.en-tiles { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.en-tile { width: 52px; height: 52px; border: 3px solid #e7a94a; background: #fff3d6; border-radius: 14px; font-size: 26px; font-weight: 800; }
+.en-tile:disabled { opacity: .3; } .en-tile.shake { animation: enShake .35s; border-color: #e0605a; }
+@keyframes enShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
 .trick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 8px 0 12px; }
 .trick-cell { border: 2px dashed var(--line); border-radius: 14px; background: #fffaf0; padding: 8px 4px; text-align: center; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .trick-cell.got { border-style: solid; border-color: #f0902f; background: #fff3e2; }
@@ -13957,6 +13975,7 @@ function tabEarn(body) {
     ['🐠', '撈金魚', openScoopGame],
     ['🍪', '烤餅乾', openBakeGame],
     ['🧁', '杯子蛋糕店', openCupcakeGame],
+    ['🔤', '英文單字', openEnglishGame],
     ['🌳', '寵物捉迷藏', openPetHideGame]].forEach(([icon, label, fn]) => {
     const b = el('button', 'game-pick');
     b.append(el('span', 'gi', icon), el('span', '', label));
@@ -18554,6 +18573,144 @@ function islDrawPet(ctx) {
   ctx.save(); ctx.translate(px, py - hop); ctx.scale(k, k);
   drawCreature(ctx, sp, { happy: true, sad: false, blink: false, fx: p.f * 1.5, clean: st.clean, adult: lookStage(st) === 'adult', baby: lookStage(st) === 'baby' });
   ctx.restore();
+}
+/* ===== 🔤 英文單字（家長：補習班每週的單字，照老師寫在白板上的做成題目）=====
+   每週十個字，從 a、b 開頭一路往後。玩法：
+   ・🔊 聽音選圖：唸出英文，從四張圖裡選對的（妹妹不用識字，只要聽得出來）。只用有圖的字
+   ・🔤 看圖拼字：看圖（沒有圖的字就看中文意思）、把亂掉的字母照順序點出來；「難」會多混兩個字母
+   可以選 Week 2～6 或全部。以後有新的週次，加在 EN_WEEKS 就好。
+   不支援語音的機器：聽音選圖改成「看字選圖」。 */
+const EN_WEEKS = [
+  { id: 2, words: [['ant', '螞蟻', '🐜'], ['apple', '蘋果', '🍎'], ['ax', '斧頭', ''], ['cat', '貓', '🐱'], ['hat', '帽子', '🎩'], ['ball', '球', '⚽'], ['book', '書', '📖'], ['bee', '蜜蜂', '🐝'], ['bed', '床', '🛏️']] },
+  { id: 3, words: [['car', '汽車', '🚗'], ['coat', '外套', '🧥'], ['cap', '帽子', '🧢'], ['can', '罐頭', '🥫'], ['cow', '乳牛', '🐮'], ['dog', '小狗', '🐶'], ['door', '門', '🚪'], ['doll', '洋娃娃', ''], ['desk', '書桌', ''], ['deer', '鹿', '🦌']] },
+  { id: 4, words: [['bed', '床', '🛏️'], ['egg', '蛋', '🥚'], ['ten', '十', '🔟'], ['net', '網子', '🥅'], ['bell', '鈴鐺', '🔔'], ['fish', '魚', '🐟'], ['fan', '風扇', ''], ['foot', '腳', '🦶'], ['five', '五', '5️⃣'], ['four', '四', '4️⃣']] },
+  { id: 5, words: [['goat', '山羊', '🐐'], ['goose', '鵝', ''], ['girl', '女孩', '👧'], ['game', '遊戲', '🎮'], ['gate', '大門', ''], ['horse', '馬', '🐴'], ['ham', '火腿', '🍖'], ['hat', '帽子', '🎩'], ['hand', '手', '✋'], ['heel', '高跟鞋', '👠']] },
+  { id: 6, words: [['bib', '圍兜', ''], ['ink', '墨水', '🖋️'], ['pig', '小豬', '🐷'], ['fish', '魚', '🐟'], ['six', '六', '6️⃣'], ['jet', '噴射機', '✈️'], ['jar', '罐子', ''], ['jug', '水壺', ''], ['jump', '跳', '🦘'], ['jeep', '吉普車', '🚙']] }
+];
+const EN_LEVELS = [
+  { name: '🔊 聽音選圖', mode: 'listen', mul: 1, sub: '聽一聽，選圖' },
+  { name: '🔤 看圖拼字', mode: 'spell', mul: 2, sub: '把字母排好', extra: 0 },
+  { name: '🔤 拼字（難）', mode: 'spell', mul: 3, sub: '還有搗蛋字母', extra: 2 }
+];
+const EN_PER = { listen: 15, spell: 25 };   // 一題答對（再乘 1；拼字全對不錯字才拿滿）
+function enSpeak(word) {
+  if (!canSpeak()) return false;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(word);
+    u.lang = 'en-US'; u.rate = .8; u.pitch = 1.05;
+    try { const v = speechSynthesis.getVoices().find(x => /^en[-_]US/i.test(x.lang)) || speechSynthesis.getVoices().find(x => /^en/i.test(x.lang)); if (v) u.voice = v; } catch (e) {}
+    speechSynthesis.speak(u);
+    return true;
+  } catch (e) { return false; }
+}
+function enPool(weekId, needPic) {
+  const seen = new Set(), out = [];
+  EN_WEEKS.filter(wk => weekId === 'all' || wk.id === weekId).forEach(wk => wk.words.forEach(([w, zh, pic]) => {
+    if (seen.has(w) || (needPic && !pic)) return;
+    seen.add(w); out.push({ w, zh, pic });
+  }));
+  return out;
+}
+function openEnglishGame() {
+  const win = openGameWindow('🔤 英文單字', '選一個週次，再選玩法。聽英文選圖片，或把字母排成單字！');
+  const chips = el('div', 'en-weeks');
+  let week = 'all';
+  const draw = () => {
+    chips.innerHTML = '';
+    [['all', '全部']].concat(EN_WEEKS.map(wk => [wk.id, 'Week ' + wk.id])).forEach(([id, label]) => {
+      const b = el('button', 'en-week' + (id === week ? ' on' : ''), label);
+      b.onclick = () => { week = id; Sound.play('click'); draw(); };
+      chips.appendChild(b);
+    });
+  };
+  draw();
+  pickLevelRow(win, EN_LEVELS, L => `一題 💰 ${EN_PER[L.mode] * L.mul}`, L => playEnglish(win, L, week));
+  win.stage.insertBefore(chips, win.stage.firstChild);
+}
+function playEnglish(w, L, week) {
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const listen = L.mode === 'listen';
+  const pool = enPool(week, listen), ROUNDS = 5;
+  if (pool.length < 4) { toast('這個週次的字不夠玩，換別的週次吧'); openEnglishGame(); return; }
+  const all = enPool('all', listen);
+  const picks = pool.slice().sort(() => Math.random() - .5).slice(0, ROUNDS);
+  let n = 0, right = 0, ended = false;
+  const q = el('div', 'en-q'), body = el('div', 'en-body');
+  w.stage.append(q, body);
+  leaveButton(w);
+  const finish = () => {
+    ended = true;
+    const base = EN_PER[L.mode] * L.mul;
+    const bells = payReward(w, Math.round(right * base) + (right === picks.length ? 20 * L.mul : 0));
+    w.status.textContent = `答對 ${right} / ${picks.length}！💰 +${fmt(bells)}`;
+    q.textContent = right === picks.length ? '🎉 全對！好厲害！' : right >= 3 ? '👏 很棒喔！' : '💪 再練習一下！';
+    body.innerHTML = '';
+    gameButtons(w, openEnglishGame);
+  };
+  const next = () => {
+    if (n >= picks.length) { finish(); return; }
+    const cur = picks[n++];
+    w.status.textContent = `第 ${n} / ${picks.length} 題　答對 ${right} 題`;
+    body.innerHTML = '';
+    if (listen) playListen(cur); else playSpell(cur);
+  };
+  const playListen = cur => {
+    const hear = canSpeak();
+    q.innerHTML = '';
+    const say = el('button', 'big en-say', hear ? '🔊 再聽一次' : `🔤 ${cur.w}`);
+    say.onclick = () => { if (hear) enSpeak(cur.w); };
+    q.appendChild(say);
+    if (hear) setTimeout(() => { if (!ended) enSpeak(cur.w); }, 250);
+    const opts = [cur].concat(pool.filter(x => x.w !== cur.w).sort(() => Math.random() - .5).slice(0, 3)).sort(() => Math.random() - .5);
+    const grid = el('div', 'en-opts');
+    opts.forEach(o => {
+      const b = el('button', 'en-opt'); b.append(el('span', 'en-pic', o.pic), el('span', 'en-zh', o.zh));
+      b.onclick = () => {
+        grid.querySelectorAll('button').forEach(x => x.disabled = true);
+        if (o.w === cur.w) { right++; b.classList.add('ok'); Sound.play('perfect'); fufuSay(`${cur.w}！答對了`, 1500); }
+        else { b.classList.add('no'); Sound.play('miss'); [...grid.children].forEach((x, i) => { if (opts[i].w === cur.w) x.classList.add('ok'); }); enSpeak(cur.w); }
+        setTimeout(next, 1100);
+      };
+      grid.appendChild(b);
+    });
+    body.appendChild(grid);
+    playEnglish.test = { cur, answer: () => [...grid.children][opts.findIndex(o => o.w === cur.w)].click(), wrong: () => [...grid.children][opts.findIndex(o => o.w !== cur.w)].click(), right: () => right, n: () => n };
+  };
+  const playSpell = cur => {
+    q.innerHTML = '';
+    const pic = el('div', 'en-bigpic', cur.pic || cur.zh);
+    if (!cur.pic) pic.classList.add('zhonly');
+    const hear = el('button', 'mini', '🔊 聽'); hear.onclick = () => enSpeak(cur.w);
+    q.append(pic, el('div', 'en-meaning', cur.zh), hear);
+    const letters = cur.w.split('');
+    const extras = []; for (let k = 0; k < L.extra; k++) extras.push('abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)]);
+    const bank = letters.concat(extras).map((ch, i) => ({ ch, i, used: false })).sort(() => Math.random() - .5);
+    let pos = 0, mistakes = 0;
+    const slots = el('div', 'en-slots'), tiles = el('div', 'en-tiles');
+    letters.forEach(() => slots.appendChild(el('span', 'en-slot', '')));
+    bank.forEach(t => {
+      const b = el('button', 'en-tile', t.ch);
+      b.onclick = () => {
+        if (t.used || pos >= letters.length) return;
+        if (t.ch === letters[pos]) {
+          t.used = true; b.disabled = true; slots.children[pos].textContent = t.ch; slots.children[pos].classList.add('ok'); pos++; Sound.play('click');
+          if (pos === letters.length) {
+            const full = mistakes === 0;
+            if (full) right++;
+            Sound.play(full ? 'perfect' : 'coin'); enSpeak(cur.w);
+            [...slots.children].forEach(sl => sl.classList.add('done'));
+            setTimeout(next, 1400);
+          }
+        } else { mistakes++; Sound.play('miss'); b.classList.add('shake'); setTimeout(() => b.classList.remove('shake'), 400); }
+      };
+      tiles.appendChild(b);
+    });
+    body.append(slots, tiles);
+    playEnglish.test = { cur, solve: () => { letters.forEach(ch => { const t = [...tiles.children].find((x, i) => !bank[i].used && bank[i].ch === ch); t.click(); }); }, wrongTile: () => { const t = [...tiles.children].find((x, i) => bank[i].ch !== letters[pos]); if (t) t.click(); }, right: () => right, n: () => n };
+  };
+  gameCleanup = () => { ended = true; stopSpeak(); };
+  next();
 }
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
