@@ -674,6 +674,24 @@ button.pass { font: inherit; }
 .en-tile { width: 52px; height: 52px; border: 3px solid #e7a94a; background: #fff3d6; border-radius: 14px; font-size: 26px; font-weight: 800; }
 .en-tile:disabled { opacity: .3; } .en-tile.shake { animation: enShake .35s; border-color: #e0605a; }
 @keyframes enShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+.ltr-sets { display: flex; flex-direction: column; gap: 10px; }
+.ltr-set { display: flex; align-items: center; gap: 14px; border: 3px solid var(--line); background: #fff; border-radius: 16px; padding: 12px 14px; text-align: left; }
+.ltr-set.rec { border-color: #e7a94a; background: #fff6df; }
+.ltr-set-l { font-size: 34px; font-weight: 800; letter-spacing: 6px; min-width: 120px; } .ltr-set-n { font-size: 14px; font-weight: 700; color: #6b5a44; }
+.ltr-bar { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; margin-bottom: 8px; }
+.ltr-step { font-size: 12px; padding: 3px 8px; border-radius: 999px; background: #eee6d6; color: #8a7a64; }
+.ltr-step.on { background: #ffe9b8; color: #5a4630; font-weight: 800; } .ltr-step.done { background: #d9f5df; color: #2f7d4a; }
+.ltr-body { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.ltr-body .game-canvas { width: min(100%, 240px); background: #fffdf8; border: 3px solid var(--line); border-radius: 14px; }
+.ltr-big { font-size: 72px; font-weight: 800; line-height: 1; color: #3a6fd1; }
+.ltr-say { font-size: 15px; font-weight: 700; color: #6b5a44; text-align: center; } .ltr-hint { font-size: 14px; color: #8a7a64; text-align: center; }
+.ltr-q { font-size: 22px; font-weight: 800; text-align: center; }
+.ltr-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; max-width: 340px; }
+.ltr-cell { font-size: 44px; font-weight: 800; border: 3px solid var(--line); background: #fff; border-radius: 14px; height: 74px; font-family: Arial, Helvetica, sans-serif; }
+.ltr-cell.ok { background: #d9f5df; border-color: #4fae63; color: #2f7d4a; } .ltr-cell.no { background: #ffe0e0; border-color: #e0605a; animation: enShake .35s; }
+.ltr-opts { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.ltr-opt { font-size: 52px; font-weight: 800; width: 90px; height: 90px; border: 3px solid var(--line); background: #fff; border-radius: 18px; font-family: Arial, Helvetica, sans-serif; }
+.ltr-opt.ok { background: #d9f5df; border-color: #4fae63; } .ltr-opt.no { background: #ffe0e0; border-color: #e0605a; }
 .trick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 8px 0 12px; }
 .trick-cell { border: 2px dashed var(--line); border-radius: 14px; background: #fffaf0; padding: 8px 4px; text-align: center; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .trick-cell.got { border-style: solid; border-color: #f0902f; background: #fff3e2; }
@@ -5018,6 +5036,8 @@ function normalizeSave(g) {
   if (out.ghost && (!Number.isInteger(out.ghost.n) || out.ghost.n < 1 || out.ghost.n > 9)) out.ghost.n = 1;
   if (out.ghost && out.ghost.foundAt != null && !num(out.ghost.foundAt)) delete out.ghost.foundAt;
   if (out.gameBonusDay != null && typeof out.gameBonusDay !== 'string') delete out.gameBonusDay;
+  if (out.abc != null && !(isObj(out.abc))) delete out.abc;
+  if (out.abc) ['bd', 'pq', 'mix'].forEach(k => { if (!Number.isInteger(out.abc[k]) || out.abc[k] < 0) out.abc[k] = 0; });
   if (out.partyDay != null && typeof out.partyDay !== 'string') delete out.partyDay;
   if (out.clownDay != null && typeof out.clownDay !== 'string') delete out.clownDay;
   if (out.dailyPaid != null && typeof out.dailyPaid !== 'string') delete out.dailyPaid;
@@ -14135,6 +14155,7 @@ function tabEarn(body) {
     ['🐠', '撈金魚', openScoopGame],
     ['🍪', '烤餅乾', openBakeGame],
     ['🧁', '杯子蛋糕店', openCupcakeGame],
+    ['🔡', '字母找找看', openLetterGame],
     ['🔤', '英文單字', openEnglishGame],
     ['🌳', '寵物捉迷藏', openPetHideGame]].forEach(([icon, label, fn]) => {
     const b = el('button', 'game-pick');
@@ -18882,6 +18903,210 @@ function playEnglish(w, L, week) {
   };
   gameCleanup = () => { ended = true; Sound.duck(false); stopSpeak(); };
   next();
+}
+/* ===== 🔡 字母找找看（家長：六歲妹妹分不清 b d p q）=====
+   照「先教 b、d，再教 p、q；不要只叫她看，要用手寫、用嘴念、用眼睛找」做成每天 5～10 分鐘的小練習：
+   ① 認識：看筆畫動畫、聽字母和單字，口訣「直線先站好，肚子長右邊」
+   ② 描寫：用手指照著淡淡的字描一遍（描到 6 成就過關，描不好不會被罵）
+   ③ 找找看：一堆字母裡找出指定的那個（點錯不扣分，輕輕說明差在哪裡）
+   ④ 複習：聽字母選字、看圖選字母
+   一組一組練：b 和 d → p 和 q → 四個一起。沒有「對／錯」的壓力：錯了只是告訴她差在哪、讓她再看一次。
+   字母的形狀是自己畫的（一條直線＋一個圓），所以方向一定對，筆畫順序也跟動畫一樣。 */
+const LTR = {   // 字母：口訣、單字圖、筆畫（100×140 的格子，基準線 y=100）
+  b: { word: 'ball', pic: '⚽', say: '直線先站好，肚子長右邊', parts: [{ l: [30, 10, 30, 100] }, { c: [55, 72, 28, Math.PI, Math.PI * 3, false] }] },
+  d: { word: 'dog', pic: '🐶', say: '先畫圓圈，再畫直線在右邊', parts: [{ c: [45, 72, 28, -Math.PI / 2, -Math.PI * 2.5, true] }, { l: [72, 10, 72, 100] }] },
+  p: { word: 'pig', pic: '🐷', say: '直線往下掉，肚子在右上', parts: [{ l: [30, 44, 30, 135] }, { c: [55, 72, 28, Math.PI, Math.PI * 3, false] }] },
+  q: { word: 'queen', pic: '👸', say: '先畫圓圈，尾巴往下掉', parts: [{ c: [45, 72, 28, -Math.PI / 2, -Math.PI * 2.5, true] }, { l: [72, 44, 72, 135] }] }
+};
+const LTR_SETS = { bd: ['b', 'd'], pq: ['p', 'q'], mix: ['b', 'd', 'p', 'q'] };
+const LTR_SET_NAME = { bd: 'b 和 d', pq: 'p 和 q', mix: 'b d p q 一起' };
+function ltrPartLen(pt) { return pt.l ? Math.hypot(pt.l[2] - pt.l[0], pt.l[3] - pt.l[1]) : 2 * Math.PI * pt.c[2]; }
+// 把字母畫在 ctx 上：prog＝0~1 畫到哪裡（動畫用）；ox,oy,k＝位置與放大
+function ltrDraw(ctx, ch, prog, ox, oy, k, width, color) {
+  const parts = LTR[ch].parts, total = parts.reduce((a, q) => a + ltrPartLen(q), 0);
+  let left = prog * total;
+  ctx.save(); ctx.translate(ox, oy); ctx.scale(k, k);
+  ctx.lineWidth = width / k; ctx.lineCap = 'round'; ctx.strokeStyle = color;
+  for (const pt of parts) {
+    const len = ltrPartLen(pt), f = Math.max(0, Math.min(1, left / len)); left -= len;
+    if (f <= 0) break;
+    ctx.beginPath();
+    if (pt.l) { ctx.moveTo(pt.l[0], pt.l[1]); ctx.lineTo(pt.l[0] + (pt.l[2] - pt.l[0]) * f, pt.l[1] + (pt.l[3] - pt.l[1]) * f); }
+    else { const [cx, cy, r, a0, a1, ccw] = pt.c; ctx.arc(cx, cy, r, a0, a0 + (a1 - a0) * f, ccw); }
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+function ltrSpeak(ch) { try { enSpeak(`${ch}, ${LTR[ch].word}`); } catch (e) {} }
+function openLetterGame() {
+  const win = openGameWindow('🔡 字母找找看', '每天練 5～10 分鐘就好。先選要練哪幾個字母，一步一步來：看、描、找、複習。');
+  Sound.duck(true);
+  gameCleanup = () => { Sound.duck(false); stopSpeak(); };
+  win.stage.innerHTML = ''; win.btns.innerHTML = '';
+  win.status.textContent = '選要練的字母';
+  const ab = G.abc = (G.abc && typeof G.abc === 'object') ? G.abc : { bd: 0, pq: 0, mix: 0 };
+  const rec = ab.bd < 3 ? 'bd' : ab.pq < 3 ? 'pq' : 'mix';   // 先 b d，再 p q，最後一起
+  const row = el('div', 'ltr-sets');
+  Object.keys(LTR_SETS).forEach(k => {
+    const b = el('button', 'ltr-set' + (k === rec ? ' rec' : ''));
+    b.append(el('span', 'ltr-set-l', LTR_SETS[k].join(' ')), el('span', 'ltr-set-n', LTR_SET_NAME[k] + (k === rec ? '　⭐ 今天推薦' : (ab[k] ? `　練過 ${ab[k]} 次` : ''))));
+    b.onclick = () => { Sound.play('click'); playLetters(win, k); };
+    row.appendChild(b);
+  });
+  win.stage.appendChild(row);
+  leaveButton(win);
+}
+function playLetters(w, setKey) {
+  const set = LTR_SETS[setKey], rand = a => a[Math.floor(Math.random() * a.length)], shuffle = a => a.slice().sort(() => Math.random() - .5);
+  const STEPS = ['① 認識字母', '② 用手指描', '③ 找找看', '④ 複習'];
+  let step = 0, raf = 0, dead = false, wrongs = 0, rights = 0;
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const bar = el('div', 'ltr-bar'), body = el('div', 'ltr-body');
+  w.stage.append(bar, body);
+  gameCleanup = () => { dead = true; cancelAnimationFrame(raf); Sound.duck(false); stopSpeak(); };
+  leaveButton(w);
+  const showBar = () => { bar.innerHTML = ''; STEPS.forEach((t, i) => bar.appendChild(el('span', 'ltr-step' + (i === step ? ' on' : i < step ? ' done' : ''), t))); w.status.textContent = `${LTR_SET_NAME[setKey]}　${STEPS[step]}`; };
+  const next = () => { cancelAnimationFrame(raf); step++; if (step >= STEPS.length) finish(); else run(); };
+  const run = () => { showBar(); body.innerHTML = ''; [stepLearn, stepTrace, stepFind, stepReview][step](); };
+  const nextBtn = (label, fn) => { const b = el('button', 'big', label || '下一步 ▶'); b.onclick = () => { Sound.play('click'); (fn || next)(); }; body.appendChild(b); return b; };
+  // ① 認識：筆畫動畫＋聽＋口訣
+  function stepLearn() {
+    let idx = 0;
+    const show = () => {
+      body.innerHTML = '';
+      cancelAnimationFrame(raf);
+      const ch = set[idx], info = LTR[ch];
+      body.appendChild(el('div', 'ltr-big', ch));
+      const { c, g } = gameCanvas(body, 200, 200);
+      body.appendChild(el('div', 'ltr-say', `${info.pic} ${info.word}　「${info.say}」`));
+      const hear = el('button', 'big alt', '🔊 聽一聽、跟著念');
+      hear.onclick = () => ltrSpeak(ch);
+      body.appendChild(hear);
+      const t0 = performance.now();
+      const frame = now => {
+        if (dead || !c.isConnected) return;
+        const t = ((now - t0) % 4200) / 4200, prog = Math.min(1, t / .65);
+        g.clearRect(0, 0, 200, 200);
+        ltrDraw(g, ch, 1, 50, 20, 1.15, 22, 'rgba(120,100,70,.12)');
+        ltrDraw(g, ch, prog, 50, 20, 1.15, 14, '#3a6fd1');
+        raf = requestAnimationFrame(frame);
+      };
+      raf = requestAnimationFrame(frame);
+      setTimeout(() => { if (!dead) ltrSpeak(ch); }, 350);
+      nextBtn(idx + 1 < set.length ? '下一個字母 ▶' : '下一步：用手指描 ▶', () => { if (idx + 1 < set.length) { idx++; show(); } else next(); });
+    };
+    show();
+  }
+  // ② 描：照著淡淡的字描；描到 6 成就過關
+  function stepTrace() {
+    let idx = 0;
+    const show = () => {
+      body.innerHTML = '';
+      const ch = set[idx], info = LTR[ch];
+      body.appendChild(el('div', 'ltr-say', `用手指把 ${ch} 描出來　「${info.say}」`));
+      const { c, g, pos } = gameCanvas(body, 240, 240);
+      c.style.touchAction = 'none';
+      const mask = document.createElement('canvas'); mask.width = c.width; mask.height = c.height;
+      const dpr = window.devicePixelRatio || 1, mg = mask.getContext('2d'); mg.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ltrDraw(mg, ch, 1, 60, 25, 1.4, 26, '#000');
+      const kid = document.createElement('canvas'); kid.width = c.width; kid.height = c.height;
+      const kg = kid.getContext('2d'); kg.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const paint = () => { g.clearRect(0, 0, 240, 240); ltrDraw(g, ch, 1, 60, 25, 1.4, 26, 'rgba(120,100,70,.18)'); g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(kid, 0, 0); g.restore(); };
+      const cover = () => {
+        const a = mg.getImageData(0, 0, mask.width, mask.height).data, b = kg.getImageData(0, 0, kid.width, kid.height).data;
+        let tot = 0, hit = 0; for (let i = 3; i < a.length; i += 16) if (a[i] > 128) { tot++; if (b[i] > 60) hit++; }
+        return tot ? hit / tot : 0;
+      };
+      let drawing = false, lx = 0, ly = 0, ok = false;
+      c.onpointerdown = e => { e.preventDefault(); try { c.setPointerCapture(e.pointerId); } catch (er) {} drawing = true; const p = pos(e); lx = p.x; ly = p.y; kg.lineWidth = 16; kg.lineCap = 'round'; kg.strokeStyle = '#3a6fd1'; kg.beginPath(); kg.moveTo(lx, ly); kg.lineTo(lx + .1, ly + .1); kg.stroke(); paint(); };
+      c.onpointermove = e => { if (!drawing) return; const p = pos(e); kg.beginPath(); kg.moveTo(lx, ly); kg.lineTo(p.x, p.y); kg.stroke(); lx = p.x; ly = p.y; paint(); };
+      c.onpointerup = c.onpointercancel = () => {
+        drawing = false;
+        if (ok) return;
+        if (cover() >= .6) { ok = true; Sound.play('perfect'); rights++; body.querySelector('.ltr-hint').textContent = `🎉 描好了！這是 ${ch}`; ltrSpeak(ch); body.querySelector('.ltr-retry').hidden = true; nextBtn(idx + 1 < set.length ? '下一個字母 ▶' : '下一步：找找看 ▶', () => { if (idx + 1 < set.length) { idx++; show(); } else next(); }); }
+      };
+      paint();
+      body.appendChild(el('div', 'ltr-hint', '照著淡淡的字描，描完整個字就過關'));
+      const retry = el('button', 'mini ltr-retry', '🔁 重描');
+      retry.onclick = () => { kg.clearRect(0, 0, kid.width, kid.height); paint(); };
+      body.appendChild(retry);
+      const skip = el('button', 'mini', '先跳過');
+      skip.onclick = () => { if (idx + 1 < set.length) { idx++; show(); } else next(); };
+      body.appendChild(skip);
+    };
+    show();
+  }
+  // ③ 找找看：3 回合，每回合找出指定的字母（12 格）
+  function stepFind() {
+    let round = 0; const R = 3;
+    const show = () => {
+      body.innerHTML = '';
+      const target = set[round % set.length], others = set.filter(x => x !== target);
+      body.appendChild(el('div', 'ltr-q', `找出所有的　${target}　${LTR[target].pic}`));
+      const hear = el('button', 'mini', '🔊 聽'); hear.onclick = () => ltrSpeak(target); body.appendChild(hear);
+      setTimeout(() => { if (!dead) ltrSpeak(target); }, 250);
+      const n = 12, cnt = 4 + Math.floor(Math.random() * 2);
+      const cells = shuffle(Array.from({ length: n }, (_, i) => i < cnt ? target : rand(others)));
+      let left = cnt, hinted = false;
+      const grid = el('div', 'ltr-grid');
+      cells.forEach(ch => {
+        const b = el('button', 'ltr-cell', ch);
+        b.onclick = () => {
+          if (b.classList.contains('ok')) return;
+          if (ch === target) { b.classList.add('ok'); rights++; Sound.play('perfect'); if (!--left) { cellsDone(); } }
+          else { wrongs++; b.classList.add('no'); Sound.play('miss'); setTimeout(() => b.classList.remove('no'), 500); if (!hinted) { hinted = true; toast(`那是 ${ch} 喔～${target} 的樣子：${LTR[target].say}`); } }
+        };
+        grid.appendChild(b);
+      });
+      body.appendChild(grid);
+      const cellsDone = () => { setTimeout(() => { if (dead) return; body.querySelector('.ltr-q').textContent = '🎉 都找到了！'; nextBtn(round + 1 < R ? '下一回合 ▶' : '下一步：複習 ▶', () => { if (round + 1 < R) { round++; show(); } else next(); }); }, 400); };
+    };
+    show();
+  }
+  // ④ 複習：聽字母選字、看圖選字母（共 6 題）
+  function stepReview() {
+    let n = 0; const Q = 6;
+    const ask = () => {
+      body.innerHTML = '';
+      if (n >= Q) { next(); return; }
+      const ch = rand(set), byPic = n % 2 === 1;
+      body.appendChild(el('div', 'ltr-q', byPic ? `${LTR[ch].pic} ${LTR[ch].word} 的第一個字母是？` : '聽一聽，是哪一個字母？'));
+      const hear = el('button', 'big alt', byPic ? '🔊 聽單字' : '🔊 再聽一次');
+      hear.onclick = () => ltrSpeak(ch); body.appendChild(hear);
+      setTimeout(() => { if (!dead) ltrSpeak(ch); }, 250);
+      const opts = shuffle(set.length > 3 ? set : set.concat(['a', 'e']).slice(0, Math.max(3, set.length)));
+      if (!opts.includes(ch)) opts[0] = ch;
+      const grid = el('div', 'ltr-opts');
+      playLetters.test = { ch };   // 測試用：現在的答案
+      shuffle(opts).forEach(o => {
+        const b = el('button', 'ltr-opt', o);
+        b.onclick = () => {
+          grid.querySelectorAll('button').forEach(x => x.disabled = true);
+          if (o === ch) { b.classList.add('ok'); rights++; Sound.play('perfect'); }
+          else { wrongs++; b.classList.add('no'); Sound.play('miss'); [...grid.children].forEach(x => { if (x.textContent === ch) x.classList.add('ok'); }); toast(`是 ${ch} 喔：${LTR[ch].say}`); }
+          setTimeout(() => { n++; ask(); }, o === ch ? 900 : 1800);
+        };
+        grid.appendChild(b);
+      });
+      body.appendChild(grid);
+    };
+    ask();
+  }
+  function finish() {
+    dead = true; Sound.duck(false);
+    const ab = G.abc = (G.abc && typeof G.abc === 'object') ? G.abc : { bd: 0, pq: 0, mix: 0 };
+    ab[setKey] = Math.min(999, (ab[setKey] || 0) + 1);
+    const bells = payReward(w, 100 + Math.min(50, rights * 2));
+    body.innerHTML = ''; bar.innerHTML = '';
+    body.appendChild(el('div', 'ltr-big', '🎉'));
+    body.appendChild(el('div', 'ltr-q', `今天的 ${LTR_SET_NAME[setKey]} 練習完成了！`));
+    body.appendChild(el('div', 'ltr-say', `💰 +${fmt(bells)}　${ab[setKey]} 次了，每天練一點點就會越來越穩～`));
+    w.status.textContent = '好棒！明天再練一次';
+    try { fufuSay('b d p q 我會分了！', 2600); dailyHit('game'); } catch (e) {}
+    saveGame();
+    gameButtons(w, openLetterGame);
+  }
+  run();
 }
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
