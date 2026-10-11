@@ -5038,6 +5038,7 @@ function normalizeSave(g) {
   if (out.gameBonusDay != null && typeof out.gameBonusDay !== 'string') delete out.gameBonusDay;
   if (out.abc != null && !(isObj(out.abc))) delete out.abc;
   if (out.abc) ['bd', 'pq', 'mix'].forEach(k => { if (!Number.isInteger(out.abc[k]) || out.abc[k] < 0) out.abc[k] = 0; });
+  if (out.pumpDay != null && !(isObj(out.pumpDay) && typeof out.pumpDay.d === 'string' && Number.isInteger(out.pumpDay.n) && out.pumpDay.n >= 0)) delete out.pumpDay;
   if (out.partyDay != null && typeof out.partyDay !== 'string') delete out.partyDay;
   if (out.clownDay != null && typeof out.clownDay !== 'string') delete out.clownDay;
   if (out.dailyPaid != null && typeof out.dailyPaid !== 'string') delete out.dailyPaid;
@@ -18368,6 +18369,8 @@ const ISL_BLD = [   // 房子：x, y 是左上角的格子，w×h 格；門在�
   { id: 'amusement', x: 23, y: 26, w: 6, h: 3 }
 ];
 const ISL_FRIEND_SPOTS = [[17, 27], [32, 27], [16, 17], [34, 17]];   // 朋友的家（最多 4 棟），3×2
+const ISL_PUMPKINS = [[22, 17], [30, 20], [20, 22], [31, 16], [26, 24]];   // 萬聖節才有的南瓜燈（點了有小驚喜）
+const ISL_PUMPKIN_CANDY_MAX = 3;   // 南瓜每天最多吐 3 顆糖（不然一直點就一直有糖）
 const ISL_POND = { x: 31, y: 24, w: 4, h: 3 };
 const ISL_HUB = [26, 19];
 const ISL_STYLE = {   // 牆、屋頂顏色
@@ -18418,7 +18421,9 @@ function islMap(nFriends) {
     if (h < .09 && !near(x, y, 1)) { tree[y][x] = true; block[y][x] = true; }
     else if (h > .93 && !near(x, y, 0)) flower[y][x] = true;
   }
-  islMapCache = { nf: nFriends, W, H, land, beach, block, path, tree, flower, blds };
+  const shells = [];   // 沙灘上的貝殼（點了可以撿）
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (land[y][x] && beach[y][x] && !block[y][x] && !path[y][x] && islHash(x, y, 11) > .955) shells.push({ x, y, id: shells.length });
+  islMapCache = { nf: nFriends, W, H, land, beach, block, path, tree, flower, blds, shells };
   return islMapCache;
 }
 const islPass = (m, x, y) => x >= 0 && y >= 0 && x < m.W && y < m.H && m.land[y][x] && !m.block[y][x];
@@ -18470,13 +18475,14 @@ function openIsland() {
   layer.append(back, fast, tip);
   stage.appendChild(layer); stage.classList.add('island-on');
   const dpr = () => window.devicePixelRatio || 1;
-  isl = { layer, cv, m, invites, x: st.x + .5, y: st.y + .5, path: [], pending: null, skipDoor: st.id, facing: 1, back: false,
+  isl = { fx: [], gulls: [], shellGot: {}, layer, cv, m, invites, x: st.x + .5, y: st.y + .5, path: [], pending: null, skipDoor: st.id, facing: 1, back: false,
     t: 0, last: performance.now(), keys: {}, press: null, repath: 0, shake: {}, picked: {}, trail: [], pet: { x: st.x + .5, y: st.y + 1.2, f: 1 }, raf: 0, tip, cam: { x: st.x + .5, y: st.y + .5 }, from: G.away ? G.away.place : null };
   isl.npcs = NEIGHBORS.filter(Boolean).slice().sort((a, b) => (!!G.friends[a.id] - !!G.friends[b.id]) || Math.random() - .5).slice(0, 3).map((n, i) => {   // 島上逛街的動物朋友（還沒認識的排前面）
     let x = 0, y = 0; for (let k = 0; k < 60; k++) { x = 18 + Math.floor(Math.random() * 16); y = 14 + Math.floor(Math.random() * 12); if (islPass(m, x, y)) break; }
     let pic = null; try { pic = renderNeighborPortrait(n, 48, 44, false); } catch (e) {}
     return { n, x: x + .5, y: y + .5, path: [], wait: 1 + Math.random() * 3, f: 1, pic, cool: 0 };
   });
+  for (let i = 0; i < 3; i++) isl.gulls.push({ x: Math.random() * ISL.W, y: 4 + Math.random() * (ISL.H - 8), vx: (Math.random() < .5 ? -1 : 1) * (.9 + Math.random() * .6), ph: Math.random() * 6, scared: 0 });   // 海鷗
   back.onclick = () => { Sound.play('click'); closeIsland(); };
   fast.onclick = () => { Sound.play('click'); openTravelMenu(); };
   cv.addEventListener('pointerdown', islDown); cv.addEventListener('pointermove', islMove);
@@ -18522,6 +18528,14 @@ function islTap(e, hold) {
   if (hold && isl.pressTile && t.x === isl.pressTile.x && t.y === isl.pressTile.y) return;   // 手指還按在原來那一格：不要重新找路
   if (hold) { isl.pending = null; isl.pressTile = null; }
   if (!hold) {
+    const fun = islFunAt(t);
+    if (fun) {
+      isl.pending = { type: 'fun', obj: fun };
+      const dx = fun.x - isl.x, dy = fun.y - isl.y;
+      if (Math.hypot(dx, dy) < fun.reach) { isl.path = []; islDoPending(); return; }
+      if (!islWalkTo((x, y) => Math.hypot(x + .5 - fun.x, y + .5 - fun.y) < fun.reach - .3)) isl.pending = null;
+      return;
+    }
     const nb = isl.npcs.find(q => Math.hypot(q.x - t.fx, q.y - 0.5 - t.fy) < 1.0);
     if (nb) {
       isl.pending = { type: 'talk', npc: nb };
@@ -18551,6 +18565,7 @@ function islUp() { if (isl) isl.press = null; }
 function islDoPending() {
   const p = isl.pending; if (!p) return; isl.pending = null;
   if (p.type === 'enter') { islEnter(p.id); return; }
+  if (p.type === 'fun') { islFun(p.obj); return; }
   if (p.type === 'talk') {
     const q = p.npc, n = q.n;
     if (Math.hypot(q.x - isl.x, q.y - isl.y) > 2.6) return;
@@ -18623,6 +18638,11 @@ function islStep(dt) {
       if (d <= sp) { q.x = px; q.y = py; q.path.shift(); } else { q.f = px > q.x ? 1 : -1; q.x += (px - q.x) / d * sp; q.y += (py - q.y) / d * sp; }
     } else { q.wait -= dt; if (q.wait <= 0) { q.wait = 2 + Math.random() * 4; const gx = Math.floor(q.x) + Math.floor(Math.random() * 9) - 4, gy = Math.floor(q.y) + Math.floor(Math.random() * 7) - 3; if (islPass(m, gx, gy)) { const pth = islFindPath(m, Math.floor(q.x), Math.floor(q.y), (x, y) => x === gx && y === gy); if (pth && pth.length < 14) q.path = pth; } } }
   });
+  isl.gulls.forEach(g => {
+    g.ph += dt * 2; g.x += g.vx * dt * (g.scared > 0 ? 3 : 1); g.y += Math.sin(g.ph) * dt * .6; g.scared = Math.max(0, g.scared - dt);
+    if (g.x < -4) g.x = ISL.W + 3; if (g.x > ISL.W + 4) g.x = -3;
+  });
+  isl.fx = isl.fx.filter(f => performance.now() - f.t0 < f.dur);
   isl.cam.x += (isl.x - isl.cam.x) * Math.min(1, dt * 6); isl.cam.y += (isl.y - isl.cam.y) * Math.min(1, dt * 6);
   return true;
 }
@@ -18684,6 +18704,15 @@ function islDraw(now) {
     ctx.fillStyle = c; for (let k = 0; k < 5; k++) { const a = k / 5 * 6.283; ctx.beginPath(); ctx.arc(px + sw + Math.cos(a) * 4, py + Math.sin(a) * 4, 3, 0, 7); ctx.fill(); }
     ctx.fillStyle = '#ffe066'; ctx.beginPath(); ctx.arc(px + sw, py, 2.2, 0, 7); ctx.fill();
   }
+  // 貝殼（沙灘）
+  m.shells.forEach(sh => {
+    if (sh.x < x0 || sh.x > x1 || sh.y < y0 || sh.y > y1 || isl.shellGot[sh.id]) return;
+    const px = sh.x * T + 16, py = sh.y * T + 20, tw = 1 + Math.sin(tt * 3 + sh.id) * .08;
+    ctx.save(); ctx.translate(px, py); ctx.scale(tw, tw);
+    ctx.fillStyle = sh.id % 2 ? '#ffc2d6' : '#ffe0b3'; ctx.strokeStyle = '#d99aa8'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(0, 7); ctx.quadraticCurveTo(-11, -2, -6, -8); ctx.quadraticCurveTo(0, -12, 6, -8); ctx.quadraticCurveTo(11, -2, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); [-4, 0, 4].forEach(a => { ctx.moveTo(0, 6); ctx.lineTo(a * 1.4, -7); }); ctx.stroke(); ctx.restore();
+  });
   // 會擋住、有前後的東西：照腳的位置排
   const items = [];
   m.blds.forEach(b => items.push({ y: (b.y + b.h) * T, draw: () => islDrawBuilding(ctx, b, tt) }));
@@ -18696,9 +18725,77 @@ function islDraw(now) {
   } }));
   items.push({ y: isl.y * T, draw: () => islDrawKid(ctx) });
   if (!isEgg()) items.push({ y: isl.pet.y * T, draw: () => islDrawPet(ctx) });
+  if (halloweenActive()) ISL_PUMPKINS.forEach(([x, y], i) => items.push({ y: (y + 1) * T, draw: () => islDrawPumpkin(ctx, x, y, i, now) }));
   items.sort((a, b) => a.y - b.y).forEach(it => it.draw());
-  if (halloweenActive()) { ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; [[22, 17], [30, 20], [20, 22], [31, 16], [26, 24]].forEach(([x, y]) => ctx.fillText('🎃', x * T + 16, y * T + 24)); }
+  islDrawFx(ctx, now);
   ctx.restore();
+}
+/* ===== 🎃 大地圖上的小趣味 =====
+   點得到的東西：南瓜燈（萬聖節）、噴水池、池塘（魚跳出來）、海鷗、沙灘貝殼。
+   不給鈴錢；南瓜每天最多吐 3 顆萬聖節糖果（會算進糖果收集），其餘都是看了開心的小驚喜。 */
+function islFunAt(t) {
+  const m = isl.m, fx = t.fx, fy = t.fy;
+  if (halloweenActive()) { const i = ISL_PUMPKINS.findIndex(([x, y]) => Math.hypot(x + .5 - fx, y + .5 - fy) < .8); if (i >= 0) return { kind: 'pumpkin', id: i, x: ISL_PUMPKINS[i][0] + .5, y: ISL_PUMPKINS[i][1] + 1.2, ox: ISL_PUMPKINS[i][0] + .5, oy: ISL_PUMPKINS[i][1] + .5, reach: 2.2 }; }
+  const g = isl.gulls.findIndex(q => Math.hypot(q.x - fx, q.y - fy) < 1.2); if (g >= 0) return { kind: 'gull', id: g, x: isl.gulls[g].x, y: isl.gulls[g].y, reach: 99 };
+  const sh = m.shells.find(q => !isl.shellGot[q.id] && Math.hypot(q.x + .5 - fx, q.y + .6 - fy) < .8); if (sh) return { kind: 'shell', id: sh.id, x: sh.x + .5, y: sh.y + .6, reach: 1.6 };
+  if (Math.hypot(ISL_HUB[0] + .5 - fx, ISL_HUB[1] + .5 - fy) < 1.1) return { kind: 'fountain', x: ISL_HUB[0] + .5, y: ISL_HUB[1] + .5, reach: 3.2 };
+  const p = ISL_POND; if (fx >= p.x - .3 && fx <= p.x + p.w + .3 && fy >= p.y - .3 && fy <= p.y + p.h + .3) return { kind: 'pond', x: p.x + p.w / 2, y: p.y + p.h / 2, reach: 3.6 };
+  return null;
+}
+const islAddFx = (k, x, y, dur, extra) => isl.fx.push(Object.assign({ k, x, y, t0: performance.now(), dur }, extra || {}));
+function islFun(o) {
+  if (o.kind === 'pumpkin') {
+    const pd = G.pumpDay = (G.pumpDay && G.pumpDay.d === today()) ? G.pumpDay : { d: today(), n: 0 };
+    islAddFx('pop', o.ox, o.oy, 700, { id: o.id });
+    const r = Math.random();
+    if (r < .45 && pd.n < ISL_PUMPKIN_CANDY_MAX) {
+      pd.n++; hwEarn(1); Sound.play('coin'); islAddFx('candy', o.ox, o.oy - .6, 1400);
+      toast(`🍬 南瓜燈吐出一顆糖！（今天 ${pd.n} / ${ISL_PUMPKIN_CANDY_MAX}）`); saveGame(); refreshTop();
+    } else if (r < .7) { Sound.play('magic'); islAddFx('ghost', o.ox, o.oy - .6, 1800); islAddFx('say', o.ox, o.oy - 2.2, 1800, { text: '嘿！被你發現了～' }); }
+    else if (r < .88) { Sound.play('whoosh'); for (let i = 0; i < 4; i++) islAddFx('bat', o.ox, o.oy - 1, 2400, { dx: (i % 2 ? 1 : -1) * (3 + i), dy: -2 - i * .6, delay: i * 150 }); toast('🦇 蝙蝠飛出來了！'); }
+    else { Sound.play('petHappy'); islAddFx('say', o.ox, o.oy - 1.8, 1500, { text: '嘻嘻嘻～' }); }
+    kidMoodUp(1);
+  } else if (o.kind === 'fountain') {
+    Sound.play('splash'); islAddFx('splash', o.x, o.y, 1600); islAddFx('rainbow', o.x, o.y - .5, 2200);
+    toast('💦 噴水池噴得好高！');
+  } else if (o.kind === 'pond') {
+    Sound.play('splash'); const p = ISL_POND; islAddFx('fish', p.x + .6 + Math.random() * (p.w - 1.2), p.y + .8 + Math.random() * (p.h - 1.6), 1300);
+    toast(['🐟 有魚跳出來了！', '🐟 噗通！', '🐠 魚兒在打招呼～'][Math.floor(Math.random() * 3)]);
+  } else if (o.kind === 'gull') {
+    const g = isl.gulls[o.id]; if (g) { g.scared = 2.5; g.vx = (g.vx < 0 ? -1 : 1) * 1.6; } Sound.play('boing'); islAddFx('say', o.x, o.y - 1, 1200, { text: '嘎～！' });
+  } else if (o.kind === 'shell') {
+    isl.shellGot[o.id] = true; Sound.play('pickUp'); islAddFx('spark', o.x, o.y, 900); kidMoodUp(1);
+    toast(['🐚 撿到一個貝殼！好漂亮', '🐚 沙灘上的貝殼～'][Math.floor(Math.random() * 2)]);
+  }
+}
+function islDrawPumpkin(ctx, x, y, i, now) {
+  const T = ISL.T, fx = isl.fx.find(f => f.k === 'pop' && f.id === i && now - f.t0 < f.dur), a = fx ? (now - fx.t0) / fx.dur : 1;
+  const hop = fx ? Math.abs(Math.sin(a * Math.PI * 3)) * 14 * (1 - a) : 0, sq = fx ? 1 + Math.sin(a * Math.PI * 6) * .08 * (1 - a) : 1;
+  const px = x * T + 16, py = y * T + 22;
+  ctx.fillStyle = 'rgba(40,60,30,.2)'; ctx.beginPath(); ctx.ellipse(px, py + 8, 13, 5, 0, 0, 7); ctx.fill();
+  ctx.save(); ctx.translate(px, py - hop); ctx.scale(sq, 2 - sq); drawLanternPumpkin(ctx, 0, 0, 13, now); ctx.restore();
+}
+function islDrawFx(ctx, now) {
+  const T = ISL.T;
+  isl.gulls.forEach(g => {   // 海鷗：高高飛在島的上面，翅膀一拍一拍
+    const px = g.x * T, py = g.y * T, w = Math.sin(g.ph * 5) * 5;
+    ctx.fillStyle = 'rgba(40,60,30,.1)'; ctx.beginPath(); ctx.ellipse(px, py + 26, 8, 3, 0, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(px - 12, py + w); ctx.quadraticCurveTo(px - 5, py - 6, px, py); ctx.quadraticCurveTo(px + 5, py - 6, px + 12, py + w); ctx.stroke();
+    ctx.strokeStyle = '#c8d0d8'; ctx.lineWidth = 1; ctx.stroke();
+  });
+  isl.fx.forEach(f => {
+    const a = (now - f.t0) / f.dur, px = f.x * T, py = f.y * T;
+    ctx.save(); ctx.textAlign = 'center'; ctx.globalAlpha = Math.max(0, Math.min(1, (1 - a) * 2.2));
+    if (f.k === 'candy') { ctx.font = '22px sans-serif'; ctx.fillText('🍬', px, py - a * 46); }
+    else if (f.k === 'ghost') { ctx.font = '30px sans-serif'; ctx.fillText('👻', px + Math.sin(a * 9) * 6, py - 10 - a * 50); }
+    else if (f.k === 'bat') { if (now - f.t0 >= (f.delay || 0)) { const b = Math.min(1, (now - f.t0 - (f.delay || 0)) / (f.dur - (f.delay || 0))); ctx.font = '22px sans-serif'; ctx.fillText('🦇', px + f.dx * T * b, py + f.dy * T * b + Math.sin(b * 14) * 6); } }
+    else if (f.k === 'say') { ctx.globalAlpha = Math.max(0, Math.min(1, (1 - a) * 3)); ctx.font = '700 13px "Microsoft JhengHei","PingFang TC",sans-serif'; const tw = ctx.measureText(f.text).width + 16; ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(px - tw / 2, py - 14 - a * 10, tw, 22, 11) : ctx.rect(px - tw / 2, py - 14 - a * 10, tw, 22); ctx.fill(); ctx.fillStyle = '#5a4630'; ctx.fillText(f.text, px, py + 2 - a * 10); }
+    else if (f.k === 'splash') { ctx.strokeStyle = 'rgba(160,220,255,.95)'; ctx.lineWidth = 3; for (let i = 0; i < 9; i++) { const ang = -Math.PI / 2 + (i - 4) * .22, v = 70 + (i % 3) * 12; ctx.beginPath(); for (let t = 0; t <= a * 1.4 && t <= 1; t += .05) { const x = px + Math.cos(ang) * v * t, y = py + Math.sin(ang) * v * t + 150 * t * t - 10; if (t === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); } ctx.stroke(); } }
+    else if (f.k === 'rainbow') { ['#ff6b6b', '#ffb84d', '#ffe066', '#7bd389', '#6bb6ff', '#b18cff'].forEach((c, i) => { ctx.strokeStyle = c; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(px, py - 20, 60 - i * 4.5, Math.PI, Math.PI * (1 + Math.min(1, a * 2.2))); ctx.stroke(); }); }
+    else if (f.k === 'fish') { const fx = px - 30 + a * 60, fy = py - Math.sin(a * Math.PI) * 50; ctx.globalAlpha = 1; ctx.font = '24px sans-serif'; ctx.fillText('🐟', fx, fy); ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(px - 30 + a * 60, py + 4, 4 + a * 16, 0, 7); ctx.stroke(); }
+    else if (f.k === 'spark') { ctx.font = '18px sans-serif'; [[-14, -10], [12, -16], [0, -26]].forEach(([dx, dy], i) => ctx.fillText('✨', px + dx, py + dy - a * 14 - i * 2)); }
+    ctx.restore();
+  });
 }
 function islDrawTree(ctx, x, y, now) {
   const T = ISL.T, px = x * T + T / 2, py = (y + 1) * T - 3, st = isl.shake[x + ',' + y], sh = st && now - st < 500 ? Math.sin((now - st) / 40) * 3 * (1 - (now - st) / 500) : 0;
