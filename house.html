@@ -3367,7 +3367,15 @@ const Sound = (() => {
     ensure();
     if (!ac) return;
     const bus = key === 'bgm' ? bgmBus : sfxBus, level = key === 'bgm' ? .16 : .55;
-    bus.gain.setTargetAtTime(on ? level : 0, ac.currentTime, .15);
+    bus.gain.setTargetAtTime(on && !(key === 'bgm' && ducked) ? level : 0, ac.currentTime, .15);
+  }
+  /* 背景音樂暫時靜音（不改她的設定）：玩要聽英文的小遊戲時，音樂會蓋過單字的聲音。
+     玩完（關掉視窗）就自動恢復成她原本設的樣子。 */
+  let ducked = false;
+  function duck(on) {
+    ducked = !!on;
+    ensure();
+    if (ac && bgmBus) bgmBus.gain.setTargetAtTime(ducked || !prefs.bgm ? 0 : .16, ac.currentTime, .2);
   }
 
   function play(name, arg) {
@@ -3386,8 +3394,8 @@ const Sound = (() => {
   }
   const songName = () => (prefs.bgm ? song.name : null);
 
-  return { play, setPref, prefs, nextSong, songName, songCount: SONGS.length,
-           _t: { getAc: () => ac, setAc: v => { ac = v; }, songs: SONGS, notes: N } }; // _t：測試用
+  return { play, setPref, duck, prefs, nextSong, songName, songCount: SONGS.length,
+           _t: { bgmGain: () => (bgmBus ? bgmBus.gain.value : null), getAc: () => ac, setAc: v => { ac = v; }, songs: SONGS, notes: N } }; // _t：測試用
 })();
 </script>
 <script>
@@ -18774,6 +18782,8 @@ function enPool(weekId, needPic) {
 }
 function openEnglishGame() {
   const win = openGameWindow('🔤 英文單字', '選一個週次，再選玩法。聽英文選圖片，或把字母排成單字！');
+  Sound.duck(true);   // 背景音樂先安靜，才聽得到單字
+  gameCleanup = () => { Sound.duck(false); stopSpeak(); };
   const chips = el('div', 'en-weeks');
   let week = 'all';
   const draw = () => {
@@ -18870,7 +18880,7 @@ function playEnglish(w, L, week) {
     body.append(slots, tiles);
     playEnglish.test = { cur, solve: () => { letters.forEach(ch => { const t = [...tiles.children].find((x, i) => !bank[i].used && bank[i].ch === ch); t.click(); }); }, wrongTile: () => { const t = [...tiles.children].find((x, i) => bank[i].ch !== letters[pos]); if (t) t.click(); }, right: () => right, n: () => n };
   };
-  gameCleanup = () => { ended = true; stopSpeak(); };
+  gameCleanup = () => { ended = true; Sound.duck(false); stopSpeak(); };
   next();
 }
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
