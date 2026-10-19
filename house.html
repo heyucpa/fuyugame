@@ -7814,6 +7814,7 @@ function fufuArrivalCheck() {
 'use strict';
 
 const PET_SPEED = 1.6; // 每秒幾格
+const PET_RUN_MULT = 1.7;   // 小可愛選了「跑步」，她的寵物也跑得比較快（比她慢一點，才看得出牠在追）
 
 // 寵物在房間裡的動作狀態（牠的數值、種類、階段存在 G.pet）
 const pet = {
@@ -8016,7 +8017,8 @@ function actorWalk(a, dt, now, room, blk, follow) {
     const [ni, nj] = a.path[0];
     if (blk[ni] && blk[ni][nj]) { a.path = []; return; }
     const tx = ni + .5, ty = nj + .5, dx = tx - a.x, dy = ty - a.y;
-    const dist = Math.hypot(dx, dy), step = PET_SPEED * dt;
+    const mine = a === pet || Object.values(comps).includes(a);   // 小可愛自己的寵物（照顧中的＋一起逛的）：她跑，牠們也跑
+    const dist = Math.hypot(dx, dy), step = PET_SPEED * (mine && runOn() ? PET_RUN_MULT : 1) * dt;
     if (Math.abs(dx - dy) > .01) a.facing = dx - dy > 0 ? 1 : -1;
     if (dist <= step) {
       a.x = tx; a.y = ty; a.path.shift();
@@ -8038,7 +8040,7 @@ function actorWalk(a, dt, now, room, blk, follow) {
 
 function petUpdate(dt, now) {
   const room = curRoom();
-  pet.t += dt;
+  pet.t += dt * (runOn() && pet.path.length ? 1.6 : 1);   // 跑的時候腳動得比較快
   if (pet.room !== roomKey()) { pet.sleep = null; pet.task = null; pet.z = 0; } // 換房間就醒來跟過去
   actorEnterRoom(pet, room);
   actorSpring(pet, dt, now, isEgg());
@@ -8155,7 +8157,7 @@ function compUpdate(dt, now, room) {
   const blk = blockedGrid(room);
   const bed = kidBedItem(room);
   compList().forEach((a, k) => {
-    a.t += dt;
+    a.t += dt * (runOn() && a.path.length ? 1.6 : 1);
     actorEnterRoom(a, room);
     actorSpring(a, dt, now, false);
     if (compBedTick(a, k, bed, now, room)) return;   // 跟小可愛一起睡

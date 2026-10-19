@@ -10,6 +10,12 @@ const { chromium } = require('playwright');
     const room=curRoom(); const frames = ()=>{ fufu.x=.5; fufu.y=.5; fufu.pose=null; fufu.act=null; fufu.task=null; fufu.path=[[1,0],[2,0],[3,0],[4,0],[5,0]]; let n=0; while(fufu.path.length && n<2000){ fufuUpdate(1/60, performance.now()); n++; } return n; };
     G.kid.hunger=100; const walk=frames(); $('#btnRun').click(); const run=frames();
     out.walkFrames=walk; out.runFrames=run; out.ratio=+(walk/run).toFixed(2); out.btn1=$('#btnRun').textContent; out.stored=localStorage.getItem('myHouse_run');
+    // 寵物：她跑，牠也跑（約 1.7 倍）；別的角色（鄰居、訪客）速度不變
+    const petFrames = ()=>{ G.pet.stage = G.pet.stage==='egg' ? 'kid' : G.pet.stage; pet.x=.5; pet.y=.5; pet.z=0; pet.sleep=null; pet.task=null; pet.press=null; pet.path=[[1,0],[2,0],[3,0],[4,0]]; let n=0; const blk=blockedGrid(room); while(pet.path.length && n<2000){ actorWalk(pet, 1/60, performance.now(), room, blk, 0); n++; } return n; };
+    setRun(false); const pw=petFrames(); setRun(true); const pr=petFrames(); out.petRatio=+(pw/pr).toFixed(2);
+    const other=()=>{ const a={x:.5,y:.5,z:0,path:[[1,0],[2,0],[3,0],[4,0]],facing:1,idleUntil:0,squishV:0}; let n=0; const blk=blockedGrid(room); while(a.path.length && n<2000){ actorWalk(a, 1/60, performance.now(), room, blk, 0); n++; } return n; };
+    setRun(false); const ow=other(); setRun(true); const orr=other(); out.otherSame=(ow===orr);
+    setRun(true);
     // 小島
     openIsland(); await wait(150); out.islBtn=$('#islRun').textContent;
     const x0=isl.x; isl.path=[[Math.floor(isl.x)+1,Math.floor(isl.y)],[Math.floor(isl.x)+2,Math.floor(isl.y)],[Math.floor(isl.x)+3,Math.floor(isl.y)]]; const t0=performance.now(); islStep(.1); out.islRunStep=+(isl.x-x0).toFixed(3); // run 0.1s 走的距離
