@@ -567,6 +567,8 @@ button.pass { font: inherit; }
 #btnTrick { grid-column: 1 / -1; background: #ffe3b0; } /* 🎪 表演：大朋友才有，自己一排 */
 .pc-btns button:hover { background: #e8d9bf; }
 .pc-btns.one { grid-template-columns: 1fr; margin-top: 5px; }
+.pc-btns.two { grid-template-columns: 1fr 1fr; margin-top: 5px; }
+.pc-btns button.on, .island-btn.on { background: #ffe9b8; }
 .pc-head small { color: var(--muted); font-size: 11px; font-weight: 400; }
 .pc-moon { display: none; font-style: normal; font-size: 13px; margin-left: 3px; }
 .pc-bar.rested .pc-moon { display: inline; }
@@ -652,7 +654,7 @@ button.pass { font: inherit; }
 .island { position: absolute; inset: 0; z-index: 9; background: #74c8ea; touch-action: none; overflow: hidden; }
 .island canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 .island-btn { position: absolute; top: 12px; font: inherit; font-size: 15px; font-weight: 800; border: 2px solid #fff; border-radius: 999px; padding: 8px 16px; min-height: 40px; background: rgba(255,255,255,.92); color: #4a3b2a; box-shadow: 0 3px 10px rgba(0,0,0,.2); cursor: pointer; touch-action: manipulation; }
-.isl-back { left: 12px; } .isl-fast { right: 12px; }
+.isl-back { left: 12px; } .isl-fast { right: 12px; } .isl-run { left: 12px; top: 60px; }
 .island-tip { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); background: rgba(255,255,255,.92); color: #5a4630; font-weight: 700; font-size: 14px; padding: 8px 16px; border-radius: 999px; box-shadow: 0 3px 10px rgba(0,0,0,.18); pointer-events: none; transition: opacity 1.2s; max-width: 90%; text-align: center; }
 .island-tip.fade { opacity: 0; }
 .island-on .petcard, .island-on .zoom-btn, .island-on .theme-btn, .island-on .photo-btn, .island-on .dup-btn, .island-on .call-btn, .island-on .hint, .island-on .itemmenu, .island-on .actions { display: none !important; }
@@ -883,7 +885,7 @@ button, .card, .place-pick, .lv-btn, .dex-tile, .adv-ep, .gift-opt, .trick-cell,
         <div class="pc-bar" title="小可愛的飽足"><span>🍙</span><i><b id="barKid"></b></i></div>
         <div class="pc-bar" title="乾淨"><span>🧼</span><i><b id="barKidClean"></b></i></div>
         <div class="pc-bar" title="心情"><span>💗</span><i><b id="barKidMood"></b></i></div>
-        <div class="pc-btns one"><button id="btnKidEat">🍙 吃東西</button></div>
+        <div class="pc-btns two"><button id="btnKidEat">🍙 吃東西</button><button id="btnRun" title="點一下改成跑步">🚶 走路</button></div>
         <div class="pc-sub">🐾 <button id="petNameLbl" class="pc-name" title="點一下幫牠取名字">圓圓</button></div>
         <div class="pc-bar grow" id="growRow" title="長大"><span>🌱</span><i><b id="barGrow"></b></i></div>
         <div class="pc-bar" title="飽足"><span>🍎</span><i><b id="barHunger"></b></i></div>
@@ -6767,6 +6769,19 @@ function drawHeadwear(ctx, o, h) {
 
 const FUFU_H = 64;          // 畫面上的身高（世界座標像素）
 const FUFU_SPEED = 2.2;     // 每秒走幾格
+/* 🏃 跑步（家長：小可愛的走路速度可以選擇跑步）：按小卡上的「🏃 跑步」切換，走得比較快、腳也動得比較快。
+   記在這台機器（localStorage），不放進存檔；預設是走路。小島上也一樣，電腦按住 Shift 也可以暫時用跑的。 */
+const RUN_MULT = 2.1;
+var runMode = null;
+function runOn() { if (runMode === null) { try { runMode = localStorage.getItem('myHouse_run') === '1'; } catch (e) { runMode = false; } } return runMode; }
+function setRun(v) {
+  runMode = !!v; try { localStorage.setItem('myHouse_run', v ? '1' : '0'); } catch (e) {}
+  refreshRunBtn();
+}
+function refreshRunBtn() {
+  const b = document.getElementById('btnRun'); if (b) { b.textContent = runOn() ? '🏃 跑步中' : '🚶 走路'; b.classList.toggle('on', runOn()); b.title = runOn() ? '現在用跑的，點一下改成走路' : '點一下改成跑步'; }
+  const i = document.getElementById('islRun'); if (i) { i.textContent = runOn() ? '🏃 跑步中' : '🚶 走路'; i.classList.toggle('on', runOn()); }
+}
 
 // 台詞一律用 pickLine(類別)，內容在 data.js 的 LINE_TYPES，玩家可在「台詞」分頁修改
 
@@ -7287,7 +7302,7 @@ function fufuUpdatePose(now) {
 // ── 每一幀更新 ──
 function fufuUpdate(dt, now) {
   const room = curRoom();
-  fufu.t += dt;
+  fufu.t += dt * (runOn() && fufu.path.length ? 1.7 : 1);   // 跑的時候腳動得比較快
   if (fufu.jumpT > 0) fufu.jumpT = Math.max(0, fufu.jumpT - dt);
   fufu.fx.forEach(q => { q.age += dt; q.y += q.vy * dt; });
   fufu.fx = fufu.fx.filter(q => q.age < q.life);
@@ -7332,7 +7347,7 @@ function fufuUpdate(dt, now) {
     }
     const tx = ni + .5, ty = nj + .5, dx = tx - fufu.x, dy = ty - fufu.y;
     const hungrySlow = G.kid.hunger < 35 ? .7 : 1; // 肚子餓走得慢一點
-    const dist = Math.hypot(dx, dy), step = FUFU_SPEED * hungrySlow * dt;
+    const dist = Math.hypot(dx, dy), step = FUFU_SPEED * hungrySlow * (runOn() ? RUN_MULT : 1) * dt;
     const sx = dx - dy; // 螢幕上的左右方向
     if (Math.abs(sx) > .01) fufu.facing = sx > 0 ? 1 : -1;
     if (Math.abs(dx + dy) > .01) fufu.back = dx + dy < 0; // 往房間深處走就看到背影
@@ -12993,6 +13008,8 @@ function showFoodMenu(who) {
 }
 $('#btnFeed').onclick = () => { if (G.pet.stage === 'egg') eggNotYet(); else showFoodMenu('pet'); };
 $('#btnKidEat').onclick = () => showFoodMenu('kid');
+$('#btnRun').onclick = () => { setRun(!runOn()); Sound.play('click'); fufuSay(runOn() ? '我要用跑的！' : '慢慢走～', 1800); };
+refreshRunBtn();
 $('#btnBath').onclick = () => { $('#foodMenu').hidden = true; petBath(); updatePetCard(); };
 $('#btnCall').onclick = () => { $('#foodMenu').hidden = true; petCallOver(); };
 $('#btnTrick').onclick = () => { $('#foodMenu').hidden = true; petTrick(); };
@@ -18470,10 +18487,12 @@ function openIsland() {
   const stage = $('.stage');
   const layer = el('div', 'island'); layer.id = 'islandLayer';
   const cv = document.createElement('canvas'); layer.appendChild(cv);
-  const back = el('button', 'island-btn isl-back', '🔙 回去'), fast = el('button', 'island-btn isl-fast', '🚗 快速出門');
+  const back = el('button', 'island-btn isl-back', '🔙 回去'), fast = el('button', 'island-btn isl-fast', '🚗 快速出門'), run = el('button', 'island-btn isl-run', ''); run.id = 'islRun';
   const tip = el('div', 'island-tip', '點地面走過去，走到房子的門口就會進去～');
-  layer.append(back, fast, tip);
+  layer.append(back, fast, run, tip);
+  run.onclick = () => { setRun(!runOn()); Sound.play('click'); };
   stage.appendChild(layer); stage.classList.add('island-on');
+  refreshRunBtn();
   const dpr = () => window.devicePixelRatio || 1;
   isl = { fx: [], gulls: [], shellGot: {}, layer, cv, m, invites, x: st.x + .5, y: st.y + .5, path: [], pending: null, skipDoor: st.id, facing: 1, back: false,
     t: 0, last: performance.now(), keys: {}, press: null, repath: 0, shake: {}, picked: {}, trail: [], pet: { x: st.x + .5, y: st.y + 1.2, f: 1 }, raf: 0, tip, cam: { x: st.x + .5, y: st.y + .5 }, from: G.away ? G.away.place : null };
@@ -18488,8 +18507,8 @@ function openIsland() {
   cv.addEventListener('pointerdown', islDown); cv.addEventListener('pointermove', islMove);
   cv.addEventListener('pointerup', islUp); cv.addEventListener('pointercancel', islUp);
   const MOVE_KEYS = ['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'];
-  isl.kd = e => { const k = (e.key || '').toLowerCase(); if (k === 'escape') { if ($('#modal').hidden) closeIsland(); return; } if (MOVE_KEYS.includes(k) && $('#modal').hidden) { isl.keys[k] = true; e.preventDefault(); } };
-  isl.ku = e => { delete isl.keys[(e.key || '').toLowerCase()]; };
+  isl.kd = e => { if (e.key === 'Shift') isl.shift = true; const k = (e.key || '').toLowerCase(); if (k === 'escape') { if ($('#modal').hidden) closeIsland(); return; } if (MOVE_KEYS.includes(k) && $('#modal').hidden) { isl.keys[k] = true; e.preventDefault(); } };
+  isl.ku = e => { if (e.key === 'Shift') isl.shift = false; delete isl.keys[(e.key || '').toLowerCase()]; };
   document.addEventListener('keydown', isl.kd); document.addEventListener('keyup', isl.ku);
   Sound.play('jump');
   setTimeout(() => { if (isl && isl.tip) isl.tip.classList.add('fade'); }, 7000);
@@ -18607,16 +18626,17 @@ function islEnter(id) {   // 走到門口：關掉地圖、進去（家：回家
   if (!PLACES[id]) return;
   travelArrive(id);
 }
+const islRunning = () => runOn() || !!(isl && isl.shift);
 function islStep(dt) {
   const m = isl.m; let moving = false, dx = 0, dy = 0;
   const K = isl.keys, kx = (K.arrowright || K.d ? 1 : 0) - (K.arrowleft || K.a ? 1 : 0), ky = (K.arrowdown || K.s ? 1 : 0) - (K.arrowup || K.w ? 1 : 0);
   if (kx || ky) {
-    const n = Math.hypot(kx, ky), sp = 4.2 * dt; isl.path = []; isl.pending = null;
+    const n = Math.hypot(kx, ky), sp = 4.2 * (islRunning() ? RUN_MULT : 1) * dt; isl.path = []; isl.pending = null;
     const nx = isl.x + kx / n * sp, ny = isl.y + ky / n * sp, ok = (x, y) => [[-.28, -.2], [.28, -.2], [-.28, .2], [.28, .2]].every(([a, b]) => islPass(m, Math.floor(x + a), Math.floor(y + b)));
     if (ok(nx, isl.y)) { dx = nx - isl.x; isl.x = nx; } if (ok(isl.x, ny)) { dy = ny - isl.y; isl.y = ny; }
     moving = true;
   } else if (isl.path.length) {
-    const [tx, ty] = isl.path[0], px = tx + .5, py = ty + .5, d = Math.hypot(px - isl.x, py - isl.y), sp = 3.8 * dt;
+    const [tx, ty] = isl.path[0], px = tx + .5, py = ty + .5, d = Math.hypot(px - isl.x, py - isl.y), sp = 3.8 * (islRunning() ? RUN_MULT : 1) * dt;
     if (d <= sp) { dx = px - isl.x; dy = py - isl.y; isl.x = px; isl.y = py; isl.path.shift(); } else { dx = (px - isl.x) / d * sp; dy = (py - isl.y) / d * sp; isl.x += dx; isl.y += dy; }
     moving = true;
   }
@@ -18631,7 +18651,7 @@ function islStep(dt) {
   const last = isl.trail[isl.trail.length - 1];
   if (!last || Math.hypot(last[0] - isl.x, last[1] - isl.y) > .15) { isl.trail.push([isl.x, isl.y]); if (isl.trail.length > 30) isl.trail.shift(); }
   const tg = isl.trail[Math.max(0, isl.trail.length - 7)], pp = isl.pet, pd = Math.hypot(tg[0] - pp.x, tg[1] - pp.y);
-  if (pd > .05) { const sp = Math.min(pd, 4.4 * dt); if (Math.abs(tg[0] - pp.x) > .01) pp.f = tg[0] > pp.x ? 1 : -1; pp.x += (tg[0] - pp.x) / pd * sp; pp.y += (tg[1] - pp.y) / pd * sp; pp.moving = true; } else pp.moving = false;
+  if (pd > .05) { const sp = Math.min(pd, 4.4 * (islRunning() ? RUN_MULT : 1) * dt); if (Math.abs(tg[0] - pp.x) > .01) pp.f = tg[0] > pp.x ? 1 : -1; pp.x += (tg[0] - pp.x) / pd * sp; pp.y += (tg[1] - pp.y) / pd * sp; pp.moving = true; } else pp.moving = false;
   isl.npcs.forEach(q => {
     if (q.path.length) {
       const [tx, ty] = q.path[0], px = tx + .5, py = ty + .5, d = Math.hypot(px - q.x, py - q.y), sp = 1.5 * dt;
@@ -18844,12 +18864,13 @@ function islDrawBuilding(ctx, b, tt) {
 }
 function islDrawKid(ctx) {
   const T = ISL.T, px = isl.x * T, py = isl.y * T + 8, walking = !!isl.walking, t = isl.t;
-  const hop = walking ? Math.abs(Math.sin(t * 11)) * 3 : 0, k = kidHeightScale(), u = T * 1.55 / 76;
+  const rn = islRunning() && walking, tt = rn ? t * 1.7 : t;
+  const hop = walking ? Math.abs(Math.sin(tt * 11)) * (rn ? 4.5 : 3) : 0, k = kidHeightScale(), u = T * 1.55 / 76;
   ctx.fillStyle = 'rgba(40,30,20,.22)'; ctx.beginPath(); ctx.ellipse(px, py, 11, 4.5, 0, 0, 7); ctx.fill();
   ctx.save(); ctx.translate(px, py - hop);
   if (kidBaby()) { ctx.scale(isl.facing * 1.15 * u * 1.4, 1.15 * u * 1.4); drawBabyKid(ctx, { t, walking, blink: fufuBlink() }); ctx.restore(); return; }
   ctx.scale(isl.facing * k * u, k * u);
-  drawGirl(ctx, { t, walking, back: isl.back && walking, blink: fufuBlink(), outfit: currentOutfit(), face: kidFace(), stage: kidLookStage(), dirty: kidDirty() });
+  drawGirl(ctx, { t: tt, walking, back: isl.back && walking, blink: fufuBlink(), outfit: currentOutfit(), face: kidFace(), stage: kidLookStage(), dirty: kidDirty() });
   ctx.restore();
 }
 function islDrawPet(ctx) {
