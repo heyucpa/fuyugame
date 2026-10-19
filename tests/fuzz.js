@@ -13,7 +13,7 @@ function rng(seed){ let s=seed>>>0||1; return ()=>{ s^=s<<13; s>>>=0; s^=s>>>17;
       p.on('dialog', d=>d.dismiss().catch(()=>{}));   // 確認視窗一律「取消」（不然會亂按到重新開始、換存檔）
       await p.goto('file://' + (process.env.HOUSE_DIR || '/home/user/fuyugame') + '/house.html'); await p.waitForTimeout(1200); try{await p.getByText('跳過').click({timeout:1000});}catch(e){} await p.waitForTimeout(500);
       await p.evaluate(()=>{ G.guide='done'; SEASON_TODAY=[10,20]; G.bells=50000; FURNITURE.forEach(f=>{ if(!f.season&&!f.gift&&Math.random()<.3) G.inv[f.id]=1; }); });
-      let lastAct=''; const hist=[]; p.on('framenavigated', f=>{ if (f===p.mainFrame() && lastAct && !/強制更新|新存檔|換成這個|版本與更新/.test(hist.slice(-4).join())) errs.push('頁面重新載入，最近的動作：'+hist.slice(-10).join(' ; ')); });
+      let lastAct=''; const hist=[]; p.on('framenavigated', f=>{ if (f===p.mainFrame() && lastAct && !/強制更新|新存檔|換成這個|版本與更新/.test(hist.slice(-12).join())) errs.push('頁面重新載入，最近的動作：'+hist.slice(-10).join(' ; ')); });
       const keys=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d',' ','Escape','Enter','r','1'];
       for (let i=0;i<STEPS;i++) {
         const t=R();
@@ -32,7 +32,9 @@ function rng(seed){ let s=seed>>>0||1; return ()=>{ s^=s<<13; s>>>=0; s^=s>>>17;
       }
       if (await p.evaluate(()=>typeof openIsland!=='function').catch(()=>true)) { errs.push('頁面被重新載入或載入不完整'); }
       const alive = await p.evaluate(()=>{ try { saveGame(); const k=Object.keys(localStorage).find(k=>/^myHouseGame_v1(:p1)?$/.test(k)); return !!normalizeSave(JSON.parse(localStorage.getItem(k))) && SAVE_LOCKED==null; } catch(e){ return 'ERR '+e.message; } });
-      if (errs.length || alive!==true) bad++;
+      const reloaded = hist.slice(-40).some(x=>/強制更新|新存檔|換成這個|版本與更新/.test(x));
+      const real = errs.filter(e=>!(reloaded && /is not defined|重新載入/.test(e)));   // 點到「強制更新」重新載入的那一下，函式還沒載好：不算
+      if (real.length || (alive!==true && !reloaded)) bad++;
       console.log('seed', seed, name, errs.length ? '❌ '+[...new Set(errs)].slice(0,4).join(' | ') : '✅', alive===true?'':'存檔:'+alive);
       await ctx.close();
     }
