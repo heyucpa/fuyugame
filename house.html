@@ -4365,6 +4365,7 @@ const NEWS = [
     ['👻', '每天有一隻小幽靈躲在家裡的某個房間，找到點一下拿 3 顆糖果'],
     ['🎉', '房間擺 3 件萬聖節家具，點小可愛選「萬聖節派對」，朋友們都來跳舞'],
     ['🍬', '派對結束每天第一次送 4 顆糖果，可以送給來玩的動物朋友'],
+    ['🌤️', '小島會跟著時間變：早上暖暖的、傍晚橘橘的、晚上路燈和窗戶會亮、有星星；島上每天有 5 枚金幣走過去就撿；走到池塘邊可以釣魚；多了兔子、松鼠、小雞、蝴蝶和騎腳踏車的朋友'],
     ['🏝️', '「🚗 出門」變成一座小島！自己走路逛，走到房子門口就進去；樹可以搖、花可以摘，寵物跟在後面。想直接去哪裡，按「🚗 快速出門」'],
     ['✨', '「我的東西」最上面有「一鍵佈置這個房間」：選一個風格，就用你有的家具幫你擺好、換漂亮的壁紙地板，不喜歡可以換回原本'],
     ['🍬', '萬聖節糖果收集：一共拿到 12／30／60 顆糖，有小幽靈巫師帽、糖果大罐、小幽靈洋裝可以領（點小可愛看進度，糖果還是可以吃、可以送人）'],
@@ -5040,6 +5041,8 @@ function normalizeSave(g) {
   if (out.gameBonusDay != null && typeof out.gameBonusDay !== 'string') delete out.gameBonusDay;
   if (out.abc != null && !(isObj(out.abc))) delete out.abc;
   if (out.abc) ['bd', 'pq', 'mix'].forEach(k => { if (!Number.isInteger(out.abc[k]) || out.abc[k] < 0) out.abc[k] = 0; });
+  if (out.islCoin != null && !(isObj(out.islCoin) && typeof out.islCoin.d === 'string' && Number.isInteger(out.islCoin.n) && out.islCoin.n >= 0 && Array.isArray(out.islCoin.got))) delete out.islCoin;
+  if (out.islCoin) out.islCoin.got = out.islCoin.got.filter(x => typeof x === 'string').slice(0, 50);
   if (out.pumpDay != null && !(isObj(out.pumpDay) && typeof out.pumpDay.d === 'string' && Number.isInteger(out.pumpDay.n) && out.pumpDay.n >= 0)) delete out.pumpDay;
   if (out.partyDay != null && typeof out.partyDay !== 'string') delete out.partyDay;
   if (out.clownDay != null && typeof out.clownDay !== 'string') delete out.clownDay;
@@ -18390,6 +18393,27 @@ const ISL_BLD = [   // 房子：x, y 是左上角的格子，w×h 格；門在�
 const ISL_FRIEND_SPOTS = [[17, 27], [32, 27], [16, 17], [34, 17]];   // 朋友的家（最多 4 棟），3×2
 const ISL_PUMPKINS = [[22, 17], [30, 20], [20, 22], [31, 16], [26, 24]];   // 萬聖節才有的南瓜燈（點了有小驚喜）
 const ISL_PUMPKIN_CANDY_MAX = 3;   // 南瓜每天最多吐 3 顆糖（不然一直點就一直有糖）
+/* ===== 小島第二階段（家長：原本規劃的都做）=====
+   🌤️ 日夜：跟著真實時間自動變（早上暖黃、傍晚橘、晚上藍，晚上路燈和窗戶會亮、有星星），沒有按鈕要學
+   💰 路上的金幣：每天島上散 5 枚，走過去就自動撿（不用點），一天最多 5 枚
+   🎣 池塘：走到池塘邊就打開釣魚（跟「賺錢」分頁的釣魚是同一個，魚圖鑑共用）
+   🐰 小動物：兔子、松鼠、小雞在草地上跳，蝴蝶飛來飛去，點了會跳一下；一位動物朋友騎腳踏車繞島
+   海岸、草地的邊都磨圓了 */
+var ISL_HOUR_TEST = null;   // 測試用：指定現在幾點（0～24）
+const ISL_COIN_MAX = 5, ISL_COIN_BELLS = [20, 30, 40, 50];
+const ISL_LAMPS = [[23, 17], [29, 17], [23, 22], [29, 22], [26, 14], [14, 17], [36, 17], [26, 30], [12, 26], [40, 26]];   // 路燈的位置
+function islHour() { return ISL_HOUR_TEST != null ? ISL_HOUR_TEST : new Date().getHours() + new Date().getMinutes() / 60; }
+function islPhase() { const h = islHour(); return h < 6 || h >= 19 ? 'night' : h < 8 ? 'morning' : h >= 17 ? 'evening' : 'day'; }
+function islCoinState() { const d = today(); if (!G.islCoin || G.islCoin.d !== d) G.islCoin = { d, n: 0, got: [] }; return G.islCoin; }
+function islCoinSpots(m) {   // 今天的金幣在哪（同一天打開幾次都一樣，撿過的就不在）
+  const st = islCoinState(); let seed = 0; for (const ch of st.d) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
+  const out = [];
+  for (let y = 2; y < m.H - 2 && out.length < 12; y++) for (let x = 2; x < m.W - 2 && out.length < 12; x++) {
+    if (!islPass(m, x, y) || m.beach[y][x] || m.path[y][x] || m.flower[y][x]) continue;
+    if (islHash(x, y, 17 + (seed % 1000)) > .975 && !st.got.includes(x + ',' + y)) out.push({ x, y });
+  }
+  return out.slice(0, Math.max(0, ISL_COIN_MAX - st.n));
+}
 const ISL_POND = { x: 31, y: 24, w: 4, h: 3 };
 const ISL_HUB = [26, 19];
 const ISL_STYLE = {   // 牆、屋頂顏色
@@ -18503,6 +18527,16 @@ function openIsland() {
     let pic = null; try { pic = renderNeighborPortrait(n, 48, 44, false); } catch (e) {}
     return { n, x: x + .5, y: y + .5, path: [], wait: 1 + Math.random() * 3, f: 1, pic, cool: 0 };
   });
+  // 🐰 小動物：在草地上跳；🦋 蝴蝶飛來飛去
+  isl.critters = [['🐰', '兔兔'], ['🐿️', '松鼠'], ['🐥', '小雞'], ['🦋', '蝴蝶'], ['🦋', '蝴蝶']].map(([e, nm], i) => {
+    let x = 0, y = 0; for (let k = 0; k < 80; k++) { x = 8 + Math.floor(Math.random() * (ISL.W - 16)); y = 6 + Math.floor(Math.random() * (ISL.H - 12)); if (islPass(m, x, y) && !m.path[y][x] && !m.beach[y][x]) break; }
+    return { e, nm, fly: e === '🦋', x: x + .5, y: y + .5, tx: x + .5, ty: y + .5, wait: Math.random() * 3, hop: 0, f: 1, ph: Math.random() * 6 };
+  });
+  // 🚲 一位動物朋友騎腳踏車，沿著路繞島
+  { const rider = NEIGHBORS.filter(Boolean).filter(n => !isl.npcs.some(q => q.n === n))[0] || NEIGHBORS[0];
+    let pic = null; try { pic = renderNeighborPortrait(rider, 44, 40, false); } catch (e) {}
+    isl.bike = { n: rider, x: ISL_HUB[0] + .5, y: ISL_HUB[1] + 2.5, path: [], wait: 0, f: 1, pic, ring: 0 }; }
+  isl.coins = islCoinSpots(m);
   for (let i = 0; i < 3; i++) isl.gulls.push({ x: Math.random() * ISL.W, y: 4 + Math.random() * (ISL.H - 8), vx: (Math.random() < .5 ? -1 : 1) * (.9 + Math.random() * .6), ph: Math.random() * 6, scared: 0 });   // 海鷗
   back.onclick = () => { Sound.play('click'); closeIsland(); };
   fast.onclick = () => { Sound.play('click'); openTravelMenu(); };
@@ -18549,6 +18583,9 @@ function islTap(e, hold) {
   if (hold && isl.pressTile && t.x === isl.pressTile.x && t.y === isl.pressTile.y) return;   // 手指還按在原來那一格：不要重新找路
   if (hold) { isl.pending = null; isl.pressTile = null; }
   if (!hold) {
+    const cr = isl.critters.find(c => Math.hypot(c.x - t.fx, c.y - .4 - t.fy) < .9);
+    if (cr) { cr.hop = 1; cr.wait = 2.5; Sound.play('boing'); islAddFx('say', cr.x, cr.y - 1.1, 1300, { text: cr.fly ? '飄～' : ['跳跳！', '嗨～', '啾啾'][Math.floor(Math.random() * 3)] }); if (cr.fly) { cr.tx = cr.x + (Math.random() - .5) * 6; cr.ty = cr.y - 2; } return; }
+    if (isl.bike && Math.hypot(isl.bike.x - t.fx, isl.bike.y - .5 - t.fy) < 1.1) { isl.bike.ring = performance.now(); Sound.play('note', 3); islAddFx('say', isl.bike.x, isl.bike.y - 1.6, 1400, { text: '叮鈴叮鈴～' }); return; }
     const fun = islFunAt(t);
     if (fun) {
       isl.pending = { type: 'fun', obj: fun };
@@ -18664,6 +18701,26 @@ function islStep(dt) {
     g.ph += dt * 2; g.x += g.vx * dt * (g.scared > 0 ? 3 : 1); g.y += Math.sin(g.ph) * dt * .6; g.scared = Math.max(0, g.scared - dt);
     if (g.x < -4) g.x = ISL.W + 3; if (g.x > ISL.W + 4) g.x = -3;
   });
+  isl.critters.forEach(c => {
+    c.ph += dt * 3; c.hop = Math.max(0, c.hop - dt * 2.5);
+    if (c.fly) { c.x += (c.tx - c.x) * dt * .9; c.y += (c.ty - c.y) * dt * .9; c.wait -= dt; if (c.wait <= 0 || Math.hypot(c.tx - c.x, c.ty - c.y) < .2) { c.wait = 2 + Math.random() * 3; let nx = c.x + (Math.random() - .5) * 8, ny = c.y + (Math.random() - .5) * 6; if (islPass(m, Math.floor(nx), Math.floor(ny))) { c.tx = nx; c.ty = ny; } } c.f = c.tx > c.x ? 1 : -1; return; }
+    const d = Math.hypot(c.tx - c.x, c.ty - c.y);
+    if (d > .05) { const sp = Math.min(d, 2.2 * dt); c.x += (c.tx - c.x) / d * sp; c.y += (c.ty - c.y) / d * sp; if (!c.hop) c.hop = .6; }
+    else { c.wait -= dt; if (c.wait <= 0) { c.wait = 1.5 + Math.random() * 4; const nx = Math.floor(c.x) + Math.floor(Math.random() * 5) - 2, ny = Math.floor(c.y) + Math.floor(Math.random() * 5) - 2; if (islPass(m, nx, ny) && !m.path[ny][nx] && !m.beach[ny][nx]) { c.tx = nx + .5; c.ty = ny + .5; c.f = c.tx > c.x ? 1 : -1; } } }
+  });
+  if (isl.bike) { const b = isl.bike;
+    if (b.path.length) { const [tx, ty] = b.path[0], px = tx + .5, py = ty + .5, d = Math.hypot(px - b.x, py - b.y), sp = 3.6 * dt; if (d <= sp) { b.x = px; b.y = py; b.path.shift(); } else { b.f = px > b.x ? 1 : -1; b.x += (px - b.x) / d * sp; b.y += (py - b.y) / d * sp; } }
+    else { b.wait -= dt; if (b.wait <= 0) { b.wait = 1 + Math.random() * 2; const tiles = []; for (let y = 0; y < m.H; y++) for (let x = 0; x < m.W; x++) if (m.path[y][x] && islPass(m, x, y)) tiles.push([x, y]); const g = tiles[Math.floor(Math.random() * tiles.length)]; if (g) { const pth = islFindPath(m, Math.floor(b.x), Math.floor(b.y), (x, y) => x === g[0] && y === g[1]); if (pth) b.path = pth.filter(([x, y]) => m.path[y][x]).length === pth.length ? pth : pth.slice(0, 6); } } } }
+  // 💰 走過金幣就撿起來（不用點）
+  isl.coins = isl.coins.filter(c => {
+    if (Math.hypot(c.x + .5 - isl.x, c.y + .5 - isl.y) > .55) return true;
+    const st = islCoinState(); if (st.n >= ISL_COIN_MAX) return false;
+    const n = ISL_COIN_BELLS[Math.floor(Math.random() * ISL_COIN_BELLS.length)];
+    st.n++; st.got.push(c.x + ',' + c.y); addBells(n); Sound.play('coin'); islAddFx('coin', c.x + .5, c.y + .3, 1100, { n });
+    toast(`💰 撿到 ${n} 鈴錢！${st.n >= ISL_COIN_MAX ? '（今天的金幣撿完了，明天再來）' : ''}`); saveGame(); refreshTop();
+    return false;
+  });
+  if (Math.random() < dt * .25) { const p = ISL_POND; islAddFx('fish', p.x + .6 + Math.random() * (p.w - 1.2), p.y + .8 + Math.random() * (p.h - 1.6), 1300); }   // 池塘偶爾有魚跳
   isl.fx = isl.fx.filter(f => performance.now() - f.t0 < f.dur);
   isl.cam.x += (isl.x - isl.cam.x) * Math.min(1, dt * 6); isl.cam.y += (isl.y - isl.cam.y) * Math.min(1, dt * 6);
   return true;
@@ -18696,13 +18753,25 @@ function islDraw(now) {
     let shore = false; for (let j = -1; j <= 1 && !shore; j++) for (let i = -1; i <= 1; i++) { const xx = x + i, yy = y + j; if (yy >= 0 && yy < m.H && xx >= 0 && xx < m.W && m.land[yy][xx]) { shore = true; break; } }
     if (shore) { ctx.fillStyle = 'rgba(255,255,255,' + (.35 + .2 * Math.sin(tt * 2 + x + y)) + ')'; ctx.fillRect(x * T - 2, y * T - 2, T + 4, T + 4); }
   }
-  // 地面
+  // 地面：海岸、草地、路的邊都磨圓（凸角切圓、凹角補圓）
+  const isLand = (x, y) => y >= 0 && y < m.H && x >= 0 && x < m.W && m.land[y][x];
+  const isGrass = (x, y) => isLand(x, y) && !m.beach[y][x];
+  const isPath = (x, y) => isLand(x, y) && m.path[y][x];
+  const beachC = (x, y) => islHash(x, y, 1) < .5 ? '#f7e6b4' : '#f3dfa6', grassC = (x, y) => islHash(x, y, 1) < .5 ? '#a4da7c' : '#9ed477';
+  const pathC = (x, y) => Math.hypot(x - ISL_HUB[0], y - ISL_HUB[1]) <= 2.4 ? '#e4dac8' : '#ecd5a0';
+  const layer = (pred, color) => {
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      if (pred(x, y)) { ctx.fillStyle = color(x, y); islRoundTile(ctx, x, y, pred); }
+      else { // 凹角：這一格不是，但左右和上下的鄰居是 → 補一小塊圓角
+        [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([i, j]) => { if (pred(x + i, y) && pred(x, y + j) && pred(x + i, y + j)) { ctx.fillStyle = color(x + i, y); islConcave(ctx, x, y, i, j); } });
+      }
+    }
+  };
+  layer(isLand, beachC); layer(isGrass, grassC); layer(isPath, pathC);
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
     if (!m.land[y][x]) continue;
     const h = islHash(x, y, 1);
-    ctx.fillStyle = m.beach[y][x] ? (h < .5 ? '#f7e6b4' : '#f3dfa6') : (h < .5 ? '#a4da7c' : '#9ed477');
-    ctx.fillRect(x * T, y * T, T + 1, T + 1);
-    if (m.path[y][x]) { ctx.fillStyle = Math.hypot(x - ISL_HUB[0], y - ISL_HUB[1]) <= 2.4 ? '#e4dac8' : '#ecd5a0'; ctx.fillRect(x * T, y * T, T + 1, T + 1); }
+    if (m.path[y][x]) {}
     else if (!m.beach[y][x] && h > .8) { ctx.strokeStyle = '#8bc766'; ctx.lineWidth = 1.5; ctx.beginPath(); const px = x * T + h * 20 + 4, py = y * T + 18; ctx.moveTo(px, py); ctx.lineTo(px - 2, py - 5); ctx.moveTo(px, py); ctx.lineTo(px + 2, py - 5); ctx.stroke(); }
   }
   // 廣場的噴水池
@@ -18748,8 +18817,14 @@ function islDraw(now) {
   items.push({ y: isl.y * T, draw: () => islDrawKid(ctx) });
   if (!isEgg()) items.push({ y: isl.pet.y * T, draw: () => islDrawPet(ctx) });
   if (halloweenActive()) ISL_PUMPKINS.forEach(([x, y], i) => items.push({ y: (y + 1) * T, draw: () => islDrawPumpkin(ctx, x, y, i, now) }));
+  ISL_LAMPS.forEach(([x, y]) => items.push({ y: (y + 1) * T, draw: () => islDrawLamp(ctx, x, y) }));
+  isl.critters.forEach(c => items.push({ y: (c.fly ? c.y - 1.5 : c.y) * T, draw: () => islDrawCritter(ctx, c) }));
+  if (isl.bike) items.push({ y: isl.bike.y * T, draw: () => islDrawBike(ctx, isl.bike, now) });
+  isl.coins.forEach(c => items.push({ y: (c.y + .6) * T, draw: () => islDrawCoin(ctx, c, tt) }));
+  isl.glow = [];
   items.sort((a, b) => a.y - b.y).forEach(it => it.draw());
   islDrawFx(ctx, now);
+  islDrawDaylight(ctx, v, W, H, now);
   ctx.restore();
 }
 /* ===== 🎃 大地圖上的小趣味 =====
@@ -18780,9 +18855,10 @@ function islFun(o) {
   } else if (o.kind === 'fountain') {
     Sound.play('splash'); islAddFx('splash', o.x, o.y, 1600); islAddFx('rainbow', o.x, o.y - .5, 2200);
     toast('💦 噴水池噴得好高！');
-  } else if (o.kind === 'pond') {
+  } else if (o.kind === 'pond') {   // 🎣 走到池塘邊就釣魚（跟「賺錢」的釣魚同一個）
     Sound.play('splash'); const p = ISL_POND; islAddFx('fish', p.x + .6 + Math.random() * (p.w - 1.2), p.y + .8 + Math.random() * (p.h - 1.6), 1300);
-    toast(['🐟 有魚跳出來了！', '🐟 噗通！', '🐠 魚兒在打招呼～'][Math.floor(Math.random() * 3)]);
+    isl.path = []; isl.facing = o.x > isl.x ? 1 : -1;
+    setTimeout(() => { if (isl && $('#modal').hidden && !resting) { fufuSay('來釣魚吧～', 2000); openFishing(); } }, 500);
   } else if (o.kind === 'gull') {
     const g = isl.gulls[o.id]; if (g) { g.scared = 2.5; g.vx = (g.vx < 0 ? -1 : 1) * 1.6; } Sound.play('boing'); islAddFx('say', o.x, o.y - 1, 1200, { text: '嘎～！' });
   } else if (o.kind === 'shell') {
@@ -18808,7 +18884,8 @@ function islDrawFx(ctx, now) {
   isl.fx.forEach(f => {
     const a = (now - f.t0) / f.dur, px = f.x * T, py = f.y * T;
     ctx.save(); ctx.textAlign = 'center'; ctx.globalAlpha = Math.max(0, Math.min(1, (1 - a) * 2.2));
-    if (f.k === 'candy') { ctx.font = '22px sans-serif'; ctx.fillText('🍬', px, py - a * 46); }
+    if (f.k === 'coin') { ctx.font = '700 16px sans-serif'; ctx.fillStyle = '#b8860b'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; const ty = py - a * 40; ctx.strokeText('+' + f.n, px, ty); ctx.fillText('+' + f.n, px, ty); }
+    else if (f.k === 'candy') { ctx.font = '22px sans-serif'; ctx.fillText('🍬', px, py - a * 46); }
     else if (f.k === 'ghost') { ctx.font = '30px sans-serif'; ctx.fillText('👻', px + Math.sin(a * 9) * 6, py - 10 - a * 50); }
     else if (f.k === 'bat') { if (now - f.t0 >= (f.delay || 0)) { const b = Math.min(1, (now - f.t0 - (f.delay || 0)) / (f.dur - (f.delay || 0))); ctx.font = '22px sans-serif'; ctx.fillText('🦇', px + f.dx * T * b, py + f.dy * T * b + Math.sin(b * 14) * 6); } }
     else if (f.k === 'say') { ctx.globalAlpha = Math.max(0, Math.min(1, (1 - a) * 3)); ctx.font = '700 13px "Microsoft JhengHei","PingFang TC",sans-serif'; const tw = ctx.measureText(f.text).width + 16; ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(px - tw / 2, py - 14 - a * 10, tw, 22, 11) : ctx.rect(px - tw / 2, py - 14 - a * 10, tw, 22); ctx.fill(); ctx.fillStyle = '#5a4630'; ctx.fillText(f.text, px, py + 2 - a * 10); }
@@ -18818,6 +18895,68 @@ function islDrawFx(ctx, now) {
     else if (f.k === 'spark') { ctx.font = '18px sans-serif'; [[-14, -10], [12, -16], [0, -26]].forEach(([dx, dy], i) => ctx.fillText('✨', px + dx, py + dy - a * 14 - i * 2)); }
     ctx.restore();
   });
+}
+function islRoundTile(ctx, x, y, pred) {   // 一格：兩邊鄰居都不是的那個角切成圓角
+  const T = ISL.T, r = T * .5, X = x * T, Y = y * T, S = T + 1;
+  const tl = !pred(x - 1, y) && !pred(x, y - 1), tr = !pred(x + 1, y) && !pred(x, y - 1), br = !pred(x + 1, y) && !pred(x, y + 1), bl = !pred(x - 1, y) && !pred(x, y + 1);
+  if (!tl && !tr && !br && !bl) { ctx.fillRect(X, Y, S, S); return; }
+  ctx.beginPath();
+  ctx.moveTo(X + (tl ? r : 0), Y);
+  ctx.lineTo(X + S - (tr ? r : 0), Y); if (tr) ctx.arcTo(X + S, Y, X + S, Y + r, r);
+  ctx.lineTo(X + S, Y + S - (br ? r : 0)); if (br) ctx.arcTo(X + S, Y + S, X + S - r, Y + S, r);
+  ctx.lineTo(X + (bl ? r : 0), Y + S); if (bl) ctx.arcTo(X, Y + S, X, Y + S - r, r);
+  ctx.lineTo(X, Y + (tl ? r : 0)); if (tl) ctx.arcTo(X, Y, X + r, Y, r);
+  ctx.closePath(); ctx.fill();
+}
+function islConcave(ctx, x, y, i, j) {   // 凹角：在「不是」的那一格，朝 (i,j) 那個角補一塊圓（圓心在這一格裡面）
+  const T = ISL.T, r = T * .5, cx = x * T + (i > 0 ? T : 0), cy = y * T + (j > 0 ? T : 0), ox = cx - i * r, oy = cy - j * r;
+  ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx - i * r, cy);
+  ctx.arc(ox, oy, r, j > 0 ? Math.PI / 2 : -Math.PI / 2, i > 0 ? 0 : Math.PI, (i > 0) === (j > 0));
+  ctx.closePath(); ctx.fill();
+}
+function islDrawLamp(ctx, x, y) {
+  const T = ISL.T, px = x * T + T / 2, py = (y + 1) * T - 4;
+  ctx.fillStyle = 'rgba(40,60,30,.18)'; ctx.beginPath(); ctx.ellipse(px, py, 6, 3, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#5a5a66'; ctx.fillRect(px - 2, py - 34, 4, 34); ctx.fillRect(px - 7, py - 40, 14, 7);
+  const on = islPhase() === 'night' || islPhase() === 'evening';
+  ctx.fillStyle = on ? '#fff0b0' : '#e8ecf0'; ctx.fillRect(px - 5, py - 39, 10, 5);
+  if (on && isl.glow) isl.glow.push([px, py - 36, 44]);
+}
+function islDrawCritter(ctx, c) {
+  const T = ISL.T, px = c.x * T, py = c.y * T + 6, hop = c.fly ? Math.sin(c.ph) * 6 + 40 : Math.sin(c.hop * Math.PI) * 10;
+  ctx.fillStyle = 'rgba(40,60,30,.16)'; ctx.beginPath(); ctx.ellipse(px, py, 7, 3, 0, 0, 7); ctx.fill();
+  ctx.save(); ctx.translate(px, py - hop); ctx.scale(c.f, 1); ctx.font = '20px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(c.e, 0, 0); ctx.restore();
+}
+function islDrawBike(ctx, b, now) {
+  const T = ISL.T, px = b.x * T, py = b.y * T + 8, moving = b.path.length > 0, spin = now / 120;
+  ctx.fillStyle = 'rgba(40,30,20,.2)'; ctx.beginPath(); ctx.ellipse(px, py, 16, 5, 0, 0, 7); ctx.fill();
+  ctx.save(); ctx.translate(px, py); ctx.scale(b.f, 1);
+  ctx.strokeStyle = '#444'; ctx.lineWidth = 2.2; [-10, 10].forEach(wx => { ctx.beginPath(); ctx.arc(wx, -6, 6.5, 0, 7); ctx.stroke(); if (moving) { ctx.beginPath(); ctx.moveTo(wx + Math.cos(spin) * 5, -6 + Math.sin(spin) * 5); ctx.lineTo(wx - Math.cos(spin) * 5, -6 - Math.sin(spin) * 5); ctx.stroke(); } });
+  ctx.strokeStyle = '#e0605a'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(-10, -6); ctx.lineTo(-2, -17); ctx.lineTo(8, -17); ctx.lineTo(10, -6); ctx.moveTo(-2, -17); ctx.lineTo(1, -6); ctx.lineTo(10, -6); ctx.stroke();
+  if (b.pic) ctx.drawImage(b.pic, -22, -56 + (moving ? Math.sin(now / 90) * 1.5 : 0), 44, 40);
+  if (now - b.ring < 600) { ctx.font = '14px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#5a4630'; ctx.fillText('🔔', 14, -40 - (now - b.ring) / 40); }
+  ctx.restore();
+}
+function islDrawCoin(ctx, c, tt) {
+  const T = ISL.T, px = c.x * T + T / 2, py = c.y * T + T / 2 + 4 - Math.abs(Math.sin(tt * 3 + c.x)) * 5, w = Math.abs(Math.cos(tt * 2.5 + c.y)) * 9 + 1;
+  ctx.fillStyle = 'rgba(40,60,30,.18)'; ctx.beginPath(); ctx.ellipse(px, c.y * T + T / 2 + 10, 8, 3, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#f2c14e'; ctx.strokeStyle = '#c9961e'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(px, py, w, 10, 0, 0, 7); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.beginPath(); ctx.ellipse(px - w * .3, py - 3, w * .3, 3, 0, 0, 7); ctx.fill();
+}
+function islDrawDaylight(ctx, v, W, H, now) {   // 🌤️ 早上、傍晚、晚上的顏色（畫在整個畫面上）；晚上的燈光、星星
+  const ph = islPhase(); if (ph === 'day') return;
+  const glows = isl.glow || [];
+  ctx.restore(); ctx.save();   // 回到螢幕座標
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.fillStyle = ph === 'night' ? '#8088c8' : ph === 'evening' ? '#f0bf90' : '#fff0d0';
+  ctx.fillRect(0, 0, W, H);
+  ctx.globalCompositeOperation = 'source-over';
+  if (ph === 'night') { ctx.fillStyle = '#fff'; for (let i = 0; i < 40; i++) { const sx = (islHash(i, 7, 21) * W), sy = islHash(i, 9, 23) * H * .5; ctx.globalAlpha = .5 + .5 * Math.sin(now / 400 + i); ctx.fillRect(sx, sy, 2, 2); } ctx.globalAlpha = 1; }
+  // 燈光（世界座標）
+  ctx.translate(W / 2, H / 2); ctx.scale(v.s, v.s); ctx.translate(-v.cx, -v.cy);
+  ctx.globalCompositeOperation = 'lighter';
+  glows.forEach(([gx, gy, r]) => { const g = ctx.createRadialGradient(gx, gy, 2, gx, gy, r); g.addColorStop(0, ph === 'night' ? 'rgba(255,220,130,.55)' : 'rgba(255,220,130,.25)'); g.addColorStop(1, 'rgba(255,220,130,0)'); ctx.fillStyle = g; ctx.fillRect(gx - r, gy - r, r * 2, r * 2); });
+  ctx.globalCompositeOperation = 'source-over';
 }
 function islDrawTree(ctx, x, y, now) {
   const T = ISL.T, px = x * T + T / 2, py = (y + 1) * T - 3, st = isl.shake[x + ',' + y], sh = st && now - st < 500 ? Math.sin((now - st) / 40) * 3 * (1 - (now - st) / 500) : 0;
@@ -18851,8 +18990,10 @@ function islDrawBuilding(ctx, b, tt) {
     ctx.fillStyle = roofC; ctx.beginPath(); ctx.moveTo(x - 7, y + 26); ctx.lineTo(x + w * .2, y - 4); ctx.lineTo(x + w * .8, y - 4); ctx.lineTo(x + w + 7, y + 26); ctx.closePath(); ctx.fill();
     ctx.fillStyle = 'rgba(255,255,255,.2)'; ctx.fillRect(x + w * .2, y - 4, w * .6, 5);
     if (b.id === 'home') { ctx.fillStyle = '#c8553d'; ctx.fillRect(x + w - 20, y - 12, 9, 16); }
-    ctx.fillStyle = '#bfe6f6'; const ww = Math.min(22, w / 4);   // 窗戶
+    const night = islPhase() === 'night' || islPhase() === 'evening';
+    ctx.fillStyle = night ? '#ffe9a8' : '#bfe6f6'; const ww = Math.min(22, w / 4);   // 窗戶（晚上會亮）
     ctx.fillRect(x + 8, y + 32, ww, 16); if (b.w > 3) ctx.fillRect(x + w - 8 - ww, y + 32, ww, 16);
+    if (night && isl.glow) { isl.glow.push([x + 8 + ww / 2, y + 40, 26]); if (b.w > 3) isl.glow.push([x + w - 8 - ww / 2, y + 40, 26]); }
   }
   const dx = b.door[0] * T;
   ctx.fillStyle = '#7a4a2a'; ctx.beginPath(); ctx.moveTo(dx + 4, y + h); ctx.lineTo(dx + 4, y + h - 20); ctx.arc(dx + 16, y + h - 20, 12, Math.PI, 0); ctx.lineTo(dx + 28, y + h); ctx.closePath(); ctx.fill();
