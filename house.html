@@ -655,6 +655,8 @@ button.pass { font: inherit; }
 .island canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 .island-btn { position: absolute; top: 12px; font: inherit; font-size: 15px; font-weight: 800; border: 2px solid #fff; border-radius: 999px; padding: 8px 16px; min-height: 40px; background: rgba(255,255,255,.92); color: #4a3b2a; box-shadow: 0 3px 10px rgba(0,0,0,.2); cursor: pointer; touch-action: manipulation; }
 .isl-back { left: 12px; } .isl-fast { right: 12px; } .isl-run { left: 12px; top: 60px; }
+.isl-tools { position: absolute; left: 12px; bottom: 60px; display: flex; flex-direction: column; gap: 6px; }
+.isl-tools .island-btn { position: static; text-align: left; }
 .island-tip { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); background: rgba(255,255,255,.92); color: #5a4630; font-weight: 700; font-size: 14px; padding: 8px 16px; border-radius: 999px; box-shadow: 0 3px 10px rgba(0,0,0,.18); pointer-events: none; transition: opacity 1.2s; max-width: 90%; text-align: center; }
 .island-tip.fade { opacity: 0; }
 .island-on .petcard, .island-on .zoom-btn, .island-on .theme-btn, .island-on .photo-btn, .island-on .dup-btn, .island-on .call-btn, .island-on .hint, .island-on .itemmenu, .island-on .actions { display: none !important; }
@@ -4365,6 +4367,7 @@ const NEWS = [
     ['👻', '每天有一隻小幽靈躲在家裡的某個房間，找到點一下拿 3 顆糖果'],
     ['🎉', '房間擺 3 件萬聖節家具，點小可愛選「萬聖節派對」，朋友們都來跳舞'],
     ['🍬', '派對結束每天第一次送 4 顆糖果，可以送給來玩的動物朋友'],
+    ['🧰', '小島左下角有三個道具：🎣 釣竿（點海邊或池塘，看到❗就點）、🦋 網子（點蝴蝶）、⛏️ 鏟子（拿著點草地挖寶）；搖樹小心蜜蜂！'],
     ['🌤️', '小島會跟著時間變：早上暖暖的、傍晚橘橘的、晚上路燈和窗戶會亮、有星星；島上每天有 5 枚金幣走過去就撿；走到池塘邊可以釣魚；多了兔子、松鼠、小雞、蝴蝶和騎腳踏車的朋友'],
     ['🏝️', '「🚗 出門」變成一座小島！自己走路逛，走到房子門口就進去；樹可以搖、花可以摘，寵物跟在後面。想直接去哪裡，按「🚗 快速出門」'],
     ['✨', '「我的東西」最上面有「一鍵佈置這個房間」：選一個風格，就用你有的家具幫你擺好、換漂亮的壁紙地板，不喜歡可以換回原本'],
@@ -5043,6 +5046,7 @@ function normalizeSave(g) {
   if (out.abc) ['bd', 'pq', 'mix'].forEach(k => { if (!Number.isInteger(out.abc[k]) || out.abc[k] < 0) out.abc[k] = 0; });
   if (out.islCoin != null && !(isObj(out.islCoin) && typeof out.islCoin.d === 'string' && Number.isInteger(out.islCoin.n) && out.islCoin.n >= 0 && Array.isArray(out.islCoin.got))) delete out.islCoin;
   if (out.islCoin) out.islCoin.got = out.islCoin.got.filter(x => typeof x === 'string').slice(0, 50);
+  if (out.islDig != null && !(isObj(out.islDig) && typeof out.islDig.d === 'string' && Number.isInteger(out.islDig.n) && out.islDig.n >= 0)) delete out.islDig;
   if (out.pumpDay != null && !(isObj(out.pumpDay) && typeof out.pumpDay.d === 'string' && Number.isInteger(out.pumpDay.n) && out.pumpDay.n >= 0)) delete out.pumpDay;
   if (out.partyDay != null && typeof out.partyDay !== 'string') delete out.partyDay;
   if (out.clownDay != null && typeof out.clownDay !== 'string') delete out.clownDay;
@@ -6157,6 +6161,23 @@ function drawProp(ctx, prop, t) {
     ctx.translate(8, -20);
     ctx.fillStyle = '#f4e6c8'; ctx.fillRect(-.6, -6, 1.2, 8);
     ctx.fillStyle = '#ffc2dc'; [[-2, -10], [2, -11], [0, -14]].forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill(); });
+  } else if (prop === 'rod' || prop === 'rodBite') { // 🎣 釣竿（右手，斜斜往上）；咬鉤時竿子彎下來抖
+    ctx.translate(8, -22); ctx.rotate(-.95 + (prop === 'rodBite' ? Math.sin(t * 40) * .12 + .25 : Math.sin(t * 2) * .03));
+    ctx.strokeStyle = '#8a5a33'; ctx.lineWidth = 2.2; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(0, 4); ctx.lineTo(0, -36); ctx.stroke();
+    ctx.strokeStyle = '#d9b27a'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, -18); ctx.lineTo(0, -36); ctx.stroke();
+    ctx.fillStyle = '#5a5a66'; ctx.beginPath(); ctx.arc(1.5, -5, 2.6, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#c0c7ce'; ctx.beginPath(); ctx.arc(1.5, -5, 1.1, 0, Math.PI * 2); ctx.fill();
+  } else if (prop === 'net' || prop === 'netSwing') { // 🦋 捕蟲網
+    ctx.translate(8, -22); ctx.rotate(-.6 + (prop === 'netSwing' ? Math.sin(t * 14) * .9 : Math.sin(t * 2) * .04));
+    ctx.strokeStyle = '#c9925a'; ctx.lineWidth = 2.2; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(0, 4); ctx.lineTo(0, -26); ctx.stroke();
+    ctx.strokeStyle = '#6a8fd6'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.ellipse(0, -33, 7.5, 6, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = 'rgba(190,220,255,.45)'; ctx.fill();
+    ctx.strokeStyle = 'rgba(100,140,210,.5)'; ctx.lineWidth = .7; for (let i = -4; i <= 4; i += 4) { ctx.beginPath(); ctx.moveTo(i, -39); ctx.lineTo(i, -27); ctx.stroke(); }
+  } else if (prop === 'shovel' || prop === 'shovelDig') { // ⛏️ 鏟子（挖的時候上下）
+    ctx.translate(8, -18 + (prop === 'shovelDig' ? Math.abs(Math.sin(t * 10)) * 5 : 0)); ctx.rotate(.55 + (prop === 'shovelDig' ? Math.sin(t * 10) * .25 : 0));
+    ctx.strokeStyle = '#8a5a33'; ctx.lineWidth = 2.4; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(0, 2); ctx.stroke();
+    ctx.fillStyle = '#8a5a33'; ctx.fillRect(-3, -22, 6, 2.5);
+    ctx.fillStyle = '#9aa3ad'; ctx.beginPath(); ctx.moveTo(-4.5, 1); ctx.lineTo(4.5, 1); ctx.lineTo(3.2, 10); ctx.lineTo(0, 12.5); ctx.lineTo(-3.2, 10); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#6b7480'; ctx.lineWidth = 1; ctx.stroke();
   } else if (prop === 'hay' || prop === 'shirt') { // 抱在胸前
     ctx.translate(0, -22);
     if (prop === 'hay') { rr(ctx, -7, -3.5, 14, 7, 2, '#e8c35a', L); ctx.fillStyle = '#c9a23a'; ctx.fillRect(-2.5, -3.5, 1, 7); ctx.fillRect(2, -3.5, 1, 7); }
@@ -18402,6 +18423,15 @@ const ISL_PUMPKIN_CANDY_MAX = 3;   // 南瓜每天最多吐 3 顆糖（不然一
 var ISL_HOUR_TEST = null;   // 測試用：指定現在幾點（0～24）
 const ISL_COIN_MAX = 5, ISL_COIN_BELLS = [20, 30, 40, 50];
 const ISL_LAMPS = [[23, 17], [29, 17], [23, 22], [29, 22], [26, 14], [14, 17], [36, 17], [26, 30], [12, 26], [40, 26]];   // 路燈的位置
+/* ===== 🧰 道具（家長：釣竿、網子、鏟子；搖樹可能有蜜蜂）=====
+   左下角三顆道具：點了就拿在手上。小孩不用先選也行——點水就自動拿釣竿、點蝴蝶自動拿網子；鏟子要自己拿出來再點草地。
+   🎣 釣竿：點海邊或池塘 → 走到水邊甩竿 → 浮標「❗」的時候點一下就釣到（跟「賺錢」的釣魚同一批魚、同一本圖鑑；海裡比較容易釣到大魚）
+   🦋 網子：點蝴蝶 → 走過去揮網 → 抓到收進蝴蝶相簿（跟捉蝴蝶小遊戲同一本）；沒抓到牠會飛走
+   ⛏️ 鏟子：拿著鏟子點草地 → 挖一個洞，可能挖到鈴錢、蘋果、貝殼，或只是蚯蚓（一天最多挖到 6 樣東西）
+   🐝 搖樹：偶爾掉下蜂窩，蜜蜂追著她跑一下，她會緊張、心情和飽足掉一點點（不會受傷，過一下就好） */
+const ISL_DIG_MAX = 6;
+function islDigState() { const d = today(); if (!G.islDig || G.islDig.d !== d) G.islDig = { d, n: 0 }; return G.islDig; }
+const ISL_TOOLS = [['rod', '🎣 釣竿', '點海邊或池塘，看到「❗」就點一下'], ['net', '🦋 網子', '點蝴蝶就會走過去抓'], ['shovel', '⛏️ 鏟子', '點草地就會挖一個洞']];
 function islHour() { return ISL_HOUR_TEST != null ? ISL_HOUR_TEST : new Date().getHours() + new Date().getMinutes() / 60; }
 function islPhase() { const h = islHour(); return h < 6 || h >= 19 ? 'night' : h < 8 ? 'morning' : h >= 17 ? 'evening' : 'day'; }
 function islCoinState() { const d = today(); if (!G.islCoin || G.islCoin.d !== d) G.islCoin = { d, n: 0, got: [] }; return G.islCoin; }
@@ -18515,12 +18545,14 @@ function openIsland() {
   const cv = document.createElement('canvas'); layer.appendChild(cv);
   const back = el('button', 'island-btn isl-back', '🔙 回去'), fast = el('button', 'island-btn isl-fast', '🚗 快速出門'), run = el('button', 'island-btn isl-run', ''); run.id = 'islRun';
   const tip = el('div', 'island-tip', '點地面走過去，走到房子的門口就會進去～');
-  layer.append(back, fast, run, tip);
+  const tools = el('div', 'isl-tools');
+  ISL_TOOLS.forEach(([id, label]) => { const b = el('button', 'island-btn isl-tool', label); b.dataset.tool = id; b.onclick = () => { Sound.play('click'); islSetTool(isl.tool === id ? null : id, true); }; tools.appendChild(b); });
+  layer.append(back, fast, run, tools, tip);
   run.onclick = () => { setRun(!runOn()); Sound.play('click'); };
   stage.appendChild(layer); stage.classList.add('island-on');
   refreshRunBtn();
   const dpr = () => window.devicePixelRatio || 1;
-  isl = { fx: [], gulls: [], shellGot: {}, layer, cv, m, invites, x: st.x + .5, y: st.y + .5, path: [], pending: null, skipDoor: st.id, facing: 1, back: false,
+  isl = { fx: [], gulls: [], shellGot: {}, tool: null, act: null, holes: [], bees: null, layer, cv, m, invites, x: st.x + .5, y: st.y + .5, path: [], pending: null, skipDoor: st.id, facing: 1, back: false,
     t: 0, last: performance.now(), keys: {}, press: null, repath: 0, shake: {}, picked: {}, trail: [], pet: { x: st.x + .5, y: st.y + 1.2, f: 1 }, raf: 0, tip, cam: { x: st.x + .5, y: st.y + .5 }, from: G.away ? G.away.place : null };
   isl.npcs = NEIGHBORS.filter(Boolean).slice().sort((a, b) => (!!G.friends[a.id] - !!G.friends[b.id]) || Math.random() - .5).slice(0, 3).map((n, i) => {   // 島上逛街的動物朋友（還沒認識的排前面）
     let x = 0, y = 0; for (let k = 0; k < 60; k++) { x = 18 + Math.floor(Math.random() * 16); y = 14 + Math.floor(Math.random() * 12); if (islPass(m, x, y)) break; }
@@ -18530,7 +18562,7 @@ function openIsland() {
   // 🐰 小動物：在草地上跳；🦋 蝴蝶飛來飛去
   isl.critters = [['🐰', '兔兔'], ['🐿️', '松鼠'], ['🐥', '小雞'], ['🦋', '蝴蝶'], ['🦋', '蝴蝶']].map(([e, nm], i) => {
     let x = 0, y = 0; for (let k = 0; k < 80; k++) { x = 8 + Math.floor(Math.random() * (ISL.W - 16)); y = 6 + Math.floor(Math.random() * (ISL.H - 12)); if (islPass(m, x, y) && !m.path[y][x] && !m.beach[y][x]) break; }
-    return { e, nm, fly: e === '🦋', x: x + .5, y: y + .5, tx: x + .5, ty: y + .5, wait: Math.random() * 3, hop: 0, f: 1, ph: Math.random() * 6 };
+    return { e, nm, fly: e === '🦋', sp: e === '🦋' ? pickButterfly() : null, hidden: 0, x: x + .5, y: y + .5, tx: x + .5, ty: y + .5, wait: Math.random() * 3, hop: 0, f: 1, ph: Math.random() * 6 };
   });
   // 🚲 一位動物朋友騎腳踏車，沿著路繞島
   { const rider = NEIGHBORS.filter(Boolean).filter(n => !isl.npcs.some(q => q.n === n))[0] || NEIGHBORS[0];
@@ -18583,7 +18615,11 @@ function islTap(e, hold) {
   if (hold && isl.pressTile && t.x === isl.pressTile.x && t.y === isl.pressTile.y) return;   // 手指還按在原來那一格：不要重新找路
   if (hold) { isl.pending = null; isl.pressTile = null; }
   if (!hold) {
-    const cr = isl.critters.find(c => Math.hypot(c.x - t.fx, c.y - .4 - t.fy) < .9);
+    const cr = isl.critters.find(c => !(c.hidden > performance.now()) && Math.hypot(c.x - t.fx, c.y - (c.fly ? 1.3 : .4) - t.fy) < .9);
+    if (cr && cr.fly) { islSetTool('net'); isl.pending = { type: 'net', c: cr }; islWalkTo((x, y) => Math.hypot(x + .5 - cr.x, y + .5 - cr.y) < 1.3) || islWalkTo(null, Math.floor(cr.x), Math.floor(cr.y)); return; }
+    if (isl.tool === 'shovel' && t.x >= 0 && t.y >= 0 && t.x < m.W && t.y < m.H && islPass(m, t.x, t.y) && !m.path[t.y][t.x] && !m.beach[t.y][t.x] && !m.flower[t.y][t.x] && !isl.holes.some(h => h.x === t.x && h.y === t.y)) {
+      isl.pending = { type: 'dig', x: t.x, y: t.y }; if (!islWalkTo((x, y) => x === t.x && y === t.y)) isl.pending = null; else if (Math.floor(isl.x) === t.x && Math.floor(isl.y) === t.y) islDoPending(); return;
+    }
     if (cr) { cr.hop = 1; cr.wait = 2.5; Sound.play('boing'); islAddFx('say', cr.x, cr.y - 1.1, 1300, { text: cr.fly ? '飄～' : ['跳跳！', '嗨～', '啾啾'][Math.floor(Math.random() * 3)] }); if (cr.fly) { cr.tx = cr.x + (Math.random() - .5) * 6; cr.ty = cr.y - 2; } return; }
     if (isl.bike && Math.hypot(isl.bike.x - t.fx, isl.bike.y - .5 - t.fy) < 1.1) { isl.bike.ring = performance.now(); Sound.play('note', 3); islAddFx('say', isl.bike.x, isl.bike.y - 1.6, 1400, { text: '叮鈴叮鈴～' }); return; }
     const fun = islFunAt(t);
@@ -18614,16 +18650,27 @@ function islTap(e, hold) {
       return;
     }
     isl.pending = null;
+    if (t.x >= 0 && t.y >= 0 && t.x < m.W && t.y < m.H && !m.land[t.y][t.x]) {   // 🎣 點到海：走到最近的岸邊釣魚
+      islSetTool('rod'); isl.pending = { type: 'fun', obj: { kind: 'sea', x: t.fx, y: t.fy, reach: 2.2 } };
+      if (!islWalkTo(null, t.x, t.y)) isl.pending = null;
+      return;
+    }
   }
   islWalkTo(null, t.x, t.y);
 }
-function islDown(e) { if (!isl) return; e.preventDefault(); try { isl.cv.setPointerCapture(e.pointerId); } catch (er) {} isl.press = e; isl.pressTile = islTile(e); isl.repath = performance.now(); islTap(e, false); }
-function islMove(e) { if (isl && isl.press) isl.press = e; }
+function islDown(e) { if (!isl) return; e.preventDefault(); if (isl.act) { if (isl.act.kind === 'fish') islPull(); return; } try { isl.cv.setPointerCapture(e.pointerId); } catch (er) {} isl.press = e; isl.pressTile = islTile(e); isl.repath = performance.now(); islTap(e, false); }
+function islMove(e) { if (isl && isl.press && !isl.act) isl.press = e; }
 function islUp() { if (isl) isl.press = null; }
 function islDoPending() {
   const p = isl.pending; if (!p) return; isl.pending = null;
   if (p.type === 'enter') { islEnter(p.id); return; }
   if (p.type === 'fun') { islFun(p.obj); return; }
+  if (p.type === 'net') {
+    const c = p.c; if (!c || c.hidden > performance.now()) return;
+    if (Math.hypot(c.x - isl.x, c.y - isl.y) > 2) { isl.pending = p; if (!islWalkTo((x, y) => Math.hypot(x + .5 - c.x, y + .5 - c.y) < 1.3)) isl.pending = null; return; }   // 蝴蝶飛走了一點：再追
+    isl.facing = c.x > isl.x ? 1 : -1; isl.act = { kind: 'net', c, t0: performance.now() }; Sound.play('whoosh'); return;
+  }
+  if (p.type === 'dig') { isl.facing = 1; isl.act = { kind: 'dig', x: p.x, y: p.y, t0: performance.now() }; Sound.play('sand'); return; }
   if (p.type === 'talk') {
     const q = p.npc, n = q.n;
     if (Math.hypot(q.x - isl.x, q.y - isl.y) > 2.6) return;
@@ -18645,7 +18692,7 @@ function islDoPending() {
     if (r.bells) toast(`掉下 ${fmt(r.bells)} 鈴錢！`);
     else if (r.item) toast(`掉下「${r.item.name}」！放進「我的東西」了`);
     else if (r.food) toast(`掉下一顆${r.food.emoji}${r.food.name}！可以餵${petName()}`);
-    else toast('🐝 蜂窩掉下來了！快跑！');
+    else islBees(p.x + .5, p.y + .5);
     saveGame(); refreshTop();
     return;
   }
@@ -18668,6 +18715,8 @@ function islEnter(id) {   // 走到門口：關掉地圖、進去（家：回家
 const islRunning = () => runOn() || !!(isl && isl.shift);
 function islStep(dt) {
   const m = isl.m; let moving = false, dx = 0, dy = 0;
+  islActStep(performance.now());
+  if (isl.act) { isl.keys = {}; isl.path = []; }   // 釣魚、揮網、挖洞的時候不走路
   const K = isl.keys, kx = (K.arrowright || K.d ? 1 : 0) - (K.arrowleft || K.a ? 1 : 0), ky = (K.arrowdown || K.s ? 1 : 0) - (K.arrowup || K.w ? 1 : 0);
   if (kx || ky) {
     const n = Math.hypot(kx, ky), sp = 4.2 * (islRunning() ? RUN_MULT : 1) * dt; isl.path = []; isl.pending = null;
@@ -18795,6 +18844,8 @@ function islDraw(now) {
     ctx.fillStyle = c; for (let k = 0; k < 5; k++) { const a = k / 5 * 6.283; ctx.beginPath(); ctx.arc(px + sw + Math.cos(a) * 4, py + Math.sin(a) * 4, 3, 0, 7); ctx.fill(); }
     ctx.fillStyle = '#ffe066'; ctx.beginPath(); ctx.arc(px + sw, py, 2.2, 0, 7); ctx.fill();
   }
+  // ⛏️ 挖過的洞
+  isl.holes.forEach(h => { if (h.x < x0 || h.x > x1 || h.y < y0 || h.y > y1) return; ctx.fillStyle = '#8a6a48'; ctx.beginPath(); ctx.ellipse(h.x * T + 16, h.y * T + 18, 11, 7, 0, 0, 7); ctx.fill(); ctx.fillStyle = '#5a4430'; ctx.beginPath(); ctx.ellipse(h.x * T + 16, h.y * T + 18, 7, 4, 0, 0, 7); ctx.fill(); });
   // 貝殼（沙灘）
   m.shells.forEach(sh => {
     if (sh.x < x0 || sh.x > x1 || sh.y < y0 || sh.y > y1 || isl.shellGot[sh.id]) return;
@@ -18824,6 +18875,7 @@ function islDraw(now) {
   isl.glow = [];
   items.sort((a, b) => a.y - b.y).forEach(it => it.draw());
   islDrawFx(ctx, now);
+  islDrawAct(ctx, now);
   islDrawDaylight(ctx, v, W, H, now);
   ctx.restore();
 }
@@ -18855,15 +18907,104 @@ function islFun(o) {
   } else if (o.kind === 'fountain') {
     Sound.play('splash'); islAddFx('splash', o.x, o.y, 1600); islAddFx('rainbow', o.x, o.y - .5, 2200);
     toast('💦 噴水池噴得好高！');
-  } else if (o.kind === 'pond') {   // 🎣 走到池塘邊就釣魚（跟「賺錢」的釣魚同一個）
-    Sound.play('splash'); const p = ISL_POND; islAddFx('fish', p.x + .6 + Math.random() * (p.w - 1.2), p.y + .8 + Math.random() * (p.h - 1.6), 1300);
-    isl.path = []; isl.facing = o.x > isl.x ? 1 : -1;
-    setTimeout(() => { if (isl && $('#modal').hidden && !resting) { fufuSay('來釣魚吧～', 2000); openFishing(); } }, 500);
+  } else if (o.kind === 'pond' || o.kind === 'sea') {   // 🎣 在水邊甩竿（釣竿自動拿出來）
+    islStartFish(o);
   } else if (o.kind === 'gull') {
     const g = isl.gulls[o.id]; if (g) { g.scared = 2.5; g.vx = (g.vx < 0 ? -1 : 1) * 1.6; } Sound.play('boing'); islAddFx('say', o.x, o.y - 1, 1200, { text: '嘎～！' });
   } else if (o.kind === 'shell') {
     isl.shellGot[o.id] = true; Sound.play('pickUp'); islAddFx('spark', o.x, o.y, 900); kidMoodUp(1);
     toast(['🐚 撿到一個貝殼！好漂亮', '🐚 沙灘上的貝殼～'][Math.floor(Math.random() * 2)]);
+  }
+}
+function islSetTool(id, byButton) {
+  if (!isl) return;
+  if (isl.act && isl.act.kind !== 'bees') isl.act = null;   // 換道具＝取消正在做的事
+  isl.tool = id;
+  isl.layer.querySelectorAll('.isl-tool').forEach(b => b.classList.toggle('on', b.dataset.tool === id));
+  if (byButton && id) { const t = ISL_TOOLS.find(x => x[0] === id); toast(t[1] + '：' + t[2]); }
+}
+function islStartFish(o) {
+  isl.path = []; isl.pending = null; islSetTool('rod');
+  isl.facing = o.x > isl.x ? 1 : -1;
+  const now = performance.now();
+  isl.act = { kind: 'fish', phase: 'cast', t0: now, wx: o.x, wy: o.y, biteAt: now + 1800 + Math.random() * 2800, sea: o.kind === 'sea' };
+  Sound.play('whoosh');
+  if (!isl.fishHint) { isl.fishHint = true; toast('🎣 等魚咬鉤，看到「❗」就趕快點一下！'); }
+}
+function islPull() {
+  const a = isl.act; if (!a || a.kind !== 'fish') return;
+  const now = performance.now();
+  if (a.phase !== 'bite') { if (now - (isl.earlyAt || 0) > 1500) { isl.earlyAt = now; toast('還沒咬鉤喔，再等一下～'); } return; }
+  let f = rollFish();
+  if (a.sea && Math.random() < .35) { const g = rollFish(); if (g.price > f.price) f = g; }   // 海裡比較容易釣到大魚
+  catchFish(f);
+  Sound.play('catchFish'); kidMoodUp(2);
+  islAddFx('fishup', isl.x + isl.facing * .6, isl.y - 1.2, 1600, { emoji: FISH_EMOJI[f.name] || '🐟' });
+  toast(`🎣 釣到「${f.name}」！賣了 ${fmt(f.price)} 鈴錢`);
+  try { kidMakeFace('joy', 1800); } catch (e) {}
+  isl.act = null; saveGame(); refreshTop();
+}
+function islBees(x, y) {   // 🐝 蜂窩掉下來：蜜蜂追她一下，心情、飽足掉一點點，她自己跑開
+  toast('🐝 蜂窩掉下來了！快跑！'); Sound.play('miss');
+  kidMoodUp(-6); G.kid.hunger = clampStat((G.kid.hunger != null ? G.kid.hunger : 80) - 5);
+  try { kidMakeFace('worried', 3500); } catch (e) {}
+  isl.bees = { t0: performance.now(), dur: 3500, x, y };
+  islAddFx('say', isl.x, isl.y - 2.2, 1600, { text: '哇！有蜜蜂！' });
+  isl.pending = null; isl.act = null;
+  const dx = isl.x - x, dy = isl.y - y, d = Math.hypot(dx, dy) || 1;
+  islWalkTo(null, Math.round(isl.x + dx / d * 5), Math.round(isl.y + dy / d * 5));
+  setTimeout(() => { if (isl) { try { kidMakeFace('sad', 1500); } catch (e) {} toast('呼…蜜蜂走了，下次小心一點'); } }, 3600);
+  saveGame();
+}
+function islActStep(now) {   // 正在做的事（釣魚、揮網、挖洞）
+  const a = isl.act; if (!a) return;
+  if (a.kind === 'fish') {
+    if (a.phase === 'cast' && now > a.t0 + 500) a.phase = 'wait';
+    if (a.phase === 'wait' && now > a.biteAt) { a.phase = 'bite'; a.biteT = now; Sound.play('knock'); }
+    if (a.phase === 'bite' && now > a.biteT + 1400) { isl.act = null; toast('💨 魚跑掉了…再點一次水試試'); Sound.play('miss'); }
+  } else if (a.kind === 'net') {
+    if (now > a.t0 + 650) {
+      const c = a.c; isl.act = null;
+      if (c.hidden > now) return;
+      if (Math.hypot(c.x - isl.x, c.y - isl.y) < 2.2 && Math.random() < .75) {
+        const album = G.butterflies = G.butterflies || {}, sp = c.sp, isNew = !album[sp.id];
+        album[sp.id] = (album[sp.id] || 0) + 1;
+        if (isNew) { const cv = document.createElement('canvas'); cv.width = 120; cv.height = 100; drawButterfly(cv.getContext('2d'), 60, 52, sp, 1.2, 2.6); const n = Object.keys(album).length; showcase(cv, sp.name, `🦋 蝴蝶相簿 ${n} / ${BUTTERFLIES.length}`, { n, all: BUTTERFLIES.length }); sessionLog.newThings.push('🦋 ' + sp.name); }
+        Sound.play('perfect'); kidMoodUp(2); try { kidMakeFace('joy', 1800); } catch (e) {}
+        toast(`🦋 抓到${sp.name}！${isNew ? '' : '（相簿裡已經有了）'}`);
+        c.hidden = now + 15000; c.sp = pickButterfly(); c.x = 8 + Math.random() * (ISL.W - 16); c.y = 6 + Math.random() * (ISL.H - 12); c.tx = c.x; c.ty = c.y;   // 過一下子別的地方會飛來一隻新的
+        saveGame(); refreshTop();
+      } else { Sound.play('miss'); islAddFx('say', c.x, c.y - 1.8, 1200, { text: '飛走了～' }); c.tx = c.x + (Math.random() < .5 ? -1 : 1) * 7; c.ty = c.y - 3; c.wait = 4; }
+    }
+  } else if (a.kind === 'dig') {
+    if (now > a.t0 + 1000) {
+      isl.act = null; isl.holes.push({ x: a.x, y: a.y });
+      const st = islDigState(), r = Math.random(), cx = a.x + .5, cy = a.y + .3;
+      if (st.n < ISL_DIG_MAX && r < .4) { const n = 10 + 10 * Math.floor(Math.random() * 4); st.n++; addBells(n); Sound.play('coin'); islAddFx('coin', cx, cy, 1100, { n }); toast(`⛏️ 挖到 ${n} 鈴錢！`); }
+      else if (st.n < ISL_DIG_MAX && r < .6) { st.n++; G.food.apple = (G.food.apple || 0) + 1; Sound.play('coin'); islAddFx('popup', cx, cy, 1300, { emoji: '🍎' }); toast(`⛏️ 挖到一顆🍎蘋果！可以餵${petName()}`); }
+      else if (st.n < ISL_DIG_MAX && r < .72) { st.n++; Sound.play('pickUp'); islAddFx('popup', cx, cy, 1300, { emoji: '🐚' }); kidMoodUp(1); toast('⛏️ 挖到一個貝殼！'); }
+      else { Sound.play('boing'); islAddFx('popup', cx, cy, 1300, { emoji: r < .86 ? '🐛' : '⚫' }); toast(r < .86 ? '⛏️ 挖到一條小蟲蟲！扭來扭去' : '⛏️ 只有一顆小石頭'); }
+      if (st.n >= ISL_DIG_MAX && !isl.digCapSaid) { isl.digCapSaid = true; setTimeout(() => toast('今天挖到的寶物夠多了，明天再挖！'), 1500); }
+      saveGame(); refreshTop();
+    }
+  }
+}
+function islDrawAct(ctx, now) {   // 釣魚線、浮標、❗；蜜蜂
+  const T = ISL.T, a = isl.act;
+  if (a && a.kind === 'fish') {
+    const k = kidHeightScale() * T * 1.55 / 76, tipX = isl.x * T + isl.facing * 26 * k, tipY = isl.y * T + 8 - 68 * k;
+    const bx = a.wx * T, by = a.wy * T + (a.phase === 'bite' ? 6 + Math.sin(now / 50) * 3 : Math.sin(now / 400) * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(tipX, tipY); ctx.quadraticCurveTo((tipX + bx) / 2, Math.max(tipY, by) + 10, bx, by); ctx.stroke();
+    if (a.phase !== 'cast') {
+      ctx.fillStyle = '#e8505b'; ctx.beginPath(); ctx.arc(bx, by, 5, Math.PI, 0); ctx.fill(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(bx, by, 5, 0, Math.PI); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(bx, by + 2, 9 + (now / 30) % 8, 0, 7); ctx.stroke();
+    }
+    if (a.phase === 'bite') { ctx.font = '700 26px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#e0605a'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.strokeText('❗', bx, by - 16 - Math.abs(Math.sin(now / 80)) * 6); ctx.fillText('❗', bx, by - 16 - Math.abs(Math.sin(now / 80)) * 6); }
+  }
+  if (isl.bees) {
+    const b = isl.bees, el2 = now - b.t0; if (el2 > b.dur) { isl.bees = null; return; }
+    ctx.font = '16px sans-serif'; ctx.textAlign = 'center';
+    for (let i = 0; i < 4; i++) { const ang = now / 150 + i * 1.6, r = 22 + i * 5; ctx.fillText('🐝', isl.x * T + Math.cos(ang) * r, isl.y * T - 34 + Math.sin(ang * 1.3) * 12); }
   }
 }
 function islDrawPumpkin(ctx, x, y, i, now) {
@@ -18884,7 +19025,8 @@ function islDrawFx(ctx, now) {
   isl.fx.forEach(f => {
     const a = (now - f.t0) / f.dur, px = f.x * T, py = f.y * T;
     ctx.save(); ctx.textAlign = 'center'; ctx.globalAlpha = Math.max(0, Math.min(1, (1 - a) * 2.2));
-    if (f.k === 'coin') { ctx.font = '700 16px sans-serif'; ctx.fillStyle = '#b8860b'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; const ty = py - a * 40; ctx.strokeText('+' + f.n, px, ty); ctx.fillText('+' + f.n, px, ty); }
+    if (f.k === 'fishup' || f.k === 'popup') { ctx.font = '26px sans-serif'; ctx.fillText(f.emoji, px, py - Math.sin(Math.min(1, a * 1.2) * Math.PI) * 50 + a * 10); }
+    else if (f.k === 'coin') { ctx.font = '700 16px sans-serif'; ctx.fillStyle = '#b8860b'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; const ty = py - a * 40; ctx.strokeText('+' + f.n, px, ty); ctx.fillText('+' + f.n, px, ty); }
     else if (f.k === 'candy') { ctx.font = '22px sans-serif'; ctx.fillText('🍬', px, py - a * 46); }
     else if (f.k === 'ghost') { ctx.font = '30px sans-serif'; ctx.fillText('👻', px + Math.sin(a * 9) * 6, py - 10 - a * 50); }
     else if (f.k === 'bat') { if (now - f.t0 >= (f.delay || 0)) { const b = Math.min(1, (now - f.t0 - (f.delay || 0)) / (f.dur - (f.delay || 0))); ctx.font = '22px sans-serif'; ctx.fillText('🦇', px + f.dx * T * b, py + f.dy * T * b + Math.sin(b * 14) * 6); } }
@@ -18923,8 +19065,10 @@ function islDrawLamp(ctx, x, y) {
   if (on && isl.glow) isl.glow.push([px, py - 36, 44]);
 }
 function islDrawCritter(ctx, c) {
+  if (c.hidden > performance.now()) return;
   const T = ISL.T, px = c.x * T, py = c.y * T + 6, hop = c.fly ? Math.sin(c.ph) * 6 + 40 : Math.sin(c.hop * Math.PI) * 10;
   ctx.fillStyle = 'rgba(40,60,30,.16)'; ctx.beginPath(); ctx.ellipse(px, py, 7, 3, 0, 0, 7); ctx.fill();
+  if (c.fly && c.sp) { drawButterfly(ctx, px, py - hop, c.sp, isl.t * 9 + c.ph, .75); return; }
   ctx.save(); ctx.translate(px, py - hop); ctx.scale(c.f, 1); ctx.font = '20px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(c.e, 0, 0); ctx.restore();
 }
 function islDrawBike(ctx, b, now) {
@@ -19013,7 +19157,8 @@ function islDrawKid(ctx) {
   ctx.save(); ctx.translate(px, py - hop);
   if (kidBaby()) { ctx.scale(isl.facing * 1.15 * u * 1.4, 1.15 * u * 1.4); drawBabyKid(ctx, { t, walking, blink: fufuBlink() }); ctx.restore(); return; }
   ctx.scale(isl.facing * k * u, k * u);
-  drawGirl(ctx, { t: tt, walking, back: isl.back && walking, blink: fufuBlink(), outfit: currentOutfit(), face: kidFace(), stage: kidLookStage(), dirty: kidDirty() });
+  const a = isl.act, prop = a ? (a.kind === 'fish' ? (a.phase === 'bite' ? 'rodBite' : 'rod') : a.kind === 'net' ? 'netSwing' : a.kind === 'dig' ? 'shovelDig' : null) : isl.tool;
+  drawGirl(ctx, { t: tt, walking, back: isl.back && walking, blink: fufuBlink(), outfit: currentOutfit(), face: kidFace(), stage: kidLookStage(), dirty: kidDirty(), prop: prop || undefined });
   ctx.restore();
 }
 function islDrawPet(ctx) {
