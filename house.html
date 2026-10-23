@@ -3015,6 +3015,7 @@ function growDexAdd(species, stage, g) {
 function growDexSync(g) {
   g = g || G;
   (g.pets || []).forEach(p => {
+    if (!p || typeof p !== 'object') return;   // 存檔裡寵物陣列有空的（null）：跳過，不要讓整個讀檔當掉
     const i = GROW_STAGES.indexOf(p.stage);
     if (i < 0) return;
     GROW_STAGES.slice(0, i + 1).forEach(st => growDexAdd(p.species, st, g));
@@ -4259,7 +4260,7 @@ function curSlotName() {
   try {
     const old = localStorage.getItem(LEGACY_KEY);
     if (!old) return;                                  // 全新的人，沒東西要搬
-    if (localStorage.getItem(slotSave('p1'))) return;  // 搬過了
+    if (localStorage.getItem(slotSave('p1')) || localStorage.getItem(SLOTS_KEY)) return;  // 搬過了（存檔格清單已經有＝早就不是舊版；就算第 1 格被刪了也不要再搬一份進來佔空間）
     localStorage.setItem(slotSave('p1'), old);
     const u = localStorage.getItem('myHouseGame_undo');
     if (u) localStorage.setItem(slotUndo('p1'), u);
@@ -4308,24 +4309,28 @@ function removeSlot(id) {
   if (list.length <= 1) return false;
   const rest = list.filter(s => s.id !== id);
   if (rest.length === list.length) return false;
-  // 刪掉之前留一份在「回收桶」（最多 2 份），「🔍 其他找得到的舊紀錄」找得到
-  try {
-    const raw = localStorage.getItem(slotSave(id));
-    if (raw) {
-      let tr = []; try { tr = JSON.parse(localStorage.getItem(TRASH_KEY)) || []; } catch (e) {}
-      tr = [{ at: Date.now(), name: (list.find(s => s.id === id) || {}).name || '', raw }].concat(Array.isArray(tr) ? tr : []).slice(0, 2);
-      localStorage.setItem(TRASH_KEY, JSON.stringify(tr));
-    }
-  } catch (e) {}
-  saveSlots(rest);
-  if (id === curSlotId()) RELOADING = true;
+  /* 順序很重要（空間不夠的時候）：先刪這一格自己的紀錄、照片（騰出空間），再把存檔放進「回收桶」並讀回來確認，
+     再寫存檔格清單並確認，最後才真的刪掉存檔。哪一步寫不進去就停下來、什麼都不刪（以前是先寫回收桶失敗也照刪，存檔就真的不見了）。 */
+  let raw = null; try { raw = localStorage.getItem(slotSave(id)); } catch (e) {}
   try {
     localStorage.removeItem('myHouseGame_snaps:' + id);
-    localStorage.removeItem(slotSave(id));
     localStorage.removeItem(slotUndo(id));
     localStorage.removeItem('myHouse_photos:' + id); // 那一格的照片也一起刪
-    ['myHouse_lastBackup:', 'myHouse_firstSeen:', 'myHouseGame_rescue:'].forEach(k => localStorage.removeItem(k + id)); // 之後新開的存檔可能用到同一個編號，不能接到舊的紀錄
+    ['myHouse_lastBackup:', 'myHouse_firstSeen:', 'myHouseGame_rescue:'].forEach(k => localStorage.removeItem(k + id)); // 之後新開的存檔可能用到同一個編號
   } catch (e) {}
+  if (raw) {   // 回收桶（最多 2 份），「🔍 其他找得到的舊紀錄」找得到
+    let tr = []; try { tr = JSON.parse(localStorage.getItem(TRASH_KEY)) || []; } catch (e) {}
+    const item = { at: Date.now(), name: (list.find(s => s.id === id) || {}).name || '', raw };
+    tr = [item].concat(Array.isArray(tr) ? tr : []).slice(0, 2);
+    let saved = false;
+    for (let n = tr.length; n >= 1 && !saved; n--) { try { localStorage.setItem(TRASH_KEY, JSON.stringify(tr.slice(0, n))); saved = true; } catch (e) {} }
+    let back = null; try { back = (JSON.parse(localStorage.getItem(TRASH_KEY)) || [])[0]; } catch (e) {}
+    if (!saved || !back || back.raw !== raw) { try { toast('⚠️ 空間不夠，放不進回收桶，存檔沒有刪。請先刪一些照片或存成檔案'); } catch (e) {} return false; }
+  }
+  saveSlots(rest);
+  if (slots().some(s => s.id === id)) { try { toast('⚠️ 存檔清單寫不進去，存檔沒有刪'); } catch (e) {} return false; }
+  if (id === curSlotId()) RELOADING = true;
+  try { localStorage.removeItem(slotSave(id)); } catch (e) {}
   if (id === localStorage.getItem(CUR_KEY)) {
     try { localStorage.setItem(CUR_KEY, rest[0].id); } catch (e) {}
   }
@@ -4924,6 +4929,8 @@ function addSnap(kind, raw) {
   if (!raw || !SNAP_MAX[kind]) return false;
   let list = readSnaps();
   if (list.some(x => x.kind === kind && x.raw === raw)) return false;
+  list = readSnaps();   // 寫之前再讀一次（兩個分頁同時存的話，不要把對方剛存的蓋掉）
+  if (list.some(x => x.kind === kind && x.raw === raw)) return false;
   const item = { kind, at: Date.now(), raw };
   list.unshift(item);
   const keep = {};
@@ -5044,6 +5051,7 @@ function normalizeSave(g) {
   if (out.gameBonusDay != null && typeof out.gameBonusDay !== 'string') delete out.gameBonusDay;
   if (out.abc != null && !(isObj(out.abc))) delete out.abc;
   if (out.abc) ['bd', 'pq', 'mix'].forEach(k => { if (!Number.isInteger(out.abc[k]) || out.abc[k] < 0) out.abc[k] = 0; });
+  { let mx = 0; out.rooms.forEach(r => (r.items || []).concat(r.wallItems || []).forEach(it => { if (Number.isInteger(it.uid) && it.uid > mx) mx = it.uid; })); if (!Number.isInteger(out.uid) || out.uid <= mx) out.uid = mx + 1; }   // uid 壞掉（NaN）會從 1 重算、跟現有家具撞號 → 以現有最大的往上接
   if (out.islCoin != null && !(isObj(out.islCoin) && typeof out.islCoin.d === 'string' && Number.isInteger(out.islCoin.n) && out.islCoin.n >= 0 && Array.isArray(out.islCoin.got))) delete out.islCoin;
   if (out.islCoin) out.islCoin.got = out.islCoin.got.filter(x => typeof x === 'string').slice(0, 50);
   if (out.islDig != null && !(isObj(out.islDig) && typeof out.islDig.d === 'string' && Number.isInteger(out.islDig.n) && out.islDig.n >= 0)) delete out.islDig;
@@ -5059,8 +5067,8 @@ function normalizeSave(g) {
   out.schoolFlags = (Array.isArray(out.schoolFlags) ? out.schoolFlags : []).map(cleanDrawing).filter(Boolean).slice(0, 6);
   if (out.schoolFlag != null) { const sf = cleanDrawing(out.schoolFlag); if (sf && !out.schoolFlags.length) { out.schoolFlags.push(sf); out.schoolFlagIdx = 0; } delete out.schoolFlag; }
   if (!(Number.isInteger(out.schoolFlagIdx) && out.schoolFlagIdx >= 0 && out.schoolFlagIdx < out.schoolFlags.length)) out.schoolFlagIdx = null;
-  if (Array.isArray(out.guestbook)) out.guestbook.forEach((e, i) => { if (i >= GUESTBOOK_DRAW_MAX) delete e.d; });   // 畫只留最近幾張（從備份還原的也一樣）
-  if (Array.isArray(out.animalBook)) out.animalBook.forEach((e, i) => { if (i >= ANIMAL_DRAW_MAX) delete e.d; });
+  if (Array.isArray(out.guestbook)) out.guestbook.forEach((e, i) => { if (e && typeof e === 'object' && i >= GUESTBOOK_DRAW_MAX) delete e.d; });   // 畫只留最近幾張（從備份還原的也一樣）；空的那格跳過
+  if (Array.isArray(out.animalBook)) out.animalBook.forEach((e, i) => { if (e && typeof e === 'object' && i >= ANIMAL_DRAW_MAX) delete e.d; });
   if (out.kidGrowDay != null && !(isObj(out.kidGrowDay) && typeof out.kidGrowDay.d === 'string' && num(out.kidGrowDay.n))) delete out.kidGrowDay;
   if (out.flowerDex != null && !isObj(out.flowerDex)) delete out.flowerDex;
   if (out.advComics != null && !isObj(out.advComics)) delete out.advComics;
@@ -5081,7 +5089,6 @@ function normalizeSave(g) {
   if (out.kid && !num(out.kid.clean)) out.kid.clean = 100;
   (out.pets || []).forEach(q => { if (q && q.small != null && !num(q.small)) delete q.small; });
   if (!isObj(g.growDex)) out.growDex = {};
-  growDexSync(out);
   if (!Array.isArray(g.newsSeen)) out.newsSeen = []; // 舊存檔：還沒看過任何公告，要讓她看到這次更新了什麼
   /* 補償也要發給「已經存在的存檔」——只改 newGame() 的話，
      她那台已經有存檔了，newGame() 根本不會再跑，一毛都拿不到。
@@ -5091,7 +5098,8 @@ function normalizeSave(g) {
     if (out.bells < START_BELLS) out.bells = START_BELLS;
   }
   // 寵物：舊存檔只有一隻 g.pet（當作「小朋友」階段的粉紅糰子），新存檔用 g.pets
-  const src = Array.isArray(g.pets) && g.pets.length ? g.pets : [Object.assign({ name: DEFAULT_PET_NAME }, g.pet || {})];
+  const srcList = Array.isArray(g.pets) ? g.pets.filter(p => p && typeof p === 'object' && !Array.isArray(p)) : [];   // 空的、壞的那幾格丟掉（不然後面每個地方都會當）
+  const src = srcList.length ? srcList : [Object.assign({ name: DEFAULT_PET_NAME }, g.pet && typeof g.pet === 'object' ? g.pet : {})];
   out.pets = src.map(p => {
     const q = Object.assign(newPet(), p);
     if (typeof q.name !== 'string') q.name = '';   // 寵物名字不是字串會讓 petName() 當掉
@@ -5102,6 +5110,7 @@ function normalizeSave(g) {
   });
   out.activePet = Number.isInteger(g.activePet) ? Math.max(0, Math.min(out.pets.length - 1, g.activePet)) : 0;
   out.pet = out.pets[out.activePet]; // 同一個物件，改 G.pet 就是改 pets 裡那隻
+  growDexSync(out);   // 要在寵物整理好之後才算（不然壞掉的種類會先被記進成長圖鑑，再讀一次又不一樣）
   fixCompanions(out);
   out.kid = Object.assign(newKid(), g.kid || {});
   out.away = null; // 重新打開遊戲一律在自己家
@@ -5223,7 +5232,11 @@ function saveGame() {
   try { localStorage.setItem(SAVE_KEY, txt); }
   catch (e) { // 空間滿了：先把舊的自動存檔清掉再試一次；還是不行才警告（私密視窗等等）
     let ok = false;
-    for (let lv = 0; lv <= 3 && !ok; lv++) { try { trimSnaps(lv); localStorage.setItem(SAVE_KEY, txt); ok = true; } catch (e2) {} }
+    for (let lv = 0; lv <= 3 && !ok; lv++) {
+      try { trimSnaps(lv); localStorage.setItem(SAVE_KEY, txt); ok = true; } catch (e2) {}
+      // 第 3 層會丟掉家長手動存的、重新開始之前的那幾份：進度比較重要所以還是做，但要說一聲
+      if (ok && lv === 3) try { toast('⚠️ 空間不夠，刪掉了幾份舊的存檔紀錄才存得進去。請到「💾 備份」刪一些照片或存成檔案'); } catch (e3) {}
+    }
     if (!ok) { showSaveWarn('fail'); return false; }
   }
   showSaveWarn(null);
@@ -14811,7 +14824,7 @@ function applyBackup(txt) {
   if (!s) return false;
   try {
     try { if (SAVE_LOCKED == null) addSnap('reset', localStorage.getItem(SAVE_KEY)); } catch (e) {} // 反悔那一份只有一個；存檔紀錄裡也留一份
-    localStorage.setItem(UNDO_KEY, makeBackup());
+    if (SAVE_LOCKED == null) localStorage.setItem(UNDO_KEY, makeBackup());   // 讀不出來的那份不要蓋掉原本可以反悔的那份（原文另外在 rescue 留著）
     localStorage.setItem(SAVE_KEY, s.data);
   } catch (e) { return false; }
   return true;
@@ -15765,7 +15778,7 @@ function maybeRescueOffer(tries) {
 }
 // 🕒 自動存一份：打開遊戲時（載入成功的那份）、之後每 10 分鐘（有變才存）
 function autoSnap() {
-  if (SAVE_LOCKED != null) return false;
+  if (SAVE_LOCKED != null || SAVE_STALE || RELOADING) return false;   // 這一頁已經不是最新的（別的分頁在玩）：不要用舊的進度蓋掉存檔紀錄
   let raw = null;
   try { raw = localStorage.getItem(SAVE_KEY); } catch (e) {}
   return raw ? addSnap('auto', raw) : false;
@@ -15782,8 +15795,7 @@ const SNAP_LABEL = { auto: '🕒 自動', manual: '💾 手動', rescue: '🆘 �
 function restoreSnap(raw) {
   try {
     if (!normalizeSave(JSON.parse(raw))) return false;
-    if (SAVE_LOCKED == null) addSnap('reset', localStorage.getItem(SAVE_KEY)); // 回去之前的進度：放在不會被自動存檔擠掉的那一類
-    localStorage.setItem(UNDO_KEY, makeBackup());
+    if (SAVE_LOCKED == null) { addSnap('reset', localStorage.getItem(SAVE_KEY)); localStorage.setItem(UNDO_KEY, makeBackup()); } // 回去之前的進度：放在不會被自動存檔擠掉的那一類
     localStorage.setItem(SAVE_KEY, raw);
   } catch (e) { return false; }
   return true;
