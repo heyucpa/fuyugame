@@ -19953,13 +19953,19 @@ function examEnd(w, pass) {
   tkdFormalUntil = Date.now() + 60000;   // 考完穿白道服再一分鐘，就換回藍色練習服
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   if (pass) {
+    const oldC = tkdBeltColors();
     t.belt = Math.min(TKD_BELTS.length - 1, t.belt + 1); t.prac = 0;
-    const bells = payReward(w, 200 + t.belt * 100);
-    const pic = el('div', 'tkd-beltpic'); pic.appendChild(beltPic(tkdBeltColors(), 200)); w.stage.appendChild(pic);
-    w.stage.appendChild(el('div', 'tkd-big', '🎉'));
-    w.status.textContent = `考過了！拿到「${tkdBeltName()}」！💰 +${fmt(bells)}`;
-    try { fufuSay(`我拿到${tkdBeltName()}了！`, 3000); hostSay('恭喜！道服上的腰帶換新的了！', 3000); speak(`恭喜！拿到${tkdBeltName()}！`); } catch (e) {}
-    Sound.play('fanfare'); kidMoodUp(10);
+    saveGame();   // 先存起來：升段動畫看到一半關掉也已經升上去了
+    w.status.textContent = '🎖️ 升段典禮！';
+    beltCeremony(w, oldC, tkdBeltColors(), tkdBeltName(), () => {
+      const bells = payReward(w, 200 + t.belt * 100);
+      const pic = el('div', 'tkd-beltpic'); pic.appendChild(beltPic(tkdBeltColors(), 200)); w.stage.appendChild(pic);
+      w.status.textContent = `考過了！拿到「${tkdBeltName()}」！💰 +${fmt(bells)}`;
+      try { fufuSay(`我拿到${tkdBeltName()}了！`, 3000); hostSay('恭喜！道服上的腰帶換新的了！', 3000); } catch (e) {}
+      kidMoodUp(10); saveGame(); refreshTop();
+      gameButtons(w, openBeltExam);
+    });
+    return;
   } else {
     t.prac = Math.max(0, TKD_PRAC_NEED - 1);   // 沒考過：再練一次就可以再考（不要讓她練很多次）
     w.stage.appendChild(el('div', 'tkd-big', '💪'));
@@ -19968,6 +19974,63 @@ function examEnd(w, pass) {
   }
   saveGame(); refreshTop();
   gameButtons(w, openBeltExam);
+}
+/* 🎖️ 升段典禮動畫（家長：升段成功要有動畫）：
+   敬禮 → 熊熊教練把舊腰帶解下來 → 新腰帶從上面轉著飄下來、綁到腰上 → 跳起來歡呼、彩帶亂飛，大大的「升上〇〇帶！」 */
+function beltCeremony(w, oldC, newC, newName, done) {
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const W = 340, H = 230, { g } = gameCanvas(w.stage, W, H), T0 = performance.now();
+  const KX = 125, FY = 200, KS = 2.1, coach = HOSTS.tkd;
+  const ks = KID_STAGE_BY_ID[kidLookStage()] || { body: 1 }, beltY = FY - 19.5 * ks.body * KS;   // 腰帶在畫布上的高度
+  const confetti = Array.from({ length: 46 }, () => ({ x: Math.random() * W, y: -Math.random() * 120, vy: 1 + Math.random() * 1.6, vx: (Math.random() - .5) * .8, r: Math.random() * 6, c: ['#ffd23f', '#e0403a', '#3f6fd1', '#7bd389', '#ff9ec4'][Math.floor(Math.random() * 5)] }));
+  let raf = 0, live = true, ended = false;
+  const sfx = {}; const once = (k, f) => { if (!sfx[k]) { sfx[k] = 1; f(); } };
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); };
+  const band = (x, y, wd, hh, cs, rot, sx) => {   // 一條腰帶（可以轉、可以左右壓扁＝在空中翻轉）
+    g.save(); g.translate(x, y); g.rotate(rot || 0); g.scale(sx == null ? 1 : sx, 1);
+    g.fillStyle = cs[0]; g.fillRect(-wd / 2, -hh / 2, wd, hh); if (cs[1]) { g.fillStyle = cs[1]; g.fillRect(-wd / 2, 0, wd, hh / 2); }
+    g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 1; g.strokeRect(-wd / 2, -hh / 2, wd, hh); g.restore();
+  };
+  const tick = now => {
+    if (!live) return;
+    const t = (now - T0) / 1000;
+    g.clearRect(0, 0, W, H);
+    g.fillStyle = '#fff4e6'; g.fillRect(0, 0, W, H);
+    for (let i = 0; i < 9; i++) { g.fillStyle = i % 2 ? '#ffd23f' : '#2f6fd1'; g.fillRect(i * 40 - 10, 196, 40, 40); }
+    if (t > 3) { g.globalAlpha = Math.min(1, (t - 3) * 2) * .5; const gr = g.createRadialGradient(KX, 120, 10, KX, 120, 140); gr.addColorStop(0, '#fff6a0'); gr.addColorStop(1, 'rgba(255,246,160,0)'); g.fillStyle = gr; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }   // 新腰帶綁好：身上發光
+    // 小可愛：0.3～0.9 秒敬禮；綁好以後跳三下
+    const bow = t > .3 && t < 1.1 ? Math.sin((t - .3) / .8 * Math.PI) * .45 : 0;
+    const hop = t > 3.1 && t < 4.6 ? Math.abs(Math.sin((t - 3.1) * 6.3)) * 16 : 0;
+    const cur = t < 1.3 ? oldC : t < 2.9 ? null : newC;   // 中間那段腰上沒有腰帶
+    const o = Object.assign({}, currentOutfit(), { top: Object.assign({}, CLOTHES_BY_ID.dobok, { belt: cur || ['rgba(0,0,0,0)'] }) });
+    g.save(); g.translate(KX, FY - hop); g.scale(KS, KS); g.translate(0, -20); g.rotate(bow); g.translate(0, 20);
+    if (kidBaby()) drawBabyKid(g, { t }); else drawGirl(g, { t, blink: false, outfit: o, face: t > 2.9 ? 'joy' : kidFace(), stage: kidLookStage() });
+    g.restore();
+    // 熊熊教練：一起敬禮；解腰帶時往前靠一點
+    const cb = t > .3 && t < 1.1 ? Math.sin((t - .3) / .8 * Math.PI) * .35 : 0, lean = t > 1 && t < 1.6 ? Math.sin((t - 1) / .6 * Math.PI) * 14 : 0;
+    g.save(); g.translate(240 - lean, FY); g.scale(-2.6, 2.6); g.translate(0, -12); g.rotate(cb); g.translate(0, 12);
+    drawNeighbor(g, coach, { happy: t > 2.9, blink: false, fx: 1.5, clean: 100 }); g.restore();
+    // 舊腰帶：從腰上被拿起來，飛到教練手上
+    if (t >= 1.3 && t < 2.2) { const k = (t - 1.3) / .9; band(lerp(KX, 222, k), lerp(beltY, 150, k) - Math.sin(k * Math.PI) * 30, 40 * (1 - k * .5), 6, oldC, k * 3); }
+    if (t >= 1.3) once('old', () => Sound.play('whoosh'));
+    // 新腰帶：從上面轉著飄下來
+    if (t >= 1.6 && t < 2.9) { const k = (t - 1.6) / 1.3, e = 1 - (1 - k) * (1 - k); band(KX, lerp(-10, beltY, e), 46, 7, newC, Math.sin(k * 9) * .2 * (1 - k), Math.cos(k * Math.PI * 6)); for (let i = 0; i < 5; i++) { g.fillStyle = '#fff6a0'; g.beginPath(); g.arc(KX + Math.sin(t * 7 + i * 1.3) * 30, lerp(-10, beltY, e) - 10 - i * 8, 2, 0, Math.PI * 2); g.fill(); } }
+    if (t >= 1.6) once('new', () => Sound.play('magic'));
+    if (t >= 2.9) once('tie', () => { Sound.play('fanfare'); try { speak(`恭喜！升上${newName}！`); } catch (e) {} });
+    // 彩帶、大字
+    if (t > 2.9) {
+      confetti.forEach(c => { c.y += c.vy; c.x += c.vx; c.r += .1; g.save(); g.translate(c.x, c.y); g.rotate(c.r); g.fillStyle = c.c; g.fillRect(-3, -1.5, 6, 3); g.restore(); });
+      const k = Math.min(1, (t - 2.9) / .4), sc = .6 + k * .4 + (k >= 1 ? Math.sin(t * 5) * .03 : 0);
+      g.save(); g.translate(W / 2, 34); g.scale(sc, sc); g.globalAlpha = k;
+      g.font = '900 26px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.lineWidth = 6; g.strokeStyle = '#ffffff'; g.strokeText(`升上${newName}！`, 0, 0); g.fillStyle = '#c0392b'; g.fillText(`升上${newName}！`, 0, 0);
+      g.restore(); g.globalAlpha = 1;
+    } else if (t > .3 && t < 1.3) { g.font = '700 18px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillStyle = '#5a4636'; g.fillText('敬禮！', W / 2, 34); }
+    else if (t >= 1.3) { g.font = '700 16px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillStyle = '#5a4636'; g.fillText('熊教練：換上新的腰帶～', W / 2, 34); }
+    if (t > 5 && !ended) { ended = true; live = false; gameCleanup = null; done(); return; }
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
 }
 // 🏊 打水比賽：一直點「游！」，跟動物朋友比誰先游到 25 公尺
 const SWIM_LEVELS = [{ name: '慢慢游', sp: 2.0, mul: 1 }, { name: '普通', sp: 2.8, mul: 2 }, { name: '比賽！', sp: 3.6, mul: 3 }];
