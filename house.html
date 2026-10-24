@@ -650,6 +650,16 @@ button.pass { font: inherit; }
 .modal-card.in-game, .modal-card.in-game * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .nosel, .nosel * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .decor-cell { cursor: pointer; }
+.tkd-view { display: flex; flex-direction: column; align-items: center; min-height: 120px; justify-content: center; }
+.tkd-board { font-size: 72px; line-height: 1; } .tkd-board.broken { animation: tkdBreak .5s forwards; }
+.tkd-board.plank { width: 120px; height: 70px; border-radius: 6px; background: repeating-linear-gradient(90deg, #e8c58f 0 14px, #d9b27a 14px 16px); border: 3px solid #b98a52; box-shadow: 0 4px 0 #a8794a; }   /* 木板（不用木頭表情符號：Windows 10 顯示不出來） */
+@keyframes tkdBreak { to { transform: rotate(25deg) scale(1.2); opacity: .25; } }
+.tkd-big { font-size: 64px; line-height: 1.1; } .tkd-say { font-size: 16px; font-weight: 800; color: #5a4630; text-align: center; margin: 6px 0; }
+.tkd-moves { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0; }
+.tkd-move { display: flex; flex-direction: column; align-items: center; border: 3px solid var(--line); background: #fff; border-radius: 16px; padding: 10px 4px; font-weight: 800; }
+.tkd-move .tkd-e { font-size: 34px; } .tkd-move.lit { background: #ffe9b8; border-color: #e7a94a; transform: scale(1.08); }
+.tkd-beltpic { display: flex; justify-content: center; } .tkd-ladder { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin: 6px 0; }
+.tkd-step { font-size: 12px; padding: 3px 8px; border-radius: 999px; background: #eee6d6; color: #8a7a64; } .tkd-step.done { background: #d9f5df; color: #2f7d4a; } .tkd-step.on { background: #ffe9b8; color: #5a4630; font-weight: 800; }
 .music-menu { position: fixed; z-index: 70; background: var(--panel, #fffaf0); border: 2px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
 .music-menu button { font: inherit; text-align: left; border: 2px solid var(--line); background: #fff; border-radius: 12px; padding: 8px 12px; min-height: 40px; font-size: 15px; font-weight: 700; cursor: pointer; }
 .music-menu .music-tog { text-align: center; background: #ffe9b8; border-color: #e7a94a; }
@@ -1690,6 +1700,8 @@ const PLACE_FLOORS = [
   { id: 'fl_lib', name: '圖書館地板', pattern: 'check', a: '#efe6cf', b: '#e9dfc5' },
   { id: 'fl_deck', name: '陽台木平台', pattern: 'plank', a: '#c9a27a', b: '#b98f66' },
   { id: 'fl_amuse', name: '遊樂園廣場', pattern: 'check', a: '#ffe9d6', b: '#fff6e6' },
+  { id: 'fl_tkdmat', name: '跆拳道軟墊', pattern: 'check', a: '#3f6fd1', b: '#e0503a' },
+  { id: 'fl_pooldeck', name: '泳池磁磚', pattern: 'check', a: '#eef7fa', b: '#d9edf3' },
   { id: 'fl_track', name: '操場跑道', pattern: 'track', a: '#5fae6f', b: '#55a265', lane: ['#2f6fd1', '#4a9be8'], stripe: '#e98a9a', lanes: 4, laneW: .9 }
 ];
 const floorById = id => FLOORS.find(x => x.id === id) || PLACE_FLOORS.find(x => x.id === id);
@@ -2042,6 +2054,43 @@ const treeParts = (leaf, leaf2, fruit) => [
 // 🎢 雲霄飛車的軌道高度（y＝0～4 每一格邊上的高度）：車站在 y＝4，出發往後先過小山坡、衝下來、爬到最高點
 const COASTER_H = [14, 70, 18, 44, 12];
 const PLACE_FURNITURE = [
+  // 🥋 跆拳道館
+  { id: 'tkd_sandbag', name: '沙包', theme: 'modern', w: 1, d: 1, parts: [
+    { x: .2, y: .2, w: .6, d: .6, z: 0, h: 4, c: '#3a3842' }, { x: .46, y: .46, w: .08, d: .08, z: 4, h: 70, c: '#5a5a66' },
+    { x: .3, y: .5, w: .4, d: .08, z: 74, h: 4, c: '#5a5a66' }, { x: .3, y: .58, w: .4, d: .3, z: 24, h: 44, c: '#e0503a' }, { x: .3, y: .58, w: .4, d: .3, z: 60, h: 4, c: '#26232a' } ] },
+  { id: 'tkd_target', name: '踢靶架', theme: 'modern', w: 1, d: 1, parts: [
+    { x: .3, y: .3, w: .4, d: .4, z: 0, h: 3, c: '#3a3842' }, { x: .46, y: .46, w: .08, d: .08, z: 3, h: 40, c: '#8e98a3' },
+    { k: 'ball', x: .5, y: .62, z: 44, r: 9, c: '#e0503a' }, { k: 'ball', x: .5, y: .66, z: 44, r: 5, c: '#ffffff' } ] },
+  { id: 'tkd_boards', name: '木板堆', theme: 'wood', w: 1, d: 1, parts: [0, 1, 2, 3].map(i => ({ x: .15, y: .25, w: .7, d: .5, z: i * 4, h: 3, c: i % 2 ? '#d9b27a' : '#e8c58f' })) },
+  { id: 'tkd_bench', name: '長椅', theme: 'wood', w: 2, d: 1, parts: [
+    { x: .1, y: .3, w: 1.8, d: .4, z: 14, h: 4, c: '#c98d5a' }, { x: .15, y: .35, w: .1, d: .3, z: 0, h: 14, c: '#8a5a33' }, { x: 1.75, y: .35, w: .1, d: .3, z: 0, h: 14, c: '#8a5a33' } ] },
+  { id: 'tkd_mirror', name: '大鏡子', theme: 'modern', w: 3, h: 50, z: 30, layer: 'wall', d: 1, parts: [],
+    draw(ctx, W, H) { ctx.fillStyle = '#c9ccd0'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#e6f3fa'; ctx.fillRect(3, 3, W - 6, H - 6);
+      ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(W * .2, H * .8); ctx.lineTo(W * .45, H * .2); ctx.moveTo(W * .35, H * .85); ctx.lineTo(W * .6, H * .25); ctx.stroke(); } },
+  { id: 'tkd_belts', name: '腰帶架', theme: 'modern', w: 2, h: 36, z: 50, layer: 'wall', d: 1, parts: [],
+    draw(ctx, W, H) { ctx.fillStyle = '#8a5a33'; ctx.fillRect(0, 2, W, 4);
+      [['#fbfbf7'], ['#ffd23f'], ['#3f6fd1'], ['#3f6fd1', '#e0403a'], ['#e0403a'], ['#26232a']].forEach((cs, i) => { const x = 4 + i * (W - 8) / 6; ctx.fillStyle = cs[0]; ctx.fillRect(x, 6, 4, H - 8); if (cs[1]) { ctx.fillStyle = cs[1]; ctx.fillRect(x + 2, 6, 2, H - 8); } ctx.strokeStyle = 'rgba(0,0,0,.2)'; ctx.lineWidth = .8; ctx.strokeRect(x, 6, 4, H - 8); }); } },
+  { id: 'tkd_banner', name: '道館標語', theme: 'modern', w: 2, h: 30, z: 60, layer: 'wall', d: 1, parts: [],
+    draw(ctx, W, H) { ctx.fillStyle = '#fffaf0'; ctx.fillRect(0, 0, W, H); ctx.strokeStyle = '#e0503a'; ctx.lineWidth = 2; ctx.strokeRect(1, 1, W - 2, H - 2);
+      ctx.fillStyle = '#26232a'; ctx.font = '700 12px "Microsoft JhengHei","PingFang TC",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('禮義・堅持', W / 2, H / 2); } },
+  // 🏊 游泳池（戶外）
+  { id: 'swim_pool', name: '游泳池', theme: 'modern', w: 6, d: 4, layer: 'floor', parts: [
+    { x: 0, y: 0, w: 6, d: 4, z: 0, h: 1, c: '#ffffff' }, { x: .25, y: .25, w: 5.5, d: 3.5, z: 1, h: 1, c: '#5cc4ec' },
+    { x: .25, y: 1.12, w: 5.5, d: .06, z: 2, h: .5, c: '#ff6b6b' }, { x: .25, y: 2.12, w: 5.5, d: .06, z: 2, h: .5, c: '#ffd23f' }, { x: .25, y: 3.0, w: 5.5, d: .06, z: 2, h: .5, c: '#ff6b6b' } ] },
+  { id: 'dive_board', name: '跳水板', theme: 'modern', w: 1, d: 2, parts: [
+    { x: .2, y: 0, w: .6, d: .5, z: 0, h: 16, c: '#c0c7ce' }, { x: .3, y: 0, w: .4, d: 1.9, z: 16, h: 3, c: '#3fa9f5' } ] },
+  { id: 'lifeguard_chair', name: '救生員椅', theme: 'modern', w: 1, d: 1, parts: [
+    { x: .15, y: .15, w: .1, d: .1, z: 0, h: 50, c: '#ffffff' }, { x: .75, y: .15, w: .1, d: .1, z: 0, h: 50, c: '#ffffff' }, { x: .15, y: .75, w: .1, d: .1, z: 0, h: 50, c: '#ffffff' }, { x: .75, y: .75, w: .1, d: .1, z: 0, h: 50, c: '#ffffff' },
+    { x: .1, y: .1, w: .8, d: .8, z: 50, h: 4, c: '#e0503a' }, { x: .1, y: .1, w: .8, d: .15, z: 54, h: 18, c: '#e0503a' }, { k: 'ball', x: .5, y: .5, z: 80, r: 10, c: '#ffd23f' } ] },
+  { id: 'float_ring', name: '游泳圈', theme: 'cute', w: 1, d: 1, layer: 'floor', parts: [
+    { k: 'ball', x: .5, y: .5, z: 2, r: 11, c: '#ff8fb3' }, { k: 'ball', x: .5, y: .5, z: 4, r: 5, c: '#5cc4ec' } ] },
+  { id: 'pool_shower', name: '沖水區', theme: 'modern', w: 1, d: 1, parts: [
+    { x: .1, y: .1, w: .8, d: .8, z: 0, h: 2, c: '#bcd7e0' }, { x: .45, y: .15, w: .1, d: .1, z: 2, h: 70, c: '#8e98a3' }, { x: .45, y: .15, w: .1, d: .4, z: 70, h: 3, c: '#8e98a3' }, { k: 'ball', x: .5, y: .55, z: 66, r: 5, c: '#c0c7ce' } ] },
+  { id: 'towel_rack2', name: '毛巾架', theme: 'modern', w: 1, d: 1, parts: [
+    { x: .15, y: .4, w: .1, d: .1, z: 0, h: 40, c: '#c98d5a' }, { x: .75, y: .4, w: .1, d: .1, z: 0, h: 40, c: '#c98d5a' }, { x: .15, y: .4, w: .7, d: .1, z: 38, h: 3, c: '#c98d5a' },
+    { x: .2, y: .45, w: .25, d: .06, z: 18, h: 20, c: '#ff8fb3' }, { x: .55, y: .45, w: .25, d: .06, z: 18, h: 20, c: '#6bb6ff' } ] },
+  { id: 'beach_umbrella', name: '遮陽傘', theme: 'cute', w: 1, d: 1, parts: [
+    { x: .46, y: .46, w: .08, d: .08, z: 0, h: 60, c: '#f4f4f0' }, { k: 'ball', x: .5, y: .5, z: 60, r: 18, c: '#ffd23f' }, { k: 'ball', x: .5, y: .5, z: 66, r: 10, c: '#ff6b6b' } ] },
   { id: 'comic_shelf', name: '漫畫櫃', theme: 'modern', w: 2, d: 1,
     parts: [{ x: 0, y: 0, w: 2, d: .6, z: 0, h: 96, c: '#6b4b35' }].concat(comicRow(0, 6), comicRow(0, 36), comicRow(0, 66)) },
   { id: 'comic_pile', name: '漫畫堆', theme: 'modern', w: 1, d: 1,
@@ -2712,6 +2761,9 @@ const HOSTS = {
   grandma: { id: 'grandma', name: '山羊阿婆', short: '阿婆', body: '#f5f1e6', edge: '#cfc6b0', belly: '#ffffff', inner: '#d8c7a0', ears: 'curl', acc: 'glasses', accColor: '#8a5a33' },
   // 學校的老師：貓頭鷹（耳朵用羽毛簇），戴眼鏡
   // 圖書館的館員：貓咪，圍藍色圍巾
+  // 跆拳道館的教練：老虎，繫黑色腰帶；游泳池的教練：海獺，戴蛙鏡
+  tkd: { id: 'tkd', name: '老虎教練', short: '虎教練', body: '#f39a4c', edge: '#c9722b', belly: '#fff1dd', inner: '#fff1dd', ears: 'round', acc: 'scarf', accColor: '#26232a' },
+  swim: { id: 'swim', name: '海獺教練', short: '獺教練', body: '#9b7653', edge: '#6e5238', belly: '#ecd9c2', inner: '#6e5238', ears: 'round', acc: 'glasses', accColor: '#3fa9f5' },
   librarian: { id: 'librarian', name: '貓咪館員', short: '館員', body: '#d9cfc4', edge: '#a8998a', belly: '#fff8f0', inner: '#ffb3c7', ears: 'pointy', acc: 'scarf', accColor: '#3f8ee0' },
   // 公園的園長：柴犬，戴綠色帽子
   ranger: { id: 'ranger', name: '柴犬園長', short: '園長', body: '#e8a25e', edge: '#b9763a', belly: '#fff4e6', inner: '#fff4e6', ears: 'pointy', acc: 'hat', accColor: '#4f9150' },
@@ -2775,6 +2827,19 @@ const PLACES = {
     ], wallItems: [] }
   ] },
   /* 🎡 遊樂園（家長選的新地方）：旋轉木馬、摩天輪可以坐，棉花糖車、氣球攤，主人是兔兔姊姊 */
+  /* 🥋 跆拳道館、🏊 游泳池（小朋友想要的新地方）：進去自動換上道服／泳衣，出來換回原本的衣服 */
+  dojo: { name: '跆拳道館', host: 'tkd', emoji: '🥋', desc: '踢板、跟著做動作、考腰帶，老虎教練等你！', rooms: [
+    { name: '跆拳道館', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_tkdmat', items: [
+      ['tkd_sandbag', 0, 0], ['tkd_sandbag', 2, 0], ['tkd_target', 5, 0], ['tkd_target', 7, 0], ['tkd_boards', 9, 0],
+      ['tkd_bench', 0, 3, 1], ['tkd_boards', 9, 8], ['tkd_bench', 0, 7, 1]
+    ], wallItems: [['tkd_mirror', 'R', 3], ['tkd_banner', 'R', 0], ['tkd_belts', 'L', 3], ['tkd_banner', 'L', 7]] }
+  ] },
+  pool: { name: '游泳池', host: 'swim', emoji: '🏊', desc: '打水比賽、潛水撿寶、跳水，海獺教練陪你玩水！', rooms: [
+    { name: '游泳池', w: 10, d: 10, wall: 'wp_balcony', floor: 'fl_pooldeck', items: [
+      ['swim_pool', 2, 2], ['dive_board', 4, 0], ['lifeguard_chair', 9, 2], ['pool_shower', 0, 0], ['towel_rack2', 0, 8],
+      ['beach_umbrella', 8, 8], ['float_ring', 6, 7], ['beach_umbrella', 0, 4]
+    ], wallItems: [] }
+  ] },
   amusement: { name: '遊樂園', host: 'amuse', emoji: '🎡', desc: '坐旋轉木馬、摩天輪，買棉花糖、拿氣球！', rooms: [
     { name: '遊樂園', w: 10, d: 10, wall: 'wp_candy', floor: 'fl_amuse', items: [
       ['ferris_wheel', 0, 0], ['street_lamp', 5, 0], ['ticket_booth', 6, 0], ['balloon_stand', 9, 0],
@@ -2869,6 +2934,8 @@ LINE_TYPES.push(
   { key: 'hostFriend', label: '姊姊／妹妹在自己家說的話', hint: '可用 {名字}', lines: ['{名字}，歡迎來我家玩！', '你看，這是我布置的房間！', '我的寵物很可愛吧？摸摸看！', '我們一起跳舞好不好？', '要不要坐下來休息一下？', '下次換我去你家玩！', '想玩什麼都可以喔～'] },
   { key: 'hostUncle', label: '叔叔說的話', hint: '可用 {名字}', lines: ['歡迎來叔叔家！漫畫隨便看～', '功課寫完了嗎？寫完叔叔陪你打一局！', '這台電玩是叔叔小時候玩的喔', '看漫畫也要讓眼睛休息一下喔', '要不要跟叔叔比賽？', '叔叔最近在看這本，超好看！'] },
   { key: 'hostLibrarian', label: '館員說的話', hint: '可用 {名字}', lines: ['{名字}，歡迎來圖書館～', '在圖書館要小聲說話喔 🤫', '繪本架上有好看的書喔', '看完的書要放回原來的地方', '閱讀護照蓋滿可以拿獎狀喔', '要不要幫我把書放回書架？'] },
+  { key: 'hostTkd', label: '跆拳道教練說的話', hint: '可用 {名字}', lines: ['{名字}，敬禮！今天也要加油喔！', '出拳要有力，喊聲要大聲！', '踢腿的時候眼睛看前面', '先熱身，才不會受傷喔', '練習越多，腰帶就越來越厲害！'] },
+  { key: 'hostSwim', label: '游泳教練說的話', hint: '可用 {名字}', lines: ['{名字}，下水前先做暖身操喔！', '不可以在池邊跑步，會滑倒喔', '憋氣、吐氣，咕嚕咕嚕～', '打水的時候腳要伸直', '游完記得擦乾、多喝水！'] },
   { key: 'hostRanger', label: '園長說的話', hint: '可用 {名字}', lines: ['{名字}，歡迎來公園玩！', '花圃的蝴蝶今天好多喔', '公園的花不能摘，拍照就好囉', '池塘裡的魚很會躲喔', '垃圾要記得帶回家喔', '天氣好熱，要不要吃冰淇淋？', '要不要在草地上野餐？'] },
   { key: 'hostTeacher', label: '老師說的話', hint: '可用 {名字}', lines: ['{名字}早安！今天也要開心上課喔', '下課了，去操場玩一下吧！', '要不要來小考？答對有獎勵喔', '去操場跟同學賽跑吧！', '寫字的時候背要挺直喔', '有問題要舉手問老師喔', '下課記得喝水、上廁所～', '作業寫好了可以拿給老師看喔'] },
   { key: 'hostGrandma', label: '阿婆說的話', hint: '可用 {名字}', lines: ['{名字}來啦！快來吃水果～', '後面的果園水果熟了，要不要去摘？', '多吃點水果，身體才會壯壯的', '阿婆泡了茶，要不要喝一點？', '寫完功課，阿婆帶你去果園散步好不好？', '慢慢吃，不要噎到喔～', '小牛小羊肚子餓了，要不要幫阿婆餵牠們？', '農場的小羊最喜歡你了～', '今天小農場又來了新朋友喔！', '有時候山上的猴子會跑下來，只能遠遠看喔'] },
@@ -3111,6 +3178,16 @@ const CLOTHES = [
 const CLOTHES_BY_ID = Object.fromEntries(CLOTHES.map(c => [c.id, c]));
 /* 🍬 萬聖節糖果收集的獎品衣服：商店買不到，不放進 CLOTHES（不然 price 0 會一開始就擁有、商店也會賣）。
    只登記在 CLOTHES_BY_ID（存檔讀取、穿著才認得），換裝頁只列出「已經拿到」的。 */
+/* 🥋🏊 在跆拳道館、游泳池裡自動換上的衣服（不用買、不放進衣櫃；出來就換回她自己選的） */
+const PLACE_CLOTHES = [
+  { id: 'dobok', slot: 'top', name: '跆拳道服', price: 0, style: 'dobok', color: '#fbfbf7', place: true },
+  { id: 'dobok_pants', slot: 'bottom', name: '道服褲', price: 0, style: 'pants', color: '#f4f4ee', place: true },
+  { id: 'barefoot', slot: 'shoes', name: '光腳', price: 0, style: 'shoes', color: '#f6cfb0', place: true },
+  { id: 'swimsuit', slot: 'top', name: '泳衣', price: 0, style: 'swim', color: '#ff6b9a', dots: '#ffffff', place: true },
+  { id: 'swim_bottom', slot: 'bottom', name: '泳衣下身', price: 0, style: 'shorts', color: '#ff6b9a', place: true },
+  { id: 'swim_cap', slot: 'head', name: '泳帽', price: 0, style: 'beanie', color: '#3fa9f5', pom: '#3fa9f5', place: true }
+];
+PLACE_CLOTHES.forEach(c => { CLOTHES_BY_ID[c.id] = c; });
 const PRIZE_CLOTHES = [
   { id: 'ghost_hat', slot: 'head', name: '小幽靈巫師帽', price: 800, style: 'witchHat', color: '#f4f1ff', band: '#b9a8ff', prize: true },
   { id: 'ghost_dress', slot: 'top', name: '小幽靈洋裝', price: 3000, style: 'dress', color: '#f4f1ff', trim: '#b9a8ff', dots: '#d9ccff', dress: true, prize: true }
@@ -4388,6 +4465,7 @@ const NEWS = [
     ['👻', '每天有一隻小幽靈躲在家裡的某個房間，找到點一下拿 3 顆糖果'],
     ['🎉', '房間擺 3 件萬聖節家具，點小可愛選「萬聖節派對」，朋友們都來跳舞'],
     ['🍬', '派對結束每天第一次送 4 顆糖果，可以送給來玩的動物朋友'],
+    ['🥋', '小島上多了跆拳道館和游泳池！道館：踢板、跟著做動作、考腰帶（白→黃→藍→藍紅→紅→黑）；泳池：打水比賽、潛水撿寶、跳水。進去會自動換上道服或泳衣'],
     ['🗣️', '語音可以換成台灣腔：「設定 → 🔊 語音」選有 ⭐ 的聲音；電腦沒有的話，裡面有教怎麼加裝（用 Edge 瀏覽器最簡單）'],
     ['🧰', '小島左下角有三個道具：🎣 釣竿（點海邊或池塘，看到❗就點）、🦋 網子（點蝴蝶）、⛏️ 鏟子（拿著點草地挖寶）；搖樹小心蜜蜂！'],
     ['🌤️', '小島會跟著時間變：早上暖暖的、傍晚橘橘的、晚上路燈和窗戶會亮、有星星；島上每天有 5 枚金幣走過去就撿；走到池塘邊可以釣魚；多了兔子、松鼠、小雞、蝴蝶和騎腳踏車的朋友'],
@@ -5069,6 +5147,7 @@ function normalizeSave(g) {
   if (out.abc != null && !(isObj(out.abc))) delete out.abc;
   if (out.abc) ['bd', 'pq', 'mix'].forEach(k => { if (!Number.isInteger(out.abc[k]) || out.abc[k] < 0) out.abc[k] = 0; });
   { let mx = 0; out.rooms.forEach(r => (r.items || []).concat(r.wallItems || []).forEach(it => { if (Number.isInteger(it.uid) && it.uid > mx) mx = it.uid; })); if (!Number.isInteger(out.uid) || out.uid <= mx) out.uid = mx + 1; }   // uid 壞掉（NaN）會從 1 重算、跟現有家具撞號 → 以現有最大的往上接
+  if (out.tkd != null) { if (!isObj(out.tkd)) delete out.tkd; else { if (!(Number.isInteger(out.tkd.belt) && out.tkd.belt >= 0 && out.tkd.belt <= 5)) out.tkd.belt = 0; if (!(Number.isInteger(out.tkd.prac) && out.tkd.prac >= 0)) out.tkd.prac = 0; } }
   if (out.islCoin != null && !(isObj(out.islCoin) && typeof out.islCoin.d === 'string' && Number.isInteger(out.islCoin.n) && out.islCoin.n >= 0 && Array.isArray(out.islCoin.got))) delete out.islCoin;
   if (out.islCoin) out.islCoin.got = out.islCoin.got.filter(x => typeof x === 'string').slice(0, 50);
   if (out.islDig != null && !(isObj(out.islDig) && typeof out.islDig.d === 'string' && Number.isInteger(out.islDig.n) && out.islDig.n >= 0)) delete out.islDig;
@@ -5153,6 +5232,12 @@ function normalizeSave(g) {
 // ── 換裝 ──
 function currentOutfit() {
   const o = {};
+  if (G.away && (G.away.place === 'dojo' || G.away.place === 'pool')) {   // 道館穿道服（腰帶是她考到的那一條）、泳池穿泳衣
+    const ids = G.away.place === 'dojo' ? { head: 'head_none', top: 'dobok', bottom: 'dobok_pants', shoes: 'barefoot' } : { head: 'swim_cap', top: 'swimsuit', bottom: 'swim_bottom', shoes: 'barefoot' };
+    OUTFIT_SLOTS.forEach(({ key }) => { o[key] = CLOTHES_BY_ID[ids[key]]; });
+    if (G.away.place === 'dojo') o.top = Object.assign({}, o.top, { belt: tkdBeltColors() });
+    return o;
+  }
   OUTFIT_SLOTS.forEach(({ key }) => { o[key] = CLOTHES_BY_ID[G.outfit[key]] || CLOTHES_BY_ID[DEFAULT_OUTFIT[key]]; });
   return o;
 }
@@ -6256,7 +6341,7 @@ function drawGirlBody(ctx, o, swing, fit) {
 
   // 手：從袖口垂下，走路時前後擺
   const sleeve = top.color;
-  const longSleeve = top.style === 'hoodie' || top.style === 'sweater' || top.style === 'jacket' || top.style === 'cape';
+  const longSleeve = top.style === 'hoodie' || top.style === 'sweater' || top.style === 'jacket' || top.style === 'cape' || top.style === 'dobok';
   [-1, 1].forEach(side => {
     ctx.save();
     ctx.translate(side * 10.5, -31);
@@ -6269,7 +6354,7 @@ function drawGirlBody(ctx, o, swing, fit) {
       if (top.style === 'dress') { // 泡泡袖
         ctx.beginPath(); ctx.ellipse(0, 2.2, 3.6, 3.2, 0, 0, Math.PI * 2);
         ctx.fillStyle = sleeve; ctx.fill(); ctx.strokeStyle = L; ctx.lineWidth = 1; ctx.stroke();
-      } else rr(ctx, -2.8, -.5, 5.6, 5.5, 2, sleeve, L);        // 短袖
+      } else if (top.style !== 'swim') rr(ctx, -2.8, -.5, 5.6, 5.5, 2, sleeve, L);        // 短袖（泳衣沒有袖子）
     }
     ctx.restore();
   });
@@ -6401,6 +6486,15 @@ function drawTop(ctx, t, back) {
     ctx.fillRect(-.6, -32, 1.2, 15);
     ctx.fillRect(-9.5, -18.5, 19, 1.5);
     if (!back) { ctx.fillRect(-7.5, -27, 4, 1.2); } // 胸前小標誌
+  } else if (t.style === 'dobok') { // 🥋 道服：V 領、腰上綁著考到的那條腰帶（兩色的就一半一半），兩條帶尾垂下來
+    const bc = t.belt || ['#fbfbf7'];
+    if (!back) { ctx.strokeStyle = '#d9d9d2'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(-6, -32); ctx.lineTo(0, -24); ctx.lineTo(6, -32); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, -24); ctx.lineTo(-3, -20); ctx.stroke(); }
+    ctx.fillStyle = bc[0]; ctx.fillRect(-10, -21, 20, 3); if (bc[1]) { ctx.fillStyle = bc[1]; ctx.fillRect(-10, -19.5, 20, 1.5); }
+    ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = .6; ctx.strokeRect(-10, -21, 20, 3);
+    if (!back) { [[-3, -1], [1, 1]].forEach(([x, k]) => { ctx.fillStyle = bc[0]; ctx.save(); ctx.translate(x, -18.5); ctx.rotate(k * .25); ctx.fillRect(0, 0, 2.2, 6); if (bc[1]) { ctx.fillStyle = bc[1]; ctx.fillRect(1.1, 0, 1.1, 6); } ctx.restore(); }); }
+  } else if (t.style === 'swim') { // 🏊 泳衣：細肩帶、點點
+    if (!back && t.dots) { ctx.fillStyle = t.dots; [[-5, -27], [4, -28], [-1, -23], [6, -22], [-6, -21]].forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, 1, 0, Math.PI * 2); ctx.fill(); }); }
+    ctx.fillStyle = t.color; ctx.fillRect(-7, -35, 2, 4); ctx.fillRect(5, -35, 2, 4);
   } else if (t.style === 'cape') { // 吸血鬼披風：前面看到紅背心＋兩側紅披風，背面是整片紅披風
     if (back) { rr(ctx, -11.5, -33, 23, 22, 3, t.trim, L); ctx.fillStyle = 'rgba(0,0,0,.16)'; ctx.fillRect(-.6, -32, 1.2, 21); }
     else {
@@ -7506,8 +7600,16 @@ function fufuDraw(ctx) {
   }
   ctx.translate(p.x, p.y - hop - jump + 1);
   ctx.scale(fufu.facing * k, breathe * k);
+  const inWater = typeof poolWaterAt === 'function' && poolWaterAt(fufu.x, fufu.y);
+  if (inWater) { ctx.save(); ctx.beginPath(); ctx.rect(-40, -140, 80, 128); ctx.clip(); }   // 🏊 在泳池裡：腰以下在水裡（不畫）
   drawGirl(ctx, { t: fufu.t, walking, back: fufu.back && (walking || !!fufu.act), blink: fufuBlink(), outfit: currentOutfit(), prop, face: kidFace(), stage: kidLookStage(), dirty: kidDirty() });
+  if (inWater) ctx.restore();
   ctx.restore();
+  if (inWater) {   // 身邊的水波
+    const r = 14 + Math.sin(fufu.t * 4) * 2;
+    ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(p.x, p.y - 12 * k, r, r * .4, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = 'rgba(92,196,236,.45)'; ctx.beginPath(); ctx.ellipse(p.x, p.y - 12 * k, r - 3, (r - 3) * .4, 0, 0, Math.PI * 2); ctx.fill();
+  }
 }
 
 /* ===== 溜滑梯、盪鞦韆的動畫 =====
@@ -10749,7 +10851,7 @@ function hostMemoryLine(id) {
 
 // ── 親戚家：叔叔、阿婆在家裡陪小可愛（跟著她走，偶爾說話）──
 const host = { n: null, a: null, say: null, sayUntil: 0, nextTalkAt: 0, danceUntil: 0, nextHop: 0 };
-const HOST_LINE_KEYS = { amuse: 'hostAmuse', friend: 'hostFriend', uncle: 'hostUncle', grandma: 'hostGrandma', teacher: 'hostTeacher', ranger: 'hostRanger', librarian: 'hostLibrarian' };
+const HOST_LINE_KEYS = { tkd: 'hostTkd', swim: 'hostSwim', amuse: 'hostAmuse', friend: 'hostFriend', uncle: 'hostUncle', grandma: 'hostGrandma', teacher: 'hostTeacher', ranger: 'hostRanger', librarian: 'hostLibrarian' };
 const hostLineKey = () => HOST_LINE_KEYS[host.n.id] || 'hostGrandma';
 function hostSay(text, ms) {
   if (!text) return;
@@ -10951,6 +11053,16 @@ function hostMenuEntries() {
     list.push(['🕹️ 一起打地鼠', openMoleGame]);
     list.push(['📺 一起玩賽車', openRaceGame]);
     list.push(['🖥️ 一起打磚塊', openBrickGame]);
+  }
+  if (host.n.id === 'tkd') {
+    list.push(['🦵 踢板（看準時機）', openKickGame]);
+    list.push(['👊 跟著做動作', openFormsGame]);
+    list.push([`🎖️ 考腰帶（現在：${tkdBeltName()}）`, openBeltExam]);
+  }
+  if (host.n.id === 'swim') {
+    list.push(['🏊 打水比賽', openSwimRace]);
+    list.push(['🤿 潛水撿寶', openDiveGame]);
+    list.push(['🌊 跳水', openJumpDive]);
   }
   if (host.n.id === 'librarian') {
     list.push(['📖 一起看繪本', openNextStorybook]);
@@ -18464,7 +18576,9 @@ const ISL_BLD = [   // 房子：x, y 是左上角的格子，w×h 格；門在�
   { id: 'park', x: 18, y: 9, w: 5, h: 2 },
   { id: 'uncle', x: 10, y: 22, w: 4, h: 3 },
   { id: 'grandma', x: 37, y: 22, w: 4, h: 3 },
-  { id: 'amusement', x: 23, y: 26, w: 6, h: 3 }
+  { id: 'amusement', x: 23, y: 26, w: 6, h: 3 },
+  { id: 'dojo', x: 27, y: 7, w: 4, h: 3 },
+  { id: 'pool', x: 12, y: 27, w: 4, h: 2 }
 ];
 const ISL_FRIEND_SPOTS = [[17, 27], [32, 27], [16, 17], [34, 17]];   // 朋友的家（最多 4 棟），3×2
 const ISL_PUMPKINS = [[22, 17], [30, 20], [20, 22], [31, 16], [26, 24]];   // 萬聖節才有的南瓜燈（點了有小驚喜）
@@ -18502,6 +18616,7 @@ function islCoinSpots(m) {   // 今天的金幣在哪（同一天打開幾次都
 const ISL_POND = { x: 31, y: 24, w: 4, h: 3 };
 const ISL_HUB = [26, 19];
 const ISL_STYLE = {   // 牆、屋頂顏色
+  dojo: ['#fff4e6', '#e0503a'], pool: ['#e8f6fb', '#3fa9f5'],
   home: ['#ffd9c9', '#ff7b7b'], school: ['#fff4cf', '#5b8def'], library: ['#e6dcff', '#7a5cc9'], park: ['#d9f0c8', '#4f9d4f'],
   uncle: ['#d7ecc8', '#7aa05a'], grandma: ['#ffe3b0', '#d68a3a'], amusement: ['#ffe0ee', '#ff6fa3'], friend: ['#fffaf0', '#6fb7e8']
 };
@@ -19179,6 +19294,12 @@ function islDrawBuilding(ctx, b, tt) {
     for (let i = 0; i < 6; i++) { const a = i / 6 * 6.283 + tt * .3, ex = cx + Math.cos(a) * wr / 1.4, ey = wy + Math.sin(a) * wr / 1.4; ctx.beginPath(); ctx.moveTo(cx, wy); ctx.lineTo(ex, ey); ctx.stroke(); ctx.fillStyle = ['#ff6fa3', '#ffd24d', '#6fb7e8'][i % 3]; ctx.beginPath(); ctx.arc(ex, ey, 6, 0, 7); ctx.fill(); }
     for (let i = 0; i < b.w; i++) { ctx.fillStyle = i % 2 ? '#fff' : '#ff6fa3'; ctx.fillRect(x + i * T, y + 18, T + 1, h - 18); }
     ctx.fillStyle = '#ff6fa3'; ctx.beginPath(); ctx.moveTo(x - 6, y + 20); ctx.lineTo(cx, y - 16); ctx.lineTo(x + w + 6, y + 20); ctx.closePath(); ctx.fill();
+  } else if (b.id === 'pool') {   // 游泳池：戶外的藍色水池、白色池邊、遮陽傘
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(x - 2, y + 4, w + 4, h - 2);
+    ctx.fillStyle = '#5cc4ec'; ctx.fillRect(x + 4, y + 10, w - 8, h - 14);
+    ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 2; for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(x + 20 + i * 34, y + 30 + Math.sin(tt * 2 + i) * 3, 7, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); }
+    ctx.strokeStyle = '#ff6b6b'; ctx.lineWidth = 2; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(x + 4, y + 30); ctx.lineTo(x + w - 4, y + 30); ctx.stroke(); ctx.setLineDash([]);
+    [[x - 6, '#ffd23f'], [x + w + 6, '#ff6b9a']].forEach(([ux, c]) => { ctx.fillStyle = '#ddd'; ctx.fillRect(ux - 1, y - 6, 2, 20); ctx.fillStyle = c; ctx.beginPath(); ctx.arc(ux, y - 6, 13, Math.PI, 0); ctx.fill(); });
   } else if (b.id === 'park') {   // 公園：綠色的大門
     ctx.fillStyle = '#8a5a33'; ctx.fillRect(x + 6, y + 6, 10, h); ctx.fillRect(x + w - 16, y + 6, 10, h);
     ctx.fillStyle = '#4f9d4f'; ctx.beginPath(); ctx.ellipse(x + w / 2, y + 12, w / 2 - 2, 20, 0, Math.PI, 0); ctx.fill();
@@ -19568,6 +19689,207 @@ function playLetters(w, setKey) {
     gameButtons(w, openLetterGame);
   }
   run();
+}
+/* ===== 🥋 跆拳道館、🏊 游泳池（小朋友想要的新地方）=====
+   腰帶（家長說的順序）：白 → 黃 → 藍 → 藍紅 → 紅 → 黑。練習（踢板、跟著做動作）3 次就可以考下一條。
+   進館自動換道服（腰帶是她考到的那條），進泳池自動換泳衣；出來就換回她自己選的衣服。 */
+const TKD_BELTS = [['白帶', ['#fbfbf7']], ['黃帶', ['#ffd23f']], ['藍帶', ['#3f6fd1']], ['藍紅帶', ['#3f6fd1', '#e0403a']], ['紅帶', ['#e0403a']], ['黑帶', ['#26232a']]];
+const TKD_PRAC_NEED = 3;
+function tkdState() { if (!G.tkd || typeof G.tkd !== 'object') G.tkd = { belt: 0, prac: 0 }; return G.tkd; }
+function tkdBeltName() { return TKD_BELTS[Math.min(TKD_BELTS.length - 1, tkdState().belt)][0]; }
+function tkdBeltColors() { return TKD_BELTS[Math.min(TKD_BELTS.length - 1, tkdState().belt)][1]; }
+function tkdPractice() { const t = tkdState(); t.prac = Math.min(99, (t.prac || 0) + 1); saveGame(); }
+function poolWaterAt(x, y) {   // 小可愛站的地方是不是在泳池的水裡
+  if (!G.away || G.away.place !== 'pool') return false;
+  const it = curRoom().items.find(i => i.id === 'swim_pool'); if (!it) return false;
+  return x > it.x + .3 && x < it.x + 6 - .3 && y > it.y + .3 && y < it.y + 4 - .3;
+}
+function beltPic(colors, w) {   // 一條腰帶的圖（大圖用）
+  const c = document.createElement('canvas'), dpr = window.devicePixelRatio || 1, h = Math.round(w * .55); c.width = w * dpr; c.height = h * dpr; c.style.width = w + 'px'; c.style.height = h + 'px';
+  const g = c.getContext('2d'); g.scale(dpr, dpr);
+  const band = (x, y, ww, hh) => { g.fillStyle = colors[0]; g.fillRect(x, y, ww, hh); if (colors[1]) { g.fillStyle = colors[1]; g.fillRect(x, y + hh / 2, ww, hh / 2); } g.strokeStyle = 'rgba(0,0,0,.3)'; g.lineWidth = 1.5; g.strokeRect(x, y, ww, hh); };
+  band(w * .08, h * .3, w * .84, h * .22);
+  g.save(); g.translate(w * .45, h * .5); g.rotate(.4); band(0, 0, w * .12, h * .45); g.restore();
+  g.save(); g.translate(w * .55, h * .5); g.rotate(-.4); band(-w * .12, 0, w * .12, h * .45); g.restore();
+  g.fillStyle = colors[0]; g.fillRect(w * .44, h * .26, w * .12, h * .3); g.strokeRect(w * .44, h * .26, w * .12, h * .3);
+  return c;
+}
+// ── 共用：指針左右跑，在綠色區域按下去（踢板、跳水都用）──
+function meterRound(w, opt, done) {
+  const bar = el('div', 'fishbar'), zone = el('div', 'zone'), mark = el('div', 'mark');
+  bar.append(zone, mark); w.stage.appendChild(bar);
+  const zW = opt.zone, zS = 8 + Math.random() * (84 - zW);
+  zone.style.left = zS + '%'; zone.style.width = zW + '%';
+  let pos = 0, dir = 1, raf = 0, last = performance.now(), live = true;
+  const tick = now => { if (!live) return; const dt = Math.min(50, now - last) / 16.7; last = now; pos += dir * opt.speed * dt; if (pos >= 100) { pos = 100; dir = -1; } if (pos <= 0) { pos = 0; dir = 1; } mark.style.left = `calc(${pos}% - 3px)`; raf = requestAnimationFrame(tick); };
+  raf = requestAnimationFrame(tick);
+  const hit = () => { if (!live) return; live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', key); const c = zS + zW / 2, d = Math.abs(pos - c); const q = pos >= zS && pos <= zS + zW ? (d < zW * .2 ? 2 : 1) : 0; setTimeout(() => { bar.remove(); btn.remove(); done(q); }, 350); };
+  const key = e => { if (e.code === 'Space') { e.preventDefault(); hit(); } };
+  const btn = el('button', 'big', opt.label || '按！'); btn.onclick = hit; w.stage.appendChild(btn);
+  document.addEventListener('keydown', key);
+  meterRound.test = { hit, setPos: v => { pos = v; }, zone: () => [zS, zW] };
+  return () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', key); };
+}
+// 🦵 踢板：5 塊板子（考試時 3 塊），一塊比一塊難
+function openKickGame() { const w = openGameWindow('🦵 踢板', '指針跑到綠色的地方就按「踢！」（或空白鍵），把木板踢斷！'); playKick(w, 5, (n, total) => { const bells = payReward(w, n * 25 + (n === total ? 30 : 0)); tkdPractice(); w.status.textContent = `踢斷 ${n} / ${total} 塊！💰 +${fmt(bells)}`; gameButtons(w, openKickGame); }); }
+function playKick(w, total, finish) {
+  let i = 0, n = 0, stop = null; w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const view = el('div', 'tkd-view'); w.stage.appendChild(view);
+  gameCleanup = () => { if (stop) stop(); };
+  const next = () => {
+    if (i >= total) { view.innerHTML = ''; view.appendChild(el('div', 'tkd-big', n === total ? '🎉' : n ? '👍' : '💪')); gameCleanup = null; finish(n, total); return; }
+    view.innerHTML = ''; view.appendChild(el('div', 'tkd-board plank', '')); view.appendChild(el('div', 'tkd-say', `第 ${i + 1} / ${total} 塊`));
+    w.status.textContent = `踢斷 ${n} 塊`;
+    stop = meterRound(w, { zone: Math.max(12, 30 - i * 4), speed: 1.6 + i * .35, label: '🦵 踢！' }, q => {
+      i++;
+      if (q) { n++; Sound.play('perfect'); view.innerHTML = ''; view.appendChild(el('div', 'tkd-board plank broken', '')); view.appendChild(el('div', 'tkd-say', q === 2 ? '啪！漂亮！' : '啪！')); try { fufuSay('喝！', 900); } catch (e) {} }
+      else { Sound.play('boing'); view.querySelector('.tkd-say').textContent = '咚…再試試！'; }
+      setTimeout(next, 900);
+    });
+  };
+  next();
+}
+// 👊 跟著做動作（品勢）：教練示範一串動作，照順序按出來
+const TKD_MOVES = [['👊', '出拳'], ['🦵', '踢腿'], ['✋', '格擋'], ['🙇', '敬禮']];
+function openFormsGame() { const w = openGameWindow('👊 跟著做動作', '先看教練做一遍（按鈕會亮），再照一樣的順序按出來！'); const L = 3 + Math.floor(tkdState().belt / 2); playForms(w, [L, L + 1, L + 2], right => { const bells = payReward(w, right * 30 + (right === 3 ? 40 : 0)); tkdPractice(); w.status.textContent = `做對 ${right} / 3 套！💰 +${fmt(bells)}`; gameButtons(w, openFormsGame); }); }
+function playForms(w, lengths, finish) {
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  let r = 0, right = 0, seq = [], k = 0, input = false, timers = [];
+  const say = el('div', 'tkd-say'), row = el('div', 'tkd-moves');
+  const btns = TKD_MOVES.map(([e, nm], i) => { const b = el('button', 'tkd-move'); b.append(el('span', 'tkd-e', e), el('span', '', nm)); b.onclick = () => press(i); row.appendChild(b); return b; });
+  w.stage.append(say, row);
+  gameCleanup = () => { timers.forEach(clearTimeout); input = false; };
+  const flash = i => { btns[i].classList.add('lit'); Sound.play('note', i); timers.push(setTimeout(() => btns[i].classList.remove('lit'), 420)); };
+  const round = () => {
+    if (r >= lengths.length) { gameCleanup = null; finish(right); return; }
+    seq = Array.from({ length: lengths[r] }, () => Math.floor(Math.random() * TKD_MOVES.length)); k = 0; input = false;
+    say.textContent = `第 ${r + 1} 套：看教練做（${seq.length} 個動作）`; btns.forEach(b => b.disabled = true);
+    seq.forEach((m, j) => timers.push(setTimeout(() => flash(m), 700 + j * 650)));
+    timers.push(setTimeout(() => { input = true; btns.forEach(b => b.disabled = false); say.textContent = '換你！照順序按出來'; }, 700 + seq.length * 650 + 200));
+    playForms.test = { seq: () => seq.slice(), ready: () => input, press: i => press(i) };
+  };
+  const press = i => {
+    if (!input) return; flash(i);
+    if (i !== seq[k]) { input = false; Sound.play('miss'); say.textContent = '差一點！正確的是：' + seq.map(m => TKD_MOVES[m][0]).join(' '); r++; timers.push(setTimeout(round, 1600)); return; }
+    k++; if (k === seq.length) { input = false; right++; r++; Sound.play('perfect'); say.textContent = '🎉 完全正確！'; timers.push(setTimeout(round, 1100)); }
+  };
+  round();
+}
+// 🎖️ 考腰帶：做一套比較長的動作（全對）＋踢 3 塊板（至少 2 塊）
+function openBeltExam() {
+  const t = tkdState(), w = openGameWindow('🎖️ 考腰帶', '');
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const nowPic = el('div', 'tkd-beltpic'); nowPic.appendChild(beltPic(tkdBeltColors(), 160)); w.stage.appendChild(nowPic);
+  w.stage.appendChild(el('div', 'tkd-say', `現在是：${tkdBeltName()}`));
+  const ladder = el('div', 'tkd-ladder'); TKD_BELTS.forEach(([nm], i) => ladder.appendChild(el('span', 'tkd-step' + (i < t.belt ? ' done' : i === t.belt ? ' on' : ''), nm))); w.stage.appendChild(ladder);
+  if (t.belt >= TKD_BELTS.length - 1) { w.status.textContent = '🥋 已經是黑帶了！你是道館最厲害的！'; gameButtons(w, openBeltExam); w.btns.querySelector('button').remove(); return; }
+  if ((t.prac || 0) < TKD_PRAC_NEED) { w.status.textContent = `再練習 ${TKD_PRAC_NEED - (t.prac || 0)} 次（踢板或跟著做動作）就可以考${TKD_BELTS[t.belt + 1][0]}！`; leaveButton(w); return; }
+  w.status.textContent = `可以考「${TKD_BELTS[t.belt + 1][0]}」了！要先做一套動作（全對），再踢 3 塊板（踢斷 2 塊以上）`;
+  const go = el('button', 'big', '🙇 敬禮，開始考試！');
+  go.onclick = () => playForms(w, [Math.min(8, 4 + t.belt)], ok1 => {
+    if (!ok1) return examEnd(w, false);
+    playKick(w, 3, n => examEnd(w, n >= 2));
+  });
+  w.btns.appendChild(go); leaveButton(w);
+}
+function examEnd(w, pass) {
+  const t = tkdState();
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  if (pass) {
+    t.belt = Math.min(TKD_BELTS.length - 1, t.belt + 1); t.prac = 0;
+    const bells = payReward(w, 200 + t.belt * 100);
+    const pic = el('div', 'tkd-beltpic'); pic.appendChild(beltPic(tkdBeltColors(), 200)); w.stage.appendChild(pic);
+    w.stage.appendChild(el('div', 'tkd-big', '🎉'));
+    w.status.textContent = `考過了！拿到「${tkdBeltName()}」！💰 +${fmt(bells)}`;
+    try { fufuSay(`我拿到${tkdBeltName()}了！`, 3000); hostSay('恭喜！道服上的腰帶換新的了！', 3000); speak(`恭喜！拿到${tkdBeltName()}！`); } catch (e) {}
+    Sound.play('fanfare'); kidMoodUp(10);
+  } else {
+    t.prac = Math.max(0, TKD_PRAC_NEED - 1);   // 沒考過：再練一次就可以再考（不要讓她練很多次）
+    w.stage.appendChild(el('div', 'tkd-big', '💪'));
+    w.status.textContent = '差一點點！再練習一次，就可以再考一次喔～';
+    try { hostSay('沒關係，再練一下就會了！', 2600); } catch (e) {}
+  }
+  saveGame(); refreshTop();
+  gameButtons(w, openBeltExam);
+}
+// 🏊 打水比賽：一直點「游！」，跟動物朋友比誰先游到 25 公尺
+const SWIM_LEVELS = [{ name: '慢慢游', sp: 2.0, mul: 1 }, { name: '普通', sp: 2.8, mul: 2 }, { name: '比賽！', sp: 3.6, mul: 3 }];
+const SWIM_PRIZE = [200, 100, 50, 20];
+function openSwimRace() { const w = openGameWindow('🏊 打水比賽', '一直點「游！」（或空白鍵）往前游，跟朋友比賽，看誰先摸到牆！'); pickLevelRow(w, SWIM_LEVELS, L => `第一名 💰 ${SWIM_PRIZE[0] * L.mul}`, L => playSwim(w, L)); }
+function playSwim(w, L) {
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const W = 340, H = 220, { g } = gameCanvas(w.stage, W, H), LEN = 25;
+  const mates = NEIGHBORS.filter(Boolean).slice(0, 3).map((n, i) => ({ n, x: 0, v: L.sp * (.9 + Math.random() * .15) * (1 - i * .04), done: 0, cap: ['#ffd23f', '#7bd389', '#b18cff'][i] }));
+  let me = 0, myDone = 0, t = 0, raf = 0, last = performance.now(), ended = false, splash = 0, order = [];
+  const go = el('button', 'big run-go', '🏊 游！'); w.stage.appendChild(go);
+  const stroke = () => { if (ended || t < 0) return; me = Math.min(LEN, me + .9); splash = .25; Sound.play('splash'); };
+  const key = e => { if (ended) return; if (e.repeat) { if (e.code === 'Space') e.preventDefault(); return; } if (e.code === 'Space') { e.preventDefault(); stroke(); } };
+  go.onclick = stroke; document.addEventListener('keydown', key);
+  gameCleanup = () => { ended = true; cancelAnimationFrame(raf); document.removeEventListener('keydown', key); };
+  t = -2.5;   // 倒數
+  const lane = i => 30 + i * 46;
+  const draw = () => {
+    g.fillStyle = '#5cc4ec'; g.fillRect(0, 0, W, H); g.fillStyle = '#ffffff'; g.fillRect(0, 0, 14, H); g.fillRect(W - 14, 0, 14, H);
+    for (let i = 1; i < 4; i++) { g.strokeStyle = i % 2 ? '#ff6b6b' : '#ffd23f'; g.setLineDash([6, 5]); g.lineWidth = 3; g.beginPath(); g.moveTo(14, i * 46 + 7); g.lineTo(W - 14, i * 46 + 7); g.stroke(); } g.setLineDash([]);
+    const px = x => 20 + x / LEN * (W - 44);
+    const swimmer = (x, y, cap, label, sp) => { const X = px(x); g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 2; g.beginPath(); g.arc(X - 14, y + Math.sin(t * 12) * 2, 6 + sp * 10, 0, Math.PI * 2); g.stroke(); g.fillStyle = cap; g.beginPath(); g.arc(X, y, 9, 0, Math.PI * 2); g.fill(); g.fillStyle = '#f6cfb0'; g.beginPath(); g.arc(X + 5, y + 2, 5, 0, Math.PI * 2); g.fill(); g.fillStyle = '#26232a'; g.font = '700 11px sans-serif'; g.textAlign = 'center'; g.fillText(label, X, y - 13); };
+    mates.forEach((m, i) => swimmer(m.x, lane(i), m.cap, m.n.short, .1));
+    swimmer(me, lane(3), '#ff6b9a', charName(), splash);
+    if (t < 0) { g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(0, 0, W, H); g.fillStyle = '#fff'; g.font = '800 48px sans-serif'; g.textAlign = 'center'; g.fillText(String(Math.ceil(-t)), W / 2, H / 2 + 16); }
+  };
+  const tick = now => {
+    if (ended) return; const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt; splash = Math.max(0, splash - dt);
+    if (t >= 0) {
+      mates.forEach(m => { if (m.x < LEN) { m.x = Math.min(LEN, m.x + m.v * dt); if (m.x >= LEN && !order.includes(m)) order.push(m); } });
+      if (me >= LEN && !myDone) { myDone = 1; order.push('me'); }
+      if (myDone) { ended = true; const rank = order.indexOf('me') + 1; document.removeEventListener('keydown', key); go.remove();
+        const bells = payReward(w, SWIM_PRIZE[rank - 1] * L.mul); w.status.textContent = `${['🥇 第一名！', '🥈 第二名！', '🥉 第三名！', '第四名，下次加油！'][rank - 1]}💰 +${fmt(bells)}`;
+        try { fufuSay(rank === 1 ? '我游第一名！' : '好好玩喔！', 2400); } catch (e) {} gameButtons(w, openSwimRace); }
+    }
+    draw(); if (!ended) raf = requestAnimationFrame(tick); else draw();
+  };
+  raf = requestAnimationFrame(tick);
+  playSwim.test = { stroke, me: () => me, ended: () => ended, start: () => { t = 0; } };
+}
+// 🤿 潛水撿寶：池底一閃一閃的東西，點到就撿起來（30 秒）
+const DIVE_ITEMS = [['🐚', 1], ['⭐', 1], ['🦀', 1], ['💍', 2], ['💎', 3]];
+function openDiveGame() { const w = openGameWindow('🤿 潛水撿寶', '池底會冒出亮晶晶的東西，在它不見之前點一下撿起來！💎 最值錢喔'); playDive(w); }
+function playDive(w) {
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const W = 320, H = 240, { c, g, pos } = gameCanvas(w.stage, W, H);
+  let items = [], score = 0, got = 0, t = 0, next = .4, raf = 0, last = performance.now(), ended = false; const DUR = 30;
+  const end = () => { ended = true; cancelAnimationFrame(raf); const bells = payReward(w, score * 12); w.status.textContent = `撿到 ${got} 樣寶物！💰 +${fmt(bells)}`; try { fufuSay('噗哈！好多寶物！', 2400); } catch (e) {} gameButtons(w, openDiveGame); };
+  gameCleanup = () => { ended = true; cancelAnimationFrame(raf); };
+  c.onpointerdown = e => { if (ended) return; e.preventDefault(); const p = pos(e); const it = items.find(q => !q.got && Math.hypot(q.x - p.x, q.y - p.y) < 26); if (it) { it.got = t; score += it.v; got++; Sound.play(it.v >= 3 ? 'perfect' : 'coin'); } else Sound.play('splash'); };
+  const tick = now => {
+    if (ended) return; const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+    if (t >= DUR) { end(); return; }
+    next -= dt; if (next <= 0) { next = .6 + Math.random() * .5; const r = Math.random(), pick = r < .06 ? DIVE_ITEMS[4] : r < .18 ? DIVE_ITEMS[3] : DIVE_ITEMS[Math.floor(Math.random() * 3)]; items.push({ e: pick[0], v: pick[1], x: 30 + Math.random() * (W - 60), y: 40 + Math.random() * (H - 70), t0: t, life: 1.6 + Math.random() * .8 }); }
+    items = items.filter(q => (q.got ? t - q.got < .5 : t - q.t0 < q.life));
+    g.fillStyle = '#4bb8e4'; g.fillRect(0, 0, W, H); g.fillStyle = '#3aa6d4'; for (let i = 0; i < 6; i++) g.fillRect(0, i * 44 + ((t * 20) % 44), W, 2);
+    g.fillStyle = 'rgba(255,255,255,.18)'; for (let i = 0; i < 8; i++) { const bx = (i * 47 + t * 15) % W, by = H - ((t * 40 + i * 31) % H); g.beginPath(); g.arc(bx, by, 3, 0, Math.PI * 2); g.fill(); }
+    items.forEach(q => { const a = q.got ? 1 - (t - q.got) / .5 : 1; g.globalAlpha = Math.max(0, a); g.font = '28px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(q.e, q.x, q.y - (q.got ? (t - q.got) * 60 : 0)); if (!q.got) { g.fillStyle = 'rgba(255,255,255,' + (.5 + .5 * Math.sin(t * 12)) + ')'; g.fillText('✨', q.x + 14, q.y - 14); } g.globalAlpha = 1; });
+    g.fillStyle = '#fff'; g.font = '700 14px sans-serif'; g.textAlign = 'left'; g.textBaseline = 'alphabetic'; g.fillText(`⏱️ ${Math.ceil(DUR - t)}　寶物 ${got}`, 10, 20);
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+  playDive.test = { items: () => items, tapAt: (x, y) => c.onpointerdown({ preventDefault() {}, clientX: x, clientY: y }), finish: () => { t = DUR; } };
+}
+// 🌊 跳水：在跳板彈到最高的時候按，水花越大分數越高（跳 3 次）
+function openJumpDive() {
+  const w = openGameWindow('🌊 跳水', '指針到綠色的地方按「跳！」，水花越大越厲害！'); w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const view = el('div', 'tkd-view'); w.stage.appendChild(view);
+  let i = 0, total = 0, stop = null; gameCleanup = () => { if (stop) stop(); };
+  const next = () => {
+    if (i >= 3) { gameCleanup = null; const bells = payReward(w, total * 15); w.status.textContent = `跳了 3 次，得 ${total} 分！💰 +${fmt(bells)}`; gameButtons(w, openJumpDive); return; }
+    view.innerHTML = ''; view.appendChild(el('div', 'tkd-board', '🏊')); view.appendChild(el('div', 'tkd-say', `第 ${i + 1} / 3 跳`));
+    stop = meterRound(w, { zone: 24 - i * 3, speed: 1.8 + i * .3, label: '🌊 跳！' }, q => {
+      i++; const pts = [1, 3, 5][q]; total += pts; Sound.play('splash');
+      view.innerHTML = ''; view.appendChild(el('div', 'tkd-big', ['💧', '💦', '🌊'][q])); view.appendChild(el('div', 'tkd-say', ['噗通～', '嘩啦！好水花！', '哇！超大水花！'][q] + `（+${pts}）`));
+      setTimeout(next, 1100);
+    });
+  };
+  next();
 }
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，

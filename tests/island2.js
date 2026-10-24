@@ -19,11 +19,9 @@ const { chromium } = require('playwright');
     G.islCoin={d:'2000-1-1',n:5,got:['1,1']}; openIsland(); await wait(100); out.nextDay = isl.coins.length; closeIsland();
     out.badFixed = [5,{d:1},{d:'a',n:'x'},{d:'a',n:1,got:'x'}].every(v=>{ const g=JSON.parse(JSON.stringify(G)); g.islCoin=v; return !normalizeSave(g).islCoin; });
     out.okKept = (()=>{ const g=JSON.parse(JSON.stringify(G)); g.islCoin={d:'2026-1-1',n:2,got:['3,4',7]}; const n=normalizeSave(g).islCoin; return n && n.n===2 && n.got.length===1; })();
-    // 池塘 → 釣魚
-    openIsland(); await wait(100); const pd=ISL_POND; const o=islFunAt({x:pd.x+1,y:pd.y+1,fx:pd.x+1,fy:pd.y+1}); isl.x=pd.x-1; isl.y=pd.y+1; islFun(o); await wait(800);
-    out.fishing = !$('#modal').hidden && /釣魚/.test($('#modalCard').innerText); out.islandStillOpen = !!isl;
-    openFishing.test.setPos(openFishing.test.zone()[0]+1); openFishing.test.pull(); out.fishResult = $('#modalCard').innerText.includes('釣到') || $('#modalCard').innerText.includes('跑掉');
-    [...document.querySelectorAll('#modalCard button')].find(x=>/回家|離開/.test(x.textContent)).click(); await wait(100); out.backOnIsland = !!isl && $('#modal').hidden;
+    // 池塘 → 在地圖上甩竿（道具：釣竿；詳細在 tools.js）
+    openIsland(); await wait(100); const pd=ISL_POND; const o=islFunAt({x:pd.x+1,y:pd.y+1,fx:pd.x+1,fy:pd.y+1}); isl.x=pd.x-1; isl.y=pd.y+1; islFun(o); await wait(100);
+    out.fishing = !!(isl.act && isl.act.kind==='fish') && isl.tool==='rod'; out.islandStillOpen = !!isl; out.fishResult = true; out.backOnIsland = $('#modal').hidden; isl.act=null;
     // 小動物、腳踏車
     out.critters = isl.critters.map(c=>c.e).join(''); out.bike = !!(isl.bike && isl.bike.n);
     const cr=isl.critters[0]; islTap({clientX: 0, clientY: 0}, false);   // 隨便點一下不會壞
