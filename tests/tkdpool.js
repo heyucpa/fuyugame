@@ -47,7 +47,7 @@ const { chromium } = require('playwright');
     out.swim = document.querySelector('.game-status').textContent;
     closeGameWindow(); openDiveGame(); await wait(1500); const its=playDive.test.items().filter(q=>!q.got); const c=document.querySelector('.game-canvas'), rr=c.getBoundingClientRect();
     its.forEach(q=>playDive.test.tapAt(rr.left+q.x/320*rr.width, rr.top+q.y/240*rr.height)); out.diveGot = playDive.test.items().filter(q=>q.got).length; playDive.test.finish(); await wait(100); out.dive = document.querySelector('.game-status').textContent;
-    closeGameWindow(); openJumpDive(); for (let i=0;i<3;i++){ await wait(60); const z=meterRound.test.zone(); meterRound.test.setPos(z[0]+z[1]/2); meterRound.test.hit(); await wait(1550); } out.jump = document.querySelector('.game-status').textContent;
+    closeGameWindow(); openJumpDive(); for (let i=0;i<3;i++){ await wait(60); const z=meterRound.test.zone(); meterRound.test.setPos(z[0]+z[1]/2); meterRound.test.hit(); await wait(3450); } out.jump = document.querySelector('.game-status').textContent;
     closeGameWindow(); draw();
     // 回家：衣服換回
     out.gotSwim = ['swimsuit','swim_bottom','swim_cap'].every(id=>G.wardrobe.includes(id));

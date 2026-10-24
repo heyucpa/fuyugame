@@ -7592,6 +7592,10 @@ function fufuDraw(ctx) {
   const prop = fufu.act && ACT_PROPS[fufu.act.key];
   const jump = fufu.jumpT > 0 ? Math.sin((1 - fufu.jumpT / .35) * Math.PI) * 18 : 0;
   const breathe = walking ? 1 : 1 + Math.sin(fufu.t * 2.4) * .015;
+  const inWater = typeof poolWaterAt === 'function' && poolWaterAt(fufu.x, fufu.y);
+  const swimming = inWater && walking && !kidBaby();   // 🏊 在泳池裡移動：真的在游（自由式／蛙式／仰式輪流）
+  if (typeof swimTick === 'function') swimTick(swimming);
+  if (swimming) { ctx.save(); ctx.translate(p.x, p.y - 8 * kidHeightScale()); ctx.scale(fufu.facing * kidHeightScale(), kidHeightScale()); drawSwimmer(ctx, fufu.t, swimStroke()); ctx.restore(); return; }
 
   ctx.fillStyle = 'rgba(40,30,20,.22)';
   ctx.beginPath();
@@ -7609,7 +7613,6 @@ function fufuDraw(ctx) {
   }
   ctx.translate(p.x, p.y - hop - jump + 1);
   ctx.scale(fufu.facing * k, breathe * k);
-  const inWater = typeof poolWaterAt === 'function' && poolWaterAt(fufu.x, fufu.y);
   if (inWater) { ctx.save(); ctx.beginPath(); ctx.rect(-40, -140, 80, 128); ctx.clip(); }   // 🏊 在泳池裡：腰以下在水裡（不畫）
   drawGirl(ctx, { t: fufu.t, walking, back: fufu.back && (walking || !!fufu.act), blink: fufuBlink(), outfit: currentOutfit(), prop, face: kidFace(), stage: kidLookStage(), dirty: kidDirty() });
   if (inWater) ctx.restore();
@@ -19737,6 +19740,57 @@ function poolWaterAt(x, y) {   // 小可愛站的地方是不是在泳池的水�
   const it = curRoom().items.find(i => i.id === 'swim_pool'); if (!it) return false;
   return x > it.x + .3 && x < it.x + 6 - .3 && y > it.y + .3 && y < it.y + 4 - .3;
 }
+/* 🏊 在泳池裡游：每次開始游就換一種泳式（自由式 → 蛙式 → 仰式），小可愛會說出泳式的名字。
+   畫法：臉朝右（外面用 scale 翻面），水面在 y＝0，身體在水面下，手臂一圈一圈划。 */
+const SWIM_STROKES = ['自由式', '蛙式', '仰式'];
+let swimNow = { on: false, i: -1 };
+function swimStroke() { return Math.max(0, swimNow.i) % SWIM_STROKES.length; }
+function swimTick(on) {
+  if (on && !swimNow.on) { swimNow.i = (swimNow.i + 1) % SWIM_STROKES.length; try { fufuSay(SWIM_STROKES[swimNow.i] + '！', 1800); } catch (e) {} }
+  swimNow.on = on;
+}
+function drawSwimmer(ctx, t, st) {
+  const L = GIRL.line, skin = GIRL.skin, suit = (currentOutfit().top || {}).color || '#ff6f91';
+  const limb = (x1, y1, x2, y2, a, w) => { ctx.globalAlpha = a; ctx.strokeStyle = skin; ctx.lineWidth = w || 3.6; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.globalAlpha = 1; };
+  const hw = currentOutfit().head, cap = hw && hw.id === 'swim_cap' ? hw.color : '#231c1c';   // 戴泳帽（沒戴就是黑頭髮）
+  // 頭：mode 'down' 臉朝下（只看到泳帽）、'side' 轉頭換氣、'up' 臉朝上（仰式）、'front' 臉朝前（蛙式）
+  const head = (x, y, mode) => {
+    const R = 8.5; ctx.save(); ctx.translate(x, y);
+    ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fillStyle = mode === 'down' ? cap : skin; ctx.fill(); ctx.strokeStyle = L; ctx.lineWidth = .8; ctx.stroke();
+    const eye = (ex, ey, shut) => { ctx.fillStyle = '#231c1c'; if (shut) { ctx.strokeStyle = '#231c1c'; ctx.lineWidth = 1.1; ctx.beginPath(); ctx.arc(ex, ey, 1.6, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); } else { ctx.beginPath(); ctx.ellipse(ex, ey, 1.3, 1.7, 0, 0, Math.PI * 2); ctx.fill(); } };
+    const blush = (bx, by) => { ctx.fillStyle = GIRL.blush; ctx.beginPath(); ctx.arc(bx, by, 1.8, 0, Math.PI * 2); ctx.fill(); };
+    ctx.fillStyle = cap;
+    if (mode === 'front') { ctx.beginPath(); ctx.arc(0, 0, R + .3, Math.PI * 1.02, Math.PI * 1.98); ctx.closePath(); ctx.fill(); eye(-1.5, 1.5); eye(4.5, 1.5); blush(-4, 4.5); blush(7, 4.5); ctx.strokeStyle = '#c0504a'; ctx.lineWidth = .9; ctx.beginPath(); ctx.arc(1.5, 4.5, 1.8, .2, Math.PI - .2); ctx.stroke(); }
+    else if (mode === 'up') { ctx.beginPath(); ctx.arc(0, 0, R + .3, -Math.PI * .55, Math.PI * .55); ctx.closePath(); ctx.fill(); eye(-3.5, -2.5, true); eye(-3.5, 2.5, true); blush(-5.5, -5.5); blush(-5.5, 5.5); }
+    else if (mode === 'side') { ctx.beginPath(); ctx.arc(0, 0, R + .3, -Math.PI * .75, Math.PI * .45); ctx.closePath(); ctx.fill(); eye(-2.5, -2); blush(-5, 1.5); ctx.fillStyle = '#c0504a'; ctx.beginPath(); ctx.arc(-3, 4, 1.5, 0, Math.PI * 2); ctx.fill(); }   // 張嘴吸一口氣
+    else { ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(0, 0, R - 2.5, -1.2, .4); ctx.stroke(); }
+    ctx.restore();
+  };
+  const drop = (x, y, r) => { ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); };
+  const bob = Math.sin(t * 5) * .8;
+  // 身邊的水（淡淡的一圈）
+  ctx.fillStyle = 'rgba(92,196,236,.35)'; ctx.beginPath(); ctx.ellipse(-2, 1, 30, 7, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.ellipse(-2, 1, 30 + Math.sin(t * 4) * 2, 7, 0, 0, Math.PI * 2); ctx.stroke();
+  // 水面下的身體（泳衣）和腿
+  ctx.globalAlpha = .6; ctx.fillStyle = suit; ctx.beginPath(); ctx.ellipse(-3, 2 + bob, 11, 4.2, 0, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+  if (st === 1) {   // 🐸 蛙式：頭在水面上一上一下，手往前伸再往兩邊撥，腿像青蛙一樣踢
+    const k = (Math.sin(t * 4) + 1) / 2, up = Math.max(0, Math.sin(t * 4)) * 3;
+    const kick = (Math.sin(t * 4 + 2) + 1) / 2;
+    limb(-16, 2, -24 - kick * 4, -1 - kick * 4, .5); limb(-16, 3, -24 - kick * 4, 5 + kick * 4, .5);
+    ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.ellipse(-28, 2, 3 + kick * 5, 1.5 + kick * 2, 0, 0, Math.PI * 2); ctx.stroke();
+    limb(5, 0, 9 + k * 13, -2 - (1 - k) * 6, .8); limb(5, 1, 9 + k * 13, 3 + (1 - k) * 5, .8);
+    head(8, -5 - up + bob, 'front');
+  } else {   // 🏊 自由式（趴著、頭偶爾轉出來換氣）／ 仰式（躺著、臉朝上）：兩隻手輪流大圈圈划水，腳一直打水
+    const back = st === 0, sp = back ? 6 : -5;
+    limb(-16, 1, -27, 1 + Math.sin(t * 14) * 2.5, .45, 3); limb(-16, 2, -27, 2 - Math.sin(t * 14) * 2.5, .45, 3);
+    drop(-29 + Math.sin(t * 9) * 2, -3 - Math.abs(Math.sin(t * 14)) * 3, 1.6); drop(-25, -2 - Math.abs(Math.cos(t * 14)) * 3, 1.2);
+    const arm = ph => { const sx = 3, sy = -1, ex = sx + Math.cos(ph) * 12, ey = sy - Math.sin(ph) * 10, above = Math.sin(ph) > 0; limb(sx, sy, ex, ey, above ? 1 : .35); if (above && Math.sin(ph) < .35 && Math.cos(ph) * sp > 0) drop(ex, -1, 2); };
+    arm(t * sp + Math.PI);
+    const breath = back && Math.sin(t * 2.5) > .55;   // 自由式：每划幾下轉頭出來換氣
+    head(12, -1 + bob, back ? (breath ? 'side' : 'down') : 'up');
+    arm(t * sp);
+  }
+}
 function beltPic(colors, w) {   // 一條腰帶的圖（大圖用）
   const c = document.createElement('canvas'), dpr = window.devicePixelRatio || 1, h = Math.round(w * .55); c.width = w * dpr; c.height = h * dpr; c.style.width = w + 'px'; c.style.height = h + 'px';
   const g = c.getContext('2d'); g.scale(dpr, dpr);
@@ -19911,16 +19965,61 @@ function playDive(w) {
 }
 // 🌊 跳水：在跳板彈到最高的時候按，水花越大分數越高（跳 3 次）
 function openJumpDive() {
-  const w = openGameWindow('🌊 跳水', '指針到綠色的地方按「跳！」，水花越大越厲害！'); w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
-  const view = el('div', 'tkd-view'); w.stage.appendChild(view);
-  let i = 0, total = 0, stop = null; gameCleanup = () => { if (stop) stop(); };
+  const w = openGameWindow('🌊 跳水', '指針到綠色的地方按「跳！」，跳得越漂亮分數越高！'); w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const W = 340, H = 230, { g } = gameCanvas(w.stage, W, H);
+  const say = el('div', 'tkd-say', ''); w.stage.appendChild(say);
+  const BOARD = { x0: 8, x1: 118, y: 112 }, WATER = 176, LAND = 236;
+  let i = 0, total = 0, stop = null, raf = 0, live = true;
+  let ph = 'ready', t0 = performance.now(), q = 0, drops = [], rings = [];
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); if (stop) stop(); };
+  const kid = (x, y, rot, opt) => {   // y＝腳底；繞著身體中間轉
+    g.save(); g.translate(x, y - 24); g.rotate(rot); g.translate(0, 24); g.scale(.85, .85);
+    if (kidBaby()) drawBabyKid(g, { t: performance.now() / 1000 }); else drawGirl(g, Object.assign({ t: performance.now() / 1000, blink: false, outfit: currentOutfit(), face: kidFace(), stage: kidLookStage() }, opt || {}));
+    g.restore();
+  };
+  const splash = n => { for (let k = 0; k < n; k++) drops.push({ x: LAND + (Math.random() - .5) * 20, y: WATER, vx: (Math.random() - .5) * 3.2, vy: -2 - Math.random() * (1.5 + n / 8), r: 1.5 + Math.random() * 2.2 }); rings.push({ r: 4, a: 1 }); };
+  const draw = now => {
+    if (!live) return;
+    const t = (now - t0) / 1000, T = now / 1000;
+    g.clearRect(0, 0, W, H);
+    g.fillStyle = '#d8f1fb'; g.fillRect(0, 0, W, WATER);
+    g.fillStyle = '#e9e1d2'; g.fillRect(0, WATER - 4, W, 4);
+    g.fillStyle = '#5cc4ec'; g.fillRect(0, WATER, W, H - WATER);
+    g.strokeStyle = 'rgba(255,255,255,.6)'; g.lineWidth = 1.5; for (let x = 0; x < W; x += 24) { g.beginPath(); g.moveTo(x + Math.sin(T * 2 + x) * 3, WATER + 12); g.lineTo(x + 12 + Math.sin(T * 2 + x) * 3, WATER + 12); g.stroke(); }
+    g.fillStyle = '#9aa3ad'; g.fillRect(BOARD.x0 + 6, BOARD.y, 10, WATER - BOARD.y);   // 跳台的柱子
+    const bend = ph === 'ready' ? Math.abs(Math.sin(T * 5)) * 3 : ph === 'jump' && t < .35 ? Math.sin(t / .35 * Math.PI) * 7 : 0;
+    g.strokeStyle = '#2f8fe0'; g.lineWidth = 6; g.lineCap = 'round'; g.beginPath(); g.moveTo(BOARD.x0, BOARD.y); g.quadraticCurveTo(BOARD.x1 - 30, BOARD.y, BOARD.x1, BOARD.y + bend); g.stroke();
+    if (ph === 'ready') kid(BOARD.x1 - 10, BOARD.y - 3 + bend - Math.abs(Math.sin(T * 5)) * 4, 0);
+    else if (ph === 'jump') {
+      if (t < .35) kid(BOARD.x1 - 10, BOARD.y - 3 + bend, 0);   // 往下壓跳板
+      else {
+        const k = Math.min(1, (t - .35) / 1.05), x = lerp(BOARD.x1 - 10, LAND, k), y = lerp(BOARD.y - 3, WATER + 18, k) - Math.sin(k * Math.PI) * 60;
+        // 2＝在空中翻一圈再頭下腳上入水；1＝漂亮的頭先入水；0＝肚子先拍到水「噗通」
+        const rot = q === 2 ? k * Math.PI * 3 : q === 1 ? k * Math.PI : k * Math.PI * .5;
+        const tuck = q === 2 && k > .15 && k < .7;
+        g.save(); if (y > WATER) { g.beginPath(); g.rect(0, 0, W, WATER); g.clip(); }
+        kid(x, y, rot, { sit: tuck }); g.restore();
+        if (k >= 1) { ph = 'under'; t0 = now; splash([10, 18, 28][q]); Sound.play('splash'); }
+      }
+    } else if (ph === 'under' || ph === 'up') {
+      if (ph === 'under') { g.fillStyle = 'rgba(255,255,255,.8)'; [0, 1, 2].forEach(b => { const by = WATER + 30 - ((t * 30 + b * 12) % 30); g.beginPath(); g.arc(LAND + Math.sin(t * 6 + b) * 4, by, 2.2, 0, Math.PI * 2); g.fill(); }); if (t > 1) { ph = 'up'; t0 = now; } }
+      else { const k = Math.min(1, t / .5); g.save(); g.beginPath(); g.rect(0, 0, W, WATER + 1); g.clip(); kid(LAND + 10, WATER + 38 - k * 20 + Math.sin(T * 3) * 1.5, 0, { walking: false }); g.restore(); g.fillStyle = 'rgba(92,196,236,.5)'; g.fillRect(LAND - 20, WATER, 60, 6); }
+    }
+    rings.forEach(r => { r.r += 1.1; r.a -= .015; if (r.a > 0) { g.strokeStyle = `rgba(255,255,255,${r.a})`; g.lineWidth = 2; g.beginPath(); g.ellipse(LAND, WATER + 2, r.r, r.r * .3, 0, 0, Math.PI * 2); g.stroke(); } });
+    rings = rings.filter(r => r.a > 0);
+    drops.forEach(d => { d.x += d.vx; d.y += d.vy; d.vy += .18; g.fillStyle = 'rgba(255,255,255,.95)'; g.beginPath(); g.arc(d.x, d.y, d.r, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#5cc4ec'; g.lineWidth = .6; g.stroke(); });
+    drops = drops.filter(d => d.y < WATER + 2);
+    raf = requestAnimationFrame(draw);
+  };
+  raf = requestAnimationFrame(draw);
   const next = () => {
-    if (i >= 3) { gameCleanup = null; const bells = payReward(w, total * 15); w.status.textContent = `跳了 3 次，得 ${total} 分！💰 +${fmt(bells)}`; gameButtons(w, openJumpDive); return; }
-    view.innerHTML = ''; view.appendChild(el('div', 'tkd-board', '🏊')); view.appendChild(el('div', 'tkd-say', `第 ${i + 1} / 3 跳`));
-    stop = meterRound(w, { zone: 24 - i * 3, speed: 1.8 + i * .3, label: '🌊 跳！' }, q => {
-      i++; const pts = [1, 3, 5][q]; total += pts; Sound.play('splash');
-      view.innerHTML = ''; view.appendChild(el('div', 'tkd-big', ['💧', '💦', '🌊'][q])); view.appendChild(el('div', 'tkd-say', ['噗通～', '嘩啦！好水花！', '哇！超大水花！'][q] + `（+${pts}）`));
-      setTimeout(next, 1100);
+    if (i >= 3) { gameCleanup = () => { live = false; cancelAnimationFrame(raf); }; const bells = payReward(w, total * 15); w.status.textContent = `跳了 3 次，得 ${total} 分！💰 +${fmt(bells)}`; gameButtons(w, openJumpDive); return; }
+    ph = 'ready'; t0 = performance.now(); say.textContent = `第 ${i + 1} / 3 跳`;
+    stop = meterRound(w, { zone: 24 - i * 3, speed: 1.8 + i * .3, label: '🌊 跳！' }, qq => {
+      i++; q = qq; ph = 'jump'; t0 = performance.now(); Sound.play('whoosh');
+      const pts = [1, 3, 5][q]; total += pts;
+      say.textContent = ['噗通～肚子先下去了！', '頭先入水，好漂亮！', '哇！在空中翻一圈！'][q] + `（+${pts}）`;
+      setTimeout(() => { if (live) next(); }, 3000);
     });
   };
   next();
