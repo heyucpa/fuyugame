@@ -3329,6 +3329,7 @@
       var normalMax = Math.max.apply(null, KID_FOODS.concat(FOODS).filter(function(f){ return !f.potion; }).map(function(f){ return f.price; }));
       if (KID_FOOD_BY_ID.shrink.price < normalMax * 2 || FOOD_BY_ID.shrink_pet.price < normalMax * 2) fails.push('變小藥水沒有比一般東西貴');
       // 小可愛：⭐⭐⭐ → 變小（⭐），跳出「原本 ➜ 變小」
+      magicForce = 'small';   // 🔮 魔法藥水是隨機的，這裡指定喝到「變小」
       G.kid.height = 160; delete G.kid.small; G.kidFood.shrink = 3; clearSC();
       kidEat('shrink', 'kid');
       var s1 = document.getElementById('showcase');
@@ -3397,6 +3398,7 @@
       if ($('#kidStageIc').textContent !== '👧') fails.push('小卡名字前面的圖示不是 👧（' + $('#kidStageIc').textContent + '）');
       if (Math.abs(parseFloat($('#barKidGrow').style.width) - 50) > 1) fails.push('小可愛的長大進度條不對：' + $('#barKidGrow').style.width);
       // 喝藥水：⭐⭐ → 暫時變成⭐的樣子
+      magicForce = 'small';
       G.kidFood.shrink = 2;
       if (!kidEat('shrink', 'kid')) fails.push('喝不了變小藥水');
       if (!kidSmall() || kidBaby() || kidLookStage() !== 'kinder' || kidHeightScale() !== 1) fails.push('喝了藥水沒有變回⭐的樣子');

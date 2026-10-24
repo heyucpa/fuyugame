@@ -660,6 +660,7 @@ button.pass { font: inherit; }
 .tkd-move .tkd-e { font-size: 34px; } .tkd-move.lit { background: #ffe9b8; border-color: #e7a94a; transform: scale(1.08); }
 .tkd-beltpic { display: flex; justify-content: center; } .tkd-ladder { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin: 6px 0; }
 .tkd-step { font-size: 12px; padding: 3px 8px; border-radius: 999px; background: #eee6d6; color: #8a7a64; } .tkd-step.done { background: #d9f5df; color: #2f7d4a; } .tkd-step.on { background: #ffe9b8; color: #5a4630; font-weight: 800; }
+.magic-pic { font-size: 96px; line-height: 1.1; text-align: center; animation: shrinkSpin 1s cubic-bezier(.3, 1.5, .5, 1) both .2s; }
 .spar-row { display: flex; gap: 12px; justify-content: center; margin: 8px 0; }
 .spar-row button { min-width: 120px; font-size: 20px; }
 .music-menu { position: fixed; z-index: 70; background: var(--panel, #fffaf0); border: 2px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
@@ -3014,7 +3015,7 @@ const KID_FOODS = [
   { id: 'cotton_candy', name: '棉花糖', emoji: '🍭', price: 100, hunger: 8, grow: 0, placeOnly: true },   // 遊樂園才買得到
   { id: 'popcorn', name: '爆米花', emoji: '🍿', price: 80, hunger: 10, grow: 0, placeOnly: true },
   { id: 'hw_candy', name: '萬聖節糖果', emoji: '🍬', price: 60, hunger: 5, grow: 0, season: 'halloween' },
-  { id: 'shrink', name: '變小藥水', emoji: '🧪', price: 1000, hunger: 0, grow: 0, potion: true }
+  { id: 'shrink', name: '神奇魔法藥水', emoji: '🧪', price: 1000, hunger: 0, grow: 0, potion: true }
 ];
 const KID_FOOD_BY_ID = Object.fromEntries(KID_FOODS.map(f => [f.id, f]));
 const FOODS = [
@@ -4469,6 +4470,7 @@ const OPEN_GIFT_BELLS = 100000;
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
   { id: '2026-10-18T09:00', title: '萬聖節派對＋找小幽靈！🎃👻', lines: [
+    ['🔮', '「變小藥水」變成「神奇魔法藥水」：每次喝都不一樣（巨人、彩虹頭髮、飄起來、超快、透明、貓咪、星星、愛心、變色、變小），喝了才知道！集滿 10 種吧'],
     ['👻', '每天有一隻小幽靈躲在家裡的某個房間，找到點一下拿 3 顆糖果'],
     ['🎉', '房間擺 3 件萬聖節家具，點小可愛選「萬聖節派對」，朋友們都來跳舞'],
     ['🍬', '派對結束每天第一次送 4 顆糖果，可以送給來玩的動物朋友'],
@@ -5216,6 +5218,9 @@ function normalizeSave(g) {
   growDexSync(out);   // 要在寵物整理好之後才算（不然壞掉的種類會先被記進成長圖鑑，再讀一次又不一樣）
   fixCompanions(out);
   out.kid = Object.assign(newKid(), g.kid || {});
+  if (out.kid.magic != null && !(isObj(out.kid.magic) && num(out.kid.magic.until) && magicFxList().some(m => m.id === out.kid.magic.id))) delete out.kid.magic;   // 🔮 魔法藥水的效果
+  if (out.kid.magicDex != null) { if (Array.isArray(out.kid.magicDex)) out.kid.magicDex = out.kid.magicDex.filter(id => magicFxList().some(m => m.id === id)); else delete out.kid.magicDex; }
+  if (out.kid.lastMagic != null && typeof out.kid.lastMagic !== 'string') delete out.kid.lastMagic;
   out.away = null; // 重新打開遊戲一律在自己家
   if (!Number.isInteger(out.cur) || out.cur < 0 || out.cur >= out.rooms.length) out.cur = 0;
   // 衣服：補上預設款，穿著中的衣服若資料裡已不存在就換回預設
@@ -5238,15 +5243,23 @@ function normalizeSave(g) {
 
 // ── 換裝 ──
 let tkdFormalUntil = 0;   // 考腰帶時換上白色正式道服（考完再穿一下下拍照）
+function magicRecolor(o) {   // 🎨 變色藥水：上衣、褲子一直換顏色
+  if (!(G.kid && G.kid.magic && kidMagic() === 'color')) return;
+  const h = (performance.now() / 22) % 360;
+  o.top = Object.assign({}, o.top, { color: `hsl(${h},80%,62%)` });
+  if (o.bottom) o.bottom = Object.assign({}, o.bottom, { color: `hsl(${(h + 150) % 360},70%,58%)` });
+}
 function currentOutfit() {
   const o = {};
   if (G.away && (G.away.place === 'dojo' || G.away.place === 'pool')) {   // 道館穿道服（腰帶是她考到的那一條）、泳池穿泳衣
     const ids = G.away.place === 'dojo' ? { head: 'head_none', top: G.outfit.top === 'dobok' || Date.now() < tkdFormalUntil ? 'dobok' : 'tkd_tee', bottom: 'dobok_pants', shoes: 'barefoot' } : { head: 'swim_cap', top: 'swimsuit', bottom: 'swim_bottom', shoes: 'barefoot' };
     OUTFIT_SLOTS.forEach(({ key }) => { o[key] = CLOTHES_BY_ID[ids[key]]; });
     if (G.away.place === 'dojo') o.top = Object.assign({}, o.top, { belt: tkdBeltColors() });
+    magicRecolor(o);
     return o;
   }
   OUTFIT_SLOTS.forEach(({ key }) => { o[key] = CLOTHES_BY_ID[G.outfit[key]] || CLOTHES_BY_ID[DEFAULT_OUTFIT[key]]; });
+  magicRecolor(o);   // 🎨 變色藥水
   if (o.top && o.top.style === 'dobok' && typeof tkdBeltColors === 'function') o.top = Object.assign({}, o.top, { belt: tkdBeltColors() });   // 在家穿道服也綁著她考到的腰帶
   return o;
 }
@@ -5823,6 +5836,25 @@ function kidGainGrowth(amount) {
   if (up) celebrateKidStage(up);
   return up;
 }
+/* 🔮 神奇魔法藥水（家長：變小藥水玩幾次就不新鮮了）：每次喝隨機一種效果，喝下去才知道是哪一種，
+   10 分鐘或睡一覺就沒了。「變小」是其中一種（存在 G.kid.small，跟以前一樣）；其他的存在 G.kid.magic = {id, until}。
+   喝過的種類收進 G.kid.magicDex（集滿 10 種）。寫成 function：normalizeSave 讀檔時就會用到，不能用 const（還沒宣告）。 */
+function magicFxList() {
+  return [
+    { id: 'small', name: '變小藥水', icon: '🧪', desc: '變小了！再喝到一次會變成小寶寶' },
+    { id: 'giant', name: '巨人藥水', icon: '🦒', desc: '變得好高好大！', say: '哇！我變成巨人了！' },
+    { id: 'rainbow', name: '彩虹藥水', icon: '🌈', desc: '頭髮變成彩虹色，一直換顏色！', say: '我的頭髮變成彩虹了！' },
+    { id: 'float', name: '飄飄藥水', icon: '🎈', desc: '腳離開地板，飄在空中！', say: '我飄起來了～' },
+    { id: 'fast', name: '閃電藥水', icon: '⚡', desc: '走路變得超級快！', say: '咻——我好快！' },
+    { id: 'ghost', name: '透明藥水', icon: '👻', desc: '身體變得透明透明的！', say: '你看得到我嗎？嘻嘻～' },
+    { id: 'cat', name: '貓咪藥水', icon: '🐱', desc: '長出貓咪耳朵和尾巴！', say: '喵～我是小貓咪！' },
+    { id: 'star', name: '星星藥水', icon: '⭐', desc: '身上一直冒出星星！', say: '亮晶晶的星星！' },
+    { id: 'heart', name: '愛心藥水', icon: '💗', desc: '一直冒愛心，寵物好開心！', say: '我好愛大家喔！' },
+    { id: 'color', name: '變色藥水', icon: '🎨', desc: '衣服一直變顏色！', say: '我的衣服在變色耶！' }
+  ];
+}
+var magicForce = null;   // 測試用：指定喝到哪一種（平常是 null＝隨機）
+function kidMagic() { const m = G.kid.magic; return m && m.until > Date.now() ? m.id : null; }
 // 喝了變小藥水：small = {until, baby}；時間到或睡一覺就變回來
 function kidSmall() { const s = G.kid.small; return s && s.until > Date.now() ? s : null; }
 function kidBaby() { const s = kidSmall(); return !!(s && s.baby); }
@@ -5831,9 +5863,9 @@ function kidLookStage() { return kidSmall() ? 'kinder' : kidStage().id; }
 // 寵物變小：p.small＝到什麼時候。小朋友、大朋友暫時變回寶寶的樣子（真正的階段跟成長值不變）
 function lookStage(p) { return p && p.small && p.small > Date.now() && (p.stage === 'kid' || p.stage === 'adult') ? 'baby' : p.stage; }
 function lookScale(p) { return PET_STAGE_BY_ID[lookStage(p)].scale; }
-function kidHeightScale() { // 畫面上的大小：成長值越高畫得大一點點，最多大 17%
+function kidHeightScale() { // 畫面上的大小：成長值越高畫得大一點點，最多大 17%；🦒 巨人藥水再大一半
   if (kidSmall()) return 1;
-  return 1 + Math.min(KID_MAX_HEIGHT - KID_START_HEIGHT, Math.max(0, G.kid.height - KID_START_HEIGHT)) / 175;
+  return (kidMagic() === 'giant' ? 1.5 : 1) * (1 + Math.min(KID_MAX_HEIGHT - KID_START_HEIGHT, Math.max(0, G.kid.height - KID_START_HEIGHT)) / 175);
 }
 // src 為 'pet' 時吃的是寵物食物（蘋果、牛奶、布丁這些小可愛也能吃）
 function feedKid(foodId, src) {
@@ -6567,6 +6599,7 @@ function hairOf(o) {
   try { cur = G && G.hair; } catch (e) { cur = null; }
   const h = (o && o.hair) || cur || DEFAULT_HAIR;
   const col = HAIR_COLOR_BY_ID[h.color] || HAIR_COLOR_BY_ID.black;
+  if (o && o.hairC) return { style: HAIR_BY_ID[h.style] || h.style === 'short' ? h.style : 'bob', c: o.hairC, hi: 'rgba(255,255,255,.45)' };   // 🌈 彩虹藥水
   // short＝爸爸的短髮，只給爸媽用，商店買不到
   return { style: HAIR_BY_ID[h.style] || h.style === 'short' ? h.style : 'bob', c: col.c, hi: col.hi };
 }
@@ -7432,7 +7465,7 @@ function fufuStartPose(now) {
   fufu.path = [];
   fufu.jumpT = .35;
   if (pose.type === 'lie' && !pose.bath) petMaybeJoinBed(it); // 寵物偶爾跳上床一起睡
-  if (pose.type === 'lie' && !pose.bath && G.kid.small) setTimeout(() => { if (fufu.pose === pose) kidUnshrink('sleep'); }, 3500); // 睡一覺就變回來
+  if (pose.type === 'lie' && !pose.bath && (G.kid.small || G.kid.magic)) setTimeout(() => { if (fufu.pose === pose) kidUnshrink('sleep'); }, 3500); // 睡一覺就變回來
 }
 
 function fufuStandUp(talk) {
@@ -7463,7 +7496,7 @@ function fufuUpdatePose(now) {
 // ── 每一幀更新 ──
 function fufuUpdate(dt, now) {
   const room = curRoom();
-  fufu.t += dt * (runOn() && fufu.path.length ? 1.7 : 1);   // 跑的時候腳動得比較快
+  fufu.t += dt * (runOn() && fufu.path.length ? 1.7 : 1) * (kidMagic() === 'fast' && fufu.path.length ? 1.8 : 1);   // 跑的時候腳動得比較快
   if (fufu.jumpT > 0) fufu.jumpT = Math.max(0, fufu.jumpT - dt);
   fufu.fx.forEach(q => { q.age += dt; q.y += q.vy * dt; });
   fufu.fx = fufu.fx.filter(q => q.age < q.life);
@@ -7508,7 +7541,7 @@ function fufuUpdate(dt, now) {
     }
     const tx = ni + .5, ty = nj + .5, dx = tx - fufu.x, dy = ty - fufu.y;
     const hungrySlow = G.kid.hunger < 35 ? .7 : 1; // 肚子餓走得慢一點
-    const dist = Math.hypot(dx, dy), step = FUFU_SPEED * hungrySlow * (runOn() ? RUN_MULT : 1) * dt;
+    const dist = Math.hypot(dx, dy), step = FUFU_SPEED * hungrySlow * (runOn() ? RUN_MULT : 1) * (kidMagic() === 'fast' ? 2.2 : 1) * dt;
     const sx = dx - dy; // 螢幕上的左右方向
     if (Math.abs(sx) > .01) fufu.facing = sx > 0 ? 1 : -1;
     if (Math.abs(dx + dy) > .01) fufu.back = dx + dy < 0; // 往房間深處走就看到背影
@@ -7615,10 +7648,15 @@ function fufuDraw(ctx) {
     ctx.restore();
     return;
   }
-  ctx.translate(p.x, p.y - hop - jump + 1);
+  const mg = kidMagic(), lift = mg === 'float' ? 26 + Math.sin(fufu.t * 2.2) * 5 : 0;   // 🎈 飄飄藥水：飄在空中
+  ctx.translate(p.x, p.y - hop - jump + 1 - lift);
   ctx.scale(fufu.facing * k, breathe * k);
+  if (mg === 'ghost') ctx.globalAlpha = .42 + Math.sin(fufu.t * 3) * .08;   // 👻 透明藥水
   if (inWater) { ctx.save(); ctx.beginPath(); ctx.rect(-40, -140, 80, 128); ctx.clip(); }   // 🏊 在泳池裡：腰以下在水裡（不畫）
-  drawGirl(ctx, { t: fufu.t, walking, back: fufu.back && (walking || !!fufu.act), blink: fufuBlink(), outfit: currentOutfit(), prop, face: kidFace(), stage: kidLookStage(), dirty: kidDirty() });
+  if (mg === 'cat') drawCatBits(ctx, fufu.t, 'tail');
+  drawGirl(ctx, { t: fufu.t, walking, back: fufu.back && (walking || !!fufu.act), blink: fufuBlink(), outfit: currentOutfit(), prop, face: kidFace(), stage: kidLookStage(), dirty: kidDirty(), hairC: mg === 'rainbow' ? `hsl(${(fufu.t * 90) % 360},85%,58%)` : null });
+  if (mg === 'cat') drawCatBits(ctx, fufu.t, 'ears');
+  ctx.globalAlpha = 1;
   if (fufu.act && !walking && typeof drawActLimb === 'function') drawActLimb(ctx, fufu.act.key, fufu.t);   // 🥋 出拳、踢腿、手刀
   if (inWater) ctx.restore();
   ctx.restore();
@@ -7768,10 +7806,30 @@ function fufuAnchor() {
    ・已經是小寶寶：不用喝（藥水不會被用掉）
    ・10 分鐘後、或去床上睡一覺，就變回來。真正的成長不會不見。 */
 function kidDrinkPotion(foodId) {
-  if (kidBaby()) { fufuSay(pickLine('babyReply'), 2400); toast('👶 已經是小寶寶了！10 分鐘後、或睡一覺就會變回來'); return false; }
   if (!G.kidFood[foodId]) return false;
+  // 🔮 這一瓶是哪一種：隨機，不會跟上一瓶一樣；已經是小寶寶就不會再抽到變小
+  if (magicForce === 'small' && kidBaby()) { fufuSay(pickLine('babyReply'), 2400); return false; }   // 測試用：指定變小，已經是小寶寶就不喝
+  const pool = magicFxList().filter(m => m.id !== G.kid.lastMagic && !(m.id === 'small' && kidBaby()));
+  const fx = magicForce ? magicFxList().find(m => m.id === magicForce) : pool[Math.floor(Math.random() * pool.length)];
   G.kidFood[foodId]--;
   if (!G.kidFood[foodId]) delete G.kidFood[foodId];
+  G.kid.lastMagic = fx.id;
+  const dex = Array.isArray(G.kid.magicDex) ? G.kid.magicDex : (G.kid.magicDex = []);
+  const firstTime = !dex.includes(fx.id); if (firstTime) dex.push(fx.id);
+  const all = magicFxList().length, dexNote = firstTime ? `🔮 魔法藥水收集 ${dex.length} / ${all}（新的！）` : `🔮 魔法藥水收集 ${dex.length} / ${all}`;
+  if (fx.id !== 'small') {
+    delete G.kid.small;   // 原本變小的話先變回來，再換成新的魔法
+    G.kid.magic = { id: fx.id, until: Date.now() + SMALL_MS };
+    fufu.pose = null; fufu.act = null; fufu.ride = null;
+    Sound.play('magic'); fufuBurst('✨'); fufuBurst(fx.icon);
+    fufuSay(fx.say, 3200);
+    try { showcase(el('div', 'magic-pic', fx.icon), `是「${fx.name}」！`, `${fx.desc}・10 分鐘後、或睡一覺就沒了`, { head: dexNote }); } catch (e) {}
+    toast(`${fx.icon} ${fx.name}：${fx.desc}`);
+    saveGame();
+    return true;
+  }
+  delete G.kid.magic;
+  setTimeout(() => toast(`🧪 是「變小藥水」！${dexNote}`), 1600);
   const baby = !!kidSmall() || kidStage().id === 'kinder';
   const fromLook = kidSmall() ? 'kinder' : kidStage().id;   // 變小之前的樣子（大圖左邊）
   G.kid.small = { until: Date.now() + SMALL_MS, baby };
@@ -7792,9 +7850,9 @@ function kidDrinkPotion(foodId) {
   return true;
 }
 function kidUnshrink(why) {
-  if (!G.kid.small) return;
-  delete G.kid.small;
-  G.kid.backAt = Date.now(); G.kid.backSaid = {}; // 接下來遇到的人：說「變回來了！」
+  if (!G.kid.small && !G.kid.magic) return;
+  if (G.kid.small) { G.kid.backAt = Date.now(); G.kid.backSaid = {}; } // 接下來遇到的人：說「變回來了！」
+  delete G.kid.small; delete G.kid.magic;
   if (fufu.pose && fufu.pose.type === 'sit') fufu.pose = null;
   fufuSay(why === 'sleep' ? '睡飽了…咦？我變回來了！' : pickLine('kidBack'), 3000);
   fufuBurst('✨');
@@ -7837,7 +7895,8 @@ function petDrinkPotion(foodId, p) {
 // 每秒檢查：藥水時間到了就變回來
 function smallTick() {
   const now = Date.now();
-  if (G.kid.small && !(G.kid.small.until > now)) kidUnshrink('time');
+  if ((G.kid.small && !(G.kid.small.until > now)) || (G.kid.magic && !(G.kid.magic.until > now))) kidUnshrink('time');
+  if (typeof magicTick === 'function') magicTick();   // ⭐💗 星星、愛心藥水：一直冒出來
   G.pets.forEach((p, i) => {
     if (!p.small || p.small > now) return;
     delete p.small;
@@ -14207,7 +14266,7 @@ function tabShop(body) {
   if (shopKind === 'food' || (shopKind === 'all' && shopTheme === 'all')) {
     body.appendChild(h3(`${charName()}的食物`));
     body.appendChild(foodShopGrid(KID_FOODS.filter(f => !f.season && !f.placeOnly), G.kidFood, buyKidFood,
-      food => food.potion ? '變小 10 分鐘' : food.grow ? '💪 健康長大' : `飽足+${food.hunger}`));
+      food => food.potion ? '隨機魔法 10 分鐘' : food.grow ? '💪 健康長大' : `飽足+${food.hunger}`));
     body.appendChild(h3(`寵物食物（${charName()}也可以吃）`));
     body.appendChild(foodShopGrid(FOODS, G.food, buyFood, food => food.potion ? '寵物變回寶寶 10 分鐘' : `飽足+${food.hunger}`));
     if (shopKind === 'food') return;
@@ -20242,6 +20301,27 @@ function drawActLimb(ctx, key, t) {
   } else if (key === 'tkdpose') {   // 一手往前、一手收在腰邊的準備姿勢
     line(6, -29, 19, -27, 3.6, o.top.color); fist(20, -27);
   }
+}
+/* 🔮 魔法藥水的小效果：貓耳朵和尾巴、星星和愛心一直冒出來 */
+function drawCatBits(ctx, t, part) {
+  const ks = KID_STAGE_BY_ID[kidLookStage()] || { body: 1, head: 1 }, dy = -33 * (ks.body - 1), hk = ks.head;
+  const hy = y => -40 + (y + 40) * hk + dy;   // 頭上的座標（跟著長大的頭大小、位置）
+  const c = hairOf({}).c;
+  if (part === 'ears') {
+    [-1, 1].forEach(sd => { const wig = Math.sin(t * 3 + sd) * .6;
+      ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(sd * 4 * hk, hy(-57)); ctx.lineTo(sd * (11 + wig) * hk, hy(-66)); ctx.lineTo(sd * 12 * hk, hy(-53)); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#ffb3c7'; ctx.beginPath(); ctx.moveTo(sd * 6.5 * hk, hy(-57)); ctx.lineTo(sd * (10.5 + wig) * hk, hy(-63)); ctx.lineTo(sd * 10.5 * hk, hy(-55)); ctx.closePath(); ctx.fill(); });
+  } else {
+    const sw = Math.sin(t * 3) * 4;
+    ctx.strokeStyle = c; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-7, -16); ctx.quadraticCurveTo(-18, -14 + sw, -16, -28 + sw); ctx.stroke();
+  }
+}
+function magicTick() {
+  const mg = kidMagic(); if (!mg) return;
+  if (mg === 'star') { fufuBurst(Math.random() < .5 ? '⭐' : '✨'); }
+  else if (mg === 'heart') { fufuBurst('💗'); if (Math.random() < .3) try { if (!isEgg() && !pet.sleep) { pet.happyUntil = performance.now() + 900; pet.squishV = -5; } } catch (e) {} }
+  else if (mg === 'fast' && fufu.path.length) fufuBurst('💨');
 }
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
