@@ -2761,9 +2761,9 @@ const HOSTS = {
   grandma: { id: 'grandma', name: '山羊阿婆', short: '阿婆', body: '#f5f1e6', edge: '#cfc6b0', belly: '#ffffff', inner: '#d8c7a0', ears: 'curl', acc: 'glasses', accColor: '#8a5a33' },
   // 學校的老師：貓頭鷹（耳朵用羽毛簇），戴眼鏡
   // 圖書館的館員：貓咪，圍藍色圍巾
-  // 跆拳道館的教練：老虎，繫黑色腰帶；游泳池的教練：海獺，戴蛙鏡
-  tkd: { id: 'tkd', name: '老虎教練', short: '虎教練', body: '#f39a4c', edge: '#c9722b', belly: '#fff1dd', inner: '#fff1dd', ears: 'round', acc: 'scarf', accColor: '#26232a' },
-  swim: { id: 'swim', name: '海獺教練', short: '獺教練', body: '#9b7653', edge: '#6e5238', belly: '#ecd9c2', inner: '#6e5238', ears: 'round', acc: 'glasses', accColor: '#3fa9f5' },
+  // 跆拳道館的教練：熊熊，繫黑色腰帶；游泳池的教練：鴨鴨（家長選的）
+  tkd: { id: 'tkd', name: '熊熊教練', short: '熊教練', body: '#8a5a33', edge: '#6b4428', belly: '#e8cfa9', inner: '#6b4428', ears: 'round', acc: 'scarf', accColor: '#26232a' },
+  swim: { id: 'swim', name: '鴨鴨教練', short: '鴨教練', body: '#ffe066', edge: '#e0b630', belly: '#fff6c8', inner: '#e0b630', ears: 'tuft', acc: 'bill', accColor: '#ff9a3c' },
   librarian: { id: 'librarian', name: '貓咪館員', short: '館員', body: '#d9cfc4', edge: '#a8998a', belly: '#fff8f0', inner: '#ffb3c7', ears: 'pointy', acc: 'scarf', accColor: '#3f8ee0' },
   // 公園的園長：柴犬，戴綠色帽子
   ranger: { id: 'ranger', name: '柴犬園長', short: '園長', body: '#e8a25e', edge: '#b9763a', belly: '#fff4e6', inner: '#fff4e6', ears: 'pointy', acc: 'hat', accColor: '#4f9150' },
@@ -2828,13 +2828,13 @@ const PLACES = {
   ] },
   /* 🎡 遊樂園（家長選的新地方）：旋轉木馬、摩天輪可以坐，棉花糖車、氣球攤，主人是兔兔姊姊 */
   /* 🥋 跆拳道館、🏊 游泳池（小朋友想要的新地方）：進去自動換上道服／泳衣，出來換回原本的衣服 */
-  dojo: { name: '跆拳道館', host: 'tkd', emoji: '🥋', desc: '踢板、跟著做動作、考腰帶，老虎教練等你！', rooms: [
+  dojo: { name: '跆拳道館', host: 'tkd', emoji: '🥋', desc: '踢板、跟著做動作、考腰帶，熊熊教練等你！', rooms: [
     { name: '跆拳道館', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_tkdmat', items: [
       ['tkd_sandbag', 0, 0], ['tkd_sandbag', 2, 0], ['tkd_target', 5, 0], ['tkd_target', 7, 0], ['tkd_boards', 9, 0],
       ['tkd_bench', 0, 3, 1], ['tkd_boards', 9, 8], ['tkd_bench', 0, 7, 1]
     ], wallItems: [['tkd_mirror', 'R', 3], ['tkd_banner', 'R', 0], ['tkd_belts', 'L', 3], ['tkd_banner', 'L', 7]] }
   ] },
-  pool: { name: '游泳池', host: 'swim', emoji: '🏊', desc: '打水比賽、潛水撿寶、跳水，海獺教練陪你玩水！', rooms: [
+  pool: { name: '游泳池', host: 'swim', emoji: '🏊', desc: '打水比賽、潛水撿寶、跳水，鴨鴨教練陪你玩水！', rooms: [
     { name: '游泳池', w: 10, d: 10, wall: 'wp_balcony', floor: 'fl_pooldeck', items: [
       ['swim_pool', 2, 2], ['dive_board', 4, 0], ['lifeguard_chair', 9, 2], ['pool_shower', 0, 0], ['towel_rack2', 0, 8],
       ['beach_umbrella', 8, 8], ['float_ring', 6, 7], ['beach_umbrella', 0, 4]
@@ -4465,7 +4465,7 @@ const NEWS = [
     ['👻', '每天有一隻小幽靈躲在家裡的某個房間，找到點一下拿 3 顆糖果'],
     ['🎉', '房間擺 3 件萬聖節家具，點小可愛選「萬聖節派對」，朋友們都來跳舞'],
     ['🍬', '派對結束每天第一次送 4 顆糖果，可以送給來玩的動物朋友'],
-    ['🥋', '小島上多了跆拳道館和游泳池！道館：踢板、跟著做動作、考腰帶（白→黃→藍→藍紅→紅→黑）；泳池：打水比賽、潛水撿寶、跳水。進去會自動換上道服或泳衣'],
+    ['🥋', '小島上多了跆拳道館（熊熊教練）和游泳池（鴨鴨教練，在旁邊的小島，走木橋過去）！第一次去會送道服、泳衣，在家也能穿。道館：踢板、跟著做動作、考腰帶（白→黃→藍→藍紅→紅→黑）；泳池：打水比賽、潛水撿寶、跳水。進去會自動換上道服或泳衣'],
     ['🗣️', '語音可以換成台灣腔：「設定 → 🔊 語音」選有 ⭐ 的聲音；電腦沒有的話，裡面有教怎麼加裝（用 Edge 瀏覽器最簡單）'],
     ['🧰', '小島左下角有三個道具：🎣 釣竿（點海邊或池塘，看到❗就點）、🦋 網子（點蝴蝶）、⛏️ 鏟子（拿著點草地挖寶）；搖樹小心蜜蜂！'],
     ['🌤️', '小島會跟著時間變：早上暖暖的、傍晚橘橘的、晚上路燈和窗戶會亮、有星星；島上每天有 5 枚金幣走過去就撿；走到池塘邊可以釣魚；多了兔子、松鼠、小雞、蝴蝶和騎腳踏車的朋友'],
@@ -5239,6 +5239,7 @@ function currentOutfit() {
     return o;
   }
   OUTFIT_SLOTS.forEach(({ key }) => { o[key] = CLOTHES_BY_ID[G.outfit[key]] || CLOTHES_BY_ID[DEFAULT_OUTFIT[key]]; });
+  if (o.top && o.top.style === 'dobok' && typeof tkdBeltColors === 'function') o.top = Object.assign({}, o.top, { belt: tkdBeltColors() });   // 在家穿道服也綁著她考到的腰帶
   return o;
 }
 function ownsClothes(id) { return G.wardrobe.includes(id); }
@@ -10452,6 +10453,9 @@ function drawNeighbor(ctx, n, look) {
     ctx.lineWidth = 1;
     [-4.5, 4.5].forEach(ex => { ctx.beginPath(); ctx.arc(ex + fx, -11, 3.2, 0, Math.PI * 2); ctx.stroke(); });
     ctx.beginPath(); ctx.moveTo(-1.3 + fx, -11); ctx.lineTo(1.3 + fx, -11); ctx.stroke();
+  } else if (n.acc === 'bill') { // 鴨嘴（鴨鴨教練）
+    ctx.beginPath(); ctx.ellipse(fx * 1.2, -4.5, 8, 3.6, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(150,80,20,.6)'; ctx.lineWidth = .8; ctx.beginPath(); ctx.moveTo(-7 + fx * 1.2, -4.5); ctx.lineTo(7 + fx * 1.2, -4.5); ctx.stroke();
   } else if (n.acc === 'hat') { // 小帽子
     ctx.beginPath(); ctx.ellipse(0, -19.5, 11, 2.6, 0, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.ellipse(0, -21, 7, 5.5, 0, Math.PI, 0); ctx.fill();
@@ -11474,6 +11478,9 @@ function travelTo(place) {
 }
 function travelArrive(place) {
   G.away = { place, idx: 0 };
+  // 🥋🏊 第一次去：教練免費送一套，收進衣櫃（在家裡也可以穿）
+  const gift = place === 'dojo' ? ['dobok', 'dobok_pants', 'barefoot'] : place === 'pool' ? ['swimsuit', 'swim_bottom', 'swim_cap'] : null;
+  if (gift && gift.some(id => !G.wardrobe.includes(id))) { gift.forEach(id => { if (!G.wardrobe.includes(id)) G.wardrobe.push(id); }); setTimeout(() => toast(place === 'dojo' ? '🥋 熊熊教練送你一套道服！在「換裝」也找得到' : '🏊 鴨鴨教練送你一套泳衣！在「換裝」也找得到'), 1800); }
   if (typeof dailyHit === 'function') try { dailyHit('visit'); } catch (e) {}
   themeOnTravel(place);
   host.n = null; // 讓 hostTick 重新迎接
@@ -14725,7 +14732,7 @@ function tabDress(body) {
   OUTFIT_SLOTS.forEach(slot => {
     body.appendChild(h3(slot.name));
     const grid = el('div', 'grid');
-    CLOTHES.concat(PRIZE_CLOTHES.filter(c => ownsClothes(c.id))).filter(c => c.slot === slot.key).forEach(item => {
+    CLOTHES.concat(PRIZE_CLOTHES.filter(c => ownsClothes(c.id)), PLACE_CLOTHES.filter(c => ownsClothes(c.id))).filter(c => c.slot === slot.key).forEach(item => {
       const has = ownsClothes(item.id), wearing = G.outfit[slot.key] === item.id;
       if (sellMode) {
         if (!has) return; // 賣東西時只列出自己有的
@@ -18578,7 +18585,7 @@ const ISL_BLD = [   // 房子：x, y 是左上角的格子，w×h 格；門在�
   { id: 'grandma', x: 37, y: 22, w: 4, h: 3 },
   { id: 'amusement', x: 23, y: 26, w: 6, h: 3 },
   { id: 'dojo', x: 27, y: 7, w: 4, h: 3 },
-  { id: 'pool', x: 12, y: 27, w: 4, h: 2 }
+  { id: 'pool', x: 45, y: 33, w: 4, h: 2, islet: true }
 ];
 const ISL_FRIEND_SPOTS = [[17, 27], [32, 27], [16, 17], [34, 17]];   // 朋友的家（最多 4 棟），3×2
 const ISL_PUMPKINS = [[22, 17], [30, 20], [20, 22], [31, 16], [26, 24]];   // 萬聖節才有的南瓜燈（點了有小驚喜）
@@ -18613,6 +18620,7 @@ function islCoinSpots(m) {   // 今天的金幣在哪（同一天打開幾次都
   }
   return out.slice(0, Math.max(0, ISL_COIN_MAX - st.n));
 }
+const ISL_ISLET = { cx: 47, cy: 34, r: 3.6, to: [39, 29] };   // 游泳池小島：圓心、半徑、木橋接到主島的哪裡
 const ISL_POND = { x: 31, y: 24, w: 4, h: 3 };
 const ISL_HUB = [26, 19];
 const ISL_STYLE = {   // 牆、屋頂顏色
@@ -18641,6 +18649,12 @@ function islMap(nFriends) {
       beach[y].push(false); block[y].push(false); path[y].push(false); tree[y].push(false); flower[y].push(false);
     }
   }
+  /* 🏝️ 游泳池的小島（家長：戶外，做成一個小島）：主島東南邊海上的圓圓小島，一座木橋連過去 */
+  const bridge = land.map(r => r.map(() => false));
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (Math.hypot(x - ISL_ISLET.cx, y - ISL_ISLET.cy) <= ISL_ISLET.r) land[y][x] = true;
+  { let [x0, y0] = [ISL_ISLET.cx, ISL_ISLET.cy], [x1, y1] = ISL_ISLET.to; const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) * 2;
+    let px = null, py = null; const put = (x, y) => { if (!land[y][x]) { land[y][x] = true; bridge[y][x] = true; } };
+    for (let i = 0; i <= n; i++) { const x = Math.round(x0 + (x1 - x0) * i / n), y = Math.round(y0 + (y1 - y0) * i / n); if (px !== null && px !== x && py !== y) put(x, py); put(x, y); px = x; py = y; } }   // 斜的地方多補一格，橋才走得過去（只能上下左右走）
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     if (!land[y][x]) continue;
     for (let j = -2; j <= 2 && !beach[y][x]; j++) for (let i = -2; i <= 2; i++) { const xx = x + i, yy = y + j; if (xx < 0 || yy < 0 || xx >= W || yy >= H || !land[yy][xx]) { beach[y][x] = true; break; } }
@@ -18649,7 +18663,12 @@ function islMap(nFriends) {
   blds.forEach(b => { for (let y = b.y; y < b.y + b.h; y++) for (let x = b.x; x < b.x + b.w; x++) block[y][x] = true; });
   for (let y = ISL_POND.y; y < ISL_POND.y + ISL_POND.h; y++) for (let x = ISL_POND.x; x < ISL_POND.x + ISL_POND.w; x++) block[y][x] = true;
   const mark = (x, y) => { if (y >= 0 && y < H && x >= 0 && x < W) path[y][x] = true; };
-  blds.forEach(b => {   // 從門口走到廣場：先上下、再左右
+  blds.forEach(b => {   // 從門口走到廣場：先上下、再左右（小島上的：沿著木橋接到主島，再接到遊樂園門口那條路）
+    if (b.islet) {
+      const [x1, y1] = ISL_ISLET.to; for (let x = x1; x >= 26; x--) mark(x, y1);
+      const [dx0, dy0] = b.door; for (let x = Math.min(dx0, ISL_ISLET.cx); x <= Math.max(dx0, ISL_ISLET.cx); x++) mark(x, dy0);
+      return;
+    }
     const [dx, dy] = b.door, [hx, hy] = ISL_HUB;
     for (let y = Math.min(dy, hy); y <= Math.max(dy, hy); y++) mark(dx, y);
     for (let x = Math.min(dx, hx); x <= Math.max(dx, hx); x++) mark(x, hy);
@@ -18666,7 +18685,7 @@ function islMap(nFriends) {
   }
   const shells = [];   // 沙灘上的貝殼（點了可以撿）
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (land[y][x] && beach[y][x] && !block[y][x] && !path[y][x] && islHash(x, y, 11) > .955) shells.push({ x, y, id: shells.length });
-  islMapCache = { nf: nFriends, W, H, land, beach, block, path, tree, flower, blds, shells };
+  islMapCache = { nf: nFriends, W, H, land, beach, block, path, tree, flower, blds, shells, bridge };
   return islMapCache;
 }
 const islPass = (m, x, y) => x >= 0 && y >= 0 && x < m.W && y < m.H && m.land[y][x] && !m.block[y][x];
@@ -18975,7 +18994,7 @@ function islDraw(now) {
   // 地面：海岸、草地、路的邊都磨圓（凸角切圓、凹角補圓）
   const isLand = (x, y) => y >= 0 && y < m.H && x >= 0 && x < m.W && m.land[y][x];
   const isGrass = (x, y) => isLand(x, y) && !m.beach[y][x];
-  const isPath = (x, y) => isLand(x, y) && m.path[y][x];
+  const isPath = (x, y) => isLand(x, y) && m.path[y][x] && !(m.bridge && m.bridge[y][x]);
   const beachC = (x, y) => islHash(x, y, 1) < .5 ? '#f7e6b4' : '#f3dfa6', grassC = (x, y) => islHash(x, y, 1) < .5 ? '#a4da7c' : '#9ed477';
   const pathC = (x, y) => Math.hypot(x - ISL_HUB[0], y - ISL_HUB[1]) <= 2.4 ? '#e4dac8' : '#ecd5a0';
   const layer = (pred, color) => {
@@ -18987,6 +19006,12 @@ function islDraw(now) {
     }
   };
   layer(isLand, beachC); layer(isGrass, grassC); layer(isPath, pathC);
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (m.bridge && m.bridge[y][x]) {   // 🌉 木橋
+    ctx.fillStyle = '#6ec2e6'; ctx.fillRect(x * T, y * T, T + 1, T + 1);
+    ctx.fillStyle = '#c9925a'; ctx.fillRect(x * T + 2, y * T + 2, T - 3, T - 3);
+    ctx.strokeStyle = '#9a6b3f'; ctx.lineWidth = 1.5; for (let i = 1; i < 4; i++) { ctx.beginPath(); ctx.moveTo(x * T + 2, y * T + i * T / 4); ctx.lineTo(x * T + T - 1, y * T + i * T / 4); ctx.stroke(); }
+    ctx.fillStyle = '#8a5a33'; ctx.fillRect(x * T, y * T, 4, 4); ctx.fillRect(x * T + T - 4, y * T + T - 4, 4, 4);
+  }
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
     if (!m.land[y][x]) continue;
     const h = islHash(x, y, 1);

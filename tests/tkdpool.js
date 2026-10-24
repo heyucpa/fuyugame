@@ -8,10 +8,11 @@ const { chromium } = require('playwright');
     const out={}; G.guide='done'; $('#modal').hidden=true; G.openGift=true; G.gameBonusDay=today(); const wait=ms=>new Promise(r=>setTimeout(r,ms)); const realSC=showcase; showcase=()=>{};
     out.places = ['dojo','pool'].every(k=>PLACES[k] && HOSTS[PLACES[k].host]);
     out.furnOK = ['dojo','pool'].every(k=>PLACES[k].rooms[0].items.every(it=>FURN_BY_ID[it.id]) && PLACES[k].rooms[0].wallItems.every(it=>FURN_BY_ID[it.id]));
+    G.wardrobe = G.wardrobe.filter(id=>!PLACE_CLOTHES.some(c=>c.id===id));
     const keepOutfit = JSON.stringify(G.outfit);
     // 進道館：道服＋腰帶顏色、出來換回
     travelArrive('dojo'); await wait(100); let o=currentOutfit(); out.dojoOutfit=[o.top.id,o.bottom.id,o.shoes.id,JSON.stringify(o.top.belt)];
-    out.ownOutfitUntouched = JSON.stringify(G.outfit)===keepOutfit;
+    out.ownOutfitUntouched = JSON.stringify(G.outfit)===keepOutfit; out.gotDobok = ['dobok','dobok_pants','barefoot'].every(id=>G.wardrobe.includes(id)); out.coaches = [HOSTS.tkd.name, HOSTS.swim.name];
     // 主人選單
     host.n = HOSTS.tkd; out.menu = hostMenuEntries().map(x=>x[0]).filter(t=>/踢板|動作|腰帶/.test(t));
     // 考腰帶：沒練習不能考
@@ -49,14 +50,16 @@ const { chromium } = require('playwright');
     closeGameWindow(); openJumpDive(); for (let i=0;i<3;i++){ await wait(60); const z=meterRound.test.zone(); meterRound.test.setPos(z[0]+z[1]/2); meterRound.test.hit(); await wait(1550); } out.jump = document.querySelector('.game-status').textContent;
     closeGameWindow(); draw();
     // 回家：衣服換回
-    homeArrive(); out.backHome = JSON.stringify(currentOutfit().top.id)===JSON.stringify(CLOTHES_BY_ID[G.outfit.top].id);
+    out.gotSwim = ['swimsuit','swim_bottom','swim_cap'].every(id=>G.wardrobe.includes(id));
+    homeArrive(); G.outfit.top='dobok'; G.tkd={belt:2,prac:0}; out.homeDobokBelt = JSON.stringify(currentOutfit().top.belt); openTab('dress'); out.dressTab = /跆拳道服/.test($('#tabBody').innerText) && /泳衣/.test($('#tabBody').innerText); G.outfit=JSON.parse(keepOutfit);
+    out.backHome = JSON.stringify(currentOutfit().top.id)===JSON.stringify(CLOTHES_BY_ID[G.outfit.top].id);
     // 小島上有兩棟新房子
-    islMapCache=null; const m=islMap(0); out.islBld = m.blds.filter(b=>b.id==='dojo'||b.id==='pool').map(b=>b.id+'@'+b.door.join(','));
+    islMapCache=null; const m=islMap(0); out.islBld = m.blds.filter(b=>b.id==='dojo'||b.id==='pool').map(b=>b.id+'@'+b.door.join(',')); const hd=m.blds[0].door, pd=m.blds.find(b=>b.id==='pool').door; out.walkToPool = !!islFindPath(m, hd[0], hd[1], (x,y)=>x===pd[0]&&y===pd[1]); out.bridgeTiles = m.bridge.flat().filter(Boolean).length;
     showcase=realSC; return out; });
   console.log(JSON.stringify(r,null,0), errs);
   // 截圖
   await p.evaluate(()=>{ $('#modal').hidden=true; travelArrive('dojo'); G.tkd={belt:3,prac:0}; fufu.x=4.5; fufu.y=5.5; }); await p.waitForTimeout(900); await p.screenshot({path:'/tmp/dojo.png', clip:{x:320,y:50,width:780,height:760}});
   await p.evaluate(()=>{ $('#modal').hidden=true; travelArrive('pool'); }); await p.waitForTimeout(500); await p.evaluate(()=>{ const sp=curRoom().items.find(i=>i.id==='swim_pool'); fufu.x=sp.x+2.5; fufu.y=sp.y+2.5; fufu.path=[]; }); await p.waitForTimeout(500); await p.screenshot({path:'/tmp/pool.png', clip:{x:320,y:50,width:780,height:760}});
-  await p.evaluate(()=>{ homeArrive(); $('#modal').hidden=true; SEASON_TODAY=[6,1]; ISL_HOUR_TEST=12; openIsland(); isl.x=29.5; isl.y=12; isl.cam.x=22; isl.cam.y=19; isl.skipDoor='x'; }); await p.waitForTimeout(700); await p.screenshot({path:'/tmp/isl_new.png', clip:{x:320,y:50,width:780,height:760}});
+  await p.evaluate(()=>{ homeArrive(); $('#modal').hidden=true; SEASON_TODAY=[6,1]; ISL_HOUR_TEST=12; openIsland(); isl.x=41.5; isl.y=30.5; isl.cam.x=42; isl.cam.y=30; isl.skipDoor='x'; }); await p.waitForTimeout(700); await p.screenshot({path:'/tmp/isl_new.png', clip:{x:320,y:50,width:780,height:760}});
   await b.close();
 })();

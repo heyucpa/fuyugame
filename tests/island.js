@@ -7,7 +7,7 @@ const { chromium } = require('playwright');
   await p.goto('file://' + (process.env.HOUSE_DIR || '/home/user/fuyugame') + '/house.html'); await p.waitForTimeout(1500); try{await p.getByText('跳過').click({timeout:1500});}catch(e){} await p.waitForTimeout(1000);
   const geo = await p.evaluate(()=>{
     const out=[]; const m=islMap(4);
-    m.blds.forEach(bd=>{ for(let y=bd.y-1;y<=bd.y+bd.h;y++) for(let x=bd.x-1;x<bd.x+bd.w+1;x++){ if(!m.land[y]||!m.land[y][x]||m.beach[y][x]) out.push(bd.id+' 在水邊或水裡 '+x+','+y); } if(!islPass(m,bd.door[0],bd.door[1])) out.push(bd.id+' 門口不能站'); });
+    m.blds.forEach(bd=>{ for(let y=bd.y-1;y<=bd.y+bd.h;y++) for(let x=bd.x-1;x<bd.x+bd.w+1;x++){ if(!m.land[y]||!m.land[y][x]||(m.beach[y][x]&&!bd.islet)) out.push(bd.id+' 在水邊或水裡 '+x+','+y); } if(!islPass(m,bd.door[0],bd.door[1])) out.push(bd.id+' 門口不能站'); });
     for(let i=0;i<m.blds.length;i++) for(let j=i+1;j<m.blds.length;j++){ const a=m.blds[i],c=m.blds[j]; if(a.x<c.x+c.w+1&&c.x<a.x+a.w+1&&a.y<c.y+c.h+1&&c.y<a.y+a.h+1) out.push('房子太近 '+a.id+'/'+c.id); }
     const home=m.blds[0]; const reach=new Set(); const q=[[home.door[0],home.door[1]]]; reach.add(q[0].join());
     for(let qi=0;qi<q.length;qi++){ const [x,y]=q[qi]; [[1,0],[-1,0],[0,1],[0,-1]].forEach(([a,c])=>{ const nx=x+a,ny=y+c; if(islPass(m,nx,ny)&&!reach.has(nx+','+ny)){ reach.add(nx+','+ny); q.push([nx,ny]); } }); }
