@@ -1700,7 +1700,7 @@ const PLACE_FLOORS = [
   { id: 'fl_lib', name: '圖書館地板', pattern: 'check', a: '#efe6cf', b: '#e9dfc5' },
   { id: 'fl_deck', name: '陽台木平台', pattern: 'plank', a: '#c9a27a', b: '#b98f66' },
   { id: 'fl_amuse', name: '遊樂園廣場', pattern: 'check', a: '#ffe9d6', b: '#fff6e6' },
-  { id: 'fl_tkdmat', name: '跆拳道軟墊', pattern: 'check', a: '#3f6fd1', b: '#e0503a' },
+  { id: 'fl_tkdmat', name: '跆拳道軟墊', pattern: 'check', a: '#2f6fd1', b: '#ffd23f' },   // 照片：藍色、黃色的拼接軟墊
   { id: 'fl_pooldeck', name: '泳池磁磚', pattern: 'check', a: '#eef7fa', b: '#d9edf3' },
   { id: 'fl_track', name: '操場跑道', pattern: 'track', a: '#5fae6f', b: '#55a265', lane: ['#2f6fd1', '#4a9be8'], stripe: '#e98a9a', lanes: 4, laneW: .9 }
 ];
@@ -2070,9 +2070,12 @@ const PLACE_FURNITURE = [
   { id: 'tkd_belts', name: '腰帶架', theme: 'modern', w: 2, h: 36, z: 50, layer: 'wall', d: 1, parts: [],
     draw(ctx, W, H) { ctx.fillStyle = '#8a5a33'; ctx.fillRect(0, 2, W, 4);
       [['#fbfbf7'], ['#ffd23f'], ['#3f6fd1'], ['#3f6fd1', '#e0403a'], ['#e0403a'], ['#26232a']].forEach((cs, i) => { const x = 4 + i * (W - 8) / 6; ctx.fillStyle = cs[0]; ctx.fillRect(x, 6, 4, H - 8); if (cs[1]) { ctx.fillStyle = cs[1]; ctx.fillRect(x + 2, 6, 2, H - 8); } ctx.strokeStyle = 'rgba(0,0,0,.2)'; ctx.lineWidth = .8; ctx.strokeRect(x, 6, 4, H - 8); }); } },
+  { id: 'tkd_banner2', name: '道館標語', theme: 'modern', w: 2, h: 30, z: 60, layer: 'wall', d: 1, parts: [],
+    draw(ctx, W, H) { ctx.fillStyle = '#fffaf0'; ctx.fillRect(0, 0, W, H); ctx.strokeStyle = '#e0503a'; ctx.lineWidth = 2; ctx.strokeRect(1, 1, W - 2, H - 2);
+      ctx.fillStyle = '#c0392b'; ctx.font = '700 12px "Microsoft JhengHei","PingFang TC",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('服從・忍耐', W / 2, H / 2); } },
   { id: 'tkd_banner', name: '道館標語', theme: 'modern', w: 2, h: 30, z: 60, layer: 'wall', d: 1, parts: [],
     draw(ctx, W, H) { ctx.fillStyle = '#fffaf0'; ctx.fillRect(0, 0, W, H); ctx.strokeStyle = '#e0503a'; ctx.lineWidth = 2; ctx.strokeRect(1, 1, W - 2, H - 2);
-      ctx.fillStyle = '#26232a'; ctx.font = '700 12px "Microsoft JhengHei","PingFang TC",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('禮義・堅持', W / 2, H / 2); } },
+      ctx.fillStyle = '#c0392b'; ctx.font = '700 12px "Microsoft JhengHei","PingFang TC",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('崇禮・尚義', W / 2, H / 2); } },   // 照片裡道館牆上的標語
   // 🏊 游泳池（戶外）
   { id: 'swim_pool', name: '游泳池', theme: 'modern', w: 6, d: 4, layer: 'floor', parts: [
     { x: 0, y: 0, w: 6, d: 4, z: 0, h: 1, c: '#ffffff' }, { x: .25, y: .25, w: 5.5, d: 3.5, z: 1, h: 1, c: '#5cc4ec' },
@@ -2832,7 +2835,7 @@ const PLACES = {
     { name: '跆拳道館', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_tkdmat', items: [
       ['tkd_sandbag', 0, 0], ['tkd_sandbag', 2, 0], ['tkd_target', 5, 0], ['tkd_target', 7, 0], ['tkd_boards', 9, 0],
       ['tkd_bench', 0, 3, 1], ['tkd_boards', 9, 8], ['tkd_bench', 0, 7, 1]
-    ], wallItems: [['tkd_mirror', 'R', 3], ['tkd_banner', 'R', 0], ['tkd_belts', 'L', 3], ['tkd_banner', 'L', 7]] }
+    ], wallItems: [['tkd_mirror', 'R', 3], ['tkd_banner', 'R', 0], ['tkd_belts', 'L', 3], ['tkd_banner2', 'L', 7]] }
   ] },
   pool: { name: '游泳池', host: 'swim', emoji: '🏊', desc: '打水比賽、潛水撿寶、跳水，鴨鴨教練陪你玩水！', rooms: [
     { name: '游泳池', w: 10, d: 10, wall: 'wp_balcony', floor: 'fl_pooldeck', items: [
@@ -3182,6 +3185,7 @@ const CLOTHES_BY_ID = Object.fromEntries(CLOTHES.map(c => [c.id, c]));
 const PLACE_CLOTHES = [
   { id: 'dobok', slot: 'top', name: '跆拳道服', price: 0, style: 'dobok', color: '#fbfbf7', place: true },
   { id: 'dobok_pants', slot: 'bottom', name: '道服褲', price: 0, style: 'pants', color: '#f4f4ee', place: true },
+  { id: 'tkd_tee', slot: 'top', name: '道館T恤', price: 0, style: 'tee', color: '#2f8fe0', place: true },   // 照片：上課常穿藍色 T 恤＋白色道服褲
   { id: 'barefoot', slot: 'shoes', name: '光腳', price: 0, style: 'shoes', color: '#f6cfb0', place: true },
   { id: 'swimsuit', slot: 'top', name: '泳衣', price: 0, style: 'swim', color: '#ff6b9a', dots: '#ffffff', place: true },
   { id: 'swim_bottom', slot: 'bottom', name: '泳衣下身', price: 0, style: 'shorts', color: '#ff6b9a', place: true },
@@ -5233,9 +5237,9 @@ function normalizeSave(g) {
 function currentOutfit() {
   const o = {};
   if (G.away && (G.away.place === 'dojo' || G.away.place === 'pool')) {   // 道館穿道服（腰帶是她考到的那一條）、泳池穿泳衣
-    const ids = G.away.place === 'dojo' ? { head: 'head_none', top: 'dobok', bottom: 'dobok_pants', shoes: 'barefoot' } : { head: 'swim_cap', top: 'swimsuit', bottom: 'swim_bottom', shoes: 'barefoot' };
+    const ids = G.away.place === 'dojo' ? { head: 'head_none', top: G.outfit.top === 'tkd_tee' ? 'tkd_tee' : 'dobok', bottom: 'dobok_pants', shoes: 'barefoot' } : { head: 'swim_cap', top: 'swimsuit', bottom: 'swim_bottom', shoes: 'barefoot' };
     OUTFIT_SLOTS.forEach(({ key }) => { o[key] = CLOTHES_BY_ID[ids[key]]; });
-    if (G.away.place === 'dojo') o.top = Object.assign({}, o.top, { belt: tkdBeltColors() });
+    if (G.away.place === 'dojo' && o.top.style === 'dobok') o.top = Object.assign({}, o.top, { belt: tkdBeltColors() });
     return o;
   }
   OUTFIT_SLOTS.forEach(({ key }) => { o[key] = CLOTHES_BY_ID[G.outfit[key]] || CLOTHES_BY_ID[DEFAULT_OUTFIT[key]]; });
@@ -6489,7 +6493,8 @@ function drawTop(ctx, t, back) {
     if (!back) { ctx.fillRect(-7.5, -27, 4, 1.2); } // 胸前小標誌
   } else if (t.style === 'dobok') { // 🥋 道服：V 領、腰上綁著考到的那條腰帶（兩色的就一半一半），兩條帶尾垂下來
     const bc = t.belt || ['#fbfbf7'];
-    if (!back) { ctx.strokeStyle = '#d9d9d2'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(-6, -32); ctx.lineTo(0, -24); ctx.lineTo(6, -32); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, -24); ctx.lineTo(-3, -20); ctx.stroke(); }
+    if (!back) { ctx.strokeStyle = '#26232a'; ctx.lineWidth = 2.6; ctx.lineJoin = 'round'; ctx.beginPath(); ctx.moveTo(-6, -32.5); ctx.lineTo(0, -24); ctx.lineTo(6, -32.5); ctx.stroke(); }   // 照片：白道服、黑色 V 領
+    else { ctx.fillStyle = '#26232a'; ctx.fillRect(-6, -33, 12, 2); }
     ctx.fillStyle = bc[0]; ctx.fillRect(-10, -21, 20, 3); if (bc[1]) { ctx.fillStyle = bc[1]; ctx.fillRect(-10, -19.5, 20, 1.5); }
     ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = .6; ctx.strokeRect(-10, -21, 20, 3);
     if (!back) { [[-3, -1], [1, 1]].forEach(([x, k]) => { ctx.fillStyle = bc[0]; ctx.save(); ctx.translate(x, -18.5); ctx.rotate(k * .25); ctx.fillRect(0, 0, 2.2, 6); if (bc[1]) { ctx.fillStyle = bc[1]; ctx.fillRect(1.1, 0, 1.1, 6); } ctx.restore(); }); }
@@ -11479,7 +11484,7 @@ function travelTo(place) {
 function travelArrive(place) {
   G.away = { place, idx: 0 };
   // 🥋🏊 第一次去：教練免費送一套，收進衣櫃（在家裡也可以穿）
-  const gift = place === 'dojo' ? ['dobok', 'dobok_pants', 'barefoot'] : place === 'pool' ? ['swimsuit', 'swim_bottom', 'swim_cap'] : null;
+  const gift = place === 'dojo' ? ['dobok', 'dobok_pants', 'barefoot', 'tkd_tee'] : place === 'pool' ? ['swimsuit', 'swim_bottom', 'swim_cap'] : null;
   if (gift && gift.some(id => !G.wardrobe.includes(id))) { gift.forEach(id => { if (!G.wardrobe.includes(id)) G.wardrobe.push(id); }); setTimeout(() => toast(place === 'dojo' ? '🥋 熊熊教練送你一套道服！在「換裝」也找得到' : '🏊 鴨鴨教練送你一套泳衣！在「換裝」也找得到'), 1800); }
   if (typeof dailyHit === 'function') try { dailyHit('visit'); } catch (e) {}
   themeOnTravel(place);
