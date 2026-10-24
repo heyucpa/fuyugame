@@ -660,6 +660,8 @@ button.pass { font: inherit; }
 .tkd-move .tkd-e { font-size: 34px; } .tkd-move.lit { background: #ffe9b8; border-color: #e7a94a; transform: scale(1.08); }
 .tkd-beltpic { display: flex; justify-content: center; } .tkd-ladder { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin: 6px 0; }
 .tkd-step { font-size: 12px; padding: 3px 8px; border-radius: 999px; background: #eee6d6; color: #8a7a64; } .tkd-step.done { background: #d9f5df; color: #2f7d4a; } .tkd-step.on { background: #ffe9b8; color: #5a4630; font-weight: 800; }
+.spar-row { display: flex; gap: 12px; justify-content: center; margin: 8px 0; }
+.spar-row button { min-width: 120px; font-size: 20px; }
 .music-menu { position: fixed; z-index: 70; background: var(--panel, #fffaf0); border: 2px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
 .music-menu button { font: inherit; text-align: left; border: 2px solid var(--line); background: #fff; border-radius: 12px; padding: 8px 12px; min-height: 40px; font-size: 15px; font-weight: 700; cursor: pointer; }
 .music-menu .music-tog { text-align: center; background: #ffe9b8; border-color: #e7a94a; }
@@ -2057,11 +2059,11 @@ const PLACE_FURNITURE = [
   // 🥋 跆拳道館
   { id: 'tkd_sandbag', name: '沙包', theme: 'modern', w: 1, d: 1, parts: [
     { x: .2, y: .2, w: .6, d: .6, z: 0, h: 4, c: '#3a3842' }, { x: .46, y: .46, w: .08, d: .08, z: 4, h: 70, c: '#5a5a66' },
-    { x: .3, y: .5, w: .4, d: .08, z: 74, h: 4, c: '#5a5a66' }, { x: .3, y: .58, w: .4, d: .3, z: 24, h: 44, c: '#e0503a' }, { x: .3, y: .58, w: .4, d: .3, z: 60, h: 4, c: '#26232a' } ] },
+    { x: .3, y: .5, w: .4, d: .08, z: 74, h: 4, c: '#5a5a66' }, { x: .3, y: .58, w: .4, d: .3, z: 24, h: 44, c: '#e0503a', bag: 1 }, { x: .3, y: .58, w: .4, d: .3, z: 60, h: 4, c: '#26232a', bag: 1 } ] },
   { id: 'tkd_target', name: '踢靶架', theme: 'modern', w: 1, d: 1, parts: [
     { x: .3, y: .3, w: .4, d: .4, z: 0, h: 3, c: '#3a3842' }, { x: .46, y: .46, w: .08, d: .08, z: 3, h: 40, c: '#8e98a3' },
-    { k: 'ball', x: .5, y: .62, z: 44, r: 9, c: '#e0503a' }, { k: 'ball', x: .5, y: .66, z: 44, r: 5, c: '#ffffff' } ] },
-  { id: 'tkd_boards', name: '木板堆', theme: 'wood', w: 1, d: 1, parts: [0, 1, 2, 3].map(i => ({ x: .15, y: .25, w: .7, d: .5, z: i * 4, h: 3, c: i % 2 ? '#d9b27a' : '#e8c58f' })) },
+    { k: 'ball', x: .5, y: .62, z: 44, r: 9, c: '#e0503a', pad: 1 }, { k: 'ball', x: .5, y: .66, z: 44, r: 5, c: '#ffffff', pad: 1 } ] },
+  { id: 'tkd_boards', name: '木板堆', theme: 'wood', w: 1, d: 1, parts: [0, 1, 2, 3].map(i => ({ x: .15, y: .25, w: .7, d: .5, z: i * 4, h: 3, c: i % 2 ? '#d9b27a' : '#e8c58f', board: i })) },
   { id: 'tkd_bench', name: '長椅', theme: 'wood', w: 2, d: 1, parts: [
     { x: .1, y: .3, w: 1.8, d: .4, z: 14, h: 4, c: '#c98d5a' }, { x: .15, y: .35, w: .1, d: .3, z: 0, h: 14, c: '#8a5a33' }, { x: 1.75, y: .35, w: .1, d: .3, z: 0, h: 14, c: '#8a5a33' } ] },
   { id: 'tkd_mirror', name: '大鏡子', theme: 'modern', w: 3, h: 50, z: 30, layer: 'wall', d: 1, parts: [],
@@ -2081,11 +2083,11 @@ const PLACE_FURNITURE = [
     { x: 0, y: 0, w: 6, d: 4, z: 0, h: 1, c: '#ffffff' }, { x: .25, y: .25, w: 5.5, d: 3.5, z: 1, h: 1, c: '#5cc4ec' },
     { x: .25, y: 1.12, w: 5.5, d: .06, z: 2, h: .5, c: '#ff6b6b' }, { x: .25, y: 2.12, w: 5.5, d: .06, z: 2, h: .5, c: '#ffd23f' }, { x: .25, y: 3.0, w: 5.5, d: .06, z: 2, h: .5, c: '#ff6b6b' } ] },
   { id: 'dive_board', name: '跳水板', theme: 'modern', w: 1, d: 2, parts: [
-    { x: .2, y: 0, w: .6, d: .5, z: 0, h: 16, c: '#c0c7ce' }, { x: .3, y: 0, w: .4, d: 1.9, z: 16, h: 3, c: '#3fa9f5' } ] },
+    { x: .2, y: 0, w: .6, d: .5, z: 0, h: 16, c: '#c0c7ce' }, { x: .3, y: 0, w: .4, d: 1.9, z: 16, h: 3, c: '#3fa9f5', spring: 1 } ] },
   { id: 'lifeguard_chair', name: '救生員椅', theme: 'modern', w: 1, d: 1, parts: [
     { x: .15, y: .15, w: .1, d: .1, z: 0, h: 50, c: '#ffffff' }, { x: .75, y: .15, w: .1, d: .1, z: 0, h: 50, c: '#ffffff' }, { x: .15, y: .75, w: .1, d: .1, z: 0, h: 50, c: '#ffffff' }, { x: .75, y: .75, w: .1, d: .1, z: 0, h: 50, c: '#ffffff' },
-    { x: .1, y: .1, w: .8, d: .8, z: 50, h: 4, c: '#e0503a' }, { x: .1, y: .1, w: .8, d: .15, z: 54, h: 18, c: '#e0503a' }, { k: 'ball', x: .5, y: .5, z: 80, r: 10, c: '#ffd23f' } ] },
-  { id: 'float_ring', name: '游泳圈', theme: 'cute', w: 1, d: 1, layer: 'floor', parts: [
+    { x: .1, y: .1, w: .8, d: .8, z: 50, h: 4, c: '#e0503a' }, { x: .1, y: .1, w: .8, d: .15, z: 54, h: 18, c: '#e0503a' }, { k: 'ball', x: .5, y: .5, z: 80, r: 10, c: '#ffd23f', flag: 1 } ] },
+  { id: 'float_ring', name: '游泳圈', theme: 'cute', w: 1, d: 1, parts: [
     { k: 'ball', x: .5, y: .5, z: 2, r: 11, c: '#ff8fb3' }, { k: 'ball', x: .5, y: .5, z: 4, r: 5, c: '#5cc4ec' } ] },
   { id: 'pool_shower', name: '沖水區', theme: 'modern', w: 1, d: 1, parts: [
     { x: .1, y: .1, w: .8, d: .8, z: 0, h: 2, c: '#bcd7e0' }, { x: .45, y: .15, w: .1, d: .1, z: 2, h: 70, c: '#8e98a3' }, { x: .45, y: .15, w: .1, d: .4, z: 70, h: 3, c: '#8e98a3' }, { k: 'ball', x: .5, y: .55, z: 66, r: 5, c: '#c0c7ce' } ] },
@@ -2093,7 +2095,7 @@ const PLACE_FURNITURE = [
     { x: .15, y: .4, w: .1, d: .1, z: 0, h: 40, c: '#c98d5a' }, { x: .75, y: .4, w: .1, d: .1, z: 0, h: 40, c: '#c98d5a' }, { x: .15, y: .4, w: .7, d: .1, z: 38, h: 3, c: '#c98d5a' },
     { x: .2, y: .45, w: .25, d: .06, z: 18, h: 20, c: '#ff8fb3' }, { x: .55, y: .45, w: .25, d: .06, z: 18, h: 20, c: '#6bb6ff' } ] },
   { id: 'beach_umbrella', name: '遮陽傘', theme: 'cute', w: 1, d: 1, parts: [
-    { x: .46, y: .46, w: .08, d: .08, z: 0, h: 60, c: '#f4f4f0' }, { k: 'ball', x: .5, y: .5, z: 60, r: 18, c: '#ffd23f' }, { k: 'ball', x: .5, y: .5, z: 66, r: 10, c: '#ff6b6b' } ] },
+    { x: .46, y: .46, w: .08, d: .08, z: 0, h: 60, c: '#f4f4f0' }, { k: 'ball', x: .5, y: .5, z: 60, r: 18, c: '#ffd23f', umb: 0 }, { k: 'ball', x: .5, y: .5, z: 66, r: 10, c: '#ff6b6b', umb: 1 } ] },
   { id: 'comic_shelf', name: '漫畫櫃', theme: 'modern', w: 2, d: 1,
     parts: [{ x: 0, y: 0, w: 2, d: .6, z: 0, h: 96, c: '#6b4b35' }].concat(comicRow(0, 6), comicRow(0, 36), comicRow(0, 66)) },
   { id: 'comic_pile', name: '漫畫堆', theme: 'modern', w: 1, d: 1,
@@ -7159,7 +7161,7 @@ function itemLook(def, rot, it, parts) {
   const active = fufu.act && fufu.act.uid === it.uid ? fufu.act.key : null;
   if (active === 'coaster') parts = parts.filter(p => !p.car);   // 🎢 車廂跟著她跑了，車站上的那台先不畫
   const st = itemState[it.uid];
-  const alwaysMoving = def.id === 'fishtank' || def.id === 'pond'; // 池塘：魚一直游、小鴨子一直漂
+  const alwaysMoving = def.id === 'fishtank' || def.id === 'pond' || def.id === 'float_ring'; // 池塘：魚一直游、小鴨子一直漂
   if (def.id === 'planter') parts = parts.concat(gardenParts(it));   // 🌱 花盆：照長到哪裡畫芽、苗、花
   if (!active && !st && !alwaysMoving) return parts;
   const fire = st && st.fireUntil > now;
@@ -7228,6 +7230,7 @@ function itemLook(def, rot, it, parts) {
   }
   if (st && st.paint && def.id === 'easel') // 畫布上一筆一筆多出顏色
     for (let i = 0; i < st.paint; i++) extra.push({ x: .2 + (i * .37) % .5, y: .52, w: .14, d: .01, z: 28 + (i * 11) % 28, h: 6, c: SCREEN_COLORS[i % SCREEN_COLORS.length] });
+  if (typeof placeLook === 'function' && G.away) out = placeLook(def, rot, it, out, active, st, t, now, extra);   // 道館、泳池的東西動起來
   if (extra.length) out = sortBoxes(out.concat(rotateParts(extra, def, rot)).map(toBounds)).map(b => b.src);
   return out;
 }
@@ -7255,6 +7258,7 @@ function fufuStartAct(key, now, it, auto) {
   if (key === 'light') { st.lit = !st.lit; if (!st.lit) { fufu.path = []; fufu.act = { key, uid: it.uid, until: now + 2000, nextFx: now + 9e9, fxEvery: 9e9, n: 0 }; fufuSay('關燈囉～', 2200); Sound.play('click'); return; } }
   fufu.path = [];
   fufu.act = { key, uid: it.uid, start: now, until: now + 5500, nextFx: now + 300, fxEvery: a.sound === 'note' ? 380 : 1000, n: 0 };
+  if (a.start && !auto) try { a.start(it, now); } catch (e) {}   // 道館、泳池：做這件事時的小變化（套游泳圈、沖水…）
   if (RIDES[key]) { // 溜滑梯、盪鞦韆：真的爬上去、滑下來／坐上去擺
     fufu.ride = { key, it, def, start: now, dur: RIDES[key].dur, sfx: {} };
     fufu.act.until = now + RIDES[key].dur;
@@ -7296,7 +7300,7 @@ function fufuStartAct(key, now, it, auto) {
   else if (a.sound !== 'note') Sound.play('pickUp');
   if (a.tab) openTab(a.tab);
   if (a.open) setTimeout(() => { // 叔叔的電腦、阿婆的穀倉：打開那裡專屬的小遊戲
-    const fn = { brick: openBrickGame, mole: openMoleGame, race: openRaceGame, farm: openFarmGame, hay: () => openStackGame('hay'), quiz: openQuizGame, run: openRunGame, fish: openFishing, bfly: openButterflyGame, shelf: openShelfGame, story: openNextStorybook, passport: openPassport, storytime: () => openNextStorybook({ aloud: true }) }[a.open] || openFarmGame;
+    const fn = typeof a.open === 'function' ? a.open : { brick: openBrickGame, mole: openMoleGame, race: openRaceGame, farm: openFarmGame, hay: () => openStackGame('hay'), quiz: openQuizGame, run: openRunGame, fish: openFishing, bfly: openButterflyGame, shelf: openShelfGame, story: openNextStorybook, passport: openPassport, storytime: () => openNextStorybook({ aloud: true }) }[a.open] || openFarmGame;
     if ($('#modal').hidden && !(typeof resting !== 'undefined' && resting)) fn();
   }, 1300);
   if (a.game) setTimeout(() => { // 大型電玩：隨機開一個小遊戲
@@ -7615,8 +7619,10 @@ function fufuDraw(ctx) {
   ctx.scale(fufu.facing * k, breathe * k);
   if (inWater) { ctx.save(); ctx.beginPath(); ctx.rect(-40, -140, 80, 128); ctx.clip(); }   // 🏊 在泳池裡：腰以下在水裡（不畫）
   drawGirl(ctx, { t: fufu.t, walking, back: fufu.back && (walking || !!fufu.act), blink: fufuBlink(), outfit: currentOutfit(), prop, face: kidFace(), stage: kidLookStage(), dirty: kidDirty() });
+  if (fufu.act && !walking && typeof drawActLimb === 'function') drawActLimb(ctx, fufu.act.key, fufu.t);   // 🥋 出拳、踢腿、手刀
   if (inWater) ctx.restore();
   ctx.restore();
+  if (inWater && typeof swimRingOn === 'function' && swimRingOn()) { ctx.save(); ctx.translate(p.x, p.y - 12 * k); drawRingAt(ctx, 0, 0); ctx.restore(); }   // 🛟 套著游泳圈
   if (inWater) {   // 身邊的水波
     const r = 14 + Math.sin(fufu.t * 4) * 2;
     ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(p.x, p.y - 12 * k, r, r * .4, 0, 0, Math.PI * 2); ctx.stroke();
@@ -11072,6 +11078,7 @@ function hostMenuEntries() {
   if (host.n.id === 'tkd') {
     list.push(['🦵 踢板（看準時機）', openKickGame]);
     list.push(['👊 跟著做動作', openFormsGame]);
+    list.push(['🥋 跟朋友對練', openSparGame]);
     list.push([`🎖️ 考腰帶（現在：${tkdBeltName()}）`, openBeltExam]);
   }
   if (host.n.id === 'swim') {
@@ -19771,6 +19778,7 @@ function drawSwimmer(ctx, t, st) {
   // 身邊的水（淡淡的一圈）
   ctx.fillStyle = 'rgba(92,196,236,.35)'; ctx.beginPath(); ctx.ellipse(-2, 1, 30, 7, 0, 0, Math.PI * 2); ctx.fill();
   ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.ellipse(-2, 1, 30 + Math.sin(t * 4) * 2, 7, 0, 0, Math.PI * 2); ctx.stroke();
+  const ring = typeof swimRingOn === 'function' && swimRingOn();
   // 水面下的身體（泳衣）和腿
   ctx.globalAlpha = .6; ctx.fillStyle = suit; ctx.beginPath(); ctx.ellipse(-3, 2 + bob, 11, 4.2, 0, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
   if (st === 1) {   // 🐸 蛙式：頭在水面上一上一下，手往前伸再往兩邊撥，腿像青蛙一樣踢
@@ -19780,6 +19788,7 @@ function drawSwimmer(ctx, t, st) {
     ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.ellipse(-28, 2, 3 + kick * 5, 1.5 + kick * 2, 0, 0, Math.PI * 2); ctx.stroke();
     limb(5, 0, 9 + k * 13, -2 - (1 - k) * 6, .8); limb(5, 1, 9 + k * 13, 3 + (1 - k) * 5, .8);
     head(8, -5 - up + bob, 'front');
+    if (ring) drawRingAt(ctx, 2, 0);
   } else {   // 🏊 自由式（趴著、頭偶爾轉出來換氣）／ 仰式（躺著、臉朝上）：兩隻手輪流大圈圈划水，腳一直打水
     const back = st === 0, sp = back ? 6 : -5;
     limb(-16, 1, -27, 1 + Math.sin(t * 14) * 2.5, .45, 3); limb(-16, 2, -27, 2 - Math.sin(t * 14) * 2.5, .45, 3);
@@ -19789,6 +19798,7 @@ function drawSwimmer(ctx, t, st) {
     const breath = back && Math.sin(t * 2.5) > .55;   // 自由式：每划幾下轉頭出來換氣
     head(12, -1 + bob, back ? (breath ? 'side' : 'down') : 'up');
     arm(t * sp);
+    if (ring) drawRingAt(ctx, 0, 1);
   }
 }
 function beltPic(colors, w) {   // 一條腰帶的圖（大圖用）
@@ -20023,6 +20033,215 @@ function openJumpDive() {
     });
   };
   next();
+}
+/* 🥋 對練：跟動物朋友穿護具對練。
+   朋友頭上出現綠色「踢！」→ 按「踢」得 1 分；出現紅色「擋！」→ 按「擋」擋住（沒擋到朋友得 1 分）。
+   先拿到 5 分的贏。開始、結束都要敬禮。 */
+const SPAR_LEVELS = [{ name: '慢慢來', win: 1700, mul: 1 }, { name: '普通', win: 1150, mul: 2 }, { name: '比賽！', win: 800, mul: 3 }];
+const SPAR_GOAL = 5;
+function openSparGame() { const w = openGameWindow('🥋 對練', '朋友頭上出現綠色「踢！」就按「🦵 踢」；出現紅色「擋！」就按「🛡️ 擋」。先拿 5 分的贏！'); pickLevelRow(w, SPAR_LEVELS, L => `贏了 💰 ${120 * L.mul}`, L => playSpar(w, L)); }
+function playSpar(w, L) {
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const W = 340, H = 200, { g } = gameCanvas(w.stage, W, H);
+  const mates = NEIGHBORS.filter(Boolean), foe = mates[Math.floor(Math.random() * mates.length)];
+  const row = el('div', 'spar-row'), bKick = el('button', 'big', '🦵 踢'), bBlock = el('button', 'big', '🛡️ 擋');
+  row.append(bKick, bBlock); w.stage.appendChild(row); leaveButton(w);
+  let me = 0, them = 0, live = true, raf = 0, state = 'bow', t0 = performance.now(), cue = null, cueAt = 0, nextAt = 0;
+  let myAnim = null, foeAnim = null, msg = `跟${foe.short}對練！先敬禮～`, msgC = '#5a4636';
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', key); };
+  const say = (m, c) => { msg = m; msgC = c || '#5a4636'; };
+  const schedule = now => { cue = null; nextAt = now + 700 + Math.random() * 1100; };
+  const point = (mine, now) => {
+    if (mine) { me++; foeAnim = { k: 'ouch', at: now }; Sound.play('perfect'); say('踢中了！得 1 分！', '#2f9e44'); }
+    else { them++; myAnim = { k: 'ouch', at: now }; Sound.play('miss'); say(`被${foe.short}踢到了～`, '#d9480f'); }
+    if (me >= SPAR_GOAL || them >= SPAR_GOAL) { state = 'end'; t0 = now; setTimeout(finish, 1600); } else schedule(now);
+  };
+  const press = kind => {
+    if (!live || state !== 'fight') return;
+    const now = performance.now();
+    if (myAnim && now - myAnim.at < 300) return;
+    myAnim = { k: kind, at: now };
+    if (kind === 'kick') {
+      Sound.play('whoosh');
+      if (cue === 'open') point(true, now);
+      else if (cue === 'atk') { point(false, now); }
+      else say('還沒有空檔，等綠色「踢！」～');
+    } else {
+      if (cue === 'atk') { foeAnim = { k: 'kick', at: now }; Sound.play('knock'); say('擋住了！好厲害！', '#1971c2'); schedule(now); }
+      else say('朋友沒有要踢你喔～');
+    }
+  };
+  bKick.onclick = () => press('kick'); bBlock.onclick = () => press('block');
+  const key = e => { if (e.repeat) return; if (e.code === 'Space' || e.code === 'ArrowRight') { e.preventDefault(); press('kick'); } else if (e.code === 'ArrowLeft' || e.code === 'KeyB') { e.preventDefault(); press('block'); } };
+  document.addEventListener('keydown', key);
+  const finish = () => {
+    if (!live) return; gameCleanup(); gameCleanup = null;
+    const win = me >= SPAR_GOAL, bells = payReward(w, (win ? 120 : 40) * L.mul);
+    tkdPractice(); kidMoodUp(win ? 12 : 6);
+    w.status.textContent = `${win ? '🏆 你贏了！' : '💪 好可惜，下次再來！'} ${me} : ${them}　💰 +${fmt(bells)}（也算練習一次）`;
+    try { hostSay(win ? '踢得真好！' : '很有精神！多練習就會贏！', 2600); speak(win ? '你贏了！' : '好可惜，再加油！'); } catch (e) {}
+    Sound.play(win ? 'fanfare' : 'bad'); saveGame(); refreshTop();
+    gameButtons(w, openSparGame);
+  };
+  const T = () => performance.now() / 1000;
+  const mat = () => {
+    g.fillStyle = '#fff4e6'; g.fillRect(0, 0, W, H);
+    for (let i = 0; i < 9; i++) { g.fillStyle = i % 2 ? '#ffd23f' : '#2f6fd1'; g.fillRect(i * 40 - 10, 150, 40, 50); }
+    g.fillStyle = '#c0392b'; g.font = '700 13px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillText(`我 ${me}　:　${them} ${foe.short}`, W / 2, 20);
+    g.fillStyle = msgC; g.font = '700 14px "Microsoft JhengHei","PingFang TC",sans-serif'; g.fillText(msg, W / 2, 42);
+  };
+  const drawMe = now => {
+    const a = myAnim && now - myAnim.at < 450 ? myAnim : null, k = a ? Math.sin((now - a.at) / 450 * Math.PI) : 0;
+    const bow = state === 'bow' || state === 'end' ? Math.max(0, Math.sin(Math.min(1, (now - t0) / 1200) * Math.PI)) * .5 : 0;
+    g.save(); g.translate(115 + (a && a.k === 'ouch' ? -k * 10 : a && a.k === 'kick' ? k * 8 : 0), 160); g.scale(1.5, 1.5);
+    g.translate(0, -20); g.rotate(bow + (a && a.k === 'ouch' ? -k * .25 : 0)); g.translate(0, 20);
+    if (kidBaby()) drawBabyKid(g, { t: T() }); else drawGirl(g, { t: T(), blink: false, outfit: currentOutfit(), face: kidFace(), stage: kidLookStage() });
+    if (!kidBaby()) { g.globalAlpha = .9; g.fillStyle = '#e0403a'; g.beginPath(); g.roundRect(-8.5, -31, 17, 13, 3); g.fill(); g.globalAlpha = 1; }   // 紅色護具
+    if (a && a.k === 'kick') { g.strokeStyle = '#ffffff'; g.lineWidth = 4.6; g.lineCap = 'round'; g.beginPath(); g.moveTo(2, -12); g.lineTo(2 + k * 20, -14 - k * 12); g.stroke(); g.fillStyle = GIRL.skin; g.beginPath(); g.ellipse(4 + k * 20, -15 - k * 12, 3.4, 2, 0, 0, Math.PI * 2); g.fill(); }
+    if (a && a.k === 'block') { g.strokeStyle = GIRL.skin; g.lineWidth = 3.6; g.lineCap = 'round'; g.beginPath(); g.moveTo(6, -30); g.lineTo(13, -38); g.moveTo(6, -27); g.lineTo(14, -30); g.stroke(); }
+    g.restore();
+  };
+  const drawFoe = now => {
+    const a = foeAnim && now - foeAnim.at < 450 ? foeAnim : null, k = a ? Math.sin((now - foeAnim.at) / 450 * Math.PI) : 0;
+    const wind = cue === 'atk' ? Math.min(1, (now - cueAt) / 400) : 0;
+    const bow = state === 'bow' || state === 'end' ? Math.max(0, Math.sin(Math.min(1, (now - t0) / 1200) * Math.PI)) * .5 : 0;
+    g.save(); g.translate(230 + (a && a.k === 'ouch' ? k * 12 : 0) - wind * 6, 160); g.scale(-2.1, 2.1);
+    g.translate(0, -12); g.rotate(bow + (a && a.k === 'ouch' ? -k * .3 : 0) - wind * .15); g.translate(0, 12);
+    drawNeighbor(g, foe, { happy: state === 'end', blink: false, fx: 1.5, clean: 100 });
+    if (cue === 'atk' || (a && a.k === 'kick')) { const kk = a && a.k === 'kick' ? 1 : wind; g.strokeStyle = foe.body; g.lineWidth = 4; g.lineCap = 'round'; g.beginPath(); g.moveTo(2, -3); g.lineTo(2 + kk * 14, -6 - kk * 6); g.stroke(); }
+    g.restore();
+    if (cue) {   // 頭上的提示：綠色踢、紅色擋，外面一圈倒數
+      const left = Math.max(0, 1 - (now - cueAt) / L.win), cx = 230, cy = 74, c = cue === 'open' ? '#2f9e44' : '#e03131';
+      g.fillStyle = c; g.beginPath(); g.arc(cx, cy, 17, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = 'rgba(255,255,255,.9)'; g.lineWidth = 3; g.beginPath(); g.arc(cx, cy, 20, -Math.PI / 2, -Math.PI / 2 + left * Math.PI * 2); g.stroke();
+      g.fillStyle = '#ffffff'; g.font = '900 15px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(cue === 'open' ? '踢！' : '擋！', cx, cy + 1); g.textBaseline = 'alphabetic';
+    }
+  };
+  const tick = now => {
+    if (!live) return;
+    if (state === 'bow' && now - t0 > 1500) { state = 'fight'; say('開始！', '#5a4636'); schedule(now); }
+    if (state === 'fight') {
+      if (!cue && now > nextAt) { cue = Math.random() < .6 ? 'open' : 'atk'; cueAt = now; if (cue === 'atk') Sound.play('shake'); }
+      if (cue && now - cueAt > L.win) {
+        if (cue === 'atk') { foeAnim = { k: 'kick', at: now }; point(false, now); }
+        else { say('空檔沒了～再等下一次！'); schedule(now); }
+      }
+    }
+    if (state === 'end') cue = null;
+    mat(); drawMe(now); drawFoe(now);
+    raf = requestAnimationFrame(tick);
+  };
+  try { speak('敬禮！'); } catch (e) {}
+  raf = requestAnimationFrame(tick);
+  playSpar.test = { press, cue: () => cue, score: () => [me, them], state: () => state };
+}
+/* ===== 🥋🏊 道館、泳池裡的東西點了會動（家長：小朋友希望每樣東西都能玩）=====
+   道館：沙包（出拳，沙包晃）、踢靶（踢腿，靶轉）、木板（手刀劈斷）、長椅（坐）、
+         鏡子（擺姿勢）、腰帶架（看自己考到哪一條）、標語（說是什麼意思）
+   泳池：跳水板（去跳水）、救生員椅（吹哨子）、游泳圈（套上去，游泳時一直套著）、
+         沖水區（沖冷水）、毛巾架（擦乾，脫下游泳圈）、遮陽傘（乘涼） */
+let swimRingUntil = 0;
+function swimRingOn() { return Date.now() < swimRingUntil && !!G.away && G.away.place === 'pool'; }
+function drawRingAt(ctx, x, y) {   // 🛟 粉紅色游泳圈（從斜上方看是扁扁的圈）
+  ctx.save(); ctx.translate(x, y);
+  ctx.lineWidth = 5; ctx.strokeStyle = '#ff8fb3'; ctx.beginPath(); ctx.ellipse(0, 0, 13, 5, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.lineWidth = 5; ctx.strokeStyle = '#ffffff'; [0, Math.PI / 2, Math.PI, Math.PI * 1.5].forEach(a => { ctx.beginPath(); ctx.ellipse(0, 0, 13, 5, 0, a, a + .35); ctx.stroke(); });
+  ctx.restore();
+}
+Object.assign(ACTIVITIES, {
+  punch: { label: '👊 打沙包', name: '打沙包', fx: '💥', lines: ['嘿！哈！', '左拳、右拳！', '沙包晃來晃去～', '我的拳頭好有力！'] },
+  kickpad: { label: '🦵 踢靶', name: '踢靶', fx: '⭐', lines: ['旋踢！', '踢到正中間！', '腳要抬高高～', '啪！好響！'] },
+  chop: { label: '✋ 手刀劈木板', name: '劈木板', fx: '💥', lines: ['喝——！', '木板斷掉了！', '手刀！咔！', '要專心，一口氣劈下去！'],
+    start: () => setTimeout(() => Sound.play('crack'), 700) },
+  tkdpose: { label: '💪 照鏡子擺姿勢', name: '擺姿勢', fx: '💪', lines: ['看我的帥氣姿勢！', '準備姿勢，站好！', '鏡子裡的我好厲害～', '敬禮！'] },
+  beltrack: { label: '🎖️ 看腰帶', name: '看腰帶', fx: '🎖️', open: () => openBeltExam(), lines: ['我現在是哪一條腰帶呢？', '黑帶好帥喔！', '我要一條一條考上去！'] },
+  motto1: { label: '📜 看標語', name: '看標語', fx: '📜', lines: ['崇禮：見到人要有禮貌、要敬禮！', '尚義：要做對的事，不欺負別人！'] },
+  motto2: { label: '📜 看標語', name: '看標語', fx: '📜', lines: ['服從：要聽教練的話！', '忍耐：累了也不放棄，再試一次！'] },
+  divego: { label: '🌊 去跳水', name: '跳水', fx: '💦', open: () => openJumpDive(), lines: ['我要跳下去囉！', '一、二、三——跳！'] },
+  whistle: { label: '📣 當救生員吹哨子', name: '當救生員', fx: '📣', lines: ['嗶嗶！泳池邊不可以跑！', '嗶——大家要注意安全！', '我是小小救生員！', '下水前要先做暖身操！'],
+    start: () => { Sound.play('boing'); try { hostSay('救生員好棒！我們都會注意安全～', 2600); } catch (e) {} } },
+  ringon: { label: '🛟 套上游泳圈', name: '套游泳圈', fx: '🛟', lines: ['套上游泳圈，浮起來了！', '去泳池游游看！', '游泳圈軟軟的～'],
+    start: () => { swimRingUntil = Date.now() + 10 * 60000; } },
+  showerpool: { label: '🚿 沖冷水', name: '沖水', fx: '💦', sound: 'bath', lines: ['好冰喔！', '下水前先沖一沖～', '嘩啦嘩啦！', '涼涼的好舒服！'],
+    start: () => { G.kid.clean = clampStat((G.kid.clean != null ? G.kid.clean : 100) + 20); } },
+  towel: { label: '🧺 拿毛巾擦乾', name: '擦乾', fx: '✨', lines: ['擦乾乾～', '毛巾軟綿綿的', '頭髮也要擦乾喔', '香香的毛巾！'],
+    start: () => { if (swimRingUntil > Date.now()) { swimRingUntil = 0; setTimeout(() => toast('🛟 游泳圈放回去了'), 1200); } } },
+  shade: { label: '⛱️ 在傘下乘涼', name: '乘涼', fx: '😎', lines: ['太陽好大，在傘下好涼～', '休息一下下', '喝口水吧！', '風吹過來好舒服'] }
+});
+Object.assign(FURNITURE_ACT, {
+  tkd_sandbag: 'punch', tkd_target: 'kickpad', tkd_boards: 'chop',
+  dive_board: 'divego', lifeguard_chair: 'whistle', float_ring: 'ringon', pool_shower: 'showerpool', towel_rack2: 'towel', beach_umbrella: 'shade'
+});
+FURNITURE_USE.tkd_bench = { use: 'sit', seats: [{ x: .55, y: .5, z: 18 }, { x: 1.45, y: .5, z: 18 }], front: [0, 1] };
+['punch', 'kickpad', 'chop', 'tkdpose', 'beltrack', 'motto1', 'motto2', 'divego', 'whistle', 'ringon', 'showerpool', 'towel', 'shade'].forEach(k => {
+  const a = ACTIVITIES[k];
+  if (!LINE_TYPES.some(t => t.key === 'act_' + k)) LINE_TYPES.push({ key: 'act_' + k, label: '做事：' + a.name, hint: '', lines: a.lines });
+});
+// 牆上的東西：走到旁邊做那件事（找一樣同一面牆附近的地板家具不容易，就在原地做）
+function wallAct(key) {
+  return () => {
+    if (fufu.pose) fufuStandUp(false);
+    const a = ACTIVITIES[key], now = performance.now();
+    fufu.path = []; fufu.task = null;
+    fufu.act = { key, uid: 0, start: now, until: now + 4000, nextFx: now + 300, fxEvery: 1000, n: 0 };
+    fufuSay(pickLine('act_' + key), 3000); Sound.play('pickUp'); kidMoodUp(4);
+    if (a.open) setTimeout(() => { if ($('#modal').hidden) a.open(); }, 900);
+  };
+}
+Object.assign(WALL_TAP, { tkd_mirror: wallAct('tkdpose'), tkd_belts: wallAct('beltrack'), tkd_banner: wallAct('motto1'), tkd_banner2: wallAct('motto2') });
+
+// 家具跟著動
+function placeLook(def, rot, it, out, active, st, t, now, extra) {
+  const id = def.id;
+  if (id === 'float_ring' && swimRingOn()) return [];   // 游泳圈被她套走了
+  if (!active) return out;
+  if (active === 'punch' && id === 'tkd_sandbag') {   // 沙包被打得前後晃
+    const k = Math.sin(t * 7) * .13, d = rotVec(def, rot, 0, k);
+    return out.map(p => p.bag ? Object.assign({}, p, { x: p.x + d.x, y: p.y + d.y }) : p);
+  }
+  if (active === 'kickpad' && id === 'tkd_target') {   // 踢靶：被踢到時往後彈、顏色閃一下
+    const hit = (t * 1.4) % 1 < .25;
+    return out.map(p => p.pad ? Object.assign({}, p, { z: p.z + (hit ? 4 : 0), c: hit && p.c === '#e0503a' ? '#ffd23f' : p.c }) : p);
+  }
+  if (active === 'chop' && id === 'tkd_boards') {   // 最上面那塊被劈成兩半飛開
+    const ph = Math.min(1, Math.max(0, ((now - fufu.act.start) / 1000 - .7) / .8));
+    if (ph <= 0) return out;
+    const top = out.find(p => p.board === 3);
+    extra.push(Object.assign({}, top, { board: null, x: top.x - ph * .35, w: top.w / 2 - .02, z: top.z + 4 + Math.sin(ph * Math.PI) * 14 }),
+      Object.assign({}, top, { board: null, x: top.x + top.w / 2 + .02 + ph * .35, w: top.w / 2 - .02, z: top.z + 4 + Math.sin(ph * Math.PI) * 14 }));
+    return out.filter(p => p.board !== 3);
+  }
+  if (active === 'divego' && id === 'dive_board') return out.map(p => p.spring ? Object.assign({}, p, { z: p.z + Math.sin(t * 9) * 2 }) : p);
+  if (active === 'whistle' && id === 'lifeguard_chair') return out.map(p => p.flag ? Object.assign({}, p, { c: Math.floor(t * 4) % 2 ? '#ff6b6b' : '#ffd23f' }) : p);
+  if (active === 'showerpool' && id === 'pool_shower') {   // 蓮蓬頭灑水
+    for (let i = 0; i < 6; i++) { const ph = (t * 1.6 + i / 6) % 1; extra.push({ k: 'ball', x: .38 + (i % 3) * .12, y: .5 + (i % 2) * .1, z: 64 - ph * 60, r: 1.8, c: '#6bb6ff', a: 1 - ph * .4 }); }
+    return out;
+  }
+  if (active === 'shade' && id === 'beach_umbrella') {   // 傘慢慢轉（兩個顏色交換）
+    const sw = Math.floor(t * 2) % 2;
+    return out.map(p => p.umb === undefined ? p : Object.assign({}, p, { c: (p.umb ^ sw) ? '#ff6b6b' : '#ffd23f' }));
+  }
+  return out;
+}
+// 小可愛的手腳：出拳、踢腿、手刀（臉朝右的座標，外面會翻面）
+function drawActLimb(ctx, key, t) {
+  if (key !== 'punch' && key !== 'kickpad' && key !== 'chop' && key !== 'tkdpose') return;
+  const o = currentOutfit(), skin = GIRL.skin, L = GIRL.line;
+  const line = (x1, y1, x2, y2, w, c) => { ctx.strokeStyle = c; ctx.lineWidth = w; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); };
+  const fist = (x, y) => { ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(x, y, 2.6, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = L; ctx.lineWidth = .6; ctx.stroke(); };
+  if (key === 'punch') {   // 左右拳輪流打出去
+    const ph = (t * 3) % 2, out = ph < 1 ? Math.sin(ph * Math.PI) : 0, out2 = ph >= 1 ? Math.sin((ph - 1) * Math.PI) : 0;
+    [[out, -30], [out2, -28]].forEach(([k, y]) => { if (k > .05) { line(6, y, 6 + k * 14, y, 3.6, o.top.color); fist(7 + k * 14, y); } });
+  } else if (key === 'kickpad') {   // 一腳抬高往前踢
+    const k = Math.max(0, Math.sin(t * 4.4));
+    if (k > .1) { line(2, -12, 2 + k * 17, -12 - k * 11, 4.6, (o.bottom || {}).color || '#ffffff'); ctx.fillStyle = skin; ctx.beginPath(); ctx.ellipse(4 + k * 17, -13 - k * 11, 3.4, 2, -k * .6, 0, Math.PI * 2); ctx.fill(); }
+  } else if (key === 'chop') {   // 手舉高，再一口氣劈下去
+    const el = Math.min(1, (performance.now() - (fufu.act && fufu.act.start || 0)) / 700);
+    const a = el < 1 ? -1.4 + el * .3 : .5;   // 先舉高（往上），0.7 秒後劈下
+    line(8, -30, 8 + Math.cos(a) * 14, -30 + Math.sin(a) * 14, 3.6, skin);
+  } else if (key === 'tkdpose') {   // 一手往前、一手收在腰邊的準備姿勢
+    line(6, -29, 19, -27, 3.6, o.top.color); fist(20, -27);
+  }
 }
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
