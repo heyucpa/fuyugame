@@ -3183,9 +3183,10 @@ const CLOTHES_BY_ID = Object.fromEntries(CLOTHES.map(c => [c.id, c]));
    只登記在 CLOTHES_BY_ID（存檔讀取、穿著才認得），換裝頁只列出「已經拿到」的。 */
 /* 🥋🏊 在跆拳道館、游泳池裡自動換上的衣服（不用買、不放進衣櫃；出來就換回她自己選的） */
 const PLACE_CLOTHES = [
-  { id: 'dobok', slot: 'top', name: '跆拳道服', price: 0, style: 'dobok', color: '#fbfbf7', place: true },
+  { id: 'dobok', slot: 'top', name: '白色正式道服', price: 0, style: 'dobok', color: '#fbfbf7', place: true },
   { id: 'dobok_pants', slot: 'bottom', name: '道服褲', price: 0, style: 'pants', color: '#f4f4ee', place: true },
-  { id: 'tkd_tee', slot: 'top', name: '道館T恤', price: 0, style: 'tee', color: '#2f8fe0', place: true },   // 照片：上課常穿藍色 T 恤＋白色道服褲
+  { id: 'tkd_tee', slot: 'top', name: '藍色練習服', price: 0, style: 'dobok', tee: true, color: '#2f6fd1', place: true },   // 平常上課穿藍色短袖（一樣綁腰帶）；考腰帶才穿白色正式道服
+
   { id: 'barefoot', slot: 'shoes', name: '光腳', price: 0, style: 'shoes', color: '#f6cfb0', place: true },
   { id: 'swimsuit', slot: 'top', name: '泳衣', price: 0, style: 'swim', color: '#ff6b9a', dots: '#ffffff', place: true },
   { id: 'swim_bottom', slot: 'bottom', name: '泳衣下身', price: 0, style: 'shorts', color: '#ff6b9a', place: true },
@@ -5234,12 +5235,13 @@ function normalizeSave(g) {
 }
 
 // ── 換裝 ──
+let tkdFormalUntil = 0;   // 考腰帶時換上白色正式道服（考完再穿一下下拍照）
 function currentOutfit() {
   const o = {};
   if (G.away && (G.away.place === 'dojo' || G.away.place === 'pool')) {   // 道館穿道服（腰帶是她考到的那一條）、泳池穿泳衣
-    const ids = G.away.place === 'dojo' ? { head: 'head_none', top: G.outfit.top === 'tkd_tee' ? 'tkd_tee' : 'dobok', bottom: 'dobok_pants', shoes: 'barefoot' } : { head: 'swim_cap', top: 'swimsuit', bottom: 'swim_bottom', shoes: 'barefoot' };
+    const ids = G.away.place === 'dojo' ? { head: 'head_none', top: G.outfit.top === 'dobok' || Date.now() < tkdFormalUntil ? 'dobok' : 'tkd_tee', bottom: 'dobok_pants', shoes: 'barefoot' } : { head: 'swim_cap', top: 'swimsuit', bottom: 'swim_bottom', shoes: 'barefoot' };
     OUTFIT_SLOTS.forEach(({ key }) => { o[key] = CLOTHES_BY_ID[ids[key]]; });
-    if (G.away.place === 'dojo' && o.top.style === 'dobok') o.top = Object.assign({}, o.top, { belt: tkdBeltColors() });
+    if (G.away.place === 'dojo') o.top = Object.assign({}, o.top, { belt: tkdBeltColors() });
     return o;
   }
   OUTFIT_SLOTS.forEach(({ key }) => { o[key] = CLOTHES_BY_ID[G.outfit[key]] || CLOTHES_BY_ID[DEFAULT_OUTFIT[key]]; });
@@ -6346,7 +6348,7 @@ function drawGirlBody(ctx, o, swing, fit) {
 
   // 手：從袖口垂下，走路時前後擺
   const sleeve = top.color;
-  const longSleeve = top.style === 'hoodie' || top.style === 'sweater' || top.style === 'jacket' || top.style === 'cape' || top.style === 'dobok';
+  const longSleeve = top.style === 'hoodie' || top.style === 'sweater' || top.style === 'jacket' || top.style === 'cape' || (top.style === 'dobok' && !top.tee);
   [-1, 1].forEach(side => {
     ctx.save();
     ctx.translate(side * 10.5, -31);
@@ -6493,8 +6495,9 @@ function drawTop(ctx, t, back) {
     if (!back) { ctx.fillRect(-7.5, -27, 4, 1.2); } // 胸前小標誌
   } else if (t.style === 'dobok') { // 🥋 道服：V 領、腰上綁著考到的那條腰帶（兩色的就一半一半），兩條帶尾垂下來
     const bc = t.belt || ['#fbfbf7'];
-    if (!back) { ctx.strokeStyle = '#26232a'; ctx.lineWidth = 2.6; ctx.lineJoin = 'round'; ctx.beginPath(); ctx.moveTo(-6, -32.5); ctx.lineTo(0, -24); ctx.lineTo(6, -32.5); ctx.stroke(); }   // 照片：白道服、黑色 V 領
-    else { ctx.fillStyle = '#26232a'; ctx.fillRect(-6, -33, 12, 2); }
+    if (t.tee) { if (!back) { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(0, -33, 4, .15 * Math.PI, .85 * Math.PI); ctx.stroke(); ctx.fillStyle = '#e0403a'; ctx.font = '700 5px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('TKD', 0, -25); } }   // 藍色練習服：圓領、胸前紅字
+    else if (!back) { ctx.strokeStyle = '#26232a'; ctx.lineWidth = 2.6; ctx.lineJoin = 'round'; ctx.beginPath(); ctx.moveTo(-6, -32.5); ctx.lineTo(0, -24); ctx.lineTo(6, -32.5); ctx.stroke(); }   // 照片：白道服、黑色 V 領
+    else if (back) { ctx.fillStyle = '#26232a'; ctx.fillRect(-6, -33, 12, 2); }
     ctx.fillStyle = bc[0]; ctx.fillRect(-10, -21, 20, 3); if (bc[1]) { ctx.fillStyle = bc[1]; ctx.fillRect(-10, -19.5, 20, 1.5); }
     ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = .6; ctx.strokeRect(-10, -21, 20, 3);
     if (!back) { [[-3, -1], [1, 1]].forEach(([x, k]) => { ctx.fillStyle = bc[0]; ctx.save(); ctx.translate(x, -18.5); ctx.rotate(k * .25); ctx.fillRect(0, 0, 2.2, 6); if (bc[1]) { ctx.fillStyle = bc[1]; ctx.fillRect(1.1, 0, 1.1, 6); } ctx.restore(); }); }
@@ -19816,14 +19819,15 @@ function openBeltExam() {
   if ((t.prac || 0) < TKD_PRAC_NEED) { w.status.textContent = `再練習 ${TKD_PRAC_NEED - (t.prac || 0)} 次（踢板或跟著做動作）就可以考${TKD_BELTS[t.belt + 1][0]}！`; leaveButton(w); return; }
   w.status.textContent = `可以考「${TKD_BELTS[t.belt + 1][0]}」了！要先做一套動作（全對），再踢 3 塊板（踢斷 2 塊以上）`;
   const go = el('button', 'big', '🙇 敬禮，開始考試！');
-  go.onclick = () => playForms(w, [Math.min(8, 4 + t.belt)], ok1 => {
+  go.onclick = () => { tkdFormalUntil = Date.now() + 10 * 60000; playForms(w, [Math.min(8, 4 + t.belt)], ok1 => {
     if (!ok1) return examEnd(w, false);
     playKick(w, 3, n => examEnd(w, n >= 2));
-  });
+  }); };
   w.btns.appendChild(go); leaveButton(w);
 }
 function examEnd(w, pass) {
   const t = tkdState();
+  tkdFormalUntil = Date.now() + 60000;   // 考完穿白道服再一分鐘，就換回藍色練習服
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   if (pass) {
     t.belt = Math.min(TKD_BELTS.length - 1, t.belt + 1); t.prac = 0;

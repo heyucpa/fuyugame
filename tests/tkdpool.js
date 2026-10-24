@@ -51,7 +51,7 @@ const { chromium } = require('playwright');
     closeGameWindow(); draw();
     // 回家：衣服換回
     out.gotSwim = ['swimsuit','swim_bottom','swim_cap'].every(id=>G.wardrobe.includes(id));
-    homeArrive(); G.outfit.top='dobok'; G.tkd={belt:2,prac:0}; out.homeDobokBelt = JSON.stringify(currentOutfit().top.belt); openTab('dress'); out.dressTab = /跆拳道服/.test($('#tabBody').innerText) && /泳衣/.test($('#tabBody').innerText); G.outfit=JSON.parse(keepOutfit);
+    homeArrive(); G.outfit.top='dobok'; G.tkd={belt:2,prac:0}; out.homeDobokBelt = JSON.stringify(currentOutfit().top.belt); openTab('dress'); out.dressTab = /道服/.test($('#tabBody').innerText) && /泳衣/.test($('#tabBody').innerText); G.outfit=JSON.parse(keepOutfit);
     out.backHome = JSON.stringify(currentOutfit().top.id)===JSON.stringify(CLOTHES_BY_ID[G.outfit.top].id);
     // 小島上有兩棟新房子
     islMapCache=null; const m=islMap(0); out.islBld = m.blds.filter(b=>b.id==='dojo'||b.id==='pool').map(b=>b.id+'@'+b.door.join(',')); const hd=m.blds[0].door, pd=m.blds.find(b=>b.id==='pool').door; out.walkToPool = !!islFindPath(m, hd[0], hd[1], (x,y)=>x===pd[0]&&y===pd[1]); out.bridgeTiles = m.bridge.flat().filter(Boolean).length;
