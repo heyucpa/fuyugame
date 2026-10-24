@@ -650,6 +650,10 @@ button.pass { font: inherit; }
 .modal-card.in-game, .modal-card.in-game * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .nosel, .nosel * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .decor-cell { cursor: pointer; }
+.voice-list { display: flex; flex-direction: column; gap: 6px; max-height: 40vh; overflow-y: auto; margin: 8px 0; }
+.voice-row { display: flex; align-items: center; gap: 6px; border: 2px solid var(--line); border-radius: 12px; padding: 6px 8px; background: #fff; }
+.voice-row.on { border-color: #4fae63; background: #eefaf0; }
+.voice-nm { flex: 1; text-align: left; font-size: 13px; font-weight: 700; }
 .decor-btn { margin-bottom: 8px; background: linear-gradient(135deg, #ffb3d1, #b9a8ff); color: #fff; }
 .island { position: absolute; inset: 0; z-index: 9; background: #74c8ea; touch-action: none; overflow: hidden; }
 .island canvas { width: 100%; height: 100%; display: block; touch-action: none; }
@@ -4372,6 +4376,7 @@ const NEWS = [
     ['👻', '每天有一隻小幽靈躲在家裡的某個房間，找到點一下拿 3 顆糖果'],
     ['🎉', '房間擺 3 件萬聖節家具，點小可愛選「萬聖節派對」，朋友們都來跳舞'],
     ['🍬', '派對結束每天第一次送 4 顆糖果，可以送給來玩的動物朋友'],
+    ['🗣️', '語音可以換成台灣腔：「設定 → 🔊 語音」選有 ⭐ 的聲音；電腦沒有的話，裡面有教怎麼加裝（用 Edge 瀏覽器最簡單）'],
     ['🧰', '小島左下角有三個道具：🎣 釣竿（點海邊或池塘，看到❗就點）、🦋 網子（點蝴蝶）、⛏️ 鏟子（拿著點草地挖寶）；搖樹小心蜜蜂！'],
     ['🌤️', '小島會跟著時間變：早上暖暖的、傍晚橘橘的、晚上路燈和窗戶會亮、有星星；島上每天有 5 枚金幣走過去就撿；走到池塘邊可以釣魚；多了兔子、松鼠、小雞、蝴蝶和騎腳踏車的朋友'],
     ['🏝️', '「🚗 出門」變成一座小島！自己走路逛，走到房子門口就進去；樹可以搖、花可以摘，寵物跟在後面。想直接去哪裡，按「🚗 快速出門」'],
@@ -15184,6 +15189,11 @@ function tabSave(body) {
     body.appendChild(del);
   }
 
+  body.appendChild(h3('🔊 語音（台灣腔）'));
+  { const v = canSpeak() ? pickZhVoice() : null;
+    body.appendChild(note(!canSpeak() ? '這個瀏覽器不能念出聲音。' : v ? `現在用：${v.name}${zhVoiceScore(v) >= 100 ? '（台灣）' : '（⚠️ 不是台灣腔）'}` : '還沒載入中文語音（等幾秒再看一次）。'));
+    const vb = el('button', 'big alt', '🔊 選語音／試聽'); vb.onclick = () => openVoicePicker(); body.appendChild(vb); }
+
   body.appendChild(h3('💵 零用錢（家長）'));
   body.appendChild(note(G.allow.on && G.allow.amt ? `爸爸媽媽每週星期${'日一二三四五六'[G.allow.day]}送 ${fmt(G.allow.amt)} 鈴錢。` : '現在不送零用錢。'));
   const allowBtn = el('button', 'big alt', '💵 調整零用錢');
@@ -19843,6 +19853,37 @@ const zyPhrase = (z, mode) => { const sd = zySound(z, mode); return `${sd}，${z
 /* 🔊 換念法（家長：這怎麼放在設定——它是注音遊戲自己的東西）
    在注音小遊戲選難度的畫面有一顆「聲音不對？換念法」，打開這個小視窗：
    選念法＋每個注音都可以點來試聽。 */
+// 🔊 選中文語音（設定裡；注音遊戲的「聲音不對？」也打得開）
+function openVoicePicker(back) {
+  const card = $('#modalCard');
+  card.classList.remove('game-card', 'in-game');
+  card.innerHTML = '';
+  card.appendChild(el('h2', '', '🔊 選語音（台灣腔）'));
+  const list = zhVoices(), cur = pickZhVoice();
+  if (!canSpeak()) card.appendChild(note('⚠️ 這個瀏覽器不能念出聲音。'));
+  else if (!list.length) card.appendChild(note('這台機器還沒有中文語音（或還在載入，等幾秒再打開一次）。'));
+  else {
+    card.appendChild(note(hasTwVoice() ? '點「試聽」聽聽看，選一個聽起來最順的。⭐ 是台灣腔。' : '⚠️ 這台機器沒有台灣腔的聲音，下面只有大陸或香港的。請看最下面的說明加裝台灣的聲音。'));
+    const box = el('div', 'voice-list');
+    list.forEach(v => {
+      const row = el('div', 'voice-row' + (cur && v.voiceURI === cur.voiceURI ? ' on' : ''));
+      const tw = zhVoiceScore(v) >= 100, hk = zhVoiceScore(v) >= 40 && !tw;
+      row.appendChild(el('span', 'voice-nm', `${tw ? '⭐ ' : ''}${v.name}${tw ? '（台灣）' : hk ? '（香港）' : '（大陸）'}`));
+      const t = el('button', 'mini', '🔊 試聽'); t.onclick = () => speak('你好！我是小可愛，今天要一起玩嗎？', v);
+      const pick = el('button', 'mini', cur && v.voiceURI === cur.voiceURI ? '✅ 用這個' : '選這個');
+      pick.onclick = () => { try { localStorage.setItem(ZH_VOICE_KEY, v.voiceURI); } catch (e) {} speak('好，就用這個聲音！', v); openVoicePicker(back); };
+      row.append(t, pick); box.appendChild(row);
+    });
+    card.appendChild(box);
+  }
+  card.appendChild(el('h3', '', '沒有台灣腔的聲音怎麼辦？'));
+  card.appendChild(note('💻 Windows 電腦：用「Microsoft Edge」瀏覽器打開遊戲，裡面有很自然的台灣聲音（曉臻、雲哲）；或到 Windows「設定 → 時間與語言 → 語音 → 新增語音」，加「中文（台灣）」，再重新打開遊戲。Chrome 有「Google 國語（臺灣）」（要連網路）。'));
+  card.appendChild(note('📱 iPad：到「設定 → 輔助使用 → 語音內容 → 聲音 → 中文」，選「中文（台灣）」的「美佳」並下載，再重新打開遊戲。'));
+  const ok = el('button', 'big', '好了');
+  ok.onclick = () => { stopSpeak(); if (back) back(); else { $('#modal').hidden = true; try { renderTab(); } catch (e) {} } };
+  card.appendChild(ok);
+  $('#modal').hidden = false;
+}
 function openZhuyinVoice(back) {
   const card = $('#modalCard');
   card.classList.remove('game-card', 'in-game');
@@ -19866,6 +19907,7 @@ function openZhuyinVoice(back) {
   });
   card.appendChild(grid);
   if (!canSpeak()) card.appendChild(note('⚠️ 這台機器沒有中文語音，注音小遊戲會念不出來。'));
+  else { const vb = el('button', 'big alt', '🗣️ 聲音是大陸腔？換成台灣腔'); vb.onclick = () => openVoicePicker(() => openZhuyinVoice(back)); card.appendChild(vb); }
   const ok = el('button', 'big', '好了');
   ok.onclick = () => { stopSpeak(); if (back) back(); else $('#modal').hidden = true; };
   card.appendChild(ok);
@@ -20128,12 +20170,38 @@ function openStorybook(id, aloud) {
 }
 // 念出來（iPad／iPhone 都有內建中文語音）。不支援的機器就不顯示按鈕
 const canSpeak = () => typeof window.speechSynthesis !== 'undefined' && typeof window.SpeechSynthesisUtterance !== 'undefined';
-function speak(text) {
+/* 🔊 台灣腔（家長：遊戲的語音是大陸腔）
+   以前只設 lang='zh-TW'，可是電腦沒有台灣的聲音時，瀏覽器會偷偷換成大陸的聲音。
+   現在自己挑：先用家長在「設定 → 🔊 語音」選的那個；沒選就挑台灣的聲音（zh-TW、美佳、曉臻、雅婷…），
+   再沒有才用香港的，大陸的放最後。選的那個記在這台機器。 */
+const ZH_VOICE_KEY = 'myHouse_zhVoice';
+function zhVoiceScore(v) {
+  const lang = String(v.lang || '').replace('_', '-').toLowerCase(), name = String(v.name || '');
+  if (!/^(zh|cmn|yue)/.test(lang) && !/chinese|中文|國語|国语|普通話|普通话/i.test(name)) return -1;
+  let s = 0;
+  if (/tw|hant/.test(lang) || /taiwan|臺灣|台灣|國語（臺灣）|mei-?jia|美佳|hsiao|曉臻|曉雨|雲哲|yunjhe|yating|雅婷|hanhan|zhiwei/i.test(name)) s = 100;
+  else if (/hk|yue/.test(lang) || /hong ?kong|香港|sin-?ji/i.test(name)) s = 40;
+  else s = 10;   // zh-CN（大陸腔）
+  if (/natural|online|neural/i.test(name)) s += 5;   // Edge 的自然語音比較好聽
+  if (v.localService) s += 1;                          // 不用網路的先
+  return s;
+}
+function zhVoices() { try { return speechSynthesis.getVoices().filter(v => zhVoiceScore(v) >= 0).sort((a, b) => zhVoiceScore(b) - zhVoiceScore(a)); } catch (e) { return []; } }
+function pickZhVoice() {
+  const list = zhVoices(); if (!list.length) return null;
+  let saved = null; try { saved = localStorage.getItem(ZH_VOICE_KEY); } catch (e) {}
+  return (saved && list.find(v => v.voiceURI === saved || v.name === saved)) || list[0];
+}
+const hasTwVoice = () => zhVoices().some(v => zhVoiceScore(v) >= 100);
+try { if (typeof speechSynthesis !== 'undefined') { speechSynthesis.getVoices(); speechSynthesis.addEventListener && speechSynthesis.addEventListener('voiceschanged', () => {}); } } catch (e) {}   // 有的瀏覽器要先叫一次才會載入聲音清單
+function speak(text, voiceOverride) {
   if (!canSpeak()) return false;
   try {
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(String(text).replace(/[「」]/g, ''));
-    u.lang = 'zh-TW'; u.rate = .9; u.pitch = 1.1;
+    const v = voiceOverride || pickZhVoice();
+    u.lang = v ? v.lang : 'zh-TW'; if (v) u.voice = v;
+    u.rate = .9; u.pitch = 1.1;
     speechSynthesis.speak(u);
     return true;
   } catch (e) { return false; }
