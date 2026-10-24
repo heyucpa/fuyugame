@@ -20196,6 +20196,16 @@ const hasTwVoice = () => zhVoices().some(v => zhVoiceScore(v) >= 100);
 try { if (typeof speechSynthesis !== 'undefined') { speechSynthesis.getVoices(); speechSynthesis.addEventListener && speechSynthesis.addEventListener('voiceschanged', () => {}); } } catch (e) {}   // 有的瀏覽器要先叫一次才會載入聲音清單
 function speak(text, voiceOverride) {
   if (!canSpeak()) return false;
+  /* 聲音清單還沒載好（Chrome、Edge 一開始是空的）：這時候念的話瀏覽器會隨便挑一個（常常是大陸腔）。
+     先等清單載好（最多 1.2 秒）再念。 */
+  if (!voiceOverride) { let n = 0; try { n = speechSynthesis.getVoices().length; } catch (e) {}
+    if (!n && !speak.waited) {
+      speak.waited = true;
+      let done = false; const go = () => { if (done) return; done = true; speak(text); };
+      try { speechSynthesis.addEventListener('voiceschanged', go, { once: true }); } catch (e) {}
+      setTimeout(go, 1200);
+      return true;
+    } }
   try {
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(String(text).replace(/[「」]/g, ''));
