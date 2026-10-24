@@ -650,6 +650,11 @@ button.pass { font: inherit; }
 .modal-card.in-game, .modal-card.in-game * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .nosel, .nosel * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .decor-cell { cursor: pointer; }
+.music-menu { position: fixed; z-index: 70; background: var(--panel, #fffaf0); border: 2px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
+.music-menu button { font: inherit; text-align: left; border: 2px solid var(--line); background: #fff; border-radius: 12px; padding: 8px 12px; min-height: 40px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.music-menu .music-tog { text-align: center; background: #ffe9b8; border-color: #e7a94a; }
+.music-menu .music-tog.on { background: #eee6d6; border-color: var(--line); }
+.music-menu .music-song.on { background: #d9f5df; border-color: #4fae63; }
 .voice-list { display: flex; flex-direction: column; gap: 6px; max-height: 40vh; overflow-y: auto; margin: 8px 0; }
 .voice-row { display: flex; align-items: center; gap: 6px; border: 2px solid var(--line); border-radius: 12px; padding: 6px 8px; background: #fff; }
 .voice-row.on { border-color: #4fae63; background: #eefaf0; }
@@ -3420,8 +3425,15 @@ const Sound = (() => {
     return song.name;
   }
   const songName = () => (prefs.bgm ? song.name : null);
+  function pickSong(i) {   // 直接選一首（音樂選單用）
+    i = Math.max(0, Math.min(SONGS.length - 1, i | 0));
+    prefs.song = i; song = SONGS[i]; BEAT = 60 / song.bpm;
+    setPref('bgm', true);
+    if (ac) restartTimeline();
+    return song.name;
+  }
 
-  return { play, setPref, duck, prefs, nextSong, songName, songCount: SONGS.length,
+  return { play, setPref, duck, prefs, nextSong, pickSong, songName, songNames: () => SONGS.map(x => x.name), songCount: SONGS.length,
            _t: { bgmGain: () => (bgmBus ? bgmBus.gain.value : null), getAc: () => ac, setAc: v => { ac = v; }, songs: SONGS, notes: N } }; // _t：測試用
 })();
 </script>
@@ -12940,14 +12952,32 @@ function refreshSoundButtons() {
     b.setAttribute('aria-pressed', on ? 'true' : 'false');
   });
   const name = Sound.songName();
-  $('#btnBgm').title = name ? `背景音樂：${name}（點一下換下一首，最後一首再點就關掉）` : '背景音樂：關（點一下打開）';
+  $('#btnBgm').title = name ? `背景音樂：${name}（點一下換歌或關掉）` : '背景音樂：關（點一下打開）';
 }
-// 🎵：換下一首，最後一首之後關掉
-$('#btnBgm').onclick = () => {
-  const name = Sound.nextSong();
-  toast(name ? `🎵 ${name}` : '🔇 音樂關掉了');
-  refreshSoundButtons();
-};
+/* 🎵 音樂選單（家長：切換開關不太順——以前要一直按換歌，按到最後一首再按才會關）
+   點 🎵 跳出一個小選單：最上面一顆大大的「開／關」，下面是每一首歌，點了就放那一首。 */
+function closeMusicMenu() { const m = document.getElementById('musicMenu'); if (m) m.remove(); document.removeEventListener('pointerdown', musicMenuOutside, true); }
+function musicMenuOutside(e) { const m = document.getElementById('musicMenu'); if (m && !m.contains(e.target) && e.target.id !== 'btnBgm') closeMusicMenu(); }
+function openMusicMenu() {
+  if (document.getElementById('musicMenu')) { closeMusicMenu(); return; }
+  const btn = $('#btnBgm'), r = btn.getBoundingClientRect(), on = Sound.prefs.bgm;
+  const m = el('div', 'music-menu'); m.id = 'musicMenu';
+  const tog = el('button', 'music-tog' + (on ? ' on' : ''), on ? '🔇 關掉音樂' : '🎵 打開音樂');
+  tog.onclick = () => { if (Sound.prefs.bgm) { Sound.setPref('bgm', false); toast('🔇 音樂關掉了'); } else { const n = Sound.pickSong(Sound.prefs.song || 0); toast(`🎵 ${n}`); } refreshSoundButtons(); closeMusicMenu(); };
+  m.appendChild(tog);
+  Sound.songNames().forEach((n, i) => {
+    const cur = on && (Sound.prefs.song || 0) === i;
+    const b = el('button', 'music-song' + (cur ? ' on' : ''), `${cur ? '▶️' : '🎶'} ${n}`);
+    b.onclick = () => { Sound.pickSong(i); toast(`🎵 ${n}`); refreshSoundButtons(); closeMusicMenu(); };
+    m.appendChild(b);
+  });
+  document.body.appendChild(m);
+  const w = m.offsetWidth;
+  m.style.top = (r.bottom + 6) + 'px';
+  m.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + 'px';
+  setTimeout(() => document.addEventListener('pointerdown', musicMenuOutside, true), 0);
+}
+$('#btnBgm').onclick = () => { Sound.play('click'); openMusicMenu(); };
 $('#btnSfx').onclick = () => { Sound.setPref('sfx', !Sound.prefs.sfx); refreshSoundButtons(); Sound.play('click'); };
 refreshSoundButtons();
 
@@ -13297,6 +13327,9 @@ function showItemMenu(it, e) {
       const tdef = FURN_BY_ID[it.top];
       if (it.top === 'music_box') add('🎵 聽音樂盒', () => playMusicBox(it));
       if (it.top === 'snow_globe') add('❄️ 搖一搖雪花球', () => shakeSnowGlobe(it));
+      add(`✋ 把${tdef ? tdef.name : '桌上的東西'}拿起來（放到別的地方）`, () => {   // 拿起來直接跟著手指走，可以放到別張桌子或地上
+        const id = it.top; snapUndo(); it.top = null; addItem(id); commit(); startHoldFromInv(id); Sound.play('pickUp');
+      });
       add(`⬇️ 把${tdef ? tdef.name : '桌上的東西'}收起來`, () => {
         snapUndo();
         if (it.top) addItem(it.top);
@@ -13313,7 +13346,7 @@ function showItemMenu(it, e) {
       });
     }
   }
-  add('✋ 搬動', () => startHoldFromRoom(it));
+  add(it.top ? '✋ 搬動桌子（東西跟著走）' : '✋ 搬動', () => startHoldFromRoom(it));
   add('📦 收起來', () => {
     snapUndo();
     curRoom().items = curRoom().items.filter(x => x.uid !== it.uid);
@@ -13355,7 +13388,7 @@ canvas.addEventListener('pointerup', e => {
   if (fa) { openMenu(farmMenuEntries(fa), e); return; }
   if (fufuHit(w)) { if (fufu.pose && fufu.pose.type === 'lie') fufuPoke(); else showKidMenu(e); return; } // 睡覺中點她就叫醒
   const it = pickItem(w);
-  if (it) { if (canUse(it)) showItemMenu(it, e); else if (!G.away || inPetHouse()) startHoldFromRoom(it); return; }
+  if (it) { if (canUse(it) || (it.top && (!G.away || inPetHouse()))) showItemMenu(it, e); else if (!G.away || inPetHouse()) startHoldFromRoom(it); return; }   // 桌上有東西：點了先問要做什麼（以前一點就把整張桌子拿起來，桌上的東西收不掉）
   const wi = G.away && !inPetHouse() ? null : pickWallItem(w);
   if (wi) { startHoldWall(wi); return; }
   // 外面地方的牆上東西：有些點了可以玩（教室的注音布告欄）
