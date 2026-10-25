@@ -13714,6 +13714,17 @@ $('#btnStore').onclick = storeHold;
 $('#btnCancel').onclick = cancelHold;
 
 // ── 上方列 ──
+/* 房間按鈕前面加圖示（家長：還不識字的妹妹看不懂「客廳」「臥室」）：先看名字，名字看不出來就看房間裡擺了什麼，再不然照第幾間 */
+const ROOM_ICON_WORDS = [[/客廳|起居/, '🛋️'], [/臥室|睡|寢|房間|主臥|小孩房|兒童房/, '🛏️'], [/餐廳|廚房|吃飯/, '🍽️'], [/浴室|廁所|洗澡|浴/, '🛁'], [/陽台|花園|庭院/, '🌷'],
+  [/書房|讀書|圖書|功課/, '📚'], [/遊戲|玩具|遊樂/, '🧸'], [/閣樓/, '🏠'], [/衣帽|更衣/, '👗'], [/音樂|琴/, '🎹']];
+function roomIcon(r, i) {
+  const nm = r.name || '', hit = ROOM_ICON_WORDS.find(([re]) => re.test(nm)); if (hit) return hit[1];
+  if (r.kind === 'balcony') return '🌷';
+  const ids = (r.items || []).map(it => it.id).join(' ');
+  if (/bed/.test(ids)) return '🛏️'; if (/bathtub|toilet/.test(ids)) return '🛁'; if (/kitchen|stove|fridge|dining/.test(ids)) return '🍽️'; if (/sofa/.test(ids)) return '🛋️';
+  return ['🛋️', '🛏️', '🍽️', '🏠'][i] || '🚪';
+}
+const roomLabel = (r, i) => `${roomIcon(r, i)} ${r.name}`;
 let lastBells = G.bells;
 function refreshTop() {
   const b = $('#bells');
@@ -13730,18 +13741,18 @@ function refreshTop() {
     tabs.appendChild(btn);
   };
   if (G.away && PLACES[G.away.place].inHouse) { // 在寵物屋：自己家的房間直接走回去（不用走路過場）
-    G.rooms.forEach((r, i) => add(r.name, false, () => leavePetHouse(i)));
+    G.rooms.forEach((r, i) => add(roomLabel(r, i), false, () => leavePetHouse(i)));
     add('🐾 寵物屋', true, () => {});
     add('🚗 出門', false, () => { cancelHold(); openIsland(); }, 'go');
     return;
   }
   if (G.away) { // 在親戚家：回家按鈕＋那個地方的房間
     add('🏠 回家', false, goHome, 'go');
-    PLACES[G.away.place].rooms.forEach((r, i) => add(r.name, i === G.away.idx, () => goPlaceRoom(i)));
+    PLACES[G.away.place].rooms.forEach((r, i, all) => add(`${all.length > 1 ? roomIcon(r, i) : PLACES[G.away.place].emoji || roomIcon(r, i)} ${r.name}`, i === G.away.idx, () => goPlaceRoom(i)));
     add('🚗 出門', false, () => { cancelHold(); openIsland(); }, 'go'); // 從叔叔家直接去阿婆家，不用先回家
     return;
   }
-  G.rooms.forEach((r, i) => add(r.name, i === G.cur, () => {
+  G.rooms.forEach((r, i) => add(roomLabel(r, i), i === G.cur, () => {
     cancelHold();
     if (i !== G.cur) roomDoors(r.name);
     G.cur = i; commit();

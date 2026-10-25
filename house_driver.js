@@ -4107,7 +4107,7 @@
       if (phList().length !== PH_MAX || PH_MAX > 12) fails.push('寵物屋同時超過 12 隻');
       // 回自己家的房間：不用走路過場，回到點的那間
       refreshTop();
-      var backB = [].filter.call(document.querySelectorAll('#roomTabs button'), function(b){ return b.textContent === G.rooms[0].name; })[0];
+      var backB = [].filter.call(document.querySelectorAll('#roomTabs button'), function(b){ return b.textContent === roomLabel(G.rooms[0], 0); })[0];
       if (!backB) fails.push('寵物屋的房間列沒有回自己房間的按鈕');
       else backB.onclick();
       if (G.away || G.cur !== 0) fails.push('從寵物屋回房間沒有回來');
