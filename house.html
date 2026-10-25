@@ -2843,7 +2843,7 @@ Object.assign(ACTIVITIES, {
   slide: { label: '🎢 溜滑梯', name: '溜滑梯', fx: '✨', lines: ['咻～', '再溜一次！', '好好玩喔！'] },
   climb: { label: '🧗 爬攀爬架', name: '爬攀爬架', fx: '✨', lines: ['手要抓好～', '爬到最上面了！', '我是攀爬高手！'] },
   swing: { label: '🌀 盪鞦韆', name: '盪鞦韆', fx: '✨', lines: ['盪好高喔！', '風吹得好舒服～', '推我一下～'] },
-  run: { label: '🏃 賽跑', name: '賽跑', fx: '💨', open: 'run', lines: ['預備——跑！', '我要跑第一名！', '加油加油！'] },
+  run: { label: '🏃 賽跑', name: '賽跑', fx: '💨', open: () => openRaceChoice(), lines: ['預備——跑！', '我要跑第一名！', '加油加油！'] },
   flag: { label: '🚩 看升旗', name: '看升旗', fx: '🚩', lines: ['旗子好高喔', '立正站好！', '風吹得旗子飄飄的'] }
 });
 Object.assign(FURNITURE_ACT, {
@@ -2961,17 +2961,11 @@ const PLACES = {
       ['popcorn_cart', 8, 8], ['cinema_counter', 0, 8]
     ], wallItems: [['cinema_screen', 'R', 2], ['movie_poster_pet', 'L', 1], ['movie_poster_space', 'L', 3], ['movie_poster_dino', 'L', 5], ['movie_poster_sea', 'L', 7], ['movie_poster_funny', 'L', 9]] }
   ] },
-  /* 🏟️ 田徑場（家長：運動島先做運動類）：百米衝刺、大隊接力、跳遠 */
   /* 🏀 體育館：籃球、躲避球、桌球 */
   arena: { name: '體育館', host: 'arena', emoji: '🏀', desc: '籃球、躲避球、桌球，猴子教練陪你打球！', rooms: [
     { name: '體育館', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_wood', items: [
       ['ar_hoop', 9, 4], ['ar_pingpong', 2, 1], ['ar_balls', 6, 0], ['ar_bench', 0, 7, 1], ['ar_bench', 4, 9]
     ], wallItems: [['ar_board', 'R', 3]] }
-  ] },
-  track: { name: '田徑場', host: 'track', emoji: '🏟️', desc: '百米衝刺、大隊接力、跳遠，花豹教練陪你練跑！', rooms: [
-    { name: '田徑場', w: 10, d: 10, wall: 'wp_balcony', floor: 'fl_track', items: [
-      ['tr_blocks', 0, 1], ['tr_blocks', 0, 3], ['tr_finish', 9, 0], ['tr_podium', 6, 7], ['tr_sand', 1, 7], ['tr_water', 9, 8]
-    ], wallItems: [['tr_board', 'R', 3]] }
   ] },
   pool: { name: '游泳池', host: 'swim', emoji: '🏊', desc: '打水比賽、潛水撿寶、跳水，鴨鴨教練陪你玩水！', rooms: [
     { name: '游泳池', w: 10, d: 10, wall: 'wp_balcony', floor: 'fl_pooldeck', items: [
@@ -2987,7 +2981,7 @@ const PLACES = {
     ], wallItems: [['pennant', 'L', 1], ['pennant', 'L', 5], ['pennant', 'R', 3], ['pennant', 'R', 6]] }
   ] },
   /* 學校：教室＋操場。一般的學校樣子，沒有校名、校徽（去識別化） */
-  school: { name: '學校', host: 'teacher', emoji: '🏫', desc: '上課小考、溜滑梯、盪鞦韆，還有貓頭鷹老師！', rooms: [
+  school: { name: '學校', host: 'teacher', emoji: '🏫', desc: '上課小考、盪鞦韆，操場有賽跑、大隊接力、跳遠！', rooms: [
     // 照片參考：綠桌墊的課桌一排一排、桌邊掛紅藍布袋，後面一排置物櫃和書櫃，
     // 牆上有注音布告欄、窗戶有綠色窗簾，地板是磨石子
     { name: '教室', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_terrazzo', items: [
@@ -3002,10 +2996,11 @@ const PLACES = {
       ['cubby_lockers', 9, 2, 3], ['cubby_lockers', 9, 5, 3]   // 門朝教室裡面（rot 3：朝 x 小的那邊＝學生那邊）
     ], wallItems: [['art_board', 'R', 4], ['blackboard', 'L', 3], ['zhuyin_board', 'L', 7], ['class_window', 'R', 2], ['class_window', 'R', 6], ['wall_clock', 'R', 8]] }, // 作品牆在兩扇窗中間（本來在角落，被書櫃擋住）
     // 前面四道藍色跑道（第 6~9 排），後面是球場；樹和長椅在球場邊（照片參考）
-    { name: '操場', w: 10, d: 10, wall: 'wp_forest', floor: 'fl_track', items: [
+    // 🏟️ 田徑場併進操場（家長：田徑場跟操場很像）：花豹教練是體育老師，百米衝刺、大隊接力、跳遠都在這裡
+    { name: '操場', host: 'track', w: 10, d: 10, wall: 'wp_forest', floor: 'fl_track', items: [
       ['flagpole', 1, 1], ['climb_frame', 3, 1], ['swing', 7, 1],   // 攀爬區（本來是溜滑梯，跟公園重複）
       ['shade_tree', 0, 3], ['park_bench', 2, 4], ['shade_tree', 8, 3], ['park_bench', 5, 4],
-      ['finish_flag', 9, 6]
+      ['finish_flag', 9, 6], ['tr_blocks', 0, 7], ['tr_blocks', 0, 9], ['tr_sand', 4, 9], ['tr_water', 9, 8]
     ], wallItems: [] }
   ] },
   /* 🐾 寵物屋：在家裡，不用出門（inHouse），不在出門選單裡。免費、不佔房間數、不能放自己的家具。
@@ -4605,8 +4600,14 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-25T09:00', title: '體育館開了！🏀', lines: [
+    ['🏀', '運動島新開「體育館」，猴子教練陪你打球：籃球 2 對 2（看力量條投籃、看到「！」跳起來蓋火鍋）'],
+    ['🔴', '躲避球：點對面的人丟球；球飛過來按「閃！」，最後一刻按還能接住！'],
+    ['🏓', '桌球：手指左右滑動球拍接球，打在球拍邊邊球會斜飛'],
+    ['🏫', '田徑場搬進學校操場了：花豹體育老師在操場，百米衝刺、大隊接力、跳遠都在那裡，紀錄都還在']
+  ] },
   { id: '2026-10-18T09:00', title: '萬聖節派對＋找小幽靈！🎃👻', lines: [
-    ['🏅', '游泳池那座小島變大成「運動島」（一樣走木橋），跆拳道館也搬過去了！新開「🏟️ 田徑場」：百米衝刺（聽到砰才能跑，左右腳輪流按）、大隊接力（接力區按交棒）、跳遠'],
+    ['🏅', '游泳池那座小島變大成「運動島」（一樣走木橋），跆拳道館也搬過去了！學校操場多了花豹體育老師：百米衝刺（聽到砰才能跑，左右腳輪流按）、大隊接力（接力區按交棒）、跳遠'],
     ['🕹️', '最上面多了「🎮 遊戲」：所有小遊戲都在這裡，點圖示就玩；外面地方的遊戲會自動走過去；最上面一排是最近玩過的'],
     ['🎮', '三個像 Roblox 的新小遊戲（在「💰 賺錢」）：👗 換裝走秀（照主題挑衣服上台，評審給星星）、🧁 甜點店大亨（買機器讓甜點店自己賺錢）、🐾 寵物收集模擬器（帶寵物敲金幣堆、升級、開新區域）'],
     ['🔒', '「⚙️ 設定」改成要家長密碼才進得去（還沒設密碼的話，大人算一題乘法），小朋友不會不小心改到設定'],
@@ -11142,7 +11143,8 @@ function hostSay(text, ms) {
   Sound.play('talk', text);
 }
 function hostTick(dt, now) {
-  const want = G.away && HOSTS[PLACES[G.away.place].host];
+  const pl0 = G.away && PLACES[G.away.place], rm0 = pl0 && pl0.rooms[G.away.idx];
+  const want = pl0 && HOSTS[(rm0 && rm0.host) || pl0.host];   // 房間可以有自己的主人（學校操場是花豹體育老師）
   if (!want) { host.n = null; host.a = null; host.pets = null; host.crowd = null; return; }
   const room = curRoom();
   if (host.n !== want) { // 剛到：親戚在門口附近迎接
@@ -11347,7 +11349,7 @@ function hostMenuEntries() {
     list.push([`🎖️ 考腰帶（現在：${tkdBeltName()}）`, openBeltExam]);
   }
   if (host.n.id === 'arena') { list.push(['🏀 籃球', openBasket]); list.push(['🔴 躲避球', openDodge]); list.push(['🏓 桌球', openPingPong]); }
-  if (host.n.id === 'track') { list.push(['🏃 百米衝刺', openSprint]); list.push(['🏃‍♀️ 大隊接力', openRelay]); list.push(['🏖️ 跳遠', openLongJump]); }
+  if (host.n.id === 'track') { list.push(['🚧 障礙賽跑', openRunGame]); list.push(['🏃 百米衝刺', openSprint]); list.push(['🏃‍♀️ 大隊接力', openRelay]); list.push(['🏖️ 跳遠', openLongJump]); if (G.away && G.away.place === 'school' && G.away.idx !== 0) list.push(['🏫 回教室', () => goPlaceRoom(0)]); }
   if (host.n.id === 'swim') {
     list.push(['🏊 打水比賽', openSwimRace]);
     list.push(['🤿 潛水撿寶', openDiveGame]);
@@ -18952,7 +18954,6 @@ const ISL_BLD = [   // 房子：x, y 是左上角的格子，w×h 格；門在�
   // 🏅 運動島（家長：游泳池那座小島擴大成運動島，走木橋過去；跆拳道館也搬過來）
   { id: 'pool', x: 44, y: 38, w: 4, h: 2, islet: true },
   { id: 'dojo', x: 50, y: 37, w: 4, h: 3, islet: true },
-  { id: 'track', x: 56, y: 37, w: 5, h: 3, islet: true },
   { id: 'arena', x: 46, y: 44, w: 5, h: 3, islet: true },
   { id: 'cinema', x: 40, y: 17, w: 3, h: 2 }
 ];
@@ -22790,7 +22791,17 @@ Object.assign(ACTIVITIES, {
 });
 Object.assign(FURNITURE_ACT, { tr_blocks: 'crouch', tr_podium: 'podium', tr_sand: 'sandjump', tr_water: 'drinkwater', tr_finish: 'finishline' });
 ['crouch', 'podium', 'sandjump', 'drinkwater', 'finishline'].forEach(k => { const a = ACTIVITIES[k]; if (!LINE_TYPES.some(t => t.key === 'act_' + k)) LINE_TYPES.push({ key: 'act_' + k, label: '做事：' + a.name, hint: '', lines: a.lines }); });
-AWAY_GAMES.push(['🏃', '百米衝刺', 'track', () => openSprint()], ['🏃‍♀️', '大隊接力', 'track', () => openRelay()], ['🏖️', '跳遠', 'track', () => openLongJump()]);
+AWAY_GAMES.push(['🏃', '百米衝刺', 'school', () => openSprint()], ['🏃‍♀️', '大隊接力', 'school', () => openRelay()], ['🏖️', '跳遠', 'school', () => openLongJump()]);
+// 🏃 終點旗：兩種賽跑選一種
+function openRaceChoice() {
+  const w = openGameWindow('🏃 賽跑', '想跑哪一種？');
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w); w.status.textContent = '選一種賽跑';
+  const row = el('div', 'lv-row');
+  [['🚧 障礙賽跑', '跳欄架、吃星星', openRunGame], ['🏃 百米衝刺', '聽槍聲、左右腳', openSprint]].forEach(([n, sub, fn], i) => {
+    const b = levelButton(i); b.append(el('span', 'lv-n', n), el('span', 'lv-p', sub)); b.onclick = () => { Sound.play('click'); closeGameWindow(); fn(); }; row.appendChild(b);
+  });
+  w.stage.appendChild(row);
+}
 /* ===== 🏀 體育館的遊戲 =====
    🏀 籃球（2 對 2，先進 3／5 球贏）：我們進攻時力量條左右跑，跑到綠色按「🏀 投籃！」；一般以上可以先「🤝 傳球」，隊友有空檔比較好投。
        對手進攻時，他跳起來投籃頭上會出現「！」，這時候按「🙌 跳！擋！」蓋火鍋；太早跳就來不及了。

@@ -1257,7 +1257,7 @@
     var lane = px(5, 9.3), field = px(5, 1.6);
     if (!(lane[2] > lane[0] + 60)) fails.push('跑道那一排不是藍色（' + [].slice.call(lane, 0, 3) + '）');
     if (!(field[1] > field[0] + 30 && field[1] > field[2])) fails.push('球場不是綠色（' + [].slice.call(field, 0, 3) + '）');
-    if (FURNITURE_ACT.finish_flag !== 'run' || ACTIVITIES.run.open !== 'run') fails.push('終點旗沒有開賽跑');
+    if (FURNITURE_ACT.finish_flag !== 'run' || (ACTIVITIES.run.open !== 'run' && typeof ACTIVITIES.run.open !== 'function')) fails.push('終點旗沒有開賽跑');
     if (!FURNITURE_USE.park_bench) fails.push('長椅不能坐');
     G.away = { place: 'school', idx: 1 }; host.n = HOSTS.teacher;
     if (!/賽跑/.test(hostMenuEntries().map(function(e){ return e[0]; }).join('|'))) fails.push('老師的選單沒有賽跑');

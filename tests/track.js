@@ -1,4 +1,4 @@
-// 🏅 運動島＋🏟️ 田徑場：游泳池、跆拳道館、田徑場都在運動島上（走木橋到得了）；百米衝刺（偷跑重來、跑完有名次、破紀錄）、大隊接力（完美交棒、掉棒）、跳遠紀錄；房間裡的東西都能點
+// 🏅 運動島（游泳池、跆拳道館、體育館，走木橋到得了）＋學校操場的田徑：花豹體育老師；百米衝刺（偷跑重來、跑完有名次、破紀錄）、大隊接力（完美交棒、掉棒）、跳遠紀錄；房間裡的東西都能點
 const { chromium } = require('playwright');
 const path = require('path');
 (async () => {
@@ -10,8 +10,8 @@ const path = require('path');
   const out = await p.evaluate(async () => {
     const wait = ms => new Promise(r => setTimeout(r, ms)), o = {};
     G.guide = 'done'; $('#modal').hidden = true;
-    islMapCache = null; const m = islMap(0), sp = ['pool', 'dojo', 'track'].map(id => m.blds.find(b => b.id === id));
-    o.onSportIsle = sp.every(b => b && b.islet);
+    islMapCache = null; const m = islMap(0), sp = ['pool', 'dojo', 'arena'].map(id => m.blds.find(b => b.id === id));
+    o.onSportIsle = sp.every(b => b && b.islet); o.noTrackBld = !m.blds.some(b => b.id === 'track') && !PLACES.track;
     const home = m.blds.find(b => b.id === 'home');
     o.walkable = sp.every(b => { const pth = islFindPath(m, home.door[0], home.door[1], (x, y) => x === b.door[0] && y === b.door[1]); const l = pth && pth[pth.length - 1]; return l && l[0] === b.door[0] && l[1] === b.door[1]; });
     // 百米：偷跑
@@ -30,10 +30,14 @@ const path = require('path');
     openLongJump(); await wait(50); for (let k = 0; k < 3; k++) { const z = meterRound.test.zone(); meterRound.test.setPos(z[0] + z[1] / 2); meterRound.test.hit(); await wait(1800); }
     o.lj = trackState().lj > 3; closeGameWindow();
     // 房間
-    travelArrive('track'); await wait(300); $('#modal').hidden = true;
-    o.host = host.n && host.n.id === 'track' && hostMenuEntries().some(e => /百米/.test(e[0]));
-    o.usable = curRoom().items.every(it => canUse(it) || FURN_BY_ID[it.id].layer === 'floor' && FURNITURE_ACT[it.id]);
-    o.quick = allQuickGames().some(g => g.name === '大隊接力' && g.where === 'track');
+    travelArrive('school'); await wait(400); $('#modal').hidden = true;
+    o.teacher = host.n && host.n.id === 'teacher';
+    goPlaceRoom(1); await wait(400); $('#modal').hidden = true;
+    o.host = host.n && host.n.id === 'track' && hostMenuEntries().some(e => /百米/.test(e[0])) && hostMenuEntries().some(e => /回教室/.test(e[0]));
+    o.usable = curRoom().items.filter(it => /^tr_/.test(it.id)).every(it => canUse(it) || FURN_BY_ID[it.id].layer === 'floor' && FURNITURE_ACT[it.id]);
+    openRaceChoice(); o.choice = document.querySelectorAll('.lv-row button').length === 2; document.querySelectorAll('.lv-row button')[1].click(); await wait(100); o.choiceSprint = /百米/.test(document.querySelector('.game-title, h2') ? document.body.innerText : ''); closeGameWindow();
+    goPlaceRoom(0); await wait(400); o.backTeacher = host.n && host.n.id === 'teacher';
+    o.quick = allQuickGames().some(g => g.name === '大隊接力' && g.where === 'school');
     saveGame(); const raw = JSON.parse(localStorage.getItem(SAVE_KEY)); o.saved = raw.track && raw.track.best > 0;
     o.bad = normalizeSave(Object.assign({}, raw, { track: { best: 'x', lj: 999 } })).track.best == null;
     return o;
