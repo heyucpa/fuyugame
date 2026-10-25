@@ -731,6 +731,9 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .isl-req { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; background: #fffaf0; border: 3px solid #ff9a3c; border-radius: 999px; padding: 6px 6px 6px 16px; font-weight: 800; font-size: 15px; color: #5a4636; z-index: 4; max-width: calc(100% - 280px); box-shadow: 0 4px 12px rgba(0,0,0,.15); }
 .isl-req button { font: inherit; font-size: 14px; font-weight: 900; border: none; background: #ff9a3c; color: #fff; border-radius: 999px; padding: 6px 12px; white-space: nowrap; }
 @media (max-width: 700px) { .isl-req { top: auto; bottom: 60px; max-width: 94%; font-size: 13px; } }
+.rename-row { display: flex; align-items: center; gap: 10px; padding: 8px; border: 2px solid var(--line); border-radius: 14px; margin: 6px 0; background: #fff; }
+.rename-t { flex: 1; display: flex; flex-direction: column; } .rename-t span { font-size: 12px; color: #8a7a6a; }
+.rename-b { display: flex; gap: 4px; flex-wrap: wrap; } .rename-b .on { background: #ffe0ee; border-color: #ff8fb3; }
 .spar-row { display: flex; gap: 12px; justify-content: center; margin: 8px 0; }
 .spar-row button { min-width: 120px; font-size: 20px; }
 .music-menu { position: fixed; z-index: 70; background: var(--panel, #fffaf0); border: 2px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
@@ -11291,6 +11294,7 @@ function hostMenuEntries() {
     ['💃 一起跳舞', () => { fufuDance(); host.danceUntil = now() + 6000; }]
   ];
   if (host.n.id === 'friend') list.push([`🎁 送禮物給${s}`, openGiftPicker]);
+  if (host.n.id === 'friend') list.push(['✏️ 名字寫錯了？', () => openInviteRename()]);
   if (trickActive() && TRICK_CANDY[host.n.id]) list.unshift([trickGot(host.n.id) ? `🎃 集糖卡（${trickCount()} / ${TRICK_HOSTS.length}）` : '🎃 不給糖就搗蛋！', () => trickOrTreat(host.n.id)]);
   if (host.n.id === 'uncle') {
     list.push(['🕹️ 一起打地鼠', openMoleGame]);
@@ -11786,6 +11790,7 @@ function openTravelMenu() {
     tb.onclick = openTrickCard;
     card.appendChild(tb);
   }
+  if (loadInvites().length) { const rn = el('button', 'big alt', '✏️ 朋友家的名字寫錯了？'); rn.onclick = () => openInviteRename(); card.appendChild(rn); }
   const row = el('div', 'invite-row');
   const mk = el('button', 'big alt', '💌 做邀請卡');
   mk.onclick = openInviteMaker;
@@ -11889,7 +11894,28 @@ function inviteCodeFrom(text) {
   return m ? m[1] : null;
 }
 // 寄件人：做邀請卡時選的「姊姊／妹妹／其他名字」；舊的卡沒有就用角色名字
-function inviteWho(inv) { return inv.f || inv.n; }
+/* ✏️ 收到的人可以改「這是誰的家」（家長：姊姊做卡的時候寫成妹妹了）：只記在這台電腦上，用寄件存檔的編號對應，
+   之後同一個人再寄新的卡也會照改過的名字。不碰存檔。 */
+const INVITE_NAME_KEY = 'myHouse_inviteNames';
+const inviteKeyOf = inv => inv.id || ((inv.n || '') + '|' + (inv.f || ''));
+function inviteNames() { try { const o = JSON.parse(localStorage.getItem(INVITE_NAME_KEY) || '{}'); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } }
+function setInviteName(inv, name) { const o = inviteNames(); if (name) o[inviteKeyOf(inv)] = String(name).slice(0, 8); else delete o[inviteKeyOf(inv)]; try { localStorage.setItem(INVITE_NAME_KEY, JSON.stringify(o)); return true; } catch (e) { return false; } }
+function inviteWho(inv) { const o = inviteNames()[inviteKeyOf(inv)]; return (typeof o === 'string' && o) || inv.f || inv.n; }
+function openInviteRename(back) {
+  const card = $('#modalCard'); card.innerHTML = '';
+  card.appendChild(el('h2', '', '✏️ 這是誰的家？'));
+  card.appendChild(note('名字寫錯了可以在這裡改。只改這台電腦上看到的名字，不會改到對方的小屋。'));
+  loadInvites().forEach(inv => {
+    const row = el('div', 'rename-row'); row.appendChild(renderInviteGirl(inv, 52, 50));
+    const t = el('div', 'rename-t'); t.append(el('b', '', `${inviteWho(inv)}的家`), el('span', '', `小可愛名字：${inv.n}`)); row.appendChild(t);
+    const bs = el('div', 'rename-b');
+    ['姊姊', '妹妹'].forEach(v => { const b = el('button', 'mini' + (inviteWho(inv) === v ? ' on' : ''), v); b.onclick = () => { setInviteName(inv, v === (inv.f || inv.n) ? '' : v); Sound.play('click'); toast(`✏️ 改成「${v}的家」了`); islMapCache = null; openInviteRename(back); }; bs.appendChild(b); });
+    const o = el('button', 'mini', '其他…'); o.onclick = () => { const v = prompt('這是誰的家？（例如：小美）', inviteWho(inv)); if (v && v.trim()) { setInviteName(inv, v.trim()); toast(`✏️ 改成「${v.trim()}的家」了`); islMapCache = null; openInviteRename(back); } }; bs.appendChild(o);
+    row.appendChild(bs); card.appendChild(row);
+  });
+  const ok = el('button', 'big', '好了'); ok.onclick = () => { $('#modal').hidden = true; if (back) back(); }; card.appendChild(ok);
+  $('#modal').hidden = false;
+}
 const isOwnInvite = inv => !!(inv.id && G.inviteId && inv.id === G.inviteId);
 /* 📧 用 Email 寄（家長：姊姊的 iPad 沒有 LINE，但可以收 email）。
    mailto 會打開這台機器的信件程式（iPad 的「郵件」、電腦的預設信箱），信的內容已經填好，只要填收件人按寄出。 */

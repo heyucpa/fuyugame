@@ -33,10 +33,10 @@ const IPAD = 'Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15
   console.log('iPad Safari', JSON.stringify(a), '→ 就在這裡', JSON.stringify(a2), e2);
   // iPad 主畫面 App（standalone）：直接收下
   const c3 = await b.newContext({viewport:{width:1100,height:760}, userAgent: IPAD}); await c3.addInitScript(()=>{ Object.defineProperty(navigator,'standalone',{value:true}); });
-  const s = await c3.newPage(); await s.goto(HOUSE + '?a=1', {waitUntil:'domcontentloaded'}); await s.waitForTimeout(800); await s.goto(link, {waitUntil:'domcontentloaded'}); await s.waitForTimeout(3500);
+  const s = await c3.newPage(); await s.goto(HOUSE + '?a=1', {waitUntil:'domcontentloaded', timeout: 90000}); await s.waitForTimeout(800); await s.goto(link, {waitUntil:'domcontentloaded', timeout: 90000}); await s.waitForTimeout(3500);
   console.log('iPad App', JSON.stringify(await s.evaluate(()=>({ direct: !$('#modal').hidden && /邀請卡/.test($('#modalCard').innerText) && !/小屋」App/.test($('#modalCard').innerText) }))));
   // 電腦：照舊直接收下
-  const c4 = await b.newContext({viewport:{width:1100,height:760}}); const d = await c4.newPage(); await d.goto(HOUSE + '?a=1', {waitUntil:'domcontentloaded'}); await d.waitForTimeout(800); await d.goto(link, {waitUntil:'domcontentloaded'}); await d.waitForTimeout(3500);
+  const c4 = await b.newContext({viewport:{width:1100,height:760}}); const d = await c4.newPage(); await d.goto(HOUSE + '?a=1', {waitUntil:'domcontentloaded', timeout: 90000}); await d.waitForTimeout(800); await d.goto(link, {waitUntil:'domcontentloaded', timeout: 90000}); await d.waitForTimeout(3500);
   console.log('電腦', JSON.stringify(await d.evaluate(()=>({ direct: !$('#modal').hidden && /邀請卡/.test($('#modalCard').innerText) && !/小屋」App/.test($('#modalCard').innerText) }))), errs);
   await b.close();
 })();
