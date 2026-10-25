@@ -716,6 +716,13 @@ button.pass { font: inherit; }
 .tyc-cash { text-align: center; font-weight: 800; margin: 6px 0; font-size: 14px; }
 .tyc-shop { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px; }
 .tyc-item { display: flex; flex-direction: column; align-items: center; gap: 1px; font: inherit; font-size: 12px; padding: 6px 4px; border: 2px solid var(--line); border-radius: 12px; background: #fff; } .tyc-item .ti { font-size: 22px; } .tyc-item b { font-size: 13px; } .tyc-item.max { background: #eaffea; }
+.qg-bonus { text-align: center; font-weight: 800; color: #e8505b; margin: 4px 0 8px; }
+.qg-h { font-weight: 900; margin: 10px 0 6px; font-size: 16px; }
+.qg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+.qg-tile { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 4px; border: 2px solid var(--line); border-radius: 16px; background: #fff; font: inherit; cursor: pointer; }
+.qg-tile:active { transform: scale(.95); } .qg-i { font-size: 34px; line-height: 1.1; } .qg-tile b { font-size: 13px; } .qg-w { font-size: 10px; color: #8a7a6a; }
+.pill.games { cursor: pointer; font: inherit; font-weight: 800; background: #ffe9b8; }
+@media (max-width: 700px) { .pill-txt { display: none; } }
 .spar-row { display: flex; gap: 12px; justify-content: center; margin: 8px 0; }
 .spar-row button { min-width: 120px; font-size: 20px; }
 .music-menu { position: fixed; z-index: 70; background: var(--panel, #fffaf0); border: 2px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
@@ -923,6 +930,7 @@ button, .card, .place-pick, .lv-btn, .dex-tile, .adv-ep, .gift-opt, .trick-cell,
   <div class="rooms" id="roomTabs"></div>
   <div class="stats">
     <button class="pill sound" id="btnBgm" title="背景音樂">🎵</button>
+    <button class="pill games" id="btnGames" title="小遊戲">🎮<span class="pill-txt"> 遊戲</span></button>
     <button class="pill sound" id="btnSfx" title="音效">🔊</button>
     <span class="pill" title="居家評分">⭐ <b id="score">0</b></span>
     <span class="pill bells" title="錢">💰 <b id="bells">0</b></span>
@@ -4553,6 +4561,7 @@ const OPEN_GIFT_BELLS = 100000;
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
   { id: '2026-10-18T09:00', title: '萬聖節派對＋找小幽靈！🎃👻', lines: [
+    ['🕹️', '最上面多了「🎮 遊戲」：所有小遊戲都在這裡，點圖示就玩；外面地方的遊戲會自動走過去；最上面一排是最近玩過的'],
     ['🎮', '三個像 Roblox 的新小遊戲（在「💰 賺錢」）：👗 換裝走秀（照主題挑衣服上台，評審給星星）、🧁 甜點店大亨（買機器讓甜點店自己賺錢）、🐾 寵物收集模擬器（帶寵物敲金幣堆、升級、開新區域）'],
     ['🔒', '「⚙️ 設定」改成要家長密碼才進得去（還沒設密碼的話，大人算一題乘法），小朋友不會不小心改到設定'],
     ['📲', 'iPad 收邀請卡變簡單：信裡的連結打開後按「📋 複製邀請卡」，回到小屋 App 上面會跳出「📥 打開剛剛複製的邀請卡」，點一下就好（電腦點連結本來就會直接打開）'],
@@ -5334,6 +5343,7 @@ function normalizeSave(g) {
     else ['power', 'bag', 'zone', 'zoneMax'].forEach(a => { if (!Number.isInteger(v[a]) || v[a] < 0 || v[a] > 99) v[a] = a === 'power' || a === 'bag' ? 1 : 0; });
     if (v.zone > v.zoneMax) v.zone = 0; if (v.zoneMax > 2) v.zoneMax = 2;
     if (v.day != null && !(isObj(v.day) && typeof v.day.d === 'string' && num(v.day.n))) delete v.day; }
+  if (out.recentGames != null) { if (Array.isArray(out.recentGames)) out.recentGames = out.recentGames.filter(x => typeof x === 'string' && x.length < 40).slice(0, 8); else delete out.recentGames; }   // 🎮 最近玩過
   if (out.qIsleDay != null && !(isObj(out.qIsleDay) && typeof out.qIsleDay.d === 'string' && isObj(out.qIsleDay.got))) delete out.qIsleDay;
   if (out.raceDay != null && !(isObj(out.raceDay) && typeof out.raceDay.d === 'string' && Number.isInteger(out.raceDay.n) && out.raceDay.n >= 0)) delete out.raceDay;   // 🏁 賽跑猜對的獎金（一天幾次）
   if (out.kid.magic != null && !(isObj(out.kid.magic) && num(out.kid.magic.until) && magicFxList().some(m => m.id === out.kid.magic.id))) delete out.kid.magic;   // 🔮 魔法藥水的效果
@@ -14584,6 +14594,21 @@ function tabBuild(body) {
   });
 }
 
+/* 家裡就能玩的小遊戲（「💰 賺錢」分頁和「🎮 遊戲」快速選單共用）：[圖示, 名字, 打開, 代號] */
+function earnGameList() {
+  return [['🃏', '翻牌配對', openMemoryGame], ['🧺', `${petName()}接水果`, openCatchGame], ['💦', '戳泡泡', openBubbleGame],
+    ['🥤', '杯子躲貓貓', openCupGame], ['🥞', '疊疊鬆餅', openStackGame], ['👗', '換裝走秀', openFashionShow],
+    ['🎯', '彈弓丟蘋果', openSlingGame],
+    ['🧩', '拼圖', openPuzzleGame],
+    ['🐾', '寵物收集模擬器', openSimGame],
+    ['⚪', '彈珠台', openMarbleGame],
+    ['🐠', '撈金魚', openScoopGame],
+    ['🍪', '烤餅乾', openBakeGame],
+    ['🧁', '甜點店大亨', openTycoon],
+    ['🔡', '字母找找看', openLetterGame],
+    ['🔤', '英文單字', openEnglishGame],
+    ['🌳', '寵物捉迷藏', openPetHideGame]].map(g => g.concat('h:' + g[1].replace(/^.*接水果$/, '接水果')));
+}
 function tabEarn(body) {
   body.appendChild(h3('每日禮物'));
   const gift = el('button', 'big', G.lastGift === today() ? '今天已領過 🎁' : '領取今日禮物 🎁 💰1,000');
@@ -14626,21 +14651,10 @@ function tabEarn(body) {
   body.appendChild(h3('小遊戲'));
   body.appendChild(note(`每場 1 分鐘內玩完，分數越高拿到越多錢。${G.gameBonusDay === today() ? '（今天的雙倍已經用過了，明天再來！）' : '🎁 今天第一場獎金雙倍！'}`));
   const games = el('div', 'game-list');
-  [['🃏', '翻牌配對', openMemoryGame], ['🧺', `${petName()}接水果`, openCatchGame], ['💦', '戳泡泡', openBubbleGame],
-    ['🥤', '杯子躲貓貓', openCupGame], ['🥞', '疊疊鬆餅', openStackGame], ['👗', '換裝走秀', openFashionShow],
-    ['🎯', '彈弓丟蘋果', openSlingGame],
-    ['🧩', '拼圖', openPuzzleGame],
-    ['🐾', '寵物收集模擬器', openSimGame],
-    ['⚪', '彈珠台', openMarbleGame],
-    ['🐠', '撈金魚', openScoopGame],
-    ['🍪', '烤餅乾', openBakeGame],
-    ['🧁', '甜點店大亨', openTycoon],
-    ['🔡', '字母找找看', openLetterGame],
-    ['🔤', '英文單字', openEnglishGame],
-    ['🌳', '寵物捉迷藏', openPetHideGame]].forEach(([icon, label, fn]) => {
+  earnGameList().forEach(([icon, label, fn, gid]) => {
     const b = el('button', 'game-pick');
     b.append(el('span', 'gi', icon), el('span', '', label));
-    b.onclick = () => { Sound.play('click'); fn(); };
+    b.onclick = () => { Sound.play('click'); if (typeof gameRecord === 'function') gameRecord(gid); fn(); };
     games.appendChild(b);
   });
   body.appendChild(games);
@@ -22421,6 +22435,50 @@ function openSimGame() {
   raf = requestAnimationFrame(tick);
   openSimGame.test = { piles: () => piles, hit, bag: () => bag, sell, refresh, s };
 }
+/* ===== 🎮 小遊戲快速選單（家長：小朋友可以快速過去玩）=====
+   最上面一排「🎮 遊戲」：全部的小遊戲用大圖示排好，最上面是「最近玩過」。
+   🏠 家裡的：點了直接開始。🗺️ 外面地方的：點了會走過去（要門票的付門票、要坐船的坐船）再開始，出門的感覺不會被跳過。 */
+const AWAY_GAMES = [
+  ['🦵', '踢板', 'dojo', () => openKickGame()], ['👊', '跟著做動作', 'dojo', () => openFormsGame()], ['🎵', '節奏跆拳道', 'dojo', () => openRhythmGame()], ['🥋', '對練', 'dojo', () => openSparGame()],
+  ['🏊', '打水比賽', 'pool', () => openSwimRace()], ['🤿', '潛水撿寶', 'pool', () => openDiveGame()], ['🌊', '跳水', 'pool', () => openJumpDive()],
+  ['🎬', '看電影', 'cinema', () => openMoviePicker()],
+  ['🕹️', '打地鼠', 'uncle', () => openMoleGame()], ['📺', '賽車', 'uncle', () => openRaceGame()], ['🖥️', '打磚塊', 'uncle', () => openBrickGame()],
+  ['🐮', '照顧小牛小羊', 'grandma', () => openFarmGame()],
+  ['📝', '小考', 'school', () => openQuizGame()], ['🔤', '注音小遊戲', 'school', () => openZhuyinGame()], ['🏃', '賽跑', 'school', () => openRunGame()],
+  ['🎣', '釣魚', 'park', () => openFishing()], ['📷', '拍蝴蝶', 'park', () => openButterflyGame()],
+  ['🔎', '幫忙找書', 'library', () => openShelfGame()]
+];
+function allQuickGames() {
+  const home = earnGameList().map(([icon, name, fn, id]) => ({ id, icon, name, where: null, go: fn }));
+  const away = AWAY_GAMES.filter(g => PLACES[g[2]]).map(([icon, name, place, fn]) => ({ id: 'a:' + place + ':' + name, icon, name, where: place, go: fn }));
+  return home.concat(away, [{ id: 'q:quest', icon: '🗺️', name: '世界闖關', where: null, go: () => openQuestMap() }]);
+}
+function gameRecord(id) { if (!id) return; const r = (Array.isArray(G.recentGames) ? G.recentGames : []).filter(x => x !== id); r.unshift(id); G.recentGames = r.slice(0, 8); }
+function quickPlay(g) {
+  $('#modal').hidden = true; gameRecord(g.id); saveGame(); Sound.play('click');
+  if (!g.where || (G.away && G.away.place === g.where)) { if (isl && g.where) closeIsland(); g.go(); return; }
+  const place = g.where, t0 = Date.now();
+  if (isl) closeIsland();
+  travelTo(place);   // 門票、走路過場都照原本的
+  const iv = setInterval(() => {   // 到了、畫面空下來再開始
+    if (Date.now() - t0 > 25000) { clearInterval(iv); return; }
+    if (G.away && G.away.place === place && $('#modal').hidden && !document.getElementById('tripLayer') && !document.getElementById('showcase')) { clearInterval(iv); setTimeout(() => { if (G.away && G.away.place === place && $('#modal').hidden) g.go(); }, 900); }
+  }, 400);
+}
+function openQuickGames() {
+  const card = $('#modalCard'); closeGameWindow(); card.innerHTML = '';
+  const x = el('button', 'modal-x', '✕'); x.onclick = () => { $('#modal').hidden = true; }; card.appendChild(x);
+  card.appendChild(el('h2', '', '🎮 想玩什麼？'));
+  if (G.gameBonusDay !== today()) card.appendChild(el('div', 'qg-bonus', '🎁 今天第一場小遊戲，獎金 ×2！'));
+  const all = allQuickGames(), byId = Object.fromEntries(all.map(g => [g.id, g]));
+  const tile = g => { const b = el('button', 'qg-tile'); b.append(el('span', 'qg-i', g.icon), el('b', '', g.name)); if (g.where) b.appendChild(el('span', 'qg-w', `${PLACES[g.where].emoji} ${PLACES[g.where].name}`)); b.onclick = () => quickPlay(g); return b; };
+  const sec = (title, list) => { if (!list.length) return; card.appendChild(el('div', 'qg-h', title)); const gr = el('div', 'qg-grid'); list.forEach(g => gr.appendChild(tile(g))); card.appendChild(gr); };
+  sec('⭐ 最近玩過', (G.recentGames || []).map(id => byId[id]).filter(Boolean).slice(0, 4));
+  sec('🏠 在家玩', all.filter(g => !g.where));
+  sec('🗺️ 出門玩（會走過去）', all.filter(g => g.where));
+  $('#modal').hidden = false;
+}
+document.getElementById('btnGames') && (document.getElementById('btnGames').onclick = () => { Sound.play('click'); openQuickGames(); });
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
       動物朋友全都打扮來跳舞放煙火，每天第一次結束時每位送一顆糖（4 顆萬聖節糖果）。
