@@ -674,6 +674,8 @@ button.pass { font: inherit; }
 .game-card.in-movie .note, .game-card.in-movie .game-status { color: #d9d0ea; }
 .game-card.in-movie canvas.game-canvas { border-radius: 10px; background: #000; }
 .movie-sub { min-height: 44px; margin-top: 8px; padding: 8px 12px; border-radius: 10px; background: rgba(0,0,0,.55); color: #fff; font-size: 17px; font-weight: 700; text-align: center; line-height: 1.4; }
+.fee-big { font-size: 72px; text-align: center; line-height: 1.2; }
+.fee-have { text-align: center; font-weight: 700; font-size: 17px; }
 .spar-row { display: flex; gap: 12px; justify-content: center; margin: 8px 0; }
 .spar-row button { min-width: 120px; font-size: 20px; }
 .music-menu { position: fixed; z-index: 70; background: var(--panel, #fffaf0); border: 2px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
@@ -4511,6 +4513,7 @@ const OPEN_GIFT_BELLS = 100000;
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
   { id: '2026-10-18T09:00', title: '萬聖節派對＋找小幽靈！🎃👻', lines: [
+    ['🎟️', '電影院（60 元，看一部）、游泳池（40 元）、遊樂園（80 元）進去前要先付錢買票，錢不夠就先去賺錢喔'],
     ['🎬', '小島上多了電影院（在阿婆家上面）！找貓頭鷹放映師買票，主角是你和寵物：動物冒險、太空、恐龍、海底、搞笑，萬聖節還有特別篇。五部都看完送一張電影海報'],
     ['🔮', '「變小藥水」變成「神奇魔法藥水」：每次喝都不一樣（巨人、彩虹頭髮、飄起來、超快、透明、貓咪、星星、愛心、變色、變小），喝了才知道！集滿 10 種吧'],
     ['👻', '每天有一隻小幽靈躲在家裡的某個房間，找到點一下拿 3 顆糖果'],
@@ -11618,10 +11621,12 @@ function travelTo(place) {
   if (G.away && G.away.place === place) return;
   cancelHold(); hideItemMenu();
   if (fufu.pose) fufuStandUp(false);
+  if (typeof placeFee === 'function' && placeFee(place)) { askEntryFee(place, () => walkTrip(PLACES[place].name, () => travelArrive(place), place)); return; }   // 🎟️ 先付錢才出發
   walkTrip(PLACES[place].name, () => travelArrive(place), place);
 }
 function travelArrive(place) {
   G.away = { place, idx: 0 };
+  if (place === 'cinema' && typeof entryTicketPending !== 'undefined' && entryTicketPending) { G.away.ticket = 1; entryTicketPending = false; }
   // 🥋🏊 第一次去：教練免費送一套，收進衣櫃（在家裡也可以穿）
   const gift = place === 'dojo' ? ['dobok', 'dobok_pants', 'barefoot', 'tkd_tee'] : place === 'pool' ? ['swimsuit', 'swim_bottom', 'swim_cap'] : null;
   if (gift && gift.some(id => !G.wardrobe.includes(id))) { gift.forEach(id => { if (!G.wardrobe.includes(id)) G.wardrobe.push(id); }); setTimeout(() => toast(place === 'dojo' ? '🥋 熊熊教練送你一套道服！在「換裝」也找得到' : '🏊 鴨鴨教練送你一套泳衣！在「換裝」也找得到'), 1800); }
@@ -19053,6 +19058,7 @@ function islEnter(id) {   // 走到門口：關掉地圖、進去（家：回家
   if (fm) { const inv = invites[+fm[1]]; if (inv) visitFriend(inv, true); return; }
   if (G.away && G.away.place === id) return;
   if (!PLACES[id]) return;
+  if (typeof placeFee === 'function' && placeFee(id)) { askEntryFee(id, () => travelArrive(id), () => openIsland()); return; }   // 🎟️ 電影院、游泳池：先付錢
   travelArrive(id);
 }
 const islRunning = () => runOn() || !!(isl && isl.shift);
@@ -20767,6 +20773,27 @@ const MOVIES = [
     { d: 6, say: '萬聖節快樂！明年再來找小幽靈玩吧！', draw(g, t) { MV.sky(g, '#2a1f4a', '#4a3a6a'); MV.stars(g, t, 40); MV.ground(g, 160, '#3a4a3a'); MV.kid(g, 150, 180, 1.1, { t, joy: true }); MV.ghost(g, 220, 130 + Math.sin(t * 2) * 6, 1, t); MV.pumpkin(g, 100, 178, 1, true, t); g.font = '900 22px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillStyle = '#ffb347'; g.fillText('Happy Halloween!', 180, 50); } }
   ] }
 ];
+/* 🎟️ 進場要先付錢（家長：電影院、游泳池、遊樂園進去前要先付錢）：從小島門口或「快速出門」去的時候先問，付了才進去。
+   電影院的票＝可以看一部電影（再看要再買）；游泳池付一次在裡面玩到離開。錢不夠就進不去（提醒她去賺錢）。 */
+const PLACE_FEES = { cinema: MOVIE_TICKET, pool: 40, amusement: 80 };   // 遊樂園：門票一張，進去設施都可以玩到離開
+function placeFee(id) { return PLACE_FEES[id] || 0; }
+function askEntryFee(id, go, back) {
+  const fee = placeFee(id), pl = PLACES[id], card = $('#modalCard'), enough = G.bells >= fee;
+  card.innerHTML = ''; card.classList.remove('game-card', 'in-game', 'in-movie');
+  card.appendChild(el('h2', '', `${pl.emoji} ${pl.name}`));
+  card.appendChild(el('div', 'fee-big', id === 'cinema' ? '🎟️' : id === 'pool' ? '🏊' : '🎡'));
+  card.appendChild(note(id === 'cinema' ? `電影票 ${fee} 元，可以看一部電影。` : id === 'amusement' ? `門票 ${fee} 元，進去所有設施都可以玩到離開。` : `入場費 ${fee} 元，付了可以玩到離開。`));
+  card.appendChild(el('p', 'fee-have', enough ? `你有 💰 ${fmt(G.bells)}` : `你只有 💰 ${fmt(G.bells)}，還差 ${fmt(fee - G.bells)} 元。去玩小遊戲賺錢吧！`));
+  const row = el('div', 'movie-pop');
+  const pay = el('button', 'big', `💰 付 ${fee} 元進去`), no = el('button', 'big alt', enough ? '不要了' : '好');
+  pay.disabled = !enough;
+  pay.onclick = () => { addBells(-fee); Sound.play('coin'); saveGame(); refreshTop(); $('#modal').hidden = true; go(); if (id === 'cinema' && G.away && G.away.place === 'cinema') G.away.ticket = 1; else if (id === 'cinema') entryTicketPending = true; };
+  no.onclick = () => { $('#modal').hidden = true; Sound.play('click'); if (back) back(); };
+  row.append(pay, no); card.appendChild(row);
+  $('#modal').hidden = false;
+  try { speak(enough ? `${pl.name}要付${fee}元喔` : '錢不夠喔，去賺錢吧！'); } catch (e) {}
+}
+let entryTicketPending = false;   // 快速出門會先走一段路才到：到了再把票給她
 const MOVIE_BY_ID = Object.fromEntries(MOVIES.map(m => [m.id, m]));
 const MOVIE_REGULAR = MOVIES.filter(m => !m.season).map(m => m.id);
 function movieText(s) { return String(s).split('{名字}').join(charName()).split('{寵物}').join(G.pet ? petName() : '小寵物'); }
@@ -20783,7 +20810,7 @@ function drawMoviePoster(g, W, H, id) {   // 海報：顏色＋大圖示＋片�
 function posterCanvas(id, w, h) { const c = document.createElement('canvas'), dpr = window.devicePixelRatio || 1; c.width = w * dpr; c.height = h * dpr; c.style.width = w + 'px'; c.style.height = h + 'px'; const g = c.getContext('2d'); g.scale(dpr, dpr); drawMoviePoster(g, w, h, id); return c; }
 // 選電影：海報一排，看過的打勾
 function openMoviePicker(preId) {
-  const w = openGameWindow('🎬 今天要看哪一部？', `點海報選電影。電影票 ${MOVIE_TICKET} 元，主角是你和${G.pet ? petName() : '寵物'}！`);
+  const w = openGameWindow('🎬 今天要看哪一部？', `點海報選電影，主角是你和${G.pet ? petName() : '寵物'}！${hasTicket() ? '（你有一張電影票）' : `（再看一部要再買票：${MOVIE_TICKET} 元）`}`);
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   const seen = moviesSeen(), grid = el('div', 'movie-grid');
   moviesNow().forEach(m => { const b = el('button', 'movie-pick'); b.appendChild(posterCanvas(m.id, 96, 132)); b.appendChild(el('b', '', movieText(m.title))); b.appendChild(el('span', '', seen[m.id] ? `✅ 看過 ${seen[m.id]} 次` : '🆕 還沒看過')); b.onclick = () => moviePopcorn(w, m); grid.appendChild(b); });
@@ -20793,21 +20820,24 @@ function openMoviePicker(preId) {
   leaveButton(w);
   if (preId && MOVIE_BY_ID[preId] && moviesNow().includes(MOVIE_BY_ID[preId])) moviePopcorn(w, MOVIE_BY_ID[preId]);
 }
+const hasTicket = () => !!(G.away && G.away.place === 'cinema' && G.away.ticket > 0);   // 進場買的那張票（看一部）
 function moviePopcorn(w, m) {
-  if (G.bells < MOVIE_TICKET) { toast(`💰 電影票要 ${MOVIE_TICKET} 元，錢不夠喔～去玩小遊戲賺錢吧！`); return; }
+  const tk = hasTicket() ? 0 : MOVIE_TICKET;
+  if (G.bells < tk) { toast(`💰 再看一部要再買一張票（${MOVIE_TICKET} 元），錢不夠喔～去玩小遊戲賺錢吧！`); return; }
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   w.stage.appendChild(posterCanvas(m.id, 120, 165));
   w.stage.appendChild(el('div', 'tkd-say', `「${movieText(m.title)}」要加買爆米花嗎？`));
   const row = el('div', 'movie-pop');
   const yes = el('button', 'big', `🍿 要！（${MOVIE_POPCORN} 元）`), no = el('button', 'big alt', '不用了，直接看');
-  yes.disabled = G.bells < MOVIE_TICKET + MOVIE_POPCORN;
+  yes.disabled = G.bells < tk + MOVIE_POPCORN;
   yes.onclick = () => playMovie(w, m, true); no.onclick = () => playMovie(w, m, false);
   row.append(yes, no); w.stage.appendChild(row);
-  w.status.textContent = `🎟️ 電影票 ${MOVIE_TICKET} 元`;
+  w.status.textContent = tk ? `🎟️ 再看一部要再買一張票：${MOVIE_TICKET} 元` : '🎟️ 用進場買的電影票';
   leaveButton(w);
 }
 function playMovie(w, m, popcorn) {
-  addBells(-(MOVIE_TICKET + (popcorn ? MOVIE_POPCORN : 0))); refreshTop(); saveGame();
+  const tk = hasTicket() ? 0 : MOVIE_TICKET; if (hasTicket()) G.away.ticket--;
+  addBells(-(tk + (popcorn ? MOVIE_POPCORN : 0))); refreshTop(); saveGame();
   Sound.play('coin');
   w.card.classList.add('in-movie');
   { const h = w.card.querySelector('h2'); if (h) h.textContent = `🎬 ${movieText(m.title)}`; const nt = w.card.querySelector('h2 + *'); if (nt && nt !== w.stage) nt.style.display = 'none'; }

@@ -2743,6 +2743,7 @@
     /* 98 公園、學校也有路過的動物朋友（遊樂園 3、公園 2、學校 3；親戚家沒有） */
     var realWalk98 = walkTrip; walkTrip = function(l, d){ d(); };
     try {
+      if (typeof PLACE_FEES === 'object') Object.keys(PLACE_FEES).forEach(function(k){ PLACE_FEES[k] = 0; });   // 進場付錢另外在 tests/cinema.js 測，這裡直接進去
       [['park', 2], ['school', 3], ['amusement', 3], ['library', 2], ['uncle', 0]].forEach(function(pc){
         G.away = null; host.n = null; travelTo(pc[0]);
         var n98 = performance.now(); for (var g98 = 0; g98 < 6; g98++) gameStep(.05, n98 + g98 * 50);

@@ -1,4 +1,4 @@
-// 🎬 電影院：小島上有、放映師賣票、選片（萬聖節片只在萬聖節）、錢不夠買不了、播放（倒數→每一幕→要她點的地方會停住等）、
+// 🎬 電影院：進場先付錢（電影院、游泳池、遊樂園；錢不夠進不去、不要就回小島；學校不用錢）、小島上有、放映師賣票、選片（萬聖節片只在萬聖節）、錢不夠買不了、播放（倒數→每一幕→要她點的地方會停住等）、
 //    看完蓋章、五部都看過送海報、存檔讀回來、壞資料清掉
 const { chromium } = require('playwright');
 const path = require('path');
@@ -12,6 +12,34 @@ const path = require('path');
     const wait = ms => new Promise(r => setTimeout(r, ms)), o = {};
     G.guide = 'done'; $('#modal').hidden = true;
     o.onIsland = islBuildings(0).some(b => b.id === 'cinema');
+    // 🎟️ 進場先付錢：從小島門口進電影院／游泳池／遊樂園
+    G.bells = 30; openIsland(); await wait(200); islEnter('pool'); await wait(150);
+    o.poorPool = !$('#modal').hidden && document.querySelector('#modalCard .movie-pop button').disabled && !G.away;
+    [...document.querySelectorAll('#modalCard .movie-pop button')][1].click(); await wait(300); o.backToIsland = !!document.getElementById('islandLayer'); closeIsland();
+    G.bells = 500; openIsland(); await wait(200); islEnter('pool'); await wait(150); document.querySelector('#modalCard .movie-pop button').click(); await wait(300);
+    o.poolPaid = G.bells === 460 && G.away && G.away.place === 'pool';
+    homeArrive(); await wait(200);
+    openIsland(); await wait(200); islEnter('amusement'); await wait(150); document.querySelector('#modalCard .movie-pop button').click(); await wait(300);
+    o.amusePaid = G.bells === 380 && G.away && G.away.place === 'amusement';
+    homeArrive(); await wait(200);
+    openIsland(); await wait(200); islEnter('cinema'); await wait(150); document.querySelector('#modalCard .movie-pop button').click(); await wait(300);
+    o.cinemaPaid = G.bells === 320 && G.away && G.away.place === 'cinema' && G.away.ticket === 1;
+    openMoviePicker('space'); await wait(100); document.querySelector('.movie-pop .alt').click(); await wait(200);
+    o.ticketUsed = G.bells === 320 && G.away.ticket === 0; closeGameWindow(); $('#modal').hidden = true;
+    homeArrive(); await wait(200);
+    openIsland(); await wait(200); islEnter('school'); await wait(300); o.freeSchool = G.away && G.away.place === 'school' && $('#modal').hidden; homeArrive(); await wait(200);
+    // 🎟️ 進場先付錢：從小島門口進電影院／游泳池
+    G.bells = 30; openIsland(); await wait(200); islEnter('pool'); await wait(150);
+    o.poorPool = !$('#modal').hidden && document.querySelector('#modalCard .movie-pop button').disabled && !G.away;
+    [...document.querySelectorAll('#modalCard .movie-pop button')][1].click(); await wait(300); o.backToIsland = !!document.getElementById('islandLayer'); closeIsland();
+    G.bells = 500; openIsland(); await wait(200); islEnter('pool'); await wait(150); document.querySelector('#modalCard .movie-pop button').click(); await wait(300);
+    o.poolPaid = G.bells === 460 && G.away && G.away.place === 'pool';
+    homeArrive(); await wait(200);
+    openIsland(); await wait(200); islEnter('cinema'); await wait(150); document.querySelector('#modalCard .movie-pop button').click(); await wait(300);
+    o.cinemaPaid = G.bells === 400 && G.away && G.away.place === 'cinema' && G.away.ticket === 1;
+    openMoviePicker('space'); await wait(100); document.querySelector('.movie-pop .alt').click(); await wait(200);
+    o.ticketUsed = G.bells === 400 && G.away.ticket === 0; closeGameWindow(); $('#modal').hidden = true;
+    homeArrive(); await wait(200);
     travelArrive('cinema'); await wait(300); $('#modal').hidden = true;
     o.host = host.n && host.n.id; o.menu = hostMenuEntries().some(e => /看電影/.test(e[0]));
     o.seats = curRoom().items.filter(i => i.id === 'cinema_seat').every(i => canUse(i));
@@ -43,7 +71,7 @@ const path = require('path');
     return o;
   });
   console.log(JSON.stringify(out));
-  const ok = out.onIsland && out.host === 'cinema' && out.menu && out.seats && out.posters >= 5 && out.halloween && out.poor && out.paid === 140 &&
+  const ok = out.onIsland && out.poorPool && out.backToIsland && out.poolPaid && out.cinemaPaid && out.ticketUsed && out.host === 'cinema' && out.menu && out.seats && out.posters >= 5 && out.halloween && out.poor && out.paid === 140 &&
     out.scene0 === 0 && out.atTap === 3 && out.sub.length > 4 && out.stillTap && out.done && out.prize && out.hasPoster && out.saved && out.badCleaned && !errs.length;
   console.log(ok ? '✅ 全部通過' : '❌ 有問題 ' + errs.join(' | '));
   await b.close();
