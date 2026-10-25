@@ -728,6 +728,9 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .qg-tile:active { transform: scale(.95); } .qg-i { font-size: 34px; line-height: 1.1; } .qg-tile b { font-size: 13px; } .qg-w { font-size: 10px; color: #8a7a6a; }
 .pill.games { cursor: pointer; font: inherit; font-weight: 800; background: #ffe9b8; }
 @media (max-width: 700px) { .pill-txt { display: none; } }
+.isl-req { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; background: #fffaf0; border: 3px solid #ff9a3c; border-radius: 999px; padding: 6px 6px 6px 16px; font-weight: 800; font-size: 15px; color: #5a4636; z-index: 4; max-width: calc(100% - 280px); box-shadow: 0 4px 12px rgba(0,0,0,.15); }
+.isl-req button { font: inherit; font-size: 14px; font-weight: 900; border: none; background: #ff9a3c; color: #fff; border-radius: 999px; padding: 6px 12px; white-space: nowrap; }
+@media (max-width: 700px) { .isl-req { top: auto; bottom: 60px; max-width: 94%; font-size: 13px; } }
 .spar-row { display: flex; gap: 12px; justify-content: center; margin: 8px 0; }
 .spar-row button { min-width: 120px; font-size: 20px; }
 .music-menu { position: fixed; z-index: 70; background: var(--panel, #fffaf0); border: 2px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
@@ -19079,7 +19082,8 @@ function openIsland() {
   const dpr = () => window.devicePixelRatio || 1;
   isl = { fx: [], gulls: [], shellGot: {}, tool: null, act: null, holes: [], bees: null, layer, cv, m, invites, x: st.x + .5, y: st.y + .5, path: [], pending: null, skipDoor: st.id, facing: 1, back: false,
     t: 0, last: performance.now(), keys: {}, press: null, repath: 0, shake: {}, picked: {}, trail: [], pet: { x: st.x + .5, y: st.y + 1.2, f: 1 }, raf: 0, tip, cam: { x: st.x + .5, y: st.y + .5 }, from: G.away ? G.away.place : null };
-  isl.npcs = NEIGHBORS.filter(Boolean).slice().sort((a, b) => (!!G.friends[a.id] - !!G.friends[b.id]) || Math.random() - .5).slice(0, 3).map((n, i) => {   // 島上逛街的動物朋友（還沒認識的排前面）
+  const reqWho = G.islReq && G.islReq.d === today() && !G.islReq.done ? G.islReq.npc : null;   // 🙋 請她幫忙的那一位：一定要在島上（不然找不到）
+  isl.npcs = NEIGHBORS.filter(Boolean).slice().sort((a, b) => ((b.id === reqWho) - (a.id === reqWho)) || (!!G.friends[a.id] - !!G.friends[b.id]) || Math.random() - .5).slice(0, 3).map((n, i) => {   // 島上逛街的動物朋友（還沒認識的排前面）
     let x = 0, y = 0; for (let k = 0; k < 60; k++) { x = 18 + Math.floor(Math.random() * 16); y = 14 + Math.floor(Math.random() * 12); if (islPass(m, x, y)) break; }
     let pic = null; try { pic = renderNeighborPortrait(n, 48, 44, false); } catch (e) {}
     return { n, x: x + .5, y: y + .5, path: [], wait: 1 + Math.random() * 3, f: 1, pic, cool: 0 };
@@ -19262,6 +19266,7 @@ function islStep(dt) {
   if (Math.abs(dy) > Math.abs(dx) * 1.2) isl.back = dy < 0; else if (dx) isl.back = false;
   isl.walking = moving;
   if (moving && typeof islFootStep === 'function') islFootStep();
+  if (typeof islReqHud === 'function') islReqHud();
   const tx = Math.floor(isl.x), ty = Math.floor(isl.y);
   const door = m.blds.find(b => b.door[0] === tx && b.door[1] === ty);
   if (isl.skipDoor && !(door && door.id === isl.skipDoor)) isl.skipDoor = null;
@@ -19411,6 +19416,7 @@ function islDraw(now) {
   ISL_LAMPS.forEach(([x, y]) => items.push({ y: (y + 1) * T, draw: () => islDrawLamp(ctx, x, y) }));
   isl.critters.forEach(c => items.push({ y: (c.fly ? c.y - 1.5 : c.y) * T, draw: () => islDrawCritter(ctx, c) }));
   if (isl.bike) items.push({ y: isl.bike.y * T, draw: () => islDrawBike(ctx, isl.bike, now) });
+  if (typeof islReqGuideDraw === 'function') items.push({ y: 1e9, draw: () => islReqGuideDraw(ctx, now) });   // 👇 任務的小手指
   (m.specials || []).forEach(sp => items.push({ y: (sp.y + 1) * T, draw: () => islDrawSpecial(ctx, sp, now) }));
   (m.docks || []).forEach(d => items.push({ y: (d.y + .2) * T, draw: () => islDrawDock(ctx, d, now) }));
   isl.coins.forEach(c => items.push({ y: (c.y + .6) * T, draw: () => islDrawCoin(ctx, c, tt) }));
@@ -22489,6 +22495,50 @@ function openQuickGames() {
   $('#modal').hidden = false;
 }
 document.getElementById('btnGames') && (document.getElementById('btnGames').onclick = () => { Sound.play('click'); openQuickGames(); });
+/* 👆 任務小幫手（家長：說要找咩咩，但找不到）：
+   ・請她幫忙的那位朋友一定會在島上
+   ・畫面上方有一條提示：「🐚 找貝殼給咩咩」→「🎁 拿去給咩咩」，旁邊一顆「👣 帶我去」，點了小可愛自己走過去
+     （找貝殼：走到最近的貝殼；抓蝴蝶：拿網子走到蝴蝶旁邊；釣魚：拿釣竿走到池塘；摘花：走到最近的花）
+   ・目標頭上有一隻一直點的大手指 👇；目標在畫面外的話，畫面邊邊有箭頭指方向 */
+function islReqNow() { const rq = G.islReq; return rq && rq.d === today() && !rq.done ? rq : null; }
+function islReqHud() {
+  if (!isl) return;
+  const rq = islReqNow(); let bar = document.getElementById('islReqBar');
+  if (!rq) { if (bar) bar.remove(); return; }
+  const who = NEIGHBORS.find(x => x && x.id === rq.npc), R = ISL_REQS[rq.kind], txt = rq.have ? `🎁 把${R[1]}拿去給${who ? who.short : '朋友'}` : `${R[0]} 幫${who ? who.short : '朋友'}找${R[1]}（${R[2]}）`;
+  if (!bar) { bar = el('div', 'isl-req'); bar.id = 'islReqBar'; const t = el('span', 'isl-req-t', ''); const go = el('button', '', '👣 帶我去'); go.onclick = e => { e.stopPropagation(); Sound.play('click'); islReqGo(); }; bar.append(t, go); isl.layer.appendChild(bar); }
+  const t = bar.querySelector('.isl-req-t'); if (t.textContent !== txt) t.textContent = txt;
+}
+function islReqTarget() {   // 現在要去哪裡：{x, y, kind}
+  const rq = islReqNow(); if (!rq || !isl) return null;
+  const m = isl.m, q = isl.npcs.find(n => n.n.id === rq.npc);
+  if (rq.have) return q ? { x: q.x, y: q.y, npc: q } : null;
+  const near = list => list.sort((a, b) => Math.hypot(a.x - isl.x, a.y - isl.y) - Math.hypot(b.x - isl.x, b.y - isl.y))[0] || null;
+  if (rq.kind === 'shell') { const sh = near(m.shells.filter(s => !isl.shellGot[s.id]).map(s => ({ x: s.x + .5, y: s.y + .6, id: s.id }))); return sh && Object.assign(sh, { shell: true }); }
+  if (rq.kind === 'flower') { const fl = []; for (let y = 0; y < m.H; y++) for (let x = 0; x < m.W; x++) if (m.flower[y][x] && !isl.picked[x + ',' + y] && !(m.isletAt && m.isletAt[y] && m.isletAt[y][x])) fl.push({ x: x + .5, y: y + .5, fx: x, fy: y }); return near(fl); }
+  if (rq.kind === 'bug') { const c = near(isl.critters.filter(c => c.fly && !(c.hidden > performance.now())).map(c => ({ x: c.x, y: c.y, c }))); return c; }
+  if (rq.kind === 'fish') { const P = ISL_POND; return { x: P.x + P.w / 2, y: P.y + P.h / 2, pond: true }; }
+  return null;
+}
+function islReqGo() {
+  const tg = islReqTarget(); if (!tg) { toast('附近好像沒有，換個地方找找看～'); return; }
+  const rq = islReqNow();
+  if (tg.npc) { isl.pending = { type: 'talk', npc: tg.npc }; if (!islWalkTo((x, y) => Math.hypot(x + .5 - tg.npc.x, y + .5 - tg.npc.y) < 1.5)) isl.pending = null; return; }
+  if (rq.kind === 'fish') { islSetTool('rod'); isl.pending = { type: 'fun', obj: { kind: 'pond', x: tg.x, y: tg.y, reach: 3.6 } }; islWalkTo((x, y) => Math.hypot(x + .5 - tg.x, y + .5 - tg.y) < 3.2); toast('🎣 到池塘邊了，看到「❗」就點一下！'); return; }
+  if (rq.kind === 'bug') { islSetTool('net'); isl.pending = { type: 'net', c: tg.c }; islWalkTo((x, y) => Math.hypot(x + .5 - tg.x, y + .5 - tg.y) < 1.3) || islWalkTo(null, Math.floor(tg.x), Math.floor(tg.y)); return; }
+  if (rq.kind === 'flower') { isl.pending = { type: 'flower', x: tg.fx, y: tg.fy }; if (!islWalkTo((x, y) => x === tg.fx && y === tg.fy)) isl.pending = null; return; }
+  if (rq.kind === 'shell') { isl.pending = { type: 'fun', obj: { kind: 'shell', id: tg.id, x: tg.x, y: tg.y, reach: 1.6 } }; islWalkTo((x, y) => Math.hypot(x + .5 - tg.x, y + .5 - tg.y) < 1.3); }
+}
+function islReqGuideDraw(ctx, now) {   // 目標頭上的大手指 👇（在畫面外就畫在邊邊、指著方向）
+  const tg = islReqTarget(); if (!tg) return;
+  const T = ISL.T, bob = Math.abs(Math.sin(now / 250)) * 8, px = tg.x * T, py = tg.y * T - (tg.npc ? 70 : 34) - bob;
+  ctx.save(); ctx.font = '30px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgba(255,230,120,.5)'; ctx.beginPath(); ctx.arc(px, py, 18 + bob * .5, 0, 7); ctx.fill();
+  ctx.fillText('👇', px, py); ctx.restore();
+  // 畫面外：在小可愛和目標之間、靠近小可愛的地方畫一個箭頭
+  const dx = tg.x - isl.x, dy = tg.y - isl.y, d = Math.hypot(dx, dy);
+  if (d > 8) { const ax = (isl.x + dx / d * 2.6) * T, ay = (isl.y + dy / d * 2.6) * T - 20; ctx.save(); ctx.translate(ax, ay); ctx.rotate(Math.atan2(dy, dx)); ctx.fillStyle = '#ff9a3c'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(18, 0); ctx.lineTo(-8, -12); ctx.lineTo(-3, 0); ctx.lineTo(-8, 12); ctx.closePath(); ctx.stroke(); ctx.fill(); ctx.restore(); }
+}
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
       動物朋友全都打扮來跳舞放煙火，每天第一次結束時每位送一顆糖（4 顆萬聖節糖果）。
