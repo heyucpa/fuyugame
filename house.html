@@ -4747,7 +4747,7 @@ function openNews(list) {
       d.appendChild(sm);
       const box = rowsOf(n);
       const say = el('button', 'mini', '🔊 念給我聽');
-      say.onclick = () => { try { speak(n.title + '。' + n.lines.map(l => l[1]).join('。')); } catch (e) {} };
+      say.onclick = () => { try { speak(n.title + '。' + n.lines.map(l => l[1]).join('。'), null, true); } catch (e) {} };
       box.appendChild(say);
       d.appendChild(box);
       card.appendChild(d);
@@ -4797,7 +4797,7 @@ function openNewsHistory() {
     const box = el('div', 'news');
     fun.forEach(([ic, tx]) => { const r = el('div', 'news-row'); r.append(el('span', 'news-ic', ic), el('span', 'news-tx', tx)); box.appendChild(r); });
     const say = el('button', 'mini', '🔊 念給我聽');
-    say.onclick = () => { try { speak('新增了：' + fun.map(l => l[1]).join('。')); } catch (e) {} };
+    say.onclick = () => { try { speak('新增了：' + fun.map(l => l[1]).join('。'), null, true); } catch (e) {} };
     box.appendChild(say);
     d.appendChild(box);
     card.appendChild(d);
@@ -12610,7 +12610,7 @@ function toast(msg) {
    表情符號不念（中文語音會把 🍎 念成「紅蘋果」之類的，反而亂）。 */
 const canSpeakSafe = () => { try { return canSpeak(); } catch (e) { return false; } };
 const plainText = t => String(t || '').replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}\u{20E3}]/gu, '').replace(/\s+/g, ' ').trim();
-function speakPlain(t) { const s = plainText(t); if (s) try { speak(s); } catch (e) {} return s; }
+function speakPlain(t) { const s = plainText(t); if (s) try { speak(s, null, true); } catch (e) {} return s; }   // 她自己按的：語音關掉也念
 const HOLD_SPEAK_MS = 900;
 let holdSpeak = null;
 document.addEventListener('pointerdown', e => {
@@ -15450,6 +15450,10 @@ function tabSave(body) {
   }
 
   body.appendChild(h3('🔊 語音（台灣腔）'));
+  { const on = voiceOn(), tg = el('button', 'big ' + (on ? '' : 'alt'), on ? '🗣️ 自動念出來：開（點一下關掉）' : '🔇 自動念出來：關（點一下打開）');
+    tg.onclick = () => { setVoiceOn(!voiceOn()); Sound.play('click'); toast(voiceOn() ? '🗣️ 會自動念出來了' : '🔇 不會自動念了（自己按 🔊 還是可以聽）'); renderTab(); };
+    body.appendChild(tg);
+    body.appendChild(note('關掉以後，遊戲不會自己念；想聽的時候按提示旁邊的 🔊、或長按按鈕還是會念。英文單字遊戲的念法不受影響。這台電腦／平板自己記住。')); }
   { const v = canSpeak() ? pickZhVoice() : null;
     body.appendChild(note(!canSpeak() ? '這個瀏覽器不能念出聲音。' : v ? `現在用：${v.name}${zhVoiceScore(v) >= 100 ? '（台灣）' : '（⚠️ 不是台灣腔）'}` : '還沒載入中文語音（等幾秒再看一次）。'));
     const vb = el('button', 'big alt', '🔊 選語音／試聽'); vb.onclick = () => openVoicePicker(); body.appendChild(vb); }
@@ -17307,7 +17311,7 @@ function openAdvComic(seriesId, i, opts) {
       say.title = '念給我聽';
       say.onclick = () => { readAloud = true; show(); };
       row.appendChild(say);
-      if (readAloud) speak(sayText);
+      if (readAloud) speak(sayText, null, true);
       if (readAloud) {
         const mute = el('button', 'big alt', '🔇');
         mute.onclick = () => { readAloud = false; stopSpeak(); show(); };
@@ -20969,7 +20973,7 @@ function openZhuyinVoice(back) {
     const t = el('button', 'zy-tile got');
     t.append(el('b', '', z.sym), el('span', '', z.pic));
     t.title = zyPhrase(z);
-    t.onclick = () => { try { speak(zyPhrase(z)); } catch (e) {} };
+    t.onclick = () => { try { speak(zyPhrase(z), null, true); } catch (e) {} };
     grid.appendChild(t);
   });
   card.appendChild(grid);
@@ -20993,7 +20997,7 @@ function playZhuyin(w, L) {
   while (order.length < ZHUYIN_N) order.push(pool[Math.floor(Math.random() * pool.length)]);
   let n = 0, right = 0, tries = 0, ended = false, q = null;
   gameCleanup = () => { try { stopSpeak(); } catch (e) {} };
-  const sayQ = () => { if (!q) return; speak(L.pic ? q.word : zyPhrase(q)); };
+  const sayQ = () => { if (!q) return; speak(L.pic ? q.word : zyPhrase(q), null, true); };   // 注音遊戲要聽題目：語音關掉也念
   function show() {
     if (n >= ZHUYIN_N) return finish();
     q = order[n]; tries = 0;
@@ -21217,7 +21221,7 @@ function openStorybook(id, aloud) {
       say.title = '聽故事';
       say.onclick = () => { readAloud = true; show(); }; // 重畫這一頁：會念出來，也會出現🔇
       row.appendChild(say);
-      if (readAloud) speak(pageText);
+      if (readAloud) speak(pageText, null, true);
     }
     const last = page === book.pages.length - 1;
     const next = el('button', 'big', last ? '看完了！' : page < 0 ? '翻開 ➡️' : '➡️');
@@ -21261,8 +21265,14 @@ function pickZhVoice() {
 }
 const hasTwVoice = () => zhVoices().some(v => zhVoiceScore(v) >= 100);
 try { if (typeof speechSynthesis !== 'undefined') { speechSynthesis.getVoices(); speechSynthesis.addEventListener && speechSynthesis.addEventListener('voiceschanged', () => {}); } } catch (e) {}   // 有的瀏覽器要先叫一次才會載入聲音清單
-function speak(text, voiceOverride) {
+/* 🔇 自動念出來可以關掉（家長：小女兒沒在聽）。存在這台裝置上（姊姊的 iPad、妹妹的電腦各自設定）。
+   關掉以後：遊戲自己念的都不念；她自己按 🔊、長按按鈕、試聽語音還是會念；英文單字的念法不受影響。 */
+const VOICE_ON_KEY = 'myHouse_voiceOn';
+function voiceOn() { try { return localStorage.getItem(VOICE_ON_KEY) !== '0'; } catch (e) { return true; } }
+function setVoiceOn(on) { try { localStorage.setItem(VOICE_ON_KEY, on ? '1' : '0'); } catch (e) {} if (!on) stopSpeak(); }
+function speak(text, voiceOverride, asked) {
   if (!canSpeak()) return false;
+  if (!asked && !voiceOverride && !voiceOn()) return false;
   try {
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(String(text).replace(/[「」]/g, ''));
