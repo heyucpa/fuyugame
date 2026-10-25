@@ -11,7 +11,7 @@ const { chromium } = require('playwright');
     for(let i=0;i<m.blds.length;i++) for(let j=i+1;j<m.blds.length;j++){ const a=m.blds[i],c=m.blds[j]; if(a.x<c.x+c.w+1&&c.x<a.x+a.w+1&&a.y<c.y+c.h+1&&c.y<a.y+a.h+1) out.push('房子太近 '+a.id+'/'+c.id); }
     const home=m.blds[0]; const reach=new Set(); const q=[[home.door[0],home.door[1]]]; reach.add(q[0].join());
     for(let qi=0;qi<q.length;qi++){ const [x,y]=q[qi]; [[1,0],[-1,0],[0,1],[0,-1]].forEach(([a,c])=>{ const nx=x+a,ny=y+c; if(islPass(m,nx,ny)&&!reach.has(nx+','+ny)){ reach.add(nx+','+ny); q.push([nx,ny]); } }); }
-    m.blds.forEach(bd=>{ if(!reach.has(bd.door.join())) out.push(bd.id+' 走不到'); });
+    m.blds.forEach(bd=>{ if(!reach.has(bd.door.join()) && !bd.fisle) out.push(bd.id+' 走不到'); });   // 朋友島的家：坐船過去（不用走得到）
     let trees=0, flowers=0, land=0; for(let y=0;y<m.H;y++) for(let x=0;x<m.W;x++){ if(m.tree[y][x]){trees++; if(m.path[y][x]) out.push('樹在路上'); } if(m.flower[y][x]) flowers++; if(m.land[y][x]&&!m.beach[y][x]) land++; }
     return { out, trees, flowers, land, nb: m.blds.length };
   });

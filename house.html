@@ -4543,6 +4543,7 @@ const OPEN_GIFT_BELLS = 100000;
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
   { id: '2026-10-18T09:00', title: '萬聖節派對＋找小幽靈！🎃👻', lines: [
+    ['🏡', '主島快滿了，姊姊、妹妹和朋友的家搬到新的「朋友島」！在主島南邊，到碼頭坐船⛵過去；第一次收到邀請卡會播朋友島出現的動畫'],
     ['🐻', '小島更熱鬧了！動物朋友會釣魚、澆花、看書、唱歌、慢跑，走近會跟你打招呼；點牠會跳出對話框，還可以問「需要幫忙嗎？」幫牠找東西拿零用錢。左上角「😊 表情」可以揮手、跳舞，朋友會跟著做'],
     ['👑', '闖關打輸大魔王，可以「從大魔王開始」，而且牠會變弱一點；破完世界會播新小島出現的動畫'],
     ['🚗', '商店多了「🚗 交通工具」：腳踏車、休旅車、工程車、公車、跑車！買了在小島點左上角「🚲 交通工具」就能騎、開，跑得比較快。新小島要到碼頭坐船⛵才過得去'],
@@ -5305,12 +5306,13 @@ function normalizeSave(g) {
     if (!isObj(out.quest)) delete out.quest;
     else { const q = out.quest, okId = k => /^[1-3]-[1-3]$/.test(k);
       if (q.mode !== 'easy' && q.mode !== 'normal') q.mode = 'easy';
-      if (q.newIsle != null && !/^(flower|candy|dino)$/.test(q.newIsle)) delete q.newIsle;
+      if (q.newIsle != null && !/^(flower|candy|dino|friend)$/.test(q.newIsle)) delete q.newIsle;
       q.clear = isObj(q.clear) ? Object.fromEntries(Object.entries(q.clear).filter(([k, v]) => okId(k) && v === 1)) : {};
       q.stars = isObj(q.stars) ? Object.fromEntries(Object.entries(q.stars).filter(([k, v]) => okId(k) && Number.isInteger(v) && v >= 0 && v <= 3)) : {}; } }
   if (out.vehicles != null) { if (Array.isArray(out.vehicles)) out.vehicles = [...new Set(out.vehicles.filter(v => /^(bike|suv|bus|truck|sports)$/.test(v)))]; else delete out.vehicles; }   // 🚗 買的交通工具
   if (out.ride != null && !(typeof out.ride === 'string' && (out.vehicles || []).includes(out.ride))) delete out.ride;
   if (out.islReq != null && !(isObj(out.islReq) && typeof out.islReq.d === 'string' && /^(shell|bug|fish|flower)$/.test(out.islReq.kind) && typeof out.islReq.npc === 'string')) delete out.islReq;   // 🐻 動物朋友請她幫忙
+  if (out.fIsle != null && out.fIsle !== 1) delete out.fIsle;   // 🏡 朋友島的動畫播過了
   if (out.qIsleDay != null && !(isObj(out.qIsleDay) && typeof out.qIsleDay.d === 'string' && isObj(out.qIsleDay.got))) delete out.qIsleDay;
   if (out.raceDay != null && !(isObj(out.raceDay) && typeof out.raceDay.d === 'string' && Number.isInteger(out.raceDay.n) && out.raceDay.n >= 0)) delete out.raceDay;   // 🏁 賽跑猜對的獎金（一天幾次）
   if (out.kid.magic != null && !(isObj(out.kid.magic) && num(out.kid.magic.until) && magicFxList().some(m => m.id === out.kid.magic.id))) delete out.kid.magic;   // 🔮 魔法藥水的效果
@@ -12006,6 +12008,7 @@ function receiveInvite(inv) {
   }
   saveInvite(inv);
   openInviteWelcome(inv);
+  if (typeof friendIsleCheck === 'function') setTimeout(friendIsleCheck, 400);   // 第一張邀請卡：朋友島出現
   return true;
 }
 function openInviteWelcome(inv) {
@@ -18800,7 +18803,7 @@ function decorGo(theme, redo) {
    ・寵物跟在後面走。收到邀請卡的朋友家也是島上的小房子
    ・右上「🚗 快速出門」還是可以用清單直接去；「🔙 回去」不出門
    ・只是新的一個畫面：沒有改存檔，也沒有新的存檔欄位（每次都從家門口、或現在這個地方的門口出發）*/
-const ISL = { W: 52, H: 40, T: 32 };
+const ISL = { W: 52, H: 55, T: 32 };   // 下面多一塊海，放朋友島
 const ISL_BLD = [   // 房子：x, y 是左上角的格子，w×h 格；門在正下方一格
   { id: 'home', x: 24, y: 11, w: 4, h: 3 },
   { id: 'school', x: 12, y: 13, w: 5, h: 3 },
@@ -18813,7 +18816,9 @@ const ISL_BLD = [   // 房子：x, y 是左上角的格子，w×h 格；門在�
   { id: 'pool', x: 45, y: 33, w: 4, h: 2, islet: true },
   { id: 'cinema', x: 40, y: 17, w: 3, h: 2 }
 ];
-const ISL_FRIEND_SPOTS = [[17, 27], [32, 27], [16, 17], [34, 17]];   // 朋友的家（最多 4 棟），3×2
+/* 🏡 朋友島（家長：主島快滿了，姊姊、妹妹、朋友的家搬到另外一座島）：主島南邊的海上，坐船過去。收到第一張邀請卡才會出現（有動畫） */
+const ISL_FRIEND_ISLE = { cx: 26, cy: 46.5, r: 7.2 };
+const ISL_FRIEND_SPOTS = [[22, 42], [28, 42], [21, 47], [28, 47]];   // 朋友的家（最多 4 棟），3×2，都在朋友島上
 const ISL_PUMPKINS = [[22, 17], [30, 20], [20, 22], [31, 16], [26, 24]];   // 萬聖節才有的南瓜燈（點了有小驚喜）
 const ISL_PUMPKIN_CANDY_MAX = 3;   // 南瓜每天最多吐 3 顆糖（不然一直點就一直有糖）
 /* ===== 小島第二階段（家長：原本規劃的都做）=====
@@ -18858,14 +18863,14 @@ let islMapCache = null;
 function islHash(x, y, s) { let h = (Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(s || 0, 1274126177)) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
 function islBuildings(n) {   // 固定的房子＋收到邀請卡的朋友家（n：朋友家數）
   const out = ISL_BLD.map(b => Object.assign({}, b));
-  for (let i = 0; i < Math.min(n || 0, ISL_FRIEND_SPOTS.length); i++) out.push({ id: 'friend' + i, x: ISL_FRIEND_SPOTS[i][0], y: ISL_FRIEND_SPOTS[i][1], w: 3, h: 2 });
+  for (let i = 0; i < Math.min(n || 0, ISL_FRIEND_SPOTS.length); i++) out.push({ id: 'friend' + i, x: ISL_FRIEND_SPOTS[i][0], y: ISL_FRIEND_SPOTS[i][1], w: 3, h: 2, islet: true, fisle: true });
   out.forEach(b => { b.door = [b.x + (b.w >> 1), b.y + b.h]; });
   return out;
 }
 function islMap(nFriends) {
   const nQ = typeof questWorldsCleared === 'function' ? questWorldsCleared() : 0;   // 🗺️ 闖關破了幾個世界＝多幾座小島
   if (islMapCache && islMapCache.nf === nFriends && islMapCache.nQ === nQ) return islMapCache;
-  const W = ISL.W, H = ISL.H, cx = W / 2 - .5, cy = H / 2 - .5;
+  const W = ISL.W, H = ISL.H, cx = 25.5, cy = 19.5;   // 主島的中心固定（地圖往下加大了也不會跟著跑）
   const land = [], beach = [], block = [], path = [], tree = [], flower = [];
   for (let y = 0; y < H; y++) {
     land.push([]); beach.push([]); block.push([]); path.push([]); tree.push([]); flower.push([]);
@@ -18891,7 +18896,15 @@ function islMap(nFriends) {
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (isletAt[y][x] === il.id) { const d = Math.hypot(x - il.to[0], y - il.to[1]); if (d < bd) { bd = d; best = [x, y]; } }
     if (best) { docks.push({ id: il.id, side: 'main', x: il.to[0], y: il.to[1], to: best }); docks.push({ id: il.id, side: 'islet', x: best[0], y: best[1], to: il.to }); }
     specials.push({ id: il.id, x: il.sx, y: il.sy });
-  });   // 斜的地方多補一格，橋才走得過去（只能上下左右走）
+  });
+  if (nFriends > 0) {   // 🏡 朋友島
+    const F = ISL_FRIEND_ISLE;
+    let md = null, mb = 1e9;   // 主島上離朋友島最近的岸邊
+    for (let y = 0; y < H; y++) for (let x = 0; x < 40; x++) if (land[y][x] && !isletAt[y][x] && !bridge[y][x]) { const d = Math.hypot(x - F.cx, y - F.cy); if (d < mb) { mb = d; md = [x, y]; } }
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (Math.hypot((x - F.cx) / 1.25, y - F.cy) <= F.r && !land[y][x]) { isletAt[y][x] = 'friend'; land[y][x] = true; }
+    let fd = null, fb = 1e9; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (isletAt[y][x] === 'friend') { const d = Math.hypot(x - md[0], y - md[1]); if (d < fb) { fb = d; fd = [x, y]; } }
+    if (md && fd) { docks.push({ id: 'friend', side: 'main', x: md[0], y: md[1], to: fd }); docks.push({ id: 'friend', side: 'islet', x: fd[0], y: fd[1], to: md }); }
+  }   // 斜的地方多補一格，橋才走得過去（只能上下左右走）
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     if (!land[y][x]) continue;
     for (let j = -2; j <= 2 && !beach[y][x]; j++) for (let i = -2; i <= 2; i++) { const xx = x + i, yy = y + j; if (xx < 0 || yy < 0 || xx >= W || yy >= H || !land[yy][xx]) { beach[y][x] = true; break; } }
@@ -18902,6 +18915,12 @@ function islMap(nFriends) {
   specials.forEach(sp => { block[sp.y][sp.x] = true; });   // 小島上的大東西（向日葵、棒棒糖、恐龍石像）擋住那一格
   const mark = (x, y) => { if (y >= 0 && y < H && x >= 0 && x < W) path[y][x] = true; };
   blds.forEach(b => {   // 從門口走到廣場：先上下、再左右（小島上的：沿著木橋接到主島，再接到遊樂園門口那條路）
+    if (b.fisle) {   // 朋友島：門口往中間那一條路、再接到島中間
+      const F = ISL_FRIEND_ISLE, [dx0, dy0] = b.door, my = Math.round(F.cy) - 1;
+      for (let y = Math.min(dy0, my); y <= Math.max(dy0, my); y++) mark(dx0, y);
+      for (let x = Math.min(dx0, Math.round(F.cx)); x <= Math.max(dx0, Math.round(F.cx)); x++) mark(x, my);
+      return;
+    }
     if (b.islet) {
       const [x1, y1] = ISL_ISLET.to; for (let x = x1; x >= 26; x--) mark(x, y1);
       const [dx0, dy0] = b.door; for (let x = Math.min(dx0, ISL_ISLET.cx); x <= Math.max(dx0, ISL_ISLET.cx); x++) mark(x, dy0);
@@ -21777,7 +21796,7 @@ function islDrawDock(ctx, d, now) {
     ctx.restore();
   }
   ctx.font = '700 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ffffff'; ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.lineWidth = 3;
-  const il = QUEST_ISLETS.find(q => q.id === d.id), label = d.side === 'main' ? `⛵ ${il ? il.name : ''}` : '⛵ 回大島';
+  const il = d.id === 'friend' ? FRIEND_ISLE_INFO : QUEST_ISLETS.find(q => q.id === d.id), label = d.side === 'main' ? `⛵ ${il ? il.name : ''}` : '⛵ 回大島';
   ctx.strokeText(label, x + T / 2, y - 2); ctx.fillText(label, x + T / 2, y - 2);
 }
 function islBoatRide(d) {
@@ -21807,7 +21826,7 @@ function playIsletAppear(il) {
   box.append(c, row); document.body.appendChild(box);
   const T0 = performance.now(); let raf = 0, live = true, said = {};
   const close = () => { live = false; cancelAnimationFrame(raf); box.remove(); };
-  go.onclick = () => { close(); closeGameWindow(); $('#modal').hidden = true; openIsland(); };
+  go.onclick = () => { close(); if (isl) { islShowNewIsle(); return; } closeGameWindow(); $('#modal').hidden = true; openIsland(); };
   later.onclick = close;
   const once = (k, f) => { if (!said[k]) { said[k] = 1; f(); } };
   const drops = [];
@@ -21827,7 +21846,7 @@ function playIsletAppear(il) {
       const ih = 46 * ease + bounce;
       g.save(); g.beginPath(); g.rect(0, 0, W, sea + 4); g.clip();
       g.fillStyle = '#f2d08a'; g.beginPath(); g.ellipse(cx, sea + 4, 130, ih + 4, 0, Math.PI, 0); g.fill();
-      g.fillStyle = il.id === 'candy' ? '#ffd9e5' : il.id === 'dino' ? '#9ccf7a' : '#8fd18f'; g.beginPath(); g.ellipse(cx, sea + 4, 100, Math.max(1, ih - 6), 0, Math.PI, 0); g.fill();
+      g.fillStyle = il.id === 'candy' ? '#ffd9e5' : il.id === 'dino' ? '#9ccf7a' : il.id === 'friend' ? '#a8e0a0' : '#8fd18f'; g.beginPath(); g.ellipse(cx, sea + 4, 100, Math.max(1, ih - 6), 0, Math.PI, 0); g.fill();
       g.restore();
       // 3. 樹、花、大東西一個一個冒出來
       const pop = (k0, f) => { const k = Math.max(0, Math.min(1, (t - k0) / .35)); if (k > 0) { g.save(); const sc = k < 1 ? k * 1.25 : 1 + Math.sin((t - k0) * 12) * .04 * Math.max(0, 1 - (t - k0 - .35)); g.translate(0, 0); f(sc); g.restore(); } };
@@ -21836,12 +21855,14 @@ function playIsletAppear(il) {
         g.translate(cx + dx, top + 22); g.scale(sc, sc);
         if (il.id === 'candy') { g.fillStyle = '#fffaf0'; g.fillRect(-2, -26, 4, 26); MV.ball(g, 0, -30, 11, ['#ff8fb3', '#ffd23f', '#7bd389', '#6bb6ff'][(dx + 70) % 4 | 0]); g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.arc(0, -30, 6, 0, 5); g.stroke(); }
         else if (il.id === 'flower') { g.font = '22px sans-serif'; g.textAlign = 'center'; g.fillText(['🌸', '🌷', '🌼', '🌺'][(dx + 70) % 4 | 0], 0, -4); }
+        else if (il.id === 'friend') { const rc = ['#6fb7e8', '#ff8fb3', '#ffc94d', '#9be0a0'][(dx + 70) % 4 | 0]; g.fillStyle = '#fffaf0'; g.fillRect(-12, -20, 24, 18); g.fillStyle = rc; g.beginPath(); g.moveTo(-15, -20); g.lineTo(0, -32); g.lineTo(15, -20); g.fill(); g.fillStyle = '#8a5a33'; g.fillRect(-3, -10, 6, 8); }
         else MV.tree(g, 0, 0, .55);
       }));
       pop(3.4, sc => {
         g.translate(cx, top + 18); g.scale(sc * 1.1, sc * 1.1);
         if (il.id === 'flower') { g.fillStyle = '#4f9d4f'; g.fillRect(-3, -50, 6, 50); g.translate(0, -56); for (let i = 0; i < 12; i++) { g.rotate(Math.PI / 6); g.fillStyle = '#ffd23f'; g.beginPath(); g.ellipse(0, -13, 4.5, 9, 0, 0, 7); g.fill(); } MV.ball(g, 0, 0, 9, '#8a5a33'); }
         else if (il.id === 'candy') { g.fillStyle = '#fffaf0'; g.fillRect(-3, -50, 6, 50); MV.ball(g, 0, -62, 20, '#ff6fa3'); g.strokeStyle = '#fff'; g.lineWidth = 4; g.beginPath(); for (let a = 0; a < 18; a += .3) g.lineTo(Math.cos(a + t) * a, -62 + Math.sin(a + t) * a); g.stroke(); }
+        else if (il.id === 'friend') { g.font = '40px sans-serif'; g.textAlign = 'center'; g.fillText('💌', 0, -18); }
         else { MV.dino(g, 0, 0, .7, '#9a9488', t * 3); }
         once('pop', () => Sound.play('fanfare'));
       });
@@ -21863,9 +21884,17 @@ function playIsletAppear(il) {
   playIsletAppear.test = { close, box };
 }
 // 打開小島時：剛出現的新小島，鏡頭先飛過去、冒星星
+const FRIEND_ISLE_INFO = { id: 'friend', name: '朋友島', icon: '🏡', desc: '姊姊、妹妹和朋友的家都在這裡！', cx: ISL_FRIEND_ISLE.cx, cy: ISL_FRIEND_ISLE.cy };
+// 收到第一張邀請卡（或舊存檔已經有朋友的家）：朋友島出現的動畫，只播一次
+function friendIsleCheck() {
+  if (G.fIsle || !loadInvites().length) return;
+  G.fIsle = 1; questState().newIsle = 'friend'; islMapCache = null; saveGame();
+  playIsletAppear(FRIEND_ISLE_INFO);
+}
 function islShowNewIsle() {
+  if (!G.fIsle && loadInvites().length) { friendIsleCheck(); return; }
   const q = questState(); if (!isl || !q.newIsle) return;
-  const il = QUEST_ISLETS.find(x => x.id === q.newIsle); delete q.newIsle; saveGame();
+  const il = q.newIsle === 'friend' ? FRIEND_ISLE_INFO : QUEST_ISLETS.find(x => x.id === q.newIsle); delete q.newIsle; saveGame();
   if (!il) return;
   isl.pan = { x: il.cx, y: il.cy, until: performance.now() + 3200 };
   for (let i = 0; i < 6; i++) setTimeout(() => { if (isl) islAddFx('spark', il.cx + (Math.random() - .5) * 4, il.cy + (Math.random() - .5) * 3, 900); }, 600 + i * 300);
