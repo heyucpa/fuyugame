@@ -706,6 +706,8 @@ button.pass { font: inherit; }
 .isl-talk-opts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 .isl-talk-opts button { font: inherit; font-size: 15px; font-weight: 800; border: 2px solid #e8c58f; background: #fff; border-radius: 999px; padding: 6px 14px; min-height: 38px; cursor: pointer; }
 .isl-talk-opts button:active { background: #fff3e0; }
+.clip-invite { position: fixed; left: 50%; top: 70px; transform: translateX(-50%); z-index: 92; font: inherit; font-size: 18px; font-weight: 900; padding: 12px 44px 12px 20px; border-radius: 999px; border: 3px solid #fff; background: #ff9a3c; color: #fff; box-shadow: 0 8px 20px rgba(0,0,0,.25); animation: fishPop .35s both; }
+.clip-x { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 16px; opacity: .85; padding: 4px; }
 .spar-row { display: flex; gap: 12px; justify-content: center; margin: 8px 0; }
 .spar-row button { min-width: 120px; font-size: 20px; }
 .music-menu { position: fixed; z-index: 70; background: var(--panel, #fffaf0); border: 2px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
@@ -4543,6 +4545,7 @@ const OPEN_GIFT_BELLS = 100000;
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
   { id: '2026-10-18T09:00', title: '萬聖節派對＋找小幽靈！🎃👻', lines: [
+    ['📲', 'iPad 收邀請卡變簡單：信裡的連結打開後按「📋 複製邀請卡」，回到小屋 App 上面會跳出「📥 打開剛剛複製的邀請卡」，點一下就好（電腦點連結本來就會直接打開）'],
     ['🏡', '主島快滿了，姊姊、妹妹和朋友的家搬到新的「朋友島」！在主島南邊，到碼頭坐船⛵過去；第一次收到邀請卡會播朋友島出現的動畫'],
     ['🐻', '小島更熱鬧了！動物朋友會釣魚、澆花、看書、唱歌、慢跑，走近會跟你打招呼；點牠會跳出對話框，還可以問「需要幫忙嗎？」幫牠找東西拿零用錢。左上角「😊 表情」可以揮手、跳舞，朋友會跟著做'],
     ['👑', '闖關打輸大魔王，可以「從大魔王開始」，而且牠會變弱一點；破完世界會播新小島出現的動畫'],
@@ -11738,9 +11741,9 @@ function openTravelMenu() {
     pick(icon, `${pl.emoji} ${pl.name}${here ? '（你在這裡）' : ''}`, pl.desc, () => travelTo(id), here);
   });
   // 🏡 收到邀請卡的家（姊姊／妹妹的家）
-  loadInvites().forEach(inv => {
+  loadInvites().forEach((inv, ii) => {
     const here = !!(G.away && G.away.place === 'friend' && PLACES.friend && PLACES.friend.inviteAt === inv.at && PLACES.friend.inviteName === inv.n);
-    pick(renderInviteGirl(inv, 64, 58), `🏡 ${inviteWho(inv)}的家${here ? '（你在這裡）' : ''}`, `${inv.f ? inv.n + '・' : ''}邀請卡（${inviteDate(inv.at)}）・房間 ${inv.r.length} 間・寵物 ${inv.pn.length} 隻`, () => visitFriend(inv), here);
+    pick(renderInviteGirl(inv, 64, 58), `🏡 ${inviteWho(inv)}的家${here ? '（你在這裡）' : ''}`, `${inv.f ? inv.n + '・' : ''}邀請卡（${inviteDate(inv.at)}）・房間 ${inv.r.length} 間・寵物 ${inv.pn.length} 隻`, () => (typeof friendByBoat === 'function' && ii < ISL_FRIEND_SPOTS.length ? friendByBoat(ii) : visitFriend(inv)), here);   // 🏡 朋友家在朋友島：一樣坐船過去
   });
   if (trickActive()) {
     const tb = el('button', 'big', `🎃 萬聖節集糖卡（${trickCount()} / ${TRICK_HOSTS.length}）`);
@@ -11972,10 +11975,13 @@ function openInvitePaste() {
   const card = $('#modalCard');
   card.innerHTML = '';
   card.appendChild(el('h2', '', '📥 收到邀請卡'));
-  card.appendChild(note('把收到的邀請卡或回禮卡連結貼在下面（在信件或 LINE 裡長按連結 → 拷貝，再到這裡長按 → 貼上）。'));
+  card.appendChild(note('把收到的邀請卡或回禮卡連結貼在下面（在信件或 LINE 裡長按連結 → 拷貝，再到這裡長按 → 貼上）。剛剛已經複製了的話，按「📋 用剛剛複製的」就好。'));
   const box = document.createElement('textarea');
   box.className = 'invite-code'; box.placeholder = '把邀請卡連結貼在這裡';
   card.appendChild(box);
+  const clip = el('button', 'big', '📋 用剛剛複製的');
+  clip.onclick = () => { if (typeof openClipInvite === 'function') openClipInvite(true); };
+  if (navigator.clipboard && navigator.clipboard.readText) card.appendChild(clip);
   const ok = el('button', 'big', '🏡 打開邀請卡');
   ok.onclick = () => {
     const gcode = giftCodeFrom(box.value);
@@ -12042,7 +12048,7 @@ function askOpenInApp(fullLink, go) {
   card.appendChild(el('h2', '', '📲 要在「小屋」App 裡打開喔'));
   card.appendChild(note('你現在是在 Safari 看到的。姊姊的小屋進度在「主畫面的小屋」裡，要在那邊打開才會收到。'));
   const steps = el('div', 'news');
-  [['1️⃣', '按下面「📋 複製邀請卡」'], ['2️⃣', '回到主畫面，打開「小屋」'], ['3️⃣', '按「🚗 出門」→「📥 收到邀請卡」，長按貼上']].forEach(([ic, tx]) => {
+  [['1️⃣', '按下面「📋 複製邀請卡」'], ['2️⃣', '回到主畫面，打開「小屋」'], ['3️⃣', '小屋上面會跳出「📥 打開剛剛複製的邀請卡」，點一下就好']].forEach(([ic, tx]) => {
     const r = el('div', 'news-row'); r.append(el('span', 'news-ic', ic), el('span', 'news-tx', tx)); steps.appendChild(r);
   });
   card.appendChild(steps);
@@ -21811,7 +21817,7 @@ function islBoatStep(a, now) {
   isl.x = a.from[0] + (a.to[0] - a.from[0]) * e; isl.y = a.from[1] + (a.to[1] - a.from[1]) * e;
   isl.facing = a.to[0] >= a.from[0] ? 1 : -1; isl.walking = false;
   isl.pet.x = isl.x - isl.facing * .4; isl.pet.y = isl.y - .1;
-  if (k >= 1) { isl.act = null; isl.x = a.to[0]; isl.y = a.to[1]; isl.trail = []; isl.path = []; Sound.play('splash'); islAddFx('say', isl.x, isl.y - 2, 1200, { text: '到了！' }); }
+  if (k >= 1) { isl.act = null; isl.x = a.to[0]; isl.y = a.to[1]; isl.trail = []; isl.path = []; Sound.play('splash'); islAddFx('say', isl.x, isl.y - 2, 1200, { text: '到了！' }); if (isl.afterBoat) { const f = isl.afterBoat; isl.afterBoat = null; f(); } }
 }
 /* 🏝️ 新小島出現的動畫（家長：小島出現時要有動畫）：
    海面閃閃發光 → 咕嚕咕嚕冒泡 → 小島從海裡升起來、水花四濺 → 樹和大東西（向日葵／棒棒糖／恐龍）一個一個冒出來 →
@@ -22107,6 +22113,42 @@ function islDrawFootprints(ctx, now) {
   const fp = isl.foot; if (!fp) return; const T = ISL.T;
   fp.forEach(f => { const a = Math.max(0, 1 - (now - f.t) / 6000); if (a <= 0) return; ctx.fillStyle = `rgba(160,120,70,${.35 * a})`; ctx.beginPath(); ctx.ellipse(f.x * T + f.s * 3, f.y * T + 8, 2.4, 3.6, 0, 0, 7); ctx.fill(); });
   isl.foot = fp.filter(f => now - f.t < 6000);
+}
+/* 📲 iPad 收邀請卡少一步（家長：複製、貼上對小朋友太麻煩）：
+   信裡的連結會開到 Safari（存檔跟主畫面的小屋是分開的），在那邊按「📋 複製邀請卡」→ 回到小屋 App，
+   畫面上方會跳出「📥 打開剛剛複製的邀請卡」，點一下（iPad 會再問一次「貼上」）就收下了。
+   只讀剪貼簿裡的邀請卡、回禮卡，不碰存檔；剪貼簿裡不是邀請卡就什麼都不做。 */
+async function openClipInvite(fromBtn) {
+  let t = '';
+  try { t = await navigator.clipboard.readText(); } catch (e) { if (fromBtn) toast('沒辦法讀剪貼簿，請長按框框 → 貼上'); return false; }
+  const gcode = giftCodeFrom(t || ''), code = inviteCodeFrom(t || '');
+  if (!code && !gcode) { if (fromBtn) toast('剪貼簿裡沒有邀請卡耶，再去信裡按一次「複製」看看'); return false; }
+  const pill = document.getElementById('clipInvite'); if (pill) pill.remove();
+  $('#modal').hidden = true;
+  handleInviteCodes(code, gcode);
+  return true;
+}
+function isIosApp() { return isIosDevice() && (navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches)); }
+function showClipPill() {
+  if (!isIosApp() || !(navigator.clipboard && navigator.clipboard.readText) || document.getElementById('clipInvite')) return;
+  const b = el('button', 'clip-invite', '📥 打開剛剛複製的邀請卡'); b.id = 'clipInvite';
+  b.onclick = () => openClipInvite(true);
+  const x = el('span', 'clip-x', '✕'); x.onclick = e => { e.stopPropagation(); b.remove(); }; b.appendChild(x);
+  document.body.appendChild(b);
+  setTimeout(() => { if (b.isConnected) b.remove(); }, 20000);
+}
+// 小屋 App 從背景回到前面（剛從 Safari 回來）：出現那顆按鈕 20 秒
+let clipHiddenAt = 0;
+document.addEventListener('visibilitychange', () => { if (document.hidden) clipHiddenAt = Date.now(); else if (clipHiddenAt && Date.now() - clipHiddenAt > 3000) showClipPill(); });
+// 🏡 快速出門去朋友家：一樣要坐船（到主島的碼頭 → 坐船到朋友島 → 走到她家門口進去）
+function friendByBoat(i) {
+  $('#modal').hidden = true;
+  if (!isl) openIsland(); if (!isl) return;
+  const m = isl.m, dock = (m.docks || []).find(d => d.id === 'friend' && d.side === 'main'), b = m.blds.find(x => x.id === 'friend' + i);
+  if (!dock || !b) { const inv = loadInvites()[i]; closeIsland(); if (inv) visitFriend(inv); return; }
+  isl.x = dock.x + .5; isl.y = dock.y + .5; isl.cam.x = isl.x; isl.cam.y = isl.y; isl.path = []; isl.pending = null; isl.skipDoor = null; isl.pan = null;
+  isl.afterBoat = () => { isl.pending = { type: 'enter', id: b.id }; if (!islWalkTo((x, y) => x === b.door[0] && y === b.door[1])) isl.pending = null; };
+  islBoatRide(dock);
 }
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
