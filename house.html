@@ -4545,6 +4545,7 @@ const OPEN_GIFT_BELLS = 100000;
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
   { id: '2026-10-18T09:00', title: '萬聖節派對＋找小幽靈！🎃👻', lines: [
+    ['🔒', '「⚙️ 設定」改成要家長密碼才進得去（還沒設密碼的話，大人算一題乘法），小朋友不會不小心改到設定'],
     ['📲', 'iPad 收邀請卡變簡單：信裡的連結打開後按「📋 複製邀請卡」，回到小屋 App 上面會跳出「📥 打開剛剛複製的邀請卡」，點一下就好（電腦點連結本來就會直接打開）'],
     ['🏡', '主島快滿了，姊姊、妹妹和朋友的家搬到新的「朋友島」！在主島南邊，到碼頭坐船⛵過去；第一次收到邀請卡會播朋友島出現的動畫'],
     ['🐻', '小島更熱鬧了！動物朋友會釣魚、澆花、看書、唱歌、慢跑，走近會跟你打招呼；點牠會跳出對話框，還可以問「需要幫忙嗎？」幫牠找東西拿零用錢。左上角「😊 表情」可以揮手、跳舞，朋友會跟著做'],
@@ -13848,6 +13849,7 @@ function leavePetHouse(i) {
 }
 
 function openTab(name) {
+  if (name !== 'save' && typeof parentOkUntil !== 'undefined') parentOkUntil = 0;   // 離開設定頁：重新上鎖
   setBigRoom(false);                  // 放大房間時點了分頁：把面板打開
   if (tab !== name) sellMode = false; // 換分頁就離開賣東西模式
   tab = name;
@@ -13855,7 +13857,25 @@ function openTab(name) {
   document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === name));
   renderTab();
 }
-document.querySelectorAll('#tabs button').forEach(b => { b.onclick = () => openTab(b.dataset.tab); });
+document.querySelectorAll('#tabs button').forEach(b => { b.onclick = () => (b.dataset.tab === 'save' && tab !== 'save' ? settingsGate(() => openTab('save')) : openTab(b.dataset.tab)); });
+/* 🔒 「⚙️ 設定」整頁上鎖（家長：小朋友很容易按到設定）：
+   有家長密碼 → 先輸入密碼；還沒設密碼 → 大人算一題乘法。進去以後 5 分鐘內、還在設定頁的時候，裡面的按鈕不再重複問密碼；
+   換到別的分頁就重新上鎖。只擋點分頁的那一下，不影響存檔、讀檔。 */
+let parentOkUntil = 0;
+function settingsGate(go) {
+  if (Date.now() < parentOkUntil) { go(); return; }
+  const c = restCfg(), pass = () => { parentOkUntil = Date.now() + 5 * 60000; go(); };
+  if (c.pin) {
+    readPin('⚙️ 設定是爸爸媽媽用的：請輸入家長密碼（4 位數字）', v => { if (v === null) return; if (v.trim() === c.pin) pass(); else { toast('密碼不對喔'); Sound.play('miss'); } }, { forgot: true });
+    return;
+  }
+  const a = 120 + Math.floor(Math.random() * 870), b = 13 + Math.floor(Math.random() * 80);
+  settingsGate.test = a * b;
+  readPin(`⚙️ 設定是爸爸媽媽用的。大人請算：${a} × ${b} ＝ ？（建議到設定裡設一組「家長密碼」，以後輸入密碼就好）`, v => {
+    if (v === null) return;
+    if (+String(v).trim() === a * b) pass(); else { toast('答案不對喔'); Sound.play('miss'); }
+  }, { digits: 6 });
+}
 
 /* ===== 手機上讓房間大一點 =====
    ① 「🔍 放大」：面板收成一排分頁，房間佔滿畫面；點任何分頁就打開面板。記住上次的選擇。
@@ -14056,6 +14076,7 @@ function endRest() {
 function askPin(why, ok) {
   const c = restCfg();
   if (!c.pin) { ok(); return; } // 每次都要輸入：只輸入一次就整段免驗證，小朋友就可以自己改
+  if (tab === 'save' && Date.now() < parentOkUntil) { ok(); return; }   // 剛剛已經用密碼打開設定頁：設定頁裡的按鈕不用再問一次
   readPin(`${why}：請輸入家長密碼（4 位數字）`, v => {
     if (v === null) return;
     if (v.trim() === c.pin) ok();
