@@ -10979,7 +10979,7 @@ function hostTick(dt, now) {
     const cfg = CROWD_PLACES[G.away.place];
     host.crowd = cfg ? NEIGHBORS.slice().sort(() => Math.random() - .5).slice(0, cfg.n).map((n, i) => {
       const c3 = nearestFree(room, 2 + i * 3, 6 + (i % 2) * 2) || c;
-      return { n: cfg.dobok ? Object.assign({}, n, { dobok: TKD_BELTS[Math.floor(Math.random() * 4)][1] }) : n, lines: cfg.lines, still: !!cfg.still, book: cfg.book ? ['#e8505b', '#6bb6ff', '#7bd389'][i] : null, balloon: cfg.balloon ? ['#ff6b6b', '#6bb6ff', '#ffd35c'][i] : null, a: { room: roomKey(), x: c3[0] + .5, y: c3[1] + .5, z: 0, path: [], t: Math.random() * 5, facing: 1,
+      return { swim: cfg.swim ? { lane: i, cap: ['#ff6b9a', '#ffd23f', '#7bd389'][i], dir: i ? -1 : 1, rest: 0 } : null, n: cfg.dobok ? Object.assign({}, n, { dobok: TKD_BELTS[Math.floor(Math.random() * 4)][1] }) : n, lines: cfg.lines, still: !!cfg.still, book: cfg.book ? ['#e8505b', '#6bb6ff', '#7bd389'][i] : null, balloon: cfg.balloon ? ['#ff6b6b', '#6bb6ff', '#ffd35c'][i] : null, a: { room: roomKey(), x: c3[0] + .5, y: c3[1] + .5, z: 0, path: [], t: Math.random() * 5, facing: 1,
         idleUntil: now + 1000 + Math.random() * 3000, blinkAt: 0, squish: 0, squishV: 0, lean: 0, leanV: 0, press: null, happyUntil: 0, particles: [] } };
     }) : [];
     host.pets = (want.pets || []).map(([species, stage, name], i) => {
@@ -11017,7 +11017,7 @@ function hostTick(dt, now) {
     if (Math.random() < .5) setTimeout(() => { if (host.n) fufuSay(pickLine('kidReply'), 2600); }, 3000);
   }
   actorWalk(a, dt, now, room, blockedGrid(room), .5);
-  (host.crowd || []).forEach(cr => { const ca = cr.a; ca.t += dt; actorEnterRoom(ca, room); actorSpring(ca, dt, now, false); if (cr.still) ca.facing = 1; else actorWalk(ca, dt, now, room, blockedGrid(room), .15); });   // 看書的站著不動
+  (host.crowd || []).forEach(cr => { const ca = cr.a; ca.t += dt; actorEnterRoom(ca, room); actorSpring(ca, dt, now, false); if (cr.swim && typeof poolLap === 'function') poolLap(cr, dt, now); else if (cr.still) ca.facing = 1; else actorWalk(ca, dt, now, room, blockedGrid(room), .15); });   // 看書的站著不動
   (host.pets || []).forEach(({ a: pa }) => { pa.t += dt; actorEnterRoom(pa, room); actorSpring(pa, dt, now, false); actorWalk(pa, dt, now, room, blockedGrid(room), .3); });
   farmTick(dt, now, room);
 }
@@ -11266,7 +11266,7 @@ function hostDrawEntries() {
   const list = [host.n.girl
     ? { x: host.a.x - .2, y: host.a.y - .2, w: .4, d: .4, z: 0, h: 64, drawFn: ctx => drawFriendGirl(ctx, host.a, host.n) }
     : { x: host.a.x - .2, y: host.a.y - .2, w: .4, d: .4, z: 0, h: 30 * VISITOR_K, drawFn: ctx => drawNeighborActor(ctx, host.a, host.n, 1, false, false) }];
-  (host.crowd || []).forEach(cr => { if (cr.a.room === roomKey()) list.push({ x: cr.a.x - .2, y: cr.a.y - .2, w: .4, d: .4, z: 0, h: 30 * VISITOR_K, drawFn: ctx => { drawNeighborActor(ctx, cr.a, cr.n, 1, false, false); if (cr.challenge) drawChallengeMark(ctx, cr); if (cr.balloon) drawCrowdBalloon(ctx, cr); if (cr.book) drawCrowdBook(ctx, cr); } }); });
+  (host.crowd || []).forEach(cr => { if (cr.a.room === roomKey()) list.push({ x: cr.a.x - .2, y: cr.a.y - .2, w: .4, d: .4, z: 0, h: 30 * VISITOR_K, drawFn: ctx => { if (cr.swim && typeof drawPoolMate === 'function' && poolWaterAt(cr.a.x, cr.a.y)) { drawPoolMate(ctx, cr); return; } drawNeighborActor(ctx, cr.a, cr.n, 1, false, false); if (cr.challenge) drawChallengeMark(ctx, cr); if (cr.balloon) drawCrowdBalloon(ctx, cr); if (cr.book) drawCrowdBook(ctx, cr); } }); });
   (host.pets || []).forEach(({ a, p }) => { if (a.room === roomKey()) list.push({ x: a.x - .15, y: a.y - .15, w: .3, d: .3, z: 0, h: 26 * lookScale(p), drawFn: ctx => drawPetActor(ctx, a, p) }); });
   farm.actors.forEach(({ n, a }) => list.push({ x: a.x - .2, y: a.y - .2, w: .4, d: .4, z: 0, h: 30 * (n.k || FARM_K), drawFn: ctx => drawNeighborActor(ctx, a, n, 1, false, false, n.k || FARM_K) }));
   return list;
@@ -12502,6 +12502,8 @@ const CROWD_PLACES = {
   // 📚 圖書館：兩位安靜看書的動物朋友（站著不動、手上拿著書，說話小小聲）
   library: { n: 2, book: true, still: true, lines: ['噓～我在看恐龍的書', '這本繪本好好看喔', '你也喜歡看書嗎？', '在圖書館要小聲一點喔～', '我在找公主的故事', '看完要放回書架喔'] },
   // 🥋 道館：兩位穿道服的同學（腰帶顏色隨機），不定時會跑過來問要不要對打
+  // 🏊 游泳池：兩位戴泳帽的同學在水道裡來回游
+  pool: { n: 2, swim: true, lines: ['我游了好幾趟了！', '水好涼喔～', '你會游自由式嗎？', '我們來比賽游到對面！', '要記得換氣喔！', '鴨教練說要先暖身～'] },
   dojo: { n: 2, dobok: true, lines: ['喝！哈！我在練踢腿', '我下次要考黃帶！', '教練說要先敬禮喔', '一起加油！', '我的腳可以踢好高！', '練完好累，可是好開心～'] },
   school: { n: 3, lines: ['下課要不要一起玩？', '老師今天好溫柔喔！', '你功課寫完了嗎？', '等一下一起去操場！', '我們來比賽跑步！', '我帶了點心，分你一半～'] }
 };
@@ -20293,6 +20295,37 @@ function openJumpDive() {
     });
   };
   next();
+}
+/* 🏊 泳池的同學：在最外面兩條水道來回游（游到底停一下再轉身），只露出戴泳帽的頭和划水的手 */
+function poolLap(cr, dt, now) {
+  const it = curRoom().items.find(i => i.id === 'swim_pool'), a = cr.a, sw = cr.swim;
+  if (!it) return;
+  const y = it.y + (sw.lane ? 3.3 : .7), x0 = it.x + .7, x1 = it.x + 5.3;
+  if (!poolWaterAt(a.x, a.y)) { a.x = sw.dir > 0 ? x0 : x1; a.y = y; }   // 剛到：直接在水裡
+  a.path = []; a.y += (y - a.y) * Math.min(1, dt * 3);
+  if (now < sw.rest) return;
+  if (now < (cr.sayUntil || 0)) return;   // 被點到在講話：停下來
+  a.x += sw.dir * .85 * dt; a.facing = sw.dir;
+  if ((sw.dir > 0 && a.x >= x1) || (sw.dir < 0 && a.x <= x0)) { sw.dir = -sw.dir; sw.rest = now + 1200 + Math.random() * 1800; a.squishV = -5; }
+}
+function drawPoolMate(ctx, cr) {
+  const a = cr.a, n = cr.n, k = VISITOR_K, p = iso(a.x, a.y, 0), t = a.t, moving = performance.now() > cr.swim.rest;
+  const bob = Math.sin(t * 5) * 1.2;
+  ctx.save(); ctx.translate(p.x, p.y + 7 * k + bob); ctx.scale(k, k);
+  ctx.save(); ctx.beginPath(); ctx.rect(-40, -60, 80, 52); ctx.clip();
+  drawCreature(ctx, n, { happy: true, blink: false, fx: a.facing * 1.5, clean: 100 });
+  ctx.fillStyle = cr.swim.cap; ctx.beginPath(); ctx.ellipse(0, -18, 12, 7.5, 0, Math.PI, 0); ctx.fill();   // 泳帽
+  ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.beginPath(); ctx.ellipse(-4, -22, 3, 1.6, -.3, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  // 兩隻手輪流大圈划水（自由式）
+  [0, Math.PI].forEach(ph => { const an = t * (moving ? 7 : 2) + ph, up = Math.sin(an);
+    ctx.globalAlpha = up > 0 ? 1 : .4; ctx.strokeStyle = n.body; ctx.lineWidth = 3.4; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(a.facing * 6, -9); ctx.lineTo(a.facing * (6 + Math.cos(an) * 9), -9 - up * 9); ctx.stroke(); });
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = 'rgba(92,196,236,.5)'; ctx.beginPath(); ctx.ellipse(0, -8, 18, 5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(0, -8, 18 + Math.sin(t * 4) * 1.5, 5, 0, 0, Math.PI * 2); ctx.stroke();
+  if (moving) { ctx.fillStyle = '#ffffff'; [0, 1, 2].forEach(i => { const ph = (t * 2.2 + i / 3) % 1; ctx.globalAlpha = 1 - ph; ctx.beginPath(); ctx.arc(-a.facing * (16 + ph * 9), -9 - Math.sin(ph * Math.PI) * 7, 1.7, 0, Math.PI * 2); ctx.fill(); }); ctx.globalAlpha = 1; }
+  ctx.restore();
 }
 /* 🥋 動物同學穿道服：在頭（圓圓的身體）下面多畫一截小身體：白道服、黑色 V 領、腰帶（那位同學考到的顏色）、白褲子、光腳 */
 function drawDobokBody(ctx, n, belt) {
