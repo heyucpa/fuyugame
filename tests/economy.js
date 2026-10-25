@@ -1,4 +1,4 @@
-// 每天第一場小遊戲雙倍、獎盃可以賣
+// 每天第一場小遊戲雙倍、小遊戲獎金 ×3＋認真玩的時間獎金、獎盃可以賣
 const { chromium } = require('playwright');
 (async()=>{
   const b = await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--no-sandbox']});
@@ -9,6 +9,12 @@ const { chromium } = require('playwright');
     G.gameBonusDay=null; const b0=G.bells; const a=payReward({}, 100); out.first=[a,G.bells-b0];
     const b1=G.bells; const c=payReward({}, 100); out.second=[c,G.bells-b1];
     G.gameBonusDay=null; const z=payReward({}, 0); out.zeroKeeps=(G.gameBonusDay===null);
+    // 💰 獎金 ×3＋認真玩的時間（每分鐘 120，最多 10 分鐘；放著不動不算）
+    G.gameBonusDay=today(); gamePlay.sec=150; const b4=G.bells; payReward({}, 100); out.timeBonus=G.bells-b4;   // 100×3＋2.5 分鐘 300
+    gamePlay.sec=5000; const b5=G.bells; payReward({}, 0); out.timeCap=G.bells-b5;     // 最多 1200
+    openGameWindow('測試','x'); gamePlay.last=0; await wait(2500); out.idle=gamePlay.sec;
+    for(let i=0;i<6;i++){ $('#modalCard').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true})); await wait(500); } out.active=gamePlay.sec; closeGameWindow();
+    out.payOk = out.timeBonus===600 && out.timeCap===1200 && out.idle===0 && out.active>=2;
     out.bad=normalizeSave(JSON.parse(JSON.stringify(Object.assign({},G,{gameBonusDay:5})))).gameBonusDay;
     // 獎盃
     G.inv.trophy_furn20=1; G.inv.trophy_furn=1; G.inv.trophy_pet=1; G.trophies=Object.assign(G.trophies||{},{furn20:true,furn:true,pet:true});
@@ -21,5 +27,5 @@ const { chromium } = require('playwright');
     const sc=totalScore(); out.score=sc;
     G.inv.trophy_pet=1; G.rooms[0].items.push({uid:G.uid++,id:'trophy_pet',x:0,y:0,rot:0}); G.inv.trophy_pet=0; delete G.inv.trophy_pet; out.inRoomBlock=furnSellBlock('trophy_pet');
     return out; });
-  console.log(JSON.stringify(r), errs); await b.close();
+  console.log(JSON.stringify(r), errs); console.log(r.first[1]===600 && r.second[1]===300 && r.payOk ? '✅ 小遊戲獎金正確' : '❌ 小遊戲獎金不對'); await b.close();
 })();

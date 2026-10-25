@@ -4607,6 +4607,7 @@ const NEWS = [
     ['🏀', '運動島新開「體育館」，猴子教練陪你打球：籃球 2 對 2（看力量條投籃、看到「！」跳起來蓋火鍋）'],
     ['🔴', '躲避球：點對面的人丟球；球飛過來按「閃！」，最後一刻按還能接住！'],
     ['🏓', '桌球：手指左右滑動球拍接球，打在球拍邊邊球會斜飛'],
+    ['💰', '小遊戲賺的錢變成 3 倍！而且玩越久賺越多：認真玩每 1 分鐘多 120 元（一場最多 10 分鐘）'],
     ['💵', '爸爸媽媽改成每天都送零用錢 10,000 元！每天打開遊戲，爸爸媽媽就會送信封來'],
     ['🏫', '田徑場搬進學校操場了：花豹體育老師在操場，百米衝刺、大隊接力、跳遠都在那裡，紀錄都還在']
   ] },
@@ -16501,6 +16502,7 @@ function openGameWindow(title, howTo) {
   const card = $('#modalCard');
   card.innerHTML = '';
   card.classList.add('game-card', 'in-game'); card.classList.remove('game-big');
+  gamePlayReset();   // 💰 重新算這一場玩了多久
   card.appendChild(el('h2', '', title));
   if (restIsDue()) setTimeout(forceRestNow, 0); // 時間已經到了（在寬限中）：不能再開新的一局
   card.appendChild(note(howTo));
@@ -16533,7 +16535,20 @@ function leaveButton(w) {
   b.onclick = () => { closeGameWindow(); renderTab(); };
   w.btns.appendChild(b);
 }
+/* 💰 小遊戲獎金（家長：賺到的錢太少、玩越久才過關的應該賺更多）
+   ・每個小遊戲原本的獎金 ×3
+   ・再加「認真玩的時間」：視窗開著、而且 8 秒內有點畫面或按鍵盤才算在玩（放著不動不算），每分鐘 120 元，一場最多算 10 分鐘
+   ・輸了也有時間獎金（玩很久沒過關也有收穫） */
+const GAME_PAY = { mul: 3, perMin: 120, maxSec: 600 };   // 測試可以改回 1 倍
+const gamePlay = { sec: 0, last: 0 };
+function gamePlayReset() { gamePlay.sec = 0; gamePlay.last = Date.now(); }
+function gameTimeBonus() { return Math.round(Math.min(GAME_PAY.maxSec, gamePlay.sec) / 60 * GAME_PAY.perMin / 10) * 10; }
+['pointerdown', 'keydown'].forEach(k => document.addEventListener(k, () => { const c = document.getElementById('modalCard'); if (c && c.classList.contains('in-game')) gamePlay.last = Date.now(); }, true));
+setInterval(() => { const c = document.getElementById('modalCard'), m = document.getElementById('modal'); if (c && m && !m.hidden && c.classList.contains('in-game') && Date.now() - gamePlay.last < 8000) gamePlay.sec++; }, 1000);
 function payReward(w, bells, extra) {
+  const tb = gameTimeBonus(), mins = Math.floor(gamePlay.sec / 60); gamePlayReset();
+  bells = Math.max(0, Math.round(bells || 0)) * GAME_PAY.mul + tb;
+  if (tb > 0 && mins >= 1) setTimeout(() => toast(`⏱️ 認真玩了 ${mins} 分鐘，多拿 ${fmt(tb)} 元！`), 1200);
   // 🎁 每天第一場有拿到錢的小遊戲，獎金雙倍（不增加整體的錢，只是讓她每天都想先玩一場）
   const dbl = bells > 0 && G.gameBonusDay !== today();
   if (dbl) { G.gameBonusDay = today(); bells *= 2; setTimeout(() => toast('🎁 今天第一場小遊戲，獎金雙倍！'), 600); }

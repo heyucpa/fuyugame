@@ -8,6 +8,7 @@
   var fails=[], errs=[], pendingChecks=[], notesPad = '';  // pendingChecks：要等非同步（MutationObserver 之類）跑完才能驗的
   window.addEventListener('error', function(e){ errs.push(String(e.message)); });
   SEASON_TODAY = [6, 1];
+  GAME_PAY.mul = 1; GAME_PAY.perMin = 0;   // 小遊戲金額的算法另外在 tests/economy.js 測；這裡驗各遊戲原本的獎金
   var house_driver_allow = [];   // 走查自己用的字不算
   G.introSeen = true;   // 開場動畫另外測（不然新存檔會先播十秒，擋住後面的走查）   // 走查一律當作沒有節日（不然 10 月跑跟 6 月跑結果不一樣）；節日的測試自己切換
 
