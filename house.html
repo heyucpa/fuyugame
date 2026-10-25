@@ -697,6 +697,15 @@ button.pass { font: inherit; }
 .quest-btn { min-width: 74px; height: 58px; font-size: 22px; font-weight: 900; border: 3px solid var(--line); border-radius: 16px; background: #fff; touch-action: none; }
 .quest-btn:active { background: #fff3e0; transform: scale(.95); } .quest-btn.qb-j { min-width: 120px; background: #ffe9b8; }
 .quest-stars { text-align: center; font-size: 40px; color: #f2b200; letter-spacing: 6px; }
+.isle-anim { position: fixed; inset: 0; z-index: 95; background: rgba(20,30,50,.75); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 16px; }
+.isle-anim canvas { width: min(92vw, 720px); aspect-ratio: 480 / 300; border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+.isl-talk { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); width: min(92%, 560px); background: #fffaf0; border: 4px solid #e8c58f; border-radius: 28px; padding: 26px 18px 14px 96px; box-shadow: 0 8px 24px rgba(0,0,0,.25); z-index: 5; min-height: 96px; animation: fishPop .3s both; }
+.island .isl-talk canvas.isl-talk-pic { position: absolute; inset: auto; left: 14px; top: 18px; width: 70px; height: 64px; max-width: none; }
+.isl-talk-name { position: absolute; left: 22px; top: -16px; background: #ff9a3c; color: #fff; font-weight: 900; padding: 4px 16px; border-radius: 999px; font-size: 16px; transform: rotate(-3deg); }
+.isl-talk-text { font-size: 18px; font-weight: 700; color: #5a4636; min-height: 28px; line-height: 1.5; }
+.isl-talk-opts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.isl-talk-opts button { font: inherit; font-size: 15px; font-weight: 800; border: 2px solid #e8c58f; background: #fff; border-radius: 999px; padding: 6px 14px; min-height: 38px; cursor: pointer; }
+.isl-talk-opts button:active { background: #fff3e0; }
 .spar-row { display: flex; gap: 12px; justify-content: center; margin: 8px 0; }
 .spar-row button { min-width: 120px; font-size: 20px; }
 .music-menu { position: fixed; z-index: 70; background: var(--panel, #fffaf0); border: 2px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
@@ -712,7 +721,7 @@ button.pass { font: inherit; }
 .island { position: absolute; inset: 0; z-index: 9; background: #74c8ea; touch-action: none; overflow: hidden; }
 .island canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 .island-btn { position: absolute; top: 12px; font: inherit; font-size: 15px; font-weight: 800; border: 2px solid #fff; border-radius: 999px; padding: 8px 16px; min-height: 40px; background: rgba(255,255,255,.92); color: #4a3b2a; box-shadow: 0 3px 10px rgba(0,0,0,.2); cursor: pointer; touch-action: manipulation; }
-.isl-back { left: 12px; } .isl-fast { right: 12px; } .isl-quest { right: 12px; top: 60px; background: #ffe9b8 !important; } .isl-ride { left: 12px; top: 108px; } .isl-run { left: 12px; top: 60px; }
+.isl-back { left: 12px; } .isl-fast { right: 12px; } .isl-quest { right: 12px; top: 60px; background: #ffe9b8 !important; } .isl-ride { left: 12px; top: 108px; } .isl-emo { left: 12px; top: 156px; } .isl-run { left: 12px; top: 60px; }
 .isl-tools { position: absolute; left: 12px; bottom: 60px; display: flex; flex-direction: column; gap: 6px; }
 .isl-tools .island-btn { position: static; text-align: left; }
 .island-tip { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); background: rgba(255,255,255,.92); color: #5a4630; font-weight: 700; font-size: 14px; padding: 8px 16px; border-radius: 999px; box-shadow: 0 3px 10px rgba(0,0,0,.18); pointer-events: none; transition: opacity 1.2s; max-width: 90%; text-align: center; }
@@ -4534,6 +4543,8 @@ const OPEN_GIFT_BELLS = 100000;
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
   { id: '2026-10-18T09:00', title: '萬聖節派對＋找小幽靈！🎃👻', lines: [
+    ['🐻', '小島更熱鬧了！動物朋友會釣魚、澆花、看書、唱歌、慢跑，走近會跟你打招呼；點牠會跳出對話框，還可以問「需要幫忙嗎？」幫牠找東西拿零用錢。左上角「😊 表情」可以揮手、跳舞，朋友會跟著做'],
+    ['👑', '闖關打輸大魔王，可以「從大魔王開始」，而且牠會變弱一點；破完世界會播新小島出現的動畫'],
     ['🚗', '商店多了「🚗 交通工具」：腳踏車、休旅車、工程車、公車、跑車！買了在小島點左上角「🚲 交通工具」就能騎、開，跑得比較快。新小島要到碼頭坐船⛵才過得去'],
     ['🗺️', '世界任務！小島右上角「🗺️ 闖關」：3 個世界 × 3 關，像瑪利歐一樣跑跑跳跳。🐣 簡單（自己跑、只要按跳）／🦸 一般（左右走＋跳）。破完一個世界，海上多一座新小島：🌸 花花島、🍬 糖果島、🦕 恐龍島'],
     ['🏁', '寵物屋「📣 叫大家」多了兩個：🏁 賽跑猜冠軍（先猜誰會贏，猜對拿 20 元）、🎾 丟球（點地板丟球，寵物搶著撿回來）'],
@@ -5294,10 +5305,12 @@ function normalizeSave(g) {
     if (!isObj(out.quest)) delete out.quest;
     else { const q = out.quest, okId = k => /^[1-3]-[1-3]$/.test(k);
       if (q.mode !== 'easy' && q.mode !== 'normal') q.mode = 'easy';
+      if (q.newIsle != null && !/^(flower|candy|dino)$/.test(q.newIsle)) delete q.newIsle;
       q.clear = isObj(q.clear) ? Object.fromEntries(Object.entries(q.clear).filter(([k, v]) => okId(k) && v === 1)) : {};
       q.stars = isObj(q.stars) ? Object.fromEntries(Object.entries(q.stars).filter(([k, v]) => okId(k) && Number.isInteger(v) && v >= 0 && v <= 3)) : {}; } }
   if (out.vehicles != null) { if (Array.isArray(out.vehicles)) out.vehicles = [...new Set(out.vehicles.filter(v => /^(bike|suv|bus|truck|sports)$/.test(v)))]; else delete out.vehicles; }   // 🚗 買的交通工具
   if (out.ride != null && !(typeof out.ride === 'string' && (out.vehicles || []).includes(out.ride))) delete out.ride;
+  if (out.islReq != null && !(isObj(out.islReq) && typeof out.islReq.d === 'string' && /^(shell|bug|fish|flower)$/.test(out.islReq.kind) && typeof out.islReq.npc === 'string')) delete out.islReq;   // 🐻 動物朋友請她幫忙
   if (out.qIsleDay != null && !(isObj(out.qIsleDay) && typeof out.qIsleDay.d === 'string' && isObj(out.qIsleDay.got))) delete out.qIsleDay;
   if (out.raceDay != null && !(isObj(out.raceDay) && typeof out.raceDay.d === 'string' && Number.isInteger(out.raceDay.n) && out.raceDay.n >= 0)) delete out.raceDay;   // 🏁 賽跑猜對的獎金（一天幾次）
   if (out.kid.magic != null && !(isObj(out.kid.magic) && num(out.kid.magic.until) && magicFxList().some(m => m.id === out.kid.magic.id))) delete out.kid.magic;   // 🔮 魔法藥水的效果
@@ -18969,12 +18982,13 @@ function openIsland() {
   const tools = el('div', 'isl-tools');
   ISL_TOOLS.forEach(([id, label]) => { const b = el('button', 'island-btn isl-tool', label); b.dataset.tool = id; b.onclick = () => { Sound.play('click'); islSetTool(isl.tool === id ? null : id, true); }; tools.appendChild(b); });
   const quest = el('button', 'island-btn isl-quest', '🗺️ 闖關'); quest.onclick = () => { Sound.play('click'); openQuestMap(); };
+  const emo = el('button', 'island-btn isl-emo', '😊 表情'); emo.onclick = e => { Sound.play('click'); openEmoteMenu(e); };
   const ride = el('button', 'island-btn isl-ride', '🚲 交通工具'); ride.id = 'islRide'; ride.onclick = e => { Sound.play('click'); openRideMenu(e); };
-  layer.append(back, fast, run, quest, ride, tools, tip);
+  layer.append(back, fast, run, quest, ride, emo, tools, tip);
   run.onclick = () => { setRun(!runOn()); Sound.play('click'); };
   stage.appendChild(layer); stage.classList.add('island-on');
   refreshRunBtn();
-  setTimeout(() => { if (typeof islRideBtn === 'function') islRideBtn(); }, 0);
+  setTimeout(() => { if (typeof islRideBtn === 'function') islRideBtn(); if (typeof islShowNewIsle === 'function') islShowNewIsle(); }, 0);
   const dpr = () => window.devicePixelRatio || 1;
   isl = { fx: [], gulls: [], shellGot: {}, tool: null, act: null, holes: [], bees: null, layer, cv, m, invites, x: st.x + .5, y: st.y + .5, path: [], pending: null, skipDoor: st.id, facing: 1, back: false,
     t: 0, last: performance.now(), keys: {}, press: null, repath: 0, shake: {}, picked: {}, trail: [], pet: { x: st.x + .5, y: st.y + 1.2, f: 1 }, raf: 0, tip, cam: { x: st.x + .5, y: st.y + .5 }, from: G.away ? G.away.place : null };
@@ -19008,6 +19022,7 @@ function openIsland() {
 }
 function closeIsland() {
   if (!isl) return;
+  if (typeof islTalkClose === 'function') islTalkClose();
   cancelAnimationFrame(isl.raf);
   document.removeEventListener('keydown', isl.kd); document.removeEventListener('keyup', isl.ku);
   isl.layer.remove(); $('.stage').classList.remove('island-on');
@@ -19102,6 +19117,7 @@ function islDoPending() {
     const q = p.npc, n = q.n;
     if (Math.hypot(q.x - isl.x, q.y - isl.y) > 2.6) return;
     q.wait = 3; q.path = []; q.f = q.x > isl.x ? -1 : 1;
+    if (typeof islTalkOpen === 'function') { islTalkOpen(q); return; }   // 動物森友會那樣的對話框
     const first = !G.friends[n.id];
     Sound.play('petHappy');
     toast(first ? `🐻 ${n.short}：你好！我們做朋友吧！` : `🐻 ${n.short}：${['你好呀～', '今天天氣真好！', '一起玩吧！', '小島好漂亮喔～'][Math.floor(Math.random() * 4)]}`);
@@ -19122,7 +19138,7 @@ function islDoPending() {
     return;
   }
   if (p.type === 'flower') {
-    isl.picked[p.x + ',' + p.y] = performance.now();
+    isl.picked[p.x + ',' + p.y] = performance.now(); if (typeof islReqHit === 'function') islReqHit('flower');
     Sound.play('pickUp'); kidMoodUp(2);
     { const fl = [['🌸', '摘到一朵花！好香喔～'], ['🌼', '摘到一朵小花！'], ['🌷', '好漂亮的花！']][Math.floor(Math.random() * 3)]; gotCard(fl[0], '小花', fl[1]); }
   }
@@ -19158,6 +19174,7 @@ function islStep(dt) {
   if (dx > .0005) isl.facing = 1; else if (dx < -.0005) isl.facing = -1;
   if (Math.abs(dy) > Math.abs(dx) * 1.2) isl.back = dy < 0; else if (dx) isl.back = false;
   isl.walking = moving;
+  if (moving && typeof islFootStep === 'function') islFootStep();
   const tx = Math.floor(isl.x), ty = Math.floor(isl.y);
   const door = m.blds.find(b => b.door[0] === tx && b.door[1] === ty);
   if (isl.skipDoor && !(door && door.id === isl.skipDoor)) isl.skipDoor = null;
@@ -19168,8 +19185,9 @@ function islStep(dt) {
   const tg = isl.trail[Math.max(0, isl.trail.length - 7)], pp = isl.pet, pd = Math.hypot(tg[0] - pp.x, tg[1] - pp.y);
   if (pd > .05) { const sp = Math.min(pd, 4.4 * islSpd() * dt); if (Math.abs(tg[0] - pp.x) > .01) pp.f = tg[0] > pp.x ? 1 : -1; pp.x += (tg[0] - pp.x) / pd * sp; pp.y += (tg[1] - pp.y) / pd * sp; pp.moving = true; } else pp.moving = false;
   isl.npcs.forEach(q => {
+    if (typeof islNpcLife === 'function' && islNpcLife(q, dt, m)) return;   // 🐻 釣魚、澆花、看書、唱歌、慢跑、打招呼…
     if (q.path.length) {
-      const [tx, ty] = q.path[0], px = tx + .5, py = ty + .5, d = Math.hypot(px - q.x, py - q.y), sp = 1.5 * dt;
+      const [tx, ty] = q.path[0], px = tx + .5, py = ty + .5, d = Math.hypot(px - q.x, py - q.y), sp = (q.doing === 'jog' ? 2.8 : 1.5) * dt;
       if (d <= sp) { q.x = px; q.y = py; q.path.shift(); } else { q.f = px > q.x ? 1 : -1; q.x += (px - q.x) / d * sp; q.y += (py - q.y) / d * sp; }
     } else { q.wait -= dt; if (q.wait <= 0) { q.wait = 2 + Math.random() * 4; const gx = Math.floor(q.x) + Math.floor(Math.random() * 9) - 4, gy = Math.floor(q.y) + Math.floor(Math.random() * 7) - 3; if (islPass(m, gx, gy)) { const pth = islFindPath(m, Math.floor(q.x), Math.floor(q.y), (x, y) => x === gx && y === gy); if (pth && pth.length < 14) q.path = pth; } } }
   });
@@ -19198,7 +19216,8 @@ function islStep(dt) {
   });
   if (Math.random() < dt * .25) { const p = ISL_POND; islAddFx('fish', p.x + .6 + Math.random() * (p.w - 1.2), p.y + .8 + Math.random() * (p.h - 1.6), 1300); }   // 池塘偶爾有魚跳
   isl.fx = isl.fx.filter(f => performance.now() - f.t0 < f.dur);
-  isl.cam.x += (isl.x - isl.cam.x) * Math.min(1, dt * 6); isl.cam.y += (isl.y - isl.cam.y) * Math.min(1, dt * 6);
+  const ct = isl.pan && performance.now() < isl.pan.until ? isl.pan : isl;   // 🏝️ 新小島出現：鏡頭先飛過去看一下
+  isl.cam.x += (ct.x - isl.cam.x) * Math.min(1, dt * (ct === isl ? 6 : 2)); isl.cam.y += (ct.y - isl.cam.y) * Math.min(1, dt * (ct === isl ? 6 : 2));
   return true;
 }
 function islFrame(now) {
@@ -19290,12 +19309,13 @@ function islDraw(now) {
   });
   // 會擋住、有前後的東西：照腳的位置排
   const items = [];
+  if (typeof islDrawFootprints === 'function') islDrawFootprints(ctx, now);   // 沙灘上的腳印
   m.blds.forEach(b => items.push({ y: (b.y + b.h) * T, draw: () => islDrawBuilding(ctx, b, tt) }));
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (m.tree[y][x]) items.push({ y: (y + 1) * T, draw: () => islDrawTree(ctx, x, y, now) });
   isl.npcs.forEach(q => items.push({ y: q.y * T, draw: () => {
     const px = q.x * T, py = q.y * T + 8, hop = q.path.length ? Math.abs(Math.sin(isl.t * 8 + q.x)) * 3 : 0;
     ctx.fillStyle = 'rgba(40,30,20,.2)'; ctx.beginPath(); ctx.ellipse(px, py, 11, 4.5, 0, 0, 7); ctx.fill();
-    if (q.pic) { ctx.save(); ctx.translate(px, py - hop); ctx.scale(q.f, 1); ctx.drawImage(q.pic, -27, -50, 54, 50); ctx.restore(); }
+    if (typeof islDrawNpc === 'function') islDrawNpc(ctx, q, px, py, hop); else if (q.pic) { ctx.save(); ctx.translate(px, py - hop); ctx.scale(q.f, 1); ctx.drawImage(q.pic, -27, -50, 54, 50); ctx.restore(); }
     if (!G.friends[q.n.id]) { ctx.font = '700 15px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ff7eb0'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.strokeText('✨', px, py - 56 - Math.sin(isl.t * 4) * 2); ctx.fillText('✨', px, py - 56 - Math.sin(isl.t * 4) * 2); }
   } }));
   items.push({ y: isl.y * T, draw: () => islDrawKid(ctx) });
@@ -19353,7 +19373,7 @@ function islFun(o) {
   } else if (o.kind === 'gull') {
     const g = isl.gulls[o.id]; if (g) { g.scared = 2.5; g.vx = (g.vx < 0 ? -1 : 1) * 1.6; } Sound.play('boing'); islAddFx('say', o.x, o.y - 1, 1200, { text: '嘎～！' });
   } else if (o.kind === 'shell') {
-    isl.shellGot[o.id] = true; Sound.play('pickUp'); islAddFx('spark', o.x, o.y, 900); kidMoodUp(1);
+    isl.shellGot[o.id] = true; if (typeof islReqHit === 'function') islReqHit('shell'); Sound.play('pickUp'); islAddFx('spark', o.x, o.y, 900); kidMoodUp(1);
     gotCard('🐚', '貝殼', ['撿到一個貝殼！好漂亮', '沙灘上的貝殼～'][Math.floor(Math.random() * 2)]);
   }
 }
@@ -19382,7 +19402,7 @@ function islPull() {
   if (a.phase !== 'bite') { if (now - (isl.earlyAt || 0) > 1500) { isl.earlyAt = now; toast('還沒咬鉤喔，再等一下～'); } return; }
   let f = rollFish();
   if (a.sea && Math.random() < .35) { const g = rollFish(); if (g.price > f.price) f = g; }   // 海裡比較容易釣到大魚
-  catchFish(f);
+  catchFish(f); if (typeof islReqHit === 'function') islReqHit('fish');
   Sound.play('catchFish'); kidMoodUp(2);
   islAddFx('fishup', isl.x + isl.facing * .6, isl.y - 1.2, 1600, { emoji: FISH_EMOJI[f.name] || '🐟' });
   if (G.fish[f.name] > 1) showFishCatch(f); else toast(`🎣 釣到「${f.name}」！賣了 ${fmt(f.price)} 元`);   // 第一次釣到會跳出圖鑑大圖；之後跳小卡
@@ -19414,7 +19434,7 @@ function islActStep(now) {   // 正在做的事（釣魚、揮網、挖洞、坐
       if (c.hidden > now) return;
       if (Math.hypot(c.x - isl.x, c.y - isl.y) < 2.2 && Math.random() < .75) {
         const album = G.butterflies = G.butterflies || {}, sp = c.sp, isNew = !album[sp.id];
-        album[sp.id] = (album[sp.id] || 0) + 1;
+        album[sp.id] = (album[sp.id] || 0) + 1; if (typeof islReqHit === 'function') islReqHit('bug');
         if (isNew) { const cv = document.createElement('canvas'); cv.width = 120; cv.height = 100; drawButterfly(cv.getContext('2d'), 60, 52, sp, 1.2, 2.6); const n = Object.keys(album).length; showcase(cv, sp.name, `🦋 蝴蝶相簿 ${n} / ${BUTTERFLIES.length}`, { n, all: BUTTERFLIES.length }); sessionLog.newThings.push('🦋 ' + sp.name); }
         Sound.play('perfect'); kidMoodUp(2); try { kidMakeFace('joy', 1800); } catch (e) {}
         if (isNew) toast(`🦋 抓到${sp.name}！`); else { const cv2 = document.createElement('canvas'); cv2.width = 120; cv2.height = 100; drawButterfly(cv2.getContext('2d'), 60, 52, sp, 1.2, 2.6); gotCard(cv2, sp.name, '相簿裡已經有了，放牠飛走～'); }
@@ -19606,7 +19626,7 @@ function islDrawKid(ctx) {
   const T = ISL.T, px = isl.x * T, py = isl.y * T + 8, walking = !!isl.walking, t = isl.t;
   const rn = islRunning() && walking, tt = rn ? t * 1.7 : t;
   if (typeof islDrawRiding === 'function' && islDrawRiding(ctx, px, py, walking, t)) return;   // 騎車、開車、坐船
-  const hop = walking ? Math.abs(Math.sin(tt * 11)) * (rn ? 4.5 : 3) : 0, k = kidHeightScale(), u = T * 1.55 / 76;
+  const hop = (walking ? Math.abs(Math.sin(tt * 11)) * (rn ? 4.5 : 3) : 0) + (typeof islEmoteHop === 'function' ? islEmoteHop() : 0), k = kidHeightScale(), u = T * 1.55 / 76;
   ctx.fillStyle = 'rgba(40,30,20,.22)'; ctx.beginPath(); ctx.ellipse(px, py, 11, 4.5, 0, 0, 7); ctx.fill();
   ctx.save(); ctx.translate(px, py - hop);
   if (kidBaby()) { ctx.scale(isl.facing * 1.15 * u * 1.4, 1.15 * u * 1.4); drawBabyKid(ctx, { t, walking, blink: fufuBlink() }); ctx.restore(); return; }
@@ -21395,7 +21415,8 @@ function openQuestMap() {
   card.appendChild(note('過關有錢可以拿；每關有 3 顆星星，找找看藏在哪裡！'));
   $('#modal').hidden = false;
 }
-function playQuest(id) {
+function playQuest(id, opt) {
+  opt = opt || {};   // opt.bossStart：從大魔王那裡開始；opt.weak：打輸幾次了（大王越來越弱）
   const q = questState(), easy = q.mode === 'easy', wd = QUEST_WORLDS[+id[0] - 1];
   const w = openGameWindow(`${wd.icon} 世界 ${id}`, easy ? '小可愛會自己往前跑，看到坑或怪物就按「跳」（或點畫面、空白鍵）！' : '← → 走、按「跳」（空白鍵／↑）跳，按久一點跳比較高。踩怪物的頭可以打倒牠！');
   w.stage.innerHTML = ''; w.btns.innerHTML = ''; w.card.classList.add('quest-big');
@@ -21414,7 +21435,7 @@ function playQuest(id) {
     const px = x * QT, py = y * QT;
     if (ch === 'e') { ents.push({ k: wd.enemy, x: px, y: py + QT - 14, w: 16, h: 14, vx: -30, alive: true }); r[x] = ' '; }
     if (ch === 'b') { ents.push({ k: 'bee', x: px, y: py, w: 16, h: 14, vx: -25, y0: py, alive: true, t: Math.random() * 6 }); r[x] = ' '; }
-    if (ch === 'K') { boss = { k: 'boss', x: px - 10, y: py + QT - 36, w: 40, h: 36, vx: 0, vy: 0, hp: easy ? 2 : 3, alive: true, hopAt: 1.5, hurt: 0 }; ents.push(boss); r[x] = ' '; }
+    if (ch === 'K') { boss = { k: 'boss', x: px - 10, y: py + QT - 36, w: 40, h: 36, vx: 0, vy: 0, hp: Math.max(1, (easy ? 2 : 3) - (opt.weak || 0)), slow: Math.min(.5, (opt.weak || 0) * .2), alive: true, hopAt: 1.5, hurt: 0 }; ents.push(boss); r[x] = ' '; }
     if (ch === 'o') { items.push({ k: 'coin', x: px + 9, y: py + 9 }); r[x] = ' '; }
     if (ch === 's') { items.push({ k: 'star', x: px + 9, y: py + 9 }); r[x] = ' '; }
     if (ch === 'C') { items.push({ k: 'check', x: px + 9, y: py + QT, on: false }); r[x] = ' '; }
@@ -21422,6 +21443,7 @@ function playQuest(id) {
     if (ch === 'S') { items.push({ k: 'spring', x: px, y: py + QT - 10, t: 0 }); r[x] = ' '; }
     if (ch === '^' && easy) r[x] = 'f';   // 簡單模式：刺換成小花（踩了沒事）
   }));
+  if (opt.bossStart && boss) { startX = checkX = Math.max(0, boss.x - 9 * QT); items.forEach(it => { if (it.k === 'check' && it.x < startX) it.on = true; }); }
   const P = { x: startX, y: 12 * QT - 30 + QT, w: 13, h: 30, vx: 0, vy: 0, on: false, face: 1, hearts: 3, inv: 0, coins: 0, stars: 0, t: 0, lastSafe: startX, bubble: 0 };
   let raf = 0, live = true, last = performance.now(), camX = 0, state = 'play', endT = 0, keys = {}, jumpHeld = false, jumpBuf = 0, msg = '', msgT = 0, coinPops = [];
   const say = (m2, s) => { msg = m2; msgT = s || 1.6; };
@@ -21503,7 +21525,7 @@ function playQuest(id) {
       if (en.k === 'bee') { en.t += dt; en.x += en.vx * dt; en.y = en.y0 + Math.sin(en.t * 2) * 22; if (Math.abs(en.x - (en.x0 = en.x0 == null ? en.x : en.x0)) > 50) en.vx = -en.vx; }
       else if (en.k === 'boss') {
         en.hurt = Math.max(0, en.hurt - dt); en.hopAt -= dt; en.vy = Math.min(600, en.vy + 1500 * dt);
-        if (en.hopAt <= 0 && Math.abs(en.x - P.x) < 260) { en.hopAt = 2 + Math.random() * .8; en.vy = -400; en.vx = (P.x < en.x ? -1 : 1) * (easy ? 40 : 55); }
+        if (en.hopAt <= 0 && Math.abs(en.x - P.x) < 260) { en.hopAt = 2 + en.slow * 2 + Math.random() * .8; en.vy = -400 * (1 - en.slow * .3); en.vx = (P.x < en.x ? -1 : 1) * (easy ? 40 : 55) * (1 - en.slow); }
         const r2 = hitTiles(en, en.vx * dt, en.vy * dt); if (r2.landed) { if (Math.abs(en.vx) > 5) en.dizzy = .9; en.vx = 0; }   // 落地暈一下：踩牠的好機會
         en.dizzy = Math.max(0, (en.dizzy || 0) - dt);
       } else {
@@ -21597,19 +21619,22 @@ function playQuest(id) {
     coinPops.forEach(cp => { g.fillStyle = '#ffd23f'; g.beginPath(); g.ellipse(cp.x - camX, cp.y - cp.t * 50, 5, 6, 0, 0, Math.PI * 2); g.fill(); });
     drawKid(); drawHud();
     if (state === 'win' && endT > 2.2) { questDone(w, id, P); return; }
-    if (state === 'dead') { g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(0, 0, QVW, QVH); g.fillStyle = '#ffffff'; g.font = '900 24px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillText('愛心用完了…再試一次吧！', QVW / 2, QVH / 2); if (endT > 1.6) { questFail(w, id); return; } }
+    if (state === 'dead') { g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(0, 0, QVW, QVH); g.fillStyle = '#ffffff'; g.font = '900 24px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillText('愛心用完了…再試一次吧！', QVW / 2, QVH / 2); if (endT > 1.6) { questFail(w, id, boss && boss.alive && P.x > boss.x - 12 * QT ? (opt.weak || 0) + 1 : 0); return; } }
     if (state === 'win' && endT < .1) say('過關了！🎉', 2.2);
     raf = requestAnimationFrame(frame);
   };
   raf = requestAnimationFrame(frame);
   playQuest.test = { P, items, ents, L, keys, solid, tileAt, win: () => { state = 'win'; endT = 0; }, step, state: () => state, jump: () => { jumpHeld = true; jumpBuf = .15; }, release: () => { jumpHeld = false; } };
 }
-function questFail(w, id) {
+/* 打輸了：在大魔王那裡輸的（家長：可以從大魔王關重新開始、難度變低）→ 多一顆「從大魔王開始」，
+   每輸一次大王少一滴血、跳得慢一點（最少 1 滴血） */
+function questFail(w, id, bossWeak) {
   gameCleanup && gameCleanup(); gameCleanup = null;
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
-  w.stage.appendChild(el('div', 'tkd-big', '💪'));
-  w.status.textContent = '差一點點！想試試看「🐣 簡單」玩法嗎？也可以再挑戰一次！';
-  const again = el('button', 'big', '再試一次'); again.onclick = () => playQuest(id);
+  w.stage.appendChild(el('div', 'tkd-big', bossWeak ? '👑' : '💪'));
+  w.status.textContent = bossWeak ? '大魔王好強！再試一次，牠會變弱一點喔！' : '差一點點！想試試看「🐣 簡單」玩法嗎？也可以再挑戰一次！';
+  if (bossWeak) { const b = el('button', 'big', '👑 從大魔王開始（牠變弱了）'); b.onclick = () => playQuest(id, { bossStart: true, weak: bossWeak }); w.btns.appendChild(b); }
+  const again = el('button', 'big' + (bossWeak ? ' alt' : ''), '從頭再試一次'); again.onclick = () => playQuest(id);
   const map = el('button', 'big alt', '回地圖'); map.onclick = () => { closeGameWindow(); openQuestMap(); };
   w.btns.append(again, map);
 }
@@ -21630,7 +21655,8 @@ function questDone(w, id, P) {
   if (first && id.endsWith('-3')) {   // 破完一個世界：新小島
     const il = QUEST_ISLETS[wd - 1];
     islMapCache = null;
-    setTimeout(() => { try { showcase(el('div', 'magic-pic', il.icon), `新的小島出現了！${il.name}`, `${il.desc}從小島的木橋走過去看看！`, { head: `🏆 世界 ${wd} 破關！` }); } catch (e) { toast(`🏝️ 新的小島出現了：${il.name}！`); } }, 800);
+    q.newIsle = il.id;
+    setTimeout(() => { if (typeof playIsletAppear === 'function') { playIsletAppear(il); return; } try { showcase(el('div', 'magic-pic', il.icon), `新的小島出現了！${il.name}`, `${il.desc}從小島的木橋走過去看看！`, { head: `🏆 世界 ${wd} 破關！` }); } catch (e) { toast(`🏝️ 新的小島出現了：${il.name}！`); } }, 800);
   }
   saveGame(); refreshTop();
 }
@@ -21767,6 +21793,291 @@ function islBoatStep(a, now) {
   isl.facing = a.to[0] >= a.from[0] ? 1 : -1; isl.walking = false;
   isl.pet.x = isl.x - isl.facing * .4; isl.pet.y = isl.y - .1;
   if (k >= 1) { isl.act = null; isl.x = a.to[0]; isl.y = a.to[1]; isl.trail = []; isl.path = []; Sound.play('splash'); islAddFx('say', isl.x, isl.y - 2, 1200, { text: '到了！' }); }
+}
+/* 🏝️ 新小島出現的動畫（家長：小島出現時要有動畫）：
+   海面閃閃發光 → 咕嚕咕嚕冒泡 → 小島從海裡升起來、水花四濺 → 樹和大東西（向日葵／棒棒糖／恐龍）一個一個冒出來 →
+   小帆船開到碼頭 → 大字「〇〇島出現了！」。點「去看看！」就打開小島地圖，鏡頭會先飛到新小島。 */
+function playIsletAppear(il) {
+  const old = document.getElementById('isleAnim'); if (old) old.remove();
+  const box = el('div', 'isle-anim'); box.id = 'isleAnim';
+  const W = 480, H = 300, c = document.createElement('canvas'), dpr = window.devicePixelRatio || 1; c.width = W * dpr; c.height = H * dpr;
+  const g = c.getContext('2d'); g.scale(dpr, dpr);
+  const go = el('button', 'big', `⛵ 去看看${il.name}！`), later = el('button', 'big alt', '等一下再去');
+  const row = el('div', 'movie-pop'); row.append(go, later); go.style.visibility = 'hidden'; later.style.visibility = 'hidden';
+  box.append(c, row); document.body.appendChild(box);
+  const T0 = performance.now(); let raf = 0, live = true, said = {};
+  const close = () => { live = false; cancelAnimationFrame(raf); box.remove(); };
+  go.onclick = () => { close(); closeGameWindow(); $('#modal').hidden = true; openIsland(); };
+  later.onclick = close;
+  const once = (k, f) => { if (!said[k]) { said[k] = 1; f(); } };
+  const drops = [];
+  const tick = now => {
+    if (!live) return;
+    const t = (now - T0) / 1000, cx = W / 2, sea = 190;
+    const gr = g.createLinearGradient(0, 0, 0, sea); gr.addColorStop(0, '#8fd3ff'); gr.addColorStop(1, '#e8f7ff'); g.fillStyle = gr; g.fillRect(0, 0, W, sea);
+    MV.cloud(g, 60 + t * 6, 50, 1); MV.cloud(g, 330 - t * 4, 70, .8);
+    g.fillStyle = '#3fa9f5'; g.fillRect(0, sea, W, H - sea);
+    g.strokeStyle = 'rgba(255,255,255,.6)'; g.lineWidth = 2; for (let i = 0; i < 9; i++) { const y = sea + 12 + (i % 3) * 30, x = (i * 97 + t * 30) % (W + 60) - 30; g.beginPath(); g.arc(x, y, 8, Math.PI * 1.1, Math.PI * 1.9); g.stroke(); }
+    // 1. 海面閃閃、冒泡
+    if (t < 1.4) { for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2 + t * 2, r = 30 + t * 40; g.fillStyle = `rgba(255,255,200,${1 - t / 1.4})`; g.font = '14px sans-serif'; g.textAlign = 'center'; g.fillText('✨', cx + Math.cos(a) * r, sea + Math.sin(a) * r * .3); } for (let i = 0; i < 6; i++) MV.ball(g, cx - 40 + i * 16, sea + 6 - ((t * 60 + i * 13) % 20), 3, 'rgba(255,255,255,.8)'); once('bub', () => Sound.play('magic')); }
+    // 2. 小島升起來
+    const rise = Math.max(0, Math.min(1, (t - 1.2) / 1.2)), ease = 1 - Math.pow(1 - rise, 3), bounce = rise >= 1 ? Math.max(0, Math.sin((t - 2.4) * 10)) * Math.max(0, 1 - (t - 2.4) * 2) * 4 : 0;
+    if (rise > 0) {
+      once('up', () => { Sound.play('splash'); for (let i = 0; i < 26; i++) drops.push({ x: cx + (Math.random() - .5) * 220, y: sea, vx: (Math.random() - .5) * 120, vy: -150 - Math.random() * 160 }); });
+      const ih = 46 * ease + bounce;
+      g.save(); g.beginPath(); g.rect(0, 0, W, sea + 4); g.clip();
+      g.fillStyle = '#f2d08a'; g.beginPath(); g.ellipse(cx, sea + 4, 130, ih + 4, 0, Math.PI, 0); g.fill();
+      g.fillStyle = il.id === 'candy' ? '#ffd9e5' : il.id === 'dino' ? '#9ccf7a' : '#8fd18f'; g.beginPath(); g.ellipse(cx, sea + 4, 100, Math.max(1, ih - 6), 0, Math.PI, 0); g.fill();
+      g.restore();
+      // 3. 樹、花、大東西一個一個冒出來
+      const pop = (k0, f) => { const k = Math.max(0, Math.min(1, (t - k0) / .35)); if (k > 0) { g.save(); const sc = k < 1 ? k * 1.25 : 1 + Math.sin((t - k0) * 12) * .04 * Math.max(0, 1 - (t - k0 - .35)); g.translate(0, 0); f(sc); g.restore(); } };
+      const top = sea + 4 - ih;
+      [[-70, 2.6], [70, 2.8], [-40, 3.0], [45, 3.15]].forEach(([dx, k0]) => pop(k0, sc => {
+        g.translate(cx + dx, top + 22); g.scale(sc, sc);
+        if (il.id === 'candy') { g.fillStyle = '#fffaf0'; g.fillRect(-2, -26, 4, 26); MV.ball(g, 0, -30, 11, ['#ff8fb3', '#ffd23f', '#7bd389', '#6bb6ff'][(dx + 70) % 4 | 0]); g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.arc(0, -30, 6, 0, 5); g.stroke(); }
+        else if (il.id === 'flower') { g.font = '22px sans-serif'; g.textAlign = 'center'; g.fillText(['🌸', '🌷', '🌼', '🌺'][(dx + 70) % 4 | 0], 0, -4); }
+        else MV.tree(g, 0, 0, .55);
+      }));
+      pop(3.4, sc => {
+        g.translate(cx, top + 18); g.scale(sc * 1.1, sc * 1.1);
+        if (il.id === 'flower') { g.fillStyle = '#4f9d4f'; g.fillRect(-3, -50, 6, 50); g.translate(0, -56); for (let i = 0; i < 12; i++) { g.rotate(Math.PI / 6); g.fillStyle = '#ffd23f'; g.beginPath(); g.ellipse(0, -13, 4.5, 9, 0, 0, 7); g.fill(); } MV.ball(g, 0, 0, 9, '#8a5a33'); }
+        else if (il.id === 'candy') { g.fillStyle = '#fffaf0'; g.fillRect(-3, -50, 6, 50); MV.ball(g, 0, -62, 20, '#ff6fa3'); g.strokeStyle = '#fff'; g.lineWidth = 4; g.beginPath(); for (let a = 0; a < 18; a += .3) g.lineTo(Math.cos(a + t) * a, -62 + Math.sin(a + t) * a); g.stroke(); }
+        else { MV.dino(g, 0, 0, .7, '#9a9488', t * 3); }
+        once('pop', () => Sound.play('fanfare'));
+      });
+      // 4. 小帆船開過來
+      if (t > 3.6) { const k = Math.min(1, (t - 3.6) / 1.4), bx = -40 + (cx - 120) * (1 - Math.pow(1 - k, 2)); g.save(); g.translate(bx, sea + 10 + Math.sin(t * 4) * 1.5); g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(1, -6); g.lineTo(1, -32); g.lineTo(14, -8); g.closePath(); g.fill(); g.fillStyle = '#c0392b'; g.beginPath(); g.moveTo(-16, -6); g.lineTo(16, -6); g.lineTo(11, 3); g.lineTo(-11, 3); g.closePath(); g.fill(); g.restore(); }
+    }
+    for (const d of drops) { d.vy += 420 / 60; d.x += d.vx / 60; d.y += d.vy / 60; if (d.y < sea + 2) MV.ball(g, d.x, d.y, 3, 'rgba(255,255,255,.9)'); }
+    // 5. 大字
+    if (t > 4.2) {
+      const k = Math.min(1, (t - 4.2) / .4);
+      g.save(); g.translate(cx, 60); g.scale(.6 + k * .4, .6 + k * .4); g.globalAlpha = k;
+      g.font = '900 30px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 7; g.strokeStyle = '#ffffff';
+      const txt = `${il.icon} ${il.name}出現了！`; g.strokeText(txt, 0, 0); g.fillStyle = '#e8505b'; g.fillText(txt, 0, 0); g.restore(); g.globalAlpha = 1;
+      once('btn', () => { go.style.visibility = ''; later.style.visibility = ''; try { speak(`${il.name}出現了！坐船去看看吧！`); } catch (e) {} });
+    }
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+  playIsletAppear.test = { close, box };
+}
+// 打開小島時：剛出現的新小島，鏡頭先飛過去、冒星星
+function islShowNewIsle() {
+  const q = questState(); if (!isl || !q.newIsle) return;
+  const il = QUEST_ISLETS.find(x => x.id === q.newIsle); delete q.newIsle; saveGame();
+  if (!il) return;
+  isl.pan = { x: il.cx, y: il.cy, until: performance.now() + 3200 };
+  for (let i = 0; i < 6; i++) setTimeout(() => { if (isl) islAddFx('spark', il.cx + (Math.random() - .5) * 4, il.cy + (Math.random() - .5) * 3, 900); }, 600 + i * 300);
+  setTimeout(() => { if (isl) toast(`${il.icon} ${il.name}在這裡！到岸邊的碼頭坐船⛵過去～`); }, 900);
+}
+/* ===== 🐻 小島更熱鬧（家長：人物、互動更生動有趣，參考動物森友會）=====
+   ・動物朋友會「做事」：釣魚（站在池塘邊甩竿，偶爾釣到）、澆花、坐著看書、唱歌、慢跑、做體操，一陣子換一件
+   ・頭上會冒想法泡泡（💭🍎🎣🌸…）；兩隻碰在一起會聊天
+   ・小可愛走近：轉過來揮手打招呼（早安／午安／晚安，看到她騎車、帶寵物也會說）
+   ・點牠：下面跳出對話框（頭像、名字、一個字一個字跑出來），可以聊天、問「需要幫忙嗎？」
+       幫忙：找貝殼、抓蝴蝶、釣魚、摘花，拿到了再去找牠，送 80 元（一天最多 3 次）
+   ・小可愛也有「😊 表情」：揮手、開心、跳舞、嚇一跳、想睡覺、愛心，旁邊的朋友會跟著做
+   ・走過沙灘會留下腳印 */
+const ISL_ACTS = ['walk', 'walk', 'fish', 'water', 'read', 'sing', 'jog', 'stretch'];
+const ISL_THOUGHTS = ['🍎', '🎣', '🌸', '☀️', '🎵', '🍰', '🦋', '💤', '🍦', '⭐'];
+const ISL_REQS = { shell: ['🐚', '貝殼', '沙灘上撿'], bug: ['🦋', '蝴蝶', '拿網子抓'], fish: ['🐟', '魚', '拿釣竿釣'], flower: ['🌸', '花', '草地上摘'] };
+const ISL_REQ_PRIZE = 80, ISL_REQ_DAY = 3;
+const nowMs = () => performance.now();
+function islGreet() {
+  const h = typeof islPhase === 'function' ? new Date().getHours() : 12, nm = charName(), v = typeof rideNow === 'function' && rideNow();
+  const lines = [h < 11 ? `${nm}，早安！` : h < 17 ? `${nm}，午安～` : `${nm}，晚上好！`, `嗨～${nm}！`, '今天天氣真好！'];
+  if (v) lines.push(`哇！你的${v.name}好酷！`, `${v.name}可以載我嗎？`);
+  if (G.pet && G.pet.stage !== 'egg') lines.push(`${petName()}好可愛喔！`);
+  return lines[Math.floor(Math.random() * lines.length)];
+}
+function islSay(q, text, ms) { q.say = { text, until: nowMs() + (ms || 2600) }; }
+function islEmote(q, e, ms) { q.emote = { e, until: nowMs() + (ms || 1800) }; }
+function islNpcLife(q, dt, m) {
+  const now = nowMs();
+  if (q.lifeInit == null) { q.lifeInit = 1; q.doing = 'walk'; q.doUntil = now + 4000 + Math.random() * 8000; q.thinkAt = now + 5000 + Math.random() * 10000; q.greetAt = 0; q.blinkAt = 0; }
+  if (isl.talk && isl.talk.q === q) { if (Math.hypot(isl.x - q.x, isl.y - q.y) > 3.5) islTalkClose(); else { q.f = isl.x > q.x ? 1 : -1; return true; } }   // 正在跟她說話：站著看她（她走開就收起來）
+  // 小可愛走近：轉過來打招呼
+  const dk = Math.hypot(isl.x - q.x, isl.y - q.y);
+  if (dk < 2.2 && now > q.greetAt && !(isl.act && isl.act.kind === 'boat')) {
+    q.greetAt = now + 45000; q.f = isl.x > q.x ? 1 : -1; q.happyUntil = now + 1500;
+    islEmote(q, !G.friends[q.n.id] ? '❗' : (G.friends[q.n.id] > 3 ? '💗' : '👋')); islSay(q, !G.friends[q.n.id] ? '嗨！你是新來的嗎？' : islGreet());
+    Sound.play('talk', 'hi');
+  }
+  // 想法泡泡
+  if (now > q.thinkAt) { q.thinkAt = now + 12000 + Math.random() * 14000; if (!q.say || now > q.say.until) islEmote(q, '💭' + ISL_THOUGHTS[Math.floor(Math.random() * ISL_THOUGHTS.length)], 2600); }
+  // 兩隻碰在一起：聊天
+  if (q.doing === 'walk' && !q.path.length && now > (q.chatAt || 0)) {
+    const o = isl.npcs.find(x => x !== q && !x.path.length && Math.hypot(x.x - q.x, x.y - q.y) < 1.8);
+    if (o) { q.chatAt = o.chatAt = now + 30000; q.f = o.x > q.x ? 1 : -1; o.f = -q.f; const pair = [['今天天氣真好！', '對呀～好舒服'], ['你吃過了嗎？', '吃了一個蘋果！'], ['等一下去釣魚嗎？', '好啊！'], ['你看到蝴蝶了嗎？', '在花那邊！']][Math.floor(Math.random() * 4)]; islSay(q, pair[0], 2400); setTimeout(() => { if (isl) islSay(o, pair[1], 2400); }, 1300); q.wait = o.wait = 4; }
+  }
+  // 換一件事做
+  if (now > q.doUntil && !q.path.length) {
+    const d = ISL_ACTS[Math.floor(Math.random() * ISL_ACTS.length)];
+    q.doing = 'walk'; q.doUntil = now + 8000 + Math.random() * 9000; q.spot = null;
+    if (d === 'fish') {   // 走到池塘邊
+      const p = ISL_POND, cands = []; for (let x = p.x; x < p.x + p.w; x++) { cands.push([x, p.y + p.h]); cands.push([x, p.y - 1]); }
+      const t = cands.filter(([x, y]) => islPass(m, x, y))[Math.floor(Math.random() * cands.length) % Math.max(1, cands.filter(([x, y]) => islPass(m, x, y)).length)];
+      if (t) { const pth = islFindPath(m, Math.floor(q.x), Math.floor(q.y), (x, y) => x === t[0] && y === t[1]); if (pth && pth.length < 40) { q.path = pth; q.goTo = 'fish'; q.spot = { x: p.x + p.w / 2, y: p.y + p.h / 2 }; q.wait = 99; } }
+    } else if (d === 'water') {
+      let best = null; for (let k = 0; k < 40 && !best; k++) { const x = Math.floor(q.x) + Math.floor(Math.random() * 11) - 5, y = Math.floor(q.y) + Math.floor(Math.random() * 9) - 4; if (m.flower[y] && m.flower[y][x] && islPass(m, x - 1, y)) best = [x - 1, y, x, y]; }
+      if (best) { const pth = islFindPath(m, Math.floor(q.x), Math.floor(q.y), (x, y) => x === best[0] && y === best[1]); if (pth && pth.length < 30) { q.path = pth; q.goTo = 'water'; q.spot = { x: best[2] + .5, y: best[3] + .5 }; q.wait = 99; } }
+    } else if (d !== 'walk') { q.doing = d; q.doUntil = now + 7000 + Math.random() * 7000; q.path = d === 'jog' ? q.path : []; if (d !== 'jog') q.wait = 99; }
+  }
+  if (q.goTo && !q.path.length) { q.doing = q.goTo; q.goTo = null; q.doUntil = now + 9000 + Math.random() * 6000; if (q.spot) q.f = q.spot.x > q.x ? 1 : -1; }
+  if (q.doing === 'jog') return false;   // 慢跑：照平常亂逛，只是跑比較快
+  if (q.doing === 'walk' || q.path.length) { if (q.wait > 50 && !q.goTo) q.wait = 1; return false; }
+  // 做事中：原地
+  if (q.doing === 'fish' && now > (q.biteAt || 0)) { q.biteAt = now + 4000 + Math.random() * 5000; if (Math.random() < .4) { islEmote(q, '🐟', 1600); islSay(q, ['釣到了！', '好大一條！', '哎呀，跑掉了～'][Math.floor(Math.random() * 3)], 1800); q.happyUntil = now + 1200; } }
+  if (q.doing === 'sing' && now > (q.noteAt || 0)) { q.noteAt = now + 700; islAddFx('say', q.x + (Math.random() - .5), q.y - 2.2, 900, { text: Math.random() < .5 ? '🎵' : '🎶' }); }
+  if (q.doing === 'stretch' && now > (q.noteAt || 0)) { q.noteAt = now + 900; q.happyUntil = now + 400; }
+  if (now > q.doUntil) { q.doing = 'walk'; q.wait = 1; q.doUntil = now + 6000 + Math.random() * 8000; }
+  return true;
+}
+function islDrawNpc(ctx, q, px, py, hop) {
+  const T = ISL.T, now = nowMs(), t = now / 1000, k = T / 32 * 1.55;
+  let lift = hop, sq = 1;
+  if (q.doing === 'stretch') lift += Math.abs(Math.sin(t * 4)) * 6;
+  if (q.doing === 'read') sq = .9;
+  if (q.doing === 'jog' && q.path.length) lift += Math.abs(Math.sin(t * 14)) * 2;
+  if (q.happyUntil > now) lift += Math.abs(Math.sin(t * 10)) * 3;
+  if (now > (q.blinkAt || 0) + 120) q.blinkAt = now + 2000 + Math.random() * 3000;
+  ctx.save(); ctx.translate(px, py - lift); ctx.scale(q.f * k, k * sq * (1 + Math.sin(t * 2.6 + q.x) * .02));
+  drawNeighbor(ctx, q.n, { happy: q.happyUntil > now || q.doing === 'sing', blink: now > (q.blinkAt || 0) || q.doing === 'read' && Math.sin(t) > .7, fx: 1.5, clean: 100 });
+  // 手上的東西
+  if (q.doing === 'fish') { ctx.strokeStyle = '#8a5a33'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(8, -8); ctx.lineTo(22, -26); ctx.stroke(); }
+  if (q.doing === 'water') { ctx.fillStyle = '#6bb6ff'; ctx.fillRect(8, -12, 9, 7); ctx.fillRect(16, -11, 6, 2); ctx.fillStyle = '#9fd8ff'; for (let i = 0; i < 3; i++) { const ph = (t * 2 + i / 3) % 1; ctx.beginPath(); ctx.arc(23 + ph * 3, -10 + ph * 12, 1.2, 0, 7); ctx.fill(); } }
+  if (q.doing === 'read') { ctx.fillStyle = ['#e8505b', '#6bb6ff', '#7bd389'][q.n.id.length % 3]; ctx.fillRect(-7, -9, 14, 9); ctx.fillStyle = '#ffffff'; ctx.fillRect(-.5, -9, 1, 9); }
+  ctx.restore();
+  if (q.doing === 'fish' && q.spot) {   // 釣線和浮標
+    const bx = q.spot.x * T + Math.sin(t) * 4, by = q.spot.y * T + Math.sin(t * 3) * 1.5, rx = px + q.f * 22 * k, ry = py - lift - 26 * k;
+    ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(rx, ry); ctx.quadraticCurveTo((rx + bx) / 2, Math.max(ry, by) + 8, bx, by); ctx.stroke();
+    ctx.fillStyle = '#e8505b'; ctx.beginPath(); ctx.arc(bx, by, 3, Math.PI, 0); ctx.fill(); ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(bx, by, 3, 0, Math.PI); ctx.fill();
+  }
+  if (q.doing === 'jog' && q.path.length) { ctx.font = '11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('💦', px - q.f * 14, py - 44 * k / 1.55); }
+  // 頭上：請她幫忙的❗、拿到東西可以交的🎁
+  const rq = G.islReq && G.islReq.d === today() && G.islReq.npc === q.n.id && !G.islReq.done ? G.islReq : null;
+  const headY = py - lift - 34 * k;
+  if (rq) { ctx.font = '700 16px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(rq.have ? '🎁' : ISL_REQS[rq.kind][0], px, headY - 6 - Math.abs(Math.sin(t * 4)) * 3); }
+  // 表情泡泡（動森那樣的白色小泡泡）
+  if (q.emote && now < q.emote.until && !(q.say && now < q.say.until)) {
+    const a = Math.min(1, (q.emote.until - now) / 300), pop = Math.min(1, (now - (q.emote.until - 1800)) / 150);
+    ctx.save(); ctx.globalAlpha = a; ctx.translate(px + 10, headY - 10); ctx.scale(.6 + .4 * Math.max(0, pop), .6 + .4 * Math.max(0, pop));
+    ctx.fillStyle = '#ffffff'; ctx.strokeStyle = 'rgba(0,0,0,.15)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(0, 0, 15, 12, 0, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(-9, 11, 3, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(-13, 16, 1.6, 0, 7); ctx.fill();
+    ctx.font = '15px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(q.emote.e.replace('💭', ''), 0, 1); ctx.textBaseline = 'alphabetic';
+    ctx.restore(); ctx.globalAlpha = 1;
+  }
+  if (q.say && now < q.say.until) {   // 說話泡泡
+    ctx.font = '700 12px "Microsoft JhengHei","PingFang TC",sans-serif'; const txt = q.say.text, w = ctx.measureText(txt).width + 16, bx = px - w / 2, by = headY - 34;
+    ctx.globalAlpha = Math.min(1, (q.say.until - now) / 300);
+    ctx.fillStyle = '#fffaf0'; ctx.strokeStyle = '#a07850'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.roundRect(bx, by, w, 22, 11); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(px - 4, by + 22); ctx.lineTo(px, by + 28); ctx.lineTo(px + 4, by + 22); ctx.fill();
+    ctx.fillStyle = '#5a4636'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(txt, px, by + 11); ctx.textBaseline = 'alphabetic'; ctx.globalAlpha = 1;
+  }
+}
+// ── 對話框 ──
+function islTalkOpen(q) {
+  islTalkClose();
+  const n = q.n, first = !G.friends[n.id];
+  if (first || nowMs() - q.cool > 30000) { G.friends[n.id] = (G.friends[n.id] || 0) + 1; q.cool = nowMs(); kidMoodUp(2); }
+  if (first) try { newFriendShowcase(n); } catch (e) {}
+  saveGame(); refreshTop();
+  q.happyUntil = nowMs() + 1500; q.say = null; Sound.play('petHappy');
+  const box = el('div', 'isl-talk'), pic = document.createElement('canvas'), dpr = window.devicePixelRatio || 1;
+  pic.width = 70 * dpr; pic.height = 64 * dpr; pic.className = 'isl-talk-pic';
+  const pg = pic.getContext('2d'); pg.scale(dpr, dpr); pg.translate(35, 58); pg.scale(1.9, 1.9); drawNeighbor(pg, n, { happy: true, blink: false, fx: 0, clean: 100 });
+  const nameTag = el('div', 'isl-talk-name', n.short), txt = el('div', 'isl-talk-text', ''), opts = el('div', 'isl-talk-opts');
+  box.append(pic, nameTag, txt, opts); isl.layer.appendChild(box);
+  isl.talk = { q, box };
+  let typer = 0;
+  const say = line => {   // 一個字一個字跑出來
+    clearInterval(typer); txt.textContent = ''; let i = 0; const chars = [...line];
+    typer = setInterval(() => { if (!isl || !isl.talk) { clearInterval(typer); return; } txt.textContent += chars[i++] || ''; if (i % 2) Sound.play('talk', 'x'); if (i >= chars.length) clearInterval(typer); }, 45);
+    try { speak(line); } catch (e) {}
+  };
+  isl.talk.stop = () => clearInterval(typer);
+  const chatLines = () => {
+    const nm = charName(), h = new Date().getHours(), f = G.friends[n.id] || 0, L = [islGreet(), '我最喜歡這座小島了！', '你知道嗎？池塘裡有好大的魚喔！', '今天想做什麼呢？', '我剛剛看到一隻漂亮的蝴蝶！', '要不要一起去海邊散步？'];
+    if (h >= 18 || h < 6) L.push('晚上的星星好漂亮～', '路燈亮起來了耶！');
+    if (f > 5) L.push(`${nm}，我們是好朋友對吧！`, '下次來我家玩嘛～');
+    if (typeof questWorldsCleared === 'function' && questWorldsCleared()) L.push('聽說海上多了新的小島！要坐船去喔！');
+    if (G.vehicles && G.vehicles.length) L.push('你有交通工具耶！好羨慕～');
+    return L[Math.floor(Math.random() * L.length)];
+  };
+  const menu = () => {
+    opts.innerHTML = '';
+    const add = (label, fn) => { const b = el('button', '', label); b.onclick = () => { Sound.play('click'); fn(); }; opts.appendChild(b); };
+    const rq = G.islReq && G.islReq.d === today() ? G.islReq : null, mine = rq && rq.npc === n.id && !rq.done;
+    add('💬 聊聊天', () => { say(chatLines()); q.happyUntil = nowMs() + 1200; });
+    if (mine && rq.have) add(`🎁 給你${ISL_REQS[rq.kind][1]}！`, () => islReqDeliver(q, say, menu));
+    else if (mine) add(`🙋 ${ISL_REQS[rq.kind][1]}還在找…`, () => say(`沒關係，慢慢找！${ISL_REQS[rq.kind][2]}得到${ISL_REQS[rq.kind][1]}喔～`));
+    else add('🙋 需要幫忙嗎？', () => islReqAsk(q, say, menu));
+    add('👋 掰掰', () => { say('掰掰～下次見！'); setTimeout(islTalkClose, 900); });
+  };
+  say(first ? '你好！我們做朋友吧！' : chatLines()); menu();
+}
+function islTalkClose() { if (!isl || !isl.talk) return; isl.talk.stop && isl.talk.stop(); isl.talk.box.remove(); isl.talk = null; }
+function islReqAsk(q, say, menu) {
+  const day = today();
+  const cnt = G.islReqDay && G.islReqDay.d === day ? G.islReqDay.n : 0;
+  if (cnt >= ISL_REQ_DAY) { say('今天你已經幫好多忙了，謝謝你！明天再來找我玩～'); return; }
+  if (G.islReq && G.islReq.d === day && !G.islReq.done && G.islReq.npc !== q.n.id) { const o = NEIGHBORS.find(x => x && x.id === G.islReq.npc); say(`你在幫${o ? o.short : '朋友'}的忙對吧？先幫完牠喔！`); return; }
+  const kinds = Object.keys(ISL_REQS), kind = kinds[Math.floor(Math.random() * kinds.length)];
+  G.islReq = { d: day, npc: q.n.id, kind, have: false };
+  say(`可以幫我找一個${ISL_REQS[kind][0]}${ISL_REQS[kind][1]}嗎？${ISL_REQS[kind][2]}得到喔！`);
+  saveGame(); menu();
+}
+function islReqHit(kind) {
+  const rq = G.islReq; if (!rq || rq.d !== today() || rq.done || rq.have || rq.kind !== kind) return;
+  rq.have = true; saveGame();
+  const o = NEIGHBORS.find(x => x && x.id === rq.npc);
+  setTimeout(() => toast(`${ISL_REQS[kind][0]} 拿到${ISL_REQS[kind][1]}了！拿去給${o ? o.short : '朋友'}吧（頭上有🎁）`), 900);
+}
+function islReqDeliver(q, say, menu) {
+  const rq = G.islReq; rq.done = true;
+  const day = today(); G.islReqDay = G.islReqDay && G.islReqDay.d === day ? G.islReqDay : { d: day, n: 0 }; G.islReqDay.n++;
+  addBells(ISL_REQ_PRIZE); G.friends[q.n.id] = (G.friends[q.n.id] || 0) + 2; kidMoodUp(5);
+  say(`哇！是${ISL_REQS[rq.kind][1]}！謝謝你～這個送你！`); Sound.play('fanfare');
+  q.happyUntil = nowMs() + 3000; islEmote(q, '💗', 2500);
+  gotCard('💰', `${ISL_REQ_PRIZE} 元`, `${q.n.short}謝謝你的幫忙！`);
+  saveGame(); refreshTop(); menu();
+}
+// ── 小可愛的表情 ──
+const ISL_EMOTES = [['wave', '👋', '揮手'], ['happy', '😄', '開心'], ['dance', '💃', '跳舞'], ['wow', '😲', '嚇一跳'], ['sleepy', '😴', '想睡覺'], ['love', '💗', '愛心']];
+function openEmoteMenu(e) { openMenu(ISL_EMOTES.map(([id, ic, nm]) => [`${ic} ${nm}`, () => islDoEmote(id)]), e); }
+function islDoEmote(id) {
+  if (!isl) return;
+  const em = ISL_EMOTES.find(x => x[0] === id), now = nowMs();
+  isl.emote = { id, until: now + (id === 'dance' ? 3000 : 1600) };
+  islAddFx('say', isl.x, isl.y - 2.1, 1500, { text: em[1] });
+  Sound.play(id === 'dance' ? 'note' : id === 'wow' ? 'boing' : id === 'love' ? 'petHappy' : 'pickUp');
+  kidMoodUp(1);
+  isl.npcs.forEach(q => { if (Math.hypot(q.x - isl.x, q.y - isl.y) < 4.5) setTimeout(() => {   // 旁邊的朋友跟著做
+    if (!isl) return; q.f = isl.x > q.x ? 1 : -1; q.happyUntil = nowMs() + (id === 'dance' ? 3000 : 1500);
+    const back = { wave: ['👋', '嗨～！'], happy: ['😄', '好開心！'], dance: ['🎵', '一起跳！'], wow: ['❗', '怎麼了？'], sleepy: ['💤', '我也好睏～'], love: ['💗', '我也喜歡你！'] }[id];
+    islEmote(q, back[0], 1800); islSay(q, back[1], 1800);
+  }, 500 + Math.random() * 400); });
+}
+function islEmoteHop() {
+  const e = isl.emote, now = nowMs(); if (!e || now > e.until) return 0;
+  if (e.id === 'dance') { if (Math.floor(now / 300) % 2) isl.facing = Math.floor(now / 600) % 2 ? 1 : -1; return Math.abs(Math.sin(now / 150)) * 6; }
+  if (e.id === 'happy' || e.id === 'love') return Math.abs(Math.sin(now / 120)) * 5;
+  if (e.id === 'wow') return Math.max(0, 1 - (e.until - now - 1100) / 500) > 0 && now > e.until - 1600 && now < e.until - 1300 ? 8 : 0;
+  return 0;
+}
+// ── 沙灘腳印 ──
+function islFootStep() {
+  const m = isl.m, tx = Math.floor(isl.x), ty = Math.floor(isl.y);
+  if (!m.beach[ty] || !m.beach[ty][tx] || (m.bridge && m.bridge[ty][tx]) || m.path[ty][tx]) return;
+  const fp = isl.foot = isl.foot || [], last = fp[fp.length - 1];
+  if (last && Math.hypot(last.x - isl.x, last.y - isl.y) < .45) return;
+  fp.push({ x: isl.x, y: isl.y, t: nowMs(), s: (fp.length % 2) ? 1 : -1 }); if (fp.length > 40) fp.shift();
+}
+function islDrawFootprints(ctx, now) {
+  const fp = isl.foot; if (!fp) return; const T = ISL.T;
+  fp.forEach(f => { const a = Math.max(0, 1 - (now - f.t) / 6000); if (a <= 0) return; ctx.fillStyle = `rgba(160,120,70,${.35 * a})`; ctx.beginPath(); ctx.ellipse(f.x * T + f.s * 3, f.y * T + 8, 2.4, 3.6, 0, 0, 7); ctx.fill(); });
+  isl.foot = fp.filter(f => now - f.t < 6000);
 }
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
