@@ -53,11 +53,12 @@ const path = require('path');
     o.paid = b0 - G.bells;
     // 播：倒數 → 第一幕；跳到要點的那一幕，確認會停住
     await wait(2700); o.scene0 = playMovie.test.scene(); o.sub = document.querySelector('.movie-sub').textContent;
-    for (let i = 0; i < 3; i++) { playMovie.test.skip(); await wait(80); }
+    for (let i = 0; i < 8 && playMovie.test.scene() < 3; i++) { playMovie.test.skip(); await wait(80); }
     o.atTap = playMovie.test.scene(); await wait(2200); o.stillTap = playMovie.test.scene() === o.atTap;
     playMovie.test.tap(); await wait(200);
     for (let i = 0; i < 12 && playMovie.test.phase() !== 'end'; i++) { playMovie.test.skip(); await wait(80); }
     await wait(4800);
+    o.taps = MOVIES.every(m => m.scenes.filter(sc => sc.tap).length >= 3);   // 每部電影至少三幕要她點
     o.done = /新章/.test(document.querySelector('#modal').innerText); o.seen = JSON.stringify(G.movies);
     // 其他四部也看完 → 送海報
     for (const id of ['space', 'dino', 'sea', 'funny']) { openMoviePicker(id); await wait(50); document.querySelector('.movie-pop .alt').click(); await wait(2700); for (let i = 0; i < 14 && playMovie.test.phase() !== 'end'; i++) { playMovie.test.skip(); await wait(60); } await wait(4800); }
@@ -72,7 +73,7 @@ const path = require('path');
   });
   console.log(JSON.stringify(out));
   const ok = out.onIsland && out.poorPool && out.backToIsland && out.poolPaid && out.cinemaPaid && out.ticketUsed && out.host === 'cinema' && out.menu && out.seats && out.posters >= 5 && out.halloween && out.poor && out.paid === 140 &&
-    out.scene0 === 0 && out.atTap === 3 && out.sub.length > 4 && out.stillTap && out.done && out.prize && out.hasPoster && out.saved && out.badCleaned && !errs.length;
+    out.scene0 === 0 && out.atTap === 3 && out.sub.length > 4 && out.stillTap && out.taps && out.done && out.prize && out.hasPoster && out.saved && out.badCleaned && !errs.length;
   console.log(ok ? '✅ 全部通過' : '❌ 有問題 ' + errs.join(' | '));
   await b.close();
 })();
