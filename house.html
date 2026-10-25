@@ -734,6 +734,8 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .rename-row { display: flex; align-items: center; gap: 10px; padding: 8px; border: 2px solid var(--line); border-radius: 14px; margin: 6px 0; background: #fff; }
 .rename-t { flex: 1; display: flex; flex-direction: column; } .rename-t span { font-size: 12px; color: #8a7a6a; }
 .rename-b { display: flex; gap: 4px; flex-wrap: wrap; } .rename-b .on { background: #ffe0ee; border-color: #ff8fb3; }
+.quest-btn.glow { animation: glowPulse .6s infinite alternate; border-color: #ffd23f; background: #fff3b0; }
+@keyframes glowPulse { from { box-shadow: 0 0 0 0 rgba(255,210,63,.8); } to { box-shadow: 0 0 0 8px rgba(255,210,63,0); } }
 .spar-row { display: flex; gap: 12px; justify-content: center; margin: 8px 0; }
 .spar-row button { min-width: 120px; font-size: 20px; }
 .music-menu { position: fixed; z-index: 70; background: var(--panel, #fffaf0); border: 2px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
@@ -2132,6 +2134,15 @@ const treeParts = (leaf, leaf2, fruit) => [
 // 🎢 雲霄飛車的軌道高度（y＝0～4 每一格邊上的高度）：車站在 y＝4，出發往後先過小山坡、衝下來、爬到最高點
 const COASTER_H = [14, 70, 18, 44, 12];
 const PLACE_FURNITURE = [
+  // 🏟️ 田徑場
+  { id: 'tr_blocks', name: '起跑架', theme: 'modern', w: 1, d: 1, parts: [{ x: .2, y: .3, w: .6, d: .4, z: 0, h: 2, c: '#5a6070' }, { x: .25, y: .35, w: .2, d: .3, z: 2, h: 6, c: '#e8505b' }, { x: .55, y: .35, w: .2, d: .3, z: 2, h: 6, c: '#e8505b' }] },
+  { id: 'tr_finish', name: '終點拱門', theme: 'modern', w: 1, d: 2, parts: [{ x: .4, y: 0, w: .2, d: .15, z: 0, h: 60, c: '#ffffff' }, { x: .4, y: 1.85, w: .2, d: .15, z: 0, h: 60, c: '#ffffff' }, { x: .4, y: 0, w: .2, d: 2, z: 56, h: 8, c: '#e8505b' }, { x: .45, y: .15, w: .1, d: 1.7, z: 30, h: 2, c: '#ffd23f' }] },
+  { id: 'tr_podium', name: '頒獎台', theme: 'modern', w: 2, d: 1, parts: [{ x: .65, y: .2, w: .7, d: .6, z: 0, h: 22, c: '#ffd23f' }, { x: 0, y: .2, w: .65, d: .6, z: 0, h: 14, c: '#c9ccd0' }, { x: 1.35, y: .2, w: .65, d: .6, z: 0, h: 9, c: '#d9a066' }] },
+  { id: 'tr_sand', name: '跳遠沙坑', theme: 'nature', w: 3, d: 1, layer: 'floor', parts: [{ x: 0, y: .1, w: 3, d: .8, z: 0, h: 1, c: '#e6c98a' }, { x: -.05, y: .1, w: .08, d: .8, z: 0, h: 1.5, c: '#ffffff' }] },
+  { id: 'tr_water', name: '補水站', theme: 'modern', w: 1, d: 1, parts: [{ x: .2, y: .2, w: .6, d: .6, z: 0, h: 22, c: '#6bb6ff' }, { x: .3, y: .3, w: .4, d: .4, z: 22, h: 12, c: '#dff0ff' }] },
+  { id: 'tr_board', name: '紀錄看板', theme: 'modern', w: 3, h: 40, z: 40, layer: 'wall', d: 1, parts: [],
+    draw(ctx, W, H) { ctx.fillStyle = '#26232a'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#ffd23f'; ctx.font = '700 9px "Microsoft JhengHei","PingFang TC",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const t = typeof trackState === 'function' ? trackState() : {}; ctx.fillText('🏆 我的紀錄', W / 2, 9); ctx.fillStyle = '#7bd389'; ctx.fillText(`100公尺 ${t.best ? t.best.toFixed(2) + ' 秒' : '—'}`, W / 2, 22); ctx.fillText(`跳遠 ${t.lj ? t.lj.toFixed(2) + ' 公尺' : '—'}`, W / 2, 33); } },
   // 🎬 電影院
   { id: 'cinema_seat', name: '電影院座位', theme: 'modern', w: 1, d: 1, parts: [
     { x: .15, y: .2, w: .7, d: .65, z: 0, h: 14, c: '#7a1f2a' }, { x: .15, y: .2, w: .7, d: .65, z: 14, h: 5, c: '#c0392b' },
@@ -2862,6 +2873,7 @@ const HOSTS = {
   // 跆拳道館的教練：熊熊，繫黑色腰帶；游泳池的教練：鴨鴨（家長選的）
   cinema: { id: 'cinema', name: '貓頭鷹放映師', short: '放映師', body: '#a07850', edge: '#7a5a3a', belly: '#f2dfc0', inner: '#7a5a3a', ears: 'tuft', acc: 'glasses', accColor: '#3a3240' },
   tkd: { id: 'tkd', name: '熊熊教練', short: '熊教練', body: '#8a5a33', edge: '#6b4428', belly: '#e8cfa9', inner: '#6b4428', ears: 'round', acc: 'scarf', accColor: '#26232a' },
+  track: { id: 'track', name: '花豹教練', short: '豹教練', body: '#f2b04a', edge: '#c98a2a', belly: '#fff1d6', inner: '#c98a2a', ears: 'round', acc: 'scarf', accColor: '#2f6fd1' },
   swim: { id: 'swim', name: '鴨鴨教練', short: '鴨教練', body: '#ffe066', edge: '#e0b630', belly: '#fff6c8', inner: '#e0b630', ears: 'tuft', acc: 'bill', accColor: '#ff9a3c' },
   librarian: { id: 'librarian', name: '貓咪館員', short: '館員', body: '#d9cfc4', edge: '#a8998a', belly: '#fff8f0', inner: '#ffb3c7', ears: 'pointy', acc: 'scarf', accColor: '#3f8ee0' },
   // 公園的園長：柴犬，戴綠色帽子
@@ -2940,6 +2952,12 @@ const PLACES = {
       ['cinema_seat', 2, 6], ['cinema_seat', 3, 6], ['cinema_seat', 4, 6], ['cinema_seat', 5, 6], ['cinema_seat', 6, 6],
       ['popcorn_cart', 8, 8], ['cinema_counter', 0, 8]
     ], wallItems: [['cinema_screen', 'R', 2], ['movie_poster_pet', 'L', 1], ['movie_poster_space', 'L', 3], ['movie_poster_dino', 'L', 5], ['movie_poster_sea', 'L', 7], ['movie_poster_funny', 'L', 9]] }
+  ] },
+  /* 🏟️ 田徑場（家長：運動島先做運動類）：百米衝刺、大隊接力、跳遠 */
+  track: { name: '田徑場', host: 'track', emoji: '🏟️', desc: '百米衝刺、大隊接力、跳遠，花豹教練陪你練跑！', rooms: [
+    { name: '田徑場', w: 10, d: 10, wall: 'wp_balcony', floor: 'fl_track', items: [
+      ['tr_blocks', 0, 1], ['tr_blocks', 0, 3], ['tr_finish', 9, 0], ['tr_podium', 6, 7], ['tr_sand', 1, 7], ['tr_water', 9, 8]
+    ], wallItems: [['tr_board', 'R', 3]] }
   ] },
   pool: { name: '游泳池', host: 'swim', emoji: '🏊', desc: '打水比賽、潛水撿寶、跳水，鴨鴨教練陪你玩水！', rooms: [
     { name: '游泳池', w: 10, d: 10, wall: 'wp_balcony', floor: 'fl_pooldeck', items: [
@@ -3043,6 +3061,7 @@ LINE_TYPES.push(
   { key: 'hostLibrarian', label: '館員說的話', hint: '可用 {名字}', lines: ['{名字}，歡迎來圖書館～', '在圖書館要小聲說話喔 🤫', '繪本架上有好看的書喔', '看完的書要放回原來的地方', '閱讀護照蓋滿可以拿獎狀喔', '要不要幫我把書放回書架？'] },
   { key: 'hostCinema', label: '電影院放映師說的話', hint: '可用 {名字}', lines: ['{名字}，今天想看哪一部電影呢？', '看電影的時候要小聲喔～', '爆米花剛爆好，好香喔！', '新的電影海報貼在牆上了，去看看！', '電影快開始囉，找位子坐好～'] },
   { key: 'hostTkd', label: '跆拳道教練說的話', hint: '可用 {名字}', lines: ['{名字}，敬禮！今天也要加油喔！', '出拳要有力，喊聲要大聲！', '踢腿的時候眼睛看前面', '先熱身，才不會受傷喔', '練習越多，腰帶就越來越厲害！'] },
+  { key: 'hostTrack', label: '田徑教練說的話', hint: '可用 {名字}', lines: ['{名字}，來跑一百公尺吧！', '起跑要等槍響喔，不可以偷跑！', '手要用力擺，腳就會跑得快！', '大隊接力最重要的是交棒！', '跑完要喝水、休息一下～'] },
   { key: 'hostSwim', label: '游泳教練說的話', hint: '可用 {名字}', lines: ['{名字}，下水前先做暖身操喔！', '不可以在池邊跑步，會滑倒喔', '憋氣、吐氣，咕嚕咕嚕～', '打水的時候腳要伸直', '游完記得擦乾、多喝水！'] },
   { key: 'hostRanger', label: '園長說的話', hint: '可用 {名字}', lines: ['{名字}，歡迎來公園玩！', '花圃的蝴蝶今天好多喔', '公園的花不能摘，拍照就好囉', '池塘裡的魚很會躲喔', '垃圾要記得帶回家喔', '天氣好熱，要不要吃冰淇淋？', '要不要在草地上野餐？'] },
   { key: 'hostTeacher', label: '老師說的話', hint: '可用 {名字}', lines: ['{名字}早安！今天也要開心上課喔', '下課了，去操場玩一下吧！', '要不要來小考？答對有獎勵喔', '去操場跟同學賽跑吧！', '寫字的時候背要挺直喔', '有問題要舉手問老師喔', '下課記得喝水、上廁所～', '作業寫好了可以拿給老師看喔'] },
@@ -4572,6 +4591,7 @@ const OPEN_GIFT_BELLS = 100000;
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
   { id: '2026-10-18T09:00', title: '萬聖節派對＋找小幽靈！🎃👻', lines: [
+    ['🏅', '游泳池那座小島變大成「運動島」（一樣走木橋），跆拳道館也搬過去了！新開「🏟️ 田徑場」：百米衝刺（聽到砰才能跑，左右腳輪流按）、大隊接力（接力區按交棒）、跳遠'],
     ['🕹️', '最上面多了「🎮 遊戲」：所有小遊戲都在這裡，點圖示就玩；外面地方的遊戲會自動走過去；最上面一排是最近玩過的'],
     ['🎮', '三個像 Roblox 的新小遊戲（在「💰 賺錢」）：👗 換裝走秀（照主題挑衣服上台，評審給星星）、🧁 甜點店大亨（買機器讓甜點店自己賺錢）、🐾 寵物收集模擬器（帶寵物敲金幣堆、升級、開新區域）'],
     ['🔒', '「⚙️ 設定」改成要家長密碼才進得去（還沒設密碼的話，大人算一題乘法），小朋友不會不小心改到設定'],
@@ -5355,6 +5375,7 @@ function normalizeSave(g) {
     if (v.zone > v.zoneMax) v.zone = 0; if (v.zoneMax > 2) v.zoneMax = 2;
     if (v.day != null && !(isObj(v.day) && typeof v.day.d === 'string' && num(v.day.n))) delete v.day; }
   if (out.recentGames != null) { if (Array.isArray(out.recentGames)) out.recentGames = out.recentGames.filter(x => typeof x === 'string' && x.length < 40).slice(0, 8); else delete out.recentGames; }   // 🎮 最近玩過
+  if (out.track != null) { if (!isObj(out.track)) delete out.track; else { ['best', 'lj'].forEach(k => { if (out.track[k] != null && !(num(out.track[k]) && out.track[k] > 0 && out.track[k] < 100)) delete out.track[k]; }); } }   // 🏟️ 田徑紀錄
   if (out.qIsleDay != null && !(isObj(out.qIsleDay) && typeof out.qIsleDay.d === 'string' && isObj(out.qIsleDay.got))) delete out.qIsleDay;
   if (out.raceDay != null && !(isObj(out.raceDay) && typeof out.raceDay.d === 'string' && Number.isInteger(out.raceDay.n) && out.raceDay.n >= 0)) delete out.raceDay;   // 🏁 賽跑猜對的獎金（一天幾次）
   if (out.kid.magic != null && !(isObj(out.kid.magic) && num(out.kid.magic.until) && magicFxList().some(m => m.id === out.kid.magic.id))) delete out.kid.magic;   // 🔮 魔法藥水的效果
@@ -11097,7 +11118,7 @@ function hostMemoryLine(id) {
 
 // ── 親戚家：叔叔、阿婆在家裡陪小可愛（跟著她走，偶爾說話）──
 const host = { n: null, a: null, say: null, sayUntil: 0, nextTalkAt: 0, danceUntil: 0, nextHop: 0 };
-const HOST_LINE_KEYS = { cinema: 'hostCinema', tkd: 'hostTkd', swim: 'hostSwim', amuse: 'hostAmuse', friend: 'hostFriend', uncle: 'hostUncle', grandma: 'hostGrandma', teacher: 'hostTeacher', ranger: 'hostRanger', librarian: 'hostLibrarian' };
+const HOST_LINE_KEYS = { track: 'hostTrack', cinema: 'hostCinema', tkd: 'hostTkd', swim: 'hostSwim', amuse: 'hostAmuse', friend: 'hostFriend', uncle: 'hostUncle', grandma: 'hostGrandma', teacher: 'hostTeacher', ranger: 'hostRanger', librarian: 'hostLibrarian' };
 const hostLineKey = () => HOST_LINE_KEYS[host.n.id] || 'hostGrandma';
 function hostSay(text, ms) {
   if (!text) return;
@@ -11309,6 +11330,7 @@ function hostMenuEntries() {
     list.push(['🥋 跟朋友對練', openSparGame]);
     list.push([`🎖️ 考腰帶（現在：${tkdBeltName()}）`, openBeltExam]);
   }
+  if (host.n.id === 'track') { list.push(['🏃 百米衝刺', openSprint]); list.push(['🏃‍♀️ 大隊接力', openRelay]); list.push(['🏖️ 跳遠', openLongJump]); }
   if (host.n.id === 'swim') {
     list.push(['🏊 打水比賽', openSwimRace]);
     list.push(['🤿 潛水撿寶', openDiveGame]);
@@ -18900,7 +18922,7 @@ function decorGo(theme, redo) {
    ・寵物跟在後面走。收到邀請卡的朋友家也是島上的小房子
    ・右上「🚗 快速出門」還是可以用清單直接去；「🔙 回去」不出門
    ・只是新的一個畫面：沒有改存檔，也沒有新的存檔欄位（每次都從家門口、或現在這個地方的門口出發）*/
-const ISL = { W: 52, H: 55, T: 32 };   // 下面多一塊海，放朋友島
+const ISL = { W: 64, H: 55, T: 32 };   // 右邊多一塊海，放運動島   // 下面多一塊海，放朋友島
 const ISL_BLD = [   // 房子：x, y 是左上角的格子，w×h 格；門在正下方一格
   { id: 'home', x: 24, y: 11, w: 4, h: 3 },
   { id: 'school', x: 12, y: 13, w: 5, h: 3 },
@@ -18909,8 +18931,11 @@ const ISL_BLD = [   // 房子：x, y 是左上角的格子，w×h 格；門在�
   { id: 'uncle', x: 10, y: 22, w: 4, h: 3 },
   { id: 'grandma', x: 37, y: 22, w: 4, h: 3 },
   { id: 'amusement', x: 23, y: 26, w: 6, h: 3 },
-  { id: 'dojo', x: 27, y: 7, w: 4, h: 3 },
-  { id: 'pool', x: 45, y: 33, w: 4, h: 2, islet: true },
+
+  // 🏅 運動島（家長：游泳池那座小島擴大成運動島，走木橋過去；跆拳道館也搬過來）
+  { id: 'pool', x: 44, y: 38, w: 4, h: 2, islet: true },
+  { id: 'dojo', x: 50, y: 37, w: 4, h: 3, islet: true },
+  { id: 'track', x: 56, y: 37, w: 5, h: 3, islet: true },
   { id: 'cinema', x: 40, y: 17, w: 3, h: 2 }
 ];
 /* 🏡 朋友島（家長：主島快滿了，姊姊、妹妹、朋友的家搬到另外一座島）：主島南邊的海上，坐船過去。收到第一張邀請卡才會出現（有動畫） */
@@ -18948,11 +18973,11 @@ function islCoinSpots(m) {   // 今天的金幣在哪（同一天打開幾次都
   }
   return out.slice(0, Math.max(0, ISL_COIN_MAX - st.n));
 }
-const ISL_ISLET = { cx: 47, cy: 34, r: 3.6, to: [39, 29] };   // 游泳池小島：圓心、半徑、木橋接到主島的哪裡
+const ISL_ISLET = { cx: 52, cy: 41, rx: 11, ry: 9, r: 9, to: [39, 29], hub: [52, 41] };   // 🏅 運動島：中心、大小、木橋接到主島的哪裡、島上的小廣場
 const ISL_POND = { x: 31, y: 24, w: 4, h: 3 };
 const ISL_HUB = [26, 19];
 const ISL_STYLE = {   // 牆、屋頂顏色
-  dojo: ['#fff4e6', '#e0503a'], pool: ['#e8f6fb', '#3fa9f5'], cinema: ['#3a2f4a', '#e8505b'],
+  dojo: ['#fff4e6', '#e0503a'], pool: ['#e8f6fb', '#3fa9f5'], track: ['#fff1e0', '#e07a4a'], cinema: ['#3a2f4a', '#e8505b'],
   home: ['#ffd9c9', '#ff7b7b'], school: ['#fff4cf', '#5b8def'], library: ['#e6dcff', '#7a5cc9'], park: ['#d9f0c8', '#4f9d4f'],
   uncle: ['#d7ecc8', '#7aa05a'], grandma: ['#ffe3b0', '#d68a3a'], amusement: ['#ffe0ee', '#ff6fa3'], friend: ['#fffaf0', '#6fb7e8']
 };
@@ -18980,8 +19005,8 @@ function islMap(nFriends) {
   }
   /* 🏝️ 游泳池的小島（家長：戶外，做成一個小島）：主島東南邊海上的圓圓小島，一座木橋連過去 */
   const bridge = land.map(r => r.map(() => false));
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (Math.hypot(x - ISL_ISLET.cx, y - ISL_ISLET.cy) <= ISL_ISLET.r) land[y][x] = true;
-  { let [x0, y0] = [ISL_ISLET.cx, ISL_ISLET.cy], [x1, y1] = ISL_ISLET.to; const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) * 2;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (Math.hypot((x - ISL_ISLET.cx) / ISL_ISLET.rx, (y - ISL_ISLET.cy) / ISL_ISLET.ry) <= 1) land[y][x] = true;
+  { let [x0, y0] = [ISL_ISLET.cx - 6, ISL_ISLET.cy - 6], [x1, y1] = ISL_ISLET.to; const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) * 2;
     let px = null, py = null; const put = (x, y) => { if (!land[y][x]) { land[y][x] = true; bridge[y][x] = true; } };
     for (let i = 0; i <= n; i++) { const x = Math.round(x0 + (x1 - x0) * i / n), y = Math.round(y0 + (y1 - y0) * i / n); if (px !== null && px !== x && py !== y) put(x, py); put(x, y); px = x; py = y; } }
   /* 🗺️ 闖關解鎖的小島：一樣是圓圓的小島＋木橋（先畫島，再從島心往主島鋪橋） */
@@ -19018,9 +19043,11 @@ function islMap(nFriends) {
       for (let x = Math.min(dx0, Math.round(F.cx)); x <= Math.max(dx0, Math.round(F.cx)); x++) mark(x, my);
       return;
     }
-    if (b.islet) {
+    if (b.islet) {   // 運動島：門口 → 島上的小廣場；小廣場 → 木橋；主島那頭接到廣場那條路
       const [x1, y1] = ISL_ISLET.to; for (let x = x1; x >= 26; x--) mark(x, y1);
-      const [dx0, dy0] = b.door; for (let x = Math.min(dx0, ISL_ISLET.cx); x <= Math.max(dx0, ISL_ISLET.cx); x++) mark(x, dy0);
+      const [hx, hy] = ISL_ISLET.hub, [dx0, dy0] = b.door;
+      for (let y = Math.min(dy0, hy); y <= Math.max(dy0, hy); y++) mark(dx0, y);
+      for (let x = Math.min(dx0, hx); x <= Math.max(dx0, hx); x++) mark(x, hy);
       return;
     }
     const [dx, dy] = b.door, [hx, hy] = ISL_HUB;
@@ -22565,6 +22592,187 @@ function islReqGuideDraw(ctx, now) {   // 目標頭上的大手指 👇（在畫
   const dx = tg.x - isl.x, dy = tg.y - isl.y, d = Math.hypot(dx, dy);
   if (d > 8) { const ax = (isl.x + dx / d * 2.6) * T, ay = (isl.y + dy / d * 2.6) * T - 20; ctx.save(); ctx.translate(ax, ay); ctx.rotate(Math.atan2(dy, dx)); ctx.fillStyle = '#ff9a3c'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(18, 0); ctx.lineTo(-8, -12); ctx.lineTo(-3, 0); ctx.lineTo(-8, 12); ctx.closePath(); ctx.stroke(); ctx.fill(); ctx.restore(); }
 }
+/* ===== 🏟️ 田徑場的遊戲 =====
+   🏃 百米衝刺（像 Speed Stars）：「各就各位、預備、砰！」槍響才能跑（偷跑重來）。
+       簡單：一直點「跑！」；一般／高手：左腳、右腳輪流按（同一腳按兩次會踉蹌），越有節奏越快。破紀錄有獎金。
+   🏃‍♀️ 大隊接力：小可愛跑第一棒和最後一棒，中間是寵物和朋友；接力區裡按「🤝 交棒！」，太早太晚會掉棒。
+   🏖️ 跳遠：助跑看準踏板按「跳！」，距離越遠越好，有紀錄。 */
+function trackState() { const t = G.track && typeof G.track === 'object' ? G.track : (G.track = {}); return t; }
+const SPRINT_LEVELS = [{ name: '簡單（一直點）', one: true, rival: .82, mul: 1 }, { name: '一般（左右腳）', one: false, rival: .9, mul: 2 }, { name: '高手！', one: false, rival: 1.02, mul: 3 }];
+const SPRINT_PRIZE = [120, 70, 40, 20], SP_LEN = 1600, SP_TIME = 1.6;   // 跑 1600 點＝100 公尺；畫面上的秒數乘 1.6 比較像真的
+function trackRunner(g, who, x, y, s, t, run, face) {   // 畫跑者：小可愛或動物朋友
+  g.save(); g.translate(x, y); g.scale((face || 1) * s, s);
+  if (who === 'kid') { if (kidBaby()) drawBabyKid(g, { t, walking: run }); else drawGirl(g, { t: t * 1.7, walking: run, blink: false, outfit: currentOutfit(), face: 'joy', stage: kidLookStage() }); }
+  else if (who.sp) { g.translate(0, -Math.abs(Math.sin(t * 14)) * (run ? 4 : 0)); drawCreature(g, who.sp, { happy: true, blink: false, fx: 1.5, clean: 100 }); }
+  else { g.translate(0, -Math.abs(Math.sin(t * 14)) * (run ? 4 : 0)); drawNeighbor(g, who, { happy: true, blink: false, fx: 1.5, clean: 100 }); }
+  g.restore();
+}
+function trackBg(g, W, H, cam, t) {
+  const gr = g.createLinearGradient(0, 0, 0, 120); gr.addColorStop(0, '#9fd8ff'); gr.addColorStop(1, '#e8f7ff'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#8a8f96'; g.fillRect(0, 60, W, 60);   // 看台
+  for (let i = 0; i < 70; i++) { const x = ((i * 37 - cam * .3) % (W + 40) + W + 40) % (W + 40) - 20, y = 66 + (i % 4) * 13; MV.ball(g, x, y + Math.sin(t * 6 + i) * 1.5, 4, ['#e8505b', '#ffd23f', '#6bb6ff', '#7bd389', '#ff9ec4'][i % 5]); }
+  g.fillStyle = '#5fae6f'; g.fillRect(0, 118, W, 8);
+  g.fillStyle = '#e07a4a'; g.fillRect(0, 126, W, H - 126);   // 紅土跑道
+  g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 2; for (let i = 0; i <= 4; i++) { const y = 126 + i * 34; g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  for (let m = 0; m <= 100; m += 10) { const x = m / 100 * SP_LEN - cam + 60; if (x < -20 || x > W + 20) continue; g.fillStyle = '#ffffff'; g.font = '700 10px sans-serif'; g.textAlign = 'center'; g.fillText(m + 'm', x, 124); g.fillRect(x - 1, 126, 2, 136); }
+  const fx = SP_LEN - cam + 60; if (fx > -20 && fx < W + 20) { for (let i = 0; i < 16; i++) { g.fillStyle = i % 2 ? '#26232a' : '#ffffff'; g.fillRect(fx - 4, 126 + i * 8.5, 8, 8.5); } }
+}
+function openSprint() { const w = openGameWindow('🏃 百米衝刺', '聽到「砰！」才可以跑！一般模式：左腳、右腳輪流按（鍵盤 ← →），越有節奏越快。簡單模式：一直點「跑！」。'); pickLevelRow(w, SPRINT_LEVELS, L => `第一名 💰 ${SPRINT_PRIZE[0] * L.mul}`, L => playSprint(w, L)); }
+function playSprint(w, L) {
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const W = 480, H = 270, { g } = gameCanvas(w.stage, W, H);
+  const pad = el('div', 'quest-pad'); w.stage.appendChild(pad);
+  const bL = L.one ? null : el('button', 'quest-btn sp-l', '🦶 左'), bR = L.one ? null : el('button', 'quest-btn sp-r', '右 🦶'), bOne = L.one ? el('button', 'quest-btn qb-j', '🏃 跑！') : null;
+  [bL, bOne, bR].filter(Boolean).forEach(b => pad.appendChild(b)); leaveButton(w);
+  const mates = NEIGHBORS.filter(Boolean).sort(() => Math.random() - .5).slice(0, 3);
+  const run = [{ who: 'kid', x: 0, v: 0, lane: 2, done: 0 }].concat(mates.map((n, i) => ({ who: n, x: 0, v: 0, lane: [0, 1, 3][i], top: (210 + Math.random() * 25) * L.rival, acc: 260 + Math.random() * 80, done: 0 })));
+  const me = run[0]; let phase = 'set', T0 = performance.now(), bangAt = 0, last = performance.now(), lastFoot = null, raf = 0, live = true, msg = '各就各位…', order = [], react = 0, stumble = 0;
+  const goAt = T0 + 1300 + Math.random() * 1500;
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', key); };
+  const press = foot => {
+    if (!live) return;
+    if (phase === 'set') { msg = '偷跑了！要等「砰！」喔～重來'; Sound.play('miss'); phase = 'false'; setTimeout(() => { if (live) { gameCleanup(); playSprint(w, L); } }, 1300); return; }
+    if (phase !== 'go' || me.done) return;
+    if (!react) react = (performance.now() - bangAt) / 1000;
+    if (L.one) { me.v = Math.min(235, me.v + 30); }
+    else if (foot === lastFoot) { me.v *= .72; stumble = .3; Sound.play('miss'); }
+    else { me.v = Math.min(270, me.v + 38); lastFoot = foot; }
+    Sound.play('click');
+  };
+  const key = e => { if (e.repeat) return; if (e.code === 'ArrowLeft' || e.code === 'KeyA' || e.code === 'KeyF') { e.preventDefault(); press(L.one ? 'x' : 'L'); } else if (e.code === 'ArrowRight' || e.code === 'KeyD' || e.code === 'KeyJ') { e.preventDefault(); press(L.one ? 'x' : 'R'); } else if (e.code === 'Space') { e.preventDefault(); press(L.one ? 'x' : (lastFoot === 'L' ? 'R' : 'L')); } };
+  document.addEventListener('keydown', key);
+  const tapB = (b, f) => b && b.addEventListener('pointerdown', e => { e.preventDefault(); press(f); });
+  tapB(bL, 'L'); tapB(bR, 'R'); tapB(bOne, 'x');
+  const finish = () => {
+    phase = 'end';
+    const place = 1 + order.indexOf(me), time = me.done * SP_TIME, ts = trackState(), rec = !L.one && (!ts.best || time < ts.best);
+    if (rec) ts.best = Math.round(time * 100) / 100;
+    setTimeout(() => {
+      if (!live) return; gameCleanup();
+      const bells = payReward(w, SPRINT_PRIZE[place - 1] * L.mul + (rec ? 50 : 0));
+      w.status.textContent = `${place === 1 ? '🥇 第一名！' : `第 ${place} 名！`} ${time.toFixed(2)} 秒${rec ? '　🎉 新紀錄！' : ''}　起跑反應 ${react.toFixed(2)} 秒　💰 +${fmt(bells)}`;
+      try { speak(place === 1 ? '第一名！好快！' : `第${place}名！`); } catch (e) {}
+      kidMoodUp(place === 1 ? 10 : 5); saveGame();
+      gameButtons(w, openSprint);
+    }, 1400);
+  };
+  const tick = now => {
+    if (!live) return;
+    const dt = Math.min(.05, (now - last) / 1000); last = now; const t = (now - T0) / 1000;
+    if (phase === 'set' && now > T0 + 700) msg = '預備——';
+    if (phase === 'set' && now > goAt) { phase = 'go'; bangAt = now; msg = '砰！'; Sound.play('knock'); setTimeout(() => { if (msg === '砰！') msg = ''; }, 700); }
+    if (phase === 'go' || phase === 'end') {
+      run.forEach(r => {
+        if (r.done) { r.v *= .96; r.x += r.v * dt; return; }
+        if (r !== me) r.v = Math.min(r.top, r.v + r.acc * dt);
+        else { r.v = Math.max(0, r.v - (L.one ? 55 : 75) * dt); stumble = Math.max(0, stumble - dt); }
+        r.x += r.v * dt;
+        if (r.x >= SP_LEN) { r.done = (now - bangAt) / 1000; order.push(r); if (r === me) { Sound.play('fanfare'); finish(); } }
+      });
+      if (phase === 'go' && run.filter(r => r !== me).every(r => r.done) && now - bangAt > 25000) { me.done = (now - bangAt) / 1000; order.push(me); finish(); }
+    }
+    const cam = Math.max(0, me.x - 120);
+    trackBg(g, W, H, cam, t);
+    run.slice().sort((a, b) => a.lane - b.lane).forEach(r => { const y = 150 + r.lane * 34, x = r.x - cam + 60; trackRunner(g, r.who, x, y, r.who === 'kid' ? .8 : 1.45, t, r.v > 20 && !(r.done && r.v < 30), 1); if (r === me && stumble > 0) { g.font = '14px sans-serif'; g.fillText('💫', x, y - 50); } });
+    if (me.done) { g.fillStyle = 'rgba(255,255,255,.85)'; g.fillRect(W / 2 - 80, 20, 160, 34); g.fillStyle = '#e8505b'; g.font = '900 20px sans-serif'; g.textAlign = 'center'; g.fillText(`${(me.done * SP_TIME).toFixed(2)} 秒`, W / 2, 44); }
+    else if (phase === 'go') { g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(W - 128, 8, 120, 40); g.fillStyle = '#fff'; g.font = '700 13px sans-serif'; g.textAlign = 'right'; g.fillText(`${((now - bangAt) / 1000 * SP_TIME).toFixed(2)} s`, W - 16, 24); g.fillText(`${(me.v / 270 * 36).toFixed(1)} km/h`, W - 16, 42); }
+    if (msg) { g.font = '900 28px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.lineWidth = 6; g.strokeStyle = '#fff'; g.strokeText(msg, W / 2, 40); g.fillStyle = '#e8505b'; g.fillText(msg, W / 2, 40); }
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+  playSprint.test = { press, me, phase: () => phase, run };
+}
+// 🏃‍♀️ 大隊接力
+const RELAY_LEVELS = [{ name: '簡單', one: true, zone: 90, mul: 1, rival: 185 }, { name: '一般', one: false, zone: 70, mul: 2, rival: 205 }, { name: '高手！', one: false, zone: 50, mul: 3, rival: 225 }];
+const RELAY_LEG = 420, RELAY_PRIZE = [180, 60];
+function openRelay() { const w = openGameWindow('🏃‍♀️ 大隊接力', '小可愛跑第一棒和最後一棒！跑到「接力區」（黃色那一段）按「🤝 交棒！」，太早、太晚都會掉棒喔！'); pickLevelRow(w, RELAY_LEVELS, L => `贏了 💰 ${RELAY_PRIZE[0] * L.mul}`, L => playRelay(w, L)); }
+function playRelay(w, L) {
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const W = 480, H = 270, { g } = gameCanvas(w.stage, W, H);
+  const pad = el('div', 'quest-pad'); w.stage.appendChild(pad);
+  const bRun = el('button', 'quest-btn', L.one ? '🏃 跑！' : '🦶 左'), bR = L.one ? null : el('button', 'quest-btn', '右 🦶'), bPass = el('button', 'quest-btn qb-j', '🤝 交棒！');
+  pad.append(bRun); if (bR) pad.append(bR); pad.append(bPass); leaveButton(w);
+  const petW = G.pets.find(p => p.stage !== 'egg'), friend = NEIGHBORS.filter(Boolean)[Math.floor(Math.random() * 6)];
+  const legs = ['kid', petW ? { sp: PET_SPECIES_BY_ID[petW.species] } : NEIGHBORS[1], friend, 'kid'];
+  const rivalTeam = NEIGHBORS.filter(Boolean).filter(n => n !== friend).slice(2, 6);
+  let leg = 0, x = 0, v = 0, lastFoot = null, dropT = 0, rx = 0, rleg = 0, T0 = performance.now(), last = T0, raf = 0, live = true, msg = '預備——砰！', msgT = 1.2, passed = [], ended = false;
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', key); };
+  const kidLeg = () => legs[leg] === 'kid';
+  const run1 = f => { if (ended || dropT > 0 || !kidLeg()) return; if (L.one) v = Math.min(240, v + 30); else if (f === lastFoot) { v *= .75; Sound.play('miss'); } else { v = Math.min(265, v + 36); lastFoot = f; } Sound.play('click'); };
+  const legEnd = () => (leg + 1) * RELAY_LEG;
+  const pass = () => {
+    if (ended || leg >= 3) return;
+    const d = x - legEnd();
+    if (d < -L.zone) { msg = '還沒到接力區喔！'; msgT = 1; Sound.play('click'); return; }
+    const q = Math.abs(d) < 15 ? 'perfect' : 'ok'; passed.push(q);
+    leg++; x = Math.max(x, legEnd() - 20); v = q === 'perfect' ? 230 : 160; lastFoot = null;
+    msg = q === 'perfect' ? '完美交棒！✨' : '交棒成功！'; msgT = 1; Sound.play(q === 'perfect' ? 'perfect' : 'coin');
+  };
+  const key = e => { if (e.repeat) return; if (e.code === 'Space' || e.code === 'Enter' || e.code === 'ArrowUp') { e.preventDefault(); pass(); } else if (e.code === 'ArrowLeft' || e.code === 'KeyA') { e.preventDefault(); run1(L.one ? 'x' : 'L'); } else if (e.code === 'ArrowRight' || e.code === 'KeyD') { e.preventDefault(); run1(L.one ? 'x' : 'R'); } };
+  document.addEventListener('keydown', key);
+  bRun.addEventListener('pointerdown', e => { e.preventDefault(); run1(L.one ? 'x' : 'L'); }); if (bR) bR.addEventListener('pointerdown', e => { e.preventDefault(); run1('R'); }); bPass.addEventListener('pointerdown', e => { e.preventDefault(); pass(); });
+  const end = win => {
+    if (ended) return; ended = true;
+    setTimeout(() => { if (!live) return; gameCleanup(); const bells = payReward(w, RELAY_PRIZE[win ? 0 : 1] * L.mul); w.status.textContent = `${win ? '🏆 我們這隊贏了！' : '💪 好可惜，差一點點！'}　完美交棒 ${passed.filter(q => q === 'perfect').length} 次　💰 +${fmt(bells)}`; try { speak(win ? '我們贏了！' : '好可惜！'); } catch (e) {} kidMoodUp(win ? 12 : 5); saveGame(); gameButtons(w, openRelay); }, 1500);
+  };
+  const tick = now => {
+    if (!live) return;
+    const dt = Math.min(.05, (now - last) / 1000); last = now; const t = (now - T0) / 1000; msgT -= dt;
+    if (t > 1.2 && !ended) {
+      if (dropT > 0) { dropT -= dt; if (dropT <= 0) msg = ''; }
+      else if (kidLeg()) v = Math.max(0, v - (L.one ? 50 : 70) * dt);
+      else v = Math.min(215, v + 200 * dt);   // 寵物、朋友自己跑
+      x += v * dt;
+      if (leg < 3 && x > legEnd() + 30) {   // 跑過頭沒交棒：掉棒（簡單模式自動交）
+        if (L.one) { pass(); } else { passed.push('drop'); leg++; dropT = 1.2; v = 0; msg = '掉棒了！快撿起來～'; msgT = 1.2; Sound.play('miss'); }
+      }
+      if (x >= RELAY_LEG * 4) { end(rx < RELAY_LEG * 4); Sound.play('fanfare'); }
+      rx += L.rival * dt * (Math.floor(rx / RELAY_LEG) !== rleg ? .6 : 1); rleg = Math.floor(rx / RELAY_LEG);
+      if (rx >= RELAY_LEG * 4 && !ended) end(false);
+    }
+    const cam = Math.max(0, x - 140), scale = RELAY_LEG * 4 / SP_LEN;
+    trackBg(g, W, H, cam / scale, t);
+    for (let i = 1; i < 4; i++) { const zx = i * RELAY_LEG - cam + 60; g.fillStyle = 'rgba(255,210,63,.45)'; g.fillRect(zx - L.zone, 160, L.zone + 30, 100); g.fillStyle = '#5a4636'; g.font = '700 10px sans-serif'; g.textAlign = 'center'; g.fillText('接力區', zx - L.zone / 2 + 15, 172); if (i > leg) trackRunner(g, legs[i], zx + 10, 236, legs[i] === 'kid' ? .58 : 1.1, t, false, 1); }
+    trackRunner(g, rivalTeam[Math.min(3, rleg)], rx - cam + 60, 196, 1.35, t, true, 1);
+    trackRunner(g, legs[leg], x - cam + 60, 236, legs[leg] === 'kid' ? .8 : 1.45, t, v > 20 || dropT > 0, 1);
+    if (dropT > 0) { g.font = '16px sans-serif'; g.fillText('💫', x - cam + 60, 186); }
+    // 接力棒
+    g.fillStyle = '#e8505b'; g.fillRect(x - cam + 66, 214, 10, 3);
+    const near = leg < 3 && x > legEnd() - L.zone && x < legEnd() + 30; bPass.classList.toggle('glow', near);
+    g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(8, 8, 150, 22); g.fillStyle = '#fff'; g.font = '700 12px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'left'; g.fillText(`第 ${leg + 1} 棒：${legs[leg] === 'kid' ? charName() : legs[leg].sp ? petName() : legs[leg].short}`, 14, 24);
+    if (msgT > 0 && msg) { g.font = '900 24px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.lineWidth = 6; g.strokeStyle = '#fff'; g.strokeText(msg, W / 2, 50); g.fillStyle = '#e8505b'; g.fillText(msg, W / 2, 50); }
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+  playRelay.test = { pass, run1, st: () => ({ leg, x, ended, passed }) };
+}
+// 🏖️ 跳遠：指針跑到綠色（踏板）按「跳！」，三次取最遠
+function openLongJump() {
+  const w = openGameWindow('🏖️ 跳遠', '指針跑到綠色的踏板時按「跳！」（空白鍵），越準跳越遠！跳三次，算最遠的那一次。');
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const view = el('div', 'tkd-view'); w.stage.appendChild(view);
+  let i = 0, best = 0, stop = null; gameCleanup = () => { if (stop) stop(); };
+  const next = () => {
+    if (i >= 3) { gameCleanup = null; const ts = trackState(), rec = !ts.lj || best > ts.lj; if (rec) ts.lj = Math.round(best * 100) / 100; const bells = payReward(w, Math.round(best * 20) + (rec ? 40 : 0)); w.status.textContent = `最遠 ${best.toFixed(2)} 公尺${rec ? '　🎉 新紀錄！' : ''}　💰 +${fmt(bells)}`; saveGame(); gameButtons(w, openLongJump); return; }
+    view.innerHTML = ''; view.appendChild(el('div', 'tkd-board', '🏃')); view.appendChild(el('div', 'tkd-say', `第 ${i + 1} / 3 跳`));
+    stop = meterRound(w, { zone: 22 - i * 3, speed: 1.7 + i * .3, label: '🦘 跳！' }, q => {
+      i++; const d = [1.6, 2.6, 3.4][q] + Math.random() * .5; best = Math.max(best, d); Sound.play(q === 2 ? 'perfect' : 'sand');
+      view.innerHTML = ''; view.appendChild(el('div', 'tkd-big', ['😅', '🙂', '🤩'][q])); view.appendChild(el('div', 'tkd-say', `${['踏板踩歪了～', '不錯喔！', '飛好遠！'][q]} ${d.toFixed(2)} 公尺`));
+      setTimeout(next, 1300);
+    });
+  };
+  next();
+}
+Object.assign(ACTIVITIES, {
+  crouch: { label: '🏁 起跑預備', name: '起跑預備', fx: '💨', lines: ['各就各位——預備！', '我要衝第一！', '手放好，腳踩穩～'] },
+  podium: { label: '🏅 站上頒獎台', name: '站頒獎台', fx: '🏅', lines: ['我是第一名！', '謝謝大家！', '拍照拍照～'] },
+  sandjump: { label: '🏖️ 跳遠', name: '跳遠', fx: '💨', open: () => openLongJump(), lines: ['助跑——跳！', '我要跳好遠！'] },
+  drinkwater: { label: '💧 喝水休息', name: '喝水', fx: '💧', lines: ['跑完要喝水～', '咕嚕咕嚕，好舒服！', '休息一下再跑！'] },
+  finishline: { label: '🏃 衝過終點', name: '衝終點', fx: '🎉', open: () => openSprint(), lines: ['衝啊——！', '終點在這裡！'] }
+});
+Object.assign(FURNITURE_ACT, { tr_blocks: 'crouch', tr_podium: 'podium', tr_sand: 'sandjump', tr_water: 'drinkwater', tr_finish: 'finishline' });
+['crouch', 'podium', 'sandjump', 'drinkwater', 'finishline'].forEach(k => { const a = ACTIVITIES[k]; if (!LINE_TYPES.some(t => t.key === 'act_' + k)) LINE_TYPES.push({ key: 'act_' + k, label: '做事：' + a.name, hint: '', lines: a.lines }); });
+AWAY_GAMES.push(['🏃', '百米衝刺', 'track', () => openSprint()], ['🏃‍♀️', '大隊接力', 'track', () => openRelay()], ['🏖️', '跳遠', 'track', () => openLongJump()]);
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
       動物朋友全都打扮來跳舞放煙火，每天第一次結束時每位送一顆糖（4 顆萬聖節糖果）。
