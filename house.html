@@ -712,7 +712,7 @@ button.pass { font: inherit; }
 .island { position: absolute; inset: 0; z-index: 9; background: #74c8ea; touch-action: none; overflow: hidden; }
 .island canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 .island-btn { position: absolute; top: 12px; font: inherit; font-size: 15px; font-weight: 800; border: 2px solid #fff; border-radius: 999px; padding: 8px 16px; min-height: 40px; background: rgba(255,255,255,.92); color: #4a3b2a; box-shadow: 0 3px 10px rgba(0,0,0,.2); cursor: pointer; touch-action: manipulation; }
-.isl-back { left: 12px; } .isl-fast { right: 12px; } .isl-quest { right: 12px; top: 60px; background: #ffe9b8 !important; } .isl-run { left: 12px; top: 60px; }
+.isl-back { left: 12px; } .isl-fast { right: 12px; } .isl-quest { right: 12px; top: 60px; background: #ffe9b8 !important; } .isl-ride { left: 12px; top: 108px; } .isl-run { left: 12px; top: 60px; }
 .isl-tools { position: absolute; left: 12px; bottom: 60px; display: flex; flex-direction: column; gap: 6px; }
 .isl-tools .island-btn { position: static; text-align: left; }
 .island-tip { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); background: rgba(255,255,255,.92); color: #5a4630; font-weight: 700; font-size: 14px; padding: 8px 16px; border-radius: 999px; box-shadow: 0 3px 10px rgba(0,0,0,.18); pointer-events: none; transition: opacity 1.2s; max-width: 90%; text-align: center; }
@@ -4534,6 +4534,7 @@ const OPEN_GIFT_BELLS = 100000;
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
   { id: '2026-10-18T09:00', title: '萬聖節派對＋找小幽靈！🎃👻', lines: [
+    ['🚗', '商店多了「🚗 交通工具」：腳踏車、休旅車、工程車、公車、跑車！買了在小島點左上角「🚲 交通工具」就能騎、開，跑得比較快。新小島要到碼頭坐船⛵才過得去'],
     ['🗺️', '世界任務！小島右上角「🗺️ 闖關」：3 個世界 × 3 關，像瑪利歐一樣跑跑跳跳。🐣 簡單（自己跑、只要按跳）／🦸 一般（左右走＋跳）。破完一個世界，海上多一座新小島：🌸 花花島、🍬 糖果島、🦕 恐龍島'],
     ['🏁', '寵物屋「📣 叫大家」多了兩個：🏁 賽跑猜冠軍（先猜誰會贏，猜對拿 20 元）、🎾 丟球（點地板丟球，寵物搶著撿回來）'],
     ['🎣', '小島上要先點左下角的「🎣 釣竿」再點水邊才會釣魚，走過海邊不會不小心開始釣'],
@@ -5295,6 +5296,8 @@ function normalizeSave(g) {
       if (q.mode !== 'easy' && q.mode !== 'normal') q.mode = 'easy';
       q.clear = isObj(q.clear) ? Object.fromEntries(Object.entries(q.clear).filter(([k, v]) => okId(k) && v === 1)) : {};
       q.stars = isObj(q.stars) ? Object.fromEntries(Object.entries(q.stars).filter(([k, v]) => okId(k) && Number.isInteger(v) && v >= 0 && v <= 3)) : {}; } }
+  if (out.vehicles != null) { if (Array.isArray(out.vehicles)) out.vehicles = [...new Set(out.vehicles.filter(v => /^(bike|suv|bus|truck|sports)$/.test(v)))]; else delete out.vehicles; }   // 🚗 買的交通工具
+  if (out.ride != null && !(typeof out.ride === 'string' && (out.vehicles || []).includes(out.ride))) delete out.ride;
   if (out.qIsleDay != null && !(isObj(out.qIsleDay) && typeof out.qIsleDay.d === 'string' && isObj(out.qIsleDay.got))) delete out.qIsleDay;
   if (out.raceDay != null && !(isObj(out.raceDay) && typeof out.raceDay.d === 'string' && Number.isInteger(out.raceDay.n) && out.raceDay.n >= 0)) delete out.raceDay;   // 🏁 賽跑猜對的獎金（一天幾次）
   if (out.kid.magic != null && !(isObj(out.kid.magic) && num(out.kid.magic.until) && magicFxList().some(m => m.id === out.kid.magic.id))) delete out.kid.magic;   // 🔮 魔法藥水的效果
@@ -14359,7 +14362,7 @@ function tabShop(body) {
   { const se = seasonNow(); if (se) seasonShop(body, se); }
   // 第一排：她在想的事（我要一張床）。第二排：想湊風格加成的時候才用
   const f = el('div', 'filter kinds');
-  [['all', '', '全部'], ['food', '🍎', '食物'], ['paper', '🎨', '壁紙地板']]
+  [['all', '', '全部'], ['food', '🍎', '食物'], ['paper', '🎨', '壁紙地板'], ['car', '🚗', '交通工具']]
     .concat(FURN_KINDS.map(k => [k.id, k.icon, k.name]))
     .forEach(([k, icon, n]) => {
       const b = el('button', k === shopKind ? 'on' : '');
@@ -14388,6 +14391,7 @@ function tabShop(body) {
     body.appendChild(f2);
   }
   if (shopKind === 'paper') { shopDeco(body); return; }
+  if (shopKind === 'car') { shopVehicles(body); return; }
   /* 在「全部」選了風格：食物沒有風格，不要再把食物擺最上面——
      不然點了風格，畫面看起來完全沒變（家具在很下面） */
   if (shopKind === 'food' || (shopKind === 'all' && shopTheme === 'all')) {
@@ -18866,12 +18870,13 @@ function islMap(nFriends) {
     let px = null, py = null; const put = (x, y) => { if (!land[y][x]) { land[y][x] = true; bridge[y][x] = true; } };
     for (let i = 0; i <= n; i++) { const x = Math.round(x0 + (x1 - x0) * i / n), y = Math.round(y0 + (y1 - y0) * i / n); if (px !== null && px !== x && py !== y) put(x, py); put(x, y); px = x; py = y; } }
   /* 🗺️ 闖關解鎖的小島：一樣是圓圓的小島＋木橋（先畫島，再從島心往主島鋪橋） */
-  const isletAt = land.map(r => r.map(() => null)), specials = [];
+  const isletAt = land.map(r => r.map(() => null)), specials = [], docks = [];
+  /* 家長：新小島要坐船才能過去——不鋪橋，主島和小島各有一個小碼頭，點碼頭就坐船過去 */
   (typeof QUEST_ISLETS !== 'undefined' ? QUEST_ISLETS.slice(0, nQ) : []).forEach(il => {
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (Math.hypot(x - il.cx, y - il.cy) <= il.r) { if (!land[y][x]) isletAt[y][x] = il.id; land[y][x] = true; }
-    let [x0, y0] = [il.cx, il.cy], [x1, y1] = il.to; const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) * 2; let px = null, py = null;
-    const put = (x, y) => { if (!land[y][x]) { land[y][x] = true; bridge[y][x] = true; } };
-    for (let i = 0; i <= n; i++) { const x = Math.round(x0 + (x1 - x0) * i / n), y = Math.round(y0 + (y1 - y0) * i / n); if (px !== null && px !== x && py !== y) put(x, py); put(x, y); px = x; py = y; }
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (Math.hypot(x - il.cx, y - il.cy) <= il.r && !land[y][x]) { isletAt[y][x] = il.id; land[y][x] = true; }
+    let best = null, bd = 1e9;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (isletAt[y][x] === il.id) { const d = Math.hypot(x - il.to[0], y - il.to[1]); if (d < bd) { bd = d; best = [x, y]; } }
+    if (best) { docks.push({ id: il.id, side: 'main', x: il.to[0], y: il.to[1], to: best }); docks.push({ id: il.id, side: 'islet', x: best[0], y: best[1], to: il.to }); }
     specials.push({ id: il.id, x: il.sx, y: il.sy });
   });   // 斜的地方多補一格，橋才走得過去（只能上下左右走）
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -18903,14 +18908,16 @@ function islMap(nFriends) {
     if (h < (il === 'candy' ? .22 : .09) && !near(x, y, 1)) { tree[y][x] = true; block[y][x] = true; }
     else if (h > (il === 'flower' ? .45 : .93) && !near(x, y, 0)) flower[y][x] = true;   // 🌸 花花島：到處都是花
   }
-  for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {   // 🍬 糖果島：沙灘上也長棒棒糖樹（離海一格以上、不擋橋和大棒棒糖）
-    if (isletAt[y][x] !== 'candy' || block[y][x] || bridge[y][x] || tree[y][x]) continue;
+  for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {   // 🍬 糖果島長棒棒糖樹、🌸 花花島開花（沙灘上也有；離海一格以上、不擋碼頭和島上的大東西）
+    if (!isletAt[y][x] || block[y][x] || bridge[y][x] || tree[y][x]) continue;
     let wet = false; for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) if (!land[y + j][x + i] || bridge[y + j][x + i]) wet = true;
-    if (!wet && islHash(x, y, 13) < .3 && !specials.some(sp => Math.abs(sp.x - x) <= 1 && Math.abs(sp.y - y) <= 1)) { tree[y][x] = true; block[y][x] = true; }
+    if (wet || specials.some(sp => Math.abs(sp.x - x) <= 1 && Math.abs(sp.y - y) <= 1) || docks.some(d => Math.abs(d.x - x) <= 1 && Math.abs(d.y - y) <= 1)) continue;
+    if (isletAt[y][x] === 'candy' && islHash(x, y, 13) < .3) { tree[y][x] = true; block[y][x] = true; }
+    else if (isletAt[y][x] === 'flower' && islHash(x, y, 17) < .55) flower[y][x] = true;   // 🌸 花花島：沙灘上也開滿花
   }
   const shells = [];   // 沙灘上的貝殼（點了可以撿）
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (land[y][x] && beach[y][x] && !block[y][x] && !path[y][x] && islHash(x, y, 11) > .955) shells.push({ x, y, id: shells.length });
-  islMapCache = { nf: nFriends, nQ, W, H, land, beach, block, path, tree, flower, blds, shells, bridge, isletAt, specials };
+  islMapCache = { nf: nFriends, nQ, W, H, land, beach, block, path, tree, flower, blds, shells, bridge, isletAt, specials, docks };
   return islMapCache;
 }
 const islPass = (m, x, y) => x >= 0 && y >= 0 && x < m.W && y < m.H && m.land[y][x] && !m.block[y][x];
@@ -18962,10 +18969,12 @@ function openIsland() {
   const tools = el('div', 'isl-tools');
   ISL_TOOLS.forEach(([id, label]) => { const b = el('button', 'island-btn isl-tool', label); b.dataset.tool = id; b.onclick = () => { Sound.play('click'); islSetTool(isl.tool === id ? null : id, true); }; tools.appendChild(b); });
   const quest = el('button', 'island-btn isl-quest', '🗺️ 闖關'); quest.onclick = () => { Sound.play('click'); openQuestMap(); };
-  layer.append(back, fast, run, quest, tools, tip);
+  const ride = el('button', 'island-btn isl-ride', '🚲 交通工具'); ride.id = 'islRide'; ride.onclick = e => { Sound.play('click'); openRideMenu(e); };
+  layer.append(back, fast, run, quest, ride, tools, tip);
   run.onclick = () => { setRun(!runOn()); Sound.play('click'); };
   stage.appendChild(layer); stage.classList.add('island-on');
   refreshRunBtn();
+  setTimeout(() => { if (typeof islRideBtn === 'function') islRideBtn(); }, 0);
   const dpr = () => window.devicePixelRatio || 1;
   isl = { fx: [], gulls: [], shellGot: {}, tool: null, act: null, holes: [], bees: null, layer, cv, m, invites, x: st.x + .5, y: st.y + .5, path: [], pending: null, skipDoor: st.id, facing: 1, back: false,
     t: 0, last: performance.now(), keys: {}, press: null, repath: 0, shake: {}, picked: {}, trail: [], pet: { x: st.x + .5, y: st.y + 1.2, f: 1 }, raf: 0, tip, cam: { x: st.x + .5, y: st.y + .5 }, from: G.away ? G.away.place : null };
@@ -19130,18 +19139,19 @@ function islEnter(id) {   // 走到門口：關掉地圖、進去（家：回家
   travelArrive(id);
 }
 const islRunning = () => runOn() || !!(isl && isl.shift);
+function islSpd() { const v = typeof rideNow === 'function' ? rideNow() : null; return v ? v.speed : (islRunning() ? RUN_MULT : 1); }   // 🚲🚗 騎車、開車比較快
 function islStep(dt) {
   const m = isl.m; let moving = false, dx = 0, dy = 0;
   islActStep(performance.now());
   if (isl.act) { isl.keys = {}; isl.path = []; }   // 釣魚、揮網、挖洞的時候不走路
   const K = isl.keys, kx = (K.arrowright || K.d ? 1 : 0) - (K.arrowleft || K.a ? 1 : 0), ky = (K.arrowdown || K.s ? 1 : 0) - (K.arrowup || K.w ? 1 : 0);
   if (kx || ky) {
-    const n = Math.hypot(kx, ky), sp = 4.2 * (islRunning() ? RUN_MULT : 1) * dt; isl.path = []; isl.pending = null;
+    const n = Math.hypot(kx, ky), sp = 4.2 * islSpd() * dt; isl.path = []; isl.pending = null;
     const nx = isl.x + kx / n * sp, ny = isl.y + ky / n * sp, ok = (x, y) => [[-.28, -.2], [.28, -.2], [-.28, .2], [.28, .2]].every(([a, b]) => islPass(m, Math.floor(x + a), Math.floor(y + b)));
     if (ok(nx, isl.y)) { dx = nx - isl.x; isl.x = nx; } if (ok(isl.x, ny)) { dy = ny - isl.y; isl.y = ny; }
     moving = true;
   } else if (isl.path.length) {
-    const [tx, ty] = isl.path[0], px = tx + .5, py = ty + .5, d = Math.hypot(px - isl.x, py - isl.y), sp = 3.8 * (islRunning() ? RUN_MULT : 1) * dt;
+    const [tx, ty] = isl.path[0], px = tx + .5, py = ty + .5, d = Math.hypot(px - isl.x, py - isl.y), sp = 3.8 * islSpd() * dt;
     if (d <= sp) { dx = px - isl.x; dy = py - isl.y; isl.x = px; isl.y = py; isl.path.shift(); } else { dx = (px - isl.x) / d * sp; dy = (py - isl.y) / d * sp; isl.x += dx; isl.y += dy; }
     moving = true;
   }
@@ -19156,7 +19166,7 @@ function islStep(dt) {
   const last = isl.trail[isl.trail.length - 1];
   if (!last || Math.hypot(last[0] - isl.x, last[1] - isl.y) > .15) { isl.trail.push([isl.x, isl.y]); if (isl.trail.length > 30) isl.trail.shift(); }
   const tg = isl.trail[Math.max(0, isl.trail.length - 7)], pp = isl.pet, pd = Math.hypot(tg[0] - pp.x, tg[1] - pp.y);
-  if (pd > .05) { const sp = Math.min(pd, 4.4 * (islRunning() ? RUN_MULT : 1) * dt); if (Math.abs(tg[0] - pp.x) > .01) pp.f = tg[0] > pp.x ? 1 : -1; pp.x += (tg[0] - pp.x) / pd * sp; pp.y += (tg[1] - pp.y) / pd * sp; pp.moving = true; } else pp.moving = false;
+  if (pd > .05) { const sp = Math.min(pd, 4.4 * islSpd() * dt); if (Math.abs(tg[0] - pp.x) > .01) pp.f = tg[0] > pp.x ? 1 : -1; pp.x += (tg[0] - pp.x) / pd * sp; pp.y += (tg[1] - pp.y) / pd * sp; pp.moving = true; } else pp.moving = false;
   isl.npcs.forEach(q => {
     if (q.path.length) {
       const [tx, ty] = q.path[0], px = tx + .5, py = ty + .5, d = Math.hypot(px - q.x, py - q.y), sp = 1.5 * dt;
@@ -19295,6 +19305,7 @@ function islDraw(now) {
   isl.critters.forEach(c => items.push({ y: (c.fly ? c.y - 1.5 : c.y) * T, draw: () => islDrawCritter(ctx, c) }));
   if (isl.bike) items.push({ y: isl.bike.y * T, draw: () => islDrawBike(ctx, isl.bike, now) });
   (m.specials || []).forEach(sp => items.push({ y: (sp.y + 1) * T, draw: () => islDrawSpecial(ctx, sp, now) }));
+  (m.docks || []).forEach(d => items.push({ y: (d.y + .2) * T, draw: () => islDrawDock(ctx, d, now) }));
   isl.coins.forEach(c => items.push({ y: (c.y + .6) * T, draw: () => islDrawCoin(ctx, c, tt) }));
   isl.glow = [];
   items.sort((a, b) => a.y - b.y).forEach(it => it.draw());
@@ -19312,6 +19323,7 @@ function islFunAt(t) {
   const g = isl.gulls.findIndex(q => Math.hypot(q.x - fx, q.y - fy) < 1.2); if (g >= 0) return { kind: 'gull', id: g, x: isl.gulls[g].x, y: isl.gulls[g].y, reach: 99 };
   const sh = m.shells.find(q => !isl.shellGot[q.id] && Math.hypot(q.x + .5 - fx, q.y + .6 - fy) < .8); if (sh) return { kind: 'shell', id: sh.id, x: sh.x + .5, y: sh.y + .6, reach: 1.6 };
   if (Math.hypot(ISL_HUB[0] + .5 - fx, ISL_HUB[1] + .5 - fy) < 1.1) return { kind: 'fountain', x: ISL_HUB[0] + .5, y: ISL_HUB[1] + .5, reach: 3.2 };
+  const dk = (m.docks || []).find(d => Math.hypot(d.x + .5 - fx, d.y + .5 - fy) < 1.1); if (dk) return { kind: 'dock', d: dk, x: dk.x + .5, y: dk.y + .5, reach: 1.7 };
   const qs = (m.specials || []).find(sp => Math.hypot(sp.x + .5 - fx, sp.y + .3 - fy) < 1.3); if (qs) return { kind: 'qspecial', id: qs.id, x: qs.x + .5, y: qs.y + .5, reach: 2 };
   const p = ISL_POND; if (fx >= p.x - .3 && fx <= p.x + p.w + .3 && fy >= p.y - .3 && fy <= p.y + p.h + .3) return { kind: 'pond', x: p.x + p.w / 2, y: p.y + p.h / 2, reach: 3.6 };
   return null;
@@ -19329,6 +19341,8 @@ function islFun(o) {
     else if (r < .88) { Sound.play('whoosh'); for (let i = 0; i < 4; i++) islAddFx('bat', o.ox, o.oy - 1, 2400, { dx: (i % 2 ? 1 : -1) * (3 + i), dy: -2 - i * .6, delay: i * 150 }); toast('🦇 蝙蝠飛出來了！'); }
     else { Sound.play('petHappy'); islAddFx('say', o.ox, o.oy - 1.8, 1500, { text: '嘻嘻嘻～' }); }
     kidMoodUp(1);
+  } else if (o.kind === 'dock') {
+    islBoatRide(o.d);
   } else if (o.kind === 'qspecial') {
     islQuestSpecial(o);
   } else if (o.kind === 'fountain') {
@@ -19387,8 +19401,9 @@ function islBees(x, y) {   // 🐝 蜂窩掉下來：蜜蜂追她一下，心情
   setTimeout(() => { if (isl) { try { kidMakeFace('sad', 1500); } catch (e) {} toast('呼…蜜蜂走了，下次小心一點'); } }, 3600);
   saveGame();
 }
-function islActStep(now) {   // 正在做的事（釣魚、揮網、挖洞）
+function islActStep(now) {   // 正在做的事（釣魚、揮網、挖洞、坐船）
   const a = isl.act; if (!a) return;
+  if (a.kind === 'boat') { if (typeof islBoatStep === 'function') islBoatStep(a, now); return; }
   if (a.kind === 'fish') {
     if (a.phase === 'cast' && now > a.t0 + 500) a.phase = 'wait';
     if (a.phase === 'wait' && now > a.biteAt) { a.phase = 'bite'; a.biteT = now; Sound.play('knock'); }
@@ -19590,6 +19605,7 @@ function islDrawBuilding(ctx, b, tt) {
 function islDrawKid(ctx) {
   const T = ISL.T, px = isl.x * T, py = isl.y * T + 8, walking = !!isl.walking, t = isl.t;
   const rn = islRunning() && walking, tt = rn ? t * 1.7 : t;
+  if (typeof islDrawRiding === 'function' && islDrawRiding(ctx, px, py, walking, t)) return;   // 騎車、開車、坐船
   const hop = walking ? Math.abs(Math.sin(tt * 11)) * (rn ? 4.5 : 3) : 0, k = kidHeightScale(), u = T * 1.55 / 76;
   ctx.fillStyle = 'rgba(40,30,20,.22)'; ctx.beginPath(); ctx.ellipse(px, py, 11, 4.5, 0, 0, 7); ctx.fill();
   ctx.save(); ctx.translate(px, py - hop);
@@ -21235,9 +21251,9 @@ PH_EXTRA.fetch = {
 };
 /* 🏝️ 闖關解鎖的小島：位置、名字、島上的大東西（每天點一次有禮物） */
 const QUEST_ISLETS = [
-  { id: 'flower', name: '花花島', icon: '🌸', desc: '開滿花的小島，花可以摘，還有一棵大向日葵。', cx: 6, cy: 5, r: 4.6, to: [12, 9], sx: 6, sy: 5 },
+  { id: 'flower', name: '花花島', icon: '🌸', desc: '開滿花的小島，花可以摘，還有一棵大向日葵。', cx: 5, cy: 4, r: 3.9, to: [11, 8], sx: 5, sy: 4 },
   { id: 'candy', name: '糖果島', icon: '🍬', desc: '長滿棒棒糖樹，還有一根超大棒棒糖！', cx: 45, cy: 6, r: 4.6, to: [37, 9], sx: 45, sy: 6 },
-  { id: 'dino', name: '恐龍島', icon: '🦕', desc: '有一隻大恐龍石像，摸摸牠會吼一聲！', cx: 5, cy: 34, r: 4.6, to: [11, 32], sx: 5, sy: 34 }
+  { id: 'dino', name: '恐龍島', icon: '🦕', desc: '有一隻大恐龍石像，摸摸牠會吼一聲！', cx: 4, cy: 35, r: 3.7, to: [9, 32], sx: 4, sy: 35 }
 ];
 function islDrawCandyTree(ctx, x, y, now) {
   const T = ISL.T, px = x * T + T / 2, py = (y + 1) * T - 3, st = isl.shake[x + ',' + y], sh = st && now - st < 500 ? Math.sin((now - st) / 40) * 3 * (1 - (now - st) / 500) : 0;
@@ -21617,6 +21633,140 @@ function questDone(w, id, P) {
     setTimeout(() => { try { showcase(el('div', 'magic-pic', il.icon), `新的小島出現了！${il.name}`, `${il.desc}從小島的木橋走過去看看！`, { head: `🏆 世界 ${wd} 破關！` }); } catch (e) { toast(`🏝️ 新的小島出現了：${il.name}！`); } }, 800);
   }
   saveGame(); refreshTop();
+}
+/* ===== 🚲🚗 交通工具（家長：商店多一些交通工具，在大地圖使用；有不同樣子）＋ ⛵ 坐船去新小島 =====
+   商店「🚗 交通工具」買；小島左上「🚲 交通工具」選要騎哪一台（或下車走路）。騎車、開車走得比較快。
+   G.vehicles＝買過的；G.ride＝現在騎的（沒有＝走路） */
+const VEHICLES = [
+  { id: 'bike', name: '腳踏車', icon: '🚲', price: 1500, speed: 1.6, verb: '騎' },
+  { id: 'suv', name: '休旅車', icon: '🚙', price: 6000, speed: 2.1, verb: '開' },
+  { id: 'truck', name: '工程車', icon: '🚧', price: 7000, speed: 1.8, verb: '開' },
+  { id: 'bus', name: '公車', icon: '🚌', price: 8000, speed: 1.9, verb: '開' },
+  { id: 'sports', name: '跑車', icon: '🏎️', price: 12000, speed: 2.6, verb: '開' }
+];
+const VEHICLE_BY_ID = Object.fromEntries(VEHICLES.map(v => [v.id, v]));
+function rideNow() { if (isl && isl.act && isl.act.kind === 'boat') return null; const v = G.ride && VEHICLE_BY_ID[G.ride]; return v && (G.vehicles || []).includes(v.id) ? v : null; }
+// 畫交通工具（側面，臉朝右；原點在地上，s＝縮放）。kid：在對的時機把小可愛畫進去
+function drawVehicle(g, id, s, t, moving, kid) {
+  const wheel = (x, y, r) => { g.save(); g.translate(x, y); g.rotate(moving ? t * 12 : 0); g.fillStyle = '#2a2a30'; g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.fill(); g.fillStyle = '#c9ccd0'; g.beginPath(); g.arc(0, 0, r * .45, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#8a8f96'; g.lineWidth = 1; g.beginPath(); g.moveTo(-r * .45, 0); g.lineTo(r * .45, 0); g.stroke(); g.restore(); };
+  const win = (x, y, w, h, sx, sy, sc) => { if (!kid) return; g.save(); g.beginPath(); g.rect(x, y, w, h); g.clip(); g.fillStyle = '#dfeef8'; g.fillRect(x, y, w, h); kid(sx, sy, sc); g.restore(); };   // 從車窗看得到小可愛
+  const glass = (x, y, w, h) => { g.fillStyle = 'rgba(170,215,245,.35)'; g.fillRect(x, y, w, h); g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 1; g.beginPath(); g.moveTo(x + 2, y + h - 2); g.lineTo(x + w * .4, y + 2); g.stroke(); };
+  g.save(); g.scale(s, s);
+  const bob = moving ? Math.abs(Math.sin(t * 14)) * .8 : 0;
+  if (id === 'bike') {
+    wheel(-12, -7, 7); wheel(12, -7, 7);
+    g.strokeStyle = '#e8505b'; g.lineWidth = 2.4; g.lineCap = 'round'; g.beginPath(); g.moveTo(-12, -7); g.lineTo(-3, -18); g.lineTo(9, -18); g.lineTo(12, -7); g.moveTo(-3, -18); g.lineTo(2, -7); g.lineTo(-12, -7); g.moveTo(9, -18); g.lineTo(10, -24); g.stroke();
+    if (kid) kid(-3, -19, .95);
+    g.strokeStyle = '#3a3240'; g.lineWidth = 2.2; g.beginPath(); g.moveTo(7, -25); g.lineTo(13, -25); g.stroke(); g.fillStyle = '#3a3240'; g.fillRect(-7, -21, 8, 3);
+  } else if (id === 'sports') {
+    g.translate(0, -bob);
+    g.fillStyle = '#e8303b'; g.beginPath(); g.moveTo(-30, -6); g.lineTo(-30, -14); g.lineTo(-12, -16); g.lineTo(-6, -24); g.lineTo(8, -24); g.lineTo(18, -16); g.lineTo(31, -13); g.lineTo(32, -6); g.closePath(); g.fill();
+    g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(-30, -9, 62, 3); win(-6, -24, 14, 9, 0, -2, .6); glass(-6, -24, 14, 9);
+    g.fillStyle = '#ffe066'; g.fillRect(28, -12, 4, 3); g.fillStyle = '#26232a'; g.fillRect(-32, -16, 6, 2);   // 車燈、尾翼
+    wheel(-18, -5, 6); wheel(19, -5, 6);
+  } else if (id === 'suv') {
+    g.translate(0, -bob);
+    g.fillStyle = '#2f8f6f'; g.beginPath(); g.roundRect(-26, -24, 52, 18, 4); g.fill(); g.beginPath(); g.moveTo(-22, -24); g.lineTo(-20, -38); g.lineTo(14, -38); g.lineTo(22, -24); g.closePath(); g.fill();
+    win(-2, -37, 15, 13, 4, -12, .7); glass(-17, -36, 13, 11); glass(-2, -37, 15, 13);
+    g.fillStyle = '#26232a'; g.fillRect(-20, -41, 30, 3);   // 車頂架
+    g.fillStyle = '#ffe066'; g.fillRect(23, -20, 3, 4); g.fillStyle = 'rgba(0,0,0,.15)'; g.fillRect(-26, -12, 52, 3);
+    wheel(-15, -6, 7); wheel(15, -6, 7);
+  } else if (id === 'bus') {
+    g.translate(0, -bob);
+    g.fillStyle = '#ffc93a'; g.beginPath(); g.roundRect(-38, -44, 76, 38, 5); g.fill();
+    win(20, -39, 15, 17, 27, -14, .7); for (let i = 0; i < 4; i++) glass(-33 + i * 14, -38, 11, 13); glass(20, -39, 15, 17);
+    g.fillStyle = '#e8505b'; g.fillRect(-38, -20, 76, 4); g.fillStyle = '#ffffff'; g.font = '700 7px sans-serif'; g.textAlign = 'center'; g.fillText('公車', -10, -11);
+    g.fillStyle = '#3a3240'; g.fillRect(4, -22, 10, 16);   // 車門
+    wheel(-24, -6, 7); wheel(24, -6, 7);
+  } else if (id === 'truck') {   // 工程車：黃色砂石車，後面的斗會一上一下
+    g.translate(0, -bob);
+    g.fillStyle = '#ffb81c'; g.beginPath(); g.roundRect(8, -38, 24, 30, 4); g.fill(); win(13, -36, 16, 14, 21, -13, .66); glass(13, -36, 16, 14);
+    g.save(); g.translate(-28, -14); g.rotate(moving ? 0 : -Math.abs(Math.sin(t * 1.5)) * .25); g.fillStyle = '#e09a10'; g.fillRect(0, -18, 34, 18); g.fillStyle = '#9a6b3f'; g.beginPath(); g.ellipse(17, -18, 15, 5, 0, Math.PI, 0); g.fill(); g.restore();
+    g.fillStyle = '#26232a'; g.fillRect(-30, -12, 62, 4); g.fillStyle = '#26232a'; g.fillRect(-26, -30, 2, 12); g.fillStyle = '#ffffff'; g.fillRect(-26, -30, 2, 3);
+    g.fillStyle = '#ff7a3c'; g.fillRect(16, -42, 6, 4);   // 警示燈
+    wheel(-20, -6, 7); wheel(-6, -6, 7); wheel(22, -6, 7);
+  }
+  g.restore();
+}
+function vehicleCanvas(id, w, h) {
+  const c = document.createElement('canvas'), dpr = window.devicePixelRatio || 1; c.width = w * dpr; c.height = h * dpr; c.style.width = w + 'px'; c.style.height = h + 'px';
+  const g = c.getContext('2d'); g.scale(dpr, dpr); g.translate(w / 2, h - 6); drawVehicle(g, id, Math.min(w / 90, h / 52), 0, false); return c;
+}
+// 小島上：騎在車上／坐在船上的小可愛
+function islDrawRiding(ctx, px, py, walking, t) {
+  const a = isl.act, boat = a && a.kind === 'boat', v = rideNow();
+  if (!boat && !v) return false;
+  const T = ISL.T, s = T / 32, k = kidHeightScale(), u = T * 1.55 / 76;
+  const kid = (sx, sy, sc) => { ctx.save(); ctx.translate(sx, sy + 12 * sc * k * u / s); ctx.scale(sc * k * u / s, sc * k * u / s); if (kidBaby()) drawBabyKid(ctx, { t }); else drawGirl(ctx, { t, sit: true, blink: fufuBlink(), outfit: currentOutfit(), face: 'joy', stage: kidLookStage() }); ctx.restore(); };
+  ctx.fillStyle = 'rgba(40,30,20,.22)'; ctx.beginPath(); ctx.ellipse(px, py, boat ? 22 : 24 * s, 5, 0, 0, 7); ctx.fill();
+  ctx.save(); ctx.translate(px, py); ctx.scale(isl.facing, 1);
+  if (boat) {   // ⛵ 小船：船身＋帆，小可愛坐在船上，船邊有水花
+    const bob = Math.sin(t * 4) * 1.5; ctx.translate(0, bob);
+    ctx.fillStyle = 'rgba(255,255,255,.8)'; for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(-24 - i * 7, -2 + Math.sin(t * 8 + i) * 1.5, 2.5 - i * .5, 0, 7); ctx.fill(); }
+    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.moveTo(2, -10); ctx.lineTo(2, -46); ctx.lineTo(20, -14); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#8a5a33'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, -6); ctx.lineTo(0, -48); ctx.stroke();
+    kid(-10, -10, .8);
+    ctx.fillStyle = '#c0392b'; ctx.beginPath(); ctx.moveTo(-24, -12); ctx.lineTo(24, -12); ctx.lineTo(16, 0); ctx.lineTo(-16, 0); ctx.closePath(); ctx.fill(); ctx.fillStyle = '#ffffff'; ctx.fillRect(-22, -12, 44, 2.5);
+  } else drawVehicle(ctx, v.id, s, t, walking, kid);
+  ctx.restore();
+  return true;
+}
+function openRideMenu(e) {
+  const own = VEHICLES.filter(v => (G.vehicles || []).includes(v.id));
+  if (!own.length) { toast('🚲 商店「🚗 交通工具」可以買腳踏車、汽車喔！'); try { shopKind = 'car'; openTab('shop'); } catch (er) {} return; }
+  const entries = own.map(v => [`${v.icon} ${v.verb}${v.name}${G.ride === v.id ? '（現在）' : ''}`, () => { if (isl && isl.act && isl.act.kind !== 'boat') isl.act = null; G.ride = v.id; saveGame(); Sound.play('boing'); islRideBtn(); toast(`${v.icon} ${v.verb}${v.name}出發！`); }]);
+  if (G.ride) entries.push(['🚶 下車走路', () => { G.ride = null; saveGame(); Sound.play('click'); islRideBtn(); }]);
+  openMenu(entries, e);
+}
+function islRideBtn() { const b = document.getElementById('islRide'), v = rideNow(); if (b) { b.textContent = v ? `${v.icon} ${v.name}` : '🚲 交通工具'; b.classList.toggle('on', !!v); } }
+function shopVehicles(body) {
+  body.appendChild(note('在小島上騎、開，走得比較快！買了以後，到小島點左上角的「🚲 交通工具」選要騎哪一台。'));
+  const grid = el('div', 'grid');
+  VEHICLES.forEach(v => {
+    const own = (G.vehicles || []).includes(v.id), card = el('div', 'card' + (own ? ' owned' : ''));
+    card.appendChild(vehicleCanvas(v.id, 120, 70));
+    card.appendChild(el('div', 'name', `${v.icon} ${v.name}`));
+    card.appendChild(el('div', 'price', own ? '✅ 已經有了' : `💰 ${fmt(v.price)}`));
+    card.appendChild(el('div', 'sub', `速度 ${'⚡'.repeat(Math.round((v.speed - 1) * 2.5))}`));
+    card.onclick = () => {
+      if (own) { toast(`${v.icon} 到小島點「🚲 交通工具」就可以${v.verb}了`); return; }
+      if (!spend(v.price)) { toast('錢不夠，去賺一點吧！'); Sound.play('miss'); return; }
+      G.vehicles = (G.vehicles || []).concat(v.id); G.ride = v.id; Sound.play('coin');
+      try { showcase(vehicleCanvas(v.id, 200, 116), `買了${v.name}！`, `到小島點左上角「🚲 交通工具」就可以${v.verb}${v.name}囉！`, { head: '🚗 新的交通工具' }); } catch (e) { toast(`${v.icon} 買了${v.name}！`); }
+      commit(); renderTab();
+    };
+    grid.appendChild(card);
+  });
+  body.appendChild(grid);
+}
+// ⛵ 碼頭：點了坐船到對面
+function islDrawDock(ctx, d, now) {
+  const T = ISL.T, x = d.x * T, y = d.y * T;
+  ctx.fillStyle = '#b5814f'; ctx.fillRect(x + 2, y + 6, T - 4, T - 10); ctx.strokeStyle = '#8a5a33'; ctx.lineWidth = 1; for (let i = 1; i < 4; i++) { ctx.beginPath(); ctx.moveTo(x + 2, y + 6 + i * (T - 10) / 4); ctx.lineTo(x + T - 2, y + 6 + i * (T - 10) / 4); ctx.stroke(); }
+  ctx.fillStyle = '#6b4b30'; ctx.fillRect(x + 3, y + 2, 4, T - 4); ctx.fillRect(x + T - 7, y + 2, 4, T - 4);
+  if (!(isl.act && isl.act.kind === 'boat')) {   // 停在旁邊的小船（往對面那邊）
+    const dx = d.to[0] - d.x, dy = d.to[1] - d.y, n = Math.hypot(dx, dy) || 1, bx = (d.x + .5 + dx / n * .95) * T, by = (d.y + .5 + dy / n * .95) * T + Math.sin(now / 400) * 1.5;
+    ctx.save(); ctx.translate(bx, by); ctx.scale(dx < 0 ? -1 : 1, 1);
+    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.moveTo(1, -6); ctx.lineTo(1, -26); ctx.lineTo(11, -8); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#c0392b'; ctx.beginPath(); ctx.moveTo(-13, -6); ctx.lineTo(13, -6); ctx.lineTo(9, 2); ctx.lineTo(-9, 2); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+  ctx.font = '700 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ffffff'; ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.lineWidth = 3;
+  const il = QUEST_ISLETS.find(q => q.id === d.id), label = d.side === 'main' ? `⛵ ${il ? il.name : ''}` : '⛵ 回大島';
+  ctx.strokeText(label, x + T / 2, y - 2); ctx.fillText(label, x + T / 2, y - 2);
+}
+function islBoatRide(d) {
+  if (isl.act) return;
+  const from = [d.x + .5, d.y + .5], to = [d.to[0] + .5, d.to[1] + .5], dist = Math.hypot(to[0] - from[0], to[1] - from[1]);
+  isl.path = []; isl.pending = null; isl.x = from[0]; isl.y = from[1];
+  isl.act = { kind: 'boat', t0: performance.now(), from, to, dur: 1200 + dist * 380 };
+  Sound.play('whoosh'); islAddFx('say', from[0], from[1] - 2, 1200, { text: '出發囉！⛵' });
+}
+function islBoatStep(a, now) {
+  const k = Math.min(1, (now - a.t0) / a.dur), e = k * k * (3 - 2 * k);
+  isl.x = a.from[0] + (a.to[0] - a.from[0]) * e; isl.y = a.from[1] + (a.to[1] - a.from[1]) * e;
+  isl.facing = a.to[0] >= a.from[0] ? 1 : -1; isl.walking = false;
+  isl.pet.x = isl.x - isl.facing * .4; isl.pet.y = isl.y - .1;
+  if (k >= 1) { isl.act = null; isl.x = a.to[0]; isl.y = a.to[1]; isl.trail = []; isl.path = []; Sound.play('splash'); islAddFx('say', isl.x, isl.y - 2, 1200, { text: '到了！' }); }
 }
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
