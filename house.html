@@ -650,6 +650,10 @@ button.pass { font: inherit; }
 @media (max-width: 700px) { .pause-badge { top: auto; bottom: 56px; font-size: 12px; } }
 .modal-card.in-game, .modal-card.in-game * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .nosel, .nosel * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+/* 📱 iPad 長按畫面會跳出「拷貝／貼上」、反白字（家長：按比較久容易跳出來）：整個遊戲都不能選字、不跳選單；
+   只有要打字、要複製的框框（輸入框、邀請卡連結框）還可以選 */
+html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
 .decor-cell { cursor: pointer; }
 .tkd-view { display: flex; flex-direction: column; align-items: center; min-height: 120px; justify-content: center; }
 .tkd-board { font-size: 72px; line-height: 1; } .tkd-board.broken { animation: tkdBreak .5s forwards; }
@@ -13766,6 +13770,10 @@ canvas.addEventListener('pointerup', e => {
     fufuWalkTo(Math.floor(g.gx), Math.floor(g.gy));
   }
 });
+/* 📱 平板長按：不要跳出系統選單、不要反白（輸入框、邀請卡連結框除外） */
+const typingTarget = t => !!(t && t.closest && t.closest('input, textarea, [contenteditable], .invite-code'));
+document.addEventListener('selectstart', e => { if (!typingTarget(e.target)) e.preventDefault(); });
+document.addEventListener('contextmenu', e => { if (!typingTarget(e.target) && window.matchMedia && matchMedia('(pointer: coarse)').matches) e.preventDefault(); });
 canvas.addEventListener('contextmenu', e => {
   e.preventDefault();
   hideItemMenu();
