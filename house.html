@@ -4519,6 +4519,7 @@ const OPEN_GIFT_BELLS = 100000;
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
   { id: '2026-10-18T09:00', title: '萬聖節派對＋找小幽靈！🎃👻', lines: [
+    ['🏁', '寵物屋「📣 叫大家」多了兩個：🏁 賽跑猜冠軍（先猜誰會贏，猜對拿 20 元）、🎾 丟球（點地板丟球，寵物搶著撿回來）'],
     ['🎣', '小島上要先點左下角的「🎣 釣竿」再點水邊才會釣魚，走過海邊不會不小心開始釣'],
     ['🎟️', '電影院（60 元，看一部）、游泳池（40 元）、遊樂園（80 元）進去前要先付錢買票，錢不夠就先去賺錢喔'],
     ['🎬', '小島上多了電影院（在阿婆家上面）！找貓頭鷹放映師買票，主角是你和寵物：動物冒險、太空、恐龍、海底、搞笑，萬聖節還有特別篇。五部都看完送一張電影海報'],
@@ -5272,6 +5273,7 @@ function normalizeSave(g) {
   out.kid = Object.assign(newKid(), g.kid || {});
   if (out.movies != null) { if (isObj(out.movies)) Object.keys(out.movies).forEach(k => { if (!/^(pet|space|dino|sea|funny|halloween)$/.test(k) || !(Number.isInteger(out.movies[k]) && out.movies[k] > 0)) delete out.movies[k]; }); else delete out.movies; }   // 🎬 電影集章
   if (out.moviePrize != null && out.moviePrize !== 1) delete out.moviePrize;
+  if (out.raceDay != null && !(isObj(out.raceDay) && typeof out.raceDay.d === 'string' && Number.isInteger(out.raceDay.n) && out.raceDay.n >= 0)) delete out.raceDay;   // 🏁 賽跑猜對的獎金（一天幾次）
   if (out.kid.magic != null && !(isObj(out.kid.magic) && num(out.kid.magic.until) && magicFxList().some(m => m.id === out.kid.magic.id))) delete out.kid.magic;   // 🔮 魔法藥水的效果
   if (out.kid.magicDex != null) { if (Array.isArray(out.kid.magicDex)) out.kid.magicDex = out.kid.magicDex.filter(id => magicFxList().some(m => m.id === id)); else delete out.kid.magicDex; }
   if (out.kid.lastMagic != null && typeof out.kid.lastMagic !== 'string') delete out.kid.lastMagic;
@@ -8860,6 +8862,8 @@ function phCallAll(id) {
     list.forEach(a => { a.goal = null; a.idleUntil = Infinity; a.path = []; if (a.sleep) phWake(a, room); a.play = null; a.napTo = null; a.playTo = null; });
     fufuSay('大家跟我走！', 2400);
     toast('🚂 帶著大家走走看！點地板讓小可愛走');
+  } else if (typeof PH_EXTRA !== 'undefined' && PH_EXTRA[id]) {   // 🏁 賽跑、🎾 丟球（寫在後面）
+    if (PH_EXTRA[id].start(room, list, now) === false) { phMode = null; return false; }
   }
   Sound.play('petHappy');
   return true;
@@ -8867,6 +8871,7 @@ function phCallAll(id) {
 // 每一隻在活動中要做什麼；回傳 true＝這一格不用走一般的逛來逛去
 function phModeActor(a, now, room, blk, dt) {
   const m = phMode;
+  if (typeof PH_EXTRA !== 'undefined' && PH_EXTRA[m.id]) return PH_EXTRA[m.id].actor(a, now, room, blk, dt);
   if (m.id === 'sleep') {
     if (a.woke) return false;   // 被點醒的那隻：照平常一樣逛（其他的繼續睡）
     if (a.sleep && a.sleep.uid != null) {   // 床被搬走或收起來：改趴在旁邊的地上睡（不然會看不到、點不到）
@@ -8982,6 +8987,7 @@ function phModeTick(now) {
   if (m.id === 'snack' && m.snacks.every(q => !q.left)) { fufuSay('大家吃飽飽！', 2200); phModeEnd(now); return; }
   if (m.id === 'sleep' && m.start != null && now > m.start + 1500 && phWalkers().every(a => a.woke)) { phModeEnd(now); return; } // 一隻一隻都叫醒了
   if (m.id === 'bubble') phBubbleTick(now);
+  if (typeof PH_EXTRA !== 'undefined' && PH_EXTRA[m.id] && PH_EXTRA[m.id].tick(now, m) === 'end') { phModeEnd(now); return; }
   if (now > m.until) phModeEnd(now);
 }
 function phModeEnd(nowArg) {
@@ -9018,6 +9024,7 @@ function phHideSpots(room, n) {
 // 活動中點寵物：回傳 true＝已經處理（不跳一般的選單）
 function phModeTap(a, now) {
   const m = phMode;
+  if (typeof PH_EXTRA !== 'undefined' && PH_EXTRA[m.id] && PH_EXTRA[m.id].tap) return PH_EXTRA[m.id].tap(a, now, m);
   if (m.id === 'sleep' && a.sleep && !a.woke) {      // 點到哪隻、只有那隻起床
     phWake(a); a.woke = true; a.squishV = -7; a.happyUntil = now + 1500; a.idleUntil = now + 2000;
     petBurst({ kind: 'emoji', emoji: '☀️', spread: 10 }, 1, a); Sound.play('petHappy');
@@ -9091,6 +9098,7 @@ function phCakeHit(w) {
 function phModeEntries() {
   if (!phMode) return [];
   const m = phMode, out = phSnackEntries();
+  if (typeof PH_EXTRA !== 'undefined' && PH_EXTRA[m.id] && PH_EXTRA[m.id].entries) out.push(...PH_EXTRA[m.id].entries(m));
   if (m.id === 'bubble') m.bubbles.forEach(b => out.push({ x: b.x - .1, y: b.y - .1, w: .2, d: .2, z: b.z - b.r / 2, h: b.r,
     drawFn: ctx => {
       const p = iso(b.x, b.y, b.z), pop = b.popped ? Math.max(0, Math.min(1, (performance.now() - b.popped) / 350)) : 0;
@@ -13656,6 +13664,7 @@ canvas.addEventListener('pointerup', e => {
     return;
   }
   if (phMode && phMode.id === 'bubble' && phBubbleHit(w)) return;   // 點泡泡：破掉
+  if (phMode && typeof PH_EXTRA !== 'undefined' && PH_EXTRA[phMode.id] && PH_EXTRA[phMode.id].floorTap && PH_EXTRA[phMode.id].floorTap(w)) return;   // 🎾 丟球：點地板丟過去
   if (phMode && phMode.id === 'birthday' && phCakeHit(w)) return;   // 點蛋糕：吹蠟燭
   if (giftBoxHit(w)) { (giftVisit.spec || GIFT_SPECS[0]).open(); return; }
   { const ph = phHit(w); if (ph != null) { phTap(ph, e); return; } }
@@ -21038,6 +21047,147 @@ function treeDropCard(r) {   // 搖樹掉下來的東西
   else if (r.item) { let v = '🎁'; try { v = renderThumb(r.item, 90); } catch (e) {} gotCard(v, r.item.name, '放進「我的東西」了'); }
   else if (r.food) gotCard(r.food.emoji, r.food.name, `可以餵${petName()}`);
 }
+/* ===== 🏁 賽跑猜冠軍、🎾 丟球（家長：叫大家來要多一些互動 → 選了這兩個）=====
+   🏁 賽跑：寵物在房間左邊排成一排 → 「猜猜誰會贏？」點一隻（12 秒沒點就直接開始）→ 預備、跑！
+       每隻的速度一直在變，最先跑到右邊的贏，頭上冒 🏅。猜對了拿 20 元（一天最多 5 次）。
+   🎾 丟球：大家圍在小可愛旁邊，點地板就把球丟過去，寵物搶著跑去撿，撿到的叼回來給她。
+       可以一直丟；一分鐘沒丟就結束，或按「🎾 不玩了」。 */
+var PH_EXTRA = {};
+const RACE_PRIZE = 20, RACE_PRIZE_DAY = 5;
+const phName = a => petNameOf(G.pets[a.idx]);
+PH_MODES.push({ id: 'race', icon: '🏁', name: '賽跑猜冠軍', endLabel: '🏁 不比了' }, { id: 'fetch', icon: '🎾', name: '丟球', endLabel: '🎾 不玩了' });
+PH_EXTRA.race = {
+  start(room, list, now) {
+    if (list.length < 2) { toast('🏁 要兩隻以上的寵物才能賽跑喔'); return false; }
+    let starts = phFreeSpots(room, .5, room.d / 2, list.length, (i) => i === 0);
+    if (starts.length < list.length) starts = starts.concat(phFreeSpots(room, .5, room.d / 2, list.length, (i, j) => i <= 1 && !starts.some(q => q[0] === i && q[1] === j)));
+    const used = [];
+    phMode.lanes = list.map((a, k) => {
+      const st = starts[k] || [Math.floor(a.x), Math.floor(a.y)];
+      const fin = phFreeSpots(room, room.w - .5, st[1] + .5, 1, (i, j) => i >= room.w - 2 && !used.some(q => q[0] === i && q[1] === j))[0] || [room.w - 1, st[1]];
+      used.push(fin); a.raceFin = fin; a.raceDone = 0; a.raceSp = 1; phGoTo(a, room, st); return { a, st, fin };
+    });
+    phMode.phase = 'line'; phMode.order = []; phMode.guess = null; phMode.dur = 120000; phMode.lineAt = now;
+    fufuSay('賽跑囉！大家排好～', 2400);
+  },
+  actor(a, now, room, blk, dt) {
+    const m = phMode;
+    if (m.phase === 'run' && !a.raceDone) { actorWalk(a, dt * a.raceSp, now, room, blk, 0); if (!a.path.length) { a.raceDone = now; m.order.push(a); if (m.order.length === 1) { petBurst({ kind: 'emoji', emoji: '🏅', spread: 10 }, 2, a); Sound.play('perfect'); } } return true; }
+    if (!atGoal(a)) { actorWalk(a, dt, now, room, blk, 0); return true; }
+    if (m.phase !== 'run') a.facing = 1;
+    if (a.raceDone && a === m.order[0] && now > (a.beatAt || 0)) { a.beatAt = now + 450; a.squishV = -8; a.happyUntil = now + 500; }
+    if (m.phase === 'guess' && a === m.guess && now > (a.beatAt || 0)) { a.beatAt = now + 700; a.squishV = -5; }
+    return true;
+  },
+  tick(now, m) {
+    fufu.idleUntil = now + 1500;
+    if (m.phase === 'line' && (m.lanes.every(l => atGoal(l.a)) || now > m.lineAt + 9000)) {
+      m.phase = 'guess'; m.guessUntil = now + 12000;
+      fufuSay('猜猜誰會跑第一名？點一隻！', 4000); toast('🏁 點一隻你覺得會贏的寵物！'); try { speak('猜猜誰會跑第一名？點一隻！'); } catch (e) {}
+    }
+    if (m.phase === 'guess' && (m.guess || now > m.guessUntil)) { m.phase = 'count'; m.goAt = now + 2600; fufuSay('預備——', 1400); Sound.play('note', 0); setTimeout(() => { if (phMode === m) Sound.play('note', 1); }, 900); }
+    if (m.phase === 'count' && now > m.goAt) {
+      m.phase = 'run'; m.runAt = now; fufuSay('跑！', 1400); Sound.play('note', 3);
+      const room = curRoom();
+      m.lanes.forEach(l => { l.a.path = findPath(room, Math.floor(l.a.x), Math.floor(l.a.y), l.fin[0], l.fin[1]); l.a.goal = l.fin; l.a.raceSp = .8 + Math.random() * .6; });
+      m.spAt = now + 700;
+    }
+    if (m.phase === 'run') {
+      if (now > m.spAt) { m.spAt = now + 600 + Math.random() * 500; m.lanes.forEach(l => { l.a.raceSp = Math.max(.5, Math.min(1.7, l.a.raceSp + (Math.random() - .5) * .6)); if (Math.random() < .08) { l.a.raceSp = .3; petBurst({ kind: 'emoji', emoji: '💦', spread: 6 }, 1, l.a); } }); }   // 速度一直變，偶爾跌一下
+      if (m.lanes.every(l => l.a.raceDone) || now > m.runAt + 20000) {
+        m.phase = 'done'; const win = m.order[0];
+        if (win) {
+          const right = m.guess === win, day = today(), rd = G.raceDay && G.raceDay.d === day ? G.raceDay : (G.raceDay = { d: day, n: 0 });
+          const paid = right && rd.n < RACE_PRIZE_DAY; if (paid) { rd.n++; addBells(RACE_PRIZE); refreshTop(); saveGame(); }
+          fufuSay(m.guess ? (right ? `${phName(win)}第一名！我猜對了！` : `${phName(win)}第一名！下次再猜猜看～`) : `第一名是${phName(win)}！`, 3200);
+          toast(`🏅 第一名：${phName(win)}${right ? `！猜對了${paid ? `，💰 +${RACE_PRIZE} 元` : ''}` : ''}`);
+          Sound.play(right ? 'fanfare' : 'petHappy');
+          m.order.forEach((a, k) => { if (k) { a.squishV = -5; petBurst({ kind: 'heart' }, 1, a); } });
+        }
+        m.until = now + 4500;
+      }
+    }
+  },
+  tap(a, now, m) {
+    if (m.phase !== 'guess' || m.guess) return true;
+    m.guess = a; a.squishV = -9; petBurst({ kind: 'emoji', emoji: '⭐', spread: 8 }, 2, a); Sound.play('pickUp');
+    fufuSay(`我猜${phName(a)}會贏！`, 2200);
+    return true;
+  },
+  entries(m) {
+    const out = [];
+    (m.lanes || []).forEach((l, k) => {
+      out.push({ x: l.fin[0] + .3, y: l.fin[1] + .3, w: .4, d: .4, z: 0, h: 4, drawFn: ctx => { const q = iso(l.fin[0] + .5, l.fin[1] + .5, 0); drawFloatIcon(ctx, q.x, q.y - 6, '🏁', 1); } });
+      if (m.guess === l.a) out.push({ x: l.a.x - .1, y: l.a.y - .1, w: .2, d: .2, z: 30, h: 4, drawFn: ctx => { const q = iso(l.a.x, l.a.y, 38); drawFloatIcon(ctx, q.x, q.y, '⭐', 1); } });
+    });
+    return out;
+  }
+};
+PH_EXTRA.fetch = {
+  start(room, list, now) {
+    const near = phFreeSpots(room, fufu.x, fufu.y, list.length);
+    list.forEach((a, k) => { a.raceSp = 1; phGoTo(a, room, near[k] || [Math.floor(a.x), Math.floor(a.y)]); });
+    phMode.ball = { state: 'held' }; phMode.dur = 600000; phMode.lastAt = now; phMode.n = 0;
+    fufuSay('來玩丟球！點地板，我把球丟過去～', 3000); toast('🎾 點地板丟球，看誰先撿到！');
+  },
+  actor(a, now, room, blk, dt) {
+    const m = phMode, b = m.ball;
+    if (a.path.length) { actorWalk(a, dt * (b.state === 'held' ? 1 : a.raceSp), now, room, blk, 0); return true; }
+    if (b.state === 'held' && now > (a.beatAt || 0)) { a.beatAt = now + 900 + Math.random() * 900; a.squishV = -4; const dx = fufu.x - a.x, dy = fufu.y - a.y; if (Math.abs(dx - dy) > .01) a.facing = dx - dy > 0 ? 1 : -1; }   // 等球：看著小可愛跳一跳
+    return true;
+  },
+  floorTap(w) {
+    const m = phMode, b = m.ball;
+    if (phHit(w) != null) return false;   // 點到寵物：照平常（摸摸）
+    if (b.state !== 'held') return true;  // 球還沒回來：先等一下
+    const g = toGrid(w), room = curRoom(), tx = Math.floor(g.gx), ty = Math.floor(g.gy);
+    if (tx < 0 || ty < 0 || tx >= room.w || ty >= room.d) return false;
+    if (blockedGrid(room)[tx][ty]) { toast('🎾 丟到地板空的地方喔'); return true; }
+    const now = performance.now();
+    m.ball = { state: 'fly', x0: fufu.x, y0: fufu.y, x1: tx + .5, y1: ty + .5, t0: now, dur: 700 };
+    m.lastAt = now; m.n++;
+    const dx = tx + .5 - fufu.x, dy = ty + .5 - fufu.y; if (Math.abs(dx - dy) > .01) fufu.facing = dx - dy > 0 ? 1 : -1;
+    fufu.jumpT = .35; fufuSay(['去撿！', '丟囉～', '接住！'][m.n % 3], 1400); Sound.play('whoosh');
+    phWalkers().forEach(a => { a.raceSp = .75 + Math.random() * .6; a.goal = [tx, ty]; a.path = findPath(room, Math.floor(a.x), Math.floor(a.y), tx, ty); });
+    return true;
+  },
+  tick(now, m) {
+    fufu.idleUntil = now + 1500;
+    const b = m.ball, room = curRoom();
+    if (b.state === 'fly' && now > b.t0 + b.dur) { m.ball = { state: 'ground', x: b.x1, y: b.y1, t0: now }; Sound.play('boing'); }
+    if (m.ball.state === 'ground') {
+      const g = m.ball, who = phWalkers().find(a => Math.hypot(a.x - g.x, a.y - g.y) < .6);
+      if (who) {
+        m.ball = { state: 'carried', a: who }; petBurst({ kind: 'emoji', emoji: '🎾', spread: 6 }, 1, who); Sound.play('pickUp');
+        const back = phFreeSpots(room, fufu.x, fufu.y, 1)[0] || fufuTile(); who.goal = back; who.path = findPath(room, Math.floor(who.x), Math.floor(who.y), back[0], back[1]); who.raceSp = 1;
+        phWalkers().filter(a => a !== who).forEach(a => { a.path = []; a.goal = null; a.squishV = -3; });
+      } else if (phWalkers().every(a => !a.path.length)) phWalkers().forEach(a => { a.path = findPath(room, Math.floor(a.x), Math.floor(a.y), Math.floor(g.x), Math.floor(g.y)); });   // 卡住了：再走一次
+    }
+    if (m.ball.state === 'carried') {
+      const a = m.ball.a;
+      if (!phWalkers().includes(a)) m.ball = { state: 'held' };
+      else if (!a.path.length || Math.hypot(a.x - fufu.x, a.y - fufu.y) < 1.3) {
+        a.path = []; m.ball = { state: 'held' }; m.lastAt = now;
+        a.squishV = -9; a.happyUntil = now + 1800; petBurst({ kind: 'heart' }, 3, a); Sound.play('petHappy');
+        fufuSay(`${phName(a)}好棒！`, 1800); kidMoodUp(1);
+        const near = phFreeSpots(room, fufu.x, fufu.y, phWalkers().length); phWalkers().filter(o => o !== a).forEach((o, k) => phGoTo(o, room, near[k + 1] || [Math.floor(o.x), Math.floor(o.y)]));
+      }
+    }
+    if (m.ball.state === 'held' && now > m.lastAt + 60000) return 'end';
+  },
+  entries(m) {
+    const b = m.ball, now = performance.now();
+    let x, y, z, sh = true;
+    if (b.state === 'held') { x = fufu.x + .25; y = fufu.y + .05; z = 22 * kidHeightScale(); sh = false; }
+    else if (b.state === 'fly') { const k = Math.min(1, (now - b.t0) / b.dur); x = b.x0 + (b.x1 - b.x0) * k; y = b.y0 + (b.y1 - b.y0) * k; z = 20 * (1 - k) + Math.sin(k * Math.PI) * 50; }
+    else if (b.state === 'ground') { x = b.x; y = b.y; z = Math.abs(Math.sin((now - b.t0) / 120)) * Math.max(0, 10 - (now - b.t0) / 80) + 3; }
+    else { x = b.a.x + b.a.facing * .2; y = b.a.y + .05; z = 12; }
+    return [{ x: x - .1, y: y - .1, w: .2, d: .2, z, h: 6, drawFn: ctx => {
+      if (sh) { const g = iso(x, y, 0); ctx.fillStyle = 'rgba(40,30,20,.2)'; ctx.beginPath(); ctx.ellipse(g.x, g.y, 5, 2, 0, 0, Math.PI * 2); ctx.fill(); }
+      const q = iso(x, y, z); ctx.fillStyle = '#d8f04a'; ctx.beginPath(); ctx.arc(q.x, q.y, 5, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = 'rgba(80,90,20,.5)'; ctx.lineWidth = .8; ctx.stroke();
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(q.x - 3, q.y, 4, -.9, .9); ctx.stroke(); } }];
+  }
+};
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
       動物朋友全都打扮來跳舞放煙火，每天第一次結束時每位送一顆糖（4 顆萬聖節糖果）。

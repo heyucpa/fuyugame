@@ -2344,7 +2344,7 @@
       enterPetHouse(); refreshDupBtn();
       if ($('#btnCallAll').hidden) fails.push('寵物屋沒有「📣 叫大家」');
       $('#btnCallAll').onclick();
-      if ($('#modalCard').querySelectorAll('.call-pick').length !== 9 || /大合照/.test($('#modalCard').textContent)) fails.push('叫大家不是九個選項（大合照要拿掉）');
+      if ($('#modalCard').querySelectorAll('.call-pick').length !== 11 || /大合照/.test($('#modalCard').textContent)) fails.push('叫大家不是十一個選項（大合照要拿掉）');
       $('#modal').hidden = true;
       var walkers = phWalkers(), egg13 = phActor(9), ex13 = [egg13.x, egg13.y];
       if (walkers.length !== 7) fails.push('（測試）寵物屋裡的寵物數量不對：' + walkers.length);
