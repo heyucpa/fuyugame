@@ -21,14 +21,14 @@ const path = require('path');
     o.bbStatus = /投進 6 \/ 7 球/.test(document.querySelector('.game-status').textContent) && arenaState().bm === B.st().score; closeGameWindow();
     // 🔴 躲避球：一直瞄準打人，球來了等最後一刻接
     openDodge(); document.querySelectorAll('.lv-btn')[0].click(); await wait(300);
-    const D = playDodge.test; let dodged = 0;
+    const D = playDodge.test; let dodged = 0; D.setSp(100);   // 一開始就能放必殺技
     for (let i = 0; i < 900 && !D.st().ended; i++) {
       const s = D.st();
-      if (s.phase === 'aim') { const q = D.them.find(x => !x.out); D.throwAt(q.x, q.y); }
+      if (s.phase === 'aim') { if (s.sp >= 100) D.special(); else { const q = D.them.find(x => !x.out); D.throwAt(q.x, q.y); } }
       if (s.phase === 'inc' && s.tgKid && s.left < .12) { D.dodge(); dodged++; }
       await wait(40);
     }
-    o.dbEnd = D.st().ended && D.st().outs >= 3; o.dbCatch = D.st().catches >= 0 && dodged >= 0; await wait(1800);
+    o.dbEnd = D.st().ended && D.st().outs >= 3; o.dbSpecial = D.st().spCount >= 1; o.dbCatch = D.st().catches >= 0 && dodged >= 0; await wait(1800);
     o.dbStatus = /打中/.test(document.querySelector('.game-status').textContent); closeGameWindow();
     // 🏓 桌球：自動跟球，一定會贏
     openPingPong(); document.querySelectorAll('.lv-btn')[0].click(); await wait(300);
