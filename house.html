@@ -661,6 +661,10 @@ button.pass { font: inherit; }
 .tkd-beltpic { display: flex; justify-content: center; } .tkd-ladder { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin: 6px 0; }
 .tkd-step { font-size: 12px; padding: 3px 8px; border-radius: 999px; background: #eee6d6; color: #8a7a64; } .tkd-step.done { background: #d9f5df; color: #2f7d4a; } .tkd-step.on { background: #ffe9b8; color: #5a4630; font-weight: 800; }
 .magic-pic { font-size: 96px; line-height: 1.1; text-align: center; animation: shrinkSpin 1s cubic-bezier(.3, 1.5, .5, 1) both .2s; }
+.rhy-row { display: flex; gap: 8px; justify-content: center; margin: 8px 0; touch-action: none; user-select: none; -webkit-user-select: none; }
+.rhy-row button { flex: 1; max-width: 84px; height: 68px; font-size: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; border: 4px solid; border-radius: 16px; background: #fff; touch-action: none; }
+.rhy-nm { font-size: 13px; font-weight: 700; color: #5a4636; }
+.rhy-row button:active { transform: scale(.94); background: #fff6d8; }
 .spar-row { display: flex; gap: 12px; justify-content: center; margin: 8px 0; }
 .spar-row button { min-width: 120px; font-size: 20px; }
 .music-menu { position: fixed; z-index: 70; background: var(--panel, #fffaf0); border: 2px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
@@ -11137,6 +11141,7 @@ function hostMenuEntries() {
   if (host.n.id === 'tkd') {
     list.push(['🦵 踢板（看準時機）', openKickGame]);
     list.push(['👊 跟著做動作', openFormsGame]);
+    list.push(['🎵 節奏跆拳道（像跳舞機）', openRhythmGame]);
     list.push(['🥋 跟朋友對練', openSparGame]);
     list.push([`🎖️ 考腰帶（現在：${tkdBeltName()}）`, openBeltExam]);
   }
@@ -19930,6 +19935,115 @@ function playForms(w, lengths, finish) {
     k++; if (k === seq.length) { input = false; right++; r++; Sound.play('perfect'); say.textContent = '🎉 完全正確！'; timers.push(setTimeout(round, 1100)); }
   };
   round();
+}
+/* 🎵 節奏跆拳道（家長：像跳舞機那樣）：箭頭從下面往上飄，碰到上面的框框時按同一個方向。
+   ← 左格擋、↓ 下段踢、↑ 出拳、→ 旋踢；小可愛在中間跟著做動作。電腦可以按方向鍵，平板點下面四個大按鈕。 */
+const RHY_LANES = [
+  { k: 'ArrowLeft', a: Math.PI, c: '#c86bff', nm: '格擋', act: 'block' },
+  { k: 'ArrowDown', a: Math.PI / 2, c: '#3fa9f5', nm: '下踢', act: 'lowkick' },
+  { k: 'ArrowUp', a: -Math.PI / 2, c: '#3fcf6f', nm: '出拳', act: 'punch' },
+  { k: 'ArrowRight', a: 0, c: '#ff8a3d', nm: '旋踢', act: 'kick' }
+];
+const RHY_LEVELS = [{ name: '慢慢來', bpm: 66, n: 20, mul: 1, eighth: 0 }, { name: '普通', bpm: 84, n: 28, mul: 2, eighth: .15 }, { name: '高手！', bpm: 100, n: 36, mul: 3, eighth: .3 }];
+const RHY_JUDGE = [[90, 'PERFECT!', '#ffd23f', 3], [170, 'GREAT!', '#7bd389', 2], [260, 'GOOD', '#6bb6ff', 1]];
+function openRhythmGame() { const w = openGameWindow('🎵 節奏跆拳道', '箭頭飄到上面的框框時，按一樣的方向！（電腦按方向鍵，平板點下面的按鈕）'); pickLevelRow(w, RHY_LEVELS, L => `全對 💰 ${L.n * 6 * L.mul}`, L => playRhythm(w, L)); }
+function playRhythm(w, L) {
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const W = 340, H = 330, { g } = gameCanvas(w.stage, W, H);
+  const row = el('div', 'rhy-row');
+  const btns = RHY_LANES.map((ln, i) => { const b = el('button', 'rhy-btn'); b.append(el('span', 'rhy-e', ['⬅️', '⬇️', '⬆️', '➡️'][i]), el('span', 'rhy-nm', ln.nm)); b.style.borderColor = ln.c; b.addEventListener('pointerdown', e => { e.preventDefault(); hit(i); }); row.appendChild(b); return b; });
+  w.stage.appendChild(row); leaveButton(w); w.status.textContent = '🎵 跟著拍子按！箭頭碰到上面的框框就按';
+  try { Sound.duck && Sound.duck(true); } catch (e) {}
+  const beat = 60000 / L.bpm, LEAD = 2200, TY = 46, LX = i => 52 + i * 79;   // 箭頭飛 2.2 秒到框框
+  const notes = []; let tm = 1800, last = -1;
+  for (let i = 0; i < L.n; i++) {
+    let lane; do { lane = Math.floor(Math.random() * 4); } while (lane === last && Math.random() < .6);
+    last = lane; notes.push({ lane, t: tm, done: false }); tm += Math.random() < L.eighth ? beat / 2 : beat;
+  }
+  const end = tm + 1200;
+  let T0 = performance.now(), raf = 0, live = true, score = 0, combo = 0, best = 0, cnt = [0, 0, 0, 0], pop = null, pose = null, ticked = -1;
+  const flashLane = [0, 0, 0, 0];
+  const key = e => { const i = RHY_LANES.findIndex(l => l.k === e.code); if (i < 0) return; e.preventDefault(); if (!e.repeat) hit(i); };
+  document.addEventListener('keydown', key);
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', key); try { Sound.duck && Sound.duck(false); } catch (e) {} };
+  function judge(n, j, now) { n.done = true; if (j < 3) { combo++; best = Math.max(best, combo); score += RHY_JUDGE[j][3]; } else combo = 0; cnt[j]++; pop = { j, at: now }; }
+  function hit(i) {
+    if (!live) return;
+    const now = performance.now(), t = now - T0; flashLane[i] = now;
+    pose = { act: RHY_LANES[i].act, at: now };
+    const n = notes.filter(x => !x.done && x.lane === i).sort((a, b) => Math.abs(a.t - t) - Math.abs(b.t - t))[0];
+    if (!n || Math.abs(n.t - t) > RHY_JUDGE[2][0]) { Sound.play('click'); return; }   // 按太早：不算錯，只是沒中
+    const d = Math.abs(n.t - t), j = RHY_JUDGE.findIndex(r => d <= r[0]);
+    judge(n, j, now); Sound.play('note', i);
+  }
+  const arrow = (x, y, a, s, fill, line) => {   // 胖胖的箭頭
+    g.save(); g.translate(x, y); g.rotate(a); g.scale(s, s);
+    g.beginPath(); g.moveTo(22, 0); g.lineTo(2, -20); g.lineTo(2, -9); g.lineTo(-20, -9); g.lineTo(-20, 9); g.lineTo(2, 9); g.lineTo(2, 20); g.closePath();
+    if (fill) { g.fillStyle = fill; g.fill(); } g.lineJoin = 'round'; g.lineWidth = 3.5; g.strokeStyle = line; g.stroke(); g.restore();
+  };
+  const drawKid = now => {   // 中間的小可愛，跟著最後一下做動作
+    const p = pose && now - pose.at < 380 ? pose : null, k = p ? Math.sin((now - p.at) / 380 * Math.PI) : 0;
+    g.save(); g.globalAlpha = .9; g.translate(W / 2, 300 - (p ? k * 6 : Math.abs(Math.sin(now / beat * Math.PI)) * 3)); g.scale(1.8, 1.8);
+    if (p && p.act === 'kick') g.rotate(-k * .15);
+    if (kidBaby()) drawBabyKid(g, { t: now / 1000 }); else drawGirl(g, { t: now / 1000, blink: false, outfit: currentOutfit(), face: combo >= 5 ? 'joy' : kidFace(), stage: kidLookStage() });
+    if (p) {
+      const o = currentOutfit(), line = (x1, y1, x2, y2, wd, c) => { g.strokeStyle = c; g.lineWidth = wd; g.lineCap = 'round'; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); };
+      if (p.act === 'punch') { line(4, -31, 6, -31 - k * 16, 3.6, o.top.color); g.fillStyle = GIRL.skin; g.beginPath(); g.arc(6, -33 - k * 16, 2.6, 0, Math.PI * 2); g.fill(); }
+      if (p.act === 'block') { line(-6, -30, -14 - k * 4, -38, 3.6, o.top.color); line(-14 - k * 4, -38, -15 - k * 4, -44, 3.4, GIRL.skin); }
+      if (p.act === 'kick') { line(2, -12, 2 + k * 18, -14 - k * 12, 4.6, (o.bottom || {}).color || '#fff'); }
+      if (p.act === 'lowkick') { line(2, -12, 4 + k * 18, -6, 4.6, (o.bottom || {}).color || '#fff'); }
+    }
+    g.restore(); g.globalAlpha = 1;
+  };
+  const tick = now => {
+    if (!live) return;
+    const t = now - T0;
+    // 背景：藍色光圈跟著拍子一閃一閃
+    const bp = (t % beat) / beat;
+    g.fillStyle = '#10204a'; g.fillRect(0, 0, W, H);
+    const gr = g.createRadialGradient(W / 2, 190, 10, W / 2, 190, 170 + (1 - bp) * 12); gr.addColorStop(0, '#3a6cd8'); gr.addColorStop(1, '#10204a'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+    const bi = Math.floor(t / beat); if (bi !== ticked && t > 0 && t < end - 1000) { ticked = bi; }
+    drawKid(now);
+    // 上面的框框
+    RHY_LANES.forEach((ln, i) => { const lit = now - flashLane[i] < 140; arrow(LX(i), TY, ln.a, lit ? 1.12 : 1 + (1 - bp) * .05, lit ? 'rgba(255,255,255,.6)' : 'rgba(255,255,255,.08)', lit ? '#ffffff' : 'rgba(255,255,255,.85)'); });
+    // 箭頭：往上飄
+    notes.forEach(n => {
+      if (n.done) return;
+      const dt = n.t - t;
+      if (dt < -RHY_JUDGE[2][0]) { judge(n, 3, now); return; }   // 錯過
+      if (dt > LEAD) return;
+      const y = TY + dt / LEAD * (H - TY + 30), ln = RHY_LANES[n.lane];
+      arrow(LX(n.lane), y, ln.a, 1, ln.c, '#ffffff');
+    });
+    // 判定字、連擊、分數
+    if (pop && now - pop.at < 600) {
+      const k = (now - pop.at) / 600, txt = pop.j < 3 ? RHY_JUDGE[pop.j][1] : 'MISS', c = pop.j < 3 ? RHY_JUDGE[pop.j][2] : '#9aa3ad';
+      g.save(); g.translate(W / 2, 130); g.scale(1.2 - k * .2, 1.2 - k * .2); g.globalAlpha = 1 - k * .6;
+      g.font = '900 30px Arial Black, Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 5; g.strokeStyle = '#10204a'; g.strokeText(txt, 0, 0); g.fillStyle = c; g.fillText(txt, 0, 0);
+      if (combo >= 3) { g.font = '800 15px Arial, sans-serif'; g.fillStyle = '#ffffff'; g.fillText(`${combo} COMBO`, 0, 26); }
+      g.restore(); g.globalAlpha = 1;
+    }
+    g.fillStyle = '#ffffff'; g.font = '700 13px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'left'; g.fillText(`分數 ${score}`, 8, H - 10);
+    const prog = Math.min(1, t / end); g.fillStyle = 'rgba(255,255,255,.25)'; g.fillRect(8, 8 + 0, 4, 0);
+    g.fillStyle = 'rgba(255,255,255,.2)'; g.fillRect(W - 12, 82, 5, 220); g.fillStyle = '#ffd23f'; g.fillRect(W - 12, 82 + 220 * (1 - prog), 5, 220 * prog);
+    if (t < 1500) { g.fillStyle = '#ffffff'; g.font = '900 34px Arial Black, Arial, sans-serif'; g.textAlign = 'center'; g.fillText(t < 750 ? 'READY' : 'GO!', W / 2, 200); }
+    if (t > end) { finish(); return; }
+    raf = requestAnimationFrame(tick);
+  };
+  function finish() {
+    gameCleanup(); gameCleanup = null;
+    const all = notes.length, ok = cnt[0] + cnt[1] + cnt[2], full = cnt[3] === 0;
+    const bells = payReward(w, Math.round((score * 2 + (full ? all : 0)) * L.mul));
+    tkdPractice(); kidMoodUp(ok > all / 2 ? 10 : 5);
+    w.stage.innerHTML = '';
+    w.stage.appendChild(el('div', 'tkd-big', full ? '🏆' : ok > all * .7 ? '🎉' : '💪'));
+    w.stage.appendChild(el('div', 'tkd-say', `PERFECT ${cnt[0]}・GREAT ${cnt[1]}・GOOD ${cnt[2]}・MISS ${cnt[3]}　最多連擊 ${best}`));
+    w.status.textContent = `${full ? '全部打中！FULL COMBO！' : `打中 ${ok} / ${all} 個`} 💰 +${fmt(bells)}（也算練習一次）`;
+    Sound.play(full ? 'fanfare' : 'coin'); saveGame(); refreshTop();
+    gameButtons(w, openRhythmGame);
+  }
+  raf = requestAnimationFrame(tick);
+  playRhythm.test = { notes: () => notes, t: () => performance.now() - T0, hit };
 }
 // 🎖️ 考腰帶：做一套比較長的動作（全對）＋踢 3 塊板（至少 2 塊）
 function openBeltExam() {
