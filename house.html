@@ -190,6 +190,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .modal-card.game-card { width: min(440px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; }
 .game-stage { margin: 8px 0; }
 .game-canvas { width: 100%; max-width: 100%; display: block; border-radius: 14px; touch-action: none; }
+/* 家長：小遊戲的畫面太小 → 有畫布的小遊戲視窗放大到快滿螢幕；畫布照比例放到最大，但留位置給下面的按鈕 */
+.modal-card.game-card.game-big { width: min(96vw, 920px); }
+.game-big .game-stage > canvas.game-canvas { margin: 0 auto; width: min(100%, max(320px, calc((100vh - 330px) * var(--ar, 1.78)))); width: min(100%, max(320px, calc((100dvh - 330px) * var(--ar, 1.78)))); }
 .game-status { font-weight: 700; min-height: 1.5em; margin: 6px 0; }
 .game-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .game-btns .big { margin: 0; }
@@ -16479,7 +16482,7 @@ function openGameWindow(title, howTo) {
   closeGameWindow();
   const card = $('#modalCard');
   card.innerHTML = '';
-  card.classList.add('game-card', 'in-game');
+  card.classList.add('game-card', 'in-game'); card.classList.remove('game-big');
   card.appendChild(el('h2', '', title));
   if (restIsDue()) setTimeout(forceRestNow, 0); // 時間已經到了（在寬限中）：不能再開新的一局
   card.appendChild(note(howTo));
@@ -16494,7 +16497,7 @@ function openGameWindow(title, howTo) {
 }
 function closeGameWindow() {
   if (gameCleanup) { gameCleanup(); gameCleanup = null; }
-  $('#modalCard').classList.remove('game-card', 'in-game');
+  $('#modalCard').classList.remove('game-card', 'in-game', 'game-big');
   $('#modal').hidden = true;
 }
 function gameButtons(w, again) {
@@ -16532,6 +16535,12 @@ function gameCanvas(stage, w, h) {
   c.width = w * dpr; c.height = h * dpr;
   c.className = 'game-canvas';
   c.style.aspectRatio = `${w} / ${h}`;
+  c.style.setProperty('--ar', String(w / h));
+  const card = stage.closest && stage.closest('.game-card'); if (card && w >= 280) card.classList.add('game-big');   // 小遊戲放大
+  if (card && w >= 280) {   // 放大以後下面的按鈕還要看得到：視窗要捲才看得到的話，畫布縮回一點
+    const fit = () => { if (!c.isConnected) return; c.style.maxWidth = ''; const over = card.scrollHeight - card.clientHeight; if (over > 0) c.style.maxWidth = Math.max(260, c.getBoundingClientRect().width - over * w / h - 2) + 'px'; };
+    setTimeout(fit, 80); setTimeout(fit, 600);
+  }
   stage.appendChild(c);
   const g = c.getContext('2d');
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -23063,7 +23072,8 @@ function playDodge(w, L) {
 }
 
 // 🏓 桌球（第一人稱：看著球桌，球拍在下面左右滑）
-const PP_LEVELS = [{ name: '簡單', paddle: .36, dur: 1.65, op: 1.3, miss: .22, win: 5, mul: 1 }, { name: '一般', paddle: .27, dur: 1.3, op: 1.7, miss: .12, win: 7, mul: 2 }, { name: '高手！', paddle: .21, dur: 1.05, op: 2.1, miss: .06, win: 7, mul: 3 }];
+// 家長：桌球太難 → 球拍變大、球變慢、簡單模式球拍會自己往球靠一點（磁鐵）
+const PP_LEVELS = [{ name: '簡單', paddle: .55, dur: 2.2, op: 1.1, miss: .3, win: 5, mul: 1, magnet: 1 }, { name: '一般', paddle: .4, dur: 1.75, op: 1.4, miss: .2, win: 5, mul: 2, magnet: .5 }, { name: '高手！', paddle: .3, dur: 1.35, op: 1.8, miss: .1, win: 7, mul: 3 }];
 const PP_PRIZE = [150, 40];
 function openPingPong() { const w = openGameWindow('🏓 桌球', '手指在畫面上左右滑（滑鼠移動、鍵盤 ← →），球拍去接球！打在球拍邊邊，球會斜斜飛，對手比較難接。'); pickLevelRow(w, PP_LEVELS, L => `先拿 ${L.win} 分　贏了 💰 ${PP_PRIZE[0] * L.mul}`, L => playPingPong(w, L)); }
 function playPingPong(w, L) {
@@ -23107,15 +23117,16 @@ function playPingPong(w, L) {
     if (phase === 'play' && shot) {
       shot.t += dt; const b = ballAt(shot);
       if (auto && shot.toMe) px += (b.x - px) * Math.min(1, dt * 8);
+      else if (L.magnet && shot.toMe && b.u > .45) px += (b.x - px) * Math.min(1, dt * L.magnet);   // 簡單：球拍自己往球靠
       if (!shot.toMe) { const d = shot.x1 - ox; ox += Math.sign(d) * Math.min(Math.abs(d), L.op * (.6 + rally * .03) * dt); }
       if (b.u >= 1) {
         if (shot.toMe) {
           const off = (b.x - px) / L.paddle;
           if (Math.abs(off) <= 1) { rally++; combo++; best = Math.max(best, combo); Sound.play(Math.abs(off) > .55 ? 'perfect' : 'click'); if (combo >= 3) say(`連續 ${combo} 球！`, .7); else if (Math.abs(off) > .55) say('好角度！', .6);
-            const tx = Math.max(-.95, Math.min(.95, b.x + off * 1.2 + (Math.random() - .5) * .3)); newShot(b.x, 0, tx, 1.02, Math.max(.65, L.dur * (1 - rally * .03)), false); }
+            const tx = Math.max(-.95, Math.min(.95, b.x + off * 1.2 + (Math.random() - .5) * .3)); newShot(b.x, 0, tx, 1.02, Math.max(.8, L.dur * (1 - rally * .015)), false); }
           else { say('沒接到～', .9); combo = 0; shot = null; phase = 'wait'; point(1); }
         } else {
-          if (Math.abs(b.x - ox) < .3 && Math.random() > L.miss + rally * .01) { Sound.play('click'); newShot(b.x, 1.02, Math.random() * 1.6 - .8, -.04, Math.max(.6, L.dur * (1 - rally * .03)), true); }
+          if (Math.abs(b.x - ox) < .3 && Math.random() > L.miss + rally * .01) { Sound.play('click'); newShot(b.x, 1.02, Math.random() * 1.6 - .8, -.04, Math.max(.8, L.dur * (1 - rally * .015)), true); }
           else { say('對手沒接到！得分！', 1); shot = null; phase = 'wait'; point(0); }
         }
       }
@@ -23134,7 +23145,7 @@ function playPingPong(w, L) {
       if (shot.toMe) { const land = proj(shot.x1, 0, 0); g.strokeStyle = 'rgba(255,210,63,.8)'; g.lineWidth = 2; g.beginPath(); g.ellipse(land.x, land.y + 4, 14, 4, 0, 0, 7); g.stroke(); } }
     // 我的球拍
     const pp = proj(px, -.02, 0), pw = L.paddle * 200; g.fillStyle = 'rgba(232,80,91,.25)'; g.fillRect(pp.x - pw, pp.y + 6, pw * 2, 6);
-    g.fillStyle = '#8a5a33'; g.fillRect(pp.x - 5, pp.y + 10, 10, 26); g.fillStyle = '#e8505b'; g.beginPath(); g.ellipse(pp.x, pp.y, 24, 20, 0, 0, 7); g.fill(); g.strokeStyle = '#26232a'; g.lineWidth = 2; g.stroke();
+    g.fillStyle = '#8a5a33'; g.fillRect(pp.x - 5, pp.y + 10, 10, 26); g.fillStyle = '#e8505b'; g.beginPath(); g.ellipse(pp.x, pp.y, Math.max(24, pw * .6), 20, 0, 0, 7); g.fill(); g.strokeStyle = '#26232a'; g.lineWidth = 2; g.stroke();
     arenaScore(g, W, score[0], score[1], charName().slice(0, 4), rival.short || '對手');
     if (combo >= 2) { g.fillStyle = '#ff7a3c'; g.font = '900 14px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'left'; g.fillText(`🔥 ${combo} combo`, 10, 24); }
     if (msgT > 0 && msg) arenaMsg(g, W, msg, 150);

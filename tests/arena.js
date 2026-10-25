@@ -41,7 +41,7 @@ const path = require('path');
     o.ppStatus = /最多連續/.test(document.querySelector('.game-status').textContent); closeGameWindow();
     // 桌球：球拍放旁邊不動 → 對手得分
     openPingPong(); document.querySelectorAll('.lv-btn')[0].click(); await wait(300);
-    playPingPong.test.setPaddle(-1.1); await wait(4000); o.ppMiss = playPingPong.test.st().score[1] >= 1; closeGameWindow();
+    const ivp = setInterval(() => playPingPong.test.setPaddle(-1.1), 16); for (let i = 0; i < 150 && playPingPong.test.st().score[1] < 1; i++) await wait(100); clearInterval(ivp); o.ppMiss = playPingPong.test.st().score[1] >= 1; closeGameWindow();
     // 主人選單、快速選單、存檔
     travelArrive('arena'); await wait(300); $('#modal').hidden = true;
     o.host = host.n && host.n.id === 'arena' && hostMenuEntries().some(e => /籃球/.test(e[0]));
