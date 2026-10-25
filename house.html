@@ -7300,6 +7300,7 @@ function timeText() {
 
 // ── 做事時看得到的畫面（115.9.19 謝會：擺碗盤、生火、看電視要有動作）──
 // 手上拿的東西（girl.js 的 drawProp）；有拿東西時臉朝前，才看得到
+const ACT_SIDE = ['punch', 'kickpad', 'chop', 'tkdpose'];   // 家長：踢靶要看得到真的在踢 → 側身做
 const ACT_PROPS = {
   read: 'book', comic: 'comic', study: 'pencil', paint: 'brush', cook: 'spatula', snack: 'juice', dishes: 'plate',
   water: 'can', hug: 'teddy', videogame: 'pad', fruit: 'apple', tea: 'cup', hay: 'hay', pick: 'basket',
@@ -7462,7 +7463,7 @@ function fufuStartAct(key, now, it, auto) {
   const a = ACTIVITIES[key], def = FURN_BY_ID[it.id], fp = footprint(def, it.rot);
   const dx = it.x + fp.w / 2 - fufu.x, dy = it.y + fp.d / 2 - fufu.y;
   fufu.facing = dx - dy >= 0 ? 1 : -1;
-  fufu.back = !ACT_PROPS[key] && dx + dy < 0; // 家具在後面（靠牆）就看到背影；手上有拿東西時臉朝前
+  fufu.back = !ACT_PROPS[key] && !ACT_SIDE.includes(key) && dx + dy < 0; // 家具在後面（靠牆）就看到背影；手上有拿東西時臉朝前；踢腿出拳要側身才看得到
   // 家具留下來的樣子
   const st = stateOf(it.uid);
   if (key === 'warm') st.fireUntil = now + 120000;
@@ -7866,7 +7867,10 @@ const RIDES = {
   carousel: { dur: 7000 },   // 🎠 坐在木馬上繞圈圈、上下跳
   teacup: { dur: 6000 },     // ☕ 坐在杯子裡轉圈圈
   coaster: { dur: 7600 },    // 🎢 從車站出發，沿著軌道衝到最後面再衝回來
-  ferris: { dur: 9000 }      // 🎡 坐上車廂，慢慢轉上去再轉下來
+  ferris: { dur: 9000 },     // 🎡 坐上車廂，慢慢轉上去再轉下來
+  whistle: { dur: 7600 },    // 🛟 爬上救生員椅、坐在上面吹哨子、再爬下來（家長：當救生員要坐在椅子上）
+  shade: { dur: 6500 },      // ⛱️ 走到傘下坐下來乘涼（家長：在傘下乘涼也要有動作）
+  podium: { dur: 5600 }      // 🏅 跳上頒獎台最高的那一階、舉手歡呼、再跳下來
 };
 const lerp = (a, b, k) => a + (b - a) * Math.max(0, Math.min(1, k));
 function swingNow() {
@@ -7881,6 +7885,8 @@ function rideSfx(r, t) { // 動作到了那一刻才出聲（每段只響一次�
   if (r.key === 'slide' && t >= 2) once('w', 'whoosh');
   if (r.key === 'climb' && t >= 2.6) once('top', 'perfect');
   if (r.key === 'swing') { const k = Math.floor(t * 3.2 / Math.PI); if (k > 0 && k < 6) once('c' + k, 'creak'); }
+  if (r.key === 'whistle') { if (t >= 2) once('w1', 'boing'); if (t >= 3.8) once('w2', 'boing'); }
+  if (r.key === 'podium') { if (t >= .9) once('up', 'jump'); if (t >= 1.3) once('f', 'fanfare'); }
 }
 function rideWorld(r, lx, ly, z) { const p = rotPoint(r.def, r.it.rot || 0, lx, ly); return { x: r.it.x + p.x, y: r.it.y + p.y, z }; }
 function ridePos(now) {
@@ -7915,6 +7921,18 @@ function ridePos(now) {
   } else if (r.key === 'teacup') {
     const a = t * 3.2;   // 轉得比木馬快
     lx = 1 + Math.cos(a) * .55; ly = 1 + Math.sin(a) * .55; z = 12; sit = true; cheer = t > 4.5;
+  } else if (r.key === 'whistle') {   // 救生員椅：座位在 z 54
+    if (t < 1.7) { const k = t / 1.7; lx = .5; ly = lerp(1.15, .6, k); z = lerp(0, 54, k) + Math.abs(Math.sin(k * Math.PI * 4)) * 3; }
+    else if (t < 5.9) { lx = .5; ly = .6; z = 54; sit = true; }
+    else { const k = Math.min(1, (t - 5.9) / 1.5); lx = .5; ly = lerp(.6, 1.15, k); z = lerp(54, 0, k); }
+  } else if (r.key === 'shade') {   // 遮陽傘：走到傘下，坐在地上
+    if (t < .7) { const k = t / .7; lx = .5; ly = lerp(1.2, .78, k); z = 0; }
+    else { lx = .5; ly = .78; z = 0; sit = true; }
+  } else if (r.key === 'podium') {   // 頒獎台：中間最高那階 z 22
+    if (t < .7) { const k = t / .7; lx = 1; ly = lerp(1.3, 1.05, k); z = 0; }
+    else if (t < 1.2) { const k = (t - .7) / .5; lx = 1; ly = lerp(1.05, .5, k); z = lerp(0, 22, k) + Math.sin(k * Math.PI) * 18; }
+    else if (t < 4.6) { lx = 1; ly = .5; z = 22 + Math.abs(Math.sin((t - 1.2) * 6)) * 5; cheer = true; }
+    else { const k = Math.min(1, (t - 4.6) / .6); lx = 1; ly = lerp(.5, 1.2, k); z = lerp(22, 0, k) + Math.sin(k * Math.PI) * 14; }
   } else if (r.key === 'ferris') {
     const k = Math.min(1, t / 9), a = Math.PI / 2 + k * Math.PI * 2;   // 從最下面出發，轉一圈
     lx = 1.5 + Math.cos(a) * 1.2; ly = .9; z = 70 - Math.sin(a) * 52 - 12; sit = true; cheer = k > .4 && k < .6;
@@ -23073,7 +23091,7 @@ function playDodge(w, L) {
 
 // 🏓 桌球（第一人稱：看著球桌，球拍在下面左右滑）
 // 家長：桌球太難 → 球拍變大、球變慢、簡單模式球拍會自己往球靠一點（磁鐵）
-const PP_LEVELS = [{ name: '簡單', paddle: .55, dur: 2.2, op: 1.1, miss: .3, win: 5, mul: 1, magnet: 1 }, { name: '一般', paddle: .4, dur: 1.75, op: 1.4, miss: .2, win: 5, mul: 2, magnet: .5 }, { name: '高手！', paddle: .3, dur: 1.35, op: 1.8, miss: .1, win: 7, mul: 3 }];
+const PP_LEVELS = [{ name: '簡單', paddle: .55, dur: 2.2, op: 1.1, miss: .3, win: 3, mul: 1, magnet: 1 }, { name: '一般', paddle: .4, dur: 1.75, op: 1.4, miss: .2, win: 5, mul: 2, magnet: .5 }, { name: '高手！', paddle: .3, dur: 1.35, op: 1.8, miss: .1, win: 7, mul: 3 }];
 const PP_PRIZE = [150, 40];
 function openPingPong() { const w = openGameWindow('🏓 桌球', '手指在畫面上左右滑（滑鼠移動、鍵盤 ← →），球拍去接球！打在球拍邊邊，球會斜斜飛，對手比較難接。'); pickLevelRow(w, PP_LEVELS, L => `先拿 ${L.win} 分　贏了 💰 ${PP_PRIZE[0] * L.mul}`, L => playPingPong(w, L)); }
 function playPingPong(w, L) {

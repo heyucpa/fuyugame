@@ -37,7 +37,7 @@ const path = require('path');
     openPingPong(); document.querySelectorAll('.lv-btn')[0].click(); await wait(300);
     const P = playPingPong.test; P.setAuto(true);
     for (let i = 0; i < 1500 && !P.st().ended; i++) await wait(80);
-    o.ppEnd = P.st().ended && P.st().score[0] === 5 && P.st().best >= 1; await wait(1700);
+    o.ppEnd = P.st().ended && P.st().score[0] === 3 && P.st().best >= 1; await wait(1700);
     o.ppStatus = /最多連續/.test(document.querySelector('.game-status').textContent); closeGameWindow();
     // 桌球：球拍放旁邊不動 → 對手得分
     openPingPong(); document.querySelectorAll('.lv-btn')[0].click(); await wait(300);
