@@ -4519,6 +4519,7 @@ const OPEN_GIFT_BELLS = 100000;
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
   { id: '2026-10-18T09:00', title: '萬聖節派對＋找小幽靈！🎃👻', lines: [
+    ['🎣', '小島上要先點左下角的「🎣 釣竿」再點水邊才會釣魚，走過海邊不會不小心開始釣'],
     ['🎟️', '電影院（60 元，看一部）、游泳池（40 元）、遊樂園（80 元）進去前要先付錢買票，錢不夠就先去賺錢喔'],
     ['🎬', '小島上多了電影院（在阿婆家上面）！找貓頭鷹放映師買票，主角是你和寵物：動物冒險、太空、恐龍、海底、搞笑，萬聖節還有特別篇。五部都看完送一張電影海報'],
     ['🔮', '「變小藥水」變成「神奇魔法藥水」：每次喝都不一樣（巨人、彩虹頭髮、飄起來、超快、透明、貓咪、星星、愛心、變色、變小），喝了才知道！集滿 10 種吧'],
@@ -18987,7 +18988,10 @@ function islTap(e, hold) {
     }
     if (cr) { cr.hop = 1; cr.wait = 2.5; Sound.play('boing'); islAddFx('say', cr.x, cr.y - 1.1, 1300, { text: cr.fly ? '飄～' : ['跳跳！', '嗨～', '啾啾'][Math.floor(Math.random() * 3)] }); if (cr.fly) { cr.tx = cr.x + (Math.random() - .5) * 6; cr.ty = cr.y - 2; } return; }
     if (isl.bike && Math.hypot(isl.bike.x - t.fx, isl.bike.y - .5 - t.fy) < 1.1) { isl.bike.ring = performance.now(); Sound.play('note', 3); islAddFx('say', isl.bike.x, isl.bike.y - 1.6, 1400, { text: '叮鈴叮鈴～' }); return; }
-    const fun = islFunAt(t);
+    let fun = islFunAt(t);
+    /* 🎣 家長：經過海邊太容易就開始釣魚——現在要先拿釣竿（左下角「🎣 釣竿」）點水邊才會釣；
+       沒拿釣竿點到水：只是走過去，偶爾提醒一下怎麼釣魚 */
+    if (fun && (fun.kind === 'pond' || fun.kind === 'sea') && isl.tool !== 'rod') { islRodHint(); fun = null; }
     if (fun) {
       isl.pending = { type: 'fun', obj: fun };
       const dx = fun.x - isl.x, dy = fun.y - isl.y;
@@ -19015,8 +19019,8 @@ function islTap(e, hold) {
       return;
     }
     isl.pending = null;
-    if (t.x >= 0 && t.y >= 0 && t.x < m.W && t.y < m.H && !m.land[t.y][t.x]) {   // 🎣 點到海：走到最近的岸邊釣魚
-      islSetTool('rod'); isl.pending = { type: 'fun', obj: { kind: 'sea', x: t.fx, y: t.fy, reach: 2.2 } };
+    if (t.x >= 0 && t.y >= 0 && t.x < m.W && t.y < m.H && !m.land[t.y][t.x] && isl.tool === 'rod') {   // 🎣 拿著釣竿點到海：走到最近的岸邊釣魚
+      isl.pending = { type: 'fun', obj: { kind: 'sea', x: t.fx, y: t.fy, reach: 2.2 } };
       if (!islWalkTo(null, t.x, t.y)) isl.pending = null;
       return;
     }
@@ -19285,6 +19289,10 @@ function islFun(o) {
     isl.shellGot[o.id] = true; Sound.play('pickUp'); islAddFx('spark', o.x, o.y, 900); kidMoodUp(1);
     gotCard('🐚', '貝殼', ['撿到一個貝殼！好漂亮', '沙灘上的貝殼～'][Math.floor(Math.random() * 2)]);
   }
+}
+function islRodHint() {   // 沒拿釣竿點到水：一分鐘最多提醒一次
+  const now = performance.now(); if (now - (isl.rodHintAt || -1e9) < 60000) return; isl.rodHintAt = now;
+  toast('🎣 想釣魚的話，先點左下角的「釣竿」，再點水邊喔！');
 }
 function islSetTool(id, byButton) {
   if (!isl) return;

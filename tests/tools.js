@@ -10,9 +10,13 @@ const { chromium } = require('playwright');
     openIsland(); await wait(150); const m = isl.m;
     out.toolBtns = [...document.querySelectorAll('.isl-tool')].map(x=>x.textContent);
     const scr=(fx,fy)=>{ isl.cam.x=isl.x; isl.cam.y=isl.y; const v=islView(), rr=isl.cv.getBoundingClientRect(); return {clientX: rr.left+v.W/2+(fx*32-v.cx)*v.s, clientY: rr.top+v.H/2+(fy*32-v.cy)*v.s}; };   // 鏡頭跟著她，每次重算
-    // 🎣 點海：自動拿釣竿、走到岸邊、甩竿
+    // 🎣 點海：要先拿釣竿才會走到岸邊甩竿
     let sea=null; for (let y=0;y<m.H&&!sea;y++) for (let x=0;x<m.W&&!sea;x++) if (!m.land[y][x] && Math.abs(x-isl.x)<14 && Math.abs(y-isl.y)<10) sea=[x,y];
-    islTap(scr(sea[0]+.5, sea[1]+.5), false); out.toolAfterSeaTap = isl.tool; out.seaPending = isl.pending && isl.pending.obj && isl.pending.obj.kind;
+    // 沒拿釣竿點海：只走過去，不會釣魚（家長：經過海邊太容易觸發釣魚）
+    islSetTool(null); islTap(scr(sea[0]+.5, sea[1]+.5), false); out.noRodNoFish = isl.tool !== 'rod' && !(isl.pending && isl.pending.obj); isl.path = []; isl.pending = null;
+    if (typeof ISL_POND !== 'undefined') { islTap(scr(ISL_POND.x+1.5, ISL_POND.y+1), false); out.noRodNoPond = !(isl.pending && isl.pending.obj); isl.path = []; isl.pending = null; }
+    // 拿著釣竿點海：走到岸邊、甩竿
+    islSetTool('rod'); islTap(scr(sea[0]+.5, sea[1]+.5), false); out.toolAfterSeaTap = isl.tool; out.seaPending = isl.pending && isl.pending.obj && isl.pending.obj.kind;
     for (let i=0;i<600 && isl && !isl.act;i++) islStep(.03);
     out.fishingStarted = !!(isl.act && isl.act.kind==='fish' && isl.act.sea); out.onLand = islPass(m, Math.floor(isl.x), Math.floor(isl.y));
     const b0=G.bells, fishN=Object.keys(G.fish).length;
