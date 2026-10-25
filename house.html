@@ -5231,8 +5231,11 @@ function normalizeSave(g) {
       on: typeof a.on === 'boolean' ? a.on : def.on,
       day: Number.isInteger(a.day) && a.day >= 0 && a.day <= 6 ? a.day : def.day,
       amt: Number.isInteger(a.amt) && a.amt >= 0 && a.amt <= 10000 ? a.amt : def.amt,
-      paid: typeof a.paid === 'string' ? a.paid : allowPeriod(Number.isInteger(a.day) && a.day >= 0 && a.day <= 6 ? a.day : def.day)
-    } : def; }
+      paid: typeof a.paid === 'string' ? a.paid : allowPeriod(Number.isInteger(a.day) && a.day >= 0 && a.day <= 6 ? a.day : def.day),
+      v2: 1
+    } : def;
+    /* 預設從 3,000 改成 10,000（家長）：舊存檔還是舊的預設 3,000、家長沒改過的，換成 10,000；只換一次（v2），之後家長再調成多少都照家長的 */
+    if (a && typeof a === 'object' && !a.v2 && out.allow.amt === 3000) out.allow.amt = 10000; }
   out.hwPrize = (Array.isArray(out.hwPrize) ? out.hwPrize : []).filter(x => typeof x === 'string');
   if (!num(out.hwEarned) || out.hwEarned < 0) out.hwEarned = 0;
   if (out.ghost && (!Number.isInteger(out.ghost.n) || out.ghost.n < 1 || out.ghost.n > 9)) out.ghost.n = 1;
@@ -5576,7 +5579,7 @@ function allowPeriod(day) {
   const d = new Date(), back = (d.getDay() - day + 7) % 7, s = new Date(d.getFullYear(), d.getMonth(), d.getDate() - back);
   return `${s.getFullYear()}-${s.getMonth() + 1}-${s.getDate()}`;
 }
-function allowDefault() { return { on: true, day: 0, amt: 3000, paid: allowPeriod(0) }; }   // function（不是 const）：讀存檔的時候就會用到，const 會是「還沒定義」
+function allowDefault() { return { on: true, day: 0, amt: 10000, paid: allowPeriod(0), v2: 1 }; }   // 家長：預設每週送 10,000 元   // function（不是 const）：讀存檔的時候就會用到，const 會是「還沒定義」
 function today() {
   const d = new Date();
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
@@ -10267,12 +10270,12 @@ function openAllowanceSettings() {
   const day = document.createElement('select'), amt = document.createElement('select'), on = document.createElement('select');
   [['1', '要送'], ['0', '不送']].forEach(([v, t]) => { const o = new Option(t, v); on.add(o); }); on.value = a.on ? '1' : '0';
   ['日', '一', '二', '三', '四', '五', '六'].forEach((t, i) => day.add(new Option('星期' + t, String(i)))); day.value = String(a.day);
-  ALLOW_AMTS.filter(v => v > 0).forEach(v => amt.add(new Option(fmt(v) + ' 元', String(v)))); amt.value = String(ALLOW_AMTS.includes(a.amt) ? a.amt : 3000);
+  ALLOW_AMTS.filter(v => v > 0).forEach(v => amt.add(new Option(fmt(v) + ' 元', String(v)))); amt.value = String(ALLOW_AMTS.includes(a.amt) ? a.amt : 10000);
   [on, day, amt].forEach(x => { x.className = 'textin'; x.style.marginBottom = '8px'; card.appendChild(x); });
   const ok = el('button', 'big', '儲存');
   ok.onclick = () => {
     const wasDay = G.allow.day;
-    G.allow.on = on.value === '1'; G.allow.day = +day.value; G.allow.amt = +amt.value;
+    G.allow.on = on.value === '1'; G.allow.day = +day.value; G.allow.amt = +amt.value; G.allow.v2 = 1;
     if (G.allow.day !== wasDay && G.allow.paid === allowPeriod(wasDay)) G.allow.paid = allowPeriod(G.allow.day);   // 換了星期幾：這個禮拜已經領過就不要再領一次
     saveGame(); $('#modal').hidden = true; toast('💵 零用錢設定好了'); renderTab();
   };

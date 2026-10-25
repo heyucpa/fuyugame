@@ -24,6 +24,14 @@ const { chromium } = require('playwright');
     giftReset(); G.allow.paid=allowPeriod(dow);
     // 設定畫面
     openTab('save'); out.btn=[...document.querySelectorAll('#tabBody button')].some(x=>/調整零用錢/.test(x.textContent)); openAllowanceSettings(); out.settingsOpen=!$('#modal').hidden; $('#modal').hidden=true;
+    // 預設 10,000：新存檔是 10,000；舊存檔還是舊預設 3,000 的換成 10,000（只換一次）；家長改過的照家長的
+    out.newAmt = allowDefault().amt;
+    const raw = JSON.parse(localStorage.getItem(SAVE_KEY));
+    out.oldUp = normalizeSave(Object.assign({}, raw, { allow: { on: true, day: 0, amt: 3000, paid: 'x' } })).allow.amt;
+    out.parentKept = normalizeSave(Object.assign({}, raw, { allow: { on: true, day: 0, amt: 3000, paid: 'x', v2: 1 } })).allow.amt;
+    out.parent5000 = normalizeSave(Object.assign({}, raw, { allow: { on: true, day: 0, amt: 5000, paid: 'x' } })).allow.amt;
     return out; });
-  console.log(JSON.stringify(r), errs); await b.close();
+  console.log(JSON.stringify(r), errs);
+  console.log(r.newAmt === 10000 && r.oldUp === 10000 && r.parentKept === 3000 && r.parent5000 === 5000 ? '✅ 預設 10,000 正確' : '❌ 預設零用錢不對');
+  await b.close();
 })();
