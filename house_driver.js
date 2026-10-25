@@ -4321,7 +4321,7 @@
       if (document.getElementById('showcase')) fails.push('看過的書又跳大圖');
       G.friends = {}; scClear(); newFriendShowcase(NEIGHBORS[0]); scShown(/好朋友 0 \/ |新朋友/, '新朋友');
       G.fish = {}; scClear(); catchFish(FISH[1]); scShown(/小丑魚[\s\S]*魚類圖鑑 1 \//, '新的魚');
-      if (document.querySelector('#showcase .sc-emoji').textContent !== '🐠') fails.push('小丑魚的大圖不是 🐠');
+      if (!document.querySelector('#showcase canvas')) fails.push('釣到新的魚沒有魚的圖');   // 每種魚都有自己的圖（畫在 canvas 上）
       // 排隊：一次拿兩樣，先跳第一個，關掉後跳第二個
       G.fish = {}; scClear(); catchFish(FISH[0]); catchFish(FISH[2]);
       if (SC_QUEUE.length !== 1) fails.push('一次拿兩樣沒有排隊（排了 ' + SC_QUEUE.length + ' 個）');
@@ -4907,12 +4907,12 @@
     if (document.querySelector('#tabBody').textContent.indexOf('回家才能換壁紙地板') < 0) fails.push('在叔叔家的我的東西沒有說不能換壁紙');
     shopKind = 'paper'; openTab('shop');
     if (document.querySelector('#tabBody').textContent.indexOf('回家才能買壁紙地板') < 0) fails.push('在叔叔家的商店沒有說不能買壁紙');
-    // 就算在別人家點到壁紙卡片，也不能說成「鈴錢不夠」（錢明明夠）
+    // 就算在別人家點到壁紙卡片，也不能說成「錢不夠」（錢明明夠）
     var lastToast = '', realToast = toast;
     toast = function(t){ lastToast = t; };
     try { var awayGrid = decoGrid('wall', WALLPAPERS, G.walls, 'wp_cream', 'own'); awayGrid.querySelector('.card').onclick(); }
     finally { toast = realToast; }
-    if (/鈴錢不夠/.test(lastToast) || !/回家/.test(lastToast)) fails.push('在叔叔家點壁紙的提示不對：' + lastToast);
+    if (/錢不夠/.test(lastToast) || !/回家/.test(lastToast)) fails.push('在叔叔家點壁紙的提示不對：' + lastToast);
     G.away = null; shopKind = 'all';
     // 賣東西模式也要看得到壁紙
     sellMode = true; openTab('inv');

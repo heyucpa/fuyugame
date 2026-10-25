@@ -676,6 +676,11 @@ button.pass { font: inherit; }
 .movie-sub { min-height: 44px; margin-top: 8px; padding: 8px 12px; border-radius: 10px; background: rgba(0,0,0,.55); color: #fff; font-size: 17px; font-weight: 700; text-align: center; line-height: 1.4; }
 .fee-big { font-size: 72px; text-align: center; line-height: 1.2; }
 .fee-have { text-align: center; font-weight: 700; font-size: 17px; }
+.fish-catch { position: fixed; left: 50%; top: 70px; transform: translateX(-50%); z-index: 90; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 18px 12px; background: #fffaf0; border: 3px solid #6bb6ff; border-radius: 18px; box-shadow: 0 8px 24px rgba(0,0,0,.25); pointer-events: none; animation: fishPop .35s cubic-bezier(.3, 1.6, .5, 1) both; transition: opacity .4s, transform .4s; }
+.fish-catch b { font-size: 20px; } .fish-catch span { font-size: 15px; color: #7a5a3a; font-weight: 700; }
+.fish-catch.out { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+@keyframes fishPop { from { transform: translateX(-50%) scale(.4); opacity: 0; } to { transform: translateX(-50%) scale(1); opacity: 1; } }
+.fish-dex-nm { display: inline-flex; align-items: center; gap: 6px; }
 .spar-row { display: flex; gap: 12px; justify-content: center; margin: 8px 0; }
 .spar-row button { min-width: 120px; font-size: 20px; }
 .music-menu { position: fixed; z-index: 70; background: var(--panel, #fffaf0); border: 2px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
@@ -885,7 +890,7 @@ button, .card, .place-pick, .lv-btn, .dex-tile, .adv-ep, .gift-opt, .trick-cell,
     <button class="pill sound" id="btnBgm" title="背景音樂">🎵</button>
     <button class="pill sound" id="btnSfx" title="音效">🔊</button>
     <span class="pill" title="居家評分">⭐ <b id="score">0</b></span>
-    <span class="pill bells" title="鈴錢">💰 <b id="bells">0</b></span>
+    <span class="pill bells" title="錢">💰 <b id="bells">0</b></span>
   </div>
 </header>
 
@@ -1861,7 +1866,7 @@ const FURNITURE_USE = {
 // {家具} 會換成家具名稱
 // 115.9.18 謝會要求台詞多一些；不放「每天來」這類催打卡的話，也不提身高
 const LINE_TYPES = [
-  { key: 'poke', label: '點她的時候', lines: ['今天也辛苦了！', '要不要休息一下？', '這個家越來越漂亮了～', '聽說釣到鯨鯊可以賣很多鈴錢喔', '搖搖樹說不定會掉家具下來', '嘿嘿，被你發現了！', '你今天過得好嗎？', '我們來布置房間吧！', '要不要一起玩小遊戲？', '我最喜歡這個家了～', '你點我幹嘛啦～哈哈', '今天想穿什麼衣服呢？', '寵物們都好可愛喔！'] },
+  { key: 'poke', label: '點她的時候', lines: ['今天也辛苦了！', '要不要休息一下？', '這個家越來越漂亮了～', '聽說釣到鯨鯊可以賣很多錢喔', '搖搖樹說不定會掉家具下來', '嘿嘿，被你發現了！', '你今天過得好嗎？', '我們來布置房間吧！', '要不要一起玩小遊戲？', '我最喜歡這個家了～', '你點我幹嘛啦～哈哈', '今天想穿什麼衣服呢？', '寵物們都好可愛喔！'] },
   { key: 'chat', label: '自己走來走去時的閒聊', lines: ['今天天氣真好～', '啦啦啦～♪', '房間要擺什麼好呢…', '等一下要做什麼呢？', '好想吃點心喔', '這裡如果放一盆花應該很漂亮', '我們家好溫暖～', '哼哼哼～', '來伸個懶腰！', '嗯…好像少了點什麼', '今天也要開開心心的！'] },
   { key: 'like', label: '走到家具旁邊', hint: '可用 {家具}', lines: ['「{家具}」我好喜歡～', '「{家具}」看起來好棒', '這個「{家具}」放在這裡剛剛好', '每次看到「{家具}」都好開心', '「{家具}」好可愛喔！'] },
   { key: 'newItem', label: '放新家具的時候', hint: '可用 {家具}', lines: ['新的「{家具}」耶！', '哇，是「{家具}」！', '「{家具}」放這裡好好看！', '房間又變漂亮了！', '謝謝你買「{家具}」給我～'] },
@@ -4868,7 +4873,7 @@ function openGiftBox() {
     Sound.play('coin');
     env.classList.add('open');
     const box = el('div', 'news');
-    [['💰', '裝潢費 ' + OPEN_GIFT_BELLS.toLocaleString() + ' 鈴錢'], ['🥚', '一顆寵物蛋！摸摸牠就會孵出來']].forEach(([ic, tx]) => {
+    [['💰', '裝潢費 ' + OPEN_GIFT_BELLS.toLocaleString() + ' 元'], ['🥚', '一顆寵物蛋！摸摸牠就會孵出來']].forEach(([ic, tx]) => {
       const r = el('div', 'news-row'); r.append(el('span', 'news-ic', ic), el('span', 'news-tx', tx)); box.appendChild(r);
     });
     card.querySelector('.gift-tx').replaceWith(box);
@@ -6015,7 +6020,7 @@ function decoSellBlock(kind, id) {
   return null;
 }
 
-// 賣掉一件；成功回傳拿到的鈴錢，不能賣回傳 0（賣東西不算「賺到」，不計入累計賺到）
+// 賣掉一件；成功回傳拿到的錢，不能賣回傳 0（賣東西不算「賺到」，不計入累計賺到）
 function sellFurniture(id) {
   if (furnSellBlock(id)) return 0;
   G.inv[id]--;
@@ -6170,7 +6175,7 @@ const FISH_EMOJI = { 小丑魚: '🐠', 金魚: '🐠', 鯨鯊: '🦈', 空罐�
 function catchFish(f) {
   if (!G.fish[f.name]) {
     const n = FISH.filter(x => G.fish[x.name]).length + 1;
-    showcase(FISH_EMOJI[f.name] || '🐟', f.name, `🐟 魚類圖鑑 ${n} / ${FISH.length}`, { n, all: FISH.length });
+    showcase(typeof fishArt === 'function' ? fishArt(f.name, 180, 108) : (FISH_EMOJI[f.name] || '🐟'), f.name, `🐟 魚類圖鑑 ${n} / ${FISH.length}`, { n, all: FISH.length });
     sessionLog.newThings.push('🐟 ' + f.name);
   }
   G.fish[f.name] = (G.fish[f.name] || 0) + 1;
@@ -9892,12 +9897,12 @@ function visitorGone(now) {
   vis.nextAt = now + VISIT_GAP_MS[0] + Math.random() * (VISIT_GAP_MS[1] - VISIT_GAP_MS[0]);
 }
 
-// 回家時六成機率送禮物：鈴錢、寵物食物或小可愛的食物
+// 回家時六成機率送禮物：錢、寵物食物或小可愛的食物
 function visitorGift() {
   if (Math.random() > .6) return null;
   const r = Math.random();
   let what;
-  if (r < .4) { const b = 100 * (1 + Math.floor(Math.random() * 3)); addBells(b); what = `${b} 鈴錢`; }
+  if (r < .4) { const b = 100 * (1 + Math.floor(Math.random() * 3)); addBells(b); what = `${b} 元`; }
   else if (r < .7) { const fl = FOODS.filter(x => !x.potion), f = fl[Math.floor(Math.random() * fl.length)]; G.food[f.id] = (G.food[f.id] || 0) + 1; what = `${f.emoji}${f.name}`; }
   else { const fl = KID_FOODS.filter(x => !x.potion && !x.season && !x.placeOnly), f = fl[Math.floor(Math.random() * fl.length)]; G.kidFood[f.id] = (G.kidFood[f.id] || 0) + 1; what = `${f.emoji}${f.name}`; }
   setTimeout(() => {
@@ -10188,7 +10193,7 @@ function openAllowanceBox() {
     G.bells += n;                               // 零用錢不算「賺到的」
     giftVisit.box = null;
     Sound.play('coin'); env.classList.add('open');
-    const row = el('div', 'news-row'); row.append(el('span', 'news-ic', '💰'), el('span', 'news-tx', `${fmt(n)} 鈴錢！`));
+    const row = el('div', 'news-row'); row.append(el('span', 'news-ic', '💰'), el('span', 'news-tx', `${fmt(n)} 元！`));
     const box = el('div', 'news'); box.appendChild(row);
     card.querySelector('.gift-tx').replaceWith(box);
     btn.textContent = '謝謝爸爸媽媽！';
@@ -10208,7 +10213,7 @@ function openAllowanceSettings() {
   const day = document.createElement('select'), amt = document.createElement('select'), on = document.createElement('select');
   [['1', '要送'], ['0', '不送']].forEach(([v, t]) => { const o = new Option(t, v); on.add(o); }); on.value = a.on ? '1' : '0';
   ['日', '一', '二', '三', '四', '五', '六'].forEach((t, i) => day.add(new Option('星期' + t, String(i)))); day.value = String(a.day);
-  ALLOW_AMTS.filter(v => v > 0).forEach(v => amt.add(new Option(fmt(v) + ' 鈴錢', String(v)))); amt.value = String(ALLOW_AMTS.includes(a.amt) ? a.amt : 3000);
+  ALLOW_AMTS.filter(v => v > 0).forEach(v => amt.add(new Option(fmt(v) + ' 元', String(v)))); amt.value = String(ALLOW_AMTS.includes(a.amt) ? a.amt : 3000);
   [on, day, amt].forEach(x => { x.className = 'textin'; x.style.marginBottom = '8px'; card.appendChild(x); });
   const ok = el('button', 'big', '儲存');
   ok.onclick = () => {
@@ -10555,7 +10560,7 @@ function visitorGiveCandy() {
   petBurst({ kind: 'emoji', emoji: '🍬', spread: 20 }, 3, a);
   Sound.play('coin');
   visSay(pickLine('visitorCandy', visVars()), 2600);
-  // 回禮：還沒收集的限定家具（三成），不然鈴錢
+  // 回禮：還沒收集的限定家具（三成），不然錢
   const fresh = SEASON_FURNITURE.filter(d => d.season === 'halloween' && !(G.seasonDex || {})[d.id]);
   setTimeout(() => {
     if (fresh.length && Math.random() < .3) {
@@ -10564,7 +10569,7 @@ function visitorGiveCandy() {
       G.seasonDex = Object.assign({}, G.seasonDex, { [def.id]: true });
       const n2 = seasonDexCount(), all = SEASON_FURNITURE.length;
       try { showcase(renderThumb(def, 150), def.name, `🎃 節日收藏 ${n2} / ${all}（動物朋友送的！）`, { n: n2, all }); } catch (e) {}
-    } else { const b = 200 + 100 * Math.floor(Math.random() * 3); addBells(b); toast(`🎁 ${vis.who ? vis.who.short : '朋友'}回送你 ${b} 鈴錢！`); }
+    } else { const b = 200 + 100 * Math.floor(Math.random() * 3); addBells(b); toast(`🎁 ${vis.who ? vis.who.short : '朋友'}回送你 ${b} 元！`); }
     saveGame(); commit();
   }, 1200);
 }
@@ -11400,7 +11405,7 @@ function walkTrip(label, done, dest) {
     fire();                       // 被點掉也算數，不然跳過等於懲罰她
     layer.remove();
     tripDone = null;
-    if (ev.kind === 'coin') toast(`💰 路上撿到 ${ev.gain} 鈴錢！`);
+    if (ev.kind === 'coin') toast(`💰 路上撿到 ${ev.gain} 元！`);
     else if (ev.kind === 'friend' && ev.who) toast(`👋 路上遇到${ev.who}`);
     saveGame();
     done();
@@ -11464,7 +11469,7 @@ function walkTrip(label, done, dest) {
       g.font = '30px sans-serif'; g.textAlign = 'center';
       g.fillText(ev.emoji, W / 2 + 54, H - 54 + Math.sin(t * 5) * 4);
       g.font = '600 14px "Noto Sans TC", sans-serif';
-      const txt = ev.kind === 'coin' ? `撿到 ${ev.gain} 鈴錢！`
+      const txt = ev.kind === 'coin' ? `撿到 ${ev.gain} 元！`
                 : ev.kind === 'friend' && ev.who ? `遇到${ev.who}，打個招呼～` : ev.say;
       const tw = g.measureText(txt).width;
       g.fillStyle = 'rgba(255,255,255,.95)';
@@ -12022,7 +12027,7 @@ setTimeout(() => checkInviteHash(), 2500);
    對方打開：跳出「誰來過、送了什麼」，記進訪客簿。
    ・回禮卡上寫著是給哪個存檔的（邀請卡的編號），給別人的不收
    ・同一張卡打開兩次只算一次；同一個人一天只會真的拿到一次禮物（之後的卡片還是會記進訪客簿）
-   ・禮物是小東西（點心、小花瓶、貼紙），不給鈴錢，不會變成刷錢的方法 */
+   ・禮物是小東西（點心、小花瓶、貼紙），不給錢，不會變成刷錢的方法 */
 const VISIT_GIFTS = [
   { id: 'cookie', icon: '🍪', name: '餅乾', give: () => { G.food.cookie = (G.food.cookie || 0) + 1; } },
   { id: 'cake', icon: '🍰', name: '草莓蛋糕', give: () => { G.food.cake = (G.food.cake || 0) + 1; } },
@@ -14129,7 +14134,7 @@ function sellToggle(body, extraNote) {
   const b = el('button', 'sellbtn' + (sellMode ? ' on' : ''), sellMode ? '✓ 賣完了，回到一般模式' : '💰 賣回商店（半價）');
   b.onclick = () => { sellMode = !sellMode; Sound.play('click'); renderTab(); };
   body.appendChild(b);
-  if (sellMode) body.appendChild(note(`點要賣的東西，可以拿回原價一半的鈴錢。賣掉之後想再買，要付原價喔。${extraNote || ''}`));
+  if (sellMode) body.appendChild(note(`點要賣的東西，可以拿回原價一半的錢。賣掉之後想再買，要付原價喔。${extraNote || ''}`));
 }
 
 // 賣之前一定先問一次，避免小朋友點錯
@@ -14150,7 +14155,7 @@ function confirmSell(name, price, doSell) {
   yes.onclick = () => {
     close();
     const got = doSell();
-    if (got) { Sound.play('coin'); toast(`賣掉「${name}」，拿到 ${fmt(got)} 鈴錢`); }
+    if (got) { Sound.play('coin'); toast(`賣掉「${name}」，拿到 ${fmt(got)} 元`); }
     commit();
   };
   no.onclick = () => { close(); Sound.play('click'); };
@@ -14183,7 +14188,7 @@ function trophySellCard(def, id) {
         yes.disabled = true;
         const got = sellFurniture(id);
         $('#modal').hidden = true;
-        if (got) { Sound.play('coin'); toast(`賣掉「${def.name}」，拿到 ${fmt(got)} 鈴錢`); }
+        if (got) { Sound.play('coin'); toast(`賣掉「${def.name}」，拿到 ${fmt(got)} 元`); }
         commit();
       };
       no.onclick = () => { $('#modal').hidden = true; Sound.play('click'); };
@@ -14274,7 +14279,7 @@ function foodShopGrid(list, stock, buy, subText) {
     if (stock[food.id]) c.appendChild(el('span', 'ct', '×' + stock[food.id]));
     c.onclick = () => {
       if (buy(food.id)) { Sound.play('coin'); toast(`買了「${food.name}」`); commit(); }
-      else toast('鈴錢不夠，去賺一點吧！');
+      else toast('錢不夠，去賺一點吧！');
     };
     fg.appendChild(c);
   });
@@ -14287,7 +14292,7 @@ function seasonShop(body, se) {
   const grid = el('div', 'grid');
   SEASON_FURNITURE.filter(d => d.season === se.id).forEach(def => {
     const card = furnCard(def, '💰 ' + fmt(def.price), () => {
-      if (!buyFurniture(def.id)) { toast('鈴錢不夠，去賺一點吧！'); return; }
+      if (!buyFurniture(def.id)) { toast('錢不夠，去賺一點吧！'); return; }
       Sound.play('coin');
       const isNew = !(G.seasonDex || {})[def.id];
       G.seasonDex = Object.assign({}, G.seasonDex, { [def.id]: true });
@@ -14306,7 +14311,7 @@ function seasonShop(body, se) {
     card.appendChild(renderGirl(Object.assign({}, G.outfit, { [c.slot]: id }), 64, 78));
     card.appendChild(el('div', 'nm', c.name));
     card.appendChild(el('div', 'pr', ownsClothes(id) ? '有了（去換裝穿）' : '💰 ' + fmt(c.price)));
-    card.onclick = () => { if (ownsClothes(id)) { openTab('dress'); return; } if (!spend(c.price)) { toast('鈴錢不夠，去賺一點吧！'); return; } G.wardrobe.push(id); Sound.play('coin'); toast(`買了「${c.name}」，去「換裝」穿上吧！`); commit(); };
+    card.onclick = () => { if (ownsClothes(id)) { openTab('dress'); return; } if (!spend(c.price)) { toast('錢不夠，去賺一點吧！'); return; } G.wardrobe.push(id); Sound.play('coin'); toast(`買了「${c.name}」，去「換裝」穿上吧！`); commit(); };
     grid.appendChild(card);
   });
   box.appendChild(grid);
@@ -14367,7 +14372,7 @@ function tabShop(body) {
     .forEach(def => {
     const card = furnCard(def, '💰 ' + fmt(def.price), () => {
       if (buyFurniture(def.id)) { Sound.play('coin'); toast(`買了「${def.name}」，放進「我的東西」了`); commit(); }
-      else toast('鈴錢不夠，去賺一點吧！');
+      else toast('錢不夠，去賺一點吧！');
     }, G.inv[def.id]);
     if (G.bells < def.price) card.classList.add('dim');
     if (def.fresh || isNewItem(def.id)) card.appendChild(el('span', 'tag new', '新'));
@@ -14425,7 +14430,7 @@ function decoGrid(kind, list, owned, current, mode) {
     c.onclick = () => {
       if (G.away) { toast('在別人家不能換壁紙地板，回家再換吧！'); return; }
       if (buyDeco(kind, item.id)) { Sound.play(has ? 'click' : 'coin'); toast(has ? `換上「${item.name}」了` : `買了「${item.name}」，已經換上了（之後在「我的東西」可以換回來）`); commit(); }
-      else toast('鈴錢不夠，去賺一點吧！');
+      else toast('錢不夠，去賺一點吧！');
     };
     grid.appendChild(c);
   });
@@ -14485,14 +14490,14 @@ function tabEarn(body) {
   body.appendChild(h3('每日禮物'));
   const gift = el('button', 'big', G.lastGift === today() ? '今天已領過 🎁' : '領取今日禮物 🎁 💰1,000');
   gift.disabled = G.lastGift === today();
-  gift.onclick = () => { const n = claimGift(); if (n) { Sound.play('coin'); toast(`收到 ${fmt(n)} 鈴錢！`); commit(); } };
+  gift.onclick = () => { const n = claimGift(); if (n) { Sound.play('coin'); toast(`收到 ${fmt(n)} 元！`); commit(); } };
   body.appendChild(gift);
 
   body.appendChild(h3('居家評分獎金'));
   const s = totalScore();
   const claim = el('button', 'big alt', G.lastClaim === today() ? '今天已領過 ⭐' : `領取評分獎金 ⭐ 💰${fmt(s)}`);
   claim.disabled = G.lastClaim === today() || s <= 0;
-  claim.onclick = () => { const n = claimScore(); if (n) { Sound.play('coin'); toast(`評分獎金 ${fmt(n)} 鈴錢！`); commit(); } };
+  claim.onclick = () => { const n = claimScore(); if (n) { Sound.play('coin'); toast(`評分獎金 ${fmt(n)} 元！`); commit(); } };
   body.appendChild(claim);
   body.appendChild(note('每天一次。家具越多、種類越多、同風格湊滿 3 件和 6 件、牆和地板搭配同風格，分數越高。'));
 
@@ -14506,7 +14511,7 @@ function tabEarn(body) {
     if (r.tired) { Sound.play('miss'); toast('🌳 ' + pickLine('treeTired')); fufuSay(pickLine('treeTired'), 3000); return; }
     if (!r.wait) { Sound.play('shake'); if (r.bells || r.food || r.item) setTimeout(() => Sound.play('coin'), 350); }
     if (r.wait) toast(`樹還在晃，${r.wait} 秒後再試`);
-    else if (r.bells) toast(`掉下 ${fmt(r.bells)} 鈴錢！`);
+    else if (r.bells) toast(`掉下 ${fmt(r.bells)} 元！`);
     else if (r.item) toast(`掉下「${r.item.name}」！放進「我的東西」了`);
     else if (r.food) toast(`掉下一顆${r.food.emoji}${r.food.name}！可以餵${petName()}`);
     else toast('🐝 蜂窩掉下來了！快跑！');
@@ -14523,7 +14528,7 @@ function tabEarn(body) {
   body.appendChild(fishBtn);
 
   body.appendChild(h3('小遊戲'));
-  body.appendChild(note(`每場 1 分鐘內玩完，分數越高拿到越多鈴錢。${G.gameBonusDay === today() ? '（今天的雙倍已經用過了，明天再來！）' : '🎁 今天第一場獎金雙倍！'}`));
+  body.appendChild(note(`每場 1 分鐘內玩完，分數越高拿到越多錢。${G.gameBonusDay === today() ? '（今天的雙倍已經用過了，明天再來！）' : '🎁 今天第一場獎金雙倍！'}`));
   const games = el('div', 'game-list');
   [['🃏', '翻牌配對', openMemoryGame], ['🧺', `${petName()}接水果`, openCatchGame], ['💦', '戳泡泡', openBubbleGame],
     ['🥤', '杯子躲貓貓', openCupGame], ['🥞', '疊疊鬆餅', openStackGame], ['🎵', '跟著唱', openSimonGame],
@@ -14633,7 +14638,8 @@ function tabBook(body) {
   body.appendChild(sec('dexFish', `🐟 魚類圖鑑 ${fishGot} / ${FISH.length}`));
   FISH.forEach(f => {
     const r = el('div', 'row');
-    r.append(el('span', '', G.fish[f.name] ? f.name : '？？？'), el('span', '', G.fish[f.name] ? `釣到 ${G.fish[f.name]} 次` : '—'));
+    const nm = el('span', 'fish-dex-nm'); try { nm.appendChild(fishArt(f.name, 54, 32, !G.fish[f.name])); } catch (e) {} nm.appendChild(document.createTextNode(G.fish[f.name] ? f.name : '？？？'));
+    r.append(nm, el('span', '', G.fish[f.name] ? `釣到 ${G.fish[f.name]} 次` : '—'));
     body.appendChild(r);
   });
   const met = NEIGHBORS.filter(n => G.friends[n.id]);
@@ -14759,7 +14765,7 @@ function confirmReset() {
   const card = $('#modalCard'), close = () => { $('#modal').hidden = true; };
   card.innerHTML = '';
   card.appendChild(el('h2', '', '⚠️ 真的要重新開始嗎？'));
-  card.appendChild(el('p', 'sell-q', '房子、家具、衣服、寵物、鈴錢，全部都會不見喔！'));
+  card.appendChild(el('p', 'sell-q', '房子、家具、衣服、寵物、錢，全部都會不見喔！'));
   try { const lt = rawLossText(JSON.stringify(G)); if (lt) card.appendChild(el('p', 'sell-q', lt)); } catch (e) {}
   // 以前這裡寫「救不回來」。現在清掉之前會自動留一份，所以講實話，
   // 但還是要她先自己存一份——自動留的那一份只有一次，再清一次就蓋掉了
@@ -14845,7 +14851,7 @@ function tabDress(body) {
   head.appendChild(preview);
   const side = el('div', 'dress-side');
   side.appendChild(el('h3', '', `幫${name}換衣服`));
-  side.appendChild(note('點衣服就能穿上；還沒有的衣服會先用鈴錢買下來，買過的隨時可以換。'));
+  side.appendChild(note('點衣服就能穿上；還沒有的衣服會先用錢買下來，買過的隨時可以換。'));
   const turn = el('button', 'mini', dressBack ? '看正面' : '轉身看背面');
   turn.onclick = () => { dressBack = !dressBack; renderTab(); };
   side.appendChild(turn);
@@ -14869,7 +14875,7 @@ function tabDress(body) {
       c.onclick = () => {
         if (wearing) return;
         if (!has) {
-          if (!spend(hs.price)) { toast('鈴錢不夠，去賺一點吧！'); return; }
+          if (!spend(hs.price)) { toast('錢不夠，去賺一點吧！'); return; }
           G.hairOwned.push(hs.id);
           Sound.play('coin');
         } else Sound.play('click');
@@ -14913,7 +14919,7 @@ function tabDress(body) {
       card.onclick = () => {
         if (wearing) return;
         const isNew = !has;
-        if (!buyAndWear(item.id)) { toast('鈴錢不夠，去賺一點吧！'); Sound.play('miss'); return; }
+        if (!buyAndWear(item.id)) { toast('錢不夠，去賺一點吧！'); Sound.play('miss'); return; }
         Sound.play(isNew ? 'coin' : 'click');
         if (isNew) toast(`買了「${item.name}」`);
         if (!fufu.pose) { fufu.jumpT = .35; fufu.back = false; } // 開心跳一下
@@ -15033,7 +15039,7 @@ function tabPets(body) {
   egg.disabled = !left || G.bells < EGG_PRICE;
   egg.onclick = () => {
     const i = buyEgg();
-    if (i == null) { toast(left ? '鈴錢不夠，去賺一點吧！' : '寵物蛋賣完了'); return; }
+    if (i == null) { toast(left ? '錢不夠，去賺一點吧！' : '寵物蛋賣完了'); return; }
     Sound.play('coin');
     switchMainPet(i);
     toast('買到一顆寵物蛋！摸摸牠讓牠孵出來吧');
@@ -15516,7 +15522,7 @@ function tabSave(body) {
     const vb = el('button', 'big alt', '🔊 選語音／試聽'); vb.onclick = () => openVoicePicker(); body.appendChild(vb); }
 
   body.appendChild(h3('💵 零用錢（家長）'));
-  body.appendChild(note(G.allow.on && G.allow.amt ? `爸爸媽媽每週星期${'日一二三四五六'[G.allow.day]}送 ${fmt(G.allow.amt)} 鈴錢。` : '現在不送零用錢。'));
+  body.appendChild(note(G.allow.on && G.allow.amt ? `爸爸媽媽每週星期${'日一二三四五六'[G.allow.day]}送 ${fmt(G.allow.amt)} 元。` : '現在不送零用錢。'));
   const allowBtn = el('button', 'big alt', '💵 調整零用錢');
   allowBtn.onclick = () => askPin('調整零用錢', openAllowanceSettings);
   body.appendChild(allowBtn);
@@ -15757,7 +15763,8 @@ function openFishing() {
       Sound.play('catchFish');
       const big = f.price >= 3000;
       result.textContent = (big ? `🎉 釣到「${f.name}」！` : `釣到「${f.name}」，`) +
-        `賣了 ${fmt(f.price)} 鈴錢` + (bonus ? `（連續 ${streak} 竿，再加 ${fmt(bonus)}）` : '');
+        `賣了 ${fmt(f.price)} 元` + (bonus ? `（連續 ${streak} 竿，再加 ${fmt(bonus)}）` : '');
+      if (typeof showFishCatch === 'function' && G.fish[f.name] > 1) showFishCatch(f, bonus ? `＋${fmt(bonus)}` : '');   // 魚的圖（第一次的會跳圖鑑大圖）
       commit();
     } else {
       // 沒拉到也告訴她剛剛是什麼——「那是鮪魚！」會讓她想再試
@@ -16363,7 +16370,7 @@ function openMemoryGame() {
         status();
         if (found === icons.length) {
           const bells = payReward(w, Math.max(200, 1200 - (moves - icons.length) * 60));   // 回傳的才是真的拿到的（第一場會雙倍）
-          w.status.textContent = `🎉 全部配對完成！${moves} 步，拿到 ${fmt(bells)} 鈴錢`;
+          w.status.textContent = `🎉 全部配對完成！${moves} 步，拿到 ${fmt(bells)} 元`;
           fufuSay('好厲害！');
           gameButtons(w, openMemoryGame);
         }
@@ -16472,7 +16479,7 @@ function openCatchGame() {
         patPet(5);                                                // 一起玩，寵物心情變好
       });
       setTimeout(() => petGainGrowth(GROWTH.game), 400);         // 一起玩也會長大
-      w.status.textContent = `🎉 時間到！分數 ${score}，拿到 ${fmt(bells)} 鈴錢${score >= 200 ? '，還多送一顆🍎' : ''}`;
+      w.status.textContent = `🎉 時間到！分數 ${score}，拿到 ${fmt(bells)} 元${score >= 200 ? '，還多送一顆🍎' : ''}`;
       gameButtons(w, openCatchGame);
       return;
     }
@@ -16552,7 +16559,7 @@ function openBubbleGame() {
     if (left <= 0 && !ended) {
       ended = true;
       const bells = payReward(w, score);
-      w.status.textContent = `🎉 時間到！分數 ${score}，拿到 ${fmt(bells)} 鈴錢`;
+      w.status.textContent = `🎉 時間到！分數 ${score}，拿到 ${fmt(bells)} 元`;
       gameButtons(w, openBubbleGame);
       return;
     }
@@ -16691,7 +16698,7 @@ function playCupGame(w, L) {
       ended = true;
       const bells = payReward(w, correct * L.per + (correct === ROUNDS ? L.all : 0) + extra);
       setTimeout(() => petGainGrowth(GROWTH.game), 400);
-      w.status.textContent = `🎉 找到 ${correct} 次！拿到 ${fmt(bells)} 鈴錢${correct === ROUNDS ? `（全部答對加獎 ${L.all}）` : ''}`;
+      w.status.textContent = `🎉 找到 ${correct} 次！拿到 ${fmt(bells)} 元${correct === ROUNDS ? `（全部答對加獎 ${L.all}）` : ''}`;
       gameButtons(w, openCupGame);
     }, 1400));
   });
@@ -16757,7 +16764,7 @@ function openStackGame(skin) {
     ended = true; moving = null;
     const n = layers.length - 1;
     const bells = payReward(w, n * 30 + perfects * 20 + (full ? 200 : 0));
-    w.status.textContent = `🎉 ${full ? '疊到最高了！' : '倒了！'}疊了 ${n} 層、完美 ${perfects} 次，拿到 ${fmt(bells)} 鈴錢`;
+    w.status.textContent = `🎉 ${full ? '疊到最高了！' : '倒了！'}疊了 ${n} 層、完美 ${perfects} 次，拿到 ${fmt(bells)} 元`;
     gameButtons(w, () => openStackGame(skin));
   }
   const onKey = e => { if (e.code === 'Space') { e.preventDefault(); drop(); } };
@@ -16861,7 +16868,7 @@ function openSimonGame() {
     ended = true; listening = false;
     const cleared = seq.length - 1;
     const bells = payReward(w, cleared * 90 + (cleared >= MAX_LEVEL ? 300 : 0));
-    w.status.textContent = `🎉 過了 ${cleared} 關，拿到 ${fmt(bells)} 鈴錢${cleared >= MAX_LEVEL ? '（全部過關加獎 300）' : ''}`;
+    w.status.textContent = `🎉 過了 ${cleared} 關，拿到 ${fmt(bells)} 元${cleared >= MAX_LEVEL ? '（全部過關加獎 300）' : ''}`;
     gameButtons(w, openSimonGame);
   }
 
@@ -18773,7 +18780,7 @@ const ISL_LAMPS = [[23, 17], [29, 17], [23, 22], [29, 22], [26, 14], [14, 17], [
    左下角三顆道具：點了就拿在手上。小孩不用先選也行——點水就自動拿釣竿、點蝴蝶自動拿網子；鏟子要自己拿出來再點草地。
    🎣 釣竿：點海邊或池塘 → 走到水邊甩竿 → 浮標「❗」的時候點一下就釣到（跟「賺錢」的釣魚同一批魚、同一本圖鑑；海裡比較容易釣到大魚）
    🦋 網子：點蝴蝶 → 走過去揮網 → 抓到收進蝴蝶相簿（跟捉蝴蝶小遊戲同一本）；沒抓到牠會飛走
-   ⛏️ 鏟子：拿著鏟子點草地 → 挖一個洞，可能挖到鈴錢、蘋果、貝殼，或只是蚯蚓（一天最多挖到 6 樣東西）
+   ⛏️ 鏟子：拿著鏟子點草地 → 挖一個洞，可能挖到錢、蘋果、貝殼，或只是蚯蚓（一天最多挖到 6 樣東西）
    🐝 搖樹：偶爾掉下蜂窩，蜜蜂追著她跑一下，她會緊張、心情和飽足掉一點點（不會受傷，過一下就好） */
 const ISL_DIG_MAX = 6;
 function islDigState() { const d = today(); if (!G.islDig || G.islDig.d !== d) G.islDig = { d, n: 0 }; return G.islDig; }
@@ -19048,7 +19055,7 @@ function islDoPending() {
     if (r.tired) { Sound.play('miss'); toast('🌳 ' + pickLine('treeTired')); return; }
     if (r.wait) { toast(`樹還在晃，${r.wait} 秒後再試`); return; }
     Sound.play('shake'); if (r.bells || r.food || r.item) setTimeout(() => Sound.play('coin'), 350);
-    if (r.bells) toast(`掉下 ${fmt(r.bells)} 鈴錢！`);
+    if (r.bells) toast(`掉下 ${fmt(r.bells)} 元！`);
     else if (r.item) toast(`掉下「${r.item.name}」！放進「我的東西」了`);
     else if (r.food) toast(`掉下一顆${r.food.emoji}${r.food.name}！可以餵${petName()}`);
     else islBees(p.x + .5, p.y + .5);
@@ -19126,7 +19133,7 @@ function islStep(dt) {
     const st = islCoinState(); if (st.n >= ISL_COIN_MAX) return false;
     const n = ISL_COIN_BELLS[Math.floor(Math.random() * ISL_COIN_BELLS.length)];
     st.n++; st.got.push(c.x + ',' + c.y); addBells(n); Sound.play('coin'); islAddFx('coin', c.x + .5, c.y + .3, 1100, { n });
-    toast(`💰 撿到 ${n} 鈴錢！${st.n >= ISL_COIN_MAX ? '（今天的金幣撿完了，明天再來）' : ''}`); saveGame(); refreshTop();
+    toast(`💰 撿到 ${n} 元！${st.n >= ISL_COIN_MAX ? '（今天的金幣撿完了，明天再來）' : ''}`); saveGame(); refreshTop();
     return false;
   });
   if (Math.random() < dt * .25) { const p = ISL_POND; islAddFx('fish', p.x + .6 + Math.random() * (p.w - 1.2), p.y + .8 + Math.random() * (p.h - 1.6), 1300); }   // 池塘偶爾有魚跳
@@ -19247,7 +19254,7 @@ function islDraw(now) {
 }
 /* ===== 🎃 大地圖上的小趣味 =====
    點得到的東西：南瓜燈（萬聖節）、噴水池、池塘（魚跳出來）、海鷗、沙灘貝殼。
-   不給鈴錢；南瓜每天最多吐 3 顆萬聖節糖果（會算進糖果收集），其餘都是看了開心的小驚喜。 */
+   不給錢；南瓜每天最多吐 3 顆萬聖節糖果（會算進糖果收集），其餘都是看了開心的小驚喜。 */
 function islFunAt(t) {
   const m = isl.m, fx = t.fx, fy = t.fy;
   if (halloweenActive()) { const i = ISL_PUMPKINS.findIndex(([x, y]) => Math.hypot(x + .5 - fx, y + .5 - fy) < .8); if (i >= 0) return { kind: 'pumpkin', id: i, x: ISL_PUMPKINS[i][0] + .5, y: ISL_PUMPKINS[i][1] + 1.2, ox: ISL_PUMPKINS[i][0] + .5, oy: ISL_PUMPKINS[i][1] + .5, reach: 2.2 }; }
@@ -19306,7 +19313,7 @@ function islPull() {
   catchFish(f);
   Sound.play('catchFish'); kidMoodUp(2);
   islAddFx('fishup', isl.x + isl.facing * .6, isl.y - 1.2, 1600, { emoji: FISH_EMOJI[f.name] || '🐟' });
-  toast(`🎣 釣到「${f.name}」！賣了 ${fmt(f.price)} 鈴錢`);
+  if (G.fish[f.name] > 1) showFishCatch(f); else toast(`🎣 釣到「${f.name}」！賣了 ${fmt(f.price)} 元`);   // 第一次釣到會跳出圖鑑大圖；之後跳小卡
   try { kidMakeFace('joy', 1800); } catch (e) {}
   isl.act = null; saveGame(); refreshTop();
 }
@@ -19346,7 +19353,7 @@ function islActStep(now) {   // 正在做的事（釣魚、揮網、挖洞）
     if (now > a.t0 + 1000) {
       isl.act = null; isl.holes.push({ x: a.x, y: a.y });
       const st = islDigState(), r = Math.random(), cx = a.x + .5, cy = a.y + .3;
-      if (st.n < ISL_DIG_MAX && r < .4) { const n = 10 + 10 * Math.floor(Math.random() * 4); st.n++; addBells(n); Sound.play('coin'); islAddFx('coin', cx, cy, 1100, { n }); toast(`⛏️ 挖到 ${n} 鈴錢！`); }
+      if (st.n < ISL_DIG_MAX && r < .4) { const n = 10 + 10 * Math.floor(Math.random() * 4); st.n++; addBells(n); Sound.play('coin'); islAddFx('coin', cx, cy, 1100, { n }); toast(`⛏️ 挖到 ${n} 元！`); }
       else if (st.n < ISL_DIG_MAX && r < .6) { st.n++; G.food.apple = (G.food.apple || 0) + 1; Sound.play('coin'); islAddFx('popup', cx, cy, 1300, { emoji: '🍎' }); toast(`⛏️ 挖到一顆🍎蘋果！可以餵${petName()}`); }
       else if (st.n < ISL_DIG_MAX && r < .72) { st.n++; Sound.play('pickUp'); islAddFx('popup', cx, cy, 1300, { emoji: '🐚' }); kidMoodUp(1); toast('⛏️ 挖到一個貝殼！'); }
       else { Sound.play('boing'); islAddFx('popup', cx, cy, 1300, { emoji: r < .86 ? '🐛' : '⚫' }); toast(r < .86 ? '⛏️ 挖到一條小蟲蟲！扭來扭去' : '⛏️ 只有一顆小石頭'); }
@@ -20954,6 +20961,71 @@ function movieDone(w, m, popcorn) {
 Object.assign(WALL_TAP, { cinema_screen: () => openMoviePicker() });
 ['pet', 'space', 'dino', 'sea', 'funny', 'halloween'].forEach(id => { WALL_TAP['movie_poster_' + id] = () => openMoviePicker(id); });
 FURNITURE_USE.cinema_seat = { use: 'sit', seats: [{ x: .5, y: .5, z: 19 }], front: [0, 1] };
+/* 🐟 每一種魚都有自己的圖（家長：釣到魚要看得到是哪一種魚，妹妹看不懂「虱目魚」）。
+   一般的魚用同一個畫法換顏色、身形、花紋；小丑魚、鯨鯊、河豚、章魚、罐頭、靴子、寶箱用圖示。 */
+const FISH_LOOK = {
+  鯽魚: { c: '#b8a050', b: '#ece2b0', len: 1, tall: 1.05 },
+  竹筴魚: { c: '#7fa6c4', b: '#eef3f8', len: 1.1, tall: .8, line: '#e6c84a', fork: true },
+  鱸魚: { c: '#8a9a8a', b: '#e6eae6', len: 1.1, tall: .9, dots: '#4a5a4a', spiky: true },
+  鯛魚: { c: '#f07a8a', b: '#ffdde2', len: .95, tall: 1.25, dots: '#6bb6ff', spiky: true },
+  鮪魚: { c: '#2f4a7a', b: '#cfd8e4', len: 1.25, tall: .95, fork: true, finlets: '#ffd23f' },
+  吳郭魚: { c: '#8e8a9a', b: '#e2e0ea', len: 1, tall: 1.1, bars: '#5a5666', tailEdge: '#e8505b', spiky: true },
+  虱目魚: { c: '#aab6c2', b: '#f4f7fa', len: 1.3, tall: .7, fork: true },
+  金魚: { c: '#ff8a2a', b: '#ffd2a0', len: .85, tall: 1.15, fancy: true },
+  小鰻魚: { c: '#6b5a3a', b: '#b8a878', eel: true }
+};
+function drawFishArt(g, name, W, H) {
+  const lk = FISH_LOOK[name];
+  if (!lk) { g.font = `${Math.round(H * .8)}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(FISH_EMOJI[name] || '🐟', W / 2, H / 2 + 2); g.textBaseline = 'alphabetic'; return; }
+  g.save(); g.translate(W / 2, H / 2); const s = Math.min(W / 100, H / 60); g.scale(s, s); g.lineJoin = 'round';
+  if (lk.eel) {   // 鰻魚：長長彎彎
+    g.lineCap = 'round'; g.strokeStyle = lk.c; g.lineWidth = 12; g.beginPath(); g.moveTo(-42, 4); g.bezierCurveTo(-20, -18, 0, 22, 22, -2); g.quadraticCurveTo(32, -10, 40, -6); g.stroke();
+    g.strokeStyle = lk.b; g.lineWidth = 4; g.beginPath(); g.moveTo(-40, 8); g.bezierCurveTo(-20, -12, 0, 26, 22, 3); g.stroke();
+    MV.ball(g, 36, -9, 2.2, '#ffffff'); MV.ball(g, 36.6, -9, 1.2, '#231c1c'); g.restore(); return;
+  }
+  const rx = 30 * lk.len, ry = 18 * lk.tall;
+  // 尾巴
+  g.fillStyle = lk.c; g.beginPath();
+  if (lk.fancy) { g.moveTo(-rx + 4, 0); g.bezierCurveTo(-rx - 30, -34, -rx - 34, -6, -rx - 22, 0); g.bezierCurveTo(-rx - 34, 6, -rx - 30, 34, -rx + 4, 0); }
+  else if (lk.fork) { g.moveTo(-rx + 4, 0); g.lineTo(-rx - 18, -16); g.lineTo(-rx - 10, 0); g.lineTo(-rx - 18, 16); }
+  else { g.moveTo(-rx + 4, 0); g.lineTo(-rx - 16, -14); g.quadraticCurveTo(-rx - 10, 0, -rx - 16, 14); }
+  g.closePath(); g.fill();
+  if (lk.tailEdge) { g.strokeStyle = lk.tailEdge; g.lineWidth = 2.5; g.beginPath(); g.moveTo(-rx - 16, -14); g.quadraticCurveTo(-rx - 10, 0, -rx - 16, 14); g.stroke(); }
+  // 背鰭
+  g.fillStyle = lk.c; g.beginPath(); g.moveTo(-rx * .4, -ry + 2);
+  if (lk.spiky) { for (let i = 0; i <= 5; i++) g.lineTo(-rx * .4 + i * rx * .14, -ry - (i % 2 ? 4 : 11)); }
+  else g.quadraticCurveTo(0, -ry - 14, rx * .35, -ry + 2);
+  g.lineTo(rx * .35, -ry + 4); g.closePath(); g.fill();
+  // 身體＋肚子
+  g.beginPath(); g.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2); g.fillStyle = lk.c; g.fill();
+  g.save(); g.clip(); g.fillStyle = lk.b; g.fillRect(-rx, ry * .15, rx * 2, ry);
+  if (lk.line) { g.fillStyle = lk.line; g.fillRect(-rx, -2, rx * 2, 3); }
+  if (lk.bars) { g.fillStyle = lk.bars; for (let i = -2; i <= 2; i++) g.fillRect(i * rx * .3 - 2, -ry, 4, ry * 1.4); }
+  if (lk.dots) { g.fillStyle = lk.dots; [[-12, -6], [-2, -10], [8, -4], [-8, 2], [4, 3]].forEach(([x, y]) => MV.ball(g, x * lk.len, y * lk.tall, 1.8, lk.dots)); }
+  g.restore();
+  g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 1.2; g.beginPath(); g.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2); g.stroke();
+  if (lk.finlets) { g.fillStyle = lk.finlets; for (let i = 0; i < 4; i++) { g.beginPath(); g.moveTo(-rx * .55 - i * 5, -ry * .6); g.lineTo(-rx * .55 - i * 5 - 3, -ry * .6 - 4); g.lineTo(-rx * .55 - i * 5 - 5, -ry * .6 + 1); g.fill(); } }
+  // 胸鰭、鰓、眼睛、嘴巴
+  g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.ellipse(rx * .2, ry * .25, 7, 4, -.5, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 1.2; g.beginPath(); g.arc(rx * .45, 0, ry * .55, -1.1, 1.1); g.stroke();
+  MV.ball(g, rx * .68, -ry * .25, 4.2, '#ffffff'); MV.ball(g, rx * .72, -ry * .25, 2.3, '#231c1c');
+  g.strokeStyle = 'rgba(0,0,0,.4)'; g.beginPath(); g.moveTo(rx * .92, ry * .12); g.lineTo(rx * .8, ry * .18); g.stroke();
+  g.restore();
+}
+function fishArt(name, w, h, hidden) {
+  const c = document.createElement('canvas'), dpr = window.devicePixelRatio || 1; c.width = w * dpr; c.height = h * dpr; c.style.width = w + 'px'; c.style.height = h + 'px';
+  const g = c.getContext('2d'); g.scale(dpr, dpr);
+  if (hidden) { g.filter = 'brightness(0) opacity(.25)'; }   // 還沒釣到：只看得到影子
+  drawFishArt(g, name, w, h); return c;
+}
+// 釣到時上面跳出一張小卡：魚的圖＋名字＋賣了多少（不擋畫面，一下下就收起來）
+function showFishCatch(f, extra) {
+  const old = document.getElementById('fishCatch'); if (old) old.remove();
+  const box = el('div', 'fish-catch'); box.id = 'fishCatch';
+  box.append(fishArt(f.name, 120, 72), el('b', '', f.name), el('span', '', `賣了 💰 ${fmt(f.price)} 元${extra || ''}`));
+  document.body.appendChild(box);
+  setTimeout(() => box.classList.add('out'), 2600); setTimeout(() => box.remove(), 3100);
+}
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
       動物朋友全都打扮來跳舞放煙火，每天第一次結束時每位送一顆糖（4 顆萬聖節糖果）。
@@ -21797,7 +21869,7 @@ function openBrickGame() {
   function finish(cleared) {
     ended = true;
     const bells = payReward(w, score + (cleared ? 200 : 0));
-    w.status.textContent = cleared ? `🎉 全部打掉了！拿到 ${fmt(bells)} 鈴錢（全破加獎 200）` : `遊戲結束！打掉 ${score / 10} 塊，拿到 ${fmt(bells)} 鈴錢`;
+    w.status.textContent = cleared ? `🎉 全部打掉了！拿到 ${fmt(bells)} 元（全破加獎 200）` : `遊戲結束！打掉 ${score / 10} 塊，拿到 ${fmt(bells)} 元`;
     gameButtons(w, openBrickGame);
   }
 
@@ -21918,7 +21990,7 @@ function openFarmGame() {
     ended = true;
     const bonus = score >= 14 ? 150 : 0;
     const bells = payReward(w, score * 25 + bonus, () => { if (score >= 8) G.food.milk = (G.food.milk || 0) + 1; });
-    w.status.textContent = `🎉 時間到！照顧了 ${score} 次，拿到 ${fmt(bells)} 鈴錢${bonus ? '（加獎 150）' : ''}${score >= 8 ? '，阿婆還送你一瓶🥛牛奶！' : ''}`;
+    w.status.textContent = `🎉 時間到！照顧了 ${score} 次，拿到 ${fmt(bells)} 元${bonus ? '（加獎 150）' : ''}${score >= 8 ? '，阿婆還送你一瓶🥛牛奶！' : ''}`;
     gameButtons(w, openFarmGame);
   }
 
@@ -22800,7 +22872,7 @@ function openSlingGame() {
   function finish(cleared) {
     ended = true; apple = null;
     const bells = payReward(w, score + (cleared ? 200 : 0));
-    w.status.textContent = `🎉 ${cleared ? '全部過關！' : '結束！'}拿到 ${fmt(bells)} 鈴錢${cleared ? '（全過關加獎 200）' : ''}`;
+    w.status.textContent = `🎉 ${cleared ? '全部過關！' : '結束！'}拿到 ${fmt(bells)} 元${cleared ? '（全過關加獎 200）' : ''}`;
     gameButtons(w, openSlingGame);
   }
 
