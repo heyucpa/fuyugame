@@ -665,6 +665,15 @@ button.pass { font: inherit; }
 .rhy-row button { flex: 1; max-width: 84px; height: 68px; font-size: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; border: 4px solid; border-radius: 16px; background: #fff; touch-action: none; }
 .rhy-nm { font-size: 13px; font-weight: 700; color: #5a4636; }
 .rhy-row button:active { transform: scale(.94); background: #fff6d8; }
+.movie-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; max-height: 52vh; overflow: auto; padding: 4px; }
+.movie-pick { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px; border: 2px solid var(--line); border-radius: 14px; background: #fff; font: inherit; cursor: pointer; }
+.movie-pick canvas { border-radius: 8px; box-shadow: 0 3px 8px rgba(0,0,0,.25); }
+.movie-pick b { font-size: 14px; } .movie-pick span { font-size: 12px; color: #7a6a5a; }
+.movie-pop { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
+.game-card.in-movie { background: #1c1726; color: #f4eefc; }
+.game-card.in-movie .note, .game-card.in-movie .game-status { color: #d9d0ea; }
+.game-card.in-movie canvas.game-canvas { border-radius: 10px; background: #000; }
+.movie-sub { min-height: 44px; margin-top: 8px; padding: 8px 12px; border-radius: 10px; background: rgba(0,0,0,.55); color: #fff; font-size: 17px; font-weight: 700; text-align: center; line-height: 1.4; }
 .spar-row { display: flex; gap: 12px; justify-content: center; margin: 8px 0; }
 .spar-row button { min-width: 120px; font-size: 20px; }
 .music-menu { position: fixed; z-index: 70; background: var(--panel, #fffaf0); border: 2px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
@@ -1707,6 +1716,7 @@ const PLACE_FLOORS = [
   { id: 'fl_lib', name: '圖書館地板', pattern: 'check', a: '#efe6cf', b: '#e9dfc5' },
   { id: 'fl_deck', name: '陽台木平台', pattern: 'plank', a: '#c9a27a', b: '#b98f66' },
   { id: 'fl_amuse', name: '遊樂園廣場', pattern: 'check', a: '#ffe9d6', b: '#fff6e6' },
+  { id: 'fl_cinema', name: '電影院地毯', pattern: 'check', a: '#9a2f3a', b: '#8e2a35' },
   { id: 'fl_tkdmat', name: '跆拳道軟墊', pattern: 'check', a: '#2f6fd1', b: '#ffd23f' },   // 照片：藍色、黃色的拼接軟墊
   { id: 'fl_pooldeck', name: '泳池磁磚', pattern: 'check', a: '#eef7fa', b: '#d9edf3' },
   { id: 'fl_track', name: '操場跑道', pattern: 'track', a: '#5fae6f', b: '#55a265', lane: ['#2f6fd1', '#4a9be8'], stripe: '#e98a9a', lanes: 4, laneW: .9 }
@@ -2061,6 +2071,23 @@ const treeParts = (leaf, leaf2, fruit) => [
 // 🎢 雲霄飛車的軌道高度（y＝0～4 每一格邊上的高度）：車站在 y＝4，出發往後先過小山坡、衝下來、爬到最高點
 const COASTER_H = [14, 70, 18, 44, 12];
 const PLACE_FURNITURE = [
+  // 🎬 電影院
+  { id: 'cinema_seat', name: '電影院座位', theme: 'modern', w: 1, d: 1, parts: [
+    { x: .15, y: .2, w: .7, d: .65, z: 0, h: 14, c: '#7a1f2a' }, { x: .15, y: .2, w: .7, d: .65, z: 14, h: 5, c: '#c0392b' },
+    { x: .15, y: .72, w: .7, d: .13, z: 19, h: 22, c: '#c0392b' }, { x: .08, y: .2, w: .08, d: .65, z: 0, h: 24, c: '#3a2f4a' }, { x: .84, y: .2, w: .08, d: .65, z: 0, h: 24, c: '#3a2f4a' } ] },
+  { id: 'cinema_counter', name: '售票櫃檯', theme: 'modern', w: 2, d: 1, parts: [
+    { x: 0, y: .2, w: 2, d: .7, z: 0, h: 30, c: '#e8505b' }, { x: 0, y: .2, w: 2, d: .7, z: 30, h: 3, c: '#ffd23f' },
+    { x: .3, y: .35, w: .3, d: .3, z: 33, h: 10, c: '#fffaf0' }, { x: 1.3, y: .4, w: .4, d: .3, z: 33, h: 6, c: '#3a2f4a' } ] },
+  { id: 'movie_poster_pet', name: '電影海報', price: 600, theme: 'modern', w: 1, h: 40, z: 45, layer: 'wall', d: 1, parts: [], draw(ctx, W, H) { if (typeof drawMoviePoster === 'function') drawMoviePoster(ctx, W, H, 'pet'); } },
+  { id: 'movie_poster_space', name: '電影海報', price: 600, theme: 'modern', w: 1, h: 40, z: 45, layer: 'wall', d: 1, parts: [], draw(ctx, W, H) { if (typeof drawMoviePoster === 'function') drawMoviePoster(ctx, W, H, 'space'); } },
+  { id: 'movie_poster_dino', name: '電影海報', price: 600, theme: 'modern', w: 1, h: 40, z: 45, layer: 'wall', d: 1, parts: [], draw(ctx, W, H) { if (typeof drawMoviePoster === 'function') drawMoviePoster(ctx, W, H, 'dino'); } },
+  { id: 'movie_poster_sea', name: '電影海報', price: 600, theme: 'modern', w: 1, h: 40, z: 45, layer: 'wall', d: 1, parts: [], draw(ctx, W, H) { if (typeof drawMoviePoster === 'function') drawMoviePoster(ctx, W, H, 'sea'); } },
+  { id: 'movie_poster_funny', name: '電影海報', price: 600, theme: 'modern', w: 1, h: 40, z: 45, layer: 'wall', d: 1, parts: [], draw(ctx, W, H) { if (typeof drawMoviePoster === 'function') drawMoviePoster(ctx, W, H, 'funny'); } },
+  { id: 'movie_poster_halloween', name: '電影海報', price: 600, theme: 'modern', w: 1, h: 40, z: 45, layer: 'wall', d: 1, parts: [], draw(ctx, W, H) { if (typeof drawMoviePoster === 'function') drawMoviePoster(ctx, W, H, 'halloween'); } },
+  { id: 'cinema_screen', name: '大銀幕', theme: 'modern', w: 5, h: 60, z: 30, layer: 'wall', d: 1, parts: [],
+    draw(ctx, W, H) { ctx.fillStyle = '#26232a'; ctx.fillRect(0, 0, W, H); const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#fffdf2'); g.addColorStop(1, '#dfe8ff'); ctx.fillStyle = g; ctx.fillRect(4, 4, W - 8, H - 8);
+      ctx.fillStyle = '#c0392b'; ctx.fillRect(0, 0, 8, H); ctx.fillRect(W - 8, 0, 8, H); ctx.fillStyle = 'rgba(255,255,255,.25)'; for (let x = 2; x < 8; x += 3) { ctx.fillRect(x, 0, 1, H); ctx.fillRect(W - 8 + x, 0, 1, H); }
+      ctx.fillStyle = '#8a7a9a'; ctx.font = '700 11px "Microsoft JhengHei","PingFang TC",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🎬 點放映師選電影', W / 2, H / 2); } },
   // 🥋 跆拳道館
   { id: 'tkd_sandbag', name: '沙包', theme: 'modern', w: 1, d: 1, parts: [
     { x: .2, y: .2, w: .6, d: .6, z: 0, h: 4, c: '#3a3842' }, { x: .46, y: .46, w: .08, d: .08, z: 4, h: 70, c: '#5a5a66' },
@@ -2772,6 +2799,7 @@ const HOSTS = {
   // 學校的老師：貓頭鷹（耳朵用羽毛簇），戴眼鏡
   // 圖書館的館員：貓咪，圍藍色圍巾
   // 跆拳道館的教練：熊熊，繫黑色腰帶；游泳池的教練：鴨鴨（家長選的）
+  cinema: { id: 'cinema', name: '貓頭鷹放映師', short: '放映師', body: '#a07850', edge: '#7a5a3a', belly: '#f2dfc0', inner: '#7a5a3a', ears: 'tuft', acc: 'glasses', accColor: '#3a3240' },
   tkd: { id: 'tkd', name: '熊熊教練', short: '熊教練', body: '#8a5a33', edge: '#6b4428', belly: '#e8cfa9', inner: '#6b4428', ears: 'round', acc: 'scarf', accColor: '#26232a' },
   swim: { id: 'swim', name: '鴨鴨教練', short: '鴨教練', body: '#ffe066', edge: '#e0b630', belly: '#fff6c8', inner: '#e0b630', ears: 'tuft', acc: 'bill', accColor: '#ff9a3c' },
   librarian: { id: 'librarian', name: '貓咪館員', short: '館員', body: '#d9cfc4', edge: '#a8998a', belly: '#fff8f0', inner: '#ffb3c7', ears: 'pointy', acc: 'scarf', accColor: '#3f8ee0' },
@@ -2843,6 +2871,14 @@ const PLACES = {
       ['tkd_sandbag', 0, 0], ['tkd_sandbag', 2, 0], ['tkd_target', 5, 0], ['tkd_target', 7, 0], ['tkd_boards', 9, 0],
       ['tkd_bench', 0, 3, 1], ['tkd_boards', 9, 8], ['tkd_bench', 0, 7, 1]
     ], wallItems: [['tkd_mirror', 'R', 3], ['tkd_banner', 'R', 0], ['tkd_belts', 'L', 3], ['tkd_banner2', 'L', 7]] }
+  ] },
+  /* 🎬 電影院（家長：電影院，類型都做）：放映師賣票，牆上貼海報，座位可以坐，爆米花車 */
+  cinema: { name: '電影院', host: 'cinema', emoji: '🎬', desc: '動物冒險、太空、恐龍、海底、搞笑…主角是你和寵物！', rooms: [
+    { name: '電影院', w: 10, d: 10, wall: 'wp_cinema', floor: 'fl_cinema', items: [
+      ['cinema_seat', 2, 4], ['cinema_seat', 3, 4], ['cinema_seat', 4, 4], ['cinema_seat', 5, 4], ['cinema_seat', 6, 4],
+      ['cinema_seat', 2, 6], ['cinema_seat', 3, 6], ['cinema_seat', 4, 6], ['cinema_seat', 5, 6], ['cinema_seat', 6, 6],
+      ['popcorn_cart', 8, 8], ['cinema_counter', 0, 8]
+    ], wallItems: [['cinema_screen', 'R', 2], ['movie_poster_pet', 'L', 1], ['movie_poster_space', 'L', 3], ['movie_poster_dino', 'L', 5], ['movie_poster_sea', 'L', 7], ['movie_poster_funny', 'L', 9]] }
   ] },
   pool: { name: '游泳池', host: 'swim', emoji: '🏊', desc: '打水比賽、潛水撿寶、跳水，鴨鴨教練陪你玩水！', rooms: [
     { name: '游泳池', w: 10, d: 10, wall: 'wp_balcony', floor: 'fl_pooldeck', items: [
@@ -2944,6 +2980,7 @@ LINE_TYPES.push(
   { key: 'hostFriend', label: '姊姊／妹妹在自己家說的話', hint: '可用 {名字}', lines: ['{名字}，歡迎來我家玩！', '你看，這是我布置的房間！', '我的寵物很可愛吧？摸摸看！', '我們一起跳舞好不好？', '要不要坐下來休息一下？', '下次換我去你家玩！', '想玩什麼都可以喔～'] },
   { key: 'hostUncle', label: '叔叔說的話', hint: '可用 {名字}', lines: ['歡迎來叔叔家！漫畫隨便看～', '功課寫完了嗎？寫完叔叔陪你打一局！', '這台電玩是叔叔小時候玩的喔', '看漫畫也要讓眼睛休息一下喔', '要不要跟叔叔比賽？', '叔叔最近在看這本，超好看！'] },
   { key: 'hostLibrarian', label: '館員說的話', hint: '可用 {名字}', lines: ['{名字}，歡迎來圖書館～', '在圖書館要小聲說話喔 🤫', '繪本架上有好看的書喔', '看完的書要放回原來的地方', '閱讀護照蓋滿可以拿獎狀喔', '要不要幫我把書放回書架？'] },
+  { key: 'hostCinema', label: '電影院放映師說的話', hint: '可用 {名字}', lines: ['{名字}，今天想看哪一部電影呢？', '看電影的時候要小聲喔～', '爆米花剛爆好，好香喔！', '新的電影海報貼在牆上了，去看看！', '電影快開始囉，找位子坐好～'] },
   { key: 'hostTkd', label: '跆拳道教練說的話', hint: '可用 {名字}', lines: ['{名字}，敬禮！今天也要加油喔！', '出拳要有力，喊聲要大聲！', '踢腿的時候眼睛看前面', '先熱身，才不會受傷喔', '練習越多，腰帶就越來越厲害！'] },
   { key: 'hostSwim', label: '游泳教練說的話', hint: '可用 {名字}', lines: ['{名字}，下水前先做暖身操喔！', '不可以在池邊跑步，會滑倒喔', '憋氣、吐氣，咕嚕咕嚕～', '打水的時候腳要伸直', '游完記得擦乾、多喝水！'] },
   { key: 'hostRanger', label: '園長說的話', hint: '可用 {名字}', lines: ['{名字}，歡迎來公園玩！', '花圃的蝴蝶今天好多喔', '公園的花不能摘，拍照就好囉', '池塘裡的魚很會躲喔', '垃圾要記得帶回家喔', '天氣好熱，要不要吃冰淇淋？', '要不要在草地上野餐？'] },
@@ -3743,7 +3780,7 @@ function rotateDir(rot, dx, dy) {
 
 // ── 牆面與地板 ──
 // 🌿 陽台的「牆」：上面是天空和雲，下面一排白色欄杆（不在商店賣）
-const SPECIAL_WALLS = [{ id: 'wp_balcony', name: '陽台天空', price: 0, theme: 'nature', base: '#bfe3f5', alt: '#ffffff', pattern: 'balcony' }];
+const SPECIAL_WALLS = [{ id: 'wp_cinema', name: '電影院牆', price: 0, theme: 'modern', base: '#3a2f4a', alt: '#443756', pattern: 'stripe' }, { id: 'wp_balcony', name: '陽台天空', price: 0, theme: 'nature', base: '#bfe3f5', alt: '#ffffff', pattern: 'balcony' }];
 const wallById = id => WALLPAPERS.find(x => x.id === id) || SPECIAL_WALLS.find(x => x.id === id);
 function wallPattern(ctx, wp, len) {
   ctx.fillStyle = wp.base;
@@ -4474,6 +4511,7 @@ const OPEN_GIFT_BELLS = 100000;
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
   { id: '2026-10-18T09:00', title: '萬聖節派對＋找小幽靈！🎃👻', lines: [
+    ['🎬', '小島上多了電影院（在阿婆家上面）！找貓頭鷹放映師買票，主角是你和寵物：動物冒險、太空、恐龍、海底、搞笑，萬聖節還有特別篇。五部都看完送一張電影海報'],
     ['🔮', '「變小藥水」變成「神奇魔法藥水」：每次喝都不一樣（巨人、彩虹頭髮、飄起來、超快、透明、貓咪、星星、愛心、變色、變小），喝了才知道！集滿 10 種吧'],
     ['👻', '每天有一隻小幽靈躲在家裡的某個房間，找到點一下拿 3 顆糖果'],
     ['🎉', '房間擺 3 件萬聖節家具，點小可愛選「萬聖節派對」，朋友們都來跳舞'],
@@ -5222,6 +5260,8 @@ function normalizeSave(g) {
   growDexSync(out);   // 要在寵物整理好之後才算（不然壞掉的種類會先被記進成長圖鑑，再讀一次又不一樣）
   fixCompanions(out);
   out.kid = Object.assign(newKid(), g.kid || {});
+  if (out.movies != null) { if (isObj(out.movies)) Object.keys(out.movies).forEach(k => { if (!/^(pet|space|dino|sea|funny|halloween)$/.test(k) || !(Number.isInteger(out.movies[k]) && out.movies[k] > 0)) delete out.movies[k]; }); else delete out.movies; }   // 🎬 電影集章
+  if (out.moviePrize != null && out.moviePrize !== 1) delete out.moviePrize;
   if (out.kid.magic != null && !(isObj(out.kid.magic) && num(out.kid.magic.until) && magicFxList().some(m => m.id === out.kid.magic.id))) delete out.kid.magic;   // 🔮 魔法藥水的效果
   if (out.kid.magicDex != null) { if (Array.isArray(out.kid.magicDex)) out.kid.magicDex = out.kid.magicDex.filter(id => magicFxList().some(m => m.id === id)); else delete out.kid.magicDex; }
   if (out.kid.lastMagic != null && typeof out.kid.lastMagic !== 'string') delete out.kid.lastMagic;
@@ -10956,7 +10996,7 @@ function hostMemoryLine(id) {
 
 // ── 親戚家：叔叔、阿婆在家裡陪小可愛（跟著她走，偶爾說話）──
 const host = { n: null, a: null, say: null, sayUntil: 0, nextTalkAt: 0, danceUntil: 0, nextHop: 0 };
-const HOST_LINE_KEYS = { tkd: 'hostTkd', swim: 'hostSwim', amuse: 'hostAmuse', friend: 'hostFriend', uncle: 'hostUncle', grandma: 'hostGrandma', teacher: 'hostTeacher', ranger: 'hostRanger', librarian: 'hostLibrarian' };
+const HOST_LINE_KEYS = { cinema: 'hostCinema', tkd: 'hostTkd', swim: 'hostSwim', amuse: 'hostAmuse', friend: 'hostFriend', uncle: 'hostUncle', grandma: 'hostGrandma', teacher: 'hostTeacher', ranger: 'hostRanger', librarian: 'hostLibrarian' };
 const hostLineKey = () => HOST_LINE_KEYS[host.n.id] || 'hostGrandma';
 function hostSay(text, ms) {
   if (!text) return;
@@ -11159,6 +11199,7 @@ function hostMenuEntries() {
     list.push(['📺 一起玩賽車', openRaceGame]);
     list.push(['🖥️ 一起打磚塊', openBrickGame]);
   }
+  if (host.n.id === 'cinema') list.push(['🎬 看電影', () => openMoviePicker()]);
   if (host.n.id === 'tkd') {
     list.push(['🦵 踢板（看準時機）', openKickGame]);
     list.push(['👊 跟著做動作', openFormsGame]);
@@ -18697,7 +18738,8 @@ const ISL_BLD = [   // 房子：x, y 是左上角的格子，w×h 格；門在�
   { id: 'grandma', x: 37, y: 22, w: 4, h: 3 },
   { id: 'amusement', x: 23, y: 26, w: 6, h: 3 },
   { id: 'dojo', x: 27, y: 7, w: 4, h: 3 },
-  { id: 'pool', x: 45, y: 33, w: 4, h: 2, islet: true }
+  { id: 'pool', x: 45, y: 33, w: 4, h: 2, islet: true },
+  { id: 'cinema', x: 40, y: 17, w: 3, h: 2 }
 ];
 const ISL_FRIEND_SPOTS = [[17, 27], [32, 27], [16, 17], [34, 17]];   // 朋友的家（最多 4 棟），3×2
 const ISL_PUMPKINS = [[22, 17], [30, 20], [20, 22], [31, 16], [26, 24]];   // 萬聖節才有的南瓜燈（點了有小驚喜）
@@ -18736,7 +18778,7 @@ const ISL_ISLET = { cx: 47, cy: 34, r: 3.6, to: [39, 29] };   // 游泳池小島
 const ISL_POND = { x: 31, y: 24, w: 4, h: 3 };
 const ISL_HUB = [26, 19];
 const ISL_STYLE = {   // 牆、屋頂顏色
-  dojo: ['#fff4e6', '#e0503a'], pool: ['#e8f6fb', '#3fa9f5'],
+  dojo: ['#fff4e6', '#e0503a'], pool: ['#e8f6fb', '#3fa9f5'], cinema: ['#3a2f4a', '#e8505b'],
   home: ['#ffd9c9', '#ff7b7b'], school: ['#fff4cf', '#5b8def'], library: ['#e6dcff', '#7a5cc9'], park: ['#d9f0c8', '#4f9d4f'],
   uncle: ['#d7ecc8', '#7aa05a'], grandma: ['#ffe3b0', '#d68a3a'], amusement: ['#ffe0ee', '#ff6fa3'], friend: ['#fffaf0', '#6fb7e8']
 };
@@ -20607,6 +20649,270 @@ function magicTick() {
   else if (mg === 'heart') { fufuBurst('💗'); if (Math.random() < .3) try { if (!isEgg() && !pet.sleep) { pet.happyUntil = performance.now() + 900; pet.squishV = -5; } } catch (e) {} }
   else if (mg === 'fast' && fufu.path.length) fufuBurst('💨');
 }
+/* ===== 🎬 電影院（家長：類型都做、電影要怎麼呈現照建議）=====
+   不能放真的電影（有版權），所以每一部都是遊戲自己畫的小動畫（約 50 秒），主角就是小可愛和她的寵物。
+   ・找放映師買票（60 元），可以加買爆米花（80 元）→ 燈暗下來、倒數 3、2、1 → 一幕一幕播
+   ・每一幕有字幕＋旁白（「自動念出來」關掉就只有字幕），前排的動物觀眾會笑、會「哇～」、會拍手
+   ・每部有一幕要她幫忙點一下（點火箭、點草叢、點蛋…），點畫面任何地方都算；10 秒沒點就自己繼續，不會卡住
+   ・看完蓋章（G.movies），五部都看過送一張「寵物主演」的電影海報可以掛在家裡
+   ・🎃 萬聖節特別篇只在萬聖節期間上映 */
+const MOVIE_TICKET = 60, MOVIE_POPCORN = 80, MOVIE_W = 360, MOVIE_SH = 203, MOVIE_H = 258;
+const MV = {   // 畫電影用的小工具（座標：銀幕 360×203）
+  sky(g, a, b) { const gr = g.createLinearGradient(0, 0, 0, MOVIE_SH); gr.addColorStop(0, a); gr.addColorStop(1, b); g.fillStyle = gr; g.fillRect(0, 0, MOVIE_W, MOVIE_SH); },
+  ground(g, y, c) { g.fillStyle = c; g.fillRect(0, y, MOVIE_W, MOVIE_SH - y); },
+  ball(g, x, y, r, c) { g.fillStyle = c; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); },
+  stars(g, t, n) { for (let i = 0; i < (n || 40); i++) { const x = (i * 97) % MOVIE_W, y = (i * 53) % 150, a = .5 + Math.sin(t * 3 + i) * .4; g.fillStyle = `rgba(255,255,255,${a})`; g.fillRect(x, y, 2, 2); } },
+  cloud(g, x, y, s) { g.fillStyle = 'rgba(255,255,255,.9)'; [[0, 0, 14], [14, -6, 16], [30, 0, 13]].forEach(([dx, dy, r]) => MV.ball(g, x + dx * s, y + dy * s, r * s, 'rgba(255,255,255,.9)')); },
+  tree(g, x, y, s) { g.fillStyle = '#8a5a33'; g.fillRect(x - 4 * s, y - 30 * s, 8 * s, 30 * s); MV.ball(g, x, y - 42 * s, 22 * s, '#5fae6f'); MV.ball(g, x - 14 * s, y - 34 * s, 14 * s, '#6cbf7c'); MV.ball(g, x + 14 * s, y - 34 * s, 14 * s, '#55a265'); },
+  bush(g, x, y, s, shake) { const k = Math.sin(shake || 0) * 3; [[-14, 0, 14], [0, -8, 16], [14, 0, 14]].forEach(([dx, dy, r]) => MV.ball(g, x + dx * s + k, y + dy * s, r * s, '#4f9d4f')); },
+  house(g, x, y) { g.fillStyle = '#ffd9c9'; g.fillRect(x, y - 50, 70, 50); g.fillStyle = '#ff7b7b'; g.beginPath(); g.moveTo(x - 8, y - 50); g.lineTo(x + 35, y - 80); g.lineTo(x + 78, y - 50); g.fill(); g.fillStyle = '#8a5a33'; g.fillRect(x + 28, y - 26, 14, 26); g.fillStyle = '#bfe3f5'; g.fillRect(x + 8, y - 40, 14, 12); g.fillRect(x + 48, y - 40, 14, 12); },
+  kid(g, x, y, s, o) { o = o || {}; g.save(); g.translate(x, y); if (o.rot) g.rotate(o.rot); g.scale((o.flip ? -1 : 1) * s, s);
+    if (kidBaby()) drawBabyKid(g, { t: o.t || 0, walking: !!o.walk }); else drawGirl(g, { t: o.t || 0, walking: !!o.walk, sit: !!o.sit, back: !!o.back, blink: false, outfit: o.outfit || currentOutfit(), face: o.joy ? 'joy' : undefined, stage: kidLookStage() });
+    if (o.mess) { g.fillStyle = o.mess; g.globalAlpha = .9; g.beginPath(); g.ellipse(0, -44, 13, 11, 0, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; g.fillStyle = '#231c1c'; [-4, 4].forEach(ex => g.fillRect(ex - 1, -46, 2.4, 2.4)); }
+    g.restore(); },
+  petSp() { return (G.pet && PET_SPECIES_BY_ID[G.pet.species]) || PET_SPECIES_BY_ID.mochi || Object.values(PET_SPECIES_BY_ID)[0]; },
+  pet(g, x, y, s, o) { o = o || {}; g.save(); g.translate(x, y); g.scale(s, s * (1 - (o.squish || 0))); drawCreature(g, MV.petSp(), { happy: o.happy !== false, blink: false, fx: (o.fx || 1) * 1.5, clean: 100 }); g.restore(); },
+  friend(g, n, x, y, s, o) { o = o || {}; g.save(); g.translate(x, y); g.scale((o.flip ? -1 : 1) * s, s); drawNeighbor(g, n, { happy: o.happy !== false, blink: false, fx: 1.5, clean: 100 }); g.restore(); },
+  rocket(g, x, y, flame, t) { g.save(); g.translate(x, y);
+    if (flame) { [['#ffd23f', 14, 26 + Math.sin(t * 30) * 6], ['#ff7a3c', 9, 18 + Math.sin(t * 25) * 4]].forEach(([c, w, h]) => { g.fillStyle = c; g.beginPath(); g.moveTo(-w, 0); g.lineTo(0, h); g.lineTo(w, 0); g.fill(); }); }
+    g.fillStyle = '#e8505b'; g.beginPath(); g.moveTo(-14, 0); g.lineTo(-24, 8); g.lineTo(-14, -14); g.fill(); g.beginPath(); g.moveTo(14, 0); g.lineTo(24, 8); g.lineTo(14, -14); g.fill();
+    g.fillStyle = '#f4f4f0'; g.beginPath(); g.moveTo(-14, 0); g.lineTo(-14, -50); g.quadraticCurveTo(0, -80, 14, -50); g.lineTo(14, 0); g.fill(); g.strokeStyle = '#9aa3ad'; g.lineWidth = 1.5; g.stroke();
+    MV.ball(g, 0, -38, 7, '#6bb6ff'); g.strokeStyle = '#5a6a7a'; g.lineWidth = 2; g.beginPath(); g.arc(0, -38, 7, 0, Math.PI * 2); g.stroke(); g.restore(); },
+  fish(g, x, y, c, dir, s) { g.save(); g.translate(x, y); g.scale(dir * (s || 1), s || 1); g.fillStyle = c; g.beginPath(); g.ellipse(0, 0, 10, 6, 0, 0, Math.PI * 2); g.fill(); g.beginPath(); g.moveTo(-8, 0); g.lineTo(-16, -6); g.lineTo(-16, 6); g.fill(); MV.ball(g, 5, -1.5, 1.5, '#231c1c'); g.restore(); },
+  dino(g, x, y, s, c, t, flip) { g.save(); g.translate(x, y); g.scale((flip ? -1 : 1) * s, s); g.fillStyle = c;
+    g.beginPath(); g.ellipse(0, -22, 30, 18, 0, 0, Math.PI * 2); g.fill();   // 身體
+    g.beginPath(); g.moveTo(-26, -24); g.quadraticCurveTo(-60, -20, -66, -6); g.lineTo(-24, -14); g.fill();   // 尾巴
+    g.beginPath(); g.moveTo(18, -30); g.quadraticCurveTo(30, -70 + Math.sin(t) * 3, 40, -74 + Math.sin(t) * 3); g.lineTo(48, -68 + Math.sin(t) * 3); g.quadraticCurveTo(36, -60, 30, -24); g.fill();   // 長脖子
+    g.beginPath(); g.ellipse(46, -72 + Math.sin(t) * 3, 11, 7, 0, 0, Math.PI * 2); g.fill(); MV.ball(g, 49, -74 + Math.sin(t) * 3, 1.8, '#231c1c');
+    [-16, -4, 10, 20].forEach((lx, i) => { g.fillRect(lx, -10, 8, 10 + Math.sin(t * 6 + i) * 1.5); });
+    g.fillStyle = 'rgba(255,255,255,.18)'; g.beginPath(); g.ellipse(0, -16, 20, 7, 0, 0, Math.PI * 2); g.fill(); g.restore(); },
+  egg(g, x, y, crack, wob) { g.save(); g.translate(x, y); g.rotate(Math.sin(wob || 0) * .15); g.fillStyle = '#f4f0e0'; g.beginPath(); g.ellipse(0, -16, 13, 17, 0, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#c9c0a0'; g.lineWidth = 1.2; g.stroke();
+    ['#7bd389', '#7bd389'].forEach((c, i) => MV.ball(g, -5 + i * 9, -20 + i * 8, 3, c));
+    if (crack) { g.strokeStyle = '#6b5a3a'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(-12, -16); g.lineTo(-6, -11); g.lineTo(-1, -17); g.lineTo(5, -11); g.lineTo(12, -16); g.stroke(); } g.restore(); },
+  turtle(g, x, y, s) { g.save(); g.translate(x, y); g.scale(s, s); g.fillStyle = '#7bc27a'; [[-14, 8], [14, 8], [-14, -8], [14, -8]].forEach(([fx, fy]) => { g.beginPath(); g.ellipse(fx, fy, 7, 4, 0, 0, Math.PI * 2); g.fill(); }); MV.ball(g, 26, 0, 7, '#7bc27a'); MV.ball(g, 29, -2, 1.5, '#231c1c');
+    g.fillStyle = '#4f8d4e'; g.beginPath(); g.ellipse(0, 0, 22, 14, 0, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#3a6b3a'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(-10, -10); g.lineTo(-10, 10); g.moveTo(8, -12); g.lineTo(8, 12); g.stroke(); g.restore(); },
+  octopus(g, x, y, s, t) { g.save(); g.translate(x, y); g.scale(s, s); g.fillStyle = '#ff8fb3'; for (let i = 0; i < 6; i++) { g.beginPath(); g.ellipse(-15 + i * 6, 12 + Math.sin(t * 4 + i) * 3, 3, 10, Math.sin(t * 3 + i) * .4, 0, Math.PI * 2); g.fill(); }
+    MV.ball(g, 0, -4, 18, '#ff8fb3'); MV.ball(g, -6, -6, 3, '#231c1c'); MV.ball(g, 6, -6, 3, '#231c1c'); g.fillStyle = '#e8507b'; g.beginPath(); g.ellipse(0, 3, 3, 2.5, 0, 0, Math.PI * 2); g.fill(); g.restore(); },
+  chest(g, x, y, open, t) { g.save(); g.translate(x, y); if (open) { for (let i = 0; i < 6; i++) { const a = -Math.PI / 2 + (i - 2.5) * .35; g.strokeStyle = `rgba(255,236,120,${.6 + Math.sin(t * 6 + i) * .3})`; g.lineWidth = 3; g.beginPath(); g.moveTo(0, -18); g.lineTo(Math.cos(a) * 50, -18 + Math.sin(a) * 50); g.stroke(); } [['#ffd23f', -8], ['#ffffff', 2], ['#ffd23f', 10], ['#ff8fb3', -2]].forEach(([c, dx], i) => MV.ball(g, dx, -20 - (i % 2) * 4, 4, c)); }
+    g.fillStyle = '#a0662d'; g.fillRect(-20, -16, 40, 16); g.fillStyle = '#ffd23f'; g.fillRect(-20, -16, 40, 3); g.fillRect(-3, -14, 6, 7);
+    g.fillStyle = '#8a5524'; if (open) { g.save(); g.translate(-20, -16); g.rotate(-1.1); g.fillRect(0, -10, 40, 10); g.restore(); } else { g.beginPath(); g.moveTo(-20, -16); g.quadraticCurveTo(0, -30, 20, -16); g.fill(); } g.restore(); },
+  cake(g, x, y, tiers, wob, berry) { g.save(); g.translate(x, y); const cs = ['#fff4e6', '#ffd9e5', '#fff4e6'];
+    for (let i = 0; i < tiers; i++) { const w = 46 - i * 10, dx = Math.sin(wob + i) * i * 3; g.fillStyle = cs[i % 3]; g.fillRect(-w / 2 + dx, -14 * (i + 1), w, 14); g.fillStyle = '#ff9ec4'; g.fillRect(-w / 2 + dx, -14 * (i + 1), w, 3); }
+    if (berry) { const dx = Math.sin(wob + tiers - 1) * (tiers - 1) * 3; MV.ball(g, dx, -14 * tiers - 4, 5, '#e8505b'); g.fillStyle = '#5fae6f'; g.fillRect(dx - 1, -14 * tiers - 11, 2, 4); } g.restore(); },
+  ghost(g, x, y, s, t, a) { g.save(); g.translate(x, y + Math.sin(t * 2) * 4); g.scale(s, s); g.globalAlpha = a == null ? .92 : a; g.fillStyle = '#ffffff';
+    g.beginPath(); g.moveTo(-16, 0); g.lineTo(-16, -20); g.arc(0, -20, 16, Math.PI, 0); g.lineTo(16, 0); for (let i = 0; i < 4; i++) g.quadraticCurveTo(12 - i * 8, 6 + Math.sin(t * 6 + i) * 2, 8 - i * 8, 0); g.fill();
+    g.globalAlpha = 1; MV.ball(g, -6, -20, 2.6, '#3a3240'); MV.ball(g, 6, -20, 2.6, '#3a3240'); g.fillStyle = 'rgba(255,150,180,.6)'; MV.ball(g, -10, -14, 3, 'rgba(255,150,180,.6)'); MV.ball(g, 10, -14, 3, 'rgba(255,150,180,.6)'); g.restore(); },
+  pumpkin(g, x, y, s, lit, t) { g.save(); g.translate(x, y); g.scale(s, s); if (lit) { const gr = g.createRadialGradient(0, -10, 2, 0, -10, 60); gr.addColorStop(0, 'rgba(255,210,90,.55)'); gr.addColorStop(1, 'rgba(255,210,90,0)'); g.fillStyle = gr; g.fillRect(-60, -70, 120, 120); }
+    g.fillStyle = '#ff8a2a'; [-8, 0, 8].forEach(dx => { g.beginPath(); g.ellipse(dx, -10, 10, 11, 0, 0, Math.PI * 2); g.fill(); }); g.fillStyle = '#5fae6f'; g.fillRect(-2, -24, 4, 6);
+    g.fillStyle = lit ? '#ffe066' : '#6b3a10'; g.beginPath(); g.moveTo(-8, -14); g.lineTo(-4, -10); g.lineTo(-10, -10); g.fill(); g.beginPath(); g.moveTo(8, -14); g.lineTo(4, -10); g.lineTo(10, -10); g.fill(); g.fillRect(-7, -6, 14, 3); g.restore(); },
+  kitchen(g) { MV.sky(g, '#fff4e6', '#ffe9d6'); g.fillStyle = '#d9b27a'; g.fillRect(0, 168, MOVIE_W, MOVIE_SH - 168); g.fillStyle = '#ffffff'; g.fillRect(20, 30, 70, 50); g.fillStyle = '#bfe3f5'; g.fillRect(25, 35, 60, 40);
+    g.fillStyle = '#c98d5a'; g.fillRect(160, 128, 180, 10); g.fillStyle = '#a8703f'; g.fillRect(170, 138, 8, 42); g.fillRect(322, 138, 8, 42); },
+  say(g, x, y, text) { text = movieText(text); g.font = '700 12px "Microsoft JhengHei","PingFang TC",sans-serif'; const w = g.measureText(text).width + 14; g.fillStyle = '#ffffff'; g.beginPath(); g.roundRect(x - w / 2, y - 22, w, 20, 8); g.fill(); g.beginPath(); g.moveTo(x - 4, y - 3); g.lineTo(x, y + 4); g.lineTo(x + 4, y - 3); g.fill(); g.fillStyle = '#3a3240'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, x, y - 12); g.textBaseline = 'alphabetic'; },
+  hearts(g, x, y, t) { for (let i = 0; i < 4; i++) { const ph = (t * .8 + i / 4) % 1; g.globalAlpha = 1 - ph; g.font = '14px sans-serif'; g.textAlign = 'center'; g.fillText('💗', x + Math.sin(i * 2 + t) * 14, y - ph * 40); } g.globalAlpha = 1; },
+  lerp: (a, b, k) => a + (b - a) * Math.max(0, Math.min(1, k))
+};
+const MV_ALIEN = { body: '#9be36b', edge: '#5aa53a', belly: '#d9ffc0', inner: '#5aa53a', ears: 'horns' };
+const MV_MAMA = { body: '#b18cff' };
+/* 每一部電影：幾幕；每一幕 d 秒、字幕 say（{名字}{寵物} 會換掉）、觀眾反應 react：[種類, 第幾秒]、
+   tap：{at 第幾秒停下來等她點, hint 提示, x, y 手指位置}；draw(g, t, st)：st.tapped 點了沒、st.tt 點完過了幾秒 */
+const MOVIES = [
+  { id: 'pet', title: '{寵物}去哪裡了？', genre: '動物冒險', icon: '🐾', color: '#7bd389', scenes: [
+    { d: 7, say: '{名字}和{寵物}在院子裡玩球，好開心！', draw(g, t) { MV.sky(g, '#bfe3f5', '#e8f6fb'); MV.cloud(g, 40, 40, 1); MV.house(g, 250, 150); MV.ground(g, 150, '#8fc27a'); const bx = 180 + Math.sin(t * 2) * 50, by = 150 - Math.abs(Math.sin(t * 4)) * 40; MV.ball(g, bx, by - 6, 7, '#ff6b6b'); MV.kid(g, 100, 170, 1.15, { t, joy: true }); MV.pet(g, 200 + Math.sin(t * 2) * 30, 172, 1.4, { fx: Math.cos(t * 2) > 0 ? 1 : -1 }); } },
+    { d: 7, say: '球滾走了，{寵物}追了出去……咦？{寵物}不見了！', react: ['wow', 4.2], draw(g, t) { MV.sky(g, '#bfe3f5', '#e8f6fb'); MV.house(g, 250, 150); MV.ground(g, 150, '#8fc27a'); MV.ball(g, 200 + t * 50, 144, 7, '#ff6b6b'); MV.pet(g, 160 + t * 45, 172, 1.4, { fx: 1 }); MV.kid(g, 100, 170, 1.15, { t }); if (t > 4) MV.say(g, 100, 92, '{寵物}？你在哪裡？'); } },
+    { d: 7, say: '{名字}到公園問朋友：「你有看到{寵物}嗎？」', draw(g, t) { MV.sky(g, '#cfeaf7', '#eef8fb'); MV.tree(g, 60, 160, 1.1); MV.tree(g, 320, 160, .9); MV.ground(g, 155, '#86b972'); MV.kid(g, 130, 175, 1.15, { t: t < 2 ? t : 0, walk: t < 2 }); MV.friend(g, NEIGHBORS[0], 230, 175, 2.2, { flip: true }); if (t > 3) MV.say(g, 230, 110, '我看到牠跑去那邊的草叢！'); } },
+    { d: 7, say: '草叢裡好像有東西在動！', tap: { at: 1.5, hint: '👆 點一下草叢看看！', x: 220, y: 140 }, react: ['clap', 3.5], draw(g, t, st) { MV.sky(g, '#cfeaf7', '#eef8fb'); MV.ground(g, 155, '#86b972'); MV.kid(g, 110, 175, 1.15, { t }); MV.bush(g, 220, 160, 1.3, st.tapped ? 0 : t * 12); if (st.tapped) { const k = Math.min(1, st.tt / .5), k2 = Math.min(1, Math.max(0, st.tt - .6) / 1.2); MV.pet(g, 220 - k2 * 70, 150 - Math.sin(k * Math.PI / 2) * 22 + k2 * 25 - Math.abs(Math.sin(st.tt * 8)) * 4 * k2, 1.5, { fx: -1 }); } if (st.tapped && st.tt > .5) MV.say(g, 200, 100, '找到了！'); } },
+    { d: 6, say: '找到你了！{名字}緊緊抱住{寵物}。', react: ['clap', 1], draw(g, t) { MV.sky(g, '#ffe3ec', '#fff6e6'); MV.ground(g, 155, '#86b972'); MV.kid(g, 160, 175, 1.25, { t, joy: true }); MV.pet(g, 196, 160, 1.4, { fx: -1, squish: Math.abs(Math.sin(t * 5)) * .1 }); MV.hearts(g, 180, 90, t); } },
+    { d: 7, say: '夕陽下一起走回家。以後要一起玩，不要跑太遠喔！', draw(g, t) { MV.sky(g, '#ff9a6b', '#ffd9a0'); MV.ball(g, 280, 120, 30, '#ffe066'); MV.ground(g, 150, '#7aa05a'); MV.kid(g, 60 + t * 22, 172, 1, { t, walk: true }); MV.pet(g, 30 + t * 22, 174, 1.2, { fx: 1 }); } }
+  ] },
+  { id: 'space', title: '{名字}上月球', genre: '太空探險', icon: '🚀', color: '#5b6cff', scenes: [
+    { d: 6, say: '晚上，{名字}看著月亮說：「好想去月亮上玩喔！」', draw(g, t) { MV.sky(g, '#1a2a5a', '#3a4a8a'); MV.stars(g, t); MV.ball(g, 290, 50, 26, '#fff6c0'); MV.ground(g, 160, '#3f6b4a'); MV.kid(g, 120, 178, 1.15, { t }); MV.say(g, 120, 100, '月亮好漂亮～'); } },
+    { d: 7, say: '火箭準備好了！倒數：三、二、一！', tap: { at: 1.5, hint: '👆 點一下，幫火箭點火！', x: 180, y: 160 }, react: ['wow', 2.6], draw(g, t, st) { MV.sky(g, '#1a2a5a', '#3a4a8a'); MV.stars(g, t); MV.ground(g, 170, '#5a6070'); const up = st.tapped ? Math.max(0, st.tt - .6) ** 2 * 60 : 0; MV.rocket(g, 180, 170 - up, st.tapped, t); if (st.tapped && st.tt < 1.2) for (let i = 0; i < 6; i++) MV.ball(g, 160 + i * 8, 172 - (st.tt * 20 + i * 3) % 14, 6, 'rgba(220,220,220,.8)'); } },
+    { d: 6, say: '咻——火箭飛過好多好多星星！', draw(g, t) { MV.sky(g, '#0d1430', '#1a2450'); for (let i = 0; i < 30; i++) { const y = ((i * 37) + t * 160) % 220 - 10; g.fillStyle = '#ffffff'; g.fillRect((i * 83) % 360, y, 2, 8); } MV.rocket(g, 180 + Math.sin(t * 3) * 10, 140, true, t); MV.ball(g, 60, 60, 14, '#ff9a6b'); MV.ball(g, 300, 150, 10, '#9be36b'); } },
+    { d: 7, say: '到月亮了！月亮上跳一下就飛得好高～', react: ['laugh', 2.5], draw(g, t) { MV.sky(g, '#0d1430', '#1a2450'); MV.stars(g, t); MV.ball(g, 60, 50, 18, '#6bb6ff'); MV.ground(g, 160, '#d9d6cc'); [[60, 175], [250, 170], [320, 182]].forEach(([x, y]) => { g.fillStyle = '#c4c0b4'; g.beginPath(); g.ellipse(x, y, 20, 5, 0, 0, Math.PI * 2); g.fill(); }); MV.rocket(g, 300, 160, false, t); MV.kid(g, 150, 178 - Math.abs(Math.sin(t * 1.4)) * 70, 1.1, { t, joy: true }); } },
+    { d: 7, say: '一個綠色的外星小朋友揮揮手：「你好！要一起玩嗎？」', react: ['wow', 1], draw(g, t) { MV.sky(g, '#0d1430', '#1a2450'); MV.stars(g, t); MV.ground(g, 160, '#d9d6cc'); MV.kid(g, 120, 178, 1.15, { t, joy: true }); g.save(); g.translate(240, 176 - Math.abs(Math.sin(t * 3)) * 6); g.scale(-2.2, 2.2); drawCreature(g, MV_ALIEN, { happy: true, blink: false, fx: 1.5, clean: 100 }); g.restore(); if (t > 2) MV.say(g, 240, 110, '嗶嗶！你好！'); } },
+    { d: 7, say: '玩到好晚才回家。晚安，月亮上的好朋友！', draw(g, t) { MV.sky(g, '#1a2a5a', '#2a3a70'); MV.stars(g, t); g.fillStyle = '#3a2f4a'; g.fillRect(0, 0, 360, 203); g.fillStyle = '#5a6a9a'; g.fillRect(220, 30, 100, 80); MV.ball(g, 270, 70, 18, '#fff6c0'); g.fillStyle = '#ffd9e5'; g.fillRect(40, 140, 140, 30); g.fillStyle = '#ffffff'; g.fillRect(40, 132, 40, 12); MV.kid(g, 70, 150, 1, { t, sit: true }); MV.pet(g, 150, 142, 1, { fx: -1 }); g.font = '16px sans-serif'; g.fillText('💤', 110 + Math.sin(t) * 4, 110 - (t * 8) % 20); } }
+  ] },
+  { id: 'dino', title: '恐龍寶寶', genre: '恐龍世界', icon: '🦕', color: '#7aa05a', scenes: [
+    { d: 6, say: '{名字}和{寵物}坐上時光機……按下按鈕，咻！', react: ['wow', 4], draw(g, t) { MV.sky(g, '#e6dcff', '#fff6e6'); g.fillStyle = '#9aa3ad'; g.fillRect(110, 70, 140, 110); g.fillStyle = '#bfe3f5'; g.fillRect(130, 90, 100, 60); ['#ff6b6b', '#ffd23f', '#7bd389'].forEach((c, i) => MV.ball(g, 140 + i * 16, 165, 5, Math.floor(t * 4 + i) % 2 ? c : '#5a6070')); MV.kid(g, 160, 148, .9, { t, joy: true }); MV.pet(g, 205, 148, 1, {}); if (t > 4) { g.fillStyle = `rgba(255,255,255,${Math.min(1, (t - 4) * .8)})`; g.fillRect(0, 0, 360, 203); } } },
+    { d: 7, say: '哇！來到好久好久以前，到處都是大恐龍！', react: ['wow', 1.5], draw(g, t) { MV.sky(g, '#ffd9a0', '#fff1c0'); g.fillStyle = '#c47a3a'; g.beginPath(); g.moveTo(240, 140); g.lineTo(290, 60); g.lineTo(340, 140); g.fill(); MV.ball(g, 290, 54, 8 + Math.sin(t * 3) * 2, 'rgba(200,200,200,.7)'); MV.ground(g, 140, '#7aa05a'); MV.tree(g, 30, 150, 1.2); MV.dino(g, 80 + t * 18, 175, 1.3, '#6aa86a', t * 2); MV.kid(g, 300, 180, .9, { t, flip: true }); } },
+    { d: 7, say: '草地上有一顆蛋在動！', tap: { at: 1.5, hint: '👆 點一下蛋！', x: 190, y: 150 }, react: ['clap', 2.5], draw(g, t, st) { MV.sky(g, '#ffe9b0', '#fff6e0'); MV.ground(g, 150, '#86b972'); MV.kid(g, 100, 175, 1.15, { t }); if (!st.tapped) MV.egg(g, 190, 172, t > 1, t * 10); else { const k = Math.min(1, st.tt / .6); g.globalAlpha = 1 - k; MV.egg(g, 190, 172, true, 0); g.globalAlpha = 1; MV.dino(g, 190, 175, .45, '#8fd18f', t * 3); if (st.tt > .6) MV.say(g, 205, 120, '嗚哇～'); } } },
+    { d: 7, say: '恐龍寶寶好喜歡{名字}，一直跟在後面跑來跑去！', react: ['laugh', 2], draw(g, t) { MV.sky(g, '#ffe9b0', '#fff6e0'); MV.ground(g, 150, '#86b972'); const x = 180 + Math.sin(t * 1.5) * 90, f = Math.cos(t * 1.5) < 0; MV.kid(g, x, 175, 1.1, { t, walk: true, flip: f, joy: true }); MV.dino(g, x + (f ? 70 : -70), 178, .45, '#8fd18f', t * 4, f); MV.pet(g, x + (f ? 40 : -40), 176, 1.1, { fx: f ? -1 : 1 }); } },
+    { d: 7, say: '恐龍媽媽來找寶寶了！{名字}把寶寶送回媽媽身邊。', react: ['clap', 4], draw(g, t) { MV.sky(g, '#ffd9a0', '#fff1c0'); MV.ground(g, 150, '#7aa05a'); MV.dino(g, 270, 178, 1.3, '#6aa86a', t * 2, true); MV.dino(g, MV.lerp(150, 220, t / 4), 178, .45, '#8fd18f', t * 4); MV.kid(g, 100, 175, 1.1, { t, joy: t > 4 }); if (t > 4) MV.hearts(g, 240, 80, t); } },
+    { d: 6, say: '回到家，恐龍寶寶送的葉子還在手上。下次再去玩吧！', draw(g, t) { MV.sky(g, '#e6dcff', '#fff6e6'); MV.house(g, 250, 155); MV.ground(g, 155, '#8fc27a'); MV.kid(g, 140, 175, 1.15, { t, joy: true }); g.fillStyle = '#5fae6f'; g.beginPath(); g.ellipse(160, 130, 8, 4, -.5, 0, Math.PI * 2); g.fill(); MV.pet(g, 190, 176, 1.2, {}); } }
+  ] },
+  { id: 'sea', title: '海底大冒險', genre: '海底世界', icon: '🐠', color: '#3fa9f5', scenes: [
+    { d: 6, say: '{名字}坐船出海，戴上蛙鏡——噗通！跳下去囉！', react: ['wow', 4], draw(g, t) { MV.sky(g, '#bfe3f5', '#e8f6fb'); MV.ground(g, 120, '#3fa9f5'); g.fillStyle = '#e8505b'; g.beginPath(); g.moveTo(100, 120); g.lineTo(240, 120); g.lineTo(220, 145); g.lineTo(120, 145); g.fill(); const k = Math.max(0, t - 3.5); MV.kid(g, 170 + k * 20, 120 - Math.sin(Math.min(1, k) * Math.PI) * 40 + Math.max(0, k - 1) * 80, 1, { t, rot: k * 2 }); if (k > 1) for (let i = 0; i < 6; i++) MV.ball(g, 190 + Math.cos(i) * 20, 120 - (k - 1) * 30 * Math.sin(i + 1), 3, '#ffffff'); } },
+    { d: 7, say: '海底好漂亮！小丑魚住在海葵裡面喔。', draw(g, t) { MV.sky(g, '#3fa9f5', '#14507a'); for (let i = 0; i < 8; i++) MV.fish(g, (i * 60 + t * 40) % 400 - 20, 40 + (i * 23) % 100, ['#ff9a3c', '#ffd23f', '#ff8fb3'][i % 3], 1, .9); g.fillStyle = '#ff7b9c'; for (let i = 0; i < 7; i++) { g.beginPath(); g.ellipse(80 + i * 5, 190, 2, 16 + Math.sin(t * 2 + i) * 2, Math.sin(t + i) * .3, 0, Math.PI * 2); g.fill(); } MV.ground(g, 190, '#e6c98a'); MV.kid(g, 230, 140 + Math.sin(t * 2) * 6, 1, { t, rot: -.3 }); for (let i = 0; i < 4; i++) MV.ball(g, 240 + i * 3, 90 - (t * 30 + i * 12) % 60, 2.5, 'rgba(255,255,255,.8)'); } },
+    { d: 7, say: '一隻大海龜游過來，載著{名字}一起游！', react: ['wow', 1.5], draw(g, t) { MV.sky(g, '#2f8fd0', '#14507a'); MV.ground(g, 190, '#e6c98a'); const x = 60 + t * 35; MV.turtle(g, x, 120, 1.6); MV.kid(g, x - 4, 106, .8, { t, sit: true, joy: true }); } },
+    { d: 6, say: '章魚嚇了一跳，噴出黑黑的墨汁！哈哈哈！', react: ['laugh', 2], draw(g, t) { MV.sky(g, '#2f8fd0', '#14507a'); MV.ground(g, 190, '#e6c98a'); MV.octopus(g, 120, 150, 1.4, t); if (t > 1.5) { const k = Math.min(1, (t - 1.5) / 1.2); g.fillStyle = `rgba(40,30,50,${.85 - k * .4})`; g.beginPath(); g.arc(150 + k * 90, 140, 10 + k * 40, 0, Math.PI * 2); g.fill(); } MV.kid(g, 270, 170, 1, { t, mess: t > 2.6 ? '#3a3240' : null, flip: true }); } },
+    { d: 7, say: '沙子裡有一個寶箱！', tap: { at: 1.5, hint: '👆 點一下，打開寶箱！', x: 200, y: 165 }, react: ['clap', 2.3], draw(g, t, st) { MV.sky(g, '#2f8fd0', '#14507a'); MV.ground(g, 180, '#e6c98a'); MV.kid(g, 110, 175, 1.1, { t, joy: st.tapped }); MV.chest(g, 200, 182, st.tapped, t); MV.fish(g, 300, 80, '#ffd23f', -1, 1); } },
+    { d: 6, say: '{名字}帶著一顆亮晶晶的珍珠回到船上。海底真好玩！', draw(g, t) { MV.sky(g, '#ff9a6b', '#ffd9a0'); MV.ball(g, 300, 110, 26, '#ffe066'); MV.ground(g, 120, '#3fa9f5'); g.fillStyle = '#e8505b'; g.beginPath(); g.moveTo(100, 120); g.lineTo(240, 120); g.lineTo(220, 145); g.lineTo(120, 145); g.fill(); MV.kid(g, 165, 120, 1, { t, joy: true }); MV.ball(g, 182, 82, 5, '#ffffff'); MV.pet(g, 205, 120, 1, {}); } }
+  ] },
+  { id: 'funny', title: '蛋糕大作戰', genre: '搞笑短片', icon: '🍰', color: '#ff9ec4', scenes: [
+    { d: 6, say: '今天是媽媽的生日，{名字}和{寵物}要做一個大蛋糕！', draw(g, t) { MV.kitchen(g); MV.kid(g, 110, 188, 1.15, { t, joy: true }); MV.pet(g, 300, 128, 1.3, { fx: -1 }); g.font = '24px sans-serif'; g.textAlign = 'center'; g.fillText('🥚', 200, 124); g.fillText('🥛', 240, 124); } },
+    { d: 6, say: '倒麵粉……噗！麵粉飛得到處都是！', react: ['laugh', 1.6], draw(g, t) { MV.kitchen(g); const k = Math.max(0, t - 1.2); MV.kid(g, 110, 188, 1.15, { t, mess: k > .3 ? '#ffffff' : null }); g.fillStyle = '#f4f0e0'; g.fillRect(170, 104, 26, 24); if (k > 0) for (let i = 0; i < 16; i++) MV.ball(g, 150 + Math.cos(i) * k * 60, 110 + Math.sin(i * 1.7) * k * 35, 5 + (i % 3), `rgba(255,255,255,${Math.max(0, 1 - k * .3)})`); MV.pet(g, 300, 128, 1.3, { fx: -1 }); } },
+    { d: 6, say: '{寵物}偷偷舔了一口奶油……被抓到了！', react: ['laugh', 3], draw(g, t) { MV.kitchen(g); g.fillStyle = '#c9e3ec'; g.fillRect(222, 110, 40, 18); g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(242, 110, 20, 7, 0, Math.PI, 0); g.fill(); MV.pet(g, 285, 128, 1.3, { fx: -1, squish: t > 3 ? .15 : 0 }); MV.kid(g, 110, 188, 1.15, { t }); if (t > 3) MV.say(g, 110, 104, '{寵物}！'); } },
+    { d: 6, say: '蛋糕越疊越高……搖搖晃晃，好危險！', react: ['wow', 2], draw(g, t) { MV.kitchen(g); g.save(); g.translate(230, 128); g.scale(1.5, 1.5); MV.cake(g, 0, 0, 3, t * 3, false); g.restore(); MV.kid(g, 110, 188, 1.15, { t }); MV.pet(g, 310, 128, 1.2, { fx: -1 }); } },
+    { d: 7, say: '最後放上一顆草莓——', tap: { at: 1.5, hint: '👆 點一下，放上草莓！', x: 230, y: 50 }, react: ['laugh', 2.3], draw(g, t, st) { MV.kitchen(g); MV.pet(g, 310, 128, 1.2, { fx: -1 });
+      if (!st.tapped || st.tt < .8) { g.save(); g.translate(230, 128); g.scale(1.5, 1.5); MV.cake(g, 0, 0, 3, t * 3, st.tapped); g.restore(); MV.kid(g, 110, 188, 1.15, { t }); }
+      else { const k = Math.min(1, (st.tt - .8) / .5); MV.kid(g, 110, 188, 1.15, { t, mess: k >= 1 ? '#ffd9e5' : null }); g.save(); g.translate(230 - k * 110, 128 - k * 10); g.rotate(-k * 1.3); g.scale(1.5, 1.5); g.globalAlpha = k >= 1 ? .0 : 1; MV.cake(g, 0, 0, 3, 0, true); g.restore(); g.globalAlpha = 1; if (k >= 1) { MV.ball(g, 112, 132, 4, '#e8505b'); MV.say(g, 110, 104, '啪！'); } } } },
+    { d: 7, say: '蛋糕歪歪的，可是媽媽笑著說：「這是我吃過最好吃的蛋糕！」', react: ['clap', 1.5], draw(g, t) { MV.kitchen(g); g.save(); g.translate(230, 128); g.rotate(.12); g.scale(1.5, 1.5); MV.cake(g, 0, 0, 2, 0, true); g.restore(); g.font = '18px sans-serif'; g.textAlign = 'center'; g.fillText('🕯️', 234, 74); MV.kid(g, 110, 188, 1.15, { t, joy: true }); MV.pet(g, 310, 128, 1.2, { fx: -1 }); MV.hearts(g, 230, 66, t); } }
+  ] },
+  { id: 'halloween', season: 'halloween', title: '南瓜燈小幽靈', genre: '萬聖節特別篇', icon: '🎃', color: '#ff9a3c', scenes: [
+    { d: 6, say: '萬聖節的晚上，{名字}提著南瓜燈出門要糖果。', draw(g, t) { MV.sky(g, '#2a1f4a', '#4a3a6a'); MV.stars(g, t, 25); MV.ball(g, 300, 50, 20, '#fff6c0'); MV.ground(g, 160, '#3a4a3a'); MV.house(g, 230, 160); MV.kid(g, 60 + t * 18, 180, 1.1, { t, walk: true }); MV.pumpkin(g, 78 + t * 18, 150, .8, true, t); } },
+    { d: 6, say: '咦？樹後面有一個白白的……小幽靈！', react: ['wow', 1.5], draw(g, t) { MV.sky(g, '#2a1f4a', '#4a3a6a'); MV.stars(g, t, 25); MV.ground(g, 160, '#3a4a3a'); g.fillStyle = '#3a2a1a'; g.fillRect(230, 60, 20, 100); MV.ball(g, 240, 60, 40, '#2a3a2a'); MV.ghost(g, 210 + Math.min(1, t / 1.5) * 15, 150, 1.1, t, .9); MV.kid(g, 100, 180, 1.1, { t }); MV.pumpkin(g, 118, 150, .8, true, t); } },
+    { d: 6, say: '小幽靈小小聲地說：「我迷路了，找不到回家的路……」', draw(g, t) { MV.sky(g, '#2a1f4a', '#4a3a6a'); MV.stars(g, t, 25); MV.ground(g, 160, '#3a4a3a'); MV.ghost(g, 220, 150, 1.2, t); MV.kid(g, 120, 180, 1.1, { t }); MV.pumpkin(g, 138, 150, .8, true, t); if (t > 1) MV.say(g, 220, 100, '嗚嗚…'); } },
+    { d: 7, say: '路好黑喔。', tap: { at: 1.2, hint: '👆 點一下南瓜燈，照亮回家的路！', x: 140, y: 140 }, react: ['clap', 2], draw(g, t, st) { MV.sky(g, '#1a1030', '#2a1f4a'); MV.ground(g, 160, '#2a3a2a'); if (st.tapped) { const k = Math.min(1, st.tt / 1.2); for (let i = 0; i < 6; i++) if (k * 6 > i) MV.pumpkin(g, 170 + i * 32, 170 - i * 4, .5, true, t); } MV.ghost(g, 230, 140, 1.1, t); MV.kid(g, 120, 180, 1.1, { t, joy: st.tapped }); MV.pumpkin(g, 138, 150, .9 + (st.tapped ? 0 : Math.sin(t * 6) * .08), true, t); } },
+    { d: 6, say: '小幽靈找到家了！幽靈爸爸媽媽送{名字}好多糖果。', react: ['clap', 1], draw(g, t) { MV.sky(g, '#2a1f4a', '#4a3a6a'); MV.stars(g, t, 25); MV.ground(g, 160, '#3a4a3a'); MV.ghost(g, 220, 140, 1.5, t); MV.ghost(g, 280, 140, 1.5, t + 1); MV.ghost(g, 250, 160, 1, t + 2); MV.kid(g, 110, 180, 1.1, { t, joy: true }); g.font = '18px sans-serif'; g.textAlign = 'center'; ['🍬', '🍭', '🍫'].forEach((c, i) => g.fillText(c, 150 + i * 16, 120 - Math.abs(Math.sin(t * 3 + i)) * 10)); } },
+    { d: 6, say: '萬聖節快樂！明年再來找小幽靈玩吧！', draw(g, t) { MV.sky(g, '#2a1f4a', '#4a3a6a'); MV.stars(g, t, 40); MV.ground(g, 160, '#3a4a3a'); MV.kid(g, 150, 180, 1.1, { t, joy: true }); MV.ghost(g, 220, 130 + Math.sin(t * 2) * 6, 1, t); MV.pumpkin(g, 100, 178, 1, true, t); g.font = '900 22px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillStyle = '#ffb347'; g.fillText('Happy Halloween!', 180, 50); } }
+  ] }
+];
+const MOVIE_BY_ID = Object.fromEntries(MOVIES.map(m => [m.id, m]));
+const MOVIE_REGULAR = MOVIES.filter(m => !m.season).map(m => m.id);
+function movieText(s) { return String(s).split('{名字}').join(charName()).split('{寵物}').join(G.pet ? petName() : '小寵物'); }
+function moviesNow() { return MOVIES.filter(m => !m.season || (m.season === 'halloween' && typeof halloweenActive === 'function' && halloweenActive())); }
+function moviesSeen() { return G.movies && typeof G.movies === 'object' ? G.movies : (G.movies = {}); }
+function drawMoviePoster(g, W, H, id) {   // 海報：顏色＋大圖示＋片名（太小的只畫圖示）
+  const m = MOVIE_BY_ID[id]; if (!m) return;
+  const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, m.color); gr.addColorStop(1, '#26232a'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  g.strokeStyle = '#ffd23f'; g.lineWidth = Math.max(1.5, W / 40); g.strokeRect(1, 1, W - 2, H - 2);
+  g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `${Math.round(Math.min(W, H) * .5)}px sans-serif`; g.fillText(m.icon, W / 2, H * .42);
+  if (W >= 60) { g.fillStyle = '#ffffff'; g.font = `900 ${Math.round(W / 8)}px "Microsoft JhengHei","PingFang TC",sans-serif`; g.fillText(movieText(m.title), W / 2, H * .8, W - 6); g.font = `700 ${Math.round(W / 11)}px "Microsoft JhengHei","PingFang TC",sans-serif`; g.fillStyle = '#ffd23f'; g.fillText(m.genre, W / 2, H * .91, W - 6); }
+  g.textBaseline = 'alphabetic';
+}
+function posterCanvas(id, w, h) { const c = document.createElement('canvas'), dpr = window.devicePixelRatio || 1; c.width = w * dpr; c.height = h * dpr; c.style.width = w + 'px'; c.style.height = h + 'px'; const g = c.getContext('2d'); g.scale(dpr, dpr); drawMoviePoster(g, w, h, id); return c; }
+// 選電影：海報一排，看過的打勾
+function openMoviePicker(preId) {
+  const w = openGameWindow('🎬 今天要看哪一部？', `點海報選電影。電影票 ${MOVIE_TICKET} 元，主角是你和${G.pet ? petName() : '寵物'}！`);
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const seen = moviesSeen(), grid = el('div', 'movie-grid');
+  moviesNow().forEach(m => { const b = el('button', 'movie-pick'); b.appendChild(posterCanvas(m.id, 96, 132)); b.appendChild(el('b', '', movieText(m.title))); b.appendChild(el('span', '', seen[m.id] ? `✅ 看過 ${seen[m.id]} 次` : '🆕 還沒看過')); b.onclick = () => moviePopcorn(w, m); grid.appendChild(b); });
+  w.stage.appendChild(grid);
+  const n = MOVIE_REGULAR.filter(id => seen[id]).length;
+  w.status.textContent = `🎟️ 集章 ${n} / ${MOVIE_REGULAR.length}${n >= MOVIE_REGULAR.length ? '（全部看過了！）' : `（全部看過送一張電影海報）`}`;
+  leaveButton(w);
+  if (preId && MOVIE_BY_ID[preId] && moviesNow().includes(MOVIE_BY_ID[preId])) moviePopcorn(w, MOVIE_BY_ID[preId]);
+}
+function moviePopcorn(w, m) {
+  if (G.bells < MOVIE_TICKET) { toast(`💰 電影票要 ${MOVIE_TICKET} 元，錢不夠喔～去玩小遊戲賺錢吧！`); return; }
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  w.stage.appendChild(posterCanvas(m.id, 120, 165));
+  w.stage.appendChild(el('div', 'tkd-say', `「${movieText(m.title)}」要加買爆米花嗎？`));
+  const row = el('div', 'movie-pop');
+  const yes = el('button', 'big', `🍿 要！（${MOVIE_POPCORN} 元）`), no = el('button', 'big alt', '不用了，直接看');
+  yes.disabled = G.bells < MOVIE_TICKET + MOVIE_POPCORN;
+  yes.onclick = () => playMovie(w, m, true); no.onclick = () => playMovie(w, m, false);
+  row.append(yes, no); w.stage.appendChild(row);
+  w.status.textContent = `🎟️ 電影票 ${MOVIE_TICKET} 元`;
+  leaveButton(w);
+}
+function playMovie(w, m, popcorn) {
+  addBells(-(MOVIE_TICKET + (popcorn ? MOVIE_POPCORN : 0))); refreshTop(); saveGame();
+  Sound.play('coin');
+  w.card.classList.add('in-movie');
+  { const h = w.card.querySelector('h2'); if (h) h.textContent = `🎬 ${movieText(m.title)}`; const nt = w.card.querySelector('h2 + *'); if (nt && nt !== w.stage) nt.style.display = 'none'; }
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const { c, g } = gameCanvas(w.stage, MOVIE_W, MOVIE_H);
+  const sub = el('div', 'movie-sub', '　'); w.stage.appendChild(sub);
+  w.status.textContent = popcorn ? '🍿 一邊吃爆米花，一邊看電影～' : '🎬 電影開始了，要安靜喔～';
+  const quit = el('button', 'big alt', '離開電影院'); quit.onclick = () => closeGameWindow(); w.btns.appendChild(quit);
+  try { Sound.duck && Sound.duck(true); } catch (e) {}
+  const crowd = NEIGHBORS.filter(Boolean).slice(0, 4);
+  let raf = 0, live = true, phase = 'intro', si = -1, T0 = performance.now(), st = null, react = null, endAt = 0;
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); stopSpeak(); try { Sound.duck && Sound.duck(false); } catch (e) {} w.card.classList.remove('in-movie'); };
+  const nextScene = now => {
+    si++; T0 = now;
+    if (si >= m.scenes.length) { phase = 'end'; sub.textContent = '— 完 —'; Sound.play('fanfare'); return; }
+    const sc = m.scenes[si]; st = { tapped: false, tt: 0, waitFrom: 0 }; react = null;
+    sub.textContent = movieText(sc.say); try { speak(movieText(sc.say)); } catch (e) {}
+  };
+  const tap = () => {
+    if (phase !== 'film' || !st || st.tapped) return;
+    const sc = m.scenes[si]; if (!sc.tap || !st.waitFrom) return;
+    st.tapped = true; st.tapAt = performance.now(); T0 += st.tapAt - st.waitFrom; st.waitFrom = 0;   // 從停住的那一刻接著播
+    Sound.play('magic');
+  };
+  c.addEventListener('pointerdown', e => { e.preventDefault(); tap(); });
+  playMovie.test = { tap, scene: () => si, phase: () => phase, skip: () => { T0 -= 60000; if (st && st.waitFrom) tap(); } };
+  const audience = (now, kind) => {   // 前排觀眾（後腦勺）＋小可愛
+    const t = now / 1000;
+    g.fillStyle = '#14101c'; g.fillRect(0, MOVIE_SH, MOVIE_W, MOVIE_H - MOVIE_SH);
+    const seats = [[50, crowd[0]], [115, crowd[1]], [180, null], [245, crowd[2]], [310, crowd[3]]];
+    seats.forEach(([x, n], i) => {
+      const hop = kind === 'laugh' ? Math.abs(Math.sin(t * 9 + i)) * 4 : kind === 'clap' ? Math.abs(Math.sin(t * 12 + i)) * 2 : 0;
+      g.save(); g.translate(x, MOVIE_H + 6 - hop);
+      if (n) { g.scale(1.4, 1.4); g.globalAlpha = .85; drawNeighbor(g, n, { happy: !!kind, blink: false, fx: 0, clean: 100 }); g.globalAlpha = 1; }
+      else { g.scale(.85, .85); if (kidBaby()) drawBabyKid(g, { t }); else drawGirl(g, { t, back: true, blink: false, outfit: currentOutfit(), stage: kidLookStage() }); }
+      g.restore();
+      if (kind && n) { const txt = kind === 'laugh' ? '哈哈！' : kind === 'wow' ? '哇～' : '👏'; g.font = '700 11px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillStyle = '#ffffff'; g.fillText(txt, x, MOVIE_SH + 14 - (t * 10 % 6)); }
+    });
+    if (popcorn) { g.font = '20px sans-serif'; g.textAlign = 'center'; g.fillText('🍿', 205, MOVIE_H - 8); }
+  };
+  const frame = now => {
+    if (!live) return;
+    const t = (now - T0) / 1000;
+    g.fillStyle = '#000000'; g.fillRect(0, 0, MOVIE_W, MOVIE_SH);
+    let kind = null;
+    if (phase === 'intro') {   // 燈暗、倒數圓圈
+      const n = 3 - Math.floor(t / .8);
+      g.fillStyle = '#d8d0c0'; g.fillRect(0, 0, MOVIE_W, MOVIE_SH); g.strokeStyle = '#26232a'; g.lineWidth = 3;
+      [40, 60].forEach(r => { g.beginPath(); g.arc(180, 100, r, 0, Math.PI * 2); g.stroke(); });
+      g.beginPath(); g.moveTo(180, 100); g.arc(180, 100, 60, -Math.PI / 2, -Math.PI / 2 + ((t / .8) % 1) * Math.PI * 2); g.lineTo(180, 100); g.fillStyle = 'rgba(38,35,42,.25)'; g.fill();
+      g.fillStyle = '#26232a'; g.font = '900 48px Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(n > 0 ? n : '', 180, 102); g.textBaseline = 'alphabetic';
+      if (t < .1) sub.textContent = `🎬 ${movieText(m.title)}`;
+      if (t > 2.4) { phase = 'film'; nextScene(now); }
+    } else if (phase === 'film') {
+      const sc = m.scenes[si];
+      let lt = t;
+      if (sc.tap && !st.tapped && lt >= sc.tap.at) { if (!st.waitFrom) st.waitFrom = now; lt = sc.tap.at; if (now - st.waitFrom > 10000) tap(); }   // 停住等她點（10 秒沒點自己繼續）
+      st.tt = st.tapped ? (now - st.tapAt) / 1000 : 0;
+      g.save(); g.beginPath(); g.rect(0, 0, MOVIE_W, MOVIE_SH); g.clip();
+      try { sc.draw(g, lt, st); } catch (e) {}
+      g.restore();
+      if (st.waitFrom && !st.tapped) {   // 提示：手指一閃一閃
+        g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(0, 0, MOVIE_W, 26); g.fillStyle = '#ffe066'; g.font = '900 15px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillText(sc.tap.hint, 180, 18);
+        const k = Math.abs(Math.sin(now / 250)); g.font = `${26 + k * 6}px sans-serif`; g.fillText('👆', sc.tap.x, sc.tap.y + 30 + k * 4);
+        g.strokeStyle = `rgba(255,230,102,${.4 + k * .5})`; g.lineWidth = 3; g.beginPath(); g.arc(sc.tap.x, sc.tap.y, 22 + k * 6, 0, Math.PI * 2); g.stroke();
+      }
+      if (sc.react && lt >= sc.react[1] && lt < sc.react[1] + 2.2) { kind = sc.react[0]; if (!react) { react = 1; Sound.play(kind === 'laugh' ? 'boing' : kind === 'clap' ? 'perfect' : 'magic'); } }
+      if (lt >= sc.d) nextScene(now);
+    } else if (phase === 'end') {   // 片尾：完、主演
+      g.fillStyle = '#000000'; g.fillRect(0, 0, MOVIE_W, MOVIE_SH);
+      g.textAlign = 'center'; g.fillStyle = '#ffffff'; g.font = '900 30px "Microsoft JhengHei","PingFang TC",sans-serif'; g.fillText('完', 180, 70);
+      g.font = '700 14px "Microsoft JhengHei","PingFang TC",sans-serif'; g.fillStyle = '#ffd23f'; g.fillText(`主演：${charName()}${G.pet ? '、' + petName() : ''}`, 180, 110);
+      g.fillStyle = '#cfc8e0'; g.fillText(`友情演出：${crowd.map(n => n.short).join('、')}`, 180, 134); g.fillText('謝謝觀賞 🎬', 180, 160);
+      kind = 'clap';
+      if (t > 4.2 && !endAt) { endAt = now; live = false; movieDone(w, m, popcorn); return; }
+    }
+    audience(now, kind);
+    raf = requestAnimationFrame(frame);
+  };
+  raf = requestAnimationFrame(frame);
+}
+function movieDone(w, m, popcorn) {
+  gameCleanup && gameCleanup(); gameCleanup = null;
+  const seen = moviesSeen(), first = !seen[m.id];
+  seen[m.id] = (seen[m.id] || 0) + 1;
+  kidMoodUp(first ? 15 : 8);
+  if (popcorn) G.kid.hunger = clampStat((G.kid.hunger != null ? G.kid.hunger : 80) + 15);
+  try { if (first) kidGainGrowth(KID_BOOK_GROW); else kidActGrowth('movie'); } catch (e) {}
+  const n = MOVIE_REGULAR.filter(id => seen[id]).length;
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  w.stage.appendChild(posterCanvas(m.id, 120, 165));
+  w.stage.appendChild(el('div', 'tkd-say', first ? `🎟️ 蓋了一個新章！集章 ${n} / ${MOVIE_REGULAR.length}` : `又看了一次「${movieText(m.title)}」！`));
+  w.status.textContent = popcorn ? '🍿 爆米花吃光光了，好飽～' : '好好看喔！';
+  if (first && !m.season && n >= MOVIE_REGULAR.length && !G.moviePrize) {
+    G.moviePrize = 1; addItem('movie_poster_pet');
+    setTimeout(() => { try { showcase(posterCanvas('pet', 120, 165), '🎬 五部電影都看完了！', `放映師送你一張「${movieText(MOVIE_BY_ID.pet.title)}」海報，放進「我的東西」了，可以掛在家裡！`, { head: '🏆 電影集章完成！' }); } catch (e) { toast('🎬 五部電影都看完了！送你一張電影海報'); } }, 600);
+  }
+  try { hostSay(first ? '好看嗎？下次再來看別的喔！' : '這部真的很好看對不對？', 2600); fufuSay(pickLine('kidReply'), 2400); } catch (e) {}
+  saveGame(); refreshTop();
+  const again = el('button', 'big', '🎬 再看一部'); again.onclick = () => openMoviePicker(); w.btns.appendChild(again);
+  leaveButton(w);
+}
+Object.assign(WALL_TAP, { cinema_screen: () => openMoviePicker() });
+['pet', 'space', 'dino', 'sea', 'funny', 'halloween'].forEach(id => { WALL_TAP['movie_poster_' + id] = () => openMoviePicker(id); });
+FURNITURE_USE.cinema_seat = { use: 'sit', seats: [{ x: .5, y: .5, z: 19 }], front: [0, 1] };
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
       動物朋友全都打扮來跳舞放煙火，每天第一次結束時每位送一顆糖（4 顆萬聖節糖果）。
