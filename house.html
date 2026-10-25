@@ -708,6 +708,14 @@ button.pass { font: inherit; }
 .isl-talk-opts button:active { background: #fff3e0; }
 .clip-invite { position: fixed; left: 50%; top: 70px; transform: translateX(-50%); z-index: 92; font: inherit; font-size: 18px; font-weight: 900; padding: 12px 44px 12px 20px; border-radius: 999px; border: 3px solid #fff; background: #ff9a3c; color: #fff; box-shadow: 0 8px 20px rgba(0,0,0,.25); animation: fishPop .35s both; }
 .clip-x { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 16px; opacity: .85; padding: 4px; }
+.fs-theme { display: flex; align-items: center; gap: 8px; font-size: 18px; margin-bottom: 6px; } .fs-ti { font-size: 30px; } .fs-timer { margin-left: auto; font-weight: 900; color: #e8505b; }
+.fs-wrap { display: flex; gap: 10px; } .fs-prev { flex: 0 0 130px; display: flex; align-items: center; justify-content: center; background: #fff3fa; border-radius: 14px; }
+.fs-right { flex: 1; min-width: 0; } .fs-tabs { display: flex; gap: 4px; margin-bottom: 6px; } .fs-tabs button { flex: 1; font: inherit; font-size: 14px; padding: 6px 2px; border: 2px solid var(--line); border-radius: 10px; background: #fff; } .fs-tabs button.on { background: #ffe0ee; border-color: #ff8fb3; }
+.fs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; max-height: 240px; overflow: auto; }
+.fs-item { display: flex; flex-direction: column; align-items: center; font: inherit; font-size: 11px; padding: 3px; border: 2px solid var(--line); border-radius: 10px; background: #fff; } .fs-item.on { border-color: #ff8fb3; background: #fff0f6; }
+.tyc-cash { text-align: center; font-weight: 800; margin: 6px 0; font-size: 14px; }
+.tyc-shop { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px; }
+.tyc-item { display: flex; flex-direction: column; align-items: center; gap: 1px; font: inherit; font-size: 12px; padding: 6px 4px; border: 2px solid var(--line); border-radius: 12px; background: #fff; } .tyc-item .ti { font-size: 22px; } .tyc-item b { font-size: 13px; } .tyc-item.max { background: #eaffea; }
 .spar-row { display: flex; gap: 12px; justify-content: center; margin: 8px 0; }
 .spar-row button { min-width: 120px; font-size: 20px; }
 .music-menu { position: fixed; z-index: 70; background: var(--panel, #fffaf0); border: 2px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
@@ -4545,6 +4553,7 @@ const OPEN_GIFT_BELLS = 100000;
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
   { id: '2026-10-18T09:00', title: '萬聖節派對＋找小幽靈！🎃👻', lines: [
+    ['🎮', '三個像 Roblox 的新小遊戲（在「💰 賺錢」）：👗 換裝走秀（照主題挑衣服上台，評審給星星）、🧁 甜點店大亨（買機器讓甜點店自己賺錢）、🐾 寵物收集模擬器（帶寵物敲金幣堆、升級、開新區域）'],
     ['🔒', '「⚙️ 設定」改成要家長密碼才進得去（還沒設密碼的話，大人算一題乘法），小朋友不會不小心改到設定'],
     ['📲', 'iPad 收邀請卡變簡單：信裡的連結打開後按「📋 複製邀請卡」，回到小屋 App 上面會跳出「📥 打開剛剛複製的邀請卡」，點一下就好（電腦點連結本來就會直接打開）'],
     ['🏡', '主島快滿了，姊姊、妹妹和朋友的家搬到新的「朋友島」！在主島南邊，到碼頭坐船⛵過去；第一次收到邀請卡會播朋友島出現的動畫'],
@@ -5320,6 +5329,11 @@ function normalizeSave(g) {
   if (out.ride != null && !(typeof out.ride === 'string' && (out.vehicles || []).includes(out.ride))) delete out.ride;
   if (out.islReq != null && !(isObj(out.islReq) && typeof out.islReq.d === 'string' && /^(shell|bug|fish|flower)$/.test(out.islReq.kind) && typeof out.islReq.npc === 'string')) delete out.islReq;   // 🐻 動物朋友請她幫忙
   if (out.fIsle != null && out.fIsle !== 1) delete out.fIsle;   // 🏡 朋友島的動畫播過了
+  for (const k of ['tycoon', 'sim']) { const v = out[k]; if (v == null) continue; if (!isObj(v)) { delete out[k]; continue; }   // 🧁 大亨、🐾 模擬器
+    if (k === 'tycoon') { v.lv = isObj(v.lv) ? Object.fromEntries(Object.entries(v.lv).filter(([a, n]) => /^(oven|cream|belt|case|staff|sign)$/.test(a) && Number.isInteger(n) && n >= 0 && n <= 10)) : {}; if (!num(v.cash) || v.cash < 0) v.cash = 0; v.cash = Math.min(v.cash, 100000); if (!num(v.last)) v.last = Date.now(); }
+    else ['power', 'bag', 'zone', 'zoneMax'].forEach(a => { if (!Number.isInteger(v[a]) || v[a] < 0 || v[a] > 99) v[a] = a === 'power' || a === 'bag' ? 1 : 0; });
+    if (v.zone > v.zoneMax) v.zone = 0; if (v.zoneMax > 2) v.zoneMax = 2;
+    if (v.day != null && !(isObj(v.day) && typeof v.day.d === 'string' && num(v.day.n))) delete v.day; }
   if (out.qIsleDay != null && !(isObj(out.qIsleDay) && typeof out.qIsleDay.d === 'string' && isObj(out.qIsleDay.got))) delete out.qIsleDay;
   if (out.raceDay != null && !(isObj(out.raceDay) && typeof out.raceDay.d === 'string' && Number.isInteger(out.raceDay.n) && out.raceDay.n >= 0)) delete out.raceDay;   // 🏁 賽跑猜對的獎金（一天幾次）
   if (out.kid.magic != null && !(isObj(out.kid.magic) && num(out.kid.magic.until) && magicFxList().some(m => m.id === out.kid.magic.id))) delete out.kid.magic;   // 🔮 魔法藥水的效果
@@ -14613,14 +14627,14 @@ function tabEarn(body) {
   body.appendChild(note(`每場 1 分鐘內玩完，分數越高拿到越多錢。${G.gameBonusDay === today() ? '（今天的雙倍已經用過了，明天再來！）' : '🎁 今天第一場獎金雙倍！'}`));
   const games = el('div', 'game-list');
   [['🃏', '翻牌配對', openMemoryGame], ['🧺', `${petName()}接水果`, openCatchGame], ['💦', '戳泡泡', openBubbleGame],
-    ['🥤', '杯子躲貓貓', openCupGame], ['🥞', '疊疊鬆餅', openStackGame], ['🎵', '跟著唱', openSimonGame],
+    ['🥤', '杯子躲貓貓', openCupGame], ['🥞', '疊疊鬆餅', openStackGame], ['👗', '換裝走秀', openFashionShow],
     ['🎯', '彈弓丟蘋果', openSlingGame],
     ['🧩', '拼圖', openPuzzleGame],
-    ['💰', '接金幣', openCoinGame],
+    ['🐾', '寵物收集模擬器', openSimGame],
     ['⚪', '彈珠台', openMarbleGame],
     ['🐠', '撈金魚', openScoopGame],
     ['🍪', '烤餅乾', openBakeGame],
-    ['🧁', '杯子蛋糕店', openCupcakeGame],
+    ['🧁', '甜點店大亨', openTycoon],
     ['🔡', '字母找找看', openLetterGame],
     ['🔤', '英文單字', openEnglishGame],
     ['🌳', '寵物捉迷藏', openPetHideGame]].forEach(([icon, label, fn]) => {
@@ -22173,6 +22187,239 @@ function friendByBoat(i) {
   isl.x = dock.x + .5; isl.y = dock.y + .5; isl.cam.x = isl.x; isl.cam.y = isl.y; isl.path = []; isl.pending = null; isl.skipDoor = null; isl.pan = null;
   isl.afterBoat = () => { isl.pending = { type: 'enter', id: b.id }; if (!islWalkTo((x, y) => x === b.door[0] && y === b.door[1])) isl.pending = null; };
   islBoatRide(dock);
+}
+/* ===== 🎮 Roblox 風的三個小遊戲（家長：三個都做；用自己畫的，不用 Roblox 的角色）=====
+   👗 換裝走秀（取代「跟著唱」）、🧁 甜點店大亨（取代「杯子蛋糕店」）、🐾 寵物收集模擬器（取代「接金幣」）。
+   舊的三個遊戲程式還在（測試用），只是不放在選單上。大亨、模擬器每天能賺的錢有上限，不會讓商店變太好買。 */
+function dayCap(obj, cap) { const d = today(); if (!obj.day || obj.day.d !== d) obj.day = { d, n: 0 }; return Math.max(0, cap - obj.day.n); }
+// ───────── 👗 換裝走秀 ─────────
+const FASHION_THEMES = [
+  { id: 'beach', icon: '🏖️', name: '海邊玩水', kw: ['泳', '草帽', '短褲', 'T恤', '墨鏡', '光腳', '夏'] },
+  { id: 'princess', icon: '👑', name: '公主舞會', kw: ['公主', '皇冠', '洋裝', '蓬蓬', '花冠', '蝴蝶結'] },
+  { id: 'halloween', icon: '🎃', name: '萬聖節派對', kw: ['南瓜', '巫', '惡魔', '幽靈', '吸血鬼', '披風'] },
+  { id: 'winter', icon: '❄️', name: '下雪天', kw: ['毛', '外套', '靴', '聖誕', '麋鹿', '長褲', '帽T'] },
+  { id: 'school', icon: '🏫', name: '開心上學', kw: ['制服', '學', '百褶', '皮鞋', '格子', '水手'] },
+  { id: 'sport', icon: '🏃', name: '運動會', kw: ['運動', '球鞋', '短褲', '帽T', '練習服', 'T恤', '道服'] },
+  { id: 'picnic', icon: '🌸', name: '春天野餐', kw: ['花', '櫻', '草帽', '裙', '洋裝', '條紋', '草莓', '雨鞋'] },
+  { id: 'party', icon: '🎉', name: '生日派對', kw: ['彩虹', '星星', '蝴蝶結', '洋裝', '公主鞋', '愛心', '蓬蓬'] }
+];
+const FASHION_PRIZE = [150, 90, 50, 30];
+function fashionPool(slot) { return Object.values(CLOTHES_BY_ID).filter(c => c.slot === slot && !/^dad_/.test(c.id)); }
+function fashionScore(theme, ids) {   // 每一件：符合主題 3 分、普通 1 分、沒戴頭飾 .5；四件都符合多 3 分
+  let s = 0, hit = 0;
+  OUTFIT_SLOTS.forEach(({ key }) => { const c = CLOTHES_BY_ID[ids[key]]; if (!c) return; if (c.id === 'head_none') { s += .5; return; } const ok = theme.kw.some(k => c.name.includes(k)); s += ok ? 3 : 1; if (ok) hit++; });
+  return s + (hit >= 4 ? 3 : hit >= 3 ? 1.5 : 0);
+}
+function openFashionShow() { const w = openGameWindow('👗 換裝走秀', '看主題，在時間內挑衣服搭配，再上台走秀！評審會給星星。衣服都可以借來穿（走秀完會換回來）。'); pickLevelRow(w, [{ name: '慢慢挑', t: 90, mul: 1 }, { name: '普通', t: 60, mul: 1 }, { name: '快快挑！', t: 40, mul: 2 }], L => `第一名 💰 ${FASHION_PRIZE[0] * L.mul}`, L => fashionDress(w, L)); }
+function fashionDress(w, L) {
+  const theme = FASHION_THEMES[Math.floor(Math.random() * FASHION_THEMES.length)];
+  const pick = Object.assign({}, G.outfit), ws = w.stage; ws.innerHTML = ''; w.btns.innerHTML = '';
+  const head = el('div', 'fs-theme'); head.append(el('span', 'fs-ti', theme.icon), el('b', '', `主題：${theme.name}`)); const timer = el('span', 'fs-timer', ''); head.appendChild(timer); ws.appendChild(head);
+  const wrap = el('div', 'fs-wrap'), prev = el('div', 'fs-prev'), right = el('div', 'fs-right'); wrap.append(prev, right); ws.appendChild(wrap);
+  const tabs = el('div', 'fs-tabs'), grid = el('div', 'fs-grid'); right.append(tabs, grid);
+  let slot = 'top';
+  const drawPrev = () => { prev.innerHTML = ''; prev.appendChild(renderGirl(pick, 130, 160)); };
+  const drawGrid = () => {
+    tabs.innerHTML = ''; OUTFIT_SLOTS.forEach(sl => { const b = el('button', sl.key === slot ? 'on' : '', sl.name); b.onclick = () => { slot = sl.key; drawGrid(); }; tabs.appendChild(b); });
+    grid.innerHTML = ''; fashionPool(slot).forEach(c => { const b = el('button', 'fs-item' + (pick[slot] === c.id ? ' on' : '')); b.appendChild(renderGirl(Object.assign({}, pick, { [slot]: c.id }), 48, 60)); b.appendChild(el('span', '', c.name)); b.onclick = () => { pick[slot] = c.id; Sound.play('click'); drawPrev(); drawGrid(); }; grid.appendChild(b); });
+  };
+  drawPrev(); drawGrid();
+  try { speak(`主題是${theme.name}！`); } catch (e) {}
+  let left = L.t, tm = 0; const done = () => { clearInterval(tm); fashionRunway(w, L, theme, pick); };
+  timer.textContent = `⏱️ ${left}`; tm = setInterval(() => { left--; timer.textContent = `⏱️ ${left}`; if (left <= 5 && left > 0) Sound.play('click'); if (left <= 0) done(); }, 1000);
+  gameCleanup = () => clearInterval(tm);
+  const go = el('button', 'big', '✨ 換好了，上台！'); go.onclick = done; w.btns.appendChild(go); leaveButton(w);
+  w.status.textContent = `${theme.icon} 照著「${theme.name}」挑衣服，時間到就上台！`;
+  fashionDress.test = { pick, theme, done };
+}
+function fashionRunway(w, L, theme, pick) {
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; w.status.textContent = '🌟 走秀中，評審在打分數…';
+  const W = 400, H = 260, { g } = gameCanvas(w.stage, W, H), T0 = performance.now(), judges = NEIGHBORS.filter(Boolean).slice(0, 3);
+  const mine = fashionScore(theme, pick), stars = judges.map(() => Math.max(1, Math.min(5, Math.round(mine / 3 + (Math.random() - .4) * 1.2))));
+  const total = stars.reduce((a, b) => a + b, 0), rivals = [0, 1, 2].map(() => 5 + Math.floor(Math.random() * 8)), place = 1 + rivals.filter(r => r > total).length;
+  const out = Object.fromEntries(OUTFIT_SLOTS.map(({ key }) => [key, CLOTHES_BY_ID[pick[key]]]));
+  let raf = 0, live = true; gameCleanup = () => { live = false; cancelAnimationFrame(raf); };
+  const said = {}; const once = (k, f) => { if (!said[k]) { said[k] = 1; f(); } };
+  const tick = now => {
+    if (!live) return;
+    const t = (now - T0) / 1000;
+    g.fillStyle = '#2a1f3a'; g.fillRect(0, 0, W, H);
+    for (let i = 0; i < 6; i++) { g.fillStyle = `rgba(255,240,180,${.12 + .08 * Math.sin(t * 3 + i)})`; g.beginPath(); g.moveTo(40 + i * 64, 0); g.lineTo(10 + i * 64, 180); g.lineTo(80 + i * 64, 180); g.fill(); }   // 舞台燈
+    g.fillStyle = '#e8505b'; g.beginPath(); g.moveTo(150, 90); g.lineTo(250, 90); g.lineTo(300, 200); g.lineTo(100, 200); g.fill();   // 伸展台
+    g.fillStyle = '#ffd23f'; g.font = '700 14px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillText(`${theme.icon} ${theme.name}`, W / 2, 24);
+    // 小可愛從後面走到前面，停下來擺姿勢
+    const k = Math.min(1, t / 2.4), y = 100 + k * 62, sc = .9 + k * .55, hop = k < 1 ? Math.abs(Math.sin(t * 9)) * 3 : (t > 2.6 && t < 3.4 ? Math.abs(Math.sin((t - 2.6) * 8)) * 10 : 0);
+    g.save(); g.translate(W / 2, y - hop); g.scale(sc, sc); drawGirl(g, { t, walking: k < 1, blink: false, outfit: out, face: t > 2.4 ? 'joy' : undefined, stage: kidLookStage() }); g.restore();
+    if (t > 2.4) once('pose', () => { Sound.play('magic'); });
+    // 評審一個一個舉星星
+    judges.forEach((n, i) => {
+      const jx = 70 + i * 130, jy = 250;
+      g.save(); g.translate(jx, jy); g.scale(1.7, 1.7); drawNeighbor(g, n, { happy: t > 3.2 + i * .8, blink: false, fx: 0, clean: 100 }); g.restore();
+      if (t > 3.2 + i * .8) { once('j' + i, () => Sound.play(stars[i] >= 4 ? 'perfect' : 'coin')); g.fillStyle = '#fffaf0'; g.fillRect(jx - 34, jy - 74, 68, 22); g.fillStyle = '#f2b200'; g.font = '14px sans-serif'; g.fillText('★'.repeat(stars[i]) + '☆'.repeat(5 - stars[i]), jx, jy - 58); }
+    });
+    if (t > 6) { g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(0, 70, W, 70); g.fillStyle = '#ffffff'; g.font = '900 26px "Microsoft JhengHei","PingFang TC",sans-serif'; g.fillText(place === 1 ? '🏆 第一名！' : `第 ${place} 名！`, W / 2, 112); once('end', () => { Sound.play(place === 1 ? 'fanfare' : 'coin'); fashionEnd(w, L, total, place); }); }
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+}
+function fashionEnd(w, L, total, place) {
+  const bells = payReward(w, FASHION_PRIZE[place - 1] * L.mul);
+  w.status.textContent = `評審一共給了 ⭐ ${total} 顆，第 ${place} 名！💰 +${fmt(bells)}`;
+  kidMoodUp(place === 1 ? 12 : 6); try { speak(place === 1 ? '第一名！好漂亮！' : `第${place}名！`); } catch (e) {}
+  setTimeout(() => { w.btns.innerHTML = ''; gameButtons(w, openFashionShow); }, 1200);
+}
+// ───────── 🧁 甜點店大亨 ─────────
+const TYC_ITEMS = [
+  { id: 'oven', icon: '🔥', name: '烤箱', base: 150, grow: 1.7, max: 10, rate: .5 },
+  { id: 'cream', icon: '🍦', name: '奶油機', base: 400, grow: 1.8, max: 5, rate: 1 },
+  { id: 'belt', icon: '➡️', name: '輸送帶', base: 900, grow: 1, max: 1, mul: 1.3 },
+  { id: 'case', icon: '🧁', name: '漂亮展示櫃', base: 1500, grow: 1, max: 1, mul: 1.5 },
+  { id: 'staff', icon: '🐻', name: '店員', base: 2500, grow: 1, max: 1, note: '關掉也會幫你賺（最多 1 小時）' },
+  { id: 'sign', icon: '🎪', name: '大招牌', base: 4000, grow: 1, max: 1, mul: 1.5 }
+];
+const TYC_DAY_CAP = 3000;
+function tycState() {
+  const t = G.tycoon && typeof G.tycoon === 'object' ? G.tycoon : (G.tycoon = {});
+  t.lv = t.lv && typeof t.lv === 'object' ? t.lv : {}; if (!t.lv.oven) t.lv.oven = 1;
+  if (typeof t.cash !== 'number') t.cash = 0; if (typeof t.last !== 'number') t.last = Date.now();
+  return t;
+}
+function tycRate() { const t = tycState(); let r = (t.lv.oven || 0) * .5 + (t.lv.cream || 0) * 1; TYC_ITEMS.forEach(it => { if (it.mul && t.lv[it.id]) r *= it.mul; }); return r; }   // 每秒幾元
+function tycCost(it) { const lv = tycState().lv[it.id] || 0; return Math.round(it.base * Math.pow(it.grow, Math.max(0, lv - (it.id === 'oven' ? 1 : 0)))); }
+function openTycoon() {
+  const t = tycState(), w = openGameWindow('🧁 甜點店大亨', '甜點店自己會做蛋糕、賣給客人。按「💰 收錢」把賺到的錢收起來，再買新機器讓店越賺越多！');
+  // 關掉的時候：有店員才會繼續賺（最多 1 小時）
+  const away = Math.min(3600, (Date.now() - t.last) / 1000);
+  if (t.lv.staff && away > 5) t.cash += tycRate() * away;
+  t.last = Date.now();
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const W = 420, H = 230, { g } = gameCanvas(w.stage, W, H);
+  const cashRow = el('div', 'tyc-cash'), collect = el('button', 'big', '💰 收錢'); w.stage.appendChild(cashRow);
+  const shop = el('div', 'tyc-shop'); w.stage.appendChild(shop);
+  w.btns.appendChild(collect); leaveButton(w);
+  const cakes = [], buyers = [], pops = [];
+  let raf = 0, live = true, last = performance.now(), cakeAcc = 0, buyAt = 0;
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); t.last = Date.now(); saveGame(); };
+  const refresh = () => {
+    const capLeft = dayCap(t, TYC_DAY_CAP);
+    cashRow.textContent = `🧁 每秒賺 ${tycRate().toFixed(1)} 元　💰 收銀機裡：${Math.floor(t.cash)} 元　（今天還可以收 ${capLeft} 元）`;
+    collect.disabled = t.cash < 1 || capLeft <= 0;
+    shop.innerHTML = '';
+    TYC_ITEMS.forEach(it => {
+      const lv = t.lv[it.id] || 0, maxed = lv >= it.max, cost = tycCost(it), b = el('button', 'tyc-item' + (maxed ? ' max' : ''));
+      b.append(el('span', 'ti', it.icon), el('b', '', `${it.name}${it.max > 1 ? ` Lv${lv}` : lv ? ' ✅' : ''}`), el('span', '', maxed ? '最高了！' : `💰 ${fmt(cost)}`));
+      b.disabled = maxed || G.bells < cost;
+      b.onclick = () => { if (!spend(cost)) { toast('錢不夠喔'); return; } t.lv[it.id] = lv + 1; Sound.play('fanfare'); toast(`${it.icon} ${it.name}${lv ? '升級' : '買好'}了！${it.note ? it.note : ''}`); saveGame(); refreshTop(); refresh(); };
+      shop.appendChild(b);
+    });
+  };
+  collect.onclick = () => {
+    const capLeft = dayCap(t, TYC_DAY_CAP), n = Math.min(Math.floor(t.cash), capLeft);
+    if (n <= 0) { toast('今天的甜點店賺夠囉，明天再來！'); return; }
+    t.cash -= n; t.day.n += n; addBells(n); Sound.play('coin'); pops.push({ x: 360, y: 120, n, t: 0 }); try { dailyHit('game'); } catch (e) {}
+    saveGame(); refreshTop(); refresh();
+  };
+  refresh();
+  const tick = now => {
+    if (!live) return;
+    const dt = Math.min(.1, (now - last) / 1000); last = now;
+    t.cash += tycRate() * dt;
+    // 畫店
+    g.fillStyle = '#ffe9d6'; g.fillRect(0, 0, W, H); g.fillStyle = '#ffd9e5'; for (let x = 0; x < W; x += 30) g.fillRect(x, 0, 15, 140);
+    g.fillStyle = '#c98d5a'; g.fillRect(0, 170, W, 60);
+    if (t.lv.sign) { g.fillStyle = '#e8505b'; g.fillRect(140, 8, 140, 30); g.fillStyle = '#fff'; g.font = '900 16px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillText('🧁 甜點屋', 210, 29); }
+    // 烤箱、奶油機
+    for (let i = 0; i < Math.min(5, t.lv.oven); i++) { g.fillStyle = '#9aa3ad'; g.fillRect(14 + i * 8, 100 - i * 4, 54, 50); g.fillStyle = Math.sin(now / 200 + i) > 0 ? '#ff7a3c' : '#ffb347'; g.fillRect(22 + i * 8, 112 - i * 4, 38, 22); }
+    if (t.lv.cream) { g.fillStyle = '#ffffff'; g.fillRect(90, 90, 40, 60); g.fillStyle = '#ff9ec4'; g.beginPath(); g.arc(110, 86, 14, Math.PI, 0); g.fill(); }
+    // 輸送帶
+    g.fillStyle = t.lv.belt ? '#5a6070' : '#c9a27a'; g.fillRect(70, 150, 230, 12); if (t.lv.belt) { g.strokeStyle = '#8a8f96'; for (let x = 70 + (now / 20) % 20; x < 300; x += 20) { g.beginPath(); g.moveTo(x, 150); g.lineTo(x, 162); g.stroke(); } }
+    // 櫃台
+    g.fillStyle = t.lv.case ? '#bfe3f5' : '#e8c58f'; g.fillRect(300, 118, 100, 52); g.fillStyle = '#8a5a33'; g.fillRect(300, 112, 100, 8);
+    if (t.lv.staff) { g.save(); g.translate(350, 112); g.scale(1.6, 1.6); drawNeighbor(g, HOSTS.tkd || NEIGHBORS[0], { happy: true, blink: false, fx: 0, clean: 100 }); g.restore(); }
+    // 做蛋糕：沿著輸送帶走到櫃台
+    cakeAcc += dt * Math.min(3, .5 + tycRate() * .25); if (cakeAcc > 1) { cakeAcc = 0; cakes.push({ x: 70, c: ['#ffd9e5', '#fff4e6', '#c9f0d6'][Math.floor(Math.random() * 3)] }); }
+    cakes.forEach(c => { c.x += dt * (t.lv.belt ? 70 : 40); g.fillStyle = c.c; g.fillRect(c.x, 136, 16, 14); g.fillStyle = '#e8505b'; g.beginPath(); g.arc(c.x + 8, 134, 3, 0, 7); g.fill(); });
+    while (cakes.length && cakes[0].x > 300) cakes.shift();
+    // 客人：走過來買、拿了蛋糕走掉
+    if (now > buyAt) { buyAt = now + (t.lv.sign ? 1800 : 3200); buyers.push({ n: NEIGHBORS.filter(Boolean)[Math.floor(Math.random() * 6)], x: W + 20, st: 0 }); }
+    buyers.forEach(b => { if (b.st === 0) { b.x -= dt * 50; if (b.x < 380) { b.st = 1; b.wait = 1; pops.push({ x: 370, y: 100, n: Math.max(1, Math.round(tycRate() * 2)), t: 0 }); Sound.play('coin'); } } else if (b.st === 1) { b.wait -= dt; if (b.wait < 0) b.st = 2; } else b.x += dt * 60;
+      g.save(); g.translate(b.x, 200); g.scale(-1.5, 1.5); drawNeighbor(g, b.n, { happy: b.st > 0, blink: false, fx: 1.5, clean: 100 }); g.restore(); if (b.st === 2) { g.font = '14px sans-serif'; g.fillText('🍰', b.x, 170); } });
+    for (let i = buyers.length - 1; i >= 0; i--) if (buyers[i].x > W + 40) buyers.splice(i, 1);
+    pops.forEach(p => { p.t += dt; g.fillStyle = `rgba(242,178,0,${1 - p.t})`; g.font = '700 14px sans-serif'; g.textAlign = 'center'; g.fillText(`+${p.n}`, p.x, p.y - p.t * 30); });
+    for (let i = pops.length - 1; i >= 0; i--) if (pops[i].t > 1) pops.splice(i, 1);
+    if (Math.floor(now / 1000) !== Math.floor((now - dt * 1000) / 1000)) refresh();
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+  openTycoon.test = { collect, refresh, t };
+}
+// ───────── 🐾 寵物收集模擬器 ─────────
+const SIM_ZONES = [{ name: '草原', c: '#8fd18f', c2: '#7bc27a', val: 1, cost: 0, pile: '💰' }, { name: '沙灘', c: '#f2d08a', c2: '#e6c070', val: 2, cost: 3000, pile: '💎' }, { name: '糖果山', c: '#ffd9e5', c2: '#ffc0d6', val: 3, cost: 8000, pile: '🍬' }];
+const SIM_DAY_CAP = 2500;
+function simState() {
+  const s = G.sim && typeof G.sim === 'object' ? G.sim : (G.sim = {});
+  ['power', 'bag', 'zone'].forEach(k => { if (!Number.isInteger(s[k]) || s[k] < 0) s[k] = k === 'zone' ? 0 : 1; });
+  s.zoneMax = Number.isInteger(s.zoneMax) ? s.zoneMax : 0; return s;
+}
+const simBagCap = s => 20 + (s.bag - 1) * 15, simPowCost = s => Math.round(200 * Math.pow(1.6, s.power - 1)), simBagCost = s => Math.round(150 * Math.pow(1.6, s.bag - 1));
+function openSimGame() {
+  const s = simState(), w = openGameWindow('🐾 寵物收集模擬器', '點金幣堆，小可愛和寵物一起敲！敲開的金幣裝進背包，背包滿了就按「💰 賣掉」。存錢升級力量、背包，打開新的區域！');
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const W = 420, H = 260, { c, g, pos } = gameCanvas(w.stage, W, H);
+  const info = el('div', 'tyc-cash'), shop = el('div', 'tyc-shop'); w.stage.append(info, shop);
+  const sell = el('button', 'big', '💰 賣掉'); w.btns.appendChild(sell); leaveButton(w);
+  const pets = G.pets.filter(p => p.stage !== 'egg').slice(0, 3).map((p, i) => ({ p, sp: PET_SPECIES_BY_ID[p.species], x: 180 + i * 30, y: 220, target: null, cool: 0 }));
+  let bag = 0, piles = [], fx = [], raf = 0, live = true, last = performance.now(), spawn = 0, kid = { x: 210, y: 225, tx: 210, ty: 225, target: null, cool: 0 };
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); };
+  const Z = () => SIM_ZONES[s.zone];
+  const refresh = () => {
+    const capLeft = dayCap(s, SIM_DAY_CAP);
+    info.textContent = `📍 ${Z().name}　🎒 ${bag} / ${simBagCap(s)}　⚒️ 力量 Lv${s.power}　（今天還可以賣 ${capLeft} 元）`;
+    sell.disabled = !bag; shop.innerHTML = '';
+    const add = (icon, name, sub, cost, ok, fn) => { const b = el('button', 'tyc-item'); b.append(el('span', 'ti', icon), el('b', '', name), el('span', '', sub)); b.disabled = !ok; b.onclick = fn; shop.appendChild(b); };
+    add('⚒️', `力量 Lv${s.power + 1}`, `💰 ${fmt(simPowCost(s))}`, 0, G.bells >= simPowCost(s), () => { if (spend(simPowCost(s))) { s.power++; Sound.play('fanfare'); saveGame(); refreshTop(); refresh(); } });
+    add('🎒', `背包 Lv${s.bag + 1}`, `💰 ${fmt(simBagCost(s))}`, 0, G.bells >= simBagCost(s), () => { if (spend(simBagCost(s))) { s.bag++; Sound.play('fanfare'); saveGame(); refreshTop(); refresh(); } });
+    SIM_ZONES.forEach((z, i) => { if (i === 0) return; const open = s.zoneMax >= i; add(open ? (s.zone === i ? '📍' : '🚪') : '🔒', z.name, open ? (s.zone === i ? '在這裡' : '去這裡') : `💰 ${fmt(z.cost)}（${z.val} 倍）`, 0, open ? s.zone !== i : G.bells >= z.cost, () => { if (!open) { if (!spend(z.cost)) return; s.zoneMax = i; Sound.play('fanfare'); } s.zone = i; piles = []; saveGame(); refreshTop(); refresh(); }); });
+    if (s.zone !== 0) add('🌿', '草原', '回去', 0, true, () => { s.zone = 0; piles = []; refresh(); });
+  };
+  sell.onclick = () => {
+    const capLeft = dayCap(s, SIM_DAY_CAP), n = Math.min(bag * Z().val, capLeft);
+    if (n <= 0) { toast('今天賣夠囉，明天再來！'); return; }
+    bag = 0; s.day.n += n; addBells(n); Sound.play('coin'); fx.push({ x: W / 2, y: 120, text: `+${n} 元`, t: 0 }); try { dailyHit('game'); } catch (e) {}
+    saveGame(); refreshTop(); refresh();
+  };
+  c.addEventListener('pointerdown', e => { const p = pos(e), pl = piles.find(q => Math.hypot(q.x - p.x, q.y - p.y) < 26); if (pl) { kid.target = pl; kid.tx = pl.x - 18; kid.ty = pl.y + 6; Sound.play('click'); } else { kid.tx = p.x; kid.ty = Math.max(120, p.y); kid.target = null; } });
+  const hit = (pl, dmg, who) => {
+    if (!pl || pl.hp <= 0) return;
+    pl.hp -= dmg; pl.shake = .15; fx.push({ x: pl.x + (Math.random() - .5) * 20, y: pl.y - 20, text: '✨', t: 0 });
+    if (pl.hp <= 0) { const room = simBagCap(s) - bag, got = Math.min(room, pl.coins); bag += got; Sound.play('coin'); fx.push({ x: pl.x, y: pl.y - 30, text: got ? `+${got}` : '🎒 滿了！', t: 0 }); if (!got) toast('🎒 背包滿了！按「💰 賣掉」'); refresh(); }
+  };
+  refresh();
+  const tick = now => {
+    if (!live) return;
+    const dt = Math.min(.1, (now - last) / 1000); last = now; const z = Z();
+    spawn -= dt; if (spawn <= 0 && piles.filter(p => p.hp > 0).length < 6) { spawn = 1.2; const big = Math.random() < .2; piles.push({ x: 40 + Math.random() * (W - 80), y: 110 + Math.random() * 110, hp: big ? 12 : 5, max: big ? 12 : 5, coins: big ? 8 : 3, big, shake: 0 }); }
+    piles = piles.filter(p => p.hp > 0 || (p.gone = (p.gone || 0) + dt) < .4);
+    g.fillStyle = z.c; g.fillRect(0, 0, W, H); g.fillStyle = z.c2; for (let i = 0; i < 40; i++) g.fillRect((i * 97) % W, (i * 53) % H, 6, 3);
+    g.fillStyle = 'rgba(255,255,255,.5)'; g.font = '700 13px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'left'; g.fillText(`📍 ${z.name}（${z.val} 倍）`, 8, 18);
+    piles.forEach(p => { p.shake = Math.max(0, p.shake - dt); const sx = p.shake ? (Math.random() - .5) * 4 : 0; g.globalAlpha = p.hp > 0 ? 1 : 1 - p.gone / .4; g.font = `${p.big ? 34 : 24}px sans-serif`; g.textAlign = 'center'; g.fillText(p.big ? '🎁' : z.pile, p.x + sx, p.y); g.globalAlpha = 1;
+      if (p.hp > 0 && p.hp < p.max) { g.fillStyle = '#ffffff'; g.fillRect(p.x - 16, p.y + 6, 32, 4); g.fillStyle = '#7bd389'; g.fillRect(p.x - 16, p.y + 6, 32 * p.hp / p.max, 4); } });
+    // 小可愛：走到點的那一堆，敲
+    const mv = (o, sp) => { const dx = o.tx - o.x, dy = o.ty - o.y, d = Math.hypot(dx, dy); if (d > 2) { o.x += dx / d * Math.min(d, sp * dt); o.y += dy / d * Math.min(d, sp * dt); return true; } return false; };
+    const walking = mv(kid, 140); kid.cool -= dt;
+    if (kid.target && kid.target.hp > 0 && !walking && kid.cool <= 0) { kid.cool = .45; hit(kid.target, s.power, 'kid'); kid.hitT = now; }
+    if (kid.target && kid.target.hp <= 0) kid.target = null;
+    // 寵物：自己找最近的那堆
+    pets.forEach(pt => { if (!pt.target || pt.target.hp <= 0) { pt.target = piles.filter(q => q.hp > 0).sort((a, b) => Math.hypot(a.x - pt.x, a.y - pt.y) - Math.hypot(b.x - pt.x, b.y - pt.y))[0] || null; } if (pt.target) { pt.tx = pt.target.x + 16; pt.ty = pt.target.y + 6; } else { pt.tx = kid.x + 20; pt.ty = kid.y; } const wk = mv(pt, 110); pt.cool -= dt; if (pt.target && !wk && pt.cool <= 0) { pt.cool = .8; hit(pt.target, Math.max(1, Math.ceil(s.power / 2)), 'pet'); pt.hop = .2; } pt.hop = Math.max(0, (pt.hop || 0) - dt);
+      g.save(); g.translate(pt.x, pt.y - pt.hop * 30); g.scale(.8, .8); drawCreature(g, pt.sp, { happy: true, blink: false, fx: 1.5, clean: 100 }); g.restore(); });
+    g.save(); g.translate(kid.x, kid.y); g.scale(kid.tx < kid.x - 1 ? -.62 : .62, .62); const swing = kid.hitT && now - kid.hitT < 200; if (swing) g.rotate(.15);
+    drawGirl(g, { t: now / 1000, walking, blink: false, outfit: currentOutfit(), face: 'joy', stage: kidLookStage() }); g.restore();
+    fx.forEach(f => { f.t += dt; g.globalAlpha = Math.max(0, 1 - f.t); g.font = '700 13px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#5a4636'; g.fillText(f.text, f.x, f.y - f.t * 30); g.globalAlpha = 1; });
+    fx = fx.filter(f => f.t < 1);
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+  openSimGame.test = { piles: () => piles, hit, bag: () => bag, sell, refresh, s };
 }
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，

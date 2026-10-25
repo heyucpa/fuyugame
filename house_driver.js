@@ -584,11 +584,11 @@
     var sv = document.querySelector('#tabBody').textContent;
     if (sv.indexOf('強制更新') < 0) fails.push('設定分頁沒有「強制更新」');
     if (sv.indexOf('這一份的日期') < 0) fails.push('設定分頁沒有顯示版本日期');
-    // 十三個小遊戲都要在清單上（116.10 加了撈金魚、烤餅乾、杯子蛋糕店）
+    // 小遊戲都要在清單上（接金幣、杯子蛋糕店、跟著唱換成 Roblox 風的三個新遊戲）
     openTab('earn');
     var picks = document.querySelectorAll('.game-pick');
     if (picks.length !== 16) fails.push('小遊戲清單有 ' + picks.length + ' 個，應該是 16 個（含英文單字、字母找找看）');
-    ['拼圖', '接金幣', '彈珠台'].forEach(function(nm){
+    ['拼圖', '寵物收集模擬器', '彈珠台'].forEach(function(nm){
       if (![].slice.call(picks).some(function(b){ return b.textContent.indexOf(nm) >= 0; }))
         fails.push('小遊戲清單裡找不到「' + nm + '」');
     });
@@ -3669,7 +3669,7 @@
     var bells19 = G.bells;
     try {
       openTab('earn');
-      ['撈金魚', '烤餅乾', '杯子蛋糕店'].forEach(function(nm){ if (![].some.call(document.querySelectorAll('#tabBody .game-pick'), function(b){ return b.textContent.indexOf(nm) >= 0; })) fails.push('賺錢分頁沒有「' + nm + '」'); });
+      ['撈金魚', '烤餅乾', '甜點店大亨', '換裝走秀'].forEach(function(nm){ if (![].some.call(document.querySelectorAll('#tabBody .game-pick'), function(b){ return b.textContent.indexOf(nm) >= 0; })) fails.push('賺錢分頁沒有「' + nm + '」'); });
       var lvClick = function(i){ var b = document.querySelectorAll('#modalCard .lv-btn')[i || 0]; if (b) b.onclick(); return !!b; };
       // 🐠
       openScoopGame();
