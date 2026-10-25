@@ -4604,6 +4604,7 @@ const NEWS = [
     ['🏀', '運動島新開「體育館」，猴子教練陪你打球：籃球 2 對 2（看力量條投籃、看到「！」跳起來蓋火鍋）'],
     ['🔴', '躲避球：點對面的人丟球；球飛過來按「閃！」，最後一刻按還能接住！'],
     ['🏓', '桌球：手指左右滑動球拍接球，打在球拍邊邊球會斜飛'],
+    ['💵', '爸爸媽媽改成每天都送零用錢 10,000 元！每天打開遊戲，爸爸媽媽就會送信封來'],
     ['🏫', '田徑場搬進學校操場了：花豹體育老師在操場，百米衝刺、大隊接力、跳遠都在那裡，紀錄都還在']
   ] },
   { id: '2026-10-18T09:00', title: '萬聖節派對＋找小幽靈！🎃👻', lines: [
@@ -5298,10 +5299,14 @@ function normalizeSave(g) {
       day: Number.isInteger(a.day) && a.day >= 0 && a.day <= 6 ? a.day : def.day,
       amt: Number.isInteger(a.amt) && a.amt >= 0 && a.amt <= 10000 ? a.amt : def.amt,
       paid: typeof a.paid === 'string' ? a.paid : allowPeriod(Number.isInteger(a.day) && a.day >= 0 && a.day <= 6 ? a.day : def.day),
-      v2: 1
+      daily: typeof a.daily === 'boolean' ? a.daily : def.daily,
+      v2: 1, v3: 1
     } : def;
     /* 預設從 3,000 改成 10,000（家長）：舊存檔還是舊的預設 3,000、家長沒改過的，換成 10,000；只換一次（v2），之後家長再調成多少都照家長的 */
-    if (a && typeof a === 'object' && !a.v2 && out.allow.amt === 3000) out.allow.amt = 10000; }
+    if (a && typeof a === 'object' && !a.v2 && out.allow.amt === 3000) out.allow.amt = 10000;
+    /* 改成每天送 10,000（家長）：還沒換過的舊存檔（沒有 v3）換成每天 10,000，只換一次；之後家長再調成每週或別的金額都照家長的。
+       上次領的日子（paid）不動：今天還沒領過的，今天就會來一次；今天剛好領過每週的，就明天再來。 */
+    if (a && typeof a === 'object' && !a.v3) { out.allow.daily = true; out.allow.amt = 10000; } }
   out.hwPrize = (Array.isArray(out.hwPrize) ? out.hwPrize : []).filter(x => typeof x === 'string');
   if (!num(out.hwEarned) || out.hwEarned < 0) out.hwEarned = 0;
   if (out.ghost && (!Number.isInteger(out.ghost.n) || out.ghost.n < 1 || out.ghost.n > 9)) out.ghost.n = 1;
@@ -5653,7 +5658,8 @@ function allowPeriod(day) {
   const d = new Date(), back = (d.getDay() - day + 7) % 7, s = new Date(d.getFullYear(), d.getMonth(), d.getDate() - back);
   return `${s.getFullYear()}-${s.getMonth() + 1}-${s.getDate()}`;
 }
-function allowDefault() { return { on: true, day: 0, amt: 10000, paid: allowPeriod(0), v2: 1 }; }   // 家長：預設每週送 10,000 元   // function（不是 const）：讀存檔的時候就會用到，const 會是「還沒定義」
+function allowDefault() { return { on: true, day: 0, amt: 10000, paid: today(), daily: true, v2: 1, v3: 1 }; }   // 家長：預設每天送 10,000 元（新存檔從明天開始）
+function allowKey(a) { return a.daily ? today() : allowPeriod(a.day); }   // 最近一個送錢日：每天送就是今天，每週送就是最近的星期X   // function（不是 const）：讀存檔的時候就會用到，const 會是「還沒定義」
 function today() {
   const d = new Date();
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
@@ -10301,12 +10307,12 @@ const GIFT_SPECS = [
     pick: () => welcomePick(f => f.theme === 'nature' || furnKind(f.id) === 'plant'), open: () => openWelcomeBox('grandma') },
   { id: 'allowance', people: () => PARENTS, draw: 'parent', carry: 'dad',
     wanted: () => allowanceWanted(), due: () => allowanceWanted(),
-    lines: ['這禮拜的零用錢來囉！', '要存起來，慢慢買喔～'], remind: ['點一下信封就會打開喔！', '打開看看～'],
-    bye: ['不客氣！下禮拜再見～', '要好好用喔！'], thanks: '謝謝爸爸媽媽！', title: '💌 爸爸媽媽送的零用錢', open: () => openAllowanceBox() }
+    lines: ['零用錢來囉！', '要存起來，慢慢買喔～'], remind: ['點一下信封就會打開喔！', '打開看看～'],
+    bye: ['不客氣！', '要好好用喔！'], thanks: '謝謝爸爸媽媽！', title: '💌 爸爸媽媽送的零用錢', open: () => openAllowanceBox() }
 ];
 const allowDate = str => { const m = /^(\d+)-(\d+)-(\d+)$/.exec(str || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3]).getTime() : 0; };
 // 只有「領的那天比最近的送錢日還舊」才領：電腦時間被調到未來又調回來，不會再多領一次
-const allowanceWanted = () => { const a = G.allow; return !!(a && a.on && a.amt > 0 && G.openGift && allowDate(a.paid) < allowDate(allowPeriod(a.day))); };
+const allowanceWanted = () => { const a = G.allow; return !!(a && a.on && a.amt > 0 && G.openGift && allowDate(a.paid) < allowDate(allowKey(a))); };
 function openAllowanceBox() {
   if (!allowanceWanted()) return;
   Sound.play('click');
@@ -10315,12 +10321,12 @@ function openAllowanceBox() {
   card.appendChild(el('h2', '', '💌 爸爸媽媽送的零用錢'));
   const env = el('div', 'gift-env', '💌');
   card.appendChild(env);
-  card.appendChild(el('p', 'gift-tx', '這禮拜的零用錢！'));
+  card.appendChild(el('p', 'gift-tx', G.allow.daily ? '今天的零用錢！' : '這禮拜的零用錢！'));
   const btn = el('button', 'big news-ok', '💌 打開');
   btn.onclick = () => {
     if (!allowanceWanted()) { $('#modal').hidden = true; return; }
     const n = G.allow.amt;
-    G.allow.paid = allowPeriod(G.allow.day);   // 先記「領過了」再給錢，不會領兩次
+    G.allow.paid = allowKey(G.allow);   // 先記「領過了」再給錢，不會領兩次
     G.bells += n;                               // 零用錢不算「賺到的」
     giftVisit.box = null;
     Sound.play('coin'); env.classList.add('open');
@@ -10340,17 +10346,19 @@ function openAllowanceSettings() {
   const a = G.allow, card = $('#modalCard');
   card.innerHTML = '';
   card.appendChild(el('h2', '', '💵 零用錢（家長）'));
-  card.appendChild(note(`爸爸媽媽每週送一次。錯過的話下次打開遊戲才會來，不會累積。「${curSlotName()}」這個存檔的設定。`));
+  card.appendChild(note(`每天送或每週送一次。錯過的話下次打開遊戲才會來，不會累積。「${curSlotName()}」這個存檔的設定。`));
+  const freq = document.createElement('select'); [['1', '每天送'], ['0', '每週送一次']].forEach(([v, t]) => freq.add(new Option(t, v))); freq.value = a.daily ? '1' : '0';
   const day = document.createElement('select'), amt = document.createElement('select'), on = document.createElement('select');
   [['1', '要送'], ['0', '不送']].forEach(([v, t]) => { const o = new Option(t, v); on.add(o); }); on.value = a.on ? '1' : '0';
   ['日', '一', '二', '三', '四', '五', '六'].forEach((t, i) => day.add(new Option('星期' + t, String(i)))); day.value = String(a.day);
   ALLOW_AMTS.filter(v => v > 0).forEach(v => amt.add(new Option(fmt(v) + ' 元', String(v)))); amt.value = String(ALLOW_AMTS.includes(a.amt) ? a.amt : 10000);
-  [on, day, amt].forEach(x => { x.className = 'textin'; x.style.marginBottom = '8px'; card.appendChild(x); });
+  [on, freq, day, amt].forEach(x => { x.className = 'textin'; x.style.marginBottom = '8px'; card.appendChild(x); });
+  const syncDay = () => { day.hidden = freq.value === '1'; }; freq.onchange = syncDay; syncDay();   // 每天送就不用選星期幾
   const ok = el('button', 'big', '儲存');
   ok.onclick = () => {
-    const wasDay = G.allow.day;
-    G.allow.on = on.value === '1'; G.allow.day = +day.value; G.allow.amt = +amt.value; G.allow.v2 = 1;
-    if (G.allow.day !== wasDay && G.allow.paid === allowPeriod(wasDay)) G.allow.paid = allowPeriod(G.allow.day);   // 換了星期幾：這個禮拜已經領過就不要再領一次
+    const wasKey = allowKey(G.allow), wasPaid = G.allow.paid === wasKey;
+    G.allow.on = on.value === '1'; G.allow.daily = freq.value === '1'; G.allow.day = +day.value; G.allow.amt = +amt.value; G.allow.v2 = 1; G.allow.v3 = 1;
+    if (wasPaid && allowKey(G.allow) !== wasKey) G.allow.paid = allowKey(G.allow);   // 換了星期幾：這個禮拜已經領過就不要再領一次
     saveGame(); $('#modal').hidden = true; toast('💵 零用錢設定好了'); renderTab();
   };
   const no = el('button', 'big alt', '不改了'); no.onclick = () => { $('#modal').hidden = true; };
@@ -15712,7 +15720,7 @@ function tabSave(body) {
     const vb = el('button', 'big alt', '🔊 選語音／試聽'); vb.onclick = () => openVoicePicker(); body.appendChild(vb); }
 
   body.appendChild(h3('💵 零用錢（家長）'));
-  body.appendChild(note(G.allow.on && G.allow.amt ? `爸爸媽媽每週星期${'日一二三四五六'[G.allow.day]}送 ${fmt(G.allow.amt)} 元。` : '現在不送零用錢。'));
+  body.appendChild(note(G.allow.on && G.allow.amt ? `爸爸媽媽${G.allow.daily ? '每天' : `每週星期${'日一二三四五六'[G.allow.day]}`}送 ${fmt(G.allow.amt)} 元。` : '現在不送零用錢。'));
   const allowBtn = el('button', 'big alt', '💵 調整零用錢');
   allowBtn.onclick = () => askPin('調整零用錢', openAllowanceSettings);
   body.appendChild(allowBtn);
