@@ -32,7 +32,7 @@ const { chromium } = require('playwright');
     o=currentOutfit(); out.newBeltColor = JSON.stringify(o.top.belt);
     // 考試失敗：動作按錯
     closeGameWindow(); G.tkd.prac=3; openBeltExam(); [...document.querySelectorAll('.game-btns button')].find(x=>/開始考試/.test(x.textContent)).click();
-    for (let i=0;i<100 && !playForms.test.ready();i++) await wait(100); const sq=playForms.test.seq(); playForms.test.press((sq[0]+1)%4); await wait(1900);
+    for (let i=0;i<100 && !playForms.test.ready();i++) await wait(100); const sq=playForms.test.seq(); playForms.test.press((sq[0]+1)%4); await wait(1500); for (let i=0;i<100 && !playForms.test.ready();i++) await wait(100); playForms.test.press((sq[0]+1)%4); await wait(1900);   // 錯了會再示範一次，第二次再錯才不算
     out.failKeepsBelt = G.tkd.belt===1 && G.tkd.prac===TKD_PRAC_NEED-1;
     // 藍紅帶的顏色、黑帶最高
     G.tkd.belt=3; out.blueRed = JSON.stringify(tkdBeltColors()); G.tkd.belt=5; closeGameWindow(); openBeltExam(); out.black = /黑帶/.test(document.querySelector('.game-status').textContent);
@@ -47,7 +47,15 @@ const { chromium } = require('playwright');
     out.swim = document.querySelector('.game-status').textContent;
     closeGameWindow(); openDiveGame(); await wait(1500); const its=playDive.test.items().filter(q=>!q.got); const c=document.querySelector('.game-canvas'), rr=c.getBoundingClientRect();
     its.forEach(q=>playDive.test.tapAt(rr.left+q.x/320*rr.width, rr.top+q.y/240*rr.height)); out.diveGot = playDive.test.items().filter(q=>q.got).length; playDive.test.finish(); await wait(100); out.dive = document.querySelector('.game-status').textContent;
-    closeGameWindow(); openJumpDive(); for (let i=0;i<3;i++){ await wait(60); const z=meterRound.test.zone(); meterRound.test.setPos(z[0]+z[1]/2); meterRound.test.hit(); await wait(3450); } out.jump = document.querySelector('.game-status').textContent;
+    closeGameWindow(); openJumpDive(); await wait(50); document.querySelectorAll('.lv-row button')[1].click(); await wait(100);
+    { const J = playJumpDive.test; const ents = [];
+      // 第 1 跳：不按 → 直直入水；第 2 跳：按住一下再放開（翻一圈）；第 3 跳：一直按到入水 → 不漂亮
+      J.down(); for (let i=0;i<60 && J.st().ph!=='water';i++) await wait(50); ents.push(J.st().entry); for (let i=0;i<80 && J.st().ph!=='stand';i++) await wait(50);
+      J.down(); await wait(250); J.down(); await wait(Math.round(1000/DIVE_LEVELS[1].spin)); J.up(); for (let i=0;i<60 && J.st().ph!=='water';i++) await wait(50); ents.push(J.st().entry); for (let i=0;i<80 && J.st().ph!=='stand';i++) await wait(50);
+      J.down(); await wait(150); J.down(); for (let i=0;i<60 && J.st().ph!=='water';i++) await wait(50); J.up(); ents.push(J.st().entry);
+      out.diveEntries = JSON.stringify(ents); out.diveOk = ents[0].q === 2 && ents[0].flips === 0 && ents[1].q >= 1 && ents[1].flips >= 1 && ents[2].q < 2;
+      for (let i=0;i<80 && !/一共/.test(document.querySelector('.game-status').textContent);i++) await wait(50); }
+    out.jump = document.querySelector('.game-status').textContent;
     closeGameWindow(); draw();
     // 回家：衣服換回
     out.gotSwim = ['swimsuit','swim_bottom','swim_cap'].every(id=>G.wardrobe.includes(id));

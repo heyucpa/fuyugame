@@ -27,8 +27,13 @@ const path = require('path');
     for (let i = 0; i < 80 && !playRelay.test.st().passed.length; i++) await wait(100);
     o.drop = playRelay.test.st().passed[0] === 'drop'; clearInterval(iv2); closeGameWindow();
     // 跳遠紀錄
-    openLongJump(); await wait(50); for (let k = 0; k < 3; k++) { const z = meterRound.test.zone(); meterRound.test.setPos(z[0] + z[1] / 2); meterRound.test.hit(); await wait(1800); }
-    o.lj = trackState().lj > 3; closeGameWindow();
+    openLongJump(); await wait(50); document.querySelectorAll('.lv-row button')[0].click(); await wait(100);
+    { const J = playLongJump.test, res = [];
+      for (let k = 0; k < 3; k++) { for (let i = 0; i < 40 && J.st().ph !== 'ready'; i++) await wait(100); J.run1();
+        const target = k === 2 ? LJ_BOARD + 10 : LJ_BOARD - 12; for (let i = 0; i < 400 && J.st().x < target; i++) await wait(20);
+        if (k === 2) { for (let i = 0; i < 100 && J.st().ph === 'run'; i++) await wait(20); } else J.jump(); await wait(100); res.push(J.st().dist); for (let i = 0; i < 60 && J.st().ph !== 'land'; i++) await wait(50); await wait(1900); }
+      o.ljFoul = res[2] === 0; o.ljDist = JSON.stringify(res); }
+    o.lj = trackState().lj > 3 && /新紀錄|最遠/.test(document.querySelector('.game-status').textContent); closeGameWindow();
     // 房間
     travelArrive('school'); await wait(400); $('#modal').hidden = true;
     o.teacher = host.n && host.n.id === 'teacher';
