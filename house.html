@@ -680,6 +680,7 @@ button.pass { font: inherit; }
 .fish-catch b { font-size: 20px; } .fish-catch span { font-size: 15px; color: #7a5a3a; font-weight: 700; }
 .fish-catch.out { opacity: 0; transform: translateX(-50%) translateY(-20px); }
 @keyframes fishPop { from { transform: translateX(-50%) scale(.4); opacity: 0; } to { transform: translateX(-50%) scale(1); opacity: 1; } }
+.got-emoji { font-size: 60px; line-height: 1.1; }
 .fish-dex-nm { display: inline-flex; align-items: center; gap: 6px; }
 .spar-row { display: flex; gap: 12px; justify-content: center; margin: 8px 0; }
 .spar-row button { min-width: 120px; font-size: 20px; }
@@ -7358,7 +7359,7 @@ function fufuStartAct(key, now, it, auto) {
     const f = orchardPick(it.id);
     if (!f) { fufu.act = null; fufuSay(pickLine('orchardEmpty'), 3000); return; }
     fufuSay(pickLine('act_pick', { 水果: f.name }), 3000);
-    toast(`🧺 摘到${f.emoji}${f.name}！（果園還有 ${G.orchard.n} 顆）`);
+    if (typeof gotCard === 'function') gotCard(f.emoji, f.name, `摘到了！果園還有 ${G.orchard.n} 顆`); else toast(`🧺 摘到${f.emoji}${f.name}！（果園還有 ${G.orchard.n} 顆）`);
     Sound.play('coin');
   } else fufuSay(pickLine('act_' + key, { 時間: timeText() }), 3000);
   if (key === 'fruit') G.kid.hunger = clampStat(G.kid.hunger + 15); // 阿婆的水果免費吃
@@ -11405,7 +11406,7 @@ function walkTrip(label, done, dest) {
     fire();                       // 被點掉也算數，不然跳過等於懲罰她
     layer.remove();
     tripDone = null;
-    if (ev.kind === 'coin') toast(`💰 路上撿到 ${ev.gain} 元！`);
+    if (ev.kind === 'coin') { if (typeof gotCard === 'function') gotCard('💰', `${ev.gain} 元`, '路上撿到的！'); else toast(`💰 路上撿到 ${ev.gain} 元！`); }
     else if (ev.kind === 'friend' && ev.who) toast(`👋 路上遇到${ev.who}`);
     saveGame();
     done();
@@ -14511,9 +14512,7 @@ function tabEarn(body) {
     if (r.tired) { Sound.play('miss'); toast('🌳 ' + pickLine('treeTired')); fufuSay(pickLine('treeTired'), 3000); return; }
     if (!r.wait) { Sound.play('shake'); if (r.bells || r.food || r.item) setTimeout(() => Sound.play('coin'), 350); }
     if (r.wait) toast(`樹還在晃，${r.wait} 秒後再試`);
-    else if (r.bells) toast(`掉下 ${fmt(r.bells)} 元！`);
-    else if (r.item) toast(`掉下「${r.item.name}」！放進「我的東西」了`);
-    else if (r.food) toast(`掉下一顆${r.food.emoji}${r.food.name}！可以餵${petName()}`);
+    else if (r.bells || r.item || r.food) treeDropCard(r);
     else toast('🐝 蜂窩掉下來了！快跑！');
     if (!r.wait) commit();
   };
@@ -19055,9 +19054,7 @@ function islDoPending() {
     if (r.tired) { Sound.play('miss'); toast('🌳 ' + pickLine('treeTired')); return; }
     if (r.wait) { toast(`樹還在晃，${r.wait} 秒後再試`); return; }
     Sound.play('shake'); if (r.bells || r.food || r.item) setTimeout(() => Sound.play('coin'), 350);
-    if (r.bells) toast(`掉下 ${fmt(r.bells)} 元！`);
-    else if (r.item) toast(`掉下「${r.item.name}」！放進「我的東西」了`);
-    else if (r.food) toast(`掉下一顆${r.food.emoji}${r.food.name}！可以餵${petName()}`);
+    if (r.bells || r.item || r.food) treeDropCard(r);
     else islBees(p.x + .5, p.y + .5);
     saveGame(); refreshTop();
     return;
@@ -19065,7 +19062,7 @@ function islDoPending() {
   if (p.type === 'flower') {
     isl.picked[p.x + ',' + p.y] = performance.now();
     Sound.play('pickUp'); kidMoodUp(2);
-    toast(['🌸 摘到一朵花！好香喔～', '🌼 摘到一朵小花！', '🌷 好漂亮的花！'][Math.floor(Math.random() * 3)]);
+    { const fl = [['🌸', '摘到一朵花！好香喔～'], ['🌼', '摘到一朵小花！'], ['🌷', '好漂亮的花！']][Math.floor(Math.random() * 3)]; gotCard(fl[0], '小花', fl[1]); }
   }
 }
 function islEnter(id) {   // 走到門口：關掉地圖、進去（家：回家；一樣的地方：留在原地）
@@ -19133,7 +19130,7 @@ function islStep(dt) {
     const st = islCoinState(); if (st.n >= ISL_COIN_MAX) return false;
     const n = ISL_COIN_BELLS[Math.floor(Math.random() * ISL_COIN_BELLS.length)];
     st.n++; st.got.push(c.x + ',' + c.y); addBells(n); Sound.play('coin'); islAddFx('coin', c.x + .5, c.y + .3, 1100, { n });
-    toast(`💰 撿到 ${n} 元！${st.n >= ISL_COIN_MAX ? '（今天的金幣撿完了，明天再來）' : ''}`); saveGame(); refreshTop();
+    gotCard('💰', `${n} 元`, st.n >= ISL_COIN_MAX ? '今天的金幣撿完了，明天再來' : '路上撿到的！'); saveGame(); refreshTop();
     return false;
   });
   if (Math.random() < dt * .25) { const p = ISL_POND; islAddFx('fish', p.x + .6 + Math.random() * (p.w - 1.2), p.y + .8 + Math.random() * (p.h - 1.6), 1300); }   // 池塘偶爾有魚跳
@@ -19286,7 +19283,7 @@ function islFun(o) {
     const g = isl.gulls[o.id]; if (g) { g.scared = 2.5; g.vx = (g.vx < 0 ? -1 : 1) * 1.6; } Sound.play('boing'); islAddFx('say', o.x, o.y - 1, 1200, { text: '嘎～！' });
   } else if (o.kind === 'shell') {
     isl.shellGot[o.id] = true; Sound.play('pickUp'); islAddFx('spark', o.x, o.y, 900); kidMoodUp(1);
-    toast(['🐚 撿到一個貝殼！好漂亮', '🐚 沙灘上的貝殼～'][Math.floor(Math.random() * 2)]);
+    gotCard('🐚', '貝殼', ['撿到一個貝殼！好漂亮', '沙灘上的貝殼～'][Math.floor(Math.random() * 2)]);
   }
 }
 function islSetTool(id, byButton) {
@@ -19344,7 +19341,7 @@ function islActStep(now) {   // 正在做的事（釣魚、揮網、挖洞）
         album[sp.id] = (album[sp.id] || 0) + 1;
         if (isNew) { const cv = document.createElement('canvas'); cv.width = 120; cv.height = 100; drawButterfly(cv.getContext('2d'), 60, 52, sp, 1.2, 2.6); const n = Object.keys(album).length; showcase(cv, sp.name, `🦋 蝴蝶相簿 ${n} / ${BUTTERFLIES.length}`, { n, all: BUTTERFLIES.length }); sessionLog.newThings.push('🦋 ' + sp.name); }
         Sound.play('perfect'); kidMoodUp(2); try { kidMakeFace('joy', 1800); } catch (e) {}
-        toast(`🦋 抓到${sp.name}！${isNew ? '' : '（相簿裡已經有了）'}`);
+        if (isNew) toast(`🦋 抓到${sp.name}！`); else { const cv2 = document.createElement('canvas'); cv2.width = 120; cv2.height = 100; drawButterfly(cv2.getContext('2d'), 60, 52, sp, 1.2, 2.6); gotCard(cv2, sp.name, '相簿裡已經有了，放牠飛走～'); }
         c.hidden = now + 15000; c.sp = pickButterfly(); c.x = 8 + Math.random() * (ISL.W - 16); c.y = 6 + Math.random() * (ISL.H - 12); c.tx = c.x; c.ty = c.y;   // 過一下子別的地方會飛來一隻新的
         saveGame(); refreshTop();
       } else { Sound.play('miss'); islAddFx('say', c.x, c.y - 1.8, 1200, { text: '飛走了～' }); c.tx = c.x + (Math.random() < .5 ? -1 : 1) * 7; c.ty = c.y - 3; c.wait = 4; }
@@ -19353,10 +19350,10 @@ function islActStep(now) {   // 正在做的事（釣魚、揮網、挖洞）
     if (now > a.t0 + 1000) {
       isl.act = null; isl.holes.push({ x: a.x, y: a.y });
       const st = islDigState(), r = Math.random(), cx = a.x + .5, cy = a.y + .3;
-      if (st.n < ISL_DIG_MAX && r < .4) { const n = 10 + 10 * Math.floor(Math.random() * 4); st.n++; addBells(n); Sound.play('coin'); islAddFx('coin', cx, cy, 1100, { n }); toast(`⛏️ 挖到 ${n} 元！`); }
-      else if (st.n < ISL_DIG_MAX && r < .6) { st.n++; G.food.apple = (G.food.apple || 0) + 1; Sound.play('coin'); islAddFx('popup', cx, cy, 1300, { emoji: '🍎' }); toast(`⛏️ 挖到一顆🍎蘋果！可以餵${petName()}`); }
-      else if (st.n < ISL_DIG_MAX && r < .72) { st.n++; Sound.play('pickUp'); islAddFx('popup', cx, cy, 1300, { emoji: '🐚' }); kidMoodUp(1); toast('⛏️ 挖到一個貝殼！'); }
-      else { Sound.play('boing'); islAddFx('popup', cx, cy, 1300, { emoji: r < .86 ? '🐛' : '⚫' }); toast(r < .86 ? '⛏️ 挖到一條小蟲蟲！扭來扭去' : '⛏️ 只有一顆小石頭'); }
+      if (st.n < ISL_DIG_MAX && r < .4) { const n = 10 + 10 * Math.floor(Math.random() * 4); st.n++; addBells(n); Sound.play('coin'); islAddFx('coin', cx, cy, 1100, { n }); gotCard('💰', `${n} 元`, '挖到的！'); }
+      else if (st.n < ISL_DIG_MAX && r < .6) { st.n++; G.food.apple = (G.food.apple || 0) + 1; Sound.play('coin'); islAddFx('popup', cx, cy, 1300, { emoji: '🍎' }); gotCard('🍎', '蘋果', `挖到的！可以餵${petName()}`); }
+      else if (st.n < ISL_DIG_MAX && r < .72) { st.n++; Sound.play('pickUp'); islAddFx('popup', cx, cy, 1300, { emoji: '🐚' }); kidMoodUp(1); gotCard('🐚', '貝殼', '挖到的！'); }
+      else { Sound.play('boing'); islAddFx('popup', cx, cy, 1300, { emoji: r < .86 ? '🐛' : '⚫' }); gotCard(r < .86 ? '🐛' : '⚫', r < .86 ? '小蟲蟲' : '小石頭', r < .86 ? '扭來扭去～' : '只有一顆小石頭'); }
       if (st.n >= ISL_DIG_MAX && !isl.digCapSaid) { isl.digCapSaid = true; setTimeout(() => toast('今天挖到的寶物夠多了，明天再挖！'), 1500); }
       saveGame(); refreshTop();
     }
@@ -21018,13 +21015,20 @@ function fishArt(name, w, h, hidden) {
   if (hidden) { g.filter = 'brightness(0) opacity(.25)'; }   // 還沒釣到：只看得到影子
   drawFishArt(g, name, w, h); return c;
 }
-// 釣到時上面跳出一張小卡：魚的圖＋名字＋賣了多少（不擋畫面，一下下就收起來）
-function showFishCatch(f, extra) {
+/* 拿到東西時上面跳出一張小卡：圖＋名字＋一句話（家長：以前就有的也要跳圖片，妹妹看圖就知道拿到什麼）。
+   不擋畫面、不用按，3 秒自己收起來。第一次拿到的還是跳圖鑑大圖。visual：canvas 或圖示文字 */
+function gotCard(visual, title, sub) {
   const old = document.getElementById('fishCatch'); if (old) old.remove();
   const box = el('div', 'fish-catch'); box.id = 'fishCatch';
-  box.append(fishArt(f.name, 120, 72), el('b', '', f.name), el('span', '', `賣了 💰 ${fmt(f.price)} 元${extra || ''}`));
+  box.append(typeof visual === 'string' ? el('div', 'got-emoji', visual) : visual, el('b', '', title), el('span', '', sub || ''));
   document.body.appendChild(box);
   setTimeout(() => box.classList.add('out'), 2600); setTimeout(() => box.remove(), 3100);
+}
+function showFishCatch(f, extra) { gotCard(fishArt(f.name, 120, 72), f.name, `賣了 💰 ${fmt(f.price)} 元${extra || ''}`); }
+function treeDropCard(r) {   // 搖樹掉下來的東西
+  if (r.bells) gotCard('💰', `${fmt(r.bells)} 元`, '從樹上掉下來了！');
+  else if (r.item) { let v = '🎁'; try { v = renderThumb(r.item, 90); } catch (e) {} gotCard(v, r.item.name, '放進「我的東西」了'); }
+  else if (r.food) gotCard(r.food.emoji, r.food.name, `可以餵${petName()}`);
 }
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
