@@ -17,6 +17,15 @@ const path = require('path');
     SC_QUEUE.length = 0; const sc = document.getElementById('showcase'); if (sc) sc.remove(); $('#modal').hidden = true;
     ['1-3', '2-3', '3-3'].forEach(k => questState().clear[k] = 1); islMapCache = null;
     openIsland(); await wait(300);
+    // 真的用手點：「🚲 交通工具」→ 選單看得到 → 換成別台、下車（家長：大地圖中無法切換交通工具）
+    G.vehicles = ['bike', 'suv']; G.ride = null; islRideBtn();
+    document.getElementById('islRide').click(); await wait(100);
+    const mn = $('#itemMenu'), rr = mn.getBoundingClientRect(), topEl = document.elementFromPoint(rr.left + rr.width / 2, rr.top + 10);
+    o.menuVisible = !mn.hidden && rr.width > 20 && !!topEl && mn.contains(topEl);
+    [...mn.querySelectorAll('button')].find(x => /休旅車/.test(x.textContent)).click(); o.switched = G.ride === 'suv';
+    document.getElementById('islRide').click(); await wait(50); [...$('#itemMenu').querySelectorAll('button')].find(x => /下車/.test(x.textContent)).click(); o.off = G.ride == null;
+    document.querySelector('.isl-emo').click(); await wait(50); const em = $('#itemMenu').getBoundingClientRect(); o.emoteMenu = em.width > 20; hideItemMenu();
+    G.ride = 'bike'; islRideBtn();
     o.btn = document.getElementById('islRide').textContent;
     o.fast = islSpd() > 1.4; G.ride = null; o.walk = islSpd() <= 1.7; G.ride = 'bike';
     // 走路到不了新小島
@@ -38,7 +47,7 @@ const path = require('path');
     return o;
   });
   console.log(JSON.stringify(out));
-  const ok = out.cards === 5 && out.noMoney && out.bought && /腳踏車/.test(out.btn) && out.fast && out.walk && out.noWalk && out.docks === 6 && out.boat && out.arrived && out.backHome && out.saved && out.badCleaned && !errs.length;
+  const ok = out.menuVisible && out.switched && out.off && out.emoteMenu && out.cards === 5 && out.noMoney && out.bought && /腳踏車/.test(out.btn) && out.fast && out.walk && out.noWalk && out.docks === 6 && out.boat && out.arrived && out.backHome && out.saved && out.badCleaned && !errs.length;
   console.log(ok ? '✅ 全部通過' : '❌ 有問題 ' + errs.join(' | '));
   await b.close();
 })();

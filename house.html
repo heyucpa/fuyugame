@@ -523,6 +523,7 @@ button.pass { font: inherit; }
   box-shadow: 0 6px 18px rgba(0,0,0,.15); z-index: 5;
 }
 .itemmenu[hidden] { display: none; }
+.island-on .itemmenu.isl-menu:not([hidden]) { display: flex !important; z-index: 30; }   /* 小島上的選單（交通工具、表情）：要蓋在地圖上面 */
 .itemmenu button { border: none; background: none; text-align: left; padding: 7px 12px; border-radius: 9px; font-size: 14px; white-space: nowrap; }
 .itemmenu button:hover { background: var(--chip); }
 .itemmenu .menu-sub { font-size: 12px; color: var(--muted); padding: 6px 12px 2px; border-top: 1px dashed var(--line); margin-top: 2px; }
@@ -13584,10 +13585,11 @@ canvas.addEventListener('pointermove', e => {
 });
 canvas.addEventListener('pointerleave', () => { if (hoverUid) { hoverUid = null; requestDraw(); } });
 // ── 椅子、床的小選單 ──
-function hideItemMenu() { $('#itemMenu').hidden = true; }
+function hideItemMenu() { $('#itemMenu').hidden = true; $('#itemMenu').classList.remove('isl-menu'); }
 // 在點的位置旁邊開一個小選單；entries：[[文字, 要做的事], ...]
 function openMenu(entries, e) {
   const menu = $('#itemMenu');
+  menu.classList.toggle('isl-menu', !!document.querySelector('.stage.island-on'));   // 小島開著：選單要看得到
   menu.innerHTML = '';
   entries.forEach(([label, fn]) => {
     const b = document.createElement('button');
@@ -19177,7 +19179,7 @@ function islTap(e, hold) {
   }
   islWalkTo(null, t.x, t.y);
 }
-function islDown(e) { if (!isl) return; e.preventDefault(); if (isl.act) { if (isl.act.kind === 'fish') islPull(); return; } try { isl.cv.setPointerCapture(e.pointerId); } catch (er) {} isl.press = e; isl.pressTile = islTile(e); isl.repath = performance.now(); islTap(e, false); }
+function islDown(e) { if (!isl) return; e.preventDefault(); hideItemMenu(); if (isl.act) { if (isl.act.kind === 'fish') islPull(); return; } try { isl.cv.setPointerCapture(e.pointerId); } catch (er) {} isl.press = e; isl.pressTile = islTile(e); isl.repath = performance.now(); islTap(e, false); }
 function islMove(e) { if (isl && isl.press && !isl.act) isl.press = e; }
 function islUp() { if (isl) isl.press = null; }
 function islDoPending() {
