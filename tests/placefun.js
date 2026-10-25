@@ -20,6 +20,11 @@ const path = require('path');
     }
     for (const id of ['tkd_mirror', 'tkd_banner', 'tkd_banner2']) { WALL_TAP[id](); await wait(200); o[id] = [fufu.act && fufu.act.key, fufu.say]; }
     WALL_TAP.tkd_belts(); await wait(1200); o.beltsOpen = !$('#modal').hidden && /腰帶/.test($('#modal').innerText); closeGameWindow(); $('#modal').hidden = true;
+    // 🥋 同學穿道服、不定時來問要不要對打
+    o.classmates = (host.crowd || []).map(c => !!c.n.dobok);
+    dojoNextChal = performance.now() - 1; smallTick(); await wait(2300);
+    const ch = host.crowd.find(c => c.challenge); o.challenge = ch ? ch.say : null;
+    if (ch) { crowdTalk(ch, { clientX: 500, clientY: 400 }); await wait(100); o.chMenu = [...document.querySelectorAll('#itemMenu button')].map(b => b.textContent); document.querySelector('#itemMenu button').click(); await wait(800); o.chSpar = /對練/.test(document.querySelector('#modal').innerText); closeGameWindow(); $('#modal').hidden = true; }
     o.menu = hostMenuEntries().map(e => e[0]).filter(x => /對練/.test(x));
     const prac0 = tkdState().prac;
     openSparGame(); await wait(200);
@@ -49,6 +54,7 @@ const path = require('path');
     fufuStartAct('towel', performance.now(), towel); o.ringOffAfterTowel = !swimRingOn();
     const sh = curRoom().items.find(x => x.id === 'pool_shower'); G.kid.clean = 50; fufuStartAct('showerpool', performance.now(), sh); o.cleaner = G.kid.clean > 50;
     const pool = curRoom().items.find(x => x.id === 'swim_pool'); o.poolNotMenu = !canUse(pool);
+    pet.x = pool.x + 2.5; pet.y = pool.y + 2.5; pet.path = [[pool.x + 4, pool.y + 2]]; await wait(600); o.petInWater = poolWaterAt(pet.x, pet.y);
     return o;
   });
   console.log(JSON.stringify(out));
@@ -57,6 +63,8 @@ const path = require('path');
   ['tkd_sandbag', 'tkd_target', 'tkd_boards'].forEach(k => { if (!out[k][0]) bad.push(k); });
   ['tkd_mirror', 'tkd_banner', 'tkd_banner2'].forEach(k => { if (!out[k][0] || !out[k][1]) bad.push(k); });
   if (!out.beltsOpen) bad.push('腰帶架');
+  if (!out.classmates.length || !out.classmates.every(Boolean) || !/對打/.test(out.challenge || '') || !out.chSpar) bad.push('同學挑戰');
+  if (!out.petInWater) bad.push('寵物游泳');
   if (!out.rhyMenu || !/💰/.test(out.rhy || '')) bad.push('節奏跆拳道');
   if (!out.menu.length) bad.push('沒有對練');
   if (Math.max(...out.sparScore) < 5 || !/💰/.test(out.sparStatus)) bad.push('對練沒結束');
