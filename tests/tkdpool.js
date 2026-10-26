@@ -28,7 +28,7 @@ const { chromium } = require('playwright');
     [...document.querySelectorAll('.game-btns button')].find(x=>/開始考試/.test(x.textContent)).click();
     for (let i=0;i<100 && !playForms.test.ready();i++) await wait(100); playForms.test.seq().forEach(m=>playForms.test.press(m)); await wait(1300);
     for (let i=0;i<3;i++){ await wait(60); const z=meterRound.test.zone(); meterRound.test.setPos(z[0]+z[1]/2); meterRound.test.hit(); await wait(1350); }
-    out.midExam = document.querySelector(".game-status").textContent; await wait(5600); out.afterExam = [G.tkd.belt, tkdBeltName(), document.querySelector('.game-status').textContent.slice(0,20)];
+    out.midExam = document.querySelector(".game-status").textContent; await wait(5600); for (let i=0;i<60 && !/考過了/.test(document.querySelector('.game-status').textContent);i++) await wait(100); out.afterExam = [G.tkd.belt, tkdBeltName(), document.querySelector('.game-status').textContent.slice(0,20)];
     o=currentOutfit(); out.newBeltColor = JSON.stringify(o.top.belt);
     // 考試失敗：動作按錯
     closeGameWindow(); G.tkd.prac=3; openBeltExam(); [...document.querySelectorAll('.game-btns button')].find(x=>/開始考試/.test(x.textContent)).click();

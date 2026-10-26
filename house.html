@@ -671,7 +671,7 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 @keyframes plankR { to { transform: translate(14px, 8px) rotate(22deg); } }
 @keyframes plankPow { from { transform: translate(-50%, -50%) scale(.3); } 60% { transform: translate(-50%, -50%) scale(1.3); } to { transform: translate(-50%, -50%) scale(1); opacity: .85; } }
 @keyframes tkdBreak { to { transform: rotate(25deg) scale(1.2); opacity: .25; } }
-.tkd-big { font-size: 64px; line-height: 1.1; } .tkd-say { font-size: 16px; font-weight: 800; color: #5a4630; text-align: center; margin: 6px 0; }
+.tkd-big { font-size: 64px; line-height: 1.1; } .tkd-say { font-size: 16px; font-weight: 800; color: #5a4630; text-align: center; margin: 6px 0; white-space: pre-line; }
 .tkd-moves { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0; }
 .tkd-move { display: flex; flex-direction: column; align-items: center; border: 3px solid var(--line); background: #fff; border-radius: 16px; padding: 10px 4px; font-weight: 800; }
 .tkd-move .tkd-e { font-size: 34px; } .tkd-move.lit { background: #ffe9b8; border-color: #e7a94a; transform: scale(1.08); }
@@ -748,10 +748,11 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .rename-b { display: flex; gap: 4px; flex-wrap: wrap; } .rename-b .on { background: #ffe0ee; border-color: #ff8fb3; }
 .quest-btn.glow { animation: glowPulse .6s infinite alternate; border-color: #ffd23f; background: #fff3b0; }
 @keyframes glowPulse { from { box-shadow: 0 0 0 0 rgba(255,210,63,.8); } to { box-shadow: 0 0 0 8px rgba(255,210,63,0); } }
-.spar-row { display: flex; gap: 12px; justify-content: center; margin: 8px 0; }
-.spar-row button { min-width: 120px; font-size: 20px; }
+.spar-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 8px 0; }
+.spar-row button { flex: 1 1 0; min-width: 96px; width: auto; font-size: 20px; }
 .quest-btn.db-sp { background: linear-gradient(#ffb02e, #ff5a1f); color: #fff; border-color: #c0392b; } .quest-btn.db-sp:disabled { background: #eee; color: #aaa; border-color: #ddd; }
 .spar-row .spar-kick { background: #3fcf6f; color: #fff; border-color: #2f9e44; } .spar-row .spar-block { background: #e8505b; color: #fff; border-color: #c0392b; }
+.spar-row .spar-sp { background: linear-gradient(#ffb02e, #ff5a1f); color: #fff; border-color: #c0392b; } .spar-row .spar-sp:disabled { background: #eee; color: #aaa; border-color: #ddd; }
 .spar-row .spar-on { animation: glowPulse .4s infinite alternate; transform: scale(1.08); box-shadow: 0 0 0 5px #ffd23f; }
 .music-menu { position: fixed; z-index: 70; background: var(--panel, #fffaf0); border: 2px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
 .music-menu button { font: inherit; text-align: left; border: 2px solid var(--line); background: #fff; border-radius: 12px; padding: 8px 12px; min-height: 40px; font-size: 15px; font-weight: 700; cursor: pointer; }
@@ -4657,6 +4658,7 @@ const NEWS = [
   { id: '2026-10-26T20:00', title: '闖關有專屬音樂了！🎵', lines: [
     ['🎵', '玩世界闖關會換成專屬的冒險音樂，遇到大魔王會換成大魔王的音樂'],
     ['🏁', '跳到終點旗子會抱著旗桿慢慢滑下去，抓得越高金幣越多！'],
+    ['🥋', '跆拳道對練有必殺技了！踢中、擋住會集氣，氣滿了按「💥 必殺技」。每考上一條腰帶學會一招：旋風踢、流星百裂拳、彩虹迴旋踢、雷光閃電腳、火焰鳳凰腳，黑帶學會「黑龍波」！'],
     ['🏝️', '「🚗 快速出門」多了闖關送的小島（花花島、糖果島、恐龍島），點了會自己坐船過去']
   ] },
   { id: '2026-10-25T09:00', title: '體育館開了！🏀', lines: [
@@ -20553,6 +20555,7 @@ function openBeltExam() {
   const nowPic = el('div', 'tkd-beltpic'); nowPic.appendChild(beltPic(tkdBeltColors(), 160)); w.stage.appendChild(nowPic);
   w.stage.appendChild(el('div', 'tkd-say', `現在是：${tkdBeltName()}`));
   const ladder = el('div', 'tkd-ladder'); TKD_BELTS.forEach(([nm], i) => ladder.appendChild(el('span', 'tkd-step' + (i < t.belt ? ' done' : i === t.belt ? ' on' : ''), nm))); w.stage.appendChild(ladder);
+  w.stage.appendChild(el('div', 'tkd-say', '💥 學會的必殺技：' + tkdLearned().map(m => m.fx + ' ' + tkdSpecialName(m)).join('、') + (t.belt < TKD_SPECIALS.length - 1 ? `\n下一招：${TKD_SPECIALS[t.belt + 1].fx} ${tkdSpecialName(TKD_SPECIALS[t.belt + 1])}（考上${TKD_BELTS[t.belt + 1][0]}就學會）` : '')));
   if (t.belt >= TKD_BELTS.length - 1) { w.status.textContent = '🥋 已經是黑帶了！你是道館最厲害的！'; gameButtons(w, openBeltExam); w.btns.querySelector('button').remove(); return; }
   if ((t.prac || 0) < TKD_PRAC_NEED) { w.status.textContent = `再練習 ${TKD_PRAC_NEED - (t.prac || 0)} 次（踢板或跟著做動作）就可以考${TKD_BELTS[t.belt + 1][0]}！`; leaveButton(w); return; }
   w.status.textContent = `可以考「${TKD_BELTS[t.belt + 1][0]}」了！要先做一套動作（全對），再踢 3 塊板（踢斷 2 塊以上）`;
@@ -20572,14 +20575,15 @@ function examEnd(w, pass) {
     t.belt = Math.min(TKD_BELTS.length - 1, t.belt + 1); t.prac = 0;
     saveGame();   // 先存起來：升段動畫看到一半關掉也已經升上去了
     w.status.textContent = '🎖️ 升段典禮！';
-    beltCeremony(w, oldC, tkdBeltColors(), tkdBeltName(), () => {
+    beltCeremony(w, oldC, tkdBeltColors(), tkdBeltName(), () => tkdLearnShow(w, TKD_SPECIALS[Math.min(TKD_SPECIALS.length - 1, t.belt)], () => {
+      w.stage.innerHTML = ''; w.btns.innerHTML = '';
       const bells = payReward(w, 200 + t.belt * 100);
       const pic = el('div', 'tkd-beltpic'); pic.appendChild(beltPic(tkdBeltColors(), 200)); w.stage.appendChild(pic);
       w.status.textContent = `考過了！拿到「${tkdBeltName()}」！💰 +${fmt(bells)}`;
       try { fufuSay(`我拿到${tkdBeltName()}了！`, 3000); hostSay('恭喜！道服上的腰帶換新的了！', 3000); } catch (e) {}
       kidMoodUp(10); saveGame(); refreshTop();
       gameButtons(w, openBeltExam);
-    });
+    }));
     return;
   } else {
     t.prac = Math.max(0, TKD_PRAC_NEED - 1);   // 沒考過：再練一次就可以再考（不要讓她練很多次）
@@ -20869,24 +20873,63 @@ function sparChallengeMenu(cr, e) {
 /* 🥋 對練：跟動物朋友穿護具對練。
    朋友頭上出現綠色「踢！」→ 按「踢」得 1 分；出現紅色「擋！」→ 按「擋」擋住（沒擋到朋友得 1 分）。
    先拿到 5 分的贏。開始、結束都要敬禮。 */
+/* 💥 跆拳道必殺技（家長：對練和升級也要有必殺技，而且要有不同的招數名稱，例如小可愛黑龍波）
+   腰帶越高學會越多招，每升一條腰帶學一招；對練時集滿氣就可以放，招式輪流用學過的。名字前面都是她的名字。 */
+const TKD_SPECIALS = [
+  { name: '旋風踢', fx: '🌀', c: '#6bb6ff', c2: '#dff0ff' },
+  { name: '流星百裂拳', fx: '💫', c: '#ffd23f', c2: '#fff6c8' },
+  { name: '彩虹迴旋踢', fx: '🌈', c: '#ff8fb3', c2: '#ffe3ee' },
+  { name: '雷光閃電腳', fx: '⚡', c: '#b18cff', c2: '#efe6ff' },
+  { name: '火焰鳳凰腳', fx: '🔥', c: '#ff5a1f', c2: '#ffe2d0' },
+  { name: '黑龍波', fx: '🐉', c: '#26232a', c2: '#c9b8ff' }
+];
+const tkdSpecialName = mv => charName() + mv.name;
+function tkdLearned() { return TKD_SPECIALS.slice(0, Math.min(TKD_SPECIALS.length, (tkdState().belt || 0) + 1)); }
+// 必殺技特寫：畫面變暗、放射線、小可愛大頭、招式名稱（k：0～1 出場進度）
+function tkdSpecialCut(g, W, H, mv, k, t) {
+  g.fillStyle = `rgba(15,10,25,${.8 * Math.min(1, k * 3)})`; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < 18; i++) { const a = i / 18 * Math.PI * 2 + t * 2; g.strokeStyle = mv.c === '#26232a' ? '#8a6bff' : mv.c; g.globalAlpha = .55; g.lineWidth = 3; g.beginPath(); g.moveTo(W * .3 + Math.cos(a) * 40, H / 2 + Math.sin(a) * 40); g.lineTo(W * .3 + Math.cos(a) * 400, H / 2 + Math.sin(a) * 400); g.stroke(); }
+  g.globalAlpha = 1;
+  const kx = Math.min(1, k * 2.5);
+  g.save(); g.translate(W * .3 - (1 - kx) * 160, H * .82); g.scale(2.3, 2.3); if (kidBaby()) drawBabyKid(g, { t }); else drawGirl(g, { t, blink: false, outfit: currentOutfit(), face: 'joy', stage: kidLookStage() }); g.restore();
+  const tx = W * .66 + (1 - kx) * 200, nm = tkdSpecialName(mv);
+  g.font = '700 13px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillStyle = '#fff'; g.fillText('必殺技！', tx, H / 2 - 30);
+  g.font = `900 ${nm.length > 7 ? 22 : 26}px "Microsoft JhengHei","PingFang TC",sans-serif`; g.lineWidth = 7; g.strokeStyle = mv.c === '#26232a' ? '#8a6bff' : '#26232a'; g.strokeText(nm, tx, H / 2 + 4); g.fillStyle = mv.c2; g.fillText(nm, tx, H / 2 + 4);
+  g.font = '34px sans-serif'; g.fillText(mv.fx, tx, H / 2 + 46);
+}
+// 🎖️ 升段學到新招：特寫動畫播 3 秒（可以按「好！」跳過）
+function tkdLearnShow(w, mv, done) {
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const W = 340, H = 230, { g } = gameCanvas(w.stage, W, H), T0 = performance.now(); let live = true, raf = 0;
+  w.status.textContent = `學會新的必殺技：${tkdSpecialName(mv)}！對練的時候集滿氣就可以用！`;
+  try { speak(`學會新的必殺技，${tkdSpecialName(mv)}！`); } catch (e) {} Sound.play('magic');
+  const fin = () => { if (!live) return; live = false; cancelAnimationFrame(raf); done(); };
+  const ok = el('button', 'big', '好！'); ok.onclick = fin; w.btns.appendChild(ok);
+  const tick = now => { if (!live) return; const t = (now - T0) / 1000; g.fillStyle = '#fff4e6'; g.fillRect(0, 0, W, H); tkdSpecialCut(g, W, H, mv, Math.min(1, t / .8), t);
+    g.font = '700 12px "Microsoft JhengHei","PingFang TC",sans-serif'; g.fillStyle = '#ffd23f'; g.textAlign = 'center'; g.fillText('✨ 學會新招式 ✨', W / 2, 22); if (t > 3.2) return fin(); raf = requestAnimationFrame(tick); };
+  raf = requestAnimationFrame(tick);
+}
 const SPAR_LEVELS = [{ name: '慢慢來', win: 1700, mul: 1 }, { name: '普通', win: 1150, mul: 2 }, { name: '比賽！', win: 800, mul: 3 }];
 const SPAR_GOAL = 5;
-function openSparGame(foe) { if (!foe || !foe.body) foe = null; /* 從選單點的時候傳進來的是事件，不是同學 */ const w = openGameWindow('🥋 對練', '朋友頭上出現綠色「踢！」就按「🦵 踢」；出現紅色「擋！」就按「🛡️ 擋」。先拿 5 分的贏！'); pickLevelRow(w, SPAR_LEVELS, L => `贏了 💰 ${120 * L.mul}`, L => playSpar(w, L, foe)); }
+function openSparGame(foe) { if (!foe || !foe.body) foe = null; /* 從選單點的時候傳進來的是事件，不是同學 */ const w = openGameWindow('🥋 對練', '朋友頭上出現綠色「踢！」就按「🦵 踢」；出現紅色「擋！」就按「🛡️ 擋」。踢中、擋住會集氣，氣滿了按「💥 必殺技」！先拿 5 分的贏！'); pickLevelRow(w, SPAR_LEVELS, L => `贏了 💰 ${120 * L.mul}`, L => playSpar(w, L, foe)); }
 function playSpar(w, L, who) {
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   const W = 340, H = 200, { g } = gameCanvas(w.stage, W, H);
   const mates = NEIGHBORS.filter(Boolean), base = who || mates[Math.floor(Math.random() * mates.length)];
   const foe = base.dobok ? base : Object.assign({}, base, { dobok: TKD_BELTS[Math.floor(Math.random() * 4)][1] });   // 對手也穿道服
   const row = el('div', 'spar-row'), bKick = el('button', 'big spar-kick', '🦵 踢！'), bBlock = el('button', 'big spar-block', '🛡️ 擋！');   // 家長：妹妹看不懂字 → 按鈕顏色跟頭上的提示一樣（綠踢、紅擋）
-  row.append(bKick, bBlock); w.stage.appendChild(row); leaveButton(w); w.status.textContent = '綠色「踢！」按綠色的；紅色「擋！」按紅色的';
+  const bSp = el('button', 'big spar-sp', '💥 必殺技'); bSp.disabled = true;
+  row.append(bKick, bBlock, bSp); w.stage.appendChild(row); leaveButton(w);
+  let ki = 0, spAt = 0, spMv = null, spN = 0;   // ki：氣（0～100），滿了可以放必殺技
+  const addKi = n => { ki = Math.min(100, ki + n); bSp.disabled = ki < 100 || state !== 'fight'; bSp.classList.toggle('spar-on', ki >= 100); }; w.status.textContent = '綠色「踢！」按綠色的；紅色「擋！」按紅色的';
   let me = 0, them = 0, live = true, raf = 0, state = 'bow', t0 = performance.now(), cue = null, cueAt = 0, nextAt = 0;
   let myAnim = null, foeAnim = null, msg = `跟${foe.short}對練！先敬禮～`, msgC = '#5a4636';
   gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', key); };
   const say = (m, c) => { msg = m; msgC = c || '#5a4636'; };
   const schedule = now => { cue = null; nextAt = now + 700 + Math.random() * 1100; };
   const point = (mine, now) => {
-    if (mine) { me++; foeAnim = { k: 'ouch', at: now }; Sound.play('perfect'); say('踢中了！得 1 分！', '#2f9e44'); }
-    else { them++; myAnim = { k: 'ouch', at: now }; Sound.play('miss'); say(`被${foe.short}踢到了～`, '#d9480f'); }
+    if (mine) { me++; foeAnim = { k: 'ouch', at: now }; Sound.play('perfect'); say('踢中了！得 1 分！', '#2f9e44'); addKi(34); }
+    else { them++; myAnim = { k: 'ouch', at: now }; Sound.play('miss'); say(`被${foe.short}踢到了～`, '#d9480f'); addKi(15); }
     if (me >= SPAR_GOAL || them >= SPAR_GOAL) { state = 'end'; t0 = now; setTimeout(finish, 1600); } else schedule(now);
   };
   const press = kind => {
@@ -20900,12 +20943,17 @@ function playSpar(w, L, who) {
       else if (cue === 'atk') { point(false, now); }
       else say('還沒有空檔，等綠色「踢！」～');
     } else {
-      if (cue === 'atk') { foeAnim = { k: 'kick', at: now }; Sound.play('knock'); say('擋住了！好厲害！', '#1971c2'); schedule(now); }
+      if (cue === 'atk') { foeAnim = { k: 'kick', at: now }; Sound.play('knock'); say('擋住了！好厲害！', '#1971c2'); addKi(25); schedule(now); }
       else say('朋友沒有要踢你喔～');
     }
   };
-  bKick.onclick = () => press('kick'); bBlock.onclick = () => press('block');
-  const key = e => { if (e.repeat) return; if (e.code === 'Space' || e.code === 'ArrowRight') { e.preventDefault(); press('kick'); } else if (e.code === 'ArrowLeft' || e.code === 'KeyB') { e.preventDefault(); press('block'); } };
+  const special = () => {   // 💥 放必殺技：特寫 1 秒 → 招式飛過去 → 一次得 2 分
+    if (!live || state !== 'fight' || ki < 100) return;
+    const list = tkdLearned(); spMv = list[spN % list.length]; spN++; ki = 0; addKi(0); bSp.classList.remove('spar-on');
+    state = 'special'; spAt = performance.now(); cue = null; Sound.play('magic'); try { speak(tkdSpecialName(spMv) + '！'); } catch (e) {}
+  };
+  bKick.onclick = () => press('kick'); bBlock.onclick = () => press('block'); bSp.onclick = special;
+  const key = e => { if (e.repeat) return; if (e.code === 'Space' || e.code === 'ArrowRight') { e.preventDefault(); press('kick'); } else if (e.code === 'ArrowLeft' || e.code === 'KeyB') { e.preventDefault(); press('block'); } else if (e.code === 'KeyS' || e.code === 'ArrowUp') { e.preventDefault(); special(); } };
   document.addEventListener('keydown', key);
   const finish = () => {
     if (!live) return; gameCleanup(); gameCleanup = null;
@@ -20960,14 +21008,24 @@ function playSpar(w, L, who) {
         else { say('空檔沒了～再等下一次！'); schedule(now); }
       }
     }
+    if (state === 'special' && now - spAt > 2000) {   // 必殺技打中：得 2 分
+      state = 'fight'; me = Math.min(SPAR_GOAL, me + 2); foeAnim = { k: 'ouch', at: now }; Sound.play('fanfare'); say(`${tkdSpecialName(spMv)}！得 2 分！`, '#c0392b');
+      if (me >= SPAR_GOAL) { state = 'end'; t0 = now; setTimeout(finish, 1600); } else schedule(now);
+    }
     if (state === 'end') cue = null;
-    bKick.classList.toggle('spar-on', cue === 'open'); bBlock.classList.toggle('spar-on', cue === 'atk');
+    bKick.classList.toggle('spar-on', cue === 'open'); bBlock.classList.toggle('spar-on', cue === 'atk'); bSp.disabled = ki < 100 || state !== 'fight';
     mat(); drawMe(now); drawFoe(now);
+    // 氣的條
+    g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(10, 54, 104, 12); g.fillStyle = ki >= 100 ? `hsl(${(now / 3) % 360},90%,60%)` : '#ffb02e'; g.fillRect(12, 56, ki, 8); g.fillStyle = '#5a4636'; g.font = '700 10px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'left'; g.fillText(ki >= 100 ? '必殺技 OK！' : '氣', 12, 78);
+    if (state === 'special') { const st = (now - spAt) / 1000;
+      if (st < 1.1) tkdSpecialCut(g, W, H, spMv, st / .6, st);
+      else { const k = Math.min(1, (st - 1.1) / .6); g.font = `${30 + k * 30}px sans-serif`; g.textAlign = 'center'; g.globalAlpha = 1 - Math.max(0, k - .8) * 5; g.fillText(spMv.fx, 130 + k * 100, 110 - Math.sin(k * Math.PI) * 30); g.globalAlpha = 1;
+        g.strokeStyle = spMv.c === '#26232a' ? '#8a6bff' : spMv.c; g.lineWidth = 4; for (let i = 0; i < 3; i++) { g.globalAlpha = .4; g.beginPath(); g.moveTo(110, 100 + i * 10); g.lineTo(130 + k * 100, 100 + i * 10); g.stroke(); } g.globalAlpha = 1; } }
     raf = requestAnimationFrame(tick);
   };
   try { speak('敬禮！'); } catch (e) {}
   raf = requestAnimationFrame(tick);
-  playSpar.test = { press, cue: () => cue, score: () => [me, them], state: () => state };
+  playSpar.test = { press, special, setKi: v => { ki = 0; addKi(v); }, ki: () => ki, cue: () => cue, score: () => [me, them], state: () => state, mv: () => spMv };
 }
 /* ===== 🥋🏊 道館、泳池裡的東西點了會動（家長：小朋友希望每樣東西都能玩）=====
    道館：沙包（出拳，沙包晃）、踢靶（踢腿，靶轉）、木板（手刀劈斷）、長椅（坐）、
