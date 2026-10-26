@@ -11,14 +11,16 @@ const path = require('path');
     const wait = ms => new Promise(r => setTimeout(r, ms)), o = {};
     G.guide = 'done'; $('#modal').hidden = true;
     islMapCache = null; const m = islMap(0), ar = m.blds.find(x => x.id === 'arena'); o.bld = !!ar && ar.islet;
-    // 🏀 投籃機：瞄準籃框一直投（一般：籃框會動，跟著它投）；亂投會沒進；時間到結算
+    // 🏀 投籃機（一般：有力量條、三關）：力量剛好、瞄準籃框一直投；亂投沒進；到目標分數進下一關；沒到 GAME OVER
     openBasket(); document.querySelectorAll('.lv-btn')[1].click(); await wait(300);
-    const B = playBasket.test;
-    for (let k = 0; k < 6; k++) { B.shootAt(B.hx()); await wait(400); }
-    await wait(900); const s1 = B.st(); o.bbMade = s1.made === 6 && s1.score >= 13;   // 連進 3 球以後變火球 3 分
-    B.shootAt(30); await wait(1200); o.bbMiss = B.st().made === 6 && B.st().combo === 0;
-    B.end(); for (let i = 0; i < 40 && !/分！/.test(document.querySelector('.game-status').textContent); i++) await wait(100);
-    o.bbStatus = /投進 6 \/ 7 球/.test(document.querySelector('.game-status').textContent) && arenaState().bm === B.st().score; closeGameWindow();
+    const B = playBasket.test; B.skipIntro(); await wait(100);
+    for (let k = 0; k < 6; k++) { B.shootAt(B.hx(), 1); await wait(400); }
+    await wait(900); const s1 = B.st(); o.bbMade = s1.made === 6 && s1.score >= 14;   // 連進 3 球火球、空心多 1 分
+    B.shootAt(30, 1); await wait(1200); o.bbMiss = B.st().made === 6 && B.st().combo === 0;
+    B.shootAt(B.hx(), 1.4); await wait(1200); o.bbTooStrong = B.st().shots === 8;
+    B.endRound(); await wait(200); o.bbNext = B.st().round === 1 && B.st().cleared === 1 && B.st().phase === 'intro';
+    B.skipIntro(); await wait(100); B.endRound(); for (let i = 0; i < 40 && !/分/.test(document.querySelector('.game-status').textContent); i++) await wait(100);
+    o.bbStatus = /過了 1 關/.test(document.querySelector('.game-status').textContent) && arenaState().bm === B.st().score; closeGameWindow();
     // ⛹️ 籃球比賽 2 對 2：開外掛投進 3 球（簡單），防守時等「！」再跳
     openBball(); document.querySelectorAll('.lv-btn')[0].click(); await wait(300);
     const B2 = playBball.test; B2.cheat(true);
@@ -49,13 +51,13 @@ const path = require('path');
     o.ppEnd = P.st().ended && P.st().score[0] === 3 && P.st().best >= 1; await wait(1700);
     o.ppStatus = /最多連續/.test(document.querySelector('.game-status').textContent); closeGameWindow();
     // 桌球：球拍放旁邊不動 → 對手得分
-    openPingPong(); document.querySelectorAll('.lv-btn')[0].click(); await wait(300);
+    openPingPong(); document.querySelectorAll('.lv-btn')[2].click(); await wait(300);
     const ivp = setInterval(() => playPingPong.test.setPaddle(-1.1), 16); for (let i = 0; i < 150 && playPingPong.test.st().score[1] < 1; i++) await wait(100); clearInterval(ivp); o.ppMiss = playPingPong.test.st().score[1] >= 1; closeGameWindow();
     // 主人選單、快速選單、存檔
     travelArrive('arena'); await wait(300); $('#modal').hidden = true;
     o.host = host.n && host.n.id === 'arena' && hostMenuEntries().some(e => /投籃機/.test(e[0])) && hostMenuEntries().some(e => /籃球比賽/.test(e[0]));
     o.quick = ['籃球比賽', '投籃機', '躲避球', '桌球'].every(n => allQuickGames().some(g => g.name === n && g.where === 'arena'));
-    saveGame(); const raw = JSON.parse(localStorage.getItem(SAVE_KEY)); o.saved = raw.arena && raw.arena.bm >= 13;
+    saveGame(); const raw = JSON.parse(localStorage.getItem(SAVE_KEY)); o.saved = raw.arena && raw.arena.bm >= 14;
     const bad = normalizeSave(Object.assign({}, raw, { arena: { bb: 'x', pp: -3, db: 2.7 } })).arena; o.bad = bad.bb == null && bad.pp == null && bad.db === 2;
     o.bad2 = normalizeSave(Object.assign({}, raw, { arena: 5 })).arena == null;
     return o;

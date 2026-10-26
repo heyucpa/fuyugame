@@ -4619,8 +4619,9 @@ const NEWS = [
     ['🏀', '運動島新開「體育館」，猴子教練陪你打球：籃球 2 對 2（看力量條投籃、看到「！」跳起來蓋火鍋）'],
     ['🔴', '躲避球：點對面的人丟球；球飛過來按「閃！」，最後一刻按還能接住！'],
     ['🏓', '桌球：手指左右滑動球拍接球，打在球拍邊邊球會斜飛'],
-    ['🏀', '新的「投籃機」：點畫面投球，限時一直投，連進 3 球變火球！原本 2 對 2 的「籃球比賽」也還在，點籃球架可以選'],
+    ['🏀', '新的「投籃機」：像真的投籃機一樣有三關，每關要到目標分數！一般、高手要看力量條；連進 3 球變火球、空心多 1 分、最後 10 秒分數加倍。原本 2 對 2 的「籃球比賽」也還在'],
     ['👑', '世界闖關的簡單模式也可以用 ◀ ▶ 自己走了（不會再自己一直往前跑），打大魔王可以自己前進、後退；簡單模式還是不扣愛心、掉下去有泡泡接'],
+    ['❤️', '躲避球每個人都有愛心，要打好幾下才會出局，比較有機會放必殺技！'],
     ['🔴', '熱血躲避球：打中、閃過、接住會集能量，滿了可以放必殺技！🔥火焰球、⚡閃電球、🌀分身球，被打中的人會被打飛'],
     ['🌊', '跳水換新玩法：在空中按住翻滾、放開伸直，頭朝下入水最漂亮，評審會舉牌給分'],
     ['🏖️', '跳遠換新玩法：先助跑，跑到白色踏板前面跳，踩過線就犯規'],
@@ -23000,24 +23001,34 @@ function arenaFloor(g, W, H, top) {
 }
 function arenaBall(g, x, y, r, c, shadowY) { if (shadowY != null) { g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(x, shadowY, r * 1.1, r * .4, 0, 0, 7); g.fill(); } MV.ball(g, x, y, r, c); g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 1; g.beginPath(); g.arc(x, y, r, 0, 7); g.moveTo(x - r, y); g.lineTo(x + r, y); g.stroke(); }
 
-// 🏀 投籃機（家長：投籃改成投籃機那種玩法）：限時內一直投！點畫面上想投的位置（或 ← → 移動準心、空白鍵投），
-// 球飛過去剛好碰到籃框中間就進。連進 3 球變「🔥 火球」一球 3 分。一般：過一陣子籃框會左右移動；高手：一開始就動、動很快。
-const BB_LEVELS = [{ name: '簡單', time: 40, tol: 30, move: 0, moveAt: 99, mul: 1 }, { name: '一般', time: 40, tol: 24, move: 60, moveAt: 15, mul: 2 }, { name: '高手！', time: 45, tol: 19, move: 105, moveAt: 0, mul: 3 }];
-function openBasket() { const w = openGameWindow('🏀 投籃機', '點畫面上想投的地方，球就飛過去！（電腦可以用 ← → 移動準心、空白鍵投）連進 3 球會變火球，一球 3 分！'); pickLevelRow(w, BB_LEVELS, L => `${L.time} 秒，投越多錢越多`, L => playBasket(w, L)); }
+/* 🏀 投籃機（家長：投籃改成投籃機那種玩法；玩法有點弱 → 加強）
+   像真的投籃機一樣分三關：每關有時間和「目標分數」，到了才能進下一關，沒到就 GAME OVER。
+     第 1 關：籃框不動　第 2 關：籃框左右移動　第 3 關：移動更快，最後 10 秒「🔥 分數加倍」
+   點畫面上想投的位置（左右瞄準）；一般、高手還要看右邊的「力量條」——在綠色的時候點最準，
+   太小力會碰到前框彈出來，太大力會打到籃板（有時候擦板進）。簡單模式不用管力量。
+   連進 3 球變「🔥 火球」一球 3 分；空心進球（正中間）多 1 分。 */
+const BB_LEVELS = [
+  { name: '簡單', tol: 30, power: false, rounds: [[30, 10, 0], [30, 24, 45], [30, 40, 70]], mul: 1 },
+  { name: '一般', tol: 24, power: true, pw: .16, pspd: 1.4, rounds: [[30, 14, 0], [30, 32, 70], [30, 54, 105]], mul: 2 },
+  { name: '高手！', tol: 19, power: true, pw: .11, pspd: 1.9, rounds: [[30, 18, 30], [30, 40, 95], [30, 66, 135]], mul: 3 }
+];   // rounds：[秒數, 這關結束時要到的總分, 籃框移動速度]
+function openBasket() { const w = openGameWindow('🏀 投籃機', '點畫面上想投的地方，球就飛過去！一般、高手要等右邊的力量條到綠色再點。三關，每關要到目標分數才能進下一關！'); pickLevelRow(w, BB_LEVELS, L => L.power ? '三關＋力量條' : '三關，不用管力量', L => playBasket(w, L)); }
 function playBasket(w, L) {
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   const W = 480, H = 300, { c, g, pos } = gameCanvas(w.stage, W, H);
   const pad = el('div', 'quest-pad'); w.stage.appendChild(pad);
   const bL = el('button', 'quest-btn', '◀'), bShoot = el('button', 'quest-btn qb-j', '🏀 投！'), bR = el('button', 'quest-btn', '▶'); pad.append(bL, bShoot, bR); leaveButton(w);
-  w.status.textContent = '點畫面上籃框的位置就會投過去！';
-  const RIM = 108, FROM = { x: W / 2, y: 262 };
-  let hx = W / 2, hdir = 1, aim = W / 2, hold = 0, balls = [], fx = [], score = 0, made = 0, shots = 0, combo = 0, best = 0, cool = 0, net = 0;
-  let T0 = performance.now(), last = T0, raf = 0, live = true, ended = false, msg = '開始！', msgT = 1;
+  w.status.textContent = L.power ? '力量條到綠色的時候，點籃框的位置！' : '點畫面上籃框的位置就會投過去！';
+  const RIM = 126, FROM = { x: W / 2, y: 262 };
+  let hx = W / 2, hdir = 1, aim = W / 2, hold = 0, balls = [], fx = [], score = 0, made = 0, shots = 0, combo = 0, best = 0, cool = 0, net = 0, pT = 0, power = 1, swish = 0;
+  let round = 0, rT = 0, phase = 'intro', introT = 2, last = performance.now(), raf = 0, live = true, ended = false, msg = '', msgT = 0, cleared = 0;
   gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); document.removeEventListener('keyup', ku); };
-  const shootAt = tx => {
-    if (!live || ended || cool > 0) return;
-    cool = .32; shots++; Sound.play('whoosh');
-    balls.push({ x0: FROM.x + (Math.random() - .5) * 30, tx: Math.max(60, Math.min(W - 60, tx)), u: 0, fire: combo >= 3, st: 'fly' });
+  const R = () => L.rounds[round], bonus = () => round === 2 && rT > R()[0] - 10;
+  const shootAt = (tx, pw) => {
+    if (!live || ended || phase !== 'play' || cool > 0) return;
+    cool = .3; shots++; Sound.play('whoosh');
+    const p = pw != null ? pw : L.power ? power : 1;
+    balls.push({ x0: FROM.x + (Math.random() - .5) * 30, tx: Math.max(60, Math.min(W - 60, tx)), u: 0, fire: combo >= 3, st: 'fly', p });
   };
   const kd = e => { if (e.code === 'ArrowLeft') { e.preventDefault(); hold = -1; } else if (e.code === 'ArrowRight') { e.preventDefault(); hold = 1; } else if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'Enter') { e.preventDefault(); if (!e.repeat) shootAt(aim); } };
   const ku = e => { if (e.code === 'ArrowLeft' && hold < 0) hold = 0; if (e.code === 'ArrowRight' && hold > 0) hold = 0; };
@@ -23028,57 +23039,79 @@ function playBasket(w, L) {
   const holdB = (b, d) => { b.addEventListener('pointerdown', e => { e.preventDefault(); hold = d; }); ['pointerup', 'pointerleave', 'pointercancel'].forEach(k => b.addEventListener(k, () => { if (hold === d) hold = 0; })); };
   holdB(bL, -1); holdB(bR, 1);
   const finish = () => {
-    ended = true; Sound.play('fanfare');
+    ended = true; phase = 'end';
     setTimeout(() => {
       if (!live) return; gameCleanup(); const a = arenaState(), rec = score > (a.bm || 0); if (rec) a.bm = score;
-      const bells = payReward(w, Math.round(score * 4 * L.mul) + (rec && score >= 10 ? 50 : 0));
-      w.status.textContent = `投進 ${made} / ${shots} 球，${score} 分！${rec && score ? '　🎉 新紀錄！' : ''}　最多連進 ${best} 球　💰 +${fmt(bells)}`;
-      try { speak(`${score}分！`); } catch (e) {} kidMoodUp(10); saveGame(); gameButtons(w, openBasket);
-    }, 1200);
+      const bells = payReward(w, Math.round(score * 4 * L.mul) + cleared * 60 * L.mul + (rec && score >= 10 ? 50 : 0));
+      w.status.textContent = `${cleared >= 3 ? '🏆 三關全破！' : `過了 ${cleared} 關`}　投進 ${made} / ${shots} 球，${score} 分${rec && score ? '　🎉 新紀錄！' : ''}　💰 +${fmt(bells)}`;
+      try { speak(cleared >= 3 ? '三關全破！好厲害！' : `${score}分！`); } catch (e) {} kidMoodUp(10); saveGame(); gameButtons(w, openBasket);
+    }, 1600);
   };
-  const ballXY = b => { const u = b.u; return { x: b.x0 + (b.tx - b.x0) * u, y: FROM.y + (RIM - 6 - FROM.y) * u - 4 * 120 * u * (1 - u), s: 1 - .45 * u }; };
+  const endRound = () => {
+    if (score >= R()[1]) { cleared++; Sound.play('fanfare');
+      if (round >= 2) { msg = '🏆 三關全破！'; msgT = 3; finish(); return; }
+      round++; rT = 0; phase = 'intro'; introT = 2.2; msg = ''; balls = []; }
+    else { msg = 'GAME OVER'; msgT = 3; Sound.play('miss'); finish(); }
+  };
+  const ballXY = b => { const u = b.u, top = 120 * (.75 + .25 * Math.min(1.4, b.p)); return { x: b.x0 + (b.tx - b.x0) * u, y: FROM.y + (RIM - 6 - FROM.y) * u - 4 * top * u * (1 - u), s: 1 - .45 * u }; };
   const tick = now => {
     if (!live) return;
-    const dt = Math.min(.05, (now - last) / 1000); last = now; const t = (now - T0) / 1000, left = Math.max(0, L.time - t); msgT -= dt; cool -= dt; net = Math.max(0, net - dt);
+    const dt = Math.min(.05, (now - last) / 1000); last = now; const T = now / 1000; msgT -= dt; cool -= dt; net = Math.max(0, net - dt); swish = Math.max(0, swish - dt);
     if (hold) aim = Math.max(40, Math.min(W - 40, aim + hold * 320 * dt));
-    if (!ended && t > L.moveAt && L.move) { hx += hdir * L.move * (1 + Math.min(1, (t - L.moveAt) / 20) * .5) * dt; if (hx > W - 120) { hx = W - 120; hdir = -1; } if (hx < 120) { hx = 120; hdir = 1; } }
+    if (phase === 'intro') { introT -= dt; if (introT <= 0) { phase = 'play'; rT = 0; } }
+    if (phase === 'play') {
+      rT += dt; if (rT >= R()[0]) endRound();
+      const mv = R()[2]; if (mv) { hx += hdir * mv * dt; if (hx > W - 120) { hx = W - 120; hdir = -1; } if (hx < 120) { hx = 120; hdir = 1; } }
+      if (L.power) { pT += dt * L.pspd * Math.PI; power = .65 + (Math.sin(pT) + 1) / 2 * .7; }   // 0.65～1.35 來回跑，1＝剛好
+    }
     balls.forEach(b => {
       if (b.st === 'fly') { b.u += dt / .72; if (b.u >= 1) {
-        b.u = 1; const d = Math.abs(b.tx - hx), inn = d < L.tol || (d < L.tol * 1.6 && Math.random() < .5);
-        if (inn) { b.st = 'in'; b.k = 0; b.x = hx + (b.tx - hx) * .3; made++; combo++; best = Math.max(best, combo); const pts = b.fire ? 3 : 2; score += pts; net = .35; Sound.play(d < L.tol * .5 ? 'perfect' : 'coin'); fx.push({ x: hx, y: RIM - 30, txt: `+${pts}${combo >= 3 ? ' 🔥' : ''}`, a: 1 }); if (combo === 3) { msg = '🔥 火球！一球 3 分！'; msgT = 1.2; } }
-        else { b.st = 'out'; b.k = 0; b.vx = (b.tx < hx ? -1 : 1) * (60 + Math.random() * 80); b.x = b.tx; b.y = RIM - 6; b.vy = -60; combo = 0; Sound.play(d < L.tol * 2.4 ? 'boing' : 'click'); }
+        b.u = 1; const d = Math.abs(b.tx - hx), pe = b.p - 1, okP = !L.power || Math.abs(pe) < L.pw;
+        let inn = false, how = '';
+        if (okP) inn = d < L.tol || (d < L.tol * 1.6 && Math.random() < .5);
+        else if (pe < 0) { inn = d < L.tol && Math.random() < .25; how = inn ? '' : '太小力，碰到前框了'; }   // 太小力：大多碰前框
+        else { inn = d < L.tol * 1.2 && Math.random() < .45; how = inn ? '擦板進球！' : '太大力，打到籃板了'; }   // 太大力：打板，有時擦板進
+        if (inn) { b.st = 'in'; b.k = 0; b.x = hx + (b.tx - hx) * .3; made++; combo++; best = Math.max(best, combo); const clean = okP && d < L.tol * .35, pts = ((b.fire ? 3 : 2) + (clean ? 1 : 0)) * (bonus() ? 2 : 1); score += pts; net = .35; if (clean) swish = .6; Sound.play(clean ? 'perfect' : 'coin');
+          fx.push({ x: hx, y: RIM - 30, txt: `+${pts}${clean ? ' 空心！' : ''}${combo >= 3 ? ' 🔥' : ''}`, a: 1 }); if (how) { msg = how; msgT = .9; } if (combo === 3) { msg = '🔥 火球！一球 3 分！'; msgT = 1.2; } }
+        else { b.st = 'out'; b.k = 0; b.vx = (b.tx < hx ? -1 : 1) * (60 + Math.random() * 80); b.x = b.tx; b.y = RIM - 6; b.vy = pe > L.pw ? -20 : -80; combo = 0; Sound.play(d < L.tol * 2.4 ? 'boing' : 'click'); if (how) { msg = how; msgT = .9; } }
       } }
       else if (b.st === 'in') { b.k += dt / .35; if (b.k >= 1) b.st = 'gone'; }
       else if (b.st === 'out') { b.k += dt; b.x += b.vx * dt; b.vy += 600 * dt; b.y += b.vy * dt; if (b.y > H + 20) b.st = 'gone'; }
     });
     balls = balls.filter(b => b.st !== 'gone');
-    if (!ended && left <= 0) { finish(); msg = '時間到！'; msgT = 2; }
-    // 畫：牆、計分燈、籃板、籃框、網子
-    const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#2b2340'); bg.addColorStop(1, '#4a3d6b'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
-    for (let i = 0; i < 14; i++) { g.fillStyle = `hsl(${(i * 26 + t * 120) % 360},90%,${combo >= 3 ? 65 : 55}%)`; g.beginPath(); g.arc(20 + i * 34, 12, 4, 0, 7); g.fill(); }
-    g.fillStyle = '#26232a'; g.fillRect(W / 2 - 92, 22, 184, 34); g.font = '900 20px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#ff7a3c'; g.fillText(String(score).padStart(3, '0'), W / 2 - 46, 40); g.fillStyle = left < 10 ? '#e8505b' : '#7bd389'; g.fillText(String(Math.ceil(left)).padStart(2, '0'), W / 2 + 50, 40); g.textBaseline = 'alphabetic';
-    g.font = '700 9px sans-serif'; g.fillStyle = '#fff'; g.fillText('分數', W / 2 - 46, 64); g.fillText('秒', W / 2 + 50, 64);
+    // 畫：牆、跑馬燈、計分板、籃板、籃框、網子
+    const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, bonus() ? '#4a1f2a' : '#2b2340'); bg.addColorStop(1, bonus() ? '#7a2f3a' : '#4a3d6b'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+    for (let i = 0; i < 14; i++) { g.fillStyle = `hsl(${(i * 26 + T * (bonus() ? 400 : 120)) % 360},90%,${combo >= 3 ? 65 : 55}%)`; g.beginPath(); g.arc(20 + i * 34, 12, 4, 0, 7); g.fill(); }
+    const left = phase === 'play' ? Math.max(0, R()[0] - rT) : R()[0];
+    g.fillStyle = '#26232a'; g.fillRect(W / 2 - 130, 22, 260, 34); g.font = '900 20px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = '#ff7a3c'; g.fillText(String(score).padStart(3, '0'), W / 2 - 80, 40); g.fillStyle = '#ffd23f'; g.fillText(String(R()[1]).padStart(3, '0'), W / 2, 40); g.fillStyle = left < 10 ? '#e8505b' : '#7bd389'; g.fillText(String(Math.ceil(left)).padStart(2, '0'), W / 2 + 84, 40); g.textBaseline = 'alphabetic';
+    g.font = '700 9px "Microsoft JhengHei","PingFang TC",sans-serif'; g.fillStyle = '#fff'; g.fillText('分數', W / 2 - 80, 66); g.fillText(`第 ${round + 1} 關目標`, W / 2, 66); g.fillText('秒', W / 2 + 84, 66);
+    if (bonus() && phase === 'play') { g.font = '900 16px "Microsoft JhengHei","PingFang TC",sans-serif'; g.fillStyle = Math.floor(T * 6) % 2 ? '#ffd23f' : '#ff5a1f'; g.fillText('🔥 分數加倍！', W - 70, 40); }
     g.fillStyle = '#fff'; g.fillRect(hx - 50, RIM - 46, 100, 58); g.strokeStyle = '#e8505b'; g.lineWidth = 3; g.strokeRect(hx - 50, RIM - 46, 100, 58); g.strokeRect(hx - 18, RIM - 26, 36, 26);
-    // 球（在籃框後面的先畫）
     const drawBall = b => { let p; if (b.st === 'fly') p = ballXY(b); else if (b.st === 'in') p = { x: b.x, y: RIM - 6 + b.k * 40, s: .55 }; else p = { x: b.x, y: b.y, s: .55 }; const r = 15 * p.s;
       if (b.fire) { g.fillStyle = 'rgba(255,140,40,.45)'; g.beginPath(); g.arc(p.x, p.y + r * .6, r * 1.7, 0, 7); g.fill(); }
       arenaBall(g, p.x, p.y, r, b.fire ? '#ff5a1f' : '#ff7a3c'); };
     balls.filter(b => b.st === 'in').forEach(drawBall);
-    g.strokeStyle = 'rgba(255,255,255,.95)'; g.lineWidth = 1.3; for (let i = 0; i <= 5; i++) { const sw = net ? Math.sin(net * 30 + i) * 3 : 0; g.beginPath(); g.moveTo(hx - 26 + i * 10.4, RIM + 2); g.lineTo(hx - 15 + i * 6 + sw, RIM + 34); g.stroke(); }
+    g.strokeStyle = swish ? '#ffd23f' : 'rgba(255,255,255,.95)'; g.lineWidth = 1.3; for (let i = 0; i <= 5; i++) { const sw = net ? Math.sin(net * 30 + i) * 3 : 0; g.beginPath(); g.moveTo(hx - 26 + i * 10.4, RIM + 2); g.lineTo(hx - 15 + i * 6 + sw, RIM + 34); g.stroke(); }
     g.beginPath(); g.moveTo(hx - 20, RIM + 18); g.lineTo(hx + 20, RIM + 18); g.stroke();
     g.strokeStyle = '#ff5a1f'; g.lineWidth = 5; g.beginPath(); g.ellipse(hx, RIM, 28, 7, 0, 0, 7); g.stroke();
     balls.filter(b => b.st !== 'in').forEach(drawBall);
-    // 準心、手邊的球
-    if (!ended) { g.strokeStyle = 'rgba(255,210,63,.7)'; g.setLineDash([5, 5]); g.lineWidth = 2; g.beginPath(); g.moveTo(FROM.x, FROM.y - 20); g.quadraticCurveTo((FROM.x + aim) / 2, RIM - 120, aim, RIM - 4); g.stroke(); g.setLineDash([]); g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(aim, RIM - 4, 4, 0, 7); g.fill(); }
+    if (phase === 'play') { g.strokeStyle = 'rgba(255,210,63,.7)'; g.setLineDash([5, 5]); g.lineWidth = 2; g.beginPath(); g.moveTo(FROM.x, FROM.y - 20); g.quadraticCurveTo((FROM.x + aim) / 2, RIM - 120, aim, RIM - 4); g.stroke(); g.setLineDash([]); g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(aim, RIM - 4, 4, 0, 7); g.fill(); }
+    // 力量條（右邊）
+    if (L.power) { const bx = W - 34, by = 90, bh = 170; g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(bx - 4, by - 4, 26, bh + 8); g.fillStyle = '#fff'; g.fillRect(bx, by, 18, bh);
+      const yOf = v => by + bh - (v - .65) / .7 * bh; g.fillStyle = '#ffe08a'; g.fillRect(bx, yOf(1 + L.pw * 1.8), 18, yOf(1 - L.pw * 1.8) - yOf(1 + L.pw * 1.8)); g.fillStyle = '#7bd389'; g.fillRect(bx, yOf(1 + L.pw), 18, yOf(1 - L.pw) - yOf(1 + L.pw));
+      g.fillStyle = '#e8505b'; g.fillRect(bx - 5, yOf(power) - 2, 28, 4); g.fillStyle = '#fff'; g.font = '700 9px "Microsoft JhengHei","PingFang TC",sans-serif'; g.fillText('力量', bx + 9, by - 8); }
     g.fillStyle = '#8a5a33'; g.fillRect(W / 2 - 80, H - 22, 160, 22); for (let i = 0; i < 5; i++) arenaBall(g, W / 2 - 60 + i * 30, H - 26, 11, '#ff7a3c');
-    if (cool <= 0 && !ended) arenaBall(g, FROM.x, FROM.y, 15, combo >= 3 ? '#ff5a1f' : '#ff7a3c');
-    fx.forEach(f => { f.y -= 30 * dt; f.a -= dt * .9; g.globalAlpha = Math.max(0, f.a); g.font = '900 20px sans-serif'; g.fillStyle = '#ffd23f'; g.fillText(f.txt, f.x, f.y); g.globalAlpha = 1; }); fx = fx.filter(f => f.a > 0);
+    if (cool <= 0 && phase === 'play') arenaBall(g, FROM.x, FROM.y, 15, combo >= 3 ? '#ff5a1f' : '#ff7a3c');
+    fx.forEach(f => { f.y -= 30 * dt; f.a -= dt * .9; g.globalAlpha = Math.max(0, f.a); g.font = '900 20px "Microsoft JhengHei","PingFang TC",sans-serif'; g.fillStyle = '#ffd23f'; g.fillText(f.txt, f.x, f.y); g.globalAlpha = 1; }); fx = fx.filter(f => f.a > 0);
     if (combo >= 2) { g.fillStyle = '#ff7a3c'; g.font = '900 14px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'left'; g.fillText(`連進 ${combo} 球`, 12, 40); g.textAlign = 'center'; }
-    if (msgT > 0 && msg) arenaMsg(g, W, msg, 200);
+    if (phase === 'intro') { g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(0, 120, W, 90); g.textAlign = 'center'; g.font = '900 30px "Microsoft JhengHei","PingFang TC",sans-serif'; g.fillStyle = '#ffd23f'; g.fillText(`第 ${round + 1} 關`, W / 2, 160);
+      g.font = '700 15px "Microsoft JhengHei","PingFang TC",sans-serif'; g.fillStyle = '#fff'; g.fillText(`${R()[0]} 秒內到 ${R()[1]} 分${R()[2] ? '　籃框會動喔！' : ''}${round === 2 ? '　最後 10 秒分數加倍！' : ''}`, W / 2, 190); }
+    if (msgT > 0 && msg) arenaMsg(g, W, msg, 230);
     raf = requestAnimationFrame(tick);
   };
   raf = requestAnimationFrame(tick);
-  playBasket.test = { shootAt, hx: () => hx, st: () => ({ score, made, shots, combo, ended }), end: () => { T0 -= L.time * 1000; } };
+  playBasket.test = { shootAt, hx: () => hx, st: () => ({ score, made, shots, combo, ended, round, phase, cleared }), skipIntro: () => { introT = 0; }, endRound: () => { rT = R()[0]; } };
 }
 
 // 🏀 籃球 2 對 2（家長：籃球跟投籃機兩種玩法並行）
@@ -23202,7 +23235,7 @@ function playBball(w, L) {
 }
 
 // 🔴 躲避球
-const DB_LEVELS = [{ name: '簡單', move: 26, dodge: .1, spd: 260, win: .7, catchW: .22, mateDodge: .6, mul: 1 }, { name: '一般', move: 50, dodge: .2, spd: 330, win: .5, catchW: .15, mateDodge: .45, mul: 2 }, { name: '高手！', move: 75, dodge: .3, spd: 400, win: .38, catchW: .1, mateDodge: .35, mul: 3 }];
+const DB_LEVELS = [{ name: '簡單', move: 26, dodge: .1, spd: 260, win: .7, catchW: .22, mateDodge: .6, mul: 1, hp: 3 }, { name: '一般', move: 50, dodge: .2, spd: 330, win: .5, catchW: .15, mateDodge: .45, mul: 2, hp: 4 }, { name: '高手！', move: 75, dodge: .3, spd: 400, win: .38, catchW: .1, mateDodge: .35, mul: 3, hp: 5 }];   // hp：對手每人幾顆愛心（家長：一下子就贏了，沒機會用必殺技）
 const DB_PRIZE = [170, 50];
 function openDodge() { const w = openGameWindow('🔴 熱血躲避球', '點對面的人把球丟過去（或按「🎯 丟！」）！球飛過來時按「🙌 閃！」（空白鍵），最後一刻按還能接住！打中、閃過、接住會集能量，滿了按「💥 必殺技」（S 鍵）！'); pickLevelRow(w, DB_LEVELS, L => `贏了 💰 ${DB_PRIZE[0] * L.mul}`, L => playDodge(w, L)); }
 /* 🔴 熱血躲避球（家長：要更像熱血躲避球、可以發動絕招）
@@ -23221,13 +23254,14 @@ function playDodge(w, L) {
   const tm = arenaMates(), TOP = 112, MID = W / 2;
   const kid = { who: 'kid', x: 120, y: 200, out: false }, us = [kid, { who: tm.pet, x: 70, y: 160, out: false }, { who: tm.friend, x: 80, y: 240, out: false }];
   const them = tm.rivals.map((n, i) => ({ who: n, x: 330 + i * 40, y: 150 + i * 45, out: false }));
-  [...us, ...them].forEach(q => { q.tx = q.x; q.ty = q.y; q.jump = 0; q.knock = 0; });
+  [...us, ...them].forEach(q => { q.tx = q.x; q.ty = q.y; q.jump = 0; q.knock = 0; q.hitT = 0; q.hp = q.maxHp = them.includes(q) ? L.hp : 3; });
+  const pops = [];   // 「-1」「-3」飄字
   let phase = 'pause', pauseT = 1.2, after = null, balls = [], holder = kid, inc = null, early = false, msg = '熱血躲避球，開始！', msgT = 1.4, T0 = performance.now(), last = T0, raf = 0, live = true, ended = false, outs = 0, catches = 0, wander = 0;
-  let sp = 0, cut = null, spCount = 0, flash = 0, theirN = 0;
+  let sp = 40, cut = null, spCount = 0, flash = 0, theirN = 0;
   gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', key); };
   const say = (m, s) => { msg = m; msgT = s || 1.1; };
   const pause = (s, fn) => { phase = 'pause'; pauseT = s; after = fn; };
-  const gain = n => { sp = Math.min(100, sp + n); bSp.disabled = sp < 100; bSp.classList.toggle('glow', sp >= 100); };
+  const gain = n => { sp = Math.min(100, Math.max(0, sp + n)); bSp.disabled = sp < 100; bSp.classList.toggle('glow', sp >= 100); };
   const aliveThem = () => them.filter(q => !q.out), aliveUs = () => us.filter(q => !q.out);
   const kidSpot = () => kid.out ? { x: W - 22, y: 200 } : kid;
   const nm = q => q.who === 'kid' ? charName() : q.who.sp ? petName() : q.who.short || '';
@@ -23242,10 +23276,12 @@ function playDodge(w, L) {
   };
   const checkEnd = () => { if (!aliveThem().length) { finish(true); return true; } if (kid.out && us.every(q => q.out)) { finish(false); return true; } return false; };
   const myTurn = () => { phase = 'aim'; holder = kid; bMain.textContent = '🎯 丟！'; bMain.classList.remove('glow'); gain(6); say(kid.out ? '外場丟！打中可以回來！' : sp >= 100 ? '能量滿了！放必殺技！' : '輪到我們丟！', 1); };
-  const knockOut = (q, power) => { q.out = true; q.knock = performance.now(); q.kpow = power || 1; outs++; flash = .25; Sound.play('boing'); };
-  const afterHits = (hits, label) => {
-    const back = kid.out && hits > 0; if (back) kid.out = false;
-    if (hits) { gain(34); say(label || (back ? '打中了！回內場！🎉' : '打中了！出局！🎉'), 1.2); } else say('被閃開了！', .9);
+  // 扣愛心：扣完才出局（被打飛）；還有愛心就往後退一下、冒「-1」
+  const damage = (q, dmg, power) => { q.hp = Math.max(0, q.hp - dmg); pops.push({ x: q.x, y: q.y - 70, txt: '-' + dmg, a: 1 }); flash = .2; if (q.hp <= 0) { q.out = true; q.knock = performance.now(); q.kpow = power || 1; if (them.includes(q)) outs++; Sound.play('boing'); return true; } q.hitT = performance.now(); Sound.play('squish'); return false; };
+  const knockOut = (q, power, dmg) => damage(q, dmg || 1, power);
+  const afterHits = (hits, label, kos) => {
+    const back = kid.out && hits > 0; if (back) { kid.out = false; kid.hp = 2; }
+    if (hits) { gain(30); say(label || (back ? '打中了！回內場！🎉' : kos ? '打中了！出局！🎉' : '打中了！'), 1.2); } else say('被閃開了！', .9);
     if (!checkEnd()) pause(1, theirTurn);
   };
   const throwAt = (x, y) => {
@@ -23311,27 +23347,27 @@ function playDodge(w, L) {
       balls.forEach(b => {
         if (b.done) return; b.t += dt; const p = ballPos(b);
         if (b.kind === 'normal') {
-          if (p.u > .55) { const hit = aliveThem().find(q => Math.hypot(q.x - p.x, q.y - 40 - p.y) < 26); if (hit) { b.done = true; if (Math.random() < L.dodge) { hit.jump = .5; b.res = 'dodged'; Sound.play('jump'); } else { knockOut(hit, 1); b.res = 'hit'; } } }
+          if (p.u > .55) { const hit = aliveThem().find(q => Math.hypot(q.x - p.x, q.y - 40 - p.y) < 26); if (hit) { b.done = true; if (Math.random() < L.dodge) { hit.jump = .5; b.res = 'dodged'; Sound.play('jump'); } else { b.ko = knockOut(hit, 1); b.res = 'hit'; } } }
           if (!b.done && p.u >= 1) { b.done = true; b.res = 'miss'; }
-        } else if (p.u >= 1) { b.done = true; if (b.sure && !b.tgt.out) { knockOut(b.tgt, b.kind === 'fire' ? 2 : 1.5); b.res = 'hit'; } else { if (!b.tgt.out) b.tgt.jump = .5; b.res = 'dodged'; } }
+        } else if (p.u >= 1) { b.done = true; if (b.sure && !b.tgt.out) { b.ko = knockOut(b.tgt, b.kind === 'fire' ? 2 : 1.5, b.kind === 'fire' ? 3 : 2); b.res = 'hit'; } else { if (!b.tgt.out) b.tgt.jump = .5; b.res = 'dodged'; } }
         if (!b.done) done = false;
       });
       if (done) {
         hits = balls.filter(b => b.res === 'hit').length; const lbl = balls.label;
-        if (balls[0].kind === 'normal') { const r = balls[0].res; balls = []; if (r === 'miss') { say('沒打到～', .8); pause(.6, theirTurn); } else if (r === 'dodged') { say('被閃開了！', .9); pause(.7, theirTurn); } else afterHits(1); }
-        else { balls = []; afterHits(hits, hits ? `${lbl}！打飛 ${hits} 個人！` : null); }
+        const balls0 = balls[0]; if (balls[0].kind === 'normal') { const r = balls[0].res; balls = []; if (r === 'miss') { say('沒打到～', .8); pause(.6, theirTurn); } else if (r === 'dodged') { say('被閃開了！', .9); pause(.7, theirTurn); } else afterHits(1, null, balls0.ko); }
+        else { const kos = balls0 && balls.filter(b => b.ko).length; balls = []; afterHits(hits, hits ? (kos ? `${lbl}！打飛 ${kos} 個人！` : `${lbl}！打中 ${hits} 個人！`) : null, kos); }
       }
     }
     if (phase === 'wind') { pauseT -= dt; if (pauseT <= 0) { const s = inc.tg, d = Math.hypot(s.x - inc.th.x, s.y - inc.th.y); inc.dur = d / (L.spd * (inc.power ? 1.35 : 1)); inc.t = 0; inc.left = inc.dur; inc.x0 = inc.th.x - 10; inc.y0 = inc.th.y - 40; Sound.play('whoosh'); phase = 'inc'; } }
     if (phase === 'inc') {
       inc.t += dt; inc.left = inc.dur - inc.t;
       if (inc.tg === kid) bMain.classList.toggle('glow', inc.left <= L.win * (inc.power ? .8 : 1) && !early);
-      if (inc.caught) { knockOut(inc.th, 1); catches++; gain(50); say('接住了！丟的人出局！🙌', 1.2); inc = null; bMain.classList.remove('glow'); if (!checkEnd()) pause(1, myTurn); }
+      if (inc.caught) { const ko = knockOut(inc.th, 1, 2); catches++; gain(50); say(ko ? '接住了！丟的人出局！🙌' : '接住了！對手扣 2 顆愛心！🙌', 1.2); inc = null; bMain.classList.remove('glow'); if (!checkEnd()) pause(1, myTurn); }
       else if (inc.left <= 0) {
         const tg = inc.tg; bMain.classList.remove('glow');
-        if (tg === kid) { if (inc.dodged && !early) { say('閃過了！', .9); Sound.play('coin'); gain(25); } else { kid.out = true; kid.knock = now; kid.kpow = inc.power ? 2 : 1; flash = .25; Sound.play('miss'); say('被打到了！去外場～', 1.2); } }
+        if (tg === kid) { if (inc.dodged && !early) { say('閃過了！', .9); Sound.play('coin'); gain(25); } else { gain(20); if (damage(kid, inc.power ? 2 : 1, inc.power ? 2 : 1)) { Sound.play('miss'); say('被打到了！去外場～', 1.2); } else say(`好痛！還有 ${kid.hp} 顆愛心`, 1.1); } }
         else if (Math.random() < L.mateDodge * (inc.power ? .7 : 1)) { tg.jump = .5; say(`${nm(tg)} 閃過了！`, .9); }
-        else { tg.out = true; tg.knock = now; tg.kpow = 1; Sound.play('miss'); say(`${nm(tg)} 出局了…`, 1); }
+        else { if (damage(tg, inc.power ? 2 : 1, 1)) say(`${nm(tg)} 出局了…`, 1); else say(`${nm(tg)} 被打到了！`, 1); }
         inc = null; if (!checkEnd()) pause(.8, myTurn);
       }
     }
@@ -23343,7 +23379,11 @@ function playDodge(w, L) {
     const benchU = us.filter(q => q.out && q !== kid && now - q.knock > 700), benchT = them.filter(q => q.out && now - q.knock > 700);
     benchU.forEach((q, i) => trackRunner(g, q.who, 50 + i * 40, TOP - 6, .9, t, false, 1)); benchT.forEach((q, i) => trackRunner(g, q.who, W - 50 - i * 40, TOP - 6, .9, t, false, -1));
     const ks = kidSpot(); const people = [...us.filter(q => !q.out), ...them.filter(q => !q.out)]; if (kid.out && now - kid.knock > 700) people.push({ who: 'kid', x: ks.x, y: ks.y, jump: kid.jump, outside: true, tx: ks.x, ty: ks.y });
-    people.sort((a, b) => a.y - b.y).forEach(q => { const up = q.jump > 0 ? Math.sin(q.jump / .5 * Math.PI) * 28 : 0; trackRunner(g, q.who, q.x, q.y - up, q.who === 'kid' ? .62 : 1.1, t, Math.hypot(q.tx - q.x, q.ty - q.y) > 3, them.includes(q) || q.outside ? -1 : 1); });
+    people.sort((a, b) => a.y - b.y).forEach(q => { const up = q.jump > 0 ? Math.sin(q.jump / .5 * Math.PI) * 28 : 0, hk = q.hitT && now - q.hitT < 400 ? Math.sin((now - q.hitT) / 400 * Math.PI) : 0, dir = them.includes(q) ? 1 : -1;
+      if (hk && Math.floor(now / 60) % 2) g.globalAlpha = .45;
+      trackRunner(g, q.who, q.x + dir * hk * 16, q.y - up, q.who === 'kid' ? .62 : 1.1, t, Math.hypot(q.tx - q.x, q.ty - q.y) > 3, them.includes(q) || q.outside ? -1 : 1); g.globalAlpha = 1;
+      if (q.maxHp && !q.outside) { g.font = '9px sans-serif'; g.textAlign = 'center'; let hs = ''; for (let i = 0; i < q.maxHp; i++) hs += i < q.hp ? '❤' : '♡'; g.fillStyle = '#e8505b'; g.fillText(hs, q.x, q.y - (q.who === 'kid' ? 58 : 50) - up); } });
+    pops.forEach(f => { f.y -= 28 * dt; f.a -= dt; g.globalAlpha = Math.max(0, f.a); g.font = '900 18px sans-serif'; g.textAlign = 'center'; g.lineWidth = 4; g.strokeStyle = '#fff'; g.strokeText(f.txt, f.x, f.y); g.fillStyle = '#e8505b'; g.fillText(f.txt, f.x, f.y); g.globalAlpha = 1; }); for (let i = pops.length - 1; i >= 0; i--) if (pops[i].a <= 0) pops.splice(i, 1);
     // 被打飛的人：往後飛、轉圈圈、冒星星
     [...us, ...them].filter(q => q.out && now - q.knock <= 700).forEach(q => { const k = (now - q.knock) / 700, dir = them.includes(q) ? 1 : -1;
       g.save(); g.translate(q.x + dir * k * 90 * q.kpow, q.y - Math.sin(k * Math.PI) * 50 * q.kpow); g.rotate(dir * k * Math.PI * 2 * q.kpow); trackRunner(g, q.who, 0, 0, q.who === 'kid' ? .62 : 1.1, t, false, -dir); g.restore();
