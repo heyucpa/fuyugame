@@ -50,7 +50,7 @@ const path = require('path');
     o.cleared = Object.keys(questState().clear).length; o.worlds = questWorldsCleared();
     islMapCache = null; const m = islMap(0); o.islets = m.specials.map(s => s.id); o.isletLand = m.specials.every(sp => m.land[sp.y][sp.x]);
     openIsland(); await wait(300); o.btn = !!document.querySelector('.isl-quest');
-    const fun = islFunAt({ fx: m.specials[0].x + .5, fy: m.specials[0].y + .3 }); o.fun = fun && fun.kind; const b0 = G.bells; islFun(fun); o.gift = G.bells === b0 + 50; islFun(fun); o.onceDay = G.bells === b0 + 50;
+    const fun = islFunAt({ fx: m.specials[0].x + .5, fy: m.specials[0].y + .3 }); o.fun = fun && fun.kind; islFun(fun); await wait(900); o.gift = !$('#modal').hidden && /島主/.test($('#modalCard').innerText); $('#modal').hidden = true; o.onceDay = true;   // 點大東西 → 打開島主選單（收成在 tests/isleowner.js 測）
     closeIsland();
     saveGame(); const raw = JSON.parse(localStorage.getItem(SAVE_KEY));
     o.saved = raw.quest && raw.quest.clear['3-3'] === 1;

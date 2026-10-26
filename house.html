@@ -761,6 +761,11 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .fit-row { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 10px; margin: 6px 0; border: 2px solid var(--line); border-radius: 12px; background: #fff; text-align: left; }
 .fit-row b { font-size: 17px; } .fit-bar { color: #e8a020; font-weight: 800; } .fit-use { font-size: 13px; color: #6b5a48; }
 .fit-hold { width: 240px; height: 18px; border-radius: 9px; background: #eee; overflow: hidden; margin: 8px auto; } .fit-hold-in { height: 100%; width: 0; background: linear-gradient(90deg, #9be36b, #3fae4f); }
+.flower-want, .flower-got { font-size: 40px; min-height: 52px; letter-spacing: 4px; } .flower-got:empty::before { content: '點下面的花放進來'; font-size: 16px; color: #a89880; line-height: 52px; } .flower-got { background: #fff; border: 3px dashed var(--line); border-radius: 14px; padding: 4px 12px; }
+.candy-board { display: grid; grid-template-columns: repeat(6, 52px); gap: 4px; justify-content: center; margin: 6px auto; }
+.candy-cell { width: 52px; height: 52px; font-size: 30px; border: none; border-radius: 12px; padding: 0; } .candy-cell.c0 { background: #ffd6e6; } .candy-cell.c1 { background: #ffe9b8; } .candy-cell.c2 { background: #e2d6ff; } .candy-cell.c3 { background: #d6f2df; }
+.dig-board { display: grid; grid-template-columns: repeat(7, 50px); gap: 4px; justify-content: center; margin: 6px auto; }
+.dig-cell { width: 50px; height: 50px; font-size: 26px; border: none; border-radius: 10px; background: repeating-linear-gradient(45deg, #e6c98a 0 6px, #dcbd7a 6px 12px); padding: 0; } .dig-cell.dug { background: #8a6a45; }
 .spar-row .spar-sp { background: linear-gradient(#ffb02e, #ff5a1f); color: #fff; border-color: #c0392b; } .spar-row .spar-sp:disabled { background: #eee; color: #aaa; border-color: #ddd; }
 .spar-row .spar-on { animation: glowPulse .4s infinite alternate; transform: scale(1.08); box-shadow: 0 0 0 5px #ffd23f; }
 .music-menu { position: fixed; z-index: 70; background: var(--panel, #fffaf0); border: 2px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
@@ -4490,6 +4495,23 @@ FURN_BY_ID.candy_jar = { id: 'candy_jar', name: '糖果大罐', price: 0, theme:
     { k: 'ball', x: .5, y: .5, z: 27, r: 3, c: '#e8505b' }
   ] };
 PLACE_FURNITURE.forEach(f => { FURN_BY_ID[f.id] = f; }); // 親戚家專用的家具（不在商店、圖鑑裡）
+/* 🏝️ 島主做的家具、恐龍模型（不在商店，做出來／拼出來才有）。
+   一定要放在讀存檔之前：擺在房間裡的家具，讀存檔時找不到會整份存檔讀不進來。 */
+Object.assign(FURN_BY_ID, {
+  isle_flowerpot: { id: 'isle_flowerpot', name: '花花盆栽', price: 0, theme: 'nature', w: 1, d: 1, gift: true, parts: [{ x: .25, y: .25, w: .5, d: .5, z: 0, h: 12, c: '#c98d5a' }, { k: 'ball', x: .4, y: .45, z: 18, r: 4, c: '#e8505b' }, { k: 'ball', x: .6, y: .5, z: 20, r: 4, c: '#ffd23f' }, { k: 'ball', x: .5, y: .62, z: 17, r: 4, c: '#ff9ec4' }, { k: 'ball', x: .5, y: .4, z: 24, r: 4, c: '#ffffff' }] },
+  isle_flowerarch: { id: 'isle_flowerarch', name: '花拱門', price: 0, theme: 'nature', w: 2, d: 1, gift: true, parts: [{ x: .1, y: .4, w: .14, d: .2, z: 0, h: 52, c: '#7bc35a' }, { x: 1.76, y: .4, w: .14, d: .2, z: 0, h: 52, c: '#7bc35a' }, { x: .1, y: .4, w: 1.8, d: .2, z: 52, h: 6, c: '#7bc35a' },
+    { k: 'ball', x: .2, y: .5, z: 20, r: 4, c: '#e8505b' }, { k: 'ball', x: .2, y: .5, z: 40, r: 4, c: '#ffd23f' }, { k: 'ball', x: 1.8, y: .5, z: 30, r: 4, c: '#ff9ec4' }, { k: 'ball', x: .5, y: .5, z: 60, r: 4, c: '#ff9ec4' }, { k: 'ball', x: 1, y: .5, z: 61, r: 4.5, c: '#e8505b' }, { k: 'ball', x: 1.5, y: .5, z: 60, r: 4, c: '#ffd23f' }] },
+  isle_lollipop: { id: 'isle_lollipop', name: '大棒棒糖擺飾', price: 0, theme: 'sweet', w: 1, d: 1, gift: true, parts: [{ x: .46, y: .46, w: .08, d: .08, z: 0, h: 40, c: '#fffaf0' }, { k: 'ball', x: .5, y: .5, z: 50, r: 13, c: '#ff6fa3' }, { k: 'ball', x: .5, y: .5, z: 50, r: 6, c: '#ffffff' }] },
+  isle_candyhouse: { id: 'isle_candyhouse', name: '糖果屋', price: 0, theme: 'sweet', w: 2, d: 2, gift: true, parts: [{ x: .2, y: .2, w: 1.6, d: 1.6, z: 0, h: 30, c: '#f6d2a8' }, { x: .1, y: .1, w: 1.8, d: 1.8, z: 30, h: 10, c: '#ff8fb3' }, { x: .8, y: 1.76, w: .4, d: .06, z: 0, h: 18, c: '#8a5a33' },
+    { k: 'ball', x: .4, y: 1.82, z: 22, r: 4, c: '#ffd23f' }, { k: 'ball', x: 1.6, y: 1.82, z: 22, r: 4, c: '#7bd389' }, { k: 'ball', x: 1, y: 1, z: 46, r: 6, c: '#e8505b' }] }
+});
+[['rex', '暴龍', '#c98a5a'], ['tri', '三角龍', '#7bbf6a'], ['long', '長頸龍', '#6bb6ff']].forEach(([k, nm, col]) => {
+  const bone = '#f4efe0', parts = [{ x: .1, y: .25, w: 1.8, d: .5, z: 0, h: 4, c: '#8a8f96' }];
+  if (k === 'rex') parts.push({ x: .6, y: .45, w: .1, d: .1, z: 4, h: 18, c: bone }, { x: 1.1, y: .45, w: .1, d: .1, z: 4, h: 18, c: bone }, { x: .4, y: .4, w: 1.1, d: .2, z: 22, h: 8, c: bone }, { x: 1.4, y: .4, w: .4, d: .2, z: 26, h: 18, c: bone }, { k: 'ball', x: 1.7, y: .5, z: 48, r: 8, c: bone }, { x: .1, y: .45, w: .4, d: .1, z: 18, h: 5, c: bone });
+  else if (k === 'tri') parts.push({ x: .5, y: .45, w: .1, d: .1, z: 4, h: 12, c: bone }, { x: 1.2, y: .45, w: .1, d: .1, z: 4, h: 12, c: bone }, { x: .3, y: .35, w: 1.2, d: .3, z: 16, h: 10, c: bone }, { k: 'ball', x: 1.65, y: .5, z: 22, r: 9, c: bone }, { k: 'ball', x: 1.55, y: .5, z: 32, r: 7, c: col });
+  else parts.push({ x: .5, y: .45, w: .1, d: .1, z: 4, h: 14, c: bone }, { x: 1.1, y: .45, w: .1, d: .1, z: 4, h: 14, c: bone }, { x: .3, y: .4, w: 1, d: .2, z: 18, h: 9, c: bone }, { x: 1.25, y: .45, w: .12, d: .12, z: 24, h: 44, c: bone }, { k: 'ball', x: 1.4, y: .5, z: 70, r: 6, c: bone }, { x: 0, y: .45, w: .35, d: .1, z: 20, h: 4, c: bone });
+  FURN_BY_ID['dino_' + k] = { id: 'dino_' + k, name: `${nm}模型`, price: 0, theme: 'nature', w: 2, d: 1, gift: true, parts };
+});
 /* 🏆 集滿獎盃：任何一種圖鑑集滿，就送一座只有集滿才拿得到的獎盃（可以擺地上、也可以擺桌上）。
    不放進 FURNITURE：不然家具圖鑑要集滿還得先拿到家具獎盃，永遠集不滿。
    價格 0＝不能賣（辛苦集來的，不要一不小心賣掉）。 */
@@ -4687,6 +4709,13 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-27T20:00', title: '你是小島的島主了！🏝️', lines: [
+    ['🏝️', '點花花島、糖果島、恐龍島上的大東西，打開「島主選單」！可以幫小島取名字'],
+    ['🌸', '花花島：每天摘花，開「💐 花藝店」幫動物朋友配花束，花可以做成盆栽、花拱門帶回家'],
+    ['🍬', '糖果島：每天收糖果，玩「🍬 糖果工廠」，糖果可以吃，也可以做大棒棒糖、糖果屋帶回家'],
+    ['🦕', '恐龍島：每天撿化石，玩「⛏️ 挖化石」，一隻恐龍 4 塊骨頭，拼好送恐龍模型！'],
+    ['⭐', '常常照顧小島，小島會升級，島上的花、糖果、骨頭會越來越多']
+  ] },
   { id: '2026-10-27T09:00', title: '健身房開了！💪', lines: [
     ['💪', '運動島新開「健身房」，河馬教練教你練身體：🏃 跑步機、🏋️ 舉啞鈴、🚴 飛輪、📦 跳箱、🧘 瑜珈'],
     ['📊', '練習會讓速度、力量、耐力升級（最高 Lv.5），百米衝刺、跳遠、投籃機、躲避球、打水比賽、對練都會變厲害！'],
@@ -5510,6 +5539,16 @@ function normalizeSave(g) {
     if (v.zone > v.zoneMax) v.zone = 0; if (v.zoneMax > 2) v.zoneMax = 2;
     if (v.day != null && !(isObj(v.day) && typeof v.day.d === 'string' && num(v.day.n))) delete v.day; }
   if (out.recentGames != null) { if (Array.isArray(out.recentGames)) out.recentGames = out.recentGames.filter(x => typeof x === 'string' && x.length < 40).slice(0, 8); else delete out.recentGames; }   // 🎮 最近玩過
+  if (out.isle != null) {   // 🏝️ 島主：名字、經驗、花、糖果、恐龍骨頭
+    if (!isObj(out.isle)) delete out.isle;
+    else Object.keys(out.isle).forEach(k => { const v = out.isle[k];
+      if (!/^(flower|candy|dino)$/.test(k) || !isObj(v)) { delete out.isle[k]; return; }
+      if (v.name != null && !(typeof v.name === 'string' && v.name.length <= 8)) delete v.name;
+      if (v.xp != null && !(num(v.xp) && v.xp >= 0 && v.xp <= 999)) delete v.xp;
+      if (k === 'flower') v.stock = isObj(v.stock) ? Object.fromEntries(Object.entries(v.stock).filter(([f, n]) => /^(rose|sun|tulip|daisy|sakura)$/.test(f) && Number.isInteger(n) && n >= 0 && n < 10000)) : {};
+      if (k === 'candy' && !(Number.isInteger(v.stock) && v.stock >= 0 && v.stock < 10000)) v.stock = 0;
+      if (k === 'dino') v.bones = isObj(v.bones) ? Object.fromEntries(Object.entries(v.bones).filter(([d, a]) => /^(rex|tri|long)$/.test(d) && Array.isArray(a)).map(([d, a]) => [d, [...new Set(a.filter(i => Number.isInteger(i) && i >= 0 && i <= 3))]])) : {};
+    }); }
   if (out.fit != null) { if (!isObj(out.fit)) delete out.fit; else ['spd', 'str', 'sta'].forEach(k => { if (out.fit[k] != null && !(num(out.fit[k]) && out.fit[k] >= 0 && out.fit[k] <= 500)) delete out.fit[k]; else if (out.fit[k] != null) out.fit[k] = Math.round(out.fit[k]); }); }   // 💪 體能經驗
   if (out.arena != null) { if (!isObj(out.arena)) delete out.arena; else { ['bb', 'bm', 'db', 'pp', 'ppw'].forEach(k => { if (out.arena[k] != null && !(num(out.arena[k]) && out.arena[k] >= 0 && out.arena[k] < 1e6)) delete out.arena[k]; else if (out.arena[k] != null) out.arena[k] = Math.floor(out.arena[k]); }); } }   // 🏀 體育館戰績
   if (out.track != null) { if (!isObj(out.track)) delete out.track; else { ['best', 'lj'].forEach(k => { if (out.track[k] != null && !(num(out.track[k]) && out.track[k] > 0 && out.track[k] < 100)) delete out.track[k]; }); } }   // 🏟️ 田徑紀錄
@@ -11969,7 +12008,7 @@ function openTravelMenu() {
     pick(renderInviteGirl(inv, 64, 58), `🏡 ${inviteWho(inv)}的家${here ? '（你在這裡）' : ''}`, `${inv.f ? inv.n + '・' : ''}邀請卡（${inviteDate(inv.at)}）・房間 ${inv.r.length} 間・寵物 ${inv.pn.length} 隻`, () => (typeof friendByBoat === 'function' && ii < ISL_FRIEND_SPOTS.length ? friendByBoat(ii) : visitFriend(inv)), here);   // 🏡 朋友家在朋友島：一樣坐船過去
   });
   // 🏝️ 闖關送的小島（破完那個世界才有）
-  QUEST_ISLETS.forEach((il, i) => { if (!questState().clear[(i + 1) + '-3']) return; pick(el('div', 'place-emoji', il.icon), `🏝️ ${il.icon} ${il.name}`, il.desc + '（走到碼頭坐船去）', () => isletByBoat(il.id), false); });
+  QUEST_ISLETS.forEach((il, i) => { if (!questState().clear[(i + 1) + '-3']) return; pick(el('div', 'place-emoji', il.icon), `🏝️ ${il.icon} ${typeof isleName === 'function' ? isleName(il.id) : il.name}`, il.desc + `（島主：${charName()}，走到碼頭坐船去）`, () => isletByBoat(il.id), false); });
   if (trickActive()) {
     const tb = el('button', 'big', `🎃 萬聖節集糖卡（${trickCount()} / ${TRICK_HOSTS.length}）`);
     tb.onclick = openTrickCard;
@@ -21744,6 +21783,7 @@ function islDrawCandyTree(ctx, x, y, now) {
 }
 function islDrawSpecial(ctx, sp, now) {
   const T = ISL.T, px = sp.x * T + T / 2, py = (sp.y + 1) * T - 2, t = now / 1000, k = isl.spTap && isl.spTap.id === sp.id ? Math.max(0, 1 - (now - isl.spTap.t) / 700) : 0;
+  if (typeof isleDecor === 'function') isleDecor(ctx, sp, now);   // 🏝️ 小島等級越高擺飾越多
   ctx.fillStyle = 'rgba(40,60,30,.22)'; ctx.beginPath(); ctx.ellipse(px, py, 20, 7, 0, 0, 7); ctx.fill();
   if (sp.id === 'flower') {   // 🌻 大向日葵
     ctx.save(); ctx.translate(px, py); ctx.rotate(Math.sin(t * 1.5) * .05 + Math.sin(now / 60) * .15 * k);
@@ -21768,18 +21808,12 @@ function islQuestSpecial(o) {
   const day = today(), d = G.qIsleDay = (G.qIsleDay && G.qIsleDay.d === day) ? G.qIsleDay : { d: day, got: {} };
   isl.spTap = { id: o.id, t: performance.now() };
   kidMoodUp(2);
-  if (o.id === 'flower') {
-    Sound.play('magic'); islAddFx('say', o.x, o.y - 3.6, 1600, { text: '嗨～今天天氣真好！' });
-    if (!d.got.flower) { d.got.flower = 1; addBells(50); gotCard('🌻', '大向日葵', '送你一個好心情 💰 +50 元（明天再來）'); }
-  } else if (o.id === 'candy') {
-    Sound.play('pickUp'); islAddFx('candy', o.x, o.y - 2, 1400);
-    if (!d.got.candy) { d.got.candy = 1; G.kidFood.cotton_candy = (G.kidFood.cotton_candy || 0) + 1; gotCard('🍭', '棉花糖', '大棒棒糖掉下一個棉花糖！可以吃喔（明天再來）'); }
-    else islAddFx('say', o.x, o.y - 3.6, 1400, { text: '甜甜的～' });
-  } else if (o.id === 'dino') {
-    Sound.play('bad'); islAddFx('say', o.x, o.y - 3.2, 1600, { text: '吼——！' });
-    if (!d.got.dino) { d.got.dino = 1; addBells(100); gotCard('🦴', '恐龍化石', '石像旁邊挖到化石！賣了 💰 100 元（明天再來）'); }
-  }
+  // 🏝️ 島主（家長：小島要有用）：大東西動一下、說句話，然後打開島主選單（每天的收成改在選單裡拿）
+  if (o.id === 'flower') { Sound.play('magic'); islAddFx('say', o.x, o.y - 3.6, 1400, { text: '島主來了！' }); }
+  else if (o.id === 'candy') { Sound.play('pickUp'); islAddFx('candy', o.x, o.y - 2, 1400); }
+  else if (o.id === 'dino') { Sound.play('bad'); islAddFx('say', o.x, o.y - 3.2, 1400, { text: '吼——！' }); }
   saveGame(); refreshTop();
+  setTimeout(() => { if (typeof openIsleMenu === 'function' && isl) openIsleMenu(o.id); }, 600);
 }
 /* ===== 🗺️ 世界任務（家長：像瑪利歐那樣闖關，闖過了小島變多）=====
    ・3 個世界 × 3 關：🌿 草原、🏖️ 沙灘、🌲 森林；第 3 關有大史萊姆王。
@@ -24213,6 +24247,182 @@ Object.assign(FURNITURE_ACT, { gym_treadmill: 'fit_run', gym_dumbbell: 'fit_lift
 ['fit_run', 'fit_lift', 'fit_bike', 'fit_box', 'fit_yoga'].forEach(k => { const a = ACTIVITIES[k]; if (!LINE_TYPES.some(t => t.key === 'act_' + k)) LINE_TYPES.push({ key: 'act_' + k, label: '做事：' + a.name, hint: '', lines: a.lines }); });
 Object.assign(WALL_TAP, { gym_board: () => openFitStats() });
 AWAY_GAMES.push(['🏃', '跑步機', 'gym', () => openFitRun()], ['🏋️', '舉啞鈴', 'gym', () => openFitLift()], ['🚴', '飛輪', 'gym', () => openFitBike()], ['📦', '跳箱', 'gym', () => openFitBox()], ['🧘', '瑜珈', 'gym', () => openFitYoga()]);
+/* ===== 🏝️ 小可愛當島主（家長：花花島、糖果島、恐龍島打開後沒什麼用 → 照這個方向做）=====
+   點島上的大東西（向日葵、大棒棒糖、恐龍石像）打開「島主選單」：
+     🌸 花花島：🌷 每天摘花 → 💐 花藝店（動物朋友來點花束，照著配）→ 用摘的花做花盆、花拱門帶回家
+     🍬 糖果島：🍭 每天收糖果 → 🍬 糖果工廠（點一樣的糖果連在一起就做出糖果）→ 吃糖果、做大棒棒糖、糖果屋帶回家
+     🦕 恐龍島：🦴 每天撿一塊化石 → ⛏️ 挖化石（鏟子有限，找骨頭）→ 一隻恐龍 4 塊骨頭，拼完得到恐龍模型
+   島主可以幫島取名字；照顧得越多（收成、玩遊戲）小島等級越高，島上的花、糖果、骨頭擺飾就越多。
+   錢只是小小的：每天收成 150 元，遊戲照一般小遊戲算。
+   G.isle = { flower: { name, xp, stock: { rose, sun, tulip, daisy, sakura } }, candy: { name, xp, stock }, dino: { name, xp, bones: { rex: [], tri: [], long: [] } } } */
+const ISLE_FLOWERS = [['rose', '🌹', '紅玫瑰'], ['sun', '🌻', '向日葵'], ['tulip', '🌷', '鬱金香'], ['daisy', '🌼', '小雛菊'], ['sakura', '🌸', '櫻花']];
+const ISLE_DINOS = [['rex', '暴龍', '#c98a5a'], ['tri', '三角龍', '#7bbf6a'], ['long', '長頸龍', '#6bb6ff']];
+const ISLE_BONES = ['頭', '身體', '尾巴', '腳'];
+const ISLE_CRAFT = { flower: [['isle_flowerpot', '🌱', '花花盆栽', 5], ['isle_flowerarch', '💐', '花拱門', 15]], candy: [['isle_lollipop', '🍭', '大棒棒糖擺飾', 6], ['isle_candyhouse', '🏠', '糖果屋', 15]] };
+function isleState(id) {
+  if (!G.isle || typeof G.isle !== 'object') G.isle = {};
+  const s = G.isle[id] && typeof G.isle[id] === 'object' ? G.isle[id] : (G.isle[id] = {});
+  if (id === 'flower' && (!s.stock || typeof s.stock !== 'object')) s.stock = {};
+  if (id === 'candy' && typeof s.stock !== 'number') s.stock = 0;
+  if (id === 'dino' && (!s.bones || typeof s.bones !== 'object')) s.bones = {};
+  return s;
+}
+const isleInfo = id => QUEST_ISLETS.find(x => x.id === id);
+function isleName(id) { const s = G.isle && G.isle[id]; return (s && typeof s.name === 'string' && s.name.trim()) || isleInfo(id).name; }
+function isleLv(id) { return Math.min(5, 1 + Math.floor((isleState(id).xp || 0) / 30)); }
+function isleXp(id, n) { const s = isleState(id), before = isleLv(id); s.xp = Math.min(999, (s.xp || 0) + n); if (isleLv(id) > before) setTimeout(() => { try { gotCard(isleInfo(id).icon, `${isleName(id)}升到 ${isleLv(id)} 級！`, '島上變得更漂亮了，去看看！'); } catch (e) {} }, 900); }
+const flowerTotal = () => ISLE_FLOWERS.reduce((n, [k]) => n + (isleState('flower').stock[k] || 0), 0);
+function isleHarvested(id) { const d = G.qIsleDay; return !!(d && d.d === today() && d.got && d.got['h_' + id]); }
+function isleHarvest(id) {
+  if (isleHarvested(id)) return;
+  const day = today(); G.qIsleDay = (G.qIsleDay && G.qIsleDay.d === day) ? G.qIsleDay : { d: day, got: {} }; G.qIsleDay.got['h_' + id] = 1;
+  const s = isleState(id); addBells(150); isleXp(id, 5);
+  if (id === 'flower') { const got = []; for (let i = 0; i < 6; i++) { const f = ISLE_FLOWERS[Math.floor(Math.random() * ISLE_FLOWERS.length)]; s.stock[f[0]] = (s.stock[f[0]] || 0) + 1; got.push(f[1]); } gotCard('🌷', '摘了 6 朵花！', `${got.join('')}　💰 +150（明天花又會開）`); }
+  else if (id === 'candy') { s.stock += 6; G.kidFood.cotton_candy = (G.kidFood.cotton_candy || 0) + 1; gotCard('🍭', '收了 6 顆糖果！', '還有一個棉花糖可以吃　💰 +150（明天會再長）'); }
+  else { const r = isleGiveBone(); gotCard('🦴', `撿到${r.txt}！`, `${r.dup ? '這塊已經有了，賣掉 💰 +30　' : ''}💰 +150（明天再來）`); }
+  Sound.play('coin'); saveGame(); refreshTop();
+}
+// 🦴 給一塊恐龍骨頭（優先給還沒有的）；拼完一隻送模型
+function isleGiveBone(force) {
+  const b = isleState('dino').bones, need = [];
+  ISLE_DINOS.forEach(([k]) => { const have = Array.isArray(b[k]) ? b[k] : (b[k] = []); ISLE_BONES.forEach((_, i) => { if (!have.includes(i)) need.push([k, i]); }); });
+  let pick = force || (need.length && Math.random() < .85 ? need[Math.floor(Math.random() * need.length)] : null);
+  if (!pick) { const d = ISLE_DINOS[Math.floor(Math.random() * 3)]; pick = [d[0], Math.floor(Math.random() * 4)]; }
+  const [k, i] = pick, dn = ISLE_DINOS.find(d => d[0] === k), dup = b[k].includes(i);
+  if (dup) { addBells(30); return { txt: `${dn[1]}的${ISLE_BONES[i]}`, dup: true }; }
+  b[k].push(i);
+  if (b[k].length === 4) { G.inv['dino_' + k] = (G.inv['dino_' + k] || 0) + 1; setTimeout(() => { try { showcase(el('div', 'magic-pic', '🦖'), `${dn[1]}的骨頭拼好了！`, `得到「${dn[1]}模型」，可以擺在家裡！`, { head: '🦴 恐龍化石' }); } catch (e) {} }, 1200); }
+  return { txt: `${dn[1]}的${ISLE_BONES[i]}`, dup: false, done: b[k].length === 4 };
+}
+function openIsleMenu(id) {
+  const il = isleInfo(id), s = isleState(id), card = $('#modalCard');
+  closeGameWindow(); card.innerHTML = '';
+  const x = el('button', 'modal-x', '✕'); x.onclick = () => { $('#modal').hidden = true; }; card.appendChild(x);
+  card.appendChild(el('h2', '', `${il.icon} ${isleName(id)}`));
+  const v = NEIGHBORS.filter(Boolean)[new Date().getDate() % NEIGHBORS.filter(Boolean).length];
+  card.appendChild(note(`島主：${charName()}　小島等級 ${'★'.repeat(isleLv(id))}${'☆'.repeat(5 - isleLv(id))}${v ? `\n${v.short || v.name}今天也來島上玩！` : ''}`));
+  const btn = (label, fn, dis) => { const b = el('button', 'big' + (dis ? ' alt' : ''), label); if (dis) b.disabled = true; b.onclick = fn; card.appendChild(b); return b; };
+  const harvestLabel = { flower: '🌷 摘今天的花', candy: '🍭 收今天的糖果', dino: '🦴 撿今天的化石' }[id];
+  btn(isleHarvested(id) ? `${harvestLabel}（明天再來）` : harvestLabel, () => { isleHarvest(id); openIsleMenu(id); }, isleHarvested(id));
+  if (id === 'flower') {
+    card.appendChild(note('我的花：' + (ISLE_FLOWERS.map(([k, e]) => s.stock[k] ? `${e}×${s.stock[k]}` : '').filter(Boolean).join('　') || '還沒有，先去摘花！')));
+    btn('💐 開花藝店（動物朋友來買花）', () => openFlowerShop());
+    ISLE_CRAFT.flower.forEach(([fid, e, nm, n]) => btn(`${e} 做${nm}帶回家（用 ${n} 朵花）`, () => { isleCraft('flower', fid, nm, n); openIsleMenu(id); }, flowerTotal() < n));
+  } else if (id === 'candy') {
+    card.appendChild(note(`我的糖果：🍬 × ${s.stock}`));
+    btn('🍬 糖果工廠（做糖果）', () => openCandyFactory());
+    btn('😋 吃一顆糖果', () => { s.stock--; kidMoodUp(4); G.kid.hunger = clampStat((G.kid.hunger || 0) + 3); Sound.play('eat'); toast('😋 甜甜的！'); saveGame(); openIsleMenu(id); }, s.stock < 1);
+    ISLE_CRAFT.candy.forEach(([fid, e, nm, n]) => btn(`${e} 做${nm}帶回家（用 ${n} 顆糖果）`, () => { isleCraft('candy', fid, nm, n); openIsleMenu(id); }, s.stock < n));
+  } else {
+    btn('⛏️ 挖化石（找恐龍骨頭）', () => openDigGame());
+    btn('📖 恐龍圖鑑', () => openDinoBook());
+  }
+  btn('🏷️ 幫小島取名字', () => openIsleRename(id));
+  $('#modal').hidden = false;
+}
+function isleCraft(id, fid, nm, n) {
+  const s = isleState(id);
+  if (id === 'flower') { if (flowerTotal() < n) return; let left = n; ISLE_FLOWERS.slice().sort((a, b) => (s.stock[b[0]] || 0) - (s.stock[a[0]] || 0)).forEach(([k]) => { const use = Math.min(left, s.stock[k] || 0); s.stock[k] -= use; left -= use; }); }
+  else { if (s.stock < n) return; s.stock -= n; }
+  G.inv[fid] = (G.inv[fid] || 0) + 1; isleXp(id, 4); Sound.play('fanfare');
+  gotCard(ISLE_CRAFT[id].find(c => c[0] === fid)[1], `做好了「${nm}」！`, '放在「我的東西」裡，可以擺在家裡'); saveGame();
+}
+function openIsleRename(id) {
+  const card = $('#modalCard'); card.innerHTML = '';
+  card.appendChild(el('h2', '', `🏷️ 幫${isleInfo(id).icon}取名字`));
+  const inp = document.createElement('input'); inp.className = 'textin'; inp.maxLength = 8; inp.value = isleName(id); card.appendChild(inp);
+  const ok = el('button', 'big', '好了！'); ok.onclick = () => { const v = inp.value.trim().slice(0, 8); isleState(id).name = v || ''; saveGame(); toast(`🏝️ 小島叫「${isleName(id)}」了！`); openIsleMenu(id); };
+  const no = el('button', 'big alt', '不改了'); no.onclick = () => openIsleMenu(id);
+  card.append(ok, no); $('#modal').hidden = false; setTimeout(() => inp.focus(), 50);
+}
+function openDinoBook() {
+  const card = $('#modalCard'); card.innerHTML = ''; const b = isleState('dino').bones;
+  card.appendChild(el('h2', '', '📖 恐龍圖鑑'));
+  ISLE_DINOS.forEach(([k, nm]) => { const have = b[k] || [], row = el('div', 'fit-row'); row.append(el('b', '', `🦖 ${nm}${have.length === 4 ? '　✅ 拼好了！' : `　${have.length} / 4`}`), el('span', 'fit-use', ISLE_BONES.map((p, i) => (have.includes(i) ? '🦴' : '❔') + p).join('　'))); card.appendChild(row); });
+  card.appendChild(note('去「⛏️ 挖化石」或每天撿化石，集滿 4 塊就會得到恐龍模型！'));
+  const back = el('button', 'big', '回到小島'); back.onclick = () => openIsleMenu('dino'); card.appendChild(back);
+  $('#modal').hidden = false;
+}
+// 💐 花藝店：動物朋友點花束，照著點一樣的花送出去
+function openFlowerShop() {
+  const w = openGameWindow('💐 花藝店', '動物朋友想要的花束畫在上面，點下面的花把一樣的放進去，再按「🎁 送給牠」！');
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const N = 4, custs = NEIGHBORS.filter(Boolean).slice().sort(() => Math.random() - .5).slice(0, N);
+  let i = 0, perfect = 0, tries = 0, want = [], got = [];
+  const view = el('div', 'tkd-view'); w.stage.appendChild(view);
+  const order = () => { const n = 2 + Math.min(3, i), o = []; for (let k = 0; k < n; k++) o.push(ISLE_FLOWERS[Math.floor(Math.random() * (2 + Math.min(3, i + 1)))][0]); return o.sort(); };
+  const em = k => ISLE_FLOWERS.find(f => f[0] === k)[1];
+  const draw = () => {
+    view.innerHTML = '';
+    const c = custs[i]; view.appendChild(el('div', 'tkd-say', `${c.short || c.name} 想要：`)); view.appendChild(el('div', 'flower-want', want.map(em).join('')));
+    view.appendChild(el('div', 'tkd-say', '你的花束：')); view.appendChild(el('div', 'flower-got', got.map(em).join('')));
+    const row = el('div', 'tkd-moves'); ISLE_FLOWERS.forEach(([k, e, nm]) => { const b = el('button', 'tkd-move'); b.append(el('span', 'tkd-e', e), el('span', '', nm)); b.onclick = () => { if (got.length < 6) { got.push(k); Sound.play('click'); draw(); } }; row.appendChild(b); }); view.appendChild(row);
+    const r2 = el('div', 'invite-row'), undo = el('button', 'big alt', '↩️ 拿掉一朵'), give = el('button', 'big', '🎁 送給牠'); undo.onclick = () => { got.pop(); draw(); }; give.onclick = submit; r2.append(undo, give); view.appendChild(r2);
+    w.status.textContent = `第 ${i + 1} / ${N} 位客人`;
+  };
+  const submit = () => {
+    tries++;
+    if (got.slice().sort().join() === want.join()) { if (tries === 1) perfect++; Sound.play('perfect'); toast(`💐 ${custs[i].short || ''}：好漂亮！謝謝！`); i++; next(); }
+    else { Sound.play('miss'); w.status.textContent = '花不太一樣喔，再看看上面！'; }
+  };
+  const next = () => { if (i >= N) { const bells = payReward(w, 40 * N + perfect * 25); isleXp('flower', 6); saveGame(); view.innerHTML = ''; view.appendChild(el('div', 'tkd-big', '💐')); w.status.textContent = `賣出 ${N} 束花！一次就對 ${perfect} 束　💰 +${fmt(bells)}`; gameButtons(w, openFlowerShop); return; } want = order(); got = []; tries = 0; draw(); };
+  openFlowerShop.test = { want: () => want.slice(), add: k => { got.push(k); }, submit, i: () => i };
+  next();
+}
+// 🍬 糖果工廠：點兩顆以上連在一起的同一種糖果，就做成糖果；20 次之內做越多越好
+const CANDY_KINDS = ['🍬', '🍭', '🍫', '🍩', '🍪'];
+function openCandyFactory() {
+  const w = openGameWindow('🍬 糖果工廠', '點一群連在一起、一樣的糖果（兩顆以上），就會做成糖果！一次點越多顆越厲害。可以點 20 次。');
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const C = 6, R = 6; let grid = [], moves = 20, made = 0, best = 0;
+  const rnd = () => Math.floor(Math.random() * 4);
+  for (let y = 0; y < R; y++) { grid.push([]); for (let x = 0; x < C; x++) grid[y].push(rnd()); }
+  const board = el('div', 'candy-board'); w.stage.appendChild(board);
+  const group = (x0, y0) => { const k = grid[y0][x0], seen = new Set(), st = [[x0, y0]], out = []; while (st.length) { const [x, y] = st.pop(), key = x + ',' + y; if (seen.has(key) || x < 0 || y < 0 || x >= C || y >= R || grid[y][x] !== k) continue; seen.add(key); out.push([x, y]); st.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]); } return out; };
+  const tapAt = (x, y) => {
+    if (moves <= 0) return; const gp = group(x, y); if (gp.length < 2) { Sound.play('click'); return; }
+    moves--; made += gp.length; best = Math.max(best, gp.length); Sound.play(gp.length >= 5 ? 'perfect' : 'pickUp');
+    gp.forEach(([gx, gy]) => { grid[gy][gx] = -1; });
+    for (let gx = 0; gx < C; gx++) { const col = []; for (let gy = R - 1; gy >= 0; gy--) if (grid[gy][gx] >= 0) col.push(grid[gy][gx]); for (let gy = R - 1, k = 0; gy >= 0; gy--, k++) grid[gy][gx] = k < col.length ? col[k] : rnd(); }
+    if (gp.length >= 5) toast(`🎉 一次做 ${gp.length} 顆！`);
+    paint();
+    if (moves <= 0) { const candies = Math.max(1, Math.floor(made / 4)), s = isleState('candy'); s.stock += candies; isleXp('candy', 6); const bells = payReward(w, made * 4); saveGame(); w.status.textContent = `做了 ${made} 顆糖果！帶回 🍬 × ${candies}（最多一次 ${best} 顆）　💰 +${fmt(bells)}`; gameButtons(w, openCandyFactory); }
+  };
+  const paint = () => { board.innerHTML = ''; for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) { const b = el('button', 'candy-cell c' + grid[y][x], CANDY_KINDS[grid[y][x]]); b.onclick = () => tapAt(x, y); board.appendChild(b); } if (moves > 0) w.status.textContent = `還可以點 ${moves} 次　做了 ${made} 顆`; };
+  openCandyFactory.test = { tapAt, grid: () => grid, moves: () => moves, made: () => made, group };
+  paint();
+}
+// ⛏️ 挖化石：7×5 的沙地，有 12 把鏟子；藏了 2 塊恐龍骨頭和一些小寶物
+function openDigGame() {
+  const w = openGameWindow('⛏️ 挖化石', '點沙地挖下去！有 12 次機會，找找看恐龍的骨頭 🦴 藏在哪裡（旁邊會出現小線索）。');
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const C = 7, R = 5, cells = []; for (let i = 0; i < C * R; i++) cells.push({ k: 'sand', dug: false });
+  const pos = [...cells.keys()].sort(() => Math.random() - .5); cells[pos[0]].k = 'bone'; cells[pos[1]].k = 'bone'; cells[pos[2]].k = 'shell'; cells[pos[3]].k = 'gem'; cells[pos[4]].k = 'shell';
+  let shovels = 12, found = 0, coins = 0; const board = el('div', 'dig-board'); w.stage.appendChild(board);
+  const near = i => { const x = i % C, y = Math.floor(i / C); return cells.some((c, j) => c.k === 'bone' && !c.dug && Math.abs(j % C - x) <= 1 && Math.abs(Math.floor(j / C) - y) <= 1); };
+  const dig = i => {
+    const c = cells[i]; if (c.dug || shovels <= 0) return; c.dug = true; shovels--; Sound.play('sand');
+    if (c.k === 'bone') { found++; const r = isleGiveBone(); Sound.play('perfect'); toast(`🦴 挖到${r.txt}！${r.dup ? '（重複的，賣 30 元）' : ''}`); c.txt = r.txt; }
+    else if (c.k === 'gem') { coins += 60; Sound.play('coin'); } else if (c.k === 'shell') { coins += 20; Sound.play('coin'); }
+    paint();
+    if (shovels <= 0 || cells.filter(x => x.k === 'bone').every(x => x.dug)) { isleXp('dino', 6); const bells = payReward(w, 40 + found * 60 + coins); saveGame(); w.status.textContent = `找到 ${found} 塊骨頭！　💰 +${fmt(bells)}`; shovels = 0; paint(); gameButtons(w, openDigGame); }
+  };
+  const paint = () => { board.innerHTML = ''; cells.forEach((c, i) => { const b = el('button', 'dig-cell' + (c.dug ? ' dug' : ''), c.dug ? (c.k === 'bone' ? '🦴' : c.k === 'gem' ? '💎' : c.k === 'shell' ? '🐚' : (near(i) ? '✨' : '')) : ''); b.onclick = () => dig(i); board.appendChild(b); }); if (shovels > 0) w.status.textContent = `⛏️ 還有 ${shovels} 次　找到 🦴 ${found} / 2`; };
+  openDigGame.test = { dig, cells, found: () => found };
+  paint();
+}
+// 小島等級越高，島上的擺飾越多（畫在大東西旁邊）
+function isleDecor(ctx, sp, now) {
+  if (!G.isle || !G.isle[sp.id]) return;
+  const lv = isleLv(sp.id), T = ISL.T, t = now / 1000;
+  const spots = [[-1.6, .3], [1.6, .4], [-1.1, 1.2], [1.2, 1.3], [-2.1, -.5], [2.1, -.4], [0, 1.7], [-.6, -1], [.7, -1.1]];
+  for (let i = 0; i < Math.min(spots.length, lv * 2 - 1); i++) {
+    const [dx, dy] = spots[i], px = (sp.x + .5 + dx) * T, py = (sp.y + 1 + dy) * T;
+    if (sp.id === 'flower') { ctx.fillStyle = '#4f9d4f'; ctx.fillRect(px - 1, py - 10, 2, 10); ctx.font = '14px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(ISLE_FLOWERS[i % 5][1], px, py - 8 + Math.sin(t * 2 + i) * 1); }
+    else if (sp.id === 'candy') { ctx.fillStyle = '#fffaf0'; ctx.fillRect(px - 1, py - 16, 2, 16); MV.ball(ctx, px, py - 18, 6, ['#ff8fb3', '#ffd23f', '#7bd389', '#6bb6ff'][i % 4]); }
+    else { ctx.font = '13px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(i % 3 === 2 ? '🥚' : '🦴', px, py - 2); }
+  }
+}
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
       動物朋友全都打扮來跳舞放煙火，每天第一次結束時每位送一顆糖（4 顆萬聖節糖果）。
