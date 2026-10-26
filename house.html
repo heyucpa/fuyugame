@@ -758,6 +758,9 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .sp-cut { position: absolute; inset: 0; z-index: 5; border-radius: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle, rgba(255,180,60,.55), rgba(15,10,25,.88) 60%); animation: spCutIn .3s ease-out; pointer-events: none; }
 .sp-cut-fx { font-size: 80px; animation: spFx .5s ease-out; } .sp-cut-sub { color: #fff; font-weight: 800; font-size: 18px; } .sp-cut-name { color: #ffe2a8; font-weight: 900; font-size: 34px; -webkit-text-stroke: 1px #26232a; text-shadow: 0 3px 0 #26232a; }
 @keyframes spCutIn { from { opacity: 0; } } @keyframes spFx { from { transform: scale(.2) rotate(-40deg); } 70% { transform: scale(1.3); } }
+.fit-row { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 10px; margin: 6px 0; border: 2px solid var(--line); border-radius: 12px; background: #fff; text-align: left; }
+.fit-row b { font-size: 17px; } .fit-bar { color: #e8a020; font-weight: 800; } .fit-use { font-size: 13px; color: #6b5a48; }
+.fit-hold { width: 240px; height: 18px; border-radius: 9px; background: #eee; overflow: hidden; margin: 8px auto; } .fit-hold-in { height: 100%; width: 0; background: linear-gradient(90deg, #9be36b, #3fae4f); }
 .spar-row .spar-sp { background: linear-gradient(#ffb02e, #ff5a1f); color: #fff; border-color: #c0392b; } .spar-row .spar-sp:disabled { background: #eee; color: #aaa; border-color: #ddd; }
 .spar-row .spar-on { animation: glowPulse .4s infinite alternate; transform: scale(1.08); box-shadow: 0 0 0 5px #ffd23f; }
 .music-menu { position: fixed; z-index: 70; background: var(--panel, #fffaf0); border: 2px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
@@ -1829,6 +1832,7 @@ const FURN_KINDS = [
   { id: 'bath',  icon: '🚿', name: '衛浴' },
   { id: 'wall',  icon: '🖼️', name: '牆上' },
   { id: 'pet',   icon: '🐾', name: '寵物' },
+  { id: 'sport', icon: '💪', name: '運動' },   // 健身器材
   { id: 'desk',  icon: '🌷', name: '桌上' },   // 放在桌上的小東西
   { id: 'deco',  icon: '🏮', name: '佈置' }
 ];
@@ -1867,6 +1871,8 @@ const FURN_KIND_OF = {
   rainbow_art: 'wall', star_lights: 'wall', heart_frame: 'wall',
   // 寵物
   pet_bed: 'pet', pet_house: 'pet', fishtank: 'pet',
+  // 運動（健身器材）
+  gym_treadmill: 'sport', gym_dumbbell: 'sport', gym_bike: 'sport', gym_box: 'sport', gym_mat: 'sport',
   // 佈置（地毯、燈、電視、暖爐、鐘這類「氣氛」的東西）
   cute_rug: 'deco', gray_rug: 'deco', leaf_rug: 'deco', rainbow_rug: 'deco',
   lamp: 'deco', clock: 'deco', tv: 'deco', fireplace: 'deco'
@@ -2156,6 +2162,10 @@ const treeParts = (leaf, leaf2, fruit) => [
 // 🎢 雲霄飛車的軌道高度（y＝0～4 每一格邊上的高度）：車站在 y＝4，出發往後先過小山坡、衝下來、爬到最高點
 const COASTER_H = [14, 70, 18, 44, 12];
 const PLACE_FURNITURE = [
+  // 💪 健身房的體能看板（點了看自己的體能）
+  { id: 'gym_board', name: '體能看板', theme: 'modern', w: 3, h: 40, z: 44, layer: 'wall', d: 1, parts: [],
+    draw(ctx, W, H) { ctx.fillStyle = '#26232a'; ctx.fillRect(0, 0, W, H); ctx.font = '700 8px sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      const f = (typeof G !== 'undefined' && G.fit) || {}; [['spd', '速度', '#6bb6ff'], ['str', '力量', '#e8505b'], ['sta', '耐力', '#7bd389']].forEach(([k, nm, c], i) => { const lv = Math.min(5, Math.floor((f[k] || 0) / 100)); ctx.fillStyle = '#fff'; ctx.fillText(nm, 3, 8 + i * 12); ctx.fillStyle = '#4a4a55'; ctx.fillRect(24, 4 + i * 12, W - 28, 7); ctx.fillStyle = c; ctx.fillRect(24, 4 + i * 12, (W - 28) * lv / 5, 7); }); } },
   // 🏀 體育館
   { id: 'ar_hoop', name: '籃球架', theme: 'modern', w: 1, d: 2, parts: [{ x: .2, y: .7, w: .6, d: .6, z: 0, h: 4, c: '#3a3842' }, { x: .45, y: .9, w: .1, d: .1, z: 4, h: 70, c: '#8e98a3' }, { x: .4, y: .3, w: .1, d: 1.4, z: 70, h: 26, c: '#ffffff' }, { k: 'ball', x: .2, y: 1, z: 76, r: 6, c: '#ff7a3c' }] },
   { id: 'ar_pingpong', name: '桌球桌', theme: 'modern', w: 2, d: 3, parts: [{ x: .1, y: .1, w: 1.8, d: 2.8, z: 22, h: 3, c: '#2f8fe0' }, { x: .1, y: 1.47, w: 1.8, d: .06, z: 25, h: 6, c: '#ffffff' }, { x: .2, y: .2, w: .1, d: .1, z: 0, h: 22, c: '#3a3842' }, { x: 1.7, y: .2, w: .1, d: .1, z: 0, h: 22, c: '#3a3842' }, { x: .2, y: 2.7, w: .1, d: .1, z: 0, h: 22, c: '#3a3842' }, { x: 1.7, y: 2.7, w: .1, d: .1, z: 0, h: 22, c: '#3a3842' }] },
@@ -2902,6 +2912,7 @@ const HOSTS = {
   // 跆拳道館的教練：熊熊，繫黑色腰帶；游泳池的教練：鴨鴨（家長選的）
   cinema: { id: 'cinema', name: '貓頭鷹放映師', short: '放映師', body: '#a07850', edge: '#7a5a3a', belly: '#f2dfc0', inner: '#7a5a3a', ears: 'tuft', acc: 'glasses', accColor: '#3a3240' },
   tkd: { id: 'tkd', name: '熊熊教練', short: '熊教練', body: '#8a5a33', edge: '#6b4428', belly: '#e8cfa9', inner: '#6b4428', ears: 'round', acc: 'scarf', accColor: '#26232a' },
+  gym: { id: 'gym', name: '河馬教練', short: '河教練', body: '#b9a6d9', edge: '#8a78b0', belly: '#e9dcf7', inner: '#ffb3c7', ears: 'round', acc: 'scarf', accColor: '#e8505b' },
   arena: { id: 'arena', name: '猴子教練', short: '猴教練', body: '#b07a4a', edge: '#86572e', belly: '#f2d6b0', inner: '#f2d6b0', ears: 'round', acc: 'hat', accColor: '#e8505b' },
   track: { id: 'track', name: '花豹教練', short: '豹教練', body: '#f2b04a', edge: '#c98a2a', belly: '#fff1d6', inner: '#c98a2a', ears: 'round', acc: 'scarf', accColor: '#2f6fd1' },
   swim: { id: 'swim', name: '鴨鴨教練', short: '鴨教練', body: '#ffe066', edge: '#e0b630', belly: '#fff6c8', inner: '#e0b630', ears: 'tuft', acc: 'bill', accColor: '#ff9a3c' },
@@ -2982,6 +2993,12 @@ const PLACES = {
       ['cinema_seat', 2, 6], ['cinema_seat', 3, 6], ['cinema_seat', 4, 6], ['cinema_seat', 5, 6], ['cinema_seat', 6, 6],
       ['popcorn_cart', 8, 8], ['cinema_counter', 0, 8]
     ], wallItems: [['cinema_screen', 'R', 2], ['movie_poster_pet', 'L', 1], ['movie_poster_space', 'L', 3], ['movie_poster_dino', 'L', 5], ['movie_poster_sea', 'L', 7], ['movie_poster_funny', 'L', 9]] }
+  ] },
+  /* 💪 健身房：跑步機、啞鈴、飛輪、跳箱、瑜珈墊，河馬教練 */
+  gym: { name: '健身房', host: 'gym', emoji: '💪', desc: '跑步機、啞鈴、飛輪、跳箱、瑜珈，練速度、力量、耐力！', rooms: [
+    { name: '健身房', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_wood', items: [
+      ['gym_treadmill', 1, 0], ['gym_treadmill', 3, 0], ['gym_dumbbell', 6, 0], ['gym_bike', 8, 1], ['gym_bike', 8, 3], ['gym_box', 6, 4], ['gym_mat', 1, 6], ['gym_mat', 1, 8]
+    ], wallItems: [['gym_board', 'R', 3]] }
   ] },
   /* 🏀 體育館：籃球、躲避球、桌球 */
   arena: { name: '體育館', host: 'arena', emoji: '🏀', desc: '籃球、躲避球、桌球，猴子教練陪你打球！', rooms: [
@@ -3092,6 +3109,7 @@ LINE_TYPES.push(
   { key: 'hostLibrarian', label: '館員說的話', hint: '可用 {名字}', lines: ['{名字}，歡迎來圖書館～', '在圖書館要小聲說話喔 🤫', '繪本架上有好看的書喔', '看完的書要放回原來的地方', '閱讀護照蓋滿可以拿獎狀喔', '要不要幫我把書放回書架？'] },
   { key: 'hostCinema', label: '電影院放映師說的話', hint: '可用 {名字}', lines: ['{名字}，今天想看哪一部電影呢？', '看電影的時候要小聲喔～', '爆米花剛爆好，好香喔！', '新的電影海報貼在牆上了，去看看！', '電影快開始囉，找位子坐好～'] },
   { key: 'hostTkd', label: '跆拳道教練說的話', hint: '可用 {名字}', lines: ['{名字}，敬禮！今天也要加油喔！', '出拳要有力，喊聲要大聲！', '踢腿的時候眼睛看前面', '先熱身，才不會受傷喔', '練習越多，腰帶就越來越厲害！'] },
+  { key: 'hostGym', label: '健身房教練說的話', hint: '可用 {名字}', lines: ['{名字}，今天想練什麼？', '跑步機可以練速度喔！', '舉啞鈴會變得好有力氣！', '飛輪要跟著節奏踩～', '練完要喝水、伸展一下！'] },
   { key: 'hostArena', label: '體育館教練說的話', hint: '可用 {名字}', lines: ['{名字}，來打球吧！', '投籃要看準籃框喔～', '躲避球要眼睛看球，跳起來閃！', '桌球的球拍要跟著球走！', '運動完要記得喝水～'] },
   { key: 'hostTrack', label: '田徑教練說的話', hint: '可用 {名字}', lines: ['{名字}，來跑一百公尺吧！', '起跑要等槍響喔，不可以偷跑！', '手要用力擺，腳就會跑得快！', '大隊接力最重要的是交棒！', '跑完要喝水、休息一下～'] },
   { key: 'hostSwim', label: '游泳教練說的話', hint: '可用 {名字}', lines: ['{名字}，下水前先做暖身操喔！', '不可以在池邊跑步，會滑倒喔', '憋氣、吐氣，咕嚕咕嚕～', '打水的時候腳要伸直', '游完記得擦乾、多喝水！'] },
@@ -4318,6 +4336,14 @@ function scaledPrice(p) {
   const v = p * PRICE_SCALE;
   return v < 1000 ? Math.max(50, Math.round(v / 50) * 50) : Math.round(v / 100) * 100;
 }
+/* 💪 健身器材（家長：健身房；器材在商店也買得到，放家裡點了一樣可以練） */
+FURNITURE.push(
+  { id: 'gym_treadmill', name: '跑步機', price: 6000, theme: 'modern', w: 1, d: 2, parts: [{ x: .1, y: .1, w: .8, d: 1.8, z: 0, h: 6, c: '#3a3842' }, { x: .15, y: .5, w: .7, d: 1.35, z: 6, h: 1, c: '#26232a' }, { x: .15, y: .12, w: .1, d: .1, z: 6, h: 40, c: '#8e98a3' }, { x: .75, y: .12, w: .1, d: .1, z: 6, h: 40, c: '#8e98a3' }, { x: .1, y: .05, w: .8, d: .18, z: 44, h: 10, c: '#4a9be8' }] },
+  { id: 'gym_dumbbell', name: '啞鈴架', price: 2500, theme: 'modern', w: 1, d: 1, parts: [{ x: .1, y: .3, w: .8, d: .4, z: 0, h: 14, c: '#5a6070' }, { x: .22, y: .47, w: .56, d: .06, z: 17, h: 2, c: '#c9ccd0' }, { k: 'ball', x: .25, y: .5, z: 19, r: 5, c: '#e8505b' }, { k: 'ball', x: .75, y: .5, z: 19, r: 5, c: '#3f8fd1' }] },
+  { id: 'gym_bike', name: '飛輪車', price: 5000, theme: 'modern', w: 1, d: 1, parts: [{ x: .2, y: .2, w: .6, d: .6, z: 0, h: 3, c: '#3a3842' }, { x: .45, y: .5, w: .1, d: .1, z: 3, h: 22, c: '#8e98a3' }, { k: 'ball', x: .5, y: .22, z: 12, r: 9, c: '#ffd23f' }, { x: .35, y: .55, w: .3, d: .22, z: 25, h: 4, c: '#26232a' }, { x: .28, y: .2, w: .44, d: .08, z: 28, h: 3, c: '#26232a' }] },
+  { id: 'gym_box', name: '跳箱', price: 3000, theme: 'modern', w: 1, d: 1, parts: [{ x: .1, y: .1, w: .8, d: .8, z: 0, h: 10, c: '#c98d5a' }, { x: .12, y: .12, w: .76, d: .76, z: 10, h: 10, c: '#e0a670' }, { x: .14, y: .14, w: .72, d: .72, z: 20, h: 8, c: '#c98d5a' }, { x: .14, y: .14, w: .72, d: .72, z: 28, h: 3, c: '#ffffff' }] },
+  { id: 'gym_mat', name: '瑜珈墊', price: 1500, theme: 'modern', w: 2, d: 1, layer: 'floor', parts: [{ x: .05, y: .1, w: 1.9, d: .8, z: 0, h: 1.5, c: '#9be36b' }, { x: .05, y: .1, w: .2, d: .8, z: 1.5, h: 2, c: '#7bc35a' }] }
+);
 (() => {
   const done = new Set();
   [FURNITURE, WALLPAPERS, FLOORS, CLOTHES, HAIR_STYLES].forEach(list => list.forEach(x => {
@@ -4661,11 +4687,17 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-27T09:00', title: '健身房開了！💪', lines: [
+    ['💪', '運動島新開「健身房」，河馬教練教你練身體：🏃 跑步機、🏋️ 舉啞鈴、🚴 飛輪、📦 跳箱、🧘 瑜珈'],
+    ['📊', '練習會讓速度、力量、耐力升級（最高 Lv.5），百米衝刺、跳遠、投籃機、躲避球、打水比賽、對練都會變厲害！'],
+    ['🛒', '健身器材在商店也買得到，放在家裡一樣可以練'],
+    ['🏆', '世界闖關：破了世界 4、5、6 各送 10,000 元！']
+  ], newItems: ['gym_treadmill', 'gym_dumbbell', 'gym_bike', 'gym_box', 'gym_mat'] },
   { id: '2026-10-26T20:00', title: '闖關有專屬音樂了！🎵', lines: [
     ['🎵', '玩世界闖關會換成專屬的冒險音樂，遇到大魔王會換成大魔王的音樂'],
     ['🏁', '跳到終點旗子會抱著旗桿慢慢滑下去，抓得越高金幣越多！'],
     ['🥋', '跆拳道對練有必殺技了！踢中、擋住會集氣，氣滿了按「💥 必殺技」。每考上一條腰帶學會一招：旋風踢、流星百裂拳、彩虹迴旋踢、雷光閃電腳、火焰鳳凰腳，黑帶學會「黑龍波」！'],
-    ['🗺️', '闖關多了三個世界：❄️ 雪地（地上滑滑的）、☁️ 天空（會動的雲朵）、🏰 城堡（岩漿、火焰、最後的大魔王），一共 18 關！'],
+    ['🗺️', '闖關多了三個世界：❄️ 雪地（地上滑滑的）、☁️ 天空（會動的雲朵）、🏰 城堡（岩漿、火焰、最後的大魔王），一共 18 關！世界 4～6 破關各送 10,000 元！'],
     ['🍒', '闖關有新道具：粉紅色 ? 磚會跳出長大果（變大，被打到不扣愛心）、火火花（按 🔥 丟火球）、無敵星星（碰到怪物就打倒）'],
     ['🟢', '還有看不見的隱藏磚塊、可以鑽進去的水管（站上去按 ⬇ 進祕密房間，好多金幣）、踩一下會變殼再踢出去的小烏龜'],
     ['🏎️', '叔叔家的賽車變成「小可愛賽車」！跟動物朋友跑 3 圈，撞 🎁 拿道具：🍌 香蕉皮、🚀 火箭、⭐ 無敵星星；轉彎按住「🌀 甩尾」再放開會加速；開的是你在商店買的車！'],
@@ -5478,6 +5510,7 @@ function normalizeSave(g) {
     if (v.zone > v.zoneMax) v.zone = 0; if (v.zoneMax > 2) v.zoneMax = 2;
     if (v.day != null && !(isObj(v.day) && typeof v.day.d === 'string' && num(v.day.n))) delete v.day; }
   if (out.recentGames != null) { if (Array.isArray(out.recentGames)) out.recentGames = out.recentGames.filter(x => typeof x === 'string' && x.length < 40).slice(0, 8); else delete out.recentGames; }   // 🎮 最近玩過
+  if (out.fit != null) { if (!isObj(out.fit)) delete out.fit; else ['spd', 'str', 'sta'].forEach(k => { if (out.fit[k] != null && !(num(out.fit[k]) && out.fit[k] >= 0 && out.fit[k] <= 500)) delete out.fit[k]; else if (out.fit[k] != null) out.fit[k] = Math.round(out.fit[k]); }); }   // 💪 體能經驗
   if (out.arena != null) { if (!isObj(out.arena)) delete out.arena; else { ['bb', 'bm', 'db', 'pp', 'ppw'].forEach(k => { if (out.arena[k] != null && !(num(out.arena[k]) && out.arena[k] >= 0 && out.arena[k] < 1e6)) delete out.arena[k]; else if (out.arena[k] != null) out.arena[k] = Math.floor(out.arena[k]); }); } }   // 🏀 體育館戰績
   if (out.track != null) { if (!isObj(out.track)) delete out.track; else { ['best', 'lj'].forEach(k => { if (out.track[k] != null && !(num(out.track[k]) && out.track[k] > 0 && out.track[k] < 100)) delete out.track[k]; }); } }   // 🏟️ 田徑紀錄
   if (out.qIsleDay != null && !(isObj(out.qIsleDay) && typeof out.qIsleDay.d === 'string' && isObj(out.qIsleDay.got))) delete out.qIsleDay;
@@ -11243,7 +11276,7 @@ function hostMemoryLine(id) {
 
 // ── 親戚家：叔叔、阿婆在家裡陪小可愛（跟著她走，偶爾說話）──
 const host = { n: null, a: null, say: null, sayUntil: 0, nextTalkAt: 0, danceUntil: 0, nextHop: 0 };
-const HOST_LINE_KEYS = { arena: 'hostArena', track: 'hostTrack', cinema: 'hostCinema', tkd: 'hostTkd', swim: 'hostSwim', amuse: 'hostAmuse', friend: 'hostFriend', uncle: 'hostUncle', grandma: 'hostGrandma', teacher: 'hostTeacher', ranger: 'hostRanger', librarian: 'hostLibrarian' };
+const HOST_LINE_KEYS = { gym: 'hostGym', arena: 'hostArena', track: 'hostTrack', cinema: 'hostCinema', tkd: 'hostTkd', swim: 'hostSwim', amuse: 'hostAmuse', friend: 'hostFriend', uncle: 'hostUncle', grandma: 'hostGrandma', teacher: 'hostTeacher', ranger: 'hostRanger', librarian: 'hostLibrarian' };
 const hostLineKey = () => HOST_LINE_KEYS[host.n.id] || 'hostGrandma';
 function hostSay(text, ms) {
   if (!text) return;
@@ -11456,6 +11489,7 @@ function hostMenuEntries() {
     list.push(['🥋 跟朋友對練', openSparGame]);
     list.push([`🎖️ 考腰帶（現在：${tkdBeltName()}）`, openBeltExam]);
   }
+  if (host.n.id === 'gym') { list.push(['🏃 跑步機（速度）', openFitRun]); list.push(['🏋️ 舉啞鈴（力量）', openFitLift]); list.push(['🚴 飛輪（耐力）', openFitBike]); list.push(['📦 跳箱（速度＋力量）', openFitBox]); list.push(['🧘 瑜珈（耐力）', openFitYoga]); list.push(['📊 我的體能', openFitStats]); }
   if (host.n.id === 'arena') { list.push(['⛹️ 籃球比賽（2 對 2）', openBball]); list.push(['🏀 投籃機', openBasket]); list.push(['🔴 躲避球', openDodge]); list.push(['🏓 桌球', openPingPong]); }
   if (host.n.id === 'track') { list.push(['🚧 障礙賽跑', openRunGame]); list.push(['🏃 百米衝刺', openSprint]); list.push(['🏃‍♀️ 大隊接力', openRelay]); list.push(['🏖️ 跳遠', openLongJump]); if (G.away && G.away.place === 'school' && G.away.idx !== 0) list.push(['🏫 回教室', () => goPlaceRoom(0)]); }
   if (host.n.id === 'swim') {
@@ -19116,6 +19150,7 @@ const ISL_BLD = [   // 房子：x, y 是左上角的格子，w×h 格；門在�
   { id: 'pool', x: 44, y: 38, w: 4, h: 2, islet: true },
   { id: 'dojo', x: 50, y: 37, w: 4, h: 3, islet: true },
   { id: 'arena', x: 46, y: 44, w: 5, h: 3, islet: true },
+  { id: 'gym', x: 56, y: 37, w: 5, h: 3, islet: true },
   { id: 'cinema', x: 40, y: 17, w: 3, h: 2 }
 ];
 /* 🏡 朋友島（家長：主島快滿了，姊姊、妹妹、朋友的家搬到另外一座島）：主島南邊的海上，坐船過去。收到第一張邀請卡才會出現（有動畫） */
@@ -19157,7 +19192,7 @@ const ISL_ISLET = { cx: 52, cy: 41, rx: 11, ry: 9, r: 9, to: [39, 29], hub: [52,
 const ISL_POND = { x: 31, y: 24, w: 4, h: 3 };
 const ISL_HUB = [26, 19];
 const ISL_STYLE = {   // 牆、屋頂顏色
-  dojo: ['#fff4e6', '#e0503a'], pool: ['#e8f6fb', '#3fa9f5'], track: ['#fff1e0', '#e07a4a'], arena: ['#fff6e0', '#ff7a3c'], cinema: ['#3a2f4a', '#e8505b'],
+  dojo: ['#fff4e6', '#e0503a'], pool: ['#e8f6fb', '#3fa9f5'], track: ['#fff1e0', '#e07a4a'], arena: ['#fff6e0', '#ff7a3c'], gym: ['#f4eeff', '#8a78b0'], cinema: ['#3a2f4a', '#e8505b'],
   home: ['#ffd9c9', '#ff7b7b'], school: ['#fff4cf', '#5b8def'], library: ['#e6dcff', '#7a5cc9'], park: ['#d9f0c8', '#4f9d4f'],
   uncle: ['#d7ecc8', '#7aa05a'], grandma: ['#ffe3b0', '#d68a3a'], amusement: ['#ffe0ee', '#ff6fa3'], friend: ['#fffaf0', '#6fb7e8']
 };
@@ -20687,7 +20722,7 @@ function playSwim(w, L) {
   // 🐬 必殺技「海豚衝刺」：游越多下能量越多，滿了按一下，變成海豚一下衝好遠
   const DOLPHIN = { name: '海豚衝刺', fx: '🐬', c: '#3fa9f5', c2: '#dff0ff' };
   let pw = 0, cutAt = 0, dash = 0, dashes = 0;
-  const stroke = () => { if (ended || t < 0 || cutAt) return; me = Math.min(LEN, me + .9); splash = .25; Sound.play('splash'); pw = Math.min(100, pw + 7); if (pw >= 100) bSp.style.display = ''; };
+  const stroke = () => { if (ended || t < 0 || cutAt) return; me = Math.min(LEN, me + .9 * fitMul('sta')); splash = .25; Sound.play('splash'); pw = Math.min(100, pw + 7); if (pw >= 100) bSp.style.display = ''; };
   const special = () => { if (ended || t < 0 || pw < 100 || cutAt) return; pw = 0; bSp.style.display = 'none'; cutAt = performance.now(); dashes++; Sound.play('magic'); try { speak(tkdSpecialName(DOLPHIN) + '！'); } catch (e) {} };
   bSp.onclick = special;
   const key = e => { if (ended) return; if (e.repeat) { if (e.code === 'Space') e.preventDefault(); return; } if (e.code === 'Space') { e.preventDefault(); stroke(); } else if (e.code === 'KeyS' || e.code === 'ArrowUp') { e.preventDefault(); special(); } };
@@ -20954,7 +20989,7 @@ function playSpar(w, L, who) {
   const bSp = el('button', 'big spar-sp', '💥 必殺技'); bSp.disabled = true;
   row.append(bKick, bBlock, bSp); w.stage.appendChild(row); leaveButton(w);
   let ki = 0, spAt = 0, spMv = null, spN = 0;   // ki：氣（0～100），滿了可以放必殺技
-  const addKi = n => { ki = Math.min(100, ki + n); bSp.disabled = ki < 100 || state !== 'fight'; bSp.classList.toggle('spar-on', ki >= 100); }; w.status.textContent = '綠色「踢！」按綠色的；紅色「擋！」按紅色的';
+  const addKi = n => { ki = Math.min(100, ki + n * fitMul('sta')); bSp.disabled = ki < 100 || state !== 'fight'; bSp.classList.toggle('spar-on', ki >= 100); }; w.status.textContent = '綠色「踢！」按綠色的；紅色「擋！」按紅色的';
   let me = 0, them = 0, live = true, raf = 0, state = 'bow', t0 = performance.now(), cue = null, cueAt = 0, nextAt = 0;
   let myAnim = null, foeAnim = null, msg = `跟${foe.short}對練！先敬禮～`, msgC = '#5a4636';
   gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', key); };
@@ -21786,7 +21821,7 @@ const QUEST_LEVELS = {
   '6-3': ['start', 'power', 'blocks*', 'lava', 'shell', 'check', 'enemy2', 'lava', 'plat*', 'spring*', 'boss']
 };
 const QUEST_IDS = Object.keys(QUEST_LEVELS);
-const QUEST_WORLD_PRIZE = 1500;   // 世界 4～6 破關獎金（payReward 會再乘 3）
+const QUEST_WORLD_PRIZE = 10000;   // 世界 4～6 破關獎金（家長：改成 10,000 元；直接給，不再乘倍數）
 function questState() {
   const q = G.quest && typeof G.quest === 'object' ? G.quest : (G.quest = {});
   if (q.mode !== 'easy' && q.mode !== 'normal') q.mode = 'easy';
@@ -22194,7 +22229,7 @@ function questDone(w, id, P) {
   if (next) { const b = el('button', 'big', `下一關 ${next} ▶`); b.onclick = () => playQuest(next); w.btns.appendChild(b); }
   const map = el('button', 'big alt', '回地圖'); map.onclick = () => { closeGameWindow(); openQuestMap(); }; w.btns.appendChild(map);
   if (first && id.endsWith('-3') && !QUEST_ISLETS[wd - 1]) {   // 世界 4～6：沒有小島，給獎盃＋大獎金
-    const wd2 = QUEST_WORLDS[wd - 1], extra = payReward(w, QUEST_WORLD_PRIZE / 3);
+    const wd2 = QUEST_WORLDS[wd - 1], extra = QUEST_WORLD_PRIZE; addBells(extra); saveGame(); refreshTop();
     w.status.textContent += `　🏆 ${wd2.name}破關獎金 +${fmt(extra)}`;
     setTimeout(() => { try { showcase(el('div', 'magic-pic', wd === 6 ? '👑' : '🏆'), wd === 6 ? '全部破關了！你是闖關大王！' : `破了${wd2.icon} ${wd2.name}！`, wd === 6 ? '六個世界、十八關全部過關，好厲害！' : `下一個世界：${QUEST_WORLDS[wd] ? QUEST_WORLDS[wd].icon + ' ' + QUEST_WORLDS[wd].name : ''}`, { head: `🏆 世界 ${wd} 破關` }); } catch (e) {} }, 900);
   }
@@ -23045,9 +23080,10 @@ function playSprint(w, L) {
     if (phase === 'set') { msg = '偷跑了！要等「砰！」喔～重來'; Sound.play('miss'); phase = 'false'; setTimeout(() => { if (live) { gameCleanup(); playSprint(w, L); } }, 1300); return; }
     if (phase !== 'go' || me.done) return;
     if (!react) react = (performance.now() - bangAt) / 1000;
-    if (L.one) { me.v = Math.min(235, me.v + 30); }
+    const fm = fitMul('spd');   // 💪 速度等級越高跑越快
+    if (L.one) { me.v = Math.min(235 * fm, me.v + 30 * fm); }
     else if (foot === lastFoot) { me.v *= .72; stumble = .3; Sound.play('miss'); }
-    else { me.v = Math.min(270, me.v + 38); lastFoot = foot; }
+    else { me.v = Math.min(270 * fm, me.v + 38 * fm); lastFoot = foot; }
     Sound.play('click');
   };
   const key = e => { if (e.repeat) return; if (e.code === 'ArrowLeft' || e.code === 'KeyA' || e.code === 'KeyF') { e.preventDefault(); press(L.one ? 'x' : 'L'); } else if (e.code === 'ArrowRight' || e.code === 'KeyD' || e.code === 'KeyJ') { e.preventDefault(); press(L.one ? 'x' : 'R'); } else if (e.code === 'Space') { e.preventDefault(); press(L.one ? 'x' : (lastFoot === 'L' ? 'R' : 'L')); } };
@@ -23109,7 +23145,7 @@ function playRelay(w, L) {
   let leg = 0, x = 0, v = 0, lastFoot = null, dropT = 0, rx = 0, rleg = 0, T0 = performance.now(), last = T0, raf = 0, live = true, msg = '預備——砰！', msgT = 1.2, passed = [], ended = false;
   gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', key); };
   const kidLeg = () => legs[leg] === 'kid';
-  const run1 = f => { if (ended || dropT > 0 || !kidLeg()) return; if (L.one) v = Math.min(240, v + 30); else if (f === lastFoot) { v *= .75; Sound.play('miss'); } else { v = Math.min(265, v + 36); lastFoot = f; } Sound.play('click'); };
+  const run1 = f => { if (ended || dropT > 0 || !kidLeg()) return; const fm = fitMul('spd'); if (L.one) v = Math.min(240 * fm, v + 30 * fm); else if (f === lastFoot) { v *= .75; Sound.play('miss'); } else { v = Math.min(265 * fm, v + 36 * fm); lastFoot = f; } Sound.play('click'); };
   const legEnd = () => (leg + 1) * RELAY_LEG;
   const pass = () => {
     if (ended || leg >= 3) return;
@@ -23176,7 +23212,7 @@ function playLongJump(w, L) {
     if (ph !== 'run') return;
     if (x > LJ_BOARD) return foul();
     const gap = LJ_BOARD - x, eff = Math.max(0, 1 - gap / 140), sp = Math.min(1, v / 300);
-    dist = Math.round((1.4 + sp * 5.2 * (.45 + .55 * eff) + Math.random() * .25) * 100) / 100;
+    dist = Math.round((1.4 + sp * 5.2 * (.45 + .55 * eff) + Math.random() * .25) * fitMul('spd') * 100) / 100;   // 💪 速度等級越高跳越遠
     jx = x; ph = 'fly'; fly = 0; flyDur = .7 + dist * .08; Sound.play('jump');
     msg = gap < 25 ? '踏板踩得剛剛好！' : gap < 70 ? '起跳！' : '太早跳了～'; msgT = 1;
   };
@@ -23284,6 +23320,7 @@ const BB_LEVELS = [
 ];   // rounds：[秒數, 這關結束時要到的總分, 籃框移動速度]
 function openBasket() { const w = openGameWindow('🏀 投籃機', '點畫面上想投的地方，球就飛過去！一般、高手要等右邊的力量條到綠色再點。三關，每關要到目標分數才能進下一關！'); pickLevelRow(w, BB_LEVELS, L => L.power ? '三關＋力量條' : '三關，不用管力量', L => playBasket(w, L)); }
 function playBasket(w, L) {
+  L = Object.assign({}, L, { tol: L.tol * fitMul('str') });   // 💪 力量等級越高，越容易投進
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   const W = 480, H = 300, { c, g, pos } = gameCanvas(w.stage, W, H);
   const pad = el('div', 'quest-pad'); w.stage.appendChild(pad);
@@ -23534,6 +23571,7 @@ function openDodge() { const w = openGameWindow('🔴 熱血躲避球', '點對�
    ・對面三個都出局就贏了 */
 const DB_SPECIALS = [['fire', '🔥 火焰球', '#ff5a1f'], ['thunder', '⚡ 閃電球', '#ffd23f'], ['clone', '🌀 分身球', '#6bb6ff']];
 function playDodge(w, L) {
+  L = Object.assign({}, L, { dodge: L.dodge / fitMul('str') });   // 💪 力量等級越高，丟的球越難閃
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   const W = 480, H = 270, { c, g, pos } = gameCanvas(w.stage, W, H);
   const pad = el('div', 'quest-pad'); w.stage.appendChild(pad);
@@ -23979,6 +24017,202 @@ function playKart(w, L, car) {
   raf = requestAnimationFrame(tick);
   playKart.test = { st: () => ({ state, lap, z, place, speed, item, coins, spin, px, LEN }), giveItem, useItem, go: () => { T0 -= 3000; }, lastLap: () => { lap = LAPS - 1; z = LEN - SEG * 6; }, setPx: v => { px = v; }, rivals, bananas: () => bananas };
 }
+/* ===== 💪 健身房（家長：繼續做健身房）=====
+   運動島上（田徑場原本的位置），河馬教練。五種器材，每一種是一個小遊戲，練「速度／力量／耐力」：
+     🏃 跑步機（速度）：一直點「跑！」，讓速度針停在綠色那一段
+     🏋️ 啞鈴（力量）：一直點「用力！」把力量條灌滿，就舉起來一次，舉越多下越好
+     🚴 飛輪（耐力）：跟著燈一閃一閃的節奏踩（點）
+     📦 跳箱（速度＋力量）：跑到跳板上按「跳！」，跳過去箱子就多一層
+     🧘 瑜珈墊（耐力）：看教練做什麼動作，選一樣的，再「按住不放」保持 2 秒
+   每練一次加經驗，100 經驗升一級（最高 Lv.5）。等級越高，運動遊戲越厲害：
+     速度 → 百米衝刺、大隊接力、跳遠；力量 → 投籃機、躲避球；耐力 → 打水比賽、跆拳道對練集氣
+   G.fit = { spd, str, sta }（經驗 0～500）。器材在商店也買得到，放在家裡一樣可以練。 */
+const FIT_STATS = { spd: ['🏃', '速度', '百米衝刺、大隊接力、跳遠'], str: ['💪', '力量', '投籃機、躲避球'], sta: ['❤️', '耐力', '打水比賽、跆拳道集氣'] };
+function fitState() { const f = G.fit && typeof G.fit === 'object' ? G.fit : (G.fit = {}); return f; }
+function fitLv(k) { return Math.min(5, Math.floor((fitState()[k] || 0) / 100)); }
+function fitMul(k) { return 1 + fitLv(k) * .03; }   // 每一級強 3%，最多 15%
+function fitBar(k) { const xp = fitState()[k] || 0, lv = fitLv(k); return lv >= 5 ? '★★★★★ MAX' : '★'.repeat(lv) + '☆'.repeat(5 - lv) + `（${xp % 100}／100）`; }
+// 練完：加經驗、看有沒有升級、給錢、長大一點
+function fitFinish(w, gains, bells, again, line) {
+  const f = fitState(), ups = [];
+  Object.entries(gains).forEach(([k, n]) => { const before = fitLv(k); f[k] = Math.min(500, Math.max(0, Math.round((f[k] || 0) + n))); if (fitLv(k) > before) ups.push(k); });
+  const got = payReward(w, bells);
+  try { kidActGrowth('gym'); } catch (e) {}
+  kidMoodUp(6); saveGame();
+  w.status.textContent = `${line}　${Object.entries(gains).map(([k, n]) => `${FIT_STATS[k][0]}${FIT_STATS[k][1]} +${Math.round(n)}`).join('　')}　💰 +${fmt(got)}`;
+  if (ups.length) { Sound.play('fanfare'); setTimeout(() => { try { showcase(el('div', 'magic-pic', '💪'), ups.map(k => `${FIT_STATS[k][1]}升到 Lv.${fitLv(k)}！`).join(' '), ups.map(k => `${FIT_STATS[k][2]}變得更厲害了！`).join('\n'), { head: '💪 體能升級' }); } catch (e) {} }, 700); }
+  try { hostSay(ups.length ? '哇！你變強了！' : '練得很好！明天再來！', 2600); } catch (e) {}
+  gameButtons(w, again);
+}
+function openFitStats() {
+  const card = $('#modalCard'); closeGameWindow(); card.innerHTML = '';
+  card.appendChild(el('h2', '', '📊 我的體能'));
+  Object.entries(FIT_STATS).forEach(([k, [ic, nm, use]]) => { const row = el('div', 'fit-row'); row.append(el('b', '', `${ic} ${nm} Lv.${fitLv(k)}`), el('span', 'fit-bar', fitBar(k)), el('span', 'fit-use', `讓「${use}」變厲害（+${fitLv(k) * 3}%）`)); card.appendChild(row); });
+  card.appendChild(note('在健身房練跑步機、啞鈴、飛輪、跳箱、瑜珈就會升級，最高 Lv.5。'));
+  const ok = el('button', 'big', '好！'); ok.onclick = () => { $('#modal').hidden = true; }; card.appendChild(ok);
+  $('#modal').hidden = false;
+}
+// 畫有在動的小可愛（側面）
+function fitKid(g, x, y, s, t, opt) { g.save(); g.translate(x, y); g.scale(s, s); if (kidBaby()) drawBabyKid(g, { t, walking: !!(opt && opt.walking) }); else drawGirl(g, Object.assign({ t, blink: false, outfit: currentOutfit(), face: 'joy', stage: kidLookStage() }, opt || {})); g.restore(); }
+function fitBg(g, W, H) { g.fillStyle = '#f3ead8'; g.fillRect(0, 0, W, H); g.fillStyle = '#e3d4b8'; for (let i = 0; i < W; i += 60) g.fillRect(i, 0, 4, 190); g.fillStyle = '#5a6070'; g.fillRect(0, 190, W, H - 190); g.fillStyle = 'rgba(255,255,255,.08)'; for (let i = 0; i < W; i += 30) g.fillRect(i, 190, 2, H - 190); }
+function fitGameStart(title, how) { const w = openGameWindow(title, how); w.stage.innerHTML = ''; w.btns.innerHTML = ''; return w; }
+// 🏃 跑步機
+function openFitRun() {
+  const w = fitGameStart('🏃 跑步機', '一直點「🏃 跑！」（空白鍵）讓速度變快，把右邊的紅色指針留在綠色那一段裡！綠色會一下慢一下快喔。');
+  const W = 480, H = 270, { g } = gameCanvas(w.stage, W, H), pad = el('div', 'quest-pad'), bRun = el('button', 'quest-btn qb-j', '🏃 跑！'); pad.append(bRun); w.stage.appendChild(pad); leaveButton(w);
+  const DUR = 20, plan = [[0, .35], [5, .6], [10, .8], [15, .5]];
+  let v = 0, inZ = 0, T0 = performance.now(), last = T0, raf = 0, live = true, belt = 0;
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', key); };
+  const tap = () => { if (!live) return; v = Math.min(1, v + .085); Sound.play('click'); };
+  const key = e => { if (e.repeat) return; if (e.code === 'Space' || e.code === 'ArrowLeft' || e.code === 'ArrowRight') { e.preventDefault(); tap(); } };
+  document.addEventListener('keydown', key); bRun.addEventListener('pointerdown', e => { e.preventDefault(); tap(); });
+  const target = t => { let c = plan[0][1]; plan.forEach(([at, cc]) => { if (t >= at) c = cc; }); return c; };
+  const tick = now => {
+    if (!live) return; const dt = Math.min(.05, (now - last) / 1000); last = now; const t = (now - T0) / 1000;
+    v = Math.max(0, v - .32 * dt); belt += v * dt * 400; const c = target(t), ok = Math.abs(v - c) < .12; if (ok && t > 1) inZ += dt;
+    fitBg(g, W, H);
+    g.fillStyle = '#3a3842'; g.fillRect(120, 200, 220, 16); g.fillStyle = '#26232a'; g.fillRect(124, 196, 212, 6); g.fillStyle = '#5a6070'; for (let i = 0; i < 12; i++) g.fillRect(124 + ((i * 20 - belt) % 212 + 212) % 212, 197, 3, 4);
+    g.fillStyle = '#8e98a3'; g.fillRect(320, 110, 6, 90); g.fillStyle = '#4a9be8'; g.fillRect(300, 100, 40, 16);
+    fitKid(g, 230, 198, 1.7, t * (1 + v * 2), { walking: v > .05 });
+    const gx = 410, gy = 50, gh = 160; g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(gx - 4, gy - 4, 34, gh + 8); g.fillStyle = '#fff'; g.fillRect(gx, gy, 26, gh); g.fillStyle = '#7bd389'; g.fillRect(gx, gy + gh - (c + .12) * gh, 26, .24 * gh);
+    g.fillStyle = '#e8505b'; g.fillRect(gx - 6, gy + gh - v * gh - 2, 38, 4); g.fillStyle = '#5a4636'; g.font = '700 11px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillText('速度', gx + 13, gy - 10);
+    g.font = '900 18px "Microsoft JhengHei","PingFang TC",sans-serif'; g.fillStyle = ok ? '#2f9e44' : '#c0392b'; g.fillText(ok ? '剛剛好！' : v < c ? '再快一點！' : '慢一點～', 230, 40);
+    g.fillStyle = '#5a4636'; g.font = '700 14px sans-serif'; g.fillText(`${Math.ceil(Math.max(0, DUR - t))} 秒　${(v * 12).toFixed(1)} km/h`, 230, 64);
+    if (t >= DUR) { gameCleanup(); gameCleanup = null; const pct = Math.min(1, inZ / (DUR - 1)); fitFinish(w, { spd: 10 + pct * 25 }, Math.round(60 + pct * 120), openFitRun, `跑在綠色裡 ${Math.round(pct * 100)}%！`); return; }
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+  openFitRun.test = { tap, v: () => v, setV: x => { v = x; }, end: () => { T0 -= DUR * 1000; } };
+}
+// 🏋️ 啞鈴
+function openFitLift() {
+  const w = fitGameStart('🏋️ 啞鈴', '一直點「💪 用力！」（空白鍵）把力量條灌滿，就會把啞鈴舉起來！20 秒內舉越多下越好。');
+  const W = 480, H = 270, { g } = gameCanvas(w.stage, W, H), pad = el('div', 'quest-pad'), b = el('button', 'quest-btn qb-j', '💪 用力！'); pad.append(b); w.stage.appendChild(pad); leaveButton(w);
+  const DUR = 20; let fill = 0, reps = 0, lift = 0, T0 = performance.now(), last = T0, raf = 0, live = true;
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', key); };
+  const need = () => 6 + reps * 2;
+  const tap = () => { if (!live || lift > 0) return; fill += 1 / need(); Sound.play('click'); if (fill >= 1) { fill = 0; reps++; lift = .7; Sound.play('perfect'); } };
+  const key = e => { if (e.repeat) return; if (e.code === 'Space') { e.preventDefault(); tap(); } };
+  document.addEventListener('keydown', key); b.addEventListener('pointerdown', e => { e.preventDefault(); tap(); });
+  const tick = now => {
+    if (!live) return; const dt = Math.min(.05, (now - last) / 1000); last = now; const t = (now - T0) / 1000;
+    fill = Math.max(0, fill - .25 * dt); lift = Math.max(0, lift - dt);
+    fitBg(g, W, H);
+    const up = lift > 0 ? Math.sin((.7 - lift) / .7 * Math.PI) : fill * .25, kx = 220, ky = 196;
+    fitKid(g, kx, ky, 1.9, t, {});
+    const hy = ky - 40 - up * 95;   // 平常在腰邊，舉起來到頭上 g.strokeStyle = '#c9ccd0'; g.lineWidth = 4; g.beginPath(); g.moveTo(kx - 34, hy); g.lineTo(kx + 34, hy); g.stroke();
+    [-1, 1].forEach(sd => { g.fillStyle = sd < 0 ? '#e8505b' : '#3f8fd1'; g.fillRect(kx + sd * 34 - 7, hy - 12, 14, 24); });
+    g.strokeStyle = GIRL.skin; g.lineWidth = 6; g.lineCap = 'round'; [-1, 1].forEach(sd => { g.beginPath(); g.moveTo(kx + sd * 14, ky - 60); g.lineTo(kx + sd * 30, hy); g.stroke(); });
+    g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(360, 60, 30, 140); g.fillStyle = '#ffb02e'; g.fillRect(364, 196 - fill * 132, 22, fill * 132);
+    g.fillStyle = '#5a4636'; g.font = '900 20px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillText(`舉起 ${reps} 下`, 220, 40); g.font = '700 13px sans-serif'; g.fillText(`${Math.ceil(Math.max(0, DUR - t))} 秒`, 375, 52);
+    if (lift > 0) { g.font = '20px sans-serif'; g.fillText('💪', kx + 50, ky - 120); }
+    if (t >= DUR) { gameCleanup(); gameCleanup = null; fitFinish(w, { str: 8 + reps * 5 }, 50 + reps * 25, openFitLift, `舉起 ${reps} 下！`); return; }
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+  openFitLift.test = { tap, reps: () => reps, end: () => { T0 -= DUR * 1000; } };
+}
+// 🚴 飛輪
+function openFitBike() {
+  const w = fitGameStart('🚴 飛輪', '燈亮的時候點「🦶 踩！」（空白鍵），跟著節奏一直踩！踩得越準，輪子轉越快。');
+  const W = 480, H = 270, { g } = gameCanvas(w.stage, W, H), pad = el('div', 'quest-pad'), b = el('button', 'quest-btn qb-j', '🦶 踩！'); pad.append(b); w.stage.appendChild(pad); leaveButton(w);
+  const DUR = 22, BEAT = .65; let good = 0, total = 0, streak = 0, spin = 0, flash = 0, T0 = performance.now(), last = T0, raf = 0, live = true, judged = -1, msg = '';
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', key); };
+  const tap = () => { if (!live) return; const t = (performance.now() - T0) / 1000 - 1, n = Math.round(t / BEAT), d = Math.abs(t - n * BEAT);
+    if (n < 0 || n === judged) return; judged = n; if (d < .16) { good++; streak++; flash = .2; msg = streak >= 5 ? `連續 ${streak} 下！` : '好！'; Sound.play('note', streak % 4); } else { streak = 0; msg = '跟著燈～'; Sound.play('click'); } };
+  const key = e => { if (e.repeat) return; if (e.code === 'Space') { e.preventDefault(); tap(); } };
+  document.addEventListener('keydown', key); b.addEventListener('pointerdown', e => { e.preventDefault(); tap(); });
+  const tick = now => {
+    if (!live) return; const dt = Math.min(.05, (now - last) / 1000); last = now; const t = (now - T0) / 1000, bt = t - 1;
+    total = Math.max(0, Math.floor(bt / BEAT) + 1); flash = Math.max(0, flash - dt); spin += (2 + streak) * dt;
+    fitBg(g, W, H);
+    const wx = 240, wy = 160; g.strokeStyle = '#ffd23f'; g.lineWidth = 6; g.beginPath(); g.arc(wx + 50, wy, 30, 0, 7); g.stroke(); g.strokeStyle = '#8a8f96'; g.lineWidth = 2; for (let i = 0; i < 4; i++) { const a = spin * 3 + i * Math.PI / 2; g.beginPath(); g.moveTo(wx + 50, wy); g.lineTo(wx + 50 + Math.cos(a) * 28, wy + Math.sin(a) * 28); g.stroke(); }
+    g.fillStyle = '#3a3842'; g.fillRect(wx - 40, 188, 130, 6); g.fillRect(wx - 6, 120, 8, 70); g.fillRect(wx - 20, 116, 36, 6);
+    fitKid(g, wx - 2, 150, 1.6, spin, { sit: true });
+    const ph = bt < 0 ? 1 : (bt % BEAT) / BEAT, on = bt >= 0 && (ph < .2 || ph > .9);
+    g.fillStyle = on ? '#ffd23f' : '#5a6070'; g.beginPath(); g.arc(90, 90, 26 + (on ? 6 : 0), 0, 7); g.fill(); g.fillStyle = '#fff'; g.font = '900 14px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillText('踩', 90, 95);
+    if (flash > 0) { g.strokeStyle = '#7bd389'; g.lineWidth = 5; g.beginPath(); g.arc(90, 90, 36, 0, 7); g.stroke(); }
+    g.fillStyle = '#5a4636'; g.font = '900 18px "Microsoft JhengHei","PingFang TC",sans-serif'; g.fillText(msg, 390, 50); g.font = '700 13px sans-serif'; g.fillText(`${Math.ceil(Math.max(0, DUR - t))} 秒　踩對 ${good} 下`, 390, 74);
+    if (t >= DUR) { gameCleanup(); gameCleanup = null; const pct = total ? Math.min(1, good / total) : 0; fitFinish(w, { sta: 10 + pct * 25 }, Math.round(60 + pct * 120), openFitBike, `踩對 ${good} / ${total} 下！`); return; }
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+  openFitBike.test = { tap, good: () => good, beatAt: k => T0 + (1 + k * BEAT) * 1000, end: () => { T0 -= DUR * 1000; } };
+}
+// 📦 跳箱
+function openFitBox() {
+  const w = fitGameStart('📦 跳箱', '小可愛會自己跑過去，跑到跳板（黃色）上的時候按「🦘 跳！」（空白鍵），跳過去箱子就多一層！');
+  const W = 480, H = 270, { g } = gameCanvas(w.stage, W, H), pad = el('div', 'quest-pad'), b = el('button', 'quest-btn qb-j', '🦘 跳！'); pad.append(b); w.stage.appendChild(pad); leaveButton(w);
+  let h = 3, cleared = 0, ph = 'run', t0 = performance.now(), last = t0, raf = 0, live = true, x = 30, jumpQ = 0, msg = '';
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', key); };
+  const BOARD = 240, BOX = 300, zone = () => Math.max(14, 34 - cleared * 4) * fitMul('spd');
+  const jump = () => { if (!live || ph !== 'run') return; const d = Math.abs(x - BOARD); if (x < BOARD - 60) return; jumpQ = d < zone() ? 1 : d < zone() * 1.8 ? (Math.random() < .5 ? 1 : 0) : 0; ph = 'jump'; t0 = performance.now(); Sound.play('jump'); };
+  const key = e => { if (e.repeat) return; if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); jump(); } };
+  document.addEventListener('keydown', key); b.addEventListener('pointerdown', e => { e.preventDefault(); jump(); });
+  const done = () => { gameCleanup(); gameCleanup = null; fitFinish(w, { spd: 5 + cleared * 4, str: 5 + cleared * 4 }, 50 + cleared * 30, openFitBox, `跳過 ${cleared} 次，最高 ${cleared ? h - 1 : 0} 層！`); };
+  const tick = now => {
+    if (!live) return; const dt = Math.min(.05, (now - last) / 1000); last = now; const t = (now - t0) / 1000;
+    if (ph === 'run') { x += 150 * dt; if (x > BOARD + 50) { ph = 'fail'; t0 = now; msg = '太晚跳了～'; Sound.play('miss'); } }
+    let ky = 196, kx = x, rot = 0;
+    if (ph === 'jump') { const k = Math.min(1, t / .9); const top = jumpQ >= 1 ? 40 + h * 12 : h * 12 - 4;
+      kx = BOARD + (BOX + 60 - BOARD) * k; ky = 196 - Math.sin(k * Math.PI) * (top + 20); rot = 0;
+      if (jumpQ < 1 && k > .45) { ph = 'fail'; t0 = now; msg = '撞到箱子了～'; Sound.play('boing'); }
+      else if (k >= 1) { cleared++; h++; ph = 'land'; t0 = now; msg = `跳過了！現在 ${h} 層`; Sound.play('perfect'); } }
+    if (ph === 'land') { kx = BOX + 60; if (t > 1) { ph = 'run'; x = 30; msg = ''; } }
+    if (ph === 'fail') { kx = BOX - 24; ky = 196; rot = Math.min(1, t * 3) * -.3; if (t > 1.3) { done(); return; } }
+    fitBg(g, W, H);
+    g.fillStyle = '#ffd23f'; g.fillRect(BOARD - zone(), 192, zone() * 2, 6); g.fillStyle = '#c98a2a'; g.fillRect(BOARD - 18, 186, 36, 6);
+    for (let i = 0; i < h; i++) { g.fillStyle = i % 2 ? '#e0a670' : '#c98d5a'; g.fillRect(BOX - 22 + i * .5, 190 - (i + 1) * 12, 44 - i, 12); } g.fillStyle = '#ffffff'; g.fillRect(BOX - 20, 190 - h * 12 - 4, 40, 4);
+    g.fillStyle = '#9be36b'; g.fillRect(BOX + 30, 188, 80, 6);
+    g.save(); g.translate(kx, ky); g.rotate(rot); fitKid(g, 0, 0, 1.5, t * 2, { walking: ph === 'run' }); g.restore();
+    g.fillStyle = '#5a4636'; g.font = '900 18px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillText(msg || `跳箱 ${h} 層`, 240, 44);
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+  openFitBox.test = { jump, st: () => ({ x, ph, cleared, h }), setX: v => { x = v; } };
+}
+// 🧘 瑜珈
+const YOGA_POSES = [['🌳', '樹式'], ['🐱', '貓式'], ['🐶', '小狗式'], ['🦩', '紅鶴式'], ['🌙', '月亮式'], ['🐍', '眼鏡蛇式']];
+function openFitYoga() {
+  const w = fitGameStart('🧘 瑜珈墊', '看教練做什麼動作，點一樣的那一個；然後「按住不放」保持 2 秒！');
+  leaveButton(w);
+  const order = YOGA_POSES.slice().sort(() => Math.random() - .5).slice(0, 5); let i = 0, right = 0, timer = 0, holdT = 0, live = true;
+  gameCleanup = () => { live = false; clearInterval(timer); };
+  const view = el('div', 'tkd-view'); w.stage.appendChild(view);
+  const next = () => {
+    if (!live) return; clearInterval(timer);
+    if (i >= order.length) { gameCleanup = null; live = false; fitFinish(w, { sta: 8 + right * 5 }, 50 + right * 30, openFitYoga, `做對 ${right} / ${order.length} 個動作！`); return; }
+    const pose = order[i]; view.innerHTML = '';
+    view.append(el('div', 'tkd-say', `教練做的是：${pose[1]}`), el('div', 'tkd-big', pose[0]));
+    try { speak(pose[1]); } catch (e) {}
+    const row = el('div', 'tkd-moves'), opts = [pose].concat(YOGA_POSES.filter(p => p !== pose).sort(() => Math.random() - .5).slice(0, 2)).sort(() => Math.random() - .5);
+    opts.forEach(p => { const bt = el('button', 'tkd-move'); bt.append(el('span', 'tkd-e', p[0]), el('span', '', p[1])); bt.onclick = () => pick(p === pose, bt); row.appendChild(bt); });
+    view.appendChild(row);
+  };
+  const pick = (ok, bt) => {
+    if (!ok) { Sound.play('miss'); bt.disabled = true; return; }
+    Sound.play('perfect'); view.innerHTML = '';
+    const pose = order[i]; view.append(el('div', 'tkd-big', pose[0]), el('div', 'tkd-say', '按住下面的按鈕不放，保持 2 秒！'));
+    const bar = el('div', 'fit-hold'), fillEl = el('div', 'fit-hold-in'); bar.appendChild(fillEl); view.appendChild(bar);
+    const hb = el('button', 'big', '🧘 按住保持'); view.appendChild(hb); holdT = 0; let down = false;
+    const set = v => { down = v; }; hb.addEventListener('pointerdown', e => { e.preventDefault(); set(true); }); ['pointerup', 'pointerleave', 'pointercancel'].forEach(k => hb.addEventListener(k, () => set(false)));
+    openFitYoga.test.hold = set;
+    timer = setInterval(() => { if (down) holdT += .1; else holdT = Math.max(0, holdT - .05); fillEl.style.width = Math.min(100, holdT / 2 * 100) + '%'; if (holdT >= 2) { clearInterval(timer); right++; i++; Sound.play('coin'); view.innerHTML = ''; view.appendChild(el('div', 'tkd-big', '👍')); setTimeout(next, 700); } }, 100);
+  };
+  openFitYoga.test = { pose: () => order[i], pick: ok => pick(ok, { disabled: false }), skip: () => { i++; next(); } };
+  next();
+}
+Object.assign(ACTIVITIES, {
+  fit_run: { label: '🏃 跑步機', name: '跑步機', fx: '💨', open: () => openFitRun(), lines: ['跑步機跑起來！', '我要變快！'] },
+  fit_lift: { label: '🏋️ 舉啞鈴', name: '舉啞鈴', fx: '💪', open: () => openFitLift(), lines: ['嘿咻——用力！', '我變得好有力氣！'] },
+  fit_bike: { label: '🚴 踩飛輪', name: '踩飛輪', fx: '💨', open: () => openFitBike(), lines: ['踩踩踩！', '腳要跟著節奏～'] },
+  fit_box: { label: '📦 跳箱', name: '跳箱', fx: '✨', open: () => openFitBox(), lines: ['助跑——跳！', '我要跳過最高的！'] },
+  fit_yoga: { label: '🧘 做瑜珈', name: '做瑜珈', fx: '🌸', open: () => openFitYoga(), lines: ['深呼吸～', '身體軟軟的～'] }
+});
+Object.assign(FURNITURE_ACT, { gym_treadmill: 'fit_run', gym_dumbbell: 'fit_lift', gym_bike: 'fit_bike', gym_box: 'fit_box', gym_mat: 'fit_yoga' });
+['fit_run', 'fit_lift', 'fit_bike', 'fit_box', 'fit_yoga'].forEach(k => { const a = ACTIVITIES[k]; if (!LINE_TYPES.some(t => t.key === 'act_' + k)) LINE_TYPES.push({ key: 'act_' + k, label: '做事：' + a.name, hint: '', lines: a.lines }); });
+Object.assign(WALL_TAP, { gym_board: () => openFitStats() });
+AWAY_GAMES.push(['🏃', '跑步機', 'gym', () => openFitRun()], ['🏋️', '舉啞鈴', 'gym', () => openFitLift()], ['🚴', '飛輪', 'gym', () => openFitBike()], ['📦', '跳箱', 'gym', () => openFitBox()], ['🧘', '瑜珈', 'gym', () => openFitYoga()]);
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
       動物朋友全都打扮來跳舞放煙火，每天第一次結束時每位送一顆糖（4 顆萬聖節糖果）。
