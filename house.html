@@ -752,6 +752,12 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .spar-row button { flex: 1 1 0; min-width: 96px; width: auto; font-size: 20px; }
 .quest-btn.db-sp { background: linear-gradient(#ffb02e, #ff5a1f); color: #fff; border-color: #c0392b; } .quest-btn.db-sp:disabled { background: #eee; color: #aaa; border-color: #ddd; }
 .spar-row .spar-kick { background: #3fcf6f; color: #fff; border-color: #2f9e44; } .spar-row .spar-block { background: #e8505b; color: #fff; border-color: #c0392b; }
+.mole-sp { display: block; margin: 8px auto 0; } .mole-board.quake { animation: moleQuake .12s 5 alternate; }
+@keyframes moleQuake { from { transform: translateX(-6px); } to { transform: translateX(6px); } }
+/* 必殺技特寫（沒有畫布的小遊戲用）：整個視窗變暗、放射光、大大的招式名稱 */
+.sp-cut { position: absolute; inset: 0; z-index: 5; border-radius: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle, rgba(255,180,60,.55), rgba(15,10,25,.88) 60%); animation: spCutIn .3s ease-out; pointer-events: none; }
+.sp-cut-fx { font-size: 80px; animation: spFx .5s ease-out; } .sp-cut-sub { color: #fff; font-weight: 800; font-size: 18px; } .sp-cut-name { color: #ffe2a8; font-weight: 900; font-size: 34px; -webkit-text-stroke: 1px #26232a; text-shadow: 0 3px 0 #26232a; }
+@keyframes spCutIn { from { opacity: 0; } } @keyframes spFx { from { transform: scale(.2) rotate(-40deg); } 70% { transform: scale(1.3); } }
 .spar-row .spar-sp { background: linear-gradient(#ffb02e, #ff5a1f); color: #fff; border-color: #c0392b; } .spar-row .spar-sp:disabled { background: #eee; color: #aaa; border-color: #ddd; }
 .spar-row .spar-on { animation: glowPulse .4s infinite alternate; transform: scale(1.08); box-shadow: 0 0 0 5px #ffd23f; }
 .music-menu { position: fixed; z-index: 70; background: var(--panel, #fffaf0); border: 2px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
@@ -4659,6 +4665,7 @@ const NEWS = [
     ['🎵', '玩世界闖關會換成專屬的冒險音樂，遇到大魔王會換成大魔王的音樂'],
     ['🏁', '跳到終點旗子會抱著旗桿慢慢滑下去，抓得越高金幣越多！'],
     ['🥋', '跆拳道對練有必殺技了！踢中、擋住會集氣，氣滿了按「💥 必殺技」。每考上一條腰帶學會一招：旋風踢、流星百裂拳、彩虹迴旋踢、雷光閃電腳、火焰鳳凰腳，黑帶學會「黑龍波」！'],
+    ['💥', '更多小遊戲有必殺技：籃球比賽「彩虹灌籃」（一次進 2 球）、桌球「火焰殺球」、打水比賽「海豚衝刺」、打地鼠「大槌地震」'],
     ['🏝️', '「🚗 快速出門」多了闖關送的小島（花花島、糖果島、恐龍島），點了會自己坐船過去']
   ] },
   { id: '2026-10-25T09:00', title: '體育館開了！🏀', lines: [
@@ -17264,11 +17271,23 @@ function playMole(w, L) {
   }
   w.stage.appendChild(board);
   let score = 0, left = 30, ended = false, timers = [];
+  // 🔨 必殺技「大槌地震」：打到 8 隻能量就滿了，按下去大槌敲地板，畫面上的地鼠全部打到，還會震出 3 隻獎勵
+  const QUAKE = { name: '大槌地震', fx: '🔨', c: '#c98a2a', c2: '#fff1d6' };
+  let pw = 0, quakes = 0;
+  const bSp = el('button', 'big db-sp mole-sp', '🔨 大槌地震'); bSp.disabled = true; w.stage.appendChild(bSp);
+  const quake = () => {
+    if (ended || pw < 100) return; pw = 0; quakes++; bSp.disabled = true; bSp.classList.remove('glow');
+    const ov = el('div', 'sp-cut'); ov.append(el('div', 'sp-cut-fx', QUAKE.fx), el('div', 'sp-cut-sub', '必殺技！'), el('div', 'sp-cut-name', tkdSpecialName(QUAKE))); w.card.appendChild(ov);
+    Sound.play('magic'); try { speak(tkdSpecialName(QUAKE) + '！'); } catch (e) {}
+    timers.push(setTimeout(() => { ov.remove(); if (ended) return; let n = 0; holes.forEach(h => { if (h.kind === 'mole') n++; h.kind = null; }); score += n + 3; board.classList.add('quake'); timers.push(setTimeout(() => board.classList.remove('quake'), 600)); Sound.play('crack'); toast(`🔨 地震！打到 ${n + 3} 隻！`); paint(); }, 1100));
+  };
+  bSp.onclick = quake;
+  playMole.test = { quake, setPw: v => { pw = v; if (pw >= 100) bSp.disabled = false; }, quakes: () => quakes, score: () => score, holes };
   gameCleanup = () => timers.forEach(t => { clearTimeout(t); clearInterval(t); });
 
   function paint() {
     holes.forEach(h => { h.el.textContent = h.kind === 'mole' ? '🐹' : h.kind === 'bomb' ? '💣' : ''; h.el.classList.toggle('up', !!h.kind); });
-    w.status.textContent = `${L.name}　還有 ${left} 秒　打到 ${score} 隻`;
+    w.status.textContent = `${L.name}　還有 ${left} 秒　打到 ${score} 隻`; bSp.textContent = pw >= 100 ? '🔨 大槌地震！' : `🔨 大槌地震（${Math.round(pw)}%）`;
   }
   function pop() {
     if (ended) return;
@@ -17286,7 +17305,7 @@ function playMole(w, L) {
   function hit(i) {
     if (ended) return;
     const h = holes[i];
-    if (h.kind === 'mole') { score++; Sound.play('pickUp'); }
+    if (h.kind === 'mole') { score++; Sound.play('pickUp'); pw = Math.min(100, pw + 13); if (pw >= 100) { bSp.disabled = false; bSp.classList.add('glow'); } }
     else if (h.kind === 'bomb') { score = Math.max(0, score - 2); Sound.play('bad'); }
     else return;
     h.kind = null;
@@ -20660,9 +20679,14 @@ function playSwim(w, L) {
   const W = 340, H = 220, { g } = gameCanvas(w.stage, W, H), LEN = 25;
   const mates = NEIGHBORS.filter(Boolean).slice(0, 3).map((n, i) => ({ n, x: 0, v: L.sp * (.9 + Math.random() * .15) * (1 - i * .04), done: 0, cap: ['#ffd23f', '#7bd389', '#b18cff'][i] }));
   let me = 0, myDone = 0, t = 0, raf = 0, last = performance.now(), ended = false, splash = 0, order = [];
-  const go = el('button', 'big run-go', '🏊 游！'); w.stage.appendChild(go);
-  const stroke = () => { if (ended || t < 0) return; me = Math.min(LEN, me + .9); splash = .25; Sound.play('splash'); };
-  const key = e => { if (ended) return; if (e.repeat) { if (e.code === 'Space') e.preventDefault(); return; } if (e.code === 'Space') { e.preventDefault(); stroke(); } };
+  const go = el('button', 'big run-go', '🏊 游！'), bSp = el('button', 'big run-go db-sp', '🐬 海豚衝刺'); bSp.style.display = 'none'; w.stage.append(go, bSp);
+  // 🐬 必殺技「海豚衝刺」：游越多下能量越多，滿了按一下，變成海豚一下衝好遠
+  const DOLPHIN = { name: '海豚衝刺', fx: '🐬', c: '#3fa9f5', c2: '#dff0ff' };
+  let pw = 0, cutAt = 0, dash = 0, dashes = 0;
+  const stroke = () => { if (ended || t < 0 || cutAt) return; me = Math.min(LEN, me + .9); splash = .25; Sound.play('splash'); pw = Math.min(100, pw + 7); if (pw >= 100) bSp.style.display = ''; };
+  const special = () => { if (ended || t < 0 || pw < 100 || cutAt) return; pw = 0; bSp.style.display = 'none'; cutAt = performance.now(); dashes++; Sound.play('magic'); try { speak(tkdSpecialName(DOLPHIN) + '！'); } catch (e) {} };
+  bSp.onclick = special;
+  const key = e => { if (ended) return; if (e.repeat) { if (e.code === 'Space') e.preventDefault(); return; } if (e.code === 'Space') { e.preventDefault(); stroke(); } else if (e.code === 'KeyS' || e.code === 'ArrowUp') { e.preventDefault(); special(); } };
   go.onclick = stroke; document.addEventListener('keydown', key);
   gameCleanup = () => { ended = true; cancelAnimationFrame(raf); document.removeEventListener('keydown', key); };
   t = -2.5;   // 倒數
@@ -20674,11 +20698,16 @@ function playSwim(w, L) {
     const swimmer = (x, y, cap, label, sp) => { const X = px(x); g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 2; g.beginPath(); g.arc(X - 14, y + Math.sin(t * 12) * 2, 6 + sp * 10, 0, Math.PI * 2); g.stroke(); g.fillStyle = cap; g.beginPath(); g.arc(X, y, 9, 0, Math.PI * 2); g.fill(); g.fillStyle = '#f6cfb0'; g.beginPath(); g.arc(X + 5, y + 2, 5, 0, Math.PI * 2); g.fill(); g.fillStyle = '#26232a'; g.font = '700 11px sans-serif'; g.textAlign = 'center'; g.fillText(label, X, y - 13); };
     mates.forEach((m, i) => swimmer(m.x, lane(i), m.cap, m.n.short, .1));
     swimmer(me, lane(3), '#ff6b9a', charName(), splash);
+    if (dash > 0) { const X = 20 + me / LEN * (W - 44); g.font = '26px sans-serif'; g.textAlign = 'center'; g.fillText('🐬', X + 4, lane(3) + 8); for (let k = 1; k < 5; k++) { g.fillStyle = `rgba(255,255,255,${.6 - k * .12})`; g.beginPath(); g.arc(X - k * 12, lane(3) + 4, 6 - k, 0, 7); g.fill(); } }
+    g.fillStyle = 'rgba(0,0,0,.3)'; g.fillRect(W - 92, H - 18, 80, 10); g.fillStyle = pw >= 100 ? `hsl(${(performance.now() / 3) % 360},90%,60%)` : '#ffd23f'; g.fillRect(W - 91, H - 17, 78 * pw / 100, 8);
+    if (cutAt) tkdSpecialCut(g, W, H, DOLPHIN, (performance.now() - cutAt) / 600, performance.now() / 1000);
     if (t < 0) { g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(0, 0, W, H); g.fillStyle = '#fff'; g.font = '800 48px sans-serif'; g.textAlign = 'center'; g.fillText(String(Math.ceil(-t)), W / 2, H / 2 + 16); }
   };
   const tick = now => {
     if (ended) return; const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt; splash = Math.max(0, splash - dt);
-    if (t >= 0) {
+    if (cutAt && now - cutAt > 1000) { cutAt = 0; dash = 1.1; Sound.play('whoosh'); }
+    if (dash > 0) { dash -= dt; me = Math.min(LEN, me + 6.5 * dt); }
+    if (t >= 0 && !cutAt) {
       mates.forEach(m => { if (m.x < LEN) { m.x = Math.min(LEN, m.x + m.v * dt); if (m.x >= LEN && !order.includes(m)) order.push(m); } });
       if (me >= LEN && !myDone) { myDone = 1; order.push('me'); }
       if (myDone) { ended = true; const rank = order.indexOf('me') + 1; document.removeEventListener('keydown', key); go.remove();
@@ -20688,7 +20717,7 @@ function playSwim(w, L) {
     draw(); if (!ended) raf = requestAnimationFrame(tick); else draw();
   };
   raf = requestAnimationFrame(tick);
-  playSwim.test = { stroke, me: () => me, ended: () => ended, start: () => { t = 0; } };
+  playSwim.test = { special, setPw: v => { pw = v; if (pw >= 100) bSp.style.display = ''; }, dashes: () => dashes, stroke, me: () => me, ended: () => ended, start: () => { t = 0; } };
 }
 // 🤿 潛水撿寶：池底一閃一閃的東西，點到就撿起來（30 秒）
 const DIVE_ITEMS = [['🐚', 1], ['⭐', 1], ['🦀', 1], ['💍', 2], ['💎', 3]];
@@ -23243,7 +23272,8 @@ function playBball(w, L) {
   const W = 480, H = 270, { g } = gameCanvas(w.stage, W, H);
   const pad = el('div', 'quest-pad'); w.stage.appendChild(pad);
   const bMain = el('button', 'quest-btn qb-j', '🏀 投籃！'), bPass = L.pass ? el('button', 'quest-btn', '🤝 傳球') : null;
-  if (bPass) pad.append(bPass); pad.append(bMain); leaveButton(w); w.status.textContent = `先進 ${L.win} 球的隊伍贏！`;
+  const bSp = el('button', 'quest-btn db-sp', '🌈 灌籃'); bSp.disabled = true;
+  if (bPass) pad.append(bPass); pad.append(bMain, bSp); leaveButton(w); w.status.textContent = `先進 ${L.win} 球的隊伍贏！`;
   const tm = arenaMates(), HR = 446, HL = 34, RIM = 96, C = .72;
   const us = [{ who: 'kid', x: 140, y: 200 }, { who: tm.pet, x: 100, y: 238 }], them = [{ who: tm.rivals[0], x: 340, y: 200 }, { who: tm.rivals[1], x: 380, y: 238 }];
   const all = us.concat(them); all.forEach(p => { p.tx = p.x; p.ty = p.y; });
@@ -23251,6 +23281,10 @@ function playBball(w, L) {
   let msg = '比賽開始！', msgT = 1.3, pauseT = 1.3, after = null, T0 = performance.now(), last = T0, raf = 0, live = true, ended = false, cheat = false;
   gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', key); };
   const say = (m, s) => { msg = m; msgT = s || 1.1; };
+  // 🌈 必殺技「彩虹灌籃」：投進、蓋火鍋會集能量，滿了在進攻的時候按，一定灌進，一次算 2 球
+  const DUNK = { name: '彩虹灌籃', fx: '🌈', c: '#ff8fb3', c2: '#ffffff' };
+  let pw = 20, cutAt = 0, dunks = 0;
+  const gainPw = n => { pw = Math.min(100, pw + n); };
   const pause = (s, fn) => { phase = 'pause'; pauseT = s; after = fn; };
   const throwBall = (x0, y0, x1, y1, dur, peak, land) => { fly = { x0, y0, x1, y1, dur, peak, t: 0, land }; };
   const startAtk = h => {
@@ -23279,7 +23313,7 @@ function playBball(w, L) {
     const make = Math.random() < [.18, .62, .96][q] + (L.mul === 1 ? .08 : 0);
     phase = 'shot'; Sound.play('whoosh'); say(['偏了…', '投！', '漂亮！✨'][q], .8);
     throwBall(holder.x + 10, holder.y - 62, HR - 14, RIM - 6, .95, 90, () => {
-      if (make) { Sound.play('perfect'); say(open ? '空檔投進！🎉' : '進了！🎉'); throwBall(HR - 14, RIM, HR - 14, 250, .45, 0, null); if (!goal(0)) pause(1.2, startDef); }
+      if (make) { gainPw(35); Sound.play('perfect'); say(open ? '空檔投進！🎉' : '進了！🎉'); throwBall(HR - 14, RIM, HR - 14, 250, .45, 0, null); if (!goal(0)) pause(1.2, startDef); }
       else { Sound.play('boing'); say('沒進～搶籃板！'); throwBall(HR - 14, RIM, 360, 215, .55, 30, () => { if (Math.random() < .35) { say('我們搶到了！'); pause(.7, () => startAtk(us[0])); } else { say('被搶走了！'); pause(.7, startDef); } }); }
     });
   };
@@ -23294,7 +23328,7 @@ function playBball(w, L) {
     if (phase === 'atk') return shoot();
     if (phase !== 'def' || coolT > 0) return;
     jumpT = .5; coolT = .75; Sound.play('jump');
-    if (defT >= shootAt && defT <= shootAt + L.block) { phase = 'blocked'; Sound.play('perfect'); say('蓋火鍋！🙌'); throwBall(holder.x - 4, holder.y - 70, us[0].x + 10, us[0].y - 40, .5, 20, () => pause(.6, () => startAtk(us[0]))); }
+    if (defT >= shootAt && defT <= shootAt + L.block) { phase = 'blocked'; gainPw(45); Sound.play('perfect'); say('蓋火鍋！🙌'); throwBall(holder.x - 4, holder.y - 70, us[0].x + 10, us[0].y - 40, .5, 20, () => pause(.6, () => startAtk(us[0]))); }
     else if (defT < shootAt) say('太早跳了！', .7);
   };
   const oppShoot = () => {
@@ -23306,6 +23340,11 @@ function playBball(w, L) {
   };
   const key = e => { if (e.repeat) return; if (e.code === 'Space' || e.code === 'Enter' || e.code === 'ArrowUp') { e.preventDefault(); press(); } else if (e.code === 'KeyP' || e.code === 'ArrowRight') { e.preventDefault(); passBall(); } };
   document.addEventListener('keydown', key);
+  const dunk = () => {
+    if (!live || ended || phase !== 'atk' || pw < 100 || fly) return;
+    pw = 0; dunks++; phase = 'cut'; cutAt = performance.now(); Sound.play('magic'); try { speak(tkdSpecialName(DUNK) + '！'); } catch (e) {}
+  };
+  bSp.addEventListener('pointerdown', e => { e.preventDefault(); dunk(); });
   bMain.addEventListener('pointerdown', e => { e.preventDefault(); press(); }); if (bPass) bPass.addEventListener('pointerdown', e => { e.preventDefault(); passBall(); });
   after = () => startAtk(us[0]);
   const hoop = (x, dir) => {
@@ -23317,6 +23356,11 @@ function playBball(w, L) {
   const tick = now => {
     if (!live) return;
     const dt = Math.min(.05, (now - last) / 1000); last = now; const t = (now - T0) / 1000; msgT -= dt; jumpT = Math.max(0, jumpT - dt); coolT = Math.max(0, coolT - dt);
+    bSp.disabled = !(pw >= 100 && phase === 'atk'); bSp.classList.toggle('glow', !bSp.disabled);
+    if (phase === 'cut' && now - cutAt > 1100) {   // 特寫完：小可愛飛到籃框灌進去
+      phase = 'dunk'; holder = us[0]; us[0].tx = HR - 40; us[0].ty = 200; Sound.play('jump');
+      throwBall(us[0].x + 10, us[0].y - 60, HR - 14, RIM - 6, .7, 120, () => { Sound.play('perfect'); say(`${tkdSpecialName(DUNK)}！進 2 球！🌈`, 1.6); throwBall(HR - 14, RIM, HR - 14, 250, .45, 0, null); if (!goal(0) && !goal(0)) pause(1.3, startDef); });
+    }
     if (phase === 'pause') { pauseT -= dt; if (pauseT <= 0 && after) { const f = after; after = null; f(); } }
     if (phase === 'atk') { pT += dt * (1.7 + L.mul * .35); p = (Math.sin(pT) + 1) / 2; them[0].tx = holder.x + 48; them[0].ty = holder.y; }
     if (phase === 'def') {
@@ -23347,11 +23391,14 @@ function playBball(w, L) {
       g.fillStyle = '#e8505b'; g.fillRect(x0 + p * bw - 2, y0 - 4, 4, 22);
     }
     arenaScore(g, W, score[0], score[1], '我們', '對手');
+    g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(10, 8, 100, 16); g.fillStyle = pw >= 100 ? `hsl(${(now / 3) % 360},90%,60%)` : '#ff8fb3'; g.fillRect(12, 10, 96 * pw / 100, 12); g.fillStyle = '#fff'; g.font = '700 9px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'left'; g.fillText(pw >= 100 ? '灌籃 OK！' : '能量', 16, 20); g.textAlign = 'center';
+    if (phase === 'dunk' && fly) { for (let k = 0; k < 6; k++) { g.strokeStyle = `hsl(${k * 60},90%,60%)`; g.globalAlpha = .6; g.lineWidth = 3; g.beginPath(); g.arc(HR - 14, RIM + 40, 60 + k * 5, Math.PI * 1.1, Math.PI * 1.6); g.stroke(); } g.globalAlpha = 1; }
+    if (phase === 'cut') tkdSpecialCut(g, W, H, DUNK, (now - cutAt) / 600, now / 1000);
     if (msgT > 0 && msg) arenaMsg(g, W, msg, 96);
     raf = requestAnimationFrame(tick);
   };
   raf = requestAnimationFrame(tick);
-  playBball.test = { press, passBall, st: () => ({ phase, score: score.slice(), defT, shootAt, ended }), cheat: v => { cheat = v; } };
+  playBball.test = { dunk, setPw: v => { pw = v; }, dunks: () => dunks, press, passBall, st: () => ({ phase, score: score.slice(), defT, shootAt, ended }), cheat: v => { cheat = v; } };
 }
 
 // 🔴 躲避球
@@ -23544,12 +23591,16 @@ function playPingPong(w, L) {
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   const W = 480, H = 270, { c, g, pos } = gameCanvas(w.stage, W, H);
   const pad = el('div', 'quest-pad'); w.stage.appendChild(pad);
-  const bL = el('button', 'quest-btn', '◀'), bR = el('button', 'quest-btn', '▶'); pad.append(bL, bR); leaveButton(w); w.status.textContent = `先拿 ${L.win} 分的人贏！`;
+  const bL = el('button', 'quest-btn', '◀'), bR = el('button', 'quest-btn', '▶'), bSp = el('button', 'quest-btn db-sp', '🔥 殺球'); bSp.disabled = true; pad.append(bL, bSp, bR); leaveButton(w); w.status.textContent = `先拿 ${L.win} 分的人贏！`;
   const rival = arenaMates().rivals[0];
   const NEAR = 236, FAR = 92, proj = (x, z, h) => { const hw = 200 - z * 110, s = 1 - z * .5; return { x: W / 2 + x * hw, y: NEAR + (FAR - NEAR) * z - (h || 0) * 70 * s, s }; };
   let score = [0, 0], px = 0, ox = 0, shot = null, phase = 'pause', pauseT = 1.2, after = null, combo = 0, best = 0, hold = 0, msg = '比賽開始！', msgT = 1.2, T0 = performance.now(), last = T0, raf = 0, live = true, ended = false, auto = false, rally = 0;
   gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); document.removeEventListener('keyup', ku); };
   const say = (m, s) => { msg = m; msgT = s || 1; };
+  // 🔥 必殺技「火焰殺球」：接到球會集能量，滿了按「🔥 殺球」，下一球變火焰殺球，對手一定接不到
+  const SMASH = { name: '火焰殺球', fx: '🔥', c: '#ff5a1f', c2: '#ffe2d0' };
+  let spw = 0, armed = false, cutAt = 0, held = null, smashes = 0;
+  const arm = () => { if (spw < 100 || armed || ended) return; armed = true; spw = 0; Sound.play('magic'); say('🔥 下一球變火焰殺球！', 1.2); };
   const pause = (s, fn) => { phase = 'pause'; pauseT = s; after = fn; };
   // 一球：從 (x0,z0) 飛到 (x1,z1)，在中間彈一下
   const newShot = (x0, z0, x1, z1, dur, toMe) => { shot = { x0, z0, x1, z1, dur, t: 0, toMe }; phase = 'play'; };
@@ -23564,19 +23615,21 @@ function playPingPong(w, L) {
     }, 1400);
   };
   const point = side => { score[side]++; Sound.play(side === 0 ? 'coin' : 'miss'); if (score[side] >= L.win) return finish(side === 0); pause(1.1, serve); };
-  const kd = e => { if (e.code === 'ArrowLeft' || e.code === 'KeyA') { e.preventDefault(); hold = -1; } else if (e.code === 'ArrowRight' || e.code === 'KeyD') { e.preventDefault(); hold = 1; } };
+  const kd = e => { if (e.code === 'ArrowLeft' || e.code === 'KeyA') { e.preventDefault(); hold = -1; } else if (e.code === 'ArrowRight' || e.code === 'KeyD') { e.preventDefault(); hold = 1; } else if (e.code === 'KeyS' || e.code === 'ArrowUp') { e.preventDefault(); arm(); } };
   const ku = e => { if ((e.code === 'ArrowLeft' || e.code === 'KeyA') && hold < 0) hold = 0; if ((e.code === 'ArrowRight' || e.code === 'KeyD') && hold > 0) hold = 0; };
   document.addEventListener('keydown', kd); document.addEventListener('keyup', ku);
   const follow = e => { const p = pos(e); px = Math.max(-1.1, Math.min(1.1, (p.x - W / 2) / 200)); };
   c.addEventListener('pointermove', follow); c.addEventListener('pointerdown', e => { e.preventDefault(); follow(e); });
   const holdB = (b, d) => { b.addEventListener('pointerdown', e => { e.preventDefault(); hold = d; }); ['pointerup', 'pointerleave', 'pointercancel'].forEach(k => b.addEventListener(k, () => { if (hold === d) hold = 0; })); };
-  holdB(bL, -1); holdB(bR, 1);
+  holdB(bL, -1); holdB(bR, 1); bSp.addEventListener('pointerdown', e => { e.preventDefault(); arm(); });
   after = serve;
   const ballAt = s => { const u = Math.min(1, s.t / s.dur), x = s.x0 + (s.x1 - s.x0) * u, z = s.z0 + (s.z1 - s.z0) * u, b = .55, h = u < b ? Math.sin(u / b * Math.PI) * .9 : Math.sin((u - b) / (1 - b) * Math.PI) * .55; return { x, z, h, u }; };
   const tick = now => {
     if (!live) return;
     const dt = Math.min(.05, (now - last) / 1000); last = now; const t = (now - T0) / 1000; msgT -= dt;
     if (hold) px = Math.max(-1.1, Math.min(1.1, px + hold * 2.4 * dt));
+    if (phase === 'cut' && now - cutAt > 1100) { const tx = ox > 0 ? -.95 : .95; newShot(held.x, 0, tx, 1.02, .42, false); shot.smash = true; Sound.play('whoosh'); }
+    bSp.disabled = spw < 100 || armed || ended; bSp.classList.toggle('glow', !bSp.disabled || armed);
     if (phase === 'pause') { pauseT -= dt; if (pauseT <= 0 && after) { const f = after; after = null; f(); } }
     if (phase === 'play' && shot) {
       shot.t += dt; const b = ballAt(shot);
@@ -23586,11 +23639,13 @@ function playPingPong(w, L) {
       if (b.u >= 1) {
         if (shot.toMe) {
           const off = (b.x - px) / L.paddle;
-          if (Math.abs(off) <= 1) { rally++; combo++; best = Math.max(best, combo); Sound.play(Math.abs(off) > .55 ? 'perfect' : 'click'); if (combo >= 3) say(`連續 ${combo} 球！`, .7); else if (Math.abs(off) > .55) say('好角度！', .6);
+          if (Math.abs(off) <= 1 && armed) { armed = false; smashes++; held = { x: b.x }; phase = 'cut'; cutAt = now; shot = null; Sound.play('perfect'); try { speak(tkdSpecialName(SMASH) + '！'); } catch (e) {} }
+          else if (Math.abs(off) <= 1) { rally++; combo++; best = Math.max(best, combo); spw = Math.min(100, spw + 20); Sound.play(Math.abs(off) > .55 ? 'perfect' : 'click'); if (combo >= 3) say(`連續 ${combo} 球！`, .7); else if (Math.abs(off) > .55) say('好角度！', .6);
             const tx = Math.max(-.95, Math.min(.95, b.x + off * 1.2 + (Math.random() - .5) * .3)); newShot(b.x, 0, tx, 1.02, Math.max(.8, L.dur * (1 - rally * .015)), false); }
           else { say('沒接到～', .9); combo = 0; shot = null; phase = 'wait'; point(1); }
         } else {
-          if (Math.abs(b.x - ox) < .3 && Math.random() > L.miss + rally * .01) { Sound.play('click'); newShot(b.x, 1.02, Math.random() * 1.6 - .8, -.04, Math.max(.8, L.dur * (1 - rally * .015)), true); }
+          if (shot.smash) { say('🔥 火焰殺球！對手接不到！', 1.3); shot = null; phase = 'wait'; point(0); }
+          else if (Math.abs(b.x - ox) < .3 && Math.random() > L.miss + rally * .01) { Sound.play('click'); newShot(b.x, 1.02, Math.random() * 1.6 - .8, -.04, Math.max(.8, L.dur * (1 - rally * .015)), true); }
           else { say('對手沒接到！得分！', 1); shot = null; phase = 'wait'; point(0); }
         }
       }
@@ -23605,18 +23660,20 @@ function playPingPong(w, L) {
     g.fillStyle = '#2f8fe0'; g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b2.x, b2.y); g.lineTo(c2.x, c2.y); g.lineTo(d.x, d.y); g.closePath(); g.fill(); g.fillStyle = '#1f6fb8'; g.fillRect(a.x, NEAR, b2.x - a.x, 8);
     g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke(); const m0 = proj(0, 0), m1 = proj(0, 1); g.lineWidth = 1; g.beginPath(); g.moveTo(m0.x, m0.y); g.lineTo(m1.x, m1.y); g.stroke();
     const n0 = proj(-1.05, .5), n1 = proj(1.05, .5); g.fillStyle = 'rgba(255,255,255,.75)'; g.fillRect(n0.x, n0.y - 12, n1.x - n0.x, 12); g.fillStyle = '#fff'; g.fillRect(n0.x, n0.y - 13, n1.x - n0.x, 2);
-    if (shot && (phase === 'play')) { const bb = ballAt(shot), sh = proj(bb.x, bb.z, 0), bp = proj(bb.x, bb.z, bb.h); g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(sh.x, sh.y, 6 * sh.s, 2.5 * sh.s, 0, 0, 7); g.fill(); MV.ball(g, bp.x, bp.y, 7 * bp.s, '#ffffff'); g.strokeStyle = '#ffb35a'; g.lineWidth = 1; g.beginPath(); g.arc(bp.x, bp.y, 7 * bp.s, 0, 7); g.stroke();
+    if (shot && (phase === 'play')) { const bb = ballAt(shot), sh = proj(bb.x, bb.z, 0), bp = proj(bb.x, bb.z, bb.h); if (shot.smash || armed && shot.toMe) { g.fillStyle = 'rgba(255,120,40,.5)'; g.beginPath(); g.arc(bp.x, bp.y, 14 * bp.s, 0, 7); g.fill(); } g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(sh.x, sh.y, 6 * sh.s, 2.5 * sh.s, 0, 0, 7); g.fill(); MV.ball(g, bp.x, bp.y, 7 * bp.s, '#ffffff'); g.strokeStyle = '#ffb35a'; g.lineWidth = 1; g.beginPath(); g.arc(bp.x, bp.y, 7 * bp.s, 0, 7); g.stroke();
       if (shot.toMe) { const land = proj(shot.x1, 0, 0); g.strokeStyle = 'rgba(255,210,63,.8)'; g.lineWidth = 2; g.beginPath(); g.ellipse(land.x, land.y + 4, 14, 4, 0, 0, 7); g.stroke(); } }
     // 我的球拍
     const pp = proj(px, -.02, 0), pw = L.paddle * 200; g.fillStyle = 'rgba(232,80,91,.25)'; g.fillRect(pp.x - pw, pp.y + 6, pw * 2, 6);
     g.fillStyle = '#8a5a33'; g.fillRect(pp.x - 5, pp.y + 10, 10, 26); g.fillStyle = '#e8505b'; g.beginPath(); g.ellipse(pp.x, pp.y, Math.max(24, pw * .6), 20, 0, 0, 7); g.fill(); g.strokeStyle = '#26232a'; g.lineWidth = 2; g.stroke();
     arenaScore(g, W, score[0], score[1], charName().slice(0, 4), rival.short || '對手');
     if (combo >= 2) { g.fillStyle = '#ff7a3c'; g.font = '900 14px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'left'; g.fillText(`🔥 ${combo} combo`, 10, 24); }
+    g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(W - 112, 34, 102, 14); g.fillStyle = spw >= 100 || armed ? `hsl(${(now / 3) % 360},90%,60%)` : '#ff7a3c'; g.fillRect(W - 110, 36, armed ? 98 : 98 * spw / 100, 10); g.fillStyle = '#5a4636'; g.font = '700 9px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'right'; g.fillText(armed ? '火焰殺球準備好了！' : spw >= 100 ? '可以殺球了！' : '殺球能量', W - 10, 60); g.textAlign = 'center';
+    if (phase === 'cut') tkdSpecialCut(g, W, H, SMASH, (now - cutAt) / 600, now / 1000);
     if (msgT > 0 && msg) arenaMsg(g, W, msg, 150);
     raf = requestAnimationFrame(tick);
   };
   raf = requestAnimationFrame(tick);
-  playPingPong.test = { st: () => ({ phase, score: score.slice(), combo, best, ended }), setAuto: v => { auto = v; }, setPaddle: v => { px = v; } };
+  playPingPong.test = { arm, setPw: v => { spw = v; }, smashes: () => smashes, st: () => ({ phase, score: score.slice(), combo, best, ended }), setAuto: v => { auto = v; }, setPaddle: v => { px = v; } };
 }
 Object.assign(ACTIVITIES, {
   shoothoop: { label: '🏀 打籃球', name: '打籃球', fx: '🏀', open: () => openBallChoice(), lines: ['看我投籃！', '唰——空心球！'] },
