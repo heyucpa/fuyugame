@@ -13,7 +13,7 @@ function rng(seed){ let s=seed>>>0||1; return ()=>{ s^=s<<13; s>>>=0; s^=s>>>17;
       p.on('dialog', d=>d.dismiss().catch(()=>{}));   // 確認視窗一律「取消」（不然會亂按到重新開始、換存檔）
       await p.goto('file://' + (process.env.HOUSE_DIR || '/home/user/fuyugame') + '/house.html'); await p.waitForTimeout(1200); try{await p.getByText('跳過').click({timeout:1000});}catch(e){} await p.waitForTimeout(500);
       await p.evaluate(()=>{ G.guide='done'; SEASON_TODAY=[10,20]; G.bells=50000; FURNITURE.forEach(f=>{ if(!f.season&&!f.gift&&Math.random()<.3) G.inv[f.id]=1; }); });
-      let lastAct='', legit=false; const hist=[]; p.on('framenavigated', f=>{ if (f===p.mainFrame() && lastAct && /強制更新|新存檔|換成這個|版本與更新/.test(hist.slice(-12).join())) legit=true; if (f===p.mainFrame() && lastAct && !/強制更新|新存檔|換成這個|版本與更新/.test(hist.slice(-12).join())) errs.push('頁面重新載入，最近的動作：'+hist.slice(-10).join(' ; ')); });
+      let lastAct='', legit=false; const hist=[]; p.on('framenavigated', f=>{ if (f===p.mainFrame() && lastAct && /強制更新|新存檔|換成這個|版本與更新/.test(hist.slice(-12).join())) legit=true; if (f===p.mainFrame() && lastAct && !/強制更新|新存檔|換成這個|版本與更新/.test(hist.slice(-12).join())) errs.push('頁面重新載入，最近的動作：'+hist.slice(-16).join(' ; ')); });
       const keys=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d',' ','Escape','Enter','r','1'];
       for (let i=0;i<STEPS;i++) {
         const t=R();

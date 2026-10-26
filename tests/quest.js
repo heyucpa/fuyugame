@@ -14,10 +14,10 @@ const path = require('path');
     // 快轉模擬：停掉畫面迴圈，直接一小步一小步算（每步 1/60 秒），自動玩家：往右走；前面有坑／牆／怪物就跳
     const sim = (normal) => {
       const T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null;
-      let held = false;
+      let held = false, lastX = 0, stuckT = 0, backT = 0;   // 卡在高牆前太久：像小朋友一樣往後退一點再衝
       for (let i = 0; i < 60 * 150 && T.state() === 'play'; i++) {
         const P = T.P, QT = 18, fx = Math.floor((P.x + P.w + 14) / QT), feet = Math.floor((P.y + P.h + 2) / QT), mid = Math.floor((P.y + P.h - 6) / QT);
-        { const bs = T.ents.find(e => e.k === 'boss' && e.alive && Math.abs(e.x - P.x) < 200); const dir = bs ? Math.sign(bs.x + bs.w / 2 - P.x - P.w / 2) || 1 : 1; T.keys.ArrowRight = dir > 0; T.keys.ArrowLeft = dir < 0; }   // 打大王：朝著大王走、牠暈的時候跳上去
+        { const bs = T.ents.find(e => e.k === 'boss' && e.alive && Math.abs(e.x - P.x) < 200); let dir = bs ? Math.sign(bs.x + bs.w / 2 - P.x - P.w / 2) || 1 : 1; if (Math.abs(P.x - lastX) < .5) stuckT += 1 / 60; else stuckT = 0; lastX = P.x; if (stuckT > 1.5) { backT = .9; stuckT = 0; } if (backT > 0) { backT -= 1 / 60; dir = -1; } T.keys.ArrowRight = dir > 0; T.keys.ArrowLeft = dir < 0; }   // 打大王：朝著大王走、牠暈的時候跳上去
         const gap = !T.solid(T.tileAt(fx, feet)) && !T.solid(T.tileAt(fx + 1, feet)) && T.tileAt(fx, feet) !== '-';
         const wall = T.solid(T.tileAt(fx, mid)) || T.solid(T.tileAt(fx, mid - 1));
         const foe = T.ents.find(e => e.alive && (e.k === 'boss' ? (e.dizzy > 0 && Math.abs(e.x + e.w / 2 - P.x - P.w / 2) < 70) : (e.x > P.x - 4 && e.x - (P.x + P.w) < 30)) && Math.abs(e.y - P.y) < 50);
