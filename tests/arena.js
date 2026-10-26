@@ -19,6 +19,18 @@ const path = require('path');
     B.shootAt(30); await wait(1200); o.bbMiss = B.st().made === 6 && B.st().combo === 0;
     B.end(); for (let i = 0; i < 40 && !/分！/.test(document.querySelector('.game-status').textContent); i++) await wait(100);
     o.bbStatus = /投進 6 \/ 7 球/.test(document.querySelector('.game-status').textContent) && arenaState().bm === B.st().score; closeGameWindow();
+    // ⛹️ 籃球比賽 2 對 2：開外掛投進 3 球（簡單），防守時等「！」再跳
+    openBball(); document.querySelectorAll('.lv-btn')[0].click(); await wait(300);
+    const B2 = playBball.test; B2.cheat(true);
+    for (let i = 0; i < 400 && !B2.st().ended; i++) {
+      const s = B2.st();
+      if (s.phase === 'atk') B2.press();
+      if (s.phase === 'def' && s.defT > s.shootAt + .05) B2.press();
+      await wait(60);
+    }
+    o.b2End = B2.st().ended && B2.st().score[0] === 3; await wait(1800);
+    o.b2Status = /贏了/.test(document.querySelector('.game-status').textContent) && arenaState().bb === 1; closeGameWindow();
+    openBallChoice(); o.ballChoice = document.querySelectorAll('.lv-row button').length === 2; closeGameWindow();
     // 🔴 躲避球：一直瞄準打人，球來了等最後一刻接
     openDodge(); document.querySelectorAll('.lv-btn')[0].click(); await wait(300);
     const D = playDodge.test; let dodged = 0; D.setSp(100);   // 一開始就能放必殺技
@@ -41,8 +53,8 @@ const path = require('path');
     const ivp = setInterval(() => playPingPong.test.setPaddle(-1.1), 16); for (let i = 0; i < 150 && playPingPong.test.st().score[1] < 1; i++) await wait(100); clearInterval(ivp); o.ppMiss = playPingPong.test.st().score[1] >= 1; closeGameWindow();
     // 主人選單、快速選單、存檔
     travelArrive('arena'); await wait(300); $('#modal').hidden = true;
-    o.host = host.n && host.n.id === 'arena' && hostMenuEntries().some(e => /投籃機/.test(e[0]));
-    o.quick = ['投籃機', '躲避球', '桌球'].every(n => allQuickGames().some(g => g.name === n && g.where === 'arena'));
+    o.host = host.n && host.n.id === 'arena' && hostMenuEntries().some(e => /投籃機/.test(e[0])) && hostMenuEntries().some(e => /籃球比賽/.test(e[0]));
+    o.quick = ['籃球比賽', '投籃機', '躲避球', '桌球'].every(n => allQuickGames().some(g => g.name === n && g.where === 'arena'));
     saveGame(); const raw = JSON.parse(localStorage.getItem(SAVE_KEY)); o.saved = raw.arena && raw.arena.bm >= 13;
     const bad = normalizeSave(Object.assign({}, raw, { arena: { bb: 'x', pp: -3, db: 2.7 } })).arena; o.bad = bad.bb == null && bad.pp == null && bad.db === 2;
     o.bad2 = normalizeSave(Object.assign({}, raw, { arena: 5 })).arena == null;
