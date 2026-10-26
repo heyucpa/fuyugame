@@ -766,6 +766,12 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .candy-cell { width: 52px; height: 52px; font-size: 30px; border: none; border-radius: 12px; padding: 0; } .candy-cell.c0 { background: #ffd6e6; } .candy-cell.c1 { background: #ffe9b8; } .candy-cell.c2 { background: #e2d6ff; } .candy-cell.c3 { background: #d6f2df; }
 .dig-board { display: grid; grid-template-columns: repeat(7, 50px); gap: 4px; justify-content: center; margin: 6px auto; }
 .dig-cell { width: 50px; height: 50px; font-size: 26px; border: none; border-radius: 10px; background: repeating-linear-gradient(45deg, #e6c98a 0 6px, #dcbd7a 6px 12px); padding: 0; } .dig-cell.dug { background: #8a6a45; }
+.menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 8px 0; } .menu-item { display: flex; flex-direction: column; align-items: center; padding: 8px 4px; border: 3px solid var(--line); border-radius: 14px; background: #fff; } .menu-e { font-size: 40px; } .menu-p { font-size: 13px; color: #c98a2a; font-weight: 800; }
+.chef-top { display: flex; gap: 24px; justify-content: center; align-items: flex-end; } .chef-col { display: flex; flex-direction: column; align-items: center; }
+.burger { display: flex; flex-direction: column; align-items: center; min-height: 120px; justify-content: flex-end; padding: 6px 14px; border-radius: 14px; background: #fff; border: 3px solid var(--line); } .burger.got { border-style: dashed; } .burger.empty { font-size: 40px; justify-content: center; } .bp { font-size: 30px; line-height: 1.05; }
+.doc-steps { font-size: 26px; margin: 6px 0; }
+.stk-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 8px 0; } .stk { display: flex; flex-direction: column; align-items: center; padding: 8px 2px; border-radius: 14px; background: #fff7e0; border: 2px solid #ffd23f; } .stk.no { background: #f2f2f2; border-color: #ddd; } .stk-e { font-size: 34px; } .stk-n { font-size: 12px; font-weight: 700; }
+.eye-e { font-family: Arial, sans-serif; font-weight: 900; line-height: 1; margin: 10px; transition: transform .2s; }
 .spar-row .spar-sp { background: linear-gradient(#ffb02e, #ff5a1f); color: #fff; border-color: #c0392b; } .spar-row .spar-sp:disabled { background: #eee; color: #aaa; border-color: #ddd; }
 .spar-row .spar-on { animation: glowPulse .4s infinite alternate; transform: scale(1.08); box-shadow: 0 0 0 5px #ffd23f; }
 .music-menu { position: fixed; z-index: 70; background: var(--panel, #fffaf0); border: 2px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
@@ -2167,6 +2173,18 @@ const treeParts = (leaf, leaf2, fruit) => [
 // 🎢 雲霄飛車的軌道高度（y＝0～4 每一格邊上的高度）：車站在 y＝4，出發往後先過小山坡、衝下來、爬到最高點
 const COASTER_H = [14, 70, 18, 44, 12];
 const PLACE_FURNITURE = [
+  // 🍽️ 餐廳
+  { id: 'rest_counter', name: '點餐櫃台', theme: 'wood', w: 2, d: 1, parts: [{ x: 0, y: .2, w: 2, d: .6, z: 0, h: 28, c: '#c98d5a' }, { x: 0, y: .2, w: 2, d: .6, z: 28, h: 3, c: '#fff6e8' }, { x: 1.4, y: .3, w: .45, d: .35, z: 31, h: 12, c: '#3a3842' }, { k: 'ball', x: .5, y: .5, z: 36, r: 5, c: '#ffb02e' }] },
+  { id: 'rest_kitchen', name: '廚房爐台', theme: 'modern', w: 2, d: 1, parts: [{ x: 0, y: .1, w: 2, d: .8, z: 0, h: 30, c: '#c9ccd0' }, { x: .2, y: .2, w: .6, d: .6, z: 30, h: 2, c: '#3a3842' }, { k: 'ball', x: .5, y: .5, z: 38, r: 7, c: '#5a6070' }, { x: 1.2, y: .3, w: .6, d: .4, z: 30, h: 3, c: '#26232a' }, { k: 'ball', x: 1.5, y: .5, z: 36, r: 5, c: '#c98a2a' }] },
+  { id: 'rest_menu', name: '菜單看板', theme: 'wood', w: 3, h: 36, z: 46, layer: 'wall', d: 1, parts: [],
+    draw(ctx, W, H) { ctx.fillStyle = '#3a2f2a'; ctx.fillRect(0, 0, W, H); ctx.strokeStyle = '#c98d5a'; ctx.lineWidth = 3; ctx.strokeRect(1.5, 1.5, W - 3, H - 3); ctx.font = '12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ['🍔', '🍜', '🍛', '🥞', '🍨', '🍣'].forEach((e, i) => ctx.fillText(e, 9 + (i % 3) * (W - 18) / 2, 11 + Math.floor(i / 3) * 14)); } },
+  // 🏥 醫院
+  { id: 'hosp_bed', name: '病床', theme: 'modern', w: 1, d: 2, parts: [{ x: .1, y: .1, w: .8, d: 1.8, z: 0, h: 16, c: '#e8eef3' }, { x: .1, y: .1, w: .8, d: .15, z: 16, h: 14, c: '#c9ccd0' }, { x: .15, y: .2, w: .7, d: .35, z: 16, h: 5, c: '#ffffff' }, { x: .12, y: .6, w: .76, d: 1.25, z: 16, h: 4, c: '#9fd8ff' }] },
+  { id: 'hosp_desk', name: '看診桌', theme: 'modern', w: 2, d: 1, parts: [{ x: 0, y: .1, w: 2, d: .8, z: 0, h: 26, c: '#ffffff' }, { x: .2, y: .3, w: .6, d: .4, z: 26, h: 18, c: '#3a3842' }, { x: .25, y: .32, w: .5, d: .36, z: 30, h: 12, c: '#9fd8ff' }, { k: 'ball', x: 1.4, y: .5, z: 30, r: 5, c: '#e8505b' }] },
+  { id: 'hosp_scale', name: '體重計', theme: 'modern', w: 1, d: 1, parts: [{ x: .15, y: .15, w: .7, d: .7, z: 0, h: 4, c: '#8e98a3' }, { x: .4, y: .2, w: .2, d: .1, z: 4, h: 30, c: '#c9ccd0' }, { x: .3, y: .15, w: .4, d: .12, z: 34, h: 10, c: '#4a9be8' }] },
+  { id: 'hosp_cabinet', name: '藥櫃', theme: 'modern', w: 1, d: 1, parts: [{ x: .1, y: .2, w: .8, d: .6, z: 0, h: 60, c: '#ffffff' }, { x: .42, y: .78, w: .16, d: .04, z: 34, h: 18, c: '#e8505b' }, { x: .3, y: .78, w: .4, d: .04, z: 41, h: 5, c: '#e8505b' }] },
+  { id: 'hosp_eye', name: '視力表', theme: 'modern', w: 2, h: 44, z: 40, layer: 'wall', d: 1, parts: [],
+    draw(ctx, W, H) { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H); ctx.strokeStyle = '#c9ccd0'; ctx.strokeRect(.5, .5, W - 1, H - 1); ctx.fillStyle = '#26232a'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; [[14, 8], [10, 20], [7, 30], [5, 38]].forEach(([sz, y], r) => { ctx.font = `900 ${sz}px Arial`; for (let i = 0; i <= r; i++) ctx.fillText('E', W / 2 + (i - r / 2) * sz, y); }); } },
   // 💪 健身房的體能看板（點了看自己的體能）
   { id: 'gym_board', name: '體能看板', theme: 'modern', w: 3, h: 40, z: 44, layer: 'wall', d: 1, parts: [],
     draw(ctx, W, H) { ctx.fillStyle = '#26232a'; ctx.fillRect(0, 0, W, H); ctx.font = '700 8px sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
@@ -2917,6 +2935,8 @@ const HOSTS = {
   // 跆拳道館的教練：熊熊，繫黑色腰帶；游泳池的教練：鴨鴨（家長選的）
   cinema: { id: 'cinema', name: '貓頭鷹放映師', short: '放映師', body: '#a07850', edge: '#7a5a3a', belly: '#f2dfc0', inner: '#7a5a3a', ears: 'tuft', acc: 'glasses', accColor: '#3a3240' },
   tkd: { id: 'tkd', name: '熊熊教練', short: '熊教練', body: '#8a5a33', edge: '#6b4428', belly: '#e8cfa9', inner: '#6b4428', ears: 'round', acc: 'scarf', accColor: '#26232a' },
+  restaurant: { id: 'restaurant', name: '貓咪主廚', short: '貓主廚', body: '#ffd9a8', edge: '#d9a86a', belly: '#fff4e0', inner: '#ffb3c7', ears: 'pointy', acc: 'hat', accColor: '#ffffff' },
+  hospital: { id: 'hospital', name: '小羊醫生', short: '羊醫生', body: '#fbfbf7', edge: '#d9d4c9', belly: '#ffffff', inner: '#ffb3c7', ears: 'curl', acc: 'glasses', accColor: '#3a3842' },
   gym: { id: 'gym', name: '河馬教練', short: '河教練', body: '#b9a6d9', edge: '#8a78b0', belly: '#e9dcf7', inner: '#ffb3c7', ears: 'round', acc: 'scarf', accColor: '#e8505b' },
   arena: { id: 'arena', name: '猴子教練', short: '猴教練', body: '#b07a4a', edge: '#86572e', belly: '#f2d6b0', inner: '#f2d6b0', ears: 'round', acc: 'hat', accColor: '#e8505b' },
   track: { id: 'track', name: '花豹教練', short: '豹教練', body: '#f2b04a', edge: '#c98a2a', belly: '#fff1d6', inner: '#c98a2a', ears: 'round', acc: 'scarf', accColor: '#2f6fd1' },
@@ -2998,6 +3018,18 @@ const PLACES = {
       ['cinema_seat', 2, 6], ['cinema_seat', 3, 6], ['cinema_seat', 4, 6], ['cinema_seat', 5, 6], ['cinema_seat', 6, 6],
       ['popcorn_cart', 8, 8], ['cinema_counter', 0, 8]
     ], wallItems: [['cinema_screen', 'R', 2], ['movie_poster_pet', 'L', 1], ['movie_poster_space', 'L', 3], ['movie_poster_dino', 'L', 5], ['movie_poster_sea', 'L', 7], ['movie_poster_funny', 'L', 9]] }
+  ] },
+  /* 🍽️ 餐廳（小鎮島）：點餐吃飯、小幫手打工 */
+  restaurant: { name: '餐廳', host: 'restaurant', emoji: '🍽️', desc: '點好吃的東西，也可以去廚房當小幫手做漢堡！', rooms: [
+    { name: '餐廳', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_wood', items: [
+      ['rest_kitchen', 0, 0], ['rest_counter', 3, 0], ['dining_table', 2, 4], ['dining_table', 6, 4], ['dining_chair', 2, 6], ['dining_chair', 3, 6], ['dining_chair', 6, 6], ['dining_chair', 7, 6]
+    ], wallItems: [['rest_menu', 'R', 3]] }
+  ] },
+  /* 🏥 醫院（小鎮島）：小醫生、寵物健檢、健康檢查、勇敢貼紙 */
+  hospital: { name: '醫院', host: 'hospital', emoji: '🏥', desc: '當小醫生照顧動物朋友、寵物健康檢查、集勇敢貼紙！', rooms: [
+    { name: '醫院', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_terrazzo', items: [
+      ['hosp_desk', 4, 0], ['hosp_cabinet', 9, 0], ['hosp_bed', 0, 2], ['hosp_bed', 0, 6], ['hosp_scale', 8, 4]
+    ], wallItems: [['hosp_eye', 'R', 4]] }
   ] },
   /* 💪 健身房：跑步機、啞鈴、飛輪、跳箱、瑜珈墊，河馬教練 */
   gym: { name: '健身房', host: 'gym', emoji: '💪', desc: '跑步機、啞鈴、飛輪、跳箱、瑜珈，練速度、力量、耐力！', rooms: [
@@ -3114,6 +3146,8 @@ LINE_TYPES.push(
   { key: 'hostLibrarian', label: '館員說的話', hint: '可用 {名字}', lines: ['{名字}，歡迎來圖書館～', '在圖書館要小聲說話喔 🤫', '繪本架上有好看的書喔', '看完的書要放回原來的地方', '閱讀護照蓋滿可以拿獎狀喔', '要不要幫我把書放回書架？'] },
   { key: 'hostCinema', label: '電影院放映師說的話', hint: '可用 {名字}', lines: ['{名字}，今天想看哪一部電影呢？', '看電影的時候要小聲喔～', '爆米花剛爆好，好香喔！', '新的電影海報貼在牆上了，去看看！', '電影快開始囉，找位子坐好～'] },
   { key: 'hostTkd', label: '跆拳道教練說的話', hint: '可用 {名字}', lines: ['{名字}，敬禮！今天也要加油喔！', '出拳要有力，喊聲要大聲！', '踢腿的時候眼睛看前面', '先熱身，才不會受傷喔', '練習越多，腰帶就越來越厲害！'] },
+  { key: 'hostRestaurant', label: '餐廳主廚說的話', hint: '可用 {名字}', lines: ['{名字}，歡迎光臨！', '今天的漢堡特別好吃喔！', '要不要來廚房幫忙？', '吃飯前要洗手喔～', '慢慢吃，不要噎到了！'] },
+  { key: 'hostHospital', label: '醫生說的話', hint: '可用 {名字}', lines: ['{名字}，今天身體好嗎？', '要不要來當小醫生？', '寵物也要定期健康檢查喔！', '多喝水、早點睡覺最健康！', '打針的時候要勇敢喔！'] },
   { key: 'hostGym', label: '健身房教練說的話', hint: '可用 {名字}', lines: ['{名字}，今天想練什麼？', '跑步機可以練速度喔！', '舉啞鈴會變得好有力氣！', '飛輪要跟著節奏踩～', '練完要喝水、伸展一下！'] },
   { key: 'hostArena', label: '體育館教練說的話', hint: '可用 {名字}', lines: ['{名字}，來打球吧！', '投籃要看準籃框喔～', '躲避球要眼睛看球，跳起來閃！', '桌球的球拍要跟著球走！', '運動完要記得喝水～'] },
   { key: 'hostTrack', label: '田徑教練說的話', hint: '可用 {名字}', lines: ['{名字}，來跑一百公尺吧！', '起跑要等槍響喔，不可以偷跑！', '手要用力擺，腳就會跑得快！', '大隊接力最重要的是交棒！', '跑完要喝水、休息一下～'] },
@@ -4709,6 +4743,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-28T09:00', title: '小鎮島：餐廳和醫院開了！🍽️🏥', lines: [
+    ['🏘️', '主島東北邊多了「小鎮島」，走木橋就到了'],
+    ['🍽️', '餐廳：看圖點餐，吃完肚子飽飽、心情好；也可以去廚房當小幫手，照著疊漢堡賺打工錢'],
+    ['🏥', '醫院：當小醫生照顧生病的動物朋友；帶寵物健康檢查；小可愛自己也可以量身高、看視力表'],
+    ['🏅', '當小醫生、健康檢查都會拿到勇敢貼紙，8 種集滿送 3,000 元！']
+  ] },
   { id: '2026-10-27T20:00', title: '你是小島的島主了！🏝️', lines: [
     ['🏝️', '點花花島、糖果島、恐龍島上的大東西，打開「島主選單」！可以幫小島取名字'],
     ['🌸', '花花島：每天摘花，開「💐 花藝店」幫動物朋友配花束，花可以做成盆栽、花拱門帶回家'],
@@ -5539,6 +5579,10 @@ function normalizeSave(g) {
     if (v.zone > v.zoneMax) v.zone = 0; if (v.zoneMax > 2) v.zoneMax = 2;
     if (v.day != null && !(isObj(v.day) && typeof v.day.d === 'string' && num(v.day.n))) delete v.day; }
   if (out.recentGames != null) { if (Array.isArray(out.recentGames)) out.recentGames = out.recentGames.filter(x => typeof x === 'string' && x.length < 40).slice(0, 8); else delete out.recentGames; }   // 🎮 最近玩過
+  if (out.town != null) {   // 🏘️ 小鎮島：勇敢貼紙、每天的健康檢查
+    if (!isObj(out.town)) delete out.town;
+    else { const t = out.town; t.stk = isObj(t.stk) ? Object.fromEntries(Object.entries(t.stk).filter(([k, n]) => /^(lion|star|rainbow|bear|heart|amb|sun|crown)$/.test(k) && Number.isInteger(n) && n > 0 && n < 10000)) : {};
+      ['petDay', 'kidDay'].forEach(k => { if (t[k] != null && typeof t[k] !== 'string') delete t[k]; }); if (t.allDone != null && t.allDone !== 1) delete t.allDone; if (t.meals != null && !(Number.isInteger(t.meals) && t.meals >= 0)) delete t.meals; } }
   if (out.isle != null) {   // 🏝️ 島主：名字、經驗、花、糖果、恐龍骨頭
     if (!isObj(out.isle)) delete out.isle;
     else Object.keys(out.isle).forEach(k => { const v = out.isle[k];
@@ -11315,7 +11359,7 @@ function hostMemoryLine(id) {
 
 // ── 親戚家：叔叔、阿婆在家裡陪小可愛（跟著她走，偶爾說話）──
 const host = { n: null, a: null, say: null, sayUntil: 0, nextTalkAt: 0, danceUntil: 0, nextHop: 0 };
-const HOST_LINE_KEYS = { gym: 'hostGym', arena: 'hostArena', track: 'hostTrack', cinema: 'hostCinema', tkd: 'hostTkd', swim: 'hostSwim', amuse: 'hostAmuse', friend: 'hostFriend', uncle: 'hostUncle', grandma: 'hostGrandma', teacher: 'hostTeacher', ranger: 'hostRanger', librarian: 'hostLibrarian' };
+const HOST_LINE_KEYS = { restaurant: 'hostRestaurant', hospital: 'hostHospital', gym: 'hostGym', arena: 'hostArena', track: 'hostTrack', cinema: 'hostCinema', tkd: 'hostTkd', swim: 'hostSwim', amuse: 'hostAmuse', friend: 'hostFriend', uncle: 'hostUncle', grandma: 'hostGrandma', teacher: 'hostTeacher', ranger: 'hostRanger', librarian: 'hostLibrarian' };
 const hostLineKey = () => HOST_LINE_KEYS[host.n.id] || 'hostGrandma';
 function hostSay(text, ms) {
   if (!text) return;
@@ -11528,6 +11572,8 @@ function hostMenuEntries() {
     list.push(['🥋 跟朋友對練', openSparGame]);
     list.push([`🎖️ 考腰帶（現在：${tkdBeltName()}）`, openBeltExam]);
   }
+  if (host.n.id === 'restaurant') { list.push(['🍽️ 點餐吃飯', openRestaurantOrder]); list.push(['👩‍🍳 小幫手打工（做漢堡）', openChefGame]); }
+  if (host.n.id === 'hospital') { list.push(['💓 當小醫生', openDoctorGame]); list.push(['🐾 寵物健康檢查', openPetCheckup]); list.push(['👧 小可愛健康檢查', openKidCheckup]); list.push(['🏅 勇敢貼紙簿', openStickerBook]); }
   if (host.n.id === 'gym') { list.push(['🏃 跑步機（速度）', openFitRun]); list.push(['🏋️ 舉啞鈴（力量）', openFitLift]); list.push(['🚴 飛輪（耐力）', openFitBike]); list.push(['📦 跳箱（速度＋力量）', openFitBox]); list.push(['🧘 瑜珈（耐力）', openFitYoga]); list.push(['📊 我的體能', openFitStats]); }
   if (host.n.id === 'arena') { list.push(['⛹️ 籃球比賽（2 對 2）', openBball]); list.push(['🏀 投籃機', openBasket]); list.push(['🔴 躲避球', openDodge]); list.push(['🏓 桌球', openPingPong]); }
   if (host.n.id === 'track') { list.push(['🚧 障礙賽跑', openRunGame]); list.push(['🏃 百米衝刺', openSprint]); list.push(['🏃‍♀️ 大隊接力', openRelay]); list.push(['🏖️ 跳遠', openLongJump]); if (G.away && G.away.place === 'school' && G.away.idx !== 0) list.push(['🏫 回教室', () => goPlaceRoom(0)]); }
@@ -19190,7 +19236,10 @@ const ISL_BLD = [   // 房子：x, y 是左上角的格子，w×h 格；門在�
   { id: 'dojo', x: 50, y: 37, w: 4, h: 3, islet: true },
   { id: 'arena', x: 46, y: 44, w: 5, h: 3, islet: true },
   { id: 'gym', x: 56, y: 37, w: 5, h: 3, islet: true },
-  { id: 'cinema', x: 40, y: 17, w: 3, h: 2 }
+  { id: 'cinema', x: 40, y: 17, w: 3, h: 2 },
+  // 🏘️ 小鎮島（家長：餐廳、醫院）：主島東北邊的海上，一樣走木橋過去
+  { id: 'restaurant', x: 53, y: 8, w: 3, h: 3, islet: true, town: true },
+  { id: 'hospital', x: 58, y: 8, w: 3, h: 3, islet: true, town: true }
 ];
 /* 🏡 朋友島（家長：主島快滿了，姊姊、妹妹、朋友的家搬到另外一座島）：主島南邊的海上，坐船過去。收到第一張邀請卡才會出現（有動畫） */
 const ISL_FRIEND_ISLE = { cx: 26, cy: 46.5, r: 7.2 };
@@ -19227,11 +19276,12 @@ function islCoinSpots(m) {   // 今天的金幣在哪（同一天打開幾次都
   }
   return out.slice(0, Math.max(0, ISL_COIN_MAX - st.n));
 }
+const ISL_TOWN = { cx: 57.5, cy: 9.5, rx: 6.5, ry: 7.5, from: [53, 13], to: [45, 15], hub: [57, 13] };   // 🏘️ 小鎮島：島心、大小、木橋從哪裡接到主島的哪裡、島上的小廣場
 const ISL_ISLET = { cx: 52, cy: 41, rx: 11, ry: 9, r: 9, to: [39, 29], hub: [52, 41] };   // 🏅 運動島：中心、大小、木橋接到主島的哪裡、島上的小廣場
 const ISL_POND = { x: 31, y: 24, w: 4, h: 3 };
 const ISL_HUB = [26, 19];
 const ISL_STYLE = {   // 牆、屋頂顏色
-  dojo: ['#fff4e6', '#e0503a'], pool: ['#e8f6fb', '#3fa9f5'], track: ['#fff1e0', '#e07a4a'], arena: ['#fff6e0', '#ff7a3c'], gym: ['#f4eeff', '#8a78b0'], cinema: ['#3a2f4a', '#e8505b'],
+  dojo: ['#fff4e6', '#e0503a'], pool: ['#e8f6fb', '#3fa9f5'], track: ['#fff1e0', '#e07a4a'], arena: ['#fff6e0', '#ff7a3c'], gym: ['#f4eeff', '#8a78b0'], restaurant: ['#fff0d9', '#e8823a'], hospital: ['#ffffff', '#e8505b'], cinema: ['#3a2f4a', '#e8505b'],
   home: ['#ffd9c9', '#ff7b7b'], school: ['#fff4cf', '#5b8def'], library: ['#e6dcff', '#7a5cc9'], park: ['#d9f0c8', '#4f9d4f'],
   uncle: ['#d7ecc8', '#7aa05a'], grandma: ['#ffe3b0', '#d68a3a'], amusement: ['#ffe0ee', '#ff6fa3'], friend: ['#fffaf0', '#6fb7e8']
 };
@@ -19262,6 +19312,11 @@ function islMap(nFriends) {
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (Math.hypot((x - ISL_ISLET.cx) / ISL_ISLET.rx, (y - ISL_ISLET.cy) / ISL_ISLET.ry) <= 1) land[y][x] = true;
   { let [x0, y0] = [ISL_ISLET.cx - 6, ISL_ISLET.cy - 6], [x1, y1] = ISL_ISLET.to; const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) * 2;
     let px = null, py = null; const put = (x, y) => { if (!land[y][x]) { land[y][x] = true; bridge[y][x] = true; } };
+    for (let i = 0; i <= n; i++) { const x = Math.round(x0 + (x1 - x0) * i / n), y = Math.round(y0 + (y1 - y0) * i / n); if (px !== null && px !== x && py !== y) put(x, py); put(x, y); px = x; py = y; } }
+  /* 🏘️ 小鎮島：橢圓形的島＋木橋接到主島 */
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (Math.hypot((x - ISL_TOWN.cx) / ISL_TOWN.rx, (y - ISL_TOWN.cy) / ISL_TOWN.ry) <= 1) land[y][x] = true;
+  { const [x0, y0] = ISL_TOWN.from, [x1, y1] = ISL_TOWN.to, n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) * 2; let px = null, py = null;
+    const put = (x, y) => { if (!land[y][x]) { land[y][x] = true; bridge[y][x] = true; } };
     for (let i = 0; i <= n; i++) { const x = Math.round(x0 + (x1 - x0) * i / n), y = Math.round(y0 + (y1 - y0) * i / n); if (px !== null && px !== x && py !== y) put(x, py); put(x, y); px = x; py = y; } }
   /* 🗺️ 闖關解鎖的小島：一樣是圓圓的小島＋木橋（先畫島，再從島心往主島鋪橋） */
   const isletAt = land.map(r => r.map(() => null)), specials = [], docks = [];
@@ -19295,6 +19350,14 @@ function islMap(nFriends) {
       const F = ISL_FRIEND_ISLE, [dx0, dy0] = b.door, my = Math.round(F.cy) - 1;
       for (let y = Math.min(dy0, my); y <= Math.max(dy0, my); y++) mark(dx0, y);
       for (let x = Math.min(dx0, Math.round(F.cx)); x <= Math.max(dx0, Math.round(F.cx)); x++) mark(x, my);
+      return;
+    }
+    if (b.town) {   // 小鎮島：門口 → 小廣場 → 木橋；主島那頭往下接到廣場旁邊那條路
+      const [hx, hy] = ISL_TOWN.hub, [dx0, dy0] = b.door, [fx, fy] = ISL_TOWN.from, [tx, ty] = ISL_TOWN.to;
+      for (let y = Math.min(dy0, hy); y <= Math.max(dy0, hy); y++) mark(dx0, y);
+      for (let x = Math.min(dx0, hx); x <= Math.max(dx0, hx); x++) mark(x, hy);
+      for (let x = fx; x <= hx; x++) mark(x, fy);
+      for (let y = ty; y <= 20; y++) mark(tx, y); for (let x = 26; x <= tx; x++) mark(x, 20);
       return;
     }
     if (b.islet) {   // 運動島：門口 → 島上的小廣場；小廣場 → 木橋；主島那頭接到廣場那條路
@@ -24423,6 +24486,173 @@ function isleDecor(ctx, sp, now) {
     else { ctx.font = '13px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(i % 3 === 2 ? '🥚' : '🦴', px, py - 2); }
   }
 }
+/* ===== 🏘️ 小鎮島：🍽️ 餐廳＋🏥 醫院（家長：餐廳、醫院要有趣味性、互動性）=====
+   🍽️ 餐廳（貓咪主廚）
+     ・🍽️ 當客人點餐：看圖點餐、付錢，吃完肚子飽飽、心情變好
+     ・👩‍🍳 小幫手打工：客人要的漢堡畫在上面，照順序疊起來送出去，賺打工錢
+   🏥 醫院（小羊醫生）
+     ・💓 小醫生：動物朋友生病了，看看是哪裡不舒服，選對工具照顧牠（發燒先量體溫再吃藥…）
+     ・🐾 寵物健康檢查（每天一次）：量體重、看牙齒、聽心跳、打針要勇敢 → 寵物心情變好
+     ・👧 小可愛健康檢查（每天一次）：量身高、看視力表（E 朝哪邊）→ 拿勇敢貼紙
+     ・🏅 勇敢貼紙簿：8 種貼紙，集滿有大獎
+   G.town = { stk: { 貼紙id: 張數 }, petDay, kidDay, allDone } */
+const BRAVE_STK = [['lion', '🦁', '勇敢獅子'], ['star', '⭐', '閃亮星星'], ['rainbow', '🌈', '彩虹'], ['bear', '🧸', '抱抱熊'], ['heart', '💖', '愛心'], ['amb', '🚑', '救護車'], ['sun', '🌞', '太陽公公'], ['crown', '👑', '小皇冠']];
+const STICKER_ALL_PRIZE = 3000;
+function townState() { const t = G.town && typeof G.town === 'object' ? G.town : (G.town = {}); if (!t.stk || typeof t.stk !== 'object') t.stk = {}; return t; }
+function giveBraveSticker(why) {
+  const t = townState(), missing = BRAVE_STK.filter(s => !t.stk[s[0]]), s = missing.length && Math.random() < .75 ? missing[Math.floor(Math.random() * missing.length)] : BRAVE_STK[Math.floor(Math.random() * BRAVE_STK.length)];
+  t.stk[s[0]] = (t.stk[s[0]] || 0) + 1;
+  setTimeout(() => { try { gotCard(s[1], `拿到「${s[2]}」貼紙！`, why || '好勇敢！貼在貼紙簿裡了'); } catch (e) {} }, 500);
+  if (!t.allDone && BRAVE_STK.every(x => t.stk[x[0]])) { t.allDone = 1; addBells(STICKER_ALL_PRIZE); setTimeout(() => { try { showcase(el('div', 'magic-pic', '🏅'), '貼紙集滿了！', `8 種勇敢貼紙全部集齊，醫生送你 💰 ${fmt(STICKER_ALL_PRIZE)} 元！`, { head: '🏥 勇敢貼紙簿' }); } catch (e) {} }, 1500); }
+  saveGame(); return s;
+}
+function openStickerBook() {
+  const card = $('#modalCard'), t = townState(); closeGameWindow(); card.innerHTML = '';
+  card.appendChild(el('h2', '', '🏅 勇敢貼紙簿'));
+  const grid = el('div', 'stk-grid'); BRAVE_STK.forEach(([id, e, nm]) => { const c = el('div', 'stk' + (t.stk[id] ? '' : ' no')); c.append(el('span', 'stk-e', t.stk[id] ? e : '❔'), el('span', 'stk-n', t.stk[id] ? `${nm} ×${t.stk[id]}` : '還沒拿到')); grid.appendChild(c); }); card.appendChild(grid);
+  card.appendChild(note(t.allDone ? '全部集滿了！你是最勇敢的小朋友！' : `集滿 8 種送 💰 ${fmt(STICKER_ALL_PRIZE)} 元！當小醫生、健康檢查都拿得到貼紙。`));
+  const ok = el('button', 'big', '好！'); ok.onclick = () => { $('#modal').hidden = true; }; card.appendChild(ok); $('#modal').hidden = false;
+}
+// 🍽️ 餐廳點餐
+const MENU = [['burger', '🍔', '漢堡套餐', 120, 40, 8], ['ramen', '🍜', '拉麵', 150, 45, 8], ['curry', '🍛', '咖哩飯', 130, 45, 6], ['pancake', '🥞', '鬆餅', 100, 25, 12], ['sundae', '🍨', '水果聖代', 90, 15, 15], ['sushi', '🍣', '壽司', 160, 35, 10]];
+function openRestaurantOrder() {
+  const card = $('#modalCard'); closeGameWindow(); card.innerHTML = '';
+  card.appendChild(el('h2', '', '🍽️ 想吃什麼？'));
+  card.appendChild(note('點一樣想吃的，付錢就會送上來！'));
+  const grid = el('div', 'menu-grid');
+  MENU.forEach(([id, e, nm, price, hunger, mood]) => { const b = el('button', 'menu-item'); b.append(el('span', 'menu-e', e), el('b', '', nm), el('span', 'menu-p', `💰 ${price}`)); b.disabled = G.bells < price;
+    b.onclick = () => { if (!spend(price)) return; G.kid.hunger = clampStat((G.kid.hunger || 0) + hunger); kidMoodUp(mood); Sound.play('eat'); refreshTop(); saveGame(); townState().meals = (townState().meals || 0) + 1;
+      card.innerHTML = ''; card.appendChild(el('h2', '', `${e} ${nm}來囉！`)); card.appendChild(el('div', 'tkd-big', e)); card.appendChild(note('好好吃喔！肚子飽飽、心情變好了！'));
+      try { speak('好好吃喔！'); fufuSay('好好吃！', 2000); hostSay('謝謝光臨！下次再來喔！', 2400); } catch (e2) {}
+      const ok = el('button', 'big', '吃飽了！'); ok.onclick = () => { $('#modal').hidden = true; }; card.appendChild(ok); };
+    grid.appendChild(b); });
+  card.appendChild(grid);
+  const no = el('button', 'big alt', '不吃了'); no.onclick = () => { $('#modal').hidden = true; }; card.appendChild(no);
+  $('#modal').hidden = false;
+}
+// 👩‍🍳 小幫手打工：照順序疊漢堡
+const BURGER_PARTS = [['bun', '🍞', '下面的麵包'], ['meat', '🥩', '肉'], ['cheese', '🧀', '起司'], ['lettuce', '🥬', '生菜'], ['tomato', '🍅', '番茄'], ['egg', '🥚', '蛋'], ['top', '🍔', '上面的麵包']];
+function openChefGame() {
+  const w = openGameWindow('👩‍🍳 小幫手打工', '客人要的漢堡畫在左邊（從下面往上疊）。照一樣的順序點食材，最後放上面的麵包就送出去！');
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const N = 5, custs = NEIGHBORS.filter(Boolean).slice().sort(() => Math.random() - .5).slice(0, N);
+  let i = 0, want = [], got = [], perfect = 0, miss = 0;
+  const view = el('div', 'chef-view'); w.stage.appendChild(view);
+  const em = k => BURGER_PARTS.find(p => p[0] === k)[1];
+  const stackEl = (arr, cls) => { const s2 = el('div', 'burger ' + cls); arr.slice().reverse().forEach(k => s2.appendChild(el('div', 'bp bp-' + k, em(k)))); return s2; };
+  const draw = () => {
+    view.innerHTML = '';
+    const top = el('div', 'chef-top'), c = custs[i];
+    const a = el('div', 'chef-col'); a.append(el('div', 'tkd-say', `${c.short || c.name} 要的：`), stackEl(want, 'want'));
+    const b2 = el('div', 'chef-col'); b2.append(el('div', 'tkd-say', '你做的：'), got.length ? stackEl(got, 'got') : el('div', 'burger got empty', '🍽️'));
+    top.append(a, b2); view.appendChild(top);
+    const row = el('div', 'tkd-moves'); BURGER_PARTS.forEach(([k, e, nm]) => { const bt = el('button', 'tkd-move'); bt.append(el('span', 'tkd-e', e), el('span', '', nm)); bt.onclick = () => add(k); row.appendChild(bt); }); view.appendChild(row);
+    w.status.textContent = `第 ${i + 1} / ${N} 位客人　🍔 疊好了 ${got.length} / ${want.length} 層`;
+  };
+  const add = k => {
+    const need = want[got.length];
+    if (k !== need) { miss++; Sound.play('miss'); w.status.textContent = `不對喔～下一層要放 ${em(need)}`; return; }
+    got.push(k); Sound.play('click');
+    if (got.length === want.length) { Sound.play('perfect'); toast(`🍔 ${custs[i].short || ''}：好好吃！謝謝！`); if (!miss) perfect++; i++; next(); } else draw();
+  };
+  const next = () => {
+    if (i >= N) { const bells = payReward(w, 50 * N + perfect * 20); view.innerHTML = ''; view.appendChild(el('div', 'tkd-big', '🍔')); w.status.textContent = `做了 ${N} 個漢堡！一次都沒錯 ${perfect} 個　💰 打工錢 +${fmt(bells)}`; try { hostSay('辛苦了！你是很棒的小幫手！', 2600); } catch (e) {} gameButtons(w, openChefGame); return; }
+    const mids = ['meat', 'cheese', 'lettuce', 'tomato', 'egg'], n = 1 + Math.min(3, i); want = ['bun']; for (let k = 0; k < n; k++) want.push(mids[Math.floor(Math.random() * mids.length)]); want.push('top'); got = []; miss = 0; draw();
+  };
+  openChefGame.test = { want: () => want.slice(), add, i: () => i };
+  next();
+}
+// 💓 小醫生
+const SICK = [
+  { id: 'fever', e: '🤒', nm: '發燒了', steps: ['thermo', 'pill'], done: '燒退了！' },
+  { id: 'cut', e: '🤕', nm: '跌倒擦傷了', steps: ['clean', 'band'], done: '傷口貼好了！' },
+  { id: 'cough', e: '😷', nm: '一直咳嗽', steps: ['steth', 'honey'], done: '喉嚨舒服多了！' },
+  { id: 'tummy', e: '🤢', nm: '肚子痛', steps: ['steth', 'pill'], done: '肚子不痛了！' }
+];
+const TOOLS = [['thermo', '🌡️', '量體溫'], ['steth', '💓', '聽診器'], ['pill', '💊', '吃藥'], ['clean', '🧴', '消毒'], ['band', '🏷️', 'OK繃'], ['honey', '🍯', '蜂蜜水']];
+function openDoctorGame() {
+  const w = openGameWindow('💓 小醫生', '動物朋友生病了！看看牠哪裡不舒服，照順序選對的工具照顧牠。不知道的話，教練會給提示喔！');
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const N = 4, pts = NEIGHBORS.filter(Boolean).slice().sort(() => Math.random() - .5).slice(0, N).map(n => ({ n, s: SICK[Math.floor(Math.random() * SICK.length)] }));
+  let i = 0, k = 0, miss = 0, good = 0; const view = el('div', 'tkd-view'); w.stage.appendChild(view);
+  const tool = id => TOOLS.find(t => t[0] === id);
+  const draw = hint => {
+    const p = pts[i]; view.innerHTML = '';
+    view.append(el('div', 'tkd-say', `${p.n.short || p.n.name} ${p.s.nm}`), el('div', 'tkd-big', p.s.e));
+    view.appendChild(el('div', 'doc-steps', p.s.steps.map((st, j) => j < k ? '✅' + tool(st)[1] : hint && j === k ? '👉' + tool(st)[1] : '⬜').join('　')));
+    const row = el('div', 'tkd-moves'); TOOLS.forEach(([id, e, nm]) => { const b = el('button', 'tkd-move'); b.append(el('span', 'tkd-e', e), el('span', '', nm)); b.onclick = () => use(id); row.appendChild(b); }); view.appendChild(row);
+    w.status.textContent = `第 ${i + 1} / ${N} 位病人`;
+  };
+  const use = id => {
+    const p = pts[i];
+    if (id !== p.s.steps[k]) { miss++; Sound.play('miss'); draw(true); w.status.textContent = '好像不是這個～看看手指 👉 指的'; return; }
+    k++; Sound.play('pickUp');
+    if (k >= p.s.steps.length) { Sound.play('perfect'); good += miss ? 0 : 1; toast(`${p.s.done} 謝謝醫生！`); i++; k = 0; miss = 0; if (i >= N) return finish(); }
+    draw(false);
+  };
+  const finish = () => { const bells = payReward(w, 60 * N + good * 20); view.innerHTML = ''; view.appendChild(el('div', 'tkd-big', '🏥')); w.status.textContent = `照顧好 ${N} 位病人！　💰 +${fmt(bells)}`; giveBraveSticker('當小醫生好棒！'); try { hostSay('你是很棒的小醫生！', 2600); } catch (e) {} gameButtons(w, openDoctorGame); };
+  openDoctorGame.test = { steps: () => pts[i] ? pts[i].s.steps.slice() : [], use, i: () => i };
+  draw(false);
+}
+// 🐾 寵物健康檢查（每天一次）
+function openPetCheckup() {
+  const t = townState(), pet = G.pet;
+  const w = openGameWindow('🐾 寵物健康檢查', '照順序幫寵物檢查：量體重 → 看牙齒 → 聽心跳 → 打預防針（按住「勇敢！」）');
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  if (!pet || pet.stage === 'egg') { w.status.textContent = '寵物還是蛋，孵出來再帶來檢查喔！'; return; }
+  if (t.petDay === today()) { w.status.textContent = `${petName()}今天檢查過了，很健康！明天再來～`; return; }
+  const steps = [['⚖️', '量體重', '體重剛剛好！'], ['🦷', '看牙齒', '牙齒白白的！'], ['💓', '聽心跳', '撲通撲通，很有精神！'], ['💉', '打預防針', '好勇敢！一點都不痛！']];
+  let k = 0; const view = el('div', 'tkd-view'); w.stage.appendChild(view);
+  const W = 300, H = 160, { g } = gameCanvas(view, W, H); let raf = 0, live = true; gameCleanup = () => { live = false; cancelAnimationFrame(raf); };
+  const sp = PET_SPECIES_BY_ID[pet.species];
+  const tick = now => { if (!live) return; g.fillStyle = '#eaf6ff'; g.fillRect(0, 0, W, H); g.fillStyle = '#ffffff'; g.fillRect(60, 110, 180, 14); g.save(); g.translate(150, 108); g.scale(2.2, 2.2); try { drawCreature(g, sp, { happy: k >= 4, blink: false, fx: 1.5, clean: 100 }); } catch (e) {} g.restore(); if (k < 4) { g.font = '30px sans-serif'; g.textAlign = 'center'; g.fillText(steps[k][0], 250, 50 + Math.sin(now / 200) * 4); } raf = requestAnimationFrame(tick); };
+  raf = requestAnimationFrame(tick);
+  const btnRow = el('div', 'invite-row'); w.stage.appendChild(btnRow);
+  const show = () => {
+    btnRow.innerHTML = '';
+    if (k >= 4) { t.petDay = today(); pet.mood = clampStat((pet.mood || 0) + 25); pet.clean = clampStat((pet.clean || 0) + 10); Sound.play('fanfare'); w.status.textContent = `${petName()}好健康！心情變好了！`; giveBraveSticker(`${petName()}健康檢查好勇敢！`); saveGame(); gameButtons(w, openPetCheckup); return; }
+    const [e, nm] = steps[k]; w.status.textContent = `第 ${k + 1} / 4 步：${nm}`;
+    if (k < 3) { const b = el('button', 'big', `${e} ${nm}`); b.onclick = () => { Sound.play('pickUp'); toast(steps[k][2]); k++; show(); }; btnRow.appendChild(b); }
+    else { const b = el('button', 'big', '💪 按住「勇敢！」'), bar = el('div', 'fit-hold'), fill = el('div', 'fit-hold-in'); bar.appendChild(fill); btnRow.append(bar, b); let hold = 0, down = false;
+      const iv = setInterval(() => { if (!live) return clearInterval(iv); hold = down ? hold + .1 : Math.max(0, hold - .1); fill.style.width = Math.min(100, hold / 1.5 * 100) + '%'; if (hold >= 1.5) { clearInterval(iv); Sound.play('perfect'); toast(steps[3][2]); k++; show(); } }, 100);
+      b.addEventListener('pointerdown', ev => { ev.preventDefault(); down = true; }); ['pointerup', 'pointerleave', 'pointercancel'].forEach(x => b.addEventListener(x, () => { down = false; })); openPetCheckup.test.hold = v => { down = v; }; }
+  };
+  openPetCheckup.test = { step: () => k, next: () => { if (k < 3) { k++; show(); } } };
+  show();
+}
+// 👧 小可愛健康檢查（每天一次）：量身高、視力表
+function openKidCheckup() {
+  const t = townState(), w = openGameWindow('👧 小可愛健康檢查', '先量身高，再看視力表：E 的開口朝哪邊，就點那個方向！');
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  if (t.kidDay === today()) { w.status.textContent = '今天檢查過了，很健康！明天再來～'; return; }
+  const view = el('div', 'tkd-view'); w.stage.appendChild(view);
+  const cm = Math.round(100 + (G.kid.height || 0) * 1.2);
+  view.append(el('div', 'tkd-big', '📏'), el('div', 'tkd-say', `身高 ${cm} 公分！${kidStage().name ? '（' + kidStage().name + '）' : ''}`));
+  const go = el('button', 'big', '👀 看視力表'); view.appendChild(go); Sound.play('pickUp');
+  let n = 0, right = 0, dir = 0;
+  const DIRS = [['⬆️', 0], ['➡️', 90], ['⬇️', 180], ['⬅️', 270]];
+  const eye = () => {
+    if (n >= 4) { t.kidDay = today(); kidMoodUp(8); Sound.play('fanfare'); view.innerHTML = ''; view.appendChild(el('div', 'tkd-big', '👍')); w.status.textContent = `視力看對 ${right} / 4 個！很健康！`; giveBraveSticker('健康檢查好棒！'); saveGame(); gameButtons(w, openKidCheckup); return; }
+    dir = Math.floor(Math.random() * 4); view.innerHTML = '';
+    const E = el('div', 'eye-e', 'E'); E.style.transform = `rotate(${DIRS[dir][1] - 90}deg)`;   /* E 本來開口朝右；表上 0＝朝上，所以再轉 -90 度 */ E.style.fontSize = (90 - n * 14) + 'px'; view.appendChild(E);
+    const row = el('div', 'tkd-moves'); DIRS.forEach(([a], j) => { const b = el('button', 'tkd-move'); b.append(el('span', 'tkd-e', a)); b.onclick = () => { if (j === dir) { right++; Sound.play('coin'); } else Sound.play('click'); n++; eye(); }; row.appendChild(b); }); view.appendChild(row);
+    w.status.textContent = `E 的開口朝哪邊？（${n + 1} / 4）`;
+  };
+  go.onclick = eye;
+  openKidCheckup.test = { start: eye, dir: () => dir, n: () => n };
+}
+Object.assign(ACTIVITIES, {
+  rest_order: { label: '🍽️ 點餐吃飯', name: '點餐', fx: '😋', open: () => openRestaurantOrder(), lines: ['我要點餐！', '看起來好好吃～'] },
+  rest_chef: { label: '👩‍🍳 當小幫手', name: '打工', fx: '🍔', open: () => openChefGame(), lines: ['我來幫忙做漢堡！', '歡迎光臨～'] },
+  doc_play: { label: '💓 當小醫生', name: '當醫生', fx: '🏷️', open: () => openDoctorGame(), lines: ['醫生來了！哪裡不舒服？', '我會照顧你的！'] },
+  pet_check: { label: '🐾 寵物健康檢查', name: '寵物健檢', fx: '💖', open: () => openPetCheckup(), lines: ['乖乖，檢查一下喔～', '要勇敢喔！'] },
+  kid_check: { label: '👧 健康檢查', name: '健康檢查', fx: '⭐', open: () => openKidCheckup(), lines: ['我長高了嗎？', '我很健康！'] },
+  stk_book: { label: '🏅 看貼紙簿', name: '看貼紙', fx: '✨', open: () => openStickerBook(), lines: ['我的勇敢貼紙！', '還差幾張呢？'] }
+});
+Object.assign(FURNITURE_ACT, { rest_counter: 'rest_order', rest_kitchen: 'rest_chef', hosp_desk: 'doc_play', hosp_scale: 'pet_check', hosp_bed: 'kid_check', hosp_cabinet: 'stk_book' });
+['rest_order', 'rest_chef', 'doc_play', 'pet_check', 'kid_check', 'stk_book'].forEach(k => { const a = ACTIVITIES[k]; if (!LINE_TYPES.some(t => t.key === 'act_' + k)) LINE_TYPES.push({ key: 'act_' + k, label: '做事：' + a.name, hint: '', lines: a.lines }); });
+Object.assign(WALL_TAP, { rest_menu: () => openRestaurantOrder(), hosp_eye: () => openKidCheckup() });
+AWAY_GAMES.push(['👩‍🍳', '餐廳打工', 'restaurant', () => openChefGame()], ['💓', '小醫生', 'hospital', () => openDoctorGame()]);
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
       動物朋友全都打扮來跳舞放煙火，每天第一次結束時每位送一顆糖（4 顆萬聖節糖果）。
