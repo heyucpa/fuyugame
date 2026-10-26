@@ -4620,7 +4620,7 @@ const NEWS = [
     ['🔴', '躲避球：點對面的人丟球；球飛過來按「閃！」，最後一刻按還能接住！'],
     ['🏓', '桌球：手指左右滑動球拍接球，打在球拍邊邊球會斜飛'],
     ['🏀', '新的「投籃機」：像真的投籃機一樣有三關，每關要到目標分數！一般、高手要看力量條；連進 3 球變火球、空心多 1 分、最後 10 秒分數加倍。原本 2 對 2 的「籃球比賽」也還在'],
-    ['👑', '世界闖關的簡單模式也可以用 ◀ ▶ 自己走了（不會再自己一直往前跑），打大魔王可以自己前進、後退；簡單模式還是不扣愛心、掉下去有泡泡接'],
+    ['👑', '世界闖關的簡單模式也可以用 ◀ ▶ 自己走了（不會再自己一直往前跑），打大魔王可以自己前進、後退；簡單模式還是不扣愛心、掉下去有泡泡接；簡單模式的坑變窄，高牆後面也多留一段平地，比較不會掉下去'],
     ['❤️', '躲避球每個人都有愛心，要打好幾下才會出局，比較有機會放必殺技！'],
     ['🔴', '熱血躲避球：打中、閃過、接住會集能量，滿了可以放必殺技！🔥火焰球、⚡閃電球、🌀分身球，被打中的人會被打飛'],
     ['🌊', '跳水換新玩法：在空中按住翻滾、放開伸直，頭朝下入水最漂亮，評審會舉牌給分'],
@@ -21646,7 +21646,7 @@ function questState() {
 function questWorldsCleared() { const q = questState(); return [1, 2, 3].filter(w => q.clear[w + '-3']).length; }
 function questUnlocked(id) { const i = QUEST_IDS.indexOf(id); return i === 0 || !!questState().clear[QUEST_IDS[i - 1]]; }
 // 把一段一段拼成一張關卡（grid[y][x] 一個字）
-function questBuild(id) {
+function questBuild(id, easy) {   // easy：簡單模式的坑窄一格（家長：這邊太容易掉下去了）
   const segs = QUEST_LEVELS[id], g = [], W = 400;
   for (let y = 0; y < QH; y++) g.push(Array(W).fill(' '));
   let x = 0;
@@ -21659,12 +21659,12 @@ function questBuild(id) {
     else if (s === 'flat') { ground(x, x + 10); coins(x + 3, 4); x += 10; }
     else if (s === 'blocks') { ground(x, x + 12); put(x + 3, 9, '='); put(x + 4, 9, '?'); put(x + 5, 9, '='); put(x + 6, 9, '?'); put(x + 7, 9, '='); if (star) put(x + 5, 6, 's'); x += 12; }
     else if (/^enemy/.test(s)) { const n = +s.slice(5) || 1; ground(x, x + 12); for (let i = 0; i < n; i++) put(x + 5 + i * 4, 12, 'e'); coins(x + 2, 3, 10); x += 12; }
-    else if (/^gap/.test(s)) { const w = +s.slice(3) || 2; ground(x, x + 3); for (let i = 0; i <= w + 1; i++) put(x + 3 + i, 9 + Math.round(Math.abs(i - (w + 1) / 2)), 'o'); x += 3 + w; ground(x, x + 3); x += 3; }
+    else if (/^gap/.test(s)) { const w = Math.max(2, (+s.slice(3) || 2) - (easy ? 1 : 0));   /* 最窄 2 格（1 格的洞剛好會掉進去） */ ground(x, x + 3); for (let i = 0; i <= w + 1; i++) put(x + 3 + i, 9 + Math.round(Math.abs(i - (w + 1) / 2)), 'o'); x += 3 + w; ground(x, x + 3); x += 3; }
     else if (s === 'step') { ground(x, x + 12); for (let i = 0; i < 3; i++) for (let y = 12 - i; y < 13; y++) { put(x + 3 + i, y, '='); put(x + 9 - i, y, '='); } put(x + 6, 9, 'o'); x += 12; }
     else if (s === 'hill') { ground(x, x + 3); ground(x + 3, x + 9, 10); coins(x + 4, 4, 8); ground(x + 9, x + 12); x += 12; }
     else if (s === 'check') { ground(x, x + 8); put(x + 4, 12, 'C'); x += 8; }
     else if (s === 'plat') { ground(x, x + 3); for (let i = 0; i < 4; i++) put(x + 4 + i, 11, '-'); if (star) put(x + 5, 8, 's'); coins(x + 4, 4, 10); x += 10; ground(x, x + 3); x += 3; }   // 中間有雲朵可以踩，掉下去也有地方再跳
-    else if (s === 'spring') { ground(x, x + 12); put(x + 4, 12, 'S'); for (let y = 8; y < 13; y++) { put(x + 7, y, '='); put(x + 8, y, '='); } if (star) put(x + 7, 3, 's'); coins(x + 9, 2, 12); x += 12; }
+    else if (s === 'spring') { ground(x, x + 16); put(x + 4, 12, 'S'); for (let y = 8; y < 13; y++) { put(x + 7, y, '='); put(x + 8, y, '='); } if (star) put(x + 7, 3, 's'); coins(x + 10, 3, 12); x += 16; }   // 高牆後面多留一段平地，跳下來才不會直接掉進坑
     else if (s === 'spikes') { ground(x, x + 12); put(x + 5, 12, '^'); put(x + 6, 12, '^'); coins(x + 4, 4, 9); x += 12; }
     else if (s === 'bees') { ground(x, x + 12); put(x + 6, 9, 'b'); coins(x + 3, 2, 11); x += 12; }
     else if (s === 'goal') { ground(x, x + 12); put(x + 7, 12, 'F'); x += 12; }
@@ -21680,7 +21680,7 @@ function openQuestMap() {
   const x = el('button', 'modal-x', '✕'); x.onclick = () => { $('#modal').hidden = true; card.classList.remove('game-card'); }; card.appendChild(x);
   card.appendChild(el('h2', '', '🗺️ 世界任務'));
   const modes = el('div', 'quest-modes');
-  [['easy', '🐣 簡單', '自己往前跑，只要按跳'], ['normal', '🦸 一般', '←→ 走＋跳，3 顆愛心']].forEach(([id, nm, d]) => { const b = el('button', 'quest-mode' + (q.mode === id ? ' on' : '')); b.append(el('b', '', nm), el('span', '', d)); b.onclick = () => { q.mode = id; saveGame(); Sound.play('click'); openQuestMap(); }; modes.appendChild(b); });
+  [['easy', '🐣 簡單', '◀ ▶ 走＋跳，不扣愛心'], ['normal', '🦸 一般', '←→ 走＋跳，3 顆愛心']].forEach(([id, nm, d]) => { const b = el('button', 'quest-mode' + (q.mode === id ? ' on' : '')); b.append(el('b', '', nm), el('span', '', d)); b.onclick = () => { q.mode = id; saveGame(); Sound.play('click'); openQuestMap(); }; modes.appendChild(b); });
   card.appendChild(modes);
   QUEST_WORLDS.forEach(wd => {
     const row = el('div', 'quest-world'), head = el('div', 'quest-wh');
@@ -21712,7 +21712,7 @@ function playQuest(id, opt) {
   let bossZone = false;   // 家長：簡單模式平常也要能自由移動 → 不再自己往前跑，◀ ▶ 一直都在（簡單模式還是不扣愛心、掉下去有泡泡接）
   w.stage.appendChild(pad);
   const quit = el('button', 'big alt', '回地圖'); quit.onclick = () => { closeGameWindow(); openQuestMap(); }; w.btns.appendChild(quit);
-  const L = questBuild(id), lvW = L.W * QT;
+  const L = questBuild(id, easy), lvW = L.W * QT;
   const tileAt = (tx, ty) => (tx < 0 || tx >= L.W) ? '#' : (ty < 0 || ty >= QH) ? ' ' : L.g[ty][tx];
   const solid = ch => ch === '#' || ch === '=' || ch === '?' || ch === 'u';
   const ents = [], items = [];
