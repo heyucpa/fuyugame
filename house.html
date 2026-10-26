@@ -4665,6 +4665,7 @@ const NEWS = [
     ['🎵', '玩世界闖關會換成專屬的冒險音樂，遇到大魔王會換成大魔王的音樂'],
     ['🏁', '跳到終點旗子會抱著旗桿慢慢滑下去，抓得越高金幣越多！'],
     ['🥋', '跆拳道對練有必殺技了！踢中、擋住會集氣，氣滿了按「💥 必殺技」。每考上一條腰帶學會一招：旋風踢、流星百裂拳、彩虹迴旋踢、雷光閃電腳、火焰鳳凰腳，黑帶學會「黑龍波」！'],
+    ['🏎️', '叔叔家的賽車變成「小可愛賽車」！跟動物朋友跑 3 圈，撞 🎁 拿道具：🍌 香蕉皮、🚀 火箭、⭐ 無敵星星；轉彎按住「🌀 甩尾」再放開會加速；開的是你在商店買的車！'],
     ['💥', '更多小遊戲有必殺技：籃球比賽「彩虹灌籃」（一次進 2 球）、桌球「火焰殺球」、打水比賽「海豚衝刺」、打地鼠「大槌地震」'],
     ['🏝️', '「🚗 快速出門」多了闖關送的小島（花花島、糖果島、恐龍島），點了會自己坐船過去']
   ] },
@@ -7595,7 +7596,7 @@ function fufuStartAct(key, now, it, auto) {
   else if (a.sound !== 'note') Sound.play('pickUp');
   if (a.tab) openTab(a.tab);
   if (a.open) setTimeout(() => { // 叔叔的電腦、阿婆的穀倉：打開那裡專屬的小遊戲
-    const fn = typeof a.open === 'function' ? a.open : { brick: openBrickGame, mole: openMoleGame, race: openRaceGame, farm: openFarmGame, hay: () => openStackGame('hay'), quiz: openQuizGame, run: openRunGame, fish: openFishing, bfly: openButterflyGame, shelf: openShelfGame, story: openNextStorybook, passport: openPassport, storytime: () => openNextStorybook({ aloud: true }) }[a.open] || openFarmGame;
+    const fn = typeof a.open === 'function' ? a.open : { brick: openBrickGame, mole: openMoleGame, race: () => openKart(), farm: openFarmGame, hay: () => openStackGame('hay'), quiz: openQuizGame, run: openRunGame, fish: openFishing, bfly: openButterflyGame, shelf: openShelfGame, story: openNextStorybook, passport: openPassport, storytime: () => openNextStorybook({ aloud: true }) }[a.open] || openFarmGame;
     if ($('#modal').hidden && !(typeof resting !== 'undefined' && resting)) fn();
   }, 1300);
   if (a.game) setTimeout(() => { // 大型電玩：隨機開一個小遊戲
@@ -11441,7 +11442,7 @@ function hostMenuEntries() {
   if (trickActive() && TRICK_CANDY[host.n.id]) list.unshift([trickGot(host.n.id) ? `🎃 集糖卡（${trickCount()} / ${TRICK_HOSTS.length}）` : '🎃 不給糖就搗蛋！', () => trickOrTreat(host.n.id)]);
   if (host.n.id === 'uncle') {
     list.push(['🕹️ 一起打地鼠', openMoleGame]);
-    list.push(['📺 一起玩賽車', openRaceGame]);
+    list.push(['🏎️ 一起玩賽車', openKart]);
     list.push(['🖥️ 一起打磚塊', openBrickGame]);
   }
   if (host.n.id === 'cinema') list.push(['🎬 看電影', () => openMoviePicker()]);
@@ -22801,7 +22802,7 @@ const AWAY_GAMES = [
   ['🦵', '踢板', 'dojo', () => openKickGame()], ['👊', '跟著做動作', 'dojo', () => openFormsGame()], ['🎵', '節奏跆拳道', 'dojo', () => openRhythmGame()], ['🥋', '對練', 'dojo', () => openSparGame()],
   ['🏊', '打水比賽', 'pool', () => openSwimRace()], ['🤿', '潛水撿寶', 'pool', () => openDiveGame()], ['🌊', '跳水', 'pool', () => openJumpDive()],
   ['🎬', '看電影', 'cinema', () => openMoviePicker()],
-  ['🕹️', '打地鼠', 'uncle', () => openMoleGame()], ['📺', '賽車', 'uncle', () => openRaceGame()], ['🖥️', '打磚塊', 'uncle', () => openBrickGame()],
+  ['🕹️', '打地鼠', 'uncle', () => openMoleGame()], ['🏎️', '賽車', 'uncle', () => openKart()], ['🖥️', '打磚塊', 'uncle', () => openBrickGame()],
   ['🐮', '照顧小牛小羊', 'grandma', () => openFarmGame()],
   ['📝', '小考', 'school', () => openQuizGame()], ['🔤', '注音小遊戲', 'school', () => openZhuyinGame()], ['🏃', '賽跑', 'school', () => openRunGame()],
   ['🎣', '釣魚', 'park', () => openFishing()], ['📷', '拍蝴蝶', 'park', () => openButterflyGame()],
@@ -23123,7 +23124,7 @@ function openRaceChoice() {
   w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w); w.status.textContent = '選一種賽跑';
   const row = el('div', 'lv-row');
   [['🚧 障礙賽跑', '跳欄架、吃星星', openRunGame], ['🏃 百米衝刺', '聽槍聲、左右腳', openSprint]].forEach(([n, sub, fn], i) => {
-    const b = levelButton(i); b.append(el('span', 'lv-n', n), el('span', 'lv-p', sub)); b.onclick = () => { Sound.play('click'); closeGameWindow(); fn(); }; row.appendChild(b);
+    const b = el('button', 'lv-btn'); b.append(el('span', 'lv-n', n), el('span', 'lv-p', sub)); b.onclick = () => { Sound.play('click'); closeGameWindow(); fn(); }; row.appendChild(b);
   });
   w.stage.appendChild(row);
 }
@@ -23692,9 +23693,171 @@ function openBallChoice() {
   w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w); w.status.textContent = '選一種玩法';
   const row = el('div', 'lv-row');
   [['⛹️ 籃球比賽', '2 對 2、投籃、蓋火鍋', openBball], ['🏀 投籃機', '限時一直投、火球', openBasket]].forEach(([n, sub, fn], i) => {
-    const b = levelButton(i); b.append(el('span', 'lv-n', n), el('span', 'lv-p', sub)); b.onclick = () => { Sound.play('click'); closeGameWindow(); fn(); }; row.appendChild(b);
+    const b = el('button', 'lv-btn'); b.append(el('span', 'lv-n', n), el('span', 'lv-p', sub)); b.onclick = () => { Sound.play('click'); closeGameWindow(); fn(); }; row.appendChild(b);
   });
   w.stage.appendChild(row);
+}
+/* ===== 🏎️ 小可愛賽車（家長：有沒有哪一款小遊戲可以改成瑪利歐賽車的方式 → 叔叔家的賽車改成這個）=====
+   往前延伸的 3D 跑道（有彎道），4 台車跑 3 圈：小可愛＋三位動物朋友。車會自己往前開，只要左右轉。
+   ・🎁 道具箱：🍌 香蕉皮（丟在後面，誰壓到誰打滑）、🚀 火箭加速、⭐ 無敵星星（撞到誰誰打滑）
+   ・🌀 甩尾：轉彎時按住甩尾，火花從藍變橘，放開就加速
+   ・路上的金幣：撿到加一點速度，結束時多給錢
+   ・開的車就是她在商店買的（卡丁車免費），每台車快慢不太一樣；工程車和公車很重，壓到香蕉不會滑
+   （舊的「賽車閃避」程式留著給測試用，選單上換成這個） */
+const KART_LEVELS = [{ name: '簡單', rival: .78, assist: true, mul: 1 }, { name: '普通', rival: .88, mul: 2 }, { name: '高手！', rival: .97, mul: 3 }];
+const KART_PRIZE = [260, 160, 100, 60];
+const KART_CARS = [{ id: 'kart', name: '卡丁車', icon: '🏎️', c: '#e8505b', sp: 1, free: true }, { id: 'sports', name: '跑車', icon: '🏎️', c: '#ff3b3b', sp: 1.08 }, { id: 'suv', name: '休旅車', icon: '🚙', c: '#3f8fd1', sp: .98 },
+  { id: 'truck', name: '工程車', icon: '🚧', c: '#ffb02e', sp: .94, heavy: true }, { id: 'bus', name: '公車', icon: '🚌', c: '#ffd23f', sp: .92, heavy: true }, { id: 'bike', name: '腳踏車', icon: '🚲', c: '#7bd389', sp: .9 }];
+const KART_ITEMS = { banana: ['🍌', '香蕉皮'], rocket: ['🚀', '火箭加速'], star: ['⭐', '無敵星星'] };
+function openKart() {
+  const w = openGameWindow('🏎️ 小可愛賽車', '車子會自己往前開！按 ◀ ▶（或點畫面左右邊、鍵盤 ← →）轉彎。撞到 🎁 拿道具、按「🎁」用；轉彎時按住「🌀 甩尾」再放開可以加速！跑 3 圈，看誰第一名！');
+  pickLevelRow(w, KART_LEVELS, L => `第一名 💰 ${KART_PRIZE[0] * L.mul}`, L => {
+    const own = KART_CARS.filter(c => c.free || (G.vehicles || []).includes(c.id));
+    if (own.length < 2) return playKart(w, L, own[0]);
+    w.stage.innerHTML = ''; w.status.textContent = '要開哪一台？';
+    const row = el('div', 'lv-row');
+    own.forEach((car, i) => { const b = el('button', 'lv-btn'); b.append(el('span', 'lv-n', `${car.icon} ${car.name}`), el('span', 'lv-p', car.heavy ? '很重，香蕉滑不倒' : car.sp > 1 ? '最快！' : car.sp < .95 ? '慢慢開' : '普通')); b.onclick = () => { Sound.play('click'); playKart(w, L, car); }; row.appendChild(b); });
+    w.stage.appendChild(row);
+  });
+}
+function drawKartRear(g, x, y, s, color, who, tilt, t, spin) {   // 從後面看的卡丁車（原點在地上）
+  g.save(); g.translate(x, y); g.scale(s, s); if (spin) g.rotate(spin); else g.rotate(tilt * .12);
+  g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(0, 0, 30, 6, 0, 0, 7); g.fill();
+  g.fillStyle = '#2a2a30'; g.fillRect(-30, -16, 12, 16); g.fillRect(18, -16, 12, 16);   // 後輪
+  g.fillStyle = color; g.beginPath(); g.roundRect(-24, -26, 48, 20, 6); g.fill(); g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(-20, -24, 40, 4);
+  g.fillStyle = '#ffd23f'; g.fillRect(-20, -12, 8, 4); g.fillRect(12, -12, 8, 4);   // 尾燈
+  g.save(); g.translate(0, -24);
+  if (who === 'kid') { g.scale(.62, .62); if (kidBaby()) drawBabyKid(g, { t }); else drawGirl(g, { t, blink: false, back: true, outfit: currentOutfit(), face: 'joy', stage: kidLookStage() }); }
+  else if (who) { g.scale(1.05, 1.05); g.translate(0, 2); drawNeighbor(g, who, { happy: true, blink: false, fx: 1.5, clean: 100 }); }
+  g.restore(); g.restore();
+}
+function playKart(w, L, car) {
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const W = 480, H = 300, { c, g, pos: cpos } = gameCanvas(w.stage, W, H);
+  const pad = el('div', 'quest-pad'); w.stage.appendChild(pad);
+  const bL = el('button', 'quest-btn', '◀'), bD = el('button', 'quest-btn', '🌀 甩尾'), bI = el('button', 'quest-btn qb-j', '🎁'), bR = el('button', 'quest-btn', '▶');
+  pad.append(bL, bD, bI, bR); leaveButton(w); w.status.textContent = `開${car.name}！跑 3 圈`;
+  // 跑道：一段一段（長度、彎的程度）
+  const SEG = 200, ROAD = 2000, DRAW = 110, CAM_H = 1000, DEPTH = 1 / Math.tan(50 * Math.PI / 180), LAPS = 3;
+  const plan = [[40, 0], [50, 2], [30, 0], [45, -3], [20, 0], [35, 3.5], [35, -2.5], [40, 0], [60, -2], [25, 0], [40, 4], [30, 0], [45, -3], [40, 0], [35, 2]];
+  const segs = []; plan.forEach(([n, cv]) => { for (let i = 0; i < n; i++) { const e = Math.sin(i / n * Math.PI); segs.push({ i: segs.length, curve: cv * e, items: [] }); } });
+  const N = segs.length, LEN = N * SEG, segAt = z => segs[Math.floor(((z % LEN) + LEN) % LEN / SEG) % N];
+  for (let i = 60; i < N - 20; i += 95) [-.55, 0, .55].forEach(o => segs[i].items.push({ k: 'box', x: o, gone: 0 }));
+  for (let i = 25; i < N; i += 70) for (let k = 0; k < 5; k++) segs[i + k * 3].items.push({ k: 'coin', x: ((i / 70) % 3 - 1) * .5, got: 0 });
+  const MAX = SEG * 46 * car.sp, ACC = MAX / 4;
+  const mates = arenaMates(), rivals = mates.rivals.concat(mates.friend ? [] : []).slice(0, 3).map((n, i) => ({ who: n, z: SEG * (2 + i * 2), x: [-.5, .5, 0][i], v: 0, top: SEG * 46 * L.rival * (.96 + i * .03), spin: 0, c: ['#3f8fd1', '#7bd389', '#b18cff'][i], tx: 0 }));
+  let z = 0, px = 0, speed = 0, lap = 0, state = 'ready', T0 = performance.now(), last = T0, raf = 0, live = true, steer = 0, drift = false, charge = 0, boost = 0, star = 0, spin = 0, item = null, coins = 0, sky = 0, msg = '', msgT = 0, bananas = [], bananaT = 6, finishT = 0, place = 0, keys = {};
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); document.removeEventListener('keyup', ku); };
+  const say = (m, s) => { msg = m; msgT = s || 1.2; };
+  const dist = () => lap * LEN + z;
+  const useItem = () => {
+    if (!item || state !== 'race') return;
+    const it = item; item = null; bI.textContent = '🎁'; bI.classList.remove('glow');
+    if (it === 'rocket') { boost = 1.6; Sound.play('whoosh'); say('🚀 火箭加速！'); }
+    else if (it === 'star') { star = 5; Sound.play('magic'); say('⭐ 無敵星星！撞誰誰打滑！', 1.5); }
+    else { bananas.push({ z: ((z - SEG * 3) % LEN + LEN) % LEN, x: px, mine: true }); Sound.play('pickUp'); say('🍌 香蕉皮丟在後面了！'); }
+  };
+  const giveItem = k => { item = k; bI.textContent = KART_ITEMS[k][0]; bI.classList.add('glow'); Sound.play('coin'); say(`拿到 ${KART_ITEMS[k][0]} ${KART_ITEMS[k][1]}！按「${KART_ITEMS[k][0]}」使用`, 1.6); };
+  const kd = e => { if (e.repeat) return; keys[e.code] = true; if (['ArrowLeft', 'ArrowRight', 'Space', 'ArrowUp', 'ShiftLeft', 'KeyZ', 'KeyX', 'KeyA', 'KeyD'].includes(e.code)) e.preventDefault(); if (e.code === 'ArrowUp' || e.code === 'KeyX' || e.code === 'KeyZ') useItem(); if (e.code === 'Space' || e.code === 'ShiftLeft') drift = true; };
+  const ku = e => { keys[e.code] = false; if (e.code === 'Space' || e.code === 'ShiftLeft') endDrift(); };
+  document.addEventListener('keydown', kd); document.addEventListener('keyup', ku);
+  const endDrift = () => { if (drift && charge > .6) { boost = Math.max(boost, charge > 1.3 ? 1.1 : .6); Sound.play(charge > 1.3 ? 'perfect' : 'coin'); say(charge > 1.3 ? '🔥 超級甩尾加速！' : '💨 甩尾加速！', .9); } drift = false; charge = 0; };
+  const hold = (b, on, off) => { b.addEventListener('pointerdown', e => { e.preventDefault(); on(); }); ['pointerup', 'pointerleave', 'pointercancel'].forEach(k => b.addEventListener(k, off)); };
+  let touchSteer = 0; hold(bL, () => { touchSteer = -1; }, () => { if (touchSteer < 0) touchSteer = 0; }); hold(bR, () => { touchSteer = 1; }, () => { if (touchSteer > 0) touchSteer = 0; });
+  hold(bD, () => { drift = true; }, endDrift); bI.addEventListener('pointerdown', e => { e.preventDefault(); useItem(); });
+  c.addEventListener('pointerdown', e => { e.preventDefault(); touchSteer = cpos(e).x < W / 2 ? -1 : 1; }); ['pointerup', 'pointerleave', 'pointercancel'].forEach(k => c.addEventListener(k, () => { touchSteer = 0; }));
+  const finish = () => {
+    state = 'done'; place = 1 + rivals.filter(r => r.z > dist() - 1).length; place = Math.min(4, place);
+    Sound.play(place === 1 ? 'fanfare' : 'coin'); say(place === 1 ? '🏆 第一名！' : `第 ${place} 名！`, 3);
+    setTimeout(() => { if (!live) return; gameCleanup(); const bells = payReward(w, KART_PRIZE[place - 1] * L.mul + coins * 3);
+      w.status.textContent = `${['🥇 第一名！', '🥈 第二名！', '🥉 第三名！', '第四名，下次加油！'][place - 1]}　撿到 ${coins} 枚金幣　💰 +${fmt(bells)}`;
+      try { speak(place === 1 ? '第一名！好厲害！' : `第${place}名！`); } catch (e) {} kidMoodUp(place === 1 ? 12 : 6); saveGame(); gameButtons(w, openKart); }, 2200);
+  };
+  const proj = (wx, wz, camX, camZ) => { const cz = wz - camZ, sc = DEPTH / Math.max(1, cz); return { sx: Math.round(W / 2 + sc * (wx - camX) * W / 2), sy: Math.round(H / 2 + sc * CAM_H * H / 2), sw: Math.round(sc * ROAD * W / 2), sc, cz }; };
+  const quad = (x1, y1, w1, x2, y2, w2, col) => { g.fillStyle = col; g.beginPath(); g.moveTo(x1 - w1, y1); g.lineTo(x2 - w2, y2); g.lineTo(x2 + w2, y2); g.lineTo(x1 + w1, y1); g.closePath(); g.fill(); };
+  const tick = now => {
+    if (!live) return;
+    const dt = Math.min(.05, (now - last) / 1000); last = now; const t = (now - T0) / 1000; msgT -= dt;
+    if (state === 'ready' && t > 3) { state = 'race'; say('出發！', 1); Sound.play('whoosh'); }
+    const st = touchSteer || ((keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0)); steer += (st - steer) * Math.min(1, dt * 10);
+    const sg = segAt(z + CAM_H * DEPTH);
+    if (state === 'race' || state === 'done') {
+      boost = Math.max(0, boost - dt); star = Math.max(0, star - dt); spin = Math.max(0, spin - dt);
+      const cap = MAX * (boost > 0 ? 1.35 : 1) * (star > 0 ? 1.15 : 1) * (spin > 0 ? .4 : 1) * (state === 'done' ? .7 : 1);
+      speed += (speed < cap ? ACC * (boost > 0 ? 2.5 : 1) : -ACC * 1.5) * dt; speed = Math.max(0, speed);
+      const pct = speed / MAX;
+      if (spin <= 0) px += steer * dt * 2.1 * Math.min(1, pct + .2) * (drift ? 1.3 : 1);
+      px -= dt * 2 * pct * sg.curve * (L.assist ? .18 : .28);   // 彎道往外甩
+      if (L.assist && !st) px *= Math.pow(.6, dt);   // 簡單：放開會慢慢回到路中間
+      if (Math.abs(px) > 1 && speed > MAX / 4) speed -= MAX * (L.assist ? .35 : .6) * dt;   // 開到草地會變慢
+      px = Math.max(-2, Math.min(2, px));
+      if (drift && Math.abs(st) > 0 && pct > .5) charge += dt; else if (drift && !st) charge = Math.max(0, charge - dt);
+      const before = z; z += speed * dt;
+      if (z >= LEN) { z -= LEN; if (state === 'race') { lap++; if (lap >= LAPS) finish(); else { say(lap === LAPS - 1 ? '🏁 最後一圈！' : `第 ${lap + 1} 圈！`, 1.4); Sound.play('pickUp'); segs.forEach(s2 => s2.items.forEach(it => { it.got = 0; })); } } }
+      // 碰到東西（看小可愛那一格）
+      const my = segAt(z + CAM_H * DEPTH);
+      my.items.forEach(it => { if (Math.abs(it.x - px) > .28) return;
+        if (it.k === 'box' && now > it.gone && !item) { it.gone = now + 3000; giveItem(['banana', 'rocket', 'star', 'rocket', 'banana'][Math.floor(Math.random() * 5)]); }
+        if (it.k === 'coin' && !it.got) { it.got = 1; coins++; speed = Math.min(MAX * 1.1, speed + MAX * .03); Sound.play('coin'); } });
+      bananas = bananas.filter(b => { if (segAt(b.z) === my && Math.abs(b.x - px) < .25 && !b.mine) { if (star > 0 || car.heavy) { say(car.heavy ? `${car.name}很重，香蕉滑不倒！` : '⭐ 無敵！'); return false; } spin = .9; speed *= .5; Sound.play('boing'); say('哇～壓到香蕉滑倒了！', 1.2); return false; } return true; });
+      // 對手
+      rivals.forEach(r => {
+        r.spin = Math.max(0, r.spin - dt);
+        if (state === 'race' || r.z < dist()) r.v = Math.min(r.top * (r.spin > 0 ? .35 : 1) * (r.z < dist() - LEN * .25 ? 1.12 : 1), r.v + ACC * .9 * dt);   // 落後太多的會追上來一點
+        r.z += r.v * dt; if (Math.random() < dt * .5) r.tx = (Math.random() - .5) * 1.4; r.x += (r.tx - r.x) * dt;
+        const rs = segAt(r.z + CAM_H * DEPTH);
+        bananas = bananas.filter(b => { if (segAt(b.z) === rs && Math.abs(b.x - r.x) < .3 && r.spin <= 0) { r.spin = 1; if (b.mine) say(`🍌 ${r.who.short || ''} 滑倒了！`, 1); return false; } return true; });
+        const dz = r.z - dist(); if (Math.abs(dz) < SEG * .6 && Math.abs(r.x - px) < .3) { if (star > 0 && r.spin <= 0) { r.spin = 1.2; Sound.play('boing'); say(`⭐ 撞飛 ${r.who.short || ''}！`, 1); } else if (star <= 0) { px += (px > r.x ? 1 : -1) * .08; speed *= .98; } }
+      });
+      bananaT -= dt; if (bananaT <= 0 && state === 'race') { bananaT = 7 + Math.random() * 5; bananas.push({ z: (z + SEG * (40 + Math.random() * 30)) % LEN, x: (Math.random() - .5) * 1.4 }); }   // 前面的朋友偶爾丟香蕉
+      sky += sg.curve * pct * dt * 20;
+      if (state === 'race') { const pl = 1 + rivals.filter(r => r.z > dist()).length; place = pl; }
+    }
+    // ── 畫 ──
+    const skyG = g.createLinearGradient(0, 0, 0, H / 2); skyG.addColorStop(0, '#7ec8f2'); skyG.addColorStop(1, '#dff3ff'); g.fillStyle = skyG; g.fillRect(0, 0, W, H / 2 + 2);
+    for (let i = 0; i < 6; i++) { const hx = ((i * 120 - sky * 3) % (W + 240) + W + 240) % (W + 240) - 120; g.fillStyle = i % 2 ? '#8fd18f' : '#6cbf7c'; g.beginPath(); g.ellipse(hx, H / 2 + 6, 110, 34, 0, Math.PI, 0); g.fill(); }
+    for (let i = 0; i < 4; i++) { const cx = ((i * 160 - sky) % (W + 160) + W + 160) % (W + 160) - 80; MV.ball(g, cx, 40 + (i % 2) * 20, 14, '#ffffff'); MV.ball(g, cx + 16, 36 + (i % 2) * 20, 18, '#ffffff'); MV.ball(g, cx + 34, 42 + (i % 2) * 20, 13, '#ffffff'); }
+    const camZ = z, base = segAt(camZ), bpct = (((camZ % SEG) + SEG) % SEG) / SEG; let x = 0, dx = -base.curve * bpct, maxy = H; const drawn = [];
+    for (let n = 0; n < DRAW; n++) {
+      const s2 = segs[(base.i + n) % N], loop = (base.i + n) >= N ? LEN : 0, wz = s2.i * SEG + loop;
+      const camX = px * ROAD;
+      const p1 = proj(-x, wz, camX, camZ), p2 = proj(-x - dx, wz + SEG, camX, camZ);
+      x += dx; dx += s2.curve;
+      drawn.push({ s2, p1, clip: maxy });
+      if (p1.cz <= DEPTH || p2.sy >= p1.sy || p2.sy >= maxy) continue;
+      const alt = Math.floor(s2.i / 3) % 2;
+      g.fillStyle = alt ? '#5fae6f' : '#55a265'; g.fillRect(0, p2.sy - 1, W, p1.sy - p2.sy + 2);
+      quad(p1.sx, p1.sy, p1.sw * 1.15, p2.sx, p2.sy, p2.sw * 1.15, alt ? '#e8505b' : '#ffffff');
+      quad(p1.sx, p1.sy, p1.sw, p2.sx, p2.sy, p2.sw, alt ? '#8a8f96' : '#959aa1');
+      if (alt) quad(p1.sx, p1.sy, p1.sw * .03, p2.sx, p2.sy, p2.sw * .03, '#ffffff');
+      if (s2.i === 0) { for (let k = 0; k < 8; k++) quad(p1.sx - p1.sw + (k + .5) * p1.sw / 4, p1.sy, p1.sw / 8, p2.sx - p2.sw + (k + .5) * p2.sw / 4, p2.sy, p2.sw / 8, k % 2 ? '#26232a' : '#ffffff'); }   // 終點線
+      maxy = p2.sy;
+    }
+    // 東西、對手（從遠到近）
+    for (let n = drawn.length - 1; n > 0; n--) {
+      const d = drawn[n], p = d.p1; if (p.cz <= DEPTH || p.sy > d.clip + 40) continue;
+      const at = o => p.sx + p.sc * o * ROAD * W / 2, sz = p.sc * W / 2;
+      d.s2.items.forEach(it => { if (it.k === 'box' && now > it.gone) { const s3 = sz * 260; g.fillStyle = `hsl(${(now / 5) % 360},85%,62%)`; g.fillRect(at(it.x) - s3 / 2, p.sy - s3 * 1.2, s3, s3); g.fillStyle = '#fff'; g.font = `900 ${s3 * .7}px sans-serif`; g.textAlign = 'center'; g.fillText('?', at(it.x), p.sy - s3 * .45); }
+        if (it.k === 'coin' && !it.got) { const r = sz * 70; g.fillStyle = '#ffd23f'; g.beginPath(); g.ellipse(at(it.x), p.sy - r * 2, r * Math.abs(Math.sin(now / 200)) + 1, r, 0, 0, 7); g.fill(); } });
+      bananas.forEach(b => { if (segAt(b.z) === d.s2) { g.font = `${sz * 300}px sans-serif`; g.textAlign = 'center'; g.fillText('🍌', at(b.x), p.sy); } });
+      rivals.forEach(r => { if (segAt(r.z + CAM_H * DEPTH) === d.s2 && r.z > dist() - SEG && r.z - dist() < DRAW * SEG) drawKartRear(g, at(r.x), p.sy, sz * 4.2, r.c, r.who, 0, t, r.spin > 0 ? r.spin * 12 : 0); });
+    }
+    // 自己的車
+    const bounce = speed > 10 ? Math.sin(t * 30) * 1 : 0;
+    if (drift && charge > .6) { g.fillStyle = charge > 1.3 ? '#ff8a3d' : '#6bb6ff'; for (let k = 0; k < 4; k++) { g.beginPath(); g.arc(W / 2 - 34 + Math.random() * 6 + (k % 2) * 62, H - 22 + Math.random() * 6, 3 + Math.random() * 3, 0, 7); g.fill(); } }
+    if (star > 0) { g.fillStyle = `hsla(${(now / 2) % 360},90%,60%,.45)`; g.beginPath(); g.ellipse(W / 2, H - 40, 50, 36, 0, 0, 7); g.fill(); }
+    if (boost > 0) { g.fillStyle = 'rgba(255,140,40,.8)'; g.beginPath(); g.moveTo(W / 2 - 14, H - 14); g.lineTo(W / 2, H + 10 + Math.random() * 10); g.lineTo(W / 2 + 14, H - 14); g.fill(); }
+    drawKartRear(g, W / 2, H - 14 + bounce, 1.35, car.c, 'kid', steer, t, spin > 0 ? spin * 14 : 0);
+    // 介面
+    g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(8, 8, 128, 46); g.fillStyle = '#fff'; g.font = '900 16px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'left';
+    g.fillText(`第 ${Math.min(LAPS, lap + 1)} / ${LAPS} 圈`, 16, 28); g.fillStyle = '#ffd23f'; g.fillText(`第 ${place || 4} 名`, 16, 48); g.fillStyle = '#fff'; g.font = '700 12px sans-serif'; g.fillText(`● ${coins}`, 92, 48);
+    g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(W - 58, 8, 50, 50); g.font = '30px sans-serif'; g.textAlign = 'center'; g.fillText(item ? KART_ITEMS[item][0] : '', W - 33, 44); if (!item) { g.strokeStyle = 'rgba(255,255,255,.5)'; g.strokeRect(W - 52, 14, 38, 38); }
+    if (state === 'ready') { const n = 3 - Math.floor(t); ['#e8505b', '#ffd23f', '#3fcf6f'].forEach((col, i) => { g.fillStyle = i < 3 - n ? col : '#444'; g.beginPath(); g.arc(W / 2 - 36 + i * 36, 70, 14, 0, 7); g.fill(); }); arenaMsg(g, W, n > 0 ? String(n) : '出發！', 120); }
+    else if (msgT > 0 && msg) arenaMsg(g, W, msg, 100);
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+  playKart.test = { st: () => ({ state, lap, z, place, speed, item, coins, spin, px, LEN }), giveItem, useItem, go: () => { T0 -= 3000; }, lastLap: () => { lap = LAPS - 1; z = LEN - SEG * 6; }, setPx: v => { px = v; }, rivals, bananas: () => bananas };
 }
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
