@@ -4778,7 +4778,8 @@ const NEWS = [
     ['🔴', '躲避球：點對面的人丟球；球飛過來按「閃！」，最後一刻按還能接住！'],
     ['🏓', '桌球：手指左右滑動球拍接球，打在球拍邊邊球會斜飛'],
     ['🏀', '新的「投籃機」：像真的投籃機一樣有三關，每關要到目標分數！一般、高手要看力量條；連進 3 球變火球、空心多 1 分、最後 10 秒分數加倍。原本 2 對 2 的「籃球比賽」也還在'],
-    ['👑', '世界闖關的簡單模式也可以用 ◀ ▶ 自己走了（不會再自己一直往前跑），打大魔王可以自己前進、後退；簡單模式還是不扣愛心、掉下去有泡泡接；簡單模式的坑變窄，高牆後面也多留一段平地，比較不會掉下去'],
+    ['👑', '世界闖關簡單模式：平常小可愛自己往前跑，到大魔王那裡會出現 ◀ ▶ 可以自己前進、後退；坑變窄，高牆後面也多留一段平地'],
+    ['✨', '闖關的「跳」按久一點會跳得更高（腳下會冒星星）！'],
     ['❤️', '躲避球每個人都有愛心，要打好幾下才會出局，比較有機會放必殺技！'],
     ['🔴', '熱血躲避球：打中、閃過、接住會集能量，滿了可以放必殺技！🔥火焰球、⚡閃電球、🌀分身球，被打中的人會被打飛'],
     ['🌊', '跳水換新玩法：在空中按住翻滾、放開伸直，頭朝下入水最漂亮，評審會舉牌給分'],
@@ -21978,7 +21979,7 @@ function openQuestMap() {
   const x = el('button', 'modal-x', '✕'); x.onclick = () => { $('#modal').hidden = true; card.classList.remove('game-card'); }; card.appendChild(x);
   card.appendChild(el('h2', '', '🗺️ 世界任務'));
   const modes = el('div', 'quest-modes');
-  [['easy', '🐣 簡單', '◀ ▶ 走＋跳，不扣愛心'], ['normal', '🦸 一般', '←→ 走＋跳，3 顆愛心']].forEach(([id, nm, d]) => { const b = el('button', 'quest-mode' + (q.mode === id ? ' on' : '')); b.append(el('b', '', nm), el('span', '', d)); b.onclick = () => { q.mode = id; saveGame(); Sound.play('click'); openQuestMap(); }; modes.appendChild(b); });
+  [['easy', '🐣 簡單', '自己往前跑，按跳（按久跳更高）'], ['normal', '🦸 一般', '←→ 走＋跳，3 顆愛心']].forEach(([id, nm, d]) => { const b = el('button', 'quest-mode' + (q.mode === id ? ' on' : '')); b.append(el('b', '', nm), el('span', '', d)); b.onclick = () => { q.mode = id; saveGame(); Sound.play('click'); openQuestMap(); }; modes.appendChild(b); });
   card.appendChild(modes);
   QUEST_WORLDS.forEach(wd => {
     const row = el('div', 'quest-world'), head = el('div', 'quest-wh');
@@ -22001,14 +22002,15 @@ function openQuestMap() {
 function playQuest(id, opt) {
   opt = opt || {};   // opt.bossStart：從大魔王那裡開始；opt.weak：打輸幾次了（大王越來越弱）
   const q = questState(), easy = q.mode === 'easy', wd = QUEST_WORLDS[+id[0] - 1];
-  const w = openGameWindow(`${wd.icon} 世界 ${id}`, easy ? '用 ◀ ▶（← →）走，按「跳」（或點畫面、空白鍵）跳！簡單模式不會扣愛心，掉下去有泡泡接住你。' : '← → 走、按「跳」（空白鍵／↑）跳，按久一點跳比較高。踩怪物的頭可以打倒牠！');
+  const w = openGameWindow(`${wd.icon} 世界 ${id}`, easy ? '小可愛會自己往前跑，看到坑或怪物就按「跳」（或點畫面、空白鍵）！按久一點會跳更高 ✨。到大魔王那裡可以用 ◀ ▶ 自己走。' : '← → 走、按「跳」（空白鍵／↑）跳，按久一點會跳更高 ✨。踩怪物的頭可以打倒牠！');
   w.stage.innerHTML = ''; w.btns.innerHTML = ''; w.card.classList.add('quest-big');
   const { c, g } = gameCanvas(w.stage, QVW, QVH);
   const pad = el('div', 'quest-pad');
   const mk = (txt, cls) => { const b = el('button', 'quest-btn ' + (cls || ''), txt); pad.appendChild(b); return b; };
   const bL = mk('◀', 'qb-l'), bR = mk('▶', 'qb-r'), bJ = mk('⤒ 跳', 'qb-j'), bDn = mk('⬇', 'qb-dn'), bF = mk('🔥', 'qb-fire');
   bDn.style.display = 'none'; bF.style.display = 'none';   // ⬇：站在水管上才出現；🔥：拿到火火花才出現
-  let bossZone = false;   // 家長：簡單模式平常也要能自由移動 → 不再自己往前跑，◀ ▶ 一直都在（簡單模式還是不扣愛心、掉下去有泡泡接）
+  if (easy) { bL.style.display = 'none'; bR.style.display = 'none'; }   // 家長：簡單模式還是自己一直跑比較好玩 → 平常自己跑，到大魔王那裡才出現 ◀ ▶ 自己走
+  let bossZone = false;
   w.stage.appendChild(pad);
   const quit = el('button', 'big alt', '回地圖'); quit.onclick = () => { closeGameWindow(); openQuestMap(); }; w.btns.appendChild(quit);
   const L = questBuild(id, easy), lvW = L.W * QT;
@@ -22090,8 +22092,10 @@ function playQuest(id, opt) {
     // 左右
     let want = 0;
     const inZone = !!(boss && boss.alive && P.x > boss.x - 11 * QT);
-    if (inZone && !bossZone) { say('大魔王來了！跳到牠頭上！', 2.4); try { Sound.setSpecial('boss'); } catch (e) {} } bossZone = inZone;
-    want = (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0);
+    if (inZone !== bossZone) { bossZone = inZone; if (easy) { bL.style.display = bR.style.display = inZone ? '' : 'none'; keys.ArrowLeft = keys.ArrowRight = false; }
+      if (inZone) { say(easy ? '大魔王來了！用 ◀ ▶ 自己走，跳到牠頭上！' : '大魔王來了！跳到牠頭上！', 2.6); try { Sound.setSpecial('boss'); } catch (e) {} } }
+    if (easy && !inZone) want = (P.backT > 0) ? -1 : 1;   // 簡單：自己往前跑（卡在高牆前太久會往回走一點再衝）
+    else want = (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0);
     if (P.backT > 0) P.backT -= dt;
     const maxV = (easy ? 112 : 128) * (P.starT > 0 ? 1.2 : 1), ice = wd.ice && P.on;
     if (want) { P.vx += want * (ice ? 420 : 900) * dt; P.face = want; } else P.vx *= Math.pow(ice ? .3 : .0005, dt);   // ❄️ 雪地：起步慢、停不太下來
@@ -22100,7 +22104,8 @@ function playQuest(id, opt) {
     if (jumpBuf > 0 && P.on) { P.vy = -470; P.on = false; jumpBuf = 0; Sound.play('jump'); }
     if (P.vy >= 0) P.boost = false;
     if (!jumpHeld && !P.boost && P.vy < -220) P.vy = -220;   // 早放開：跳低一點（彈簧、踩怪物彈起來的不算）
-    P.vy = Math.min(600, P.vy + 1500 * dt);
+    P.holdT = jumpHeld && P.vy < 0 ? (P.holdT || 0) + dt : 0;
+    P.vy = Math.min(600, P.vy + (jumpHeld && P.vy < 0 && !P.boost ? 900 : 1500) * dt);   // 家長：長按跳比較高 → 一直按著，往上的時候重力變小，跳得更高
     P.hitX = false;
     plats.forEach(pl => { const nx = pl.x + pl.vx * dt; if (nx < pl.x0 || nx > pl.x0 + pl.range) pl.vx = -pl.vx; pl.dx = pl.vx * dt; pl.x += pl.dx; });
     const prevBottom = P.y + P.h, ride = P.on && plats.find(pl => P.x + P.w > pl.x && P.x < pl.x + pl.w && Math.abs(prevBottom - pl.y) < 2);
@@ -22132,7 +22137,7 @@ function playQuest(id, opt) {
       if (it.k === 'spring' && P.vy >= 0 && Math.abs(P.x + P.w / 2 - (it.x + 9)) < 11 && Math.abs(P.y + P.h - (it.y + 10)) < 12) { /* 走過去、跳下來踩到都會彈 */ P.boost = true; P.vy = -760; P.on = false; it.t = .3; Sound.play('boing'); }
       if (it.k === 'goal' && Math.abs(P.x + P.w / 2 - it.x) < 10) { const h = Math.max(0, it.y - (P.y + P.h)), bonus = 1 + Math.round(h / 110 * 9); P.coins += bonus; flag = { it, t: 0, drop: 0, bonus }; state = 'flag'; endT = 0; P.vx = 0; P.vy = 0; Sound.play('flagSlide'); say(`抓到旗子了！💰 +${bonus}`, 1.8); try { Sound.setSpecial(null); } catch (e) {} }   // 家長：跳到旗子要慢慢滑下去；抓越高金幣越多
     });
-    if (easy && P.on && P.hitX && want > 0) { P.stuck = (P.stuck || 0) + dt; if (msgT <= 0) say('按「跳」跳過去！', 1.2); if (P.stuck > 1.6) { P.stuck = 0; say('往後退一點，再跳過去！', 1.6); } } else if (!P.hitX) P.stuck = 0;
+    if (easy && P.on && P.hitX && want > 0) { P.stuck = (P.stuck || 0) + dt; if (msgT <= 0) say('按「跳」跳過去！', 1.2); if (P.stuck > 1.6) { P.stuck = 0; P.backT = .9; } } else if (!P.hitX) P.stuck = 0;
     // 怪物
     ents.forEach(en => {
       if (!en.alive) { en.dead = (en.dead || 0) + dt; return; }
@@ -22260,6 +22265,7 @@ function playQuest(id, opt) {
     if (P.inv > 0 && Math.floor(P.t * 14) % 2 && state === 'play') return;
     const x = P.x + P.w / 2 - camX, y = P.y + P.h;
     if (P.bubble > 0) { g.fillStyle = 'rgba(190,230,255,.45)'; g.beginPath(); g.arc(x, y - 14, 22, 0, Math.PI * 2); g.fill(); g.strokeStyle = 'rgba(120,180,230,.8)'; g.stroke(); }
+    if (P.holdT > .12) { g.font = '11px sans-serif'; g.textAlign = 'center'; for (let i = 0; i < 3; i++) g.fillText('✨', x + Math.sin(P.t * 20 + i * 2) * 10, y + 6 + i * 7); }   // 長按跳：腳下冒星星
     if (P.starT > 0) { g.fillStyle = `hsla(${(P.t * 400) % 360},90%,60%,.45)`; g.beginPath(); g.ellipse(x, y - 16, 16, 22, 0, 0, 7); g.fill(); }   // ⭐ 無敵：彩虹光
     const ks = P.big ? .7 : .54;   // 🍓 長大果：變大
     g.save(); g.translate(x, y); g.scale(P.face * ks, ks);

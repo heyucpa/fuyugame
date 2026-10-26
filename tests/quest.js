@@ -47,6 +47,10 @@ const path = require('path');
       const y0 = T.P.y; await wait(400); const y1 = T.P.y; o.flagSlide = T.state() === 'flag' && y1 > y0 + 10 && y1 - y0 < 60 && T.flag().bonus >= 6; o.flagDbg = [T.state(), y0, y1, T.flag() && T.flag().bonus]; o.musicBack = Sound.special() == null;
       for (let i = 0; i < 60 && T.state() !== 'win'; i++) await wait(100); o.flagWin = T.state() === 'win' || /過關/.test(document.body.innerText);
       await wait(2600); closeGameWindow(); $('#modal').hidden = true; SC_QUEUE.length = 0; const sc = document.getElementById('showcase'); if (sc) sc.remove(); }
+    // ✨ 長按跳更高；簡單模式平常自己往前跑（不用按）
+    { const jumpTop = held => { questState().mode = 'normal'; playQuest('1-1'); const T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null; for (let i = 0; i < 30; i++) T.step(1 / 60); const y0 = T.P.y; T.jump(); let top = y0; for (let i = 0; i < 70; i++) { if (!held && i === 2) T.release(); T.step(1 / 60); top = Math.min(top, T.P.y); } T.release(); closeGameWindow(); $('#modal').hidden = true; return y0 - top; };
+      const hi = jumpTop(true), lo = jumpTop(false); o.holdHigher = hi > lo * 2 && hi > 100; o.jumpH = [Math.round(lo), Math.round(hi)];
+      questState().mode = 'easy'; playQuest('1-1'); const T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null; const x0 = T.P.x; for (let i = 0; i < 60; i++) T.step(1 / 60); o.autoRun = T.P.x > x0 + 50 && document.querySelector('.qb-l').style.display === 'none'; closeGameWindow(); $('#modal').hidden = true; }
     o.cleared = Object.keys(questState().clear).length; o.worlds = questWorldsCleared();
     islMapCache = null; const m = islMap(0); o.islets = m.specials.map(s => s.id); o.isletLand = m.specials.every(sp => m.land[sp.y][sp.x]);
     openIsland(); await wait(300); o.btn = !!document.querySelector('.isl-quest');
@@ -61,7 +65,7 @@ const path = require('path');
   console.log(JSON.stringify(out));
   const easyAll = Object.entries(out.runs).filter(([k]) => /^easy/.test(k)).every(([, v]) => /^win/.test(v));
   const normalWins = Object.entries(out.runs).filter(([k]) => /^normal/.test(k)).filter(([, v]) => /^win/.test(v)).length;
-  const ok = out.locked && easyAll && normalWins >= 7 && out.worlds === 3 && out.islets.length === 3 && out.isletLand && out.btn && out.fun === 'qspecial' && out.gift && out.onceDay && out.saved && out.badCleaned && out.bossBtns && out.bossStill && out.bossBack && out.music && out.flagSlide && out.musicBack && out.flagWin && !errs.length;
+  const ok = out.locked && easyAll && normalWins >= 7 && out.worlds === 3 && out.islets.length === 3 && out.isletLand && out.btn && out.fun === 'qspecial' && out.gift && out.onceDay && out.saved && out.badCleaned && out.bossBtns && out.bossStill && out.bossBack && out.holdHigher && out.autoRun && out.music && out.flagSlide && out.musicBack && out.flagWin && !errs.length;
   console.log(ok ? '✅ 全部通過' : '❌ 有問題 ' + errs.join(' | '));
   await b.close();
 })();
