@@ -3459,6 +3459,9 @@ const Sound = (() => {
 
   // ── 音效 ──
   const fx = {
+    // 🏁 闖關過關的勝利小樂句（自己寫的旋律）
+    questClear() { [['C5', 0], ['E5', .12], ['G5', .24], ['C6', .36], ['G5', .6], ['C6', .72]].forEach(([n, at], i) => tone({ f0: { C5: 523, E5: 659, G5: 784, C6: 1047 }[n], dur: i === 5 ? .5 : .14, type: 'square', vol: .16, at })); },
+    flagSlide() { tone({ f0: 1200, f1: 300, dur: .9, type: 'square', vol: .1, vib: 20 }); },
     // 圓圓：開心「啾咿～」
     petHappy() { tone({ f0: 700, f1: 1250, dur: .13, vol: .4 }); tone({ f0: 900, f1: 1500, dur: .16, vol: .35, at: .12, vib: 30 }); },
     // 圓圓：難過「嗚～嗯」
@@ -3563,6 +3566,29 @@ const Sound = (() => {
       ['A5', 2], ['G5', 1], ['E5', 1], ['F5', 1], ['E5', 1], ['D5', 1], ['B4', 1],
       ['C5', 2], ['B4', 1], ['G4', 1], ['A4', 3], [null, 1]] }
   ];
+  /* 🗺️ 闖關專屬音樂（家長：玩闖關時換成專屬音樂）：輕快的冒險曲、緊張的大魔王曲。旋律自己寫的，不用任何遊戲的歌。
+     用方波（像紅白機），只有闖關的時候放，離開就換回她原本選的那一首。 */
+  const SPECIAL_SONGS = {
+    quest: { name: '闖關冒險曲', bpm: 150, chip: true, bass: ['C3', 'F3', 'C3', 'G3', 'C3', 'F3', 'G3', 'C3'], melody: [
+      ['C5', 1], ['E5', 1], ['G5', 1], ['E5', 1], ['A5', 1], ['G5', 1], ['E5', 2],
+      ['F5', 1], ['A5', 1], ['G5', 1], ['E5', 1], ['D5', 2], [null, 2],
+      ['C5', 1], ['E5', 1], ['G5', 1], ['C5', 1], ['B4', 1], ['D5', 1], ['G5', 2],
+      ['A5', 1], ['G5', 1], ['F5', 1], ['D5', 1], ['C5', 3], [null, 1],
+      ['E5', .5], ['E5', .5], ['G5', 1], ['A5', 1], ['G5', 1], ['E5', 1], ['C5', 1], ['D5', 2],
+      ['F5', .5], ['F5', .5], ['A5', 1], ['B4', 1], ['D5', 1], ['G5', 2], ['F5', 1], ['E5', 1],
+      ['C5', 1], ['G4', 1], ['C5', 1], ['E5', 1], ['D5', 1], ['B4', 1], ['G4', 2],
+      ['C5', 1], ['D5', 1], ['E5', 1], ['D5', 1], ['C5', 3], [null, 1]] },
+    boss: { name: '大魔王來了', bpm: 132, chip: true, bass: ['A3', 'A3', 'F3', 'E3', 'A3', 'A3', 'F3', 'E3'], melody: [
+      ['A4', .5], ['A4', .5], ['C5', 1], ['A4', .5], ['A4', .5], ['E5', 1], ['D5', 1], ['C5', 1], ['B4', 2],
+      ['A4', .5], ['A4', .5], ['C5', 1], ['A4', .5], ['A4', .5], ['F5', 1], ['E5', 2], [null, 2],
+      ['E5', 1], ['F5', 1], ['E5', 1], ['D5', 1], ['C5', 1], ['B4', 1], ['A4', 2],
+      ['G4', 1], ['B4', 1], ['D5', 1], ['F5', 1], ['E5', 3], [null, 1],
+      ['A4', .5], ['A4', .5], ['C5', 1], ['A4', .5], ['A4', .5], ['E5', 1], ['D5', 1], ['C5', 1], ['B4', 2],
+      ['A4', .5], ['A4', .5], ['C5', 1], ['A4', .5], ['A4', .5], ['F5', 1], ['E5', 2], [null, 2],
+      ['F5', 1], ['E5', 1], ['D5', 1], ['C5', 1], ['B4', 1], ['C5', 1], ['D5', 2],
+      ['E5', 1], ['C5', 1], ['B4', 1], ['G4', 1], ['A4', 3], [null, 1]] }
+  };
+  let special = null;
   let song = SONGS[prefs.song] || SONGS[0], BEAT = 60 / song.bpm;
   let nextIdx = 0, nextTime = 0, bassIdx = 0, nextBass = 0;
 
@@ -3577,6 +3603,12 @@ const Sound = (() => {
       o.connect(g); g.connect(bgmBus);
       o.start(t); o.stop(t + dur + .05);
     });
+  }
+  function chipNote(freq, t, beats) {   // 方波短音（闖關音樂）
+    const dur = Math.max(.08, beats * BEAT * .85), o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'square'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.11, t + .01); g.gain.setValueAtTime(.09, t + dur * .6); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+    o.connect(g); g.connect(bgmBus); o.start(t); o.stop(t + dur + .05);
   }
   function bassNote(freq, t) {
     const o = ac.createOscillator(), g = ac.createGain();
@@ -3602,7 +3634,7 @@ const Sound = (() => {
     const horizon = ac.currentTime + .6;
     while (nextTime < horizon) {
       const [name, beats] = song.melody[nextIdx];
-      if (name) musicBoxNote(N[name], nextTime, beats);
+      if (name) (song.chip ? chipNote : musicBoxNote)(N[name], nextTime, beats);
       nextTime += beats * BEAT;
       nextIdx = (nextIdx + 1) % song.melody.length;
       if (nextIdx === 0) { nextBass = nextTime; bassIdx = 0; } // 每一輪重新對齊低音
@@ -3651,20 +3683,27 @@ const Sound = (() => {
     if (!prefs.bgm) { prefs.song = 0; setPref('bgm', true); }
     else if ((prefs.song || 0) + 1 < SONGS.length) { prefs.song = (prefs.song || 0) + 1; savePrefs(); }
     else { prefs.song = 0; setPref('bgm', false); return null; }
-    song = SONGS[prefs.song]; BEAT = 60 / song.bpm;
+    special = null; song = SONGS[prefs.song]; BEAT = 60 / song.bpm;
     if (ac) restartTimeline();
     return song.name;
   }
-  const songName = () => (prefs.bgm ? song.name : null);
+  const songName = () => (prefs.bgm ? (special ? (SONGS[prefs.song] || SONGS[0]).name : song.name) : null);
+  // 🗺️ 換成闖關音樂（'quest'／'boss'）；傳 null 換回她原本選的那首。不改她的設定
+  function setSpecial(key) {
+    const s2 = key && SPECIAL_SONGS[key];
+    if ((special || null) === (s2 ? key : null)) return;
+    special = s2 ? key : null; song = s2 || SONGS[prefs.song] || SONGS[0]; BEAT = 60 / song.bpm;
+    if (ac) restartTimeline();
+  }
   function pickSong(i) {   // 直接選一首（音樂選單用）
     i = Math.max(0, Math.min(SONGS.length - 1, i | 0));
-    prefs.song = i; song = SONGS[i]; BEAT = 60 / song.bpm;
+    prefs.song = i; special = null; song = SONGS[i]; BEAT = 60 / song.bpm;
     setPref('bgm', true);
     if (ac) restartTimeline();
     return song.name;
   }
 
-  return { play, setPref, duck, prefs, nextSong, pickSong, songName, songNames: () => SONGS.map(x => x.name), songCount: SONGS.length,
+  return { play, setPref, duck, prefs, nextSong, pickSong, songName, setSpecial, special: () => special, songNames: () => SONGS.map(x => x.name), songCount: SONGS.length,
            _t: { bgmGain: () => (bgmBus ? bgmBus.gain.value : null), getAc: () => ac, setAc: v => { ac = v; }, songs: SONGS, notes: N } }; // _t：測試用
 })();
 </script>
@@ -4615,6 +4654,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-26T20:00', title: '闖關有專屬音樂了！🎵', lines: [
+    ['🎵', '玩世界闖關會換成專屬的冒險音樂，遇到大魔王會換成大魔王的音樂'],
+    ['🏁', '跳到終點旗子會抱著旗桿慢慢滑下去，抓得越高金幣越多！'],
+    ['🏝️', '「🚗 快速出門」多了闖關送的小島（花花島、糖果島、恐龍島），點了會自己坐船過去']
+  ] },
   { id: '2026-10-25T09:00', title: '體育館開了！🏀', lines: [
     ['🏀', '運動島新開「體育館」，猴子教練陪你打球：籃球 2 對 2（看力量條投籃、看到「！」跳起來蓋火鍋）'],
     ['🔴', '躲避球：點對面的人丟球；球飛過來按「閃！」，最後一刻按還能接住！'],
@@ -11877,6 +11921,8 @@ function openTravelMenu() {
     const here = !!(G.away && G.away.place === 'friend' && PLACES.friend && PLACES.friend.inviteAt === inv.at && PLACES.friend.inviteName === inv.n);
     pick(renderInviteGirl(inv, 64, 58), `🏡 ${inviteWho(inv)}的家${here ? '（你在這裡）' : ''}`, `${inv.f ? inv.n + '・' : ''}邀請卡（${inviteDate(inv.at)}）・房間 ${inv.r.length} 間・寵物 ${inv.pn.length} 隻`, () => (typeof friendByBoat === 'function' && ii < ISL_FRIEND_SPOTS.length ? friendByBoat(ii) : visitFriend(inv)), here);   // 🏡 朋友家在朋友島：一樣坐船過去
   });
+  // 🏝️ 闖關送的小島（破完那個世界才有）
+  QUEST_ISLETS.forEach((il, i) => { if (!questState().clear[(i + 1) + '-3']) return; pick(el('div', 'place-emoji', il.icon), `🏝️ ${il.icon} ${il.name}`, il.desc + '（走到碼頭坐船去）', () => isletByBoat(il.id), false); });
   if (trickActive()) {
     const tb = el('button', 'big', `🎃 萬聖節集糖卡（${trickCount()} / ${TRICK_HOSTS.length}）`);
     tb.onclick = openTrickCard;
@@ -21731,7 +21777,7 @@ function playQuest(id, opt) {
   }));
   if (opt.bossStart && boss) { startX = checkX = Math.max(0, boss.x - 9 * QT); items.forEach(it => { if (it.k === 'check' && it.x < startX) it.on = true; }); }
   const P = { x: startX, y: 12 * QT - 30 + QT, w: 13, h: 30, vx: 0, vy: 0, on: false, face: 1, hearts: 3, inv: 0, coins: 0, stars: 0, t: 0, lastSafe: startX, bubble: 0 };
-  let raf = 0, live = true, last = performance.now(), camX = 0, state = 'play', endT = 0, keys = {}, jumpHeld = false, jumpBuf = 0, msg = '', msgT = 0, coinPops = [];
+  let flag = null, raf = 0, live = true, last = performance.now(), camX = 0, state = 'play', endT = 0, keys = {}, jumpHeld = false, jumpBuf = 0, msg = '', msgT = 0, coinPops = [];
   const say = (m2, s) => { msg = m2; msgT = s || 1.6; };
   const keyD = e => { const k = e.code; if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'Space', 'KeyA', 'KeyD', 'KeyW'].includes(k)) e.preventDefault(); if (e.repeat) return; keys[k] = true; if (k === 'Space' || k === 'ArrowUp' || k === 'KeyW') { jumpHeld = true; jumpBuf = .15; } };
   const keyU = e => { keys[e.code] = false; if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') jumpHeld = false; };
@@ -21742,7 +21788,8 @@ function playQuest(id, opt) {
   hold(bJ, () => { jumpHeld = true; jumpBuf = .15; }, () => { jumpHeld = false; });
   if (easy) c.addEventListener('pointerdown', e => { e.preventDefault(); jumpHeld = true; jumpBuf = .15; });
   c.addEventListener('pointerup', () => { if (easy) jumpHeld = false; });
-  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', keyD); document.removeEventListener('keyup', keyU); w.card.classList.remove('quest-big'); };
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', keyD); document.removeEventListener('keyup', keyU); w.card.classList.remove('quest-big'); try { Sound.setSpecial(null); } catch (e) {} };
+  try { Sound.setSpecial(opt.bossStart ? 'boss' : 'quest'); } catch (e) {}   // 🎵 闖關專屬音樂
   try { Sound.duck && Sound.duck(false); } catch (e) {}
   const hitTiles = (o, dx, dy) => {   // 先橫後直，碰到磚塊就停
     o.x += dx;
@@ -21775,7 +21822,7 @@ function playQuest(id, opt) {
     // 左右
     let want = 0;
     const inZone = !!(boss && boss.alive && P.x > boss.x - 11 * QT);
-    if (inZone && !bossZone) say('大魔王來了！跳到牠頭上！', 2.4); bossZone = inZone;
+    if (inZone && !bossZone) { say('大魔王來了！跳到牠頭上！', 2.4); try { Sound.setSpecial('boss'); } catch (e) {} } bossZone = inZone;
     want = (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0);
     if (P.backT > 0) P.backT -= dt;
     const maxV = easy ? 112 : 128;
@@ -21803,7 +21850,7 @@ function playQuest(id, opt) {
       if (it.k === 'star' && near(13, 20)) { it.got = 1; P.stars++; Sound.play('perfect'); say(`找到星星了！⭐ ${P.stars} / 3`); }
       if (it.k === 'check' && !it.on && Math.abs(P.x - it.x) < 12) { it.on = true; checkX = it.x - 6; Sound.play('pickUp'); say('記錄點！'); }
       if (it.k === 'spring' && P.vy >= 0 && Math.abs(P.x + P.w / 2 - (it.x + 9)) < 11 && Math.abs(P.y + P.h - (it.y + 10)) < 12) { /* 走過去、跳下來踩到都會彈 */ P.boost = true; P.vy = -760; P.on = false; it.t = .3; Sound.play('boing'); }
-      if (it.k === 'goal' && Math.abs(P.x + P.w / 2 - it.x) < 10) { state = 'win'; endT = 0; Sound.play('fanfare'); }
+      if (it.k === 'goal' && Math.abs(P.x + P.w / 2 - it.x) < 10) { const h = Math.max(0, it.y - (P.y + P.h)), bonus = 1 + Math.round(h / 110 * 9); P.coins += bonus; flag = { it, t: 0, drop: 0, bonus }; state = 'flag'; endT = 0; P.vx = 0; P.vy = 0; Sound.play('flagSlide'); say(`抓到旗子了！💰 +${bonus}`, 1.8); try { Sound.setSpecial(null); } catch (e) {} }   // 家長：跳到旗子要慢慢滑下去；抓越高金幣越多
     });
     if (easy && P.on && P.hitX && want > 0) { P.stuck = (P.stuck || 0) + dt; if (msgT <= 0) say('按「跳」跳過去！', 1.2); if (P.stuck > 1.6) { P.stuck = 0; say('往後退一點，再跳過去！', 1.6); } } else if (!P.hitX) P.stuck = 0;
     // 怪物
@@ -21877,7 +21924,7 @@ function playQuest(id, opt) {
     else if (it.k === 'star') { g.save(); g.translate(x, it.y + Math.sin(P.t * 3) * 2); g.rotate(Math.sin(P.t * 2) * .2); g.fillStyle = '#ffe14a'; g.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? 4 : 9, a = -Math.PI / 2 + i * Math.PI / 5; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); } g.closePath(); g.fill(); g.strokeStyle = '#d9a400'; g.stroke(); g.restore(); }
     else if (it.k === 'check') { g.fillStyle = '#8a8f96'; g.fillRect(x - 1, it.y - 30, 2, 30); g.fillStyle = it.on ? '#7bd389' : '#c9ccd0'; g.beginPath(); g.moveTo(x + 1, it.y - 30); g.lineTo(x + 14, it.y - 25); g.lineTo(x + 1, it.y - 20); g.fill(); }
     else if (it.k === 'spring') { const k = it.t > 0 ? .5 : 1; it.t = Math.max(0, it.t - 1 / 60); g.fillStyle = '#e8505b'; g.fillRect(x + 2, it.y + 10 - 10 * k, 14, 3); g.strokeStyle = '#9aa3ad'; g.lineWidth = 2; g.beginPath(); for (let i = 0; i < 4; i++) g.lineTo(x + (i % 2 ? 4 : 14), it.y + 10 - 10 * k + 3 + i * 2 * k); g.stroke(); }
-    else if (it.k === 'goal') { g.fillStyle = '#e8e8e8'; g.fillRect(x - 2, it.y - 110, 4, 110); MV.ball(g, x, it.y - 112, 4, '#ffd23f'); g.fillStyle = '#e8505b'; g.beginPath(); g.moveTo(x + 2, it.y - 108); g.lineTo(x + 30 + Math.sin(P.t * 4) * 3, it.y - 98); g.lineTo(x + 2, it.y - 88); g.fill(); g.fillStyle = '#ffffff'; g.font = '700 9px sans-serif'; g.textAlign = 'center'; g.fillText('終點', x + 14, it.y - 96); }
+    else if (it.k === 'goal') { g.fillStyle = '#e8e8e8'; g.fillRect(x - 2, it.y - 110, 4, 110); MV.ball(g, x, it.y - 112, 4, '#ffd23f'); const fd = flag ? flag.drop : 0; g.fillStyle = '#e8505b'; g.beginPath(); g.moveTo(x + 2, it.y - 108 + fd); g.lineTo(x + 30 + Math.sin(P.t * 4) * 3, it.y - 98 + fd); g.lineTo(x + 2, it.y - 88 + fd); g.fill(); g.fillStyle = '#ffffff'; g.font = '700 9px sans-serif'; g.textAlign = 'center'; g.fillText('終點', x + 14, it.y - 96 + fd); }
   };
   const drawKid = () => {
     if (P.inv > 0 && Math.floor(P.t * 14) % 2 && state === 'play') return;
@@ -21898,7 +21945,11 @@ function playQuest(id, opt) {
   const frame = now => {
     if (!live) return;
     const dt = Math.min(1 / 30, (now - last) / 1000); last = now;
-    if (state === 'play') step(dt); else { endT += dt; P.t += dt; if (state === 'win') { P.vx = 0; P.vy = Math.min(600, P.vy + 1500 * dt); hitTiles(P, 0, P.vy * dt); if (Math.floor(endT * 3) % 2 && P.on) P.vy = -200; } }
+    if (state === 'flag') {   // 抱著旗桿慢慢滑下去，旗子也一起降下來；到底再跳下來
+      flag.t += dt; P.t += dt; P.x = flag.it.x - P.w - 1; P.face = 1;
+      const bottom = flag.it.y - P.h; P.y = Math.min(bottom, P.y + 75 * dt); flag.drop = Math.min(78, flag.drop + 75 * dt);
+      if (P.y >= bottom && flag.t > .8) { state = 'win'; endT = 0; P.x += 10; P.vy = -220; Sound.play('questClear'); }
+    } else if (state === 'play') step(dt); else { endT += dt; P.t += dt; if (state === 'win') { P.vx = 0; P.vy = Math.min(600, P.vy + 1500 * dt); hitTiles(P, 0, P.vy * dt); if (Math.floor(endT * 3) % 2 && P.on) P.vy = -200; } }
     drawBg();
     const tx0 = Math.floor(camX / QT), tx1 = tx0 + Math.ceil(QVW / QT) + 1;
     for (let ty = 0; ty < QH; ty++) for (let tx = tx0; tx <= tx1; tx++) { const ch = tileAt(tx, ty); if (ch !== ' ' && tx >= 0 && tx < L.W) drawTile(ch, tx * QT - camX, ty * QT); }
@@ -21911,7 +21962,7 @@ function playQuest(id, opt) {
     raf = requestAnimationFrame(frame);
   };
   raf = requestAnimationFrame(frame);
-  playQuest.test = { P, items, ents, L, keys, solid, tileAt, win: () => { state = 'win'; endT = 0; }, step, state: () => state, jump: () => { jumpHeld = true; jumpBuf = .15; }, release: () => { jumpHeld = false; } };
+  playQuest.test = { P, items, ents, L, keys, solid, tileAt, win: () => { state = 'win'; endT = 0; }, step, frameStep: dt => { last = performance.now() - dt * 1000; frame(performance.now()); }, flag: () => flag, state: () => state, jump: () => { jumpHeld = true; jumpBuf = .15; }, release: () => { jumpHeld = false; } };
 }
 /* 打輸了：在大魔王那裡輸的（家長：可以從大魔王關重新開始、難度變低）→ 多一顆「從大魔王開始」，
    每輸一次大王少一滴血、跳得慢一點（最少 1 滴血） */
@@ -22403,6 +22454,17 @@ function showClipPill() {
 let clipHiddenAt = 0;
 document.addEventListener('visibilitychange', () => { if (document.hidden) clipHiddenAt = Date.now(); else if (clipHiddenAt && Date.now() - clipHiddenAt > 3000) showClipPill(); });
 // 🏡 快速出門去朋友家：一樣要坐船（到主島的碼頭 → 坐船到朋友島 → 走到她家門口進去）
+// 🏝️ 快速出門去闖關送的小島（家長：新增加的小島要出現在快速出門）：走到主島碼頭 → 坐船 → 走到島上的大東西旁邊
+function isletByBoat(id) {
+  $('#modal').hidden = true;
+  if (G.away && typeof goHome === 'function') goHome();
+  if (!isl) openIsland(); if (!isl) return;
+  const m = isl.m, dock = (m.docks || []).find(d => d.id === id && d.side === 'main'), sp = (m.specials || []).find(x => x.id === id);
+  if (!dock || !sp) { toast('還沒有這座島喔！'); return; }
+  isl.x = dock.x + .5; isl.y = dock.y + .5; isl.cam.x = isl.x; isl.cam.y = isl.y; isl.path = []; isl.pending = null; isl.skipDoor = null; isl.pan = null;
+  isl.afterBoat = () => { islWalkTo((x, y) => (x !== sp.x || y !== sp.y) && Math.abs(x - sp.x) <= 1 && Math.abs(y - sp.y) <= 1); };
+  islBoatRide(dock);
+}
 function friendByBoat(i) {
   $('#modal').hidden = true;
   if (!isl) openIsland(); if (!isl) return;

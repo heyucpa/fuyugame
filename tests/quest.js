@@ -24,7 +24,7 @@ const path = require('path');
         if (P.on && (gap || wall || foe)) { T.jump(); held = true; } else if (held && !P.on && P.vy > 0) { T.release(); held = false; }
         T.step(1 / 60);
       }
-      return T.state() + (normal ? ' ❤' + T.P.hearts : '') + ' x=' + Math.round(T.P.x / 18) + '/' + T.L.W;
+      return (T.state() === 'flag' ? 'win' : T.state()) + (normal ? ' ❤' + T.P.hearts : '') + ' x=' + Math.round(T.P.x / 18) + '/' + T.L.W;
     };
     for (const mode of ['easy', 'normal']) {
       for (const id of QUEST_IDS) {
@@ -40,6 +40,13 @@ const path = require('path');
       const x0 = T.P.x; for (let i = 0; i < 60; i++) T.step(1 / 60); o.bossStill = Math.abs(T.P.x - x0) < 4;
       T.keys.ArrowLeft = true; for (let i = 0; i < 40; i++) T.step(1 / 60); T.keys.ArrowLeft = false; o.bossBack = T.P.x < x0 - 20;
       closeGameWindow(); $('#modal').hidden = true; }
+    // 🏁 抓到旗桿慢慢滑下去（抓越高金幣越多）；🎵 闖關音樂，抓到旗子就換回原本的
+    { questState().mode = 'normal'; playQuest('1-1'); await wait(300); const T = playQuest.test; o.music = Sound.special() === 'quest';
+      const goal = T.items.find(it => it.k === 'goal'); T.P.x = goal.x - 16; T.P.y = goal.y - 105; T.P.vx = 120; T.P.vy = 0; T.keys.ArrowRight = true;
+      for (let i = 0; i < 100 && T.state() !== 'flag'; i++) await wait(5); T.keys.ArrowRight = false;
+      const y0 = T.P.y; await wait(400); const y1 = T.P.y; o.flagSlide = T.state() === 'flag' && y1 > y0 + 10 && y1 - y0 < 60 && T.flag().bonus >= 6; o.flagDbg = [T.state(), y0, y1, T.flag() && T.flag().bonus]; o.musicBack = Sound.special() == null;
+      for (let i = 0; i < 60 && T.state() !== 'win'; i++) await wait(100); o.flagWin = T.state() === 'win' || /過關/.test(document.body.innerText);
+      await wait(2600); closeGameWindow(); $('#modal').hidden = true; SC_QUEUE.length = 0; const sc = document.getElementById('showcase'); if (sc) sc.remove(); }
     o.cleared = Object.keys(questState().clear).length; o.worlds = questWorldsCleared();
     islMapCache = null; const m = islMap(0); o.islets = m.specials.map(s => s.id); o.isletLand = m.specials.every(sp => m.land[sp.y][sp.x]);
     openIsland(); await wait(300); o.btn = !!document.querySelector('.isl-quest');
@@ -54,7 +61,7 @@ const path = require('path');
   console.log(JSON.stringify(out));
   const easyAll = Object.entries(out.runs).filter(([k]) => /^easy/.test(k)).every(([, v]) => /^win/.test(v));
   const normalWins = Object.entries(out.runs).filter(([k]) => /^normal/.test(k)).filter(([, v]) => /^win/.test(v)).length;
-  const ok = out.locked && easyAll && normalWins >= 7 && out.worlds === 3 && out.islets.length === 3 && out.isletLand && out.btn && out.fun === 'qspecial' && out.gift && out.onceDay && out.saved && out.badCleaned && out.bossBtns && out.bossStill && out.bossBack && !errs.length;
+  const ok = out.locked && easyAll && normalWins >= 7 && out.worlds === 3 && out.islets.length === 3 && out.isletLand && out.btn && out.fun === 'qspecial' && out.gift && out.onceDay && out.saved && out.badCleaned && out.bossBtns && out.bossStill && out.bossBack && out.music && out.flagSlide && out.musicBack && out.flagWin && !errs.length;
   console.log(ok ? '✅ 全部通過' : '❌ 有問題 ' + errs.join(' | '));
   await b.close();
 })();
