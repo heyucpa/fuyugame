@@ -781,6 +781,7 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .confetti-cv { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 85; }
 .star-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; } .star-slot { display: flex; flex-direction: column; align-items: center; padding: 10px 4px; border-radius: 16px; background: #f1ecf7; border: 2px dashed #c9b8e8; color: #a99ac9; }
 .star-slot.on { background: #fff7d6; border: 2px solid #ffd23f; color: #5a4636; } .star-e { font-size: 34px; } .star-n { font-size: 13px; font-weight: 800; }
+.yy-frame { display: block; width: 100%; height: min(72vh, 720px); border: none; border-radius: 14px; background: #fffaf0; }
 .spar-row .spar-sp { background: linear-gradient(#ffb02e, #ff5a1f); color: #fff; border-color: #c0392b; } .spar-row .spar-sp:disabled { background: #eee; color: #aaa; border-color: #ddd; }
 .spar-row .spar-on { animation: glowPulse .4s infinite alternate; transform: scale(1.08); box-shadow: 0 0 0 5px #ffd23f; }
 .music-menu { position: fixed; z-index: 70; background: var(--panel, #fffaf0); border: 2px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
@@ -4760,6 +4761,10 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-29T09:00', title: '🛋️ 新家大採購', lines: [
+    ['🛋️', '新的小遊戲「新家大採購」：答對題目，幫寵物把家具搬進新家！（四年級的數學、國語，給姊姊挑戰）'],
+    ['🎮', '在「🎮 遊戲」或學校老師那裡都找得到，玩完會照星星給錢']
+  ] },
   { id: '2026-10-28T20:00', title: '🌟 神祕的星星蛋', lines: [
     ['🥚', '房間角落出現一顆神祕的星星蛋！蛋上有 6 個空格，要找回 6 個「星光線索」才會孵化'],
     ['🗺️', '每個世界闖關的大魔王關，第一次過關就會找到一個線索（以前破過的也算！）'],
@@ -5611,6 +5616,7 @@ function normalizeSave(g) {
   if (out.star != null) {   // 🌟 星光線索
     if (!isObj(out.star)) delete out.star;
     else { const st = out.star; st.got = Array.isArray(st.got) ? [...new Set(st.got.filter(w => Number.isInteger(w) && w >= 1 && w <= 6))].sort((a, b) => a - b) : []; ['egg', 'hatched'].forEach(k => { if (st[k] != null && st[k] !== 1) delete st[k]; }); } }
+  if (out.yy != null && !(isObj(out.yy) && typeof out.yy.d === 'string' && Number.isInteger(out.yy.n) && out.yy.n >= 0 && out.yy.n < 100)) delete out.yy;   // 🛋️ 新家大採購今天給過錢的場數
   if (out.town != null) {   // 🏘️ 小鎮島：勇敢貼紙、每天的健康檢查
     if (!isObj(out.town)) delete out.town;
     else { const t = out.town; t.stk = isObj(t.stk) ? Object.fromEntries(Object.entries(t.stk).filter(([k, n]) => /^(lion|star|rainbow|bear|heart|amb|sun|crown)$/.test(k) && Number.isInteger(n) && n > 0 && n < 10000)) : {};
@@ -11633,6 +11639,7 @@ function hostMenuEntries() {
     list.push(['🔤 注音小遊戲', openZhuyinGame]);
     list.push(['🏳️ 選校旗／畫新的', openFlagPicker]);
     list.push(['🏃 跟同學賽跑', openRunGame]);
+    list.push(['🛋️ 姊姊的挑戰：新家大採購', () => openYuanyuan()]);
     [['🏫 回教室', 0], ['🎢 一起去操場', 1]]
       .filter(([, i]) => i !== G.away.idx).forEach(([label, i]) => list.push([label, () => goPlaceRoom(i)]));
   }
@@ -14951,7 +14958,8 @@ function earnGameList() {
     ['🧁', '甜點店大亨', openTycoon],
     ['🔡', '字母找找看', openLetterGame],
     ['🔤', '英文單字', openEnglishGame],
-    ['🌳', '寵物捉迷藏', openPetHideGame]].map(g => g.concat('h:' + g[1].replace(/^.*接水果$/, '接水果')));
+    ['🌳', '寵物捉迷藏', openPetHideGame],
+    ['🛋️', '新家大採購（姊姊）', () => openYuanyuan()]].map(g => g.concat('h:' + g[1].replace(/^.*接水果$/, '接水果')));
 }
 function tabEarn(body) {
   body.appendChild(h3('每日禮物'));
@@ -16766,7 +16774,7 @@ let gameDomFitT = 0;
 function fitGameDom() {
   const card = $('#modalCard'), stage = card && card.querySelector('.game-stage');
   if (!stage || !card.classList.contains('in-game') || $('#modal').hidden) return;
-  if (stage.querySelector('canvas.game-canvas')) { if (stage.style.zoom) { stage.style.zoom = ''; stage.style.width = ''; stage.style.marginInline = ''; } return; }
+  if (stage.querySelector('canvas.game-canvas, iframe')) { if (stage.style.zoom) { stage.style.zoom = ''; stage.style.width = ''; stage.style.marginInline = ''; } return; }
   const top = card.scrollTop; stage.style.zoom = ''; stage.style.width = ''; stage.style.marginInline = ''; card.classList.remove('game-big');
   const vw = window.innerWidth, vh = window.innerHeight, H0 = card.scrollHeight, h0 = stage.scrollHeight, w0 = Math.max(stage.scrollWidth, 1);
   const wBig = Math.min(vw * .96, 920) - 44;
@@ -24646,6 +24654,37 @@ function isleDecor(ctx, sp, now) {
     else { ctx.font = '13px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(i % 3 === 2 ? '🥚' : '🦴', px, py - 2); }
   }
 }
+/* ===== 🛋️ 圓圓的新家大採購（家長設計的小遊戲；四年級的數學、國語，給姊姊）=====
+   遊戲本身是另一個檔案 yuanyuan_shopping.html（家長自己改題目不用動這裡），在小遊戲視窗裡用 iframe 打開：
+   ・網址帶 embed=1、寵物現在的名字（pet）、存檔格（slot，姊姊妹妹各記各的）
+   ・玩完它會用 postMessage 傳回星星數 → 照星星給錢（一般小遊戲的算法，每天前 5 場有錢），也算「玩小遊戲」
+   ・她在裡面點的時候也會通知小屋，認真玩的時間獎金一樣算
+   G.yy = { d, n }（今天給過錢的場數） */
+const YY_PRIZE = [0, 60, 120, 200], YY_DAY_MAX = 5;
+let yyWin = null;
+function openYuanyuan() {
+  const w = openGameWindow(`🛋️ ${petName()}的新家大採購`, '👧 姊姊的挑戰（四年級）：答對題目，幫寵物把家具搬進新家！一共 5 關。');
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; w.card.classList.add('game-big');
+  const fr = document.createElement('iframe');
+  fr.className = 'yy-frame'; fr.title = '新家大採購';
+  fr.src = 'yuanyuan_shopping.html?embed=1&pet=' + encodeURIComponent(petName()) + '&slot=' + encodeURIComponent(curSlotId());
+  w.stage.appendChild(fr); leaveButton(w);
+  const st = G.yy && G.yy.d === today() ? G.yy : (G.yy = { d: today(), n: 0 });
+  w.status.textContent = st.n < YY_DAY_MAX ? `玩完會依星星給錢（今天還有 ${YY_DAY_MAX - st.n} 場）` : '今天的獎金拿完了，還是可以繼續玩喔！';
+  yyWin = { w, fr };
+  gameCleanup = () => { yyWin = null; };
+}
+window.addEventListener('message', e => {
+  const d = e.data; if (!yyWin || !d || typeof d !== 'object' || e.source !== yyWin.fr.contentWindow) return;
+  if (d.type === 'yuanyuan-tap') { gamePlay.last = Date.now(); return; }
+  if (d.type === 'yuanyuan-done') {
+    const stars = Math.max(0, Math.min(3, Math.round(+d.stars) || 0)), st = G.yy && G.yy.d === today() ? G.yy : (G.yy = { d: today(), n: 0 }), w = yyWin.w;
+    if (st.n >= YY_DAY_MAX) { w.status.textContent = `⭐ ${stars} 顆星！今天的獎金拿完了，明天再來賺錢喔～`; try { dailyHit('game'); } catch (e2) {} saveGame(); return; }
+    st.n++; const bells = payReward(w, YY_PRIZE[stars] || 30);
+    w.status.textContent = `${'⭐'.repeat(stars)} ${stars} 顆星！家具都搬進新家了　💰 +${fmt(bells)}`;
+    try { kidMoodUp(6); fufuSay('我幫寵物布置新家了！', 2400); } catch (e2) {} saveGame();
+  }
+});
 /* ===== 🏘️ 小鎮島：🍽️ 餐廳＋🏥 醫院（家長：餐廳、醫院要有趣味性、互動性）=====
    🍽️ 餐廳（貓咪主廚）
      ・🍽️ 當客人點餐：看圖點餐、付錢，吃完肚子飽飽、心情變好

@@ -588,7 +588,7 @@
     // 小遊戲都要在清單上（接金幣、杯子蛋糕店、跟著唱換成 Roblox 風的三個新遊戲）
     openTab('earn');
     var picks = document.querySelectorAll('.game-pick');
-    if (picks.length !== 16) fails.push('小遊戲清單有 ' + picks.length + ' 個，應該是 16 個（含英文單字、字母找找看）');
+    if (picks.length !== 17) fails.push('小遊戲清單有 ' + picks.length + ' 個，應該是 17 個（含英文單字、字母找找看、新家大採購）');
     ['拼圖', '寵物收集模擬器', '彈珠台'].forEach(function(nm){
       if (![].slice.call(picks).some(function(b){ return b.textContent.indexOf(nm) >= 0; }))
         fails.push('小遊戲清單裡找不到「' + nm + '」');
