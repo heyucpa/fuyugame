@@ -325,14 +325,14 @@
       fails.push('設定分頁沒有「重新開始」');
 
     /* ⑩.8 寵物跟髮型的數量與資料完整性 */
-    if (PET_SPECIES.length !== 20) fails.push('寵物變成 ' + PET_SPECIES.length + ' 種了');
+    if (PET_SPECIES.length !== 21) fails.push('寵物變成 ' + PET_SPECIES.length + ' 種了');
     var pid = {};
     PET_SPECIES.forEach(function(sp){
       if (pid[sp.id]) fails.push('寵物 id 重複：' + sp.id);
       pid[sp.id] = 1;
       ['name','body','edge','belly','inner'].forEach(function(k){
         if (!sp[k]) fails.push(sp.id + ' 缺了 ' + k); });
-      if (!sp.weight) fails.push(sp.id + ' 沒有權重，永遠抽不到');
+      if (!sp.weight && !sp.story) fails.push(sp.id + ' 沒有權重，永遠抽不到');   // 🌟 星光小精靈只從星星蛋來
     });
     // 每一種都要畫得出來（新增的耳朵或記號打錯就會空白）
     PET_SPECIES.forEach(function(sp){
@@ -2558,7 +2558,7 @@
       $('#foodMenu').hidden = true;
     } finally { var kf17 = JSON.parse(keepFood17); G.food = kf17[0]; G.kidFood = kf17[1]; G.kid.hunger = kf17[2]; G.bells = kf17[3]; shopKind = 'all'; openTab('inv'); }
     var specials = PET_SPECIES.filter(function(s){ return s.special; });
-    if (specials.length !== 2) fails.push('特別的寵物不是兩隻');
+    if (specials.filter(function(s){ return !s.story; }).length !== 2) fails.push('特別的寵物不是兩隻');
     specials.forEach(function(sp){
       if (!sp.wings || !sp.sparkle || !sp.rare) fails.push(sp.name + ' 沒有翅膀／閃亮亮／稀有');
       if (!(sp.weight < 3)) fails.push(sp.name + ' 沒有比稀有更難孵到');
@@ -3992,7 +3992,7 @@
     openTab('pets');
     var ptx = $('#tabBody').textContent;
     if (new RegExp(PET_SPECIES.length + ' 種都收集到了').test(ptx)) fails.push('還有幾種在蛋裡沒孵，卻寫「都收集到了」');
-    if (!new RegExp((PET_SPECIES.length - 13) + ' 種新的寵物都在你的蛋裡面').test(ptx)) fails.push('沒有說剩下的種類在蛋裡面、要摸一摸讓牠們孵出來');
+    if (!new RegExp((PET_SPECIES.filter(function(s){ return !s.story; }).length - 13) + ' 種新的寵物都在你的蛋裡面').test(ptx)) fails.push('沒有說剩下的種類在蛋裡面、要摸一摸讓牠們孵出來');
     var eggBtn10 = [].filter.call(document.querySelectorAll('#tabBody button'), function(b){ return /寵物蛋/.test(b.textContent); })[0];
     if (!eggBtn10 || !eggBtn10.disabled) fails.push('剩下的種類都在蛋裡，買蛋按鈕還可以按');
     G.pets.forEach(function(pp){ pp.stage = 'kid'; });

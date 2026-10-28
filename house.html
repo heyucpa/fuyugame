@@ -779,6 +779,8 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .spark-fly { position: fixed; z-index: 90; pointer-events: none; font-size: 20px; transform: translate(-50%, -50%); animation: sparkFly .9s ease-out forwards; }
 @keyframes sparkFly { to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.4); opacity: 0; } }
 .confetti-cv { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 85; }
+.star-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; } .star-slot { display: flex; flex-direction: column; align-items: center; padding: 10px 4px; border-radius: 16px; background: #f1ecf7; border: 2px dashed #c9b8e8; color: #a99ac9; }
+.star-slot.on { background: #fff7d6; border: 2px solid #ffd23f; color: #5a4636; } .star-e { font-size: 34px; } .star-n { font-size: 13px; font-weight: 800; }
 .spar-row .spar-sp { background: linear-gradient(#ffb02e, #ff5a1f); color: #fff; border-color: #c0392b; } .spar-row .spar-sp:disabled { background: #eee; color: #aaa; border-color: #ddd; }
 .spar-row .spar-on { animation: glowPulse .4s infinite alternate; transform: scale(1.08); box-shadow: 0 0 0 5px #ffd23f; }
 .music-menu { position: fixed; z-index: 70; background: var(--panel, #fffaf0); border: 2px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
@@ -3281,7 +3283,9 @@ const PET_SPECIES = [
      跟其他寵物不一樣的地方：有小翅膀（wings）、身邊一直閃亮亮（sparkle），天使兔頭上還有光環（halo）。
      比稀有的更難孵到（weight 2）。 */
   { id: 'angelbunny', name: '天使兔', body: '#fffaf2', edge: '#e6d3a8', belly: '#ffffff', inner: '#ffd6e6', ears: 'long', wings: '#ffffff', halo: '#ffd35c', sparkle: true, rare: true, special: true, weight: 2 },
-  { id: 'galaxydragon', name: '銀河龍', body: '#5b4b9e', edge: '#3c2f75', belly: '#a99ae0', inner: '#ffe066', ears: 'horns', wings: '#8f7fe0', starMark: true, sparkle: true, rare: true, special: true, weight: 2 }
+  { id: 'galaxydragon', name: '銀河龍', body: '#5b4b9e', edge: '#3c2f75', belly: '#a99ae0', inner: '#ffe066', ears: 'horns', wings: '#8f7fe0', starMark: true, sparkle: true, rare: true, special: true, weight: 2 },
+  /* 🌟 星光小精靈（家長：故事主線）：找齊 6 個星光線索，星星蛋才孵得出來；買的蛋永遠抽不到（story） */
+  { id: 'starling', name: '星光小精靈', body: '#fff3b0', edge: '#e0b832', belly: '#ffffff', inner: '#ffb3c7', ears: 'tuft', wings: '#ffe9a8', halo: '#ffd35c', starMark: true, sparkle: true, rare: true, special: true, story: true, weight: 0 }
 ];
 const PET_SPECIES_BY_ID = Object.fromEntries(PET_SPECIES.map(s => [s.id, s]));
 // next：要累積多少成長才進入下一階段；scale：畫面大小
@@ -4538,6 +4542,10 @@ FURN_BY_ID.candy_jar = { id: 'candy_jar', name: '糖果大罐', price: 0, theme:
     { k: 'ball', x: .5, y: .5, z: 27, r: 3, c: '#e8505b' }
   ] };
 PLACE_FURNITURE.forEach(f => { FURN_BY_ID[f.id] = f; }); // 親戚家專用的家具（不在商店、圖鑑裡）
+/* 🌟 神祕的星星蛋（擺在房間角落，點了看星光線索） */
+FURN_BY_ID.star_egg = { id: 'star_egg', name: '神祕的星星蛋', price: 0, theme: 'cute', w: 1, d: 1, gift: true, parts: [
+  { x: .2, y: .2, w: .6, d: .6, z: 0, h: 5, c: '#c98d5a' }, { k: 'ball', x: .5, y: .5, z: 18, r: 11, c: '#fff8e0' }, { k: 'ball', x: .5, y: .5, z: 26, r: 8, c: '#fffbea' },
+  { k: 'ball', x: .38, y: .6, z: 18, r: 2.5, c: '#ffd23f' }, { k: 'ball', x: .62, y: .55, z: 24, r: 2.5, c: '#ffd23f' }, { k: 'ball', x: .45, y: .48, z: 30, r: 2, c: '#ff9ec4' }, { k: 'ball', x: .58, y: .66, z: 13, r: 2, c: '#9fd8ff' }] };
 /* 🏝️ 島主做的家具、恐龍模型（不在商店，做出來／拼出來才有）。
    一定要放在讀存檔之前：擺在房間裡的家具，讀存檔時找不到會整份存檔讀不進來。 */
 Object.assign(FURN_BY_ID, {
@@ -4752,6 +4760,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-28T20:00', title: '🌟 神祕的星星蛋', lines: [
+    ['🥚', '房間角落出現一顆神祕的星星蛋！蛋上有 6 個空格，要找回 6 個「星光線索」才會孵化'],
+    ['🗺️', '每個世界闖關的大魔王關，第一次過關就會找到一個線索（以前破過的也算！）'],
+    ['🌟', '6 個都找到，就會孵出只有這裡才有的稀有寵物喔！圖鑑多了「🌟 星光線索」']
+  ] },
   { id: '2026-10-28T09:00', title: '🎯 今天可以玩…', lines: [
     ['🎯', '每天打開會跳出「今天可以玩…」三個小目標，上面的「🎯 今日」按鈕隨時可以看'],
     ['💰', '每完成一個給 300 元；三個都完成還有今日大獎（貼紙、寵物食物、小家具或 1,500 元）'],
@@ -5595,6 +5608,9 @@ function normalizeSave(g) {
     if (v.zone > v.zoneMax) v.zone = 0; if (v.zoneMax > 2) v.zoneMax = 2;
     if (v.day != null && !(isObj(v.day) && typeof v.day.d === 'string' && num(v.day.n))) delete v.day; }
   if (out.recentGames != null) { if (Array.isArray(out.recentGames)) out.recentGames = out.recentGames.filter(x => typeof x === 'string' && x.length < 40).slice(0, 8); else delete out.recentGames; }   // 🎮 最近玩過
+  if (out.star != null) {   // 🌟 星光線索
+    if (!isObj(out.star)) delete out.star;
+    else { const st = out.star; st.got = Array.isArray(st.got) ? [...new Set(st.got.filter(w => Number.isInteger(w) && w >= 1 && w <= 6))].sort((a, b) => a - b) : []; ['egg', 'hatched'].forEach(k => { if (st[k] != null && st[k] !== 1) delete st[k]; }); } }
   if (out.town != null) {   // 🏘️ 小鎮島：勇敢貼紙、每天的健康檢查
     if (!isObj(out.town)) delete out.town;
     else { const t = out.town; t.stk = isObj(t.stk) ? Object.fromEntries(Object.entries(t.stk).filter(([k, n]) => /^(lion|star|rainbow|bear|heart|amb|sun|crown)$/.test(k) && Number.isInteger(n) && n > 0 && n < 10000)) : {};
@@ -6073,14 +6089,14 @@ function collectedSpecies() {
 function buyEgg() {
   // 每一種都有了（蛋裡的也算）就不賣了；之後新增種類就又可以買
   const have = new Set(G.pets.map(p => p.species));
-  if (!PET_SPECIES.some(s => !have.has(s.id))) return null;
+  if (!PET_SPECIES.some(s => !s.story && !have.has(s.id))) return null;
   if (!spend(EGG_PRICE)) return null;
   return addEgg();
 }
 function addEgg() {
-  const have = new Set(G.pets.map(p => p.species));
-  const fresh = PET_SPECIES.filter(s => !have.has(s.id));
-  const pool = fresh.length ? fresh : PET_SPECIES;
+  const have = new Set(G.pets.map(p => p.species)), buyable = PET_SPECIES.filter(s => !s.story);   // 🌟 故事寵物不會從買的蛋孵出來
+  const fresh = buyable.filter(s => !have.has(s.id));
+  const pool = fresh.length ? fresh : buyable;
   let r = Math.random() * pool.reduce((a, s) => a + s.weight, 0), pick = pool[0];
   for (const s of pool) { if ((r -= s.weight) < 0) { pick = s; break; } }
   G.pets.push(newPet(pick.id, 'egg', ''));
@@ -8497,7 +8513,7 @@ const PET_TRAIT_OF = {
   chick: 'sand', peachmouse: 'sand', marshpig: 'sand', cocoadog: 'sand',
   bunny: 'shy', sheep: 'shy', mochi: 'shy', bear: 'shy',
   dragon: 'jump', starfox: 'jump', strawcow: 'jump', rainbowuni: 'jump',
-  angelbunny: 'shy', galaxydragon: 'jump'
+  angelbunny: 'shy', galaxydragon: 'jump', starling: 'jump'
 };
 const petTrait = () => (G.pet && PET_TRAIT_OF[G.pet.species]) || 'jump';
 const PET_TRAIT_NAMES = { fish: '愛看魚', sand: '愛玩沙', shy: '有點害羞', jump: '很活潑' };
@@ -14996,6 +15012,7 @@ function tabBook(body) {
   const tc = id => trophyCount(id);
   const sections = [
     ['dexTrophy', '🏆', '獎盃', count(G.trophies), TROPHY_SETS.length],
+    ['dexStar', '🌟', '星光', ((G.star && G.star.got) || []).length, 6],
     ['dexPet', '🐾', '寵物', tc('pet')[0], PET_SPECIES.length],
     ['dexGrow', '🌱', '成長', growDexCount(), growDexAll()],
     ['dexSeason', '🎃', '節日', seasonDexCount(), SEASON_FURNITURE.length],
@@ -15138,6 +15155,14 @@ function tabBook(body) {
     cg.appendChild(t);
   });
   body.appendChild(cg);
+
+  // 🌟 星光線索：6 格，沒找到的是剪影
+  { const sg = (G.star && G.star.got) || [];
+    body.appendChild(sec('dexStar', `🌟 星光線索 ${sg.length} / 6`));
+    body.appendChild(note(G.star && G.star.egg ? (G.star.hatched ? '找齊了！星光小精靈孵出來了。' : '每個世界闖關的大魔王關，第一次過關就會找到一個。') : '房間角落會出現一顆神祕的星星蛋，到時候就可以開始找了！'));
+    const stg = el('div', 'dex-tiles');
+    STAR_CLUES.forEach(c => { const has = sg.includes(c.w), t = el('div', 'dex-tile' + (has ? '' : ' none')); t.append(el('div', 'dex-big', has ? c.icon : '✦'), el('span', '', has ? `${c.name}：${c.hint}` : `世界 ${c.w} 大魔王`)); stg.appendChild(t); });
+    body.appendChild(stg); }
 
   // ⚔️ 冒險漫畫：看過的可以點來再看一次
   body.appendChild(sec('dexAdv', `⚔️ 冒險漫畫 ${advCount()} / ${ADV_ALL}`));
@@ -15461,9 +15486,9 @@ function tabPets(body) {
      inEggs＝還沒孵、但蛋裡就是新種類的（以前把這些算成「收集到了」，
      家長看到圖鑑 13/18 卻寫「18 種都收集到了」）。 */
   const have = new Set(G.pets.map(p => p.species));
-  const left = PET_SPECIES.filter(s => !have.has(s.id)).length;
+  const left = PET_SPECIES.filter(s => !s.story && !have.has(s.id)).length;
   const hatched = collectedSpecies();
-  const inEggs = PET_SPECIES.filter(s => !hatched.has(s.id) && have.has(s.id)).length;
+  const inEggs = PET_SPECIES.filter(s => !s.story && !hatched.has(s.id) && have.has(s.id)).length;
   /* 每一種都有了（蛋裡的也算）就不能再買（家長：買到 18 種就好，不然小孩會一直買到重複的）。
      之後如果新增寵物種類，left 會變回大於 0，就又可以買了。 */
   body.appendChild(note(left
@@ -18917,7 +18942,8 @@ const DAILY_POOL = [
   { id: 'water', cat: 'home', icon: '🌱', text: '幫陽台的花澆一次水', need: 1, go: 'balcony', avail: g => (g.rooms || []).some(r => r.wall === 'wp_balcony' || /陽台/.test(r.name)) },
   { id: 'isle', cat: 'isle', icon: '🏝️', text: '去小島收成一次', need: 1, go: 'out', avail: g => !!(g.quest && g.quest.clear && g.quest.clear['1-3']) },
   { id: 'doctor', cat: 'town', icon: '🏥', text: '去醫院當一次小醫生', need: 1, go: 'out' },
-  { id: 'gym', cat: 'sport', icon: '💪', text: '去健身房練一次', need: 1, go: 'out' }
+  { id: 'gym', cat: 'sport', icon: '💪', text: '去健身房練一次', need: 1, go: 'out' },
+  { id: 'clue', cat: 'quest', icon: '🌟', text: '去找下一個星光線索（世界闖關大魔王關）', need: 1, go: 'games', avail: g => !!(g.star && g.star.egg && !g.star.hatched && (g.star.got || []).length < 6 && (typeof starNextW !== 'function' || questUnlocked(starNextW() + '-3'))) }
 ];
 const DAILY_N = 3, DAILY_EACH = 300, DAILY_BIG_BELLS = 1500;
 function dailyPick(day) {
@@ -22162,6 +22188,7 @@ function playQuest(id, opt) {
   let inBonus = false, pipeBack = 0, downBuf = 0;   // 祕密房間
   let flag = null, raf = 0, live = true, last = performance.now(), camX = 0, state = 'play', endT = 0, keys = {}, jumpHeld = false, jumpBuf = 0, msg = '', msgT = 0, coinPops = [];
   const say = (m2, s) => { msg = m2; msgT = s || 1.6; };
+  try { const ln = typeof starIntroLine === 'function' ? starIntroLine(id) : ''; if (ln) setTimeout(() => say(ln, 4.5), 300); } catch (e) {}   // 🌟 線索關的開場
   const keyD = e => { const k = e.code; if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space', 'KeyA', 'KeyD', 'KeyW', 'KeyS', 'KeyX', 'KeyF'].includes(k)) e.preventDefault(); if (e.repeat) return; keys[k] = true; if (k === 'ArrowDown' || k === 'KeyS') downBuf = .3; if (k === 'KeyX' || k === 'KeyF') shootFire(); if (k === 'Space' || k === 'ArrowUp' || k === 'KeyW') { jumpHeld = true; jumpBuf = .15; } };
   const keyU = e => { keys[e.code] = false; if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') jumpHeld = false; };
   document.addEventListener('keydown', keyD); document.addEventListener('keyup', keyU);
@@ -22432,7 +22459,7 @@ function playQuest(id, opt) {
 /* 打輸了：在大魔王那裡輸的（家長：可以從大魔王關重新開始、難度變低）→ 多一顆「從大魔王開始」，
    每輸一次大王少一滴血、跳得慢一點（最少 1 滴血） */
 function questFail(w, id, bossWeak) {
-  try { dailyHit('quest'); } catch (e) {}
+  try { dailyHit('quest'); if (typeof starNextW === 'function' && +id[0] === starNextW() && /-3$/.test(id)) dailyHit('clue'); } catch (e) {}
   gameCleanup && gameCleanup(); gameCleanup = null;
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   w.stage.appendChild(el('div', 'tkd-big', bossWeak ? '👑' : '💪'));
@@ -22443,7 +22470,8 @@ function questFail(w, id, bossWeak) {
   w.btns.append(again, map);
 }
 function questDone(w, id, P) {
-  try { dailyHit('quest'); } catch (e) {}
+  try { dailyHit('quest'); if (typeof starNextW === 'function' && +id[0] === starNextW() && /-3$/.test(id)) dailyHit('clue'); } catch (e) {}
+  try { if (typeof starClear === 'function') starClear(id); } catch (e) {}   // 🌟 第一次過大魔王關：星光線索
   gameCleanup && gameCleanup(); gameCleanup = null;
   const q = questState(), first = !q.clear[id], wd = +id[0];
   q.clear[id] = 1; q.stars[id] = Math.max(q.stars[id] || 0, P.stars);
@@ -24785,6 +24813,69 @@ Object.assign(FURNITURE_ACT, { rest_counter: 'rest_order', rest_kitchen: 'rest_c
 ['rest_order', 'rest_chef', 'doc_play', 'pet_check', 'kid_check', 'stk_book'].forEach(k => { const a = ACTIVITIES[k]; if (!LINE_TYPES.some(t => t.key === 'act_' + k)) LINE_TYPES.push({ key: 'act_' + k, label: '做事：' + a.name, hint: '', lines: a.lines }); });
 Object.assign(WALL_TAP, { rest_menu: () => openRestaurantOrder(), hosp_eye: () => openKidCheckup() });
 AWAY_GAMES.push(['👩‍🍳', '餐廳打工', 'restaurant', () => openChefGame()], ['💓', '小醫生', 'hospital', () => openDoctorGame()]);
+/* ===== 🌟 星光線索（家長：世界闖關加一條故事主線）=====
+   小可愛在房間角落發現一顆「神祕的星星蛋」，蛋上有 6 個空格。
+   每個世界的大魔王關（1-3、2-3…6-3）第一次過關，就找到 1 個「星光線索」；6 個都找到，星星蛋孵出「星光小精靈」（只有這裡拿得到）。
+   ・線索關開場：動物朋友用邀約的口氣說一兩句；過關後「找到星光線索！」
+   ・已經破過的大魔王關（更新前就破了）：拿到星星蛋的時候一起補給她
+   ・重複過關不再給線索，獎金照原本的規則
+   ・圖鑑「🌟 星光線索」：6 格，沒找到的是剪影
+   G.star = { egg: 1, got: [世界編號…], hatched: 1 } */
+const STAR_CLUES = [
+  { w: 1, icon: '🌸', name: '花瓣星光', hint: '暖暖的，像春天的花香', line: '聽說草原大王那裡有一閃一閃的東西耶，要不要一起去看看？' },
+  { w: 2, icon: '🐚', name: '貝殼星光', hint: '放在耳邊，聽得到海浪聲', line: '沙灘的螃蟹大王好像撿到一顆亮亮的貝殼，我們去問問看！' },
+  { w: 3, icon: '🍃', name: '葉子星光', hint: '晚上的森林裡會發出綠綠的光', line: '森林深處晚上會發光喔～說不定是星光線索！' },
+  { w: 4, icon: '❄️', name: '雪花星光', hint: '冰冰涼涼，一直不會融化', line: '雪地裡有一片會發光的雪花，好像在等你耶！' },
+  { w: 5, icon: '☁️', name: '雲朵星光', hint: '軟綿綿的，輕輕的會飄', line: '天空的雲上面掉下一顆小星星，我們一起去撿！' },
+  { w: 6, icon: '👑', name: '城堡星光', hint: '最亮的一道光，星星蛋在等它', line: '最後一道星光在城堡裡！一起加油，星星蛋就快孵出來了！' }
+];
+function starState() { const s = G.star && typeof G.star === 'object' ? G.star : (G.star = {}); if (!Array.isArray(s.got)) s.got = []; return s; }
+const starHas = w => starState().got.includes(w);
+const starNextW = () => { const s = starState(); if (!s.egg || s.hatched) return 0; const c = STAR_CLUES.find(c2 => !s.got.includes(c2.w)); return c ? c.w : 0; };
+function starFriend(w) { const ns = NEIGHBORS.filter(Boolean); return ns[(w * 3) % ns.length]; }
+// 闖關開場：這一關是還沒拿到線索的大魔王關，就說一句邀約的話
+function starIntroLine(id) {
+  const s = starState(), w = +id[0]; if (!s.egg || s.hatched || !/-3$/.test(id) || starHas(w)) return '';
+  const c = STAR_CLUES[w - 1], f = starFriend(w); return c ? `${f ? (f.short || f.name) + '：' : ''}${c.line}` : '';
+}
+// 第一次過大魔王關：找到線索（回傳拿到的線索，沒有回傳 null）
+function starClear(id) {
+  const s = starState(), w = +id[0]; if (!s.egg || s.hatched || !/-3$/.test(id) || starHas(w) || !STAR_CLUES[w - 1]) return null;
+  s.got.push(w); s.got.sort((a, b) => a - b); saveGame();
+  const c = STAR_CLUES[w - 1];
+  setTimeout(() => { try { Sound.play('questClear'); showcase(el('div', 'magic-pic', c.icon), `找到星光線索！「${c.name}」`, `${c.hint}\n星星蛋上亮了 ${s.got.length} / 6 格${s.got.length >= 6 ? '，蛋在動了！' : ''}`, { head: '🌟 星光線索' }); } catch (e) {} if (s.got.length >= 6) setTimeout(starHatch, 800); }, 1500);
+  return c;
+}
+function starHatch() {
+  const s = starState(); if (s.hatched || s.got.length < 6) return;
+  s.hatched = 1; const p = newPet('starling', 'baby', ''); G.pets.push(p); try { growDexAdd && growDexAdd('starling', 'baby'); } catch (e) {} saveGame();
+  try { Sound.play('fanfare'); if (typeof confettiBurst === 'function') confettiBurst(150); showcase(renderPetPortrait(p, 150, 140), '星星蛋孵化了！是「星光小精靈」！', '只有找齊 6 個星光線索才遇得到的稀有寵物，在寵物頁可以帶牠出來喔！', { head: '🌟 好特別！' }); } catch (e) {}
+}
+// 拿到星星蛋：放在房間角落（擺不下就放進「我的東西」）；已經破過的大魔王關一起補給她
+function starGiveEgg() {
+  const s = starState(); if (s.egg) return; s.egg = 1;
+  const room = G.rooms[0], spot = room && nearestFree(room, room.w - 1, 0);
+  if (spot) room.items.push({ uid: G.uid++, id: 'star_egg', x: spot[0], y: spot[1], rot: 0 }); else G.inv.star_egg = (G.inv.star_egg || 0) + 1;
+  STAR_CLUES.forEach(c => { if (G.quest && G.quest.clear && G.quest.clear[c.w + '-3'] && !s.got.includes(c.w)) s.got.push(c.w); });
+  saveGame(); try { draw(); } catch (e) {}
+  showcase(el('div', 'magic-pic', '🥚'), '房間角落有一顆神祕的星星蛋！', `蛋上有 6 個空格，要找回 6 個「星光線索」才會孵化。\n每個世界闖關的大魔王那裡都有一個${s.got.length ? `（你已經找到 ${s.got.length} 個了！）` : ''}！點蛋可以看找到幾個。`, { head: '🌟 星星蛋' });
+  if (s.got.length >= 6) setTimeout(starHatch, 1500);
+}
+function openStarEgg() {
+  const s = starState(), card = $('#modalCard'); closeGameWindow(); card.innerHTML = '';
+  card.appendChild(el('h2', '', s.hatched ? '🌟 星星蛋（已經孵化了）' : '🌟 神祕的星星蛋'));
+  const row = el('div', 'star-slots'); STAR_CLUES.forEach(c => { const has = s.got.includes(c.w), t = el('div', 'star-slot' + (has ? ' on' : '')); t.append(el('span', 'star-e', has ? c.icon : '✦'), el('span', 'star-n', has ? c.name : `世界 ${c.w}`)); row.appendChild(t); }); card.appendChild(row);
+  const nx = starNextW();
+  card.appendChild(note(s.hatched ? '星光小精靈已經孵出來了！謝謝你找回全部的星光。' : `找到 ${s.got.length} / 6 個。${nx ? `下一個在「世界 ${nx}」的大魔王關（${nx}-3）！` : ''}`));
+  if (!s.hatched) { const go = el('button', 'big', '🗺️ 去闖關找線索'); go.onclick = () => openQuestMap(); card.appendChild(go); }
+  const ok = el('button', 'big alt', '好'); ok.onclick = () => { $('#modal').hidden = true; }; card.appendChild(ok);
+  $('#modal').hidden = false;
+}
+Object.assign(ACTIVITIES, { stareggs: { label: '🌟 看星星蛋', name: '看星星蛋', fx: '✨', open: () => openStarEgg(), lines: ['蛋裡面亮亮的耶！', '還差幾個星光呢？'] } });
+FURNITURE_ACT.star_egg = 'stareggs';
+if (!LINE_TYPES.some(t => t.key === 'act_stareggs')) LINE_TYPES.push({ key: 'act_stareggs', label: '做事：看星星蛋', hint: '', lines: ACTIVITIES.stareggs.lines });
+// 教學做完、畫面穩定的時候送星星蛋
+setInterval(() => { try { if (!G || !G.openGift || G.guide !== 'done' || SAVE_LOCKED != null || G.away || starState().egg) return; if (!$('#modal').hidden || document.getElementById('showcase') || document.querySelector('.stage.island-on') || (typeof giftVisit !== 'undefined' && giftVisit.state !== 'none') || hold) return; const li = typeof lastStageInput !== 'undefined' ? lastStageInput : 0; if (!li || Date.now() - li < 1500) return; starGiveEgg(); } catch (e) {} }, 3000);
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
       動物朋友全都打扮來跳舞放煙火，每天第一次結束時每位送一顆糖（4 顆萬聖節糖果）。
