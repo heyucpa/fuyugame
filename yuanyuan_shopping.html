@@ -10,13 +10,15 @@ body{display:flex;justify-content:center;align-items:flex-start;padding:10px}
 button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 #app{width:min(520px,100%);background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:12px 14px 16px;text-align:center;position:relative;overflow:hidden}
 .top{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:16px;margin-bottom:6px}
-.dots{display:flex;gap:6px}.dot{width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid var(--line)}
+.top>span:first-child{flex:1;text-align:left;white-space:nowrap}
+.dots{display:flex;gap:5px;flex:none}.dot{width:15px;height:15px;border-radius:50%;background:#fff;border:2px solid var(--line)}
 .dot.on{background:var(--gold);border-color:#e0a82e}
 /* 小房間 */
-#room{position:relative;height:190px;border-radius:14px;border:2px solid var(--line);overflow:hidden;background:linear-gradient(#ffe6ef 0 62%,#d9b27c 62% 100%)}
+#room{position:relative;height:210px;border-radius:14px;border:2px solid var(--line);overflow:hidden;background:linear-gradient(#ffe6ef 0 62%,#d9b27c 62% 100%)}
 #room::before{content:"";position:absolute;left:0;right:0;top:62%;height:4px;background:#8a5a33;opacity:.35}
 .win{position:absolute;left:50%;top:14px;width:58px;height:50px;margin-left:-29px;border:4px solid #fff;border-radius:8px;background:linear-gradient(#bfe3ff,#e9f6ff);box-shadow:0 0 0 2px #e4d8c3}
-.slot{position:absolute;font-size:38px;line-height:1;transform:scale(0);filter:drop-shadow(0 3px 2px rgba(0,0,0,.18))}
+.slot{position:absolute;font-size:34px;line-height:1;transform:scale(0);cursor:pointer;transition:filter .3s}
+.slot.show{transform:none}
 .slot.in{animation:pop .5s cubic-bezier(.3,1.6,.5,1) forwards}
 @keyframes pop{0%{transform:translateY(-70px) scale(.2);opacity:0}100%{transform:scale(1);opacity:1}}
 #pet{position:absolute;left:44%;bottom:12px;width:50px;height:46px;transition:left .8s ease-in-out;z-index:3}
@@ -30,8 +32,25 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 .ear.l{left:3px}.ear.r{right:3px}
 #pet.hop{animation:hop .5s ease 2}
 @keyframes hop{50%{transform:translateY(-22px)}}
+#pet.dance{animation:dance .45s ease 3}
+@keyframes dance{25%{transform:translateY(-16px) rotate(-14deg)}75%{transform:translateY(-16px) rotate(14deg)}}
+#pet.tilt{animation:tilt .7s ease}
+@keyframes tilt{30%{transform:rotate(-16deg)}70%{transform:rotate(10deg)}}
+#pet.happy .blob::before,#pet.happy .blob::after{height:4px;top:19px;border-radius:4px}
+#pet.happy .mouth{left:18px;width:14px;height:9px;background:#ff8a8a;border:2px solid #3a3240;border-radius:0 0 14px 14px}
+#pet.sad .mouth{top:30px;border-bottom:none;border-top:2px solid #3a3240;border-radius:8px 8px 0 0}
+#pet.glow .blob{background:#fff2b8;box-shadow:0 0 14px 7px #ffe066}
+#combo{position:absolute;top:6px;right:6px;z-index:5;display:none;background:linear-gradient(#ff9ec4,#ff6fa8);color:#fff;font-weight:800;font-size:15px;border-radius:999px;padding:3px 12px;border:2px solid #fff;box-shadow:0 2px 0 #d04d86}
+#combo.bump{animation:bump .5s ease}
+@keyframes bump{40%{transform:scale(1.35) rotate(-6deg)}}
+.spk{position:absolute;font-size:18px;pointer-events:none;z-index:6;animation:spk .9s ease-out forwards}
+@keyframes spk{to{transform:translate(var(--dx),-46px) scale(1.4);opacity:0}}
+#stars{font-size:38px;letter-spacing:4px;margin:6px 0 0;color:#e0a82e}
+#stars span{display:inline-block;animation:pop2 .6s ease backwards}
+#endinfo{font-size:14px;color:#8a5a33;margin:2px 0 6px}
 #say{min-height:40px;margin:8px 0 2px;font-weight:700;font-size:15px;color:#8a5a33}
 #q{background:#fff;border:2px solid var(--line);border-radius:14px;padding:10px 8px;margin:4px 0 8px}
+#story{font-size:14px;color:#8a5a33;font-weight:700;margin-bottom:6px;line-height:1.4}
 #q .tag{display:inline-block;background:var(--blue);color:#fff;font-size:12px;font-weight:800;border-radius:999px;padding:2px 10px;margin-bottom:4px}
 #q .t{font-size:24px;font-weight:800;line-height:1.4}
 #q .t b{color:var(--warn);border-bottom:3px dashed var(--warn);padding:0 6px}
@@ -49,21 +68,47 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 @keyframes pop2{0%{transform:scale(0) rotate(-30deg)}100%{transform:scale(1) rotate(-4deg)}}
 .conf{position:absolute;top:-20px;font-size:24px;pointer-events:none;animation:fall 1.8s linear forwards;z-index:9}
 @keyframes fall{to{transform:translateY(520px) rotate(360deg);opacity:.2}}
+
+#bar{display:flex;justify-content:space-between;align-items:center;min-height:30px;margin:0 0 6px;font-size:13px;font-weight:700;color:#8a5a33;gap:6px}
+#hist{text-align:left}
+#clear{border:2px solid var(--line);background:#fff;border-radius:999px;padding:3px 10px;font-weight:800;font-size:13px;color:#8a5a33;white-space:nowrap;flex:none}
+#clear.sure{background:var(--warn);border-color:#b34f3b;color:#fff}
+.crown{display:none;position:absolute;left:50%;top:-16px;margin-left:-10px;font-size:18px;line-height:1;z-index:4}
+#pet[data-king="1"] .crown{display:block;animation:crown .6s ease-in-out infinite alternate}
+@keyframes crown{to{transform:translateY(-3px) rotate(6deg)}}
+.cpop{position:absolute;left:50%;top:34%;z-index:8;display:flex;align-items:center;gap:4px;white-space:nowrap;pointer-events:none;animation:cpop .8s ease-out forwards}
+.cpop .tx{font-weight:900;color:#fff;text-shadow:0 2px 0 #d9531e,2px 0 0 #d9531e,-2px 0 0 #d9531e,0 -2px 0 #d9531e,0 0 10px #ffb347}
+.cpop.l3 .tx{color:#fff3a0}.cpop.l4 .tx{color:#ffd0e6;text-shadow:0 2px 0 #c2377a,2px 0 0 #c2377a,-2px 0 0 #c2377a,0 -2px 0 #c2377a,0 0 12px #ff9ec4}
+.cpop .sd{font-size:20px;animation:flick .25s ease-in-out 3 alternate}
+@keyframes flick{to{transform:scale(1.3) rotate(10deg)}}
+@keyframes cpop{0%{transform:translate(-50%,-50%) scale(.2);opacity:0}25%{transform:translate(-50%,-50%) scale(1.2);opacity:1}45%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{transform:translate(-50%,-50%) scale(1.15);opacity:0}}
+.fw{position:absolute;left:50%;top:40%;font-size:20px;pointer-events:none;z-index:7;animation:fw .9s ease-out forwards}
+@keyframes fw{0%{transform:translate(-50%,-50%) scale(.4)}to{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1.3);opacity:0}}
+#room.rb::after{content:"";position:absolute;inset:0;border-radius:12px;pointer-events:none;z-index:7;box-shadow:inset 0 0 0 3px #ff5d5d,inset 0 0 0 6px #ffb347,inset 0 0 0 9px #ffe066,inset 0 0 0 12px #6fdc8c,inset 0 0 0 15px #6bb6ff;animation:rb 1.4s ease-out forwards}
+#mute{flex:none;width:42px;height:42px;margin-left:8px;border-radius:50%;border:2px solid var(--line);background:#fff;font-size:22px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 0 var(--line)}
+#mute:active{transform:translateY(1px);box-shadow:none}
+#mute.off{background:#eee;border-color:#cfc6b4;filter:grayscale(.6)}
+@keyframes rb{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
 </style></head>
 <body>
 <div id="app">
-  <div class="top"><span>🏡 圓圓的新家</span><span class="dots" id="dots"></span></div>
-  <div id="room"><div class="win"></div>
-    <div id="pet"><div class="ear l"></div><div class="ear r"></div><div class="blob"></div><div class="cheek l"></div><div class="cheek r"></div><div class="mouth"></div></div>
+  <div class="top"><span>🏡 圓圓的新家</span><span class="dots" id="dots"></span><button id="mute" type="button" aria-label="音效開關" aria-pressed="false">🔊</button></div>
+  <div id="bar"><span id="hist"></span><button id="clear" style="display:none">🧹 重新布置</button></div>
+  <div id="room"><div class="win"></div><div id="combo"></div>
+    <div id="pet"><div class="crown">👑</div><div class="ear l"></div><div class="ear r"></div><div class="blob"></div><div class="cheek l"></div><div class="cheek r"></div><div class="mouth"></div></div>
   </div>
   <div id="say"></div>
   <div id="play">
-    <div id="q"><div class="tag" id="tag"></div><div class="t" id="qt"></div></div>
+    <div id="q"><div id="story"></div><div class="tag" id="tag"></div><div class="t" id="qt"></div></div>
     <div id="opts"></div>
   </div>
   <div id="end">
     <div class="sticker">🌟 小小設計師 🌟</div>
+    <div id="stars"></div>
     <div id="endsay" style="font-weight:800;font-size:17px;margin:6px 0"></div>
+    <div id="endstory" style="font-size:14px;color:#8a5a33;margin:4px 0"></div>
+    <div id="endinfo"></div>
+    <div id="endhist" style="font-size:14px;font-weight:800;color:#8a5a33;margin:0 0 6px"></div>
     <button class="big" id="again">🔁 再玩一次</button>
   </div>
 </div>
@@ -75,76 +120,237 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
   var pick=function(a){return a[rnd(a.length)]};
   var shuffle=function(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=rnd(i+1),t=a[i];a[i]=a[j];a[j]=t}return a};
 
-  // 小音效（沒有也沒關係；需點一下才會出聲）
-  var ac=null;
-  function beep(f,d,t){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();var o=ac.createOscillator(),g=ac.createGain();o.type=t||'sine';o.frequency.value=f;g.gain.value=.08;o.connect(g);g.connect(ac.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+d);o.stop(ac.currentTime+d)}catch(e){}}
-  function good(){beep(660,.12);setTimeout(function(){beep(880,.18)},110)}
-  function soft(){beep(300,.15,'triangle')}
-  function fan(){[523,659,784,1047].forEach(function(f,i){setTimeout(function(){beep(f,.2)},i*120)})}
+  // ---- 音效：只用 Web Audio 現場合成（沒有任何音檔）；要等第一次點擊/觸控後才建立；失敗就安靜略過 ----
+  var ac=null,master=null,muted=false,acDead=false;
+  function unlock(){
+    if(acDead)return;
+    try{
+      if(!ac){var AC=window.AudioContext||window.webkitAudioContext;if(!AC){acDead=true;return}
+        ac=new AC();
+        try{master=ac.createGain();master.gain.value=.5;master.connect(ac.destination)}catch(e){master=null}
+        try{var bf=ac.createBuffer(1,1,22050),sr=ac.createBufferSource();sr.buffer=bf;sr.connect(ac.destination);sr.start(0)}catch(e){} // iOS 解鎖
+      }
+      if(ac.state==='suspended'||ac.state==='interrupted'){var pr=ac.resume();if(pr&&pr.catch)pr.catch(function(){})}
+    }catch(e){ac=null;master=null;acDead=true}
+  }
+  ['pointerdown','touchstart','touchend','mousedown','click','keydown'].forEach(function(ev){document.addEventListener(ev,unlock,true)});
+  // 單音：f 頻率、at 延遲秒數、d 長度、type 波形、v 音量、f2 滑到的頻率
+  function tone(f,at,d,type,v,f2){
+    if(muted||!ac||ac.state==='closed')return;
+    try{var t=ac.currentTime+(at||0)+.01,o=ac.createOscillator(),g=ac.createGain();
+      o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);
+      g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(v||.16,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+      o.connect(g);g.connect(master||ac.destination);o.start(t);o.stop(t+d+.03)}catch(e){}
+  }
+  var LAD=[523,587,659,784,880,1047,1175,1319,1568,1760,2093]; // 五聲音階，不會刺耳
+  var SFX={
+    ok:function(){tone(784,0,.12,'sine',.17);tone(1175,.09,.2,'sine',.17)},                       // 答對：短清脆上行
+    combo:function(n){ // 連擊：越高連擊音越多、音越高
+      var cnt=n<=2?3:(n===3?5:Math.min(6+(n-4),8)),st=n<=2?1:(n===3?2:3),i;
+      for(i=0;i<cnt;i++)tone(LAD[st+i],.16+i*.07,.16,'triangle',.15);
+      if(n>=3){tone(2093,.16+cnt*.07,.3,'sine',.1);tone(2637,.2+cnt*.07,.3,'sine',.08)}
+      if(n>=4){tone(392,.16,.4,'triangle',.12);tone(523,.16,.4,'triangle',.1)}
+    },
+    no:function(){tone(392,0,.2,'triangle',.11);tone(330,.15,.28,'triangle',.1)},                 // 答錯：柔和低音
+    place:function(){tone(190,.3,.18,'sine',.24,60)},                                               // 放家具：咚
+    hue:function(h){tone(300+(h||0)*90,0,.1,'sine',.2,800+(h||0)*120)},                           // 換色：啵
+    end:function(st){ // 過關／結尾短旋律，3 星更華麗
+      var m=st>=3?[523,659,784,1047,1319,1047,1319,1568]:(st===2?[523,659,784,1047,784,1047]:[523,659,784,1047]),i;
+      for(i=0;i<m.length;i++)tone(m[i],.05+i*.13,.22,'triangle',.15);
+      var e=.05+m.length*.13;
+      if(st>=2){tone(523,e,.6,'triangle',.1);tone(659,e,.6,'triangle',.09);tone(784,e,.6,'triangle',.09);tone(1047,e,.6,'triangle',.09)}
+      if(st>=3){for(i=0;i<5;i++)tone(1568+i*260,e+.05+i*.08,.25,'sine',.07)}
+    },
+    click:function(){tone(700,0,.05,'triangle',.07,520)}                                           // 按鈕：輕微
+  };
+  var mb=$('mute');
+  function paintMute(){mb.textContent=muted?'🔇':'🔊';mb.className=muted?'off':'';mb.setAttribute('aria-pressed',muted?'true':'false');mb.setAttribute('aria-label',muted?'音效已關閉，點一下開啟':'音效已開啟，點一下關閉')}
 
   // 家具（避開太新的表情符號，Windows 10 看不到）
-  var FURN=[['🛋️','沙發'],['🛏️','小床'],['🖼️','圖畫','wall'],['📺','電視'],['🧸','娃娃'],['🌷','花'],['📚','書櫃'],['🧺','籃子']];
-  var SLOTS=[{l:'1%',b:'14px'},{l:'20%',b:'14px'},{l:'64%',b:'14px'},{l:'81%',b:'14px'}];var WSLOTS=[{l:'12%',b:'100px'},{l:'74%',b:'100px'}];
+  var FURN=[['🛋️','沙發'],['🛏️','小床'],['📺','電視'],['🧸','娃娃'],['🌷','花'],['📚','書櫃'],['🧺','籃子'],['🌵','仙人掌'],['🎹','鋼琴'],['🎁','禮物'],['🖼️','圖畫','wall'],['🕰️','時鐘','wall']];
+  // 位置：F=前排地板、B=後排靠牆、W=掛牆；圓圓固定站中間(42%)，不會擋到
+  var SL={F0:{l:'1%',b:'10px'},F1:{l:'17%',b:'10px'},F2:{l:'66%',b:'10px'},F3:{l:'82%',b:'10px'},B0:{l:'8%',b:'78px'},B1:{l:'45%',b:'78px'},B2:{l:'80%',b:'78px'},W0:{l:'12%',b:'118px'},W1:{l:'74%',b:'118px'}};
+  var FLOOR=['F0','F1','F2','F3','B0','B1','B2'],WALL=['W0','W1'];
+  function hasSL(k){return Object.prototype.hasOwnProperty.call(SL,k)}
+  function findF(e){for(var i=0;i<FURN.length;i++)if(FURN[i][0]===e)return FURN[i];return null}
+  var NR=5; // 關數
 
-  // ---- 題庫（都偏簡單；答錯只鼓勵） ----
+  // ---- 暫存（localStorage；失敗也能照常玩；只存家具/次數/星星，不存個人資料） ----
+  var mem={};
+  function sget(k){var v=null;try{v=window.localStorage.getItem('yuanyuan_'+k)}catch(e){}return v===null||v===undefined?(mem[k]===undefined?null:mem[k]):v}
+  function sset(k,v){mem[k]=v;try{window.localStorage.setItem('yuanyuan_'+k,v)}catch(e){}}
+  var house=[],plays=0,best=0;
+  function loadAll(){
+    try{var a=JSON.parse(sget('house')||'[]'),used={};
+      if(Array.isArray(a))a.forEach(function(x){if(!x||typeof x.e!=='string'||typeof x.s!=='string'||!hasSL(x.s)||used[x.s])return;var f=findF(x.e);if(!f)return;if((WALL.indexOf(x.s)>=0)!==(f[2]==='wall'))return;var h=+x.h;if(!(h>=0&&h<4))h=0;used[x.s]=1;house.push({e:x.e,n:f[1],s:x.s,h:Math.floor(h)})})}catch(e){house=[]}
+    try{var p=parseInt(sget('plays'),10),bs=parseInt(sget('best'),10);plays=(p>=0&&p<100000)?p:0;best=(bs>=0&&bs<=3)?bs:0}catch(e){plays=0;best=0}
+  }
+  function saveHouse(){sset('house',JSON.stringify(house.map(function(x){return {e:x.e,s:x.s,h:x.h}})))}
+  function starStr(n){var t='';for(var i=0;i<3;i++)t+=i<n?'★':'☆';return t}
+  function histText(){return plays>0?'已玩 '+plays+' 次｜最高 '+starStr(best):''}
+  function refreshBar(){$('hist').textContent=histText();$('clear').style.display=house.length?'':'none'}
+  var HUES=[0,80,180,280];
+  function setHue(n,h){n.setAttribute('data-h',h);n.style.filter='hue-rotate('+HUES[h]+'deg) drop-shadow(0 3px 2px rgba(0,0,0,.18))'}
+  function mkNode(it,anim){
+    var s=SL[it.s],n=document.createElement('div');n.className='slot';n.textContent=it.e;n.style.left=s.l;n.style.bottom=s.b;n.setAttribute('data-s',it.s);setHue(n,it.h);
+    n.onclick=function(){it.h=(it.h+1)%4;setHue(n,it.h);saveHouse();SFX.hue(it.h)};
+    $('room').appendChild(n);it.el=n;void n.offsetWidth;n.className=anim?'slot in':'slot show'}
+  function place(f){ // 放一件新家具；位置滿了就換掉同類最舊的
+    var wall=f[2]==='wall',used={};house.forEach(function(x){used[x.s]=1});
+    var free=(wall?WALL:FLOOR).filter(function(k){return !used[k]}),sid=null;
+    if(free.length)sid=pick(free);
+    else for(var i=0;i<house.length;i++){if((WALL.indexOf(house[i].s)>=0)===wall){var old=house.splice(i,1)[0];if(old.el)old.el.remove();sid=old.s;break}}
+    var it={e:f[0],n:f[1],s:sid,h:rnd(4)};house.push(it);mkNode(it,true);saveHouse();refreshBar();SFX.place()}
+  function chooseFurn(){ // 5 件不重複；盡量挑家裡還沒有的
+    var have={};house.forEach(function(x){have[x.e]=1});var a=shuffle(FURN);
+    return a.filter(function(f){return !have[f[0]]}).concat(a.filter(function(f){return have[f[0]]})).slice(0,NR)}
+
+  // ---- 題庫（康軒四年級範圍，都偏簡單；答錯只鼓勵） ----
+  function opts3(ans,cands){var out=[ans],seen={};seen[ans]=1;
+    cands.forEach(function(c){c=String(c);if(out.length<3&&!seen[c]&&!/^-|NaN|^0$|^0\//.test(c)){seen[c]=1;out.push(c)}});
+    var k=1;while(out.length<3){var c=String(+ans+k++);if(!seen[c]&&!isNaN(+ans)){seen[c]=1;out.push(c)}}
+    return out}
   function mulQ(){
-    var a=2+rnd(5),b=2+rnd(5),ans=a*b; // 2~6 的乘法
-    var ws=shuffle([ans+a,ans-b,ans+b+1,ans-a,ans+2].filter(function(x){return x>0&&x!==ans}));
-    return {tag:'乘法小任務',text:a+' × '+b+' = <b>？</b>',ans:String(ans),opts:[String(ans),String(ws[0]),String(ws[1])]};
+    var a=2+rnd(5),b=2+rnd(5),ans=a*b;
+    return {k:'mul',a:a,b:b,tag:'乘法小任務',text:a+' × '+b+' = <b>？</b>',ans:String(ans),opts:opts3(String(ans),[ans+a,ans-b,ans+b+1,ans-a,ans+2])};
   }
+  function divQ(){ // 兩/三位數 ÷ 一位數（整除）
+    var b=2+rnd(8),q=(rnd(3)===0?11+rnd(20):3+rnd(9));q=Math.max(q,Math.ceil(12/b));var a=b*q;
+    return {k:'div',a:a,b:b,tag:'除法小任務',text:a+' ÷ '+b+' = <b>？</b>',ans:String(q),opts:opts3(String(q),[q+1,q-1,q+2,q+10,q-2])};
+  }
+  function invQ(){ // 乘除互逆
+    var b=2+rnd(8),q=2+rnd(8),a=b*q;
+    return {k:'inv',a:a,b:b,tag:'乘除小任務',text:'<b>？</b> × '+b+' = '+a,ans:String(q),opts:opts3(String(q),[q+1,q-1,a-b,q+2])};
+  }
+  function fracQ(){ // 同分母分數加減
+    var d=4+rnd(6),add=rnd(2)===0,x,y,r;
+    if(add){x=1+rnd(d-2);y=1+rnd(d-1-x);r=x+y}else{x=2+rnd(d-2);y=1+rnd(x-1);r=x-y}
+    var ans=r+'/'+d;
+    return {k:'frac',d:d,x:x,y:y,add:add,tag:'分數小任務',text:x+'/'+d+(add?' ＋ ':' － ')+y+'/'+d+' = <b>？</b>',ans:ans,
+      opts:opts3(ans,[(r+1)+'/'+d,(r-1)+'/'+d,r+'/'+(d+d),(x+y)+'/'+(d+d)])};
+  }
+  function kgQ(){ // 公斤公克
+    var t=rnd(3),n=2+rnd(8),ans,text,c;
+    if(t===0){ans=n*1000;text=n+' 公斤 = <b>？</b> 公克';c=[n*100,n*10000,n*10]}
+    else if(t===1){var g=(rnd(2)?200:500);ans=n*1000+g;text=n+' 公斤 '+g+' 公克 = <b>？</b> 公克';c=[n*100+g,n*10+g,n*1000+g+100]}
+    else{ans=n;text=n*1000+' 公克 = <b>？</b> 公斤';c=[n*10,n*100,n+1]}
+    return {k:'kg',t:t,n:n,g:g,tag:'重量小任務',text:text,ans:String(ans),opts:opts3(String(ans),c)};
+  }
+  function hm(total){var h=Math.floor(total/60)%12||12,m=total%60;return m===0?h+' 點整':h+' 點 '+m+' 分'}
+  function timeQ(){ // 時間計算
+    var h=1+rnd(11),m=10*rnd(6),d=10*(1+rnd(5)),t=h*60+m+d,ans=hm(t);
+    return {k:'time',h:h,m:m,d:d,tag:'時間小任務',text:hm(h*60+m)+'，再過 '+d+' 分鐘是幾點？',ans:ans,opts:opts3(ans,[hm(t+10),hm(t-10),hm(t+60),hm(t-60)])};
+  }
+  function circleQ(){ // 圓的半徑與直徑
+    if(rnd(2)){var r=2+rnd(9);return {k:'r2d',r:r,tag:'圓的小任務',text:'圓的半徑是 '+r+' 公分，直徑是 <b>？</b> 公分',ans:String(2*r),opts:opts3(String(2*r),[r,2*r+2,4*r])}}
+    var d=2*(3+rnd(8));return {k:'d2r',d:d,tag:'圓的小任務',text:'圓的直徑是 '+d+' 公分，半徑是 <b>？</b> 公分',ans:String(d/2),opts:opts3(String(d/2),[d,d/2+2,2*d])};
+  }
+  var PROB=[['媽媽買了 3 盒餅乾，每盒 4 片，一共有幾片？','12','7','10'],['圓圓每天吃 2 顆莓果，5 天吃幾顆？','10','7','25'],['一束花 6 朵，買 2 束，一共幾朵？','12','8','62'],['每張桌子 4 隻腳，3 張桌子有幾隻腳？','12','7','16'],['一包貼紙 5 張，買 4 包，有幾張貼紙？','20','9','54'],
+    ['24 顆糖平分給 4 個人，每人幾顆？','6','20','8'],['72 公分的緞帶剪成 6 段一樣長，每段幾公分？','12','66','11'],['45 張貼紙，每頁貼 5 張，要貼幾頁？','9','40','50'],['84 朵花，每 4 朵綁一束，可以綁幾束？','21','80','20']];
+  function wordQ(){var x=pick(PROB);return {k:'word',tag:'應用小任務',text:x[0],ans:x[1],opts:[x[1],x[2],x[3]]}}
   var IDIOM=[['一<b>？</b>兩得','舉','拳','學'],['三心<b>？</b>意','二','三','四'],['七上八<b>？</b>','下','上','左'],['一<b>？</b>二鳥','石','右','日'],['半途而<b>？</b>','廢','費','肺'],['畫蛇添<b>？</b>','足','手','走'],['守株待<b>？</b>','兔','免','冤'],['四面八<b>？</b>','方','万','放'],['五光十<b>？</b>','色','包','邑'],['井底之<b>？</b>','蛙','娃','挂']];
-  function idiomQ(){var x=pick(IDIOM);return {tag:'成語小任務',text:x[0],ans:x[1],opts:[x[1],x[2],x[3]]}}
-  function wordQ(){
-    var P=[['媽媽買了 3 盒餅乾，每盒 4 片，一共有幾片？','12','7','10'],['圓圓每天吃 2 顆莓果，5 天吃幾顆？','10','7','25'],['一束花 6 朵，買 2 束，一共幾朵？','12','8','62'],['每張桌子 4 隻腳，3 張桌子有幾隻腳？','12','7','16'],['一包貼紙 5 張，買 4 包，有幾張貼紙？','20','9','54']];
-    var x=pick(P);return {tag:'應用小任務',text:x[0],ans:x[1],opts:[x[1],x[2],x[3]]};
-  }
+  function idiomQ(){var x=pick(IDIOM);return {k:'idiom',tag:'成語小任務',text:x[0],ans:x[1],opts:[x[1],x[2],x[3]]}}
   var ZAI=[['我們明天<b>？</b>見！','再','在','才'],['小花貓<b>？</b>沙發上睡覺。','在','再','才'],['這首歌好好聽，我想<b>？</b>聽一次。','再','在','載']];
-  function zaiQ(){var x=pick(ZAI);return {tag:'國字小任務',text:x[0],ans:x[1],opts:[x[1],x[2],x[3]]}}
-  var ROUNDS=[mulQ,idiomQ,function(){return Math.random()<.5?wordQ():zaiQ()}];
+  function zaiQ(){var x=pick(ZAI);return {k:'zai',tag:'國字小任務',text:x[0],ans:x[1],opts:[x[1],x[2],x[3]]}}
+  var SIM=[['我自<b>？</b>整理書包。','己','已','以'],['天色<b>？</b>經很晚了。','已','己','以'],['寫<b>？</b>業要認真。','作','做','坐'],['弟弟長得很<b>？</b>爸爸。','像','象','向'],['月亮圓圓的，好<b>？</b>喔。','圓','園','遠'],['我們去公<b>？</b>玩。','園','圓','遠'],['他跑<b>？</b>很快。','得','的','地'],['媽媽開心<b>？</b>笑了。','地','得','的']];
+  function simQ(){var x=pick(SIM);return {k:'sim',tag:'相似字小任務',text:x[0],ans:x[1],opts:[x[1],x[2],x[3]]}}
+  var POLY=[['「長大」的「長」，要唸哪一個音？','ㄓㄤˇ','ㄔㄤˊ','ㄓㄤˋ'],['「音樂」的「樂」，要唸哪一個音？','ㄩㄝˋ','ㄌㄜˋ','ㄧㄠˋ'],['「快樂」的「樂」，要唸哪一個音？','ㄌㄜˋ','ㄩㄝˋ','ㄌㄜˊ'],['「銀行」的「行」，要唸哪一個音？','ㄏㄤˊ','ㄒㄧㄥˊ','ㄒㄧㄥˋ'],['「重要」的「重」，要唸哪一個音？','ㄓㄨㄥˋ','ㄔㄨㄥˊ','ㄓㄨㄥˇ'],['「得到」的「得」，要唸哪一個音？','ㄉㄜˊ','ㄉㄜ˙','ㄉㄟˇ']];
+  function polyQ(){var x=pick(POLY);return {k:'poly',tag:'多音字小任務',text:x[0],ans:x[1],opts:[x[1],x[2],x[3]]}}
+  var RHET=[['「月亮像一個大銀盤。」是哪一種句子？','譬喻','擬人','設問'],['「小花對我點點頭。」是哪一種句子？','擬人','譬喻','設問'],['「白雲像棉花糖。」是哪一種句子？','譬喻','擬人','設問'],['「風兒在樹林裡唱歌。」是哪一種句子？','擬人','譬喻','設問'],['「弟弟的臉紅得像蘋果。」是哪一種句子？','譬喻','擬人','設問'],['「太陽公公笑瞇瞇。」是哪一種句子？','擬人','譬喻','設問']];
+  function rhetQ(){var x=pick(RHET);return {k:'rhet',tag:'修辭小任務',text:x[0],ans:x[1],opts:[x[1],x[2],x[3]]}}
+  var MATH=[mulQ,divQ,invQ,fracQ,kgQ,timeQ,circleQ,wordQ],CHI=[idiomQ,zaiQ,simQ,polyQ,rhetQ];
+  var rounds=[];
+  function buildRounds(){var m=shuffle(MATH),c=shuffle(CHI);rounds=rnd(2)?[m[0],c[0],m[1],c[1],m[2]]:[c[0],m[0],c[1],m[1],c[2]]} // 數學/國語交錯，5 關題型都不同
+  // 小故事：每關一句，{f} 換成這一關的家具
+  var STORY=[['圓圓想買{f}，老闆說要先答對這題：','圓圓走進家具店，想搬{f}回家。先過這一關！','新家空空的！圓圓想要{f}，加油答題：'],
+    ['圓圓還想買{f}，老闆說再答一題就送你！','店裡好熱鬧！想要{f}，就來挑戰這題：','圓圓看到好漂亮的{f}！先答對這題：'],
+    ['圓圓逛到二樓，發現好可愛的{f}！答題帶它回家：','老闆說：這件{f}今天特價，答對就是你的！','圓圓摸摸{f}，好想要！先答對這題：'],
+    ['快到了！圓圓還想買{f}，再加油一下！','圓圓的錢包還夠買{f}，來挑戰這題：','老闆搬出了{f}，只要答對就能帶走：'],
+    ['最後一件！圓圓想帶{f}回家，加油！','老闆笑著說：答對這題，{f}就是你的！','圓圓眼睛亮亮的，好想要{f}！最後一題：']];
+  var ENDSTORY=['圓圓抱著 5 件新家具開心轉圈，今晚終於能睡在新家了！','老闆笑著說「謝謝光顧」，圓圓高興地搬進新家，滿屋子都是你挑的家具。','圓圓把新家布置得好溫暖，還邀請你明天來玩！','5 件家具都搬進來啦！圓圓說：這是全世界最棒的家！'];
 
-  var round=0,furn=[],slots=[],locked=false;
-  function dots(){var h='';for(var i=0;i<3;i++)h+='<span class="dot'+(i<round?' on':'')+'"></span>';$('dots').innerHTML=h}
+  var round=0,furn=[],locked=false,combo=0,maxCombo=0,wrong=0,qWrong=false,moodT=null,rbT=null;
+  var CHEER=['答對了！','太厲害了！','好棒喔！','哇～你好聰明！','耶！答對囉！'];
+  var COMBOSAY=['連擊中！圓圓閃閃發光 ✨','手感超好，繼續衝！','你是答題高手！','圓圓跳舞慶祝～'];
+  var OOPS=['差一點點，再想想看～','沒關係，再試一次！','圓圓相信你！換一個答案看看','嗯～歪頭想想，你可以的！','慢慢來，圓圓陪你～'];
+  function mood(cls,ms){var p=$('pet');clearTimeout(moodT);p.className='';void p.offsetWidth;p.className=cls;moodT=setTimeout(function(){p.className=''},ms)}
+  function sparkle(){var r=$('room');for(var i=0;i<6;i++){var e=document.createElement('div');e.className='spk';e.textContent=pick(['⭐','✨','💖']);e.style.left=(40+rnd(18))+'%';e.style.bottom=(30+rnd(30))+'px';e.style.setProperty('--dx',(rnd(80)-40)+'px');r.appendChild(e);(function(e){setTimeout(function(){e.remove()},950)})(e)}}
+  function showCombo(){var c=$('combo');if(combo>=2){c.textContent='🔥 連擊 x'+combo;c.style.display='block';c.className='';void c.offsetWidth;c.className='bump'}else{c.style.display='none'}}
+  function king(on){if(on)$('pet').setAttribute('data-king','1');else $('pet').removeAttribute('data-king')}
+  function comboFx(n){ // 連擊特效：x2 大字+火焰，x3 煙火星星，x4↑ 彩虹邊框+皇冠，越高越多
+    var r=$('room'),e=document.createElement('div');e.className='cpop l'+Math.min(n,4);SFX.combo(n);
+    var fs=20+2*Math.min(n,5);
+    var dec=n>=4?['🔥','⭐']:['🔥','🔥'];
+    e.innerHTML='<span class="sd">'+dec[0]+'</span><span class="tx" style="font-size:'+fs+'px">🔥 連擊 x'+n+'！</span><span class="sd">'+dec[1]+'</span>';
+    r.appendChild(e);var tx=e.querySelector('.tx'),lim=r.clientWidth/1.25;while(e.offsetWidth>lim&&fs>14){fs-=2;tx.style.fontSize=fs+'px'}
+    setTimeout(function(){e.remove()},850);
+    if(n>=3){var cnt=8+3*(Math.min(n,8)-3),ic=['⭐','✨','🎆','💖','🌟'];
+      for(var i=0;i<cnt;i++){(function(i){var f=document.createElement('div');f.className='fw';f.textContent=ic[i%ic.length];var ang=i*6.2832/cnt,rad=60+rnd(45);
+        f.style.setProperty('--dx',Math.round(Math.cos(ang)*rad)+'px');f.style.setProperty('--dy',Math.round(Math.sin(ang)*rad*.7)+'px');r.appendChild(f);setTimeout(function(){f.remove()},950)})(i)}}
+    if(n>=4){clearTimeout(rbT);r.classList.remove('rb');void r.offsetWidth;r.classList.add('rb');rbT=setTimeout(function(){r.classList.remove('rb')},1450);king(true)}
+  }
+  function dots(){var h='';for(var i=0;i<NR;i++)h+='<span class="dot'+(i<round?' on':'')+'"></span>';$('dots').innerHTML=h}
   function say(t){$('say').textContent=t}
   function reset(){
-    round=0;locked=false;
-    furn=shuffle(FURN).slice(0,3);var fs=shuffle(SLOTS),ws=shuffle(WSLOTS);slots=furn.map(function(f){return f[2]==='wall'?ws.shift():fs.shift()});
-    var r=$('room');Array.prototype.slice.call(r.querySelectorAll('.slot')).forEach(function(n){n.remove()});
+    round=0;locked=false;combo=0;maxCombo=0;wrong=0;qWrong=false;showCombo();king(false);clearTimeout(moodT);$('pet').className='';
+    buildRounds();furn=chooseFurn(); // 房間裡原有的家具保留，這次再繼續加
     $('end').style.display='none';$('play').style.display='block';
     $('pet').style.left='42%';
-    say('圓圓要布置新家！答對就能搬家具進去 🏠');
+    refreshBar();
+    say(house.length?'歡迎回來！圓圓的家還在，再來添新家具 🏠':'圓圓要布置新家！答對就能搬家具進去 🏠');
     next();
   }
   function next(){
-    dots();locked=false;
-    var q=ROUNDS[round]();
-    $('tag').textContent='第 '+(round+1)+' / 3 關　'+q.tag;
+    dots();locked=false;qWrong=false;
+    var q=rounds[round]();
+    $('story').textContent=pick(STORY[round]).replace('{f}',furn[round][1]);
+    $('tag').textContent='第 '+(round+1)+' / '+NR+' 關　'+q.tag;
     $('qt').innerHTML=q.text;
     var o=$('opts');o.innerHTML='';
     shuffle(q.opts).forEach(function(v){
       var b=document.createElement('button');b.className='opt';b.textContent=v;
+      var w=0;for(var i=0;i<v.length;i++)w+=/[0-9\/]/.test(v[i])?.58:(/[ˊˇˋ˙]/.test(v[i])?.1:1);
+      b.style.fontSize=w<=2.7?'':(w<=3.7?'20px':(w<=4.7?'17px':'14px'));
       b.onclick=function(){answer(b,v===q.ans,q)};
       o.appendChild(b);
     });
   }
   function answer(b,right,q){
     if(locked||b.disabled)return;
-    if(!right){b.className='opt no';b.disabled=true;soft();say(pick(['差一點點，再想想看～','沒關係，再試一次！','圓圓相信你！換一個答案看看']));return}
-    locked=true;b.className='opt ok';good();
-    var f=furn[round],s=slots[round];
-    var n=document.createElement('div');n.className='slot';n.textContent=f[0];n.style.left=s.l;n.style.bottom=s.b;
-    $('room').appendChild(n);void n.offsetWidth;n.className='slot in';
-    var pet=$('pet');pet.style.left='42%';pet.className='hop';setTimeout(function(){pet.className=''},1100);
-    say('答對了！'+f[1]+'搬進新家 '+f[0]);
+    if(!right){b.className='opt no';b.disabled=true;SFX.no();wrong++;qWrong=true;combo=0;king(false);showCombo();mood('tilt sad',900);say(pick(OOPS));return}
+    locked=true;b.className='opt ok';SFX.ok();
+    var f=furn[round];
+    if(!qWrong){combo++;if(combo>maxCombo)maxCombo=combo}
+    place(f);
+    showCombo();
+    var line=f[1]+'搬進新家 '+f[0]+(round===0?'　👆點一下家具可以換顏色！':'');
+    if(combo>=2){mood('dance glow',1500);sparkle();comboFx(combo);say(pick(COMBOSAY)+' '+f[1]+'搬進新家 '+f[0])}
+    else{mood('happy hop',1100);say(pick(CHEER)+line)}
     round++;dots();
-    setTimeout(function(){if(round>=3)finish();else next()},1100);
+    setTimeout(function(){if(round>=NR)finish();else next()},1100);
   }
   function finish(){
     $('play').style.display='none';$('end').style.display='block';
-    $('endsay').textContent='圓圓的新家完成了，好開心！';say('🎉 謝謝你幫圓圓布置新家 🎉');
-    fan();
+    var st=wrong===0?3:(wrong<=3?2:1);
+    var msgs={3:['太完美了！5 關一次就全對，你是設計大師！','5 關全部一次答對，圓圓的新家超漂亮！'],2:['很棒喔！只錯一點點，新家很好看！','好厲害，圓圓好喜歡你布置的家！'],1:['完成了！多練習幾次會更厲害～','圓圓的新家完成了，謝謝你不放棄！']};
+    var sh='';for(var i=0;i<3;i++)sh+='<span style="animation-delay:'+(i*.25)+'s">'+(i<st?'⭐':'☆')+'</span>';
+    $('stars').innerHTML=sh;$('stars').setAttribute('data-stars',st);
+    $('endsay').textContent=pick(msgs[st]);
+    $('endstory').textContent=pick(ENDSTORY);$('endinfo').textContent='答錯 '+wrong+' 次　｜　最高連擊 x'+maxCombo;
+    $('combo').style.display='none';king(false);plays++;if(st>best)best=st;sset('plays',String(plays));sset('best',String(best));$('endhist').textContent=histText();refreshBar();mood('dance glow',1500);
+    say('🎉 謝謝你幫圓圓布置新家 🎉');
+    SFX.end(st);
     for(var i=0;i<14;i++){(function(i){setTimeout(function(){var c=document.createElement('div');c.className='conf';c.textContent=pick(['⭐','🎉','💖','✨','🌸']);c.style.left=rnd(92)+'%';$('app').appendChild(c);setTimeout(function(){c.remove()},1900)},i*70)})(i)}
   }
-  $('again').onclick=reset;
+  $('again').onclick=function(){SFX.click();reset()};
+  var clrT=null;
+  $('clear').onclick=function(){var c=$('clear');SFX.click();
+    if(c.className!=='sure'){c.className='sure';c.textContent='再按一次，確定清空';clearTimeout(clrT);clrT=setTimeout(function(){c.className='';c.textContent='🧹 重新布置'},3000);return}
+    clearTimeout(clrT);c.className='';c.textContent='🧹 重新布置';
+    house.forEach(function(x){if(x.el)x.el.remove()});house=[];saveHouse();refreshBar();say('家具都搬走了，圓圓的新家又空空的～')};
+  muted=sget('mute')==='1';paintMute();
+  mb.onclick=function(){muted=!muted;sset('mute',muted?'1':'0');paintMute();if(!muted)SFX.click()};
+  loadAll();house.forEach(function(it){mkNode(it,false)});
   reset();
 })();
 </script>
