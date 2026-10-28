@@ -782,6 +782,18 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .star-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; } .star-slot { display: flex; flex-direction: column; align-items: center; padding: 10px 4px; border-radius: 16px; background: #f1ecf7; border: 2px dashed #c9b8e8; color: #a99ac9; }
 .star-slot.on { background: #fff7d6; border: 2px solid #ffd23f; color: #5a4636; } .star-e { font-size: 34px; } .star-n { font-size: 13px; font-weight: 800; }
 .yy-frame { display: block; width: 100%; height: min(72vh, 720px); border: none; border-radius: 14px; background: #fffaf0; }
+.card { position: relative; } .en-chip { position: absolute; top: 4px; left: 4px; width: 30px; height: 30px; border-radius: 50%; background: #fff; border: 2px solid #A9D6F5; font-size: 15px; line-height: 26px; text-align: center; cursor: pointer; z-index: 2; }
+.en-pop { position: fixed; z-index: 95; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 16px; background: #fffaf0; border: 3px solid #A9D6F5; box-shadow: 0 4px 10px rgba(107,74,58,.2); font-size: 15px; animation: enPop .25s ease-out; }
+.en-pop b { font-size: 22px; color: #2f6fd1; font-family: Arial, sans-serif; } .en-say { border: none; background: #e6f3ff; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; }
+@keyframes enPop { from { transform: scale(.6); opacity: 0; } }
+.en-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 12px; } .en-word { border: 2px solid #A9D6F5; background: #fff; border-radius: 999px; padding: 4px 12px; font-family: Arial, sans-serif; font-weight: 700; color: #2f6fd1; }
+.cash-bill { display: flex; gap: 14px; justify-content: center; font-size: 20px; font-weight: 800; margin: 4px 0; } .cash-bill span { background: #fff; border: 2px solid var(--line); border-radius: 12px; padding: 4px 12px; }
+.cash-tray { min-height: 64px; display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; align-items: center; padding: 8px; margin: 6px auto; max-width: 340px; border-radius: 40px; background: #f3ead8; border: 3px dashed #c9a87a; } .cash-empty { color: #a89880; font-size: 14px; }
+.cash-sum { font-weight: 800; color: #8a5a33; } .cash-msg { margin: 6px 0; font-weight: 800; color: #c0392b; font-size: 17px; }
+.cash-coins { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 8px 0; } .coin-btn { border: none; background: none; padding: 2px; min-width: 52px; min-height: 52px; }
+.coin { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; font-weight: 900; font-size: 15px; font-family: Arial, sans-serif; color: #5a4636; background: radial-gradient(circle at 35% 30%, #fff6d0, #e0b84a); border: 3px solid #b88a2a; box-shadow: 0 2px 0 #8a6a2a; }
+.coin.c1 { width: 34px; height: 34px; font-size: 13px; background: radial-gradient(circle at 35% 30%, #fff, #c9a07a); border-color: #9a7550; } .coin.c5 { width: 38px; height: 38px; background: radial-gradient(circle at 35% 30%, #fff, #c9ccd0); border-color: #8e98a3; }
+.coin.c10 { background: radial-gradient(circle at 35% 30%, #fff, #c9ccd0); border-color: #8e98a3; } .coin.c50 { width: 48px; height: 48px; } .coin.c100 { width: 50px; height: 50px; background: radial-gradient(circle at 35% 30%, #fff, #c9ccd0); border-color: #6b7580; box-shadow: 0 0 0 3px #e0b84a, 0 2px 0 #8a6a2a; }
 .spar-row .spar-sp { background: linear-gradient(#ffb02e, #ff5a1f); color: #fff; border-color: #c0392b; } .spar-row .spar-sp:disabled { background: #eee; color: #aaa; border-color: #ddd; }
 .spar-row .spar-on { animation: glowPulse .4s infinite alternate; transform: scale(1.08); box-shadow: 0 0 0 5px #ffd23f; }
 .music-menu { position: fixed; z-index: 70; background: var(--panel, #fffaf0); border: 2px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
@@ -4761,6 +4773,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-29T20:00', title: '🔤 英文小達人＋💰 收銀台找錢', lines: [
+    ['🔤', '家具和食物卡片左上角多了 🔤，點一下會念英文！學會 10、30、60 個單字有徽章'],
+    ['💰', '小鎮島餐廳的「收銀台找錢」：客人付了錢，從零錢裡找回剛剛好的錢！'],
+    ['🧾', '找對 10、30、60 次會變成「小小店長」，圖鑑都看得到']
+  ] },
   { id: '2026-10-29T09:00', title: '🛋️ 新家大採購', lines: [
     ['🛋️', '新的小遊戲「新家大採購」：答對題目，幫寵物把家具搬進新家！（四年級的數學、國語，給姊姊挑戰）'],
     ['🎮', '在「🎮 遊戲」或學校老師那裡都找得到，玩完會照星星給錢']
@@ -5616,6 +5633,9 @@ function normalizeSave(g) {
   if (out.star != null) {   // 🌟 星光線索
     if (!isObj(out.star)) delete out.star;
     else { const st = out.star; st.got = Array.isArray(st.got) ? [...new Set(st.got.filter(w => Number.isInteger(w) && w >= 1 && w <= 6))].sort((a, b) => a - b) : []; ['egg', 'hatched'].forEach(k => { if (st[k] != null && st[k] !== 1) delete st[k]; }); } }
+  if (out.enLearn != null) { if (!isObj(out.enLearn)) delete out.enLearn; else out.enLearn = Object.fromEntries(Object.entries(out.enLearn).filter(([k, v]) => k.length <= 30 && /^[A-Za-z ]+$/.test(k) && v === 1)); }   // 🔤 學過的英文單字
+  if (out.cash != null) { if (!(isObj(out.cash) && Number.isInteger(out.cash.ok) && out.cash.ok >= 0 && out.cash.ok < 1e6)) delete out.cash; }   // 🧾 找錢答對次數
+  if (out.cashDay != null && !(isObj(out.cashDay) && typeof out.cashDay.d === 'string' && Number.isInteger(out.cashDay.n) && out.cashDay.n >= 0 && out.cashDay.n < 100)) delete out.cashDay;
   if (out.yy != null && !(isObj(out.yy) && typeof out.yy.d === 'string' && Number.isInteger(out.yy.n) && out.yy.n >= 0 && out.yy.n < 100)) delete out.yy;   // 🛋️ 新家大採購今天給過錢的場數
   if (out.town != null) {   // 🏘️ 小鎮島：勇敢貼紙、每天的健康檢查
     if (!isObj(out.town)) delete out.town;
@@ -11612,7 +11632,7 @@ function hostMenuEntries() {
     list.push(['🥋 跟朋友對練', openSparGame]);
     list.push([`🎖️ 考腰帶（現在：${tkdBeltName()}）`, openBeltExam]);
   }
-  if (host.n.id === 'restaurant') { list.push(['🍽️ 點餐吃飯', openRestaurantOrder]); list.push(['👩‍🍳 小幫手打工（做漢堡）', openChefGame]); }
+  if (host.n.id === 'restaurant') { list.push(['🍽️ 點餐吃飯', openRestaurantOrder]); list.push(['👩‍🍳 小幫手打工（做漢堡）', openChefGame]); list.push(['💰 收銀台找錢', openCashGame]); }
   if (host.n.id === 'hospital') { list.push(['💓 當小醫生', openDoctorGame]); list.push(['🐾 寵物健康檢查', openPetCheckup]); list.push(['👧 小可愛健康檢查', openKidCheckup]); list.push(['🏅 勇敢貼紙簿', openStickerBook]); }
   if (host.n.id === 'gym') { list.push(['🏃 跑步機（速度）', openFitRun]); list.push(['🏋️ 舉啞鈴（力量）', openFitLift]); list.push(['🚴 飛輪（耐力）', openFitBike]); list.push(['📦 跳箱（速度＋力量）', openFitBox]); list.push(['🧘 瑜珈（耐力）', openFitYoga]); list.push(['📊 我的體能', openFitStats]); }
   if (host.n.id === 'arena') { list.push(['⛹️ 籃球比賽（2 對 2）', openBball]); list.push(['🏀 投籃機', openBasket]); list.push(['🔴 躲避球', openDodge]); list.push(['🏓 桌球', openPingPong]); }
@@ -14575,6 +14595,7 @@ function furnCard(def, sub, onClick, count) {
   c.appendChild(el('div', 'nm', def.name));
   if (sub) c.appendChild(el('div', 'pr', sub));
   if (count) c.appendChild(el('span', 'ct', '×' + count));
+  const en = typeof enChip === 'function' ? enChip(def.id, def.name) : null; if (en) c.appendChild(en);   // 🔤 英文
   c.onclick = onClick;
   return c;
 }
@@ -14735,6 +14756,7 @@ function foodShopGrid(list, stock, buy, subText) {
     c.appendChild(el('div', 'nm', food.name));
     c.appendChild(el('div', 'pr', `💰 ${fmt(food.price)}　${subText(food)}`));
     if (stock[food.id]) c.appendChild(el('span', 'ct', '×' + stock[food.id]));
+    const en = typeof enChip === 'function' ? enChip(food.id, food.name) : null; if (en) c.appendChild(en);   // 🔤 英文
     c.onclick = () => {
       if (buy(food.id)) { Sound.play('coin'); toast(`買了「${food.name}」`); commit(); }
       else toast('錢不夠，去賺一點吧！');
@@ -15021,6 +15043,8 @@ function tabBook(body) {
   const sections = [
     ['dexTrophy', '🏆', '獎盃', count(G.trophies), TROPHY_SETS.length],
     ['dexStar', '🌟', '星光', ((G.star && G.star.got) || []).length, 6],
+    ['dexEn', '🔤', '英文', Math.min(60, Object.keys(G.enLearn || {}).length), 60],
+    ['dexCash', '🧾', '店長', Math.min(60, (G.cash && G.cash.ok) || 0), 60],
     ['dexPet', '🐾', '寵物', tc('pet')[0], PET_SPECIES.length],
     ['dexGrow', '🌱', '成長', growDexCount(), growDexAll()],
     ['dexSeason', '🎃', '節日', seasonDexCount(), SEASON_FURNITURE.length],
@@ -15171,6 +15195,18 @@ function tabBook(body) {
     const stg = el('div', 'dex-tiles');
     STAR_CLUES.forEach(c => { const has = sg.includes(c.w), t = el('div', 'dex-tile' + (has ? '' : ' none')); t.append(el('div', 'dex-big', has ? c.icon : '✦'), el('span', '', has ? `${c.name}：${c.hint}` : `世界 ${c.w} 大魔王`)); stg.appendChild(t); });
     body.appendChild(stg); }
+
+  // 🔤 英文小達人：學過的單字（點了再念一次）＋徽章
+  { const ws = Object.keys(G.enLearn || {});
+    body.appendChild(sec('dexEn', `🔤 英文小達人 ${ws.length} 個單字`));
+    body.appendChild(note('家具、食物卡片左上角的 🔤 點一下就會念英文。學會 10、30、60 個各有一個徽章！'));
+    const bd = el('div', 'dex-tiles'); EN_BADGES.forEach(([n, ic, nm]) => { const has = ws.length >= n, t = el('div', 'dex-tile' + (has ? '' : ' none')); t.append(el('div', 'dex-big', has ? ic : '✦'), el('span', '', `${nm}（${n} 個）`)); bd.appendChild(t); }); body.appendChild(bd);
+    if (ws.length) { const wl = el('div', 'en-list'); ws.sort().forEach(wd => { const b = el('button', 'en-word', wd); b.onclick = () => enSpeak(wd); wl.appendChild(b); }); body.appendChild(wl); } }
+  // 🧾 小小店長：收銀台找對幾次
+  { const ok = (G.cash && G.cash.ok) || 0;
+    body.appendChild(sec('dexCash', `🧾 小小店長：找對 ${ok} 次`));
+    body.appendChild(note('去小鎮島餐廳的收銀台幫客人找錢。找對 10、30、60 次各有一個徽章！'));
+    const cd = el('div', 'dex-tiles'); CASH_BADGES.forEach(([n, ic, nm]) => { const has = ok >= n, t = el('div', 'dex-tile' + (has ? '' : ' none')); t.append(el('div', 'dex-big', has ? ic : '✦'), el('span', '', `${nm}（${n} 次）`)); cd.appendChild(t); }); body.appendChild(cd); }
 
   // ⚔️ 冒險漫畫：看過的可以點來再看一次
   body.appendChild(sec('dexAdv', `⚔️ 冒險漫畫 ${advCount()} / ${ADV_ALL}`));
@@ -18951,6 +18987,8 @@ const DAILY_POOL = [
   { id: 'isle', cat: 'isle', icon: '🏝️', text: '去小島收成一次', need: 1, go: 'out', avail: g => !!(g.quest && g.quest.clear && g.quest.clear['1-3']) },
   { id: 'doctor', cat: 'town', icon: '🏥', text: '去醫院當一次小醫生', need: 1, go: 'out' },
   { id: 'gym', cat: 'sport', icon: '💪', text: '去健身房練一次', need: 1, go: 'out' },
+  { id: 'en3', cat: 'learn', icon: '🔤', text: '學 3 個英文單字（點家具卡片上的 🔤）', need: 3, go: 'inv' },
+  { id: 'cash', cat: 'learn', icon: '🧾', text: '去餐廳收銀台幫忙找錢一次', need: 1, go: 'out' },
   { id: 'clue', cat: 'quest', icon: '🌟', text: '去找下一個星光線索（世界闖關大魔王關）', need: 1, go: 'games', avail: g => !!(g.star && g.star.egg && !g.star.hatched && (g.star.got || []).length < 6 && (typeof starNextW !== 'function' || questUnlocked(starNextW() + '-3'))) }
 ];
 const DAILY_N = 3, DAILY_EACH = 300, DAILY_BIG_BELLS = 1500;
@@ -24915,6 +24953,127 @@ FURNITURE_ACT.star_egg = 'stareggs';
 if (!LINE_TYPES.some(t => t.key === 'act_stareggs')) LINE_TYPES.push({ key: 'act_stareggs', label: '做事：看星星蛋', hint: '', lines: ACTIVITIES.stareggs.lines });
 // 教學做完、畫面穩定的時候送星星蛋
 setInterval(() => { try { if (!G || !G.openGift || G.guide !== 'done' || SAVE_LOCKED != null || G.away || starState().egg) return; if (!$('#modal').hidden || document.getElementById('showcase') || document.querySelector('.stage.island-on') || (typeof giftVisit !== 'undefined' && giftVisit.state !== 'none') || hold) return; const li = typeof lastStageInput !== 'undefined' ? lastStageInput : 0; if (!li || Date.now() - li < 1500) return; starGiveEgg(); } catch (e) {} }, 3000);
+/* ===== 🔤 英文小達人（家長：偷偷學英文，要好玩不要像考試）=====
+   家具、食物卡片左上角有一顆小小的「🔤」：點了會跳出英文單字，自動念一次（瀏覽器支援才念，🔊 可以再聽一次）。
+   點過、聽過的單字記在 G.enLearn；圖鑑「🔤 英文小達人」看學了幾個；10、30、60 個各得一個徽章（💰 500＋一張貼紙）。
+   每日小目標「學 3 個英文單字」。找不到英文的東西就不出現 🔤。 */
+const EN_WORDS = {
+  // 家具
+  wood_chair: 'chair', wood_table: 'table', wood_bed: 'bed', bookshelf: 'bookshelf', wardrobe: 'wardrobe', clock: 'clock',
+  cute_chair: 'chair', cute_table: 'table', cute_bed: 'bed', teddy: 'teddy bear', cute_rug: 'rug', fishtank: 'fish tank',
+  sofa: 'sofa', tv: 'TV', fridge: 'fridge', kitchen: 'kitchen', lamp: 'lamp', piano: 'piano', gray_rug: 'rug',
+  plant_s: 'plant', planter: 'flowerpot', plant_l: 'plant', log_stool: 'stool', fireplace: 'fireplace', leaf_rug: 'rug',
+  dining_table: 'table', dining_chair: 'chair', desk: 'desk', office_chair: 'chair', bathtub: 'bathtub', toilet: 'toilet',
+  bath_sink: 'sink', bath_mat: 'bath mat', art_mountain: 'picture', art_flower: 'picture', wall_clock: 'clock', calendar: 'calendar',
+  window: 'window', star_poster: 'poster', wall_shelf: 'shelf', bath_mirror: 'mirror', towel_rack: 'towel', dresser: 'dresser',
+  nightstand: 'nightstand', beanbag: 'beanbag', toybox: 'toy box', loveseat: 'sofa', coat_rack: 'coat rack', rocking_chair: 'rocking chair',
+  cupboard: 'cupboard', stove: 'stove', bar_stool: 'stool', globe: 'globe', easel: 'easel', rainbow_rug: 'rainbow',
+  sunflower: 'sunflower', cactus: 'cactus', washer: 'washing machine', pet_bed: 'pet bed', pet_house: 'pet house', certificate: 'certificate',
+  rainbow_art: 'rainbow', star_lights: 'star', heart_frame: 'heart', cupcake_chair: 'cupcake', macaron_table: 'macaron', donut_rug: 'donut',
+  candy_bed: 'candy', icecream_lamp: 'ice cream', cake_shelf: 'cake', lollipop_tree: 'lollipop', strawberry_sofa: 'strawberry', cookie_jar: 'cookie',
+  cream_wardrobe: 'wardrobe', cloud_sofa: 'cloud', unicorn_rocker: 'unicorn', star_lamp: 'star', heart_mirror: 'mirror', rainbow_shelf: 'shelf',
+  bunny_cushion: 'bunny', pet_castle: 'castle', cat_tower: 'cat tower', comic_book: 'comic book', mini_figure: 'toy', game_cart: 'game',
+  robot_toy: 'robot', pink_bookshelf: 'bookshelf', lemon_bookshelf: 'bookshelf', pink_desk: 'desk', lemon_desk: 'desk', pink_wardrobe: 'wardrobe',
+  lemon_wardrobe: 'wardrobe', pink_nightstand: 'nightstand', lemon_nightstand: 'nightstand', lemon_chair: 'chair', lemon_table: 'table', lemon_bed: 'bed',
+  flower_vase: 'vase', photo_frame: 'photo', aroma_candle: 'candle', alarm_clock: 'alarm clock', small_cake: 'cake', tea_set: 'teapot',
+  book_stack: 'book', pencil_cup: 'pencil', snow_globe: 'snow globe', music_box: 'music box',
+  gym_treadmill: 'treadmill', gym_dumbbell: 'dumbbell', gym_bike: 'bike', gym_box: 'box', gym_mat: 'mat',
+  // 食物
+  apple: 'apple', milk: 'milk', cookie: 'cookie', onigiri: 'rice ball', pudding: 'pudding', cake: 'cake', bone: 'bone',
+  fresh_milk: 'milk', broccoli: 'broccoli', banana: 'banana', orange: 'orange', sandwich: 'sandwich', bento: 'lunch box',
+  ice_cream: 'ice cream', cotton_candy: 'cotton candy', popcorn: 'popcorn', hw_candy: 'candy'
+};
+const EN_BADGES = [[10, '🥉', '英文小達人 銅牌'], [30, '🥈', '英文小達人 銀牌'], [60, '🥇', '英文小達人 金牌']];
+const enCount = () => Object.keys(G.enLearn || {}).length;
+function enLearn(word) {
+  if (!G.enLearn || typeof G.enLearn !== 'object') G.enLearn = {};
+  const isNew = !G.enLearn[word], before = enCount();
+  if (isNew) { G.enLearn[word] = 1; try { dailyHit('en3'); } catch (e) {} }
+  const after = enCount();
+  EN_BADGES.forEach(([n, ic, nm]) => { if (before < n && after >= n) { addBells(500); const s = giveSticker().s; setTimeout(() => { try { Sound.play('fanfare'); showcase(el('div', 'magic-pic', ic), `「${nm}」！`, `學會 ${n} 個英文單字了！送你 💰 500 和貼紙 ${s}`, { head: '🔤 好厲害！' }); } catch (e) {} }, 400); } });
+  if (isNew) saveGame();
+  return isNew;
+}
+// 跳出英文小卡（在點的地方旁邊），會自己念一次
+function enPop(anchor, word, zh) {
+  document.querySelectorAll('.en-pop').forEach(x => x.remove());
+  const r = anchor.getBoundingClientRect(), p = el('div', 'en-pop');
+  p.append(el('b', '', word), el('span', '', zh));
+  if (canSpeak()) { const s = el('button', 'en-say', '🔊'); s.onclick = ev => { ev.stopPropagation(); enSpeak(word); }; p.appendChild(s); }
+  p.style.left = Math.max(8, Math.min(innerWidth - 180, r.left)) + 'px'; p.style.top = Math.max(8, r.top - 54) + 'px';
+  document.body.appendChild(p); p.onclick = ev => { ev.stopPropagation(); p.remove(); };
+  setTimeout(() => p.remove(), 4000);
+  enSpeak(word); if (enLearn(word)) toast(`🔤 學會一個新單字：${word}（${enCount()} 個）`);
+}
+// 卡片左上角的「🔤」（用 span，不要在按鈕裡面再放按鈕）
+function enChip(id, zh) {
+  const w = EN_WORDS[id]; if (!w) return null;
+  const c = el('span', 'en-chip', '🔤'); c.setAttribute('role', 'button'); c.title = '英文';
+  c.onclick = ev => { ev.stopPropagation(); ev.preventDefault(); Sound.play('click'); enPop(c, w, zh); };
+  c.addEventListener('pointerdown', ev => ev.stopPropagation());
+  return c;
+}
+/* ===== 💰 收銀台找錢（家長：偷偷學找錢，要好玩）=====
+   餐廳收銀台的小幫手：客人買東西、付了錢，從零錢裡選出要找回的錢。
+     簡單：找回 50 元以內（1、5、10、50 元）　一般：找回 200 元以內（再加 100 元）
+   答錯不扣錢，溫和提示「還差／多了幾元」，第 3 次就示範正確的找法；一場 5 位客人，有「略過這位」。
+   答對的次數記在 G.cash.ok；圖鑑「🧾 小小店長」：答對 10、30、60 次各一個徽章（💰 500＋貼紙）。前 5 場有獎金。 */
+const CASH_LEVELS = [{ name: '簡單', sub: '找 50 元以內', max: 50, coins: [1, 5, 10, 50], mul: 1 }, { name: '一般', sub: '找 200 元以內', max: 200, coins: [1, 5, 10, 50, 100], mul: 2 }];
+const CASH_BADGES = [[10, '🥉', '小小店長 銅牌'], [30, '🥈', '小小店長 銀牌'], [60, '🥇', '小小店長 金牌']];
+const CASH_DAY_MAX = 5;
+const CASH_GOODS = [['🍔', '漢堡'], ['🍜', '拉麵'], ['🥞', '鬆餅'], ['🍨', '聖代'], ['🍣', '壽司'], ['🍪', '餅乾'], ['🧃', '果汁'], ['🍰', '蛋糕']];
+function cashState() { const c = G.cash && typeof G.cash === 'object' ? G.cash : (G.cash = {}); if (!Number.isInteger(c.ok)) c.ok = 0; return c; }
+function openCashGame() { const w = openGameWindow('💰 收銀台找錢', '客人付了錢，要找回多少呢？點下面的零錢放進盤子，好了按「✅ 找好了」！'); pickLevelRow(w, CASH_LEVELS, L => L.sub, L => playCash(w, L)); }
+function coinEl(v) { return el('span', 'coin c' + v, String(v)); }
+function playCash(w, L) {
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const N = 5, custs = NEIGHBORS.filter(Boolean).slice().sort(() => Math.random() - .5).slice(0, N);
+  let i = 0, right = 0, tries = 0, tray = [], cur = null;
+  const view = el('div', 'tkd-view'); w.stage.appendChild(view);
+  const make = () => {   // 找回的錢在 1～max 之間，付的錢是 50／100／500／1000 這種整數
+    const pays = L.max <= 50 ? [50, 100] : [100, 200, 500];
+    for (let k = 0; k < 50; k++) { const pay = pays[Math.floor(Math.random() * pays.length)], change = 1 + Math.floor(Math.random() * Math.min(L.max, pay - 5)), price = pay - change; if (price > 0) return { pay, price, change, good: CASH_GOODS[Math.floor(Math.random() * CASH_GOODS.length)] }; }
+    return { pay: 50, price: 37, change: 13, good: CASH_GOODS[0] };
+  };
+  const sum = () => tray.reduce((a, b) => a + b, 0);
+  const greedy = n => { const out = []; L.coins.slice().sort((a, b) => b - a).forEach(c => { while (n >= c) { out.push(c); n -= c; } }); return out; };
+  const draw = (msg, show) => {
+    view.innerHTML = '';
+    const c = custs[i];
+    view.appendChild(el('div', 'tkd-say', `${c.short || c.name} 買了 ${cur.good[0]} ${cur.good[1]}`));
+    const bill = el('div', 'cash-bill'); bill.append(el('span', '', `價錢 ${cur.price} 元`), el('span', '', `付了 💵 ${cur.pay} 元`)); view.appendChild(bill);
+    view.appendChild(el('div', 'tkd-say', '要找回多少錢呢？'));
+    const tr = el('div', 'cash-tray'); (show || tray).forEach(v => tr.appendChild(coinEl(v))); if (!(show || tray).length) tr.appendChild(el('span', 'cash-empty', '把零錢放進盤子')); view.appendChild(tr);
+    view.appendChild(el('div', 'cash-sum', `盤子裡：${show ? show.reduce((a, b) => a + b, 0) : sum()} 元`));
+    if (msg) view.appendChild(el('div', 'cash-msg', msg));
+    if (show) return;
+    const row = el('div', 'cash-coins'); L.coins.forEach(v => { const b = el('button', 'coin-btn'); b.appendChild(coinEl(v)); b.onclick = () => { if (tray.length < 20) { tray.push(v); Sound.play('coin'); draw(); } }; row.appendChild(b); }); view.appendChild(row);
+    const r2 = el('div', 'invite-row'), back = el('button', 'big alt', '↩️ 拿回一個'), ok = el('button', 'big', '✅ 找好了'), skip = el('button', 'big alt', '⏭️ 略過這位');
+    back.onclick = () => { tray.pop(); draw(); }; ok.onclick = submit; skip.onclick = () => { i++; next(); }; r2.append(back, ok); view.append(r2, skip);
+    w.status.textContent = `第 ${i + 1} / ${N} 位客人　答對 ${right} 位`;
+  };
+  const submit = () => {
+    const s = sum();
+    if (s === cur.change) { right++; cashState().ok++; cashBadge(); Sound.play('perfect'); sparkleAt(innerWidth / 2, innerHeight / 2, '💖'); toast(`💖 ${custs[i].short || ''}：謝謝你！找得剛剛好！`); i++; setTimeout(next, 600); return; }
+    tries++; Sound.play('miss');
+    if (tries >= 3) { draw('看看怎麼找：這樣就剛剛好喔！', greedy(cur.change)); setTimeout(() => { i++; next(); }, 2600); return; }
+    draw(s < cur.change ? `還差 ${cur.change - s} 元喔，再放一點～` : `多了 ${s - cur.change} 元喔，拿回一點～`);
+  };
+  const next = () => {
+    if (i >= N) {
+      const st = G.cashDay && G.cashDay.d === today() ? G.cashDay : (G.cashDay = { d: today(), n: 0 });
+      view.innerHTML = ''; view.appendChild(el('div', 'tkd-big', '🧾'));
+      let bells = 0; if (st.n < CASH_DAY_MAX && right) { st.n++; bells = payReward(w, right * 20 * L.mul); }
+      try { dailyHit('cash'); } catch (e) {}
+      w.status.textContent = `幫 ${N} 位客人結帳，找對 ${right} 位！${bells ? `　💰 +${fmt(bells)}` : ''}`; saveGame(); gameButtons(w, openCashGame); return;
+    }
+    cur = make(); tray = []; tries = 0; draw();
+  };
+  playCash.test = { cur: () => cur, add: v => tray.push(v), submit, i: () => i, right: () => right, greedy };
+  next();
+}
+function cashBadge() { const n = cashState().ok; CASH_BADGES.forEach(([k, ic, nm]) => { if (n === k) { addBells(500); const s = giveSticker().s; setTimeout(() => { try { Sound.play('fanfare'); showcase(el('div', 'magic-pic', ic), `「${nm}」！`, `已經幫客人找對 ${k} 次錢了！送你 💰 500 和貼紙 ${s}`, { head: '🧾 好厲害！' }); } catch (e) {} }, 400); } }); }
+AWAY_GAMES.push(['💰', '收銀台找錢', 'restaurant', () => openCashGame()]);
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
       動物朋友全都打扮來跳舞放煙火，每天第一次結束時每位送一顆糖（4 顆萬聖節糖果）。

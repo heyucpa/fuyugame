@@ -4811,6 +4811,7 @@
     SB.next(); SB.next();
     $('#modal').hidden = true;
     if (Object.keys(G.passport).length) fails.push('繪本翻到一半就蓋章了');
+    var dst = dailyState(); dst.ids = ['feed', 'bath', 'kidEat']; dst.n = {}; dst.paid = {};   // 今天的目標剛好是「看繪本」的話會拿目標獎金，不算繪本給錢
     openStorybook('brave');
     var bk0 = G.bells;
     for (var pgi = 0; pgi < 5; pgi++) openStorybook.test.next();
