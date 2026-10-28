@@ -8,7 +8,7 @@
 
    同一個資源每次連得上就順手更新一份，所以她離線時拿到的
    一定是「最後一次有網路時的版本」。 */
-const CACHE = 'fuyugame-v2';   // 加了「圓圓的新家大採購」：換版本號，舊快取會被清掉
+const CACHE = 'fuyugame-v3';   // 加了「圓圓的新家大採購」：換版本號，舊快取會被清掉
 const FILES = ['./house.html', './theater.html', './index.html', './yuanyuan_shopping.html', './'];
 
 self.addEventListener('install', e => {

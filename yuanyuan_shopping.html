@@ -90,6 +90,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 #room.rb::after{content:"";position:absolute;inset:0;border-radius:12px;pointer-events:none;z-index:7;box-shadow:inset 0 0 0 3px #ff5d5d,inset 0 0 0 6px #ffb347,inset 0 0 0 9px #ffe066,inset 0 0 0 12px #6fdc8c,inset 0 0 0 15px #6bb6ff;animation:rb 1.4s ease-out forwards}
 #mute{flex:none;width:42px;height:42px;margin-left:8px;border-radius:50%;border:2px solid var(--line);background:#fff;font-size:22px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 0 var(--line)}
 #mute:active{transform:translateY(1px);box-shadow:none}
+html.embed body{padding:0;background:transparent}html.embed #app{width:100%;border:none;border-radius:0}
 #mute.off{background:#eee;border-color:#cfc6b4;filter:grayscale(.6)}
 #prog{margin:0 0 8px;font-size:13px;font-weight:800;color:#8a5a33}
 .pbar{height:12px;border-radius:999px;background:#fff;border:2px solid var(--line);overflow:hidden;margin:3px 0 4px}
@@ -173,6 +174,15 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
   var $=function(id){return document.getElementById(id)};
   var rnd=function(n){return Math.floor(Math.random()*n)};
   var pick=function(a){return a[rnd(a.length)]};
+  // ---- 放在「我的小屋」裡玩（?embed=1）：寵物名字跟著小屋、每個存檔分開記、玩完把星星告訴小屋；單獨打開照舊 ----
+  var QS={};try{location.search.slice(1).split('&').forEach(function(kv){var p=kv.split('=');if(p[0])QS[decodeURIComponent(p[0])]=decodeURIComponent(p[1]||'')})}catch(e){}
+  var EMBED=QS.embed==='1'&&window.parent&&window.parent!==window;
+  var PET=String(QS.pet||'').replace(/[<>&"]/g,'').slice(0,8)||'圓圓';
+  var NS=QS.slot?('yuanyuan_'+String(QS.slot).replace(/[^a-z0-9]/gi,'').slice(0,12)+'_'):'yuanyuan_';
+  function nm(t){return PET==='圓圓'?t:String(t).replace(/圓圓/g,PET)}
+  function tell(o){if(EMBED)try{window.parent.postMessage(o,'*')}catch(e){}}
+  if(EMBED)document.documentElement.className='embed';
+  document.addEventListener('pointerdown',function(){tell({type:'yuanyuan-tap'})},true);
   var shuffle=function(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=rnd(i+1),t=a[i];a[i]=a[j];a[j]=t}return a};
 
   // ---- 音效：只用 Web Audio 現場合成（沒有任何音檔）；要等第一次點擊/觸控後才建立；失敗就安靜略過 ----
@@ -307,8 +317,8 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 
   // ---- 暫存（localStorage；失敗也能照常玩；只存家具/次數/星星，不存個人資料） ----
   var mem={};
-  function sget(k){var v=null;try{v=window.localStorage.getItem('yuanyuan_'+k)}catch(e){}return v===null||v===undefined?(mem[k]===undefined?null:mem[k]):v}
-  function sset(k,v){mem[k]=v;try{window.localStorage.setItem('yuanyuan_'+k,v)}catch(e){}}
+  function sget(k){var v=null;try{v=window.localStorage.getItem(NS+k)}catch(e){}return v===null||v===undefined?(mem[k]===undefined?null:mem[k]):v}
+  function sset(k,v){mem[k]=v;try{window.localStorage.setItem(NS+k,v)}catch(e){}}
   var house=[],plays=0,best=0,total=0,tierSaved=0;
   function tierOf(n){var t=0;for(var i=0;i<TIERS.length;i++)if(n>=TIERS[i][0])t=i+1;return t}
   function curTier(){return Math.max(tierOf(total),tierSaved)}
@@ -441,7 +451,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
     var b=$('banner');b.innerHTML='<small>第 '+(t+1)+' 間房　'+th.ic+'</small><b>'+th.ent+'</b>';b.classList.remove('go');void b.offsetWidth;b.classList.add('go');
     clearTimeout(bnT);bnT=setTimeout(function(){b.classList.remove('go')},1650);if(t>0)SFX.room()}
   function dots(){var h='';for(var i=0;i<NR;i++)h+='<span class="dot'+(i<round?' on':'')+'"></span>';$('dots').innerHTML=h}
-  function say(t){$('say').textContent=t}
+  function say(t){$('say').textContent=nm(t)}
   function reset(){
     round=0;locked=false;combo=0;maxCombo=0;wrong=0;qWrong=false;showCombo();king(false);clearTimeout(moodT);$('pet').className='';
     startM=rnd(2);buildRounds();furn=chooseFurn();run=[];maxRoom=-1;
@@ -454,7 +464,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
   function next(){
     dots();locked=false;qWrong=false;enterRoom(round);if(round>0)say(TT().hi);
     var q=rounds[round]();
-    $('story').textContent=pick(TT().st).replace('{f}',furn[round][1]);
+    $('story').textContent=nm(pick(TT().st).replace('{f}',furn[round][1]));
     $('tag').textContent='第 '+(round+1)+' / '+NR+' 關　'+q.tag;
     $('qt').innerHTML=q.text;
     var o=$('opts');o.innerHTML='';
@@ -487,13 +497,14 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
     var msgs={3:['太完美了！'+NR+' 關一次就全對，你是設計大師！',NR+' 關全部一次答對，圓圓的新家超漂亮！'],2:['很棒喔！只錯一點點，新家很好看！','好厲害，圓圓好喜歡你布置的家！'],1:['完成了！多練習幾次會更厲害～','圓圓的新家完成了，謝謝你不放棄！']};
     var sh='';for(var i=0;i<3;i++)sh+='<span style="animation-delay:'+(i*.25)+'s">'+(i<st?'⭐':'☆')+'</span>';
     $('stars').innerHTML=sh;$('stars').setAttribute('data-stars',st);
-    $('endsay').textContent=pick(msgs[st]);
-    $('endstory').textContent=pick(ENDSTORY);var ft=TH[maxRoom>=0?maxRoom:rnd(8)];$('sticker').textContent='🌟 '+ft.et[st-1]+' 🌟';buildRooms();$('endinfo').textContent='答錯 '+wrong+' 次　｜　最高連擊 x'+maxCombo;
+    $('endsay').textContent=nm(pick(msgs[st]));
+    $('endstory').textContent=nm(pick(ENDSTORY));var ft=TH[maxRoom>=0?maxRoom:rnd(8)];$('sticker').textContent='🌟 '+ft.et[st-1]+' 🌟';buildRooms();$('endinfo').textContent='答錯 '+wrong+' 次　｜　最高連擊 x'+maxCombo;
     $('combo').style.display='none';king(false);plays++;if(st>best)best=st;sset('plays',String(plays));sset('best',String(best));
     var oldT=curTier();total+=st;var newT=Math.max(oldT,tierOf(total));tierSaved=newT;sset('total',String(total));sset('unlock',String(newT));
     $('endgain').textContent='本次得到 ★'+st+'　累積 ★'+total;$('endhist').textContent=histText();refreshBar();mood('dance glow',1500);
     say('🎉 謝謝你幫圓圓布置新家 🎉');
     SFX.end(st);showUnlock(oldT,newT,st);
+    tell({type:'yuanyuan-done',stars:st,wrong:wrong,combo:maxCombo});   // 告訴小屋：玩完了、幾顆星
     for(var i=0;i<14;i++){(function(i){setTimeout(function(){var c=document.createElement('div');c.className='conf';c.textContent=pick(['⭐','🎉','💖','✨','🌸']);c.style.left=rnd(92)+'%';$('app').appendChild(c);setTimeout(function(){c.remove()},1900)},i*70)})(i)}
   }
   function buildRooms(){ // 結尾：8 間房逐間回顧；有舊家的話多一張「舊家」
@@ -519,6 +530,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
     house=house.filter(function(x){return x.r!==undefined});saveHouse();refreshBar();if($('end').style.display==='block'){buildRooms();showRoom(NR-1,[run[NR-1]])}say('舊家的家具都搬走了～')};
   muted=sget('mute')==='1';paintMute();
   mb.onclick=function(){muted=!muted;sset('mute',muted?'1':'0');paintMute();if(!muted)SFX.click()};
+  if(PET!=='圓圓'){var tt=document.querySelector('.top>span');if(tt)tt.textContent='🏡 '+PET+'的新家';document.title=PET+'的新家大採購 🛋️'}
   loadAll();
   reset();
 })();

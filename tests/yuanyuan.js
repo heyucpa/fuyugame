@@ -12,9 +12,9 @@ const path = require('path');
   o.loaded = !!fr;
   if (fr) {
     o.petName = /咪咪的新家/.test(await fr.locator('.top').innerText());
-    // 一直點正確答案，五關玩完
-    for (let k = 0; k < 5; k++) { await fr.waitForTimeout(200); const ok = await fr.evaluate(() => { const bs = [...document.querySelectorAll('.opt')]; return bs.length; }); if (!ok) break;
-      const n = await fr.locator('.opt').count(); for (let i = 0; i < n; i++) { const before = await fr.evaluate(() => document.querySelectorAll('.dot.on').length); await fr.locator('.opt').nth(i).click(); await fr.waitForTimeout(150); const after = await fr.evaluate(() => document.querySelectorAll('.dot.on').length); if (after > before) break; } await fr.waitForTimeout(1300); }
+    // 一直點還能點的答案，全部關卡玩完（關數照遊戲本身，現在是 8 關）
+    for (let k = 0; k < 200; k++) { const st = await fr.evaluate(() => { if (document.getElementById('end').style.display === 'block') return 'end'; const b = [...document.querySelectorAll('.opt')].find(x => !x.disabled); if (b) b.click(); return 'go'; }); if (st === 'end') break; await fr.waitForTimeout(350); }
+
     await p.waitForTimeout(800);
     o.ended = await fr.evaluate(() => document.getElementById('end').style.display === 'block');
     o.ownKey = await fr.evaluate(() => Object.keys(localStorage).some(k => /^yuanyuan_p1_/.test(k)));
