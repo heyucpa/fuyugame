@@ -11,7 +11,8 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 #app{width:min(520px,100%);background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:12px 14px 16px;text-align:center;position:relative;overflow:hidden}
 .top{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:16px;margin-bottom:6px}
 .top>span:first-child{flex:1;text-align:left;white-space:nowrap}
-.dots{display:flex;gap:5px;flex:none}.dot{width:15px;height:15px;border-radius:50%;background:#fff;border:2px solid var(--line)}
+@media(max-width:380px){.dots{gap:3px!important}.dot{width:11px!important;height:11px!important}}
+.dots{display:flex;gap:4px;flex:none}.dot{width:13px;height:13px;border-radius:50%;background:#fff;border:2px solid var(--line)}
 .dot.on{background:var(--gold);border-color:#e0a82e}
 /* 小房間 */
 #room{position:relative;height:210px;border-radius:14px;border:2px solid var(--line);overflow:hidden;background:linear-gradient(#ffe6ef 0 62%,#d9b27c 62% 100%)}
@@ -87,14 +88,27 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 #room.rb::after{content:"";position:absolute;inset:0;border-radius:12px;pointer-events:none;z-index:7;box-shadow:inset 0 0 0 3px #ff5d5d,inset 0 0 0 6px #ffb347,inset 0 0 0 9px #ffe066,inset 0 0 0 12px #6fdc8c,inset 0 0 0 15px #6bb6ff;animation:rb 1.4s ease-out forwards}
 #mute{flex:none;width:42px;height:42px;margin-left:8px;border-radius:50%;border:2px solid var(--line);background:#fff;font-size:22px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 0 var(--line)}
 #mute:active{transform:translateY(1px);box-shadow:none}
-html.embed body{padding:0;background:transparent}html.embed #app{width:100%;border:none;border-radius:0}
 #mute.off{background:#eee;border-color:#cfc6b4;filter:grayscale(.6)}
+#prog{margin:0 0 8px;font-size:13px;font-weight:800;color:#8a5a33}
+.pbar{height:12px;border-radius:999px;background:#fff;border:2px solid var(--line);overflow:hidden;margin:3px 0 4px}
+.pbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffd35c,#ffb347);border-radius:999px;transition:width 1s ease}
+#chips{display:flex;gap:4px;justify-content:center;flex-wrap:wrap}
+.chip{font-size:11px;font-weight:800;border-radius:999px;padding:1px 7px;background:#fff;border:1px solid var(--line);color:#a8977c;white-space:nowrap}
+.chip.on{background:#fff2b8;border-color:#e0a82e;color:#8a5a33}
+#unl{display:none;margin:8px 0;padding:10px 8px;border-radius:14px;border:3px solid #e0a82e;background:linear-gradient(#fff6c9,#ffe27a);font-weight:800;color:#8a5a33;font-size:15px;line-height:1.5;animation:unlpop .8s cubic-bezier(.3,1.6,.5,1)}
+#unl .ut{font-size:17px;margin-bottom:2px}
+#unl .ue{font-size:30px;letter-spacing:4px;line-height:1.3}
+#unl .ue span{display:inline-block;animation:ubob .7s ease-in-out infinite alternate}
+#unl .ue span:nth-child(2n){animation-delay:.2s}#unl .ue span:nth-child(3n){animation-delay:.4s}
+@keyframes unlpop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes ubob{to{transform:translateY(-7px) rotate(8deg)}}
 @keyframes rb{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
 </style></head>
 <body>
 <div id="app">
   <div class="top"><span>🏡 圓圓的新家</span><span class="dots" id="dots"></span><button id="mute" type="button" aria-label="音效開關" aria-pressed="false">🔊</button></div>
   <div id="bar"><span id="hist"></span><button id="clear" style="display:none">🧹 重新布置</button></div>
+  <div id="prog"><div id="progtx"></div><div class="pbar"><i id="pfill"></i></div><div id="chips"></div></div>
   <div id="room"><div class="win"></div><div id="combo"></div>
     <div id="pet"><div class="crown">👑</div><div class="ear l"></div><div class="ear r"></div><div class="blob"></div><div class="cheek l"></div><div class="cheek r"></div><div class="mouth"></div></div>
   </div>
@@ -109,6 +123,8 @@ html.embed body{padding:0;background:transparent}html.embed #app{width:100%;bord
     <div id="endsay" style="font-weight:800;font-size:17px;margin:6px 0"></div>
     <div id="endstory" style="font-size:14px;color:#8a5a33;margin:4px 0"></div>
     <div id="endinfo"></div>
+    <div id="endgain" style="font-size:14px;font-weight:800;color:#8a5a33;margin:2px 0 4px"></div>
+    <div id="unl"></div>
     <div id="endhist" style="font-size:14px;font-weight:800;color:#8a5a33;margin:0 0 6px"></div>
     <button class="big" id="again">🔁 再玩一次</button>
   </div>
@@ -119,15 +135,6 @@ html.embed body{padding:0;background:transparent}html.embed #app{width:100%;bord
   var $=function(id){return document.getElementById(id)};
   var rnd=function(n){return Math.floor(Math.random()*n)};
   var pick=function(a){return a[rnd(a.length)]};
-  // ---- 放在「我的小屋」裡玩（?embed=1）：寵物名字跟著小屋、每個存檔分開記、玩完把星星告訴小屋；單獨打開照舊 ----
-  var QS={};try{location.search.slice(1).split('&').forEach(function(kv){var p=kv.split('=');if(p[0])QS[decodeURIComponent(p[0])]=decodeURIComponent(p[1]||'')})}catch(e){}
-  var EMBED=QS.embed==='1'&&window.parent&&window.parent!==window;
-  var PET=String(QS.pet||'').replace(/[<>&"]/g,'').slice(0,8)||'圓圓';
-  var NS=QS.slot?('yuanyuan_'+String(QS.slot).replace(/[^a-z0-9]/gi,'').slice(0,12)+'_'):'yuanyuan_';
-  function nm(t){return PET==='圓圓'?t:String(t).replace(/圓圓/g,PET)}
-  function tell(o){if(EMBED)try{window.parent.postMessage(o,'*')}catch(e){}}
-  if(EMBED)document.documentElement.className='embed';
-  document.addEventListener('pointerdown',function(){tell({type:'yuanyuan-tap'})},true);
   var shuffle=function(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=rnd(i+1),t=a[i];a[i]=a[j];a[j]=t}return a};
 
   // ---- 音效：只用 Web Audio 現場合成（沒有任何音檔）；要等第一次點擊/觸控後才建立；失敗就安靜略過 ----
@@ -171,49 +178,81 @@ html.embed body{padding:0;background:transparent}html.embed #app{width:100%;bord
       if(st>=2){tone(523,e,.6,'triangle',.1);tone(659,e,.6,'triangle',.09);tone(784,e,.6,'triangle',.09);tone(1047,e,.6,'triangle',.09)}
       if(st>=3){for(i=0;i<5;i++)tone(1568+i*260,e+.05+i*.08,.25,'sine',.07)}
     },
+    unlock:function(d,t){ // 解鎖慶祝：接在過關音樂後面，往上的琶音＋閃亮音，越特別越長
+      var m=[784,988,1175,1568,1976],i;if(t>=2)m=m.concat([2349]);if(t>=3)m=m.concat([2637,3136]);
+      for(i=0;i<m.length;i++)tone(m[i],d+i*.1,.28,'triangle',.13);
+      var e=d+m.length*.1;tone(1047,e,.7,'sine',.1);tone(1568,e,.7,'sine',.08);for(i=0;i<4;i++)tone(2093+i*300,e+.05+i*.09,.25,'sine',.06)
+    },
     click:function(){tone(700,0,.05,'triangle',.07,520)}                                           // 按鈕：輕微
   };
   var mb=$('mute');
   function paintMute(){mb.textContent=muted?'🔇':'🔊';mb.className=muted?'off':'';mb.setAttribute('aria-pressed',muted?'true':'false');mb.setAttribute('aria-label',muted?'音效已關閉，點一下開啟':'音效已開啟，點一下關閉')}
 
   // 家具（避開太新的表情符號，Windows 10 看不到）
-  var FURN=[['🛋️','沙發'],['🛏️','小床'],['📺','電視'],['🧸','娃娃'],['🌷','花'],['📚','書櫃'],['🧺','籃子'],['🌵','仙人掌'],['🎹','鋼琴'],['🎁','禮物'],['🖼️','圖畫','wall'],['🕰️','時鐘','wall']];
+  var FURN=[['🛋️','沙發'],['🛏️','小床'],['📺','電視'],['🧸','娃娃'],['🌷','花'],['📚','書櫃'],['🧺','籃子'],['🌵','仙人掌'],['🎹','鋼琴'],['🎁','禮物'],['🖼️','圖畫','wall'],['🕰️','時鐘','wall'],
+    // 星星解鎖的家具（第 4 個欄位＝解鎖等級）
+    ['🌻','向日葵','',1],['🎸','吉他','',1],['🚲','腳踏車','',1],['🌈','彩虹','wall',1],
+    ['🏆','獎盃','',2],['🎠','旋轉木馬','',2],
+    ['🏰','城堡','',3],['👑','皇冠','wall',3],['🦄','獨角獸','',3]];
+  // 累積星星的解鎖門檻：[星數,簡稱,慶祝標題,內容]
+  var TIERS=[[10,'新家具','解鎖新家具！','🌻向日葵 🎸吉他 🚲腳踏車 🌈彩虹　下一次玩就會出現～'],
+    [30,'新顏色','解鎖新顏色和特別家具！','點家具可以換 6 種顏色啦！🏆獎盃 🎠旋轉木馬　下一次玩會出現～'],
+    [60,'城堡','解鎖最特別的家具！','🏰城堡 👑皇冠 🦄獨角獸　下一次玩會出現～']];
+  var TEMOJI=[['🌻','🎸','🚲','🌈'],['🎨','🏆','🎠','✨'],['🏰','👑','🦄','🌟']];
   // 位置：F=前排地板、B=後排靠牆、W=掛牆；圓圓固定站中間(42%)，不會擋到
   var SL={F0:{l:'1%',b:'10px'},F1:{l:'17%',b:'10px'},F2:{l:'66%',b:'10px'},F3:{l:'82%',b:'10px'},B0:{l:'8%',b:'78px'},B1:{l:'45%',b:'78px'},B2:{l:'80%',b:'78px'},W0:{l:'12%',b:'118px'},W1:{l:'74%',b:'118px'}};
   var FLOOR=['F0','F1','F2','F3','B0','B1','B2'],WALL=['W0','W1'];
   function hasSL(k){return Object.prototype.hasOwnProperty.call(SL,k)}
   function findF(e){for(var i=0;i<FURN.length;i++)if(FURN[i][0]===e)return FURN[i];return null}
-  var NR=5; // 關數
+  var NR=8; // 關數（一次遊玩約 5 分鐘）
 
   // ---- 暫存（localStorage；失敗也能照常玩；只存家具/次數/星星，不存個人資料） ----
   var mem={};
-  function sget(k){var v=null;try{v=window.localStorage.getItem(NS+k)}catch(e){}return v===null||v===undefined?(mem[k]===undefined?null:mem[k]):v}
-  function sset(k,v){mem[k]=v;try{window.localStorage.setItem(NS+k,v)}catch(e){}}
-  var house=[],plays=0,best=0;
+  function sget(k){var v=null;try{v=window.localStorage.getItem('yuanyuan_'+k)}catch(e){}return v===null||v===undefined?(mem[k]===undefined?null:mem[k]):v}
+  function sset(k,v){mem[k]=v;try{window.localStorage.setItem('yuanyuan_'+k,v)}catch(e){}}
+  var house=[],plays=0,best=0,total=0,tierSaved=0;
+  function tierOf(n){var t=0;for(var i=0;i<TIERS.length;i++)if(n>=TIERS[i][0])t=i+1;return t}
+  function curTier(){return Math.max(tierOf(total),tierSaved)}
+  function colorN(){return curTier()>=2?HUES.length:4}
+  function pool(){var t=curTier();return FURN.filter(function(f){return !f[3]||f[3]<=t})}
   function loadAll(){
+    try{var tt=parseInt(sget('total'),10),us=parseInt(sget('unlock'),10);total=(tt>=0&&tt<100000)?tt:0;tierSaved=(us>=0&&us<=TIERS.length)?us:0}catch(e){total=0;tierSaved=0}
     try{var a=JSON.parse(sget('house')||'[]'),used={};
-      if(Array.isArray(a))a.forEach(function(x){if(!x||typeof x.e!=='string'||typeof x.s!=='string'||!hasSL(x.s)||used[x.s])return;var f=findF(x.e);if(!f)return;if((WALL.indexOf(x.s)>=0)!==(f[2]==='wall'))return;var h=+x.h;if(!(h>=0&&h<4))h=0;used[x.s]=1;house.push({e:x.e,n:f[1],s:x.s,h:Math.floor(h)})})}catch(e){house=[]}
+      if(Array.isArray(a))a.forEach(function(x){if(!x||typeof x.e!=='string'||typeof x.s!=='string'||!hasSL(x.s)||used[x.s])return;var f=findF(x.e);if(!f)return;if((WALL.indexOf(x.s)>=0)!==(f[2]==='wall'))return;var h=+x.h;if(!(h>=0&&h<colorN()))h=0;used[x.s]=1;house.push({e:x.e,n:f[1],s:x.s,h:Math.floor(h)})})}catch(e){house=[]}
     try{var p=parseInt(sget('plays'),10),bs=parseInt(sget('best'),10);plays=(p>=0&&p<100000)?p:0;best=(bs>=0&&bs<=3)?bs:0}catch(e){plays=0;best=0}
   }
   function saveHouse(){sset('house',JSON.stringify(house.map(function(x){return {e:x.e,s:x.s,h:x.h}})))}
   function starStr(n){var t='';for(var i=0;i<3;i++)t+=i<n?'★':'☆';return t}
   function histText(){return plays>0?'已玩 '+plays+' 次｜最高 '+starStr(best):''}
-  function refreshBar(){$('hist').textContent=histText();$('clear').style.display=house.length?'':'none'}
-  var HUES=[0,80,180,280];
+  function refreshProg(){var t=curTier(),nx=t<TIERS.length?TIERS[t][0]:0,h='';
+    $('progtx').textContent=nx?'累積 ★'+total+'／下一個 '+nx:'累積 ★'+total+'／全部解鎖 🎉';
+    $('pfill').style.width=(nx?Math.max(0,Math.min(100,total/nx*100)):100)+'%';
+    for(var i=0;i<TIERS.length;i++)h+='<span class="chip'+(t>i?' on':'')+'">'+(t>i?'✅':'🔒')+TIERS[i][0]+'★ '+TIERS[i][1]+'</span>';
+    $('chips').innerHTML=h}
+  function refreshBar(){$('hist').textContent=histText();$('clear').style.display=house.length?'':'none';refreshProg()}
+  var HUES=[0,80,180,280,130,330]; // 前 4 個一開始就有，後 2 個累積 30★ 解鎖
   function setHue(n,h){n.setAttribute('data-h',h);n.style.filter='hue-rotate('+HUES[h]+'deg) drop-shadow(0 3px 2px rgba(0,0,0,.18))'}
   function mkNode(it,anim){
     var s=SL[it.s],n=document.createElement('div');n.className='slot';n.textContent=it.e;n.style.left=s.l;n.style.bottom=s.b;n.setAttribute('data-s',it.s);setHue(n,it.h);
-    n.onclick=function(){it.h=(it.h+1)%4;setHue(n,it.h);saveHouse();SFX.hue(it.h)};
+    n.onclick=function(){it.h=(it.h+1)%colorN();setHue(n,it.h);saveHouse();SFX.hue(it.h)};
     $('room').appendChild(n);it.el=n;void n.offsetWidth;n.className=anim?'slot in':'slot show'}
   function place(f){ // 放一件新家具；位置滿了就換掉同類最舊的
     var wall=f[2]==='wall',used={};house.forEach(function(x){used[x.s]=1});
     var free=(wall?WALL:FLOOR).filter(function(k){return !used[k]}),sid=null;
     if(free.length)sid=pick(free);
     else for(var i=0;i<house.length;i++){if((WALL.indexOf(house[i].s)>=0)===wall){var old=house.splice(i,1)[0];if(old.el)old.el.remove();sid=old.s;break}}
-    var it={e:f[0],n:f[1],s:sid,h:rnd(4)};house.push(it);mkNode(it,true);saveHouse();refreshBar();SFX.place()}
-  function chooseFurn(){ // 5 件不重複；盡量挑家裡還沒有的
-    var have={};house.forEach(function(x){have[x.e]=1});var a=shuffle(FURN);
-    return a.filter(function(f){return !have[f[0]]}).concat(a.filter(function(f){return have[f[0]]})).slice(0,NR)}
+    var it={e:f[0],n:f[1],s:sid,h:rnd(colorN())};house.push(it);mkNode(it,true);saveHouse();refreshBar();SFX.place()}
+  function chooseFurn(){ // NR 件不重複；盡量挑家裡還沒有的；地板最多 7 件、牆上最多 2 件，這次買的才不會互相擠掉
+    var have={};house.forEach(function(x){have[x.e]=1});var a=shuffle(pool());
+    a=a.filter(function(f){return !have[f[0]]}).concat(a.filter(function(f){return have[f[0]]}));
+    var sel=a.slice(0,NR),rest=a.slice(NR),isW=function(f){return f[2]==='wall'},k;
+    function swap(wantWall){ // 把選到的「多出來的那一類」換成備選裡另一類
+      var pi=-1;for(k=rest.length-1;k>=0;k--)if(isW(rest[k])===wantWall){pi=k;break}
+      var si=-1;for(k=sel.length-1;k>=0;k--)if(isW(sel[k])!==wantWall){si=k;break}
+      if(pi<0||si<0)return false;var t=sel[si];sel[si]=rest[pi];rest[pi]=t;return true}
+    var g=0;while(g++<20){var w=sel.filter(isW).length,fl=sel.length-w;
+      if(fl>FLOOR.length){if(!swap(true))break}else if(w>WALL.length){if(!swap(false))break}else break}
+    return sel}
 
   // ---- 題庫（康軒四年級範圍，都偏簡單；答錯只鼓勵） ----
   function opts3(ans,cands){var out=[ans],seen={};seen[ans]=1;
@@ -258,26 +297,30 @@ html.embed body{padding:0;background:transparent}html.embed #app{width:100%;bord
   var PROB=[['媽媽買了 3 盒餅乾，每盒 4 片，一共有幾片？','12','7','10'],['圓圓每天吃 2 顆莓果，5 天吃幾顆？','10','7','25'],['一束花 6 朵，買 2 束，一共幾朵？','12','8','62'],['每張桌子 4 隻腳，3 張桌子有幾隻腳？','12','7','16'],['一包貼紙 5 張，買 4 包，有幾張貼紙？','20','9','54'],
     ['24 顆糖平分給 4 個人，每人幾顆？','6','20','8'],['72 公分的緞帶剪成 6 段一樣長，每段幾公分？','12','66','11'],['45 張貼紙，每頁貼 5 張，要貼幾頁？','9','40','50'],['84 朵花，每 4 朵綁一束，可以綁幾束？','21','80','20']];
   function wordQ(){var x=pick(PROB);return {k:'word',tag:'應用小任務',text:x[0],ans:x[1],opts:[x[1],x[2],x[3]]}}
-  var IDIOM=[['一<b>？</b>兩得','舉','拳','學'],['三心<b>？</b>意','二','三','四'],['七上八<b>？</b>','下','上','左'],['一<b>？</b>二鳥','石','右','日'],['半途而<b>？</b>','廢','費','肺'],['畫蛇添<b>？</b>','足','手','走'],['守株待<b>？</b>','兔','免','冤'],['四面八<b>？</b>','方','万','放'],['五光十<b>？</b>','色','包','邑'],['井底之<b>？</b>','蛙','娃','挂']];
+  var IDIOM=[['一<b>？</b>兩得','舉','拳','學'],['三心<b>？</b>意','二','三','四'],['七上八<b>？</b>','下','上','左'],['一<b>？</b>二鳥','石','右','日'],['半途而<b>？</b>','廢','費','肺'],['畫蛇添<b>？</b>','足','手','走'],['守株待<b>？</b>','兔','免','冤'],['四面八<b>？</b>','方','万','放'],['五光十<b>？</b>','色','包','邑'],['井底之<b>？</b>','蛙','娃','挂'],['對牛彈<b>？</b>','琴','禽','勤'],['掩耳<b>？</b>鈴','盜','道','導'],['聚沙成<b>？</b>','塔','搭','答'],['同舟共<b>？</b>','濟','擠','齊'],['熟能<b>？</b>巧','生','升','聲'],['良藥<b>？</b>口','苦','古','故'],['力爭上<b>？</b>','游','遊','由'],['腳踏實<b>？</b>','地','池','他'],['登峰造<b>？</b>','極','級','及'],['全神貫<b>？</b>','注','住','主']];
   function idiomQ(){var x=pick(IDIOM);return {k:'idiom',tag:'成語小任務',text:x[0],ans:x[1],opts:[x[1],x[2],x[3]]}}
-  var ZAI=[['我們明天<b>？</b>見！','再','在','才'],['小花貓<b>？</b>沙發上睡覺。','在','再','才'],['這首歌好好聽，我想<b>？</b>聽一次。','再','在','載']];
+  var ZAI=[['我們明天<b>？</b>見！','再','在','才'],['小花貓<b>？</b>沙發上睡覺。','在','再','才'],['這首歌好好聽，我想<b>？</b>聽一次。','再','在','載'],['這題我想<b>？</b>檢查一遍。','再','在','載'],['哥哥<b>？</b>房間裡看書。','在','再','載'],['老師說：請<b>？</b>大聲一點。','再','在','載'],['小鳥<b>？</b>樹上唱歌。','在','再','載'],['我吃飽了，不想<b>？</b>吃了。','再','在','載'],['我們<b>？</b>操場上跑步。','在','再','才'],['下課後，<b>？</b>一起去玩吧！','再','在','載'],['媽媽<b>？</b>廚房煮飯。','在','再','才'],['這件衣服太小，我<b>？</b>也穿不下。','再','在','載'],['書包<b>？</b>桌子下面。','在','再','載'],['明年夏天，我們<b>？</b>來這裡玩。','再','在','載'],['老師<b>？</b>黑板上寫字。','在','再','才'],['<b>？</b>見！明天學校見！','再','在','載'],['魚兒<b>？</b>水裡游來游去。','在','再','才'],['我的家<b>？</b>臺中。','在','再','載'],['圓圓<b>？</b>新家門口等你。','在','再','才'],['我想<b>？</b>玩一次這個遊戲。','再','在','載']];
   function zaiQ(){var x=pick(ZAI);return {k:'zai',tag:'國字小任務',text:x[0],ans:x[1],opts:[x[1],x[2],x[3]]}}
-  var SIM=[['我自<b>？</b>整理書包。','己','已','以'],['天色<b>？</b>經很晚了。','已','己','以'],['寫<b>？</b>業要認真。','作','做','坐'],['弟弟長得很<b>？</b>爸爸。','像','象','向'],['月亮圓圓的，好<b>？</b>喔。','圓','園','遠'],['我們去公<b>？</b>玩。','園','圓','遠'],['他跑<b>？</b>很快。','得','的','地'],['媽媽開心<b>？</b>笑了。','地','得','的']];
+  var SIM=[['我自<b>？</b>整理書包。','己','已','以'],['天色<b>？</b>經很晚了。','已','己','以'],['寫<b>？</b>業要認真。','作','做','坐'],['弟弟長得很<b>？</b>爸爸。','像','象','向'],['月亮圓圓的，好<b>？</b>喔。','圓','園','遠'],['我們去公<b>？</b>玩。','園','圓','遠'],['他跑<b>？</b>很快。','得','的','地'],['媽媽開心<b>？</b>笑了。','地','得','的'],['芒果還沒成<b>？</b>，不能吃。','熟','熱','熬'],['突然的巨響，讓我受到<b>？</b>嚇。','驚','警','敬'],['看到壞人，要趕快打電話報<b>？</b>。','警','驚','敬'],['我們用積木<b>？</b>了一座城堡。','搭','塔','答'],['巴黎鐵<b>？</b>又高又美。','塔','搭','答'],['我用零用錢<b>？</b>了一本故事書。','買','賣','貴'],['牆上的<b>？</b>敲了十二下。','鐘','鍾','種'],['下個月學校要<b>？</b>運動會。','辦','辨','辯'],['小明<b>？</b>得作文比賽第一名。','獲','穫','護'],['今天天氣晴<b>？</b>，萬里無雲。','朗','郎','浪'],['河<b>？</b>邊有許多人在散步。','堤','提','題'],['他的<b>？</b>力很好，看得很遠。','視','勢','試']];
   function simQ(){var x=pick(SIM);return {k:'sim',tag:'相似字小任務',text:x[0],ans:x[1],opts:[x[1],x[2],x[3]]}}
-  var POLY=[['「長大」的「長」，要唸哪一個音？','ㄓㄤˇ','ㄔㄤˊ','ㄓㄤˋ'],['「音樂」的「樂」，要唸哪一個音？','ㄩㄝˋ','ㄌㄜˋ','ㄧㄠˋ'],['「快樂」的「樂」，要唸哪一個音？','ㄌㄜˋ','ㄩㄝˋ','ㄌㄜˊ'],['「銀行」的「行」，要唸哪一個音？','ㄏㄤˊ','ㄒㄧㄥˊ','ㄒㄧㄥˋ'],['「重要」的「重」，要唸哪一個音？','ㄓㄨㄥˋ','ㄔㄨㄥˊ','ㄓㄨㄥˇ'],['「得到」的「得」，要唸哪一個音？','ㄉㄜˊ','ㄉㄜ˙','ㄉㄟˇ']];
+  var POLY=[['「長大」的「長」，要唸哪一個音？','ㄓㄤˇ','ㄔㄤˊ','ㄓㄤˋ'],['「音樂」的「樂」，要唸哪一個音？','ㄩㄝˋ','ㄌㄜˋ','ㄧㄠˋ'],['「快樂」的「樂」，要唸哪一個音？','ㄌㄜˋ','ㄩㄝˋ','ㄌㄜˊ'],['「銀行」的「行」，要唸哪一個音？','ㄏㄤˊ','ㄒㄧㄥˊ','ㄒㄧㄥˋ'],['「重要」的「重」，要唸哪一個音？','ㄓㄨㄥˋ','ㄔㄨㄥˊ','ㄓㄨㄥˇ'],['「得到」的「得」，要唸哪一個音？','ㄉㄜˊ','ㄉㄜ˙','ㄉㄟˇ'],['「子彈」的「彈」，要唸哪一個音？','ㄉㄢˋ','ㄊㄢˊ','ㄊㄢˋ'],['「同舟共濟」的「濟」，要唸哪一個音？','ㄐㄧˋ','ㄐㄧˇ','ㄐㄧˊ'],['「中獎」的「中」，要唸哪一個音？','ㄓㄨㄥˋ','ㄓㄨㄥ','ㄓㄨㄥˇ'],['「愛好」的「好」，要唸哪一個音？','ㄏㄠˋ','ㄏㄠˇ','ㄏㄠˊ'],['「還書」的「還」，要唸哪一個音？','ㄏㄨㄢˊ','ㄏㄞˊ','ㄏㄨㄢˇ'],['「首都」的「都」，要唸哪一個音？','ㄉㄨ','ㄉㄡ','ㄉㄨˇ'],['「少年」的「少」，要唸哪一個音？','ㄕㄠˋ','ㄕㄠˇ','ㄕㄠˊ'],['「背書包」的「背」，要唸哪一個音？','ㄅㄟ','ㄅㄟˋ','ㄅㄟˇ'],['「放假」的「假」，要唸哪一個音？','ㄐㄧㄚˋ','ㄐㄧㄚˇ','ㄐㄧㄚˊ'],['「因為」的「為」，要唸哪一個音？','ㄨㄟˋ','ㄨㄟˊ','ㄨㄟˇ'],['「教室」的「教」，要唸哪一個音？','ㄐㄧㄠˋ','ㄐㄧㄠ','ㄐㄧㄠˇ'],['「有空」的「空」，要唸哪一個音？','ㄎㄨㄥˋ','ㄎㄨㄥ','ㄎㄨㄥˊ'],['「曾經」的「曾」，要唸哪一個音？','ㄘㄥˊ','ㄗㄥ','ㄘㄥˋ'],['「裂縫」的「縫」，要唸哪一個音？','ㄈㄥˋ','ㄈㄥˊ','ㄈㄥˇ']];
   function polyQ(){var x=pick(POLY);return {k:'poly',tag:'多音字小任務',text:x[0],ans:x[1],opts:[x[1],x[2],x[3]]}}
-  var RHET=[['「月亮像一個大銀盤。」是哪一種句子？','譬喻','擬人','設問'],['「小花對我點點頭。」是哪一種句子？','擬人','譬喻','設問'],['「白雲像棉花糖。」是哪一種句子？','譬喻','擬人','設問'],['「風兒在樹林裡唱歌。」是哪一種句子？','擬人','譬喻','設問'],['「弟弟的臉紅得像蘋果。」是哪一種句子？','譬喻','擬人','設問'],['「太陽公公笑瞇瞇。」是哪一種句子？','擬人','譬喻','設問']];
+  var RHET=[['「月亮像一個大銀盤。」是哪一種句子？','譬喻','擬人','設問'],['「小花對我點點頭。」是哪一種句子？','擬人','譬喻','設問'],['「白雲像棉花糖。」是哪一種句子？','譬喻','擬人','設問'],['「風兒在樹林裡唱歌。」是哪一種句子？','擬人','譬喻','設問'],['「弟弟的臉紅得像蘋果。」是哪一種句子？','譬喻','擬人','設問'],['「太陽公公笑瞇瞇。」是哪一種句子？','擬人','譬喻','設問'],['「窗口邊的台灣欒樹像一幅風景畫。」是哪一種句子？','譬喻','擬人','設問'],['「彎彎的月亮像一艘小船。」是哪一種句子？','譬喻','擬人','設問'],['「笑聲像銀鈴一樣好聽。」是哪一種句子？','譬喻','擬人','設問'],['「秋天的楓葉紅得像火焰。」是哪一種句子？','譬喻','擬人','設問'],['「雨絲細得像一根根銀針。」是哪一種句子？','譬喻','擬人','設問'],['「秋天為青山穿上芒花編織的毛衣。」是哪一種句子？','擬人','譬喻','設問'],['「花兒張開笑臉歡迎小蜜蜂。」是哪一種句子？','擬人','譬喻','設問'],['「星星眨著眼睛看著我們。」是哪一種句子？','擬人','譬喻','設問'],['「小河哼著歌向前跑。」是哪一種句子？','擬人','譬喻','設問'],['「春風輕輕撫摸我的臉。」是哪一種句子？','擬人','譬喻','設問'],['「誰最愛吃魚呢？答案是小貓。」是哪一種句子？','設問','譬喻','擬人'],['「是誰把花園變得這麼美？是辛勤的園丁。」是哪一種句子？','設問','譬喻','擬人'],['「我愛讀書，我愛運動，我愛畫畫。」是哪一種句子？','排比','設問','擬人'],['「他的力氣大得可以搬動一座山。」是哪一種句子？','誇飾','擬人','設問']];
   function rhetQ(){var x=pick(RHET);return {k:'rhet',tag:'修辭小任務',text:x[0],ans:x[1],opts:[x[1],x[2],x[3]]}}
   var MATH=[mulQ,divQ,invQ,fracQ,kgQ,timeQ,circleQ,wordQ],CHI=[idiomQ,zaiQ,simQ,polyQ,rhetQ];
   var rounds=[];
-  function buildRounds(){var m=shuffle(MATH),c=shuffle(CHI);rounds=rnd(2)?[m[0],c[0],m[1],c[1],m[2]]:[c[0],m[0],c[1],m[1],c[2]]} // 數學/國語交錯，5 關題型都不同
+  function buildRounds(){var m=shuffle(MATH),c=shuffle(CHI),i;rounds=[];for(i=0;i<NR;i++)rounds.push(i%2===startM?m[i>>1]:c[i>>1])} // 數學/國語交錯，8 關題型都不同（數學 4 種、國語 4 種）
+  var startM=0;
   // 小故事：每關一句，{f} 換成這一關的家具
   var STORY=[['圓圓想買{f}，老闆說要先答對這題：','圓圓走進家具店，想搬{f}回家。先過這一關！','新家空空的！圓圓想要{f}，加油答題：'],
     ['圓圓還想買{f}，老闆說再答一題就送你！','店裡好熱鬧！想要{f}，就來挑戰這題：','圓圓看到好漂亮的{f}！先答對這題：'],
     ['圓圓逛到二樓，發現好可愛的{f}！答題帶它回家：','老闆說：這件{f}今天特價，答對就是你的！','圓圓摸摸{f}，好想要！先答對這題：'],
+    ['圓圓走過長長的商店街，看到{f}在門口招手！','老闆從倉庫搬出{f}，說：答對就送你！','圓圓聞到麵包香，不過先買{f}！答對這題：'],
+    ['逛了一半啦！圓圓的目光停在{f}上，加油！','圓圓問：這件{f}擺在新家好看嗎？先答對這題：','老闆說：{f}是店裡的人氣商品，挑戰看看：'],
+    ['圓圓抱著袋子，又看上了{f}！再答一題：','櫃台的小鈴鐺響了，{f}等你帶回家！','圓圓的新家還有空位，正好放{f}！答題：'],
     ['快到了！圓圓還想買{f}，再加油一下！','圓圓的錢包還夠買{f}，來挑戰這題：','老闆搬出了{f}，只要答對就能帶走：'],
     ['最後一件！圓圓想帶{f}回家，加油！','老闆笑著說：答對這題，{f}就是你的！','圓圓眼睛亮亮的，好想要{f}！最後一題：']];
-  var ENDSTORY=['圓圓抱著 5 件新家具開心轉圈，今晚終於能睡在新家了！','老闆笑著說「謝謝光顧」，圓圓高興地搬進新家，滿屋子都是你挑的家具。','圓圓把新家布置得好溫暖，還邀請你明天來玩！','5 件家具都搬進來啦！圓圓說：這是全世界最棒的家！'];
+  var ENDSTORY=['圓圓抱著 '+NR+' 件新家具開心轉圈，今晚終於能睡在新家了！','老闆笑著說「謝謝光顧」，圓圓高興地搬進新家，滿屋子都是你挑的家具。','圓圓把新家布置得好溫暖，還邀請你明天來玩！',NR+' 件家具都搬進來啦！圓圓說：這是全世界最棒的家！'];
 
   var round=0,furn=[],locked=false,combo=0,maxCombo=0,wrong=0,qWrong=false,moodT=null,rbT=null;
   var CHEER=['答對了！','太厲害了！','好棒喔！','哇～你好聰明！','耶！答對囉！'];
@@ -300,11 +343,11 @@ html.embed body{padding:0;background:transparent}html.embed #app{width:100%;bord
     if(n>=4){clearTimeout(rbT);r.classList.remove('rb');void r.offsetWidth;r.classList.add('rb');rbT=setTimeout(function(){r.classList.remove('rb')},1450);king(true)}
   }
   function dots(){var h='';for(var i=0;i<NR;i++)h+='<span class="dot'+(i<round?' on':'')+'"></span>';$('dots').innerHTML=h}
-  function say(t){$('say').textContent=nm(t)}
+  function say(t){$('say').textContent=t}
   function reset(){
     round=0;locked=false;combo=0;maxCombo=0;wrong=0;qWrong=false;showCombo();king(false);clearTimeout(moodT);$('pet').className='';
-    buildRounds();furn=chooseFurn(); // 房間裡原有的家具保留，這次再繼續加
-    $('end').style.display='none';$('play').style.display='block';
+    startM=rnd(2);buildRounds();furn=chooseFurn(); // 房間裡原有的家具保留，這次再繼續加
+    $('end').style.display='none';$('unl').style.display='none';$('play').style.display='block';
     $('pet').style.left='42%';
     refreshBar();
     say(house.length?'歡迎回來！圓圓的家還在，再來添新家具 🏠':'圓圓要布置新家！答對就能搬家具進去 🏠');
@@ -313,7 +356,7 @@ html.embed body{padding:0;background:transparent}html.embed #app{width:100%;bord
   function next(){
     dots();locked=false;qWrong=false;
     var q=rounds[round]();
-    $('story').textContent=nm(pick(STORY[round]).replace('{f}',furn[round][1]));
+    $('story').textContent=pick(STORY[round]).replace('{f}',furn[round][1]);
     $('tag').textContent='第 '+(round+1)+' / '+NR+' 關　'+q.tag;
     $('qt').innerHTML=q.text;
     var o=$('opts');o.innerHTML='';
@@ -341,17 +384,25 @@ html.embed body{padding:0;background:transparent}html.embed #app{width:100%;bord
   }
   function finish(){
     $('play').style.display='none';$('end').style.display='block';
-    var st=wrong===0?3:(wrong<=3?2:1);
-    var msgs={3:['太完美了！5 關一次就全對，你是設計大師！','5 關全部一次答對，圓圓的新家超漂亮！'],2:['很棒喔！只錯一點點，新家很好看！','好厲害，圓圓好喜歡你布置的家！'],1:['完成了！多練習幾次會更厲害～','圓圓的新家完成了，謝謝你不放棄！']};
+    var st=wrong===0?3:(wrong<=4?2:1); // 0 錯＝3 星、1–4 錯＝2 星、5 以上＝1 星
+    var msgs={3:['太完美了！'+NR+' 關一次就全對，你是設計大師！',NR+' 關全部一次答對，圓圓的新家超漂亮！'],2:['很棒喔！只錯一點點，新家很好看！','好厲害，圓圓好喜歡你布置的家！'],1:['完成了！多練習幾次會更厲害～','圓圓的新家完成了，謝謝你不放棄！']};
     var sh='';for(var i=0;i<3;i++)sh+='<span style="animation-delay:'+(i*.25)+'s">'+(i<st?'⭐':'☆')+'</span>';
     $('stars').innerHTML=sh;$('stars').setAttribute('data-stars',st);
-    $('endsay').textContent=nm(pick(msgs[st]));
-    $('endstory').textContent=nm(pick(ENDSTORY));$('endinfo').textContent='答錯 '+wrong+' 次　｜　最高連擊 x'+maxCombo;
-    $('combo').style.display='none';king(false);plays++;if(st>best)best=st;sset('plays',String(plays));sset('best',String(best));$('endhist').textContent=histText();refreshBar();mood('dance glow',1500);
+    $('endsay').textContent=pick(msgs[st]);
+    $('endstory').textContent=pick(ENDSTORY);$('endinfo').textContent='答錯 '+wrong+' 次　｜　最高連擊 x'+maxCombo;
+    $('combo').style.display='none';king(false);plays++;if(st>best)best=st;sset('plays',String(plays));sset('best',String(best));
+    var oldT=curTier();total+=st;var newT=Math.max(oldT,tierOf(total));tierSaved=newT;sset('total',String(total));sset('unlock',String(newT));
+    $('endgain').textContent='本次得到 ★'+st+'　累積 ★'+total;$('endhist').textContent=histText();refreshBar();mood('dance glow',1500);
     say('🎉 謝謝你幫圓圓布置新家 🎉');
-    SFX.end(st);
-    tell({type:'yuanyuan-done',stars:st,wrong:wrong,combo:maxCombo});   // 告訴小屋：玩完了、幾顆星
+    SFX.end(st);showUnlock(oldT,newT,st);
     for(var i=0;i<14;i++){(function(i){setTimeout(function(){var c=document.createElement('div');c.className='conf';c.textContent=pick(['⭐','🎉','💖','✨','🌸']);c.style.left=rnd(92)+'%';$('app').appendChild(c);setTimeout(function(){c.remove()},1900)},i*70)})(i)}
+  }
+  function showUnlock(a,b,st){ // 這次玩完剛好跨過門檻才慶祝；只有這一次畫面會出現
+    var u=$('unl');if(b<=a){u.style.display='none';return}
+    var h='',em=[],i;for(i=a;i<b;i++){h+='<div class="ut">🎉 '+TIERS[i][2]+' 🎉</div><div class="ue">'+TEMOJI[i].map(function(e){return '<span>'+e+'</span>'}).join('')+'</div><div>'+TIERS[i][3]+'</div>';em=em.concat(TEMOJI[i])}
+    u.innerHTML=h;u.style.display='block';u.style.animation='none';void u.offsetWidth;u.style.animation='';
+    SFX.unlock(st>=3?1.8:(st===2?1.5:.9),b);
+    for(i=0;i<20;i++){(function(i){setTimeout(function(){var c=document.createElement('div');c.className='conf';c.textContent=em[i%em.length];c.style.left=rnd(92)+'%';$('app').appendChild(c);setTimeout(function(){c.remove()},1900)},300+i*80)})(i)}
   }
   $('again').onclick=function(){SFX.click();reset()};
   var clrT=null;
@@ -361,7 +412,6 @@ html.embed body{padding:0;background:transparent}html.embed #app{width:100%;bord
     house.forEach(function(x){if(x.el)x.el.remove()});house=[];saveHouse();refreshBar();say('家具都搬走了，圓圓的新家又空空的～')};
   muted=sget('mute')==='1';paintMute();
   mb.onclick=function(){muted=!muted;sset('mute',muted?'1':'0');paintMute();if(!muted)SFX.click()};
-  if(PET!=='圓圓'){var tt=document.querySelector('.top>span');if(tt)tt.textContent='🏡 '+PET+'的新家';document.title=PET+'的新家大採購 🛋️'}
   loadAll();house.forEach(function(it){mkNode(it,false)});
   reset();
 })();
