@@ -772,6 +772,13 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .doc-steps { font-size: 26px; margin: 6px 0; }
 .stk-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 8px 0; } .stk { display: flex; flex-direction: column; align-items: center; padding: 8px 2px; border-radius: 14px; background: #fff7e0; border: 2px solid #ffd23f; } .stk.no { background: #f2f2f2; border-color: #ddd; } .stk-e { font-size: 34px; } .stk-n { font-size: 12px; font-weight: 700; }
 .eye-e { font-family: Arial, sans-serif; font-weight: 900; line-height: 1; margin: 10px; transition: transform .2s; }
+.pill.daily-pill { position: relative; cursor: pointer; font: inherit; font-weight: 800; background: #ffe0ea; } .pill.daily-pill.done { background: #d6f2df; }
+.daily-dot { position: absolute; top: 2px; right: 2px; width: 10px; height: 10px; border-radius: 50%; background: #e8505b; border: 2px solid #fff; }
+.daily-row { display: flex; align-items: center; gap: 8px; } .daily-n { font-weight: 800; color: #8a6a4a; margin-left: auto; white-space: nowrap; } .daily-go { padding: 6px 10px; border-radius: 12px; border: 2px solid var(--line); background: #fff3b0; font-weight: 800; white-space: nowrap; min-height: 40px; }
+.daily-hand { pointer-events: auto; cursor: pointer; z-index: 60; }
+.spark-fly { position: fixed; z-index: 90; pointer-events: none; font-size: 20px; transform: translate(-50%, -50%); animation: sparkFly .9s ease-out forwards; }
+@keyframes sparkFly { to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.4); opacity: 0; } }
+.confetti-cv { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 85; }
 .spar-row .spar-sp { background: linear-gradient(#ffb02e, #ff5a1f); color: #fff; border-color: #c0392b; } .spar-row .spar-sp:disabled { background: #eee; color: #aaa; border-color: #ddd; }
 .spar-row .spar-on { animation: glowPulse .4s infinite alternate; transform: scale(1.08); box-shadow: 0 0 0 5px #ffd23f; }
 .music-menu { position: fixed; z-index: 70; background: var(--panel, #fffaf0); border: 2px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
@@ -4745,6 +4752,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-28T09:00', title: '🎯 今天可以玩…', lines: [
+    ['🎯', '每天打開會跳出「今天可以玩…」三個小目標，上面的「🎯 今日」按鈕隨時可以看'],
+    ['💰', '每完成一個給 300 元；三個都完成還有今日大獎（貼紙、寵物食物、小家具或 1,500 元）'],
+    ['👉', '不知道怎麼做？按「帶我去」，小手會指給你看！']
+  ] },
   { id: '2026-10-28T09:00', title: '小鎮島：餐廳和醫院開了！🍽️🏥', lines: [
     ['🏘️', '主島東北邊多了「小鎮島」，走木橋就到了'],
     ['🍽️', '餐廳：看圖點餐，吃完肚子飽飽、心情好；也可以去廚房當小幫手，照著疊漢堡賺打工錢'],
@@ -5509,7 +5521,8 @@ function normalizeSave(g) {
   if (out.partyDay != null && typeof out.partyDay !== 'string') delete out.partyDay;
   if (out.clownDay != null && typeof out.clownDay !== 'string') delete out.clownDay;
   if (out.dailyPaid != null && typeof out.dailyPaid !== 'string') delete out.dailyPaid;
-  if (out.daily != null && !(isObj(out.daily) && typeof out.daily.d === 'string' && Array.isArray(out.daily.ids))) delete out.daily;
+  if (out.daily != null && !(isObj(out.daily) && typeof out.daily.d === 'string' && Array.isArray(out.daily.ids) && out.daily.ids.every(x => typeof x === 'string'))) delete out.daily;
+  if (out.daily) { const d = out.daily; d.n = isObj(d.n) ? Object.fromEntries(Object.entries(d.n).filter(([, v]) => Number.isInteger(v) && v >= 0 && v < 100)) : {}; d.paid = isObj(d.paid) ? Object.fromEntries(Object.entries(d.paid).filter(([, v]) => v === 1)) : {}; if (d.seen != null && typeof d.seen !== 'string') delete d.seen; d.done = d.done === true; }   // 🎯 今日目標
   if (out.newsAt != null && !isObj(out.newsAt)) delete out.newsAt;
   if (out.trick != null && !(isObj(out.trick) && isObj(out.trick.got) && num(out.trick.y))) delete out.trick;
   if (out.artWall != null) out.artWall = (Array.isArray(out.artWall) ? out.artWall : []).map(cleanDrawing).filter(Boolean).slice(0, 4);
@@ -6308,6 +6321,7 @@ function buyFurniture(id) {
   const def = FURN_BY_ID[id];
   if (!spend(def.price)) return false;
   addItem(id);
+  if (typeof dailyHit === 'function') try { dailyHit('shop'); } catch (e) {}
   return true;
 }
 function buyDeco(kind, id) {
@@ -6319,6 +6333,7 @@ function buyDeco(kind, id) {
   if (!owned.includes(id)) {
     if (!spend(item.price)) return false;
     owned.push(id);
+    if (typeof dailyHit === 'function') try { dailyHit('shop'); } catch (e) {}
   }
   curRoom()[kind] = id;
   return true;
@@ -12000,7 +12015,7 @@ function travelArrive(place) {
   // 🥋🏊 第一次去：教練免費送一套，收進衣櫃（在家裡也可以穿）
   const gift = place === 'dojo' ? ['dobok', 'dobok_pants', 'barefoot', 'tkd_tee'] : place === 'pool' ? ['swimsuit', 'swim_bottom', 'swim_cap'] : null;
   if (gift && gift.some(id => !G.wardrobe.includes(id))) { gift.forEach(id => { if (!G.wardrobe.includes(id)) G.wardrobe.push(id); }); setTimeout(() => toast(place === 'dojo' ? '🥋 熊熊教練送你一套道服！在「換裝」也找得到' : '🏊 鴨鴨教練送你一套泳衣！在「換裝」也找得到'), 1800); }
-  if (typeof dailyHit === 'function') try { dailyHit('visit'); } catch (e) {}
+  if (typeof dailyHit === 'function') try { dailyHit('visit'); if (place === 'uncle' || place === 'grandma') dailyHit('family'); } catch (e) {}
   themeOnTravel(place);
   host.n = null; // 讓 hostTick 重新迎接
   fufuSay(pickLine('travelGo', { 地點: PLACES[place].name }), 3000);
@@ -13553,6 +13568,7 @@ function startHoldFromRoom(it) {
 function placeHold() {
   if (!hold || !hold.ok) { toast(hold && hold.tableFull ? '桌上已經有東西了，換一張桌子吧' : '這裡放不下喔'); Sound.play('miss'); return; }
   Sound.play('place');
+  if (typeof dailyHit === 'function') try { dailyHit('decor'); } catch (e) {}   // 🎯 擺放或移動家具
   const room = curRoom(), onWall = hold.def.layer === 'wall';
   if (hold.table != null) { // 放到桌上
     const t = room.items.find(x => x.uid === hold.table);
@@ -16186,6 +16202,7 @@ function openFishing() {
       const big = f.price >= 3000;
       result.textContent = (big ? `🎉 釣到「${f.name}」！` : `釣到「${f.name}」，`) +
         `賣了 ${fmt(f.price)} 元` + (bonus ? `（連續 ${streak} 竿，再加 ${fmt(bonus)}）` : '');
+      try { dailyHit('fish'); } catch (e) {}
       if (typeof showFishCatch === 'function' && G.fish[f.name] > 1) showFishCatch(f, bonus ? `＋${fmt(bonus)}` : '');   // 魚的圖（第一次的會跳圖鑑大圖）
       commit();
     } else {
@@ -18870,94 +18887,198 @@ function playRideFilm(key) {
   })();
   return true;
 }
-/* ===== 📋 今天的三件事（家長：讓每天打開都有新鮮感，帶她去平常比較少去的地方）=====
-   每天從池子裡挑三件（照日期決定，同一天重開也是同三件），做完三件 → 一張貼紙＋💰 200，一天一次。
-   任務是「做了就算」，沒有做完也沒事，明天換新的。 */
+/* ===== 🎯 今天可以玩…（家長：每日小目標＋小手指引）=====
+   原本的「今天的三件事」升級：
+   ・每天（本機日期）從池子挑 3 個，3 個來自不同類型（照日期決定，同一天重開也一樣）
+   ・每完成 1 個就給 💰 300（約每天零用錢的 3%），有星星特效；3 個都完成 → 今日大獎（貼紙、寵物食物、小家具或 💰 1,500 隨機一個）＋彩帶慶祝
+   ・每天第一次打開、畫面穩定（沒有其他視窗、教學做完）時跳出小卡；上面工具列「🎯 今日」隨時打開，沒做完有小紅點，都做完變 ✅
+   ・每個目標旁邊有「👉 帶我去」：小卡收起來，小手指向要點的地方（頁籤、按鈕、出門、寵物、小可愛），點到那裡、點小手、或 12 秒後就不見
+   ・任務「做了就算」，沒做完也沒事；每個目標、大獎一天只領一次
+   G.daily = { d, ids, n: {id: 次數}, paid: {id: 1}, done, seen }；G.dailyPaid＝最後一次領大獎的日子 */
 const DAILY_POOL = [
-  { id: 'book',   icon: '📖', text: '去圖書館看一本繪本', need: 1 },
-  { id: 'feed',   icon: '🍎', text: '餵寵物吃 2 次', need: 2 },
-  { id: 'kidEat', icon: '🍙', text: '讓小可愛吃一次東西', need: 1 },
-  { id: 'bath',   icon: '🛁', text: '幫寵物洗一次澡', need: 1 },
-  { id: 'lesson', icon: '🔔', text: '在學校上一堂課', need: 1 },
-  { id: 'game',   icon: '🎮', text: '玩 2 場小遊戲', need: 2 },
-  { id: 'visit',  icon: '🚗', text: '出門去 2 個地方', need: 2 },
-  { id: 'dance',  icon: '💃', text: '跳一次舞', need: 1 },
-  { id: 'comic',  icon: '⚔️', text: '看一集冒險漫畫', need: 1 },
-  { id: 'zhuyin', icon: '🔤', text: '玩一次注音小遊戲', need: 1 },
-  { id: 'pat',    icon: '💗', text: '摸摸寵物 5 次', need: 5 },
-  { id: 'ride',   icon: '🎡', text: '坐一次遊樂設施（遊樂園、公園、學校都有）', need: 1 },
-  { id: 'water',  icon: '🌱', text: '幫陽台的花澆一次水', need: 1, avail: g => (g.rooms || []).some(r => r.wall === 'wp_balcony' || /陽台/.test(r.name)) },
-  { id: 'trick',  icon: '🎪', text: '看寵物表演一次才藝', need: 1, avail: g => (g.pets || []).some(p => p.stage === 'adult') }
+  { id: 'feed', cat: 'pet', icon: '🍎', text: '餵寵物吃 2 次', need: 2, go: 'feed' },
+  { id: 'bath', cat: 'pet', icon: '🛁', text: '幫寵物洗一次澡', need: 1, go: 'bath' },
+  { id: 'pat', cat: 'pet', icon: '💗', text: '摸摸寵物 5 次', need: 5, go: 'pet' },
+  { id: 'trick', cat: 'pet', icon: '🎪', text: '看寵物表演一次才藝', need: 1, go: 'trick', avail: g => (g.pets || []).some(p => p.stage === 'adult') },
+  { id: 'kidEat', cat: 'kid', icon: '🍙', text: '讓小可愛吃一次東西', need: 1, go: 'kidEat' },
+  { id: 'dance', cat: 'kid', icon: '💃', text: '點小可愛，跳一次舞', need: 1, go: 'kid' },
+  { id: 'book', cat: 'learn', icon: '📖', text: '去圖書館看一本繪本', need: 1, go: 'out' },
+  { id: 'lesson', cat: 'learn', icon: '🔔', text: '在學校上一堂課', need: 1, go: 'out' },
+  { id: 'zhuyin', cat: 'learn', icon: '🔤', text: '玩一次注音小遊戲', need: 1, go: 'out' },
+  { id: 'comic', cat: 'learn', icon: '⚔️', text: '去叔叔家看一集冒險漫畫', need: 1, go: 'out' },
+  { id: 'game', cat: 'play', icon: '🎮', text: '玩 2 場小遊戲', need: 2, go: 'games' },
+  { id: 'ride', cat: 'play', icon: '🎡', text: '坐一次遊樂設施', need: 1, go: 'out' },
+  { id: 'quest', cat: 'quest', icon: '🗺️', text: '玩一關世界闖關（過關、沒過都算）', need: 1, go: 'games' },
+  { id: 'visit', cat: 'out', icon: '🚗', text: '出門去 2 個地方', need: 2, go: 'out' },
+  { id: 'family', cat: 'out', icon: '👵', text: '去叔叔家或阿婆家玩一次', need: 1, go: 'out' },
+  { id: 'fish', cat: 'out', icon: '🎣', text: '去釣魚，釣到 1 條魚', need: 1, go: 'out' },
+  { id: 'shop', cat: 'home', icon: '🛒', text: '在商店買 1 樣東西', need: 1, go: 'shop' },
+  { id: 'decor', cat: 'home', icon: '🛋️', text: '擺放或移動 1 件家具', need: 1, go: 'inv' },
+  { id: 'water', cat: 'home', icon: '🌱', text: '幫陽台的花澆一次水', need: 1, go: 'balcony', avail: g => (g.rooms || []).some(r => r.wall === 'wp_balcony' || /陽台/.test(r.name)) },
+  { id: 'isle', cat: 'isle', icon: '🏝️', text: '去小島收成一次', need: 1, go: 'out', avail: g => !!(g.quest && g.quest.clear && g.quest.clear['1-3']) },
+  { id: 'doctor', cat: 'town', icon: '🏥', text: '去醫院當一次小醫生', need: 1, go: 'out' },
+  { id: 'gym', cat: 'sport', icon: '💪', text: '去健身房練一次', need: 1, go: 'out' }
 ];
-const DAILY_N = 3, DAILY_BELLS = 200;
+const DAILY_N = 3, DAILY_EACH = 300, DAILY_BIG_BELLS = 1500;
 function dailyPick(day) {
   let h = 0; for (const ch of (day + ':' + (G.inviteId || G.charName || ''))) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   const rnd = () => { h = (h * 1103515245 + 12345) >>> 0; return h / 4294967296; };
-  const pool = DAILY_POOL.filter(t => !t.avail || t.avail(G)).slice();
+  let pool = DAILY_POOL.filter(t => !t.avail || t.avail(G)).slice();
   const out = [];
-  while (out.length < DAILY_N && pool.length) out.push(pool.splice(Math.floor(rnd() * pool.length), 1)[0].id);
+  while (out.length < DAILY_N && pool.length) { const t = pool.splice(Math.floor(rnd() * pool.length), 1)[0]; out.push(t.id); pool = pool.filter(x => x.cat !== t.cat); }   // 3 個不同類型
   return out;
 }
 function dailyState() {
   const d = today();
-  // dailyPaid：最後一次領獎的日子。把裝置日期調回去再調回來也不能重複領（家長沒回報，是檢查時想到的）
-  if (!G.daily || G.daily.d !== d || !G.daily.ids.every(id => DAILY_POOL.some(t => t.id === id))) G.daily = { d, ids: dailyPick(d), n: {}, done: G.dailyPaid === d };
+  // dailyPaid：最後一次領大獎的日子。把裝置日期調回去再調回來也不能重複領大獎
+  if (!G.daily || G.daily.d !== d || !G.daily.ids.every(id => DAILY_POOL.some(t => t.id === id))) G.daily = { d, ids: dailyPick(d), n: {}, paid: {}, done: G.dailyPaid === d };
+  if (!G.daily.n || typeof G.daily.n !== 'object') G.daily.n = {};
+  if (!G.daily.paid || typeof G.daily.paid !== 'object') G.daily.paid = {};
   return G.daily;
 }
 const dailyTask = id => DAILY_POOL.find(t => t.id === id);
 const dailyCount = (st, id) => Math.min(dailyTask(id).need, (st.n || {})[id] || 0);
 const dailyDoneN = st => st.ids.filter(id => dailyCount(st, id) >= dailyTask(id).need).length;
-// 做了一件事就來報：key 對得上今天的任務才算
+// 🎉 彩帶（全螢幕 canvas，最多 150 片，3 秒就停；點一下就收）
+function confettiBurst(n) {
+  try {
+    const c = document.createElement('canvas'), W = innerWidth, H = innerHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
+    c.width = W * dpr; c.height = H * dpr; c.className = 'confetti-cv'; document.body.appendChild(c);
+    const g = c.getContext('2d'); g.scale(dpr, dpr);
+    const ps = Array.from({ length: Math.min(150, n || 120) }, () => ({ x: Math.random() * W, y: -20 - Math.random() * H * .4, vx: (Math.random() - .5) * 2, vy: 2 + Math.random() * 3, r: Math.random() * 6, w: 6 + Math.random() * 6, c: ['#FF9A3C', '#F58CA5', '#BFE8D2', '#A9D6F5', '#D9C7F0', '#FFE9A8'][Math.floor(Math.random() * 6)] }));
+    const T0 = performance.now(); let live = true; c.onpointerdown = () => { live = false; c.remove(); };
+    const tick = now => { if (!live) return; const t = (now - T0) / 1000; g.clearRect(0, 0, W, H); g.globalAlpha = Math.max(0, Math.min(1, 3.2 - t));
+      ps.forEach(p => { p.x += p.vx; p.y += p.vy; p.r += .1; g.save(); g.translate(p.x, p.y); g.rotate(p.r); g.fillStyle = p.c; g.fillRect(-p.w / 2, -p.w / 4, p.w, p.w / 2); g.restore(); });
+      if (t > 3.3) { live = false; c.remove(); return; } requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+  } catch (e) {}
+}
+// ✨ 小星星從某個地方冒出來（完成一個目標）
+function sparkleAt(x, y, sym) {
+  for (let i = 0; i < 8; i++) { const s = el('div', 'spark-fly', sym || (i % 2 ? '⭐' : '💖')); s.style.left = x + 'px'; s.style.top = y + 'px'; s.style.setProperty('--dx', (Math.cos(i / 8 * 6.28) * 70) + 'px'); s.style.setProperty('--dy', (Math.sin(i / 8 * 6.28) * 70 - 30) + 'px'); document.body.appendChild(s); setTimeout(() => s.remove(), 900); }
+}
+// 今日大獎：隨機一種
+function dailyBigPrize() {
+  const kinds = ['sticker', 'food', 'furn', 'bells'], k = kinds[Math.floor(Math.random() * kinds.length)];
+  if (k === 'sticker') { const s = giveSticker().s; return [s, `一張新貼紙 ${s}`]; }
+  if (k === 'food') { const ids = FOODS.filter(f => !f.potion).map(f => f.id); const got = []; for (let i = 0; i < 3; i++) { const id = ids[Math.floor(Math.random() * ids.length)]; G.food[id] = (G.food[id] || 0) + 1; got.push(FOOD_BY_ID[id].emoji); } return ['🎁', `一包寵物食物 ${got.join('')}`]; }
+  if (k === 'furn') { const cheap = FURNITURE.filter(f => f.price > 0 && f.price <= 1500 && !f.gift && !f.season && !f.layer); if (cheap.length) { const f = cheap[Math.floor(Math.random() * cheap.length)]; G.inv[f.id] = (G.inv[f.id] || 0) + 1; return ['🛋️', `一件小家具「${f.name}」（在我的東西裡）`]; } }
+  addBells(DAILY_BIG_BELLS); return ['💰', `💰 ${fmt(DAILY_BIG_BELLS)} 元`];
+}
+// 做了一件事就來報：key 對得上今天的目標才算
 function dailyHit(key, n) {
   if (!G || !G.openGift || SAVE_LOCKED != null) return false;
   const st = dailyState();
-  if (!st.ids.includes(key) || st.done) return false;
+  if (!st.ids.includes(key)) return false;
   const t = dailyTask(key), before = dailyCount(st, key);
   st.n[key] = Math.min(t.need, (st.n[key] || 0) + (n || 1));
   const after = dailyCount(st, key);
   if (after > before) {
-    if (after >= t.need) toast(`📋 完成一件：${t.icon} ${t.text}（${dailyDoneN(st)} / ${DAILY_N}）`);
-    if (dailyDoneN(st) >= DAILY_N) {
+    if (after >= t.need && !st.paid[key]) {   // 完成一個：小獎勵（一天一次）
+      st.paid[key] = 1; addBells(DAILY_EACH); Sound.play('coin');
+      toast(`🎯 完成了：${t.icon} ${t.text}　💰 +${DAILY_EACH}（${dailyDoneN(st)} / ${DAILY_N}）`);
+      const b = document.getElementById('btnDaily'), r = b && b.getBoundingClientRect(); sparkleAt(r ? r.left + r.width / 2 : innerWidth / 2, r ? r.bottom : 80);
+      if (dailyGuide && dailyGuide.id === key) dailyGuideOff();
+    }
+    if (dailyDoneN(st) >= DAILY_N && !st.done && G.dailyPaid !== st.d) {
       st.done = true; G.dailyPaid = st.d;
-      addBells(DAILY_BELLS);
-      const stck = giveSticker().s;
-      showcase(el('div', 'daily-big', '📋✅'), '今天的三件事都做完了！', `拿到貼紙 ${stck} 和 💰 ${DAILY_BELLS}！明天還有新的三件事`, { head: '🎉 太棒了！' });
-      Sound.play('fanfare');
+      const [ic, txt] = dailyBigPrize();
+      setTimeout(() => { try { Sound.play('questClear'); confettiBurst(140); showcase(el('div', 'daily-big', ic), '今天的目標都完成了！', `今日大獎：${txt}！明天還有新的目標`, { head: '🎉 太棒了！' }); } catch (e) {} }, 700);
     }
     saveGame(); refreshTop();
   }
   updateDailyChip();
   return true;
 }
+// 上面工具列的「🎯 今日」按鈕（沒做完有小紅點，都做完變 ✅）
 function updateDailyChip() {
-  let b = document.getElementById('dailyChip');
-  if (!b) { b = el('button', 'daily-chip'); b.id = 'dailyChip'; b.onclick = openDaily; const st = document.querySelector('.stage'); if (st) st.appendChild(b); }
+  const old = document.getElementById('dailyChip'); if (old) old.remove();   // 舊版放在房間右上角的那顆
+  let b = document.getElementById('btnDaily');
+  if (!b) { b = el('button', 'pill daily-pill'); b.id = 'btnDaily'; b.title = '今天可以玩'; b.onclick = () => { Sound.play('click'); openDaily(); }; const games = document.getElementById('btnGames'); if (games && games.parentNode) games.parentNode.insertBefore(b, games); else return; }
   if (!G.openGift || SAVE_LOCKED != null) { b.hidden = true; return; }
-  const st = dailyState(), n = dailyDoneN(st);
-  b.hidden = false;
-  b.textContent = st.done ? '📋 今天都做完了 ✅' : `📋 今天的三件事 ${n} / ${DAILY_N}`;
-  b.classList.toggle('done', !!st.done);
+  const st = dailyState(), all = dailyDoneN(st) >= DAILY_N;
+  b.hidden = false; b.innerHTML = '';
+  b.append(document.createTextNode(all ? '✅' : '🎯'), el('span', 'pill-txt', ' 今日'));
+  if (!all) b.appendChild(el('i', 'daily-dot'));
+  b.classList.toggle('done', all);
 }
 function openDaily() {
   const st = dailyState(), card = $('#modalCard');
-  card.innerHTML = '';
-  card.appendChild(el('h2', '', '📋 今天的三件事'));
-  card.appendChild(note(st.done ? '今天的三件事都做完了！明天會有新的三件事。' : `做完三件就有一張貼紙和 💰 ${DAILY_BELLS}。沒做完也沒關係，明天會換新的。`));
+  st.seen = st.d;
+  closeGameWindow(); card.innerHTML = '';
+  const x = el('button', 'modal-x', '✕'); x.onclick = () => { $('#modal').hidden = true; }; card.appendChild(x);
+  card.appendChild(el('h2', '', '🎯 今天可以玩…'));
+  card.appendChild(note(st.done ? '今天的目標都完成了！明天會有新的目標。' : `每完成一個 💰 ${DAILY_EACH}，三個都完成還有今日大獎！沒做完也沒關係，明天會換新的。`));
   const list = el('div', 'daily-list');
   st.ids.forEach(id => {
     const t = dailyTask(id), c = dailyCount(st, id), ok = c >= t.need;
     const row = el('div', 'daily-row' + (ok ? ' ok' : ''));
-    row.append(el('span', 'daily-ic', ok ? '✅' : t.icon), el('span', 'daily-tx', t.text + (t.need > 1 ? `　${c} / ${t.need}` : '')));
+    row.append(el('span', 'daily-ic', ok ? '✅' : t.icon), el('span', 'daily-tx', t.text), el('span', 'daily-n', `${c} / ${t.need}`));
+    if (!ok) { const go = el('button', 'daily-go', '👉 帶我去'); go.onclick = () => { $('#modal').hidden = true; dailyGuideOn(id); }; row.appendChild(go); }
     list.appendChild(row);
   });
   card.appendChild(list);
   const ok = el('button', 'big', '好，去玩！');
   ok.onclick = () => { $('#modal').hidden = true; };
   card.appendChild(ok);
-  $('#modal').hidden = false;
+  $('#modal').hidden = false; saveGame();
+}
+// 每天第一次：等畫面穩定（沒有其他視窗、包裹、教學、小島）才跳出來
+function dailyAutoOpen() {
+  try {
+    if (!G || !G.openGift || SAVE_LOCKED != null || G.guide !== 'done' || (typeof introPlaying !== 'undefined' && introPlaying)) return;
+    const st = dailyState(); if (st.seen === st.d) return;
+    if (!$('#modal').hidden || document.getElementById('showcase') || document.querySelector('.stage.island-on') || (typeof giftVisit !== 'undefined' && giftVisit.state !== 'none') || (typeof hold !== 'undefined' && hold) || (typeof resting !== 'undefined' && resting)) return;
+    const li = typeof lastStageInput !== 'undefined' ? lastStageInput : 0;
+    if (!li || Date.now() - li < 1500) return;   // 她點過畫面（真的在玩）、而且停下來 1.5 秒才跳；正在點東西就先不要跳
+    openDaily();
+  } catch (e) {}
 }
 setTimeout(() => { try { updateDailyChip(); } catch (e) {} }, 1200);
+setTimeout(() => setInterval(() => { try { updateDailyChip(); } catch (e) {} dailyAutoOpen(); }, 2000), 5000);   // 按鈕常常更新一下（包裹打開、讀檔之後才看得到）
 setInterval(() => { try { if (G.daily && G.daily.d !== today()) updateDailyChip(); } catch (e) {} }, 60000);   // 跨日：換新的
+// 👉 小手指引（延伸原本教學的小手）：指向目標要點的地方；點到那裡、點小手、或 12 秒後就收起來
+let dailyGuide = null;
+function dailyGuideTarget(go) {
+  const rectOf = node => { if (!node || node.hidden || !node.offsetParent) return null; const r = node.getBoundingClientRect(); if (!r.width || r.bottom < 0 || r.top > innerHeight) return null; return { x: r.left + r.width / 2, y: r.top + 4, node }; };
+  const tab = name => rectOf(document.querySelector('#tabs button[data-tab="' + name + '"]'));
+  const inRoom = (x, y, lift) => { if (G.away || document.querySelector('.stage.island-on')) return null; const r = canvas.getBoundingClientRect(), p = iso(x, y, 0); return { x: r.left + view.ox + p.x * view.scale, y: r.top + view.oy + (p.y - lift) * view.scale, node: canvas }; };
+  if (go === 'feed') return rectOf($('#btnFeed'));
+  if (go === 'bath') return rectOf($('#btnBath'));
+  if (go === 'kidEat') return rectOf($('#btnKidEat'));
+  if (go === 'trick') return rectOf($('#btnTrick')) || rectOf($('#btnCall'));
+  if (go === 'pet') return pet && !isEgg() ? inRoom(pet.x, pet.y, 30 * petScale()) || rectOf($('#btnCall')) : rectOf($('#btnCall'));
+  if (go === 'kid') return inRoom(fufu.x, fufu.y, 60) || null;
+  if (go === 'games') return rectOf($('#btnGames'));
+  if (go === 'shop') return tab('shop');
+  if (go === 'inv') return tab('inv');
+  if (go === 'balcony') { const b = [...document.querySelectorAll('#roomTabs button')].find(x => /陽台/.test(x.textContent)); return rectOf(b) || tab('inv'); }
+  if (go === 'out') { if (document.querySelector('.stage.island-on')) return null; return rectOf([...document.querySelectorAll('#roomTabs button')].find(x => /出門/.test(x.textContent))); }
+  return null;
+}
+function dailyGuideOn(id) {
+  const t = dailyTask(id); if (!t) return;
+  dailyGuide = { id, go: t.go, until: Date.now() + 12000 };
+  let h = document.getElementById('dailyHand');
+  if (!h) { h = el('div', 'guide-hand daily-hand', '👇'); h.id = 'dailyHand'; h.onclick = dailyGuideOff; document.body.appendChild(h); }
+  const say = { out: '點「出門」去外面！', games: '點「遊戲」找找看！', shop: '點「商店」買東西！', inv: '點「我的東西」拿家具出來擺！' }[t.go];
+  try { fufuSay(say || `${t.icon} 點這裡！`, 2600); } catch (e) {}
+  dailyGuideTick();
+}
+function dailyGuideOff() { dailyGuide = null; const h = document.getElementById('dailyHand'); if (h) h.hidden = true; }
+function dailyGuideTick() {
+  const h = document.getElementById('dailyHand'); if (!dailyGuide || !h) return;
+  if (Date.now() > dailyGuide.until) return dailyGuideOff();
+  const tg = !$('#modal').hidden ? null : dailyGuideTarget(dailyGuide.go);
+  h.hidden = !tg; if (!tg) return;
+  h.style.left = tg.x + 'px'; h.style.top = tg.y + 'px'; dailyGuide.node = tg.node;
+}
+setInterval(dailyGuideTick, 120);
+document.addEventListener('pointerdown', e => {   // 點到小手指的地方 → 收起來
+  if (!dailyGuide || !dailyGuide.node || !e.target) return;
+  if (e.target.id === 'dailyHand') return;
+  if (dailyGuide.node === canvas ? e.target === canvas : dailyGuide.node.contains(e.target)) setTimeout(dailyGuideOff, 300);
+}, true);
 /* ===== ✨ 一鍵佈置（家長：妹妹不會佈置，但想要漂亮的房子）=====
    選一個風格 → 用「收納裡已經有的」同風格家具自動擺好，再換上同風格的壁紙地板（有買過的話），評分也會加分。
    ・房間已經有家具：可以「補上」（原本的一件都不動，只在空的地方加）或「全部重擺」（先收起來再擺，會問她）。
@@ -19871,6 +19992,7 @@ function islPull() {
   catchFish(f); if (typeof islReqHit === 'function') islReqHit('fish');
   Sound.play('catchFish'); kidMoodUp(2);
   islAddFx('fishup', isl.x + isl.facing * .6, isl.y - 1.2, 1600, { emoji: FISH_EMOJI[f.name] || '🐟' });
+  try { dailyHit('fish'); } catch (e) {}
   if (G.fish[f.name] > 1) showFishCatch(f); else toast(`🎣 釣到「${f.name}」！賣了 ${fmt(f.price)} 元`);   // 第一次釣到會跳出圖鑑大圖；之後跳小卡
   try { kidMakeFace('joy', 1800); } catch (e) {}
   isl.act = null; saveGame(); refreshTop();
@@ -22310,6 +22432,7 @@ function playQuest(id, opt) {
 /* 打輸了：在大魔王那裡輸的（家長：可以從大魔王關重新開始、難度變低）→ 多一顆「從大魔王開始」，
    每輸一次大王少一滴血、跳得慢一點（最少 1 滴血） */
 function questFail(w, id, bossWeak) {
+  try { dailyHit('quest'); } catch (e) {}
   gameCleanup && gameCleanup(); gameCleanup = null;
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   w.stage.appendChild(el('div', 'tkd-big', bossWeak ? '👑' : '💪'));
@@ -22320,6 +22443,7 @@ function questFail(w, id, bossWeak) {
   w.btns.append(again, map);
 }
 function questDone(w, id, P) {
+  try { dailyHit('quest'); } catch (e) {}
   gameCleanup && gameCleanup(); gameCleanup = null;
   const q = questState(), first = !q.clear[id], wd = +id[0];
   q.clear[id] = 1; q.stars[id] = Math.max(q.stars[id] || 0, P.stars);
@@ -24142,7 +24266,7 @@ function fitFinish(w, gains, bells, again, line) {
   const f = fitState(), ups = [];
   Object.entries(gains).forEach(([k, n]) => { const before = fitLv(k); f[k] = Math.min(500, Math.max(0, Math.round((f[k] || 0) + n))); if (fitLv(k) > before) ups.push(k); });
   const got = payReward(w, bells);
-  try { kidActGrowth('gym'); } catch (e) {}
+  try { kidActGrowth('gym'); dailyHit('gym'); } catch (e) {}
   kidMoodUp(6); saveGame();
   w.status.textContent = `${line}　${Object.entries(gains).map(([k, n]) => `${FIT_STATS[k][0]}${FIT_STATS[k][1]} +${Math.round(n)}`).join('　')}　💰 +${fmt(got)}`;
   if (ups.length) { Sound.play('fanfare'); setTimeout(() => { try { showcase(el('div', 'magic-pic', '💪'), ups.map(k => `${FIT_STATS[k][1]}升到 Lv.${fitLv(k)}！`).join(' '), ups.map(k => `${FIT_STATS[k][2]}變得更厲害了！`).join('\n'), { head: '💪 體能升級' }); } catch (e) {} }, 700); }
@@ -24347,7 +24471,7 @@ function isleHarvested(id) { const d = G.qIsleDay; return !!(d && d.d === today(
 function isleHarvest(id) {
   if (isleHarvested(id)) return;
   const day = today(); G.qIsleDay = (G.qIsleDay && G.qIsleDay.d === day) ? G.qIsleDay : { d: day, got: {} }; G.qIsleDay.got['h_' + id] = 1;
-  const s = isleState(id); addBells(150); isleXp(id, 5);
+  const s = isleState(id); addBells(150); isleXp(id, 5); try { dailyHit('isle'); } catch (e) {}
   if (id === 'flower') { const got = []; for (let i = 0; i < 6; i++) { const f = ISLE_FLOWERS[Math.floor(Math.random() * ISLE_FLOWERS.length)]; s.stock[f[0]] = (s.stock[f[0]] || 0) + 1; got.push(f[1]); } gotCard('🌷', '摘了 6 朵花！', `${got.join('')}　💰 +150（明天花又會開）`); }
   else if (id === 'candy') { s.stock += 6; G.kidFood.cotton_candy = (G.kidFood.cotton_candy || 0) + 1; gotCard('🍭', '收了 6 顆糖果！', '還有一個棉花糖可以吃　💰 +150（明天會再長）'); }
   else { const r = isleGiveBone(); gotCard('🦴', `撿到${r.txt}！`, `${r.dup ? '這塊已經有了，賣掉 💰 +30　' : ''}💰 +150（明天再來）`); }
@@ -24598,7 +24722,7 @@ function openDoctorGame() {
     if (k >= p.s.steps.length) { Sound.play('perfect'); good += miss ? 0 : 1; toast(`${p.s.done} 謝謝醫生！`); i++; k = 0; miss = 0; if (i >= N) return finish(); }
     draw(false);
   };
-  const finish = () => { const bells = payReward(w, 60 * N + good * 20); view.innerHTML = ''; view.appendChild(el('div', 'tkd-big', '🏥')); w.status.textContent = `照顧好 ${N} 位病人！　💰 +${fmt(bells)}`; giveBraveSticker('當小醫生好棒！'); try { hostSay('你是很棒的小醫生！', 2600); } catch (e) {} gameButtons(w, openDoctorGame); };
+  const finish = () => { const bells = payReward(w, 60 * N + good * 20); view.innerHTML = ''; view.appendChild(el('div', 'tkd-big', '🏥')); w.status.textContent = `照顧好 ${N} 位病人！　💰 +${fmt(bells)}`; try { dailyHit('doctor'); } catch (e) {} giveBraveSticker('當小醫生好棒！'); try { hostSay('你是很棒的小醫生！', 2600); } catch (e) {} gameButtons(w, openDoctorGame); };
   openDoctorGame.test = { steps: () => pts[i] ? pts[i].s.steps.slice() : [], use, i: () => i };
   draw(false);
 }
