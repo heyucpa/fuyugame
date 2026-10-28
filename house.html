@@ -866,6 +866,12 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .zy-card.ok { background: #dff5e4; border-color: #5fae7c; }
 .zy-card.no { opacity: .35; }
 .zy-card.hint { border-color: #f2c14e; box-shadow: 0 0 0 4px #ffe58a; }
+.pk-big { font-size: 96px; font-weight: 800; line-height: 1.1; color: #3a3240; }
+.pk-big.en { font-size: 64px; letter-spacing: 2px; }
+.zy-card.pk-pic { font-size: 54px; }
+.zy-card.pk-word { font-size: 28px; width: auto; min-width: 120px; padding: 0 12px; }
+.en-word.hz { font-size: 22px; }
+.en-word.hz.none { opacity: .4; }
 .zy-dex { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 6px; margin: 6px 0 12px; }
 .zy-tile { font: inherit; border: 2px solid var(--line); border-radius: 12px; background: #fff; padding: 4px; display: flex; flex-direction: column; align-items: center; }
 .zy-tile b { font-size: 22px; } .zy-tile span { font-size: 18px; }
@@ -4773,6 +4779,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-30T20:00', title: '🀄 小一國字＋🐣 小一英文（妹妹版）', lines: [
+    ['🀄', '學校老師那裡多了「小一國字」：看圖、聽一聽，點出對的國字！'],
+    ['🐣', '「小一英文」：聽英文選圖片，動物、水果、天空的單字，答對的也算進英文小達人'],
+    ['📖', '認得 10、25、全部的國字各有一個徽章，圖鑑「🀄 國字」看得到']
+  ] },
   { id: '2026-10-29T20:00', title: '🔤 英文小達人＋💰 收銀台找錢', lines: [
     ['🔤', '家具和食物卡片左上角多了 🔤，點一下會念英文！學會 10、30、60 個單字有徽章'],
     ['💰', '小鎮島餐廳的「收銀台找錢」：客人付了錢，從零錢裡找回剛剛好的錢！'],
@@ -5634,6 +5645,7 @@ function normalizeSave(g) {
     if (!isObj(out.star)) delete out.star;
     else { const st = out.star; st.got = Array.isArray(st.got) ? [...new Set(st.got.filter(w => Number.isInteger(w) && w >= 1 && w <= 6))].sort((a, b) => a - b) : []; ['egg', 'hatched'].forEach(k => { if (st[k] != null && st[k] !== 1) delete st[k]; }); } }
   if (out.enLearn != null) { if (!isObj(out.enLearn)) delete out.enLearn; else out.enLearn = Object.fromEntries(Object.entries(out.enLearn).filter(([k, v]) => k.length <= 30 && /^[A-Za-z ]+$/.test(k) && v === 1)); }   // 🔤 學過的英文單字
+  if (out.hanzi != null) { if (!isObj(out.hanzi)) delete out.hanzi; else out.hanzi = Object.fromEntries(Object.entries(out.hanzi).filter(([k, v]) => /^[\u4e00-\u9fff]$/.test(k) && v === 1)); }   // 🀄 認得的國字
   if (out.cash != null) { if (!(isObj(out.cash) && Number.isInteger(out.cash.ok) && out.cash.ok >= 0 && out.cash.ok < 1e6)) delete out.cash; }   // 🧾 找錢答對次數
   if (out.cashDay != null && !(isObj(out.cashDay) && typeof out.cashDay.d === 'string' && Number.isInteger(out.cashDay.n) && out.cashDay.n >= 0 && out.cashDay.n < 100)) delete out.cashDay;
   if (out.yy != null && !(isObj(out.yy) && typeof out.yy.d === 'string' && Number.isInteger(out.yy.n) && out.yy.n >= 0 && out.yy.n < 100)) delete out.yy;   // 🛋️ 新家大採購今天給過錢的場數
@@ -11657,6 +11669,8 @@ function hostMenuEntries() {
     list.push(['🔔 上課（點名、數學、美勞、午睡）', openLessonMenu]);
     list.push(['📝 來小考', openQuizGame]);
     list.push(['🔤 注音小遊戲', openZhuyinGame]);
+    list.push(['🀄 小一國字', openHanziGame]);
+    list.push(['🔤 小一英文（妹妹）', openKidEnGame]);
     list.push(['🏳️ 選校旗／畫新的', openFlagPicker]);
     list.push(['🏃 跟同學賽跑', openRunGame]);
     list.push(['🛋️ 姊姊的挑戰：新家大採購', () => openYuanyuan()]);
@@ -14980,6 +14994,8 @@ function earnGameList() {
     ['🧁', '甜點店大亨', openTycoon],
     ['🔡', '字母找找看', openLetterGame],
     ['🔤', '英文單字', openEnglishGame],
+    ['🀄', '小一國字', openHanziGame],
+    ['🐣', '小一英文', openKidEnGame],
     ['🌳', '寵物捉迷藏', openPetHideGame],
     ['🛋️', '新家大採購（姊姊）', () => openYuanyuan()]].map(g => g.concat('h:' + g[1].replace(/^.*接水果$/, '接水果')));
 }
@@ -15044,6 +15060,7 @@ function tabBook(body) {
     ['dexTrophy', '🏆', '獎盃', count(G.trophies), TROPHY_SETS.length],
     ['dexStar', '🌟', '星光', ((G.star && G.star.got) || []).length, 6],
     ['dexEn', '🔤', '英文', Math.min(60, Object.keys(G.enLearn || {}).length), 60],
+    ['dexHanzi', '🀄', '國字', hanziCount(), HANZI.length],
     ['dexCash', '🧾', '店長', Math.min(60, (G.cash && G.cash.ok) || 0), 60],
     ['dexPet', '🐾', '寵物', tc('pet')[0], PET_SPECIES.length],
     ['dexGrow', '🌱', '成長', growDexCount(), growDexAll()],
@@ -15202,6 +15219,13 @@ function tabBook(body) {
     body.appendChild(note('家具、食物卡片左上角的 🔤 點一下就會念英文。學會 10、30、60 個各有一個徽章！'));
     const bd = el('div', 'dex-tiles'); EN_BADGES.forEach(([n, ic, nm]) => { const has = ws.length >= n, t = el('div', 'dex-tile' + (has ? '' : ' none')); t.append(el('div', 'dex-big', has ? ic : '✦'), el('span', '', `${nm}（${n} 個）`)); bd.appendChild(t); }); body.appendChild(bd);
     if (ws.length) { const wl = el('div', 'en-list'); ws.sort().forEach(wd => { const b = el('button', 'en-word', wd); b.onclick = () => enSpeak(wd); wl.appendChild(b); }); body.appendChild(wl); } }
+  // 🀄 識字小高手：認得的國字（點了念一次）
+  { const got = G.hanzi || {};
+    body.appendChild(sec('dexHanzi', `🀄 識字小高手 ${hanziCount()} / ${HANZI.length} 個字`));
+    body.appendChild(note('去學校找老師玩「小一國字」，第一次就答對的字會亮起來。認得 10、25、全部各有一個徽章！'));
+    const hb = el('div', 'dex-tiles'); HANZI_BADGES.forEach(([n, ic, nm]) => { const has = hanziCount() >= n, t = el('div', 'dex-tile' + (has ? '' : ' none')); t.append(el('div', 'dex-big', has ? ic : '✦'), el('span', '', `${nm}（${n} 個）`)); hb.appendChild(t); });
+    body.appendChild(hb);
+    const hl = el('div', 'en-list'); HANZI.forEach(h => { const b = el('button', 'en-word hz' + (got[h.k] ? '' : ' none'), got[h.k] ? `${h.k} ${h.pic}` : '？'); if (got[h.k]) b.onclick = () => speak(hanziSay(h), null, true); hl.appendChild(b); }); body.appendChild(hl); }
   // 🧾 小小店長：收銀台找對幾次
   { const ok = (G.cash && G.cash.ok) || 0;
     body.appendChild(sec('dexCash', `🧾 小小店長：找對 ${ok} 次`));
@@ -18974,6 +18998,7 @@ const DAILY_POOL = [
   { id: 'book', cat: 'learn', icon: '📖', text: '去圖書館看一本繪本', need: 1, go: 'out' },
   { id: 'lesson', cat: 'learn', icon: '🔔', text: '在學校上一堂課', need: 1, go: 'out' },
   { id: 'zhuyin', cat: 'learn', icon: '🔤', text: '玩一次注音小遊戲', need: 1, go: 'out' },
+  { id: 'hanzi', cat: 'learn', icon: '🀄', text: '玩一次小一國字', need: 1, go: 'out' },
   { id: 'comic', cat: 'learn', icon: '⚔️', text: '去叔叔家看一集冒險漫畫', need: 1, go: 'out' },
   { id: 'game', cat: 'play', icon: '🎮', text: '玩 2 場小遊戲', need: 2, go: 'games' },
   { id: 'ride', cat: 'play', icon: '🎡', text: '坐一次遊樂設施', need: 1, go: 'out' },
@@ -25074,6 +25099,155 @@ function playCash(w, L) {
 }
 function cashBadge() { const n = cashState().ok; CASH_BADGES.forEach(([k, ic, nm]) => { if (n === k) { addBells(500); const s = giveSticker().s; setTimeout(() => { try { Sound.play('fanfare'); showcase(el('div', 'magic-pic', ic), `「${nm}」！`, `已經幫客人找對 ${k} 次錢了！送你 💰 500 和貼紙 ${s}`, { head: '🧾 好厲害！' }); } catch (e) {} }, 400); } }); }
 AWAY_GAMES.push(['💰', '收銀台找錢', 'restaurant', () => openCashGame()]);
+/* ===== 🀄 小一國字＋🔤 小一英文（家長：妹妹小一，做一個她的國字版、英文單字版）=====
+   跟注音小遊戲一樣：大卡片、會念、答錯沒關係會再念一次，錯兩次會亮出答案。
+   國字：🖼️ 看圖找字（看圖＋聽，詞裡缺的字用 □ 表示）→ 👂 聽音找字 → 📖 看字選圖（練「認得字」）
+   英文：🔊 聽英文選圖 → 🖼️ 看圖選單字 → 📖 看字選圖。英文答對的字也算進「英文小達人」。
+   國字第一次答對記在 G.hanzi（字 → 1）；認得 10、25、全部各有一個徽章（💰 500＋貼紙）。
+   不能發聲的機器：聽音的玩法改成看圖。 */
+const HANZI = [
+  ['一', '數字一', '1️⃣'], ['二', '數字二', '2️⃣'], ['三', '數字三', '3️⃣'], ['四', '數字四', '4️⃣'], ['五', '數字五', '5️⃣'],
+  ['六', '數字六', '6️⃣'], ['七', '數字七', '7️⃣'], ['八', '數字八', '8️⃣'], ['九', '數字九', '9️⃣'], ['十', '數字十', '🔟'],
+  ['人', '大人', '🧑'], ['口', '張口', '👄'], ['手', '小手', '✋'], ['耳', '耳朵', '👂'], ['目', '目光', '👁️'],
+  ['日', '日出', '🌅'], ['月', '月亮', '🌙'], ['山', '高山', '⛰️'], ['水', '喝水', '💧'], ['火', '大火', '🔥'],
+  ['木', '樹木', '🌳'], ['田', '田地', '🌾'], ['雨', '下雨', '🌧️'], ['雲', '白雲', '☁️'], ['花', '花朵', '🌸'],
+  ['草', '小草', '🌿'], ['米', '白米', '🍚'], ['魚', '小魚', '🐟'], ['鳥', '小鳥', '🐦'], ['牛', '乳牛', '🐮'],
+  ['羊', '綿羊', '🐑'], ['馬', '小馬', '🐴'], ['狗', '小狗', '🐶'], ['貓', '小貓', '🐱'], ['豬', '小豬', '🐷'],
+  ['雞', '小雞', '🐔'], ['蛋', '雞蛋', '🥚'], ['車', '汽車', '🚗'], ['門', '大門', '🚪'], ['書', '看書', '📖'],
+  ['刀', '小刀', '🔪'], ['球', '打球', '⚽'], ['上', '上面', '⬆️'], ['下', '下面', '⬇️'], ['大', '大象', '🐘'],
+  ['小', '小螞蟻', '🐜'], ['爸', '爸爸', '👨'], ['媽', '媽媽', '👩'], ['家', '我家', '🏠'], ['星', '星星', '⭐'],
+  ['心', '愛心', '❤️'], ['衣', '衣服', '👕'], ['雪', '下雪', '❄️'], ['果', '水果', '🍎'], ['西', '西瓜', '🍉']
+].map(([c, w, pic]) => ({ k: c, txt: c, w, pic }));
+const KID_EN = [
+  ['cat', '貓', '🐱'], ['dog', '狗', '🐶'], ['pig', '豬', '🐷'], ['cow', '牛', '🐮'], ['duck', '鴨子', '🦆'],
+  ['fish', '魚', '🐟'], ['bird', '鳥', '🐦'], ['bee', '蜜蜂', '🐝'], ['ant', '螞蟻', '🐜'], ['frog', '青蛙', '🐸'],
+  ['lion', '獅子', '🦁'], ['bear', '熊', '🐻'], ['rabbit', '兔子', '🐰'],
+  ['apple', '蘋果', '🍎'], ['banana', '香蕉', '🍌'], ['egg', '蛋', '🥚'], ['milk', '牛奶', '🥛'], ['cake', '蛋糕', '🍰'],
+  ['grapes', '葡萄', '🍇'], ['orange', '橘子', '🍊'], ['sun', '太陽', '☀️'], ['moon', '月亮', '🌙'], ['star', '星星', '⭐'],
+  ['tree', '樹', '🌳'], ['flower', '花', '🌸'], ['rain', '下雨', '🌧️'],
+  ['car', '汽車', '🚗'], ['bus', '公車', '🚌'], ['ball', '球', '⚽'], ['book', '書', '📖'], ['hat', '帽子', '🎩'],
+  ['house', '房子', '🏠'], ['hand', '手', '✋'], ['eye', '眼睛', '👁️'], ['ear', '耳朵', '👂'], ['nose', '鼻子', '👃'],
+  ['one', '一', '1️⃣'], ['two', '二', '2️⃣'], ['three', '三', '3️⃣'], ['ice cream', '冰淇淋', '🍦']
+].map(([w, zh, pic]) => ({ k: w, txt: w, zh, pic }));
+const HANZI_LEVELS = [
+  { name: '🖼️ 看圖找字', mode: 'pic2txt', pool: 20, opts: 3, mul: 1, sub: '數字和簡單的字' },
+  { name: '👂 聽音找字', mode: 'snd2txt', pool: 40, opts: 3, mul: 2, sub: '只用聽的' },
+  { name: '📖 看字選圖', mode: 'txt2pic', pool: HANZI.length, opts: 4, mul: 3, sub: '認得這個字嗎' }
+];
+const KID_EN_LEVELS = [
+  { name: '🔊 聽英文選圖', mode: 'snd2pic', pool: 13, opts: 3, mul: 1, sub: '動物' },
+  { name: '🖼️ 看圖選單字', mode: 'pic2txt', pool: 26, opts: 3, mul: 2, sub: '動物、水果、天空' },
+  { name: '📖 看字選圖', mode: 'txt2pic', pool: KID_EN.length, opts: 4, mul: 3, sub: '全部的字' }
+];
+const PICK_N = 8;
+const HANZI_BADGES = [[10, '🥉', '識字小高手 銅牌'], [25, '🥈', '識字小高手 銀牌'], [HANZI.length, '🥇', '識字小高手 金牌']];
+const hanziCount = () => Object.keys(G.hanzi || {}).filter(c => HANZI.some(h => h.k === c)).length;
+const hanziSay = h => `${h.k}，${h.w}的${h.k}`;
+function hanziLearn(c) {
+  if (!G.hanzi || typeof G.hanzi !== 'object') G.hanzi = {};
+  if (G.hanzi[c]) return false;
+  const before = hanziCount(); G.hanzi[c] = 1; const after = hanziCount();
+  HANZI_BADGES.forEach(([n, ic, nm]) => { if (before < n && after >= n) { addBells(500); const s = giveSticker().s; setTimeout(() => { try { Sound.play('fanfare'); showcase(el('div', 'magic-pic', ic), `「${nm}」！`, `認得 ${n} 個國字了！送你 💰 500 和貼紙 ${s}`, { head: '🀄 好厲害！' }); } catch (e) {} }, 2000); } });
+  return true;
+}
+function openHanziGame() {
+  const w = openGameWindow('🀄 小一國字', '看圖、聽一聽，點出對的國字！答錯沒關係，會再念一次。');
+  pickLevelRow(w, HANZI_LEVELS, L => `答對一題 💰 ${10 * L.mul}`, L => playPick(w, L, {
+    items: HANZI, again: openHanziGame, daily: 'hanzi',
+    say: h => speak(hanziSay(h), null, true),
+    hint: h => h.w.replace(h.k, '□'),
+    praise: h => `對了！${h.w}的${h.k}`,
+    learn: h => hanziLearn(h.k),
+    end: () => `已經認得 ${hanziCount()} / ${HANZI.length} 個字`
+  }));
+  w.stage.appendChild(note(`已經認得 ${hanziCount()} / ${HANZI.length} 個字。圖鑑「🀄 國字」可以看全部。`));
+}
+function openKidEnGame() {
+  const w = openGameWindow('🔤 小一英文', '聽英文、看圖片，點出對的！答錯沒關係，會再念一次。');
+  Sound.duck(true);
+  pickLevelRow(w, KID_EN_LEVELS, L => `答對一題 💰 ${10 * L.mul}`, L => playPick(w, L, {
+    items: KID_EN, again: openKidEnGame, daily: 'game', en: true,
+    say: h => enSpeak(h.k),
+    hint: h => '',
+    praise: h => `${h.k}！${h.zh}`,
+    learn: h => enLearn(h.k),
+    end: () => `英文小達人：學會 ${enCount()} 個單字`
+  }));
+  gameCleanup = () => { Sound.duck(false); try { stopSpeak(); } catch (e) {} };
+}
+// 共用的「點對的卡片」：mode = pic2txt（看圖＋聽 → 選字）、snd2txt（聽 → 選字）、snd2pic（聽 → 選圖）、txt2pic（看字 → 選圖）
+function playPick(w, L, cfg) {
+  let mode = L.mode;
+  if (!canSpeak() && mode === 'snd2txt') mode = 'pic2txt';
+  if (!canSpeak() && mode === 'snd2pic') mode = 'txt2pic';
+  const pool = cfg.items.slice(0, L.pool);
+  const order = pool.slice().sort(() => Math.random() - .5).slice(0, PICK_N);
+  const showPic = mode === 'snd2pic' || mode === 'txt2pic';   // 選項是圖
+  let n = 0, right = 0, tries = 0, ended = false, q = null;
+  if (cfg.en) Sound.duck(true);
+  gameCleanup = () => { if (cfg.en) Sound.duck(false); try { stopSpeak(); } catch (e) {} };
+  const sayQ = () => { if (q) try { cfg.say(q); } catch (e) {} };
+  function show() {
+    if (n >= order.length) return finish();
+    q = order[n]; tries = 0;
+    w.stage.innerHTML = '';
+    const top = el('div', 'zy-q');
+    if (mode === 'pic2txt') { top.appendChild(el('div', 'zy-pic', q.pic)); const h = cfg.hint(q); if (h) top.appendChild(el('div', 'zy-word', h)); }
+    else if (mode === 'txt2pic') top.appendChild(el('div', 'pk-big' + (cfg.en ? ' en' : ''), q.txt));
+    else top.appendChild(el('div', 'zy-pic', '👂'));
+    if (canSpeak()) { const say = el('button', 'big alt zy-say', mode === 'txt2pic' ? '🔊 聽聽看' : '🔊 再聽一次'); say.onclick = sayQ; top.appendChild(say); }
+    w.stage.appendChild(top);
+    const others = pool.filter(z => z.k !== q.k && z.pic !== q.pic).sort(() => Math.random() - .5).slice(0, L.opts - 1);
+    const row = el('div', 'zy-cards');
+    others.concat([q]).sort(() => Math.random() - .5).forEach(z => {
+      const b = el('button', 'zy-card' + (showPic ? ' pk-pic' : cfg.en ? ' pk-word' : ''), showPic ? z.pic : z.txt);
+      b.dataset.k = z.k;
+      b.onclick = () => pick(z, b, row);
+      row.appendChild(b);
+    });
+    w.stage.appendChild(row);
+    w.status.textContent = `第 ${n + 1} / ${order.length} 題　答對 ${right}`;
+    if (mode !== 'txt2pic') sayQ();
+  }
+  function pick(z, b, row) {
+    if (ended || b.disabled) return;
+    if (z.k === q.k) {
+      if (tries === 0) { right++; try { cfg.learn(q); } catch (e) {} }
+      b.classList.add('ok'); Sound.play('coin');
+      w.status.textContent = `⭕ ${cfg.praise(q)}`;
+      try { cfg.say(q); } catch (e) {}
+      row.querySelectorAll('button').forEach(x => { x.disabled = true; });
+      n++;
+      setTimeout(() => { if (!ended) show(); }, 1600);
+    } else {
+      tries++;
+      b.classList.add('no'); b.disabled = true; Sound.play('miss');
+      w.status.textContent = '再試試看！';
+      if (tries >= 2) row.querySelectorAll('button').forEach(x => { if (x.dataset.k === q.k) x.classList.add('hint'); });
+      setTimeout(sayQ, 500);
+    }
+  }
+  function finish() {
+    if (ended) return;
+    ended = true;
+    kidActGrowth('zhuyin');
+    try { dailyHit(cfg.daily); } catch (e) {}
+    const bells = payReward(w, right * 10 * L.mul);
+    saveGame();
+    w.stage.innerHTML = '';
+    w.stage.appendChild(el('div', 'zy-pic', right >= order.length - 1 ? '🏆' : right >= order.length / 2 ? '🌟' : '👍'));
+    w.stage.appendChild(note(cfg.end()));
+    w.status.textContent = `答對 ${right} / ${order.length} 題！💰 +${fmt(bells)}`;
+    try { speak(`答對${right}題，好棒！`); } catch (e) {}
+    gameButtons(w, cfg.again);
+  }
+  show();
+  playPick.test = { q: () => q, n: () => n, right: () => right, mode, finish,
+    answer: () => { const b = w.stage.querySelector(`.zy-card[data-k="${q.k}"]`); if (b) b.onclick(); return b; },
+    wrong: () => { const b = [...w.stage.querySelectorAll('.zy-card')].find(x => x.dataset.k !== q.k && !x.disabled); if (b) b.onclick(); return b; } };
+}
+AWAY_GAMES.push(['🀄', '小一國字', 'school', () => openHanziGame()], ['🔤', '小一英文', 'school', () => openKidEnGame()]);
+
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
       動物朋友全都打扮來跳舞放煙火，每天第一次結束時每位送一顆糖（4 顆萬聖節糖果）。
