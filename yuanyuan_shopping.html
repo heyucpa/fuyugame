@@ -90,7 +90,6 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 #room.rb::after{content:"";position:absolute;inset:0;border-radius:12px;pointer-events:none;z-index:7;box-shadow:inset 0 0 0 3px #ff5d5d,inset 0 0 0 6px #ffb347,inset 0 0 0 9px #ffe066,inset 0 0 0 12px #6fdc8c,inset 0 0 0 15px #6bb6ff;animation:rb 1.4s ease-out forwards}
 #mute{flex:none;width:42px;height:42px;margin-left:8px;border-radius:50%;border:2px solid var(--line);background:#fff;font-size:22px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 0 var(--line)}
 #mute:active{transform:translateY(1px);box-shadow:none}
-html.embed body{padding:0;background:transparent}html.embed #app{width:100%;border:none;border-radius:0}
 #mute.off{background:#eee;border-color:#cfc6b4;filter:grayscale(.6)}
 #prog{margin:0 0 8px;font-size:13px;font-weight:800;color:#8a5a33}
 .pbar{height:12px;border-radius:999px;background:#fff;border:2px solid var(--line);overflow:hidden;margin:3px 0 4px}
@@ -131,6 +130,28 @@ html.embed body{padding:0;background:transparent}html.embed #app{width:100%;bord
 #banner b{display:block;font-size:17px;line-height:1.3}
 #banner.go{display:block;animation:bn 1.6s ease forwards}
 @keyframes bn{0%{transform:translate(-50%,-50%) scale(.3);opacity:0}14%{transform:translate(-50%,-50%) scale(1.08);opacity:1}24%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{transform:translate(-50%,-50%) scale(1);opacity:0}}
+#clr{display:none;background:#fffbe8;border:3px solid #e0a82e;border-radius:14px;padding:10px 8px;margin:4px 0 8px;text-align:center;color:#8a5a33}
+#clr .ct{font-size:19px;font-weight:900;line-height:1.3}
+#clr .cf{font-size:44px;line-height:1.25;margin-top:2px}
+#clr .cn{font-size:16px;font-weight:800;line-height:1.35;word-break:break-all}
+#clr .cs{font-size:15px;font-weight:800;margin-top:4px;line-height:1.5}
+#clr .cp{font-size:14px;font-weight:700;margin-top:4px;line-height:1.5;background:#fff;border-radius:10px;padding:5px 6px}
+#clr .big{font-size:22px;padding:15px 8px;min-height:56px;margin-top:10px;background:#e8505b;box-shadow:0 4px 0 #b83a45}
+#clr .big:disabled{opacity:.6}
+#bkb,.mini{border:2px solid #e0a82e;background:#fff6c9;color:#8a5a33;border-radius:999px;padding:3px 10px;font-size:13px;font-weight:800;white-space:nowrap}
+#bar .rt{display:flex;gap:6px;align-items:center;flex-shrink:0}
+#newt{display:none;margin:4px 0 6px;padding:6px 8px;border-radius:12px;border:2px solid #e0a82e;background:#fff6c9;font-size:14px;font-weight:800;color:#8a5a33;line-height:1.5;animation:unlpop .6s cubic-bezier(.3,1.6,.5,1)}
+#bk{display:none;position:fixed;left:0;right:0;top:0;bottom:0;z-index:50;background:rgba(60,40,30,.55);overflow-y:auto;-webkit-overflow-scrolling:touch}
+#bk .bp{box-sizing:border-box;width:calc(100% - 16px);max-width:520px;margin:10px auto;background:#fffdf5;border-radius:16px;padding:12px 8px;color:#8a5a33}
+#bk .bt{font-size:19px;font-weight:900;text-align:center}
+#bk .bs{font-size:13px;font-weight:700;text-align:center;margin:2px 0 8px;line-height:1.5}
+#bkg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.tc{box-sizing:border-box;min-width:0;border:2px solid #e0a82e;background:linear-gradient(#fff6c9,#ffe27a);border-radius:10px;padding:5px 2px;text-align:center}
+.tc small{display:block;font-size:10px;line-height:1.3;font-weight:800;opacity:.85;word-break:break-all}
+.tc b{display:block;font-size:13px;line-height:1.35;word-break:break-all;margin-top:1px}
+.tc.no{border:2px dashed #d8c9b0;background:#f6f1e6;color:#a89a84}
+.tc.no b{font-size:22px;line-height:1.2}
+.tc.no .h{font-size:10px;line-height:1.3;font-weight:700;word-break:break-all}
 #room.rin{animation:rin .6s ease}
 @keyframes rin{0%{opacity:.15;filter:brightness(1.7)}100%{opacity:1;filter:none}}
 #rtitle{font-size:13px;font-weight:800;color:#8a5a33;margin:6px 0 2px}
@@ -145,7 +166,7 @@ html.embed body{padding:0;background:transparent}html.embed #app{width:100%;bord
 <body>
 <div id="app">
   <div class="top"><span>🏡 圓圓的新家</span><span class="dots" id="dots"></span><button id="mute" type="button" aria-label="音效開關" aria-pressed="false">🔊</button></div>
-  <div id="bar"><span id="hist"></span><button id="clear" style="display:none">🧹 清掉舊家</button></div>
+  <div id="bar"><span id="hist"></span><span class="rt"><button id="bkb" type="button">📖 稱號圖鑑</button><button id="clear" style="display:none">🧹 清掉舊家</button></span></div>
   <div id="prog"><div id="progtx"></div><div class="pbar"><i id="pfill"></i></div><div id="chips"></div></div>
   <div id="room" data-t="0"><div id="fl"></div><div id="decor"></div><div class="win" id="win"></div><div id="combo"></div><div id="banner"></div>
     <div id="pet"><div class="hat" id="hat"></div><div class="crown">👑</div><div class="ear l"></div><div class="ear r"></div><div class="blob"></div><div class="cheek l"></div><div class="cheek r"></div><div class="mouth"></div></div>
@@ -154,6 +175,7 @@ html.embed body{padding:0;background:transparent}html.embed #app{width:100%;bord
   <div id="play">
     <div id="q"><div id="story"></div><div class="tag" id="tag"></div><div class="t" id="qt"></div></div>
     <div id="opts"></div>
+    <div id="clr"></div>
   </div>
   <div id="end">
     <div class="sticker" id="sticker">🌟 小小設計師 🌟</div>
@@ -162,27 +184,21 @@ html.embed body{padding:0;background:transparent}html.embed #app{width:100%;bord
     <div id="endstory" style="font-size:14px;color:#8a5a33;margin:4px 0"></div>
     <div id="endinfo"></div>
     <div id="endgain" style="font-size:14px;font-weight:800;color:#8a5a33;margin:2px 0 4px"></div>
+    <div id="newt"></div>
     <div id="unl"></div>
     <div id="rtitle">🏠 8 間房間回顧（點一下可以再看那一間）</div><div id="rooms"></div>
     <div id="endhist" style="font-size:14px;font-weight:800;color:#8a5a33;margin:0 0 6px"></div>
+    <button class="big alt" id="bke" type="button">📖 稱號圖鑑</button>
     <button class="big" id="again">🔁 再玩一次</button>
   </div>
 </div>
+<div id="bk"><div class="bp"><div class="bt">📖 稱號圖鑑</div><div class="bs" id="bkc"></div><div id="bkg"></div><button class="big alt" id="bkx" type="button">關閉</button></div></div>
 <script>
 'use strict';
 (function(){
   var $=function(id){return document.getElementById(id)};
   var rnd=function(n){return Math.floor(Math.random()*n)};
   var pick=function(a){return a[rnd(a.length)]};
-  // ---- 放在「我的小屋」裡玩（?embed=1）：寵物名字跟著小屋、每個存檔分開記、玩完把星星告訴小屋；單獨打開照舊 ----
-  var QS={};try{location.search.slice(1).split('&').forEach(function(kv){var p=kv.split('=');if(p[0])QS[decodeURIComponent(p[0])]=decodeURIComponent(p[1]||'')})}catch(e){}
-  var EMBED=QS.embed==='1'&&window.parent&&window.parent!==window;
-  var PET=String(QS.pet||'').replace(/[<>&"]/g,'').slice(0,8)||'圓圓';
-  var NS=QS.slot?('yuanyuan_'+String(QS.slot).replace(/[^a-z0-9]/gi,'').slice(0,12)+'_'):'yuanyuan_';
-  function nm(t){return PET==='圓圓'?t:String(t).replace(/圓圓/g,PET)}
-  function tell(o){if(EMBED)try{window.parent.postMessage(o,'*')}catch(e){}}
-  if(EMBED)document.documentElement.className='embed';
-  document.addEventListener('pointerdown',function(){tell({type:'yuanyuan-tap'})},true);
   var shuffle=function(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=rnd(i+1),t=a[i];a[i]=a[j];a[j]=t}return a};
 
   // ---- 音效：只用 Web Audio 現場合成（沒有任何音檔）；要等第一次點擊/觸控後才建立；失敗就安靜略過 ----
@@ -257,7 +273,7 @@ html.embed body{padding:0;background:transparent}html.embed #app{width:100%;bord
   SL.N1={l:'18%',b:'10px'};SL.N2={l:'63%',b:'10px'};var RF=['N1','N2'],RW=['W0','W1']; // v8：每間房只放這一關的 1 件家具，位置固定在不擋圓圓的地方
   function hasSL(k){return Object.prototype.hasOwnProperty.call(SL,k)}
   function findF(e){for(var i=0;i<FURN.length;i++)if(FURN[i][0]===e)return FURN[i];return null}
-  var NR=8; // 關數（一次遊玩約 5 分鐘）
+  var NR=8,NQ=5; // 8 關，每關 5 小題（共 40 題）；過關後停在過關畫面，按「下一關」才換房
 
 
   // ---- 8 間房間主題：外觀、家具偏好、必殺技、稱號、對話都不一樣 ----
@@ -317,8 +333,8 @@ html.embed body{padding:0;background:transparent}html.embed #app{width:100%;bord
 
   // ---- 暫存（localStorage；失敗也能照常玩；只存家具/次數/星星，不存個人資料） ----
   var mem={};
-  function sget(k){var v=null;try{v=window.localStorage.getItem(NS+k)}catch(e){}return v===null||v===undefined?(mem[k]===undefined?null:mem[k]):v}
-  function sset(k,v){mem[k]=v;try{window.localStorage.setItem(NS+k,v)}catch(e){}}
+  function sget(k){var v=null;try{v=window.localStorage.getItem('yuanyuan_'+k)}catch(e){}return v===null||v===undefined?(mem[k]===undefined?null:mem[k]):v}
+  function sset(k,v){mem[k]=v;try{window.localStorage.setItem('yuanyuan_'+k,v)}catch(e){}}
   var house=[],plays=0,best=0,total=0,tierSaved=0;
   function tierOf(n){var t=0;for(var i=0;i<TIERS.length;i++)if(n>=TIERS[i][0])t=i+1;return t}
   function curTier(){return Math.max(tierOf(total),tierSaved)}
@@ -415,12 +431,18 @@ html.embed body{padding:0;background:transparent}html.embed #app{width:100%;bord
   function rhetQ(){var x=pick(RHET);return {k:'rhet',tag:'修辭小任務',text:x[0],ans:x[1],opts:[x[1],x[2],x[3]]}}
   var MATH=[mulQ,divQ,invQ,fracQ,kgQ,timeQ,circleQ,wordQ],CHI=[idiomQ,zaiQ,simQ,polyQ,rhetQ];
   var rounds=[];
-  function buildRounds(){var m=shuffle(MATH),c=shuffle(CHI),i;rounds=[];for(i=0;i<NR;i++)rounds.push(i%2===startM?m[i>>1]:c[i>>1])} // 數學/國語交錯，8 關題型都不同（數學 4 種、國語 4 種）
+  var MG=[[mulQ,divQ,invQ,mulQ,divQ],[fracQ,fracQ,fracQ,fracQ,fracQ],[kgQ,timeQ,kgQ,timeQ,kgQ],[circleQ,wordQ,circleQ,wordQ,circleQ]];
+  function buildRounds(){ // 8 關：數學 4 關、國語 4 關交錯；每關 5 題同一主題；同一次遊玩內題目不重複
+    var m=shuffle(MG.slice()),c=shuffle(CHI.slice()).slice(0,4),seen={},i,k;qs=[];
+    for(i=0;i<NR;i++){var gens=(i%2===startM)?m[i>>1]:[c[i>>1],c[i>>1],c[i>>1],c[i>>1],c[i>>1]],L=[];
+      for(k=0;k<NQ;k++){var q,t=0;do{q=gens[k]();t++}while(seen[q.text+'|'+q.ans]&&t<80);seen[q.text+'|'+q.ans]=1;L.push(q)}
+      qs.push(L)}
+  }
   var startM=0;
   // 小故事、鼓勵話、必殺技、稱號：都放在各房間主題 TH 裡
   var ENDSTORY=['圓圓逛完 '+NR+' 間不同的房間，抱著 '+NR+' 件新家具開心轉圈！','老闆笑著說「謝謝光顧」，圓圓高興地搬進新家，每個房間都有你挑的家具。','圓圓把 '+NR+' 間房都布置好了，從木屋到太空基地，每一間都好有特色！',NR+' 間房都搬進新家具啦！圓圓說：這是全世界最棒的家！'];
 
-  var round=0,furn=[],run=[],maxRoom=-1,bnT=null,locked=false,combo=0,maxCombo=0,wrong=0,qWrong=false,moodT=null,rbT=null;
+  var titles={},newTitles=[],qs=[],qi=0,lvWrong=0,lvMax=0,lvStars=[],adv=false,lockUntil=0,round=0,furn=[],run=[],maxRoom=-1,bnT=null,locked=false,combo=0,maxCombo=0,wrong=0,qWrong=false,moodT=null,rbT=null;
   function TT(r){return TH[(r===undefined?round:r)%8]}
   function mood(cls,ms){var p=$('pet');clearTimeout(moodT);p.className='';void p.offsetWidth;p.className=cls;moodT=setTimeout(function(){p.className=''},ms)}
   function sparkle(){var r=$('room');for(var i=0;i<6;i++){var e=document.createElement('div');e.className='spk';e.textContent=pick(TT().fw);e.style.left=(40+rnd(18))+'%';e.style.bottom=(30+rnd(30))+'px';e.style.setProperty('--dx',(rnd(80)-40)+'px');r.appendChild(e);(function(e){setTimeout(function(){e.remove()},950)})(e)}}
@@ -451,21 +473,26 @@ html.embed body{padding:0;background:transparent}html.embed #app{width:100%;bord
     var b=$('banner');b.innerHTML='<small>第 '+(t+1)+' 間房　'+th.ic+'</small><b>'+th.ent+'</b>';b.classList.remove('go');void b.offsetWidth;b.classList.add('go');
     clearTimeout(bnT);bnT=setTimeout(function(){b.classList.remove('go')},1650);if(t>0)SFX.room()}
   function dots(){var h='';for(var i=0;i<NR;i++)h+='<span class="dot'+(i<round?' on':'')+'"></span>';$('dots').innerHTML=h}
-  function say(t){$('say').textContent=nm(t)}
+  function say(t){$('say').textContent=t}
   function reset(){
-    round=0;locked=false;combo=0;maxCombo=0;wrong=0;qWrong=false;showCombo();king(false);clearTimeout(moodT);$('pet').className='';
+    newTitles=[];$('newt').style.display='none';round=0;qi=0;lvWrong=0;lvMax=0;lvStars=[];adv=false;lockUntil=0;locked=false;combo=0;maxCombo=0;wrong=0;qWrong=false;showCombo();king(false);clearTimeout(moodT);$('pet').className='';
     startM=rnd(2);buildRounds();furn=chooseFurn();run=[];maxRoom=-1;
-    $('end').style.display='none';$('unl').style.display='none';$('play').style.display='block';
+    $('end').style.display='none';$('unl').style.display='none';$('play').style.display='block';$('clr').style.display='none';
     $('pet').style.left='42%';
     refreshBar();
     next();
-    say(plays>0?'歡迎回來！這次要布置 '+NR+' 間不同風格的房間 🏠':'圓圓要布置 '+NR+' 間不同的房間！答對就能搬家具進去 🏠');
+    say(plays>0?'歡迎回來！這次要布置 '+NR+' 間不同風格的房間 🏠':'圓圓要布置 '+NR+' 間不同的房間！每關答對 '+NQ+' 題，就能搬一件家具進去 🏠');
   }
-  function next(){
-    dots();locked=false;qWrong=false;enterRoom(round);if(round>0)say(TT().hi);
-    var q=rounds[round]();
-    $('story').textContent=nm(pick(TT().st).replace('{f}',furn[round][1]));
-    $('tag').textContent='第 '+(round+1)+' / '+NR+' 關　'+q.tag;
+  function next(){ // 進入新的一關（新房間轉場橫幅在這時才出現）
+    dots();qi=0;lvWrong=0;lvMax=0;adv=false;enterRoom(round);if(round>0)say(TT().hi);
+    $('story').textContent=pick(TT().st).replace('{f}',furn[round][1]);
+    showQ();
+  }
+  function showQ(){
+    locked=false;qWrong=false;
+    $('clr').style.display='none';$('q').style.display='';$('opts').style.display='';
+    var q=qs[round][qi];
+    $('tag').textContent='第 '+(round+1)+' 關・第 '+(qi+1)+'／'+NQ+' 題　'+q.tag;
     $('qt').innerHTML=q.text;
     var o=$('opts');o.innerHTML='';
     shuffle(q.opts).forEach(function(v){
@@ -476,37 +503,75 @@ html.embed body{padding:0;background:transparent}html.embed #app{width:100%;bord
       o.appendChild(b);
     });
   }
+  function loadTitles(){var a=[];try{a=JSON.parse(sget('titles')||'[]')}catch(e){a=[]}titles={};if(Array.isArray(a))a.forEach(function(x){if(typeof x==='number'&&x%1===0&&x>=0&&x<NR*3)titles[x]=1})}
+  function saveTitles(){sset('titles',JSON.stringify(Object.keys(titles).map(Number)))}
+  function gainTitle(t,j){var k=t*3+j;if(!titles[k]){titles[k]=1;newTitles.push(k);saveTitles()}}
+  var RN=['溫馨木屋','萬聖節南瓜屋','哥德古堡','海底龍宮','糖果樂園','冰雪小屋','魔法森林','太空基地'];
+  var HINT=['整關 5 題都一次答對','連續一次答對 3 題','連續一次答對 5 題以上']; // 只有答對才拿得到；答錯會讓連擊歸零、也不是整關全對
+  function openBook(){var h='',n=0,t,j;
+    for(t=0;t<NR;t++)for(j=0;j<3;j++){var th=TH[t],got=titles[t*3+j];
+      if(got){n++;h+='<div class="tc"><small>'+th.ic+' '+RN[t]+'</small><b>'+th.ttl[j]+'</b></div>'}
+      else h+='<div class="tc no"><small>'+th.ic+' '+RN[t]+'</small><b>？</b><div class="h">'+HINT[j]+'</div></div>'}
+    $('bkg').innerHTML=h;$('bkc').textContent=n>0?'已收集 '+n+' 個稱號。拿到的會亮起來，看看就好～':'拿到的稱號會亮起來，看看就好～';
+    $('bk').style.display='block';$('bk').scrollTop=0;SFX.click()}
+  function closeBook(){$('bk').style.display='none';SFX.click()}
+  function ttlOf(th,c){return th.ttl[c<=2?0:(c<=4?1:2)]}
   function answer(b,right,q){
-    if(locked||b.disabled)return;
+    if(locked||b.disabled||Date.now()<lockUntil)return;
     $('banner').classList.remove('go');
-    if(!right){b.className='opt no';b.disabled=true;SFX.no();wrong++;qWrong=true;combo=0;king(false);showCombo();mood('tilt sad',900);say(pick(TT().op));return}
+    if(!right){b.className='opt no';b.disabled=true;SFX.no();wrong++;lvWrong++;qWrong=true;combo=0;king(false);showCombo();mood('tilt sad',900);say(pick(TT().op));return}
     locked=true;b.className='opt ok';SFX.ok();
-    var f=furn[round];
-    if(!qWrong){combo++;if(combo>maxCombo){maxCombo=combo;maxRoom=round}}
-    place(f);
+    if(!qWrong){combo++;if(combo>maxCombo){maxCombo=combo;maxRoom=round}if(combo>lvMax)lvMax=combo}
+    if(!qWrong&&combo>=3)gainTitle(round,combo<=4?1:2); // 一次答對的連擊 x3→稱號2、x5↑→稱號3（答錯連擊歸零，不可能靠答錯得到）
     showCombo();
-    var th=TT(),line=f[1]+'搬進'+th.sn+'！'+(round===0?'　👆點一下家具可以換顏色！':'');
-    if(combo>=2){mood('dance glow',1500);sparkle();comboFx(combo);say(th.ic+'【'+th.ttl[combo<=2?0:(combo===3?1:2)]+'】'+pick(th.cs)+' '+f[1]+'搬進'+th.sn)}
-    else{mood('happy hop',1100);say(pick(th.ch)+line)}
-    round++;dots();
-    setTimeout(function(){if(round>=NR)finish();else next()},1100);
+    var th=TT();
+    if(qi<NQ-1){ // 關內小題：同一間房，答對後很快出下一題
+      if(combo>=2){mood('dance glow',1500);sparkle();comboFx(combo);say(th.ic+'【'+ttlOf(th,combo)+'】'+pick(th.cs))}
+      else{mood('happy hop',900);say(pick(th.ch))}
+      qi++;var rr=round;setTimeout(function(){if(round===rr&&!adv)showQ()},1000);return}
+    // 第 5 題答對：過關，放這一關的家具，停在過關畫面
+    var f=furn[round];place(f);
+    var stl=lvWrong===0?3:(lvWrong<=2?2:1); // 本關 0 錯＝3 星、1–2 錯＝2 星、3 錯以上＝1 星
+    lvStars[round]=stl;if(lvWrong===0)gainTitle(round,0); // 整關 0 錯（3 星）→稱號1
+    var line=f[1]+'搬進'+th.sn+'！'+(round===0?'　👆點一下家具可以換顏色！':'');
+    var sayT;
+    if(combo>=2){mood('dance glow',1500);sparkle();comboFx(combo);sayT=th.ic+'【'+ttlOf(th,combo)+'】'+pick(th.cs)+' '+f[1]+'搬進'+th.sn}
+    else{mood('happy hop',1100);sayT=pick(th.ch)+line}
+    say(sayT);
+    var cleared=round;round++;dots();
+    var cinfo=lvMax>=2?th.ic+'【'+ttlOf(th,lvMax)+'】最高連擊 x'+lvMax:'最高連擊 x'+lvMax;
+    setTimeout(function(){showClear(th,f,stl,cleared,cinfo,sayT)},800);
+  }
+  function showClear(th,f,stl,cleared,cinfo,sayT){
+    $('q').style.display='none';$('opts').style.display='none';
+    var last=round>=NR,c=$('clr');
+    c.innerHTML='<div class="ct">🎉 第 '+(cleared+1)+' 關完成！</div><div class="cf">'+f[0]+'</div><div class="cn">'+f[1]+'搬進'+th.sn+'了</div>'
+      +'<div class="cs">本關 '+starStr(stl)+'　'+NQ+' 題都過了，答錯 '+lvWrong+' 次<br>'+cinfo+'</div>'
+      +'<div class="cp">圓圓：'+sayT.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</div>'
+      +'<button class="big" id="nx" type="button">'+(last?'看結果 ➜':'下一關 ➜')+'</button>';
+    c.style.display='block';SFX.end(stl);
+    var nx=$('nx');nx.onclick=function(){
+      if(adv)return;adv=true;nx.disabled=true;SFX.click();lockUntil=Date.now()+450;
+      if(round>=NR)finish();else next()};
+    try{c.scrollIntoView({block:'nearest'})}catch(e){}
   }
   function finish(){
     $('play').style.display='none';$('end').style.display='block';
-    var st=wrong===0?3:(wrong<=4?2:1); // 0 錯＝3 星、1–4 錯＝2 星、5 以上＝1 星
-    var msgs={3:['太完美了！'+NR+' 關一次就全對，你是設計大師！',NR+' 關全部一次答對，圓圓的新家超漂亮！'],2:['很棒喔！只錯一點點，新家很好看！','好厲害，圓圓好喜歡你布置的家！'],1:['完成了！多練習幾次會更厲害～','圓圓的新家完成了，謝謝你不放棄！']};
+    var sc=0,li;for(li=0;li<NR;li++)sc+=lvStars[li]||1;var st=sc>=20?3:(sc>=14?2:1); // 8 關星數加總（每關 1–3 星，滿分 24）：20 以上＝3 星、14–19＝2 星、其餘＝1 星
+    var msgs={3:['太棒了！'+NR+' 關幾乎都一次答對，你是設計大師！','好厲害！'+NR+' 間房都過得又穩又快，圓圓的新家超漂亮！'],2:['很棒喔！只錯一點點，新家很好看！','好厲害，圓圓好喜歡你布置的家！'],1:['完成了！多練習幾次會更厲害～','圓圓的新家完成了，謝謝你不放棄！']};
     var sh='';for(var i=0;i<3;i++)sh+='<span style="animation-delay:'+(i*.25)+'s">'+(i<st?'⭐':'☆')+'</span>';
     $('stars').innerHTML=sh;$('stars').setAttribute('data-stars',st);
-    $('endsay').textContent=nm(pick(msgs[st]));
-    $('endstory').textContent=nm(pick(ENDSTORY));var ft=TH[maxRoom>=0?maxRoom:rnd(8)];$('sticker').textContent='🌟 '+ft.et[st-1]+' 🌟';buildRooms();$('endinfo').textContent='答錯 '+wrong+' 次　｜　最高連擊 x'+maxCombo;
+    $('endsay').textContent=pick(msgs[st]);
+    $('endstory').textContent=pick(ENDSTORY);var fr=maxRoom>=0?maxRoom:rnd(8),ft=TH[fr],ftt=ft.et[st-1];$('sticker').textContent='🌟 '+ftt+' 🌟';showNewT();buildRooms();$('endinfo').textContent=(NR*NQ)+' 題｜答錯 '+wrong+' 次｜最高連擊 x'+maxCombo;
     $('combo').style.display='none';king(false);plays++;if(st>best)best=st;sset('plays',String(plays));sset('best',String(best));
     var oldT=curTier();total+=st;var newT=Math.max(oldT,tierOf(total));tierSaved=newT;sset('total',String(total));sset('unlock',String(newT));
     $('endgain').textContent='本次得到 ★'+st+'　累積 ★'+total;$('endhist').textContent=histText();refreshBar();mood('dance glow',1500);
     say('🎉 謝謝你幫圓圓布置新家 🎉');
     SFX.end(st);showUnlock(oldT,newT,st);
-    tell({type:'yuanyuan-done',stars:st,wrong:wrong,combo:maxCombo});   // 告訴小屋：玩完了、幾顆星
     for(var i=0;i<14;i++){(function(i){setTimeout(function(){var c=document.createElement('div');c.className='conf';c.textContent=pick(['⭐','🎉','💖','✨','🌸']);c.style.left=rnd(92)+'%';$('app').appendChild(c);setTimeout(function(){c.remove()},1900)},i*70)})(i)}
   }
+  function showNewT(){var e=$('newt');if(!newTitles.length){e.style.display='none';return}
+    e.innerHTML='✨ 新稱號：'+newTitles.map(function(k){return TH[k/3|0].ttl[k%3]+'（'+RN[k/3|0]+'）'}).join('、');e.style.display='block';e.style.animation='none';void e.offsetWidth;e.style.animation=''}
   function buildRooms(){ // 結尾：8 間房逐間回顧；有舊家的話多一張「舊家」
     var h='',i,L=legacy();
     for(i=0;i<NR;i++){var th=TH[i%8],it=run[i];h+='<button class="rc'+(i===NR-1?' on':'')+'" type="button" data-t="'+(i%8)+'" data-i="'+i+'" aria-label="看'+th.n+'"><span class="rm"><i>'+th.ic+'</i><b>'+(it?it.e:'')+'</b></span><span class="rn">'+th.sn+'</span></button>'}
@@ -530,8 +595,8 @@ html.embed body{padding:0;background:transparent}html.embed #app{width:100%;bord
     house=house.filter(function(x){return x.r!==undefined});saveHouse();refreshBar();if($('end').style.display==='block'){buildRooms();showRoom(NR-1,[run[NR-1]])}say('舊家的家具都搬走了～')};
   muted=sget('mute')==='1';paintMute();
   mb.onclick=function(){muted=!muted;sset('mute',muted?'1':'0');paintMute();if(!muted)SFX.click()};
-  if(PET!=='圓圓'){var tt=document.querySelector('.top>span');if(tt)tt.textContent='🏡 '+PET+'的新家';document.title=PET+'的新家大採購 🛋️'}
-  loadAll();
+  loadAll();loadTitles();
+  $('bkb').onclick=openBook;$('bke').onclick=openBook;$('bkx').onclick=closeBook;$('bk').onclick=function(e){if(e.target===$('bk'))closeBook()};
   reset();
 })();
 </script>
