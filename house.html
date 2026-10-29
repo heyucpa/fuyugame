@@ -779,7 +779,7 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .daily-hand { pointer-events: auto; cursor: pointer; z-index: 60; }
 .spark-fly { position: fixed; z-index: 90; pointer-events: none; font-size: 20px; transform: translate(-50%, -50%); animation: sparkFly .9s ease-out forwards; }
 @keyframes sparkFly { to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.4); opacity: 0; } }
-.confetti-cv { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 85; }
+.confetti-cv { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 90; pointer-events: none; }   /* 彩帶不擋點擊 */
 .star-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; } .star-slot { display: flex; flex-direction: column; align-items: center; padding: 10px 4px; border-radius: 16px; background: #f1ecf7; border: 2px dashed #c9b8e8; color: #a99ac9; }
 .star-slot.on { background: #fff7d6; border: 2px solid #ffd23f; color: #5a4636; } .star-e { font-size: 34px; } .star-n { font-size: 13px; font-weight: 800; }
 .yy-frame { display: block; width: 100%; height: min(72vh, 720px); border: none; border-radius: 14px; background: #fffaf0; }
@@ -4783,6 +4783,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-02T20:00', title: '🍂 四季裝飾＋🎊 彩帶', lines: [
+    ['🍂', '房間後面會跟著季節換：春天飄櫻花、夏天飄泡泡、秋天落葉、冬天下雪'],
+    ['🎊', '拿到徽章、破關、集滿、長大的時候，會撒彩帶慶祝！'],
+    ['🎒', '新家大採購多了妹妹的小一版（國文＋英文），在學校老師那裡和遊戲清單']
+  ] },
   { id: '2026-11-01T20:00', title: '🐾 寵物一起闖關！', lines: [
     ['🐾', '孵出來的寵物會跟著小可愛一起闖關，撿金幣會幫牠集能量'],
     ['✨', '能量集滿，按 🐾 必殺技（電腦按 C）：畫面裡的小怪物全部打倒，大魔王也會被打一下！'],
@@ -5660,6 +5665,7 @@ function normalizeSave(g) {
     else { const st = out.star; st.got = Array.isArray(st.got) ? [...new Set(st.got.filter(w => Number.isInteger(w) && w >= 1 && w <= 6))].sort((a, b) => a - b) : []; ['egg', 'hatched'].forEach(k => { if (st[k] != null && st[k] !== 1) delete st[k]; }); } }
   if (out.enLearn != null) { if (!isObj(out.enLearn)) delete out.enLearn; else out.enLearn = Object.fromEntries(Object.entries(out.enLearn).filter(([k, v]) => k.length <= 30 && /^[A-Za-z ]+$/.test(k) && v === 1)); }   // 🔤 學過的英文單字
   if (out.cloudKing != null && !(isObj(out.cloudKing) && Number.isInteger(out.cloudKing.beat) && out.cloudKing.beat >= 0 && out.cloudKing.beat < 1e6)) delete out.cloudKing;   // ☁️ 打倒烏雲大王幾次
+  if (out.noSeasonFx != null && out.noSeasonFx !== 1) delete out.noSeasonFx;   // 🍂 關掉季節裝飾
   if (out.hanzi != null) { if (!isObj(out.hanzi)) delete out.hanzi; else out.hanzi = Object.fromEntries(Object.entries(out.hanzi).filter(([k, v]) => /^[\u4e00-\u9fff]$/.test(k) && v === 1)); }   // 🀄 認得的國字
   if (out.cash != null) { if (!(isObj(out.cash) && Number.isInteger(out.cash.ok) && out.cash.ok >= 0 && out.cash.ok < 1e6)) delete out.cash; }   // 🧾 找錢答對次數
   if (out.cashDay != null && !(isObj(out.cashDay) && typeof out.cashDay.d === 'string' && Number.isInteger(out.cashDay.n) && out.cashDay.n >= 0 && out.cashDay.n < 100)) delete out.cashDay;
@@ -11689,6 +11695,7 @@ function hostMenuEntries() {
     list.push(['🏳️ 選校旗／畫新的', openFlagPicker]);
     list.push(['🏃 跟同學賽跑', openRunGame]);
     list.push(['🛋️ 姊姊的挑戰：新家大採購', () => openYuanyuan()]);
+    list.push(['🎒 妹妹的新家大採購（小一版）', () => openYuanyuan(true)]);
     [['🏫 回教室', 0], ['🎢 一起去操場', 1]]
       .filter(([, i]) => i !== G.away.idx).forEach(([label, i]) => list.push([label, () => goPlaceRoom(i)]));
   }
@@ -13229,10 +13236,12 @@ function draw() {
   const dpr = window.devicePixelRatio || 1;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const sea = seasonOfMonth();
+  try { drawSeasonBack(ctx, dpr, sea, performance.now()); } catch (e) {}   // 🍂 四季：房間後面飄花瓣／泡泡／落葉／雪
   ctx.setTransform(view.scale * dpr, 0, 0, view.scale * dpr, view.ox * dpr, view.oy * dpr);
   const room = curRoom();
-  // 陰影底座
-  ctx.fillStyle = 'rgba(60,90,60,.18)';
+  // 陰影底座（四季換顏色：春天粉粉的、秋天金黃、冬天積雪）
+  ctx.fillStyle = SEASON_GROUND[sea] || 'rgba(60,90,60,.18)';
   ctx.beginPath();
   const c = iso(room.w / 2, room.d / 2);
   ctx.ellipse(c.x, c.y + 18, (room.w + room.d) * TW / 4 + 20, (room.w + room.d) * TH / 4 + 14, 0, 0, Math.PI * 2);
@@ -13245,6 +13254,34 @@ function draw() {
   drawTargetMarker(ctx, performance.now());
   drawActHint(ctx, performance.now());
   fufuDrawBubble(ctx, performance.now());
+}
+/* ===== 🍂 四季裝飾（美編）=====
+   照月份換：春 3～5 月飄櫻花瓣、夏 6～8 月往上飄泡泡、秋 9～11 月落葉、冬 12～2 月下雪；房間底下那一圈也換顏色。
+   只畫在房間「後面」（不擋家具、不擋點擊），每季 22 片，用時間算位置（不存狀態，也不花電）。
+   設定裡可以關掉（G.noSeasonFx）。測試可以用 SEASON_TODAY 指定日期。 */
+const SEASON_GROUND = { spring: 'rgba(240,150,190,.2)', summer: 'rgba(60,150,200,.16)', autumn: 'rgba(210,140,50,.22)', winter: 'rgba(255,255,255,.75)' };
+function seasonOfMonth() {
+  const m = SEASON_TODAY ? SEASON_TODAY[0] : new Date().getMonth() + 1;
+  return m >= 3 && m <= 5 ? 'spring' : m >= 6 && m <= 8 ? 'summer' : m >= 9 && m <= 11 ? 'autumn' : 'winter';
+}
+function drawSeasonBack(g, dpr, sea, now) {
+  if (G.noSeasonFx) return;
+  const W = g.canvas.width / dpr, H = g.canvas.height / dpr, t = now / 1000;
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  for (let i = 0; i < 22; i++) {
+    const a = (i * 0.6180339) % 1, b = (i * 0.4142135) % 1, sp = .6 + b * .8, sz = .7 + a * .6;
+    if (sea === 'summer') {   // 泡泡慢慢往上飄
+      const x = (a * W + Math.sin(t * .8 + i) * 20 + W) % W, y = H + 20 - ((b * H + t * 22 * sp) % (H + 40)), r = 5 + sz * 6;
+      g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 1.5; g.fillStyle = 'rgba(200,235,255,.25)'; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); g.stroke();
+      g.fillStyle = 'rgba(255,255,255,.8)'; g.beginPath(); g.arc(x - r * .35, y - r * .35, r * .22, 0, 7); g.fill(); continue;
+    }
+    const fall = sea === 'winter' ? 26 : 34, x = (a * W + Math.sin(t * .7 + i * 1.7) * 26 + t * 8 * (sea === 'winter' ? 0 : 1) + W * 3) % W, y = (b * H + t * fall * sp) % (H + 40) - 20, rot = t * (1 + a) + i;
+    g.save(); g.translate(x, y); g.rotate(rot); g.scale(sz, sz);
+    if (sea === 'winter') { g.fillStyle = '#ffffff'; g.beginPath(); g.arc(0, 0, 4, 0, 7); g.fill(); g.strokeStyle = 'rgba(120,165,215,.85)'; g.lineWidth = 1.2; g.stroke(); }
+    else if (sea === 'spring') { g.fillStyle = i % 3 ? '#ffc2d6' : '#ffe0ea'; g.beginPath(); g.ellipse(0, 0, 6, 3.6, 0, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.6)'; g.beginPath(); g.ellipse(-1.5, -1, 2.5, 1.2, 0, 0, 7); g.fill(); }
+    else { g.fillStyle = ['#e8823a', '#d9542b', '#f2b134', '#b9733a'][i % 4]; g.beginPath(); g.moveTo(0, -8); g.quadraticCurveTo(7, -2, 0, 8); g.quadraticCurveTo(-7, -2, 0, -8); g.fill(); g.strokeStyle = 'rgba(90,50,20,.5)'; g.lineWidth = 1; g.beginPath(); g.moveTo(0, -7); g.lineTo(0, 10); g.stroke(); }
+    g.restore();
+  }
 }
 /* ===== 世界自己會動 =====
    沒有點任何東西的時候，場景裡也有事情在發生：花圃上有蝴蝶飛、樹上的葉子飄下來、
@@ -15012,7 +15049,8 @@ function earnGameList() {
     ['🀄', '小一國字', openHanziGame],
     ['🐣', '小一英文', openKidEnGame],
     ['🌳', '寵物捉迷藏', openPetHideGame],
-    ['🛋️', '新家大採購（姊姊）', () => openYuanyuan()]].map(g => g.concat('h:' + g[1].replace(/^.*接水果$/, '接水果')));
+    ['🛋️', '新家大採購（姊姊）', () => openYuanyuan()],
+    ['🎒', '新家大採購（小一）', () => openYuanyuan(true)]].map(g => g.concat('h:' + g[1].replace(/^.*接水果$/, '接水果')));
 }
 function tabEarn(body) {
   body.appendChild(h3('每日禮物'));
@@ -15974,6 +16012,9 @@ function tabSave(body) {
   const nb = el('button', 'mini', '📜 更新紀錄（以前更新了什麼）');
   nb.onclick = () => openNewsHistory();
   body.appendChild(nb);
+  const sfx = el('button', 'mini', G.noSeasonFx ? '🍂 打開房間後面的季節裝飾' : '🍂 關掉房間後面的季節裝飾（花瓣、落葉、雪）');   // 美編：四季裝飾，嫌眼花可以關
+  sfx.onclick = () => { G.noSeasonFx = G.noSeasonFx ? undefined : 1; saveGame(); renderTab(); };
+  body.appendChild(sfx);
   const rp = el('button', 'mini', '↩️ 小卡、📷、💡 位置歸位');
   rp.title = '小卡和按鈕可以拖到喜歡的地方；拖亂了按這裡放回原位';
   rp.onclick = () => { dragCard.reset(); dragPhoto.reset(); dragTheme.reset(); toast('放回原位了'); };
@@ -18075,6 +18116,8 @@ function showcaseNext() {
   if (!SC_QUEUE.length || document.getElementById('showcase')) return null;
   if (showcaseBlocked() || (typeof resting !== 'undefined' && resting)) { setTimeout(showcaseNext, 700); return null; }
   const { visual, title, sub, opts } = SC_QUEUE.shift();
+  // 🎊 值得慶祝的大事（徽章、破關、集滿、長大、全部完成…）自動撒彩帶（美編）
+  if (opts.party || /好厲害|太棒|完成|快樂|長大了|破關|升級/.test(opts.head || '') || /破了|集滿|全部|徽章|獎盃|破關/.test(title)) try { confettiBurst(110); } catch (e) {}
   const box = el('div', 'showcase'); box.id = 'showcase';
   box.appendChild(el('div', 'sc-rays'));
   const card = el('div', 'sc-card');
@@ -24884,12 +24927,12 @@ function isleDecor(ctx, sp, now) {
    G.yy = { d, n }（今天給過錢的場數） */
 const YY_PRIZE = [0, 60, 120, 200], YY_DAY_MAX = 5;
 let yyWin = null;
-function openYuanyuan() {
-  const w = openGameWindow(`🛋️ ${petName()}的新家大採購`, '👧 姊姊的挑戰（四年級）：答對題目，幫寵物把家具搬進新家！一共 5 關。');
+function openYuanyuan(g1) {   // g1：妹妹的小一版（國文＋英文），另一個檔案、另外記家具
+  const w = openGameWindow(`🛋️ ${petName()}的新家大採購${g1 ? '（小一版）' : ''}`, g1 ? '🎒 妹妹的小一版：國文和英文的題目，答對就幫寵物把家具搬進新家！' : '👧 姊姊的挑戰（四年級）：答對題目，幫寵物把家具搬進新家！');
   w.stage.innerHTML = ''; w.btns.innerHTML = ''; w.card.classList.add('game-big');
   const fr = document.createElement('iframe');
   fr.className = 'yy-frame'; fr.title = '新家大採購';
-  fr.src = 'yuanyuan_shopping.html?embed=1&pet=' + encodeURIComponent(petName()) + '&slot=' + encodeURIComponent(curSlotId());
+  fr.src = (g1 ? 'yuanyuan_shopping_g1.html' : 'yuanyuan_shopping.html') + '?embed=1&pet=' + encodeURIComponent(petName()) + '&slot=' + encodeURIComponent(curSlotId());
   w.stage.appendChild(fr); leaveButton(w);
   const st = G.yy && G.yy.d === today() ? G.yy : (G.yy = { d: today(), n: 0 });
   w.status.textContent = st.n < YY_DAY_MAX ? `玩完會依星星給錢（今天還有 ${YY_DAY_MAX - st.n} 場）` : '今天的獎金拿完了，還是可以繼續玩喔！';

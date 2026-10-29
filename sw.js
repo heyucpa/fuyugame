@@ -8,8 +8,8 @@
 
    同一個資源每次連得上就順手更新一份，所以她離線時拿到的
    一定是「最後一次有網路時的版本」。 */
-const CACHE = 'fuyugame-v3';   // 加了「圓圓的新家大採購」：換版本號，舊快取會被清掉
-const FILES = ['./house.html', './theater.html', './index.html', './yuanyuan_shopping.html', './'];
+const CACHE = 'fuyugame-v4';   // 加了「圓圓的新家大採購」：換版本號，舊快取會被清掉
+const FILES = ['./house.html', './theater.html', './index.html', './yuanyuan_shopping.html', './yuanyuan_shopping_g1.html', './'];
 
 self.addEventListener('install', e => {
   // 先把主要的幾頁抓起來；抓不到也不要讓安裝失敗（例如當下就沒網路）
