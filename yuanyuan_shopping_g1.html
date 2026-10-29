@@ -93,7 +93,6 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 #room.rb::after{content:"";position:absolute;inset:0;border-radius:12px;pointer-events:none;z-index:7;box-shadow:inset 0 0 0 3px #ff5d5d,inset 0 0 0 6px #ffb347,inset 0 0 0 9px #ffe066,inset 0 0 0 12px #6fdc8c,inset 0 0 0 15px #6bb6ff;animation:rb 1.4s ease-out forwards}
 #mute{flex:none;width:42px;height:42px;margin-left:8px;border-radius:50%;border:2px solid var(--line);background:#fff;font-size:22px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 0 var(--line)}
 #mute:active{transform:translateY(1px);box-shadow:none}
-html.embed body{padding:0;background:transparent}html.embed #app{width:100%;border:none;border-radius:0}
 #mute.off{background:#eee;border-color:#cfc6b4;filter:grayscale(.6)}
 #prog{margin:0 0 8px;font-size:13px;font-weight:800;color:#8a5a33}
 .pbar{height:12px;border-radius:999px;background:#fff;border:2px solid var(--line);overflow:hidden;margin:3px 0 4px}
@@ -192,6 +191,7 @@ rt{font-size:.46em;font-weight:700;line-height:1.1;letter-spacing:0;color:#8a5a3
 .opt{font-size:28px;line-height:1.25;padding:12px 4px;min-height:62px}
 #opts.one .opt{font-size:26px}
 .opt.lt{font-size:40px;font-weight:900}
+@media(max-width:350px){#q .t .em.zyseq,#q .t .em.ord{font-size:33px;letter-spacing:0}}
 </style></head>
 <body>
 <div id="app">
@@ -229,15 +229,6 @@ rt{font-size:.46em;font-weight:700;line-height:1.1;letter-spacing:0;color:#8a5a3
   var $=function(id){return document.getElementById(id)};
   var rnd=function(n){return Math.floor(Math.random()*n)};
   var pick=function(a){return a[rnd(a.length)]};
-  // ---- 放在「我的小屋」裡玩（?embed=1）：寵物名字跟著小屋、每個存檔分開記、玩完把星星告訴小屋；單獨打開照舊 ----
-  var QS={};try{location.search.slice(1).split('&').forEach(function(kv){var p=kv.split('=');if(p[0])QS[decodeURIComponent(p[0])]=decodeURIComponent(p[1]||'')})}catch(e){}
-  var EMBED=QS.embed==='1'&&window.parent&&window.parent!==window;
-  var PET=String(QS.pet||'').replace(/[<>&"]/g,'').slice(0,8)||'圓圓';
-  var NS=QS.slot?('yuanyuan1_'+String(QS.slot).replace(/[^a-z0-9]/gi,'').slice(0,12)+'_'):'yuanyuan1_';
-  function nm(t){return PET==='圓圓'?t:String(t).replace(/圓圓/g,PET)}
-  function tell(o){if(EMBED)try{window.parent.postMessage(o,'*')}catch(e){}}
-  if(EMBED)document.documentElement.className='embed';
-  document.addEventListener('pointerdown',function(){tell({type:'yuanyuan-tap'})},true);
   var shuffle=function(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=rnd(i+1),t=a[i];a[i]=a[j];a[j]=t}return a};
 
   // ---- 音效：只用 Web Audio 現場合成（沒有任何音檔）；要等第一次點擊/觸控後才建立；失敗就安靜略過 ----
@@ -372,8 +363,8 @@ rt{font-size:.46em;font-weight:700;line-height:1.1;letter-spacing:0;color:#8a5a3
 
   // ---- 暫存（localStorage；失敗也能照常玩；只存家具/次數/星星，不存個人資料） ----
   var mem={};
-  function sget(k){var v=null;try{v=window.localStorage.getItem(NS+k)}catch(e){}return v===null||v===undefined?(mem[k]===undefined?null:mem[k]):v}
-  function sset(k,v){mem[k]=v;try{window.localStorage.setItem(NS+k,v)}catch(e){}}
+  function sget(k){var v=null;try{v=window.localStorage.getItem('yuanyuan1_'+k)}catch(e){}return v===null||v===undefined?(mem[k]===undefined?null:mem[k]):v}
+  function sset(k,v){mem[k]=v;try{window.localStorage.setItem('yuanyuan1_'+k,v)}catch(e){}}
   var house=[],plays=0,best=0,total=0,tierSaved=0;
   function tierOf(n){var t=0;for(var i=0;i<TIERS.length;i++)if(n>=TIERS[i][0])t=i+1;return t}
   function curTier(){return Math.max(tierOf(total),tierSaved)}
@@ -413,73 +404,154 @@ rt{font-size:.46em;font-weight:700;line-height:1.1;letter-spacing:0;color:#8a5a3
       if(!c.length)c=p.filter(function(f){return !EXCL[f[0]]&&!used[f[0]]});
       if(!c.length)c=p.filter(function(f){return !used[f[0]]});
       var f=pick(c);used[f[0]]=1;sel.push(f)}
+    // v10：解鎖的家具要保證出現。最新一級的解鎖家具全部出現，較早級別的每件 50% 出現；優先放進「主題裡有它」的房間，沒有就放進還沒指定的房間，取代那間原本選的家具（不重複、最多 NR 件）
+    var ct=curTier(),must=[],opt=[];
+    p.forEach(function(f){if(f[3]){if(f[3]===ct)must.push(f);else if(rnd(2)===0)opt.push(f)}});
+    var list=shuffle(must).concat(shuffle(opt)).slice(0,NR),fixed={};
+    function idx(e){for(var i=0;i<sel.length;i++)if(sel[i][0]===e)return i;return -1}
+    list.forEach(function(f){var at=idx(f[0]);if(at>=0)fixed[at]=1});
+    list.forEach(function(f){if(idx(f[0])>=0)return;
+      var rooms=[],r;for(r=0;r<NR;r++)if(!fixed[r])rooms.push(r);if(!rooms.length)return;
+      var fav=rooms.filter(function(x){return TH[x%8].fav.indexOf(f[0])>=0}),room=pick(fav.length?fav:rooms);
+      sel[room]=f;fixed[room]=1});
     return sel}
 
   // ---- 小一版題庫（小一上學期：國文＋英文；答錯只鼓勵）----
-// 小一版題庫：8 關主題（國文 4、英文 4）。每題 [題目html, 答案, 錯誤選項1, 錯誤選項2, 去重key, 唸出來的文字(可省略)]
+// 小一版題庫 v2：8 關主題（國文 4、英文 4）。每題 [題目html, 答案, 錯誤選項1, 錯誤選項2, 去重key, 唸出來的文字(可省略), 題型樣板tp]
 // ‹…› 內的字不加注音（避免洩漏答案）；其他中文字由字典自動加注音。'sw:#色碼:名稱' 代表色塊選項。
 var EM=function(x,c){return '<div class="em'+(c?' '+c:'')+'">'+x+'</div>'};
+var EMS=function(x,fs){return '<div class="em" style="font-size:'+fs+'px;line-height:1.3">'+x+'</div>'};
 var SUBQ=function(x){return '<div class="sub">'+x+'</div>'};
 var BANK=[];
 (function(){
+  var it;
+  function A(tp,t,a,d1,d2,key,say){it.push([t,a,d1,d2,key,say||'',tp])}
+  function B(id,sub,name,tag){BANK.push({id:id,sub:sub,name:name,tag:tag,items:it})}
+  function two(list,ans,i){var o=list.filter(function(x){return x!==ans}),a=o[(i*3+1)%o.length],b=o[(i*5+4)%o.length];if(a===b)b=o[(i*5+5)%o.length];return [a,b]}
+  var CN=['一','二','三','四','五','六','七','八','九','十'];
   // ===== 國文 1：注音符號 =====
-  var zy=[['🐶','狗','ㄍㄡˇ','ㄎㄡˇ','ㄍㄠˇ'],['🐱','貓','ㄇㄠ','ㄇㄚ','ㄇㄡ'],['🐟','魚','ㄩˊ','ㄩˇ','ㄧˊ'],['🐦','鳥','ㄋㄧㄠˇ','ㄋㄧㄡˇ','ㄌㄧㄠˇ'],['🐮','牛','ㄋㄧㄡˊ','ㄋㄧㄠˊ','ㄌㄧㄡˊ'],['🐴','馬','ㄇㄚˇ','ㄇㄚˋ','ㄇㄛˇ'],
-    ['🌙','月','ㄩㄝˋ','ㄩㄝˊ','ㄩㄢˋ'],['☀️','日','ㄖˋ','ㄕˋ','ㄗˋ'],['👄','口','ㄎㄡˇ','ㄍㄡˇ','ㄎㄡˋ'],['✋','手','ㄕㄡˇ','ㄕㄡˋ','ㄔㄡˇ'],['🔥','火','ㄏㄨㄛˇ','ㄏㄨㄛˊ','ㄎㄨㄛˇ'],['💧','水','ㄕㄨㄟˇ','ㄕㄨㄟˋ','ㄔㄨㄟˇ'],['⛰️','山','ㄕㄢ','ㄕㄤ','ㄕㄢˊ'],['🌳','木','ㄇㄨˋ','ㄇㄨˊ','ㄅㄨˋ']];
-  var seq=[['ㄅ　ㄆ　ㄇ','ㄈ','ㄊ','ㄍ'],['ㄉ　ㄊ　ㄋ','ㄌ','ㄅ','ㄏ'],['ㄍ　ㄎ','ㄏ','ㄇ','ㄌ'],['ㄐ　ㄑ','ㄒ','ㄈ','ㄙ'],['ㄗ　ㄘ','ㄙ','ㄒ','ㄖ'],['ㄓ　ㄔ　ㄕ','ㄖ','ㄌ','ㄐ'],['ㄚ　ㄛ','ㄜ','ㄩ','ㄧ'],['ㄧ　ㄨ','ㄩ','ㄚ','ㄛ']];
-  var it=[];
-  zy.forEach(function(z){it.push([EM(z[0])+'「‹'+z[1]+'›」怎麼拼？',z[2],z[3],z[4],'zy'+z[1]])});
-  seq.forEach(function(s,i){it.push([SUBQ('照順序，接下來是哪一個？')+EM(s[0]+'　<b>？</b>','zyseq'),s[1],s[2],s[3],'sq'+i])});
-  BANK.push({id:'zy',sub:'國文',name:'注音符號',tag:'📖 國文・注音符號',items:it});
-  // ===== 國文 2：看圖選字 =====
-  var ch=[['⛰️','山','水','火'],['💧','水','山','木'],['🔥','火','水','日'],['☀️','日','月','目'],['🌙','月','日','山'],['👄','口','手','耳'],['✋','手','口','木'],['👀','目','日','耳'],['👂','耳','口','手'],['🌳','木','火','水'],['🌧️','雨','山','門'],['🌸','花','木','車'],['🐟','魚','鳥','馬'],['🐦','鳥','魚','牛'],['🐮','牛','馬','狗'],['🐴','馬','牛','鳥'],['🐶','狗','貓','魚'],['🚪','門','車','口'],['🚗','車','門','雨']];
-  it=[];ch.forEach(function(c){it.push([EM(c[0])+'這是哪一個字？',c[1],c[2],c[3],'ch'+c[1]])});
-  BANK.push({id:'ch',sub:'國文',name:'看圖選字',tag:'📖 國文・看圖選字',items:it});
-  // ===== 國文 3：詞語（看圖補字） =====
-  var wd=[['🐶','小','<b>？</b>','狗','貓','鳥'],['🐱','小','<b>？</b>','貓','狗','魚'],['🐦','小','<b>？</b>','鳥','魚','貓'],['🐟','小','<b>？</b>','魚','鳥','狗'],['✋','小','<b>？</b>','手','山','門'],
-    ['👨','爸','<b>？</b>','爸','媽','雨'],['👩','媽','<b>？</b>','媽','爸','口'],['🧑','大','<b>？</b>','人','魚','貓'],['⛰️','大','<b>？</b>','山','門','鳥'],['🌧️','下','<b>？</b>','雨','山','手'],['🚪','開','<b>？</b>','門','水','手'],['🚂','火','<b>？</b>','車','山','雨'],['🔥','大','<b>？</b>','火','鳥','手'],['🍚','吃','<b>？</b>','飯','手','山']];
-  it=[];wd.forEach(function(w,i){it.push([EM(w[0])+SUBQ('看圖，補上缺的字')+'<div class="t2">'+w[1]+w[2]+'</div>',w[3],w[4],w[5],'wd'+i])});
-  BANK.push({id:'wd',sub:'國文',name:'詞語補字',tag:'📖 國文・詞語',items:it});
+  it=[];
+  [['🐶','狗','ㄍㄡˇ','ㄎㄡˇ','ㄍㄠˇ'],['🐱','貓','ㄇㄠ','ㄇㄚ','ㄇㄡ'],['🐟','魚','ㄩˊ','ㄩˇ','ㄧˊ'],['🐦','鳥','ㄋㄧㄠˇ','ㄋㄧㄡˇ','ㄌㄧㄠˇ'],['🐮','牛','ㄋㄧㄡˊ','ㄋㄧㄠˊ','ㄌㄧㄡˊ'],['🐴','馬','ㄇㄚˇ','ㄇㄚˋ','ㄇㄛˇ'],
+   ['🌙','月','ㄩㄝˋ','ㄩㄝˊ','ㄩㄢˋ'],['☀️','日','ㄖˋ','ㄕˋ','ㄗˋ'],['👄','口','ㄎㄡˇ','ㄍㄡˇ','ㄎㄡˋ'],['✋','手','ㄕㄡˇ','ㄕㄡˋ','ㄔㄡˇ'],['🔥','火','ㄏㄨㄛˇ','ㄏㄨㄛˊ','ㄎㄨㄛˇ'],['💧','水','ㄕㄨㄟˇ','ㄕㄨㄟˋ','ㄔㄨㄟˇ'],['⛰️','山','ㄕㄢ','ㄕㄤ','ㄕㄢˊ'],['🌳','木','ㄇㄨˋ','ㄇㄨˊ','ㄅㄨˋ'],
+   ['🐷','豬','ㄓㄨ','ㄔㄨ','ㄗㄨ'],['🐰','兔','ㄊㄨˋ','ㄊㄨˇ','ㄌㄨˋ'],['🚪','門','ㄇㄣˊ','ㄇㄥˊ','ㄇㄣˇ'],['👂','耳','ㄦˇ','ㄦˊ','ㄦˋ'],['🏠','家','ㄐㄧㄚ','ㄑㄧㄚ','ㄐㄧㄤ'],['🌸','花','ㄏㄨㄚ','ㄍㄨㄚ','ㄏㄨㄛ'],['🐑','羊','ㄧㄤˊ','ㄧㄠˊ','ㄧㄤˇ'],['⭐','星','ㄒㄧㄥ','ㄒㄧㄣ','ㄒㄧㄤ']
+  ].forEach(function(z){A('pin',EM(z[0])+'「‹'+z[1]+'›」怎麼拼？',z[2],z[3],z[4],'zy'+z[1])});
+  [['人','ㄖㄣˊ','ㄖㄥˊ','ㄖㄣˇ'],['天','ㄊㄧㄢ','ㄊㄧㄣ','ㄊㄧㄢˊ'],['米','ㄇㄧˇ','ㄇㄧˊ','ㄇㄧˋ'],['白','ㄅㄞˊ','ㄅㄞˇ','ㄆㄞˊ'],['草','ㄘㄠˇ','ㄘㄠˊ','ㄗㄠˇ'],['我','ㄨㄛˇ','ㄨㄛˊ','ㄨㄛˋ'],['吃','ㄔ','ㄔˇ','ㄕ']
+  ].forEach(function(z){A('pin2',EM('‹'+z[0]+'›')+'這個字怎麼拼？',z[1],z[2],z[3],'zy'+z[0])});
+  [['ㄅ　ㄆ　ㄇ','ㄈ','ㄊ','ㄍ'],['ㄉ　ㄊ　ㄋ','ㄌ','ㄅ','ㄏ'],['ㄍ　ㄎ','ㄏ','ㄇ','ㄌ'],['ㄐ　ㄑ','ㄒ','ㄈ','ㄙ'],['ㄗ　ㄘ','ㄙ','ㄒ','ㄖ'],['ㄓ　ㄔ　ㄕ','ㄖ','ㄌ','ㄐ'],['ㄚ　ㄛ','ㄜ','ㄩ','ㄧ'],['ㄧ　ㄨ','ㄩ','ㄚ','ㄛ'],['ㄇ　ㄈ','ㄉ','ㄊ','ㄍ']
+  ].forEach(function(s,i){A('sq',SUBQ('照順序，接下來是哪一個？')+EM(s[0]+'　<b>？</b>','zyseq'),s[1],s[2],s[3],'sq'+i)});
+  [['ㄉ　ㄊ　<b>？</b>　ㄌ','ㄋ','ㄏ','ㄍ'],['ㄍ　<b>？</b>　ㄏ','ㄎ','ㄌ','ㄇ'],['ㄐ　<b>？</b>　ㄒ','ㄑ','ㄔ','ㄗ'],['ㄗ　<b>？</b>　ㄙ','ㄘ','ㄔ','ㄖ'],['ㄞ　ㄟ　<b>？</b>　ㄡ','ㄠ','ㄢ','ㄚ'],['ㄢ　ㄣ　<b>？</b>　ㄥ','ㄤ','ㄦ','ㄞ']
+  ].forEach(function(s,i){A('sq2',SUBQ('照順序，缺的是哪一個？')+EM(s[0],'zyseq'),s[1],s[2],s[3],'sm'+i)});
+  [['ㄍㄡˇ','ㄍ','ㄎ','ㄏ'],['ㄇㄠ','ㄇ','ㄅ','ㄈ'],['ㄕㄨㄟˇ','ㄕ','ㄔ','ㄙ'],['ㄏㄨㄛˇ','ㄏ','ㄍ','ㄎ'],['ㄌㄧㄡˋ','ㄌ','ㄋ','ㄉ']
+  ].forEach(function(s){A('fs',SUBQ('第一個符號是哪一個？')+EM(s[0],'zyseq'),s[1],s[2],s[3],'fz'+s[0])});
+  [['ㄇㄚ','第一聲','第二聲','第三聲'],['ㄖㄣˊ','第二聲','第一聲','第四聲'],['ㄋㄧˇ','第三聲','第二聲','第四聲'],['ㄌㄧㄡˋ','第四聲','第三聲','第一聲'],['ㄕㄢ','第一聲','第三聲','第四聲'],['ㄩˊ','第二聲','第三聲','第四聲']
+  ].forEach(function(s){A('tn',SUBQ('這是第幾聲？')+EM(s[0],'zyseq'),s[1],s[2],s[3],'tn'+s[0])});
+  B('zy','國文','注音符號','📖 國文・注音符號');
+  // ===== 國文 2：看圖選字、數字 =====
+  it=[];
+  [['⛰️','山','水','火'],['💧','水','山','木'],['🔥','火','水','日'],['☀️','日','月','目'],['🌙','月','日','山'],['👄','口','手','耳'],['✋','手','口','木'],['👀','目','日','耳'],['👂','耳','口','手'],['🌳','木','火','水'],['🌧️','雨','山','門'],['🌸','花','木','車'],['🐟','魚','鳥','馬'],['🐦','鳥','魚','牛'],['🐮','牛','馬','狗'],['🐴','馬','牛','鳥'],['🐶','狗','貓','魚'],['🚪','門','車','口'],['🚗','車','門','雨'],
+   ['🐑','羊','牛','馬'],['🐰','兔','魚','鳥'],['🐷','豬','牛','狗'],['⭐','星','日','月'],['🏠','家','門','車'],['❤️','心','手','口'],['📖','書','門','木']
+  ].forEach(function(c){A('pic',EM(c[0])+'這是哪一個字？',c[1],c[2],c[3],'ch'+c[1])});
+  [['山','⛰️','🔥','💧'],['水','💧','🌳','☀️'],['火','🔥','⛰️','🌧️'],['日','☀️','🌙','🌸'],['口','👄','✋','👂'],['耳','👂','👀','✋'],['魚','🐟','🐦','🐶'],['鳥','🐦','🐟','🐱'],['車','🚗','🚪','⛰️'],['花','🌸','🌳','⭐'],['狗','🐶','🐱','🐴'],['星','⭐','🌙','☀️']
+  ].forEach(function(c){A('rpic',EM('‹'+c[0]+'›')+'哪一個圖是這個字？',c[1],c[2],c[3],'ch'+c[0])});
+  [[2,'🍎'],[3,'🌸'],[4,'🐶'],[5,'⭐'],[6,'🍓'],[7,'🎈'],[8,'🐟']].forEach(function(c){var n=c[0],e='';for(var j=0;j<n;j++)e+=c[1];
+    A('cnt',EMS(e,34)+SUBQ('數一數，有幾個？'),CN[n-1],CN[n-2],CN[n],'nm'+n)});
+  [['一　二　<b>？</b>　四','三','五','六'],['二　三　<b>？</b>　五','四','六','七'],['四　五　<b>？</b>　七','六','八','九'],['六　七　<b>？</b>　九','八','十','五'],['七　八　<b>？</b>　十','九','五','六']
+  ].forEach(function(s,i){A('seqn',SUBQ('數字接龍，缺哪一個？')+EM(s[0],'ord'),s[1],s[2],s[3],'ns'+i)});
+  B('ch','國文','看圖選字','📖 國文・看圖選字');
+  // ===== 國文 3：詞語 =====
+  it=[];
+  [['🐶','小<b>？</b>','狗','貓','鳥'],['🐱','小<b>？</b>','貓','狗','魚'],['🐦','小<b>？</b>','鳥','魚','貓'],['🐟','小<b>？</b>','魚','鳥','狗'],['✋','小<b>？</b>','手','山','門'],
+   ['👨','爸<b>？</b>','爸','媽','雨'],['👩','媽<b>？</b>','媽','爸','口'],['🧑','大<b>？</b>','人','魚','貓'],['⛰️','大<b>？</b>','山','門','鳥'],['🌧️','下<b>？</b>','雨','山','手'],['🚪','開<b>？</b>','門','水','手'],['🚂','火<b>？</b>','車','山','雨'],['🔥','大<b>？</b>','火','鳥','手'],['🍚','吃<b>？</b>','飯','手','山'],
+   ['🚪','大<b>？</b>','門','水','魚'],['🍚','米<b>？</b>','飯','山','手'],['🍎','水<b>？</b>','果','門','手'],['🌸','花<b>？</b>','朵','山','車'],['🌧️','大<b>？</b>','雨','魚','木'],['🌙','月<b>？</b>','亮','門','魚'],['🌋','火<b>？</b>','山','木','門'],['🏠','回<b>？</b>','家','水','手'],['🍉','西<b>？</b>','瓜','山','木'],['🥛','牛<b>？</b>','奶','魚','馬'],['🚗','汽<b>？</b>','車','山','手'],['👂','耳<b>？</b>','朵','山','魚'],['📖','書<b>？</b>','本','魚','門'],['🎒','書<b>？</b>','包','山','火']
+  ].forEach(function(w,i){A('fill',EM(w[0])+SUBQ('看圖，補上缺的字')+'<div class="t2">'+w[1]+'</div>',w[2],w[3],w[4],'wd'+i)});
+  [['大','小','上','口'],['小','大','口','山'],['上','下','大','木'],['下','上','小','水'],['左','右','上','火'],['右','左','下','日'],['多','少','大','手'],['前','後','上','小'],['出','入','大','山'],['哭','笑','口','火'],['男','女','木','火'],['黑','白','大','山']
+  ].forEach(function(w){A('ant',SUBQ('哪一個字，和它的意思相反？')+EM(w[0],'cpb'),w[1],w[2],w[3],'an'+w[0])});
+  [['用<b>？</b>聽聲音','耳','口','手'],['用<b>？</b>吃飯','口','耳','目'],['用<b>？</b>看東西','目','耳','口'],['用<b>？</b>拿東西','手','目','耳'],['用<b>？</b>說話','口','手','耳']
+  ].forEach(function(w,i){A('body',SUBQ('選出缺的字')+'<div class="t2" style="font-size:34px">'+w[0]+'</div>',w[1],w[2],w[3],'bd'+i)});
+  B('wd','國文','詞語補字','📖 國文・詞語');
   // ===== 國文 4：筆畫與組成 =====
-  var sk=[['人',2,1,3],['十',2,3,4],['口',3,2,4],['大',3,2,4],['山',3,4,5],['小',3,2,4],['日',4,3,5],['月',4,3,5],['木',4,3,5],['水',4,3,5],['火',4,3,5],['手',4,3,5],['田',5,4,6],['目',5,4,6],['白',5,4,6]];
-  it=[];sk.forEach(function(s){it.push([EM(s[0])+'有幾畫？',s[1]+' 畫',s[2]+' 畫',s[3]+' 畫','sk'+s[0]])});
-  var cp=[['吃','口','木','大'],['叫','口','日','水'],['林','木','日','口'],['果','木','水','日'],['明','日','口','木'],['好','女','日','木'],['媽','女','口','木']];
-  cp.forEach(function(c){it.push([SUBQ('哪一個字裡面有這個部分？')+EM(c[1],'cpb'),c[0],c[2],c[3],'cp'+c[1]])});
-  BANK.push({id:'sk',sub:'國文',name:'筆畫與組成',tag:'📖 國文・筆畫',items:it});
+  it=[];
+  [['人',2,1,3],['十',2,3,4],['口',3,2,4],['大',3,2,4],['山',3,4,5],['小',3,2,4],['日',4,3,5],['月',4,3,5],['木',4,3,5],['水',4,3,5],['火',4,3,5],['手',4,3,5],['田',5,4,6],['目',5,4,6],['白',5,4,6],
+   ['一',1,2,3],['三',3,2,4],['上',3,2,4],['女',3,2,4],['子',3,2,4],['天',4,3,5],['五',4,3,5],['立',5,4,6],['生',5,4,6],['出',5,4,6],['好',6,5,7],['字',6,5,7],['多',6,5,7],['米',6,5,7]
+  ].forEach(function(s){A('stk',EM(s[0])+'有幾畫？',s[1]+' 畫',s[2]+' 畫',s[3]+' 畫','sk'+s[0])});
+  [['吃','口','木','大'],['叫','口','木','水'],['林','木','日','口'],['果','木','水','日'],['明','日','口','木'],['好','女','日','木'],['媽','女','口','木'],
+   ['和','口','木','火'],['名','口','木','火'],['休','木','水','火'],['早','日','木','水'],['星','日','木','手'],['姐','女','木','火'],['秋','火','口','山'],['看','目','木','火'],['同','口','木','山']
+  ].forEach(function(c){A('part',SUBQ('哪一個字裡面有這個部分？')+EM(c[1],'cpb'),c[0],c[2],c[3],'cp'+c[1])});
+  [['十','橫','豎','撇'],['人','撇','橫','豎'],['口','豎','橫','撇'],['日','豎','橫','點'],['火','點','橫','豎'],['大','橫','撇','點'],['月','撇','橫','豎'],['木','橫','撇','點'],['川','撇','橫','豎'],['山','豎','橫','撇']
+  ].forEach(function(s){A('first',EM(s[0])+'第一筆是哪一種？',s[1],s[2],s[3],'fs'+s[0])});
+  B('sk','國文','筆畫與組成','📖 國文・筆畫');
   // ===== 英文 1：字母 =====
-  var up=[['A','a','e','o'],['B','b','h','t'],['C','c','e','g'],['D','d','a','k'],['E','e','a','m'],['F','f','t','r'],['G','g','y','j'],['H','h','k','m'],['K','k','h','r'],['M','m','n','w'],['N','n','u','r'],['R','r','n','t'],['T','t','f','j']];
-  var lo=[['a','A','E','R'],['b','B','H','K'],['d','D','M','T'],['e','E','F','H'],['f','F','T','R'],['g','G','J','Y'],['h','H','N','K'],['m','M','W','N'],['n','N','M','Z'],['r','R','K','V'],['t','T','F','Y'],['y','Y','V','X'],['k','K','X','H']];
-  var od=[['A　B　<b>？</b>　D','C','E','F','oA'],['D　E　<b>？</b>　G','F','H','C','oD'],['J　K　<b>？</b>　M','L','N','P','oJ'],['M　N　<b>？</b>　P','O','Q','K','oM'],['W　X　<b>？</b>　Z','Y','V','U','oW'],['a　b　<b>？</b>　d','c','e','f','oa'],['e　f　<b>？</b>　h','g','j','k','oe'],['m　n　<b>？</b>　p','o','q','r','om'],['x　y　<b>？</b>','z','w','v','ox']];
-  it=[];up.forEach(function(u){it.push([EM(u[0])+'小寫是哪一個？',u[1],u[2],u[3],'L'+u[0].toLowerCase()])});
-  lo.forEach(function(u){it.push([EM(u[0])+'大寫是哪一個？',u[1],u[2],u[3],'L'+u[0]])});
-  od.forEach(function(o){it.push([SUBQ('字母順序，缺哪一個？')+EM(o[0],'ord'),o[1],o[2],o[3],o[4]])});
-  BANK.push({id:'al',sub:'英文',name:'字母大小寫',tag:'🔤 英文・字母',items:it});
+  it=[];
+  [['A','a','e','o'],['B','b','h','t'],['C','c','e','g'],['D','d','a','k'],['E','e','a','m'],['F','f','t','r'],['G','g','y','j'],['H','h','k','m'],['K','k','h','r'],['M','m','n','w'],['N','n','u','r'],['R','r','n','t'],['T','t','f','j'],['J','j','g','y'],['P','p','b','q'],['S','s','z','c']
+  ].forEach(function(u){A('up',EM(u[0])+'小寫是哪一個？',u[1],u[2],u[3],'L'+u[0].toLowerCase())});
+  [['a','A','E','R'],['b','B','H','K'],['d','D','M','T'],['e','E','F','H'],['f','F','T','R'],['g','G','J','Y'],['h','H','N','K'],['m','M','W','N'],['n','N','M','Z'],['r','R','K','V'],['t','T','F','Y'],['y','Y','V','X'],['k','K','X','H'],['i','I','J','T'],['o','O','Q','C'],['u','U','V','W']
+  ].forEach(function(u){A('lo',EM(u[0])+'大寫是哪一個？',u[1],u[2],u[3],'L'+u[0])});
+  [['A　B　<b>？</b>　D','C','E','F','oA'],['D　E　<b>？</b>　G','F','H','C','oD'],['J　K　<b>？</b>　M','L','N','P','oJ'],['M　N　<b>？</b>　P','O','Q','K','oM'],['W　X　<b>？</b>　Z','Y','V','U','oW'],['a　b　<b>？</b>　d','c','e','f','oa'],['e　f　<b>？</b>　h','g','j','k','oe'],['m　n　<b>？</b>　p','o','q','r','om'],['x　y　<b>？</b>','z','w','v','ox'],
+   ['B　C　<b>？</b>　E','D','F','H','oB'],['F　G　<b>？</b>　I','H','J','L','oF'],['N　O　<b>？</b>　Q','P','R','T','oN'],['T　U　<b>？</b>　W','V','X','Z','oT'],['b　c　<b>？</b>　e','d','f','g','ob'],['p　q　<b>？</b>　s','r','t','u','op']
+  ].forEach(function(o){A('ord',SUBQ('字母順序，缺哪一個？')+EM(o[0],'ord'),o[1],o[2],o[3],o[4])});
+  [['🍎','apple','A','B','S'],['⚽','ball','B','D','P'],['🐱','cat','C','B','S'],['🐶','dog','D','B','P'],['🥚','egg','E','A','I'],['🐟','fish','F','B','M'],['🏠','house','H','N','M'],['🌙','moon','M','B','K'],['🍊','orange','O','B','K'],['🐷','pig','P','B','Q']
+  ].forEach(function(f){A('fl',EM(f[0])+EM(f[1],'en')+SUBQ('第一個字母是哪一個？'),f[2],f[3],f[4],'fl'+f[1],f[1])});
+  B('al','英文','字母大小寫','🔤 英文・字母');
   // ===== 英文 2：顏色與數字 =====
+  it=[];
   var CO=[['Red','#e53935'],['Blue','#1e88e5'],['Green','#43a047'],['Yellow','#fdd835'],['Orange','#fb8c00'],['Purple','#8e24aa'],['Pink','#ff8ab8'],['Black','#212121'],['White','#ffffff'],['Brown','#795548']];
   var cd=function(c){return '<span class="cd" style="background:'+c+'"></span>'};
-  it=[];
-  CO.forEach(function(c,i){var o=CO.filter(function(x,j){return j!==i});var a=o[(i*3+1)%9],b=o[(i*5+4)%9];if(a===b)b=o[(i*5+5)%9];it.push([EM(cd(c[1]))+'這是什麼顏色？',c[0],a[0],b[0],'co'+c[0]])});
-  ['Red','Blue','Green','Yellow','Orange','Pink'].forEach(function(n,i){var me=CO.filter(function(x){return x[0]===n})[0],o=CO.filter(function(x){return x[0]!==n&&['Red','Blue','Green','Yellow','Orange','Pink','Purple'].indexOf(x[0])>=0});
-    var a=o[i%o.length],b=o[(i+3)%o.length];it.push([EM(n,'en')+'哪一個是這個顏色？','sw:'+me[1]+':'+n,'sw:'+a[1]+':'+a[0],'sw:'+b[1]+':'+b[0],'co'+n,n])});
+  CO.forEach(function(c,i){var o=CO.filter(function(x,j){return j!==i});var a=o[(i*3+1)%9],b=o[(i*5+4)%9];if(a===b)b=o[(i*5+5)%9];A('col',EM(cd(c[1]))+'這是什麼顏色？',c[0],a[0],b[0],'co'+c[0])});
+  var SWN=['Red','Blue','Green','Yellow','Orange','Pink','Purple','Brown','Black'],SWD=['Red','Blue','Green','Yellow','Orange','Pink','Purple'];
+  function colorOf(n){return CO.filter(function(x){return x[0]===n})[0]}
+  SWN.forEach(function(n,i){var me=colorOf(n),o=SWD.filter(function(x){return x!==n}),a=colorOf(o[i%o.length]),b=colorOf(o[(i+3)%o.length]);
+    A('sw',EM(n,'en')+'哪一個是這個顏色？','sw:'+me[1]+':'+n,'sw:'+a[1]+':'+a[0],'sw:'+b[1]+':'+b[0],'co'+n,n)});
+  var EXO={'🍌':['Green','Brown'],'🍋':['Green'],'🍎':['Green'],'🌸':['Red'],'🌊':['Green','Purple'],'🥒':['Yellow'],'🍫':['Orange'],'🍇':['Green']};
+  [['🍎','Red'],['🍌','Yellow'],['🍊','Orange'],['🍇','Purple'],['🐸','Green'],['🌊','Blue'],['🌸','Pink'],['🍫','Brown'],['🥒','Green'],['🍋','Yellow']
+  ].forEach(function(c,i){var d=two(['Red','Blue','Green','Yellow','Orange','Pink','Purple','Brown'].filter(function(x){return (EXO[c[0]]||[]).indexOf(x)<0}),c[1],i);A('obj',EM(c[0])+'這是什麼顏色？',c[1],d[0],d[1],'co'+c[1],c[1])});
   var NU=['one','two','three','four','five','six','seven','eight','nine','ten'];
-  NU.forEach(function(n,i){var a=NU[(i+3)%10],b=NU[(i+6)%10];it.push([EM(String(i+1),'num')+'英文怎麼說？',n,a,b,'nu'+n])});
-  BANK.push({id:'cn',sub:'英文',name:'顏色與數字',tag:'🎨 英文・顏色／數字',items:it});
+  NU.forEach(function(n,i){var a=NU[(i+3)%10],b=NU[(i+6)%10];A('num',EM(String(i+1),'num')+'英文怎麼說？',n,a,b,'nu'+n)});
+  [[2,'🍎'],[3,'🐱'],[4,'🌟'],[5,'🎈'],[6,'🐟'],[7,'🍓'],[8,'🚗']].forEach(function(c){var n=c[0],e='';for(var j=0;j<n;j++)e+=c[1];
+    A('cnt',EMS(e,34)+SUBQ('數一數，英文怎麼說？'),NU[n-1],NU[n-2],NU[n],'nu'+NU[n-1],NU[n-1])});
+  [2,3,5,6,7,8,9,10].forEach(function(n){var d=two(['1','2','3','4','5','6','7','8','9','10'],String(n),n);A('wn',EM(NU[n-1],'en')+'是數字幾？',String(n),d[0],d[1],'nu'+NU[n-1],NU[n-1])});
+  [['2　3　<b>？</b>　5','four','six','two'],['1　2　<b>？</b>　4','three','five','nine'],['5　6　<b>？</b>　8','seven','four','ten'],['6　7　<b>？</b>　9','eight','three','one'],['7　8　<b>？</b>　10','nine','five','two']
+  ].forEach(function(s,i){A('seqn',SUBQ('數字接龍，缺的數字英文怎麼說？')+EM(s[0],'ord'),s[1],s[2],s[3],'ns'+i,s[1])});
+  B('cn','英文','顏色與數字','🎨 英文・顏色／數字');
   // ===== 英文 3：動物與水果 =====
-  var AF=[['🐶','dog','cat','pig'],['🐱','cat','dog','fish'],['🐟','fish','bird','cow'],['🐦','bird','fish','dog'],['🐮','cow','horse','cat'],['🐴','horse','cow','pig'],['🐷','pig','dog','rabbit'],['🐰','rabbit','pig','monkey'],['🐵','monkey','tiger','rabbit'],['🐯','tiger','cat','monkey'],['🐸','frog','fish','bird'],['🐘','elephant','tiger','horse'],
-    ['🍎','apple','banana','grape'],['🍌','banana','apple','orange'],['🍊','orange','apple','grape'],['🍇','grape','banana','apple'],['🍉','watermelon','apple','banana'],['🍓','strawberry','grape','orange']];
-  it=[];AF.forEach(function(a){it.push([EM(a[0])+'英文怎麼說？',a[1],a[2],a[3],'af'+a[1]])});
-  BANK.push({id:'af',sub:'英文',name:'動物與水果',tag:'🐶 英文・動物／水果',items:it});
+  it=[];
+  var ANI=['dog','cat','fish','bird','cow','horse','pig','rabbit','monkey','tiger','frog','elephant','bear','lion','duck','chicken','sheep','turtle','mouse','snake','panda','bee','whale','zebra','giraffe'];
+  var FRU=['apple','banana','orange','grape','watermelon','strawberry','lemon','peach','pineapple','pear','cherry'];
+  var VEG=['carrot','tomato','corn','potato','broccoli'];
+  [['🐶','dog','cat','pig'],['🐱','cat','dog','fish'],['🐟','fish','bird','cow'],['🐦','bird','fish','dog'],['🐮','cow','horse','cat'],['🐴','horse','cow','pig'],['🐷','pig','dog','rabbit'],['🐰','rabbit','pig','monkey'],['🐵','monkey','tiger','rabbit'],['🐯','tiger','cat','monkey'],['🐸','frog','fish','bird'],['🐘','elephant','tiger','horse'],
+   ['🍎','apple','banana','grape'],['🍌','banana','apple','orange'],['🍊','orange','apple','grape'],['🍇','grape','banana','apple'],['🍉','watermelon','apple','banana'],['🍓','strawberry','grape','orange']
+  ].forEach(function(a){A('pic',EM(a[0])+'英文怎麼說？',a[1],a[2],a[3],'af'+a[1],a[1])});
+  [['🐻','bear'],['🦁','lion'],['🦆','duck'],['🐔','chicken'],['🐑','sheep'],['🐢','turtle'],['🐭','mouse'],['🐍','snake'],['🐼','panda'],['🐝','bee'],['🐳','whale'],['🦓','zebra'],['🦒','giraffe']
+  ].forEach(function(a,i){var d=two(ANI,a[1],i);A('pic',EM(a[0])+'英文怎麼說？',a[1],d[0],d[1],'af'+a[1],a[1])});
+  [['🍋','lemon'],['🍑','peach'],['🍍','pineapple'],['🍐','pear'],['🍒','cherry']
+  ].forEach(function(a,i){var d=two(FRU,a[1],i+2);A('pic',EM(a[0])+'英文怎麼說？',a[1],d[0],d[1],'af'+a[1],a[1])});
+  [['🥕','carrot'],['🍅','tomato'],['🌽','corn'],['🥔','potato'],['🥦','broccoli']
+  ].forEach(function(a,i){var d=two(VEG,a[1],i+1);A('pic',EM(a[0])+'英文怎麼說？',a[1],d[0],d[1],'af'+a[1],a[1])});
+  var NOTF=['dog','cat','bird','cow','horse','pig','rabbit','tiger','frog','bear'],NOTA=['apple','banana','orange','grape','lemon','peach','pear','cherry'];
+  ['banana','apple','grape','strawberry','peach','watermelon'].forEach(function(f,i){var d=two(NOTF,'',i);A('which',SUBQ('哪一個是<b>水果</b>？'),f,d[0],d[1],'af'+f)});
+  ['dog','cat','rabbit','tiger','horse','bird'].forEach(function(f,i){var d=two(NOTA,'',i);A('which',SUBQ('哪一個是<b>動物</b>？'),f,d[0],d[1],'af'+f)});
+  B('af','英文','動物與水果','🐶 英文・動物／水果');
   // ===== 英文 4：家人與問候 =====
-  var FA=[['👨','Dad','Mom','baby'],['👩','Mom','Dad','sister'],['👦','brother','sister','Mom'],['👧','sister','brother','Dad'],['👴','grandpa','grandma','brother'],['👵','grandma','grandpa','sister'],['👶','baby','Mom','Dad']];
-  var GR=[['🌅','早上遇到老師，要說什麼？','Good morning!','Good night!','Goodbye!','gm'],['🌙','睡覺前，要對媽媽說什麼？','Good night!','Good morning!','Hello!','gn'],['👋','遇到朋友，要說什麼？','Hello!','Goodbye!','Thank you!','he'],['🚌','要回家了，跟朋友說什麼？','Goodbye!','Hello!','Sorry!','by'],['🎁','朋友送你禮物，要說什麼？','Thank you!','Sorry!','Goodbye!','ty'],['😢','不小心撞到人，要說什麼？','Sorry!','Hello!','Good morning!','so']];
-  var MN=[['Hello!','你好','再見','謝謝','mHello'],['Thank you!','謝謝','你好','對不起','mThank'],['Goodbye!','再見','早安','你好','mBye'],['Good morning!','早安','晚安','謝謝','mGm'],['Good night!','晚安','早安','再見','mGn']];
-  it=[];FA.forEach(function(f){it.push([EM(f[0])+'英文怎麼說？',f[1],f[2],f[3],'fa'+f[1]])});
-  GR.forEach(function(g){it.push([EM(g[0])+g[1],g[2],g[3],g[4],'gr'+g[5]])});
-  MN.forEach(function(m){it.push([EM(m[0],'en')+'是什麼意思？',m[1],m[2],m[3],m[4],m[0]])});
-  BANK.push({id:'fg',sub:'英文',name:'家人與問候',tag:'👨‍👩‍👧 英文・家人／問候',items:it});
+  it=[];
+  var FAM=['Dad','Mom','brother','sister','grandpa','grandma','baby','teacher','friend','family'];
+  [['👨','Dad','Mom','baby'],['👩','Mom','Dad','sister'],['👦','brother','sister','Mom'],['👧','sister','brother','Dad'],['👴','grandpa','grandma','brother'],['👵','grandma','grandpa','sister'],['👶','baby','Mom','Dad'],['👪','family','baby','Dad']
+  ].forEach(function(f){A('fam',EM(f[0])+'英文怎麼說？',f[1],f[2],f[3],'fa'+f[1],f[1])});
+  [['爸爸','Dad'],['媽媽','Mom'],['哥哥','brother'],['姐姐','sister'],['爺爺','grandpa'],['奶奶','grandma'],['老師','teacher'],['朋友','friend'],['弟弟','brother'],['妹妹','sister']
+  ].forEach(function(f,i){var d=two(FAM.filter(function(x){return x!=='family'&&x!==f[1]}),'',i);A('cfam',EM(f[0])+'英文怎麼說？',f[1],d[0],d[1],'fa'+f[1],f[1])});
+  [['🌅','早上遇到老師，要說什麼？','Good morning!','Good night!','Goodbye!','gm'],['🌙','睡覺前，要對媽媽說什麼？','Good night!','Good morning!','Hello!','gn'],['👋','遇到朋友，要說什麼？','Hello!','Goodbye!','Thank you!','he'],['🚌','要回家了，跟朋友說什麼？','Goodbye!','Hello!','Sorry!','by'],['🎁','朋友送你禮物，要說什麼？','Thank you!','Sorry!','Goodbye!','ty'],['😢','不小心撞到人，要說什麼？','Sorry!','Hello!','Good morning!','so'],
+   ['🎂','朋友生日，要說什麼？','Happy birthday!','Good night!','Sorry!','hb'],['🌤️','下午遇到朋友，要說什麼？','Good afternoon!','Good morning!','Good night!','ga'],['🤝','第一次見面，要說什麼？','Nice to meet you!','Goodbye!','Sorry!','nt'],['🙏','別人跟你說謝謝，你要說什麼？','You are welcome.','Good night!','Sorry!','yw']
+  ].forEach(function(g){A('sit',EM(g[0])+g[1],g[2],g[3],g[4],'gr'+g[5])});
+  [['Hello!','你好','再見','謝謝','mHello'],['Thank you!','謝謝','你好','對不起','mThank'],['Goodbye!','再見','早安','你好','mBye'],['Good morning!','早安','晚安','謝謝','mGm'],['Good night!','晚安','早安','再見','mGn'],
+   ['Sorry!','對不起','謝謝','再見','mSorry'],['Good afternoon!','午安','早安','晚安','mGa'],['Happy birthday!','生日快樂','早安','謝謝','mHb'],['Please','請','謝謝','再見','mPlease']
+  ].forEach(function(m){A('mean',EM(m[0],'en')+'是什麼意思？',m[1],m[2],m[3],m[4],m[0])});
+  [['How are you?','I am fine.','I am six.','My name is Amy.','qHow'],['What is your name?','My name is Tom.','I am fine.','I am six.','qName'],['How old are you?','I am six.','I am fine.','My name is Leo.','qOld'],['Thank you.','You are welcome.','Good night.','Sorry.','qTy'],['Hello!','Hi!','Goodbye!','Good night!','qHi'],['Sorry.','It is OK.','Goodbye.','Good morning.','qSorry']
+  ].forEach(function(q){A('qa',EM(q[0],'en')+SUBQ('要怎麼回答？'),q[1],q[2],q[3],q[4],q[0])});
+  [['🌅','morning','night','afternoon'],['🌙','night','morning','afternoon'],['🌤️','afternoon','morning','night']
+  ].forEach(function(g){A('gap',EM(g[0])+EM('Good <b>？</b>!','en')+SUBQ('要填哪一個字？'),g[1],g[2],g[3],'gf'+g[1],'Good '+g[1])});
+  B('fg','英文','家人與問候','👨‍👩‍👧 英文・家人／問候');
 })();
 
   // ---- 注音：直接用注音符號字元，包在 <ruby> 裡（手機一般字型都有注音；沒有的話也只是顯示在字上面）----
-  var ZYC={"一":"ㄧˊ","上":"ㄕㄤˋ","下":"ㄒㄧㄚˋ","不":"ㄅㄨˋ","了":"˙ㄌㄜ","人":"ㄖㄣˊ","什":"ㄕㄣˊ","你":"ㄋㄧˇ","來":"ㄌㄞˊ","個":"ㄍㄜˋ","再":"ㄗㄞˋ","分":"ㄈㄣˋ","到":"ㄉㄠˋ","前":"ㄑㄧㄢˊ","十":"ㄕˊ","友":"ㄧㄡˇ","口":"ㄎㄡˇ","叫":"ㄐㄧㄠˋ","吃":"ㄔ","哪":"ㄋㄚˇ","回":"ㄏㄨㄟˊ","圖":"ㄊㄨˊ","大":"ㄉㄚˋ","女":"ㄋㄩˇ","好":"ㄏㄠˇ","媽":"ㄇㄚ","字":"ㄗˋ","安":"ㄢ","家":"ㄐㄧㄚ","寫":"ㄒㄧㄝˇ","對":"ㄉㄨㄟˋ","小":"ㄒㄧㄠˇ","山":"ㄕㄢ","師":"ㄕ","幾":"ㄐㄧˇ","序":"ㄒㄩˋ","心":"ㄒㄧㄣ","怎":"ㄗㄣˇ","思":"˙ㄙ","意":"ㄧˋ","手":"ㄕㄡˇ","拼":"ㄆㄧㄣ","接":"ㄐㄧㄝ","撞":"ㄓㄨㄤˋ","文":"ㄨㄣˊ","日":"ㄖˋ","早":"ㄗㄠˇ","明":"ㄇㄧㄥˊ","是":"ㄕˋ","晚":"ㄨㄢˇ","月":"ㄩㄝˋ","有":"ㄧㄡˇ","朋":"ㄆㄥˊ","木":"ㄇㄨˋ","林":"ㄌㄧㄣˊ","果":"ㄍㄨㄛˇ","母":"ㄇㄨˇ","水":"ㄕㄨㄟˇ","火":"ㄏㄨㄛˇ","照":"ㄓㄠˋ","爸":"ㄅㄚˋ","牛":"ㄋㄧㄡˊ","物":"ㄨˋ","狗":"ㄍㄡˇ","田":"ㄊㄧㄢˊ","畫":"ㄏㄨㄚˋ","白":"ㄅㄞˊ","的":"˙ㄉㄜ","目":"ㄇㄨˋ","看":"ㄎㄢˋ","睡":"ㄕㄨㄟˋ","禮":"ㄌㄧˇ","缺":"ㄑㄩㄝ","老":"ㄌㄠˇ","耳":"ㄦˇ","色":"ㄙㄜˋ","花":"ㄏㄨㄚ","英":"ㄧㄥ","補":"ㄅㄨˇ","裡":"ㄌㄧˇ","要":"ㄧㄠˋ","見":"ㄐㄧㄢˋ","覺":"ㄐㄧㄠˋ","說":"ㄕㄨㄛ","謝":"ㄒㄧㄝˋ","貓":"ㄇㄠ","起":"ㄑㄧˇ","跟":"ㄍㄣ","車":"ㄔㄜ","送":"ㄙㄨㄥˋ","這":"ㄓㄜˋ","遇":"ㄩˋ","部":"ㄅㄨˋ","門":"ㄇㄣˊ","開":"ㄎㄞ","雨":"ㄩˇ","面":"ㄇㄧㄢˋ","順":"ㄕㄨㄣˋ","顏":"ㄧㄢˊ","飯":"ㄈㄢˋ","馬":"ㄇㄚˇ","魚":"ㄩˊ","鳥":"ㄋㄧㄠˇ","麼":"˙ㄇㄜ"},ZYW={"什麼":"ㄕㄣˊ ˙ㄇㄜ","怎麼":"ㄗㄣˇ ˙ㄇㄜ","意思":"ㄧˋ ˙ㄙ","媽媽":"ㄇㄚ ˙ㄇㄚ","謝謝":"ㄒㄧㄝˋ ˙ㄒㄧㄝ","睡覺":"ㄕㄨㄟˋ ㄐㄧㄠˋ","部分":"ㄅㄨˋ ㄈㄣˋ","一個":"ㄧˊ ㄍㄜˋ"};
+  var ZYC={"一":"ㄧ","上":"ㄕㄤˋ","下":"ㄒㄧㄚˋ","不":"ㄅㄨˋ","了":"˙ㄌㄜ","人":"ㄖㄣˊ","什":"ㄕㄣˊ","你":"ㄋㄧˇ","來":"ㄌㄞˊ","個":"ㄍㄜˋ","再":"ㄗㄞˋ","分":"ㄈㄣˋ","到":"ㄉㄠˋ","前":"ㄑㄧㄢˊ","十":"ㄕˊ","友":"ㄧㄡˇ","口":"ㄎㄡˇ","叫":"ㄐㄧㄠˋ","吃":"ㄔ","哪":"ㄋㄚˇ","回":"ㄏㄨㄟˊ","圖":"ㄊㄨˊ","大":"ㄉㄚˋ","女":"ㄋㄩˇ","好":"ㄏㄠˇ","媽":"ㄇㄚ","字":"ㄗˋ","安":"ㄢ","家":"ㄐㄧㄚ","寫":"ㄒㄧㄝˇ","對":"ㄉㄨㄟˋ","小":"ㄒㄧㄠˇ","山":"ㄕㄢ","師":"ㄕ","幾":"ㄐㄧˇ","序":"ㄒㄩˋ","心":"ㄒㄧㄣ","怎":"ㄗㄣˇ","思":"˙ㄙ","意":"ㄧˋ","手":"ㄕㄡˇ","拼":"ㄆㄧㄣ","接":"ㄐㄧㄝ","撞":"ㄓㄨㄤˋ","文":"ㄨㄣˊ","日":"ㄖˋ","早":"ㄗㄠˇ","明":"ㄇㄧㄥˊ","是":"ㄕˋ","晚":"ㄨㄢˇ","月":"ㄩㄝˋ","有":"ㄧㄡˇ","朋":"ㄆㄥˊ","木":"ㄇㄨˋ","林":"ㄌㄧㄣˊ","果":"ㄍㄨㄛˇ","母":"ㄇㄨˇ","水":"ㄕㄨㄟˇ","火":"ㄏㄨㄛˇ","照":"ㄓㄠˋ","爸":"ㄅㄚˋ","牛":"ㄋㄧㄡˊ","物":"ㄨˋ","狗":"ㄍㄡˇ","田":"ㄊㄧㄢˊ","畫":"ㄏㄨㄚˋ","白":"ㄅㄞˊ","的":"˙ㄉㄜ","目":"ㄇㄨˋ","看":"ㄎㄢˋ","睡":"ㄕㄨㄟˋ","禮":"ㄌㄧˇ","缺":"ㄑㄩㄝ","老":"ㄌㄠˇ","耳":"ㄦˇ","色":"ㄙㄜˋ","花":"ㄏㄨㄚ","英":"ㄧㄥ","補":"ㄅㄨˇ","裡":"ㄌㄧˇ","要":"ㄧㄠˋ","見":"ㄐㄧㄢˋ","覺":"ㄐㄧㄠˋ","說":"ㄕㄨㄛ","謝":"ㄒㄧㄝˋ","貓":"ㄇㄠ","起":"ㄑㄧˇ","跟":"ㄍㄣ","車":"ㄔㄜ","送":"ㄙㄨㄥˋ","這":"ㄓㄜˋ","遇":"ㄩˋ","部":"ㄅㄨˋ","門":"ㄇㄣˊ","開":"ㄎㄞ","雨":"ㄩˇ","面":"ㄇㄧㄢˋ","順":"ㄕㄨㄣˋ","顏":"ㄧㄢˊ","飯":"ㄈㄢˋ","馬":"ㄇㄚˇ","魚":"ㄩˊ","鳥":"ㄋㄧㄠˇ","麼":"˙ㄇㄜ","子":"ㄗˇ","撇":"ㄆㄧㄝˇ","兔":"ㄊㄨˋ","和":"ㄏㄜˊ","數":"ㄕㄨˋ","汽":"ㄑㄧˋ","選":"ㄒㄩㄢˇ","立":"ㄌㄧˋ","少":"ㄕㄠˇ","同":"ㄊㄨㄥˊ","次":"ㄘˋ","樂":"ㄌㄜˋ","請":"ㄑㄧㄥˇ","弟":"ㄉㄧˋ","答":"ㄉㄚˊ","龍":"ㄌㄨㄥˊ","包":"ㄅㄠ","本":"ㄅㄣˇ","相":"ㄒㄧㄤ","亮":"ㄌㄧㄤˋ","名":"ㄇㄧㄥˊ","號":"ㄏㄠˋ","六":"ㄌㄧㄡˋ","七":"ㄑㄧ","八":"ㄅㄚ","九":"ㄐㄧㄡˇ","休":"ㄒㄧㄡ","點":"ㄉㄧㄢˇ","種":"ㄓㄨㄥˇ","姐":"ㄐㄧㄝˇ","填":"ㄊㄧㄢˊ","反":"ㄈㄢˇ","它":"ㄊㄚ","三":"ㄙㄢ","二":"ㄦˋ","五":"ㄨˇ","入":"ㄖㄨˋ","出":"ㄔㄨ","別":"ㄅㄧㄝˊ","動":"ㄉㄨㄥˋ","午":"ㄨˇ","右":"ㄧㄡˋ","哥":"ㄍㄜ","哭":"ㄎㄨ","四":"ㄙˋ","多":"ㄉㄨㄛ","天":"ㄊㄧㄢ","奶":"ㄋㄞˇ","妹":"ㄇㄟˋ","川":"ㄔㄨㄢ","左":"ㄗㄨㄛˇ","後":"ㄏㄡˋ","快":"ㄎㄨㄞˋ","拿":"ㄋㄚˊ","星":"ㄒㄧㄥ","書":"ㄕㄨ","朵":"ㄉㄨㄛˇ","東":"ㄉㄨㄥ","橫":"ㄏㄥˊ","爺":"ㄧㄝˊ","瓜":"ㄍㄨㄚ","生":"ㄕㄥ","用":"ㄩㄥˋ","男":"ㄋㄢˊ","秋":"ㄑㄧㄡ","笑":"ㄒㄧㄠˋ","符":"ㄈㄨˊ","第":"ㄉㄧˋ","筆":"ㄅㄧˇ","米":"ㄇㄧˇ","羊":"ㄧㄤˊ","聲":"ㄕㄥ","聽":"ㄊㄧㄥ","西":"ㄒㄧ","話":"ㄏㄨㄚˋ","豎":"ㄕㄨˋ","豬":"ㄓㄨ","音":"ㄧㄣ","黑":"ㄏㄟ"},ZYW={"什麼":"ㄕㄣˊ ˙ㄇㄜ","怎麼":"ㄗㄣˇ ˙ㄇㄜ","意思":"ㄧˋ ˙ㄙ","媽媽":"ㄇㄚ ˙ㄇㄚ","謝謝":"ㄒㄧㄝˋ ˙ㄒㄧㄝ","睡覺":"ㄕㄨㄟˋ ㄐㄧㄠˋ","部分":"ㄅㄨˋ ㄈㄣˋ","一個":"ㄧˊ ㄍㄜˋ","數一數":"ㄕㄨˇ ㄧ ㄕㄨˇ","第一":"ㄉㄧˋ ㄧ","一種":"ㄧˋ ㄓㄨㄥˇ","爸爸":"ㄅㄚˋ ˙ㄅㄚ","哥哥":"ㄍㄜ ˙ㄍㄜ","姐姐":"ㄐㄧㄝˇ ˙ㄐㄧㄝ","弟弟":"ㄉㄧˋ ˙ㄉㄧ","妹妹":"ㄇㄟˋ ˙ㄇㄟ","爺爺":"ㄧㄝˊ ˙ㄧㄝ","奶奶":"ㄋㄞˇ ˙ㄋㄞ","東西":"ㄉㄨㄥ ˙ㄒㄧ"};
   function zyR(c,z){return '<ruby>'+c+'<rt>'+z+'</rt></ruby>'}
   function zy(html){ // 把中文字加上注音；標籤不動；‹…› 裡面的字不加（避免洩漏答案）
     return html.split(/(<[^>]*>)/).map(function(seg){
@@ -494,11 +566,32 @@ var BANK=[];
   var TTS=false;try{TTS=('speechSynthesis' in window)&&typeof SpeechSynthesisUtterance!=='undefined'}catch(e){TTS=false}
   function speak(t){if(!TTS)return;try{window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=.8;window.speechSynthesis.speak(u)}catch(e){}}
   var rounds=[];
-  function buildRounds(){ // 8 關：國文 4 關、英文 4 關交錯（開頭隨機）；每關 5 題同一主題；同一次遊玩內題目不重複
-    var chi=shuffle([0,1,2,3]),eng=shuffle([4,5,6,7]),seen={},i,k;qs=[];
-    for(i=0;i<NR;i++){var bk=BANK[(i%2===startM)?chi[i>>1]:eng[i>>1]],pool=shuffle(bk.items),L=[],used={};
-      for(k=0;k<pool.length&&L.length<NQ;k++){var x=pool[k],id=x[0]+'|'+x[1];if(used[x[4]]||seen[id])continue;used[x[4]]=1;seen[id]=1;
-        L.push({k:bk.id,tag:bk.tag,text:x[0],ans:x[1],opts:[x[1],x[2],x[3]],say:x[5]||''})}
+  // ---- 跨次不重複：localStorage（yuanyuan1_seen）記最近玩過的題 id 和題型；下次優先抽沒玩過的，題庫用完才從最久以前玩過的開始循環。壞掉/停用時改用記憶體，照常玩 ----
+  var SEEN_CAP=1200,TP_WIN=60,seenL=[],seenT=[],seenId={},seenTp={};
+  function hsh(s){var h=5381;for(var i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)}
+  function loadSeen(){var o=null;seenL=[];seenT=[];
+    try{o=JSON.parse(sget('seen')||'null')}catch(e){o=null}
+    if(o&&Array.isArray(o.i))seenL=o.i.filter(function(x){return typeof x==='string'}).slice(-SEEN_CAP);
+    if(o&&Array.isArray(o.t))seenT=o.t.filter(function(x){return typeof x==='string'}).slice(-TP_WIN);
+    reSeen()}
+  function reSeen(){seenId={};seenTp={};seenL.forEach(function(x){seenId[x]=1});seenT.forEach(function(x){seenTp[x]=1})}
+  function markSeen(q){if(!q||!q.id)return;
+    try{var i=seenL.indexOf(q.id);if(i>=0)seenL.splice(i,1);seenL.push(q.id);if(seenL.length>SEEN_CAP)seenL.shift();
+      if(q.tp){seenT.push(q.tp);if(seenT.length>TP_WIN)seenT.shift()}
+      reSeen();sset('seen',JSON.stringify({i:seenL,t:seenT}))}catch(e){}}
+  function dealQ(cand,pid,used,ltp){ // 同一次遊玩不重複、同一關不重複概念；優先沒玩過的題，再優先這關還沒出現的題型；都玩過了就挑最久以前玩過的
+    var st,i,c,best=null,bs,sc;
+    for(st=0;st<5&&!best;st++){bs=1e9;
+      for(i=0;i<cand.length;i++){c=cand[i];if(used[c.x[4]]||pid[c.id])continue;
+        if(st<4){if(seenId[c.id])continue;if(st<3&&ltp[c.tp])continue;if(st<1&&seenTp[c.tp])continue;best=c;break}
+        sc=seenL.indexOf(c.id)+(ltp[c.tp]?SEEN_CAP+5:0);if(sc<bs){bs=sc;best=c}}}
+    if(!best)for(i=0;i<cand.length&&!best;i++)if(!pid[cand[i].id])best=cand[i];
+    return best||cand[0]}
+  function buildRounds(){ // 8 關：國文 4 關、英文 4 關交錯（開頭隨機）；每關 5 題同一主題；同一次遊玩內題目不重複，並避開最近玩過的題
+    var chi=shuffle([0,1,2,3]),eng=shuffle([4,5,6,7]),pid={},i,k;qs=[];loadSeen();
+    for(i=0;i<NR;i++){var bk=BANK[(i%2===startM)?chi[i>>1]:eng[i>>1]],used={},ltp={},L=[],cand=shuffle(bk.items.map(function(x){return {x:x,id:hsh(bk.id+'|'+x[0]+'|'+x[1]),tp:bk.id+':'+(x[6]||x[4])}}));
+      for(k=0;k<NQ;k++){var c=dealQ(cand,pid,used,ltp),x=c.x;used[x[4]]=1;pid[c.id]=1;ltp[c.tp]=1;
+        L.push({k:bk.id,tag:bk.tag,text:x[0],ans:x[1],opts:[x[1],x[2],x[3]],say:x[5]||'',id:c.id,tp:c.tp})}
       qs.push(L)}
   }
   var startM=0;
@@ -536,7 +629,7 @@ var BANK=[];
     var b=$('banner');b.innerHTML='<small>第 '+(t+1)+' 間房　'+th.ic+'</small><b>'+th.ent+'</b>';b.classList.remove('go');void b.offsetWidth;b.classList.add('go');
     clearTimeout(bnT);bnT=setTimeout(function(){b.classList.remove('go')},1650);if(t>0)SFX.room()}
   function dots(){var h='';for(var i=0;i<NR;i++)h+='<span class="dot'+(i<round?' on':'')+'"></span>';$('dots').innerHTML=h}
-  function say(t){$('say').textContent=nm(t)}
+  function say(t){$('say').textContent=t}
   function reset(){
     newTitles=[];$('newt').style.display='none';round=0;qi=0;lvWrong=0;lvMax=0;lvCombo=0;lvStars=[];adv=false;lockUntil=0;locked=false;combo=0;maxCombo=0;wrong=0;qWrong=false;showCombo();king(false);clearTimeout(moodT);$('pet').className='';
     startM=rnd(2);buildRounds();furn=chooseFurn();run=[];maxRoom=-1;
@@ -548,13 +641,13 @@ var BANK=[];
   }
   function next(){ // 進入新的一關（新房間轉場橫幅在這時才出現）
     dots();qi=0;lvWrong=0;lvMax=0;lvCombo=0;adv=false;enterRoom(round);if(round>0)say(TT().hi);
-    $('story').textContent=nm(pick(TT().st).replace('{f}',furn[round][1]));
+    $('story').textContent=pick(TT().st).replace('{f}',furn[round][1]);
     showQ();
   }
   function showQ(){
     locked=false;qWrong=false;
     $('clr').style.display='none';$('q').style.display='';$('opts').style.display='';
-    var q=qs[round][qi];
+    var q=qs[round][qi];markSeen(q);
     $('tag').textContent='第 '+(round+1)+' 關・第 '+(qi+1)+'／'+NQ+' 題　'+q.tag;
     $('qt').innerHTML=zy(q.text);
     var sp=$('sp');if(q.say&&TTS){sp.style.display='block';sp.onclick=function(){speak(q.say)}}else{sp.style.display='none';sp.onclick=null}
@@ -641,14 +734,13 @@ var BANK=[];
     var msgs={3:['太棒了！'+NR+' 關幾乎都一次答對，你是設計大師！','好厲害！'+NR+' 間房都過得又穩又快，圓圓的新家超漂亮！'],2:['很棒喔！只錯一點點，新家很好看！','好厲害，圓圓好喜歡你布置的家！'],1:['完成了！多練習幾次會更厲害～','圓圓的新家完成了，謝謝你不放棄！']};
     var sh='';for(var i=0;i<3;i++)sh+='<span style="animation-delay:'+(i*.25)+'s">'+(i<st?'⭐':'☆')+'</span>';
     $('stars').innerHTML=sh;$('stars').setAttribute('data-stars',st);
-    $('endsay').textContent=nm(pick(msgs[st]));
-    $('endstory').textContent=nm(pick(ENDSTORY));var fr=maxRoom>=0?maxRoom:rnd(8),ft=TH[fr],ftt=ft.et[st-1];$('sticker').textContent='🌟 '+ftt+' 🌟';showNewT();buildRooms();$('endinfo').textContent=(NR*NQ)+' 題｜答錯 '+wrong+' 次｜最高連擊 x'+maxCombo;
+    $('endsay').textContent=pick(msgs[st]);
+    $('endstory').textContent=pick(ENDSTORY);var fr=maxRoom>=0?maxRoom:rnd(8),ft=TH[fr],ftt=ft.et[st-1];$('sticker').textContent='🌟 '+ftt+' 🌟';showNewT();buildRooms();$('endinfo').textContent=(NR*NQ)+' 題｜答錯 '+wrong+' 次｜最高連擊 x'+maxCombo;
     $('combo').style.display='none';king(false);plays++;if(st>best)best=st;sset('plays',String(plays));sset('best',String(best));
     var oldT=curTier();total+=st;var newT=Math.max(oldT,tierOf(total));tierSaved=newT;sset('total',String(total));sset('unlock',String(newT));
     $('endgain').textContent='本次得到 ★'+st+'　累積 ★'+total;$('endhist').textContent=histText();refreshBar();mood('dance glow',1500);
     say('🎉 謝謝你幫圓圓布置新家 🎉');
-    SFX.end(st);tell({type:'yuanyuan-done',stars:st,wrong:wrong,combo:maxCombo});   // 告訴小屋：玩完了、幾顆星
-    showUnlock(oldT,newT,st);
+    SFX.end(st);showUnlock(oldT,newT,st);
     for(var i=0;i<14;i++){(function(i){setTimeout(function(){var c=document.createElement('div');c.className='conf';c.textContent=pick(['⭐','🎉','💖','✨','🌸']);c.style.left=rnd(92)+'%';$('app').appendChild(c);setTimeout(function(){c.remove()},1900)},i*70)})(i)}
   }
   function showNewT(){var e=$('newt');if(!newTitles.length){e.style.display='none';return}
@@ -678,7 +770,6 @@ var BANK=[];
   mb.onclick=function(){muted=!muted;sset('mute',muted?'1':'0');paintMute();if(!muted)SFX.click()};
   loadAll();loadTitles();
   $('bkb').onclick=openBook;$('bke').onclick=openBook;$('bkx').onclick=closeBook;$('bk').onclick=function(e){if(e.target===$('bk'))closeBook()};
-  if(PET!=='圓圓'){var tt=document.querySelector('.top>span');if(tt&&tt.firstChild&&tt.firstChild.nodeType===3)tt.firstChild.nodeValue='🏡 '+PET+'的新家';document.title=document.title.replace(/圓圓/g,PET)}
   reset();
 })();
 </script>
