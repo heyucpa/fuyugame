@@ -746,6 +746,7 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .rename-row { display: flex; align-items: center; gap: 10px; padding: 8px; border: 2px solid var(--line); border-radius: 14px; margin: 6px 0; background: #fff; }
 .rename-t { flex: 1; display: flex; flex-direction: column; } .rename-t span { font-size: 12px; color: #8a7a6a; }
 .rename-b { display: flex; gap: 4px; flex-wrap: wrap; } .rename-b .on { background: #ffe0ee; border-color: #ff8fb3; }
+.quest-btn.qb-pet { min-width: 64px; } .quest-btn.qb-pet.glow { min-width: 110px; }
 .quest-btn.glow { animation: glowPulse .6s infinite alternate; border-color: #ffd23f; background: #fff3b0; }
 @keyframes glowPulse { from { box-shadow: 0 0 0 0 rgba(255,210,63,.8); } to { box-shadow: 0 0 0 8px rgba(255,210,63,0); } }
 .spar-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 8px 0; }
@@ -4782,6 +4783,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-01T20:00', title: '🐾 寵物一起闖關！', lines: [
+    ['🐾', '孵出來的寵物會跟著小可愛一起闖關，撿金幣會幫牠集能量'],
+    ['✨', '能量集滿，按 🐾 必殺技（電腦按 C）：畫面裡的小怪物全部打倒，大魔王也會被打一下！'],
+    ['⭐', '招式看寵物的個性：星星衝撞、愛心泡泡、大浪花、沙沙旋風；長成大朋友還會讓小可愛無敵一下']
+  ] },
   { id: '2026-10-31T20:00', title: '☁️ 烏雲大王來了！', lines: [
     ['☁️', '天空世界 5-3 的大魔王換成「烏雲大王」：會在天上飄、下雨，等牠飄下來頭暈的時候跳到牠頭上！'],
     ['⚡', '打到一半牠會生氣：小心地上黃色的框框會打雷；最後雨下更大，會出現雲朵台階'],
@@ -22230,16 +22236,30 @@ function openQuestMap() {
   card.appendChild(note('過關有錢可以拿；每關有 3 顆星星，找找看藏在哪裡！'));
   $('#modal').hidden = false;
 }
+const QPET_MOVES = {
+  jump: { name: '星星衝撞', icon: '⭐', fx: '⭐', col: '#ffd23f' },
+  shy: { name: '愛心泡泡', icon: '💗', fx: '💗', col: '#ff9ec4' },
+  fish: { name: '大浪花', icon: '🌊', fx: '💧', col: '#5cc4ec' },
+  sand: { name: '沙沙旋風', icon: '🌪️', fx: '🌀', col: '#e8c27a' }
+};
 function playQuest(id, opt) {
   opt = opt || {};   // opt.bossStart：從大魔王那裡開始；opt.weak：打輸幾次了（大王越來越弱）
   const q = questState(), easy = q.mode === 'easy', wd = QUEST_WORLDS[+id[0] - 1];
-  const w = openGameWindow(`${wd.icon} 世界 ${id}`, easy ? '小可愛會自己往前跑，看到坑或怪物就按「跳」（或點畫面、空白鍵）！按久一點會跳更高 ✨。到大魔王那裡可以用 ◀ ▶ 自己走。' : '← → 走、按「跳」（空白鍵／↑）跳，按久一點會跳更高 ✨。踩怪物的頭可以打倒牠！');
+  const w = openGameWindow(`${wd.icon} 世界 ${id}`, (easy ? '小可愛會自己往前跑，看到坑或怪物就按「跳」（或點畫面、空白鍵）！按久一點會跳更高 ✨。到大魔王那裡可以用 ◀ ▶ 自己走。' : '← → 走、按「跳」（空白鍵／↑）跳，按久一點會跳更高 ✨。踩怪物的頭可以打倒牠！') + (G.pet && G.pet.stage !== 'egg' ? `${petName()}也一起來了：🐾 集滿了就按，放必殺技！` : ''));
   w.stage.innerHTML = ''; w.btns.innerHTML = ''; w.card.classList.add('quest-big');
   const { c, g } = gameCanvas(w.stage, QVW, QVH);
   const pad = el('div', 'quest-pad');
   const mk = (txt, cls) => { const b = el('button', 'quest-btn ' + (cls || ''), txt); pad.appendChild(b); return b; };
   const bL = mk('◀', 'qb-l'), bR = mk('▶', 'qb-r'), bJ = mk('⤒ 跳', 'qb-j'), bDn = mk('⬇', 'qb-dn'), bF = mk('🔥', 'qb-fire');
   bDn.style.display = 'none'; bF.style.display = 'none';   // ⬇：站在水管上才出現；🔥：拿到火火花才出現
+  /* 🐾 寵物一起闖關（Grok 建議、家長同意）：孵出來的寵物跟在小可愛後面跑；撿金幣、時間慢慢集能量，
+     集滿按 🐾（或 C 鍵）放必殺技：畫面裡的小怪物全部打倒，大魔王扣一下（大約三成血）。
+     招式照寵物個性：活潑⭐星星衝撞、害羞💗愛心泡泡、愛看魚🌊大浪花、愛玩沙🌪️沙沙旋風。
+     寶寶：只打得到附近；小朋友：整個畫面；大朋友：整個畫面＋小可愛無敵 2 秒＋多 3 枚金幣。 */
+  const QP = (() => { const p0 = G.pet; if (!p0 || p0.stage === 'egg' || !PET_SPECIES_BY_ID[p0.species]) return null;
+    const tr = PET_TRAIT_OF[p0.species] || 'jump';
+    return { sp: PET_SPECIES_BY_ID[p0.species], stage: lookStage(p0), trait: tr, name: petName(), mv: QPET_MOVES[tr], meter: 0, max: easy ? 12 : 18, x: 0, y: 0, act: 0, uses: 0, lastCoins: 0, ui: 0 }; })();
+  const bP = QP ? mk('🐾', 'qb-pet') : null;
   if (easy) { bL.style.display = 'none'; bR.style.display = 'none'; }   // 家長：簡單模式還是自己一直跑比較好玩 → 平常自己跑，到大魔王那裡才出現 ◀ ▶ 自己走
   let bossZone = false;
   w.stage.appendChild(pad);
@@ -22276,16 +22296,31 @@ function playQuest(id, opt) {
   let flag = null, raf = 0, live = true, last = performance.now(), camX = 0, state = 'play', endT = 0, keys = {}, jumpHeld = false, jumpBuf = 0, msg = '', msgT = 0, coinPops = [];
   const say = (m2, s) => { msg = m2; msgT = s || 1.6; };
   try { const ln = typeof starIntroLine === 'function' ? starIntroLine(id) : ''; if (ln) setTimeout(() => say(ln, 4.5), 300); } catch (e) {}   // 🌟 線索關的開場
-  const keyD = e => { const k = e.code; if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space', 'KeyA', 'KeyD', 'KeyW', 'KeyS', 'KeyX', 'KeyF'].includes(k)) e.preventDefault(); if (e.repeat) return; keys[k] = true; if (k === 'ArrowDown' || k === 'KeyS') downBuf = .3; if (k === 'KeyX' || k === 'KeyF') shootFire(); if (k === 'Space' || k === 'ArrowUp' || k === 'KeyW') { jumpHeld = true; jumpBuf = .15; } };
+  const keyD = e => { const k = e.code; if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space', 'KeyA', 'KeyD', 'KeyW', 'KeyS', 'KeyX', 'KeyF', 'KeyC', 'KeyQ'].includes(k)) e.preventDefault(); if (e.repeat) return; keys[k] = true; if (k === 'ArrowDown' || k === 'KeyS') downBuf = .3; if (k === 'KeyX' || k === 'KeyF') shootFire(); if (k === 'KeyC' || k === 'KeyQ') petSpecial(); if (k === 'Space' || k === 'ArrowUp' || k === 'KeyW') { jumpHeld = true; jumpBuf = .15; } };
   const keyU = e => { keys[e.code] = false; if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') jumpHeld = false; };
   document.addEventListener('keydown', keyD); document.addEventListener('keyup', keyU);
   const hold = (b, on, off) => { if (!b) return; b.addEventListener('pointerdown', e => { e.preventDefault(); on(); }); ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => b.addEventListener(ev, off)); };
   hold(bL, () => keys.ArrowLeft = true, () => keys.ArrowLeft = false);
   hold(bR, () => keys.ArrowRight = true, () => keys.ArrowRight = false);
   hold(bJ, () => { jumpHeld = true; jumpBuf = .15; }, () => { jumpHeld = false; });
+  if (bP) bP.addEventListener('pointerdown', e => { e.preventDefault(); petSpecial(); });
   bDn.addEventListener('pointerdown', e => { e.preventDefault(); downBuf = .3; }); bF.addEventListener('pointerdown', e => { e.preventDefault(); shootFire(); });
   // 🔥 火火花：丟出會彈跳的火球，打到怪物就打倒（大魔王扣一下）
   function shootFire() { if (!P.fire || state !== 'play' || P.fireCd > 0 || fbs.length >= 2) return; P.fireCd = .3; fbs.push({ x: P.x + P.w / 2 + P.face * 8, y: P.y + 10, w: 8, h: 8, vx: P.face * 230, vy: 60, life: 2.5 }); Sound.play('whoosh'); }
+  function petSpecial() {
+    if (!QP || state !== 'play' || QP.meter < QP.max || QP.act > 0) return;
+    QP.meter = 0; QP.act = 1.6; QP.uses++; Sound.play('magic'); setTimeout(() => { try { Sound.play('perfect'); } catch (e) {} }, 250);
+    say(`${QP.name}的必殺技：${QP.mv.icon} ${QP.mv.name}！`, 2.4);
+    const baby = QP.stage === 'baby', lo = baby ? P.x - 150 : camX - 10, hi = baby ? P.x + 150 : camX + QVW + 10;
+    let n = 0;
+    ents.forEach(en => { if (!en.alive || en.x + en.w < lo || en.x > hi) return;
+      if (en.k === 'cloudking') { if (en.inv <= 0) { en.hurt = 0; ckHit(en); } return; }
+      if (en.k === 'boss') { if (en.hurt <= 0) { en.hp--; en.hurt = 1; say(en.hp > 0 ? `${QP.name}打到大王了！再 ${en.hp} 下！` : '打倒大王了！', 2.2); if (en.hp <= 0) { en.alive = false; items.forEach(it => { if (it.k === 'goal') it.hidden = false; }); Sound.play('fanfare'); } } return; }
+      if (en.k === 'flame') return;
+      en.alive = false; n++; });
+    P.coins += n + (QP.stage === 'adult' ? 3 : 0);
+    if (QP.stage === 'adult') P.inv = Math.max(P.inv, 2);
+  }
   const POWERS = { grow: ['長大果', '變大了！被打到也不會少愛心'], fire: ['火火花', '可以丟火球了！按 🔥（或 X 鍵）'], inv: ['無敵星星', '無敵了！碰到怪物就打倒！'] };
   const givePower = k => {
     Sound.play('magic'); say(`${POWERS[k][0]}！${POWERS[k][1]}`, 2.4);
@@ -22369,7 +22404,16 @@ function playQuest(id, opt) {
     } else { say(`再 ${en.hp} 下！`); Sound.play('squish'); }
     en.mode = 'rise'; en.mt = 0;
   }
+  const petStep = dt => {
+    if (!QP) return;
+    if (P.coins > QP.lastCoins) QP.meter += P.coins - QP.lastCoins; QP.lastCoins = P.coins;
+    QP.meter = Math.min(QP.max, QP.meter + dt * .4); if (QP.act > 0) QP.act -= dt;
+    const tx = P.x + P.w / 2 - P.face * 22, ty = P.y + P.h; if (!QP.x) { QP.x = tx; QP.y = ty; }
+    QP.x += (tx - QP.x) * Math.min(1, dt * 6); QP.y += (ty - QP.y) * Math.min(1, dt * 8);
+    if ((QP.ui -= dt) <= 0 && bP) { QP.ui = .15; const pc = Math.round(QP.meter / QP.max * 100), full = pc >= 100; bP.style.background = full ? '' : `linear-gradient(to top, #ffe08a ${pc}%, #fff ${pc}%)`; bP.classList.toggle('glow', full); bP.textContent = full ? '🐾 必殺技' : '🐾'; }
+  };
   const step = dt => {
+    petStep(dt);
     P.t += dt; if (P.inv > 0) P.inv -= dt; if (msgT > 0) msgT -= dt; if (jumpBuf > 0) jumpBuf -= dt; if (downBuf > 0) downBuf -= dt; if (P.fireCd > 0) P.fireCd -= dt;
     if (P.starT > 0) { P.starT -= dt; if (P.starT <= 0) say('無敵時間結束了', 1); }
     if (P.bubble > 0) { P.bubble -= dt; P.y += (11 * QT - P.h - P.y) * Math.min(1, dt * 3); return; }   // 泡泡慢慢把她放回地上
@@ -22619,6 +22663,15 @@ function playQuest(id, opt) {
     plats.forEach(pl => { const x = pl.x - camX; g.fillStyle = '#ffffff'; g.beginPath(); g.roundRect(x - 2, pl.y, pl.w + 4, 10, 5); g.fill(); MV.ball(g, x + 12, pl.y + 2, 7, '#ffffff'); MV.ball(g, x + 28, pl.y, 9, '#ffffff'); MV.ball(g, x + 42, pl.y + 2, 7, '#ffffff'); g.fillStyle = 'rgba(150,190,230,.5)'; g.fillRect(x, pl.y + 7, pl.w, 3); });   // ☁️ 會動的雲
     fbs.forEach(f => { MV.ball(g, f.x - camX, f.y, 5, '#ff8a3d'); MV.ball(g, f.x - camX, f.y, 2.5, '#ffd23f'); });
     coinPops.forEach(cp => { g.fillStyle = '#ffd23f'; g.beginPath(); g.ellipse(cp.x - camX, cp.y - cp.t * 50, 5, 6, 0, 0, Math.PI * 2); g.fill(); });
+    if (QP) {   // 🐾 寵物：跟在後面蹦蹦跳；放必殺技的時候衝出去、整排都是招式的圖案
+      const a = QP.act > 0 ? 1 - QP.act / 1.6 : 0, hop = Math.abs(Math.sin(P.t * 9)) * (Math.abs(P.vx) > 10 ? 5 : 1.5);
+      const px = QP.act > 0 ? P.x + P.w / 2 - camX + Math.sin(a * Math.PI) * 120 * P.face : QP.x - camX, py = QP.act > 0 ? QP.y - Math.sin(a * Math.PI) * 50 : QP.y - hop;
+      if (QP.act > 0) { const baby = QP.stage === 'baby', l = baby ? P.x - 150 - camX : 0, r = baby ? P.x + 150 - camX : QVW;
+        g.fillStyle = QP.mv.col; g.globalAlpha = .25 * Math.sin(a * Math.PI); g.fillRect(l, 0, r - l, QVH); g.globalAlpha = 1;
+        g.font = '18px sans-serif'; g.textAlign = 'center'; for (let i = 0; i < 14; i++) { const fx2 = l + ((i * 37 + a * 300) % Math.max(1, r - l)), fy2 = 60 + ((i * 53) % 150) + Math.sin(P.t * 6 + i) * 8; g.globalAlpha = Math.sin(a * Math.PI); g.fillText(QP.mv.fx, fx2, fy2); } g.globalAlpha = 1; }
+      g.save(); g.translate(px, py); g.scale(-P.face * .62, .62); drawCreature(g, QP.sp, { happy: true, clean: 100, adult: QP.stage === 'adult', baby: QP.stage === 'baby' }); g.restore();
+      if (QP.meter >= QP.max && QP.act <= 0) { g.font = '12px sans-serif'; g.textAlign = 'center'; g.fillText('✨', px + Math.sin(P.t * 5) * 10, py - 40); }
+    }
     drawKid(); drawHud();
     if (state === 'win' && endT > 2.2) { questDone(w, id, P); return; }
     if (state === 'dead') { g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(0, 0, QVW, QVH); g.fillStyle = '#ffffff'; g.font = '900 24px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillText('愛心用完了…再試一次吧！', QVW / 2, QVH / 2); if (endT > 1.6) { questFail(w, id, boss && boss.alive && P.x > boss.x - 12 * QT ? (opt.weak || 0) + 1 : 0, boss && boss.k === 'cloudking' && boss.alive && boss.phase > 1 ? boss.phase : 0); return; } }
@@ -22626,7 +22679,7 @@ function playQuest(id, opt) {
     raf = requestAnimationFrame(frame);
   };
   raf = requestAnimationFrame(frame);
-  playQuest.test = { cloud: () => (boss && boss.k === 'cloudking' ? boss : null), ckHit: en => ckHit(en), rain, bolts, puddles, bossZone: () => bossZone, plats, givePower, shootFire, fbs, inBonus: () => inBonus, down: () => { downBuf = .3; }, P, items, ents, L, keys, solid, tileAt, win: () => { state = 'win'; endT = 0; }, step, frameStep: dt => { last = performance.now() - dt * 1000; frame(performance.now()); }, flag: () => flag, state: () => state, jump: () => { jumpHeld = true; jumpBuf = .15; }, release: () => { jumpHeld = false; } };
+  playQuest.test = { pet: () => QP, petSpecial: () => petSpecial(), cloud: () => (boss && boss.k === 'cloudking' ? boss : null), ckHit: en => ckHit(en), rain, bolts, puddles, bossZone: () => bossZone, plats, givePower, shootFire, fbs, inBonus: () => inBonus, down: () => { downBuf = .3; }, P, items, ents, L, keys, solid, tileAt, win: () => { state = 'win'; endT = 0; }, step, frameStep: dt => { last = performance.now() - dt * 1000; frame(performance.now()); }, flag: () => flag, state: () => state, jump: () => { jumpHeld = true; jumpBuf = .15; }, release: () => { jumpHeld = false; } };
 }
 /* 打輸了：在大魔王那裡輸的（家長：可以從大魔王關重新開始、難度變低）→ 多一顆「從大魔王開始」，
    每輸一次大王少一滴血、跳得慢一點（最少 1 滴血） */
