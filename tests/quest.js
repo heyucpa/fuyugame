@@ -17,10 +17,15 @@ const path = require('path');
       let held = false, lastX = 0, stuckT = 0, backT = 0;   // 卡在高牆前太久：像小朋友一樣往後退一點再衝
       for (let i = 0; i < 60 * 150 && T.state() === 'play'; i++) {
         const P = T.P, QT = 18, fx = Math.floor((P.x + P.w + 14) / QT), feet = Math.floor((P.y + P.h + 2) / QT), mid = Math.floor((P.y + P.h - 6) / QT);
-        { const bs = T.ents.find(e => e.k === 'boss' && e.alive && Math.abs(e.x - P.x) < 200); let dir = bs ? Math.sign(bs.x + bs.w / 2 - P.x - P.w / 2) || 1 : 1; if (Math.abs(P.x - lastX) < .5) stuckT += 1 / 60; else stuckT = 0; lastX = P.x; if (stuckT > 1.5) { backT = .9; stuckT = 0; } if (backT > 0) { backT -= 1 / 60; dir = -1; } T.keys.ArrowRight = dir > 0; T.keys.ArrowLeft = dir < 0; }   // 打大王：朝著大王走、牠暈的時候跳上去
+        { const bs = T.ents.find(e => (e.k === 'boss' || e.k === 'cloudking') && e.alive && Math.abs(e.x - P.x) < 260); let dir = bs ? Math.sign(bs.x + bs.w / 2 - P.x - P.w / 2) || 1 : 1;
+          if (bs && bs.k === 'cloudking') {   // ☁️ 烏雲大王：飄著的時候離遠一點躲雨，休息的時候過去踩；閃電框框裡就快走開
+            const cx = bs.x + bs.w / 2, px = P.x + P.w / 2, near = bs.mode === 'rest' || bs.mode === 'down';
+            let tx = near ? cx : cx + (px < cx ? -100 : 100); if (!near && (tx < bs.ax0 + 10 || tx > bs.ax1 - 10)) tx = cx + (px < cx ? 100 : -100);
+            const bolt = T.bolts.find(b => !b.hit && px > b.x - 8 && px < b.x + b.w + 8); if (bolt) tx = px + (px < bolt.x + bolt.w / 2 ? -40 : 40); const drop = T.rain.find(d => Math.abs(d.x - px) < 16 && d.y < P.y + 4 && d.y > P.y - 90); if (drop && !near) tx = px + (px < drop.x ? -40 : 40); const hv = T.items.find(it => it.k === 'heart' && !it.got); if (hv && !near && !drop && !bolt) tx = hv.x;
+            dir = Math.abs(tx - px) < 6 ? 0 : Math.sign(tx - px); } if (Math.abs(P.x - lastX) < .5) stuckT += 1 / 60; else stuckT = 0; lastX = P.x; if (stuckT > 1.5) { backT = .9; stuckT = 0; } if (backT > 0) { backT -= 1 / 60; dir = -1; } T.keys.ArrowRight = dir > 0; T.keys.ArrowLeft = dir < 0; }   // 打大王：朝著大王走、牠暈的時候跳上去
         const gap = !T.solid(T.tileAt(fx, feet)) && !T.solid(T.tileAt(fx + 1, feet)) && T.tileAt(fx, feet) !== '-';
         const wall = T.solid(T.tileAt(fx, mid)) || T.solid(T.tileAt(fx, mid - 1));
-        const foe = T.ents.find(e => e.alive && (e.k === 'boss' ? (e.dizzy > 0 && Math.abs(e.x + e.w / 2 - P.x - P.w / 2) < 70) : (e.x > P.x - 4 && e.x - (P.x + P.w) < 30)) && Math.abs(e.y - P.y) < 50);
+        const foe = T.ents.find(e => e.alive && ((e.k === 'boss' || e.k === 'cloudking') ? (e.dizzy > 0 && Math.abs(e.x + e.w / 2 - P.x - P.w / 2) < 70) : (e.x > P.x - 4 && e.x - (P.x + P.w) < 30)) && Math.abs(e.y - P.y) < 50);
         if (P.on && (gap || wall || foe)) { T.jump(); held = true; } else if (held && !P.on && P.vy > 0) { T.release(); held = false; }
         T.step(1 / 60);
       }

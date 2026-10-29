@@ -3558,6 +3558,9 @@ const Sound = (() => {
     // 🏁 闖關過關的勝利小樂句（自己寫的旋律）
     questClear() { [['C5', 0], ['E5', .12], ['G5', .24], ['C6', .36], ['G5', .6], ['C6', .72]].forEach(([n, at], i) => tone({ f0: { C5: 523, E5: 659, G5: 784, C6: 1047 }[n], dur: i === 5 ? .5 : .14, type: 'square', vol: .16, at })); },
     flagSlide() { tone({ f0: 1200, f1: 300, dur: .9, type: 'square', vol: .1, vib: 20 }); },
+    // ☁️ 烏雲大王：打雷（低低的轟隆＋劈啪）、換階段（往下走的三個音）
+    thunder() { noise({ dur: .9, vol: .4, freq: 200 }); noise({ dur: .2, vol: .25, freq: 1800 }); tone({ f0: 90, f1: 40, dur: .7, type: 'sawtooth', vol: .1 }); },
+    cloudPhase() { [392, 330, 262].forEach((f, i) => tone({ f0: f, f1: f * .8, dur: .22, type: 'triangle', vol: .16, at: i * .16 })); },
     // 圓圓：開心「啾咿～」
     petHappy() { tone({ f0: 700, f1: 1250, dur: .13, vol: .4 }); tone({ f0: 900, f1: 1500, dur: .16, vol: .35, at: .12, vib: 30 }); },
     // 圓圓：難過「嗚～嗯」
@@ -4779,6 +4782,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-10-31T20:00', title: '☁️ 烏雲大王來了！', lines: [
+    ['☁️', '天空世界 5-3 的大魔王換成「烏雲大王」：會在天上飄、下雨，等牠飄下來頭暈的時候跳到牠頭上！'],
+    ['⚡', '打到一半牠會生氣：小心地上黃色的框框會打雷；最後雨下更大，會出現雲朵台階'],
+    ['🌤️', '打倒牠，烏雲變白雲飄走，送限定貼紙「烏雲剋星」；輸了可以從打到的那個階段繼續']
+  ] },
   { id: '2026-10-30T20:00', title: '🀄 小一國字＋🐣 小一英文（妹妹版）', lines: [
     ['🀄', '學校老師那裡多了「小一國字」：看圖、聽一聽，點出對的國字！'],
     ['🐣', '「小一英文」：聽英文選圖片，動物、水果、天空的單字，答對的也算進英文小達人'],
@@ -5645,6 +5653,7 @@ function normalizeSave(g) {
     if (!isObj(out.star)) delete out.star;
     else { const st = out.star; st.got = Array.isArray(st.got) ? [...new Set(st.got.filter(w => Number.isInteger(w) && w >= 1 && w <= 6))].sort((a, b) => a - b) : []; ['egg', 'hatched'].forEach(k => { if (st[k] != null && st[k] !== 1) delete st[k]; }); } }
   if (out.enLearn != null) { if (!isObj(out.enLearn)) delete out.enLearn; else out.enLearn = Object.fromEntries(Object.entries(out.enLearn).filter(([k, v]) => k.length <= 30 && /^[A-Za-z ]+$/.test(k) && v === 1)); }   // 🔤 學過的英文單字
+  if (out.cloudKing != null && !(isObj(out.cloudKing) && Number.isInteger(out.cloudKing.beat) && out.cloudKing.beat >= 0 && out.cloudKing.beat < 1e6)) delete out.cloudKing;   // ☁️ 打倒烏雲大王幾次
   if (out.hanzi != null) { if (!isObj(out.hanzi)) delete out.hanzi; else out.hanzi = Object.fromEntries(Object.entries(out.hanzi).filter(([k, v]) => /^[\u4e00-\u9fff]$/.test(k) && v === 1)); }   // 🀄 認得的國字
   if (out.cash != null) { if (!(isObj(out.cash) && Number.isInteger(out.cash.ok) && out.cash.ok >= 0 && out.cash.ok < 1e6)) delete out.cash; }   // 🧾 找錢答對次數
   if (out.cashDay != null && !(isObj(out.cashDay) && typeof out.cashDay.d === 'string' && Number.isInteger(out.cashDay.n) && out.cashDay.n >= 0 && out.cashDay.n < 100)) delete out.cashDay;
@@ -15211,6 +15220,7 @@ function tabBook(body) {
     body.appendChild(note(G.star && G.star.egg ? (G.star.hatched ? '找齊了！星光小精靈孵出來了。' : '每個世界闖關的大魔王關，第一次過關就會找到一個。') : '房間角落會出現一顆神祕的星星蛋，到時候就可以開始找了！'));
     const stg = el('div', 'dex-tiles');
     STAR_CLUES.forEach(c => { const has = sg.includes(c.w), t = el('div', 'dex-tile' + (has ? '' : ' none')); t.append(el('div', 'dex-big', has ? c.icon : '✦'), el('span', '', has ? `${c.name}：${c.hint}` : `世界 ${c.w} 大魔王`)); stg.appendChild(t); });
+    { const ck = (G.cloudKing && G.cloudKing.beat) || 0, t = el('div', 'dex-tile' + (ck ? '' : ' none')); t.append(el('div', 'dex-big', ck ? '🌤️' : '☁️'), el('span', '', ck ? `限定貼紙「烏雲剋星」（打倒 ${ck} 次）` : '打倒世界 5 的烏雲大王')); stg.appendChild(t); }   // ☁️ 限定貼紙
     body.appendChild(stg); }
 
   // 🔤 英文小達人：學過的單字（點了再念一次）＋徽章
@@ -22237,7 +22247,8 @@ function playQuest(id, opt) {
   const L = questBuild(id, easy), lvW = L.W * QT;
   const tileAt = (tx, ty) => (tx < 0 || tx >= L.W) ? '#' : (ty < 0 || ty >= QH) ? ' ' : L.g[ty][tx];
   const solid = ch => ch === '#' || ch === '=' || ch === '?' || ch === 'u' || ch === 'M' || ch === 'P' || ch === 'Q';
-  const ents = [], items = [], plats = [], fbs = [];
+  const ents = [], items = [], plats = [], fbs = [], rain = [], puddles = [], bolts = [];   // rain／puddles／bolts：烏雲大王的雨滴、水窪、閃電
+  const ckPhase = (en, hp) => hp > en.hpMax * 2 / 3 ? 1 : hp > en.hpMax / 3 ? 2 : 3;
   let boss = null, startX = 2 * QT, checkX = startX;
   L.g.forEach((r, y) => r.forEach((ch, x) => {
     const px = x * QT, py = y * QT;
@@ -22246,7 +22257,12 @@ function playQuest(id, opt) {
     if (ch === 'p') { plats.push({ x: px, y: py, w: 54, h: 8, x0: px, range: (easy ? 3 : 4) * QT - 18, vx: 38, dx: 0 }); r[x] = ' '; }
     if (ch === 'v') { ents.push({ k: 'flame', x: px + 1, y: QVH, base: py + QT, w: 14, h: 16, alive: true, t: Math.random() * 2 }); r[x] = ' '; }
     if (ch === 'b') { ents.push({ k: 'bee', x: px, y: py, w: 16, h: 14, vx: -25, y0: py, alive: true, t: Math.random() * 6 }); r[x] = ' '; }
-    if (ch === 'K') { boss = { k: 'boss', x: px - 10, y: py + QT - 36, w: 40, h: 36, vx: 0, vy: 0, hp: Math.max(1, (easy ? 2 : 3) + (wd.castle ? 1 : 0) - (opt.weak || 0)), slow: Math.min(.5, (opt.weak || 0) * .2), alive: true, hopAt: 1.5, hurt: 0 }; ents.push(boss); r[x] = ' '; }
+    if (ch === 'K' && wd.cloud) {   // ☁️ 天空世界的大魔王：烏雲大王（飄在天上下雨、打雷；下來休息的時候才踩得到）
+      const mx = Math.max(3, (easy ? 4 : 6) - (opt.weak || 0)), cp = opt.cloudPhase === 3 ? Math.floor(mx / 3) : opt.cloudPhase === 2 ? Math.floor(mx * 2 / 3) : mx;
+      boss = { k: 'cloudking', x: px - 20, zx: px - 10, y: 2 * QT, w: 56, h: 30, gy: py + QT, home: 2 * QT, ax0: px - 13 * QT, ax1: px + 8 * QT, kx: x, hpMax: mx, hp: cp, trail: cp, phase: 1, mode: 'float', mt: 0, t: 0, dropT: 1.2, boltT: 2.5, hurt: 0, inv: 0, dizzy: 0, flash: 0, alive: true };
+      boss.phase = ckPhase(boss, cp); ents.push(boss); r[x] = ' ';
+    }
+    else if (ch === 'K') { boss = { k: 'boss', x: px - 10, y: py + QT - 36, w: 40, h: 36, vx: 0, vy: 0, hp: Math.max(1, (easy ? 2 : 3) + (wd.castle ? 1 : 0) - (opt.weak || 0)), slow: Math.min(.5, (opt.weak || 0) * .2), alive: true, hopAt: 1.5, hurt: 0 }; ents.push(boss); r[x] = ' '; }
     if (ch === 'o') { items.push({ k: 'coin', x: px + 9, y: py + 9 }); r[x] = ' '; }
     if (ch === 's') { items.push({ k: 'star', x: px + 9, y: py + 9 }); r[x] = ' '; }
     if (ch === 'C') { items.push({ k: 'check', x: px + 9, y: py + QT, on: false }); r[x] = ' '; }
@@ -22307,19 +22323,65 @@ function playQuest(id, opt) {
     if (P.hearts <= 0) { state = 'dead'; endT = 0; return; }
     P.x = checkX; P.y = 8 * QT; P.vy = 0; P.inv = 1.5; say('從記錄點重新開始！');
   };
+  // ☁️ 烏雲大王：飄（下雨，第 2 階段起會打雷）→ 飛到小可愛頭上 → 慢慢降下來（地上有影子）→ 休息頭暈（踩頭的機會）→ 飛回天上
+  function ckStep(en, dt) {
+    en.t += dt; en.hurt = Math.max(0, en.hurt - dt); en.inv = Math.max(0, en.inv - dt); en.flash = Math.max(0, en.flash - dt);
+    en.trail += (en.hp - en.trail) * Math.min(1, dt * 2.5);
+    const ph = en.phase, k = easy ? 1.4 : 1, gy = en.gy, cl = x => Math.max(en.ax0, Math.min(en.ax1 - en.w, x));
+    // 雨滴：碰到小可愛會痛（簡單模式只彈開），落地變水窪（踩在水窪裡走比較慢）
+    for (let i = rain.length - 1; i >= 0; i--) { const d = rain[i]; d.vy = Math.min(260, d.vy + 600 * dt); d.y += d.vy * dt;
+      if (P.bubble <= 0 && d.x > P.x - 2 && d.x < P.x + P.w + 2 && d.y > P.y && d.y < P.y + P.h) { rain.splice(i, 1); hurt(d.x); continue; }
+      if (d.y >= gy - 2) { rain.splice(i, 1); const near = puddles.find(pd => Math.abs(pd.x - d.x) < 18); if (near) near.t = 4; else if (puddles.length < 6) puddles.push({ x: d.x, t: 4 }); } }
+    for (let i = puddles.length - 1; i >= 0; i--) if ((puddles[i].t -= dt) <= 0) puddles.splice(i, 1);
+    P.wet = P.on && Math.abs(P.y + P.h - gy) < 3 && puddles.some(pd => Math.abs(P.x + P.w / 2 - pd.x) < 14);
+    // 閃電：先在地上亮黃色框框（警告），過一下才打下來
+    for (let i = bolts.length - 1; i >= 0; i--) { const b = bolts[i]; b.t += dt;
+      if (b.t >= b.warn && !b.hit) { b.hit = true; en.flash = .15; Sound.play('thunder'); if (P.x + P.w > b.x + 2 && P.x < b.x + b.w - 2) hurt(b.x + b.w / 2); }
+      if (b.t > b.warn + .35) bolts.splice(i, 1); }
+    if (!bossZone) { en.y = en.home + Math.sin(en.t * 2) * 4; return; }   // 還沒走到：在天上等
+    if (en.inv > 0) { en.mode = 'float'; en.mt = 0; en.dizzy = 0; en.y += (en.home - en.y) * Math.min(1, dt * 3); return; }   // 換階段：在天上生氣一下
+    en.mt += dt;
+    if (en.mode === 'float') {
+      const mid = (en.ax0 + en.ax1 - en.w) / 2, half = (en.ax1 - en.ax0 - en.w) / 2;
+      en.x += (mid + Math.sin(en.t * (.45 + ph * .15)) * half - en.x) * Math.min(1, dt * 2); en.y = en.home + Math.sin(en.t * 2) * 4;
+      if ((en.dropT -= dt) <= 0 && rain.length < 20) { en.dropT = [1, .7, .5][ph - 1] * k; rain.push({ x: en.x + 8 + Math.random() * (en.w - 16), y: en.y + en.h - 4, vy: 90 }); }
+      if (ph >= 2 && (en.boltT -= dt) <= 0 && bolts.length < 2) { en.boltT = (ph === 3 ? 2.6 : 3.4) * k; bolts.push({ x: Math.max(en.ax0, Math.min(en.ax1 - 22, P.x + P.w / 2 - 11)), w: 22, t: 0, warn: easy ? 1.2 : .85 }); }
+      if (en.mt > [4.2, 3.8, 3.4][ph - 1]) { en.mode = 'aim'; en.mt = 0; }
+    } else if (en.mode === 'aim') { en.x += (cl(P.x + P.w / 2 - en.w / 2) - en.x) * Math.min(1, dt * 3); if (en.mt > .8) { en.mode = 'down'; en.mt = 0; Sound.play('whoosh'); } }
+    else if (en.mode === 'down') { en.y = Math.min(gy - en.h, en.y + (easy ? 200 : 250) * dt); if (en.y >= gy - en.h) { en.mode = 'rest'; en.mt = 0; Sound.play('boing'); } }
+    else if (en.mode === 'rest') { const rt = easy ? 2.8 : 1.9; en.dizzy = Math.max(.01, rt - en.mt); if (en.mt > rt) { en.mode = 'rise'; en.mt = 0; en.dizzy = 0; } }
+    else { en.dizzy = 0; en.y -= 150 * dt; if (en.y <= en.home) { en.y = en.home; en.mode = 'float'; en.mt = 0; } }
+  }
+  function ckHit(en) {
+    if (!en.alive || en.hurt > 0 || en.inv > 0) return;
+    en.hp--; en.hurt = .8; en.dizzy = 0;
+    if (en.hp <= 0) {   // 打倒了：變成白雲飄走，旗子出現
+      en.alive = false; en.dead = 0; rain.length = 0; bolts.length = 0; P.wet = false; P.coins += 30; P.cloudKO = true;
+      items.forEach(it => { if (it.k === 'goal') it.hidden = false; }); Sound.play('fanfare'); say('烏雲變成白雲了！☀️ 💰 +30', 3);
+      try { Sound.setSpecial('quest'); } catch (e) {} return;
+    }
+    const np = ckPhase(en, en.hp);
+    if (np !== en.phase) {
+      en.phase = np; en.inv = 2.2; Sound.play('cloudPhase');
+      items.push({ k: 'heart', x: en.kx * QT + 9, y: en.gy - 40, pop: .3 });   // 換階段掉一顆愛心（補一顆血）
+      say(np === 2 ? '⚡ 烏雲大王生氣了！小心地上黃色的框框，會打雷！' : '🌧️ 雨下更大了！踩雲朵台階跳上去！', 3);
+      if (np === 3) [[-7, -5], [3, 5]].forEach(([a, b2]) => { for (let tx = en.kx + a; tx <= en.kx + b2; tx++) if (tileAt(tx, 9) === ' ') L.g[9][tx] = '-'; });   // 第 3 階段：出現雲朵台階
+    } else { say(`再 ${en.hp} 下！`); Sound.play('squish'); }
+    en.mode = 'rise'; en.mt = 0;
+  }
   const step = dt => {
     P.t += dt; if (P.inv > 0) P.inv -= dt; if (msgT > 0) msgT -= dt; if (jumpBuf > 0) jumpBuf -= dt; if (downBuf > 0) downBuf -= dt; if (P.fireCd > 0) P.fireCd -= dt;
     if (P.starT > 0) { P.starT -= dt; if (P.starT <= 0) say('無敵時間結束了', 1); }
     if (P.bubble > 0) { P.bubble -= dt; P.y += (11 * QT - P.h - P.y) * Math.min(1, dt * 3); return; }   // 泡泡慢慢把她放回地上
     // 左右
     let want = 0;
-    const inZone = !!(boss && boss.alive && P.x > boss.x - 11 * QT);
+    const inZone = !!(boss && boss.alive && P.x > (boss.zx != null ? boss.zx : boss.x) - 11 * QT);
     if (inZone !== bossZone) { bossZone = inZone; if (easy) { bL.style.display = bR.style.display = inZone ? '' : 'none'; keys.ArrowLeft = keys.ArrowRight = false; }
-      if (inZone) { say(easy ? '大魔王來了！用 ◀ ▶ 自己走，跳到牠頭上！' : '大魔王來了！跳到牠頭上！', 2.6); try { Sound.setSpecial('boss'); } catch (e) {} } }
+      if (inZone) { say(boss.k === 'cloudking' ? '☁️ 烏雲大王來了！躲開雨滴，等牠下來休息再跳到頭上！' : easy ? '大魔王來了！用 ◀ ▶ 自己走，跳到牠頭上！' : '大魔王來了！跳到牠頭上！', 3); try { Sound.setSpecial('boss'); } catch (e) {} } }
     if (easy && !inZone) want = (P.backT > 0) ? -1 : 1;   // 簡單：自己往前跑（卡在高牆前太久會往回走一點再衝）
     else want = (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0);
     if (P.backT > 0) P.backT -= dt;
-    const maxV = (easy ? 112 : 128) * (P.starT > 0 ? 1.2 : 1), ice = wd.ice && P.on;
+    const maxV = (easy ? 112 : 128) * (P.starT > 0 ? 1.2 : 1) * (P.wet ? .6 : 1), ice = wd.ice && P.on;
     if (want) { P.vx += want * (ice ? 420 : 900) * dt; P.face = want; } else P.vx *= Math.pow(ice ? .3 : .0005, dt);   // ❄️ 雪地：起步慢、停不太下來
     if (Math.abs(P.vx) > maxV) P.vx = Math.sign(P.vx) * maxV;
     // 跳
@@ -22354,6 +22416,7 @@ function playQuest(id, opt) {
       const near = (rx, ry) => Math.abs(P.x + P.w / 2 - it.x) < rx && Math.abs(P.y + P.h / 2 - it.y) < ry;
       if (it.k === 'coin' && near(11, 18)) { it.got = 1; P.coins++; Sound.play('coin'); }
       if (it.k === 'pow' && near(13, 20)) { it.got = 1; givePower(it.kind); }
+      if (it.k === 'heart' && near(13, 22)) { it.got = 1; Sound.play('pickUp'); if (!easy && P.hearts < 3) { P.hearts++; say('愛心 +1 ❤️'); } else say('好溫暖！❤️'); }
       if (it.k === 'star' && near(13, 20)) { it.got = 1; P.stars++; Sound.play('perfect'); say(`找到星星了！⭐ ${P.stars} / 3`); }
       if (it.k === 'check' && !it.on && Math.abs(P.x - it.x) < 12) { it.on = true; checkX = it.x - 6; Sound.play('pickUp'); say('記錄點！'); }
       if (it.k === 'spring' && P.vy >= 0 && Math.abs(P.x + P.w / 2 - (it.x + 9)) < 11 && Math.abs(P.y + P.h - (it.y + 10)) < 12) { /* 走過去、跳下來踩到都會彈 */ P.boost = true; P.vy = -760; P.on = false; it.t = .3; Sound.play('boing'); }
@@ -22369,11 +22432,12 @@ function playQuest(id, opt) {
       }
       else if (en.k === 'shell' && !en.still) {   // 被踢出去的殼：一直滑，撞到別的怪物就打倒
         en.kick += dt; en.vy = Math.min(600, (en.vy || 0) + 1500 * dt); en.hitX = false; hitTiles(en, en.vx * dt, en.vy * dt); if (en.hitX) en.vx = -en.vx;
-        ents.forEach(o => { if (o !== en && o.alive && o.k !== 'boss' && o.k !== 'flame' && Math.abs(o.x - en.x) < 14 && Math.abs(o.y - en.y) < 14) { o.alive = false; P.coins++; Sound.play('squish'); } });
+        ents.forEach(o => { if (o !== en && o.alive && o.k !== 'boss' && o.k !== 'cloudking' && o.k !== 'flame' && Math.abs(o.x - en.x) < 14 && Math.abs(o.y - en.y) < 14) { o.alive = false; P.coins++; Sound.play('squish'); } });
         if (en.kick > 5 || en.y > QVH + 40) en.alive = false;
       }
       else if (en.k === 'shell') { /* 停著的殼 */ }
       else if (en.k === 'bee') { en.t += dt; en.x += en.vx * dt; en.y = en.y0 + Math.sin(en.t * 2) * 22; if (Math.abs(en.x - (en.x0 = en.x0 == null ? en.x : en.x0)) > 50) en.vx = -en.vx; }
+      else if (en.k === 'cloudking') ckStep(en, dt);
       else if (en.k === 'boss') {
         en.hurt = Math.max(0, en.hurt - dt); en.hopAt -= dt; en.vy = Math.min(600, en.vy + 1500 * dt);
         if (en.hopAt <= 0 && Math.abs(en.x - P.x) < 260) { en.hopAt = 2 + en.slow * 2 + Math.random() * .8; en.vy = -400 * (1 - en.slow * .3); en.vx = (P.x < en.x ? -1 : 1) * (easy ? 40 : 55) * (1 - en.slow); }
@@ -22390,6 +22454,10 @@ function playQuest(id, opt) {
       if (P.bubble > 0) return;
       const ox = Math.min(P.x + P.w, en.x + en.w) - Math.max(P.x, en.x), oy = Math.min(P.y + P.h, en.y + en.h) - Math.max(P.y, en.y);
       if (ox > 2 && oy > 2) {
+        if (en.k === 'cloudking') {   // 雲軟軟的：碰到不會痛，可以穿過去；牠下來的時候從上面踩頭才算
+          if ((en.mode === 'rest' || en.mode === 'down') && P.vy > 0 && P.y + P.h - en.y < 16) { P.vy = -380; P.boost = true; Sound.play('squish'); ckHit(en); }
+          return;
+        }
         if (P.starT > 0 && en.k !== 'boss') { en.alive = false; P.coins++; Sound.play('squish'); return; }   // ⭐ 無敵：碰到就打倒
         if (en.k === 'shell' && en.still) { en.still = false; en.kick = 0; en.vx = (P.x + P.w / 2 < en.x + en.w / 2 ? 1 : -1) * 260; P.inv = Math.max(P.inv, .4); Sound.play('boing'); say('踢！', .8); return; }   // 停著的殼：碰一下就踢出去
         if (en.k === 'shell') return;   // 滑走的殼不會打到小可愛
@@ -22405,7 +22473,8 @@ function playQuest(id, opt) {
     // 🔥 火球：會在地上彈，打到怪物就打倒
     fbs.forEach(f => { f.life -= dt; f.vy = Math.min(500, f.vy + 1200 * dt); f.hitX = false; const rr = hitTiles(f, f.vx * dt, f.vy * dt); if (rr.landed) f.vy = -170; if (f.hitX) f.life = 0;
       ents.forEach(en => { if (!en.alive || f.life <= 0 || (en.k === 'flame' && !en.up)) return; if (Math.abs(en.x + en.w / 2 - f.x - 4) < en.w / 2 + 7 && Math.abs(en.y + en.h / 2 - f.y - 4) < en.h / 2 + 8) { f.life = 0;
-        if (en.k === 'boss') { if (en.hurt <= 0) { en.hp--; en.hurt = 1; Sound.play('squish'); say(en.hp > 0 ? `再 ${en.hp} 下！` : '打倒大王了！'); if (en.hp <= 0) { en.alive = false; items.forEach(it => { if (it.k === 'goal') it.hidden = false; }); Sound.play('fanfare'); } } }
+        if (en.k === 'cloudking') ckHit(en);
+        else if (en.k === 'boss') { if (en.hurt <= 0) { en.hp--; en.hurt = 1; Sound.play('squish'); say(en.hp > 0 ? `再 ${en.hp} 下！` : '打倒大王了！'); if (en.hp <= 0) { en.alive = false; items.forEach(it => { if (it.k === 'goal') it.hidden = false; }); Sound.play('fanfare'); } } }
         else { en.alive = false; P.coins++; Sound.play('squish'); } } }); });
     for (let i = fbs.length - 1; i >= 0; i--) if (fbs[i].life <= 0 || fbs[i].y > QVH) fbs.splice(i, 1);
     items.forEach(it => { if (it.pop > 0) { it.pop -= dt; it.y -= 30 * dt; } });
@@ -22441,6 +22510,7 @@ function playQuest(id, opt) {
   };
   const drawEnemy = en => {
     const x = en.x - camX, y = en.y;
+    if (en.k === 'cloudking') { drawCloudKing(en); return; }
     if (!en.alive) { if ((en.dead || 0) > .5) return; g.globalAlpha = 1 - (en.dead || 0) * 2; }
     if (en.k === 'slime' || en.k === 'boss') {
       const big = en.k === 'boss', sq = en.alive ? 1 + Math.sin(P.t * 8 + en.x) * .06 : .4, col = big ? (en.hurt > 0 && Math.floor(P.t * 12) % 2 ? '#ffffff' : wd.castle ? '#e8505b' : '#b18cff') : wd.cloud ? '#ff9ec4' : '#7bd389';
@@ -22469,6 +22539,28 @@ function playQuest(id, opt) {
     }
     g.globalAlpha = 1;
   };
+  // ☁️ 烏雲大王（自己畫的）：一團雲＋王冠；階段越後面顏色越深；被打到閃白；休息時轉圈圈星星；打倒變白雲飄走
+  const drawCloudKing = en => {
+    const d = en.alive ? 0 : (en.dead || 0); if (d > 2.5) return;
+    const x = en.x - camX, y = en.y - d * 40, w = en.w, h = en.h;
+    puddles.forEach(pd => { g.fillStyle = `rgba(110,170,230,${Math.min(.6, pd.t * .3)})`; g.beginPath(); g.ellipse(pd.x - camX, en.gy - 1, 12, 3, 0, 0, 7); g.fill(); });
+    if (en.alive && (en.mode === 'aim' || en.mode === 'down')) { const k = 1 - (en.gy - en.h - en.y) / (en.gy - en.h - en.home + 1); g.fillStyle = `rgba(40,40,70,${.15 + k * .2})`; g.beginPath(); g.ellipse(x + w / 2, en.gy - 1, w * (.35 + k * .2), 4, 0, 0, 7); g.fill(); }   // 影子：快壓下來了
+    bolts.forEach(b => { const bx = b.x - camX;
+      if (!b.hit) { if (Math.floor(b.t * 8) % 2) { g.strokeStyle = '#ffd23f'; g.lineWidth = 2; g.setLineDash([4, 3]); g.strokeRect(bx + .5, en.gy - 40, b.w - 1, 39); g.setLineDash([]); } g.fillStyle = 'rgba(255,210,63,.18)'; g.fillRect(bx, en.gy - 40, b.w, 40); }
+      else { g.strokeStyle = '#fff6a0'; g.lineWidth = 4; g.beginPath(); let yy = 0, xx = bx + b.w / 2; g.moveTo(xx, 0); while (yy < en.gy) { yy += 22; xx = bx + b.w / 2 + (Math.random() - .5) * 14; g.lineTo(xx, Math.min(yy, en.gy)); } g.stroke(); g.strokeStyle = '#ffd23f'; g.lineWidth = 2; g.stroke(); } });
+    rain.forEach(r2 => { g.strokeStyle = '#5aa0e6'; g.lineWidth = 2; g.beginPath(); g.moveTo(r2.x - camX, r2.y - 7); g.lineTo(r2.x - camX, r2.y); g.stroke(); });
+    g.globalAlpha = en.alive ? 1 : Math.max(0, 1 - d / 2.5);
+    const col = !en.alive ? '#ffffff' : en.hurt > 0 && Math.floor(P.t * 14) % 2 ? '#ffffff' : en.inv > 0 && Math.floor(P.t * 6) % 2 ? '#3d4252' : ['#8f98ab', '#6d7487', '#4f5566'][en.phase - 1];
+    const sq = en.mode === 'rest' ? 1 + Math.sin(P.t * 6) * .05 : 1;
+    [[.22, .62, .3], [.45, .38, .38], [.73, .56, .32], [.5, .72, .34], [.12, .78, .2], [.88, .76, .2]].forEach(([fx, fy, fr]) => MV.ball(g, x + w * fx, y + h * fy * sq, h * fr * 1.1, col));
+    g.fillStyle = '#ffd23f'; g.beginPath(); g.moveTo(x + w * .35, y + 2); g.lineTo(x + w * .38, y - 9); g.lineTo(x + w * .45, y - 2); g.lineTo(x + w * .5, y - 11); g.lineTo(x + w * .55, y - 2); g.lineTo(x + w * .62, y - 9); g.lineTo(x + w * .65, y + 2); g.fill();   // 王冠
+    const ex = x + w / 2, ey = y + h * .55; g.fillStyle = '#231c1c'; g.strokeStyle = '#231c1c'; g.lineWidth = 2;
+    if (!en.alive) { [-1, 1].forEach(s2 => { g.beginPath(); g.arc(ex + s2 * 8, ey, 3, Math.PI, 0); g.stroke(); }); g.beginPath(); g.arc(ex, ey + 5, 5, 0, Math.PI); g.stroke(); g.fillStyle = 'rgba(255,140,170,.6)'; [-1, 1].forEach(s2 => { g.beginPath(); g.arc(ex + s2 * 15, ey + 4, 3, 0, 7); g.fill(); }); }
+    else if (en.mode === 'rest') { [-1, 1].forEach(s2 => { g.beginPath(); g.moveTo(ex + s2 * 8 - 3, ey - 3); g.lineTo(ex + s2 * 8 + 3, ey + 3); g.moveTo(ex + s2 * 8 + 3, ey - 3); g.lineTo(ex + s2 * 8 - 3, ey + 3); g.stroke(); }); g.font = '11px sans-serif'; g.textAlign = 'center'; for (let i = 0; i < 3; i++) g.fillText('⭐', ex + Math.cos(P.t * 6 + i * 2.1) * 22, y - 10 + Math.sin(P.t * 6 + i * 2.1) * 4); }
+    else { [-1, 1].forEach(s2 => { g.fillStyle = en.phase === 3 ? '#e8505b' : '#231c1c'; g.beginPath(); g.arc(ex + s2 * 8, ey, 3, 0, 7); g.fill(); g.beginPath(); g.moveTo(ex + s2 * 13, ey - 7); g.lineTo(ex + s2 * 4, ey - 4); g.stroke(); }); g.beginPath(); g.moveTo(ex - 5, ey + 7); g.lineTo(ex + 5, ey + 7); g.stroke(); }
+    if (en.hurt > 0 && en.alive) { g.fillStyle = '#7cc8ff'; g.beginPath(); g.arc(x + w * .85, y + 6, 3, 0, 7); g.fill(); }   // 被打到：冒汗
+    g.globalAlpha = 1;
+  };
   const drawItem = it => {
     if (it.got || it.hidden) return;
     const x = it.x - camX; if (x < -30 || x > QVW + 30) return;
@@ -22477,6 +22569,7 @@ function playQuest(id, opt) {
       else if (it.kind === 'fire') { for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2 + P.t; g.fillStyle = '#ff8a3d'; g.beginPath(); g.arc(x + Math.cos(a) * 5, yy + Math.sin(a) * 5, 3.5, 0, 7); g.fill(); } g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(x, yy, 3.5, 0, 7); g.fill(); g.fillStyle = '#3fae4f'; g.fillRect(x - 1, yy + 6, 2, 6); }
       else { g.save(); g.translate(x, yy); g.rotate(P.t * 2); g.fillStyle = `hsl(${(P.t * 300) % 360},90%,60%)`; g.beginPath(); for (let k = 0; k < 10; k++) { const r = k % 2 ? 4 : 9, a = -Math.PI / 2 + k * Math.PI / 5; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); } g.closePath(); g.fill(); g.restore(); }
       return; }
+    if (it.k === 'heart') { g.font = '16px sans-serif'; g.textAlign = 'center'; g.fillText('❤️', x, it.y + Math.sin(P.t * 4) * 2); return; }
     if (it.k === 'coin') { const sx = Math.abs(Math.cos(P.t * 4 + it.x)); g.fillStyle = '#ffd23f'; g.beginPath(); g.ellipse(x, it.y, 5 * sx + 1, 6, 0, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#c98a10'; g.lineWidth = 1; g.stroke(); }
     else if (it.k === 'star') { g.save(); g.translate(x, it.y + Math.sin(P.t * 3) * 2); g.rotate(Math.sin(P.t * 2) * .2); g.fillStyle = '#ffe14a'; g.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? 4 : 9, a = -Math.PI / 2 + i * Math.PI / 5; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); } g.closePath(); g.fill(); g.strokeStyle = '#d9a400'; g.stroke(); g.restore(); }
     else if (it.k === 'check') { g.fillStyle = '#8a8f96'; g.fillRect(x - 1, it.y - 30, 2, 30); g.fillStyle = it.on ? '#7bd389' : '#c9ccd0'; g.beginPath(); g.moveTo(x + 1, it.y - 30); g.lineTo(x + 14, it.y - 25); g.lineTo(x + 1, it.y - 20); g.fill(); }
@@ -22500,6 +22593,14 @@ function playQuest(id, opt) {
     g.fillText(`💰 ${P.coins}　${'★'.repeat(P.stars)}${'☆'.repeat(3 - P.stars)}`, 14, 19);
     if (!easy) g.fillText('❤️'.repeat(Math.max(0, P.hearts)) + '🤍'.repeat(Math.max(0, 3 - P.hearts)), 130, 19);
     const pw = P.starT > 0 ? '🌟 無敵！' : P.fire ? '🔥 火火花' : P.big ? '🍒 變大了' : ''; if (pw) { g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.roundRect(QVW - 104, 6, 98, 26, 13); g.fill(); g.fillStyle = '#e8505b'; g.textAlign = 'center'; g.fillText(pw, QVW - 55, 19); }
+    if (boss && boss.k === 'cloudking' && boss.alive && bossZone) {   // ☁️ 烏雲大王的血條：三段顏色＝三個階段，扣掉的地方先留白再慢慢縮
+      const bw = 180, bx = QVW / 2 - bw / 2, by = 36, u = bw / boss.hpMax;
+      g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.roundRect(bx - 66, by - 4, bw + 72, 18, 9); g.fill();
+      g.fillStyle = '#3a3240'; g.font = '700 11px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'left'; g.fillText('☁️ 烏雲大王', bx - 62, by + 5);
+      g.fillStyle = '#ddd'; g.fillRect(bx, by, bw, 10); g.fillStyle = '#ffffff'; g.fillRect(bx, by, u * boss.trail, 10);
+      for (let i = 0; i < boss.hp; i++) { g.fillStyle = ['#7bd389', '#ffd23f', '#ff6b5b'][ckPhase(boss, i + 1) - 1]; g.fillRect(bx + i * u + 1, by + 1, u - 2, 8); }
+    }
+    if (boss && boss.flash > 0) { g.fillStyle = `rgba(255,255,230,${boss.flash * 3})`; g.fillRect(0, 0, QVW, QVH); }   // 打雷閃一下
     if (msgT > 0) { g.font = '900 18px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.lineWidth = 5; g.strokeStyle = '#ffffff'; g.strokeText(msg, QVW / 2, 60); g.fillStyle = '#e8505b'; g.fillText(msg, QVW / 2, 60); }
     g.textBaseline = 'alphabetic';
   };
@@ -22520,22 +22621,23 @@ function playQuest(id, opt) {
     coinPops.forEach(cp => { g.fillStyle = '#ffd23f'; g.beginPath(); g.ellipse(cp.x - camX, cp.y - cp.t * 50, 5, 6, 0, 0, Math.PI * 2); g.fill(); });
     drawKid(); drawHud();
     if (state === 'win' && endT > 2.2) { questDone(w, id, P); return; }
-    if (state === 'dead') { g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(0, 0, QVW, QVH); g.fillStyle = '#ffffff'; g.font = '900 24px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillText('愛心用完了…再試一次吧！', QVW / 2, QVH / 2); if (endT > 1.6) { questFail(w, id, boss && boss.alive && P.x > boss.x - 12 * QT ? (opt.weak || 0) + 1 : 0); return; } }
+    if (state === 'dead') { g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(0, 0, QVW, QVH); g.fillStyle = '#ffffff'; g.font = '900 24px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillText('愛心用完了…再試一次吧！', QVW / 2, QVH / 2); if (endT > 1.6) { questFail(w, id, boss && boss.alive && P.x > boss.x - 12 * QT ? (opt.weak || 0) + 1 : 0, boss && boss.k === 'cloudking' && boss.alive && boss.phase > 1 ? boss.phase : 0); return; } }
     if (state === 'win' && endT < .1) say('過關了！🎉', 2.2);
     raf = requestAnimationFrame(frame);
   };
   raf = requestAnimationFrame(frame);
-  playQuest.test = { plats, givePower, shootFire, fbs, inBonus: () => inBonus, down: () => { downBuf = .3; }, P, items, ents, L, keys, solid, tileAt, win: () => { state = 'win'; endT = 0; }, step, frameStep: dt => { last = performance.now() - dt * 1000; frame(performance.now()); }, flag: () => flag, state: () => state, jump: () => { jumpHeld = true; jumpBuf = .15; }, release: () => { jumpHeld = false; } };
+  playQuest.test = { cloud: () => (boss && boss.k === 'cloudking' ? boss : null), ckHit: en => ckHit(en), rain, bolts, puddles, bossZone: () => bossZone, plats, givePower, shootFire, fbs, inBonus: () => inBonus, down: () => { downBuf = .3; }, P, items, ents, L, keys, solid, tileAt, win: () => { state = 'win'; endT = 0; }, step, frameStep: dt => { last = performance.now() - dt * 1000; frame(performance.now()); }, flag: () => flag, state: () => state, jump: () => { jumpHeld = true; jumpBuf = .15; }, release: () => { jumpHeld = false; } };
 }
 /* 打輸了：在大魔王那裡輸的（家長：可以從大魔王關重新開始、難度變低）→ 多一顆「從大魔王開始」，
    每輸一次大王少一滴血、跳得慢一點（最少 1 滴血） */
-function questFail(w, id, bossWeak) {
+function questFail(w, id, bossWeak, cloudPhase) {
   try { dailyHit('quest'); if (typeof starNextW === 'function' && +id[0] === starNextW() && /-3$/.test(id)) dailyHit('clue'); } catch (e) {}
   gameCleanup && gameCleanup(); gameCleanup = null;
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   w.stage.appendChild(el('div', 'tkd-big', bossWeak ? '👑' : '💪'));
   w.status.textContent = bossWeak ? '大魔王好強！再試一次，牠會變弱一點喔！' : '差一點點！想試試看「🐣 簡單」玩法嗎？也可以再挑戰一次！';
-  if (bossWeak) { const b = el('button', 'big', '👑 從大魔王開始（牠變弱了）'); b.onclick = () => playQuest(id, { bossStart: true, weak: bossWeak }); w.btns.appendChild(b); }
+  if (cloudPhase) { const b = el('button', 'big', `☁️ 從第 ${cloudPhase} 階段繼續`); b.onclick = () => playQuest(id, { bossStart: true, weak: bossWeak, cloudPhase }); w.btns.appendChild(b); }   // 烏雲大王打到一半輸了：不用從頭打
+  if (bossWeak) { const b = el('button', 'big' + (cloudPhase ? ' alt' : ''), '👑 從大魔王開始（牠變弱了）'); b.onclick = () => playQuest(id, { bossStart: true, weak: bossWeak }); w.btns.appendChild(b); }
   const again = el('button', 'big' + (bossWeak ? ' alt' : ''), '從頭再試一次'); again.onclick = () => playQuest(id);
   const map = el('button', 'big alt', '回地圖'); map.onclick = () => { closeGameWindow(); openQuestMap(); };
   w.btns.append(again, map);
@@ -22543,6 +22645,10 @@ function questFail(w, id, bossWeak) {
 function questDone(w, id, P) {
   try { dailyHit('quest'); if (typeof starNextW === 'function' && +id[0] === starNextW() && /-3$/.test(id)) dailyHit('clue'); } catch (e) {}
   try { if (typeof starClear === 'function') starClear(id); } catch (e) {}   // 🌟 第一次過大魔王關：星光線索
+  if (P.cloudKO) {   // ☁️ 打倒烏雲大王：記次數；第一次送限定貼紙「烏雲剋星」
+    const ck = G.cloudKing && typeof G.cloudKing === 'object' ? G.cloudKing : (G.cloudKing = { beat: 0 }); ck.beat = (ck.beat || 0) + 1;
+    if (ck.beat === 1) setTimeout(() => { try { Sound.play('fanfare'); showcase(el('div', 'magic-pic', '🌤️'), '限定貼紙「烏雲剋星」！', '打倒烏雲大王，天空放晴了！貼紙放在圖鑑的星光那一頁。', { head: '☁️ 好厲害！' }); } catch (e) {} }, 900);
+  }
   gameCleanup && gameCleanup(); gameCleanup = null;
   const q = questState(), first = !q.clear[id], wd = +id[0];
   q.clear[id] = 1; q.stars[id] = Math.max(q.stars[id] || 0, P.stars);
