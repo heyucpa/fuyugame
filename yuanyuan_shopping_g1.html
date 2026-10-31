@@ -227,7 +227,7 @@ rt{font-size:.46em;font-weight:700;line-height:1.1;letter-spacing:0;color:#8a5a3
 'use strict';
 (function(){
   var $=function(id){return document.getElementById(id)};
-  var rnd=function(n){return Math.floor(Math.random()*n)};
+  var rnd=function(n){try{var c=window.crypto||window.msCrypto;if(c&&c.getRandomValues){var a=new Uint32Array(1);c.getRandomValues(a);return Math.floor(a[0]/4294967296*n)}}catch(e){}return Math.floor(Math.random()*n)}; // 真隨機：crypto 優先，沒有才用 Math.random
   var pick=function(a){return a[rnd(a.length)]};
   var shuffle=function(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=rnd(i+1),t=a[i];a[i]=a[j];a[j]=t}return a};
 
@@ -579,6 +579,9 @@ var BANK=[];
     try{var i=seenL.indexOf(q.id);if(i>=0)seenL.splice(i,1);seenL.push(q.id);if(seenL.length>SEEN_CAP)seenL.shift();
       if(q.tp){seenT.push(q.tp);if(seenT.length>TP_WIN)seenT.shift()}
       reSeen();sset('seen',JSON.stringify({i:seenL,t:seenT}))}catch(e){}}
+  function markDealt(){ // 一開局就把這次抽到的 40 題全記成玩過：就算只玩一兩題就離開，下次點進來也會換一批
+    try{qs.forEach(function(L){L.forEach(function(q){if(!q||!q.id)return;var i=seenL.indexOf(q.id);if(i>=0)seenL.splice(i,1);seenL.push(q.id)})});
+      while(seenL.length>SEEN_CAP)seenL.shift();reSeen();sset('seen',JSON.stringify({i:seenL,t:seenT}))}catch(e){}}
   function dealQ(cand,pid,used,ltp){ // 同一次遊玩不重複、同一關不重複概念；優先沒玩過的題，再優先這關還沒出現的題型；都玩過了就挑最久以前玩過的
     var st,i,c,best=null,bs,sc;
     for(st=0;st<5&&!best;st++){bs=1e9;
@@ -589,10 +592,14 @@ var BANK=[];
     return best||cand[0]}
   function buildRounds(){ // 8 關：國文 4 關、英文 4 關交錯（開頭隨機）；每關 5 題同一主題；同一次遊玩內題目不重複，並避開最近玩過的題
     var chi=shuffle([0,1,2,3]),eng=shuffle([4,5,6,7]),pid={},i,k;qs=[];loadSeen();
+    BANK.forEach(function(bk){ // 某一類題目沒玩過的不夠一關：這類自動重置，重新一輪（其他類的進度保留）
+      var ids={},left=0;bk.items.forEach(function(x){var id=hsh(bk.id+'|'+x[0]+'|'+x[1]);ids[id]=1;if(!seenId[id])left++});
+      if(left<NQ*2){seenL=seenL.filter(function(z){return !ids[z]});reSeen()}});
     for(i=0;i<NR;i++){var bk=BANK[(i%2===startM)?chi[i>>1]:eng[i>>1]],used={},ltp={},L=[],cand=shuffle(bk.items.map(function(x){return {x:x,id:hsh(bk.id+'|'+x[0]+'|'+x[1]),tp:bk.id+':'+(x[6]||x[4])}}));
       for(k=0;k<NQ;k++){var c=dealQ(cand,pid,used,ltp),x=c.x;used[x[4]]=1;pid[c.id]=1;ltp[c.tp]=1;
         L.push({k:bk.id,tag:bk.tag,text:x[0],ans:x[1],opts:[x[1],x[2],x[3]],say:x[5]||'',id:c.id,tp:c.tp})}
       qs.push(L)}
+    markDealt();
   }
   var startM=0;
   // 小故事、鼓勵話、必殺技、稱號：都放在各房間主題 TH 裡
@@ -770,6 +777,7 @@ var BANK=[];
   mb.onclick=function(){muted=!muted;sset('mute',muted?'1':'0');paintMute();if(!muted)SFX.click()};
   loadAll();loadTitles();
   $('bkb').onclick=openBook;$('bke').onclick=openBook;$('bkx').onclick=closeBook;$('bk').onclick=function(e){if(e.target===$('bk'))closeBook()};
+  window.addEventListener('pageshow',function(e){if(e.persisted)reset()}); // 手機「上一頁/切回分頁」從快取還原時也重新抽題
   reset();
 })();
 </script>
