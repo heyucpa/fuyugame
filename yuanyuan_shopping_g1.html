@@ -93,7 +93,6 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 #room.rb::after{content:"";position:absolute;inset:0;border-radius:12px;pointer-events:none;z-index:7;box-shadow:inset 0 0 0 3px #ff5d5d,inset 0 0 0 6px #ffb347,inset 0 0 0 9px #ffe066,inset 0 0 0 12px #6fdc8c,inset 0 0 0 15px #6bb6ff;animation:rb 1.4s ease-out forwards}
 #mute{flex:none;width:42px;height:42px;margin-left:8px;border-radius:50%;border:2px solid var(--line);background:#fff;font-size:22px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 0 var(--line)}
 #mute:active{transform:translateY(1px);box-shadow:none}
-html.embed body{padding:0;background:transparent}html.embed #app{width:100%;border:none;border-radius:0}
 #mute.off{background:#eee;border-color:#cfc6b4;filter:grayscale(.6)}
 #prog{margin:0 0 8px;font-size:13px;font-weight:800;color:#8a5a33}
 .pbar{height:12px;border-radius:999px;background:#fff;border:2px solid var(--line);overflow:hidden;margin:3px 0 4px}
@@ -193,6 +192,51 @@ rt{font-size:.46em;font-weight:700;line-height:1.1;letter-spacing:0;color:#8a5a3
 #opts.one .opt{font-size:26px}
 .opt.lt{font-size:40px;font-weight:900}
 @media(max-width:350px){#q .t .em.zyseq,#q .t .em.ord{font-size:33px;letter-spacing:0}}
+/* ==== v13 可愛 3D 黏土風（純 CSS，只改外觀） ==== */
+html,body{background:radial-gradient(circle at 30% 0%,#fff7e8 0,#ffe9f1 45%,#e6f0ff 100%) fixed}
+#app{border:none;border-radius:28px;background:linear-gradient(160deg,#fffdf7,#fff3e2);box-shadow:0 14px 30px rgba(140,90,50,.22),0 3px 0 #f0dcc0,inset 0 2px 0 #fff,inset 0 -6px 12px rgba(220,180,140,.18)}
+.dot{box-shadow:inset 0 -2px 3px rgba(0,0,0,.12),0 2px 3px rgba(0,0,0,.12)}
+.dot.on{background:radial-gradient(circle at 35% 30%,#fff6c0,#ffd35c 55%,#e9a92a);box-shadow:0 2px 4px rgba(200,140,30,.45)}
+#room{border:none;border-radius:22px;box-shadow:inset 0 10px 18px rgba(255,255,255,.55),inset 0 -14px 22px rgba(60,30,10,.18),0 10px 0 #d9bf98,0 16px 22px rgba(120,80,40,.28);margin-bottom:12px}
+#room::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;background:linear-gradient(90deg,rgba(0,0,0,.10),transparent 14%,transparent 86%,rgba(0,0,0,.10)),linear-gradient(rgba(255,255,255,.25),transparent 40%)}
+#fl{border-top:none;box-shadow:inset 0 10px 14px rgba(40,20,5,.28),inset 0 -6px 10px rgba(255,255,255,.18)}
+.win{box-shadow:0 0 0 2px rgba(80,60,40,.18),0 5px 8px rgba(80,60,40,.25),inset 0 -6px 10px rgba(255,255,255,.6)}
+.slot{filter:drop-shadow(0 6px 3px rgba(60,30,10,.32)) drop-shadow(0 1px 0 rgba(255,255,255,.6))}
+.blob{background:radial-gradient(circle at 35% 28%,#fff8e2 0,#ffe3a8 45%,#f4c06e 100%);border:none;box-shadow:inset -4px -6px 8px rgba(180,110,40,.35),inset 3px 4px 6px rgba(255,255,255,.8),0 6px 6px rgba(80,40,10,.3)}
+#pet::after{content:"";position:absolute;left:8%;right:8%;bottom:-6px;height:8px;border-radius:50%;background:rgba(60,30,10,.25);filter:blur(2px);z-index:-1}
+#pet.glow .blob{background:radial-gradient(circle at 35% 28%,#fff,#fff2b8 50%,#ffd76a)}
+#combo{box-shadow:0 4px 0 #d94f87,0 6px 10px rgba(200,60,110,.35),inset 0 2px 0 rgba(255,255,255,.45)}
+#q{border:none;border-radius:22px;background:linear-gradient(#ffffff,#fff7ea);box-shadow:0 6px 0 #efdcc0,0 10px 18px rgba(140,90,50,.18),inset 0 2px 0 #fff;padding:12px 10px;margin:6px 0 14px}
+#q .tag{background:linear-gradient(#8cc8ff,#4f9cf0);box-shadow:0 2px 0 #3577c4,inset 0 1px 0 rgba(255,255,255,.5)}
+#q .t{text-shadow:0 2px 0 rgba(255,255,255,.9),0 3px 4px rgba(120,80,40,.15)}
+#opts{gap:10px;perspective:600px}
+.opt{border-radius:20px;padding:15px 4px 17px;background:linear-gradient(#86d8a0,#5fae7c 60%,#4f9a69);box-shadow:0 6px 0 #3f7d55,0 9px 12px rgba(40,90,60,.3),inset 0 3px 0 rgba(255,255,255,.45),inset 0 -4px 6px rgba(0,0,0,.08);text-shadow:0 2px 0 rgba(0,60,30,.3);transition:transform .12s,box-shadow .12s}
+.opt:hover:not(:disabled){transform:translateY(-2px) rotateX(8deg)}
+.opt:active{transform:translateY(5px);box-shadow:0 1px 0 #3f7d55,0 2px 4px rgba(40,90,60,.3),inset 0 3px 0 rgba(255,255,255,.35)}
+.opt.no{background:linear-gradient(#ffcf80,#e7a94a 60%,#d49638);box-shadow:0 6px 0 #a8752a,0 9px 12px rgba(160,110,40,.3),inset 0 3px 0 rgba(255,255,255,.45)}
+.opt.ok{background:linear-gradient(#ff8a93,#e8505b 60%,#d4404b);box-shadow:0 6px 0 #a3313b,0 9px 12px rgba(180,50,60,.35),inset 0 3px 0 rgba(255,255,255,.45);animation:jelly .5s ease}
+@keyframes jelly{30%{transform:scale(1.12,.88)}55%{transform:scale(.94,1.08)}80%{transform:scale(1.03,.97)}}
+.big{border-radius:20px;background:linear-gradient(#86d8a0,#5fae7c 60%,#4f9a69);box-shadow:0 6px 0 #3f7d55,0 10px 14px rgba(40,90,60,.3),inset 0 3px 0 rgba(255,255,255,.45);text-shadow:0 2px 0 rgba(0,60,30,.3);margin-top:10px}
+.big:active{transform:translateY(5px);box-shadow:0 1px 0 #3f7d55}
+.big.alt{background:linear-gradient(#ffcf80,#e7a94a 60%,#d49638);box-shadow:0 6px 0 #a8752a,0 10px 14px rgba(160,110,40,.3),inset 0 3px 0 rgba(255,255,255,.45)}
+#clr{border:none;border-radius:22px;box-shadow:0 6px 0 #e9c870,0 10px 18px rgba(160,120,30,.22),inset 0 2px 0 #fff}
+#clr .big{background:linear-gradient(#ff8a93,#e8505b 60%,#d4404b);box-shadow:0 6px 0 #a3313b,0 10px 14px rgba(180,50,60,.3),inset 0 3px 0 rgba(255,255,255,.45)}
+.sticker,#unl,.tpop,#newt{box-shadow:0 5px 0 #d79e2a,0 8px 14px rgba(160,110,30,.3),inset 0 2px 0 rgba(255,255,255,.7)}
+#stars span{text-shadow:0 3px 0 #c98a1c,0 6px 8px rgba(150,100,20,.35)}
+#mute,#clear,#bkb,.mini{box-shadow:0 3px 0 #e0cfb0,0 5px 8px rgba(120,80,40,.18),inset 0 2px 0 #fff}
+#mute:active,#clear:active,#bkb:active,.mini:active{transform:translateY(3px);box-shadow:none}
+.pbar{border:none;height:14px;box-shadow:inset 0 3px 5px rgba(120,80,40,.25),0 2px 0 #fff}
+.pbar i{background:linear-gradient(#ffe68a,#ffc23a 55%,#f2a52a);box-shadow:inset 0 2px 0 rgba(255,255,255,.6)}
+.chip{box-shadow:0 2px 0 #e6d6b8}
+.rc{border:none;border-radius:14px;box-shadow:0 4px 0 #e2d2b5,0 6px 10px rgba(120,80,40,.18);transition:transform .15s}
+.rc.on{box-shadow:0 4px 0 #4f9a69,0 0 0 3px #9fdcb5,0 8px 12px rgba(40,90,60,.25);transform:translateY(-3px)}
+.tc{border-radius:14px;box-shadow:0 4px 0 #d9a83a,0 6px 10px rgba(150,110,30,.2),inset 0 2px 0 rgba(255,255,255,.7)}
+.tc.no{box-shadow:none}
+#bk .bp{border-radius:24px;box-shadow:0 10px 0 #ead7b8,0 18px 30px rgba(0,0,0,.3)}
+@keyframes floaty{50%{transform:translateY(-4px)}}
+.dc{animation:floaty 3s ease-in-out infinite;filter:drop-shadow(0 4px 2px rgba(0,0,0,.25))}
+.dc.b,.dc.d{animation-delay:1.2s}
+@media (prefers-reduced-motion:reduce){.dc,.opt.ok{animation:none}}
 </style></head>
 <body>
 <div id="app">
@@ -230,16 +274,6 @@ rt{font-size:.46em;font-weight:700;line-height:1.1;letter-spacing:0;color:#8a5a3
   var $=function(id){return document.getElementById(id)};
   var rnd=function(n){try{var c=window.crypto||window.msCrypto;if(c&&c.getRandomValues){var a=new Uint32Array(1);c.getRandomValues(a);return Math.floor(a[0]/4294967296*n)}}catch(e){}return Math.floor(Math.random()*n)}; // 真隨機：crypto 優先，沒有才用 Math.random
   var pick=function(a){return a[rnd(a.length)]};
-  // ---- 放在「我的小屋」裡玩（?embed=1）：寵物名字跟著小屋、每個存檔分開記、玩完把星星告訴小屋；單獨打開照舊 ----
-  // 在「選版本」入口頁的 srcdoc 裡：網址參數看入口頁的；訊息直接傳給最外層的小屋
-  var QS={};try{var _q=location.search||(window.parent!==window?window.parent.location.search:'');_q.slice(1).split('&').forEach(function(kv){var p=kv.split('=');if(p[0])QS[decodeURIComponent(p[0])]=decodeURIComponent(p[1]||'')})}catch(e){}
-  var EMBED=QS.embed==='1'&&window.top!==window;
-  var PET=String(QS.pet||'').replace(/[<>&"]/g,'').slice(0,8)||'圓圓';
-  var NS=QS.slot?('yuanyuan1_'+String(QS.slot).replace(/[^a-z0-9]/gi,'').slice(0,12)+'_'):'yuanyuan1_';
-  function nm(t){return PET==='圓圓'?t:String(t).replace(/圓圓/g,PET)}
-  function tell(o){if(EMBED)try{window.top.postMessage(o,'*')}catch(e){}}
-  if(EMBED)document.documentElement.className='embed';
-  document.addEventListener('pointerdown',function(){tell({type:'yuanyuan-tap'})},true);
   var shuffle=function(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=rnd(i+1),t=a[i];a[i]=a[j];a[j]=t}return a};
 
   // ---- 音效：只用 Web Audio 現場合成（沒有任何音檔）；要等第一次點擊/觸控後才建立；失敗就安靜略過 ----
@@ -374,8 +408,8 @@ rt{font-size:.46em;font-weight:700;line-height:1.1;letter-spacing:0;color:#8a5a3
 
   // ---- 暫存（localStorage；失敗也能照常玩；只存家具/次數/星星，不存個人資料） ----
   var mem={};
-  function sget(k){var v=null;try{v=window.localStorage.getItem(NS+k)}catch(e){}return v===null||v===undefined?(mem[k]===undefined?null:mem[k]):v}
-  function sset(k,v){mem[k]=v;try{window.localStorage.setItem(NS+k,v)}catch(e){}}
+  function sget(k){var v=null;try{v=window.localStorage.getItem('yuanyuan1_'+k)}catch(e){}return v===null||v===undefined?(mem[k]===undefined?null:mem[k]):v}
+  function sset(k,v){mem[k]=v;try{window.localStorage.setItem('yuanyuan1_'+k,v)}catch(e){}}
   var house=[],plays=0,best=0,total=0,tierSaved=0;
   function tierOf(n){var t=0;for(var i=0;i<TIERS.length;i++)if(n>=TIERS[i][0])t=i+1;return t}
   function curTier(){return Math.max(tierOf(total),tierSaved)}
@@ -647,7 +681,7 @@ var BANK=[];
     var b=$('banner');b.innerHTML='<small>第 '+(t+1)+' 間房　'+th.ic+'</small><b>'+th.ent+'</b>';b.classList.remove('go');void b.offsetWidth;b.classList.add('go');
     clearTimeout(bnT);bnT=setTimeout(function(){b.classList.remove('go')},1650);if(t>0)SFX.room()}
   function dots(){var h='';for(var i=0;i<NR;i++)h+='<span class="dot'+(i<round?' on':'')+'"></span>';$('dots').innerHTML=h}
-  function say(t){$('say').textContent=nm(t)}
+  function say(t){$('say').textContent=t}
   function reset(){
     newTitles=[];$('newt').style.display='none';round=0;qi=0;lvWrong=0;lvMax=0;lvCombo=0;lvStars=[];adv=false;lockUntil=0;locked=false;combo=0;maxCombo=0;wrong=0;qWrong=false;showCombo();king(false);clearTimeout(moodT);$('pet').className='';
     startM=rnd(2);buildRounds();furn=chooseFurn();run=[];maxRoom=-1;
@@ -659,7 +693,7 @@ var BANK=[];
   }
   function next(){ // 進入新的一關（新房間轉場橫幅在這時才出現）
     dots();qi=0;lvWrong=0;lvMax=0;lvCombo=0;adv=false;enterRoom(round);if(round>0)say(TT().hi);
-    $('story').textContent=nm(pick(TT().st).replace('{f}',furn[round][1]));
+    $('story').textContent=pick(TT().st).replace('{f}',furn[round][1]);
     showQ();
   }
   function showQ(){
@@ -752,14 +786,13 @@ var BANK=[];
     var msgs={3:['太棒了！'+NR+' 關幾乎都一次答對，你是設計大師！','好厲害！'+NR+' 間房都過得又穩又快，圓圓的新家超漂亮！'],2:['很棒喔！只錯一點點，新家很好看！','好厲害，圓圓好喜歡你布置的家！'],1:['完成了！多練習幾次會更厲害～','圓圓的新家完成了，謝謝你不放棄！']};
     var sh='';for(var i=0;i<3;i++)sh+='<span style="animation-delay:'+(i*.25)+'s">'+(i<st?'⭐':'☆')+'</span>';
     $('stars').innerHTML=sh;$('stars').setAttribute('data-stars',st);
-    $('endsay').textContent=nm(pick(msgs[st]));
-    $('endstory').textContent=nm(pick(ENDSTORY));var fr=maxRoom>=0?maxRoom:rnd(8),ft=TH[fr],ftt=ft.et[st-1];$('sticker').textContent='🌟 '+ftt+' 🌟';showNewT();buildRooms();$('endinfo').textContent=(NR*NQ)+' 題｜答錯 '+wrong+' 次｜最高連擊 x'+maxCombo;
+    $('endsay').textContent=pick(msgs[st]);
+    $('endstory').textContent=pick(ENDSTORY);var fr=maxRoom>=0?maxRoom:rnd(8),ft=TH[fr],ftt=ft.et[st-1];$('sticker').textContent='🌟 '+ftt+' 🌟';showNewT();buildRooms();$('endinfo').textContent=(NR*NQ)+' 題｜答錯 '+wrong+' 次｜最高連擊 x'+maxCombo;
     $('combo').style.display='none';king(false);plays++;if(st>best)best=st;sset('plays',String(plays));sset('best',String(best));
     var oldT=curTier();total+=st;var newT=Math.max(oldT,tierOf(total));tierSaved=newT;sset('total',String(total));sset('unlock',String(newT));
     $('endgain').textContent='本次得到 ★'+st+'　累積 ★'+total;$('endhist').textContent=histText();refreshBar();mood('dance glow',1500);
     say('🎉 謝謝你幫圓圓布置新家 🎉');
-    SFX.end(st);tell({type:'yuanyuan-done',stars:st,wrong:wrong,combo:maxCombo});   // 告訴小屋：玩完了、幾顆星
-    showUnlock(oldT,newT,st);
+    SFX.end(st);showUnlock(oldT,newT,st);
     for(var i=0;i<14;i++){(function(i){setTimeout(function(){var c=document.createElement('div');c.className='conf';c.textContent=pick(['⭐','🎉','💖','✨','🌸']);c.style.left=rnd(92)+'%';$('app').appendChild(c);setTimeout(function(){c.remove()},1900)},i*70)})(i)}
   }
   function showNewT(){var e=$('newt');if(!newTitles.length){e.style.display='none';return}
@@ -790,7 +823,6 @@ var BANK=[];
   loadAll();loadTitles();
   $('bkb').onclick=openBook;$('bke').onclick=openBook;$('bkx').onclick=closeBook;$('bk').onclick=function(e){if(e.target===$('bk'))closeBook()};
   window.addEventListener('pageshow',function(e){if(e.persisted)reset()}); // 手機「上一頁/切回分頁」從快取還原時也重新抽題
-  if(PET!=='圓圓'){var tt=document.querySelector('.top>span');if(tt&&tt.firstChild&&tt.firstChild.nodeType===3)tt.firstChild.nodeValue='🏡 '+PET+'的新家';document.title=document.title.replace(/圓圓/g,PET)}
   reset();
 })();
 </script>
