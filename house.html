@@ -5328,11 +5328,12 @@ function openNews(list) {
    每一次更新一張卡，最新的打開、其他收起來，點標題打開。🔊 可以念給妹妹聽。
    只列最近 10 次；內容只放「新增了什麼好玩的」——公告裡的說明、提醒（標了 'info' 的那幾行）不列。 */
 const NEWS_HIST_MAX = 10;
+const NEWS_SHOW_MAX = 3, NEWS_TOP3_KEY = '2026-11-11';   // 想讓大家下次登入再看一次最新三則：改這個日期
 const newsFunLines = n => n.lines.filter(l => l[2] !== 'info');
 /* 公告的編號只是排順序用的（有的比今天還晚），不是真的日期。
    顯示的是「這台第一次跳出這則公告的那天」（G.newsAt），沒記到的就不寫，免得看起來像「未來」。 */
 function newsWhen(n) {
-  const at = (G.newsAt || {})[n.id];
+  const at = (G.newsAt || {})[n.id] || Date.parse(n.id);   // 沒記到哪天看的（一次只列三則、舊的直接算看過）→ 用更新那天
   if (!at) return '';
   const d = new Date(at);
   return `${d.getMonth() + 1} 月 ${d.getDate()} 日`;
@@ -5470,10 +5471,14 @@ function maybeShowNews(tries) {
   tries = tries || 0;
   // 開幕包裹還沒打開：先讓爸爸媽媽送包裹，公告等她打開之後再跳（openGiftBox 會叫回來）
   if (!G.openGift && SAVE_LOCKED == null) return;
-  const list = unseenNews();
+  /* 家長：下次登入把最新三次更新列出來 → 換了 NEWS_TOP3_KEY 的那一次，不管看過沒有，都列最新三次；
+     平常也最多列最新三次（太久沒玩一次跳十幾則看不完），比較舊的沒看過的直接算看過。 */
+  const unseen = unseenNews(), force = G.newsTop3 !== NEWS_TOP3_KEY;
+  const list = force ? NEWS.slice(0, NEWS_SHOW_MAX) : unseen.slice(0, NEWS_SHOW_MAX);
   if (!list.length || tries > 20) return;
   if (!$('#modal').hidden || (typeof resting !== 'undefined' && resting) || (typeof hold !== 'undefined' && hold) || (typeof introPlaying !== 'undefined' && introPlaying)) { setTimeout(() => maybeShowNews(tries + (resting ? 0 : 1)), 3000); return; } // 休息中不算次數：休息完還要記得跳
   openNews(list);
+  G.newsTop3 = NEWS_TOP3_KEY; G.newsSeen = Array.from(new Set((G.newsSeen || []).concat(unseen.map(n => n.id)))); saveGame();
 }
 
 function newGame() {
@@ -5521,6 +5526,7 @@ function newGame() {
        本來沒寫這一行：新開的存檔沒有旗標，第二次打開時被當成舊存檔，
        她花剩多少都會被補回 10 萬——每開一間新的就白送一次錢。 */
     newsSeen: NEWS.map(n => n.id), // 新開的存檔不用看以前的更新公告
+    newsTop3: NEWS_TOP3_KEY,
     usedActs: {},                  // 做過哪些事（做過的就不再冒提示圖示）
     hostMem: {},                   // 主人記得的上次的事
     theme: null, themesDone: {},   // 小主題：現在在做的、做完過的
@@ -5780,6 +5786,7 @@ function normalizeSave(g) {
   if (out.kid && !num(out.kid.clean)) out.kid.clean = 100;
   (out.pets || []).forEach(q => { if (q && q.small != null && !num(q.small)) delete q.small; });
   if (!isObj(g.growDex)) out.growDex = {};
+  if (out.newsTop3 != null && typeof out.newsTop3 !== 'string') delete out.newsTop3;   // 📰 最新三則看過了沒
   if (!Array.isArray(g.newsSeen)) out.newsSeen = []; // 舊存檔：還沒看過任何公告，要讓她看到這次更新了什麼
   /* 補償也要發給「已經存在的存檔」——只改 newGame() 的話，
      她那台已經有存檔了，newGame() 根本不會再跑，一毛都拿不到。
