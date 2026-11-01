@@ -3793,14 +3793,14 @@
     /* 76 音樂多兩首（共 6 首）：每首 64 拍、音名都認得；小可愛躺上床，照顧中的寵物一定跳上來抱著睡、先滾一滾；
        寵物屋沒有玩具：原地跳舞或跑去找小可愛 */
     var SG = Sound._t.songs, NT = Sound._t.notes;
-    if (SG.length !== 6 || Sound.songCount !== 6) fails.push('背景音樂不是 6 首（' + SG.length + '）');
+    if (SG.length !== 10 || Sound.songCount !== 10) fails.push('背景音樂不是 10 首（' + SG.length + '）');
     SG.forEach(function(sg){
       var beats = sg.melody.reduce(function(t, n){ return t + n[1]; }, 0);
       if (Math.abs(beats - 64) > 1e-9) fails.push('「' + sg.name + '」不是 64 拍（' + beats + '）');
       sg.melody.concat(sg.bass.map(function(b){ return [b, 0]; })).forEach(function(n){ if (n[0] !== null && !NT[n[0]]) fails.push('「' + sg.name + '」有不認得的音 ' + n[0]); });
       if (sg.bass.length !== 8) fails.push('「' + sg.name + '」的低音不是 8 個');
     });
-    if (new Set(SG.map(function(sg){ return sg.name; })).size !== 6) fails.push('歌名有重複');
+    if (new Set(SG.map(function(sg){ return sg.name; })).size !== SG.length) fails.push('歌名有重複');
     // 抱著睡：每次都會上來（以前是一半機率）
     var keepG14 = JSON.stringify(G);
     try {

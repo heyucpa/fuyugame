@@ -780,6 +780,13 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .spark-fly { position: fixed; z-index: 90; pointer-events: none; font-size: 20px; transform: translate(-50%, -50%); animation: sparkFly .9s ease-out forwards; }
 @keyframes sparkFly { to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.4); opacity: 0; } }
 .crash-box { width: 100%; height: 220px; font: 12px/1.45 ui-monospace, Consolas, monospace; border: 2px solid var(--line); border-radius: 12px; padding: 8px; box-sizing: border-box; white-space: pre-wrap; }
+.quest-pause { position: absolute; top: 6px; right: 6px; z-index: 3; width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--line); background: rgba(255,255,255,.9); font-size: 20px; padding: 0; touch-action: none; }
+.quest-pause[hidden] { display: none; }
+.quest-pauseov { position: absolute; inset: 0; z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: rgba(40,30,50,.55); border-radius: 12px; }
+.quest-pauseov[hidden] { display: none; }
+.quest-pauseov .big { width: 260px; max-width: 80%; flex: none; font-size: 20px; padding: 14px; }
+.quest-pause-t { color: #fff; font-size: 26px; font-weight: 900; text-shadow: 0 2px 4px rgba(0,0,0,.4); }
+.game-canvas { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 .confetti-cv { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 90; pointer-events: none; }   /* 彩帶不擋點擊 */
 .star-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; } .star-slot { display: flex; flex-direction: column; align-items: center; padding: 10px 4px; border-radius: 16px; background: #f1ecf7; border: 2px dashed #c9b8e8; color: #a99ac9; }
 .star-slot.on { background: #fff7d6; border: 2px solid #ffd23f; color: #5a4636; } .star-e { font-size: 34px; } .star-n { font-size: 13px; font-weight: 800; }
@@ -3706,7 +3713,44 @@ const Sound = (() => {
       ['C5', 1], ['D5', 1], ['E5', 2], ['G5', 1], ['F5', 1], ['E5', 2],
       ['F5', 1], ['E5', 1], ['D5', 2], ['C5', 1], ['D5', 1], ['E5', 2],
       ['A5', 2], ['G5', 1], ['E5', 1], ['F5', 1], ['E5', 1], ['D5', 1], ['B4', 1],
-      ['C5', 2], ['B4', 1], ['G4', 1], ['A4', 3], [null, 1]] }
+      ['C5', 2], ['B4', 1], ['G4', 1], ['A4', 3], [null, 1]] },
+    // 家長：音樂能否再多幾個 → 第 7～10 首（原創）
+    { name: '森林探險', bpm: 108, bass: ['C3', 'F3', 'G3', 'C3', 'A3', 'D3', 'G3', 'C3'], melody: [
+      ['G4', 1], ['C5', 1], ['E5', 1], ['G5', 1], ['F5', 1], ['E5', 1], ['D5', 2],
+      ['E5', 1], ['F5', 1], ['G5', 1], ['A5', 1], ['G5', 2], ['E5', 2],
+      ['F5', 1], ['E5', 1], ['D5', 1], ['C5', 1], ['B4', 1], ['C5', 1], ['D5', 2],
+      ['G4', 1], ['A4', 1], ['B4', 1], ['D5', 1], ['C5', 3], [null, 1],
+      ['A4', .5], ['C5', .5], ['E5', 1], ['A5', 1], ['G5', 1], ['E5', 1], ['D5', 1], ['C5', 2],
+      ['D5', .5], ['F5', .5], ['A5', 1], ['G5', 1], ['F5', 1], ['E5', 1], ['D5', 1], ['C5', 2],
+      ['E5', 1], ['G5', 1], ['C5', 1], ['E5', 1], ['D5', 1], ['B4', 1], ['G4', 2],
+      ['C5', 1], ['E5', 1], ['D5', 1], ['B4', 1], ['C5', 3], [null, 1]] },
+    { name: '海邊貝殼', bpm: 92, bass: ['F3', 'C3', 'D3', 'Bb3', 'F3', 'C3', 'Bb3', 'F3'], melody: [
+      ['F4', 1], ['A4', 1], ['C5', 2], ['A4', 1], ['C5', 1], ['F5', 2],
+      ['E5', 1], ['D5', 1], ['C5', 1], ['A4', 1], ['G4', 3], [null, 1],
+      ['A4', 1], ['Bb4', 1], ['C5', 1], ['D5', 1], ['C5', 2], ['A4', 2],
+      ['Bb4', 1], ['A4', 1], ['G4', 1], ['E4', 1], ['F4', 3], [null, 1],
+      ['C5', 1], ['F5', 1], ['A5', 2], ['G5', 1], ['F5', 1], ['E5', 2],
+      ['D5', 1], ['F5', 1], ['Bb4', 2], ['C5', 1], ['D5', 1], ['C5', 2],
+      ['A4', 1], ['C5', 1], ['F5', 1], ['E5', 1], ['D5', 1], ['C5', 1], ['Bb4', 1], ['G4', 1],
+      ['A4', 2], ['G4', 1], ['E4', 1], ['F4', 3], [null, 1]] },
+    { name: '雪花飄飄', bpm: 76, bass: ['A3', 'F3', 'C3', 'G3', 'A3', 'D3', 'E3', 'A3'], melody: [
+      ['E5', 2], ['D5', 1], ['C5', 1], ['B4', 2], ['A4', 2],
+      ['C5', 1], ['E5', 1], ['A5', 2], ['G5', 1], ['E5', 1], ['D5', 2],
+      ['F5', 2], ['E5', 1], ['D5', 1], ['C5', 2], ['E5', 2],
+      ['D5', 1], ['C5', 1], ['B4', 1], ['G4', 1], ['A4', 3], [null, 1],
+      ['A4', 1], ['C5', 1], ['E5', 1], ['G5', 1], ['F5', 2], ['E5', 2],
+      ['D5', 1], ['F5', 1], ['A5', 2], ['G5', 1], ['F5', 1], ['E5', 2],
+      ['C5', 1], ['D5', 1], ['E5', 1], ['A5', 1], ['G5', 1], ['E5', 1], ['D5', 1], ['B4', 1],
+      ['C5', 1], ['B4', 1], ['G4', 2], ['A4', 3], [null, 1]] },
+    { name: '彩虹滑梯', bpm: 124, bass: ['C3', 'G3', 'A3', 'F3', 'C3', 'G3', 'F3', 'G3'], melody: [
+      ['C5', .5], ['E5', .5], ['G5', .5], ['C5', .5], ['E5', 1], ['G5', 1], ['A5', 2], ['G5', 2],
+      ['F5', .5], ['E5', .5], ['D5', .5], ['C5', .5], ['D5', 1], ['E5', 1], ['D5', 2], [null, 2],
+      ['E5', .5], ['G5', .5], ['A5', .5], ['G5', .5], ['E5', 1], ['C5', 1], ['D5', 2], ['E5', 2],
+      ['F5', 1], ['D5', 1], ['B4', 1], ['G4', 1], ['C5', 3], [null, 1],
+      ['A5', 1], ['G5', 1], ['E5', 1], ['G5', 1], ['A5', 1], ['G5', 1], ['E5', 2],
+      ['F5', 1], ['E5', 1], ['D5', 1], ['E5', 1], ['F5', 1], ['E5', 1], ['D5', 2],
+      ['C5', .5], ['D5', .5], ['E5', .5], ['F5', .5], ['G5', 1], ['A5', 1], ['G5', 1], ['E5', 1], ['D5', 2],
+      ['E5', 1], ['D5', 1], ['C5', 1], ['B4', 1], ['C5', 3], [null, 1]] }
   ];
   /* 🗺️ 闖關專屬音樂（家長：玩闖關時換成專屬音樂）：輕快的冒險曲、緊張的大魔王曲。旋律自己寫的，不用任何遊戲的歌。
      用方波（像紅白機），只有闖關的時候放，離開就換回她原本選的那一首。 */
@@ -3732,6 +3776,18 @@ const Sound = (() => {
   };
   let special = null;
   let song = SONGS[prefs.song] || SONGS[0], BEAT = 60 / song.bpm;
+  /* 🔀 自動換歌（家長：平常的背景音樂放十分鐘左右就隨機換下一首）：
+     同一首放超過 10 分鐘（算真的有在放的時間；切到背景不算），在這一輪唱完的地方換成隨機另一首。
+     闖關的專屬音樂不算；音樂選單可以關掉（prefs.shuffle = false）。換歌時叫 onAutoSong（畫面跳小提示）。 */
+  const SHUFFLE_SEC = 600;
+  let songT0 = 0, onAutoSong = null;
+  const markSong = () => { songT0 = ac ? ac.currentTime : 0; };
+  function maybeShuffle() {
+    if (special || prefs.shuffle === false || SONGS.length < 2 || !ac || ac.currentTime - songT0 < SHUFFLE_SEC) return;
+    let j = Math.floor(Math.random() * (SONGS.length - 1)); if (j >= (prefs.song || 0)) j++;
+    prefs.song = j; savePrefs(); song = SONGS[j]; BEAT = 60 / song.bpm; markSong();
+    if (onAutoSong) setTimeout(() => { try { onAutoSong(song.name); } catch (e) {} }, 0);
+  }
   let nextIdx = 0, nextTime = 0, bassIdx = 0, nextBass = 0;
 
   function musicBoxNote(freq, t, beats) {
@@ -3779,7 +3835,7 @@ const Sound = (() => {
       if (name) (song.chip ? chipNote : musicBoxNote)(N[name], nextTime, beats);
       nextTime += beats * BEAT;
       nextIdx = (nextIdx + 1) % song.melody.length;
-      if (nextIdx === 0) { nextBass = nextTime; bassIdx = 0; } // 每一輪重新對齊低音
+      if (nextIdx === 0) { nextBass = nextTime; bassIdx = 0; maybeShuffle(); } // 每一輪重新對齊低音；唱完一輪看看要不要換歌
     }
     while (nextBass < horizon) {
       bassNote(N[song.bass[bassIdx]], nextBass);
@@ -3825,7 +3881,7 @@ const Sound = (() => {
     if (!prefs.bgm) { prefs.song = 0; setPref('bgm', true); }
     else if ((prefs.song || 0) + 1 < SONGS.length) { prefs.song = (prefs.song || 0) + 1; savePrefs(); }
     else { prefs.song = 0; setPref('bgm', false); return null; }
-    special = null; song = SONGS[prefs.song]; BEAT = 60 / song.bpm;
+    special = null; song = SONGS[prefs.song]; BEAT = 60 / song.bpm; markSong();
     if (ac) restartTimeline();
     return song.name;
   }
@@ -3834,19 +3890,20 @@ const Sound = (() => {
   function setSpecial(key) {
     const s2 = key && SPECIAL_SONGS[key];
     if ((special || null) === (s2 ? key : null)) return;
-    special = s2 ? key : null; song = s2 || SONGS[prefs.song] || SONGS[0]; BEAT = 60 / song.bpm;
+    special = s2 ? key : null; song = s2 || SONGS[prefs.song] || SONGS[0]; BEAT = 60 / song.bpm; if (!s2) markSong();
     if (ac) restartTimeline();
   }
   function pickSong(i) {   // 直接選一首（音樂選單用）
     i = Math.max(0, Math.min(SONGS.length - 1, i | 0));
-    prefs.song = i; special = null; song = SONGS[i]; BEAT = 60 / song.bpm;
+    prefs.song = i; special = null; song = SONGS[i]; BEAT = 60 / song.bpm; markSong();
     setPref('bgm', true);
     if (ac) restartTimeline();
     return song.name;
   }
 
-  return { play, setPref, duck, prefs, nextSong, pickSong, songName, setSpecial, special: () => special, songNames: () => SONGS.map(x => x.name), songCount: SONGS.length,
-           _t: { bgmGain: () => (bgmBus ? bgmBus.gain.value : null), getAc: () => ac, setAc: v => { ac = v; }, songs: SONGS, notes: N } }; // _t：測試用
+  const setShuffle = on => { prefs.shuffle = !!on; savePrefs(); };
+  return { setShuffle, onAutoSong: f => { onAutoSong = f; }, play, setPref, duck, prefs, nextSong, pickSong, songName, setSpecial, special: () => special, songNames: () => SONGS.map(x => x.name), songCount: SONGS.length,
+           _t: { songAge: () => (ac ? ac.currentTime - songT0 : 0), ageSong: sec => { songT0 -= sec; }, shuffleNow: () => { songT0 = -1e9; maybeShuffle(); }, bgmGain: () => (bgmBus ? bgmBus.gain.value : null), getAc: () => ac, setAc: v => { ac = v; }, songs: SONGS, notes: N } }; // _t：測試用
 })();
 </script>
 <script>
@@ -4825,6 +4882,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-03T20:00', title: '👆 闖關用手指按＋🎵 新音樂', lines: [
+    ['👆', '闖關可以直接按畫面：按住左邊往左走、右邊往右走、中間跳，往上滑也會跳'],
+    ['⏸', '下面的「回地圖」拿掉了，改成右上角的 ⏸ 暫停，比較不會按錯'],
+    ['🎵', '多了 4 首新音樂：森林探險、海邊貝殼、雪花飄飄、彩虹滑梯；放 10 分鐘左右會自己換一首']
+  ] },
   { id: '2026-11-02T20:00', title: '🍂 四季裝飾＋🎊 彩帶', lines: [
     ['🍂', '房間後面會跟著季節換：春天飄櫻花、夏天飄泡泡、秋天落葉、冬天下雪'],
     ['🎊', '拿到徽章、破關、集滿、長大的時候，會撒彩帶慶祝！'],
@@ -13824,6 +13886,9 @@ function openMusicMenu() {
     b.onclick = () => { Sound.pickSong(i); toast(`🎵 ${n}`); refreshSoundButtons(); closeMusicMenu(); };
     m.appendChild(b);
   });
+  const sh = el('button', 'music-song' + (Sound.prefs.shuffle !== false ? ' on' : ''), Sound.prefs.shuffle !== false ? '🔀 每 10 分鐘自動換歌：開' : '🔀 每 10 分鐘自動換歌：關');
+  sh.onclick = () => { Sound.setShuffle(Sound.prefs.shuffle === false); toast(Sound.prefs.shuffle !== false ? '🔀 放 10 分鐘左右會自己換一首' : '🔁 一直放同一首'); closeMusicMenu(); };
+  m.appendChild(sh);
   document.body.appendChild(m);
   const w = m.offsetWidth;
   m.style.top = (r.bottom + 6) + 'px';
@@ -13831,6 +13896,7 @@ function openMusicMenu() {
   setTimeout(() => document.addEventListener('pointerdown', musicMenuOutside, true), 0);
 }
 $('#btnBgm').onclick = () => { Sound.play('click'); openMusicMenu(); };
+Sound.onAutoSong(n => { try { toast(`🎵 換一首：${n}`); refreshSoundButtons(); } catch (e) {} });
 $('#btnSfx').onclick = () => { Sound.setPref('sfx', !Sound.prefs.sfx); refreshSoundButtons(); Sound.play('click'); };
 refreshSoundButtons();
 
@@ -22356,7 +22422,7 @@ const QPET_MOVES = {
 function playQuest(id, opt) {
   opt = opt || {};   // opt.bossStart：從大魔王那裡開始；opt.weak：打輸幾次了（大王越來越弱）
   const q = questState(), easy = q.mode === 'easy', wd = QUEST_WORLDS[+id[0] - 1];
-  const w = openGameWindow(`${wd.icon} 世界 ${id}`, (easy ? '小可愛會自己往前跑，看到坑或怪物就按「跳」（或點畫面、空白鍵）！按久一點會跳更高 ✨。到大魔王那裡可以用 ◀ ▶ 自己走。' : '← → 走、按「跳」（空白鍵／↑）跳，按久一點會跳更高 ✨。踩怪物的頭可以打倒牠！') + (G.pet && G.pet.stage !== 'egg' ? `${petName()}也一起來了：🐾 集滿了就按，放必殺技！` : ''));
+  const w = openGameWindow(`${wd.icon} 世界 ${id}`, (easy ? '小可愛會自己往前跑，看到坑或怪物就按「跳」（或點畫面、空白鍵）！按久一點會跳更高 ✨。到大魔王那裡可以用 ◀ ▶ 自己走。' : '← → 走、按「跳」（空白鍵／↑）跳，按久一點會跳更高 ✨。踩怪物的頭可以打倒牠！平板也可以直接按畫面：左邊往左、右邊往右、中間（或往上滑）跳。') + (G.pet && G.pet.stage !== 'egg' ? `${petName()}也一起來了：🐾 集滿了就按，放必殺技！` : ''));
   w.stage.innerHTML = ''; w.btns.innerHTML = ''; w.card.classList.add('quest-big');
   const { c, g } = gameCanvas(w.stage, QVW, QVH);
   const pad = el('div', 'quest-pad');
@@ -22374,7 +22440,19 @@ function playQuest(id, opt) {
   if (easy) { bL.style.display = 'none'; bR.style.display = 'none'; }   // 家長：簡單模式還是自己一直跑比較好玩 → 平常自己跑，到大魔王那裡才出現 ◀ ▶ 自己走
   let bossZone = false;
   w.stage.appendChild(pad);
-  const quit = el('button', 'big alt', '回地圖'); quit.onclick = () => { closeGameWindow(); openQuestMap(); }; w.btns.appendChild(quit);
+  /* ⏸ 暫停（家長：iPad 玩的時候很容易按到「回地圖」）：下面不放「回地圖」了，改成畫面右上角小小的 ⏸，
+     按了先暫停、跳出「繼續玩／回地圖」兩顆大按鈕，按錯也只是暫停一下。鍵盤 Esc、P 也可以暫停。 */
+  let paused = false;
+  w.stage.style.position = 'relative';
+  const pauseB = el('button', 'quest-pause', '⏸'); pauseB.title = '暫停'; pauseB.setAttribute('aria-label', '暫停');
+  const pauseOv = el('div', 'quest-pauseov'); pauseOv.hidden = true;
+  const resumeB = el('button', 'big', '▶ 繼續玩'), mapB = el('button', 'big alt', '🗺️ 回地圖');
+  pauseOv.append(el('div', 'quest-pause-t', '⏸ 暫停中'), resumeB, mapB);
+  const setPause = on => { if (on && state !== 'play') return; paused = !!on; pauseOv.hidden = !paused; pauseB.hidden = paused; Object.keys(keys).forEach(k => { keys[k] = false; }); jumpHeld = false; touches.clear(); Sound.play('click'); };
+  pauseB.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); setPause(true); });
+  resumeB.onclick = () => setPause(false);
+  mapB.onclick = () => { closeGameWindow(); openQuestMap(); };
+  w.stage.append(pauseB, pauseOv);
   const L = questBuild(id, easy), lvW = L.W * QT;
   const tileAt = (tx, ty) => (tx < 0 || tx >= L.W) ? '#' : (ty < 0 || ty >= QH) ? ' ' : L.g[ty][tx];
   const solid = ch => ch === '#' || ch === '=' || ch === '?' || ch === 'u' || ch === 'M' || ch === 'P' || ch === 'Q';
@@ -22407,7 +22485,7 @@ function playQuest(id, opt) {
   let flag = null, raf = 0, live = true, last = performance.now(), camX = 0, state = 'play', endT = 0, keys = {}, jumpHeld = false, jumpBuf = 0, msg = '', msgT = 0, coinPops = [];
   const say = (m2, s) => { msg = m2; msgT = s || 1.6; };
   try { const ln = typeof starIntroLine === 'function' ? starIntroLine(id) : ''; if (ln) setTimeout(() => say(ln, 4.5), 300); } catch (e) {}   // 🌟 線索關的開場
-  const keyD = e => { const k = e.code; if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space', 'KeyA', 'KeyD', 'KeyW', 'KeyS', 'KeyX', 'KeyF', 'KeyC', 'KeyQ'].includes(k)) e.preventDefault(); if (e.repeat) return; keys[k] = true; if (k === 'ArrowDown' || k === 'KeyS') downBuf = .3; if (k === 'KeyX' || k === 'KeyF') shootFire(); if (k === 'KeyC' || k === 'KeyQ') petSpecial(); if (k === 'Space' || k === 'ArrowUp' || k === 'KeyW') { jumpHeld = true; jumpBuf = .15; } };
+  const keyD = e => { const k = e.code; if ((k === 'Escape' || k === 'KeyP') && !e.repeat) { e.preventDefault(); setPause(!paused); return; } if (paused) return; if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space', 'KeyA', 'KeyD', 'KeyW', 'KeyS', 'KeyX', 'KeyF', 'KeyC', 'KeyQ'].includes(k)) e.preventDefault(); if (e.repeat) return; keys[k] = true; if (k === 'ArrowDown' || k === 'KeyS') downBuf = .3; if (k === 'KeyX' || k === 'KeyF') shootFire(); if (k === 'KeyC' || k === 'KeyQ') petSpecial(); if (k === 'Space' || k === 'ArrowUp' || k === 'KeyW') { jumpHeld = true; jumpBuf = .15; } };
   const keyU = e => { keys[e.code] = false; if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') jumpHeld = false; };
   document.addEventListener('keydown', keyD); document.addEventListener('keyup', keyU);
   const hold = (b, on, off) => { if (!b) return; b.addEventListener('pointerdown', e => { e.preventDefault(); on(); }); ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => b.addEventListener(ev, off)); };
@@ -22437,8 +22515,23 @@ function playQuest(id, opt) {
     Sound.play('magic'); say(`${POWERS[k][0]}！${POWERS[k][1]}`, 2.4);
     if (k === 'grow') P.big = true; else if (k === 'fire') { P.big = true; P.fire = true; bF.style.display = ''; } else { P.starT = 8; try { Sound.setSpecial('quest'); } catch (e) {} }
   };
-  if (easy) c.addEventListener('pointerdown', e => { e.preventDefault(); jumpHeld = true; jumpBuf = .15; });
-  c.addEventListener('pointerup', () => { if (easy) jumpHeld = false; });
+  /* 👆 直接用手指按畫面（家長：能不能用手指按螢幕取代跳躍、前進後退）：
+     按住畫面左邊 3 成＝往左走、右邊 3 成＝往右走、中間＝跳（按久跳更高）；在左右兩邊往上滑也會跳。可以兩隻手一起按。
+     簡單模式本來就自己跑：整個畫面都是「跳」，到大魔王那裡才分左右。原本下面的按鈕照樣可以用。 */
+  const touches = new Map(), touchUI = (window.matchMedia && matchMedia('(pointer: coarse)').matches) || 'ontouchstart' in window;
+  c.style.touchAction = 'none';
+  const zoneOf = e => { if (easy && !bossZone) return 'J'; const r = c.getBoundingClientRect(), fx = (e.clientX - r.left) / Math.max(1, r.width); return fx < .3 ? 'L' : fx > .7 ? 'R' : 'J'; };
+  const touchSync = () => { let l = false, rr = false, j = false; touches.forEach(t => { if (t.z === 'L') l = true; if (t.z === 'R') rr = true; if (t.j) j = true; }); keys.TouchL = l; keys.TouchR = rr; return j; };
+  c.addEventListener('pointerdown', e => {
+    e.preventDefault(); if (paused || state !== 'play') return;
+    try { c.setPointerCapture(e.pointerId); } catch (e2) {}
+    const z = zoneOf(e), t = { z, y0: e.clientY, j: z === 'J' }; touches.set(e.pointerId, t);
+    if (t.j) { jumpHeld = true; jumpBuf = .15; }
+    touchSync();
+  });
+  c.addEventListener('pointermove', e => { const t = touches.get(e.pointerId); if (!t || t.j) return; if (t.y0 - e.clientY > 28) { t.j = true; jumpHeld = true; jumpBuf = .15; } });   // 往上滑：跳
+  const touchEnd = e => { const t = touches.get(e.pointerId); if (!t) return; touches.delete(e.pointerId); if (!touchSync() && t.j) jumpHeld = false; };
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => c.addEventListener(ev, touchEnd));
   gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', keyD); document.removeEventListener('keyup', keyU); w.card.classList.remove('quest-big'); try { Sound.setSpecial(null); } catch (e) {} };
   try { Sound.setSpecial(opt.bossStart ? 'boss' : 'quest'); } catch (e) {}   // 🎵 闖關專屬音樂
   try { Sound.duck && Sound.duck(false); } catch (e) {}
@@ -22534,7 +22627,7 @@ function playQuest(id, opt) {
     if (inZone !== bossZone) { bossZone = inZone; if (easy) { bL.style.display = bR.style.display = inZone ? '' : 'none'; keys.ArrowLeft = keys.ArrowRight = false; }
       if (inZone) { say(boss.k === 'cloudking' ? '☁️ 烏雲大王來了！躲開雨滴，等牠下來休息再跳到頭上！' : easy ? '大魔王來了！用 ◀ ▶ 自己走，跳到牠頭上！' : '大魔王來了！跳到牠頭上！', 3); try { Sound.setSpecial('boss'); } catch (e) {} } }
     if (easy && !inZone) want = (P.backT > 0) ? -1 : 1;   // 簡單：自己往前跑（卡在高牆前太久會往回走一點再衝）
-    else want = (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0);
+    else want = (keys.ArrowRight || keys.KeyD || keys.TouchR ? 1 : 0) - (keys.ArrowLeft || keys.KeyA || keys.TouchL ? 1 : 0);
     if (P.backT > 0) P.backT -= dt;
     const maxV = (easy ? 112 : 128) * (P.starT > 0 ? 1.2 : 1) * (P.wet ? .6 : 1), ice = wd.ice && P.on;
     if (want) { P.vx += want * (ice ? 420 : 900) * dt; P.face = want; } else P.vx *= Math.pow(ice ? .3 : .0005, dt);   // ❄️ 雪地：起步慢、停不太下來
@@ -22748,6 +22841,13 @@ function playQuest(id, opt) {
     g.fillText(`💰 ${P.coins}　${'★'.repeat(P.stars)}${'☆'.repeat(3 - P.stars)}`, 14, 19);
     if (!easy) g.fillText('❤️'.repeat(Math.max(0, P.hearts)) + '🤍'.repeat(Math.max(0, 3 - P.hearts)), 130, 19);
     const pw = P.starT > 0 ? '🌟 無敵！' : P.fire ? '🔥 火火花' : P.big ? '🍒 變大了' : ''; if (pw) { g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.roundRect(QVW - 104, 6, 98, 26, 13); g.fill(); g.fillStyle = '#e8505b'; g.textAlign = 'center'; g.fillText(pw, QVW - 55, 19); }
+    if (touchUI && state === 'play' && (P.t < 6 || touches.size)) {   // 👆 平板：畫面上淡淡的分區提示（開始 6 秒、手指按著的時候）
+      const split = !(easy && !bossZone); g.globalAlpha = .55; g.textAlign = 'center'; g.font = '900 20px sans-serif'; g.fillStyle = '#ffffff'; g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 3;
+      if (split) { g.fillStyle = 'rgba(255,255,255,.12)'; g.fillRect(QVW * .3 - 1, 40, 2, QVH - 40); g.fillRect(QVW * .7 - 1, 40, 2, QVH - 40); g.fillStyle = '#ffffff';
+        [['◀', QVW * .15], ['⤒ 跳', QVW * .5], ['▶', QVW * .85]].forEach(([t2, x2]) => { g.strokeText(t2, x2, QVH - 14); g.fillText(t2, x2, QVH - 14); }); }
+      else { g.strokeText('👆 點畫面跳', QVW / 2, QVH - 14); g.fillText('👆 點畫面跳', QVW / 2, QVH - 14); }
+      g.globalAlpha = 1;
+    }
     if (boss && boss.k === 'cloudking' && boss.alive && bossZone) {   // ☁️ 烏雲大王的血條：三段顏色＝三個階段，扣掉的地方先留白再慢慢縮
       const bw = 180, bx = QVW / 2 - bw / 2, by = 36, u = bw / boss.hpMax;
       g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.roundRect(bx - 66, by - 4, bw + 72, 18, 9); g.fill();
@@ -22761,6 +22861,7 @@ function playQuest(id, opt) {
   };
   const frame = now => {
     if (!live) return;
+    if (paused) { last = now; raf = requestAnimationFrame(frame); return; }   // ⏸ 暫停：畫面停著
     const dt = Math.min(1 / 30, (now - last) / 1000); last = now;
     if (state === 'flag') {   // 抱著旗桿慢慢滑下去，旗子也一起降下來；到底再跳下來
       flag.t += dt; P.t += dt; P.x = flag.it.x - P.w - 1; P.face = 1;
@@ -22790,7 +22891,7 @@ function playQuest(id, opt) {
     raf = requestAnimationFrame(frame);
   };
   raf = requestAnimationFrame(frame);
-  playQuest.test = { pet: () => QP, petSpecial: () => petSpecial(), cloud: () => (boss && boss.k === 'cloudking' ? boss : null), ckHit: en => ckHit(en), rain, bolts, puddles, bossZone: () => bossZone, plats, givePower, shootFire, fbs, inBonus: () => inBonus, down: () => { downBuf = .3; }, P, items, ents, L, keys, solid, tileAt, win: () => { state = 'win'; endT = 0; }, step, frameStep: dt => { last = performance.now() - dt * 1000; frame(performance.now()); }, flag: () => flag, state: () => state, jump: () => { jumpHeld = true; jumpBuf = .15; }, release: () => { jumpHeld = false; } };
+  playQuest.test = { pause: on => setPause(on), paused: () => paused, touches, zoneOf, canvas: c, pet: () => QP, petSpecial: () => petSpecial(), cloud: () => (boss && boss.k === 'cloudking' ? boss : null), ckHit: en => ckHit(en), rain, bolts, puddles, bossZone: () => bossZone, plats, givePower, shootFire, fbs, inBonus: () => inBonus, down: () => { downBuf = .3; }, P, items, ents, L, keys, solid, tileAt, win: () => { state = 'win'; endT = 0; }, step, frameStep: dt => { last = performance.now() - dt * 1000; frame(performance.now()); }, flag: () => flag, state: () => state, jump: () => { jumpHeld = true; jumpBuf = .15; }, release: () => { jumpHeld = false; } };
 }
 /* 打輸了：在大魔王那裡輸的（家長：可以從大魔王關重新開始、難度變低）→ 多一顆「從大魔王開始」，
    每輸一次大王少一滴血、跳得慢一點（最少 1 滴血） */
