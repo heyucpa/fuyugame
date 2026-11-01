@@ -779,6 +779,7 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .daily-hand { pointer-events: auto; cursor: pointer; z-index: 60; }
 .spark-fly { position: fixed; z-index: 90; pointer-events: none; font-size: 20px; transform: translate(-50%, -50%); animation: sparkFly .9s ease-out forwards; }
 @keyframes sparkFly { to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.4); opacity: 0; } }
+.crash-box { width: 100%; height: 220px; font: 12px/1.45 ui-monospace, Consolas, monospace; border: 2px solid var(--line); border-radius: 12px; padding: 8px; box-sizing: border-box; white-space: pre-wrap; }
 .confetti-cv { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 90; pointer-events: none; }   /* 彩帶不擋點擊 */
 .star-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; } .star-slot { display: flex; flex-direction: column; align-items: center; padding: 10px 4px; border-radius: 16px; background: #f1ecf7; border: 2px dashed #c9b8e8; color: #a99ac9; }
 .star-slot.on { background: #fff7d6; border: 2px solid #ffd23f; color: #5a4636; } .star-e { font-size: 34px; } .star-n { font-size: 13px; font-weight: 800; }
@@ -1076,6 +1077,47 @@ button, .card, .place-pick, .lv-btn, .dex-tile, .adv-ep, .gift-opt, .trick-cell,
 </div>
 <div class="toasts" id="toasts"></div>
 <div class="guide-hand" id="guideHand" hidden>👇</div>
+<script>
+/* ===== 📋 當機紀錄（家長：「常常玩一下就當機」，在這邊重現不出來）=====
+   在家裡的機器上記下發生了什麼，家長到「⚙️ 設定 → 📋 當機紀錄」複製給我看：
+   ・JS 錯誤（哪一行、什麼訊息）
+   ・上次沒有正常關掉：每 5 秒記一下「還活著＋剛剛在做什麼」，切到背景／關掉會記「正常離開」；
+     下次打開發現沒有正常離開＝上次可能當掉、或被 iPad 因為記憶體不夠關掉
+   ・畫面停住超過 5 秒又恢復
+   每筆都附上「當時在做什麼」（最近 12 個動作：開哪個分頁、哪個小遊戲、去哪裡）。最多留 30 筆，放這台機器的 localStorage。
+   放在最前面的 <script>：後面的程式載入時出錯也記得到。 */
+var CRASH_KEY = 'myHouse_crashlog', ALIVE_KEY = 'myHouse_alive', crashCrumbs = [], crashHiddenSince = 0;
+function crashCrumb(s) { try { crashCrumbs.push(new Date().toTimeString().slice(0, 8) + ' ' + String(s).slice(0, 60)); if (crashCrumbs.length > 12) crashCrumbs.shift(); } catch (e) {} }
+function crashLogGet() { try { var a = JSON.parse(localStorage.getItem(CRASH_KEY) || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+function crashLog(kind, msg) {
+  try {
+    var a = crashLogGet(), last = a[a.length - 1], m = String(msg || '').slice(0, 300);
+    if (last && last.kind === kind && last.msg === m && Date.now() - last.t < 60000) { last.n = (last.n || 1) + 1; }   // 同一個錯誤一直跳：算次數就好
+    else a.push({ t: Date.now(), kind: kind, msg: m, did: crashCrumbs.slice() });
+    while (a.length > 30) a.shift();
+    localStorage.setItem(CRASH_KEY, JSON.stringify(a));
+  } catch (e) {}
+}
+function crashLogText() {
+  var a = crashLogGet(), ua = navigator.userAgent, dev = /iPad|Macintosh.*Mobile|Macintosh.*Safari(?!.*Chrome)/.test(ua) && navigator.maxTouchPoints > 1 ? 'iPad' : /Windows/.test(ua) ? 'Windows' : /iPhone/.test(ua) ? 'iPhone' : /Android/.test(ua) ? 'Android' : '其他';
+  var head = '【我的小屋 當機紀錄】' + dev + '｜' + (/Edg\//.test(ua) ? 'Edge' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : '?') + '｜螢幕 ' + screen.width + 'x' + screen.height + '｜' + (window.matchMedia && matchMedia('(display-mode: standalone)').matches ? '主畫面 App' : '瀏覽器') + '｜版本 ' + document.lastModified + '\n' + ua + '\n';
+  if (!a.length) return head + '（沒有紀錄）';
+  return head + a.map(function (r, i) { var d = new Date(r.t); return '\n#' + (i + 1) + ' ' + (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.toTimeString().slice(0, 8) + ' 【' + r.kind + '】' + r.msg + (r.n > 1 ? '（' + r.n + ' 次）' : '') + (r.did && r.did.length ? '\n   之前在做：' + r.did.join(' → ') : ''); }).join('\n');
+}
+window.addEventListener('error', function (e) { crashLog('錯誤', (e.message || '?') + (e.lineno ? ' @' + e.lineno + ':' + e.colno : '') + (e.error && e.error.stack ? ' | ' + String(e.error.stack).split('\n').slice(1, 3).join(' ').replace(/\s+/g, ' ') : '')); });
+window.addEventListener('unhandledrejection', function (e) { var r = e.reason; crashLog('錯誤', 'Promise: ' + (r && (r.message || r)) ); });
+(function () {
+  try {
+    var prev = JSON.parse(localStorage.getItem(ALIVE_KEY) || 'null');
+    if (prev && !prev.clean && Date.now() - prev.t < 6 * 3600 * 1000) { crashCrumbs = (prev.did || []).slice(); crashLog('上次沒有正常關掉', '可能當掉、或被系統關掉（iPad 記憶體不夠也會這樣）；最後一次還活著是 ' + new Date(prev.t).toTimeString().slice(0, 8)); crashCrumbs = []; }
+  } catch (e) {}
+  var beat = function (clean) { try { localStorage.setItem(ALIVE_KEY, JSON.stringify({ t: Date.now(), clean: !!clean, did: crashCrumbs.slice(-12) })); } catch (e) {} };
+  beat(false); setInterval(function () { if (!document.hidden) beat(false); }, 5000);
+  document.addEventListener('visibilitychange', function () { if (document.hidden) { crashHiddenSince = Date.now(); beat(true); } else { beat(false); } });
+  window.addEventListener('pagehide', function () { beat(true); });
+  crashCrumb('打開遊戲');
+})();
+</script>
 <script>
 // 遊戲資料：家具、壁紙、地板、魚、擴建價格
 // 家具 parts 單位：x/y/w/d 為格數（可小數），z/h 為像素高度
@@ -5185,6 +5227,18 @@ function newsWhen(n) {
   if (!at) return '';
   const d = new Date(at);
   return `${d.getMonth() + 1} 月 ${d.getDate()} 日`;
+}
+function openCrashLog() {
+  const card = $('#modalCard'); card.classList.remove('game-card', 'in-game'); card.innerHTML = '';
+  card.appendChild(el('h2', '', '📋 當機紀錄'));
+  card.appendChild(note('遊戲當掉、畫面停住、出現錯誤的時候，這台機器會記下來。按「複製」，貼給幫你改遊戲的人看。'));
+  const txt = crashLogText(), box = el('textarea', 'crash-box'); box.value = txt; box.readOnly = true; card.appendChild(box);
+  const cp = el('button', 'big', '📋 複製');
+  cp.onclick = async () => { let ok = false; try { await navigator.clipboard.writeText(txt); ok = true; } catch (e) {} if (!ok) { try { box.select(); ok = document.execCommand('copy'); } catch (e) {} } toast(ok ? '複製好了，可以貼上了！' : '請長按上面的字，自己全選複製'); };
+  const clr = el('button', 'big alt', '🧹 清掉紀錄');
+  clr.onclick = () => { try { localStorage.removeItem(CRASH_KEY); } catch (e) {} openCrashLog(); };
+  const ok = el('button', 'big alt', '好了'); ok.onclick = () => { $('#modal').hidden = true; try { renderTab(); } catch (e) {} };
+  card.append(cp, clr, ok); $('#modal').hidden = false;
 }
 function openNewsHistory() {
   const card = $('#modalCard');
@@ -12081,6 +12135,7 @@ function drawTripLibrary(g, W, H, x) {
 
 // ── 出門、回家 ──
 function travelTo(place) {
+  crashCrumb('出門去 ' + place);
   if (typeof closeIsland === 'function') closeIsland();
   if (G.away && G.away.place === place) return;
   cancelHold(); hideItemMenu();
@@ -13529,6 +13584,7 @@ const loopErrs = new Set();
 (function loop(now) {
   requestAnimationFrame(loop);
   now = now || performance.now();
+  if (now - lastFrame > 5000 && !document.hidden && Date.now() - crashHiddenSince > (now - lastFrame) + 1000) crashLog('畫面停住', `停了 ${((now - lastFrame) / 1000).toFixed(1)} 秒又恢復（跳出確認視窗也會這樣）`);   // 📋 當機紀錄
   const dt = Math.max(0, Math.min(.05, (now - lastFrame) / 1000));
   lastFrame = now;
   try { gameStep(dt, now); }
@@ -14311,6 +14367,7 @@ function leavePetHouse(i) {
 }
 
 function openTab(name) {
+  crashCrumb('分頁 ' + name);
   if (name !== 'save' && typeof parentOkUntil !== 'undefined') parentOkUntil = 0;   // 離開設定頁：重新上鎖
   setBigRoom(false);                  // 放大房間時點了分頁：把面板打開
   if (tab !== name) sellMode = false; // 換分頁就離開賣東西模式
@@ -16014,6 +16071,8 @@ function tabSave(body) {
   const nb = el('button', 'mini', '📜 更新紀錄（以前更新了什麼）');
   nb.onclick = () => openNewsHistory();
   body.appendChild(nb);
+  { const n = crashLogGet().length, cb = el('button', 'mini', `📋 當機紀錄（${n} 筆）`);   // 家長：常常當機 → 記下來複製給開發的人看
+    cb.onclick = () => openCrashLog(); body.appendChild(cb); }
   const sfx = el('button', 'mini', G.noSeasonFx ? '🍂 打開房間後面的季節裝飾' : '🍂 關掉房間後面的季節裝飾（花瓣、落葉、雪）');   // 美編：四季裝飾，嫌眼花可以關
   sfx.onclick = () => { G.noSeasonFx = G.noSeasonFx ? undefined : 1; saveGame(); renderTab(); };
   body.appendChild(sfx);
@@ -16869,6 +16928,7 @@ if (hoursAway >= WELCOME_BACK_HOURS) {
 // ── 共用：開一個遊戲視窗，關掉時清掉計時器與事件 ──
 let gameCleanup = null;
 function openGameWindow(title, howTo) {
+  crashCrumb('開 ' + title);
   closeGameWindow();
   const card = $('#modalCard');
   card.innerHTML = '';
@@ -16906,6 +16966,7 @@ function fitGameDomSoon() { clearTimeout(gameDomFitT); gameDomFitT = setTimeout(
   new MutationObserver(() => { if (c.classList.contains('in-game')) fitGameDomSoon(); }).observe(c, { childList: true, subtree: true });
   window.addEventListener('resize', fitGameDomSoon); })();
 function closeGameWindow() {
+  crashCrumb('關小遊戲');
   if (gameCleanup) { gameCleanup(); gameCleanup = null; }
   $('#modalCard').classList.remove('game-card', 'in-game', 'game-big');
   $('#modal').hidden = true;
@@ -19713,6 +19774,7 @@ function islStartTile(m) {
   return { id: b.id, x: b.door[0], y: b.door[1] };
 }
 function openIsland() {
+  crashCrumb('去小島');
   if (isl) return;
   if (resting) { toast('現在是休息時間喔'); return; }
   cancelHold(); hideItemMenu();
