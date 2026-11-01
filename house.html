@@ -788,6 +788,11 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .quest-pause-t { color: #fff; font-size: 26px; font-weight: 900; text-shadow: 0 2px 4px rgba(0,0,0,.4); }
 .game-canvas { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 .duel-hit { background: linear-gradient(#ffb02e, #ff8a3d); color: #fff; border-color: #e8590c; }
+.dive-modes { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 0 0 10px; }
+.dive-modes-t { width: 100%; text-align: center; font-weight: 700; color: #6d5a48; font-size: 14px; }
+.dive-mode { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 120px; padding: 10px 12px; border-radius: 16px; border: 3px solid #8fd3ff; background: #eaf7ff; font: inherit; cursor: pointer; touch-action: manipulation; }
+.dive-mode b { font-size: 17px; } .dive-mode span { font-size: 12px; color: #6d7a88; }
+.quest-btn.dive-pose { min-width: 58px; font-size: 26px; }
 .confetti-cv { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 90; pointer-events: none; }   /* 彩帶不擋點擊 */
 .star-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; } .star-slot { display: flex; flex-direction: column; align-items: center; padding: 10px 4px; border-radius: 16px; background: #f1ecf7; border: 2px dashed #c9b8e8; color: #a99ac9; }
 .star-slot.on { background: #fff7d6; border: 2px solid #ffd23f; color: #5a4636; } .star-e { font-size: 34px; } .star-n { font-size: 13px; font-weight: 800; }
@@ -4883,6 +4888,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-07T20:00', title: '🌊 跳水多了 3 種玩法！', lines: [
+    ['💣', '大水花比賽：在空中按住抱成一顆球，水花越大越高分，旁邊的朋友會被噴得全身濕！'],
+    ['🎯', '跳進泳圈：看準力量條再跳，跳進泳圈得分，金色小鴨泳圈最高分'],
+    ['🤪', '搞笑姿勢：在空中擺大字、紅鶴、鴨子、火箭，換越多姿勢大家笑越大聲！']
+  ] },
   { id: '2026-11-06T20:00', title: '👑 挑戰教練＋🌏 世界大賽', lines: [
     ['👑', '考到黑帶，就可以挑戰熊熊教練！教練會放必殺技「熊熊大地震」，打贏就是道館冠軍'],
     ['🌏', '道館不定時會舉辦世界跆拳道大賽：第一輪、準決賽、決賽，拿金牌當世界冠軍！'],
@@ -21325,7 +21335,146 @@ function playDive(w) {
    不按也可以：會自己轉半圈頭朝下入水（最基本的跳水）。翻越多圈分數越高，但要記得在入水前放開。
    三位動物評審舉牌打分數（1～10），跳 3 次加起來。 */
 const DIVE_LEVELS = [{ name: '3 公尺', fall: 1.5, spin: 1.3, tol: .95, assist: .8, mul: 1 }, { name: '5 公尺', fall: 1.85, spin: 1.6, tol: .75, assist: .45, mul: 2 }, { name: '10 公尺！', fall: 2.25, spin: 1.9, tol: .55, assist: 0, mul: 3 }];
-function openJumpDive() { const w = openGameWindow('🌊 跳水', '按「跳！」跳出去；在空中「按住」會抱膝翻滾，「放開」身體伸直。入水時頭朝下、身體直直的最漂亮！'); pickLevelRow(w, DIVE_LEVELS, L => `翻越多圈越高分`, L => playJumpDive(w, L)); }
+function openJumpDive() {
+  const w = openGameWindow('🌊 跳水', '按「跳！」跳出去；在空中「按住」會抱膝翻滾，「放開」身體伸直。入水時頭朝下、身體直直的最漂亮！');
+  pickLevelRow(w, DIVE_LEVELS, L => `翻越多圈越高分`, L => playJumpDive(w, L));
+  // 家長：跳水可以多些玩法，她們很愛玩 → 上面多一排「其他玩法」
+  const row = el('div', 'dive-modes'); row.appendChild(el('div', 'dive-modes-t', '🏅 花式跳水（下面選高度）　或玩別的：'));
+  DIVE_MODES.forEach(m => { const b = el('button', 'dive-mode'); b.append(el('b', '', m.icon + ' ' + m.name), el('span', '', m.sub)); b.onclick = () => { Sound.play('click'); openDiveMode(m.id); }; row.appendChild(b); });
+  w.stage.insertBefore(row, w.stage.firstChild);
+}
+/* 🌊 跳水的其他玩法（家長：跳水可以多些玩法，她們很愛玩）
+   💣 大水花比賽：在空中按住抱成一顆球（炸彈跳），越高、抱越久水花越大，旁邊的朋友會被噴得全身濕；比三跳，最大的水花算分
+   🎯 跳進泳圈：水上漂著泳圈（金色小鴨泳圈最高分），力量條左右跑，按下去決定跳多遠，跳進泳圈裡得分；跳 5 次
+   🤪 搞笑姿勢：在空中一直按姿勢按鈕（⭐ 大字、🦩 紅鶴、🦆 鴨子、🚀 火箭），換越多不一樣的姿勢，朋友笑越大聲、分數越高；跳 3 次 */
+const DIVE_MODES = [
+  { id: 'bomb', icon: '💣', name: '大水花比賽', sub: '抱成球，噴濕大家！', how: '按「跳！」跳出去，在空中「按住」抱成一顆球。越高、抱越久，入水的水花越大！' },
+  { id: 'ring', icon: '🎯', name: '跳進泳圈', sub: '看準了再跳！', how: '力量條左右跑，按「跳！」決定跳多遠。跳進泳圈裡得分，金色小鴨泳圈最高分！' },
+  { id: 'pose', icon: '🤪', name: '搞笑姿勢', sub: '在空中擺姿勢', how: '跳出去以後一直按下面的姿勢按鈕：⭐ 大字、🦩 紅鶴、🦆 鴨子、🚀 火箭。換越多不一樣的，大家笑越大聲！' }
+];
+const DIVE_POSES = [['star', '⭐', '大字'], ['flamingo', '🦩', '紅鶴'], ['duck', '🦆', '鴨子'], ['rocket', '🚀', '火箭']];
+function openDiveMode(id) {
+  const m = DIVE_MODES.find(x => x.id === id) || DIVE_MODES[0];
+  const w = openGameWindow(`${m.icon} ${m.name}`, m.how);
+  pickLevelRow(w, DIVE_LEVELS, L => id === 'ring' ? '越高越難跳準' : '越高越厲害', L => playDiveFun(w, L, id));
+  const back = el('button', 'mini', '↩️ 換別的跳水玩法'); back.onclick = () => openJumpDive(); w.stage.appendChild(back);
+}
+function playDiveFun(w, L, mode) {
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const W = 480, H = 300, { g } = gameCanvas(w.stage, W, H);
+  const pad = el('div', 'quest-pad'); w.stage.appendChild(pad);
+  const bGo = el('button', 'quest-btn qb-j', '🌊 跳！'); pad.append(bGo);
+  const poseBtns = mode === 'pose' ? DIVE_POSES.map(([k, ic, nm]) => { const b = el('button', 'quest-btn dive-pose', ic); b.title = nm; b.disabled = true; b.addEventListener('pointerdown', e => { e.preventDefault(); doPose(k); }); pad.appendChild(b); return b; }) : [];
+  leaveButton(w);
+  const WATER = 236, PX = 118, PY = WATER - 40 - L.fall * 62, fans = NEIGHBORS.filter(Boolean).slice().sort(() => Math.random() - .5).slice(0, 3);
+  const N = mode === 'ring' ? 5 : 3, airT = L.fall * (mode === 'pose' ? 1.45 : 1);
+  let n = 0, total = 0, best = 0, ph = 'stand', t0 = performance.now(), last = t0, raf = 0, live = true, held = false, tuckT = 0, x = PX, y = PY, rot = 0, tx = W * .62;
+  let drops = [], rings = [], col = null, msg = '', msgT = 0, power = 0, pdir = 1, wet = 0, laugh = 0, pose = null, poseAt = 0, poses = [], cheer = '';
+  const RX0 = W * .36, RX1 = W - 160;   // 泳圈漂的範圍（右邊是朋友站的地方）
+  const floats = mode === 'ring' ? [{ x: W * .42, v: 34, r: 30, pts: 1, c: '#ff6b9a' }, { x: W * .58, v: -46, r: 22, pts: 3, c: '#4fb0ff' }, { x: W * .5, v: 60, r: 16, pts: 5, c: '#ffd23f', duck: true }] : [];
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); document.removeEventListener('keyup', ku); };
+  w.status.textContent = `第 1 / ${N} 跳`;
+  const say = (m2, s2) => { msg = m2; msgT = s2 || 2.2; };
+  const go = () => {
+    if (!live) return;
+    if (ph === 'stand') {
+      if (mode === 'ring') tx = PX + 60 + power * (W - 150 - PX - 60); else tx = W * .62;
+      ph = 'air'; t0 = performance.now(); rot = 0; held = false; tuckT = 0; poses = []; pose = null; Sound.play('jump');
+      bGo.textContent = mode === 'bomb' ? '💣 按住抱成球' : mode === 'pose' ? '🤸' : '🌊'; poseBtns.forEach(b => { b.disabled = false; b.classList.add('glow'); }); return;
+    }
+    if (ph === 'air' && mode === 'bomb') held = true;
+  };
+  const up = () => { held = false; };
+  function doPose(k) { if (ph !== 'air') return; pose = k; poseAt = performance.now(); poses.push(k); laugh = Math.min(1, laugh + .25); Sound.play(['boing', 'perfect', 'squish', 'whoosh'][DIVE_POSES.findIndex(p2 => p2[0] === k)] || 'boing'); const nm = DIVE_POSES.find(p2 => p2[0] === k); cheer = `${nm[1]} ${nm[2]}！`; }
+  const kd = e => { if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'Enter') { e.preventDefault(); if (!e.repeat) go(); } const ix = ['Digit1', 'Digit2', 'Digit3', 'Digit4'].indexOf(e.code); if (ix >= 0 && mode === 'pose') doPose(DIVE_POSES[ix][0]); };
+  const ku = e => { if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'Enter') up(); };
+  document.addEventListener('keydown', kd); document.addEventListener('keyup', ku);
+  bGo.addEventListener('pointerdown', e => { e.preventDefault(); go(); }); ['pointerup', 'pointerleave', 'pointercancel'].forEach(k => bGo.addEventListener(k, up));
+  const splash = (k, hgt) => { for (let i = 0; i < k; i++) drops.push({ x: x + (Math.random() - .5) * 24, y: WATER, vx: (Math.random() - .5) * (2 + hgt / 40), vy: -2 - Math.random() * (1.5 + hgt / 25), r: 1.5 + Math.random() * 2.4 }); rings.push({ r: 4, a: 1 }); };
+  const enter = () => {
+    ph = 'water'; t0 = performance.now(); bGo.disabled = true; poseBtns.forEach(b => { b.disabled = true; b.classList.remove('glow'); });
+    let pts = 0;
+    if (mode === 'bomb') {
+      const ball = held ? .55 + .45 * Math.min(1, tuckT / .9) : .22, hgt = Math.round(40 + 150 * ball * (L.fall / 2.25) + Math.random() * 14);
+      col = { h: hgt, t: 0 }; splash(Math.round(hgt / 4), hgt); Sound.play(held ? 'crack' : 'splash'); setTimeout(() => Sound.play('splash'), 120);
+      const m2 = (hgt / 40).toFixed(1); pts = Math.round(hgt / 6); best = Math.max(best, hgt);
+      if (hgt > 120) { wet = 3; say(`💣 炸彈跳！水花 ${m2} 公尺！朋友全身濕透了！`); try { speak('好大的水花！'); } catch (e) {} }
+      else if (held) { wet = 1.5; say(`水花 ${m2} 公尺！抱久一點會更大！`); } else say(`水花 ${m2} 公尺～在空中按住抱成球！`);
+    } else if (mode === 'ring') {
+      const hit = floats.find(f => Math.abs(f.x - x) < f.r);
+      splash(hit ? 10 : 18, 40); Sound.play('splash');
+      if (hit) { pts = hit.pts; hit.wob = 1; say(hit.duck ? '🦆 跳進金色小鴨泳圈！+5！' : `跳進泳圈了！+${hit.pts}`); Sound.play(hit.duck ? 'fanfare' : 'perfect'); }
+      else say('差一點點～看泳圈漂到哪裡再跳！');
+    } else {
+      const kinds = new Set(poses).size; pts = Math.min(12, poses.length) + kinds * 2 + (kinds === 4 ? 4 : 0);
+      splash(16, 40); Sound.play('splash');
+      say(poses.length ? `${poses.length} 個姿勢、${kinds} 種不一樣！${kinds === 4 ? '全部都擺了！🤣' : ''}` : '在空中按姿勢按鈕擺姿勢！'); if (kinds >= 3) try { speak('哈哈哈，好好笑！'); } catch (e) {}
+    }
+    total += pts;
+    setTimeout(() => { if (!live) return; n++; if (n >= N) return finish(); ph = 'stand'; x = PX; y = PY; rot = 0; col = null; pose = null; bGo.disabled = false; bGo.textContent = '🌊 跳！'; w.status.textContent = `第 ${n + 1} / ${N} 跳　目前 ${total} 分`; }, 2600);
+  };
+  const finish = () => {
+    gameCleanup(); gameCleanup = null; const bells = payReward(w, Math.round(total * 4 * L.mul));
+    const head = mode === 'bomb' ? `最大的水花 ${(best / 40).toFixed(1)} 公尺！` : mode === 'ring' ? `跳 ${N} 次，` : '大家笑翻了！';
+    w.status.textContent = `${head}一共 ${total} 分！💰 +${fmt(bells)}`; try { speak(`一共${total}分！`); } catch (e) {} kidMoodUp(8); saveGame();
+    gameButtons(w, () => openDiveMode(mode));
+    const other = el('button', 'big alt', '🌊 換別的跳水玩法'); other.onclick = () => openJumpDive(); w.btns.insertBefore(other, w.btns.lastChild);
+  };
+  const kid = (px, py, r, tuck, ps) => {
+    g.save(); g.translate(px, py - 26); g.rotate(r);
+    if (ps === 'star') g.scale(1.3, .85); else if (ps === 'flamingo') g.rotate(.35); else if (ps === 'duck') g.scale(1.1, .8); else if (ps === 'rocket') g.scale(.75, 1.25);
+    g.translate(0, 26); g.scale(.95, .95);
+    if (kidBaby()) drawBabyKid(g, { t: performance.now() / 1000 }); else drawGirl(g, { t: performance.now() / 1000, blink: false, outfit: currentOutfit(), face: ps || tuck ? 'joy' : 'joy', sit: tuck, stage: kidLookStage() });
+    g.restore();
+    if (tuck && mode === 'bomb') { g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 2; g.beginPath(); g.arc(px, py - 20, 22 + Math.sin(performance.now() / 60) * 2, 0, 7); g.stroke(); }
+    if (ps) { const ic = DIVE_POSES.find(p2 => p2[0] === ps)[1]; g.font = '20px sans-serif'; g.textAlign = 'center'; g.fillText(ic, px + 26, py - 40); if (ps === 'rocket') { g.fillStyle = '#ff8a3d'; g.beginPath(); g.moveTo(px - 6, py + 2); g.lineTo(px, py + 16 + Math.random() * 6); g.lineTo(px + 6, py + 2); g.fill(); } if (ps === 'star') { g.fillText('✨', px - 26, py - 30); } }
+  };
+  const tick = now => {
+    if (!live) return;
+    const dt = Math.min(.05, (now - last) / 1000); last = now; const T = now / 1000; msgT -= dt; wet = Math.max(0, wet - dt); laugh = Math.max(0, laugh - dt * .25);
+    if (ph === 'stand' && mode === 'ring') { power += pdir * dt * (.55 + L.mul * .15); if (power > 1) { power = 1; pdir = -1; } if (power < 0) { power = 0; pdir = 1; } }
+    floats.forEach(f => { f.x += f.v * dt; if ((f.x < RX0 && f.v < 0) || (f.x > RX1 && f.v > 0)) f.v = -f.v; f.wob = Math.max(0, (f.wob || 0) - dt); });
+    if (ph === 'air') {
+      const t = (now - t0) / 1000, k = Math.min(1, t / airT);
+      x = PX + (tx - PX) * k; y = PY + (WATER + 10 - PY) * k * k - Math.sin(Math.min(1, k * 2.2) * Math.PI) * 26;
+      if (mode === 'bomb') { if (held) { tuckT += dt; rot += dt * 3; } else rot += (Math.PI / airT) * dt * .5; }
+      else if (mode === 'ring') rot = Math.sin(k * Math.PI) * .3;
+      else rot = Math.sin(t * 2) * .15;
+      if (k >= 1) enter();
+    }
+    // 場景
+    const sky = g.createLinearGradient(0, 0, 0, WATER); sky.addColorStop(0, '#9fd8ff'); sky.addColorStop(1, '#e8f7ff'); g.fillStyle = sky; g.fillRect(0, 0, W, WATER);
+    g.fillStyle = '#cfd6dd'; g.fillRect(PX - 70, PY + 4, 18, WATER - PY); g.fillStyle = '#e8eef3'; g.fillRect(PX - 90, PY, 98, 8); g.fillStyle = '#2f8fe0'; g.fillRect(PX - 90, PY - 2, 98, 3);
+    g.fillStyle = '#fff'; g.font = '700 11px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillText(L.name, PX - 60, PY + 22);
+    g.fillStyle = '#5cc4ec'; g.fillRect(0, WATER, W, H - WATER); g.fillStyle = '#e9e1d2'; g.fillRect(0, WATER - 3, W, 3);
+    g.strokeStyle = 'rgba(255,255,255,.6)'; g.lineWidth = 1.5; for (let i = 0; i < W; i += 30) { g.beginPath(); g.moveTo(i + Math.sin(T + i) * 3, WATER + 16); g.lineTo(i + 14 + Math.sin(T + i) * 3, WATER + 16); g.stroke(); }
+    // 泳圈
+    floats.forEach(f => { const wb = Math.sin(T * 12) * (f.wob || 0) * 3; g.lineWidth = 7; g.strokeStyle = f.c; g.beginPath(); g.ellipse(f.x, WATER + 4 + wb, f.r, f.r * .32, 0, 0, 7); g.stroke(); g.lineWidth = 7; g.strokeStyle = '#fff'; [0, Math.PI / 2, Math.PI, Math.PI * 1.5].forEach(a => { g.beginPath(); g.ellipse(f.x, WATER + 4 + wb, f.r, f.r * .32, 0, a, a + .3); g.stroke(); });
+      g.font = '700 11px sans-serif'; g.fillStyle = '#3a3240'; g.textAlign = 'center'; g.fillText(f.duck ? '🦆 +5' : `+${f.pts}`, f.x, WATER - 10 + wb); });
+    // 朋友（看台）：被噴濕、笑
+    fans.forEach((j, i) => { const jx = W - 120 + i * 42, jy = WATER - 2; trackRunner(g, j, jx, jy, .9, T, false, -1);
+      if (wet > 0) { g.font = '14px sans-serif'; g.textAlign = 'center'; g.fillText(['💦', '😆', '💦'][i], jx, jy - 52 - Math.sin(T * 8 + i) * 3); g.fillStyle = 'rgba(120,190,240,.5)'; for (let k2 = 0; k2 < 4; k2++) { g.beginPath(); g.arc(jx - 8 + k2 * 5, jy - 40 + ((T * 60 + k2 * 9) % 30), 1.6, 0, 7); g.fill(); } }
+      else if (laugh > .2 || (ph === 'water' && mode === 'pose')) { g.font = '14px sans-serif'; g.textAlign = 'center'; g.fillText(laugh > .6 ? '🤣' : '😆', jx, jy - 52 - Math.abs(Math.sin(T * 10 + i)) * 5); } });
+    // 小可愛
+    if (ph === 'stand') kid(PX, PY, 0, false, null);
+    else if (ph === 'air') kid(x, y, rot, mode === 'bomb' && held, mode === 'pose' && pose && now - poseAt < 2500 ? pose : null);
+    else if (ph === 'water') { const t = (now - t0) / 1000; if (t > 1.1) { g.save(); g.beginPath(); g.rect(0, 0, W, WATER + 1); g.clip(); kid(x, WATER + 34 - Math.min(1, (t - 1.1) / .5) * 16, 0, false, null); g.restore(); } }
+    // 💣 水柱
+    if (col) { col.t += dt; const hh = col.h * Math.sin(Math.min(1, col.t / .9) * Math.PI); if (hh > 1) { const gr = g.createLinearGradient(0, WATER - hh, 0, WATER); gr.addColorStop(0, 'rgba(255,255,255,.95)'); gr.addColorStop(1, 'rgba(160,220,255,.8)'); g.fillStyle = gr; g.beginPath(); g.moveTo(x - 18, WATER); g.quadraticCurveTo(x - 10, WATER - hh * .6, x - 4, WATER - hh); g.lineTo(x + 4, WATER - hh); g.quadraticCurveTo(x + 10, WATER - hh * .6, x + 18, WATER); g.fill();
+      if (col.t < 1.2) { g.fillStyle = '#1971c2'; g.font = '900 14px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillText(`${(col.h / 40).toFixed(1)} m`, x + 34, WATER - hh); } } }
+    rings.forEach(r => { r.r += 1.2; r.a -= .015; if (r.a > 0) { g.strokeStyle = `rgba(255,255,255,${r.a})`; g.lineWidth = 2; g.beginPath(); g.ellipse(x, WATER + 2, r.r, r.r * .3, 0, 0, Math.PI * 2); g.stroke(); } }); rings = rings.filter(r => r.a > 0);
+    drops.forEach(d => { d.x += d.vx; d.y += d.vy; d.vy += .18; g.fillStyle = 'rgba(255,255,255,.95)'; g.beginPath(); g.arc(d.x, d.y, d.r, 0, Math.PI * 2); g.fill(); }); drops = drops.filter(d => d.y < WATER + 2);
+    // 🎯 力量條＋落點
+    if (mode === 'ring' && ph === 'stand') { const bx = W / 2 - 110; g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(bx, 16, 220, 16); const gr2 = g.createLinearGradient(bx, 0, bx + 220, 0); gr2.addColorStop(0, '#7bd389'); gr2.addColorStop(1, '#ff6b6b'); g.fillStyle = gr2; g.fillRect(bx + 2, 18, 216 * power, 12);
+      g.fillStyle = '#fff'; g.font = '700 11px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillText('力量：按「跳！」', W / 2, 46); const lx = PX + 60 + power * (W - 150 - PX - 60); g.strokeStyle = 'rgba(255,255,255,.9)'; g.setLineDash([4, 4]); g.beginPath(); g.moveTo(lx, WATER - 30); g.lineTo(lx, WATER + 10); g.stroke(); g.setLineDash([]); g.fillText('⬇', lx, WATER - 34); }
+    if (ph === 'stand' && mode !== 'ring') { g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(W / 2 - 110, 14, 220, 26); g.fillStyle = '#fff'; g.font = '700 13px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillText('按「跳！」跳出去', W / 2, 32); }
+    if (ph === 'air') { const tip = mode === 'bomb' ? (held ? '抱緊緊～💣' : '按住抱成一顆球！') : mode === 'pose' ? (cheer || '快按下面的姿勢按鈕！') : '飛～'; g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(W / 2 - 120, 14, 240, 26); g.fillStyle = '#fff'; g.font = '700 13px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillText(tip, W / 2, 32); }
+    if (msgT > 0 && msg) arenaMsg(g, W, msg, 70);
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+  playDiveFun.test = { go, up, doPose, st: () => ({ ph, n, total, best, held, tuckT, power, x, poses: poses.slice() }), floats, setPower: v => { power = v; pdir = 0; } };
+}
 function playJumpDive(w, L) {
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   const W = 480, H = 300, { g } = gameCanvas(w.stage, W, H);
