@@ -14546,17 +14546,12 @@ function hintShown() { const st = $('.stage'); if (!st || !$('#hint')) return fa
    - 家長密碼：設了之後，關掉提醒、改時間、提早結束休息都要輸入密碼。
    這些是「這台裝置」的設定（記在瀏覽器），不是存檔的一部分，換存檔格也一樣有效。 */
 const REST_CFG_KEY = 'myHouse_restCfg', REST_STATE_KEY = 'myHouse_restState';
-/* 家長：預設玩十分鐘就強制休息一分鐘，不論有沒有設定 → 最多玩 10 分鐘、至少休息 1 分鐘，關不掉；
-   設定只能「更嚴」：玩 5 分鐘、或休息久一點。以前存的「關掉」「玩 20 分鐘」都會被拉回 10 分鐘。 */
-const REST_MAX_PLAY = 10, REST_MIN_BREAK = 1;
-const REST_PLAY_OPTS = [5, 10], REST_BREAK_OPTS = [1, 3, 5, 10, 15];
+const REST_PLAY_OPTS = [10, 15, 20, 30, 45, 60], REST_BREAK_OPTS = [3, 5, 10, 15];
 const REST_GRACE_MS = 3 * 60000, REST_WARN_S = 120;
 function restCfg() {
   let c = null;
   try { c = JSON.parse(lsGet(REST_CFG_KEY) || 'null'); } catch (e) { c = null; }
-  const r = Object.assign({ on: true, play: REST_MAX_PLAY, rest: REST_MIN_BREAK, pin: '' }, c || {});
-  r.on = true; r.play = Math.min(REST_MAX_PLAY, Math.max(1, +r.play || REST_MAX_PLAY)); r.rest = Math.max(REST_MIN_BREAK, +r.rest || REST_MIN_BREAK);   // 一定要休息
-  return r;
+  return Object.assign({ on: true, play: 20, rest: 5, pin: '' }, c || {});
 }
 function saveRestCfg(c) { lsSet(REST_CFG_KEY, JSON.stringify(c)); }
 function restState() {
@@ -14567,7 +14562,6 @@ function restState() {
 function saveRestState(s) { lsSet(REST_STATE_KEY, JSON.stringify(s)); }
 // 用 var：畫面的 loop 在載入時就先跑第一格（比這一行早），let 會在那時候丟錯、讓整段程式停掉
 var resting = false, restUnlocked = false;
-var REST_TEST_OFF = false;   // 只有自動測試會打開（跑很久的測試不要被休息畫面擋住）；畫面上沒有任何地方能改
 // 這次打開遊戲之後做了什麼（給休息畫面的「今天做了」用；不存檔）
 var sessionLog = { acts: {}, newThings: [], placed: 0, earned0: null, met: [] };
 
@@ -14575,7 +14569,6 @@ var sessionLog = { acts: {}, newThings: [], placed: 0, earned0: null, met: [] };
 function restTick(now, visible) {
   now = now || Date.now();
   updatePauseBadge(now);   // 提醒關掉時下面會提早 return，徽章還是要更新
-  if (REST_TEST_OFF) return;
   const c = restCfg(), s = restState();
   if (s.restUntil > now) { showRest(s.restUntil); return; }
   if (resting) endRest();
@@ -14767,7 +14760,9 @@ function readPin(msg, cb, opts) {
 function restSettings(body) {
   const c = restCfg();
   body.appendChild(h3('⏰ 休息提醒（家長設定）'));
-  body.appendChild(note(`現在：連續玩 ${c.play} 分鐘，就休息 ${c.rest} 分鐘。一定會休息，關不掉（最多玩 ${REST_MAX_PLAY} 分鐘、至少休息 ${REST_MIN_BREAK} 分鐘）；下面只能改得更嚴。` + (c.pin ? '已經設了家長密碼。' : '建議設一個家長密碼，小朋友才不會自己改。')));
+  body.appendChild(note(c.on
+    ? `現在：連續玩 ${c.play} 分鐘，就休息 ${c.rest} 分鐘。` + (c.pin ? '已經設了家長密碼。' : '建議設一個家長密碼，小朋友才不會自己關掉。')
+    : '現在：休息提醒是關掉的。'));
   const row = (label, opts, cur, set) => {
     const r = el('div', 'filter themes');
     r.appendChild(el('span', 'flabel', label));
@@ -14778,8 +14773,11 @@ function restSettings(body) {
     });
     body.appendChild(r);
   };
-  row('玩幾分鐘', REST_PLAY_OPTS, c.play, (c2, v) => { c2.play = v; });
-  row('休息幾分鐘', REST_BREAK_OPTS, c.rest, (c2, v) => { c2.rest = v; });
+  row('提醒', ['開', '關'], c.on ? '開' : '關', (c2, v) => { c2.on = v === '開'; });
+  if (c.on) {
+    row('玩幾分鐘', REST_PLAY_OPTS, c.play, (c2, v) => { c2.play = v; });
+    row('休息幾分鐘', REST_BREAK_OPTS, c.rest, (c2, v) => { c2.rest = v; });
+  }
   const pinBtn = el('button', 'mini', c.pin ? '🔑 改家長密碼' : '🔑 設定家長密碼');
   pinBtn.onclick = () => askPin('修改家長密碼', setNewPin);
   body.appendChild(pinBtn);
