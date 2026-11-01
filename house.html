@@ -26980,7 +26980,9 @@ function speak(text, voiceOverride, asked) {
     const u = new SpeechSynthesisUtterance(String(text).replace(/[「」]/g, ''));
     const v = voiceOverride || pickZhVoice();
     u.lang = v ? v.lang : 'zh-TW'; if (v) u.voice = v;
-    u.rate = .9; u.pitch = 1.1;
+    // 家長：iPad 的美佳聽起來像大陸腔（iPad 只給網頁美佳、善怡、婷婷三個中文聲音，Siri 的聲音用不到）→ 美佳用正常音高、慢一點點比較自然；其他聲音照舊
+    const apple = v && /美佳|mei-?jia/i.test(v.name);
+    u.rate = apple ? .85 : .9; u.pitch = apple ? 1 : 1.1;
     speechSynthesis.speak(u);
     return true;
   } catch (e) { return false; }
