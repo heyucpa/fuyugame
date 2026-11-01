@@ -21646,6 +21646,9 @@ const TKD_SPECIALS = [
   { name: '黑龍波', fx: '🐉', c: '#26232a', c2: '#c9b8ff' }
 ];
 const tkdSpecialName = mv => charName() + mv.name;
+/* 🎲 家長：必殺技可以隨機使用 → 每次放必殺技從六招裡隨機挑一招（不會連續兩次同一招），腰帶還沒到的招也會出現 */
+let tkdLastMove = null;
+function tkdRandomMove() { const pool = TKD_SPECIALS.filter(m => m !== tkdLastMove); tkdLastMove = pool[Math.floor(Math.random() * pool.length)]; return tkdLastMove; }
 function tkdLearned() { return TKD_SPECIALS.slice(0, Math.min(TKD_SPECIALS.length, (tkdState().belt || 0) + 1)); }
 // 必殺技特寫：畫面變暗、放射線、小可愛大頭、招式名稱（k：0～1 出場進度）
 function tkdSpecialCut(g, W, H, mv, k, t) {
@@ -21757,7 +21760,7 @@ function playSpar(w, L, who) {
   };
   const special = () => {   // 💥 放必殺技：特寫 1 秒 → 招式飛過去 → 一次得 2 分
     if (!live || state !== 'fight' || ki < 100) return;
-    const list = tkdLearned(); spMv = list[spN % list.length]; spN++; ki = 0; addKi(0); bSp.classList.remove('spar-on');
+    spMv = tkdRandomMove(); spN++; ki = 0; addKi(0); bSp.classList.remove('spar-on');
     state = 'special'; spAt = performance.now(); spHit = false; cue = null; Sound.play('magic'); try { speak(tkdSpecialName(spMv) + '！'); } catch (e) {}
   };
   bKick.onclick = () => press('kick'); bBlock.onclick = () => press('block'); bSp.onclick = special;
@@ -25937,7 +25940,7 @@ function playDuel(w, who, opt) {
     if (!live || S.phase !== 'choose') return;
     if (kind === 'sp' && S.ki < 100) return;
     S.myAct = kind; S.phase = 'me'; S.at = performance.now(); ui();
-    if (kind === 'sp') { const list = tkdLearned(); S.spMv = list[(st.win + st.lose + S.turn) % list.length]; S.ki = 0; Sound.play('magic'); try { speak(tkdSpecialName(S.spMv) + '！'); } catch (e) {} }
+    if (kind === 'sp') { S.spMv = tkdRandomMove(); S.ki = 0; Sound.play('magic'); try { speak(tkdSpecialName(S.spMv) + '！'); } catch (e) {} }
     else if (kind === 'hit') { Sound.play('whoosh'); S.anim = { who: 'me', k: 'hit', at: performance.now() }; }
     else { Sound.play('click'); S.anim = { who: 'me', k: 'block', at: performance.now() }; }
   };

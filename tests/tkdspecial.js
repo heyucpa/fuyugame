@@ -16,11 +16,12 @@ const path = require('path');
     const S = playSpar.test; o.btnOff = document.querySelector('.spar-sp').disabled;
     S.special(); o.notYet = S.state() === 'fight';
     S.setKi(100); await wait(50); o.btnOn = !document.querySelector('.spar-sp').disabled;
-    const me0 = S.score()[0]; S.special(); o.cut = S.state() === 'special' && S.mv().name === '旋風踢';
+    const me0 = S.score()[0]; S.special(); o.cut = S.state() === 'special' && TKD_SPECIALS.includes(S.mv());   /* 家長：必殺技隨機使用 */
     await wait(3000); o.two = S.score()[0] >= me0 + 2 || S.state() === 'end'; o.kiReset = S.ki() < 100;
     closeGameWindow();
     // 黑帶：學會 6 招，輪流用
     G.tkd.belt = 5; o.learned5 = tkdLearned().length === 6;
+    { const seen = new Set(); let prev = null, rep = false; for (let i = 0; i < 60; i++) { const m = tkdRandomMove(); if (m === prev) rep = true; prev = m; seen.add(m.name); } o.random = seen.size >= 5 && !rep; }
     openSparGame(); document.querySelectorAll('.lv-row button')[0].click();
     for (let i = 0; i < 40 && playSpar.test.state() !== 'fight'; i++) await wait(100);
     const names = []; for (let k = 0; k < 2; k++) { playSpar.test.setKi(100); playSpar.test.special(); names.push(playSpar.test.mv().name); await wait(2900); if (playSpar.test.state() === 'end') break; }
