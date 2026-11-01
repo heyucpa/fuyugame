@@ -13192,8 +13192,9 @@ function thumb(def) {
 }
 
 // ── 畫面 ──
+var canvasBox = null;   // 畫布的大小（computeView 用）；大小變了 ResizeObserver 會叫 resize 重新量
 function resize() {
-  const r = canvas.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  const r = canvasBox = canvas.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
   canvas.width = Math.max(1, Math.round(r.width * dpr));
   canvas.height = Math.max(1, Math.round(r.height * dpr));
   requestDraw();
@@ -13201,7 +13202,7 @@ function resize() {
 new ResizeObserver(resize).observe(canvas);
 
 function computeView() {
-  const room = curRoom(), r = canvas.getBoundingClientRect();
+  const room = curRoom(), r = canvasBox || (canvasBox = canvas.getBoundingClientRect());   // 只用寬高：存起來，不要每一格畫面都量一次（會逼瀏覽器重排版面，舊電腦、iPad 會卡）
   const minX = iso(0, room.d).x - 30, maxX = iso(room.w, 0).x + 30;
   const minY = iso(0, 0, WALL_H).y - 20, maxY = iso(room.w, room.d).y + 40;
   const hintH = hintShown() ? 50 : 12; // 提示條收起來，房間就可以往下長
@@ -13968,7 +13969,7 @@ $('#pcToggle').onclick = () => {
 const isTouchDevice = () => window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
 
 function updateHoldUI() {
-  $('.stage').classList.toggle('holding', !!hold);
+  $('.stage').classList.toggle('holding', !!hold);   canvasBox = null;   // 版面變了：畫布大小重新量
   $('#holdActions').hidden = !hold;
   const onWall = hold && hold.def.layer === 'wall', touch = isTouchDevice();
   $('#btnRotate').firstChild.textContent = onWall ? '↻ 換牆' : '↻ 旋轉';
@@ -14362,7 +14363,7 @@ function updatePauseBadge(now) {
 function setBigRoom(on) {
   const was = document.body.classList.contains('bigroom');
   if (was === !!on) return;
-  document.body.classList.toggle('bigroom', !!on);
+  document.body.classList.toggle('bigroom', !!on);   canvasBox = null;   // 版面變了：畫布大小重新量
   const b = $('#btnZoom');
   if (b) b.textContent = on ? '🔍 縮小' : '🔍 放大';
   lsSet(BIG_KEY, on ? '1' : '0');
@@ -14383,12 +14384,13 @@ const hintRuns = Number(lsGet(HINT_KEY) || 0) + 1;
 lsSet(HINT_KEY, String(hintRuns));
 // 收起平常那句提示（房間跟著變大）；拿著家具時 CSS 還是會顯示
 function hideIdleHint() {
-  $('.stage').classList.add('hint-off');
+  $('.stage').classList.add('hint-off');   canvasBox = null;   // 版面變了：畫布大小重新量
   try { computeView(); requestDraw(); } catch (e) {}
 }
 if (hintRuns > HINT_RUNS) $('.stage').classList.add('hint-off');
 else setTimeout(hideIdleHint, HINT_SHOW_MS);
-function hintShown() { const h = $('#hint'); return !!(h && h.offsetParent); }
+// 提示條看不看得到：照 CSS 的規則看 class 就好（本來用 offsetParent，每一格畫面都逼瀏覽器重排版面，舊電腦、iPad 會卡）
+function hintShown() { const st = $('.stage'); if (!st || !$('#hint')) return false; if (st.classList.contains('hint-off') && !st.classList.contains('holding')) return false; return !document.querySelector('.island-on'); }
 
 /* ===== ⏰ 休息提醒 =====
    家長希望小學生不要一次玩太久：連續玩 N 分鐘就請她們休息 M 分鐘。
@@ -19098,8 +19100,12 @@ const dailyDoneN = st => st.ids.filter(id => dailyCount(st, id) >= dailyTask(id)
 // 🎉 彩帶（全螢幕 canvas，最多 150 片，3 秒就停；點一下就收）
 function confettiBurst(n) {
   try {
-    const c = document.createElement('canvas'), W = innerWidth, H = innerHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
+    /* 省記憶體（iPad 記憶體吃太多會整頁當掉重開）：一次只撒一份、用 1 倍解析度（彩帶小小的看不出差別）、
+       切到背景畫面不會動的時候也保證 4 秒後拿掉 */
+    if (document.querySelector('.confetti-cv')) return;
+    const c = document.createElement('canvas'), W = innerWidth, H = innerHeight, dpr = 1;
     c.width = W * dpr; c.height = H * dpr; c.className = 'confetti-cv'; document.body.appendChild(c);
+    setTimeout(() => { live = false; c.remove(); }, 4000);
     const g = c.getContext('2d'); g.scale(dpr, dpr);
     const ps = Array.from({ length: Math.min(150, n || 120) }, () => ({ x: Math.random() * W, y: -20 - Math.random() * H * .4, vx: (Math.random() - .5) * 2, vy: 2 + Math.random() * 3, r: Math.random() * 6, w: 6 + Math.random() * 6, c: ['#FF9A3C', '#F58CA5', '#BFE8D2', '#A9D6F5', '#D9C7F0', '#FFE9A8'][Math.floor(Math.random() * 6)] }));
     const T0 = performance.now(); let live = true; c.onpointerdown = () => { live = false; c.remove(); };
@@ -24932,7 +24938,7 @@ function openYuanyuan(g1) {   // g1：妹妹的小一版（國文＋英文），
   w.stage.innerHTML = ''; w.btns.innerHTML = ''; w.card.classList.add('game-big');
   const fr = document.createElement('iframe');
   fr.className = 'yy-frame'; fr.title = '新家大採購';
-  fr.src = (g1 ? 'yuanyuan_shopping_g1.html' : 'yuanyuan_shopping.html') + '?embed=1&pet=' + encodeURIComponent(petName()) + '&slot=' + encodeURIComponent(curSlotId());
+  fr.src = 'yuanyuan_shopping.html?embed=1&g=' + encodeURIComponent(g1 ? '小一' : '四年級') + '&pet=' + encodeURIComponent(petName()) + '&slot=' + encodeURIComponent(curSlotId());
   w.stage.appendChild(fr); leaveButton(w);
   const st = G.yy && G.yy.d === today() ? G.yy : (G.yy = { d: today(), n: 0 });
   w.status.textContent = st.n < YY_DAY_MAX ? `玩完會依星星給錢（今天還有 ${YY_DAY_MAX - st.n} 場）` : '今天的獎金拿完了，還是可以繼續玩喔！';
@@ -24940,7 +24946,9 @@ function openYuanyuan(g1) {   // g1：妹妹的小一版（國文＋英文），
   gameCleanup = () => { yyWin = null; };
 }
 window.addEventListener('message', e => {
-  const d = e.data; if (!yyWin || !d || typeof d !== 'object' || e.source !== yyWin.fr.contentWindow) return;
+  const d = e.data; if (!yyWin || !d || typeof d !== 'object') return;
+  let fromYY = false; try { fromYY = e.source === yyWin.fr.contentWindow || (!!e.source && e.source.parent === yyWin.fr.contentWindow); } catch (e2) {}   // 遊戲在入口頁裡面的 iframe（srcdoc）
+  if (!fromYY) return;
   if (d.type === 'yuanyuan-tap') { gamePlay.last = Date.now(); return; }
   if (d.type === 'yuanyuan-done') {
     const stars = Math.max(0, Math.min(3, Math.round(+d.stars) || 0)), st = G.yy && G.yy.d === today() ? G.yy : (G.yy = { d: today(), n: 0 }), w = yyWin.w;

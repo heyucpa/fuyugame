@@ -10,12 +10,12 @@ const path = require('path');
   const o = {};
   for (const g1 of [false, true]) {   // 姊姊版、妹妹小一版都要接得好
     const t = g1 ? 'g1' : '';
-    const o1 = await p.evaluate(async g1 => { G.guide = 'done'; $('#modal').hidden = true; G.pet.name = '咪咪'; if (!g1) G.yy = null; openYuanyuan(g1); await new Promise(r => setTimeout(r, 1500)); const fr = document.querySelector('.yy-frame'); return { frame: !!fr, src: !!fr && fr.src.includes('pet=%E5%92%AA%E5%92%AA') && fr.src.includes(g1 ? 'yuanyuan_shopping_g1.html' : 'yuanyuan_shopping.html?') }; }, g1);
+    const o1 = await p.evaluate(async g1 => { G.guide = 'done'; $('#modal').hidden = true; G.pet.name = '咪咪'; if (!g1) G.yy = null; openYuanyuan(g1); await new Promise(r => setTimeout(r, 1500)); const fr = document.querySelector('.yy-frame'); return { frame: !!fr, src: !!fr && fr.src.includes('pet=%E5%92%AA%E5%92%AA') && fr.src.includes('yuanyuan_shopping.html?embed=1&g=' + encodeURIComponent(g1 ? '小一' : '四年級')) }; }, g1);
     Object.entries(o1).forEach(([k, v]) => { o[k + t] = v; });
-    const fr = p.frames().find(f => (g1 ? /yuanyuan_shopping_g1/ : /yuanyuan_shopping\.html/).test(f.url()));
+    const fr = p.frames().find(f => f.url() === 'about:srcdoc' && f.parentFrame() && /yuanyuan_shopping\.html/.test(f.parentFrame().url()));   // 入口頁裡面的遊戲
     o['loaded' + t] = !!fr;
     if (fr) {
-      o['petName' + t] = /咪咪的新家/.test(await fr.locator('.top').innerText());
+      o['petName' + t] = /咪咪的新家/.test(await fr.locator('.top').innerText()) && (g1 ? /小一版/ : /^(?![\s\S]*小一版)/).test(await fr.locator('.top').innerText());
       // 一直點還能點的答案，全部關卡玩完（關數照遊戲本身）
       for (let k = 0; k < 900; k++) { const st = await fr.evaluate(() => { if (document.getElementById('end').style.display === 'block') return 'end'; const b = [...document.querySelectorAll('.opt')].find(x => !x.disabled && x.offsetParent); if (b) b.click(); else { const nx = [...document.querySelectorAll('button')].find(x => x.offsetParent && /下一關|看結果|繼續|下一題/.test(x.textContent)); if (nx) nx.click(); } return 'go'; }); if (st === 'end') break; await fr.waitForTimeout(250); }
       await p.waitForTimeout(800);
@@ -29,7 +29,9 @@ const path = require('path');
   Object.assign(o, r2);
   // 單獨打開（不在小屋裡）照舊：叫圓圓、用原本的存檔 key
   const p2 = await (await b.newContext()).newPage(); await p2.goto('file://' + path.resolve(__dirname, '../yuanyuan_shopping.html')); await p2.waitForTimeout(500);
-  o.alone = /圓圓的新家/.test(await p2.locator('.top').innerText());
+  o.alone = await p2.locator('#pick').isVisible();   // 單獨打開：先選版本
+  await p2.click('#b4'); await p2.waitForTimeout(800); const inner = p2.frames().find(f => f.url() === 'about:srcdoc');
+  o.alone = o.alone && !!inner && /圓圓的新家/.test(await inner.locator('.top').innerText()) && await p2.locator('#sw').isVisible();
   await p2.goto('file://' + path.resolve(__dirname, '../yuanyuan_shopping_g1.html')); await p2.waitForTimeout(500);
   o.aloneG1 = /圓圓的新家/.test(await p2.locator('.top').innerText()) && /小一版/.test(await p2.locator('.top').innerText());
   console.log(JSON.stringify(o));
