@@ -4883,6 +4883,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-06T20:00', title: '👑 挑戰教練＋🌏 世界大賽', lines: [
+    ['👑', '考到黑帶，就可以挑戰熊熊教練！教練會放必殺技「熊熊大地震」，打贏就是道館冠軍'],
+    ['🌏', '道館不定時會舉辦世界跆拳道大賽：第一輪、準決賽、決賽，拿金牌當世界冠軍！'],
+    ['⏰', '每玩 10 分鐘，眼睛要放鬆 1 分鐘：看看遠方、喝口水'] 
+  ] },
   { id: '2026-11-05T20:00', title: '⚔️ 對決＋💥 必殺技動畫', lines: [
     ['💥', '跆拳道的必殺技有動畫了：旋風、流星拳、彩虹、閃電、火鳳凰、黑龍，一招一個樣子！'],
     ['⚔️', '道館、學校、公園、遊樂園的朋友會跑來挑戰「對決」：看朋友頭上的圖，要打你就擋、在打瞌睡 💤 就打！'],
@@ -5793,6 +5798,7 @@ function normalizeSave(g) {
   if (out.enLearn != null) { if (!isObj(out.enLearn)) delete out.enLearn; else out.enLearn = Object.fromEntries(Object.entries(out.enLearn).filter(([k, v]) => k.length <= 30 && /^[A-Za-z ]+$/.test(k) && v === 1)); }   // 🔤 學過的英文單字
   if (out.cloudKing != null && !(isObj(out.cloudKing) && Number.isInteger(out.cloudKing.beat) && out.cloudKing.beat >= 0 && out.cloudKing.beat < 1e6)) delete out.cloudKing;   // ☁️ 打倒烏雲大王幾次
   if (out.noSeasonFx != null && out.noSeasonFx !== 1) delete out.noSeasonFx;   // 🍂 關掉季節裝飾
+  if (out.tkd && isObj(out.tkd)) { if (out.tkd.coach != null && !(Number.isInteger(out.tkd.coach) && out.tkd.coach >= 0 && out.tkd.coach < 1e6)) delete out.tkd.coach; if (out.tkd.world != null) { const wv = out.tkd.world; if (!isObj(wv)) delete out.tkd.world; else { if (!(Number.isInteger(wv.best) && wv.best >= -1 && wv.best <= 3)) wv.best = -1; if (!(Number.isInteger(wv.gold) && wv.gold >= 0 && wv.gold < 1e6)) wv.gold = 0; if (wv.d != null && typeof wv.d !== 'string') { delete wv.d; delete wv.n; } if (wv.n != null && !(Number.isInteger(wv.n) && wv.n >= 0 && wv.n < 100)) wv.n = 0; } } }   // 👑 教練、🌏 世界大賽
   if (out.duel != null) { if (!isObj(out.duel)) delete out.duel; else ['win', 'lose'].forEach(k => { if (!(Number.isInteger(out.duel[k]) && out.duel[k] >= 0 && out.duel[k] < 1e6)) out.duel[k] = 0; }); }   // ⚔️ 對決贏輸幾次
   if (out.hanzi != null) { if (!isObj(out.hanzi)) delete out.hanzi; else out.hanzi = Object.fromEntries(Object.entries(out.hanzi).filter(([k, v]) => /^[\u4e00-\u9fff]$/.test(k) && v === 1)); }   // 🀄 認得的國字
   if (out.cash != null) { if (!(isObj(out.cash) && Number.isInteger(out.cash.ok) && out.cash.ok >= 0 && out.cash.ok < 1e6)) delete out.cash; }   // 🧾 找錢答對次數
@@ -11792,6 +11798,8 @@ function hostMenuEntries() {
     list.push(['🎵 節奏跆拳道（像跳舞機）', openRhythmGame]);
     list.push(['🥋 跟朋友對練', openSparGame]);
     list.push(['⚔️ 跟朋友對決（輪流出招）', openDuelGame]);
+    list.push(['🌏 報名世界大賽', openWorldCup]);
+    list.push([tkdBlack() ? '👑 挑戰熊熊教練' : '👑 挑戰熊熊教練（黑帶才可以）', openCoachChallenge]);
     list.push([`🎖️ 考腰帶（現在：${tkdBeltName()}）`, openBeltExam]);
   }
   if (host.n.id === 'restaurant') { list.push(['🍽️ 點餐吃飯', openRestaurantOrder]); list.push(['👩‍🍳 小幫手打工（做漢堡）', openChefGame]); list.push(['💰 收銀台找錢', openCashGame]); }
@@ -21512,7 +21520,12 @@ function tkdMoveAnim(g, mv, k, A, B, t) {
   const ez = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2, hx = B.x, hy = B.y - 30, lerp = (a, b, u) => a + (b - a) * u;
   const px = lerp(A.x, hx, ez), py = lerp(A.y - 30, hy, ez) - Math.sin(ez * Math.PI) * 30;
   g.save(); g.lineCap = 'round';
-  if (mv.name === '旋風踢') {
+  if (mv.name === '熊熊大地震') {   // 👑 教練的招：地面裂開一路裂過來、石頭跳起來
+    const gy = Math.max(A.y, B.y) + 2, x1 = lerp(A.x, B.x, ez); g.strokeStyle = '#6b4428'; g.lineWidth = 3; g.beginPath(); g.moveTo(A.x, gy);
+    for (let x = A.x; (A.x < B.x ? x < x1 : x > x1); x += (A.x < B.x ? 9 : -9)) g.lineTo(x, gy - 2 + ((Math.round(x / 9)) % 2 ? 4 : -3)); g.stroke();
+    for (let i = 0; i < 7; i++) { const u = Math.max(0, ez - i * .1), x = lerp(A.x, B.x, u), h = Math.sin(Math.min(1, (ez - i * .1) * 4) * Math.PI) * 26; if (u <= 0) continue; g.fillStyle = i % 2 ? '#8a6b4a' : '#a07850'; g.beginPath(); g.arc(x, gy - 6 - Math.max(0, h), 5 - i * .3, 0, 7); g.fill(); }
+    g.font = '22px sans-serif'; g.textAlign = 'center'; g.fillText('🐻', A.x, A.y - 70 - Math.abs(Math.sin(t * 6)) * 10);
+  } else if (mv.name === '旋風踢' || mv.name === '世界旋風斬') {
     for (let i = 0; i < 4; i++) { g.strokeStyle = `rgba(107,182,255,${.8 - i * .15})`; g.lineWidth = 4 - i * .6; g.beginPath(); g.ellipse(px, py, 22 - i * 4, 9 - i * 1.5, t * 8 + i, 0, Math.PI * 1.6); g.stroke(); }
     for (let i = 0; i < 6; i++) { g.strokeStyle = 'rgba(223,240,255,.8)'; g.lineWidth = 2; g.beginPath(); g.moveTo(px - 30 - i * 8, py - 12 + i * 5); g.lineTo(px - 50 - i * 12, py - 12 + i * 5); g.stroke(); }
   } else if (mv.name === '流星百裂拳') {
@@ -25729,9 +25742,10 @@ const DUEL_FOE_MOVES = [['撞撞頭', '💫'], ['旋轉尾巴', '🌀'], ['大�
 const DUEL_MIN_HUNGER = 20, DUEL_COST_WIN = 8, DUEL_COST_LOSE = 25;
 const pickOne = a => a[Math.floor(Math.random() * a.length)];
 function duelState() { if (!G.duel || typeof G.duel !== 'object') G.duel = { win: 0, lose: 0 }; return G.duel; }
-function openDuelGame(foe) {
+function openDuelGame(foe, opt) {
   if (!foe || !foe.body) foe = null;   // 從選單點進來傳的是事件
-  const w = openGameWindow('⚔️ 對決！', '看朋友頭上的圖：👊／🔥 要打你了就按「🛡️ 擋」，💤 在休息就快「👊 打」！氣滿了放「💥 必殺技」。');
+  opt = opt && typeof opt === 'object' && !opt.type ? opt : {};
+  const w = openGameWindow(opt.title || '⚔️ 對決！', '看朋友頭上的圖：👊／🔥 要打你了就按「🛡️ 擋」，💤 在休息就快「👊 打」！氣滿了放「💥 必殺技」。');
   const hunger = Math.round((G.kid && G.kid.hunger) || 0);
   if (hunger < DUEL_MIN_HUNGER) {   // 太餓：沒力氣對決 → 去吃東西
     w.stage.innerHTML = ''; w.stage.appendChild(el('div', 'tkd-big', '🍙'));
@@ -25740,30 +25754,33 @@ function openDuelGame(foe) {
     const eat = el('button', 'big', '🍙 去吃東西'); eat.onclick = () => { closeGameWindow(); try { showFoodMenu('kid'); } catch (e) {} };
     w.btns.innerHTML = ''; w.btns.appendChild(eat); leaveButton(w); return;
   }
-  playDuel(w, foe);
+  playDuel(w, foe, opt);
 }
-function playDuel(w, who) {
+function playDuel(w, who, opt) {
+  opt = opt || {};
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   const W = 360, H = 230, { g } = gameCanvas(w.stage, W, H), place = (G.away && G.away.place) || 'home';
   const mates = NEIGHBORS.filter(Boolean), foe = who || pickOne(mates), st = duelState();
-  const lvl = Math.min(4, Math.floor((st.win || 0) / 3)), hunger = (G.kid && G.kid.hunger) || 50;
-  const S = { me: Math.min(10, 5 + Math.round(hunger / 20)), meMax: 10, foe: 8 + lvl, foeMax: 8 + lvl, ki: 0, intent: 'atk', phase: 'intro', at: performance.now(), anim: null, pops: [], shake: 0, spMv: null, over: false, turn: 0, moves: [pickOne(DUEL_FOE_MOVES), pickOne(DUEL_FOE_MOVES)] };
+  const lvl = opt.lvl != null ? opt.lvl : Math.min(4, Math.floor((st.win || 0) / 3)), hunger = (G.kid && G.kid.hunger) || 50;
+  const S = { me: Math.min(10, 5 + Math.round(hunger / 20)), meMax: 10, foe: opt.hp || 8 + lvl, foeMax: opt.hp || 8 + lvl, ki: 0, intent: 'atk', phase: 'intro', at: performance.now(), anim: null, pops: [], shake: 0, spMv: null, over: false, turn: 0, moves: [pickOne(DUEL_FOE_MOVES), pickOne(DUEL_FOE_MOVES)] };
   const row = el('div', 'spar-row'), bHit = el('button', 'big duel-hit', '👊 打'), bBlock = el('button', 'big spar-block', '🛡️ 擋'), bSp = el('button', 'big spar-sp', '💥 必殺技');
   row.append(bHit, bBlock, bSp); w.stage.appendChild(row); leaveButton(w);
-  let live = true, raf = 0, msg = `${foe.short}來挑戰了！`, msgC = '#5a4636';
+  let live = true, raf = 0, msg = opt.intro || `${foe.short}來挑戰了！`, msgC = '#5a4636';
   gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', key); };
   const say = (m, c) => { msg = m; msgC = c || '#5a4636'; };
   const ME = { x: 105, y: 178 }, FOE = { x: 262, y: 178 };
   const pop = (x, y, t, c) => S.pops.push({ x, y, t, c, at: performance.now() });
-  const ui = () => { const ok = S.phase === 'choose' && live; bHit.disabled = bBlock.disabled = !ok; bSp.disabled = !ok || S.ki < 100; bSp.classList.toggle('spar-on', ok && S.ki >= 100); bBlock.classList.toggle('spar-on', ok && (S.intent === 'atk' || S.intent === 'big')); bHit.classList.toggle('spar-on', ok && S.intent === 'rest'); };
+  const ui = () => { const ok = S.phase === 'choose' && live; bHit.disabled = bBlock.disabled = !ok; bSp.disabled = !ok || S.ki < 100; bSp.classList.toggle('spar-on', ok && S.ki >= 100); bBlock.classList.toggle('spar-on', ok && (S.intent === 'atk' || S.intent === 'big' || S.intent === 'fsp')); bHit.classList.toggle('spar-on', ok && S.intent === 'rest'); };
   const newIntent = () => {
     S.turn++; const r = Math.random();
     S.intent = S.foe <= 3 && r < .3 ? 'big' : r < .5 ? 'atk' : r < .72 ? 'big' : 'rest';
     if (S.turn === 1) S.intent = 'atk';   // 第一回合先示範「要打你了→擋」
+    if (opt.foeSp && S.turn > 1 && S.turn % 4 === 0) S.intent = 'fsp';   // 👑 教練（和大賽決賽）每 4 回合放一次必殺技
     const ev = Math.random();   // 🎲 好玩的小事
     if (S.turn > 1 && ev < .07) { S.intent = 'slip'; say(`${foe.short}踩到香蕉皮滑倒了！🍌 快打牠！`, '#e67700'); Sound.play('boing'); }
     else if (S.turn > 1 && ev < .13) { S.ki = Math.min(100, S.ki + 30); say('📣 啦啦隊幫你加油！氣 +30', '#1971c2'); Sound.play('perfect'); }
     else if (S.turn > 1 && ev < .18 && S.me < S.meMax) { S.me++; pop(ME.x, ME.y - 70, '+1 ❤️', '#2f9e44'); say('咬一口小點心～回 1 滴血！🍪', '#2f9e44'); Sound.play('pickUp'); }
+    else if (S.intent === 'fsp') { say(`${foe.short}在集氣放必殺技「${opt.foeSp.name}」！💥 一定要擋！`, '#7048e8'); Sound.play('shake'); }
     else say(S.intent === 'atk' ? `${foe.short}要用「${S.moves[0][0]}」打你了！按 🛡️ 擋！` : S.intent === 'big' ? `${foe.short}在集氣放大招「${S.moves[1][0]}」！🔥 快擋！` : `${foe.short}累了在休息 💤 快打牠！`);
     S.phase = 'choose'; ui();
   };
@@ -25784,7 +25801,7 @@ function playDuel(w, who) {
       let n = 2, tag = ''; if (it === 'rest' || it === 'slip') { n++; tag = '趁機！'; } if (Math.random() < .2) { n++; tag = '會心一擊！'; }
       S.ki = Math.min(100, S.ki + 20); hurtFoe(n, tag); Sound.play('perfect'); say(tag ? `${tag}打中 ${n} 點！` : `打中了！${n} 點！`, '#2f9e44');
     } else {
-      if (it === 'atk' || it === 'big') { S.ki = Math.min(100, S.ki + 40); S.blocked = true; say('🛡️ 擋住了！準備反擊！', '#1971c2'); Sound.play('knock'); }
+      if (it === 'atk' || it === 'big' || it === 'fsp') { S.ki = Math.min(100, S.ki + 40); S.blocked = true; say('🛡️ 擋住了！準備反擊！', '#1971c2'); Sound.play('knock'); }
       else { S.ki = Math.min(100, S.ki + 15); say(`${foe.short}沒有要打你～下次牠休息就快打牠！`); }
     }
   };
@@ -25792,6 +25809,7 @@ function playDuel(w, who) {
     const it = S.intent;
     if (it === 'rest' || it === 'slip') { if (it === 'rest') say(`${foe.short}休息完了～`); return; }
     S.anim = { who: 'foe', k: 'hit', at: performance.now() }; Sound.play('whoosh');
+    if (it === 'fsp') { Sound.play('crack'); if (S.myAct === 'block') { hurtMe(2); say(`擋住了「${opt.foeSp.name}」！只痛一點點！`, '#1971c2'); } else { hurtMe(4); S.shake = .5; say(`被「${opt.foeSp.name}」打中了！好痛～`, '#d9480f'); } S.blocked = false; return; }
     const big = it === 'big', mvn = big ? S.moves[1] : S.moves[0];
     if (S.myAct === 'block') { if (big) hurtMe(1); hurtFoe(1, '反擊！'); say(big ? `大招「${mvn[0]}」被擋住了！只痛一點點，還反擊！` : `擋住「${mvn[0]}」還反擊！`, '#1971c2'); }
     else { hurtMe(big ? 3 : 2); S.shake = big ? .4 : .2; say(`被「${mvn[0]}」${mvn[1]} 打到了！`, '#d9480f'); Sound.play('miss'); }
@@ -25802,6 +25820,7 @@ function playDuel(w, who) {
     setTimeout(() => {
       if (!live) return; gameCleanup(); gameCleanup = null;
       const k = G.kid; if (k) k.hunger = Math.max(0, Math.round(k.hunger - (win ? DUEL_COST_WIN : DUEL_COST_LOSE)));
+      if (opt.onEnd) { saveGame(); refreshTop(); opt.onEnd(win, w); return; }   // 教練挑戰、世界大賽：自己處理獎勵和下一步
       if (win) st.win = (st.win || 0) + 1; else st.lose = (st.lose || 0) + 1;
       const bells = payReward(w, win ? 100 + lvl * 25 : 30);
       kidMoodUp(win ? 12 : 4); try { dailyHit('game'); } catch (e) {}
@@ -25819,17 +25838,18 @@ function playDuel(w, who) {
   const key = e => { if (e.repeat) return; if (e.code === 'Space' || e.code === 'ArrowRight' || e.code === 'KeyA') { e.preventDefault(); act('hit'); } else if (e.code === 'ArrowLeft' || e.code === 'KeyB' || e.code === 'KeyS') { e.preventDefault(); act('block'); } else if (e.code === 'KeyD' || e.code === 'Enter') { e.preventDefault(); act('sp'); } };
   document.addEventListener('keydown', key);
   const bg = () => {
-    const sky = { dojo: ['#fff4e6', '#ffe8cc'], school: ['#e7f5ff', '#d0ebff'], park: ['#d8f5a2', '#b2f2bb'], amusement: ['#ffe3ee', '#ffd8a8'] }[place] || ['#fff4e6', '#ffe3ee'];
+    const sky = opt.arena ? ['#1c2541', '#3a506b'] : { dojo: ['#fff4e6', '#ffe8cc'], school: ['#e7f5ff', '#d0ebff'], park: ['#d8f5a2', '#b2f2bb'], amusement: ['#ffe3ee', '#ffd8a8'] }[place] || ['#fff4e6', '#ffe3ee'];
     const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, sky[0]); gr.addColorStop(1, sky[1]); g.fillStyle = gr; g.fillRect(0, 0, W, H);
-    if (place === 'dojo') for (let i = 0; i < 10; i++) { g.fillStyle = i % 2 ? '#ffd23f' : '#2f6fd1'; g.fillRect(i * 40 - 10, 180, 40, 50); }
+    if (opt.arena) { for (let i = 0; i < 12; i++) { g.fillStyle = `hsla(${i * 30 + performance.now() / 20},80%,70%,.5)`; g.beginPath(); g.arc(15 + i * 30, 120 + Math.sin(performance.now() / 300 + i) * 4, 6, 0, 7); g.fill(); } g.fillStyle = '#e03131'; g.fillRect(0, 180, W, 50); g.fillStyle = '#ffd23f'; g.font = '900 12px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillText(opt.arena, W / 2, 205); }
+    else if (place === 'dojo') for (let i = 0; i < 10; i++) { g.fillStyle = i % 2 ? '#ffd23f' : '#2f6fd1'; g.fillRect(i * 40 - 10, 180, 40, 50); }
     else { g.fillStyle = place === 'park' ? '#7bd389' : place === 'school' ? '#e8c27a' : '#ffb3c8'; g.fillRect(0, 180, W, 50); }
     // 血條、氣
     const bar = (x, v, mx, nm, right) => { g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(x, 10, 140, 12); g.fillStyle = v / mx > .5 ? '#5fcf6f' : v / mx > .25 ? '#ffd23f' : '#ff6b6b'; const ww = 136 * v / mx; g.fillRect(right ? x + 2 + 136 - ww : x + 2, 12, ww, 8);
-      g.fillStyle = '#3a3240'; g.font = '700 11px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = right ? 'right' : 'left'; g.fillText(`${nm} ❤️ ${v}`, right ? x + 140 : x, 36); };
+      g.fillStyle = opt.arena ? '#ffffff' : '#3a3240'; g.font = '700 11px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = right ? 'right' : 'left'; g.fillText(`${nm} ❤️ ${v}`, right ? x + 140 : x, 36); };
     bar(10, S.me, S.meMax, charName(), false); bar(W - 150, S.foe, S.foeMax, foe.short + (lvl ? ` Lv.${lvl + 1}` : ''), true);
     g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(10, 42, 84, 8); g.fillStyle = S.ki >= 100 ? `hsl(${(performance.now() / 3) % 360},90%,60%)` : '#ffb02e'; g.fillRect(12, 44, S.ki * .8, 4);
-    g.fillStyle = '#5a4636'; g.font = '700 10px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'left'; g.fillText(S.ki >= 100 ? '氣滿了！💥' : '氣', 98, 50);
-    g.fillStyle = msgC; g.font = '700 13px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillText(msg, W / 2, 68);
+    g.fillStyle = opt.arena ? '#ffffff' : '#5a4636'; g.font = '700 10px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'left'; g.fillText(S.ki >= 100 ? '氣滿了！💥' : '氣', 98, 50);
+    g.font = '700 13px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; if (opt.arena) { g.lineWidth = 4; g.strokeStyle = '#fff'; g.strokeText(msg, W / 2, 68); } g.fillStyle = msgC; g.fillText(msg, W / 2, 68);
   };
   const drawMe = now => {
     const a = S.anim && S.anim.who === 'me' && now - S.anim.at < 500 ? S.anim : null, k = a ? Math.sin((now - a.at) / 500 * Math.PI) : 0;
@@ -25846,9 +25866,9 @@ function playDuel(w, who) {
     g.save(); g.translate(x, FOE.y); g.scale(-2.2, 2.2); if (lose || slip) { g.translate(0, -4); g.rotate(slip ? .9 : -.5); }
     drawNeighbor(g, foe, { happy: S.over && !lose, sad: lose, blink: false, fx: 1.5, clean: 100 }); g.restore();
     if (S.phase === 'choose' && !S.over) {   // 頭上的「要做什麼」
-      const ic = { atk: '👊', big: '🔥', rest: '💤', slip: '🍌' }[S.intent], col = { atk: '#e03131', big: '#ff5a1f', rest: '#2f9e44', slip: '#e67700' }[S.intent], y = FOE.y - 92 + Math.sin(now / 200) * 3;
+      const ic = { atk: '👊', big: '🔥', rest: '💤', slip: '🍌', fsp: '💥' }[S.intent], col = { atk: '#e03131', big: '#ff5a1f', rest: '#2f9e44', slip: '#e67700', fsp: '#7048e8' }[S.intent], y = FOE.y - 92 + Math.sin(now / 200) * 3;
       g.fillStyle = col; g.beginPath(); g.arc(FOE.x, y, 17, 0, 7); g.fill(); g.font = '18px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(ic, FOE.x, y + 1); g.textBaseline = 'alphabetic';
-      if (S.intent === 'big') { g.strokeStyle = `rgba(255,90,31,${.4 + Math.sin(now / 90) * .3})`; g.lineWidth = 3; g.beginPath(); g.arc(FOE.x, FOE.y - 30, 34, 0, 7); g.stroke(); }
+      if (S.intent === 'big' || S.intent === 'fsp') { g.strokeStyle = `rgba(255,90,31,${.4 + Math.sin(now / 90) * .3})`; g.lineWidth = 3; g.beginPath(); g.arc(FOE.x, FOE.y - 30, 34, 0, 7); g.stroke(); }
     }
     if (lose) { g.font = '14px sans-serif'; g.textAlign = 'center'; g.fillText('💫', FOE.x + Math.sin(now / 150) * 10, FOE.y - 72); }
   };
@@ -25861,11 +25881,13 @@ function playDuel(w, who) {
       if (S.myAct === 'sp' && el2 > 2450 && !S.spHit) { S.spHit = true; resolveMe(); }
       if (el2 > dur) { if (S.myAct !== 'sp') resolveMe(); S.spHit = false; if (S.foe <= 0) { say(`打贏了！${foe.short}倒下了～`, '#2f9e44'); finish(true); } else { S.phase = 'foe'; S.at = now; } }
     }
-    if (S.phase === 'foe' && el2 > 500 && !S.foeDone) { S.foeDone = true; resolveFoe(); }
-    if (S.phase === 'foe' && el2 > 1300) { S.foeDone = false; if (S.me <= 0) { say('哎呀，輸了…', '#d9480f'); finish(false); } else newIntent(); }
+    const fsp = S.intent === 'fsp', fT = fsp ? 2500 : 500;
+    if (S.phase === 'foe' && el2 > fT && !S.foeDone) { S.foeDone = true; resolveFoe(); }
+    if (S.phase === 'foe' && el2 > fT + 800) { S.foeDone = false; if (S.me <= 0) { say('哎呀，輸了…', '#d9480f'); finish(false); } else newIntent(); }
     if (S.shake > 0) S.shake -= 1 / 60;
     g.save(); if (S.shake > 0) g.translate(Math.sin(now / 15) * 4, 0);
     bg(); drawMe(now); drawFoe(now);
+    if (S.phase === 'foe' && S.intent === 'fsp' && el2 < 2600) { const s2 = el2 / 1000; tkdMoveAnim(g, opt.foeSp, Math.min(1, s2 / 2.4), FOE, ME, s2); g.font = '900 16px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.lineWidth = 5; g.strokeStyle = '#26232a'; g.strokeText(`${foe.short}・${opt.foeSp.name}`, W / 2, 96); g.fillStyle = '#ffd23f'; g.fillText(`${foe.short}・${opt.foeSp.name}`, W / 2, 96); }
     if (S.phase === 'me' && S.myAct === 'sp') { const s2 = el2 / 1000; if (s2 < 1.1) tkdSpecialCut(g, W, H, S.spMv, s2 / .6, s2); else tkdMoveAnim(g, S.spMv, Math.min(1, (s2 - 1.1) / 1.4), ME, FOE, s2); }
     S.pops = S.pops.filter(p => now - p.at < 1100); S.pops.forEach(p => { const u = (now - p.at) / 1100; g.globalAlpha = 1 - u; g.font = '900 18px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.lineWidth = 4; g.strokeStyle = '#fff'; g.strokeText(p.t, p.x, p.y - u * 30); g.fillStyle = p.c; g.fillText(p.t, p.x, p.y - u * 30); g.globalAlpha = 1; });
     g.restore();
@@ -25873,9 +25895,88 @@ function playDuel(w, who) {
   };
   ui(); try { speak(`${foe.short}來挑戰了！`); } catch (e) {} Sound.play('shake');
   raf = requestAnimationFrame(tick);
-  playDuel.test = { S, act, newIntent, finish, foe };
+  playDuel.test = { S, act, newIntent, finish, foe, opt };
 }
 AWAY_GAMES.push(['⚔️', '對決', 'dojo', () => openDuelGame()]);
+
+/* 👑 挑戰熊熊教練（家長：升上黑帶後可以跟教練挑戰）：黑帶才打得到。教練 16 滴血、每 4 回合放必殺技「熊熊大地震」（擋住只痛 2 點，沒擋 4 點）。
+   第一次打贏：「道館冠軍」獎盃＋💰 3,000；之後每次贏 💰 300。G.tkd.coach = 打贏教練幾次。 */
+const COACH_SP = { name: '熊熊大地震', fx: '🐻', c: '#8a5a33', c2: '#e8cfa9' };
+const tkdBlack = () => (tkdState().belt || 0) >= TKD_BELTS.length - 1;
+function openCoachChallenge() {
+  if (!tkdBlack()) { toast(`🥋 要考到黑帶才能挑戰教練喔！現在是${tkdBeltName()}`); try { hostSay(`考到黑帶，再來挑戰我吧！`, 2600); } catch (e) {} return; }
+  const coach = HOSTS.tkd, t = tkdState();
+  openDuelGame(coach, { title: '👑 挑戰熊熊教練', hp: 16, lvl: 4, foeSp: COACH_SP, intro: '黑帶了啊！來吧，讓我看看你的實力！',
+    onEnd: (win, w) => {
+      const first = win && !t.coach; if (win) t.coach = (t.coach || 0) + 1;
+      if (first) { addBells(3000); setTimeout(() => { try { Sound.play('fanfare'); confettiBurst(120); showcase(el('div', 'magic-pic', '🏆'), '打贏熊熊教練了！', '你是「道館冠軍」！送你 💰 3,000！', { head: '👑 太厲害了！' }); } catch (e) {} }, 400); }
+      const bells = win && !first ? payReward(w, 300) : 0;
+      w.status.textContent = win ? (first ? '👑 打贏教練了！你是「道館冠軍」！💰 +3,000' : `👑 又打贏教練了！（${t.coach} 次）💰 +${fmt(bells)}`) : '教練好強！去吃東西補體力，練習一下再來挑戰！';
+      try { hostSay(win ? '好厲害！你已經比我強了！' : '很有精神！再練練就會贏！', 3000); speak(win ? '打贏教練了！' : '教練好強，再來挑戰！'); } catch (e) {}
+      saveGame(); refreshTop(); duelEndButtons(w, win, openCoachChallenge);
+    } });
+}
+function duelEndButtons(w, win, again) {
+  w.btns.innerHTML = '';
+  if (!win || (G.kid && G.kid.hunger < 40)) { const eat = el('button', 'big', '🍙 去吃東西'); eat.onclick = () => { closeGameWindow(); try { showFoodMenu('kid'); } catch (e) {} }; w.btns.appendChild(eat); }
+  const ag = el('button', 'big' + (win ? '' : ' alt'), '⚔️ 再挑戰一次'); ag.onclick = again; w.btns.appendChild(ag);
+  const home = el('button', 'big alt', G.away ? '離開' : '回家'); home.onclick = () => { closeGameWindow(); renderTab(); }; w.btns.appendChild(home);
+}
+/* 🌏 世界大賽（家長：也可以隨機參加世界大賽）：在道館不定時會廣播「世界跆拳道大賽開始報名了」，點教練就能報名（教練選單也有）。
+   三場：第一輪 → 準決賽 → 決賽，對手越來越強（決賽的對手會放必殺技）；每場中間可以吃一口點心回一點體力。
+   成績：第一輪輸＝🎗️ 參加獎、準決賽輸＝🥉、決賽輸＝🥈、全贏＝🥇 世界冠軍（第一次 💰 2,000＋獎盃）。G.tkd.world = { best, gold }。
+   一天最多報名 3 次（不然一直打太累）。 */
+const WORLD_ROUNDS = [['第一輪', 9, 1], ['準決賽', 11, 2], ['決賽', 13, 4]];
+const WORLD_FROM = ['冰雪國', '沙漠國', '森林國', '大海國', '火山國', '雲朵國', '糖果國', '星星國'];
+const WORLD_PRIZE = [80, 200, 500, 1200], WORLD_MEDAL = ['🎗️ 參加獎', '🥉 銅牌', '🥈 銀牌', '🥇 世界冠軍'];
+const WORLD_SP = { name: '世界旋風斬', fx: '🌪️', c: '#4fb0ff', c2: '#e7f5ff' };
+const WORLD_DAY_MAX = 3;
+function worldState() { const t = tkdState(); if (!t.world || typeof t.world !== 'object') t.world = { best: -1, gold: 0 }; return t.world; }
+function openWorldCup() {
+  const ws = worldState(), d = today();
+  if (ws.d !== d) { ws.d = d; ws.n = 0; }
+  if (ws.n >= WORLD_DAY_MAX) { toast('🌏 今天的世界大賽打 3 次了，明天再來！'); return; }
+  ws.n++; saveGame();
+  const foes = NEIGHBORS.slice().sort(() => Math.random() - .5).slice(0, 3).map((n, i) => Object.assign({}, n, { short: WORLD_FROM[(Math.floor(Math.random() * 8) + i * 3) % 8] + n.short, dobok: TKD_BELTS[Math.min(TKD_BELTS.length - 1, 2 + i * 2)][1] }));
+  worldRound(0, foes);
+}
+function worldRound(r, foes) {
+  const [nm, hp, lvl] = WORLD_ROUNDS[r], f = foes[r];
+  if (G.kid && G.kid.hunger < DUEL_MIN_HUNGER) G.kid.hunger = DUEL_MIN_HUNGER;   // 大賽中途不會因為太餓不能打（體力少，血就少）
+  openDuelGame(f, { title: `🌏 世界大賽・${nm}`, hp, lvl, arena: `🌏 世界跆拳道大賽　${nm}`, foeSp: r === 2 ? WORLD_SP : null, intro: `${nm}！對手是${f.short}！`,
+    onEnd: (win, w) => {
+      const ws = worldState(), got = win ? r + 1 : r;
+      if (!win || r === 2) {   // 比完了：頒獎
+        ws.best = Math.max(ws.best == null ? -1 : ws.best, got); const first = got === 3 && !ws.gold; if (got === 3) ws.gold = (ws.gold || 0) + 1;
+        const bells = payReward(w, WORLD_PRIZE[got]) + (first ? (addBells(2000), 2000) : 0);
+        w.status.textContent = `${WORLD_MEDAL[got]}！${got === 3 ? '你是世界冠軍！' : win ? '' : `在${nm}輸給${f.short}～沒關係，去吃東西補體力！`}　💰 +${fmt(bells)}`;
+        Sound.play(got === 3 ? 'fanfare' : 'questClear');
+        setTimeout(() => { try { if (got === 3) confettiBurst(140); showcase(el('div', 'magic-pic', WORLD_MEDAL[got].split(' ')[0]), `世界大賽：${WORLD_MEDAL[got].split(' ')[1]}！`, got === 3 ? (first ? '第一次拿到世界冠軍！多送你 💰 2,000！' : `又拿到世界冠軍了！（${ws.gold} 次）`) : '下次再來挑戰更好的名次！', { head: got === 3 ? '🎉 太棒了！' : '🌏 世界大賽' }); } catch (e) {} }, 500);
+        try { speak(got === 3 ? '世界冠軍！' : WORLD_MEDAL[got].split(' ')[1] + '！好棒！'); } catch (e) {}
+        saveGame(); refreshTop(); duelEndButtons(w, win, () => openWorldCup()); return;
+      }
+      // 贏了：下一場（中間吃一口點心回體力）
+      if (G.kid) G.kid.hunger = Math.min(100, G.kid.hunger + 6);
+      w.status.textContent = `🎉 ${nm}贏了！進入${WORLD_ROUNDS[r + 1][0]}！（吃一口點心 🍙 +6）`;
+      try { speak(`贏了！下一場是${WORLD_ROUNDS[r + 1][0]}！`); } catch (e) {} Sound.play('questClear');
+      w.stage.appendChild(el('div', 'tkd-say', foes.map((x, i) => `${i < r + 1 ? '✅' : i === r + 1 ? '👉' : '⬜'} ${WORLD_ROUNDS[i][0]}：${x.short}`).join('　')));
+      w.btns.innerHTML = ''; const nx = el('button', 'big', `⚔️ 開始${WORLD_ROUNDS[r + 1][0]}`); nx.onclick = () => worldRound(r + 1, foes); w.btns.appendChild(nx); leaveButton(w);
+    } });
+  worldRound.test = { r, foes };
+}
+// 在道館：不定時廣播世界大賽（一次待在道館最多一次）
+let worldNextAd = 0, worldAdSaid = false;
+function worldAdTick() {
+  if (!G.away || G.away.place !== 'dojo') { worldNextAd = 0; worldAdSaid = false; return; }
+  const now = performance.now();
+  if (!worldNextAd) { worldNextAd = now + 45000 + Math.random() * 60000; return; }
+  if (worldAdSaid || now < worldNextAd || !$('#modal').hidden || fufu.pose) return;
+  const ws = worldState(); if (ws.d === today() && ws.n >= WORLD_DAY_MAX) return;
+  worldAdSaid = true; Sound.play('fanfare');
+  try { hostSay('📣 世界跆拳道大賽開始報名了！想參加就來找我！', 5000); speak('世界跆拳道大賽開始報名了！想參加就來找熊熊教練！'); } catch (e) {}
+  toast('🌏 世界大賽開始報名了！點熊熊教練就可以報名！');
+}
+setInterval(() => { try { if (!resting) worldAdTick(); } catch (e) {} }, 2000);
 
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
