@@ -17,13 +17,13 @@ const path = require('path');
     S.special(); o.notYet = S.state() === 'fight';
     S.setKi(100); await wait(50); o.btnOn = !document.querySelector('.spar-sp').disabled;
     const me0 = S.score()[0]; S.special(); o.cut = S.state() === 'special' && S.mv().name === '旋風踢';
-    await wait(2300); o.two = S.score()[0] >= me0 + 2 || S.state() === 'end'; o.kiReset = S.ki() < 100;
+    await wait(3000); o.two = S.score()[0] >= me0 + 2 || S.state() === 'end'; o.kiReset = S.ki() < 100;
     closeGameWindow();
     // 黑帶：學會 6 招，輪流用
     G.tkd.belt = 5; o.learned5 = tkdLearned().length === 6;
     openSparGame(); document.querySelectorAll('.lv-row button')[0].click();
     for (let i = 0; i < 40 && playSpar.test.state() !== 'fight'; i++) await wait(100);
-    const names = []; for (let k = 0; k < 2; k++) { playSpar.test.setKi(100); playSpar.test.special(); names.push(playSpar.test.mv().name); await wait(2200); if (playSpar.test.state() === 'end') break; }
+    const names = []; for (let k = 0; k < 2; k++) { playSpar.test.setKi(100); playSpar.test.special(); names.push(playSpar.test.mv().name); await wait(2900); if (playSpar.test.state() === 'end') break; }
     o.rotate = names.length < 2 || names[0] !== names[1]; closeGameWindow();
     // 考腰帶畫面列出學會的招
     G.tkd = { belt: 2, prac: 0 }; openBeltExam(); o.examList = /彩虹迴旋踢/.test($('#modalCard').innerText) && /下一招/.test($('#modalCard').innerText); closeGameWindow();

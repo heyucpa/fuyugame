@@ -787,6 +787,7 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .quest-pauseov .big { width: 260px; max-width: 80%; flex: none; font-size: 20px; padding: 14px; }
 .quest-pause-t { color: #fff; font-size: 26px; font-weight: 900; text-shadow: 0 2px 4px rgba(0,0,0,.4); }
 .game-canvas { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.duel-hit { background: linear-gradient(#ffb02e, #ff8a3d); color: #fff; border-color: #e8590c; }
 .confetti-cv { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 90; pointer-events: none; }   /* 彩帶不擋點擊 */
 .star-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; } .star-slot { display: flex; flex-direction: column; align-items: center; padding: 10px 4px; border-radius: 16px; background: #f1ecf7; border: 2px dashed #c9b8e8; color: #a99ac9; }
 .star-slot.on { background: #fff7d6; border: 2px solid #ffd23f; color: #5a4636; } .star-e { font-size: 34px; } .star-n { font-size: 13px; font-weight: 800; }
@@ -4882,6 +4883,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-05T20:00', title: '⚔️ 對決＋💥 必殺技動畫', lines: [
+    ['💥', '跆拳道的必殺技有動畫了：旋風、流星拳、彩虹、閃電、火鳳凰、黑龍，一招一個樣子！'],
+    ['⚔️', '道館、學校、公園、遊樂園的朋友會跑來挑戰「對決」：看朋友頭上的圖，要打你就擋、在休息就打！'],
+    ['🍙', '對決會用掉體力（🍙），輸了也沒關係，去吃東西補體力再來挑戰']
+  ] },
   { id: '2026-11-04T20:00', title: '🦸 大魔王變強了＋🐣 簡單模式也能自己走', lines: [
     ['🦸', '「一般」的大魔王會飛到天上再踩下來（看影子躲開），還會噴火球（跳起來躲）'],
     ['◀', '「簡單」、「一般」都是自己按 ◀ ▶ 走，不會自動往前跑了（也可以直接按畫面）'],
@@ -5787,6 +5793,7 @@ function normalizeSave(g) {
   if (out.enLearn != null) { if (!isObj(out.enLearn)) delete out.enLearn; else out.enLearn = Object.fromEntries(Object.entries(out.enLearn).filter(([k, v]) => k.length <= 30 && /^[A-Za-z ]+$/.test(k) && v === 1)); }   // 🔤 學過的英文單字
   if (out.cloudKing != null && !(isObj(out.cloudKing) && Number.isInteger(out.cloudKing.beat) && out.cloudKing.beat >= 0 && out.cloudKing.beat < 1e6)) delete out.cloudKing;   // ☁️ 打倒烏雲大王幾次
   if (out.noSeasonFx != null && out.noSeasonFx !== 1) delete out.noSeasonFx;   // 🍂 關掉季節裝飾
+  if (out.duel != null) { if (!isObj(out.duel)) delete out.duel; else ['win', 'lose'].forEach(k => { if (!(Number.isInteger(out.duel[k]) && out.duel[k] >= 0 && out.duel[k] < 1e6)) out.duel[k] = 0; }); }   // ⚔️ 對決贏輸幾次
   if (out.hanzi != null) { if (!isObj(out.hanzi)) delete out.hanzi; else out.hanzi = Object.fromEntries(Object.entries(out.hanzi).filter(([k, v]) => /^[\u4e00-\u9fff]$/.test(k) && v === 1)); }   // 🀄 認得的國字
   if (out.cash != null) { if (!(isObj(out.cash) && Number.isInteger(out.cash.ok) && out.cash.ok >= 0 && out.cash.ok < 1e6)) delete out.cash; }   // 🧾 找錢答對次數
   if (out.cashDay != null && !(isObj(out.cashDay) && typeof out.cashDay.d === 'string' && Number.isInteger(out.cashDay.n) && out.cashDay.n >= 0 && out.cashDay.n < 100)) delete out.cashDay;
@@ -11784,6 +11791,7 @@ function hostMenuEntries() {
     list.push(['👊 跟著做動作', openFormsGame]);
     list.push(['🎵 節奏跆拳道（像跳舞機）', openRhythmGame]);
     list.push(['🥋 跟朋友對練', openSparGame]);
+    list.push(['⚔️ 跟朋友對決（輪流出招）', openDuelGame]);
     list.push([`🎖️ 考腰帶（現在：${tkdBeltName()}）`, openBeltExam]);
   }
   if (host.n.id === 'restaurant') { list.push(['🍽️ 點餐吃飯', openRestaurantOrder]); list.push(['👩‍🍳 小幫手打工（做漢堡）', openChefGame]); list.push(['💰 收銀台找錢', openCashGame]); }
@@ -21431,22 +21439,28 @@ function drawDobokBody(ctx, n, belt) {
 /* 🥋 同學來挑戰：在道館待一陣子（第一次約 25 秒，之後 60～120 秒），一位同學走到小可愛旁邊，
    頭上出現「🥋 要不要對打？」，點牠就可以選要不要；20 秒沒理牠就回去練習。答應了就跟這位同學對練。 */
 let dojoNextChal = 0;
+/* ⚔️ 家長：可以隨機跟道館或世界裡的角色發動對決、對打，要有趣味性；輸了也沒關係，頂多要去吃東西補體力。
+   道館、學校、公園、遊樂園的動物朋友都會不定時跑來挑戰：道館一半是「🥋 對練」一半是「⚔️ 對決」，其他地方是「⚔️ 對決」。 */
+const DUEL_PLACES = { dojo: 1, school: 1, park: 1, amusement: 1 };
 function dojoChallengeTick() {
-  if (!G.away || G.away.place !== 'dojo' || !host.crowd || !host.crowd.length) { dojoNextChal = 0; return; }
+  if (!G.away || !DUEL_PLACES[G.away.place] || !host.crowd || !host.crowd.length) { dojoNextChal = 0; return; }
+  const dojo = G.away.place === 'dojo';
   const now = performance.now();
   host.crowd.forEach(cr => { if (cr.challenge && now > cr.challenge) { cr.challenge = 0; cr.say = '那下次再一起練！'; cr.sayUntil = now + 2500; } });
-  if (!dojoNextChal) { dojoNextChal = now + 25000; return; }
+  if (!dojoNextChal) { dojoNextChal = now + (dojo ? 25000 : 40000); return; }
   if (now < dojoNextChal || !$('#modal').hidden || fufu.pose || host.crowd.some(c => c.challenge)) return;
-  dojoNextChal = now + 60000 + Math.random() * 60000;
+  dojoNextChal = now + (dojo ? 60000 : 90000) + Math.random() * (dojo ? 60000 : 90000);
   const cr = host.crowd[Math.floor(Math.random() * host.crowd.length)], room = curRoom();
+  cr.kind = dojo && Math.random() < .5 ? 'spar' : 'duel';
   const tgt = nearestFree(room, fufu.x + 1, fufu.y + .5);
   if (tgt) cr.a.path = findPath(room, Math.floor(cr.a.x), Math.floor(cr.a.y), tgt[0], tgt[1]);
   cr.challenge = now + 20000; cr.a.idleUntil = now + 20000;
   setTimeout(() => {
     if (!cr.challenge) return;
-    cr.say = `${charName()}，要不要跟我對打？🥋`; cr.sayUntil = performance.now() + 5000; cr.a.squishV = -7;
+    const ln = cr.kind === 'duel' ? pickOne(DUEL_CHAL_LINES).replace('{名}', charName()) : `${charName()}，要不要跟我對打？🥋`;
+    cr.say = ln; cr.sayUntil = performance.now() + 5000; cr.a.squishV = -7;
     Sound.play('talk', cr.say);
-    try { speak(`${charName()}，要不要跟我對打？`); } catch (e) {}
+    try { speak(ln.replace(/[⚔️🥋]/g, '')); } catch (e) {}
     setTimeout(() => { if (cr.challenge) fufuSay('點牠就可以選要不要對打喔！', 2600); }, 2600);
   }, 1800);
 }
@@ -21456,9 +21470,10 @@ function drawChallengeMark(ctx, cr) {   // 頭上跳動的「🥋 ❗」
   ctx.fillStyle = '#ffffff'; ctx.font = '900 14px Arial, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('!', p.x, y + 1); ctx.restore();
 }
 function sparChallengeMenu(cr, e) {
-  const yes = () => { cr.challenge = 0; cr.say = '好！我們來比賽！'; cr.sayUntil = performance.now() + 2000; fufuSay('好啊！來對打！', 2000); setTimeout(() => openSparGame(cr.n), 600); };
+  const duel = cr.kind === 'duel';
+  const yes = () => { cr.challenge = 0; cr.say = duel ? '好！看招！' : '好！我們來比賽！'; cr.sayUntil = performance.now() + 2000; fufuSay(duel ? '好啊！來對決！' : '好啊！來對打！', 2000); setTimeout(() => duel ? openDuelGame(cr.n) : openSparGame(cr.n), 600); };
   const no = () => { cr.challenge = 0; cr.say = '好吧～那下次喔！'; cr.sayUntil = performance.now() + 2500; fufuSay('下次再一起玩！', 2200); };
-  if (e) openMenu([[`🥋 好啊！跟${cr.n.short}對打`, yes], ['👋 下次再說', no]], e); else yes();
+  if (e) openMenu([[duel ? `⚔️ 好啊！跟${cr.n.short}對決` : `🥋 好啊！跟${cr.n.short}對打`, yes], ['👋 下次再說', no]], e); else yes();
 }
 /* 🥋 對練：跟動物朋友穿護具對練。
    朋友頭上出現綠色「踢！」→ 按「踢」得 1 分；出現紅色「擋！」→ 按「擋」擋住（沒擋到朋友得 1 分）。
@@ -21487,6 +21502,47 @@ function tkdSpecialCut(g, W, H, mv, k, t) {
   g.font = `900 ${nm.length > 7 ? 22 : 26}px "Microsoft JhengHei","PingFang TC",sans-serif`; g.lineWidth = 7; g.strokeStyle = mv.c === '#26232a' ? '#8a6bff' : '#26232a'; g.strokeText(nm, tx, H / 2 + 4); g.fillStyle = mv.c2; g.fillText(nm, tx, H / 2 + 4);
   g.font = '34px sans-serif'; g.fillText(mv.fx, tx, H / 2 + 46);
 }
+/* 💥 必殺技的招式動畫（家長：道館的必殺技要有動畫）：特寫之後，每一招有自己的樣子飛過去打中對手——
+   旋風踢＝藍色旋風捲過去、流星百裂拳＝一大堆拳頭和星星、彩虹迴旋踢＝畫一道彩虹踢過去、
+   雷光閃電腳＝烏雲打雷劈下來、火焰鳳凰腳＝火鳳凰飛過去、黑龍波＝一條黑紫色的龍衝過去。最後「碰！」一圈爆開。
+   A：放招的人（腳底）、B：被打的人（腳底）、k：0～1 進度。 */
+function tkdMoveAnim(g, mv, k, A, B, t) {
+  const ez = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2, hx = B.x, hy = B.y - 30, lerp = (a, b, u) => a + (b - a) * u;
+  const px = lerp(A.x, hx, ez), py = lerp(A.y - 30, hy, ez) - Math.sin(ez * Math.PI) * 30;
+  g.save(); g.lineCap = 'round';
+  if (mv.name === '旋風踢') {
+    for (let i = 0; i < 4; i++) { g.strokeStyle = `rgba(107,182,255,${.8 - i * .15})`; g.lineWidth = 4 - i * .6; g.beginPath(); g.ellipse(px, py, 22 - i * 4, 9 - i * 1.5, t * 8 + i, 0, Math.PI * 1.6); g.stroke(); }
+    for (let i = 0; i < 6; i++) { g.strokeStyle = 'rgba(223,240,255,.8)'; g.lineWidth = 2; g.beginPath(); g.moveTo(px - 30 - i * 8, py - 12 + i * 5); g.lineTo(px - 50 - i * 12, py - 12 + i * 5); g.stroke(); }
+  } else if (mv.name === '流星百裂拳') {
+    const n = Math.floor(k * 16); g.font = '20px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    for (let i = 0; i < n; i++) { const a = i * 2.39, r = 10 + (i % 4) * 7; g.globalAlpha = Math.max(0, 1 - (n - i) / 8); g.fillText(i % 3 ? '👊' : '⭐', hx + Math.cos(a) * r - 6, hy + Math.sin(a) * r); }
+    g.globalAlpha = 1; for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2 + t * 3; g.strokeStyle = '#ffd23f'; g.lineWidth = 3; g.beginPath(); g.moveTo(hx + Math.cos(a) * 26, hy + Math.sin(a) * 26); g.lineTo(hx + Math.cos(a) * (34 + k * 10), hy + Math.sin(a) * (34 + k * 10)); g.stroke(); }
+    g.font = '900 16px "Microsoft JhengHei","PingFang TC",sans-serif'; g.fillStyle = '#c0392b'; g.fillText(`${Math.max(1, n * 6)} 連打！`, hx, hy - 48);
+  } else if (mv.name === '彩虹迴旋踢') {
+    const cols = ['#ff5a5a', '#ff9f3a', '#ffd23f', '#5fcf6f', '#4fb0ff', '#6b6bff', '#b46bff'], cx = (A.x + hx) / 2, cy = Math.max(A.y, B.y) - 10, rx = Math.abs(hx - A.x) / 2, ry = 70;
+    cols.forEach((c, i) => { g.strokeStyle = c; g.lineWidth = 4; g.beginPath(); g.ellipse(cx, cy, rx + 12 - i * 4, ry + 12 - i * 4, 0, Math.PI, Math.PI + Math.PI * ez); g.stroke(); });
+    const a = Math.PI + Math.PI * ez; g.font = '18px sans-serif'; g.textAlign = 'center'; g.fillText('✨', cx + Math.cos(a) * rx, cy + Math.sin(a) * ry);
+  } else if (mv.name === '雷光閃電腳') {
+    g.fillStyle = '#4f5566'; [-18, 0, 18].forEach((dx, i) => { g.beginPath(); g.arc(hx + dx, 22 + (i % 2) * 6, 16, 0, 7); g.fill(); });
+    if (k > .35) { const f = Math.floor(t * 30) % 2; g.strokeStyle = f ? '#fff6a0' : '#b18cff'; g.lineWidth = 5; g.beginPath(); let x = hx, y = 34; g.moveTo(x, y); for (let i = 0; i < 6; i++) { x = hx + (i % 2 ? 12 : -12); y += (hy - 34) / 6; g.lineTo(x, y); } g.lineTo(hx, hy); g.stroke(); g.strokeStyle = '#ffffff'; g.lineWidth = 2; g.stroke();
+      if (f) { g.fillStyle = 'rgba(255,255,230,.35)'; g.fillRect(0, 0, g.canvas.width, g.canvas.height); } }
+    g.font = '18px sans-serif'; g.textAlign = 'center'; g.fillText('⚡', px, py);
+  } else if (mv.name === '火焰鳳凰腳') {
+    for (let i = 0; i < 14; i++) { const u = Math.max(0, ez - i * .03); const x = lerp(A.x, hx, u), y = lerp(A.y - 30, hy, u) - Math.sin(u * Math.PI) * 30; g.fillStyle = `rgba(255,${120 + i * 8},40,${.7 - i * .045})`; g.beginPath(); g.arc(x, y + Math.sin(t * 20 + i) * 3, 9 - i * .5, 0, 7); g.fill(); }
+    g.save(); g.translate(px, py); const fl = Math.sin(t * 18) * .5; g.fillStyle = '#ff5a1f';
+    [-1, 1].forEach(sd => { g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(-10, sd * (22 + fl * 10), -26, sd * (14 + fl * 12)); g.quadraticCurveTo(-12, sd * 6, 0, 0); g.fill(); });
+    g.fillStyle = '#ffb02e'; g.beginPath(); g.ellipse(0, 0, 12, 7, 0, 0, 7); g.fill(); g.fillStyle = '#ffe14a'; g.beginPath(); g.arc(10, -3, 5, 0, 7); g.fill(); g.fillStyle = '#231c1c'; g.beginPath(); g.arc(11, -4, 1.3, 0, 7); g.fill();
+    g.fillStyle = '#ff8a3d'; g.beginPath(); g.moveTo(15, -3); g.lineTo(20, -1); g.lineTo(15, 0); g.fill(); g.restore();
+  } else {   // 黑龍波
+    for (let i = 16; i >= 0; i--) { const u = Math.max(0, ez - i * .035); const x = lerp(A.x, hx, u), y = lerp(A.y - 30, hy, u) + Math.sin(t * 8 + i * .7) * 10;
+      g.fillStyle = i % 2 ? '#26232a' : '#3d2f5c'; g.beginPath(); g.arc(x, y, 10 - i * .35, 0, 7); g.fill(); if (i % 3 === 0) { g.fillStyle = '#8a6bff'; g.beginPath(); g.moveTo(x - 3, y - 8); g.lineTo(x, y - 15); g.lineTo(x + 3, y - 8); g.fill(); } }
+    const dy = py + Math.sin(t * 8) * 10; g.fillStyle = '#26232a'; g.beginPath(); g.ellipse(px + 6, dy, 14, 10, 0, 0, 7); g.fill();
+    g.fillStyle = '#ff5a5a'; g.beginPath(); g.arc(px + 10, dy - 3, 2.5, 0, 7); g.fill(); g.strokeStyle = '#c9b8ff'; g.lineWidth = 2; g.beginPath(); g.moveTo(px + 2, dy - 9); g.lineTo(px - 6, dy - 18); g.moveTo(px + 8, dy - 9); g.lineTo(px + 4, dy - 19); g.stroke();
+    g.fillStyle = 'rgba(138,107,255,.25)'; g.beginPath(); g.arc(px, dy, 24, 0, 7); g.fill();
+  }
+  if (k > .85) { const b = (k - .85) / .15; g.globalAlpha = 1 - b; g.fillStyle = mv.c === '#26232a' ? '#8a6bff' : mv.c; g.beginPath(); g.arc(hx, hy, 14 + b * 40, 0, 7); g.fill(); g.globalAlpha = 1; g.font = `${24 + b * 16}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('💥', hx, hy); }
+  g.restore(); g.textBaseline = 'alphabetic';
+}
 // 🎖️ 升段學到新招：特寫動畫播 3 秒（可以按「好！」跳過）
 function tkdLearnShow(w, mv, done) {
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
@@ -21510,7 +21566,7 @@ function playSpar(w, L, who) {
   const row = el('div', 'spar-row'), bKick = el('button', 'big spar-kick', '🦵 踢！'), bBlock = el('button', 'big spar-block', '🛡️ 擋！');   // 家長：妹妹看不懂字 → 按鈕顏色跟頭上的提示一樣（綠踢、紅擋）
   const bSp = el('button', 'big spar-sp', '💥 必殺技'); bSp.disabled = true;
   row.append(bKick, bBlock, bSp); w.stage.appendChild(row); leaveButton(w);
-  let ki = 0, spAt = 0, spMv = null, spN = 0;   // ki：氣（0～100），滿了可以放必殺技
+  let ki = 0, spAt = 0, spMv = null, spN = 0, spHit = false;   // ki：氣（0～100），滿了可以放必殺技
   const addKi = n => { ki = Math.min(100, ki + n * fitMul('sta')); bSp.disabled = ki < 100 || state !== 'fight'; bSp.classList.toggle('spar-on', ki >= 100); }; w.status.textContent = '綠色「踢！」按綠色的；紅色「擋！」按紅色的';
   let me = 0, them = 0, live = true, raf = 0, state = 'bow', t0 = performance.now(), cue = null, cueAt = 0, nextAt = 0;
   let myAnim = null, foeAnim = null, msg = `跟${foe.short}對練！先敬禮～`, msgC = '#5a4636';
@@ -21540,7 +21596,7 @@ function playSpar(w, L, who) {
   const special = () => {   // 💥 放必殺技：特寫 1 秒 → 招式飛過去 → 一次得 2 分
     if (!live || state !== 'fight' || ki < 100) return;
     const list = tkdLearned(); spMv = list[spN % list.length]; spN++; ki = 0; addKi(0); bSp.classList.remove('spar-on');
-    state = 'special'; spAt = performance.now(); cue = null; Sound.play('magic'); try { speak(tkdSpecialName(spMv) + '！'); } catch (e) {}
+    state = 'special'; spAt = performance.now(); spHit = false; cue = null; Sound.play('magic'); try { speak(tkdSpecialName(spMv) + '！'); } catch (e) {}
   };
   bKick.onclick = () => press('kick'); bBlock.onclick = () => press('block'); bSp.onclick = special;
   const key = e => { if (e.repeat) return; if (e.code === 'Space' || e.code === 'ArrowRight') { e.preventDefault(); press('kick'); } else if (e.code === 'ArrowLeft' || e.code === 'KeyB') { e.preventDefault(); press('block'); } else if (e.code === 'KeyS' || e.code === 'ArrowUp') { e.preventDefault(); special(); } };
@@ -21598,7 +21654,7 @@ function playSpar(w, L, who) {
         else { say('空檔沒了～再等下一次！'); schedule(now); }
       }
     }
-    if (state === 'special' && now - spAt > 2000) {   // 必殺技打中：得 2 分
+    if (state === 'special' && now - spAt > 2700) {   // 必殺技打中：得 2 分（特寫 1.1 秒＋招式動畫 1.4 秒＋碰！）
       state = 'fight'; me = Math.min(SPAR_GOAL, me + 2); foeAnim = { k: 'ouch', at: now }; Sound.play('fanfare'); say(`${tkdSpecialName(spMv)}！得 2 分！`, '#c0392b');
       if (me >= SPAR_GOAL) { state = 'end'; t0 = now; setTimeout(finish, 1600); } else schedule(now);
     }
@@ -21609,8 +21665,7 @@ function playSpar(w, L, who) {
     g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(10, 54, 104, 12); g.fillStyle = ki >= 100 ? `hsl(${(now / 3) % 360},90%,60%)` : '#ffb02e'; g.fillRect(12, 56, ki, 8); g.fillStyle = '#5a4636'; g.font = '700 10px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'left'; g.fillText(ki >= 100 ? '必殺技 OK！' : '氣', 12, 78);
     if (state === 'special') { const st = (now - spAt) / 1000;
       if (st < 1.1) tkdSpecialCut(g, W, H, spMv, st / .6, st);
-      else { const k = Math.min(1, (st - 1.1) / .6); g.font = `${30 + k * 30}px sans-serif`; g.textAlign = 'center'; g.globalAlpha = 1 - Math.max(0, k - .8) * 5; g.fillText(spMv.fx, 130 + k * 100, 110 - Math.sin(k * Math.PI) * 30); g.globalAlpha = 1;
-        g.strokeStyle = spMv.c === '#26232a' ? '#8a6bff' : spMv.c; g.lineWidth = 4; for (let i = 0; i < 3; i++) { g.globalAlpha = .4; g.beginPath(); g.moveTo(110, 100 + i * 10); g.lineTo(130 + k * 100, 100 + i * 10); g.stroke(); } g.globalAlpha = 1; } }
+      else { tkdMoveAnim(g, spMv, Math.min(1, (st - 1.1) / 1.4), { x: 115, y: 160 }, { x: 230, y: 160 }, st); if (st > 2.45 && !spHit) { spHit = true; foeAnim = { k: 'ouch', at: now }; Sound.play('crack'); } } }
     raf = requestAnimationFrame(tick);
   };
   try { speak('敬禮！'); } catch (e) {}
@@ -25659,6 +25714,166 @@ function playPick(w, L, cfg) {
     wrong: () => { const b = [...w.stage.querySelectorAll('.zy-card')].find(x => x.dataset.k !== q.k && !x.disabled); if (b) b.onclick(); return b; } };
 }
 AWAY_GAMES.push(['🀄', '小一國字', 'school', () => openHanziGame()], ['🔤', '小一英文', 'school', () => openKidEnGame()]);
+
+/* ===== ⚔️ 對決（家長：隨機跟道館或世界裡的角色發動對決、對打，要有趣味性；輸了也沒關係，頂多要去吃東西補體力）=====
+   輪流出招的回合制，妹妹看圖就會玩：
+   ・朋友頭上會先秀出牠「要做什麼」：👊 要打你、🔥 要放大招、💤 在休息
+   ・你選：👊 打（2 點，牠在休息時多打 1 點，有時會心一擊）、🛡️ 擋（擋住還會反擊 1 點、集很多氣）、💥 必殺技（氣滿了才能放，5 點，跆拳道學到的招式＋動畫）
+   ・偶爾有好玩的事：朋友踩到香蕉皮滑倒、啦啦隊加油集氣、咬一口小點心回血
+   體力＝小可愛的 🍙 飽足：越飽血越多（6～10）。贏了只少一點點（-8），輸了會餓（-25），要去吃東西補體力；太餓（<20）沒力氣對決。
+   G.duel = { win, lose }：贏越多次，朋友也會越來越強（最多多 4 滴血）。 */
+const DUEL_CHAL_LINES = ['⚔️ {名}，來對決吧！看誰比較厲害！', '⚔️ {名}！我練了新招，要不要比一比？', '⚔️ 嘿嘿～{名}，敢不敢跟我對決？', '⚔️ {名}，我們來比武！輸的要請吃點心喔！'];
+const DUEL_FOE_MOVES = [['撞撞頭', '💫'], ['旋轉尾巴', '🌀'], ['大熊抱', '🤗'], ['跳跳踢', '🦶'], ['翻滾攻擊', '🌪️'], ['口水泡泡', '💦'], ['搔癢攻擊', '✋']];
+const DUEL_MIN_HUNGER = 20, DUEL_COST_WIN = 8, DUEL_COST_LOSE = 25;
+const pickOne = a => a[Math.floor(Math.random() * a.length)];
+function duelState() { if (!G.duel || typeof G.duel !== 'object') G.duel = { win: 0, lose: 0 }; return G.duel; }
+function openDuelGame(foe) {
+  if (!foe || !foe.body) foe = null;   // 從選單點進來傳的是事件
+  const w = openGameWindow('⚔️ 對決！', '看朋友頭上的圖：👊／🔥 要打你了就按「🛡️ 擋」，💤 在休息就快「👊 打」！氣滿了放「💥 必殺技」。');
+  const hunger = Math.round((G.kid && G.kid.hunger) || 0);
+  if (hunger < DUEL_MIN_HUNGER) {   // 太餓：沒力氣對決 → 去吃東西
+    w.stage.innerHTML = ''; w.stage.appendChild(el('div', 'tkd-big', '🍙'));
+    w.status.textContent = `肚子好餓（🍙 ${hunger}），沒力氣對決…先去吃東西補體力吧！`;
+    try { fufuSay('肚子好餓，沒力氣了～', 2400); } catch (e) {}
+    const eat = el('button', 'big', '🍙 去吃東西'); eat.onclick = () => { closeGameWindow(); try { showFoodMenu('kid'); } catch (e) {} };
+    w.btns.innerHTML = ''; w.btns.appendChild(eat); leaveButton(w); return;
+  }
+  playDuel(w, foe);
+}
+function playDuel(w, who) {
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const W = 360, H = 230, { g } = gameCanvas(w.stage, W, H), place = (G.away && G.away.place) || 'home';
+  const mates = NEIGHBORS.filter(Boolean), foe = who || pickOne(mates), st = duelState();
+  const lvl = Math.min(4, Math.floor((st.win || 0) / 3)), hunger = (G.kid && G.kid.hunger) || 50;
+  const S = { me: Math.min(10, 5 + Math.round(hunger / 20)), meMax: 10, foe: 8 + lvl, foeMax: 8 + lvl, ki: 0, intent: 'atk', phase: 'intro', at: performance.now(), anim: null, pops: [], shake: 0, spMv: null, over: false, turn: 0, moves: [pickOne(DUEL_FOE_MOVES), pickOne(DUEL_FOE_MOVES)] };
+  const row = el('div', 'spar-row'), bHit = el('button', 'big duel-hit', '👊 打'), bBlock = el('button', 'big spar-block', '🛡️ 擋'), bSp = el('button', 'big spar-sp', '💥 必殺技');
+  row.append(bHit, bBlock, bSp); w.stage.appendChild(row); leaveButton(w);
+  let live = true, raf = 0, msg = `${foe.short}來挑戰了！`, msgC = '#5a4636';
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', key); };
+  const say = (m, c) => { msg = m; msgC = c || '#5a4636'; };
+  const ME = { x: 105, y: 178 }, FOE = { x: 262, y: 178 };
+  const pop = (x, y, t, c) => S.pops.push({ x, y, t, c, at: performance.now() });
+  const ui = () => { const ok = S.phase === 'choose' && live; bHit.disabled = bBlock.disabled = !ok; bSp.disabled = !ok || S.ki < 100; bSp.classList.toggle('spar-on', ok && S.ki >= 100); bBlock.classList.toggle('spar-on', ok && (S.intent === 'atk' || S.intent === 'big')); bHit.classList.toggle('spar-on', ok && S.intent === 'rest'); };
+  const newIntent = () => {
+    S.turn++; const r = Math.random();
+    S.intent = S.foe <= 3 && r < .3 ? 'big' : r < .5 ? 'atk' : r < .72 ? 'big' : 'rest';
+    if (S.turn === 1) S.intent = 'atk';   // 第一回合先示範「要打你了→擋」
+    const ev = Math.random();   // 🎲 好玩的小事
+    if (S.turn > 1 && ev < .07) { S.intent = 'slip'; say(`${foe.short}踩到香蕉皮滑倒了！🍌 快打牠！`, '#e67700'); Sound.play('boing'); }
+    else if (S.turn > 1 && ev < .13) { S.ki = Math.min(100, S.ki + 30); say('📣 啦啦隊幫你加油！氣 +30', '#1971c2'); Sound.play('perfect'); }
+    else if (S.turn > 1 && ev < .18 && S.me < S.meMax) { S.me++; pop(ME.x, ME.y - 70, '+1 ❤️', '#2f9e44'); say('咬一口小點心～回 1 滴血！🍪', '#2f9e44'); Sound.play('pickUp'); }
+    else say(S.intent === 'atk' ? `${foe.short}要用「${S.moves[0][0]}」打你了！按 🛡️ 擋！` : S.intent === 'big' ? `${foe.short}在集氣放大招「${S.moves[1][0]}」！🔥 快擋！` : `${foe.short}累了在休息 💤 快打牠！`);
+    S.phase = 'choose'; ui();
+  };
+  const hurtFoe = (n, txt) => { S.foe = Math.max(0, S.foe - n); pop(FOE.x, FOE.y - 72, `-${n}` + (txt ? ' ' + txt : ''), '#c0392b'); S.shake = .25; S.anim = { who: 'foe', k: 'ouch', at: performance.now() }; };
+  const hurtMe = n => { S.me = Math.max(0, S.me - n); pop(ME.x, ME.y - 72, `-${n}`, '#c0392b'); S.ki = Math.min(100, S.ki + 15); S.anim = { who: 'me', k: 'ouch', at: performance.now() }; };
+  const act = kind => {
+    if (!live || S.phase !== 'choose') return;
+    if (kind === 'sp' && S.ki < 100) return;
+    S.myAct = kind; S.phase = 'me'; S.at = performance.now(); ui();
+    if (kind === 'sp') { const list = tkdLearned(); S.spMv = list[(st.win + st.lose + S.turn) % list.length]; S.ki = 0; Sound.play('magic'); try { speak(tkdSpecialName(S.spMv) + '！'); } catch (e) {} }
+    else if (kind === 'hit') { Sound.play('whoosh'); S.anim = { who: 'me', k: 'hit', at: performance.now() }; }
+    else { Sound.play('click'); S.anim = { who: 'me', k: 'block', at: performance.now() }; }
+  };
+  const resolveMe = () => {   // 我的招打出去
+    const it = S.intent;
+    if (S.myAct === 'sp') { hurtFoe(5, '必殺！'); Sound.play('crack'); say(`${tkdSpecialName(S.spMv)}！打中了！`, '#c0392b'); return; }
+    if (S.myAct === 'hit') {
+      let n = 2, tag = ''; if (it === 'rest' || it === 'slip') { n++; tag = '趁機！'; } if (Math.random() < .2) { n++; tag = '會心一擊！'; }
+      S.ki = Math.min(100, S.ki + 20); hurtFoe(n, tag); Sound.play('perfect'); say(tag ? `${tag}打中 ${n} 點！` : `打中了！${n} 點！`, '#2f9e44');
+    } else {
+      if (it === 'atk' || it === 'big') { S.ki = Math.min(100, S.ki + 40); S.blocked = true; say('🛡️ 擋住了！準備反擊！', '#1971c2'); Sound.play('knock'); }
+      else { S.ki = Math.min(100, S.ki + 15); say(`${foe.short}沒有要打你～下次牠休息就快打牠！`); }
+    }
+  };
+  const resolveFoe = () => {   // 換朋友出招
+    const it = S.intent;
+    if (it === 'rest' || it === 'slip') { if (it === 'rest') say(`${foe.short}休息完了～`); return; }
+    S.anim = { who: 'foe', k: 'hit', at: performance.now() }; Sound.play('whoosh');
+    const big = it === 'big', mvn = big ? S.moves[1] : S.moves[0];
+    if (S.myAct === 'block') { if (big) hurtMe(1); hurtFoe(1, '反擊！'); say(big ? `大招「${mvn[0]}」被擋住了！只痛一點點，還反擊！` : `擋住「${mvn[0]}」還反擊！`, '#1971c2'); }
+    else { hurtMe(big ? 3 : 2); S.shake = big ? .4 : .2; say(`被「${mvn[0]}」${mvn[1]} 打到了！`, '#d9480f'); Sound.play('miss'); }
+    S.blocked = false;
+  };
+  const finish = win => {
+    if (S.over) return; S.over = true; S.phase = 'end'; ui();
+    setTimeout(() => {
+      if (!live) return; gameCleanup(); gameCleanup = null;
+      const k = G.kid; if (k) k.hunger = Math.max(0, Math.round(k.hunger - (win ? DUEL_COST_WIN : DUEL_COST_LOSE)));
+      if (win) st.win = (st.win || 0) + 1; else st.lose = (st.lose || 0) + 1;
+      const bells = payReward(w, win ? 100 + lvl * 25 : 30);
+      kidMoodUp(win ? 12 : 4); try { dailyHit('game'); } catch (e) {}
+      if (win) { Sound.play('fanfare'); try { confettiBurst(80); } catch (e) {} }
+      w.status.textContent = win ? `🏆 你贏了 ${foe.short}！（贏了 ${st.win} 次）　💰 +${fmt(bells)}　🍙 -${DUEL_COST_WIN}` : `沒關係！${foe.short}好厲害～肚子餓了 🍙 -${DUEL_COST_LOSE}，去吃東西補體力，再來挑戰！　💰 +${fmt(bells)}`;
+      try { speak(win ? '你贏了！好厲害！' : '沒關係，去吃東西補體力，再來挑戰！'); fufuSay(win ? '我贏了！耶！' : '肚子好餓～我要去吃東西！', 2600); } catch (e) {}
+      saveGame(); refreshTop();
+      w.btns.innerHTML = '';
+      if (!win || (G.kid && G.kid.hunger < 40)) { const eat = el('button', 'big', '🍙 去吃東西'); eat.onclick = () => { closeGameWindow(); try { showFoodMenu('kid'); } catch (e) {} }; w.btns.appendChild(eat); }
+      const again = el('button', 'big' + (win ? '' : ' alt'), '⚔️ 再對決一次'); again.onclick = () => openDuelGame(who); w.btns.appendChild(again);
+      const home = el('button', 'big alt', G.away ? '離開' : '回家'); home.onclick = () => { closeGameWindow(); renderTab(); }; w.btns.appendChild(home);
+    }, 1500);
+  };
+  bHit.onclick = () => act('hit'); bBlock.onclick = () => act('block'); bSp.onclick = () => act('sp');
+  const key = e => { if (e.repeat) return; if (e.code === 'Space' || e.code === 'ArrowRight' || e.code === 'KeyA') { e.preventDefault(); act('hit'); } else if (e.code === 'ArrowLeft' || e.code === 'KeyB' || e.code === 'KeyS') { e.preventDefault(); act('block'); } else if (e.code === 'KeyD' || e.code === 'Enter') { e.preventDefault(); act('sp'); } };
+  document.addEventListener('keydown', key);
+  const bg = () => {
+    const sky = { dojo: ['#fff4e6', '#ffe8cc'], school: ['#e7f5ff', '#d0ebff'], park: ['#d8f5a2', '#b2f2bb'], amusement: ['#ffe3ee', '#ffd8a8'] }[place] || ['#fff4e6', '#ffe3ee'];
+    const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, sky[0]); gr.addColorStop(1, sky[1]); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+    if (place === 'dojo') for (let i = 0; i < 10; i++) { g.fillStyle = i % 2 ? '#ffd23f' : '#2f6fd1'; g.fillRect(i * 40 - 10, 180, 40, 50); }
+    else { g.fillStyle = place === 'park' ? '#7bd389' : place === 'school' ? '#e8c27a' : '#ffb3c8'; g.fillRect(0, 180, W, 50); }
+    // 血條、氣
+    const bar = (x, v, mx, nm, right) => { g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(x, 10, 140, 12); g.fillStyle = v / mx > .5 ? '#5fcf6f' : v / mx > .25 ? '#ffd23f' : '#ff6b6b'; const ww = 136 * v / mx; g.fillRect(right ? x + 2 + 136 - ww : x + 2, 12, ww, 8);
+      g.fillStyle = '#3a3240'; g.font = '700 11px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = right ? 'right' : 'left'; g.fillText(`${nm} ❤️ ${v}`, right ? x + 140 : x, 36); };
+    bar(10, S.me, S.meMax, charName(), false); bar(W - 150, S.foe, S.foeMax, foe.short + (lvl ? ` Lv.${lvl + 1}` : ''), true);
+    g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(10, 42, 84, 8); g.fillStyle = S.ki >= 100 ? `hsl(${(performance.now() / 3) % 360},90%,60%)` : '#ffb02e'; g.fillRect(12, 44, S.ki * .8, 4);
+    g.fillStyle = '#5a4636'; g.font = '700 10px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'left'; g.fillText(S.ki >= 100 ? '氣滿了！💥' : '氣', 98, 50);
+    g.fillStyle = msgC; g.font = '700 13px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillText(msg, W / 2, 68);
+  };
+  const drawMe = now => {
+    const a = S.anim && S.anim.who === 'me' && now - S.anim.at < 500 ? S.anim : null, k = a ? Math.sin((now - a.at) / 500 * Math.PI) : 0;
+    const lose = S.over && S.me <= 0, x = ME.x + (a && a.k === 'hit' ? k * 60 : a && a.k === 'ouch' ? -k * 14 : 0);
+    g.save(); g.translate(x, ME.y); g.scale(1.6, 1.6); if (lose) { g.translate(0, -6); g.rotate(-.4); }
+    if (kidBaby()) drawBabyKid(g, { t: now / 1000 }); else drawGirl(g, { t: now / 1000, walking: a && a.k === 'hit', blink: false, outfit: currentOutfit(), face: lose ? 'worried' : S.over ? 'joy' : a && a.k === 'ouch' ? 'wow' : 'happy', stage: kidLookStage() });
+    if (a && a.k === 'block') { g.strokeStyle = 'rgba(80,160,255,.8)'; g.lineWidth = 3; g.beginPath(); g.arc(8, -30, 18, -1.2, 1.2); g.stroke(); }
+    g.restore();
+    if (lose) { g.font = '14px sans-serif'; g.textAlign = 'center'; g.fillText('💫', ME.x + Math.sin(now / 150) * 10, ME.y - 70); }
+  };
+  const drawFoe = now => {
+    const a = S.anim && S.anim.who === 'foe' && now - S.anim.at < 500 ? S.anim : null, k = a ? Math.sin((now - a.at) / 500 * Math.PI) : 0;
+    const lose = S.over && S.foe <= 0, slip = S.intent === 'slip' && S.phase === 'choose', x = FOE.x + (a && a.k === 'hit' ? -k * 60 : a && a.k === 'ouch' ? k * 16 : 0) + (S.shake > 0 ? Math.sin(now / 20) * 3 : 0);
+    g.save(); g.translate(x, FOE.y); g.scale(-2.2, 2.2); if (lose || slip) { g.translate(0, -4); g.rotate(slip ? .9 : -.5); }
+    drawNeighbor(g, foe, { happy: S.over && !lose, sad: lose, blink: false, fx: 1.5, clean: 100 }); g.restore();
+    if (S.phase === 'choose' && !S.over) {   // 頭上的「要做什麼」
+      const ic = { atk: '👊', big: '🔥', rest: '💤', slip: '🍌' }[S.intent], col = { atk: '#e03131', big: '#ff5a1f', rest: '#2f9e44', slip: '#e67700' }[S.intent], y = FOE.y - 92 + Math.sin(now / 200) * 3;
+      g.fillStyle = col; g.beginPath(); g.arc(FOE.x, y, 17, 0, 7); g.fill(); g.font = '18px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(ic, FOE.x, y + 1); g.textBaseline = 'alphabetic';
+      if (S.intent === 'big') { g.strokeStyle = `rgba(255,90,31,${.4 + Math.sin(now / 90) * .3})`; g.lineWidth = 3; g.beginPath(); g.arc(FOE.x, FOE.y - 30, 34, 0, 7); g.stroke(); }
+    }
+    if (lose) { g.font = '14px sans-serif'; g.textAlign = 'center'; g.fillText('💫', FOE.x + Math.sin(now / 150) * 10, FOE.y - 72); }
+  };
+  const tick = now => {
+    if (!live) return;
+    const el2 = now - S.at;
+    if (S.phase === 'intro' && el2 > 1200) newIntent();
+    if (S.phase === 'me') {
+      const dur = S.myAct === 'sp' ? 2700 : 600;
+      if (S.myAct === 'sp' && el2 > 2450 && !S.spHit) { S.spHit = true; resolveMe(); }
+      if (el2 > dur) { if (S.myAct !== 'sp') resolveMe(); S.spHit = false; if (S.foe <= 0) { say(`打贏了！${foe.short}倒下了～`, '#2f9e44'); finish(true); } else { S.phase = 'foe'; S.at = now; } }
+    }
+    if (S.phase === 'foe' && el2 > 500 && !S.foeDone) { S.foeDone = true; resolveFoe(); }
+    if (S.phase === 'foe' && el2 > 1300) { S.foeDone = false; if (S.me <= 0) { say('哎呀，輸了…', '#d9480f'); finish(false); } else newIntent(); }
+    if (S.shake > 0) S.shake -= 1 / 60;
+    g.save(); if (S.shake > 0) g.translate(Math.sin(now / 15) * 4, 0);
+    bg(); drawMe(now); drawFoe(now);
+    if (S.phase === 'me' && S.myAct === 'sp') { const s2 = el2 / 1000; if (s2 < 1.1) tkdSpecialCut(g, W, H, S.spMv, s2 / .6, s2); else tkdMoveAnim(g, S.spMv, Math.min(1, (s2 - 1.1) / 1.4), ME, FOE, s2); }
+    S.pops = S.pops.filter(p => now - p.at < 1100); S.pops.forEach(p => { const u = (now - p.at) / 1100; g.globalAlpha = 1 - u; g.font = '900 18px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.lineWidth = 4; g.strokeStyle = '#fff'; g.strokeText(p.t, p.x, p.y - u * 30); g.fillStyle = p.c; g.fillText(p.t, p.x, p.y - u * 30); g.globalAlpha = 1; });
+    g.restore();
+    raf = requestAnimationFrame(tick);
+  };
+  ui(); try { speak(`${foe.short}來挑戰了！`); } catch (e) {} Sound.play('shake');
+  raf = requestAnimationFrame(tick);
+  playDuel.test = { S, act, newIntent, finish, foe };
+}
+AWAY_GAMES.push(['⚔️', '對決', 'dojo', () => openDuelGame()]);
 
 /* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
