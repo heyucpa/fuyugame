@@ -22,10 +22,13 @@ const path = require('path');
             const cx = bs.x + bs.w / 2, px = P.x + P.w / 2, near = bs.mode === 'rest' || bs.mode === 'down';
             let tx = near ? cx : cx + (px < cx ? -100 : 100); if (!near && (tx < bs.ax0 + 10 || tx > bs.ax1 - 10)) tx = cx + (px < cx ? 100 : -100);
             const bolt = T.bolts.find(b => !b.hit && px > b.x - 8 && px < b.x + b.w + 8); if (bolt) tx = px + (px < bolt.x + bolt.w / 2 ? -40 : 40); const drop = T.rain.find(d => Math.abs(d.x - px) < 16 && d.y < P.y + 4 && d.y > P.y - 90); if (drop && !near) tx = px + (px < drop.x ? -40 : 40); const hv = T.items.find(it => it.k === 'heart' && !it.got); if (hv && !near && !drop && !bolt) tx = hv.x;
-            dir = Math.abs(tx - px) < 6 ? 0 : Math.sign(tx - px); } if (Math.abs(P.x - lastX) < .5) stuckT += 1 / 60; else stuckT = 0; lastX = P.x; if (stuckT > 1.5) { backT = .9; stuckT = 0; } if (backT > 0) { backT -= 1 / 60; dir = -1; } T.keys.ArrowRight = dir > 0; T.keys.ArrowLeft = dir < 0; }   // 打大王：朝著大王走、牠暈的時候跳上去
+            dir = Math.abs(tx - px) < 6 ? 0 : Math.sign(tx - px); }
+          if (bs && bs.k === 'boss' && bs.mode === 'fly' && bs.mt > 1.2) { const cx = bs.x + bs.w / 2, px = P.x + P.w / 2; if (Math.abs(cx - px) < 50) dir = px < cx ? -1 : 1; }   /* 🔥 一般模式大魔王飛起來：別站在影子底下 */
+          if (Math.abs(P.x - lastX) < .5) stuckT += 1 / 60; else stuckT = 0; lastX = P.x; if (stuckT > 1.5) { backT = .9; stuckT = 0; } if (backT > 0) { backT -= 1 / 60; dir = -1; } T.keys.ArrowRight = dir > 0; T.keys.ArrowLeft = dir < 0; }   // 打大王：朝著大王走、牠暈的時候跳上去
         const gap = !T.solid(T.tileAt(fx, feet)) && !T.solid(T.tileAt(fx + 1, feet)) && T.tileAt(fx, feet) !== '-';
         const wall = T.solid(T.tileAt(fx, mid)) || T.solid(T.tileAt(fx, mid - 1));
-        const foe = T.ents.find(e => e.alive && ((e.k === 'boss' || e.k === 'cloudking') ? (e.dizzy > 0 && Math.abs(e.x + e.w / 2 - P.x - P.w / 2) < 70) : (e.x > P.x - 4 && e.x - (P.x + P.w) < 30)) && Math.abs(e.y - P.y) < 50);
+        const fireNear = (T.bossFire || []).some(f => Math.abs(f.x - P.x - P.w / 2) < 46 && Math.sign(P.x - f.x) === Math.sign(f.vx));   // 火球飛過來：跳
+        const foe = fireNear || T.ents.find(e => e.alive && ((e.k === 'boss' || e.k === 'cloudking') ? (e.dizzy > 0 && Math.abs(e.x + e.w / 2 - P.x - P.w / 2) < 70) : (e.x > P.x - 4 && e.x - (P.x + P.w) < 30)) && Math.abs(e.y - P.y) < 50);
         if (P.on && (gap || wall || foe)) { T.jump(); held = true; } else if (held && !P.on && P.vy > 0) { T.release(); held = false; }
         T.step(1 / 60);
       }
@@ -55,7 +58,7 @@ const path = require('path');
     // ✨ 長按跳更高；簡單模式平常自己往前跑（不用按）
     { const jumpTop = held => { questState().mode = 'normal'; playQuest('1-1'); const T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null; for (let i = 0; i < 30; i++) T.step(1 / 60); const y0 = T.P.y; T.jump(); let top = y0; for (let i = 0; i < 70; i++) { if (!held && i === 2) T.release(); T.step(1 / 60); top = Math.min(top, T.P.y); } T.release(); closeGameWindow(); $('#modal').hidden = true; return y0 - top; };
       const hi = jumpTop(true), lo = jumpTop(false); o.holdHigher = hi > lo * 2 && hi > 100; o.jumpH = [Math.round(lo), Math.round(hi)];
-      questState().mode = 'easy'; playQuest('1-1'); const T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null; const x0 = T.P.x; for (let i = 0; i < 60; i++) T.step(1 / 60); o.autoRun = T.P.x > x0 + 50 && document.querySelector('.qb-l').style.display === 'none'; closeGameWindow(); $('#modal').hidden = true; }
+      questState().mode = 'easy'; playQuest('1-1'); const T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null; const x0 = T.P.x; for (let i = 0; i < 60; i++) T.step(1 / 60); o.autoRun = T.P.x > x0 + 50 && document.querySelector('.qb-l').style.display !== 'none'; closeGameWindow(); $('#modal').hidden = true; }
     o.cleared = Object.keys(questState().clear).length; o.worlds = questWorldsCleared();
     islMapCache = null; const m = islMap(0); o.islets = m.specials.map(s => s.id); o.isletLand = m.specials.every(sp => m.land[sp.y][sp.x]);
     openIsland(); await wait(300); o.btn = !!document.querySelector('.isl-quest');
