@@ -802,6 +802,7 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .qpad-split .qb-j:active { transform: translateY(3px); box-shadow: 0 1px 0 #c98a10; }
 .qpad-split .qb-dn, .qpad-split .qb-fire, .qpad-split .qb-pet { min-width: 66px; height: 66px; border-radius: 20px; }
 @media (max-width: 560px) { .qpad-split .qb-l, .qpad-split .qb-r { width: 70px; height: 70px; font-size: 28px; } .qpad-split .qb-j { width: 88px; height: 88px; font-size: 20px; } .qpad-split .qb-dn, .qpad-split .qb-fire, .qpad-split .qb-pet { min-width: 52px; height: 56px; } }
+.voice-diag { white-space: pre-wrap; font-size: 12px; color: #6d6a75; background: #f4f1ec; border-radius: 10px; padding: 8px 10px; margin: 8px 0; line-height: 1.5; }
 .confetti-cv { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 90; pointer-events: none; }   /* 彩帶不擋點擊 */
 .star-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; } .star-slot { display: flex; flex-direction: column; align-items: center; padding: 10px 4px; border-radius: 16px; background: #f1ecf7; border: 2px dashed #c9b8e8; color: #a99ac9; }
 .star-slot.on { background: #fff7d6; border: 2px solid #ffd23f; color: #5a4636; } .star-e { font-size: 34px; } .star-n { font-size: 13px; font-weight: 800; }
@@ -26628,7 +26629,7 @@ function openVoicePicker(back) {
   card.appendChild(el('h2', '', '🔊 選語音（台灣腔）'));
   const list = zhVoices(), cur = pickZhVoice();
   if (!canSpeak()) card.appendChild(note('⚠️ 這個瀏覽器不能念出聲音。'));
-  else if (!list.length) card.appendChild(note('這台機器還沒有中文語音（或還在載入，等幾秒再打開一次）。'));
+  else if (!list.length) { card.appendChild(note('這台機器還沒有中文語音（或還在載入，等幾秒會自己再找一次）。')); try { speechSynthesis.addEventListener('voiceschanged', function again() { speechSynthesis.removeEventListener('voiceschanged', again); if (!$('#modal').hidden && document.querySelector('.voice-diag')) openVoicePicker(back); }); } catch (e) {} }
   else {
     card.appendChild(note(hasTwVoice() ? '點「試聽」聽聽看，選一個聽起來最順的。⭐ 是台灣腔。' : '⚠️ 這台機器沒有台灣腔的聲音，下面只有大陸或香港的。請看最下面的說明加裝台灣的聲音。'));
     const box = el('div', 'voice-list');
@@ -26643,6 +26644,11 @@ function openVoicePicker(back) {
     });
     card.appendChild(box);
   }
+  // 🔎 家長：iPad 換台灣腔好像失敗 → 列出這台機器找到的中文聲音（拍照給幫忙改遊戲的人看就知道卡在哪）；iPad 的聲音常常晚一點才出來，可以按「重新找」
+  { let all = []; try { all = speechSynthesis.getVoices(); } catch (e) {}
+    const used = pickZhVoice(), names = list.map(v => `${zhVoiceScore(v) >= 100 ? '⭐' : ''}${v.name}（${v.lang}${v.localService === false ? '，要網路' : ''}）`);
+    card.appendChild(el('div', 'voice-diag', `🔎 這台機器找到 ${all.length} 個聲音，中文的有 ${list.length} 個：${names.join('、') || '（沒有）'}\n現在念的是：${used ? used.name + '（' + used.lang + '）' : '（沒有中文聲音，用機器預設的）'}`));
+    const re = el('button', 'mini', '🔄 重新找聲音（剛下載完按這個）'); re.onclick = () => { try { speechSynthesis.getVoices(); } catch (e) {} toast('找聲音中…'); setTimeout(() => openVoicePicker(back), 900); }; card.appendChild(re); }
   card.appendChild(el('h3', '', '沒有台灣腔的聲音怎麼辦？'));
   card.appendChild(note('💻 Windows 電腦：用「Microsoft Edge」瀏覽器打開遊戲，裡面有很自然的台灣聲音（曉臻、雲哲）；或到 Windows「設定 → 時間與語言 → 語音 → 新增語音」，加「中文（台灣）」，再重新打開遊戲。Chrome 有「Google 國語（臺灣）」（要連網路）。'));
   card.appendChild(note('📱 iPad：到「設定 → 輔助使用 → 語音內容 → 聲音 → 中文」，選「中文（台灣）」的「美佳」並下載，再重新打開遊戲。'));
