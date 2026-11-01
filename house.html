@@ -16294,6 +16294,10 @@ function tabSave(body) {
     tg.onclick = () => { setVoiceOn(!voiceOn()); Sound.play('click'); toast(voiceOn() ? '🗣️ 會自動念出來了' : '🔇 不會自動念了（自己按 🔊 還是可以聽）'); renderTab(); };
     body.appendChild(tg);
     body.appendChild(note('關掉以後，遊戲不會自己念；想聽的時候按提示旁邊的 🔊、或長按按鈕還是會念。英文單字遊戲的念法不受影響。這台電腦／平板自己記住。')); }
+  { const en = voiceLang() === 'en', lb = el('button', 'big ' + (en ? '' : 'alt'), en ? '🔤 常用的話念英文（點一下改回中文）' : '🗣️ 常用的話念中文（點一下改成念英文）');
+    lb.onclick = () => { setVoiceLang(en ? 'zh' : 'en'); Sound.play('click'); if (!en) { toast('🔤 常用的話會念英文了'); enSpeak('Great job! Special move! Whirlwind Kick!'); } else { toast('🗣️ 改回念中文'); speak('好棒！', null, true); } renderTab(); };
+    body.appendChild(lb);
+    body.appendChild(note('念英文：稱讚、比賽、必殺技這些常聽到的話用英文念（畫面上的字還是中文）。注音、國字、繪本、教學提示還是念中文。這台電腦／平板自己記住。')); }
   { const v = canSpeak() ? pickZhVoice() : null;
     body.appendChild(note(!canSpeak() ? '這個瀏覽器不能念出聲音。' : v ? `現在用：${v.name}${zhVoiceScore(v) >= 100 ? '（台灣）' : '（⚠️ 不是台灣腔）'}` : '還沒載入中文語音（等幾秒再看一次）。'));
     const vb = el('button', 'big alt', '🔊 選語音／試聽'); vb.onclick = () => openVoicePicker(); body.appendChild(vb); }
@@ -26972,9 +26976,63 @@ try { if (typeof speechSynthesis !== 'undefined') { speechSynthesis.getVoices();
 const VOICE_ON_KEY = 'myHouse_voiceOn';
 function voiceOn() { try { return localStorage.getItem(VOICE_ON_KEY) !== '0'; } catch (e) { return true; } }
 function setVoiceOn(on) { try { localStorage.setItem(VOICE_ON_KEY, on ? '1' : '0'); } catch (e) {} if (!on) stopSpeak(); }
+/* 🗣️ 念中文／念英文（家長：iPad 的中文聲音像大陸腔 → 可以調成英文：常用的話改用英文念，畫面的字還是中文）
+   設定裡切換，記在這台機器（myHouse_voiceLang：zh／en，預設中文）。
+   只翻「聊天、稱讚、比賽、必殺技」這些常用的話；注音、國字、繪本、教學提示不在表裡，照樣用中文念。
+   表裡沒有的句子也照樣用中文念，之後再慢慢補。 */
+const VOICE_LANG_KEY = 'myHouse_voiceLang';
+function voiceLang() { try { return localStorage.getItem(VOICE_LANG_KEY) === 'en' ? 'en' : 'zh'; } catch (e) { return 'zh'; } }
+function setVoiceLang(l) { try { localStorage.setItem(VOICE_LANG_KEY, l === 'en' ? 'en' : 'zh'); } catch (e) {} }
+const MOVE_EN = {
+  '旋風踢': 'Whirlwind Kick', '流星百裂拳': 'Meteor Punch Rush', '彩虹迴旋踢': 'Rainbow Spin Kick', '雷光閃電腳': 'Thunder Lightning Kick', '火焰鳳凰腳': 'Fire Phoenix Kick', '黑龍波': 'Black Dragon Wave',
+  '熊掌拍拍雨': 'Bear Paw Rain', '月亮跳跳踢': 'Moon Bounce Kick', '狐火轉轉': 'Fox Fire Spin', '松果連發彈': 'Pinecone Blaster', '棉花雲衝撞': 'Cotton Cloud Crash', '汪汪音波吼': 'Woof Woof Sound Wave',
+  '貓貓連環爪': 'Kitty Claw Combo', '冰滑溜溜衝': 'Ice Slide Dash', '甜甜圈旋風': 'Donut Tornado', '刺球滾滾彈': 'Spiky Ball Roll', '無尾熊超級抱': 'Koala Super Hug', '森林葉子雨': 'Forest Leaf Storm',
+  '熊熊大地震': 'Bear Earthquake', '世界旋風斬': 'World Cyclone Slash', '大槌地震': 'Hammer Quake', '海豚衝刺': 'Dolphin Dash', '彩虹灌籃': 'Rainbow Dunk', '火焰殺球': 'Fire Smash',
+  '火焰球': 'Fireball', '閃電球': 'Lightning Ball', '分身球': 'Clone Ball'
+};
+const EN_SAY = {
+  '偷跑了！': 'False start!', '各就各位': 'On your marks!', '預備': 'Get set!', '哈哈哈，好好笑！': 'Ha ha ha! So funny!', '好大的水花！': 'What a big splash!',
+  '好好吃喔！': 'So yummy!', '敬禮！': 'Bow!', '猜猜誰會跑第一名？點一隻！': 'Who will win? Pick one!', '這是我的新家！': 'This is my new home!',
+  '三關全破！好厲害！': 'All three levels cleared! Amazing!', '錢不夠喔，去賺錢吧！': "Not enough money. Let's earn some!", '世界冠軍！': 'World champion!',
+  '第一名！好厲害！': 'First place! Amazing!', '第一名！好快！': 'First place! So fast!', '第一名！好漂亮！': 'First place! Beautiful!',
+  '你贏了！': 'You win!', '好可惜！': 'So close!', '好可惜，再加油！': 'So close! Keep trying!', '你贏了！好厲害！': 'You win! Amazing!',
+  '沒關係，去吃東西補體力，再來挑戰！': "It's okay! Eat something, then try again!", '我們贏了！': 'We win!', '打贏教練了！': 'You beat the coach!',
+  '教練好強，再來挑戰！': 'The coach is strong. Try again!', '你是起跑反應王！': 'You are the starting king!', '好棒！': 'Great job!',
+  '世界跆拳道大賽開始報名了！想參加就來找熊熊教練！': 'The World Taekwondo Cup is starting! Come see Coach Bear to join!',
+  '樹式': 'Tree pose', '貓式': 'Cat pose', '小狗式': 'Puppy pose', '紅鶴式': 'Flamingo pose', '月亮式': 'Moon pose', '眼鏡蛇式': 'Cobra pose'
+};
+const EN_BELT = { '白帶': 'White belt', '黃帶': 'Yellow belt', '藍帶': 'Blue belt', '藍紅帶': 'Blue and red belt', '紅帶': 'Red belt', '黑帶': 'Black belt' };
+const EN_ORD = n => n + (n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th');
+const EN_SAY_RX = [
+  [/^(\d+(?:\.\d+)?)公尺！$/, m => `${m[1]} meters!`],
+  [/^一共(\d+)分！$/, m => `${m[1]} points in total!`],
+  [/^(\d+)分！$/, m => `${m[1]} points!`],
+  [/^第(\d+)名！$/, m => `${EN_ORD(+m[1])} place!`],
+  [/^答對(\d+)題，好棒！$/, m => `${m[1]} correct! Great job!`],
+  [/^恭喜！升上(.+)！$/, m => `Congratulations! ${EN_BELT[m[1]] || 'Level up'}!`],
+  [/^零用錢(\d+)元！/, m => `Pocket money! ${m[1]} dollars! Save it up!`],
+  [/來挑戰了！$/, () => 'A challenger is here!'],
+  [/^學會了.+的(.+)！$/, m => MOVE_EN[m[1]] ? `New move! ${MOVE_EN[m[1]]}!` : null],
+  [/^學會新的必殺技，.*?(\S+)！$/, m => { const k = Object.keys(MOVE_EN).find(x => m[1].endsWith(x)); return k ? `New special move! ${MOVE_EN[k]}!` : null; }],
+  [/^贏了！下一場是(準決賽|決賽)！$/, m => `You won! Next is the ${m[1] === '決賽' ? 'final' : 'semifinal'}!`],
+  [/^(參加獎|銅牌|銀牌)！好棒！$/, m => `${{ 參加獎: 'Thanks for joining', 銅牌: 'Bronze medal', 銀牌: 'Silver medal' }[m[1]]}! Great job!`],
+  [/來對決吧/, () => "Let's have a duel! Who is stronger?"], [/我練了新招/, () => 'I learned a new move! Want to try?'],
+  [/敢不敢跟我對決/, () => 'Do you dare to duel me?'], [/我們來比武/, () => "Let's have a match! The loser buys snacks!"],
+  [/要不要跟我對打/, () => 'Want to spar with me?']
+];
+// 放必殺技：「（名字）旋風踢！」→「Special move! Whirlwind Kick!」
+function toEnglishSay(text) {
+  const t = String(text || '').trim(); if (!t) return null;
+  if (EN_SAY[t]) return EN_SAY[t];
+  for (const [rx, f] of EN_SAY_RX) { const m = t.match(rx); if (m) { const r = f(m); if (r) return r; } }
+  const mv = Object.keys(MOVE_EN).sort((a, b) => b.length - a.length).find(k => t === k + '！' || (t.endsWith(k + '！') && t.length <= k.length + 9));
+  if (mv) return `Special move! ${MOVE_EN[mv]}!`;
+  return null;
+}
 function speak(text, voiceOverride, asked) {
   if (!canSpeak()) return false;
   if (!asked && !voiceOverride && !voiceOn()) return false;
+  if (!voiceOverride && voiceLang() === 'en') { const en = toEnglishSay(text); if (en) return enSpeak(en); }   // 🗣️ 念英文：表裡有的話用英文念
   try {
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(String(text).replace(/[「」]/g, ''));
