@@ -9,7 +9,7 @@ const path = require('path');
   try { await p.getByText('跳過').click({ timeout: 1500 }); } catch (e) {}
   const out = await p.evaluate(async () => {
     const wait = ms => new Promise(r => setTimeout(r, ms)), o = {}, fakeW = () => ({ stage: document.createElement('div'), btns: document.createElement('div'), status: {}, card: document.createElement('div') });
-    G.guide = 'done'; G.openGift = true; $('#modal').hidden = true; G.star = {}; G.daily = { d: today(), ids: ['feed', 'bath', 'kidEat'], n: {}, paid: {}, seen: today() };
+    DAILY_ON = true; /* 每日目標收起來了，測試時打開 */ G.guide = 'done'; G.openGift = true; $('#modal').hidden = true; G.star = {}; G.daily = { d: today(), ids: ['feed', 'bath', 'kidEat'], n: {}, paid: {}, seen: today() };
     questState().clear['1-3'] = 1;   // 更新前就破過世界 1
     document.querySelector('.stage').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
     for (let i = 0; i < 40 && !G.star.egg; i++) { if (!$('#modal').hidden) $('#modal').hidden = true; await wait(200); }

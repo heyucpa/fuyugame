@@ -9,7 +9,7 @@ const path = require('path');
   try { await p.getByText('跳過').click({ timeout: 1500 }); } catch (e) {}
   const out = await p.evaluate(async () => {
     const wait = ms => new Promise(r => setTimeout(r, ms)), o = {};
-    G.guide = 'done'; G.openGift = true; $('#modal').hidden = true; G.daily = null; G.dailyPaid = null; SC_QUEUE.length = 0;
+    DAILY_ON = true; /* 每日目標收起來了，測試時打開 */ G.guide = 'done'; G.openGift = true; $('#modal').hidden = true; G.daily = null; G.dailyPaid = null; SC_QUEUE.length = 0;
     // 每天第一次自動跳出
     document.querySelector('.stage').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));   // 她點過一下畫面
     o.notBeforeTap = true;

@@ -9,7 +9,7 @@ const path = require('path');
   try { await p.getByText('跳過').click({ timeout: 1500 }); } catch (e) {}
   const out = await p.evaluate(async () => {
     const wait = ms => new Promise(r => setTimeout(r, ms)), o = {};
-    G.guide = 'done'; G.openGift = true; $('#modal').hidden = true; G.hanzi = {}; G.enLearn = {};
+    DAILY_ON = true; /* 每日目標收起來了，測試時打開 */ G.guide = 'done'; G.openGift = true; $('#modal').hidden = true; G.hanzi = {}; G.enLearn = {};
     G.daily = { d: today(), ids: ['hanzi', 'feed', 'bath'], n: {}, paid: {}, seen: today() };
     const play = async (open, lv) => {
       open(); document.querySelectorAll('.lv-btn')[lv].click(); await wait(100); const T = playPick.test;

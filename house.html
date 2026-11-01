@@ -19315,9 +19315,12 @@ function dailyBigPrize() {
   if (k === 'furn') { const cheap = FURNITURE.filter(f => f.price > 0 && f.price <= 1500 && !f.gift && !f.season && !f.layer); if (cheap.length) { const f = cheap[Math.floor(Math.random() * cheap.length)]; G.inv[f.id] = (G.inv[f.id] || 0) + 1; return ['🛋️', `一件小家具「${f.name}」（在我的東西裡）`]; } }
   addBells(DAILY_BIG_BELLS); return ['💰', `💰 ${fmt(DAILY_BIG_BELLS)} 元`];
 }
+/* 家長：每日任務小孩都沒在玩 → 先收起來（不刪）：不跳視窗、沒有 🎯 按鈕、不算也不給獎勵。
+   程式和存檔（G.daily）都留著，舊存檔不受影響；想再打開把這裡改成 true 就好。 */
+var DAILY_ON = false;
 // 做了一件事就來報：key 對得上今天的目標才算
 function dailyHit(key, n) {
-  if (!G || !G.openGift || SAVE_LOCKED != null) return false;
+  if (!DAILY_ON || !G || !G.openGift || SAVE_LOCKED != null) return false;
   const st = dailyState();
   if (!st.ids.includes(key)) return false;
   const t = dailyTask(key), before = dailyCount(st, key);
@@ -19345,7 +19348,7 @@ function updateDailyChip() {
   const old = document.getElementById('dailyChip'); if (old) old.remove();   // 舊版放在房間右上角的那顆
   let b = document.getElementById('btnDaily');
   if (!b) { b = el('button', 'pill daily-pill'); b.id = 'btnDaily'; b.title = '今天可以玩'; b.onclick = () => { Sound.play('click'); openDaily(); }; const games = document.getElementById('btnGames'); if (games && games.parentNode) games.parentNode.insertBefore(b, games); else return; }
-  if (!G.openGift || SAVE_LOCKED != null) { b.hidden = true; return; }
+  if (!DAILY_ON || !G.openGift || SAVE_LOCKED != null) { b.hidden = true; return; }
   const st = dailyState(), all = dailyDoneN(st) >= DAILY_N;
   b.hidden = false; b.innerHTML = '';
   b.append(document.createTextNode(all ? '✅' : '🎯'), el('span', 'pill-txt', ' 今日'));
@@ -19376,7 +19379,7 @@ function openDaily() {
 // 每天第一次：等畫面穩定（沒有其他視窗、包裹、教學、小島）才跳出來
 function dailyAutoOpen() {
   try {
-    if (!G || !G.openGift || SAVE_LOCKED != null || G.guide !== 'done' || (typeof introPlaying !== 'undefined' && introPlaying)) return;
+    if (!DAILY_ON || !G || !G.openGift || SAVE_LOCKED != null || G.guide !== 'done' || (typeof introPlaying !== 'undefined' && introPlaying)) return;
     const st = dailyState(); if (st.seen === st.d) return;
     if (!$('#modal').hidden || document.getElementById('showcase') || document.querySelector('.stage.island-on') || (typeof giftVisit !== 'undefined' && giftVisit.state !== 'none') || (typeof hold !== 'undefined' && hold) || (typeof resting !== 'undefined' && resting)) return;
     const li = typeof lastStageInput !== 'undefined' ? lastStageInput : 0;

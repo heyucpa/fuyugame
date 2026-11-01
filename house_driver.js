@@ -4674,11 +4674,12 @@
     stg.classList.remove('holding', 'hint-off');
     // 房間被高度卡住的時候，收起提示條房間要變大
     var cv2 = document.getElementById('view'), keep2 = cv2.getAttribute('style');
-    cv2.style.width = '900px'; cv2.style.height = '300px';
+    cv2.style.width = '900px'; cv2.style.height = '300px'; canvasBox = null;   // 改了大小：真的瀏覽器會叫 resize 重新量，這裡直接清掉
     computeView(); var sOn = view.scale;
-    stg.classList.add('hint-off'); computeView(); var sOff = view.scale;
+    stg.classList.add('hint-off'); canvasBox = null; computeView(); var sOff = view.scale;
     stg.classList.remove('hint-off');
     if (keep2 == null) cv2.removeAttribute('style'); else cv2.setAttribute('style', keep2);
+    canvasBox = null;
     if (!(sOff > sOn)) fails.push('提示條收起來，房間沒有變大（' + sOn.toFixed(3) + ' / ' + sOff.toFixed(3) + '）');
     if (typeof HINT_RUNS !== 'number' || HINT_RUNS < 3) fails.push('提示條太快收起來');
 
