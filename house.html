@@ -793,6 +793,15 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .dive-mode { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 120px; padding: 10px 12px; border-radius: 16px; border: 3px solid #8fd3ff; background: #eaf7ff; font: inherit; cursor: pointer; touch-action: manipulation; }
 .dive-mode b { font-size: 17px; } .dive-mode span { font-size: 12px; color: #6d7a88; }
 .quest-btn.dive-pose { min-width: 58px; font-size: 26px; }
+.qpad-split { justify-content: space-between; align-items: flex-end; width: 100%; max-width: 980px; margin: 8px auto 0; gap: 12px; }
+.qpad-l, .qpad-r { display: flex; gap: 12px; align-items: flex-end; touch-action: none; }
+.qpad-l { padding: 4px; border-radius: 26px; background: rgba(0,0,0,.04); }
+.qpad-split .qb-l, .qpad-split .qb-r { width: 96px; height: 88px; font-size: 36px; border-radius: 24px; }
+.qpad-split .qb-l.on, .qpad-split .qb-r.on { background: #fff3e0; border-color: #ff9a3c; transform: scale(.96); }
+.qpad-split .qb-j { width: 112px; height: 112px; border-radius: 50%; font-size: 24px; background: #ffd98a; border-color: #e0a030; box-shadow: 0 4px 0 #c98a10; }
+.qpad-split .qb-j:active { transform: translateY(3px); box-shadow: 0 1px 0 #c98a10; }
+.qpad-split .qb-dn, .qpad-split .qb-fire, .qpad-split .qb-pet { min-width: 66px; height: 66px; border-radius: 20px; }
+@media (max-width: 560px) { .qpad-split .qb-l, .qpad-split .qb-r { width: 70px; height: 70px; font-size: 28px; } .qpad-split .qb-j { width: 88px; height: 88px; font-size: 20px; } .qpad-split .qb-dn, .qpad-split .qb-fire, .qpad-split .qb-pet { min-width: 52px; height: 56px; } }
 .confetti-cv { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 90; pointer-events: none; }   /* 彩帶不擋點擊 */
 .star-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; } .star-slot { display: flex; flex-direction: column; align-items: center; padding: 10px 4px; border-radius: 16px; background: #f1ecf7; border: 2px dashed #c9b8e8; color: #a99ac9; }
 .star-slot.on { background: #fff7d6; border: 2px solid #ffd23f; color: #5a4636; } .star-e { font-size: 34px; } .star-n { font-size: 13px; font-weight: 800; }
@@ -22650,9 +22659,12 @@ function playQuest(id, opt) {
   const w = openGameWindow(`${wd.icon} 世界 ${id}`, (easy ? '按住 ◀ ▶ 走、按「跳」跳（按久一點會跳更高 ✨）；也可以直接按畫面：左邊往左、右邊往右、中間跳。站在水管上按 ⬇ 鑽進去。簡單模式被打到不會少愛心！' : '← → 走、按「跳」（空白鍵／↑）跳，按久一點會跳更高 ✨。踩怪物的頭可以打倒牠！平板也可以直接按畫面：左邊往左、右邊往右、中間（或往上滑）跳。') + (G.pet && G.pet.stage !== 'egg' ? `${petName()}也一起來了：🐾 集滿了就按，放必殺技！` : ''));
   w.stage.innerHTML = ''; w.btns.innerHTML = ''; w.card.classList.add('quest-big');
   const { c, g } = gameCanvas(w.stage, QVW, QVH);
-  const pad = el('div', 'quest-pad');
-  const mk = (txt, cls) => { const b = el('button', 'quest-btn ' + (cls || ''), txt); pad.appendChild(b); return b; };
-  const bL = mk('◀', 'qb-l'), bR = mk('▶', 'qb-r'), bJ = mk('⤒ 跳', 'qb-j'), bDn = mk('⬇', 'qb-dn'), bF = mk('🔥', 'qb-fire');
+  /* 🎮 像手把一樣分兩邊（家長：iPad 上手指擠在中間小小的區域按不順）：
+     左手拇指：◀ ▶ 大大的放左邊，手指按著往左右滑就換方向（不用抬起來）；
+     右手拇指：大大圓圓的「跳」放右邊，⬇ 🔥 🐾 放在跳的旁邊。 */
+  const pad = el('div', 'quest-pad qpad-split'), padL = el('div', 'qpad-l'), padR = el('div', 'qpad-r'); pad.append(padL, padR);
+  const mk = (txt, cls, side) => { const b = el('button', 'quest-btn ' + (cls || ''), txt); (side === 'L' ? padL : padR).appendChild(b); return b; };
+  const bL = mk('◀', 'qb-l', 'L'), bR = mk('▶', 'qb-r', 'L'), bDn = mk('⬇', 'qb-dn'), bF = mk('🔥', 'qb-fire'), bJ = mk('⤒ 跳', 'qb-j');
   bDn.style.display = 'none'; bF.style.display = 'none';   // ⬇：站在水管上才出現；🔥：拿到火火花才出現
   /* 🐾 寵物一起闖關（Grok 建議、家長同意）：孵出來的寵物跟在小可愛後面跑；撿金幣、時間慢慢集能量，
      集滿按 🐾（或 C 鍵）放必殺技：畫面裡的小怪物全部打倒，大魔王扣一下（大約三成血）。
@@ -22662,6 +22674,7 @@ function playQuest(id, opt) {
     const tr = PET_TRAIT_OF[p0.species] || 'jump';
     return { sp: PET_SPECIES_BY_ID[p0.species], stage: lookStage(p0), trait: tr, name: petName(), mv: QPET_MOVES[tr], meter: 0, max: easy ? 12 : 18, x: 0, y: 0, act: 0, uses: 0, lastCoins: 0, ui: 0 }; })();
   const bP = QP ? mk('🐾', 'qb-pet') : null;
+  if (bP) padR.insertBefore(bP, bJ);   // 跳永遠在最右邊
   /* 家長：簡單、一般都要自己左右走，不要自動往前跑了 → 兩種都是 ◀ ▶ 自己走；簡單模式比較寬鬆（坑窄、刺變花、被打到不扣愛心、掉下去有泡泡）。 */
   let bossZone = false;
   w.stage.appendChild(pad);
@@ -22717,9 +22730,14 @@ function playQuest(id, opt) {
   const keyU = e => { keys[e.code] = false; if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') jumpHeld = false; };
   document.addEventListener('keydown', keyD); document.addEventListener('keyup', keyU);
   const hold = (b, on, off) => { if (!b) return; b.addEventListener('pointerdown', e => { e.preventDefault(); on(); }); ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => b.addEventListener(ev, off)); };
-  hold(bL, () => keys.ArrowLeft = true, () => keys.ArrowLeft = false);
-  hold(bR, () => keys.ArrowRight = true, () => keys.ArrowRight = false);
-  hold(bJ, () => { jumpHeld = true; jumpBuf = .15; }, () => { jumpHeld = false; });
+  // ◀ ▶ 整塊當一個方向鍵：按著往左右滑就換方向；手指滑出去也不會突然停（pointer capture）
+  { let pid = null; const dir = e => { const r = padL.getBoundingClientRect(), left = e.clientX < r.left + r.width / 2; keys.ArrowLeft = left; keys.ArrowRight = !left; bL.classList.toggle('on', left); bR.classList.toggle('on', !left); };
+    const off = e => { if (pid !== e.pointerId) return; pid = null; keys.ArrowLeft = keys.ArrowRight = false; bL.classList.remove('on'); bR.classList.remove('on'); };
+    padL.addEventListener('pointerdown', e => { e.preventDefault(); pid = e.pointerId; try { padL.setPointerCapture(pid); } catch (e2) {} dir(e); });
+    padL.addEventListener('pointermove', e => { if (pid === e.pointerId) dir(e); });
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => padL.addEventListener(ev, off)); }
+  bJ.addEventListener('pointerdown', e => { e.preventDefault(); try { bJ.setPointerCapture(e.pointerId); } catch (e2) {} jumpHeld = true; jumpBuf = .15; });
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => bJ.addEventListener(ev, () => { jumpHeld = false; }));
   if (bP) bP.addEventListener('pointerdown', e => { e.preventDefault(); petSpecial(); });
   bDn.addEventListener('pointerdown', e => { e.preventDefault(); downBuf = .3; }); bF.addEventListener('pointerdown', e => { e.preventDefault(); shootFire(); });
   // 🔥 火火花：丟出會彈跳的火球，打到怪物就打倒（大魔王扣一下）

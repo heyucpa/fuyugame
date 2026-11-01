@@ -31,6 +31,10 @@ const path = require('path');
     for (let i = 0; i < 60; i++) T.step(1 / 60);
     at(.85, 'pointerdown', 4); T.step(1 / 60); at(.85, 'pointermove', 4, -40); T.step(1 / 60); o.swipe = T.P.vy < 0; at(.85, 'pointerup', 4);
     o.twoHands = (() => { at(.9, 'pointerdown', 5); at(.5, 'pointerdown', 6); const ok = T.keys.TouchR && T.touches.size === 2; at(.9, 'pointerup', 5); at(.5, 'pointerup', 6); return ok && !T.keys.TouchR && T.touches.size === 0; })();
+    { const pl = document.querySelector('.qpad-l'), pr = document.querySelector('.qpad-r'), rr = pl.getBoundingClientRect(), ev = (t, fx) => pl.dispatchEvent(new PointerEvent(t, { bubbles: true, pointerId: 9, clientX: rr.left + rr.width * fx, clientY: rr.top + rr.height / 2 }));
+      ev('pointerdown', .2); const l1 = T.keys.ArrowLeft && !T.keys.ArrowRight; ev('pointermove', .8); const r1 = T.keys.ArrowRight && !T.keys.ArrowLeft; ev('pointerup', .8);
+      const jb = pr.querySelector('.qb-j'); jb.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 10 })); T.step(1 / 60); const jmp = T.P.vy < 0; jb.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 10 }));
+      o.gamepad = l1 && r1 && !T.keys.ArrowLeft && !T.keys.ArrowRight && jmp && pr.lastElementChild === jb && pl.contains(document.querySelector('.qb-l')); }
     closeGameWindow();
     questState().mode = 'easy'; playQuest('1-1'); T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null;
     o.easyJump = T.zoneOf({ clientX: T.canvas.getBoundingClientRect().left + 5 }) === 'L';   /* 簡單模式也分左右 */ closeGameWindow();
