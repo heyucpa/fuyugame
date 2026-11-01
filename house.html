@@ -4898,7 +4898,9 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
-  { id: '2026-11-08T20:00', title: '🎮 闖關按鍵變手把＋🏫 操場變大', lines: [
+  { id: '2026-11-09T20:00', title: '🥋 每個朋友都有自己的招＋🎮 闖關手把', lines: [
+    ['🥋', '對決的時候，每個朋友會用自己的必殺技：月亮跳跳踢、冰滑溜溜衝、無尾熊超級抱…'],
+    ['✨', '第一次打贏朋友，就學會牠的招！放必殺技時會從學會的招裡隨機用出來'],
     ['🎮', '闖關的按鍵變成手把：左手 ◀ ▶（按著左右滑就換方向）、右手大大的「跳」，iPad 比較好按'],
     ['🏫', '學校的操場變大了，遊樂器材、大樹、跑道分開擺，不會擠在一起']
   ] },
@@ -5823,6 +5825,7 @@ function normalizeSave(g) {
   if (out.cloudKing != null && !(isObj(out.cloudKing) && Number.isInteger(out.cloudKing.beat) && out.cloudKing.beat >= 0 && out.cloudKing.beat < 1e6)) delete out.cloudKing;   // ☁️ 打倒烏雲大王幾次
   if (out.noSeasonFx != null && out.noSeasonFx !== 1) delete out.noSeasonFx;   // 🍂 關掉季節裝飾
   if (out.tkd && isObj(out.tkd)) { if (out.tkd.coach != null && !(Number.isInteger(out.tkd.coach) && out.tkd.coach >= 0 && out.tkd.coach < 1e6)) delete out.tkd.coach; if (out.tkd.world != null) { const wv = out.tkd.world; if (!isObj(wv)) delete out.tkd.world; else { if (!(Number.isInteger(wv.best) && wv.best >= -1 && wv.best <= 3)) wv.best = -1; if (!(Number.isInteger(wv.gold) && wv.gold >= 0 && wv.gold < 1e6)) wv.gold = 0; if (wv.d != null && typeof wv.d !== 'string') { delete wv.d; delete wv.n; } if (wv.n != null && !(Number.isInteger(wv.n) && wv.n >= 0 && wv.n < 100)) wv.n = 0; } } }   // 👑 教練、🌏 世界大賽
+  if (out.moves != null) { if (!isObj(out.moves)) delete out.moves; else out.moves = Object.fromEntries(Object.entries(out.moves).filter(([k, v]) => /^[a-z]{2,12}$/.test(k) && v === 1)); }   // 🥋 學會的朋友招式
   if (out.duel != null) { if (!isObj(out.duel)) delete out.duel; else ['win', 'lose'].forEach(k => { if (!(Number.isInteger(out.duel[k]) && out.duel[k] >= 0 && out.duel[k] < 1e6)) out.duel[k] = 0; }); }   // ⚔️ 對決贏輸幾次
   if (out.hanzi != null) { if (!isObj(out.hanzi)) delete out.hanzi; else out.hanzi = Object.fromEntries(Object.entries(out.hanzi).filter(([k, v]) => /^[\u4e00-\u9fff]$/.test(k) && v === 1)); }   // 🀄 認得的國字
   if (out.cash != null) { if (!(isObj(out.cash) && Number.isInteger(out.cash.ok) && out.cash.ok >= 0 && out.cash.ok < 1e6)) delete out.cash; }   // 🧾 找錢答對次數
@@ -15284,6 +15287,7 @@ function tabBook(body) {
     ['dexStar', '🌟', '星光', ((G.star && G.star.got) || []).length, 6],
     ['dexEn', '🔤', '英文', Math.min(60, Object.keys(G.enLearn || {}).length), 60],
     ['dexHanzi', '🀄', '國字', hanziCount(), HANZI.length],
+    ['dexMoves', '🥋', '招式', myMoves().length, TKD_SPECIALS.length + Object.keys(SIG_MOVES).length],
     ['dexCash', '🧾', '店長', Math.min(60, (G.cash && G.cash.ok) || 0), 60],
     ['dexPet', '🐾', '寵物', tc('pet')[0], PET_SPECIES.length],
     ['dexGrow', '🌱', '成長', growDexCount(), growDexAll()],
@@ -15450,6 +15454,14 @@ function tabBook(body) {
     const hb = el('div', 'dex-tiles'); HANZI_BADGES.forEach(([n, ic, nm]) => { const has = hanziCount() >= n, t = el('div', 'dex-tile' + (has ? '' : ' none')); t.append(el('div', 'dex-big', has ? ic : '✦'), el('span', '', `${nm}（${n} 個）`)); hb.appendChild(t); });
     body.appendChild(hb);
     const hl = el('div', 'en-list'); HANZI.forEach(h => { const b = el('button', 'en-word hz' + (got[h.k] ? '' : ' none'), got[h.k] ? `${h.k} ${h.pic}` : '？'); if (got[h.k]) b.onclick = () => speak(hanziSay(h), null, true); hl.appendChild(b); }); body.appendChild(hl); }
+  // 🥋 招式收集：考腰帶學的六招＋打贏朋友學的招
+  { const mine = myMoves();
+    body.appendChild(sec('dexMoves', `🥋 招式收集 ${mine.length} / ${TKD_SPECIALS.length + Object.keys(SIG_MOVES).length}`));
+    body.appendChild(note('考上腰帶學會跆拳道的招；對決、對練第一次打贏朋友，就學會那位朋友的招。放必殺技的時候會從學會的招裡隨機用出來！'));
+    const mg = el('div', 'dex-tiles');
+    TKD_SPECIALS.forEach((mv, i) => { const has = mine.includes(mv), t2 = el('div', 'dex-tile' + (has ? '' : ' none')); t2.append(el('div', 'dex-big', has ? mv.fx : '✦'), el('span', '', has ? mv.name : `考到${TKD_BELTS[i][0]}`)); mg.appendChild(t2); });
+    Object.keys(SIG_MOVES).forEach(id => { const mv = SIG_MOVES[id]; if (!mv) return; const has = mine.includes(mv), t2 = el('div', 'dex-tile' + (has ? '' : ' none')); t2.append(el('div', 'dex-big', has ? mv.fx : '✦'), el('span', '', has ? `${mv.name}（${sigOwner(id)}）` : `打贏${sigOwner(id)}`)); mg.appendChild(t2); });
+    body.appendChild(mg); }
   // 🧾 小小店長：收銀台找對幾次
   { const ok = (G.cash && G.cash.ok) || 0;
     body.appendChild(sec('dexCash', `🧾 小小店長：找對 ${ok} 次`));
@@ -21661,8 +21673,37 @@ const TKD_SPECIALS = [
 ];
 const tkdSpecialName = mv => charName() + mv.name;
 /* 🎲 家長：必殺技可以隨機使用 → 每次放必殺技從六招裡隨機挑一招（不會連續兩次同一招），腰帶還沒到的招也會出現 */
+/* 🥋 每個角色有自己的招（家長：每個角色都有自己的招數，打贏對方就可以學會對方的招數）：
+   對決的時候朋友會用自己的招；第一次打贏（對決、對練、教練挑戰、世界大賽都算）就學會牠的招。
+   小可愛放必殺技時，從「學會的招」裡隨機挑（考腰帶學的六招＋打贏朋友學的招），不會連續兩次同一招。
+   G.moves = { 角色 id: 1 }；圖鑑「🥋 招式」看得到全部。 */
+const SIG_MOVES = {
+  abu: { name: '熊掌拍拍雨', fx: '🐾', anim: 'rain', c: '#8a5a33', c2: '#f2d6b0' },
+  mimi: { name: '月亮跳跳踢', fx: '🌙', anim: 'bounce', c: '#ffd23f', c2: '#fff6c8' },
+  lulu: { name: '狐火轉轉', fx: '🔥', anim: 'whirl', c: '#ff8a3d', c2: '#ffe2d0' },
+  qiqi: { name: '松果連發彈', fx: '🌰', anim: 'barrage', c: '#a07850', c2: '#f2d6b0' },
+  meme: { name: '棉花雲衝撞', fx: '☁️', anim: 'rush', c: '#b8c8e8', c2: '#ffffff' },
+  wangwang: { name: '汪汪音波吼', fx: '🔊', anim: 'wave', c: '#ffb02e', c2: '#fff1d6' },
+  miaomiao: { name: '貓貓連環爪', fx: '😼', anim: 'claw', c: '#e8505b', c2: '#ffe3ee' },
+  bobo: { name: '冰滑溜溜衝', fx: '❄️', anim: 'rush', c: '#8fd3ff', c2: '#e7f5ff' },
+  nunu: { name: '甜甜圈旋風', fx: '🍩', anim: 'whirl', c: '#ff9ec4', c2: '#ffe3ee' },
+  cici: { name: '刺球滾滾彈', fx: '🌰', anim: 'roll', c: '#a07850', c2: '#f2d6b0' },
+  baobao: { name: '無尾熊超級抱', fx: '🐨', anim: 'hug', c: '#ff8fb3', c2: '#ffe3ee' },
+  diandian: { name: '森林葉子雨', fx: '🍃', anim: 'rain', c: '#5fcf6f', c2: '#e6fcf5' },
+  tkd: null   // 熊熊教練：熊熊大地震（下面 COACH_SP 定好以後補上）
+};
+const sigOwner = id => id === 'tkd' ? '熊熊教練' : ((NEIGHBORS.find(n => n && n.id === id) || {}).name || '朋友');
+function movesState() { if (!G.moves || typeof G.moves !== 'object') G.moves = {}; return G.moves; }
+function myMoves() { const m = movesState(); return tkdLearned().concat(Object.keys(SIG_MOVES).filter(id => m[id] && SIG_MOVES[id]).map(id => SIG_MOVES[id])); }
 let tkdLastMove = null;
-function tkdRandomMove() { const pool = TKD_SPECIALS.filter(m => m !== tkdLastMove); tkdLastMove = pool[Math.floor(Math.random() * pool.length)]; return tkdLastMove; }
+function tkdRandomMove() { const all = myMoves(), pool = all.length > 1 ? all.filter(m => m !== tkdLastMove) : all; tkdLastMove = pool[Math.floor(Math.random() * pool.length)]; return tkdLastMove; }
+// 打贏 id 這位：第一次就學會牠的招（回傳學到的招，學過了回傳 null）
+function learnSigMove(id) {
+  const mv = SIG_MOVES[id], m = movesState(); if (!mv || m[id]) return null;
+  m[id] = 1; saveGame();
+  setTimeout(() => { try { Sound.play('magic'); showcase(el('div', 'magic-pic', mv.fx), `學會了${sigOwner(id)}的「${mv.name}」！`, `打贏${sigOwner(id)}，學會了牠的招！放必殺技的時候會隨機用出來喔！（已經會 ${myMoves().length} 招）`, { head: '🥋 學會新招！', party: true }); speak(`學會了${sigOwner(id)}的${mv.name}！`); } catch (e) {} }, 900);
+  return mv;
+}
 function tkdLearned() { return TKD_SPECIALS.slice(0, Math.min(TKD_SPECIALS.length, (tkdState().belt || 0) + 1)); }
 // 必殺技特寫：畫面變暗、放射線、小可愛大頭、招式名稱（k：0～1 出場進度）
 function tkdSpecialCut(g, W, H, mv, k, t) {
@@ -21684,7 +21725,19 @@ function tkdMoveAnim(g, mv, k, A, B, t) {
   const ez = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2, hx = B.x, hy = B.y - 30, lerp = (a, b, u) => a + (b - a) * u;
   const px = lerp(A.x, hx, ez), py = lerp(A.y - 30, hy, ez) - Math.sin(ez * Math.PI) * 30;
   g.save(); g.lineCap = 'round';
-  if (mv.name === '熊熊大地震') {   // 👑 教練的招：地面裂開一路裂過來、石頭跳起來
+  if (mv.anim) {   // 🥋 朋友們的招（每個人自己的樣子）
+    const c = mv.c || '#ffd23f', fx = mv.fx || '⭐'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    if (mv.anim === 'rain') { g.font = '20px sans-serif'; for (let i = 0; i < 12; i++) { const u = Math.min(1, Math.max(0, k * 1.6 - i * .07)); if (u <= 0) continue; g.globalAlpha = u < 1 ? 1 : .4; g.fillText(fx, hx - 34 + (i * 23) % 68, -10 + u * (hy + 10) - (i % 3) * 6); } g.globalAlpha = 1; }
+    else if (mv.anim === 'bounce') { for (let i = 4; i >= 0; i--) { const u = Math.max(0, ez - i * .05), bx = lerp(A.x, hx, u), by = lerp(A.y - 30, hy, u) - Math.abs(Math.sin(u * Math.PI * 3)) * 50; g.globalAlpha = i ? .25 : 1; g.font = `${i ? 16 : 26}px sans-serif`; g.fillText(fx, bx, by); } g.globalAlpha = 1; }
+    else if (mv.anim === 'rush') { const rx = lerp(A.x, hx, ez), ry = lerp(A.y - 30, hy, ez); g.strokeStyle = c; g.lineWidth = 3; for (let i = 0; i < 6; i++) { g.globalAlpha = .6; g.beginPath(); g.moveTo(rx - 20 - i * 9, ry - 14 + i * 6); g.lineTo(rx - 50 - i * 14, ry - 14 + i * 6); g.stroke(); } g.globalAlpha = .5; g.fillStyle = c; g.beginPath(); g.ellipse(rx, ry, 26, 18, 0, 0, 7); g.fill(); g.globalAlpha = 1; g.font = '28px sans-serif'; g.fillText(fx, rx, ry); }
+    else if (mv.anim === 'wave') { const d = Math.hypot(hx - A.x, hy - A.y + 30), ang = Math.atan2(hy - (A.y - 30), hx - A.x); g.strokeStyle = c; for (let i = 0; i < 5; i++) { const r = (k * 1.3 - i * .12) * d; if (r <= 4) continue; g.globalAlpha = Math.max(0, 1 - r / d * .7); g.lineWidth = 4; g.beginPath(); g.arc(A.x, A.y - 30, r, ang - .5, ang + .5); g.stroke(); } g.globalAlpha = 1; g.font = '24px sans-serif'; g.fillText(fx, A.x + 14, A.y - 64); }
+    else if (mv.anim === 'claw') { if (k < .5) { g.font = '26px sans-serif'; g.fillText(fx, lerp(A.x, hx - 20, k * 2), lerp(A.y - 40, hy - 10, k * 2)); } else { const u = (k - .5) * 2; g.strokeStyle = c; g.lineWidth = 5; g.lineCap = 'round'; for (let i = 0; i < 3; i++) { const v = Math.min(1, u * 2 - i * .25); if (v <= 0) continue; g.beginPath(); g.moveTo(hx - 22 + i * 12, hy - 30); g.lineTo(hx - 22 + i * 12 + 20 * v, hy - 30 + 50 * v); g.stroke(); } g.font = '26px sans-serif'; g.fillText(fx, hx - 34, hy - 46); } }
+    else if (mv.anim === 'roll') { const rx = lerp(A.x, hx, ez), ry = Math.max(A.y, B.y) - 16; g.save(); g.translate(rx, ry); g.rotate(t * 14); g.fillStyle = c; g.beginPath(); g.arc(0, 0, 13, 0, 7); g.fill(); g.strokeStyle = '#4a3726'; g.lineWidth = 3; for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2; g.beginPath(); g.moveTo(Math.cos(a) * 12, Math.sin(a) * 12); g.lineTo(Math.cos(a) * 21, Math.sin(a) * 21); g.stroke(); } g.restore(); g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.ellipse(rx, ry + 16, 14, 3, 0, 0, 7); g.fill(); }
+    else if (mv.anim === 'hug') { const r = 70 * (1 - ez) + 18; g.font = '16px sans-serif'; for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2 + t * 2; g.fillText('💗', hx + Math.cos(a) * r, hy + Math.sin(a) * r * .8); } g.font = '28px sans-serif'; g.fillText(fx, lerp(A.x, hx - 18, ez), hy - 10); }
+    else if (mv.anim === 'whirl') { const rx = lerp(A.x, hx, ez), ry = lerp(A.y - 30, hy, ez); for (let i = 0; i < 4; i++) { g.strokeStyle = c; g.globalAlpha = .85 - i * .18; g.lineWidth = 4 - i * .6; g.beginPath(); g.ellipse(rx, ry, 24 - i * 4, 10 - i * 1.5, t * 8 + i, 0, Math.PI * 1.6); g.stroke(); } g.globalAlpha = 1; g.font = '18px sans-serif'; for (let i = 0; i < 3; i++) { const a = t * 9 + i * 2.1; g.fillText(fx, rx + Math.cos(a) * 26, ry + Math.sin(a) * 12); } }
+    else if (mv.anim === 'barrage') { const n2 = Math.floor(k * 16); g.font = '18px sans-serif'; for (let i = 0; i < n2; i++) { const u = Math.min(1, (k * 16 - i) / 3), bx = lerp(A.x + 10, hx + ((i * 37) % 30) - 15, u), by = lerp(A.y - 34, hy + ((i * 23) % 30) - 15, u); g.globalAlpha = u >= 1 ? .5 : 1; g.fillText(fx, bx, by); } g.globalAlpha = 1; }
+    g.textBaseline = 'alphabetic';
+  } else if (mv.name === '熊熊大地震') {   // 👑 教練的招：地面裂開一路裂過來、石頭跳起來
     const gy = Math.max(A.y, B.y) + 2, x1 = lerp(A.x, B.x, ez); g.strokeStyle = '#6b4428'; g.lineWidth = 3; g.beginPath(); g.moveTo(A.x, gy);
     for (let x = A.x; (A.x < B.x ? x < x1 : x > x1); x += (A.x < B.x ? 9 : -9)) g.lineTo(x, gy - 2 + ((Math.round(x / 9)) % 2 ? 4 : -3)); g.stroke();
     for (let i = 0; i < 7; i++) { const u = Math.max(0, ez - i * .1), x = lerp(A.x, B.x, u), h = Math.sin(Math.min(1, (ez - i * .1) * 4) * Math.PI) * 26; if (u <= 0) continue; g.fillStyle = i % 2 ? '#8a6b4a' : '#a07850'; g.beginPath(); g.arc(x, gy - 6 - Math.max(0, h), 5 - i * .3, 0, 7); g.fill(); }
@@ -21783,6 +21836,7 @@ function playSpar(w, L, who) {
   const finish = () => {
     if (!live) return; gameCleanup(); gameCleanup = null;
     const win = me >= SPAR_GOAL, bells = payReward(w, (win ? 120 : 40) * L.mul);
+    if (win) learnSigMove(foe.id);   // 🥋 對練打贏也學得到
     tkdPractice(); kidMoodUp(win ? 12 : 6);
     w.status.textContent = `${win ? '🏆 你贏了！' : '💪 好可惜，下次再來！'} ${me} : ${them}　💰 +${fmt(bells)}（也算練習一次）`;
     try { hostSay(win ? '踢得真好！' : '很有精神！多練習就會贏！', 2600); speak(win ? '你贏了！' : '好可惜，再加油！'); } catch (e) {}
@@ -25934,6 +25988,7 @@ function playDuel(w, who, opt) {
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   const W = 360, H = 230, { g } = gameCanvas(w.stage, W, H), place = (G.away && G.away.place) || 'home';
   const mates = NEIGHBORS.filter(Boolean), foe = who || pickOne(mates), st = duelState();
+  const fSp = opt.foeSp !== undefined ? opt.foeSp : (SIG_MOVES[foe.id] || null), fEvery = opt.foeSp ? 4 : 5;   // 🥋 朋友也會用自己的招（教練、決賽每 4 回合，其他人每 5 回合）
   const lvl = opt.lvl != null ? opt.lvl : Math.min(4, Math.floor((st.win || 0) / 3)), hunger = (G.kid && G.kid.hunger) || 50;
   const S = { me: Math.min(10, 5 + Math.round(hunger / 20)), meMax: 10, foe: opt.hp || 8 + lvl, foeMax: opt.hp || 8 + lvl, ki: 0, intent: 'atk', phase: 'intro', at: performance.now(), anim: null, pops: [], shake: 0, spMv: null, over: false, turn: 0, moves: [pickOne(DUEL_FOE_MOVES), pickOne(DUEL_FOE_MOVES)] };
   const row = el('div', 'spar-row'), bHit = el('button', 'big duel-hit', '👊 打'), bBlock = el('button', 'big spar-block', '🛡️ 擋'), bSp = el('button', 'big spar-sp', '💥 必殺技');
@@ -25948,12 +26003,12 @@ function playDuel(w, who, opt) {
     S.turn++; const r = Math.random();
     S.intent = S.foe <= 3 && r < .3 ? 'big' : r < .5 ? 'atk' : r < .72 ? 'big' : 'rest';
     if (S.turn === 1) S.intent = 'atk';   // 第一回合先示範「要打你了→擋」
-    if (opt.foeSp && S.turn > 1 && S.turn % 4 === 0) S.intent = 'fsp';   // 👑 教練（和大賽決賽）每 4 回合放一次必殺技
+    if (fSp && S.turn > 1 && S.turn % fEvery === 0) S.intent = 'fsp';   // 👑 教練（和大賽決賽）每 4 回合放一次必殺技
     const ev = Math.random();   // 🎲 好玩的小事
     if (S.turn > 1 && ev < .07) { S.intent = 'slip'; say(`${foe.short}踩到香蕉皮滑倒了！🍌 快打牠！`, '#e67700'); Sound.play('boing'); }
     else if (S.turn > 1 && ev < .13) { S.ki = Math.min(100, S.ki + 30); say('📣 啦啦隊幫你加油！氣 +30', '#1971c2'); Sound.play('perfect'); }
     else if (S.turn > 1 && ev < .18 && S.me < S.meMax) { S.me++; pop(ME.x, ME.y - 70, '+1 ❤️', '#2f9e44'); say('咬一口小點心～回 1 滴血！🍪', '#2f9e44'); Sound.play('pickUp'); }
-    else if (S.intent === 'fsp') { say(`${foe.short}在集氣放必殺技「${opt.foeSp.name}」！💥 一定要擋！`, '#7048e8'); Sound.play('shake'); }
+    else if (S.intent === 'fsp') { say(`${foe.short}在集氣放必殺技「${fSp.name}」！💥 一定要擋！`, '#7048e8'); Sound.play('shake'); }
     else say(S.intent === 'atk' ? `${foe.short}要用「${S.moves[0][0]}」打你了！按 🛡️ 擋！` : S.intent === 'big' ? `${foe.short}在集氣放大招「${S.moves[1][0]}」！🔥 快擋！` : `${foe.short}累了在休息 💤 快打牠！`);
     S.phase = 'choose'; ui();
   };
@@ -25982,7 +26037,7 @@ function playDuel(w, who, opt) {
     const it = S.intent;
     if (it === 'rest' || it === 'slip') { if (it === 'rest') say(`${foe.short}休息完了～`); return; }
     S.anim = { who: 'foe', k: 'hit', at: performance.now() }; Sound.play('whoosh');
-    if (it === 'fsp') { Sound.play('crack'); if (S.myAct === 'block') { hurtMe(2); say(`擋住了「${opt.foeSp.name}」！只痛一點點！`, '#1971c2'); } else { hurtMe(4); S.shake = .5; say(`被「${opt.foeSp.name}」打中了！好痛～`, '#d9480f'); } S.blocked = false; return; }
+    if (it === 'fsp') { Sound.play('crack'); if (S.myAct === 'block') { hurtMe(2); say(`擋住了「${fSp.name}」！只痛一點點！`, '#1971c2'); } else { hurtMe(4); S.shake = .5; say(`被「${fSp.name}」打中了！好痛～`, '#d9480f'); } S.blocked = false; return; }
     const big = it === 'big', mvn = big ? S.moves[1] : S.moves[0];
     if (S.myAct === 'block') { if (big) hurtMe(1); hurtFoe(1, '反擊！'); say(big ? `大招「${mvn[0]}」被擋住了！只痛一點點，還反擊！` : `擋住「${mvn[0]}」還反擊！`, '#1971c2'); }
     else { hurtMe(big ? 3 : 2); S.shake = big ? .4 : .2; say(`被「${mvn[0]}」${mvn[1]} 打到了！`, '#d9480f'); Sound.play('miss'); }
@@ -25995,6 +26050,7 @@ function playDuel(w, who, opt) {
       const k = G.kid; if (k) k.hunger = Math.max(0, Math.round(k.hunger - (win ? DUEL_COST_WIN : DUEL_COST_LOSE)));
       if (opt.onEnd) { saveGame(); refreshTop(); opt.onEnd(win, w); return; }   // 教練挑戰、世界大賽：自己處理獎勵和下一步
       if (win) st.win = (st.win || 0) + 1; else st.lose = (st.lose || 0) + 1;
+      if (win) learnSigMove(foe.id);   // 🥋 第一次打贏就學會牠的招
       const bells = payReward(w, win ? 100 + lvl * 25 : 30);
       kidMoodUp(win ? 12 : 4); try { dailyHit('game'); } catch (e) {}
       if (win) { Sound.play('fanfare'); try { confettiBurst(80); } catch (e) {} }
@@ -26060,7 +26116,7 @@ function playDuel(w, who, opt) {
     if (S.shake > 0) S.shake -= 1 / 60;
     g.save(); if (S.shake > 0) g.translate(Math.sin(now / 15) * 4, 0);
     bg(); drawMe(now); drawFoe(now);
-    if (S.phase === 'foe' && S.intent === 'fsp' && el2 < 2600) { const s2 = el2 / 1000; tkdMoveAnim(g, opt.foeSp, Math.min(1, s2 / 2.4), FOE, ME, s2); g.font = '900 16px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.lineWidth = 5; g.strokeStyle = '#26232a'; g.strokeText(`${foe.short}・${opt.foeSp.name}`, W / 2, 96); g.fillStyle = '#ffd23f'; g.fillText(`${foe.short}・${opt.foeSp.name}`, W / 2, 96); }
+    if (S.phase === 'foe' && S.intent === 'fsp' && el2 < 2600) { const s2 = el2 / 1000; tkdMoveAnim(g, fSp, Math.min(1, s2 / 2.4), FOE, ME, s2); g.font = '900 16px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.lineWidth = 5; g.strokeStyle = '#26232a'; g.strokeText(`${foe.short}・${fSp.name}`, W / 2, 96); g.fillStyle = '#ffd23f'; g.fillText(`${foe.short}・${fSp.name}`, W / 2, 96); }
     if (S.phase === 'me' && S.myAct === 'sp') { const s2 = el2 / 1000; if (s2 < 1.1) tkdSpecialCut(g, W, H, S.spMv, s2 / .6, s2); else tkdMoveAnim(g, S.spMv, Math.min(1, (s2 - 1.1) / 1.4), ME, FOE, s2); }
     S.pops = S.pops.filter(p => now - p.at < 1100); S.pops.forEach(p => { const u = (now - p.at) / 1100; g.globalAlpha = 1 - u; g.font = '900 18px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.lineWidth = 4; g.strokeStyle = '#fff'; g.strokeText(p.t, p.x, p.y - u * 30); g.fillStyle = p.c; g.fillText(p.t, p.x, p.y - u * 30); g.globalAlpha = 1; });
     g.restore();
@@ -26068,20 +26124,21 @@ function playDuel(w, who, opt) {
   };
   ui(); try { speak(`${foe.short}來挑戰了！`); } catch (e) {} Sound.play('shake');
   raf = requestAnimationFrame(tick);
-  playDuel.test = { S, act, newIntent, finish, foe, opt };
+  playDuel.test = { S, act, newIntent, finish, foe, opt, fSp };
 }
 AWAY_GAMES.push(['⚔️', '對決', 'dojo', () => openDuelGame()]);
 
 /* 👑 挑戰熊熊教練（家長：升上黑帶後可以跟教練挑戰）：黑帶才打得到。教練 16 滴血、每 4 回合放必殺技「熊熊大地震」（擋住只痛 2 點，沒擋 4 點）。
    第一次打贏：「道館冠軍」獎盃＋💰 3,000；之後每次贏 💰 300。G.tkd.coach = 打贏教練幾次。 */
 const COACH_SP = { name: '熊熊大地震', fx: '🐻', c: '#8a5a33', c2: '#e8cfa9' };
+SIG_MOVES.tkd = COACH_SP;
 const tkdBlack = () => (tkdState().belt || 0) >= TKD_BELTS.length - 1;
 function openCoachChallenge() {
   if (!tkdBlack()) { toast(`🥋 要考到黑帶才能挑戰教練喔！現在是${tkdBeltName()}`); try { hostSay(`考到黑帶，再來挑戰我吧！`, 2600); } catch (e) {} return; }
   const coach = HOSTS.tkd, t = tkdState();
   openDuelGame(coach, { title: '👑 挑戰熊熊教練', hp: 16, lvl: 4, foeSp: COACH_SP, intro: '黑帶了啊！來吧，讓我看看你的實力！',
     onEnd: (win, w) => {
-      const first = win && !t.coach; if (win) t.coach = (t.coach || 0) + 1;
+      const first = win && !t.coach; if (win) { t.coach = (t.coach || 0) + 1; learnSigMove('tkd'); }
       if (first) { addBells(3000); setTimeout(() => { try { Sound.play('fanfare'); confettiBurst(120); showcase(el('div', 'magic-pic', '🏆'), '打贏熊熊教練了！', '你是「道館冠軍」！送你 💰 3,000！', { head: '👑 太厲害了！' }); } catch (e) {} }, 400); }
       const bells = win && !first ? payReward(w, 300) : 0;
       w.status.textContent = win ? (first ? '👑 打贏教練了！你是「道館冠軍」！💰 +3,000' : `👑 又打贏教練了！（${t.coach} 次）💰 +${fmt(bells)}`) : '教練好強！去吃東西補體力，練習一下再來挑戰！';
@@ -26116,9 +26173,10 @@ function openWorldCup() {
 function worldRound(r, foes) {
   const [nm, hp, lvl] = WORLD_ROUNDS[r], f = foes[r];
   if (G.kid && G.kid.hunger < DUEL_MIN_HUNGER) G.kid.hunger = DUEL_MIN_HUNGER;   // 大賽中途不會因為太餓不能打（體力少，血就少）
-  openDuelGame(f, { title: `🌏 世界大賽・${nm}`, hp, lvl, arena: `🌏 世界跆拳道大賽　${nm}`, foeSp: r === 2 ? WORLD_SP : null, intro: `${nm}！對手是${f.short}！`,
+  openDuelGame(f, { title: `🌏 世界大賽・${nm}`, hp, lvl, arena: `🌏 世界跆拳道大賽　${nm}`, foeSp: r === 2 ? WORLD_SP : undefined, intro: `${nm}！對手是${f.short}！`,
     onEnd: (win, w) => {
       const ws = worldState(), got = win ? r + 1 : r;
+      if (win) learnSigMove(f.id);
       if (!win || r === 2) {   // 比完了：頒獎
         ws.best = Math.max(ws.best == null ? -1 : ws.best, got); const first = got === 3 && !ws.gold; if (got === 3) ws.gold = (ws.gold || 0) + 1;
         const bells = payReward(w, WORLD_PRIZE[got]) + (first ? (addBells(2000), 2000) : 0);
