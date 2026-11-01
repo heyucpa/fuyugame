@@ -1,4 +1,4 @@
-// 🗺️ 簡單模式自己跑但可以按 ◀ ▶ 自由走（放開一下再跑）、跑到水管上會停一下、按 ⬇ 進得去；
+// 🗺️ 簡單模式不會自動跑、按 ◀ ▶ 自由走、站在水管上 ⬇ 出現、按 ⬇ 進得去；
 // 🔥 一般模式大魔王：飛上天（往上、跟著小可愛、踩下來頭暈久一點）、噴火球（會彈、碰到會痛）；簡單模式的大魔王不會
 const { chromium } = require('playwright');
 const path = require('path');
@@ -14,15 +14,16 @@ const path = require('path');
     // 簡單：◀ ▶ 一直都在、按了照她走
     questState().mode = 'easy'; playQuest('1-1'); let T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null;
     o.btns = document.querySelector('.qb-l').style.display !== 'none' && document.querySelector('.qb-r').style.display !== 'none';
-    run(T, 60); const x1 = T.P.x; T.keys.ArrowLeft = true; run(T, 40); o.manualLeft = T.P.x < x1 - 20; T.keys.ArrowLeft = false;
-    run(T, 20); const x2 = T.P.x; run(T, 20); o.waitAfter = Math.abs(T.P.x - x2) < 6; run(T, 60); o.autoAgain = T.P.x > x2 + 30;
+    run(T, 60); const x1 = T.P.x; o.noAuto = Math.abs(x1 - T.P.x) < 1 && (run(T, 60), Math.abs(T.P.x - x1) < 4);
+    T.keys.ArrowRight = true; run(T, 40); o.manualRight = T.P.x > x1 + 20; T.keys.ArrowRight = false; const x2 = T.P.x;
+    T.keys.ArrowLeft = true; run(T, 40); o.manualLeft = T.P.x < x2 - 20; T.keys.ArrowLeft = false;
     closeGameWindow();
     // 水管：找一關有水管的
     const pid = QUEST_IDS.find(id => questBuild(id, true).g.some(r => r.includes('P')));
     playQuest(pid); T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null;
     let px = -1, py = -1; T.L.g.forEach((r, y) => r.forEach((ch, x) => { if (px < 0 && ch === 'P' && T.L.g[y - 1][x] !== 'P') { px = x; py = y; } }));
     T.P.x = px * QT + 2; T.P.y = py * QT - T.P.h - 2; T.P.vy = 0; run(T, 10);
-    const xs = T.P.x; run(T, 50); o.pipeStop = T.P.pipeHold > 0 && Math.abs(T.P.x - xs) < 10 && document.querySelector('.qb-dn').style.display !== 'none';
+    o.pipeStop = document.querySelector('.qb-dn').style.display !== 'none';
     T.down(); run(T, 2); o.inPipe = T.inBonus();
     closeGameWindow();
     // 一般模式大魔王

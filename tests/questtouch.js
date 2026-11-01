@@ -33,7 +33,7 @@ const path = require('path');
     o.twoHands = (() => { at(.9, 'pointerdown', 5); at(.5, 'pointerdown', 6); const ok = T.keys.TouchR && T.touches.size === 2; at(.9, 'pointerup', 5); at(.5, 'pointerup', 6); return ok && !T.keys.TouchR && T.touches.size === 0; })();
     closeGameWindow();
     questState().mode = 'easy'; playQuest('1-1'); T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null;
-    o.easyJump = T.zoneOf({ clientX: T.canvas.getBoundingClientRect().left + 5 }) === 'J'; closeGameWindow();
+    o.easyJump = T.zoneOf({ clientX: T.canvas.getBoundingClientRect().left + 5 }) === 'L';   /* 簡單模式也分左右 */ closeGameWindow();
     // 回地圖
     questState().mode = 'normal'; playQuest('1-1'); await wait(100); playQuest.test.pause(true); [...document.querySelectorAll('.quest-pauseov button')].find(x => /回地圖/.test(x.textContent)).click(); await wait(200);
     o.toMap = !document.querySelector('.quest-pauseov') && /闖關|世界/.test(document.getElementById('modalCard').textContent); closeGameWindow(); $('#modal').hidden = true;

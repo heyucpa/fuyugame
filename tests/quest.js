@@ -58,7 +58,7 @@ const path = require('path');
     // ✨ 長按跳更高；簡單模式平常自己往前跑（不用按）
     { const jumpTop = held => { questState().mode = 'normal'; playQuest('1-1'); const T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null; for (let i = 0; i < 30; i++) T.step(1 / 60); const y0 = T.P.y; T.jump(); let top = y0; for (let i = 0; i < 70; i++) { if (!held && i === 2) T.release(); T.step(1 / 60); top = Math.min(top, T.P.y); } T.release(); closeGameWindow(); $('#modal').hidden = true; return y0 - top; };
       const hi = jumpTop(true), lo = jumpTop(false); o.holdHigher = hi > lo * 2 && hi > 100; o.jumpH = [Math.round(lo), Math.round(hi)];
-      questState().mode = 'easy'; playQuest('1-1'); const T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null; const x0 = T.P.x; for (let i = 0; i < 60; i++) T.step(1 / 60); o.autoRun = T.P.x > x0 + 50 && document.querySelector('.qb-l').style.display !== 'none'; closeGameWindow(); $('#modal').hidden = true; }
+      questState().mode = 'easy'; playQuest('1-1'); const T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null; const x0 = T.P.x; for (let i = 0; i < 60; i++) T.step(1 / 60); o.autoRun = Math.abs(T.P.x - x0) < 4 && document.querySelector('.qb-l').style.display !== 'none';   /* 不會自動往前跑了 */ closeGameWindow(); $('#modal').hidden = true; }
     o.cleared = Object.keys(questState().clear).length; o.worlds = questWorldsCleared();
     islMapCache = null; const m = islMap(0); o.islets = m.specials.map(s => s.id); o.isletLand = m.specials.every(sp => m.land[sp.y][sp.x]);
     openIsland(); await wait(300); o.btn = !!document.querySelector('.isl-quest');
