@@ -4898,6 +4898,10 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-10T20:00', title: '🏁 起跑反應王', lines: [
+    ['🏁', '點操場的起跑架就可以玩「起跑反應王」：聽到教練吹哨「嗶！」才可以衝，太早按是偷跑！'],
+    ['⚡', '看看你的反應有多快（幾秒），跟同學比誰先衝出去；高手模式還有假動作喔']
+  ] },
   { id: '2026-11-09T20:00', title: '🥋 每個朋友都有自己的招＋🎮 闖關手把', lines: [
     ['🥋', '對決的時候，每個朋友會用自己的必殺技：月亮跳跳踢、冰滑溜溜衝、無尾熊超級抱…'],
     ['✨', '第一次打贏朋友，就學會牠的招！放必殺技時會從學會的招裡隨機用出來'],
@@ -11833,7 +11837,7 @@ function hostMenuEntries() {
   if (host.n.id === 'hospital') { list.push(['💓 當小醫生', openDoctorGame]); list.push(['🐾 寵物健康檢查', openPetCheckup]); list.push(['👧 小可愛健康檢查', openKidCheckup]); list.push(['🏅 勇敢貼紙簿', openStickerBook]); }
   if (host.n.id === 'gym') { list.push(['🏃 跑步機（速度）', openFitRun]); list.push(['🏋️ 舉啞鈴（力量）', openFitLift]); list.push(['🚴 飛輪（耐力）', openFitBike]); list.push(['📦 跳箱（速度＋力量）', openFitBox]); list.push(['🧘 瑜珈（耐力）', openFitYoga]); list.push(['📊 我的體能', openFitStats]); }
   if (host.n.id === 'arena') { list.push(['⛹️ 籃球比賽（2 對 2）', openBball]); list.push(['🏀 投籃機', openBasket]); list.push(['🔴 躲避球', openDodge]); list.push(['🏓 桌球', openPingPong]); }
-  if (host.n.id === 'track') { list.push(['🚧 障礙賽跑', openRunGame]); list.push(['🏃 百米衝刺', openSprint]); list.push(['🏃‍♀️ 大隊接力', openRelay]); list.push(['🏖️ 跳遠', openLongJump]); if (G.away && G.away.place === 'school' && G.away.idx !== 0) list.push(['🏫 回教室', () => goPlaceRoom(0)]); }
+  if (host.n.id === 'track') { list.push(['🏁 起跑反應王', openStartGame]); list.push(['🚧 障礙賽跑', openRunGame]); list.push(['🏃 百米衝刺', openSprint]); list.push(['🏃‍♀️ 大隊接力', openRelay]); list.push(['🏖️ 跳遠', openLongJump]); if (G.away && G.away.place === 'school' && G.away.idx !== 0) list.push(['🏫 回教室', () => goPlaceRoom(0)]); }
   if (host.n.id === 'swim') {
     list.push(['🏊 打水比賽', openSwimRace]);
     list.push(['🤿 潛水撿寶', openDiveGame]);
@@ -24300,7 +24304,7 @@ function playLongJump(w, L) {
   playLongJump.test = { run1, jump, st: () => ({ ph, x, v, n, best, dist }) };
 }
 Object.assign(ACTIVITIES, {
-  crouch: { label: '🏁 起跑預備', name: '起跑預備', fx: '💨', lines: ['各就各位——預備！', '我要衝第一！', '手放好，腳踩穩～'] },
+  crouch: { label: '🏁 起跑預備', name: '起跑預備', fx: '💨', open: () => openStartGame(), lines: ['各就各位——預備！', '我要衝第一！', '手放好，腳踩穩～'] },
   podium: { label: '🏅 站上頒獎台', name: '站頒獎台', fx: '🏅', lines: ['我是第一名！', '謝謝大家！', '拍照拍照～'] },
   sandjump: { label: '🏖️ 跳遠', name: '跳遠', fx: '💨', open: () => openLongJump(), lines: ['助跑——跳！', '我要跳好遠！'] },
   drinkwater: { label: '💧 喝水休息', name: '喝水', fx: '💧', lines: ['跑完要喝水～', '咕嚕咕嚕，好舒服！', '休息一下再跑！'] },
@@ -24309,6 +24313,93 @@ Object.assign(ACTIVITIES, {
 Object.assign(FURNITURE_ACT, { tr_blocks: 'crouch', tr_podium: 'podium', tr_sand: 'sandjump', tr_water: 'drinkwater', tr_finish: 'finishline' });
 ['crouch', 'podium', 'sandjump', 'drinkwater', 'finishline'].forEach(k => { const a = ACTIVITIES[k]; if (!LINE_TYPES.some(t => t.key === 'act_' + k)) LINE_TYPES.push({ key: 'act_' + k, label: '做事：' + a.name, hint: '', lines: a.lines }); });
 AWAY_GAMES.push(['🏃', '百米衝刺', 'school', () => openSprint()], ['🏃‍♀️', '大隊接力', 'school', () => openRelay()], ['🏖️', '跳遠', 'school', () => openLongJump()]);
+/* 🏁 起跑反應王（家長：按「起跑預備」是不是該有小遊戲？）：點起跑架就玩。
+   「各就各位…預備…」等豹教練吹哨「嗶！🏁」才可以按「衝！」——太早按＝偷跑（🟨 黃牌）。
+   每次看反應時間（幾秒）、跟兩位同學比誰先衝出去；比 5 次。
+   一般：等的時間比較不一定；高手：會有假動作（氣球「啪！」、小鳥「啾！」），那不是起跑信號！ */
+const START_LEVELS = [{ name: '簡單', wait: [1.4, 2.6], fake: 0, rival: [.32, .5], mul: 1, sub: '聽到嗶就衝' }, { name: '一般', wait: [1, 3.6], fake: 0, rival: [.24, .4], mul: 2, sub: '等多久不一定' }, { name: '高手！', wait: [1, 4], fake: .55, rival: [.18, .32], mul: 3, sub: '小心假動作！' }];
+const START_N = 5;
+function openStartGame() { const w = openGameWindow('🏁 起跑反應王', '「各就各位…預備…」聽到教練吹哨「嗶！🏁」才可以按「衝！」。太早按是偷跑喔！'); pickLevelRow(w, START_LEVELS, L => L.sub, L => playStartGame(w, L)); }
+function playStartGame(w, L) {
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const W = 480, H = 270, { g } = gameCanvas(w.stage, W, H);
+  const pad = el('div', 'quest-pad'); w.stage.appendChild(pad);
+  const bGo = el('button', 'quest-btn qb-j start-go', '💨 衝！'); pad.appendChild(bGo); leaveButton(w);
+  const mates = NEIGHBORS.filter(Boolean).sort(() => Math.random() - .5).slice(0, 2), coach = HOSTS.track;
+  let n = 0, wins = 0, best = 0, falses = 0, ph = 'ready', t0 = performance.now(), goAt = 0, fakeAt = 0, fakeKind = null, faked = false, live = true, raf = 0, react = 0, rivalT = [], msg = '', res = '', dashT = 0;
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', key); };
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const setup = () => {
+    ph = 'ready'; t0 = performance.now(); react = 0; res = ''; dashT = 0; faked = false; bGo.disabled = false;
+    goAt = t0 + 1700 + rnd(L.wait[0], L.wait[1]) * 1000;   // 「各就各位」0.8 秒、「預備」再 0.9 秒，然後等一下下
+    fakeKind = L.fake && Math.random() < L.fake ? (Math.random() < .5 ? 'balloon' : 'bird') : null; fakeAt = fakeKind ? rnd(t0 + 1900, goAt - 350) : 0;
+    rivalT = mates.map(() => rnd(L.rival[0], L.rival[1]));
+    msg = '各就各位…'; try { speak('各就各位'); } catch (e) {}
+    w.status.textContent = `第 ${n + 1} / ${START_N} 次　贏了 ${wins} 次${best ? `　最快 ${best.toFixed(2)} 秒` : ''}`;
+  };
+  const end = () => { n++; if (n >= START_N) return finish(); setTimeout(() => { if (live) setup(); }, 300); };
+  const go = () => {
+    if (!live || bGo.disabled) return;
+    const now = performance.now();
+    if (ph === 'ready' || ph === 'set') {   // 偷跑！
+      ph = 'false'; falses++; bGo.disabled = true; Sound.play('miss'); msg = '🟨 偷跑了！要等「嗶」喔～'; try { speak('偷跑了！'); } catch (e) {}
+      setTimeout(() => { if (live) end(); }, 1800); return;
+    }
+    if (ph !== 'go') return;
+    react = (now - goAt) / 1000; ph = 'dash'; dashT = now; bGo.disabled = true; Sound.play('whoosh');
+    const faster = rivalT.filter(t => t < react).length, win = faster === 0; if (win) wins++;
+    if (!best || react < best) best = react;
+    res = `${react.toFixed(2)} 秒` + (react < .2 ? '　⚡ 閃電起跑！' : react < .3 ? '　好快！' : '');
+    msg = win ? '🥇 第一個衝出去！' : faster === 1 ? '🥈 第二個衝出去' : '🥉 再快一點點！';
+    Sound.play(win ? 'perfect' : 'click');
+    setTimeout(() => { if (live) end(); }, 2000);
+  };
+  const finish = () => {
+    gameCleanup(); gameCleanup = null;
+    const bells = payReward(w, Math.round((wins * 30 + (best && best < .3 ? 30 : 0)) * L.mul) + 10);
+    try { dailyHit('game'); } catch (e) {} kidMoodUp(6); saveGame();
+    w.status.textContent = `比了 ${START_N} 次，${wins} 次第一個衝出去！${best ? `最快 ${best.toFixed(2)} 秒。` : ''}${falses ? `偷跑 ${falses} 次。` : ''}💰 +${fmt(bells)}`;
+    try { speak(wins >= 3 ? '你是起跑反應王！' : '好棒！'); } catch (e) {} Sound.play(wins >= 3 ? 'fanfare' : 'questClear');
+    gameButtons(w, openStartGame);
+  };
+  bGo.addEventListener('pointerdown', e => { e.preventDefault(); go(); });
+  const key = e => { if (e.repeat) return; if (e.code === 'Space' || e.code === 'Enter' || e.code === 'ArrowRight') { e.preventDefault(); go(); } };
+  document.addEventListener('keydown', key);
+  const tick = now => {
+    if (!live) return;
+    const T = now / 1000;
+    if (ph === 'ready' && now - t0 > 800) { ph = 'set'; msg = '預備…'; try { speak('預備'); } catch (e) {} }
+    if (ph === 'set' && fakeKind && !faked && now >= fakeAt) { faked = true; Sound.play(fakeKind === 'balloon' ? 'crack' : 'note'); }
+    if (ph === 'set' && now >= goAt) { ph = 'go'; msg = '嗶！🏁 衝！'; Sound.play('flagSlide'); try { Sound.play('whoosh'); } catch (e) {} }
+    if (ph === 'go' && now - goAt > 1500) { react = 1.5; ph = 'dash'; dashT = now; bGo.disabled = true; msg = '慢了～聽到嗶就要衝！'; res = '1.50 秒'; setTimeout(() => { if (live) end(); }, 1600); }
+    // 畫：跑道、三個人蹲在起跑線
+    g.fillStyle = '#9fd8ff'; g.fillRect(0, 0, W, 120); g.fillStyle = '#5fae6f'; g.fillRect(0, 110, W, 20);
+    for (let k = 0; k < 3; k++) { g.fillStyle = k % 2 ? '#4a9be8' : '#2f6fd1'; g.fillRect(0, 130 + k * 46, W, 46); g.fillStyle = '#fff'; g.fillRect(0, 130 + k * 46, W, 2); }
+    g.fillStyle = '#fff'; g.fillRect(110, 130, 4, 138);   // 起跑線
+    const lanes = [{ who: 'kid', y: 214 }].concat(mates.map((m, i) => ({ who: m, y: i ? 260 : 168 })));   // 三條跑道各站一個（腳踩在跑道下半）
+    lanes.forEach((ln, i) => {
+      const myT = i === 0 ? (ph === 'dash' && react < 1.5 ? (now - dashT) / 1000 + react : -1) : (ph === 'go' || ph === 'dash' ? (now - goAt) / 1000 : -1);
+      const startAt = i === 0 ? react : rivalT[i - 1], run = myT >= startAt && (i > 0 || ph === 'dash') ? Math.min(240, Math.pow(myT - startAt, 1.4) * 260) : 0;
+      const crouch = run <= 0 && (ph === 'set' || ph === 'go' || (i === 0 && ph !== 'dash')), x = 96 + run;
+      g.save(); g.translate(x, ln.y - 4); if (crouch) { g.rotate(.5); g.scale(.95, .8); }
+      if (ln.who === 'kid') g.scale(.72, .72);   // 跟同學一樣大
+      if (ln.who === 'kid') { if (kidBaby()) drawBabyKid(g, { t: T, walking: run > 0 }); else drawGirl(g, { t: T, walking: run > 0, blink: false, outfit: currentOutfit(), face: ph === 'false' ? 'wow' : 'joy', stage: kidLookStage() }); }
+      else trackRunner(g, ln.who, 0, 0, .9, T, run > 0, 1);
+      g.restore();
+    });
+    trackRunner(g, coach, 60, 116, .9, T, false, 1);   // 豹教練拿旗子
+    g.fillStyle = '#8a8f96'; g.fillRect(74, 64, 2, 40); g.fillStyle = ph === 'go' || ph === 'dash' ? '#2f9e44' : '#e8505b'; g.beginPath(); g.moveTo(76, 64); g.lineTo(96, 70); g.lineTo(76, 76); g.fill();
+    if (faked && fakeKind && (ph === 'set' || ph === 'go') && now - fakeAt < 900) { g.font = '26px sans-serif'; g.textAlign = 'center'; g.fillText(fakeKind === 'balloon' ? '🎈💥' : '🐦', 300, 70); g.font = '900 14px "Microsoft JhengHei","PingFang TC",sans-serif'; g.fillStyle = '#c0392b'; g.fillText(fakeKind === 'balloon' ? '啪！（不是哨音喔）' : '啾！（不是哨音喔）', 300, 98); }
+    if (ph === 'false') { g.fillStyle = '#ffd23f'; g.fillRect(64, 40, 18, 24); g.strokeStyle = '#c98a10'; g.strokeRect(64, 40, 18, 24); }
+    if (msg) arenaMsg(g, W, msg, 40);
+    if (res) { g.font = '900 20px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.lineWidth = 5; g.strokeStyle = '#fff'; g.strokeText(res, W / 2, 70); g.fillStyle = '#1971c2'; g.fillText(res, W / 2, 70); }
+    bGo.classList.toggle('glow', ph === 'go');
+    raf = requestAnimationFrame(tick);
+  };
+  setup(); raf = requestAnimationFrame(tick);
+  playStartGame.test = { go, st: () => ({ ph, n, wins, best, falses, goAt, react, fakeKind }) };
+}
+AWAY_GAMES.push(['🏁', '起跑反應王', 'school', () => openStartGame()]);
 // 🏃 終點旗：兩種賽跑選一種
 function openRaceChoice() {
   const w = openGameWindow('🏃 賽跑', '想跑哪一種？');
