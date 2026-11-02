@@ -3997,7 +3997,10 @@
     if (!eggBtn10 || !eggBtn10.disabled) fails.push('剩下的種類都在蛋裡，買蛋按鈕還可以按');
     G.pets.forEach(function(pp){ pp.stage = 'kid'; });
     openTab('pets');
-    if (!new RegExp(PET_SPECIES.length + ' 種都收集到了').test($('#tabBody').textContent)) fails.push('真的全部孵出來了，沒有寫「都收集到了」');
+    var shopDone = $('#tabBody').textContent;
+    var shopN = PET_SPECIES.filter(function(s){ return !s.story; }).length;
+    if (!new RegExp('商店可以買的 ' + shopN + ' 種都收集到了').test(shopDone)) fails.push('真的全部孵出來了，沒有寫商店的寵物都收集到了');
+    if (/湊齊 6 個線索/.test(shopDone)) fails.push('星光小精靈已經在了，還寫要湊 6 個線索');
     var eggBtn11 = [].filter.call(document.querySelectorAll('#tabBody button'), function(b){ return /寵物蛋/.test(b.textContent); })[0];
     if (!eggBtn11 || !eggBtn11.disabled || !/賣完/.test(eggBtn11.textContent)) fails.push('18 種都有了，買蛋按鈕沒有變成「賣完了」');
     var kp10 = JSON.parse(keepPets10); G.pets = kp10[0]; G.activePet = kp10[1]; G.companions = kp10[2]; G.pet = G.pets[G.activePet];
