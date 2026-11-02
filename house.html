@@ -12265,8 +12265,9 @@ function travelTo(place) {
   if (typeof placeFee === 'function' && placeFee(place)) { askEntryFee(place, () => walkTrip(PLACES[place].name, () => travelArrive(place), place)); return; }   // 🎟️ 先付錢才出發
   walkTrip(PLACES[place].name, () => travelArrive(place), place);
 }
-function travelArrive(place) {
-  G.away = { place, idx: 0 };
+function travelArrive(place, idx) {
+  const roomIdx = idx || 0;   // 小島的操場進來是學校第 2 間；沒帶的還是第 1 間。存檔一樣是 { place, idx }
+  G.away = { place, idx: roomIdx };
   if (place === 'cinema' && typeof entryTicketPending !== 'undefined' && entryTicketPending) { G.away.ticket = 1; entryTicketPending = false; }
   // 🥋🏊 第一次去：教練免費送一套，收進衣櫃（在家裡也可以穿）
   const gift = place === 'dojo' ? ['dobok', 'dobok_pants', 'barefoot', 'tkd_tee'] : place === 'pool' ? ['swimsuit', 'swim_bottom', 'swim_cap'] : null;
@@ -12274,8 +12275,9 @@ function travelArrive(place) {
   if (typeof dailyHit === 'function') try { dailyHit('visit'); if (place === 'uncle' || place === 'grandma') dailyHit('family'); } catch (e) {}
   themeOnTravel(place);
   host.n = null; // 讓 hostTick 重新迎接
-  fufuSay(pickLine('travelGo', { 地點: PLACES[place].name }), 3000);
-  toast(`🚗 出發去${PLACES[place].name}！`);
+  const destName = (roomIdx && PLACES[place].rooms[roomIdx] && PLACES[place].rooms[roomIdx].name) || PLACES[place].name;
+  fufuSay(pickLine('travelGo', { 地點: destName }), 3000);
+  toast(`🚗 出發去${destName}！`);
   Sound.play('jump');
   commit();
 }
@@ -14427,7 +14429,7 @@ $('#btnCancel').onclick = cancelHold;
 
 // ── 上方列 ──
 /* 房間按鈕前面加圖示（家長：還不識字的妹妹看不懂「客廳」「臥室」）：先看名字，名字看不出來就看房間裡擺了什麼，再不然照第幾間 */
-const ROOM_ICON_WORDS = [[/客廳|起居/, '🛋️'], [/臥室|睡|寢|房間|主臥|小孩房|兒童房/, '🛏️'], [/餐廳|廚房|吃飯/, '🍽️'], [/浴室|廁所|洗澡|浴/, '🛁'], [/陽台|花園|庭院/, '🌷'],
+const ROOM_ICON_WORDS = [[/客廳|起居/, '🛋️'], [/操場|跑道|田徑/, '🏟️'], [/臥室|睡|寢|房間|主臥|小孩房|兒童房/, '🛏️'], [/餐廳|廚房|吃飯/, '🍽️'], [/浴室|廁所|洗澡|浴/, '🛁'], [/陽台|花園|庭院/, '🌷'],
   [/書房|讀書|圖書|功課/, '📚'], [/遊戲|玩具|遊樂/, '🧸'], [/閣樓/, '🏠'], [/衣帽|更衣/, '👗'], [/音樂|琴/, '🎹']];
 function roomIcon(r, i) {
   const nm = r.name || '', hit = ROOM_ICON_WORDS.find(([re]) => re.test(nm)); if (hit) return hit[1];
@@ -15288,6 +15290,11 @@ function tabEarn(body) {
   body.appendChild(games);
 }
 
+/* 🌟 星光小精靈不在商店蛋裡。有這隻（或星星蛋已經孵過）就改寫「已孵出」。 */
+function starlingOwned() { return collectedSpecies().has('starling') || !!(G.star && G.star.hatched); }
+function starlingDexHint() {
+  return starlingOwned() ? '🌟 星光小精靈已孵出' : '🌟 星光小精靈要闖關湊齊 6 個線索才會孵出，買蛋抽不到';
+}
 /* 📖 圖鑑：所有收集都在這一頁。最上面一排是總覽，點了跳到那一段。
    妹妹看不懂字，所以每一段都有圖示，總覽也是圖示＋數字。 */
 function tabBook(body) {
@@ -15340,6 +15347,7 @@ function tabBook(body) {
   body.appendChild(trG);
   body.appendChild(sec('dexPet', `🐾 寵物圖鑑 ${tc('pet')[0]} / ${PET_SPECIES.length}`));
   body.appendChild(note('寵物蛋摸一摸就會孵出來。「寵物」分頁可以買新的蛋。'));
+  body.appendChild(note(starlingDexHint()));
   body.appendChild(petDexGrid());
   body.appendChild(sec('dexGrow', `🌱 成長圖鑑 ${growDexCount()} / ${growDexAll()}`));
   body.appendChild(note(`${charName()}吃營養的東西、做各種事、看繪本，會慢慢長大。寵物有寶寶、小朋友、大朋友三個樣子，養大就會收進來。還有一格隱藏的喔！`));
@@ -15812,7 +15820,8 @@ function tabPets(body) {
       (inEggs ? `\n另外有 ${inEggs} 種新的寵物在你的蛋裡面，摸一摸讓牠們孵出來！` : '')
     : inEggs
       ? `剩下 ${inEggs} 種新的寵物都在你的蛋裡面了，摸一摸讓牠們孵出來吧！（寵物屋裡也可以摸）`
-      : `${PET_SPECIES.length} 種都收集到了 🎉　寵物蛋賣完了，之後有新的寵物會再進貨喔！`));
+      : `商店能買的 ${PET_SPECIES.filter(s => !s.story).length} 種寵物蛋都收集到了 🎉　寵物蛋賣完了，之後有新的寵物會再進貨喔！` +
+        (starlingOwned() ? '' : '　星光小精靈要闖關湊齊 6 個線索才會孵出，買蛋抽不到。')));
   const egg = el('button', 'big',
     left ? `🥚 買一顆寵物蛋　💰 ${fmt(EGG_PRICE)}` : '🥚 寵物蛋賣完了');
   egg.disabled = !left || G.bells < EGG_PRICE;
@@ -15830,6 +15839,7 @@ function tabPets(body) {
   const dexB = el('button', 'big alt', `📖 看寵物圖鑑（${collectedSpecies().size} / ${PET_SPECIES.length}）`);
   dexB.onclick = () => { openTab('book'); setTimeout(() => { const t = document.getElementById('dexPet'); if (t) t.scrollIntoView({ block: 'start' }); }, 0); };
   body.appendChild(dexB);
+  body.appendChild(note(starlingDexHint()));
 }
 // 成長圖鑑：一種寵物一排，寶寶 → 小朋友 → 大朋友。還沒孵到的種類整排都是剪影
 function growDexGrid() {
@@ -19714,6 +19724,8 @@ const ISL = { W: 64, H: 55, T: 32 };   // 右邊多一塊海，放運動島   //
 const ISL_BLD = [   // 房子：x, y 是左上角的格子，w×h 格；門在正下方一格
   { id: 'home', x: 24, y: 11, w: 4, h: 3 },
   { id: 'school', x: 12, y: 13, w: 5, h: 3 },
+  // 🏟️ 操場：學校旁邊自己的一棟（點了進學校的操場，idx 1）。門跟教室門口同一排，中間有小路
+  { id: 'playground', x: 17, y: 13, w: 4, h: 3, place: 'school', room: 1 },
   { id: 'library', x: 32, y: 13, w: 4, h: 3 },
   { id: 'park', x: 18, y: 9, w: 5, h: 2 },
   { id: 'uncle', x: 10, y: 22, w: 4, h: 3 },
@@ -19771,7 +19783,7 @@ const ISL_POND = { x: 31, y: 24, w: 4, h: 3 };
 const ISL_HUB = [26, 19];
 const ISL_STYLE = {   // 牆、屋頂顏色
   dojo: ['#fff4e6', '#e0503a'], pool: ['#e8f6fb', '#3fa9f5'], track: ['#fff1e0', '#e07a4a'], arena: ['#fff6e0', '#ff7a3c'], gym: ['#f4eeff', '#8a78b0'], restaurant: ['#fff0d9', '#e8823a'], hospital: ['#ffffff', '#e8505b'], cinema: ['#3a2f4a', '#e8505b'],
-  home: ['#ffd9c9', '#ff7b7b'], school: ['#fff4cf', '#5b8def'], library: ['#e6dcff', '#7a5cc9'], park: ['#d9f0c8', '#4f9d4f'],
+  home: ['#ffd9c9', '#ff7b7b'], school: ['#fff4cf', '#5b8def'], playground: ['#d9f5df', '#2f6fd1'], library: ['#e6dcff', '#7a5cc9'], park: ['#d9f0c8', '#4f9d4f'],
   uncle: ['#d7ecc8', '#7aa05a'], grandma: ['#ffe3b0', '#d68a3a'], amusement: ['#ffe0ee', '#ff6fa3'], friend: ['#fffaf0', '#6fb7e8']
 };
 let islMapCache = null;
@@ -19860,6 +19872,14 @@ function islMap(nFriends) {
     for (let y = Math.min(dy, hy); y <= Math.max(dy, hy); y++) mark(dx, y);
     for (let x = Math.min(dx, hx); x <= Math.max(dx, hx); x++) mark(x, hy);
   });
+  { // 🏫 教室門口 ↔ 🏟️ 操場門口：中間一小段路
+    const sch = blds.find(b => b.id === 'school'), pg = blds.find(b => b.id === 'playground');
+    if (sch && pg) {
+      const [x0, y0] = sch.door, [x1, y1] = pg.door;
+      for (let x = Math.min(x0, x1); x <= Math.max(x0, x1); x++) mark(x, y0);
+      for (let y = Math.min(y0, y1); y <= Math.max(y0, y1); y++) mark(x1, y);
+    }
+  }
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {   // 廣場
     if (Math.hypot(x - ISL_HUB[0], y - ISL_HUB[1]) <= 2.4) mark(x, y);
   }
@@ -19910,7 +19930,8 @@ function islStartTile(m) {
     if (G.away.place === 'friend') {
       const i = loadInvites().findIndex(v => PLACES.friend && v.at === PLACES.friend.inviteAt && v.n === PLACES.friend.inviteName);
       id = i >= 0 && i < ISL_FRIEND_SPOTS.length ? 'friend' + i : 'home';
-    } else if (pl && !pl.inHouse && ISL_BLD.some(b => b.id === G.away.place)) id = G.away.place;
+    } else if (G.away.place === 'school' && G.away.idx === 1 && ISL_BLD.some(b => b.id === 'playground')) id = 'playground';
+    else if (pl && !pl.inHouse && ISL_BLD.some(b => b.id === G.away.place)) id = G.away.place;
   }
   const b = m.blds.find(x => x.id === id) || m.blds[0];
   return { id: b.id, x: b.door[0], y: b.door[1] };
@@ -20031,7 +20052,7 @@ function islTap(e, hold) {
       return;
     }
     const b = m.blds.find(b => t.x >= b.x && t.x < b.x + b.w && t.y >= b.y && t.y < b.y + b.h);
-    if (b) { isl.pending = { type: 'enter', id: b.id }; isl.skipDoor = null; if (!islWalkTo((x, y) => x === b.door[0] && y === b.door[1])) isl.pending = null; Sound.play('click'); return; }
+    if (b) { const spec = islPlaceOf(b.id); isl.pending = { type: 'enter', id: b.id, place: spec.place, room: spec.room }; isl.skipDoor = null; if (!islWalkTo((x, y) => x === b.door[0] && y === b.door[1])) isl.pending = null; Sound.play('click'); return; }
     if (t.x >= 0 && t.y >= 0 && t.x < m.W && t.y < m.H && m.tree[t.y][t.x]) {
       isl.pending = { type: 'tree', x: t.x, y: t.y };
       if (Math.abs(Math.floor(isl.x) - t.x) + Math.abs(Math.floor(isl.y) - t.y) === 1 || !islWalkTo((x, y) => Math.abs(x - t.x) + Math.abs(y - t.y) === 1)) { isl.path = []; if (Math.hypot(isl.x - t.x - .5, isl.y - t.y - .5) < 2.2) islDoPending(); else isl.pending = null; }
@@ -20094,16 +20115,25 @@ function islDoPending() {
     { const fl = [['🌸', '摘到一朵花！好香喔～'], ['🌼', '摘到一朵小花！'], ['🌷', '好漂亮的花！']][Math.floor(Math.random() * 3)]; gotCard(fl[0], '小花', fl[1]); }
   }
 }
+function islPlaceOf(id) {   // 操場不是另一個存檔地點：進學校的操場房間。其他房子照 id
+  const b = ISL_BLD.find(x => x.id === id);
+  return { place: (b && b.place) || id, room: (b && b.room) || 0 };
+}
 function islEnter(id) {   // 走到門口：關掉地圖、進去（家：回家；一樣的地方：留在原地）
-  const invites = isl.invites;
+  const invites = isl.invites, spec = islPlaceOf(id);
   closeIsland();
-  if (id === 'home') { if (G.away) { if (fufu.pose) fufuStandUp(false); homeArrive(); } return; }
+  if (spec.place === 'home') { if (G.away) { if (fufu.pose) fufuStandUp(false); homeArrive(); } return; }
   const fm = /^friend(\d)$/.exec(id);
   if (fm) { const inv = invites[+fm[1]]; if (inv) visitFriend(inv, true); return; }
-  if (G.away && G.away.place === id) return;
-  if (!PLACES[id]) return;
-  if (typeof placeFee === 'function' && placeFee(id)) { askEntryFee(id, () => travelArrive(id), () => openIsland()); return; }   // 🎟️ 電影院、游泳池：先付錢
-  travelArrive(id);
+  if (!PLACES[spec.place]) return;
+  if (G.away && G.away.place === spec.place) {
+    // 已經在學校：點教室／操場只換房間，不要把回家或別的地方的「再進去就留著」弄壞
+    if ((id === 'school' || id === 'playground') && (G.away.idx || 0) !== spec.room) goPlaceRoom(spec.room);
+    return;
+  }
+  const arrive = () => travelArrive(spec.place, spec.room);
+  if (typeof placeFee === 'function' && placeFee(spec.place)) { askEntryFee(spec.place, arrive, () => openIsland()); return; }   // 🎟️ 電影院、游泳池：先付錢
+  arrive();
 }
 const islRunning = () => runOn() || !!(isl && isl.shift);
 function islSpd() { const v = typeof rideNow === 'function' ? rideNow() : null; return v ? v.speed : (islRunning() ? RUN_MULT : 1); }   // 🚲🚗 騎車、開車比較快
@@ -20535,8 +20565,8 @@ function islDrawTree(ctx, x, y, now) {
 function islDrawBuilding(ctx, b, tt) {
   const T = ISL.T, x = b.x * T, y = b.y * T, w = b.w * T, h = b.h * T, fr = /^friend/.test(b.id);
   const sty = ISL_STYLE[fr ? 'friend' : b.id] || ISL_STYLE.home, roofC = fr ? ['#6fb7e8', '#ff8fb3', '#ffc94d', '#9be0a0'][+b.id.slice(6)] : sty[1];
-  const pl = fr ? null : PLACES[b.id], icon = fr ? '🏡' : b.id === 'home' ? '🏠' : (pl ? pl.emoji : '🏠');
-  let label = fr ? '' : b.id === 'home' ? '我的家' : (pl ? pl.name : '');
+  const pl = fr ? null : PLACES[b.id], icon = fr ? '🏡' : b.id === 'home' ? '🏠' : b.id === 'playground' ? '🏟️' : (pl ? pl.emoji : '🏠');
+  let label = fr ? '' : b.id === 'home' ? '我的家' : b.id === 'playground' ? '操場' : (pl ? pl.name : '');
   if (fr) { const inv = isl.invites[+b.id.slice(6)]; label = inv ? inviteWho(inv) + '的家' : '朋友的家'; }
   ctx.fillStyle = 'rgba(40,60,30,.18)'; ctx.fillRect(x + 4, y + h - 4, w, 8);
   if (b.id === 'amusement') {   // 遊樂園：大帳篷＋摩天輪
@@ -20551,6 +20581,15 @@ function islDrawBuilding(ctx, b, tt) {
     ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 2; for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(x + 20 + i * 34, y + 30 + Math.sin(tt * 2 + i) * 3, 7, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); }
     ctx.strokeStyle = '#ff6b6b'; ctx.lineWidth = 2; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(x + 4, y + 30); ctx.lineTo(x + w - 4, y + 30); ctx.stroke(); ctx.setLineDash([]);
     [[x - 6, '#ffd23f'], [x + w + 6, '#ff6b9a']].forEach(([ux, c]) => { ctx.fillStyle = '#ddd'; ctx.fillRect(ux - 1, y - 6, 2, 20); ctx.fillStyle = c; ctx.beginPath(); ctx.arc(ux, y - 6, 13, Math.PI, 0); ctx.fill(); });
+  } else if (b.id === 'playground') {   // 操場：綠地＋跑道（不是床，也沒有教室那種屋頂）
+    ctx.fillStyle = '#6fbe78'; ctx.fillRect(x - 2, y + 6, w + 4, h - 4);
+    ctx.fillStyle = '#5fae6f'; ctx.fillRect(x + 4, y + 12, w - 8, h - 16);
+    const cx = x + w / 2, cy = y + h / 2 + 2, rw = Math.max(18, w / 2 - 14), rh = Math.max(12, h / 2 - 16);
+    ctx.lineWidth = 9; ctx.strokeStyle = '#e98a9a'; ctx.beginPath(); ctx.ellipse(cx, cy, rw, rh, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.lineWidth = 5; ctx.strokeStyle = '#2f6fd1'; ctx.beginPath(); ctx.ellipse(cx, cy, rw, rh, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.lineWidth = 1.5; ctx.strokeStyle = '#ffffff'; ctx.setLineDash([4, 3]); ctx.beginPath(); ctx.ellipse(cx, cy, Math.max(8, rw - 8), Math.max(6, rh - 6), 0, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = '#8fd48a'; ctx.beginPath(); ctx.ellipse(cx, cy, Math.max(6, rw - 14), Math.max(4, rh - 10), 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx - rw + 10, cy - 8); ctx.lineTo(cx - rw + 10, cy + 8); ctx.stroke();
   } else if (b.id === 'park') {   // 公園：綠色的大門
     ctx.fillStyle = '#8a5a33'; ctx.fillRect(x + 6, y + 6, 10, h); ctx.fillRect(x + w - 16, y + 6, 10, h);
     ctx.fillStyle = '#4f9d4f'; ctx.beginPath(); ctx.ellipse(x + w / 2, y + 12, w / 2 - 2, 20, 0, Math.PI, 0); ctx.fill();
@@ -22731,6 +22770,31 @@ const QPET_MOVES = {
   fish: { name: '大浪花', icon: '🌊', fx: '💧', col: '#5cc4ec' },
   sand: { name: '沙沙旋風', icon: '🌪️', fx: '🌀', col: '#e8c27a' }
 };
+/* 闖關上方那句話：單行 fillText 會被畫面切掉（星光開場很長）。依 QVW−40 自動換行，最多 4 行，白邊紅字跟原來一樣。短句還是畫在 y＝60。 */
+function drawQuestMsg(g, msg) {
+  const maxW = QVW - 40, maxLines = 4, parts = String(msg).split('\n');
+  let size = 18;
+  const wrap = () => {
+    g.font = `900 ${size}px "Microsoft JhengHei","PingFang TC",sans-serif`;
+    const out = [];
+    parts.forEach(part => {
+      let line = '';
+      for (const ch of part) {
+        const trial = line + ch;
+        if (line && g.measureText(trial).width > maxW) { out.push(line); line = ch; }
+        else line = trial;
+      }
+      if (line || !part) out.push(line);
+    });
+    return out;
+  };
+  let lines = wrap();
+  while (lines.length > maxLines && size > 14) { size -= 1; lines = wrap(); }
+  if (lines.length > maxLines) lines = lines.slice(0, maxLines);
+  g.textAlign = 'center'; g.lineWidth = 5; g.strokeStyle = '#ffffff'; g.fillStyle = '#e8505b';
+  const lh = size + 6;
+  lines.forEach((ln, i) => { const y = 60 + i * lh; g.strokeText(ln, QVW / 2, y); g.fillText(ln, QVW / 2, y); });
+}
 function playQuest(id, opt) {
   opt = opt || {};   // opt.bossStart：從大魔王那裡開始；opt.weak：打輸幾次了（大王越來越弱）
   const q = questState(), easy = q.mode === 'easy', wd = QUEST_WORLDS[+id[0] - 1];
@@ -23210,7 +23274,7 @@ function playQuest(id, opt) {
       for (let i = 0; i < boss.hp; i++) { g.fillStyle = ['#7bd389', '#ffd23f', '#ff6b5b'][ckPhase(boss, i + 1) - 1]; g.fillRect(bx + i * u + 1, by + 1, u - 2, 8); }
     }
     if (boss && boss.flash > 0) { g.fillStyle = `rgba(255,255,230,${boss.flash * 3})`; g.fillRect(0, 0, QVW, QVH); }   // 打雷閃一下
-    if (msgT > 0) { g.font = '900 18px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.lineWidth = 5; g.strokeStyle = '#ffffff'; g.strokeText(msg, QVW / 2, 60); g.fillStyle = '#e8505b'; g.fillText(msg, QVW / 2, 60); }
+    if (msgT > 0 && msg) drawQuestMsg(g, msg);
     g.textBaseline = 'alphabetic';
   };
   const frame = now => {
