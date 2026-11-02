@@ -11,7 +11,7 @@ const path = require('path');
     const wait = ms => new Promise(r => setTimeout(r, ms)), o = {};
     G.guide = 'done'; $('#modal').hidden = true;
     openTravelMenu(); o.hiddenBefore = !/花花島/.test($('#modalCard').innerText); $('#modal').hidden = true;
-    questState().clear['1-3'] = 1; islMapCache = null;
+    questState().clear[questBossId(1)] = 1; islMapCache = null;
     openTravelMenu(); const btn = [...document.querySelectorAll('#modalCard .place-pick')].find(x => /花花島/.test(x.innerText)); o.shown = !!btn && !/糖果島/.test($('#modalCard').innerText);
     btn.click(); await wait(300); o.onIsland = !!isl;
     for (let i = 0; i < 200 && isl && (isl.boat || isl.path.length || isl.afterBoat); i++) await wait(100);

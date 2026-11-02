@@ -15,15 +15,17 @@ const path = require('path');
     for (let i = 0; i < 40 && !G.star.egg; i++) { if (!$('#modal').hidden) $('#modal').hidden = true; await wait(200); }
     o.egg = G.star.egg === 1 && (G.rooms[0].items.some(it => it.id === 'star_egg') || G.inv.star_egg === 1); o.retro = G.star.got.join() === '1';
     await wait(300); o.eggShow = !!document.getElementById('showcase') || SC_QUEUE.length > 0; const sc = document.getElementById('showcase'); if (sc) sc.remove(); SC_QUEUE.length = 0;
-    o.intro = /草原|沙灘/.test(starIntroLine('2-3')) && starIntroLine('2-1') === '' && starIntroLine('1-3') === '';
-    // 第一次過 2-3 給線索、再過不給
-    questDone(fakeW(), '2-3', { coins: 0, stars: 1 }); o.clue2 = G.star.got.join() === '1,2';
-    questDone(fakeW(), '2-3', { coins: 0, stars: 1 }); o.noDup = G.star.got.length === 2;
+    o.intro = /草原|沙灘/.test(starIntroLine(questBossId(2))) && starIntroLine('2-1') === '' && starIntroLine('1-3') === '';
+    o.eggNote = (window.starNoticeLog || []).includes('egg') && /✨ 房間多出一個星星蛋了！/.test(document.body.innerText);
+    // 第一次過世界 2 的大魔王關（最後一關）給線索、再過不給
+    questDone(fakeW(), questBossId(2), { coins: 0, stars: 1 }); o.clue2 = G.star.got.join() === '1,2';
+    questDone(fakeW(), questBossId(2), { coins: 0, stars: 1 }); o.noDup = G.star.got.length === 2;
     // 每日目標：找下一個線索
     o.dailyClue = dailyTask('clue').avail(G) === !!questUnlocked(starNextW() + '-3');
     // 6 個 → 孵化
-    G.star.got = [1, 2, 3, 4, 5]; const nPets = G.pets.length; questDone(fakeW(), '6-3', { coins: 0, stars: 1 }); await wait(2800);
+    G.star.got = [1, 2, 3, 4, 5]; const nPets = G.pets.length; questDone(fakeW(), questBossId(6), { coins: 0, stars: 1 }); await wait(2800);
     o.hatch = G.star.hatched === 1 && G.pets.length === nPets + 1 && G.pets.some(pt => pt.species === 'starling' && pt.stage === 'baby');
+    o.hatchNote = (window.starNoticeLog || []).includes('hatch') && /🌟 星光小精靈孵出來了！/.test(document.body.innerText);
     document.querySelectorAll('#showcase').forEach(x => x.remove()); SC_QUEUE.length = 0; $('#modal').hidden = true;
     // 買的蛋抽不到
     const saved = G.pets.slice(); let got = new Set(); for (let k = 0; k < 120; k++) { G.pets = saved.slice(); const i = addEgg(); got.add(G.pets[i].species); } G.pets = saved; o.noStoryEgg = !got.has('starling');

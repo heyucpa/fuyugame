@@ -43,7 +43,7 @@ const path = require('path');
       }
     }
     // 簡單模式：到大魔王前面會出現 ◀ ▶，不按就停住、按 ◀ 會往後退
-    { questState().mode = 'easy'; playQuest('1-3', { bossStart: true }); const T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null;
+    { questState().mode = 'easy'; playQuest(questBossId(1), { bossStart: true }); const T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null;
       for (let i = 0; i < 60; i++) T.step(1 / 60); const lb = document.querySelector('.qb-l'); o.bossBtns = lb && lb.style.display !== 'none';
       const x0 = T.P.x; for (let i = 0; i < 60; i++) T.step(1 / 60); o.bossStill = Math.abs(T.P.x - x0) < 4;
       T.keys.ArrowLeft = true; for (let i = 0; i < 40; i++) T.step(1 / 60); T.keys.ArrowLeft = false; o.bossBack = T.P.x < x0 - 20;

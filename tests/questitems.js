@@ -13,7 +13,7 @@ const path = require('path');
     const start = (id, mode) => { questState().mode = mode || 'normal'; playQuest(id); const T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null; return T; };
     const run = (T, n) => { for (let i = 0; i < n; i++) T.step(1 / 60); };
     const find = (T, ch) => { for (let y = 0; y < T.L.g.length; y++) { const x = T.L.g[y].indexOf(ch); if (x >= 0) return [x, y]; } return null; };
-    o.worlds = QUEST_WORLDS.length === 6 && QUEST_IDS.length === 18 && QUEST_IDS.includes('6-3');
+    o.worlds = QUEST_WORLDS.length === 6 && QUEST_IDS.length === 30 && QUEST_IDS.includes('6-3') && QUEST_IDS.includes('1-4') && questBossId(1) === '1-5' && questBossId(6) === '6-5';
     // 道具磚：從下面頂 → 跳出道具 → 碰到就拿到
     let T = start('1-1'); let [mx, my] = find(T, 'M'); T.P.x = mx * QT + 2; T.P.y = (my + 1) * QT + 2; T.P.vy = -300; run(T, 6);
     const pw = T.items.find(it => it.k === 'pow'); o.powBlock = !!pw && T.L.g[my][mx] === 'u';
@@ -40,9 +40,23 @@ const path = require('path');
     T = start('5-1'); const pl = T.plats[0], x1 = pl.x; run(T, 30); o.plat = T.plats.length >= 2 && pl.x !== x1;
     T = start('6-1'); o.flame = T.ents.some(e => e.k === 'flame') && !!find(T, 'L');
     closeGameWindow(); $('#modal').hidden = true;
+    // 磚塊：小的時候頂一下還在，變大就頂破；藤蔓按住跳會往上；水裡換成企鵝泳衣，上岸換回來
+    T = start('1-1'); const br = find(T, 'B'); T.P.big = false; T.P.x = br[0] * QT + 2; T.P.y = (br[1] + 1) * QT + 2; T.P.vy = -300; run(T, 8);
+    o.brickBump = T.L.g[br[1]][br[0]] === 'B';
+    T.P.big = true; T.P.x = br[0] * QT + 2; T.P.y = (br[1] + 1) * QT + 2; T.P.vy = -320; run(T, 8); o.brickBreak = T.L.g[br[1]][br[0]] === ' ';
+    T = start('1-4'); let vx0 = -1, vy0 = -1; T.L.g.forEach((r, y) => { const x = r.indexOf('V'); if (x >= 0 && y >= 7) { vx0 = x; vy0 = y; } }); T.P.x = vx0 * QT + 2; T.P.y = vy0 * QT; T.jump(); const yv = T.P.y; run(T, 20); o.vine = vy0 >= 7 && T.P.y < yv - 12;
+    T = start('2-4'); let sx = -1; T.L.g[12].forEach((ch, x) => { if (sx < 0 && ch === 'W' && T.L.g[13][x] === '#') sx = x; });
+    T.P.x = sx * QT; T.P.y = 13 * QT - T.P.h; T.P.vy = 0; run(T, 4); o.swim = T.P.swim === true && T.penguin() === true;
+    T.P.x = 2 * QT; T.P.y = 13 * QT - T.P.h; T.P.vy = 0; run(T, 6); o.shore = T.P.swim === false && T.penguin() === false;
+    const ux = T.L.waterPipes[0]; T.P.x = ux * QT + 4; T.P.y = 11 * QT - T.P.h; T.P.vy = 0; run(T, 3); T.down(); run(T, 3); o.waterPipe = T.inBonus() && T.P.swim === true;
+    closeGameWindow(); $('#modal').hidden = true;
     // 存檔：6 個世界的關卡都留著，奇怪的拿掉
     const raw = JSON.parse(JSON.stringify(G)); raw.quest = { mode: 'easy', clear: { '6-3': 1, '7-1': 1 }, stars: { '5-2': 3 } };
-    const n = normalizeSave(raw).quest; o.save = n.clear['6-3'] === 1 && !n.clear['7-1'] && n.stars['5-2'] === 3;
+    const n = normalizeSave(raw).quest; o.save = n.clear['6-3'] === 1 && !n.clear['7-1'] && n.stars['5-2'] === 3 && n.legacy['6'] === 1 && !n.clear['6-4'] && !n.clear['6-5'];
+    const kept = normalizeSave(Object.assign({}, JSON.parse(JSON.stringify(G)), { quest: { mode: 'normal', clear: { '1-1': 1, '1-2': 1, '1-3': 1, '2-3': 1, '3-3': 1, '4-3': 1, '5-3': 1, '6-3': 1 }, stars: { '1-3': 2, '6-3': 3 } } })).quest;
+    o.keepOld = ['1-1', '1-2', '1-3', '2-3', '3-3', '4-3', '5-3', '6-3'].every(k => kept.clear[k] === 1) && !kept.clear['1-4'] && !kept.clear['1-5'] && kept.stars['1-3'] === 2 && kept.stars['6-3'] === 3 && [1, 2, 3, 4, 5, 6].every(w => kept.legacy[String(w)] === 1);
+    const neu = normalizeSave(Object.assign({}, JSON.parse(JSON.stringify(G)), { quest: { mode: 'easy', rev: 2, legacy: {}, clear: { '1-3': 1 }, stars: { '1-1': 1 } } })).quest;
+    o.noFalseWorld = neu.rev === 2 && neu.legacy['1'] == null && neu.clear['1-3'] === 1 && neu.stars['1-1'] === 1;
     // 地圖
     openQuestMap(); o.map = document.querySelectorAll('.quest-world').length === 6 && /城堡世界/.test($('#modalCard').innerText) && /獎盃/.test($('#modalCard').innerText); $('#modal').hidden = true;
     return o;
