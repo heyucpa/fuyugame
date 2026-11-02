@@ -672,6 +672,23 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 @keyframes plankPow { from { transform: translate(-50%, -50%) scale(.3); } 60% { transform: translate(-50%, -50%) scale(1.3); } to { transform: translate(-50%, -50%) scale(1); opacity: .85; } }
 @keyframes tkdBreak { to { transform: rotate(25deg) scale(1.2); opacity: .25; } }
 .tkd-big { font-size: 64px; line-height: 1.1; } .tkd-say { font-size: 16px; font-weight: 800; color: #5a4630; text-align: center; margin: 6px 0; white-space: pre-line; }
+.cup-board { background: #fff8ee; border: 3px solid #ffd23f; border-radius: 16px; padding: 8px 8px 4px; }
+.cup-road { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin: 2px 0 8px; }
+.cup-step { font-size: 13px; font-weight: 800; padding: 4px 7px; border-radius: 999px; background: #fff; border: 2px solid #e7d7c3; color: #8a7a64; }
+.cup-step.now { background: #ffe066; border-color: #f08c00; color: #5a3d00; }
+.cup-step.done { background: #d3f9d8; border-color: #2f9e44; color: #2b8a3e; }
+.cup-fight { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 4px 0 8px; }
+.cup-card { width: 112px; min-height: 96px; border-radius: 14px; background: #fff; border: 3px solid #ffd23f; text-align: center; padding: 6px 4px; font-weight: 800; font-size: 14px; line-height: 1.25; }
+.cup-card.me { border-color: #4dabf7; background: #e7f5ff; }
+.cup-card .emo { font-size: 36px; line-height: 1.15; display: block; }
+.cup-vs { font-size: 22px; font-weight: 900; color: #e03131; }
+.cup-note { text-align: center; font-weight: 800; color: #5a4636; margin: 2px 0 6px; font-size: 14px; }
+.cup-grid { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin: 2px 0 6px; }
+.cup-mini { width: 68px; border-radius: 10px; background: #fff; border: 2px solid #e7d7c3; text-align: center; font-size: 11px; font-weight: 700; padding: 3px 2px 4px; line-height: 1.2; }
+.cup-mini .emo { font-size: 22px; display: block; line-height: 1.1; }
+.cup-mini.out { opacity: .42; }
+.cup-mini.up { border-color: #2f9e44; background: #ebfbee; }
+.cup-mini.now { border-color: #f08c00; background: #fff4e0; }
 .tkd-moves { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0; }
 .tkd-move { display: flex; flex-direction: column; align-items: center; border: 3px solid var(--line); background: #fff; border-radius: 16px; padding: 10px 4px; font-weight: 800; }
 .tkd-move .tkd-e { font-size: 34px; } .tkd-move.lit { background: #ffe9b8; border-color: #e7a94a; transform: scale(1.08); }
@@ -5858,7 +5875,7 @@ function normalizeSave(g) {
   if (out.enLearn != null) { if (!isObj(out.enLearn)) delete out.enLearn; else out.enLearn = Object.fromEntries(Object.entries(out.enLearn).filter(([k, v]) => k.length <= 30 && /^[A-Za-z ]+$/.test(k) && v === 1)); }   // 🔤 學過的英文單字
   if (out.cloudKing != null && !(isObj(out.cloudKing) && Number.isInteger(out.cloudKing.beat) && out.cloudKing.beat >= 0 && out.cloudKing.beat < 1e6)) delete out.cloudKing;   // ☁️ 打倒烏雲大王幾次
   if (out.noSeasonFx != null && out.noSeasonFx !== 1) delete out.noSeasonFx;   // 🍂 關掉季節裝飾
-  if (out.tkd && isObj(out.tkd)) { if (out.tkd.coach != null && !(Number.isInteger(out.tkd.coach) && out.tkd.coach >= 0 && out.tkd.coach < 1e6)) delete out.tkd.coach; if (out.tkd.world != null) { const wv = out.tkd.world; if (!isObj(wv)) delete out.tkd.world; else { if (!(Number.isInteger(wv.best) && wv.best >= -1 && wv.best <= 3)) wv.best = -1; if (!(Number.isInteger(wv.gold) && wv.gold >= 0 && wv.gold < 1e6)) wv.gold = 0; if (wv.d != null && typeof wv.d !== 'string') { delete wv.d; delete wv.n; } if (wv.n != null && !(Number.isInteger(wv.n) && wv.n >= 0 && wv.n < 100)) wv.n = 0; } } }   // 👑 教練、🌏 世界大賽
+  if (out.tkd && isObj(out.tkd)) { if (out.tkd.coach != null && !(Number.isInteger(out.tkd.coach) && out.tkd.coach >= 0 && out.tkd.coach < 1e6)) delete out.tkd.coach; if (out.tkd.world != null) { const wv = out.tkd.world; if (!isObj(wv)) delete out.tkd.world; else { if (!(Number.isInteger(wv.best) && wv.best >= -1 && wv.best <= 5)) wv.best = -1; if (!(Number.isInteger(wv.gold) && wv.gold >= 0 && wv.gold < 1e6)) wv.gold = 0; if (wv.v == null) { if (wv.best === 3) wv.best = 5; else if (wv.best === 2) wv.best = 4; else if (wv.best === 1) wv.best = 3; wv.v = 2; } else if (wv.v !== 2) { delete wv.v; wv.v = 2; } if (wv.d != null && typeof wv.d !== 'string') { delete wv.d; delete wv.n; } if (wv.n != null && !(Number.isInteger(wv.n) && wv.n >= 0 && wv.n < 100)) wv.n = 0; } } }   // 👑 教練、🌏 世界大賽（v 沒有＝舊三場：3 冠軍→5、2 銀→4、1 銅→3）
   if (out.moves != null) { if (!isObj(out.moves)) delete out.moves; else out.moves = Object.fromEntries(Object.entries(out.moves).filter(([k, v]) => /^[a-z]{2,12}$/.test(k) && v === 1)); }   // 🥋 學會的朋友招式
   if (out.duel != null) { if (!isObj(out.duel)) delete out.duel; else ['win', 'lose'].forEach(k => { if (!(Number.isInteger(out.duel[k]) && out.duel[k] >= 0 && out.duel[k] < 1e6)) out.duel[k] = 0; }); }   // ⚔️ 對決贏輸幾次
   if (out.hanzi != null) { if (!isObj(out.hanzi)) delete out.hanzi; else out.hanzi = Object.fromEntries(Object.entries(out.hanzi).filter(([k, v]) => /^[\u4e00-\u9fff]$/.test(k) && v === 1)); }   // 🀄 認得的國字
@@ -6894,8 +6911,19 @@ function drawBabyKid(ctx, o) {
     ctx.beginPath(); ctx.arc(hx, hy, r, 0, Math.PI * 2); ctx.fillStyle = GIRL.skin; ctx.fill(); ctx.strokeStyle = L; ctx.lineWidth = .8; ctx.stroke();
     ctx.beginPath(); ctx.arc(hx, hy, r + .2, Math.PI * 1.08, Math.PI * 1.92); ctx.closePath(); ctx.fillStyle = hair.c; ctx.fill();
     ctx.beginPath(); ctx.arc(hx + 1, hy - r - 1.5, 2.2, Math.PI * .2, Math.PI * 1.7); ctx.strokeStyle = hair.c; ctx.lineWidth = 1.4; ctx.stroke(); // 一撮捲捲的頭髮
-    ctx.fillStyle = '#231c1c';
-    [hx - 2.6, hx + 3.4].forEach(ex => { if (o.blink) ctx.fillRect(ex - 1.5, hy + .5, 3, .9); else { ctx.beginPath(); ctx.ellipse(ex, hy + .8, 1.5, 1.9, 0, 0, Math.PI * 2); ctx.fill(); } });
+    const ouchB = o.face === 'ouch' ? (o.ouch || 'pain') : '';
+    ctx.fillStyle = '#231c1c'; ctx.strokeStyle = '#231c1c'; ctx.lineWidth = 1.1; ctx.lineCap = 'round';
+    [hx - 2.6, hx + 3.4].forEach((ex, i) => {
+      if (ouchB === 'stars') star(ctx, ex, hy + .5, 2.3, '#ffd23f');
+      else if (ouchB) {
+        ctx.beginPath();
+        if (ouchB === 'crook' && i === 1) { ctx.moveTo(ex - 1.6, hy - .3); ctx.lineTo(ex + 1.6, hy + 1.7); ctx.moveTo(ex + 1.6, hy - .3); ctx.lineTo(ex - 1.6, hy + 1.7); }
+        else { ctx.moveTo(ex - 1.7, hy); ctx.lineTo(ex, hy + 1.7); ctx.lineTo(ex + 1.7, hy); }
+        ctx.stroke();
+      } else if (o.blink) ctx.fillRect(ex - 1.5, hy + .5, 3, .9);
+      else { ctx.beginPath(); ctx.ellipse(ex, hy + .8, 1.5, 1.9, 0, 0, Math.PI * 2); ctx.fill(); }
+    });
+    if (ouchB === 'tears' || ouchB === 'pain') { ctx.fillStyle = 'rgba(90,170,230,.95)'; ctx.beginPath(); ctx.ellipse(hx + 6.4, hy + 3.4, 1.05, 1.8, .2, 0, Math.PI * 2); ctx.fill(); }
     ctx.fillStyle = GIRL.blush; [hx - 5.5, hx + 6.3].forEach(bx => { ctx.beginPath(); ctx.arc(bx, hy + 3.6, 2.1, 0, Math.PI * 2); ctx.fill(); });
     // 奶嘴
     ctx.fillStyle = '#ff8fb8'; ctx.beginPath(); ctx.ellipse(hx + .8, hy + 5.4, 3.2, 2.2, 0, 0, Math.PI * 2); ctx.fill();
@@ -7359,9 +7387,17 @@ function drawGirlHead(ctx, o) {
 
   const fx = 1.2; // 臉稍微朝行進方向
   const blink = o.blink;
+  const ouch = o.face === 'ouch' ? (o.ouch || 'pain') : ''; // 對決被打到：痛、星星眼、淚、歪嘴，輪流
   ctx.fillStyle = '#231c1c';
   [-5, 5].forEach(ex => {
-    if (o.face === 'joy' && !blink) { // 開心：眼睛瞇成 ^ ^
+    if (ouch && !blink) {
+      ctx.strokeStyle = '#231c1c'; ctx.lineWidth = 1.5; ctx.lineCap = 'round';
+      if (ouch === 'stars') { star(ctx, ex + fx, hy + 1.1, 3.2, '#ffd23f'); ctx.strokeStyle = '#e67700'; ctx.lineWidth = .7; ctx.stroke(); }
+      else if (ouch === 'pain') { ctx.beginPath(); ctx.moveTo(ex + fx - 2.5, hy - .3); ctx.lineTo(ex + fx, hy + 2.1); ctx.lineTo(ex + fx + 2.5, hy - .3); ctx.stroke(); }
+      else if (ouch === 'tears') { ctx.beginPath(); ctx.arc(ex + fx, hy + 2.5, 2.3, 1.15 * Math.PI, 1.85 * Math.PI); ctx.stroke(); }
+      else if (ex < 0) { ctx.beginPath(); ctx.arc(ex + fx, hy + 1, 1.8, 0, Math.PI * 2); ctx.stroke(); ctx.beginPath(); ctx.arc(ex + fx + .3, hy + 1.1, .45, 0, Math.PI * 2); ctx.fill(); }
+      else { ctx.beginPath(); ctx.moveTo(ex + fx - 2.1, hy - .5); ctx.lineTo(ex + fx + 2.1, hy + 2.2); ctx.moveTo(ex + fx + 2.1, hy - .5); ctx.lineTo(ex + fx - 2.1, hy + 2.2); ctx.stroke(); }
+    } else if (o.face === 'joy' && !blink) { // 開心：眼睛瞇成 ^ ^
       ctx.strokeStyle = '#231c1c'; ctx.lineWidth = 1.3;
       ctx.beginPath(); ctx.arc(ex + fx, hy + 2.2, 2.2, 1.15 * Math.PI, 1.85 * Math.PI); ctx.stroke();
     } else if (o.face === 'wow' && !blink) { // 嚇一跳：眼睛睜大
@@ -7382,7 +7418,15 @@ function drawGirlHead(ctx, o) {
      講一套、臉一套，小孩會覺得怪。
      預覽縮圖（商店、換裝）一律用笑臉：那些是在看衣服，不是在看心情。 */
   ctx.strokeStyle = '#8a3b36'; ctx.lineWidth = 1.2;
-  if (o.face === 'hungry') {
+  if (ouch === 'pain') {
+    ctx.beginPath(); ctx.moveTo(fx - 3.2, hy + 8.2); ctx.quadraticCurveTo(fx, hy + 5, fx + 3.4, hy + 8.6); ctx.stroke();
+  } else if (ouch === 'stars') {
+    ctx.fillStyle = '#8a3b36'; ctx.beginPath(); ctx.ellipse(fx + .6, hy + 6.6, 1.7, 2.3, .55, 0, Math.PI * 2); ctx.fill();
+  } else if (ouch === 'tears') {
+    ctx.beginPath(); ctx.arc(fx, hy + 9.4, 3, 1.12 * Math.PI, 1.88 * Math.PI); ctx.stroke();
+  } else if (ouch === 'crook') {
+    ctx.beginPath(); ctx.moveTo(fx - 3.2, hy + 6); ctx.quadraticCurveTo(fx + .4, hy + 9.1, fx + 3.6, hy + 5.2); ctx.stroke();
+  } else if (o.face === 'hungry') {
     // 嘴角往下，再加一道口水／汗滴
     ctx.beginPath(); ctx.arc(fx, hy + 9.5, 3.2, 1.18 * Math.PI, 1.82 * Math.PI); ctx.stroke();
     ctx.fillStyle = 'rgba(120,190,230,.85)';
@@ -7435,6 +7479,14 @@ function drawGirlHead(ctx, o) {
     ctx.beginPath(); ctx.moveTo(fx - 1.4, hy - .2); ctx.lineTo(fx + 1.4, hy - .2); ctx.stroke(); // 鼻樑
     ctx.beginPath(); ctx.moveTo(fx - 8.6, hy - .6); ctx.lineTo(-12.5, hy - 1.4);
     ctx.moveTo(fx + 8.6, hy - .6); ctx.lineTo(12.5, hy - 1.4); ctx.stroke();               // 鏡腳
+  }
+  // 被打到的淚、汗、小星星畫在瀏海上面，縮圖也看得到
+  if (ouch === 'tears' || ouch === 'pain') {
+    ctx.fillStyle = 'rgba(80,170,230,.95)';
+    ctx.beginPath(); ctx.ellipse(fx + 9.2, hy + 7.2, 1.5, 2.8, .15, 0, Math.PI * 2); ctx.fill();
+    if (ouch === 'tears') { ctx.beginPath(); ctx.ellipse(fx - 8.2, hy + 7.6, 1.3, 2.4, -.12, 0, Math.PI * 2); ctx.fill(); }
+  } else if (ouch === 'stars') {
+    star(ctx, fx - 9, hy + 8, 2.1, '#ffe066'); star(ctx, fx + 10, hy + 6.2, 1.7, '#ffe066');
   }
 }
 
@@ -10164,7 +10216,14 @@ function drawCreature(ctx, sp, look) {
   ctx.strokeStyle = '#4a2f35'; ctx.fillStyle = '#4a2f35'; ctx.lineWidth = 1.3; ctx.lineCap = 'round';
   [-4.5, 4.5].forEach(ex => {
     ctx.beginPath();
-    if (look.happy) { ctx.arc(ex + fx, ey + 1, 2.2, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); }       // ^ ^
+    if (look.hurt === 'pain') { ctx.moveTo(ex + fx - 2.1, ey - 1.3); ctx.lineTo(ex + fx, ey + 1.3); ctx.lineTo(ex + fx + 2.1, ey - 1.3); ctx.stroke(); }
+    else if (look.hurt === 'stars') star(ctx, ex + fx, ey, 3.4, '#ffd23f');
+    else if (look.hurt === 'tears') { ctx.arc(ex + fx, ey + 1.5, 1.9, 1.15 * Math.PI, 1.85 * Math.PI); ctx.stroke(); }
+    else if (look.hurt === 'crook') {
+      if (ex < 0) { ctx.arc(ex + fx, ey, 1.7, 0, Math.PI * 2); ctx.stroke(); }
+      else { ctx.moveTo(ex + fx - 1.9, ey - 1.5); ctx.lineTo(ex + fx + 1.9, ey + 1.6); ctx.moveTo(ex + fx + 1.9, ey - 1.5); ctx.lineTo(ex + fx - 1.9, ey + 1.6); ctx.stroke(); }
+    }
+    else if (look.happy) { ctx.arc(ex + fx, ey + 1, 2.2, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); }       // ^ ^
     else if (look.blink) { ctx.moveTo(ex + fx - 2, ey); ctx.lineTo(ex + fx + 2, ey); ctx.stroke(); }
     else if (look.sad) { // 難過：眉毛內側高、外側低（八字眉）
       ctx.arc(ex + fx, ey, 1.6, 0, Math.PI * 2); ctx.fill();
@@ -10185,9 +10244,16 @@ function drawCreature(ctx, sp, look) {
     ctx.fillStyle = '#f5a623'; ctx.fill();
   } else {
     ctx.beginPath();
-    if (look.happy) { ctx.fillStyle = '#c94f6d'; ctx.arc(fx, ey + 4, 2.4, 0, Math.PI); ctx.fill(); }
+    if (look.hurt === 'pain' || look.hurt === 'tears') { ctx.arc(fx, ey + 6.2, 2.3, 1.15 * Math.PI, 1.85 * Math.PI); ctx.stroke(); }
+    else if (look.hurt === 'stars') { ctx.fillStyle = '#c94f6d'; ctx.ellipse(fx, ey + 4.2, 1.6, 2.1, .4, 0, Math.PI * 2); ctx.fill(); }
+    else if (look.hurt === 'crook') { ctx.moveTo(fx - 2.5, ey + 3.2); ctx.quadraticCurveTo(fx, ey + 6.2, fx + 2.7, ey + 2.8); ctx.stroke(); }
+    else if (look.happy) { ctx.fillStyle = '#c94f6d'; ctx.arc(fx, ey + 4, 2.4, 0, Math.PI); ctx.fill(); }
     else if (look.sad) { ctx.arc(fx, ey + 6, 2, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke(); }
     else { ctx.arc(fx, ey + 3.5, 1.8, .15 * Math.PI, .85 * Math.PI); ctx.stroke(); }
+  }
+  if (look.hurt === 'tears' || look.hurt === 'pain') {
+    ctx.fillStyle = 'rgba(80,170,230,.95)';
+    ctx.beginPath(); ctx.ellipse(fx + 8, ey + 2.4, 1.3, 2.3, .25, 0, Math.PI * 2); ctx.fill();
   }
 
   // 寶寶：脖子上的小圍兜（寶寶、小朋友、大朋友三個階段一眼看得出來）
@@ -11859,7 +11925,7 @@ function hostMenuEntries() {
     list.push(['🎵 節奏跆拳道（像跳舞機）', openRhythmGame]);
     list.push(['🥋 跟朋友對練', openSparGame]);
     list.push(['⚔️ 跟朋友對決（輪流出招）', openDuelGame]);
-    list.push(['🌏 報名世界大賽', openWorldCup]);
+    if (typeof tkdState === 'function' && (tkdState().coach || 0) > 0) list.push(['🌏 報名世界大賽', openWorldCup]);
     list.push([tkdBlack() ? '👑 挑戰熊熊教練' : '👑 挑戰熊熊教練（黑帶才可以）', openCoachChallenge]);
     list.push([`🎖️ 考腰帶（現在：${tkdBeltName()}）`, openBeltExam]);
   }
@@ -26455,7 +26521,8 @@ function playDuel(w, who, opt) {
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   const W = 360, H = 230, { g } = gameCanvas(w.stage, W, H), place = (G.away && G.away.place) || 'home';
   const mates = NEIGHBORS.filter(Boolean), foe = who || pickOne(mates), st = duelState();
-  const fSp = opt.foeSp !== undefined ? opt.foeSp : (SIG_MOVES[foe.id] || null), fEvery = opt.foeSp ? 4 : 5;   // 🥋 朋友也會用自己的招（教練、決賽每 4 回合，其他人每 5 回合）
+  const fSp = opt.foeSp !== undefined ? opt.foeSp : (SIG_MOVES[foe.id] || null), fEvery = opt.fEvery || (opt.foeSp ? 4 : 5);   // 🥋 朋友的招：沒另外指定時，有必殺的每 4 回合，其他人每 5 回合
+  const pow = opt.foePow || 0, spX = opt.spExtra || 0;
   const lvl = opt.lvl != null ? opt.lvl : Math.min(4, Math.floor((st.win || 0) / 3)), hunger = (G.kid && G.kid.hunger) || 50;
   const S = { me: Math.min(10, 5 + Math.round(hunger / 20)), meMax: 10, foe: opt.hp || 8 + lvl, foeMax: opt.hp || 8 + lvl, ki: 0, intent: 'atk', phase: 'intro', at: performance.now(), anim: null, pops: [], shake: 0, spMv: null, over: false, turn: 0, moves: [pickOne(DUEL_FOE_MOVES), pickOne(DUEL_FOE_MOVES)] };
   const row = el('div', 'spar-row'), bHit = el('button', 'big duel-hit', '👊 打'), bBlock = el('button', 'big spar-block', '🛡️ 擋'), bSp = el('button', 'big spar-sp', '💥 必殺技');
@@ -26467,8 +26534,9 @@ function playDuel(w, who, opt) {
   const pop = (x, y, t, c) => S.pops.push({ x, y, t, c, at: performance.now() });
   const ui = () => { const ok = S.phase === 'choose' && live; bHit.disabled = bBlock.disabled = !ok; bSp.disabled = !ok || S.ki < 100; bSp.classList.toggle('spar-on', ok && S.ki >= 100); bBlock.classList.toggle('spar-on', ok && (S.intent === 'atk' || S.intent === 'big' || S.intent === 'fsp')); bHit.classList.toggle('spar-on', ok && S.intent === 'rest'); };
   const newIntent = () => {
-    S.turn++; const r = Math.random();
-    S.intent = S.foe <= 3 && r < .3 ? 'big' : r < .5 ? 'atk' : r < .72 ? 'big' : 'rest';
+    S.turn++; const r = Math.random(), ag = opt.agg || 0;
+    if (opt.foeFast) S.intent = r < .58 ? 'atk' : r < .88 ? 'big' : 'rest';
+    else S.intent = S.foe <= 3 && r < .3 + ag ? 'big' : r < .5 + ag ? 'atk' : r < .72 + ag * .4 ? 'big' : 'rest';
     if (S.turn === 1) S.intent = 'atk';   // 第一回合先示範「要打你了→擋」
     if (fSp && S.turn > 1 && S.turn % fEvery === 0) S.intent = 'fsp';   // 👑 教練（和大賽決賽）每 4 回合放一次必殺技
     const ev = Math.random();   // 🎲 好玩的小事
@@ -26479,8 +26547,12 @@ function playDuel(w, who, opt) {
     else say(S.intent === 'atk' ? `${foe.short}要用「${S.moves[0][0]}」打你了！按 🛡️ 擋！` : S.intent === 'big' ? `${foe.short}在集氣放大招「${S.moves[1][0]}」！🔥 快擋！` : `${foe.short}累了在休息 💤 快打牠！`);
     S.phase = 'choose'; ui();
   };
-  const hurtFoe = (n, txt) => { S.foe = Math.max(0, S.foe - n); pop(FOE.x, FOE.y - 72, `-${n}` + (txt ? ' ' + txt : ''), '#c0392b'); S.shake = .25; S.anim = { who: 'foe', k: 'ouch', at: performance.now() }; };
-  const hurtMe = n => { S.me = Math.max(0, S.me - n); pop(ME.x, ME.y - 72, `-${n}`, '#c0392b'); S.ki = Math.min(100, S.ki + 15); S.anim = { who: 'me', k: 'ouch', at: performance.now() }; };
+  const HURT_FACE = ['pain', 'stars', 'tears', 'crook'];
+  const markHurt = who => { S.hurtN = S.hurtN || { me: 0, foe: 0 }; const n = S.hurtN[who] = (S.hurtN[who] || 0) + 1; S.hurt = S.hurt || {}; S.hurt[who] = { at: performance.now(), k: HURT_FACE[(n - 1) % 4] }; };
+  const faceOf = (who, now) => { const h = S.hurt && S.hurt[who]; if (!h || (now || performance.now()) - h.at > 1300) return ''; return h.k; };
+  const hurtMark = { pain: '😣', stars: '💫', tears: '💧', crook: '😵' };
+  const hurtFoe = (n, txt) => { S.foe = Math.max(0, S.foe - n); pop(FOE.x, FOE.y - 72, `-${n}` + (txt ? ' ' + txt : ''), '#c0392b'); S.shake = .25; S.anim = { who: 'foe', k: 'ouch', at: performance.now() }; markHurt('foe'); };
+  const hurtMe = n => { S.me = Math.max(0, S.me - n); pop(ME.x, ME.y - 72, `-${n}`, '#c0392b'); S.ki = Math.min(100, S.ki + 15); S.anim = { who: 'me', k: 'ouch', at: performance.now() }; markHurt('me'); };
   const act = kind => {
     if (!live || S.phase !== 'choose') return;
     if (kind === 'sp' && S.ki < 100) return;
@@ -26504,10 +26576,10 @@ function playDuel(w, who, opt) {
     const it = S.intent;
     if (it === 'rest' || it === 'slip') { if (it === 'rest') say(`${foe.short}休息完了～`); return; }
     S.anim = { who: 'foe', k: 'hit', at: performance.now() }; Sound.play('whoosh');
-    if (it === 'fsp') { Sound.play('crack'); if (S.myAct === 'block') { hurtMe(2); say(`擋住了「${fSp.name}」！只痛一點點！`, '#1971c2'); } else { hurtMe(4); S.shake = .5; say(`被「${fSp.name}」打中了！好痛～`, '#d9480f'); } S.blocked = false; return; }
+    if (it === 'fsp') { Sound.play('crack'); if (S.myAct === 'block') { hurtMe(2); say(`擋住了「${fSp.name}」！只痛一點點！`, '#1971c2'); } else { hurtMe(4 + spX + (opt.foeFast ? 1 : 0)); S.shake = .5; say(`被「${fSp.name}」打中了！好痛～`, '#d9480f'); } S.blocked = false; return; }
     const big = it === 'big', mvn = big ? S.moves[1] : S.moves[0];
     if (S.myAct === 'block') { if (big) hurtMe(1); hurtFoe(1, '反擊！'); say(big ? `大招「${mvn[0]}」被擋住了！只痛一點點，還反擊！` : `擋住「${mvn[0]}」還反擊！`, '#1971c2'); }
-    else { hurtMe(big ? 3 : 2); S.shake = big ? .4 : .2; say(`被「${mvn[0]}」${mvn[1]} 打到了！`, '#d9480f'); Sound.play('miss'); }
+    else { hurtMe(big ? 3 + pow : 2 + pow); S.shake = big ? .4 : .2; say(`被「${mvn[0]}」${mvn[1]} 打到了！`, '#d9480f'); Sound.play('miss'); }
     S.blocked = false;
   };
   const finish = win => {
@@ -26534,33 +26606,42 @@ function playDuel(w, who, opt) {
   const key = e => { if (e.repeat) return; if (e.code === 'Space' || e.code === 'ArrowRight' || e.code === 'KeyA') { e.preventDefault(); act('hit'); } else if (e.code === 'ArrowLeft' || e.code === 'KeyB' || e.code === 'KeyS') { e.preventDefault(); act('block'); } else if (e.code === 'KeyD' || e.code === 'Enter') { e.preventDefault(); act('sp'); } };
   document.addEventListener('keydown', key);
   const bg = () => {
-    const sky = opt.arena ? ['#1c2541', '#3a506b'] : { dojo: ['#fff4e6', '#ffe8cc'], school: ['#e7f5ff', '#d0ebff'], park: ['#d8f5a2', '#b2f2bb'], amusement: ['#ffe3ee', '#ffd8a8'] }[place] || ['#fff4e6', '#ffe3ee'];
-    const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, sky[0]); gr.addColorStop(1, sky[1]); g.fillStyle = gr; g.fillRect(0, 0, W, H);
-    if (opt.arena) { for (let i = 0; i < 12; i++) { g.fillStyle = `hsla(${i * 30 + performance.now() / 20},80%,70%,.5)`; g.beginPath(); g.arc(15 + i * 30, 120 + Math.sin(performance.now() / 300 + i) * 4, 6, 0, 7); g.fill(); } g.fillStyle = '#e03131'; g.fillRect(0, 180, W, 50); g.fillStyle = '#ffd23f'; g.font = '900 12px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillText(opt.arena, W / 2, 205); }
-    else if (place === 'dojo') for (let i = 0; i < 10; i++) { g.fillStyle = i % 2 ? '#ffd23f' : '#2f6fd1'; g.fillRect(i * 40 - 10, 180, 40, 50); }
-    else { g.fillStyle = place === 'park' ? '#7bd389' : place === 'school' ? '#e8c27a' : '#ffb3c8'; g.fillRect(0, 180, W, 50); }
+    const ven = opt.venue && typeof worldVenue === 'function' ? worldVenue(opt.venue) : null;
+    const ink = ven ? (ven.dark ? '#ffffff' : '#3a3240') : (opt.arena ? '#ffffff' : '#3a3240');
+    if (ven) drawWorldArena(g, W, H, ven, opt.arena);
+    else {
+      const sky = opt.arena ? ['#1c2541', '#3a506b'] : { dojo: ['#fff4e6', '#ffe8cc'], school: ['#e7f5ff', '#d0ebff'], park: ['#d8f5a2', '#b2f2bb'], amusement: ['#ffe3ee', '#ffd8a8'] }[place] || ['#fff4e6', '#ffe3ee'];
+      const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, sky[0]); gr.addColorStop(1, sky[1]); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+      if (opt.arena) { for (let i = 0; i < 12; i++) { g.fillStyle = `hsla(${i * 30 + performance.now() / 20},80%,70%,.5)`; g.beginPath(); g.arc(15 + i * 30, 120 + Math.sin(performance.now() / 300 + i) * 4, 6, 0, 7); g.fill(); } g.fillStyle = '#e03131'; g.fillRect(0, 180, W, 50); g.fillStyle = '#ffd23f'; g.font = '900 12px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillText(opt.arena, W / 2, 205); }
+      else if (place === 'dojo') for (let i = 0; i < 10; i++) { g.fillStyle = i % 2 ? '#ffd23f' : '#2f6fd1'; g.fillRect(i * 40 - 10, 180, 40, 50); }
+      else { g.fillStyle = place === 'park' ? '#7bd389' : place === 'school' ? '#e8c27a' : '#ffb3c8'; g.fillRect(0, 180, W, 50); }
+    }
     // 血條、氣
     const bar = (x, v, mx, nm, right) => { g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(x, 10, 140, 12); g.fillStyle = v / mx > .5 ? '#5fcf6f' : v / mx > .25 ? '#ffd23f' : '#ff6b6b'; const ww = 136 * v / mx; g.fillRect(right ? x + 2 + 136 - ww : x + 2, 12, ww, 8);
-      g.fillStyle = opt.arena ? '#ffffff' : '#3a3240'; g.font = '700 11px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = right ? 'right' : 'left'; g.fillText(`${nm} ❤️ ${v}`, right ? x + 140 : x, 36); };
+      g.fillStyle = ink; g.font = '700 11px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = right ? 'right' : 'left'; g.fillText(`${nm} ❤️ ${v}`, right ? x + 140 : x, 36); };
     bar(10, S.me, S.meMax, charName(), false); bar(W - 150, S.foe, S.foeMax, foe.short + (lvl ? ` Lv.${lvl + 1}` : ''), true);
     g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(10, 42, 84, 8); g.fillStyle = S.ki >= 100 ? `hsl(${(performance.now() / 3) % 360},90%,60%)` : '#ffb02e'; g.fillRect(12, 44, S.ki * .8, 4);
-    g.fillStyle = opt.arena ? '#ffffff' : '#5a4636'; g.font = '700 10px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'left'; g.fillText(S.ki >= 100 ? '氣滿了！💥' : '氣', 98, 50);
-    g.font = '700 13px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; if (opt.arena) { g.lineWidth = 4; g.strokeStyle = '#fff'; g.strokeText(msg, W / 2, 68); } g.fillStyle = msgC; g.fillText(msg, W / 2, 68);
+    g.fillStyle = ink; g.font = '700 10px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'left'; g.fillText(S.ki >= 100 ? '氣滿了！💥' : '氣', 98, 50);
+    g.font = '700 13px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; if (opt.arena && (!ven || ven.dark)) { g.lineWidth = 4; g.strokeStyle = ven && ven.dark ? '#111' : '#fff'; g.strokeText(msg, W / 2, 68); } g.fillStyle = msgC; g.fillText(msg, W / 2, 68);
   };
   const drawMe = now => {
     const a = S.anim && S.anim.who === 'me' && now - S.anim.at < 500 ? S.anim : null, k = a ? Math.sin((now - a.at) / 500 * Math.PI) : 0;
     const lose = S.over && S.me <= 0, x = ME.x + (a && a.k === 'hit' ? k * 60 : a && a.k === 'ouch' ? -k * 14 : 0);
     g.save(); g.translate(x, ME.y); g.scale(1.6, 1.6); if (lose) { g.translate(0, -6); g.rotate(-.4); }
-    if (kidBaby()) drawBabyKid(g, { t: now / 1000 }); else drawGirl(g, { t: now / 1000, walking: a && a.k === 'hit', blink: false, outfit: currentOutfit(), face: lose ? 'worried' : S.over ? 'joy' : a && a.k === 'ouch' ? 'wow' : 'happy', stage: kidLookStage() });
+    const hf = faceOf('me', now);
+    if (kidBaby()) drawBabyKid(g, { t: now / 1000, face: hf ? 'ouch' : '', ouch: hf }); else drawGirl(g, { t: now / 1000, walking: a && a.k === 'hit', blink: false, outfit: currentOutfit(), face: lose ? 'worried' : S.over ? 'joy' : hf ? 'ouch' : (a && a.k === 'ouch' ? 'wow' : 'happy'), ouch: hf, stage: kidLookStage() });
     if (a && a.k === 'block') { g.strokeStyle = 'rgba(80,160,255,.8)'; g.lineWidth = 3; g.beginPath(); g.arc(8, -30, 18, -1.2, 1.2); g.stroke(); }
     g.restore();
+    if (hf) { g.save(); g.beginPath(); g.fillStyle = '#fff'; g.arc(x, ME.y - 98, 16, 0, 7); g.fill(); g.font = '26px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(hurtMark[hf] || '💫', x, ME.y - 97); g.restore(); }
     if (lose) { g.font = '14px sans-serif'; g.textAlign = 'center'; g.fillText('💫', ME.x + Math.sin(now / 150) * 10, ME.y - 70); }
   };
   const drawFoe = now => {
     const a = S.anim && S.anim.who === 'foe' && now - S.anim.at < 500 ? S.anim : null, k = a ? Math.sin((now - a.at) / 500 * Math.PI) : 0;
     const lose = S.over && S.foe <= 0, slip = S.intent === 'slip' && S.phase === 'choose', x = FOE.x + (a && a.k === 'hit' ? -k * 60 : a && a.k === 'ouch' ? k * 16 : 0) + (S.shake > 0 ? Math.sin(now / 20) * 3 : 0);
     g.save(); g.translate(x, FOE.y); g.scale(-2.2, 2.2); if (lose || slip) { g.translate(0, -4); g.rotate(slip ? .9 : -.5); }
-    drawNeighbor(g, foe, { happy: S.over && !lose, sad: lose, blink: false, fx: 1.5, clean: 100 }); g.restore();
+    const hf = faceOf('foe', now);
+    drawNeighbor(g, foe, { happy: S.over && !lose && !hf, sad: lose, hurt: hf, blink: false, fx: 1.5, clean: 100 }); g.restore();
+    if (hf) { g.save(); g.beginPath(); g.fillStyle = '#fff'; g.arc(x, FOE.y - 102, 16, 0, 7); g.fill(); g.font = '26px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(hurtMark[hf] || '💫', x, FOE.y - 101); g.restore(); }
     if (S.phase === 'choose' && !S.over) {   // 頭上的「要做什麼」
       const ic = { atk: '👊', big: '🔥', rest: '💤', slip: '🍌', fsp: '💥' }[S.intent], col = { atk: '#e03131', big: '#ff5a1f', rest: '#2f9e44', slip: '#e67700', fsp: '#7048e8' }[S.intent], y = FOE.y - 92 + Math.sin(now / 200) * 3;
       g.fillStyle = col; g.beginPath(); g.arc(FOE.x, y, 17, 0, 7); g.fill(); g.font = '18px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(ic, FOE.x, y + 1); g.textBaseline = 'alphabetic';
@@ -26577,7 +26658,7 @@ function playDuel(w, who, opt) {
       if (S.myAct === 'sp' && el2 > 2450 && !S.spHit) { S.spHit = true; resolveMe(); }
       if (el2 > dur) { if (S.myAct !== 'sp') resolveMe(); S.spHit = false; if (S.foe <= 0) { say(`打贏了！${foe.short}倒下了～`, '#2f9e44'); finish(true); } else { S.phase = 'foe'; S.at = now; } }
     }
-    const fsp = S.intent === 'fsp', fT = fsp ? 2500 : 500;
+    const fsp = S.intent === 'fsp', fT = fsp ? (opt.foeFast ? 1800 : 2500) : (opt.foeFast ? 320 : 500);
     if (S.phase === 'foe' && el2 > fT && !S.foeDone) { S.foeDone = true; resolveFoe(); }
     if (S.phase === 'foe' && el2 > fT + 800) { S.foeDone = false; if (S.me <= 0) { say('哎呀，輸了…', '#d9480f'); finish(false); } else newIntent(); }
     if (S.shake > 0) S.shake -= 1 / 60;
@@ -26591,7 +26672,7 @@ function playDuel(w, who, opt) {
   };
   ui(); try { speak(`${foe.short}來挑戰了！`); } catch (e) {} Sound.play('shake');
   raf = requestAnimationFrame(tick);
-  playDuel.test = { S, act, newIntent, finish, foe, opt, fSp };
+  playDuel.test = { S, act, newIntent, finish, foe, opt, fSp, faceOf };
 }
 AWAY_GAMES.push(['⚔️', '對決', 'dojo', () => openDuelGame()]);
 
@@ -26606,10 +26687,10 @@ function openCoachChallenge() {
   openDuelGame(coach, { title: '👑 挑戰熊熊教練', hp: 16, lvl: 4, foeSp: COACH_SP, intro: '黑帶了啊！來吧，讓我看看你的實力！',
     onEnd: (win, w) => {
       const first = win && !t.coach; if (win) { t.coach = (t.coach || 0) + 1; learnSigMove('tkd'); }
-      if (first) { addBells(3000); setTimeout(() => { try { Sound.play('fanfare'); confettiBurst(120); showcase(el('div', 'magic-pic', '🏆'), '打贏熊熊教練了！', '你是「道館冠軍」！送你 💰 3,000！', { head: '👑 太厲害了！' }); } catch (e) {} }, 400); }
+      if (first) { addBells(3000); setTimeout(() => { try { Sound.play('fanfare'); confettiBurst(120); showcase(el('div', 'magic-pic', '🏆'), '打贏熊熊教練了！', '你是「道館冠軍」！送你 💰 3,000！世界上也有跆拳道大賽喔。想參加的話，再點我，選「🌏 報名世界大賽」。', { head: '👑 太厲害了！' }); } catch (e) {} }, 400); }
       const bells = win && !first ? payReward(w, 300) : 0;
-      w.status.textContent = win ? (first ? '👑 打贏教練了！你是「道館冠軍」！💰 +3,000' : `👑 又打贏教練了！（${t.coach} 次）💰 +${fmt(bells)}`) : '教練好強！去吃東西補體力，練習一下再來挑戰！';
-      try { hostSay(win ? '好厲害！你已經比我強了！' : '很有精神！再練練就會贏！', 3000); speak(win ? '打贏教練了！' : '教練好強，再來挑戰！'); } catch (e) {}
+      w.status.textContent = win ? (first ? '👑 打贏教練了！你是「道館冠軍」！💰 +3,000　想參加世界大賽，再點我，選「🌏 報名世界大賽」' : `👑 又打贏教練了！（${t.coach} 次）💰 +${fmt(bells)}`) : '教練好強！去吃東西補體力，練習一下再來挑戰！';
+      try { hostSay(win ? (first ? '好厲害！你比我強了！世界上也有比賽喔。想去的話，再點我，選報名世界大賽！' : '好厲害！你已經比我強了！') : '很有精神！再練練就會贏！', first ? 5200 : 3000); speak(win ? (first ? '你打贏教練了！想參加世界大賽，就再點教練，選報名世界大賽！' : '打贏教練了！') : '教練好強，再來挑戰！'); } catch (e) {}
       saveGame(); refreshTop(); duelEndButtons(w, win, openCoachChallenge);
     } });
 }
@@ -26619,60 +26700,292 @@ function duelEndButtons(w, win, again) {
   const ag = el('button', 'big' + (win ? '' : ' alt'), '⚔️ 再挑戰一次'); ag.onclick = again; w.btns.appendChild(ag);
   const home = el('button', 'big alt', G.away ? '離開' : '回家'); home.onclick = () => { closeGameWindow(); renderTab(); }; w.btns.appendChild(home);
 }
-/* 🌏 世界大賽（家長：也可以隨機參加世界大賽）：在道館不定時會廣播「世界跆拳道大賽開始報名了」，點教練就能報名（教練選單也有）。
-   三場：第一輪 → 準決賽 → 決賽，對手越來越強（決賽的對手會放必殺技）；每場中間可以吃一口點心回一點體力。
-   成績：第一輪輸＝🎗️ 參加獎、準決賽輸＝🥉、決賽輸＝🥈、全贏＝🥇 世界冠軍（第一次 💰 2,000＋獎盃）。G.tkd.world = { best, gold }。
-   一天最多報名 3 次（不然一直打太累）。 */
-const WORLD_ROUNDS = [['第一輪', 9, 1], ['準決賽', 11, 2], ['決賽', 13, 4]];
+/* 🌏 世界大賽：先打贏熊熊教練（G.tkd.coach >= 1）才看得到報名、道館才會廣播。
+   五場單淘汰：三十二強 → 十六強 → 八強 → 準決賽 → 決賽（月球）。每次報名選手隨機。
+   同一屆一場比一場難一點（血量、比較愛出大招、必殺越後面越常）。闖關若選了「一般」，決賽再硬一點；預設比較友善。
+   每一場開始前：搭飛機去那個國家（決賽改搭火箭，外星人小綠帶進會場）。對戰表用大圖示。
+   成績在 G.tkd.world。舊的三場名次由 normalizeSave 換成五場刻度（v:2）。一天最多 3 次。 */
+const WORLD_ROUNDS = [
+  { name: '三十二強', hp: 7, lvl: 0, every: 0, pow: 0, spX: 0, agg: 0 },
+  { name: '十六強', hp: 8, lvl: 1, every: 7, pow: 0, spX: 0, agg: .04 },
+  { name: '八強', hp: 10, lvl: 1, every: 6, pow: 0, spX: 0, agg: .08 },
+  { name: '準決賽', hp: 12, lvl: 2, every: 5, pow: 1, spX: 0, agg: .12 },
+  { name: '決賽', hp: 13, lvl: 4, every: 4, pow: 1, spX: 1, agg: .16 }
+];
 const WORLD_FROM = ['冰雪國', '沙漠國', '森林國', '大海國', '火山國', '雲朵國', '糖果國', '星星國'];
-const WORLD_PRIZE = [80, 200, 500, 1200], WORLD_MEDAL = ['🎗️ 參加獎', '🥉 銅牌', '🥈 銀牌', '🥇 世界冠軍'];
+const WORLD_STEP = ['①', '②', '③', '④', '⑤'];
+const WORLD_PRIZE = [80, 150, 260, 420, 700, 1200];
+const WORLD_MEDAL = ['🎗️ 參加獎', '🎫 十六強', '🎖️ 八強', '🥉 四強', '🥈 銀牌', '🥇 世界冠軍'];
 const WORLD_SP = { name: '世界旋風斬', fx: '🌪️', c: '#4fb0ff', c2: '#e7f5ff' };
+const WORLD_SP_LITE = { name: '小小旋風', fx: '💨', c: '#74c0fc', c2: '#e7f5ff' };
 const WORLD_DAY_MAX = 3;
-function worldState() { const t = tkdState(); if (!t.world || typeof t.world !== 'object') t.world = { best: -1, gold: 0 }; return t.world; }
+const WORLD_EMO = { abu: '🐻', mimi: '🐰', lulu: '🦊', qiqi: '🐿️', meme: '🐑', wangwang: '🐶', miaomiao: '🐱', bobo: '🐧', nunu: '🐷', cici: '🦔', baobao: '🐨', diandian: '🦌' };
+const WORLD_VENUES = {
+  '冰雪國': { id: '冰雪國', sky: ['#c5ebff', '#e7f5ff'], floor: '#f8f9fa', floor2: '#b6dff7', accent: '#1971c2', mark: '❄️', land: '雪山', flag: ['#ffffff', '#4dabf7', '#ffffff'] },
+  '沙漠國': { id: '沙漠國', sky: ['#ffe8cc', '#ffd8a8'], floor: '#f6d592', floor2: '#e6b325', accent: '#e67700', mark: '🐪', land: '金字塔', flag: ['#ffd43b', '#f76707', '#ffd43b'] },
+  '森林國': { id: '森林國', sky: ['#d3f9d8', '#b2f2bb'], floor: '#8ce99a', floor2: '#51cf66', accent: '#2b8a3e', mark: '🌲', land: '大森林', flag: ['#2f9e44', '#fff3bf', '#2f9e44'] },
+  '大海國': { id: '大海國', sky: ['#d0ebff', '#74c0fc'], floor: '#4dabf7', floor2: '#ffd43b', accent: '#1864ab', mark: '🐬', land: '燈塔', flag: ['#1971c2', '#ffffff', '#1971c2'] },
+  '火山國': { id: '火山國', sky: ['#ffe3e3', '#ffc9c9'], floor: '#868e96', floor2: '#495057', accent: '#e03131', mark: '🌋', land: '火山', flag: ['#212529', '#e03131', '#ffd43b'] },
+  '雲朵國': { id: '雲朵國', sky: ['#f8f9fa', '#dbe4ff'], floor: '#fff4e6', floor2: '#bac8ff', accent: '#5c7cfa', mark: '☁️', land: '雲城堡', flag: ['#ffffff', '#91a7ff', '#ffffff'] },
+  '糖果國': { id: '糖果國', sky: ['#fff0f6', '#ffdeeb'], floor: '#ffc9c9', floor2: '#ffec99', accent: '#e64980', mark: '🍬', land: '糖果塔', flag: ['#ff6b9d', '#ffd43b', '#74c0fc'] },
+  '星星國': { id: '星星國', sky: ['#1a1440', '#3a0ca3'], floor: '#5c4d7a', floor2: '#ffd43b', accent: '#ffe066', mark: '⭐', land: '星星塔', flag: ['#240046', '#ffd43b', '#240046'], dark: 1 },
+  '月球': { id: '月球', sky: ['#070b18', '#24185c'], floor: '#d0d4dc', floor2: '#8d96a3', accent: '#ffe066', mark: '🌕', land: '月球', flag: ['#24185c', '#ffe066', '#f8f9fa'], dark: 1, moon: 1 }
+};
+function worldShuffle(a) { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = b[i]; b[i] = b[j]; b[j] = t; } return b; }
+function worldEmo(n) { return WORLD_EMO[n && n.id] || '🐾'; }
+function worldVenue(name) { return WORLD_VENUES[name] || WORLD_VENUES['冰雪國']; }
+let worldRound = { test: null };
+function worldState() { const t = tkdState(); if (!t.world || typeof t.world !== 'object') t.world = { best: -1, gold: 0, v: 2 }; if (t.world.v !== 2) t.world.v = 2; return t.world; }
+function worldCupOpen() { return (tkdState().coach || 0) > 0; }
+function worldRoundPlan(r) {
+  const b = WORLD_ROUNDS[r], hard = !!(G.quest && G.quest.mode === 'normal'), last = r === WORLD_ROUNDS.length - 1;
+  return { name: b.name, hp: b.hp + (hard ? (last ? 3 : (r >= 2 ? 1 : 0)) : 0), lvl: b.lvl + (hard && last ? 1 : 0), every: b.every === 0 ? 0 : Math.max(3, b.every - (hard ? 1 : 0)), pow: b.pow + (hard && r >= 3 ? 1 : 0), spX: b.spX, agg: +(b.agg + (hard ? .06 : 0)).toFixed(2), fast: !!(hard && last), moon: last };
+}
+function worldBuildCup() {
+  const path = worldShuffle(WORLD_FROM).slice(0, 4).concat(['月球']);
+  const animals = worldShuffle(NEIGHBORS), used = new Set();
+  const make = (animal, venue, belt) => { let short = venue + animal.short, n = 2; while (used.has(short)) short = venue + animal.short + (n++); used.add(short); return Object.assign({}, animal, { short, venue, dobok: belt }); };
+  const opps = path.map((v, i) => make(animals[i % animals.length], v, TKD_BELTS[Math.min(TKD_BELTS.length - 1, i + 1)][1]));
+  const pool = []; WORLD_FROM.forEach(v => NEIGHBORS.forEach(n => { if (!used.has(v + n.short)) pool.push([v, n]); }));
+  const fillers = worldShuffle(pool).slice(0, 26).map(([v, n], i) => make(n, v, TKD_BELTS[i % 4][1]));
+  return { opps, fillers, path };
+}
+function worldField(cup, r) {
+  const oppsIn = cup.opps.slice(r), oppsOut = cup.opps.slice(0, r);
+  const need = Math.max(0, (32 >> r) - 1 - oppsIn.length);
+  return { inn: oppsIn.concat(cup.fillers.slice(0, need)), out: oppsOut.concat(cup.fillers.slice(need)), opp: cup.opps[r] };
+}
+function drawCupFlag(g, x, y, h, cols) {
+  g.fillStyle = '#5c4a32'; g.fillRect(x, y - h, 3, h + 8);
+  const bw = 26, bh = 16; cols.forEach((c, i) => { g.fillStyle = c; g.fillRect(x + 3, y - h + i * (bh / cols.length), bw, bh / cols.length + .6); });
+}
+function drawCupCloud(g, x, y, s) {
+  g.fillStyle = 'rgba(255,255,255,.92)'; g.beginPath(); g.arc(x, y, 12 * s, 0, 7); g.arc(x + 14 * s, y + 2, 9 * s, 0, 7); g.arc(x - 11 * s, y + 3, 8 * s, 0, 7); g.fill();
+}
+function drawCupPlane(g, x, y, sc) {
+  g.save(); g.translate(x, y); g.scale(sc, sc);
+  g.fillStyle = 'rgba(30,60,90,.15)'; g.beginPath(); g.ellipse(6, 18, 28, 5, 0, 0, 7); g.fill();
+  g.fillStyle = '#e9ecef'; g.strokeStyle = '#495057'; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(-8, 1); g.lineTo(18, 16); g.lineTo(2, 4); g.closePath(); g.fill(); g.stroke();
+  g.beginPath(); g.moveTo(-20, -1); g.lineTo(-34, -18); g.lineTo(-14, -3); g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = '#f8f9fa'; g.beginPath(); g.ellipse(0, 0, 30, 11, 0, 0, 7); g.fill(); g.stroke();
+  g.fillStyle = '#4dabf7'; [-10, -2, 6].forEach(wx => { g.beginPath(); g.arc(wx, -1, 2.4, 0, 7); g.fill(); });
+  g.fillStyle = '#ffd43b'; g.beginPath(); g.moveTo(22, -7); g.lineTo(38, 0); g.lineTo(22, 7); g.closePath(); g.fill(); g.stroke();
+  g.restore();
+}
+function drawCupRocket(g, x, y, sc) {
+  g.save(); g.translate(x, y); g.scale(sc, sc);
+  const fl = 16 + Math.sin(performance.now() / 40) * 7;
+  g.fillStyle = '#ff922b'; g.beginPath(); g.moveTo(-7, 16); g.lineTo(0, 16 + fl); g.lineTo(7, 16); g.fill();
+  g.fillStyle = '#ffe066'; g.beginPath(); g.moveTo(-3, 16); g.lineTo(0, 16 + fl * .6); g.lineTo(3, 16); g.fill();
+  g.fillStyle = '#f8f9fa'; g.strokeStyle = '#495057'; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(0, -30); g.lineTo(12, 16); g.lineTo(-12, 16); g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = '#4dabf7'; g.beginPath(); g.arc(0, -6, 5, 0, 7); g.fill();
+  g.fillStyle = '#e03131';
+  g.beginPath(); g.moveTo(-12, 6); g.lineTo(-20, 18); g.lineTo(-8, 14); g.closePath(); g.fill();
+  g.beginPath(); g.moveTo(12, 6); g.lineTo(20, 18); g.lineTo(8, 14); g.closePath(); g.fill();
+  g.restore();
+}
+function drawCupAlien(g, x, y, sc) {
+  g.save(); g.translate(x, y); g.scale(sc, sc);
+  const wv = Math.sin(performance.now() / 180) * .4;
+  g.strokeStyle = '#2b8a3e'; g.fillStyle = '#2b8a3e'; g.lineWidth = 2; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(-4, -16); g.lineTo(-8, -28); g.moveTo(4, -16); g.lineTo(8, -28); g.stroke();
+  g.fillStyle = '#ffd43b'; g.beginPath(); g.arc(-8, -28, 2.6, 0, 7); g.arc(8, -28, 2.6, 0, 7); g.fill();
+  g.fillStyle = '#8ce99a'; g.strokeStyle = '#2b8a3e'; g.beginPath(); g.ellipse(0, -6, 14, 16, 0, 0, 7); g.fill(); g.stroke();
+  g.fillStyle = '#fff'; g.beginPath(); g.ellipse(-5, -7, 4.2, 5.2, 0, 0, 7); g.ellipse(5, -7, 4.2, 5.2, 0, 0, 7); g.fill();
+  g.fillStyle = '#1c1c1c'; g.beginPath(); g.arc(-4.2, -6.4, 2, 0, 7); g.arc(5.8, -6.4, 2, 0, 7); g.fill();
+  g.strokeStyle = '#2b8a3e'; g.beginPath(); g.arc(0, -1, 4, .2, Math.PI - .2); g.stroke();
+  g.fillStyle = '#69db7c'; g.beginPath(); g.ellipse(0, 16, 10, 11, 0, 0, 7); g.fill(); g.stroke();
+  g.save(); g.translate(11, 12); g.rotate(-1 + wv); g.fillStyle = '#8ce99a'; g.beginPath(); g.ellipse(7, 0, 7, 3, 0, 0, 7); g.fill(); g.stroke(); g.restore();
+  g.restore();
+}
+function drawVenueLand(g, id) {
+  if (id === '冰雪國') {
+    g.fillStyle = '#e7f5ff'; g.beginPath(); g.moveTo(30, 176); g.lineTo(100, 78); g.lineTo(160, 176); g.fill();
+    g.fillStyle = '#fff'; g.beginPath(); g.moveTo(110, 176); g.lineTo(190, 46); g.lineTo(270, 176); g.fill();
+    g.fillStyle = '#74c0fc'; g.beginPath(); g.moveTo(168, 92); g.lineTo(190, 46); g.lineTo(210, 96); g.fill();
+  } else if (id === '沙漠國') {
+    g.fillStyle = '#ffd43b'; g.beginPath(); g.arc(300, 62, 20, 0, 7); g.fill();
+    g.fillStyle = '#f4c56b'; g.beginPath(); g.moveTo(60, 176); g.lineTo(130, 96); g.lineTo(200, 176); g.fill();
+    g.beginPath(); g.moveTo(150, 176); g.lineTo(220, 112); g.lineTo(290, 176); g.fill();
+  } else if (id === '森林國') {
+    [[70, 150], [130, 136], [190, 154], [250, 132], [310, 148]].forEach(([x, y]) => { g.fillStyle = '#8a5a33'; g.fillRect(x - 3, y, 6, 30); g.fillStyle = '#2f9e44'; g.beginPath(); g.arc(x, y, 16, 0, 7); g.fill(); });
+  } else if (id === '大海國') {
+    g.fillStyle = '#1864ab'; g.fillRect(0, 148, 360, 28);
+    g.fillStyle = 'rgba(255,255,255,.85)'; for (let i = 0; i < 6; i++) { g.beginPath(); g.arc(24 + i * 58, 156, 12, 0, Math.PI, true); g.fill(); }
+    g.fillStyle = '#f8f9fa'; g.fillRect(248, 86, 12, 68); g.fillStyle = '#e03131'; g.beginPath(); g.arc(254, 80, 8, 0, 7); g.fill();
+  } else if (id === '火山國') {
+    g.fillStyle = '#868e96'; g.beginPath(); g.moveTo(70, 176); g.lineTo(180, 48); g.lineTo(290, 176); g.fill();
+    g.fillStyle = '#ff6b6b'; g.beginPath(); g.moveTo(158, 92); g.lineTo(180, 48); g.lineTo(202, 96); g.fill();
+    g.fillStyle = '#ff922b'; g.beginPath(); g.ellipse(180, 78, 12, 6, 0, 0, 7); g.fill();
+  } else if (id === '雲朵國') {
+    drawCupCloud(g, 80, 96, 1.3); drawCupCloud(g, 180, 72, 1.7); drawCupCloud(g, 280, 104, 1.2);
+    g.fillStyle = '#fff'; g.fillRect(150, 108, 52, 36); g.fillStyle = '#ffd43b'; g.beginPath(); g.moveTo(144, 108); g.lineTo(176, 82); g.lineTo(208, 108); g.fill();
+  } else if (id === '糖果國') {
+    g.fillStyle = '#ff6b9d'; g.fillRect(64, 78, 26, 98); g.fillStyle = '#fff'; for (let i = 0; i < 5; i++) g.fillRect(64, 78 + i * 18, 26, 8);
+    g.fillStyle = '#ffd43b'; g.fillRect(230, 108, 46, 68); g.fillStyle = '#74c0fc'; g.fillRect(230, 120, 46, 10); g.fillRect(230, 146, 46, 10);
+    g.fillStyle = '#e64980'; g.beginPath(); g.arc(253, 96, 16, 0, 7); g.fill();
+  } else if (id === '星星國') {
+    for (let i = 0; i < 7; i++) star(g, 36 + i * 48, 36 + (i % 3) * 18, 7, '#ffe066');
+    g.fillStyle = '#5c4d7a'; g.fillRect(156, 96, 40, 80); star(g, 176, 74, 14, '#ffd43b');
+  } else if (id === '月球') {
+    g.fillStyle = '#4dabf7'; g.beginPath(); g.arc(64, 54, 18, 0, 7); g.fill();
+    g.fillStyle = '#69db7c'; g.beginPath(); g.arc(58, 50, 6, 0, 7); g.arc(70, 58, 5, 0, 7); g.fill();
+  }
+}
+function drawWorldArena(g, W, H, ven, label) {
+  const sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, ven.sky[0]); sky.addColorStop(1, ven.sky[1]); g.fillStyle = sky; g.fillRect(0, 0, W, H);
+  if (ven.dark) { for (let i = 0; i < 26; i++) { g.globalAlpha = .35 + (i % 5) * .12; g.fillStyle = '#fff'; g.fillRect((i * 53) % W, (i * 29) % 108, i % 4 ? 1.5 : 2.3, i % 4 ? 1.5 : 2.3); } g.globalAlpha = 1; }
+  drawVenueLand(g, ven.id);
+  if (ven.moon) {
+    g.fillStyle = ven.floor; g.fillRect(0, 176, W, H - 176);
+    g.fillStyle = ven.floor2; [[36, 200, 16], [110, 212, 9], [190, 198, 18], [270, 210, 11], [330, 190, 8]].forEach(([x, y, r]) => { g.beginPath(); g.ellipse(x, y, r, r * .42, 0, 0, 7); g.fill(); });
+    drawCupAlien(g, 46, 158, .62); drawCupAlien(g, 168, 162, .42); drawCupAlien(g, 300, 156, .55);
+  } else {
+    for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? ven.floor2 : ven.floor; g.fillRect(i * (W / 8), 176, W / 8 + 1, H - 176); }
+  }
+  drawCupFlag(g, 12, 174, 48, ven.flag);
+  const text = label || ven.land;
+  g.font = '900 13px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.lineWidth = 4; g.strokeStyle = ven.dark ? '#111' : '#fff'; g.strokeText(text, W / 2, 202); g.fillStyle = ven.dark ? '#ffe066' : ven.accent; g.fillText(text, W / 2, 202);
+  if (!ven.moon) { g.font = '20px sans-serif'; g.fillText(ven.mark, W - 26, 164); }
+}
+function worldFlyTo(w, foe, done) {
+  const moon = foe.venue === '月球', ven = worldVenue(foe.venue);
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  w.stage.dataset.travel = foe.venue; w.stage.dataset.kind = moon ? 'rocket' : 'plane';
+  const W = 360, H = 230, { g } = gameCanvas(w.stage, W, H);
+  let live = true, raf = 0, ended = false, saidAlien = false, phase = '';
+  const t0 = performance.now(), TOTAL = moon ? 5600 : 3400;
+  const finish = () => { if (ended) return; ended = true; live = false; cancelAnimationFrame(raf); gameCleanup = null; done(); };
+  gameCleanup = () => { ended = true; live = false; cancelAnimationFrame(raf); try { stopSpeak(); } catch (e) {} };
+  const skip = el('button', 'big', moon ? '🚀 到了！' : '✈️ 到了！'); skip.onclick = finish; w.btns.appendChild(skip); leaveButton(w);
+  w.status.textContent = moon ? '🚀 火箭飛向月球…' : `✈️ 飛去${foe.venue}…`;
+  try { speak(moon ? '決賽在月球！坐火箭出發！' : `坐飛機去${foe.venue}！`); } catch (e) {}
+  Sound.play('whoosh');
+  const frame = now => {
+    if (!live) return;
+    const t = (now - t0) / 1000, next = moon ? (t > 3.2 ? 'alien' : 'rocket') : (t > 2.2 ? 'land' : 'plane');
+    if (next !== phase) {
+      phase = next; w.stage.dataset.kind = moon ? (t > 3.2 ? 'alien' : 'rocket') : 'plane';
+      if (moon && t > 3.2 && !saidAlien) { saidAlien = true; w.status.textContent = '👽 小綠：決賽會場在這邊，跟我走！'; try { speak('你好呀！我是小綠！我帶你去月球的比賽會場！'); } catch (e) {} }
+      else if (!moon && t > 2.2) w.status.textContent = `抵達${foe.venue}！${ven.land}的比賽場地到了。`;
+    }
+    const sky = g.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, moon ? '#070b18' : '#7ec8f0'); sky.addColorStop(1, moon ? '#24185c' : '#e7f5ff');
+    g.fillStyle = sky; g.fillRect(0, 0, W, H);
+    if (moon) {
+      for (let i = 0; i < 32; i++) { g.globalAlpha = .4 + (i % 4) * .15; g.fillStyle = '#fff'; g.fillRect((i * 47) % W, (i * 23) % 150, 1.7, 1.7); } g.globalAlpha = 1;
+      g.fillStyle = '#4dabf7'; g.beginPath(); g.arc(70, Math.min(240, 210 + t * 20), Math.max(8, 36 - t * 7), 0, 7); g.fill();
+      if (t > 2.5) { g.fillStyle = '#c5c9d1'; g.fillRect(0, 168, W, 62); g.fillStyle = '#9aa3b2'; [[48, 200, 14], [150, 210, 8], [250, 196, 16]].forEach(([x, y, r]) => { g.beginPath(); g.ellipse(x, y, r, r * .4, 0, 0, 7); g.fill(); }); }
+      drawCupRocket(g, 180, 150 - Math.min(1, t / 2.4) * 88, 1.15);
+      if (t > 3.2) {
+        drawCupAlien(g, 262, 162, 1.25);
+        g.fillStyle = 'rgba(255,255,255,.96)'; g.strokeStyle = '#2f9e44'; g.lineWidth = 2;
+        g.beginPath(); g.roundRect(18, 78, 210, 52, 12); g.fill(); g.stroke();
+        g.fillStyle = '#2b8a3e'; g.font = '700 14px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'left';
+        g.fillText('你好呀！我是小綠！', 30, 100); g.fillText('決賽會場在這邊，跟我走～', 30, 120);
+      }
+      g.fillStyle = '#ffe066'; g.font = '900 20px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center';
+      g.fillText(t < 3.2 ? '🚀 飛向月球' : '🌕 月球決賽', W / 2, 32);
+    } else {
+      for (let i = 0; i < 4; i++) drawCupCloud(g, ((i * 130 - t * 80) % (W + 120) + W + 120) % (W + 120) - 50, 48 + (i % 3) * 26, .85 + (i % 2) * .35);
+      if (t > 1.5) { g.globalAlpha = Math.min(1, (t - 1.5) / .7); drawVenueLand(g, foe.venue); drawCupFlag(g, W / 2 - 16, 168, 52, ven.flag); g.globalAlpha = 1; }
+      drawCupPlane(g, -50 + Math.min(1, t / 2.1) * 230, 96 + Math.sin(t * 3) * 6, 1.15);
+      g.fillStyle = '#1c3d5a'; g.font = '900 20px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center';
+      g.fillText(t < 2.2 ? `✈️ 前往 ${foe.venue}` : `抵達 ${foe.venue}！`, W / 2, 28);
+      g.font = '700 14px "Microsoft JhengHei","PingFang TC",sans-serif'; g.fillText(`${ven.mark} ${ven.land}`, W / 2, 50);
+    }
+    if (now - t0 > TOTAL) { finish(); return; }
+    raf = requestAnimationFrame(frame);
+  };
+  raf = requestAnimationFrame(frame);
+}
+function worldShowBoard(w, cup, r, fromWin) {
+  const plan = worldRoundPlan(r), opp = cup.opps[r], field = worldField(cup, r);
+  const h = w.card.querySelector('h2'); if (h) h.textContent = `🌏 世界大賽・${plan.name}`;
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  w.stage.dataset.kind = 'board'; w.stage.dataset.travel = opp.venue; w.stage.dataset.round = plan.name;
+  const board = el('div', 'cup-board'), road = el('div', 'cup-road');
+  WORLD_ROUNDS.forEach((b, i) => road.appendChild(el('div', 'cup-step' + (i < r ? ' done' : i === r ? ' now' : ''), `${i < r ? '✅' : i === r ? '👉' : '⬜'} ${WORLD_STEP[i]} ${b.name}`)));
+  const fight = el('div', 'cup-fight'), me = el('div', 'cup-card me'), fo = el('div', 'cup-card');
+  me.append(el('span', 'emo', '🥋'), document.createTextNode('你'), document.createElement('br'), document.createTextNode(charName()));
+  fo.append(el('span', 'emo', worldEmo(opp)), document.createTextNode(opp.venue), document.createElement('br'), document.createTextNode(opp.short.slice(opp.venue.length)));
+  fight.append(me, el('div', 'cup-vs', '對'), fo);
+  const note = fromWin ? `🎉 晉級了！吃一口點心 🍙。下一場在${opp.venue}，再強一點點。` : (r === 0 ? `這一屆還有 ${32 >> r} 位選手！連贏 5 場就是冠軍。` : `現在是${plan.name}，還有 ${32 >> r} 位。`);
+  board.append(road, el('div', 'cup-note', note), fight);
+  const others = field.inn.filter(f => f !== opp);
+  board.appendChild(el('div', 'cup-note', others.length ? '還在比賽' : '只剩你們兩個！'));
+  if (others.length) {
+    const grid = el('div', 'cup-grid');
+    others.slice(0, 8).forEach(f => { const c = el('div', 'cup-mini up'); const where = f.venue === '月球' && r < WORLD_ROUNDS.length - 1 ? '神秘選手' : f.venue; c.append(el('span', 'emo', worldEmo(f)), document.createTextNode('✅ 晉級'), document.createElement('br'), document.createTextNode(where)); grid.appendChild(c); });
+    board.appendChild(grid);
+    if (others.length > 8) board.appendChild(el('div', 'cup-note', `還有 ${others.length - 8} 位選手也在比`));
+  }
+  if (field.out.length) {
+    board.appendChild(el('div', 'cup-note', '回家了'));
+    const gout = el('div', 'cup-grid');
+    field.out.slice(0, 6).forEach(f => { const c = el('div', 'cup-mini out'); c.append(el('span', 'emo', worldEmo(f)), document.createTextNode('❌ 淘汰'), document.createElement('br'), document.createTextNode(f.venue)); gout.appendChild(c); });
+    board.appendChild(gout);
+    if (field.out.length > 6) board.appendChild(el('div', 'cup-note', `還有 ${field.out.length - 6} 位淘汰`));
+  }
+  w.stage.appendChild(board);
+  w.status.textContent = plan.moon ? `決賽在月球！對手是${opp.short}。坐火箭出發！` : `${plan.name}！對手是${opp.short}。坐飛機去${opp.venue}！`;
+  try { speak(plan.moon ? '決賽！我們坐火箭去月球！' : `${plan.name}，坐飛機去${opp.venue}！`); } catch (e) {}
+  const go = el('button', 'big', plan.moon ? '🚀 坐火箭去月球' : `✈️ 飛去${opp.venue}`);
+  go.onclick = () => worldFlyTo(w, opp, () => worldStartDuel(cup, r));
+  w.btns.appendChild(go); leaveButton(w);
+  worldRound.test = { r, cup, plan, opp };
+}
+function worldStartDuel(cup, r) {
+  const plan = worldRoundPlan(r), f = cup.opps[r];
+  if (G.kid && G.kid.hunger < DUEL_MIN_HUNGER) G.kid.hunger = DUEL_MIN_HUNGER;
+  openDuelGame(f, {
+    title: `🌏 世界大賽・${plan.name}・${f.venue}`, hp: plan.hp, lvl: plan.lvl,
+    arena: plan.moon ? `🌙 月球決賽會場　${plan.name}` : `🌏 ${f.venue}跆拳道場　${plan.name}`,
+    venue: f.venue, foeSp: plan.every ? (plan.moon ? WORLD_SP : WORLD_SP_LITE) : null, fEvery: plan.every || undefined,
+    foePow: plan.pow, spExtra: plan.spX, agg: plan.agg, foeFast: plan.fast,
+    intro: plan.moon ? `月球決賽！對手是${f.short}！` : `${plan.name}！${f.venue}的${f.short}！`,
+    onEnd: (win, w) => {
+      const ws = worldState(), got = win ? r + 1 : r, last = r === WORLD_ROUNDS.length - 1;
+      if (win) learnSigMove(f.id);
+      if (!win || last) {
+        ws.best = Math.max(ws.best == null ? -1 : ws.best, got); ws.v = 2;
+        const champ = got === WORLD_ROUNDS.length, first = champ && !ws.gold; if (champ) ws.gold = (ws.gold || 0) + 1;
+        const bells = payReward(w, WORLD_PRIZE[got]) + (first ? (addBells(2000), 2000) : 0);
+        const medal = WORLD_MEDAL[got] || WORLD_MEDAL[0];
+        w.status.textContent = `${medal}！${champ ? '你是世界冠軍！' : win ? '' : `在${plan.name}輸給${f.short}～沒關係，去吃東西補體力！`}　💰 +${fmt(bells)}`;
+        Sound.play(champ ? 'fanfare' : 'questClear');
+        setTimeout(() => { try { if (champ) confettiBurst(140); showcase(el('div', 'magic-pic', medal.split(' ')[0]), `世界大賽：${medal.split(' ')[1]}！`, champ ? (first ? '第一次拿到世界冠軍！多送你 💰 2,000！' : `又拿到世界冠軍了！（${ws.gold} 次）`) : '下次再來挑戰更好的名次！', { head: champ ? '🎉 太棒了！' : '🌏 世界大賽' }); } catch (e) {} }, 500);
+        try { speak(champ ? '世界冠軍！' : medal.split(' ')[1] + '！好棒！'); } catch (e) {}
+        saveGame(); refreshTop(); duelEndButtons(w, win, () => openWorldCup()); return;
+      }
+      if (G.kid) G.kid.hunger = Math.min(100, G.kid.hunger + 6);
+      Sound.play('questClear'); worldShowBoard(w, cup, r + 1, true);
+    }
+  });
+}
 function openWorldCup() {
+  if (!worldCupOpen()) { toast('🌏 要先打贏熊熊教練，教練才會告訴你世界大賽喔！'); try { hostSay('先打贏我，我再告訴你一個大秘密！', 2800); speak('先打贏教練，再來參加世界大賽！'); } catch (e) {} return; }
   const ws = worldState(), d = today();
   if (ws.d !== d) { ws.d = d; ws.n = 0; }
   if (ws.n >= WORLD_DAY_MAX) { toast('🌏 今天的世界大賽打 3 次了，明天再來！'); return; }
   ws.n++; saveGame();
-  const foes = NEIGHBORS.slice().sort(() => Math.random() - .5).slice(0, 3).map((n, i) => Object.assign({}, n, { short: WORLD_FROM[(Math.floor(Math.random() * 8) + i * 3) % 8] + n.short, dobok: TKD_BELTS[Math.min(TKD_BELTS.length - 1, 2 + i * 2)][1] }));
-  worldRound(0, foes);
+  playDuel.test = null;
+  const w = openGameWindow('🌏 世界大賽', '連贏 5 場就是世界冠軍！每一場會飛去不同的國家，決賽在月球。');
+  worldShowBoard(w, worldBuildCup(), 0);
 }
-function worldRound(r, foes) {
-  const [nm, hp, lvl] = WORLD_ROUNDS[r], f = foes[r];
-  if (G.kid && G.kid.hunger < DUEL_MIN_HUNGER) G.kid.hunger = DUEL_MIN_HUNGER;   // 大賽中途不會因為太餓不能打（體力少，血就少）
-  openDuelGame(f, { title: `🌏 世界大賽・${nm}`, hp, lvl, arena: `🌏 世界跆拳道大賽　${nm}`, foeSp: r === 2 ? WORLD_SP : undefined, intro: `${nm}！對手是${f.short}！`,
-    onEnd: (win, w) => {
-      const ws = worldState(), got = win ? r + 1 : r;
-      if (win) learnSigMove(f.id);
-      if (!win || r === 2) {   // 比完了：頒獎
-        ws.best = Math.max(ws.best == null ? -1 : ws.best, got); const first = got === 3 && !ws.gold; if (got === 3) ws.gold = (ws.gold || 0) + 1;
-        const bells = payReward(w, WORLD_PRIZE[got]) + (first ? (addBells(2000), 2000) : 0);
-        w.status.textContent = `${WORLD_MEDAL[got]}！${got === 3 ? '你是世界冠軍！' : win ? '' : `在${nm}輸給${f.short}～沒關係，去吃東西補體力！`}　💰 +${fmt(bells)}`;
-        Sound.play(got === 3 ? 'fanfare' : 'questClear');
-        setTimeout(() => { try { if (got === 3) confettiBurst(140); showcase(el('div', 'magic-pic', WORLD_MEDAL[got].split(' ')[0]), `世界大賽：${WORLD_MEDAL[got].split(' ')[1]}！`, got === 3 ? (first ? '第一次拿到世界冠軍！多送你 💰 2,000！' : `又拿到世界冠軍了！（${ws.gold} 次）`) : '下次再來挑戰更好的名次！', { head: got === 3 ? '🎉 太棒了！' : '🌏 世界大賽' }); } catch (e) {} }, 500);
-        try { speak(got === 3 ? '世界冠軍！' : WORLD_MEDAL[got].split(' ')[1] + '！好棒！'); } catch (e) {}
-        saveGame(); refreshTop(); duelEndButtons(w, win, () => openWorldCup()); return;
-      }
-      // 贏了：下一場（中間吃一口點心回體力）
-      if (G.kid) G.kid.hunger = Math.min(100, G.kid.hunger + 6);
-      w.status.textContent = `🎉 ${nm}贏了！進入${WORLD_ROUNDS[r + 1][0]}！（吃一口點心 🍙 +6）`;
-      try { speak(`贏了！下一場是${WORLD_ROUNDS[r + 1][0]}！`); } catch (e) {} Sound.play('questClear');
-      w.stage.appendChild(el('div', 'tkd-say', foes.map((x, i) => `${i < r + 1 ? '✅' : i === r + 1 ? '👉' : '⬜'} ${WORLD_ROUNDS[i][0]}：${x.short}`).join('　')));
-      w.btns.innerHTML = ''; const nx = el('button', 'big', `⚔️ 開始${WORLD_ROUNDS[r + 1][0]}`); nx.onclick = () => worldRound(r + 1, foes); w.btns.appendChild(nx); leaveButton(w);
-    } });
-  worldRound.test = { r, foes };
-}
-// 在道館：不定時廣播世界大賽（一次待在道館最多一次）
 let worldNextAd = 0, worldAdSaid = false;
 function worldAdTick() {
+  if (!worldCupOpen()) { worldNextAd = 0; worldAdSaid = false; return; }
   if (!G.away || G.away.place !== 'dojo') { worldNextAd = 0; worldAdSaid = false; return; }
   const now = performance.now();
   if (!worldNextAd) { worldNextAd = now + 45000 + Math.random() * 60000; return; }
   if (worldAdSaid || now < worldNextAd || !$('#modal').hidden || fufu.pose) return;
   const ws = worldState(); if (ws.d === today() && ws.n >= WORLD_DAY_MAX) return;
   worldAdSaid = true; Sound.play('fanfare');
-  try { hostSay('📣 世界跆拳道大賽開始報名了！想參加就來找我！', 5000); speak('世界跆拳道大賽開始報名了！想參加就來找熊熊教練！'); } catch (e) {}
-  toast('🌏 世界大賽開始報名了！點熊熊教練就可以報名！');
+  try { hostSay('📣 世界跆拳道大賽開始報名了！想參加就點我，選報名世界大賽！', 5000); speak('世界跆拳道大賽開始報名了！點熊熊教練，選報名世界大賽！'); } catch (e) {}
+  toast('🌏 世界大賽開始報名了！點熊熊教練，選「報名世界大賽」！');
 }
 setInterval(() => { try { if (!resting) worldAdTick(); } catch (e) {} }, 2000);
 
