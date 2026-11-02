@@ -15,7 +15,7 @@ const path = require('path');
     G.bells = 2000; [...document.querySelectorAll('#tabBody .card')].find(c => /跑車/.test(c.textContent)).click(); o.noMoney = !(G.vehicles || []).includes('sports');
     [...document.querySelectorAll('#tabBody .card')].find(c => /腳踏車/.test(c.textContent)).click(); o.bought = (G.vehicles || []).includes('bike') && G.bells === 500 && G.ride === 'bike';
     SC_QUEUE.length = 0; const sc = document.getElementById('showcase'); if (sc) sc.remove(); $('#modal').hidden = true;
-    ['1-3', '2-3', '3-3'].forEach(k => questState().clear[k] = 1); islMapCache = null;
+    [1, 2, 3].forEach(w => questState().clear[questBossId(w)] = 1); islMapCache = null;
     openIsland(); await wait(300);
     // 真的用手點：「🚲 交通工具」→ 選單看得到 → 換成別台、下車（家長：大地圖中無法切換交通工具）
     G.vehicles = ['bike', 'suv']; G.ride = null; islRideBtn();

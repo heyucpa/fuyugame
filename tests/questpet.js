@@ -31,11 +31,11 @@ const path = require('path');
     const q2 = T.pet(); o.shy = q2.mv.name === '愛心泡泡'; q2.meter = q2.max; T.ents.forEach(e => { e.alive = false; }); const n2 = [80, 330].map(dx => { const e = { k: 'slime', x: T.P.x + dx, y: T.P.y, w: 16, h: 14, vx: 0, alive: true }; T.ents.push(e); return e; });
     T.petSpecial(); o.babyNear = !n2[0].alive && n2[1].alive; closeGameWindow();
     // 大朋友：無敵＋3 金幣；大魔王扣一下
-    G.pet.stage = 'adult'; G.pet.species = 'penguin'; playQuest('1-3', { bossStart: true }); T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null;
+    G.pet.stage = 'adult'; G.pet.species = 'penguin'; playQuest(questBossId(1), { bossStart: true }); T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null;
     const q3 = T.pet(); o.fish = q3.mv.name === '大浪花'; const bs = T.ents.find(e => e.k === 'boss'); for (let i = 0; i < 5; i++) T.step(1 / 60);
     T.P.x = bs.x - 100; const hp = bs.hp, c3 = T.P.coins; q3.meter = q3.max; T.P.inv = 0; T.petSpecial(); o.boss = bs.hp === hp - 1 && T.P.inv >= 1.9 && T.P.coins >= c3 + 3; closeGameWindow();
     // 烏雲大王（飄在天上也打得到）
-    playQuest('5-3', { bossStart: true }); T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null; const ck = T.cloud(), q4 = T.pet();
+    playQuest(questBossId(5), { bossStart: true }); T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null; const ck = T.cloud(), q4 = T.pet();
     T.P.x = ck.x - 50; T.step(1 / 60); const ch = ck.hp; q4.meter = q4.max; T.petSpecial(); o.cloud = ck.hp === ch - 1; closeGameWindow();
     // 畫面跑幾格不會出錯（真的畫出來）
     playQuest('2-1'); T = playQuest.test; T.pet().meter = 99; T.petSpecial(); await wait(600); o.drawn = T.pet().act > 0 || T.pet().uses === 1; closeGameWindow();

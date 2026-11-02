@@ -10,7 +10,7 @@ const path = require('path');
   const out = await p.evaluate(async () => {
     const wait = ms => new Promise(r => setTimeout(r, ms)), o = {}, txt = () => $('#modalCard').innerText, btn = re => [...document.querySelectorAll('#modalCard button')].find(x => re.test(x.textContent));
     G.guide = 'done'; $('#modal').hidden = true; G.isle = {}; G.qIsleDay = null;
-    ['1-3', '2-3', '3-3'].forEach(k => questState().clear[k] = 1); islMapCache = null;
+    [1, 2, 3].forEach(w => questState().clear[questBossId(w)] = 1); islMapCache = null;
     openIsland(); await wait(300); const m = isl.m;
     const sp = m.specials.find(x => x.id === 'flower'); islFun(islFunAt({ fx: sp.x + .5, fy: sp.y + .3 })); await wait(900); o.menu = /島主/.test(txt()) && /花花島/.test(txt());
     // 🌷 收成：一天一次

@@ -37,7 +37,7 @@ const path = require('path');
     isl.x = bt[0] + .5; isl.y = bt[1] + .5; isl.foot = []; islFootStep(); o.foot = isl.foot.length === 1;
     closeIsland();
     // 新小島：動畫＋打開小島鏡頭飛過去
-    questState().clear['1-3'] = 1; questState().newIsle = 'flower'; islMapCache = null;
+    questState().clear[questBossId(1)] = 1; questState().newIsle = 'flower'; islMapCache = null;
     playIsletAppear(QUEST_ISLETS[0]); await wait(4800); o.anim = !!document.getElementById('isleAnim') && [...document.querySelectorAll('#isleAnim button')].every(x => x.style.visibility !== 'hidden');
     document.querySelector('#isleAnim button').click(); await wait(600);
     o.pan = !!(isl && isl.pan && isl.pan.x === QUEST_ISLETS[0].cx) && !questState().newIsle; closeIsland();
@@ -50,7 +50,7 @@ const path = require('path');
     friendIsleCheck(); await wait(300); o.fAnim = !!document.getElementById('isleAnim') && G.fIsle === 1; playIsletAppear.test.close();
     friendIsleCheck(); o.fOnce = !document.getElementById('isleAnim'); window.loadInvites = realLI; delete questState().newIsle;
     // 大魔王：從魔王開始、變弱
-    questState().mode = 'normal'; playQuest('1-3', { bossStart: true, weak: 2 }); const T = playQuest.test, bs = T.ents.find(e => e.k === 'boss');
+    questState().mode = 'normal'; playQuest(questBossId(1), { bossStart: true, weak: 2 }); const T = playQuest.test, bs = T.ents.find(e => e.k === 'boss');
     o.bossStart = T.P.x > bs.x - 10 * 18 && T.P.x < bs.x; o.weak = bs.hp === 1 && bs.slow > 0;
     closeGameWindow(); $('#modal').hidden = true;
     return o;
