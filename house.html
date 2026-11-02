@@ -12265,8 +12265,10 @@ function travelTo(place) {
   if (typeof placeFee === 'function' && placeFee(place)) { askEntryFee(place, () => walkTrip(PLACES[place].name, () => travelArrive(place), place)); return; }   // 🎟️ 先付錢才出發
   walkTrip(PLACES[place].name, () => travelArrive(place), place);
 }
-function travelArrive(place) {
-  G.away = { place, idx: 0 };
+function travelArrive(place, roomIdx) {
+  const rooms = PLACES[place] && PLACES[place].rooms;
+  const idx = Number.isInteger(roomIdx) && rooms && rooms[roomIdx] ? roomIdx : 0;
+  G.away = { place, idx };
   if (place === 'cinema' && typeof entryTicketPending !== 'undefined' && entryTicketPending) { G.away.ticket = 1; entryTicketPending = false; }
   // 🥋🏊 第一次去：教練免費送一套，收進衣櫃（在家裡也可以穿）
   const gift = place === 'dojo' ? ['dobok', 'dobok_pants', 'barefoot', 'tkd_tee'] : place === 'pool' ? ['swimsuit', 'swim_bottom', 'swim_cap'] : null;
@@ -14427,7 +14429,7 @@ $('#btnCancel').onclick = cancelHold;
 
 // ── 上方列 ──
 /* 房間按鈕前面加圖示（家長：還不識字的妹妹看不懂「客廳」「臥室」）：先看名字，名字看不出來就看房間裡擺了什麼，再不然照第幾間 */
-const ROOM_ICON_WORDS = [[/客廳|起居/, '🛋️'], [/臥室|睡|寢|房間|主臥|小孩房|兒童房/, '🛏️'], [/餐廳|廚房|吃飯/, '🍽️'], [/浴室|廁所|洗澡|浴/, '🛁'], [/陽台|花園|庭院/, '🌷'],
+const ROOM_ICON_WORDS = [[/操場|跑道|田徑/, '🏟️'], [/客廳|起居/, '🛋️'], [/臥室|睡|寢|房間|主臥|小孩房|兒童房/, '🛏️'], [/餐廳|廚房|吃飯/, '🍽️'], [/浴室|廁所|洗澡|浴/, '🛁'], [/陽台|花園|庭院/, '🌷'],
   [/書房|讀書|圖書|功課/, '📚'], [/遊戲|玩具|遊樂/, '🧸'], [/閣樓/, '🏠'], [/衣帽|更衣/, '👗'], [/音樂|琴/, '🎹']];
 function roomIcon(r, i) {
   const nm = r.name || '', hit = ROOM_ICON_WORDS.find(([re]) => re.test(nm)); if (hit) return hit[1];
@@ -15288,6 +15290,9 @@ function tabEarn(body) {
   body.appendChild(games);
 }
 
+/* 🌟 星光小精靈不在商店的蛋裡（story）。圖鑑提示、以及「商店蛋都買完」的那句用這個判斷，不要改孵蛋池。 */
+const STARLING_DEX_HINT = '🌟 星光小精靈要闖關湊齊 6 個線索才會孵出，買蛋抽不到';
+function starlingKept() { return !!(collectedSpecies().has('starling') || (G.star && G.star.hatched)); }
 /* 📖 圖鑑：所有收集都在這一頁。最上面一排是總覽，點了跳到那一段。
    妹妹看不懂字，所以每一段都有圖示，總覽也是圖示＋數字。 */
 function tabBook(body) {
@@ -15340,6 +15345,7 @@ function tabBook(body) {
   body.appendChild(trG);
   body.appendChild(sec('dexPet', `🐾 寵物圖鑑 ${tc('pet')[0]} / ${PET_SPECIES.length}`));
   body.appendChild(note('寵物蛋摸一摸就會孵出來。「寵物」分頁可以買新的蛋。'));
+  if (!starlingKept()) body.appendChild(note(STARLING_DEX_HINT));
   body.appendChild(petDexGrid());
   body.appendChild(sec('dexGrow', `🌱 成長圖鑑 ${growDexCount()} / ${growDexAll()}`));
   body.appendChild(note(`${charName()}吃營養的東西、做各種事、看繪本，會慢慢長大。寵物有寶寶、小朋友、大朋友三個樣子，養大就會收進來。還有一格隱藏的喔！`));
@@ -15805,14 +15811,16 @@ function tabPets(body) {
   const left = PET_SPECIES.filter(s => !s.story && !have.has(s.id)).length;
   const hatched = collectedSpecies();
   const inEggs = PET_SPECIES.filter(s => !s.story && !hatched.has(s.id) && have.has(s.id)).length;
-  /* 每一種都有了（蛋裡的也算）就不能再買（家長：買到 18 種就好，不然小孩會一直買到重複的）。
-     之後如果新增寵物種類，left 會變回大於 0，就又可以買了。 */
+  const shopN = PET_SPECIES.filter(s => !s.story).length;
+  /* 每一種商店蛋都有了（蛋裡的也算）就不能再買（家長：買到商店的種類就好，不然小孩會一直買到重複的）。
+     星光小精靈不算在這句「都收集到了」裡。之後如果新增寵物種類，left 會變回大於 0，就又可以買了。 */
   body.appendChild(note(left
     ? `孵出來的寶寶是隨機的，一定是還沒有的種類（還有 ${left} 種沒有）。蛋上的斑點顏色是小提示喔！` +
       (inEggs ? `\n另外有 ${inEggs} 種新的寵物在你的蛋裡面，摸一摸讓牠們孵出來！` : '')
     : inEggs
       ? `剩下 ${inEggs} 種新的寵物都在你的蛋裡面了，摸一摸讓牠們孵出來吧！（寵物屋裡也可以摸）`
-      : `${PET_SPECIES.length} 種都收集到了 🎉　寵物蛋賣完了，之後有新的寵物會再進貨喔！`));
+      : `商店可以買的 ${shopN} 種都收集到了 🎉　寵物蛋賣完了，之後有新的寵物會再進貨喔！`));
+  if (!left && !inEggs && !starlingKept()) body.appendChild(note(STARLING_DEX_HINT));
   const egg = el('button', 'big',
     left ? `🥚 買一顆寵物蛋　💰 ${fmt(EGG_PRICE)}` : '🥚 寵物蛋賣完了');
   egg.disabled = !left || G.bells < EGG_PRICE;
@@ -19714,6 +19722,7 @@ const ISL = { W: 64, H: 55, T: 32 };   // 右邊多一塊海，放運動島   //
 const ISL_BLD = [   // 房子：x, y 是左上角的格子，w×h 格；門在正下方一格
   { id: 'home', x: 24, y: 11, w: 4, h: 3 },
   { id: 'school', x: 12, y: 13, w: 5, h: 3 },
+  { id: 'playground', x: 7, y: 13, w: 4, h: 3 },   // 🏟️ 操場：緊鄰學校西側，中間留一條路；進門是學校的操場房間
   { id: 'library', x: 32, y: 13, w: 4, h: 3 },
   { id: 'park', x: 18, y: 9, w: 5, h: 2 },
   { id: 'uncle', x: 10, y: 22, w: 4, h: 3 },
@@ -19771,7 +19780,7 @@ const ISL_POND = { x: 31, y: 24, w: 4, h: 3 };
 const ISL_HUB = [26, 19];
 const ISL_STYLE = {   // 牆、屋頂顏色
   dojo: ['#fff4e6', '#e0503a'], pool: ['#e8f6fb', '#3fa9f5'], track: ['#fff1e0', '#e07a4a'], arena: ['#fff6e0', '#ff7a3c'], gym: ['#f4eeff', '#8a78b0'], restaurant: ['#fff0d9', '#e8823a'], hospital: ['#ffffff', '#e8505b'], cinema: ['#3a2f4a', '#e8505b'],
-  home: ['#ffd9c9', '#ff7b7b'], school: ['#fff4cf', '#5b8def'], library: ['#e6dcff', '#7a5cc9'], park: ['#d9f0c8', '#4f9d4f'],
+  home: ['#ffd9c9', '#ff7b7b'], school: ['#fff4cf', '#5b8def'], playground: ['#e7f8d4', '#e07a3a'], library: ['#e6dcff', '#7a5cc9'], park: ['#d9f0c8', '#4f9d4f'],
   uncle: ['#d7ecc8', '#7aa05a'], grandma: ['#ffe3b0', '#d68a3a'], amusement: ['#ffe0ee', '#ff6fa3'], friend: ['#fffaf0', '#6fb7e8']
 };
 let islMapCache = null;
@@ -19860,6 +19869,17 @@ function islMap(nFriends) {
     for (let y = Math.min(dy, hy); y <= Math.max(dy, hy); y++) mark(dx, y);
     for (let x = Math.min(dx, hx); x <= Math.max(dx, hx); x++) mark(x, hy);
   });
+  { // 學校和操場中間的路：兩扇門連在一起，中間那一條空格也鋪成路
+    const pg = blds.find(b => b.id === 'playground'), sch = blds.find(b => b.id === 'school');
+    if (pg && sch) {
+      const [dx, dy] = pg.door, [sx, sy] = sch.door, yb = Math.max(dy, sy);
+      for (let x = Math.min(dx, sx); x <= Math.max(dx, sx); x++) mark(x, yb);
+      for (let y = Math.min(dy, yb); y <= yb; y++) mark(dx, y);
+      for (let y = Math.min(sy, yb); y <= yb; y++) mark(sx, y);
+      const gap0 = Math.min(pg.x + pg.w, sch.x), gap1 = Math.max(pg.x, sch.x);
+      for (let x = gap0; x < gap1; x++) for (let y = Math.min(pg.y, sch.y); y <= yb; y++) if (land[y] && land[y][x] && !block[y][x]) mark(x, y);
+    }
+  }
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {   // 廣場
     if (Math.hypot(x - ISL_HUB[0], y - ISL_HUB[1]) <= 2.4) mark(x, y);
   }
@@ -19910,7 +19930,8 @@ function islStartTile(m) {
     if (G.away.place === 'friend') {
       const i = loadInvites().findIndex(v => PLACES.friend && v.at === PLACES.friend.inviteAt && v.n === PLACES.friend.inviteName);
       id = i >= 0 && i < ISL_FRIEND_SPOTS.length ? 'friend' + i : 'home';
-    } else if (pl && !pl.inHouse && ISL_BLD.some(b => b.id === G.away.place)) id = G.away.place;
+    } else if (G.away.place === 'school' && G.away.idx === 1) id = 'playground';   // 人在操場房間：從小島的操場門口出來
+    else if (pl && !pl.inHouse && ISL_BLD.some(b => b.id === G.away.place)) id = G.away.place;
   }
   const b = m.blds.find(x => x.id === id) || m.blds[0];
   return { id: b.id, x: b.door[0], y: b.door[1] };
@@ -20100,6 +20121,13 @@ function islEnter(id) {   // 走到門口：關掉地圖、進去（家：回家
   if (id === 'home') { if (G.away) { if (fufu.pose) fufuStandUp(false); homeArrive(); } return; }
   const fm = /^friend(\d)$/.exec(id);
   if (fm) { const inv = invites[+fm[1]]; if (inv) visitFriend(inv, true); return; }
+  // 🏟️ 操場跟學校是同一棟地方的兩間：操場進 idx 1，學校大門進教室 idx 0（人已經在學校就直接換房間）
+  if (id === 'playground' || id === 'school') {
+    const idx = id === 'playground' ? 1 : 0;
+    if (G.away && G.away.place === 'school') { if (G.away.idx !== idx) goPlaceRoom(idx); return; }
+    travelArrive('school', idx);
+    return;
+  }
   if (G.away && G.away.place === id) return;
   if (!PLACES[id]) return;
   if (typeof placeFee === 'function' && placeFee(id)) { askEntryFee(id, () => travelArrive(id), () => openIsland()); return; }   // 🎟️ 電影院、游泳池：先付錢
@@ -20535,8 +20563,8 @@ function islDrawTree(ctx, x, y, now) {
 function islDrawBuilding(ctx, b, tt) {
   const T = ISL.T, x = b.x * T, y = b.y * T, w = b.w * T, h = b.h * T, fr = /^friend/.test(b.id);
   const sty = ISL_STYLE[fr ? 'friend' : b.id] || ISL_STYLE.home, roofC = fr ? ['#6fb7e8', '#ff8fb3', '#ffc94d', '#9be0a0'][+b.id.slice(6)] : sty[1];
-  const pl = fr ? null : PLACES[b.id], icon = fr ? '🏡' : b.id === 'home' ? '🏠' : (pl ? pl.emoji : '🏠');
-  let label = fr ? '' : b.id === 'home' ? '我的家' : (pl ? pl.name : '');
+  const pl = fr ? null : PLACES[b.id], icon = b.id === 'playground' ? '🏟️' : fr ? '🏡' : b.id === 'home' ? '🏠' : (pl ? pl.emoji : '🏠');
+  let label = b.id === 'playground' ? '操場' : fr ? '' : b.id === 'home' ? '我的家' : (pl ? pl.name : '');
   if (fr) { const inv = isl.invites[+b.id.slice(6)]; label = inv ? inviteWho(inv) + '的家' : '朋友的家'; }
   ctx.fillStyle = 'rgba(40,60,30,.18)'; ctx.fillRect(x + 4, y + h - 4, w, 8);
   if (b.id === 'amusement') {   // 遊樂園：大帳篷＋摩天輪
@@ -20555,6 +20583,18 @@ function islDrawBuilding(ctx, b, tt) {
     ctx.fillStyle = '#8a5a33'; ctx.fillRect(x + 6, y + 6, 10, h); ctx.fillRect(x + w - 16, y + 6, 10, h);
     ctx.fillStyle = '#4f9d4f'; ctx.beginPath(); ctx.ellipse(x + w / 2, y + 12, w / 2 - 2, 20, 0, Math.PI, 0); ctx.fill();
     [[26, 8], [58, 2], [92, 8], [124, 4]].forEach(([a, c]) => { ctx.fillStyle = '#6fc06a'; ctx.beginPath(); ctx.arc(x + a, y + 6 + c / 2, 11, 0, 7); ctx.fill(); });
+  } else if (b.id === 'playground') {   // 操場：綠地中間一圈橘色跑道，不是一棟有床的房子
+    ctx.fillStyle = '#5fae6f'; ctx.fillRect(x, y + 4, w, h - 4);
+    ctx.fillStyle = '#e07a3a'; ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x + 6, y + 10, w - 12, h - 18, 16); else ctx.rect(x + 6, y + 10, w - 12, h - 18);
+    ctx.fill();
+    ctx.fillStyle = '#7dce6a'; ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x + 18, y + 20, w - 36, h - 38, 10); else ctx.rect(x + 18, y + 20, w - 36, h - 38);
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.strokeRect(x + 11, y + 15, w - 22, h - 28);
+    ctx.fillStyle = '#2f6fd1'; ctx.fillRect(x + 20, y + h - 26, w - 40, 7);
+    ctx.fillStyle = '#8a5a33'; ctx.fillRect(x + 16, y - 2, 3, 16);
+    ctx.fillStyle = '#e8505b'; ctx.beginPath(); ctx.moveTo(x + 19, y - 1); ctx.lineTo(x + 36, y + 5); ctx.lineTo(x + 19, y + 11); ctx.fill();
   } else {
     ctx.fillStyle = sty[0]; ctx.fillRect(x, y + 20, w, h - 20);
     ctx.strokeStyle = 'rgba(0,0,0,.08)'; ctx.lineWidth = 2; ctx.strokeRect(x, y + 20, w, h - 20);
@@ -20567,8 +20607,12 @@ function islDrawBuilding(ctx, b, tt) {
     if (night && isl.glow) { isl.glow.push([x + 8 + ww / 2, y + 40, 26]); if (b.w > 3) isl.glow.push([x + w - 8 - ww / 2, y + 40, 26]); }
   }
   const dx = b.door[0] * T;
-  ctx.fillStyle = '#7a4a2a'; ctx.beginPath(); ctx.moveTo(dx + 4, y + h); ctx.lineTo(dx + 4, y + h - 20); ctx.arc(dx + 16, y + h - 20, 12, Math.PI, 0); ctx.lineTo(dx + 28, y + h); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = '#ffd24d'; ctx.beginPath(); ctx.arc(dx + 23, y + h - 10, 1.8, 0, 7); ctx.fill();
+  if (b.id === 'playground') {   // 白色球門當入口，不是木頭屋門
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(dx + 6, y + h - 16, 4, 16); ctx.fillRect(dx + 22, y + h - 16, 4, 16); ctx.fillRect(dx + 6, y + h - 18, 20, 4);
+  } else {
+    ctx.fillStyle = '#7a4a2a'; ctx.beginPath(); ctx.moveTo(dx + 4, y + h); ctx.lineTo(dx + 4, y + h - 20); ctx.arc(dx + 16, y + h - 20, 12, Math.PI, 0); ctx.lineTo(dx + 28, y + h); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#ffd24d'; ctx.beginPath(); ctx.arc(dx + 23, y + h - 10, 1.8, 0, 7); ctx.fill();
+  }
   // 屋頂上的小圖示＋名字
   const bx = x + w / 2, by = y - 14 + Math.sin(tt * 2 + b.x) * 1.2;
   ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.beginPath(); ctx.arc(bx, by, 15, 0, 7); ctx.fill(); ctx.strokeStyle = roofC; ctx.lineWidth = 2; ctx.stroke();
@@ -22731,6 +22775,26 @@ const QPET_MOVES = {
   fish: { name: '大浪花', icon: '🌊', fx: '💧', col: '#5cc4ec' },
   sand: { name: '沙沙旋風', icon: '🌪️', fx: '🌀', col: '#e8c27a' }
 };
+// 闖關頭頂那句話：單行會超出 480 寬被切掉。依字寬折成最多 4 行（大約畫面寬減 40），白邊紅字跟原本一樣。
+function questWrapLines(g, text, maxW, maxLines) {
+  const lines = [], paras = String(text || '').split('\n');
+  for (let p = 0; p < paras.length; p++) {
+    let cur = '';
+    const para = paras[p];
+    for (let i = 0; i < para.length; i++) {
+      const t = cur + para.charAt(i);
+      if (cur && g.measureText(t).width > maxW) { lines.push(cur); cur = para.charAt(i); }
+      else cur = t;
+    }
+    lines.push(cur);
+  }
+  if (lines.length <= maxLines) return lines;
+  const out = lines.slice(0, maxLines);
+  let last = out[maxLines - 1];
+  while (last.length && g.measureText(last + '…').width > maxW) last = last.slice(0, -1);
+  out[maxLines - 1] = last + '…';
+  return out;
+}
 function playQuest(id, opt) {
   opt = opt || {};   // opt.bossStart：從大魔王那裡開始；opt.weak：打輸幾次了（大王越來越弱）
   const q = questState(), easy = q.mode === 'easy', wd = QUEST_WORLDS[+id[0] - 1];
@@ -23210,7 +23274,11 @@ function playQuest(id, opt) {
       for (let i = 0; i < boss.hp; i++) { g.fillStyle = ['#7bd389', '#ffd23f', '#ff6b5b'][ckPhase(boss, i + 1) - 1]; g.fillRect(bx + i * u + 1, by + 1, u - 2, 8); }
     }
     if (boss && boss.flash > 0) { g.fillStyle = `rgba(255,255,230,${boss.flash * 3})`; g.fillRect(0, 0, QVW, QVH); }   // 打雷閃一下
-    if (msgT > 0) { g.font = '900 18px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.lineWidth = 5; g.strokeStyle = '#ffffff'; g.strokeText(msg, QVW / 2, 60); g.fillStyle = '#e8505b'; g.fillText(msg, QVW / 2, 60); }
+    if (msgT > 0 && msg) {   // 同一條 say／msg：長的線索開場、必殺技、道具說明都折行
+      g.font = '900 18px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.lineWidth = 5; g.lineJoin = 'round'; g.strokeStyle = '#ffffff'; g.fillStyle = '#e8505b';
+      const lines = questWrapLines(g, msg, QVW - 40, 4);
+      for (let i = 0; i < lines.length; i++) { const yy = 60 + i * 22; g.strokeText(lines[i], QVW / 2, yy); g.fillText(lines[i], QVW / 2, yy); }
+    }
     g.textBaseline = 'alphabetic';
   };
   const frame = now => {
