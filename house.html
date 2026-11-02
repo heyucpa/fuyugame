@@ -706,8 +706,8 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .quest-mode.on { border-color: #ff9a3c; background: #fff3e0; } .quest-mode b { font-size: 17px; } .quest-mode span { font-size: 12px; color: #7a6a5a; }
 .quest-world { margin: 8px 0; padding: 10px; border-radius: 14px; background: #f6f9ff; }
 .quest-wh { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; } .quest-wi { font-size: 26px; } .quest-prize { font-size: 12px; color: #7a5a3a; margin-left: auto; }
-.quest-lvs { display: flex; gap: 8px; margin-top: 8px; }
-.quest-lv { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 4px; border: 2px solid #9fc4ff; border-radius: 12px; background: #fff; font: inherit; font-size: 16px; cursor: pointer; }
+.quest-lvs { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.quest-lv { flex: 1 1 68px; min-width: 64px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 4px; border: 2px solid #9fc4ff; border-radius: 12px; background: #fff; font: inherit; font-size: 15px; cursor: pointer; }
 .quest-lv span { color: #f2b200; font-size: 15px; letter-spacing: 1px; } .quest-lv.done { background: #eaffea; border-color: #7bd389; }
 .quest-lv.locked { opacity: .5; cursor: default; } .quest-lv.locked span { color: #9a8a7a; font-size: 12px; }
 .quest-pad { display: flex; gap: 10px; justify-content: center; margin-top: 8px; touch-action: none; user-select: none; -webkit-user-select: none; }
@@ -786,6 +786,13 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .quest-pauseov[hidden] { display: none; }
 .quest-pauseov .big { width: 260px; max-width: 80%; flex: none; font-size: 20px; padding: 14px; }
 .quest-pause-t { color: #fff; font-size: 26px; font-weight: 900; text-shadow: 0 2px 4px rgba(0,0,0,.4); }
+/* 🌟 星星蛋出現、星光小精靈孵化：奶油色通知卡＋粒子，各只播一次 */
+.star-notice { position: fixed; inset: 0; z-index: 96; display: flex; align-items: center; justify-content: center; pointer-events: none; animation: starNoticeIn .35s ease-out both; }
+.star-notice.out { animation: starNoticeOut .45s ease-in forwards; }
+.star-notice-cv { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -54%); width: min(94vw, 520px); height: auto; }
+.star-notice-card { position: relative; z-index: 1; max-width: min(92vw, 440px); margin-top: 86px; padding: 14px 22px; text-align: center; color: #6a4a38; font: 900 22px "Microsoft JhengHei","PingFang TC",sans-serif; line-height: 1.35; background: rgba(255, 248, 236, .94); border-radius: 20px; box-shadow: 0 12px 28px rgba(120, 70, 50, .18), inset 0 0 0 3px #f3c3d4, inset 0 0 0 6px #b7e0b4; }
+@keyframes starNoticeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes starNoticeOut { to { opacity: 0; } }
 .game-canvas { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 .duel-hit { background: linear-gradient(#ffb02e, #ff8a3d); color: #fff; border-color: #e8590c; }
 .dive-modes { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 0 0 10px; }
@@ -3664,6 +3671,9 @@ const Sound = (() => {
     magic() { [784, 988, 1175, 1568, 1319].forEach((f, i) => tone({ f0: f, f1: f * 1.05, dur: .14, vol: .22, at: i * .07, vib: 20 })); }, // 🧪 變小、變回來：閃亮亮
     crack() { noise({ dur: .08, vol: .35, freq: 3000 }); noise({ dur: .1, vol: .25, freq: 2200, at: .09 }); },
     perfect() { [880, 1175].forEach((f, i) => tone({ f0: f, dur: .12, type: 'triangle', vol: .3, at: i * .07 })); },
+    // 🌟 星星蛋第一次出現：輕輕一聲叮。孵化：裂殼＋比較亮的上行音
+    starDing() { tone({ f0: 880, f1: 1320, dur: .2, type: 'sine', vol: .2 }); tone({ f0: 1320, dur: .28, type: 'triangle', vol: .1, at: .1 }); },
+    starPop() { noise({ dur: .08, vol: .22, freq: 2600 }); [523, 659, 880, 1175, 1568].forEach((f, i) => tone({ f0: f, dur: .15, type: 'triangle', vol: .24, at: .06 + i * .07 })); tone({ f0: 1760, dur: .42, type: 'sine', vol: .12, at: .42 }); },
     // 小可愛說話：像動物森友會那樣的嘰哩咕嚕
     talk(text) {
       const n = Math.min(7, Math.max(2, Math.ceil((text || '').length / 3)));
@@ -4899,10 +4909,10 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
-  { id: '2026-11-12T20:00', title: '🗺️ 闖關變長、更好玩', lines: [
-    ['🧱', '原本的 18 關都變長了！路上多了打得掉的金幣磚、要跳起來抓的藤蔓、會左右動的雲'],
-    ['🟢', '每一關都有水管。站上去按 ⬇，鑽進金幣房（裡面還有藤蔓和道具）'],
-    ['🐣', '簡單模式坑比較窄、刺還是小花、藤蔓更好爬，被打到也不會少愛心']
+  { id: '2026-11-12T21:00', title: '🗺️ 前面的闖關變長了', lines: [
+    ['🧱', '每個世界前面的舊關變長了：打得掉的磚、藤蔓、會動的雲、踢殼、頭頂的金幣房'],
+    ['🟢', '舊關也有水管，站上去按 ⬇ 進祕密房間'],
+    ['🐣', '簡單模式坑比較窄、怪比較少，被打到還是不會少愛心']
   ] },
   { id: '2026-11-10T20:00', title: '🏁 起跑反應王', lines: [
     ['🏁', '點操場的起跑架就可以玩「起跑反應王」：聽到教練吹哨「嗶！」才可以衝，太早按是偷跑！'],
@@ -5820,11 +5830,18 @@ function normalizeSave(g) {
   if (out.moviePrize != null && out.moviePrize !== 1) delete out.moviePrize;
   if (out.quest != null) {   // 🗺️ 世界任務：過關、星星、玩法
     if (!isObj(out.quest)) delete out.quest;
-    else { const q = out.quest, okId = k => /^[1-6]-[1-3]$/.test(k);
+    else { const q = out.quest, okId = k => /^[1-6]-[1-5]$/.test(k);
       if (q.mode !== 'easy' && q.mode !== 'normal') q.mode = 'easy';
       if (q.newIsle != null && !/^(flower|candy|dino|friend)$/.test(q.newIsle)) delete q.newIsle;
       q.clear = isObj(q.clear) ? Object.fromEntries(Object.entries(q.clear).filter(([k, v]) => okId(k) && v === 1)) : {};
-      q.stars = isObj(q.stars) ? Object.fromEntries(Object.entries(q.stars).filter(([k, v]) => okId(k) && Number.isInteger(v) && v >= 0 && v <= 3)) : {}; } }
+      q.stars = isObj(q.stars) ? Object.fromEntries(Object.entries(q.stars).filter(([k, v]) => okId(k) && Number.isInteger(v) && v >= 0 && v <= 3)) : {};
+      // 舊存檔的大魔王在第 3 關。只在第一次讀到（沒有 rev）時把「世界已破」記下來，不清掉 1-3…6-3，也不幫新關卡寫過關。
+      const legOk = o => isObj(o) ? Object.fromEntries(Object.entries(o).filter(([k, v]) => /^[1-6]$/.test(String(k)) && v === 1).map(([k]) => [String(k), 1])) : {};
+      if (q.rev !== 2) {
+        const leg = {};
+        for (let w = 1; w <= 6; w++) if (q.clear[w + '-3'] === 1) leg[String(w)] = 1;
+        q.legacy = leg; q.rev = 2;
+      } else q.legacy = legOk(q.legacy); } }
   if (out.vehicles != null) { if (Array.isArray(out.vehicles)) out.vehicles = [...new Set(out.vehicles.filter(v => /^(bike|suv|bus|truck|sports)$/.test(v)))]; else delete out.vehicles; }   // 🚗 買的交通工具
   if (out.ride != null && !(typeof out.ride === 'string' && (out.vehicles || []).includes(out.ride))) delete out.ride;
   if (out.islReq != null && !(isObj(out.islReq) && typeof out.islReq.d === 'string' && /^(shell|bug|fish|flower)$/.test(out.islReq.kind) && typeof out.islReq.npc === 'string')) delete out.islReq;   // 🐻 動物朋友請她幫忙
@@ -12335,7 +12352,7 @@ function openTravelMenu() {
     pick(renderInviteGirl(inv, 64, 58), `🏡 ${inviteWho(inv)}的家${here ? '（你在這裡）' : ''}`, `${inv.f ? inv.n + '・' : ''}邀請卡（${inviteDate(inv.at)}）・房間 ${inv.r.length} 間・寵物 ${inv.pn.length} 隻`, () => (typeof friendByBoat === 'function' && ii < ISL_FRIEND_SPOTS.length ? friendByBoat(ii) : visitFriend(inv)), here);   // 🏡 朋友家在朋友島：一樣坐船過去
   });
   // 🏝️ 闖關送的小島（破完那個世界才有）
-  QUEST_ISLETS.forEach((il, i) => { if (!questState().clear[(i + 1) + '-3']) return; pick(el('div', 'place-emoji', il.icon), `🏝️ ${il.icon} ${typeof isleName === 'function' ? isleName(il.id) : il.name}`, il.desc + `（島主：${charName()}，走到碼頭坐船去）`, () => isletByBoat(il.id), false); });
+  QUEST_ISLETS.forEach((il, i) => { if (!(typeof questWorldDone === 'function' ? questWorldDone(i + 1) : questState().clear[(i + 1) + '-3'])) return; pick(el('div', 'place-emoji', il.icon), `🏝️ ${il.icon} ${typeof isleName === 'function' ? isleName(il.id) : il.name}`, il.desc + `（島主：${charName()}，走到碼頭坐船去）`, () => isletByBoat(il.id), false); });
   if (trickActive()) {
     const tb = el('button', 'big', `🎃 萬聖節集糖卡（${trickCount()} / ${TRICK_HOSTS.length}）`);
     tb.onclick = openTrickCard;
@@ -19283,12 +19300,12 @@ const DAILY_POOL = [
   { id: 'shop', cat: 'home', icon: '🛒', text: '在商店買 1 樣東西', need: 1, go: 'shop' },
   { id: 'decor', cat: 'home', icon: '🛋️', text: '擺放或移動 1 件家具', need: 1, go: 'inv' },
   { id: 'water', cat: 'home', icon: '🌱', text: '幫陽台的花澆一次水', need: 1, go: 'balcony', avail: g => (g.rooms || []).some(r => r.wall === 'wp_balcony' || /陽台/.test(r.name)) },
-  { id: 'isle', cat: 'isle', icon: '🏝️', text: '去小島收成一次', need: 1, go: 'out', avail: g => !!(g.quest && g.quest.clear && g.quest.clear['1-3']) },
+  { id: 'isle', cat: 'isle', icon: '🏝️', text: '去小島收成一次', need: 1, go: 'out', avail: g => !!(typeof questWorldDone === 'function' ? questWorldDone(1) : (g.quest && g.quest.clear && g.quest.clear['1-3'])) },
   { id: 'doctor', cat: 'town', icon: '🏥', text: '去醫院當一次小醫生', need: 1, go: 'out' },
   { id: 'gym', cat: 'sport', icon: '💪', text: '去健身房練一次', need: 1, go: 'out' },
   { id: 'en3', cat: 'learn', icon: '🔤', text: '學 3 個英文單字（點家具卡片上的 🔤）', need: 3, go: 'inv' },
   { id: 'cash', cat: 'learn', icon: '🧾', text: '去餐廳收銀台幫忙找錢一次', need: 1, go: 'out' },
-  { id: 'clue', cat: 'quest', icon: '🌟', text: '去找下一個星光線索（世界闖關大魔王關）', need: 1, go: 'games', avail: g => !!(g.star && g.star.egg && !g.star.hatched && (g.star.got || []).length < 6 && (typeof starNextW !== 'function' || questUnlocked(starNextW() + '-3'))) }
+  { id: 'clue', cat: 'quest', icon: '🌟', text: '去找下一個星光線索（世界闖關大魔王關）', need: 1, go: 'games', avail: g => !!(g.star && g.star.egg && !g.star.hatched && (g.star.got || []).length < 6 && (typeof starNextW !== 'function' || questUnlocked((typeof questBossId === 'function' ? questBossId(starNextW()) : starNextW() + '-3')))) }
 ];
 const DAILY_N = 3, DAILY_EACH = 300, DAILY_BIG_BELLS = 1500;
 function dailyPick(day) {
@@ -22655,13 +22672,14 @@ function islQuestSpecial(o) {
   setTimeout(() => { if (typeof openIsleMenu === 'function' && isl) openIsleMenu(o.id); }, 600);
 }
 /* ===== 🗺️ 世界任務（家長：像瑪利歐那樣闖關，闖過了小島變多）=====
-   ・3 個世界 × 3 關：🌿 草原、🏖️ 沙灘、🌲 森林；第 3 關有大史萊姆王。
+   ・6 個世界 × 5 關：大魔王在每一個世界的最後一關（1-5、2-5…）。以前的 1-3…6-3 還在，星星、過關旗標不清掉。
    ・兩種玩法（每個存檔自己記）：
        🐣 簡單（妹妹）：一樣自己 ◀ ▶ 走（家長：不要自動往前跑了）；碰到怪物只會被彈開、掉下去會有泡泡接回來，一定過得了關。
-       🦸 一般（姊姊）：←→ 走、跳（按久跳比較高），3 顆愛心，碰到怪物或掉下去少一顆，沒了就重來。
+       🦸 一般（姊姊）：←→ 走、跳（按久跳比較高），怪物走快一點、多一隻，3 顆愛心，碰到怪物或掉下去少一顆，沒了就重來。
+   ・磚塊可以頂、頂破（有時金幣或道具）；藤蔓爬上雲；會動的台子；水管進祕密房間；沙灘可以游泳（企鵝泳衣）。
    ・每關有 3 顆星星可以收集；金幣換成錢。
-   ・破完一個世界：海上多一座新小島（🌸 花花島、🍬 糖果島、🦕 恐龍島），走木橋過去。
-   ・進度存在 G.quest = { mode, clear: {'1-1': 1}, stars: {'1-1': 2} } */
+   ・破完一個世界（最後一關）：海上多一座新小島（🌸 花花島、🍬 糖果島、🦕 恐龍島）。更新前已破第 3 關的，小島維持開放。
+   ・進度存在 G.quest = { mode, clear: {'1-1': 1}, stars: {'1-1': 2}, rev, legacy } */
 const QT = 18, QH = 15, QVW = 480, QVH = 270;   // 一格 18 點；關卡高 15 格；畫面 480×270
 const QUEST_WORLDS = [
   { id: 1, name: '草原世界', icon: '🌿', sky: ['#9fd8ff', '#e8f7ff'], hill: '#8fd18f', hill2: '#6cbf7c', top: '#5fbf4f', dirt: '#b9824f', enemy: 'slime', islet: 'flower' },
@@ -22672,27 +22690,38 @@ const QUEST_WORLDS = [
   { id: 5, name: '天空世界', icon: '☁️', sky: ['#9fd8ff', '#ffe6f2'], hill: '#ffffff', hill2: '#ffeaf4', top: '#ffffff', dirt: '#dfe9ff', enemy: 'slime', bees: true, cloud: true },
   { id: 6, name: '城堡世界', icon: '🏰', sky: ['#3a2a3f', '#7a4a5a'], hill: '#4a3a50', hill2: '#3a2c40', top: '#8a8f96', dirt: '#5a5560', enemy: 'turtle', castle: true }
 ];
-// 每一關由幾段組成（數字是難度：越大坑越寬、怪越多）。* 會放一顆星星，每關剛好 3 顆。
-// 經典 1-1…6-3 加長時只加「有事情做」的段落（打磚、藤蔓、雲、踢殼、水管房），不要拿空地灌長度。
+// 每一關由幾段組成（數字是難度：越大坑越寬、怪越多）
 const QUEST_LEVELS = {
-  '1-1': ['start', 'power', 'brickline', 'flat', 'hidden', 'blocks*', 'vine', 'enemy1', 'gap2', 'staircoin', 'flat', 'step', 'check', 'parade', 'enemy1', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'kickline', 'alcove', 'pipehouse', 'check', 'goal'],
-  '1-2': ['start', 'power', 'brickline', 'enemy1', 'vine', 'gap2', 'blocks*', 'staircoin', 'hill', 'pipe', 'parade', 'enemy2', 'check', 'plat*', 'skyhop', 'gap3', 'step', 'spring*', 'cloudgap', 'kickline', 'alcove', 'enemy1', 'pipehouse', 'goal'],
-  '1-3': ['start', 'power', 'brickline', 'blocks*', 'vine', 'enemy2', 'gap3', 'staircoin', 'check', 'parade', 'plat*', 'skyhop', 'hill', 'spring*', 'cloudgap', 'kickline', 'alcove', 'pipehouse', 'enemy2', 'boss'],
-  '2-1': ['start', 'power', 'brickline', 'flat', 'hidden', 'vine', 'enemy1', 'gap2', 'blocks*', 'staircoin', 'spikes', 'check', 'parade', 'plat*', 'skyhop', 'enemy2', 'spring*', 'cloudgap', 'kickline', 'alcove', 'gap3', 'pipehouse', 'goal'],
+  '1-1': ['start', 'power', 'flat', 'hidden', 'blocks*', 'enemy1', 'brickline', 'gap2', 'vine', 'staircoin', 'flat', 'step', 'check', 'parade', 'enemy1', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'kickline', 'alcove', 'pipehouse', 'check', 'goal'],
+  '1-2': ['start', 'power', 'enemy1', 'brickline', 'vine', 'gap2', 'blocks*', 'staircoin', 'hill', 'pipe', 'parade', 'enemy2', 'check', 'plat*', 'skyhop', 'gap3', 'step', 'spring*', 'cloudgap', 'kickline', 'alcove', 'enemy1', 'pipehouse', 'goal'],
+  '1-3': ['start', 'power', 'brickline', 'blocks*', 'enemy2', 'gap3', 'staircoin', 'check', 'parade', 'plat*', 'skyhop', 'hill', 'spring*', 'cloudgap', 'vine*', 'kickline', 'alcove', 'pipehouse', 'enemy2', 'goal'],
+  '1-4': ['start', 'power', 'brow*', 'vine*', 'enemy1', 'gap2', 'pipe', 'mplat', 'check', 'hidden', 'uplat', 'spring*', 'goal'],
+  '1-5': ['start', 'power', 'blocks*', 'enemy2', 'gap3', 'check', 'plat*', 'hill', 'spring*', 'enemy2', 'boss'],
+  '2-1': ['start', 'power', 'flat', 'hidden', 'enemy1', 'brickline', 'gap2', 'blocks*', 'staircoin', 'spikes', 'check', 'parade', 'plat*', 'skyhop', 'enemy2', 'spring*', 'cloudgap', 'kickline', 'alcove', 'gap3', 'pipehouse', 'vine', 'goal'],
   '2-2': ['start', 'power', 'brickline', 'enemy2', 'vine', 'gap3', 'blocks*', 'spikes', 'staircoin', 'pipe', 'hill', 'check', 'parade', 'plat*', 'skyhop', 'enemy2', 'gap3', 'spring*', 'cloudgap', 'kickline', 'alcove', 'step', 'pipehouse', 'goal'],
-  '2-3': ['start', 'power', 'brickline', 'blocks*', 'vine', 'spikes', 'enemy2', 'staircoin', 'check', 'parade', 'gap3', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'kickline', 'alcove', 'pipehouse', 'enemy2', 'boss'],
-  '3-1': ['start', 'power', 'brickline', 'flat', 'hidden', 'vine', 'bees', 'beeweave', 'gap2', 'blocks*', 'staircoin', 'enemy2', 'check', 'parade', 'plat*', 'skyhop', 'bees', 'spring*', 'cloudgap', 'kickline', 'alcove', 'gap3', 'pipehouse', 'goal'],
+  '2-3': ['start', 'power', 'brickline', 'blocks*', 'spikes', 'enemy2', 'staircoin', 'check', 'gap3', 'parade', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'swim*', 'kickline', 'alcove', 'pipehouse', 'enemy2', 'goal'],
+  '2-4': ['start', 'power', 'swim*', 'wpipe', 'brow*', 'enemy1', 'check', 'mplat', 'vine*', 'spring*', 'goal'],
+  '2-5': ['start', 'swim', 'power', 'blocks*', 'enemy2', 'check', 'gap3', 'plat*', 'spring*', 'boss'],
+  '3-1': ['start', 'power', 'flat', 'hidden', 'vine', 'bees', 'beeweave', 'gap2', 'blocks*', 'staircoin', 'enemy2', 'check', 'parade', 'plat*', 'skyhop', 'bees', 'spring*', 'cloudgap', 'kickline', 'alcove', 'gap3', 'pipehouse', 'brickline', 'goal'],
   '3-2': ['start', 'power', 'brickline', 'bees', 'vine', 'gap3', 'blocks*', 'beeweave', 'spikes', 'staircoin', 'pipe', 'enemy2', 'check', 'parade', 'plat*', 'skyhop', 'bees', 'hill', 'spring*', 'cloudgap', 'kickline', 'alcove', 'gap3', 'pipehouse', 'goal'],
-  '3-3': ['start', 'power', 'brickline', 'bees', 'vine', 'blocks*', 'beeweave', 'enemy2', 'check', 'parade', 'gap3', 'plat*', 'skyhop', 'spikes', 'spring*', 'cloudgap', 'kickline', 'alcove', 'bees', 'pipehouse', 'boss'],
+  '3-3': ['start', 'power', 'brickline', 'bees', 'blocks*', 'beeweave', 'enemy2', 'check', 'parade', 'gap3', 'plat*', 'skyhop', 'spikes', 'spring*', 'cloudgap', 'vine*', 'kickline', 'alcove', 'pipehouse', 'goal'],
+  '3-4': ['start', 'power', 'vine*', 'bees', 'brow*', 'pipe', 'gap2', 'check', 'mplat', 'hidden', 'spring*', 'goal'],
+  '3-5': ['start', 'power', 'bees', 'blocks*', 'enemy2', 'check', 'gap3', 'plat*', 'spring*', 'boss'],
   '4-1': ['start', 'flat', 'power', 'brickline', 'vine', 'enemy1', 'iceglide', 'gap2', 'shell', 'staircoin', 'check', 'hidden', 'parade', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'kickline', 'blocks*', 'alcove', 'pipehouse', 'goal'],
   '4-2': ['start', 'enemy2', 'power', 'brickline', 'vine', 'gap3', 'iceglide', 'pipe', 'staircoin', 'check', 'blocks*', 'parade', 'shell', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'kickline', 'alcove', 'gap2', 'pipehouse', 'goal'],
-  '4-3': ['start', 'power', 'brickline', 'blocks*', 'vine', 'enemy2', 'iceglide', 'check', 'parade', 'shell', 'gap3', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'kickline', 'alcove', 'pipehouse', 'enemy2', 'boss'],
+  '4-3': ['start', 'power', 'brickline', 'blocks*', 'vine', 'enemy2', 'iceglide', 'check', 'parade', 'shell', 'gap3', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'vine*', 'kickline', 'alcove', 'pipehouse', 'goal'],
+  '4-4': ['start', 'power', 'shell', 'vine*', 'gap2', 'check', 'brow*', 'mplat', 'pipe', 'spring*', 'goal'],
+  '4-5': ['start', 'power', 'blocks*', 'enemy2', 'shell', 'check', 'gap3', 'plat*', 'spring*', 'boss'],
   '5-1': ['start', 'flat', 'power', 'brickline', 'mplat', 'vine', 'enemy1', 'skyhop', 'check', 'plat*', 'cloudgap', 'hidden', 'parade', 'mplat', 'staircoin', 'blocks*', 'spring*', 'kickline', 'alcove', 'pipehouse', 'goal'],
   '5-2': ['start', 'bees', 'power', 'brickline', 'mplat', 'vine', 'blocks*', 'beeweave', 'pipe', 'staircoin', 'check', 'parade', 'shell', 'mplat', 'skyhop', 'plat*', 'cloudgap', 'spring*', 'kickline', 'alcove', 'pipehouse', 'goal'],
-  '5-3': ['start', 'power', 'brickline', 'blocks*', 'vine', 'mplat', 'skyhop', 'check', 'bees', 'beeweave', 'plat*', 'cloudgap', 'mplat', 'spring*', 'parade', 'kickline', 'alcove', 'pipehouse', 'enemy2', 'boss'],
+  '5-3': ['start', 'power', 'brickline', 'blocks*', 'mplat', 'skyhop', 'check', 'bees', 'beeweave', 'plat*', 'cloudgap', 'mplat', 'vine*', 'spring*', 'parade', 'kickline', 'alcove', 'pipehouse', 'goal'],
+  '5-4': ['start', 'power', 'mplat', 'vine*', 'bees', 'check', 'brow*', 'hidden', 'mplat', 'uplat', 'spring*', 'goal'],
+  '5-5': ['start', 'power', 'blocks*', 'mplat', 'check', 'bees', 'plat*', 'mplat', 'spring*', 'enemy2', 'boss'],
   '6-1': ['start', 'power', 'brickline', 'enemy1', 'vine', 'lava', 'lavahop', 'blocks*', 'staircoin', 'check', 'parade', 'shell', 'lava', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'kickline', 'alcove', 'pipehouse', 'goal'],
   '6-2': ['start', 'power', 'brickline', 'lava', 'lavahop', 'shell', 'vine', 'blocks*', 'pipe', 'staircoin', 'check', 'parade', 'enemy2', 'lava', 'plat*', 'skyhop', 'hidden', 'spring*', 'cloudgap', 'kickline', 'alcove', 'pipehouse', 'goal'],
-  '6-3': ['start', 'power', 'brickline', 'blocks*', 'vine', 'lava', 'lavahop', 'shell', 'check', 'parade', 'enemy2', 'lava', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'kickline', 'alcove', 'pipehouse', 'boss']
+  '6-3': ['start', 'power', 'brickline', 'blocks*', 'lava', 'lavahop', 'shell', 'check', 'parade', 'enemy2', 'lava', 'plat*', 'skyhop', 'vine*', 'spring*', 'cloudgap', 'kickline', 'alcove', 'pipehouse', 'goal'],
+  '6-4': ['start', 'power', 'lava', 'brow*', 'shell', 'check', 'pipe', 'vine*', 'spring*', 'goal'],
+  '6-5': ['start', 'power', 'blocks*', 'lava', 'shell', 'check', 'enemy2', 'lava', 'plat*', 'spring*', 'boss']
 };
 const QUEST_IDS = Object.keys(QUEST_LEVELS);
 const QUEST_WORLD_PRIZE = 10000;   // 世界 4～6 破關獎金（家長：改成 10,000 元；直接給，不再乘倍數）
@@ -22701,13 +22730,29 @@ function questState() {
   if (q.mode !== 'easy' && q.mode !== 'normal') q.mode = 'easy';
   if (!q.clear || typeof q.clear !== 'object') q.clear = {};
   if (!q.stars || typeof q.stars !== 'object') q.stars = {};
+  // 新遊戲一進來就蓋 rev，之後才破的第 3 關不會被當成「舊版已經破關」。舊存檔在 normalizeSave 裡已經記過 legacy。
+  if (q.rev !== 2) {
+    const leg = {};
+    for (let w = 1; w <= 6; w++) if (q.clear[w + '-3'] === 1) leg[String(w)] = 1;
+    q.legacy = leg; q.rev = 2;
+  } else if (!q.legacy || typeof q.legacy !== 'object') q.legacy = {};
   return q;
 }
-function questWorldsCleared() { const q = questState(); return [1, 2, 3].filter(w => q.clear[w + '-3']).length; }   // 只有前三個世界送小島
-function questUnlocked(id) { const i = QUEST_IDS.indexOf(id); return i === 0 || !!questState().clear[QUEST_IDS[i - 1]]; }
+function questIdsOf(w) { return QUEST_IDS.filter(id => +id.split('-')[0] === +w); }
+function questBossId(w) { const a = questIdsOf(w); return a.length ? a[a.length - 1] : (w + '-3'); }
+function questIsBoss(id) { return !!id && questBossId(+String(id).split('-')[0]) === id; }
+function questWorldDone(w) {
+  const q = questState();
+  if (q.clear[questBossId(w)]) return true;
+  const leg = q.legacy;
+  return !!(leg && (leg[w] === 1 || leg[String(w)] === 1));
+}
+function questWorldsCleared() { return [1, 2, 3].filter(w => questWorldDone(w)).length; }   // 只有前三個世界送小島（看最後一關，或更新前已破的世界）
+function questUnlocked(id) { const q = questState(); if (q.clear[id]) return true; const i = QUEST_IDS.indexOf(id); return i === 0 || !!q.clear[QUEST_IDS[i - 1]]; }
 // 把一段一段拼成一張關卡（grid[y][x] 一個字）
 function questBuild(id, easy) {   // easy：簡單模式的坑窄一格（家長：這邊太容易掉下去了）
-  const segs = QUEST_LEVELS[id], g = [], W = 460, pipes = [];
+  const segs = QUEST_LEVELS[id], g = [], W = 460, pipes = [], waterPipes = [];
+  const brickKind = xx => { const k = Math.abs(xx * 5 + 1) % 6; return k === 0 ? 'N' : k === 1 ? 'R' : k === 2 ? '?' : 'B'; };
   for (let y = 0; y < QH; y++) g.push(Array(W).fill(' '));
   let x = 0;
   const put = (xx, y, c) => { if (xx >= 0 && xx < W && y >= 0 && y < QH) g[y][xx] = c; };
@@ -22717,8 +22762,8 @@ function questBuild(id, easy) {   // easy：簡單模式的坑窄一格（家長
     const star = sg.endsWith('*'), s = sg.replace('*', '');
     if (s === 'start') { ground(x, x + 10); x += 10; }
     else if (s === 'flat') { ground(x, x + 10); coins(x + 3, 4); x += 10; }
-    else if (s === 'blocks') { ground(x, x + 12); put(x + 3, 9, '='); put(x + 4, 9, '?'); put(x + 5, 9, '='); put(x + 6, 9, '?'); put(x + 7, 9, '='); if (star) put(x + 5, 6, 's'); x += 12; }
-    else if (/^enemy/.test(s)) { const n = +s.slice(5) || 1; ground(x, x + 12); for (let i = 0; i < n; i++) put(x + 5 + i * 4, 12, 'e'); coins(x + 2, 3, 10); x += 12; }
+    else if (s === 'blocks' || s === 'brow') { ground(x, x + 12); for (let i = 0; i < 5; i++) put(x + 3 + i, 9, brickKind(x + 3 + i)); if (!easy && s === 'brow') { for (let i = 0; i < 3; i++) put(x + 4 + i, 6, i === 1 ? 'N' : 'B'); put(x + 8, 12, 'e'); } if (star) put(x + 5, 5, 's'); x += 12; }
+    else if (/^enemy/.test(s)) { const n = +s.slice(5) || 1; ground(x, x + 12); for (let i = 0; i < n; i++) put(x + 5 + i * 4, 12, 'e'); if (!easy && n >= 2) put(x + 2, 12, 'e'); coins(x + 2, 3, 10); x += 12; }
     else if (/^gap/.test(s)) { const w = Math.max(2, (+s.slice(3) || 2) - (easy ? 1 : 0));   /* 最窄 2 格（1 格的洞剛好會掉進去） */ ground(x, x + 3); for (let i = 0; i <= w + 1; i++) put(x + 3 + i, 9 + Math.round(Math.abs(i - (w + 1) / 2)), 'o'); x += 3 + w; ground(x, x + 3); x += 3; }
     else if (s === 'step') { ground(x, x + 12); for (let i = 0; i < 3; i++) for (let y = 12 - i; y < 13; y++) { put(x + 3 + i, y, '='); put(x + 9 - i, y, '='); } put(x + 6, 9, 'o'); x += 12; }
     else if (s === 'hill') { ground(x, x + 3); ground(x + 3, x + 9, 10); coins(x + 4, 4, 8); ground(x + 9, x + 12); x += 12; }
@@ -22736,60 +22781,53 @@ function questBuild(id, easy) {   // easy：簡單模式的坑窄一格（家長
     else if (s === 'shell') { ground(x, x + 12); put(x + 6, 12, 't'); coins(x + 2, 3, 10); x += 12; }   // 烏龜：踩一下變殼，再碰一下就踢出去
     else if (s === 'mplat') { const w = easy ? 3 : 4; ground(x, x + 3); put(x + 3, 10, 'p'); x += 3 + w; ground(x, x + 3); x += 3; }   // 坑上面有一朵會左右動的雲
     else if (s === 'lava') { const w = easy ? 2 : 3; ground(x, x + 3); for (let i = 0; i < w; i++) { put(x + 3 + i, 13, 'L'); put(x + 3 + i, 14, 'L'); } put(x + 3 + (w >> 1), 12, 'v'); x += 3 + w; ground(x, x + 3); x += 3; }   // 岩漿坑，會跳出火球
-    // ── 加長用的段落：每一段都有事情做（打磚、爬藤、踩雲、踢殼、找隱藏房）──
-    else if (s === 'brickline') {   // 一排打得掉的磚：金幣、問號、道具，上面再藏一顆。先跳再頂。
+    else if (s === 'vine') { ground(x, x + 14); for (let y = 3; y <= 9; y++) put(x + 4, y, 'V'); for (let i = 0; i < 4; i++) put(x + 5 + i, 4, '-'); if (star) put(x + 7, 2, 's'); coins(x + 9, 3, 7); x += 14; }   // 藤蔓：按住跳往上爬，爬到雲上
+    else if (s === 'swim') { ground(x, x + 18); for (let xx = x + 2; xx < x + 16; xx++) for (let y = 10; y <= 12; y++) put(xx, y, 'W'); for (let i = 0; i < 4; i++) put(x + 4 + i * 3, 11, 'o'); put(x + 10, 10, 'n'); if (star) put(x + 8, 8, 's'); x += 18; }   // 水池：地板還在，走過去就游泳
+    else if (s === 'wpipe') { ground(x, x + 12); for (let y = 11; y < 13; y++) { put(x + 5, y, 'U'); put(x + 6, y, 'U'); } waterPipes.push(x + 5); x += 12; }   // 藍色水管：進水裡的祕密房間
+    else if (s === 'uplat') { ground(x, x + 10); put(x + 5, 8, 'Y'); if (star) put(x + 5, 4, 's'); x += 10; }   // 上下動的雲，在頭上，不擋路
+    // ── 舊關加長：每段都有事情做。磚的規則跟現在一樣（變大才打得破；N 一定有金幣）。怪都放在地面，不擋路。──
+    else if (s === 'brickline') {
       ground(x, x + 14);
-      for (let i = 2; i <= 9; i++) put(x + i, 9, i === 4 ? '?' : i === 6 ? 'M' : 'B');
-      put(x + 5, 6, 'H');
-      put(x + 3, 10, 'o'); put(x + 5, 10, 'o'); put(x + 7, 10, 'o'); put(x + 8, 7, 'o'); put(x + 9, 7, 'o');
+      for (let i = 2; i <= 9; i++) put(x + i, 9, i === 4 ? '?' : i === 6 ? 'M' : i === 8 ? 'N' : 'B');
+      put(x + 3, 10, 'o'); put(x + 5, 10, 'o'); put(x + 7, 10, 'o'); put(x + 8, 7, 'o');
       put(x + 12, 12, 'e');
       x += 14;
     }
-    else if (s === 'vine') {   // 藤蔓從高台垂下來。跳起來抓住、按住跳往上爬。簡單模式多兩層雲，不爬也上得去。
-      ground(x, x + 16);
-      for (let i = 8; i <= 14; i++) put(x + i, 5, '=');
-      put(x + 10, 4, 'o'); put(x + 11, 4, 'o'); put(x + 12, 4, 'o'); put(x + 13, 4, 'o');
-      put(x + 11, 2, 'M');   // 站在高台上，頭不會卡進這顆磚，跳一下就頂得到
-      for (let y = 6; y <= 10; y++) put(x + 7, y, 'V');
-      if (easy) { for (let i = 0; i < 3; i++) put(x + 3 + i, 11, '-'); for (let i = 0; i < 2; i++) put(x + 5 + i, 8, '-'); }
-      put(x + 3, 12, 'e'); put(x + 4, 10, 'o'); put(x + 5, 10, 'o');
-      x += 16;
-    }
-    else if (s === 'staircoin') {   // 跟原本的階梯一樣爬得上去，階梯頂接一段打得掉的路，再上面是問號和道具。
+    else if (s === 'staircoin') {
       ground(x, x + 16);
       for (let i = 0; i < 3; i++) for (let y = 12 - i; y <= 12; y++) { put(x + 2 + i, y, '='); put(x + 10 - i, y, '='); }
       put(x + 5, 10, 'B'); put(x + 6, 10, 'B'); put(x + 7, 10, 'B');
-      put(x + 5, 7, '?'); put(x + 6, 7, 'B'); put(x + 7, 7, 'M');
+      put(x + 5, 7, '?'); put(x + 6, 7, 'N'); put(x + 7, 7, 'M');
       put(x + 4, 8, 'o'); put(x + 8, 8, 'o');
       put(x + 13, 12, 'e');
       x += 16;
     }
-    else if (s === 'skyhop') {   // 低空雲朵可以走過去；上面還有金幣。一般模式中間多一朵會動、比較高的雲。
+    else if (s === 'skyhop') {
       ground(x, x + 3);
       for (let i = 0; i < 4; i++) { put(x + 4 + i, 11, '-'); put(x + 4 + i, 9, 'o'); }
       put(x + 6, easy ? 11 : 8, 'c');
-      if (!easy) { put(x + 5, 7, 'o'); put(x + 6, 7, 'o'); put(x + 7, 7, 'o'); }
+      if (!easy) { put(x + 5, 7, 'o'); put(x + 7, 7, 'o'); }
       x += 10; ground(x, x + 3); x += 3;
     }
-    else if (s === 'parade') {   // 一隻一隻來：先踩地上的，跳過矮牆，再踩下一隻。一般模式最後一隻站在磚上。
+    else if (s === 'parade') {
       ground(x, x + 16);
       put(x + 3, 12, 'e');
       put(x + 6, 12, '='); put(x + 6, 11, '=');
       put(x + 7, 10, 'o'); put(x + 8, 10, 'o');
       put(x + 10, 12, 'e');
-      if (!easy) { put(x + 12, 11, '='); put(x + 13, 12, 'e'); }   // 矮牆隔開第三隻，都站在地上（跳過去再踩）
+      if (!easy) { put(x + 12, 11, '='); put(x + 13, 12, 'e'); }
       else { put(x + 13, 10, 'o'); put(x + 14, 10, 'o'); }
       x += 16;
     }
-    else if (s === 'cloudgap') {   // 小坑兩邊各一朵會動的雲，對向來回。坑不比原本的 gap 寬，雲是給想抄近路、撿高處金幣的人。
+    else if (s === 'cloudgap') {
       const w = easy ? 2 : 3;
       ground(x, x + 4);
-      put(x + 4, 11, 'c');
-      put(x + 4 + w - 1, easy ? 11 : 10, 'n');
+      put(x + 4, 11, 'p');
+      put(x + 4 + w - 1, easy ? 11 : 10, 'c');
       for (let i = 0; i < w; i++) put(x + 4 + i, 8, 'o');
       x += 4 + w; ground(x, x + 4); x += 4;
     }
-    else if (s === 'kickline') {   // 前面一隻烏龜，後面排好小怪：踩一下變殼，再踢過去。簡單模式少一隻。
+    else if (s === 'kickline') {
       ground(x, x + 16);
       put(x + 2, 12, 't');
       const n = easy ? 2 : 3;
@@ -22798,28 +22836,27 @@ function questBuild(id, easy) {   // easy：簡單模式的坑窄一格（家長
       put(x + 15, 11, '='); put(x + 15, 12, '=');
       x += 16;
     }
-    else if (s === 'alcove') {   // 頭頂是打得掉的地板，頂開才進得了上面的金幣房。旁邊還有一顆隱藏磚。
+    else if (s === 'alcove') {
       ground(x, x + 16);
       put(x + 2, 5, '='); put(x + 11, 5, '=');
       for (let yy = 6; yy <= 8; yy++) { put(x + 2, yy, '='); put(x + 11, yy, '='); }
-      for (let i = 3; i <= 10; i++) put(x + i, 5, '=');
+      for (let i = 3; i <= 10; i++) put(x + i, 5, i === 7 ? 'M' : '=');
       for (let i = 3; i <= 10; i++) put(x + i, 8, 'B');
       for (let i = 3; i <= 10; i++) { put(x + i, 6, 'o'); put(x + i, 7, 'o'); }
-      put(x + 7, 5, 'M');   // 道具在天花板，進房之後跳一下才拿得到，不會卡在身體裡
-      put(x + 13, 9, 'H');
+      put(x + 13, 9, 'N'); put(x + 14, 9, 'H');
       x += 16;
     }
-    else if (s === 'pipehouse') {   // 高一點的水管（按 ⬇ 進祕密房間），從水管頂跳上打得掉的屋頂，屋頂有道具。
+    else if (s === 'pipehouse') {
       ground(x, x + 14);
       for (let y = 10; y < 13; y++) { put(x + 4, y, 'P'); put(x + 5, y, 'P'); }
       pipes.push(x + 4);
-      for (let i = 7; i <= 11; i++) put(x + i, 8, i === 9 ? 'M' : 'B');
+      for (let i = 7; i <= 11; i++) put(x + i, 8, i === 9 ? 'M' : i === 8 ? 'N' : 'B');
       put(x + 9, 6, 'o'); put(x + 10, 6, 'o');
       if (easy) { put(x + 6, 11, '-'); put(x + 7, 10, '-'); }
       put(x + 12, 12, 'e');
       x += 14;
     }
-    else if (s === 'beeweave') {   // 雲朵橋。站在雲上蜜蜂碰不到；跳起來抄近路才會遇到。一般模式坑比較寬，簡單模式蜜蜂貼在天上。
+    else if (s === 'beeweave') {
       ground(x, x + 3);
       const span = easy ? 7 : 9;
       for (let i = 0; i < 3; i++) { put(x + 3 + i, 11, '-'); put(x + 3 + i, 9, 'o'); }
@@ -22827,7 +22864,7 @@ function questBuild(id, easy) {   // easy：簡單模式的坑窄一格（家長
       for (let i = 0; i < 3; i++) { put(x + span + i, 11, '-'); put(x + span + i, 9, 'o'); }
       x += 3 + span; ground(x, x + 3); x += 3;
     }
-    else if (s === 'iceglide') {   // 雪地：金幣在半空，落地前有一隻烏龜。後面一個小坑，簡單模式坑邊多一朵雲。
+    else if (s === 'iceglide') {
       ground(x, x + 11);
       for (let i = 0; i < 4; i++) put(x + 2 + i, 10, 'o');
       put(x + 8, 12, 't');
@@ -22837,12 +22874,12 @@ function questBuild(id, easy) {   // easy：簡單模式的坑窄一格（家長
       for (let i = 0; i < w; i++) put(x + i, 9, 'o');
       x += w; ground(x, x + 5); x += 5;
     }
-    else if (s === 'lavahop') {   // 兩段岩漿中間一座有金幣磚的小島。簡單模式沒有火球，第二段坑邊有雲。
+    else if (s === 'lavahop') {
       const w = easy ? 2 : 3;
       const lava = at => { for (let i = 0; i < w; i++) { put(at + i, 13, 'L'); put(at + i, 14, 'L'); } if (!easy) put(at + (w >> 1), 12, 'v'); };
       ground(x, x + 3); lava(x + 3); x += 3 + w;
       ground(x, x + 5);
-      put(x + 1, 9, '?'); put(x + 2, 9, 'B'); put(x + 3, 9, 'B');
+      put(x + 1, 9, '?'); put(x + 2, 9, 'B'); put(x + 3, 9, 'N');
       put(x + 1, 7, 'o'); put(x + 2, 7, 'o'); put(x + 3, 7, 'o');
       x += 5;
       if (easy) put(x - 1, 11, '-');
@@ -22851,18 +22888,22 @@ function questBuild(id, easy) {   // easy：簡單模式的坑窄一格（家長
     }
   });
   let width = x, bonusX = 0;
-  if (pipes.length) {   // 🟢 祕密房間：接在關卡最後面（牆擋住走不進去，只能從水管進來），裡面好多金幣，右邊的水管回去
+  const waterRoom = waterPipes.length > 0 && !pipes.length;
+  if (pipes.length || waterPipes.length) {   // 🟢 祕密房間：接在關卡最後面（牆擋住走不進去，只能從水管進來）
     bonusX = x + 1; for (let y = 0; y < 13; y++) put(bonusX, y, '#');
     ground(bonusX + 1, bonusX + 20); for (let xx = bonusX + 1; xx < bonusX + 20; xx++) put(xx, 2, '#'); put(bonusX + 19, 3, '#');
     for (let y = 3; y < 13; y++) put(bonusX + 19, y, '#');
     for (let i = 0; i < 12; i++) { put(bonusX + 3 + i, 7, 'o'); put(bonusX + 3 + i, 9, 'o'); put(bonusX + 3 + i, 11, 'o'); }
-    for (let i = 0; i < 6; i++) put(bonusX + 3 + i, 5, i === 3 ? 'M' : 'B');   // 跳起來打掉的一排，中間是道具
-    for (let y = 4; y <= 9; y++) put(bonusX + 13, y, 'V');   // 爬上去才拿得到角落的金幣
-    put(bonusX + 14, 4, 'o'); put(bonusX + 15, 4, 'o');
     for (let y = 11; y < 13; y++) { put(bonusX + 16, y, 'Q'); put(bonusX + 17, y, 'Q'); }
+    if (!waterRoom) {   // 一般祕密房間多一排磚和一根藤；水裡的房間維持原本的滿水
+      for (let i = 0; i < 6; i++) put(bonusX + 3 + i, 5, i === 3 ? 'M' : 'B');
+      for (let y = 4; y <= 9; y++) put(bonusX + 13, y, 'V');
+      put(bonusX + 14, 4, 'o'); put(bonusX + 15, 4, 'o');
+    }
+    if (waterRoom) for (let yy = 3; yy < 13; yy++) for (let xx = bonusX + 2; xx < bonusX + 16; xx++) if (g[yy][xx] === ' ') g[yy][xx] = 'W';
     width = bonusX + 20;
   }
-  return { g: g.map(r => r.slice(0, width)), W: width, pipes, bonusX };
+  return { g: g.map(r => r.slice(0, width)), W: width, pipes, waterPipes, bonusX, waterRoom };
 }
 function openQuestMap() {
   if (typeof closeIsland === 'function' && isl) { /* 從小島按的：先留著小島，關掉闖關回到小島 */ }
@@ -22875,20 +22916,20 @@ function openQuestMap() {
   card.appendChild(modes);
   QUEST_WORLDS.forEach(wd => {
     const row = el('div', 'quest-world'), head = el('div', 'quest-wh');
-    const done = q.clear[wd.id + '-3'];
+    const done = questWorldDone(wd.id);
     head.append(el('span', 'quest-wi', wd.icon), el('b', '', `世界 ${wd.id}　${wd.name}`), el('span', 'quest-prize', QUEST_ISLETS[wd.id - 1] ? (done ? `✅ ${QUEST_ISLETS[wd.id - 1].icon} ${QUEST_ISLETS[wd.id - 1].name}開放了` : `🏝️ 破關送：${QUEST_ISLETS[wd.id - 1].icon} ${QUEST_ISLETS[wd.id - 1].name}`) : (done ? `✅ 🏆 拿到${wd.name}獎盃了` : `🏆 破關送：${wd.name}獎盃＋💰 ${fmt(QUEST_WORLD_PRIZE)}`)));
     row.appendChild(head);
-    const lv = el('div', 'quest-lvs');
-    [1, 2, 3].forEach(n => {
-      const id = wd.id + '-' + n, open = questUnlocked(id), st = q.stars[id] || 0;
+    const lv = el('div', 'quest-lvs'), boss = questBossId(wd.id);
+    questIdsOf(wd.id).forEach(id => {
+      const open = questUnlocked(id), st = q.stars[id] || 0;
       const b = el('button', 'quest-lv' + (open ? '' : ' locked') + (q.clear[id] ? ' done' : ''));
-      b.append(el('b', '', open ? (n === 3 ? '👑 ' : '') + id : '🔒'), el('span', '', open ? '★'.repeat(st) + '☆'.repeat(3 - st) : '還沒開'));
+      b.append(el('b', '', open ? (id === boss ? '👑 ' : '') + id : '🔒'), el('span', '', open ? '★'.repeat(st) + '☆'.repeat(3 - st) : '還沒開'));
       b.disabled = !open; b.onclick = () => playQuest(id);
       lv.appendChild(b);
     });
     row.appendChild(lv); card.appendChild(row);
   });
-  card.appendChild(note('過關有錢可以拿；每關有 3 顆星星，找找看藏在哪裡！'));
+  card.appendChild(note('過關有錢可以拿；每關有 3 顆星星，找找看藏在哪裡！每一個世界多了新關卡，大魔王在最後一關。以前過關的紀錄都還在。'));
   $('#modal').hidden = false;
 }
 const QPET_MOVES = {
@@ -22957,23 +22998,23 @@ function playQuest(id, opt) {
   w.stage.append(pauseB, pauseOv);
   const L = questBuild(id, easy), lvW = L.W * QT;
   const tileAt = (tx, ty) => (tx < 0 || tx >= L.W) ? '#' : (ty < 0 || ty >= QH) ? ' ' : L.g[ty][tx];
-  const solid = ch => ch === '#' || ch === '=' || ch === '?' || ch === 'u' || ch === 'M' || ch === 'P' || ch === 'Q' || ch === 'B';
-  const ents = [], items = [], plats = [], fbs = [], rain = [], puddles = [], bolts = [];   // rain／puddles／bolts：烏雲大王的雨滴、水窪、閃電
+  const solid = ch => ch === '#' || ch === '=' || ch === '?' || ch === 'u' || ch === 'M' || ch === 'P' || ch === 'Q' || ch === 'U' || ch === 'B' || ch === 'N' || ch === 'R';
+  const ents = [], items = [], plats = [], fbs = [], rain = [], puddles = [], bolts = [], bumps = [], bits = [];   // bumps／bits：磚塊被頂一下、被頂破的碎片
   const ckPhase = (en, hp) => hp > en.hpMax * 2 / 3 ? 1 : hp > en.hpMax / 3 ? 2 : 3;
   let bossHome = null;
   const bossFire = [];   // 一般模式大魔王噴的火球
   let boss = null, startX = 2 * QT, checkX = startX;
   L.g.forEach((r, y) => r.forEach((ch, x) => {
     const px = x * QT, py = y * QT;
-    if (ch === 'e') { ents.push({ k: wd.enemy, x: px, y: py + QT - 14, w: 16, h: 14, vx: -30, alive: true }); r[x] = ' '; }
-    if (ch === 't') { ents.push({ k: 'turtle', x: px, y: py + QT - 16, w: 16, h: 16, vx: -28, alive: true }); r[x] = ' '; }
-    if (ch === 'p' || ch === 'c' || ch === 'n') {   // p：原本的短程雲。c／n：加長關卡用，左右對向走
-      const long = ch !== 'p';
-      const range = long ? (easy ? 2 : 3) * QT : (easy ? 3 : 4) * QT - 18;
-      const x0 = ch === 'n' ? px - range : px;
-      plats.push({ x: px, y: py, w: 54, h: 8, x0, range, vx: ch === 'n' ? (easy ? -26 : -34) : (long && easy ? 26 : 38), dx: 0 });
-      r[x] = ' ';
+    const spd = easy ? 1 : 1.18;   // 一般模式：小怪走快一點
+    if (ch === 'e') { ents.push({ k: wd.enemy, x: px, y: py + QT - 14, w: 16, h: 14, vx: -30 * spd, alive: true }); r[x] = ' '; }
+    if (ch === 't') { ents.push({ k: 'turtle', x: px, y: py + QT - 16, w: 16, h: 16, vx: -28 * spd, alive: true }); r[x] = ' '; }
+    if (ch === 'n') { ents.push({ k: 'fish', x: px, y: py, w: 18, h: 12, vx: (easy ? -24 : -40), y0: py, alive: true, t: Math.random() * 3 }); r[x] = ' '; }
+    if (ch === 'p' || ch === 'c') {   // c：對向的雲，行程短一點，簡單模式更慢
+      const back = ch === 'c', range = back ? (easy ? 2 : 3) * QT : (easy ? 3 : 4) * QT - 18;
+      plats.push({ x: px, y: py, w: 54, h: 8, x0: back ? px - range : px, range, vx: back ? (easy ? -26 : -34) : 38, dx: 0, dy: 0 }); r[x] = ' ';
     }
+    if (ch === 'Y') { plats.push({ x: px, y: py, w: 54, h: 8, y0: py, range: 42, vy: easy ? 22 : 32, vx: 0, dx: 0, dy: 0, vert: true }); r[x] = ' '; }
     if (ch === 'v') { ents.push({ k: 'flame', x: px + 1, y: QVH, base: py + QT, w: 14, h: 16, alive: true, t: Math.random() * 2 }); r[x] = ' '; }
     if (ch === 'b') { ents.push({ k: 'bee', x: px, y: py, w: 16, h: 14, vx: -25, y0: py, alive: true, t: Math.random() * 6 }); r[x] = ' '; }
     if (ch === 'K' && !wd.cloud) bossHome = { x: px - 10, gy: py + QT };   // 一般模式大魔王飛的範圍、地面
@@ -22991,7 +23032,7 @@ function playQuest(id, opt) {
     if (ch === '^' && easy) r[x] = 'f';   // 簡單模式：刺換成小花（踩了沒事）
   }));
   if (opt.bossStart && boss) { startX = checkX = Math.max(0, boss.x - 9 * QT); items.forEach(it => { if (it.k === 'check' && it.x < startX) it.on = true; }); }
-  const P = { x: startX, y: 12 * QT - 30 + QT, w: 13, h: 30, vx: 0, vy: 0, on: false, face: 1, hearts: 3, inv: 0, coins: 0, stars: 0, t: 0, lastSafe: startX, bubble: 0, big: false, fire: false, starT: 0, fireCd: 0 };
+  const P = { x: startX, y: 12 * QT - 30 + QT, w: 13, h: 30, vx: 0, vy: 0, on: false, face: 1, hearts: 3, inv: 0, coins: 0, stars: 0, t: 0, lastSafe: startX, bubble: 0, big: false, fire: false, starT: 0, fireCd: 0, swim: false, wasSwim: false };
   let inBonus = false, pipeBack = 0, downBuf = 0;   // 祕密房間
   let flag = null, raf = 0, live = true, last = performance.now(), camX = 0, state = 'play', endT = 0, keys = {}, jumpHeld = false, jumpBuf = 0, msg = '', msgT = 0, coinPops = [];
   const say = (m2, s) => { msg = m2; msgT = s || 1.6; };
@@ -23165,46 +23206,66 @@ function playQuest(id, opt) {
       if (inZone) { say(boss.k === 'cloudking' ? '☁️ 烏雲大王來了！躲開雨滴，等牠下來休息再跳到頭上！' : easy ? '大魔王來了！用 ◀ ▶ 自己走，跳到牠頭上！' : '大魔王來了！跳到牠頭上！', 3); try { Sound.setSpecial('boss'); } catch (e) {} } }
     want = (keys.ArrowRight || keys.KeyD || keys.TouchR ? 1 : 0) - (keys.ArrowLeft || keys.KeyA || keys.TouchL ? 1 : 0);
     if (P.backT > 0) P.backT -= dt;
-    const maxV = (easy ? 112 : 128) * (P.starT > 0 ? 1.2 : 1) * (P.wet ? .6 : 1), ice = wd.ice && P.on;
+    const inWater = () => {
+      if (L.waterRoom && inBonus) return true;
+      const x0 = Math.floor(P.x / QT), x1 = Math.floor((P.x + P.w - .01) / QT), y0 = Math.floor(P.y / QT), y1 = Math.floor((P.y + P.h - .01) / QT);
+      for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) if (tileAt(tx, ty) === 'W') return true;
+      return false;
+    };
+    const onVine = () => { const tx = Math.floor((P.x + P.w / 2) / QT); for (let ty = Math.floor(P.y / QT); ty <= Math.floor((P.y + P.h) / QT); ty++) if (tileAt(tx, ty) === 'V') return true; return false; };
+    P.swim = inWater();
+    const maxV = (easy ? 112 : 128) * (P.starT > 0 ? 1.2 : 1) * (P.wet ? .6 : 1) * (P.swim ? .72 : 1), ice = wd.ice && P.on && !P.swim;
     if (want) { P.vx += want * (ice ? 420 : 900) * dt; P.face = want; } else P.vx *= Math.pow(ice ? .3 : .0005, dt);   // ❄️ 雪地：起步慢、停不太下來
     if (Math.abs(P.vx) > maxV) P.vx = Math.sign(P.vx) * maxV;
     // 跳
-    if (jumpBuf > 0 && P.on) { P.vy = -470; P.on = false; jumpBuf = 0; Sound.play('jump'); }
+    const climbing = onVine() && (jumpHeld || keys.ArrowUp || keys.KeyW || keys.ArrowDown || keys.KeyS);
+    if (climbing && !P.saidVine) { P.saidVine = 1; say('藤蔓！按住「跳」往上爬', 1.8); }
+    if (jumpBuf > 0 && P.on && !climbing) { P.vy = -470; P.on = false; jumpBuf = 0; Sound.play(P.swim ? 'splash' : 'jump'); }
     if (P.vy >= 0) P.boost = false;
     if (!jumpHeld && !P.boost && P.vy < -220) P.vy = -220;   // 早放開：跳低一點（彈簧、踩怪物彈起來的不算）
     P.holdT = jumpHeld && P.vy < 0 ? (P.holdT || 0) + dt : 0;
-    P.vy = Math.min(600, P.vy + (jumpHeld && P.vy < 0 && !P.boost ? 900 : 1500) * dt);   // 家長：長按跳比較高 → 一直按著，往上的時候重力變小，跳得更高
+    if (climbing) P.vy = (keys.ArrowDown || keys.KeyS) && !jumpHeld ? 80 : -86;
+    else {
+      if (P.swim && jumpHeld && !P.on) P.vy -= 520 * dt;
+      P.vy = Math.min(P.swim ? 150 : 600, P.vy + (jumpHeld && P.vy < 0 && !P.boost ? (P.swim ? 280 : 900) : (P.swim ? 420 : 1500)) * dt);   // 家長：長按跳比較高；水裡重力比較小，按住跳會往上游
+    }
     P.hitX = false;
-    plats.forEach(pl => { const nx = pl.x + pl.vx * dt; if (nx < pl.x0 || nx > pl.x0 + pl.range) pl.vx = -pl.vx; pl.dx = pl.vx * dt; pl.x += pl.dx; });
+    plats.forEach(pl => {
+      if (pl.vert) { const ny = pl.y + pl.vy * dt; if (ny < pl.y0 - pl.range || ny > pl.y0) pl.vy = -pl.vy; pl.dy = pl.vy * dt; pl.y += pl.dy; pl.dx = 0; }
+      else { const nx = pl.x + pl.vx * dt; if (nx < pl.x0 || nx > pl.x0 + pl.range) pl.vx = -pl.vx; pl.dx = pl.vx * dt; pl.x += pl.dx; pl.dy = 0; }
+    });
     const prevBottom = P.y + P.h, ride = P.on && plats.find(pl => P.x + P.w > pl.x && P.x < pl.x + pl.w && Math.abs(prevBottom - pl.y) < 2);
-    if (ride) P.x += ride.dx;   // 站在雲上跟著雲走
+    if (ride) { P.x += ride.dx; P.y += ride.dy || 0; }   // 站在雲上跟著雲走（上下動的雲也帶著走）
     const r = hitTiles(P, P.vx * dt, P.vy * dt);
     P.on = r.landed;
     if (P.vy >= 0) plats.forEach(pl => { if (P.x + P.w > pl.x + 2 && P.x < pl.x + pl.w - 2 && prevBottom <= pl.y + 3 && P.y + P.h >= pl.y) { P.y = pl.y - P.h; P.vy = 0; P.on = true; r.landed = true; } });
     if (P.on) { const tx = Math.floor((P.x + P.w / 2) / QT); if (solid(tileAt(tx, Math.floor((P.y + P.h + 2) / QT)))) P.lastSafe = P.x; }
-    {   // 🌿 藤蔓：人在藤蔓中間、而且不是正在大跳的時候才抓住。按住跳往上爬，按 ⬇ 滑下去。頭上有東西就不再往上擠。
-      const tx = Math.floor((P.x + P.w / 2) / QT), y0 = Math.floor(P.y / QT), y1 = Math.floor((P.y + P.h - 1) / QT);
-      let vine = false; for (let ty = y0; ty <= y1; ty++) if (tileAt(tx, ty) === 'V') vine = true;
-      if (vine && P.vy > -200) {
-        const down = keys.ArrowDown || keys.KeyS, above = tileAt(tx, Math.floor((P.y - 2) / QT));
-        if (jumpHeld && !down && !solid(above)) P.vy = easy ? -150 : -118;
-        else if (down) P.vy = 120;
-        else if (!jumpHeld) P.vy = easy ? 18 : 40;
-        if (!P.vineSaid) { P.vineSaid = 1; say(easy ? '藤蔓！按住「跳」往上爬' : '抓住藤蔓了！按住跳往上爬', 1.6); }
+    if (r.bonk) { const [tx, ty] = r.bonk, chb = L.g[ty][tx]; bumps.push({ tx, ty, t: .16 });
+      const coinHere = () => { P.coins++; coinPops.push({ x: tx * QT + 9, y: ty * QT, t: 0 }); Sound.play('coin'); };
+      const powHere = () => { const k = ['grow', 'fire', 'inv', 'grow', 'fire'][(tx + ty) % 5]; items.push({ k: 'pow', kind: k, x: tx * QT + 9, y: ty * QT - 10, pop: .3 }); Sound.play('pickUp'); };
+      if (chb === 'M' || chb === 'R') { L.g[ty][tx] = 'u'; powHere(); }
+      else if (chb === 'N') { L.g[ty][tx] = 'u'; coinHere(); }
+      else if (chb === 'B') {
+        if (P.big || P.fire || P.starT > 0) { L.g[ty][tx] = ' '; for (let i = 0; i < 4; i++) bits.push({ x: tx * QT + 6, y: ty * QT + 6, vx: (i % 2 ? 50 : -50), vy: -90 - i * 12, t: 0 }); Sound.play('squish'); }
+        else Sound.play('click');
       }
-    }
-    if (r.bonk) { const [tx, ty] = r.bonk; if (L.g[ty][tx] === 'M') { L.g[ty][tx] = 'u'; const k = ['grow', 'fire', 'inv', 'grow', 'fire'][Math.floor(Math.random() * 5)]; items.push({ k: 'pow', kind: k, x: tx * QT + 9, y: ty * QT - 10, pop: .3 }); Sound.play('pickUp'); }
-      else if (L.g[ty][tx] === 'h') { L.g[ty][tx] = 'u'; P.coins += 5; for (let k = 0; k < 5; k++) coinPops.push({ x: tx * QT + 9 + (k - 2) * 6, y: ty * QT, t: -k * .08 }); Sound.play('coin'); say('隱藏磚塊！💰 +5'); }
-      else if (L.g[ty][tx] === 'B') { L.g[ty][tx] = ' '; P.coins++; coinPops.push({ x: tx * QT + 9, y: ty * QT, t: 0 }); Sound.play('coin'); if (!P.broke) { P.broke = 1; say('磚塊打碎了！💰', 1.2); } }
-      else if (L.g[ty][tx] === '?') { L.g[ty][tx] = 'u'; P.coins++; coinPops.push({ x: tx * QT + 9, y: ty * QT, t: 0 }); Sound.play('coin'); } else Sound.play('click'); }
+      else if (chb === 'h') { L.g[ty][tx] = 'u'; P.coins += 5; for (let k = 0; k < 5; k++) coinPops.push({ x: tx * QT + 9 + (k - 2) * 6, y: ty * QT, t: -k * .08 }); Sound.play('coin'); say('隱藏磚塊！💰 +5'); }
+      else if (chb === '?') { L.g[ty][tx] = 'u'; coinHere(); } else Sound.play('click'); }
     // 刺
     { const tx = Math.floor((P.x + P.w / 2) / QT), ty = Math.floor((P.y + P.h + 1) / QT); if (tileAt(tx, ty - 0) === '^' || tileAt(tx, Math.floor((P.y + P.h - 2) / QT)) === '^') hurt(P.x + P.w / 2 - P.face * 10); }
-    { const fx2 = Math.floor((P.x + P.w / 2) / QT), fy2 = Math.floor((P.y + P.h + 2) / QT), under = tileAt(fx2, fy2), onPipe = P.on && (under === 'P' || under === 'Q');
+    { const fx2 = Math.floor((P.x + P.w / 2) / QT), fy2 = Math.floor((P.y + P.h + 2) / QT), under = tileAt(fx2, fy2), onPipe = P.on && (under === 'P' || under === 'Q' || under === 'U');
       bDn.style.display = onPipe ? '' : 'none'; bDn.classList.toggle('glow', onPipe);
       if (easy && onPipe && P.pipeTile !== fx2 && P.pipeTile !== fx2 - 1 && P.pipeTile !== fx2 + 1) { P.pipeTile = fx2; say('🟢 水管！按 ⬇ 可以鑽進去', 2); }   // 簡單模式：提醒她可以按 ⬇
-      if (onPipe && downBuf > 0) { downBuf = 0; Sound.play('whoosh');
-        if (under === 'P') { pipeBack = fx2; inBonus = true; P.x = (L.bonusX + 3) * QT; P.y = 8 * QT; P.vx = P.vy = 0; say('🟢 祕密房間！好多金幣！', 2); }
+      if (onPipe && downBuf > 0) { downBuf = 0; Sound.play(under === 'U' ? 'splash' : 'whoosh');
+        if (under === 'P' || under === 'U') { pipeBack = fx2; inBonus = true; P.x = (L.bonusX + 3) * QT; P.y = 8 * QT; P.vx = P.vy = 0; say(under === 'U' || L.waterRoom ? '🌊 潛到水裡了！換上企鵝泳衣！' : '🟢 祕密房間！好多金幣！', 2); }
         else { inBonus = false; P.x = (pipeBack + 3) * QT; P.y = 9 * QT; P.vx = P.vy = 0; say('回來了！', 1); } } }
+    P.swim = inWater();
+    if (P.swim && !P.wasSwim) say('🐧 企鵝泳衣！游起來了～', 2);
+    if (!P.swim && P.wasSwim) say('回到岸上，衣服換回來了！', 1.4);
+    P.wasSwim = P.swim;
+    for (let i = bumps.length - 1; i >= 0; i--) { bumps[i].t -= dt; if (bumps[i].t <= 0) bumps.splice(i, 1); }
+    bits.forEach(b => { b.t += dt; b.vy += 500 * dt; b.x += b.vx * dt; b.y += b.vy * dt; });
+    for (let i = bits.length - 1; i >= 0; i--) if (bits[i].t > .45) bits.splice(i, 1);
     if (P.y > QVH + 40) fallOut();
     P.x = Math.max(0, Math.min(lvW - P.w, P.x));
     // 道具
@@ -23234,6 +23295,7 @@ function playQuest(id, opt) {
       }
       else if (en.k === 'shell') { /* 停著的殼 */ }
       else if (en.k === 'bee') { en.t += dt; en.x += en.vx * dt; en.y = en.y0 + Math.sin(en.t * 2) * 22; if (Math.abs(en.x - (en.x0 = en.x0 == null ? en.x : en.x0)) > 50) en.vx = -en.vx; }
+      else if (en.k === 'fish') { en.t += dt; en.x += en.vx * dt; if (en.x0 == null) en.x0 = en.x; en.y = en.y0 + Math.sin(en.t * 3) * 8; if (Math.abs(en.x - en.x0) > 46) en.vx = -en.vx; }
       else if (en.k === 'cloudking') ckStep(en, dt);
       else if (en.k === 'boss' && !easy && en.mode) bossSpecial(en, dt);   // 一般模式的大魔王：飛上天踩下來、噴火球
       else if (en.k === 'boss') {
@@ -23287,29 +23349,37 @@ function playQuest(id, opt) {
   };
   // ── 畫 ──
   const drawBg = () => {
-    const gr = g.createLinearGradient(0, 0, 0, QVH); gr.addColorStop(0, wd.sky[0]); gr.addColorStop(1, wd.sky[1]); g.fillStyle = gr; g.fillRect(0, 0, QVW, QVH);
-    for (let i = 0; i < 6; i++) { const x = ((i * 170 - camX * .2) % 1020 + 1020) % 1020 - 100; MV.cloud(g, x, 40 + (i % 3) * 18, .9); }
-    [[wd.hill2, .35, 70, 150], [wd.hill, .5, 50, 175]].forEach(([col, par, r, base]) => { g.fillStyle = col; for (let i = -1; i < 8; i++) { const x = ((i * 140 - camX * par) % 980 + 980) % 980 - 140; g.beginPath(); g.ellipse(x, base + 40, r + (i % 2) * 20, r, 0, Math.PI, 0); g.fill(); } });
+    const gr = g.createLinearGradient(0, 0, 0, QVH); gr.addColorStop(0, wd.sky[0]); gr.addColorStop(.55, wd.sky[0]); gr.addColorStop(1, wd.sky[1]); g.fillStyle = gr; g.fillRect(0, 0, QVW, QVH);
+    // 遠山、中景、近丘：三層視差，越遠越淡、移動越慢
+    [[wd.hill2, .12, 110, 128, .55], [wd.hill, .28, 78, 150, .8], [wd.hill, .48, 52, 176, 1]].forEach(([col, par, r, base, al]) => { g.globalAlpha = al; g.fillStyle = col; for (let i = -1; i < 8; i++) { const x = ((i * 150 - camX * par) % 1050 + 1050) % 1050 - 150; g.beginPath(); g.ellipse(x, base + 40, r + (i % 2) * 18, r * .85, 0, Math.PI, 0); g.fill(); g.fillStyle = 'rgba(255,255,255,.22)'; g.beginPath(); g.ellipse(x - r * .2, base + 18, r * .45, r * .22, 0, Math.PI, 0); g.fill(); g.fillStyle = col; } g.globalAlpha = 1; });
+    for (let i = 0; i < 6; i++) { const x = ((i * 170 - camX * .2) % 1020 + 1020) % 1020 - 100; MV.cloud(g, x, 28 + (i % 3) * 16, .85 + (i % 2) * .2); }
+    const haze = g.createLinearGradient(0, 150, 0, 230); haze.addColorStop(0, 'rgba(255,255,255,0)'); haze.addColorStop(1, 'rgba(40,50,40,.1)'); g.fillStyle = haze; g.fillRect(0, 150, QVW, 80);
     if (wd.id === 2) { g.fillStyle = '#5fb8e8'; g.fillRect(0, 190, QVW, 80); }   // 沙灘：遠方的海
     if (wd.snow) { g.fillStyle = 'rgba(255,255,255,.9)'; for (let i = 0; i < 40; i++) { const sx = ((i * 53 - camX * .4 + Math.sin(P.t + i) * 10) % QVW + QVW) % QVW, sy = ((i * 37 + P.t * 30) % QVH); g.beginPath(); g.arc(sx, sy, 1.5 + (i % 3) * .6, 0, 7); g.fill(); } }   // ❄️ 下雪
     if (wd.castle) { g.fillStyle = 'rgba(0,0,0,.25)'; for (let i = -1; i < 9; i++) { const x = ((i * 120 - camX * .3) % 1080 + 1080) % 1080 - 120; g.fillRect(x, 60, 70, 130); for (let k = 0; k < 4; k++) g.fillRect(x + k * 20, 48, 12, 14); g.fillStyle = 'rgba(255,200,80,.35)'; g.fillRect(x + 28, 100, 14, 20); g.fillStyle = 'rgba(0,0,0,.25)'; } }   // 🏰 遠方的城堡
-    if (inBonus) { g.fillStyle = '#26232a'; g.fillRect(0, 0, QVW, QVH); }   // 祕密房間：地底下暗暗的
+    if (inBonus) { if (L.waterRoom) { const wg = g.createLinearGradient(0, 0, 0, QVH); wg.addColorStop(0, '#1c78b4'); wg.addColorStop(1, '#0c3d62'); g.fillStyle = wg; g.fillRect(0, 0, QVW, QVH); } else { g.fillStyle = '#26232a'; g.fillRect(0, 0, QVW, QVH); } }   // 祕密房間：地底下，或藍色水管進去的水底
   };
   const drawTile = (ch, x, y) => {
-    if (ch === '#') { const top = tileAt(Math.floor((x + camX) / QT), Math.floor(y / QT) - 1) !== '#'; g.fillStyle = wd.dirt; g.fillRect(x, y, QT, QT); g.fillStyle = 'rgba(0,0,0,.08)'; g.fillRect(x + 4, y + 8, 3, 3); g.fillRect(x + 12, y + 13, 3, 3); if (top) { g.fillStyle = wd.top; g.fillRect(x, y, QT, 6); g.fillStyle = 'rgba(255,255,255,.25)'; g.fillRect(x, y, QT, 2); } }
-    else if (ch === '=' || ch === 'B') { g.fillStyle = ch === 'B' ? '#e39a62' : '#c96f3a'; g.fillRect(x, y, QT, QT); g.strokeStyle = '#8a4520'; g.lineWidth = 1; g.strokeRect(x + .5, y + .5, QT - 1, QT - 1); g.beginPath(); g.moveTo(x, y + 9); g.lineTo(x + QT, y + 9); g.moveTo(x + 9, y); g.lineTo(x + 9, y + 9); g.stroke(); if (ch === 'B') { g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(x + 9, y + 9, 2.4, 0, 7); g.fill(); } }   // B：打得掉，裡面有一枚金幣
-    else if (ch === 'V') { g.strokeStyle = '#2f8a3c'; g.lineWidth = 3; g.beginPath(); g.moveTo(x + 9, y); g.lineTo(x + 9, y + QT); g.stroke(); g.fillStyle = '#5fcf6f'; g.beginPath(); g.ellipse(x + 4, y + 5, 4, 2.4, -.7, 0, 7); g.fill(); g.beginPath(); g.ellipse(x + 14, y + 12, 4, 2.4, .7, 0, 7); g.fill(); }   // 藤蔓
-    else if (ch === '?') { g.fillStyle = '#ffc93a'; g.fillRect(x, y, QT, QT); g.strokeStyle = '#c98a10'; g.lineWidth = 1.5; g.strokeRect(x + .5, y + .5, QT - 1, QT - 1); g.fillStyle = '#ffffff'; g.font = '900 13px Arial'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('★', x + 9, y + 10); g.textBaseline = 'alphabetic'; }
-    else if (ch === 'u') { g.fillStyle = '#a07850'; g.fillRect(x, y, QT, QT); g.strokeStyle = '#6b4b30'; g.strokeRect(x + .5, y + .5, QT - 1, QT - 1); }
+    const tx = Math.floor((x + camX + .5) / QT), ty = Math.floor((y + .5) / QT);
+    const bump = bumps.find(b => b.tx === tx && b.ty === ty);
+    if (bump) y -= Math.sin((.16 - bump.t) / .16 * Math.PI) * 5;
+    const bevel = (face, edge) => { g.fillStyle = edge; g.fillRect(x + 2, y + 2, QT, QT); g.fillStyle = face; g.fillRect(x, y, QT - 2, QT - 2); g.fillStyle = 'rgba(255,255,255,.32)'; g.fillRect(x, y, QT - 2, 3); g.fillStyle = 'rgba(255,255,255,.16)'; g.fillRect(x, y, 3, QT - 2); g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(x + QT - 5, y + 3, 3, QT - 5); };
+    if (ch === '#') { const top = tileAt(tx, ty - 1) !== '#'; g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(x + 3, y + 3, QT, QT); g.fillStyle = wd.dirt; g.fillRect(x, y, QT - 1, QT - 1); g.fillStyle = 'rgba(0,0,0,.1)'; g.fillRect(x + QT - 5, y, 4, QT); g.fillRect(x, y + QT - 4, QT, 3); g.fillRect(x + 4, y + 8, 3, 3); g.fillRect(x + 11, y + 12, 3, 3); if (top) { g.fillStyle = wd.top; g.fillRect(x, y, QT - 1, 6); g.fillStyle = 'rgba(255,255,255,.4)'; g.fillRect(x, y, QT - 1, 2); g.fillStyle = 'rgba(0,0,0,.12)'; g.fillRect(x, y + 5, QT - 1, 2); } }
+    else if (ch === '=' || ch === 'B' || ch === 'N' || ch === 'R') { bevel(ch === '=' ? '#d4844e' : '#e08a52', '#8a4520'); g.strokeStyle = 'rgba(90,40,20,.45)'; g.lineWidth = 1; g.beginPath(); g.moveTo(x + 2, y + 9); g.lineTo(x + QT - 3, y + 9); g.moveTo(x + 9, y + 3); g.lineTo(x + 9, y + 9); g.moveTo(x + 3, y + 9); g.lineTo(x + 3, y + QT - 3); g.stroke(); if (ch === 'N') { g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(x + 13, y + 13, 2.2, 0, 7); g.fill(); } if (ch === 'R') { g.fillStyle = `rgba(255,255,255,${.35 + Math.abs(Math.sin(P.t * 4)) * .4})`; g.beginPath(); g.arc(x + 5, y + 5, 1.6, 0, 7); g.fill(); } }
+    else if (ch === '?') { bevel('#ffd35c', '#c98a10'); g.fillStyle = '#ffffff'; g.font = '900 13px Arial'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('?', x + 8, y + 10 + Math.sin(P.t * 4) * .6); g.textBaseline = 'alphabetic'; }
+    else if (ch === 'u') { bevel('#b08a62', '#6b4b30'); }
     else if (ch === '-') { g.fillStyle = '#ffffff'; g.beginPath(); g.roundRect(x - 1, y, QT + 2, 8, 4); g.fill(); g.fillStyle = 'rgba(150,190,230,.5)'; g.fillRect(x, y + 6, QT, 2); }
     else if (ch === '^') { g.fillStyle = '#9aa3ad'; for (let i = 0; i < 3; i++) { g.beginPath(); g.moveTo(x + i * 6, y + QT); g.lineTo(x + i * 6 + 3, y + 6); g.lineTo(x + i * 6 + 6, y + QT); g.fill(); } }
     else if (ch === 'f') { g.font = '13px sans-serif'; g.textAlign = 'center'; g.fillText('🌼', x + 9, y + 16); }
-    else if (ch === 'M') { g.fillStyle = '#ff9ec4'; g.fillRect(x, y, QT, QT); g.strokeStyle = '#d0507a'; g.lineWidth = 1.5; g.strokeRect(x + .5, y + .5, QT - 1, QT - 1); g.fillStyle = '#ffffff'; g.font = '900 13px Arial'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('?', x + 9, y + 10 + Math.sin(P.t * 4) * 1); g.textBaseline = 'alphabetic'; }   // 道具磚（粉紅色）
+    else if (ch === 'M') { bevel('#ffb3d0', '#d0507a'); g.fillStyle = '#ffffff'; g.font = '900 13px Arial'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('?', x + 8, y + 10 + Math.sin(P.t * 4) * 1); g.textBaseline = 'alphabetic'; }   // 道具磚（粉紅色）
     else if (ch === 'H') { g.strokeStyle = `rgba(255,255,255,${.12 + Math.abs(Math.sin(P.t * 2)) * .15})`; g.lineWidth = 1; g.setLineDash([3, 3]); g.strokeRect(x + 1.5, y + 1.5, QT - 3, QT - 3); g.setLineDash([]); }   // 隱藏磚：淡淡的虛線（給一點點提示）
-    else if (ch === 'h') { g.fillStyle = '#a07850'; g.fillRect(x, y, QT, QT); }
-    else if (ch === 'P' || ch === 'Q') { const left = tileAt(Math.floor((x + camX) / QT) - 1, Math.floor(y / QT)) !== ch, topT = tileAt(Math.floor((x + camX) / QT), Math.floor(y / QT) - 1) !== ch;
-      g.fillStyle = '#3fae4f'; g.fillRect(x, y, QT, QT); g.fillStyle = '#2f8a3c'; g.fillRect(x + (left ? 0 : QT - 3), y, 3, QT); g.fillStyle = 'rgba(255,255,255,.3)'; if (left) g.fillRect(x + 4, y, 3, QT);
-      if (topT) { g.fillStyle = '#5fcf6f'; g.fillRect(x - (left ? 2 : 0), y, QT + 2, 7); g.strokeStyle = '#2f8a3c'; g.strokeRect(x - (left ? 2 : 0) + .5, y + .5, QT + 1, 6); if (left) { g.font = '900 16px sans-serif'; g.textAlign = 'center'; g.lineWidth = 3; g.strokeStyle = '#2f8a3c'; g.strokeText('⬇', x + QT, y - 6 + Math.sin(P.t * 5) * 2); g.fillStyle = '#fff'; g.fillText('⬇', x + QT, y - 6 + Math.sin(P.t * 5) * 2); } } }   // 🟢 水管
+    else if (ch === 'h') { bevel('#b08a62', '#6b4b30'); }
+    else if (ch === 'V') { g.strokeStyle = '#2f7a32'; g.lineWidth = 3; g.beginPath(); g.moveTo(x + 9, y); g.lineTo(x + 9, y + QT); g.stroke(); g.fillStyle = '#3f9d45'; g.beginPath(); g.ellipse(x + 4, y + 5, 5, 3, -.5, 0, 7); g.fill(); g.fillStyle = '#8fd18f'; g.beginPath(); g.ellipse(x + 14, y + 12, 5, 3, .5, 0, 7); g.fill(); }
+    else if (ch === 'W') { const surface = tileAt(tx, ty - 1) !== 'W'; g.fillStyle = surface ? 'rgba(96,196,240,.52)' : 'rgba(28,120,190,.4)'; g.fillRect(x, y, QT, QT); if (surface) { g.fillStyle = 'rgba(255,255,255,.6)'; g.fillRect(x, y, QT, 3); g.fillStyle = 'rgba(255,255,255,.45)'; g.fillRect(x + ((Math.floor(P.t * 12) + tx * 3) % 9), y + 1, 5, 2); } else { g.strokeStyle = 'rgba(255,255,255,.28)'; g.beginPath(); g.moveTo(x + 2, y + 7 + Math.sin(P.t * 3 + tx) * 2); g.quadraticCurveTo(x + 9, y + 4, x + 15, y + 9); g.stroke(); } }
+    else if (ch === 'P' || ch === 'Q' || ch === 'U') { const left = tileAt(tx - 1, ty) !== ch, topT = tileAt(tx, ty - 1) !== ch, waterP = ch === 'U';
+      const body = waterP ? '#3aa0d8' : '#3fae4f', edge = waterP ? '#1d6f9c' : '#2f8a3c', lip = waterP ? '#8fd4f8' : '#5fcf6f';
+      g.fillStyle = edge; g.fillRect(x + 2, y + 2, QT, QT); g.fillStyle = body; g.fillRect(x, y, QT - 2, QT - 1); g.fillStyle = 'rgba(255,255,255,.35)'; if (left) g.fillRect(x + 4, y, 3, QT);
+      if (topT) { g.fillStyle = lip; g.fillRect(x - (left ? 2 : 0), y, QT + 2, 7); g.strokeStyle = edge; g.strokeRect(x - (left ? 2 : 0) + .5, y + .5, QT + 1, 6); if (left) { g.font = '900 16px sans-serif'; g.textAlign = 'center'; g.lineWidth = 3; g.strokeStyle = edge; g.strokeText('⬇', x + QT, y - 6 + Math.sin(P.t * 5) * 2); g.fillStyle = '#fff'; g.fillText('⬇', x + QT, y - 6 + Math.sin(P.t * 5) * 2); } } }   // 🟢 水管／🔵 入水的水管
     else if (ch === 'L') { g.fillStyle = Math.floor(y / QT) === 13 ? '#ff6a2a' : '#d9381e'; g.fillRect(x, y, QT, QT); if (Math.floor(y / QT) === 13) { g.fillStyle = '#ffb02e'; g.beginPath(); g.arc(x + 9 + Math.sin(P.t * 3 + x) * 4, y + 4, 3, 0, 7); g.fill(); } }   // 岩漿
   };
   const drawEnemy = en => {
@@ -23337,6 +23407,11 @@ function playQuest(id, opt) {
     } else if (en.k === 'flame') {
       if (!en.up) { g.globalAlpha = 1; return; }
       g.fillStyle = '#ffb02e'; g.beginPath(); g.arc(x + 7, y + 9, 7, 0, 7); g.fill(); g.fillStyle = '#ff5a1f'; g.beginPath(); g.moveTo(x, y + 9); g.quadraticCurveTo(x + 7, y - 8 + Math.sin(P.t * 20) * 2, x + 14, y + 9); g.fill(); g.fillStyle = '#231c1c'; g.fillRect(x + 4, y + 8, 2, 2); g.fillRect(x + 9, y + 8, 2, 2);
+    } else if (en.k === 'fish') {
+      g.fillStyle = '#3aa0d8'; g.beginPath(); g.ellipse(x + 9, y + 6, 9, 5, 0, 0, 7); g.fill();
+      g.fillStyle = '#7ec8f0'; g.beginPath(); g.ellipse(x + 10, y + 7, 5, 3, 0, 0, 7); g.fill();
+      g.fillStyle = '#1d6f9c'; g.beginPath(); g.moveTo(x + (en.vx < 0 ? 16 : 2), y + 6); g.lineTo(x + (en.vx < 0 ? 22 : -4), y + 2); g.lineTo(x + (en.vx < 0 ? 22 : -4), y + 10); g.fill();
+      g.fillStyle = '#231c1c'; g.beginPath(); g.arc(x + (en.vx < 0 ? 6 : 13), y + 5, 1.3, 0, 7); g.fill();
     } else if (en.k === 'crab') {
       g.fillStyle = '#ff6b5b'; g.beginPath(); g.ellipse(x + 8, y + 9, 8, 5, 0, 0, Math.PI * 2); g.fill(); [-1, 1].forEach(s => { g.beginPath(); g.arc(x + 8 + s * 9, y + 4 + Math.sin(P.t * 8) * 1.5, 3, 0, Math.PI * 2); g.fill(); });
       g.fillStyle = '#231c1c'; g.fillRect(x + 5, y + 4, 2, 2); g.fillRect(x + 10, y + 4, 2, 2);
@@ -23389,9 +23464,21 @@ function playQuest(id, opt) {
     if (P.bubble > 0) { g.fillStyle = 'rgba(190,230,255,.45)'; g.beginPath(); g.arc(x, y - 14, 22, 0, Math.PI * 2); g.fill(); g.strokeStyle = 'rgba(120,180,230,.8)'; g.stroke(); }
     if (P.holdT > .12) { g.font = '11px sans-serif'; g.textAlign = 'center'; for (let i = 0; i < 3; i++) g.fillText('✨', x + Math.sin(P.t * 20 + i * 2) * 10, y + 6 + i * 7); }   // 長按跳：腳下冒星星
     if (P.starT > 0) { g.fillStyle = `hsla(${(P.t * 400) % 360},90%,60%,.45)`; g.beginPath(); g.ellipse(x, y - 16, 16, 22, 0, 0, 7); g.fill(); }   // ⭐ 無敵：彩虹光
+    if (P.swim) { g.fillStyle = 'rgba(255,255,255,.75)'; for (let i = 0; i < 3; i++) { const by = (P.t * 36 + i * 16) % 30; g.beginPath(); g.arc(x - 14 * P.face, y - 10 - by, 1.6 + i * .45, 0, 7); g.fill(); } }
     const ks = P.big ? .7 : .54;   // 🍓 長大果：變大
+    const penguinFit = () => ({
+      head: Object.assign({}, CLOTHES_BY_ID.swim_cap, { color: '#26232a', pom: '#ffb02e' }),
+      top: Object.assign({}, CLOTHES_BY_ID.swimsuit, { color: '#26232a', dots: '#ffffff' }),
+      bottom: Object.assign({}, CLOTHES_BY_ID.swim_bottom, { color: '#1c1c22' }),
+      shoes: CLOTHES_BY_ID.barefoot
+    });
     g.save(); g.translate(x, y); g.scale(P.face * ks, ks);
-    if (kidBaby()) drawBabyKid(g, { t: P.t, walking: Math.abs(P.vx) > 10 }); else drawGirl(g, { t: P.t, walking: P.on && Math.abs(P.vx) > 10, blink: false, outfit: currentOutfit(), face: state === 'win' ? 'joy' : kidFace(), stage: kidLookStage() });
+    if (kidBaby()) drawBabyKid(g, { t: P.t, walking: Math.abs(P.vx) > 10 }); else drawGirl(g, { t: P.t, walking: P.on && Math.abs(P.vx) > 10, blink: false, outfit: P.swim ? penguinFit() : currentOutfit(), face: state === 'win' ? 'joy' : kidFace(), stage: kidLookStage() });
+    if (P.swim && !kidBaby()) {   // 企鵝泳衣：白肚、橘嘴、橘腳。上岸就換回原本的衣服（只改這一幀的畫法）
+      g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(1, -23, 6.2, 7.2, 0, 0, 7); g.fill();
+      g.fillStyle = '#ffb02e'; g.beginPath(); g.moveTo(10, -44); g.lineTo(16, -41); g.lineTo(10, -38); g.fill();
+      g.fillRect(-5, -4, 4, 2.2); g.fillRect(2, -4, 4, 2.2);
+    }
     g.restore();
   };
   const drawHud = () => {
@@ -23399,7 +23486,7 @@ function playQuest(id, opt) {
     g.font = '700 14px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillStyle = '#3a3240';
     g.fillText(`💰 ${P.coins}　${'★'.repeat(P.stars)}${'☆'.repeat(3 - P.stars)}`, 14, 19);
     if (!easy) g.fillText('❤️'.repeat(Math.max(0, P.hearts)) + '🤍'.repeat(Math.max(0, 3 - P.hearts)), 130, 19);
-    const pw = P.starT > 0 ? '🌟 無敵！' : P.fire ? '🔥 火火花' : P.big ? '🍒 變大了' : ''; if (pw) { g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.roundRect(QVW - 104, 6, 98, 26, 13); g.fill(); g.fillStyle = '#e8505b'; g.textAlign = 'center'; g.fillText(pw, QVW - 55, 19); }
+    const pw = P.swim ? '🐧 游泳' : P.starT > 0 ? '🌟 無敵！' : P.fire ? '🔥 火火花' : P.big ? '🍒 變大了' : ''; if (pw) { g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.roundRect(QVW - 104, 6, 98, 26, 13); g.fill(); g.fillStyle = P.swim ? '#1d6f9c' : '#e8505b'; g.textAlign = 'center'; g.fillText(pw, QVW - 55, 19); }
     if (touchUI && state === 'play' && (P.t < 6 || touches.size)) {   // 👆 平板：畫面上淡淡的分區提示（開始 6 秒、手指按著的時候）
       const split = true; g.globalAlpha = .55; g.textAlign = 'center'; g.font = '900 20px sans-serif'; g.fillStyle = '#ffffff'; g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 3;
       if (split) { g.fillStyle = 'rgba(255,255,255,.12)'; g.fillRect(QVW * .3 - 1, 40, 2, QVH - 40); g.fillRect(QVW * .7 - 1, 40, 2, QVH - 40); g.fillStyle = '#ffffff';
@@ -23439,6 +23526,7 @@ function playQuest(id, opt) {
     fbs.forEach(f => { MV.ball(g, f.x - camX, f.y, 5, '#ff8a3d'); MV.ball(g, f.x - camX, f.y, 2.5, '#ffd23f'); });
     bossFire.forEach(f => { const fx3 = f.x + f.w / 2 - camX, fy3 = f.y + f.h / 2; MV.ball(g, fx3, fy3, 7, '#e8505b'); MV.ball(g, fx3, fy3, 4.5, '#ff8a3d'); MV.ball(g, fx3, fy3, 2, '#ffe14a'); });   // 🔥 大魔王的火球（紅色，跟自己的不一樣）
     coinPops.forEach(cp => { g.fillStyle = '#ffd23f'; g.beginPath(); g.ellipse(cp.x - camX, cp.y - cp.t * 50, 5, 6, 0, 0, Math.PI * 2); g.fill(); });
+    bits.forEach(b => { g.fillStyle = '#c96f3a'; g.fillRect(b.x - camX, b.y, 5, 4); g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(b.x - camX + 3, b.y + 2, 2, 2); });
     if (QP) {   // 🐾 寵物：跟在後面蹦蹦跳；放必殺技的時候衝出去、整排都是招式的圖案
       const a = QP.act > 0 ? 1 - QP.act / 1.6 : 0, hop = Math.abs(Math.sin(P.t * 9)) * (Math.abs(P.vx) > 10 ? 5 : 1.5);
       const px = QP.act > 0 ? P.x + P.w / 2 - camX + Math.sin(a * Math.PI) * 120 * P.face : QP.x - camX, py = QP.act > 0 ? QP.y - Math.sin(a * Math.PI) * 50 : QP.y - hop;
@@ -23455,12 +23543,12 @@ function playQuest(id, opt) {
     raf = requestAnimationFrame(frame);
   };
   raf = requestAnimationFrame(frame);
-  playQuest.test = { bossFire, bossSpecial: (en, dt) => bossSpecial(en, dt), pause: on => setPause(on), paused: () => paused, touches, zoneOf, canvas: c, pet: () => QP, petSpecial: () => petSpecial(), cloud: () => (boss && boss.k === 'cloudking' ? boss : null), ckHit: en => ckHit(en), rain, bolts, puddles, bossZone: () => bossZone, plats, givePower, shootFire, fbs, inBonus: () => inBonus, down: () => { downBuf = .3; }, P, items, ents, L, keys, solid, tileAt, win: () => { state = 'win'; endT = 0; }, step, frameStep: dt => { last = performance.now() - dt * 1000; frame(performance.now()); }, flag: () => flag, state: () => state, jump: () => { jumpHeld = true; jumpBuf = .15; }, release: () => { jumpHeld = false; } };
+  playQuest.test = { bossFire, bossSpecial: (en, dt) => bossSpecial(en, dt), pause: on => setPause(on), paused: () => paused, touches, zoneOf, canvas: c, pet: () => QP, petSpecial: () => petSpecial(), cloud: () => (boss && boss.k === 'cloudking' ? boss : null), ckHit: en => ckHit(en), rain, bolts, puddles, bossZone: () => bossZone, plats, givePower, shootFire, fbs, inBonus: () => inBonus, penguin: () => !!P.swim, down: () => { downBuf = .3; }, P, items, ents, L, keys, solid, tileAt, win: () => { state = 'win'; endT = 0; }, step, frameStep: dt => { last = performance.now() - dt * 1000; frame(performance.now()); }, flag: () => flag, state: () => state, jump: () => { jumpHeld = true; jumpBuf = .15; }, release: () => { jumpHeld = false; } };
 }
 /* 打輸了：在大魔王那裡輸的（家長：可以從大魔王關重新開始、難度變低）→ 多一顆「從大魔王開始」，
    每輸一次大王少一滴血、跳得慢一點（最少 1 滴血） */
 function questFail(w, id, bossWeak, cloudPhase) {
-  try { dailyHit('quest'); if (typeof starNextW === 'function' && +id[0] === starNextW() && /-3$/.test(id)) dailyHit('clue'); } catch (e) {}
+  try { dailyHit('quest'); if (typeof starNextW === 'function' && +id[0] === starNextW() && questIsBoss(id)) dailyHit('clue'); } catch (e) {}
   gameCleanup && gameCleanup(); gameCleanup = null;
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   w.stage.appendChild(el('div', 'tkd-big', bossWeak ? '👑' : '💪'));
@@ -23472,8 +23560,8 @@ function questFail(w, id, bossWeak, cloudPhase) {
   w.btns.append(again, map);
 }
 function questDone(w, id, P) {
-  try { dailyHit('quest'); if (typeof starNextW === 'function' && +id[0] === starNextW() && /-3$/.test(id)) dailyHit('clue'); } catch (e) {}
-  try { if (typeof starClear === 'function') starClear(id); } catch (e) {}   // 🌟 第一次過大魔王關：星光線索
+  try { dailyHit('quest'); if (typeof starNextW === 'function' && +id[0] === starNextW() && questIsBoss(id)) dailyHit('clue'); } catch (e) {}
+  try { if (typeof starClear === 'function') starClear(id); } catch (e) {}   // 🌟 第一次過大魔王關（該世界最後一關）：星光線索
   if (P.cloudKO) {   // ☁️ 打倒烏雲大王：記次數；第一次送限定貼紙「烏雲剋星」
     const ck = G.cloudKing && typeof G.cloudKing === 'object' ? G.cloudKing : (G.cloudKing = { beat: 0 }); ck.beat = (ck.beat || 0) + 1;
     if (ck.beat === 1) setTimeout(() => { try { Sound.play('fanfare'); showcase(el('div', 'magic-pic', '🌤️'), '限定貼紙「烏雲剋星」！', '打倒烏雲大王，天空放晴了！貼紙放在圖鑑的星光那一頁。', { head: '☁️ 好厲害！' }); } catch (e) {} }, 900);
@@ -23491,12 +23579,13 @@ function questDone(w, id, P) {
   const idx = QUEST_IDS.indexOf(id), next = QUEST_IDS[idx + 1];
   if (next) { const b = el('button', 'big', `下一關 ${next} ▶`); b.onclick = () => playQuest(next); w.btns.appendChild(b); }
   const map = el('button', 'big alt', '回地圖'); map.onclick = () => { closeGameWindow(); openQuestMap(); }; w.btns.appendChild(map);
-  if (first && id.endsWith('-3') && !QUEST_ISLETS[wd - 1]) {   // 世界 4～6：沒有小島，給獎盃＋大獎金
+  const alreadyWorld = q.legacy && (q.legacy[wd] === 1 || q.legacy[String(wd)] === 1);   // 更新前就破過的世界：不再發一次小島／獎盃
+  if (first && questIsBoss(id) && !alreadyWorld && !QUEST_ISLETS[wd - 1]) {   // 世界 4～6：沒有小島，給獎盃＋大獎金
     const wd2 = QUEST_WORLDS[wd - 1], extra = QUEST_WORLD_PRIZE; addBells(extra); saveGame(); refreshTop();
     w.status.textContent += `　🏆 ${wd2.name}破關獎金 +${fmt(extra)}`;
-    setTimeout(() => { try { showcase(el('div', 'magic-pic', wd === 6 ? '👑' : '🏆'), wd === 6 ? '全部破關了！你是闖關大王！' : `破了${wd2.icon} ${wd2.name}！`, wd === 6 ? '六個世界、十八關全部過關，好厲害！' : `下一個世界：${QUEST_WORLDS[wd] ? QUEST_WORLDS[wd].icon + ' ' + QUEST_WORLDS[wd].name : ''}`, { head: `🏆 世界 ${wd} 破關` }); } catch (e) {} }, 900);
+    setTimeout(() => { try { showcase(el('div', 'magic-pic', wd === 6 ? '👑' : '🏆'), wd === 6 ? '全部破關了！你是闖關大王！' : `破了${wd2.icon} ${wd2.name}！`, wd === 6 ? `六個世界、${QUEST_IDS.length}關全部過關，好厲害！` : `下一個世界：${QUEST_WORLDS[wd] ? QUEST_WORLDS[wd].icon + ' ' + QUEST_WORLDS[wd].name : ''}`, { head: `🏆 世界 ${wd} 破關` }); } catch (e) {} }, 900);
   }
-  if (first && id.endsWith('-3') && QUEST_ISLETS[wd - 1]) {   // 破完一個世界：新小島
+  if (first && questIsBoss(id) && !alreadyWorld && QUEST_ISLETS[wd - 1]) {   // 破完一個世界的最後一關：新小島
     const il = QUEST_ISLETS[wd - 1];
     islMapCache = null;
     q.newIsle = il.id;
@@ -25941,7 +26030,8 @@ Object.assign(WALL_TAP, { rest_menu: () => openRestaurantOrder(), hosp_eye: () =
 AWAY_GAMES.push(['👩‍🍳', '餐廳打工', 'restaurant', () => openChefGame()], ['💓', '小醫生', 'hospital', () => openDoctorGame()]);
 /* ===== 🌟 星光線索（家長：世界闖關加一條故事主線）=====
    小可愛在房間角落發現一顆「神祕的星星蛋」，蛋上有 6 個空格。
-   每個世界的大魔王關（1-3、2-3…6-3）第一次過關，就找到 1 個「星光線索」；6 個都找到，星星蛋孵出「星光小精靈」（只有這裡拿得到）。
+   每個世界的大魔王關（該世界最後一關）第一次過關，就找到 1 個「星光線索」；6 個都找到，星星蛋孵出「星光小精靈」（只有這裡拿得到）。
+   更新前大魔王在第 3 關：拿到星星蛋時，已經破過的 1-3…6-3 仍會補線索。
    ・線索關開場：動物朋友用邀約的口氣說一兩句；過關後「找到星光線索！」
    ・已經破過的大魔王關（更新前就破了）：拿到星星蛋的時候一起補給她
    ・重複過關不再給線索，獎金照原本的規則
@@ -25961,30 +26051,92 @@ const starNextW = () => { const s = starState(); if (!s.egg || s.hatched) return
 function starFriend(w) { const ns = NEIGHBORS.filter(Boolean); return ns[(w * 3) % ns.length]; }
 // 闖關開場：這一關是還沒拿到線索的大魔王關，就說一句邀約的話
 function starIntroLine(id) {
-  const s = starState(), w = +id[0]; if (!s.egg || s.hatched || !/-3$/.test(id) || starHas(w)) return '';
+  const s = starState(), w = +id[0]; if (!s.egg || s.hatched || !questIsBoss(id) || starHas(w)) return '';
   const c = STAR_CLUES[w - 1], f = starFriend(w); return c ? `${f ? (f.short || f.name) + '：' : ''}${c.line}` : '';
 }
 // 第一次過大魔王關：找到線索（回傳拿到的線索，沒有回傳 null）
 function starClear(id) {
-  const s = starState(), w = +id[0]; if (!s.egg || s.hatched || !/-3$/.test(id) || starHas(w) || !STAR_CLUES[w - 1]) return null;
+  const s = starState(), w = +id[0]; if (!s.egg || s.hatched || !questIsBoss(id) || starHas(w) || !STAR_CLUES[w - 1]) return null;
   s.got.push(w); s.got.sort((a, b) => a - b); saveGame();
   const c = STAR_CLUES[w - 1];
   setTimeout(() => { try { Sound.play('questClear'); showcase(el('div', 'magic-pic', c.icon), `找到星光線索！「${c.name}」`, `${c.hint}\n星星蛋上亮了 ${s.got.length} / 6 格${s.got.length >= 6 ? '，蛋在動了！' : ''}`, { head: '🌟 星光線索' }); } catch (e) {} if (s.got.length >= 6) setTimeout(starHatch, 800); }, 1500);
   return c;
 }
+function playStarNotice(kind) {
+  const hatch = kind === 'hatch';
+  try { (window.starNoticeLog = window.starNoticeLog || []).push(hatch ? 'hatch' : 'egg'); } catch (e) {}
+  const old = document.getElementById('starNotice'); if (old) old.remove();
+  const box = el('div', 'star-notice' + (hatch ? ' is-hatch' : '')); box.id = 'starNotice';
+  const cv = document.createElement('canvas'); cv.className = 'star-notice-cv';
+  const card = el('div', 'star-notice-card', hatch ? '🌟 星光小精靈孵出來了！' : '✨ 房間多出一個星星蛋了！');
+  box.append(cv, card); document.body.appendChild(box);
+  const W = 520, H = 300, dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = W * dpr; cv.height = H * dpr; cv.style.width = 'min(94vw, 520px)'; cv.style.height = 'auto';
+  const ctx = cv.getContext('2d'); ctx.scale(dpr, dpr);
+  const gold = ['#ffe14a', '#ffd23f', '#fff6c0', '#ffb703', '#fff'];
+  const lav = ['#f4e9ff', '#d7c6f5', '#ffffff', '#c5b4e3', '#e8e8f8'];
+  const cols = hatch ? lav : gold;
+  const parts = [];
+  for (let i = 0; i < (hatch ? 30 : 24); i++) parts.push({
+    x: hatch ? W * .5 + (Math.random() - .5) * 30 : W * .84,
+    y: hatch ? H * .46 : H * .78,
+    vx: hatch ? (Math.random() - .5) * 110 : -70 - Math.random() * 80,
+    vy: hatch ? -40 - Math.random() * 90 : -36 - Math.random() * 50,
+    r: 2 + Math.random() * 2.6,
+    c: cols[i % cols.length],
+    delay: Math.random() * .25
+  });
+  const dur = hatch ? 3000 : 2500, t0 = performance.now();
+  let raf = 0, live = true;
+  try { Sound.play(hatch ? 'starPop' : 'starDing'); } catch (e) {}
+  const star = (x, y, r, rot) => { ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * .45 : r; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } ctx.fill(); ctx.restore(); };
+  const frame = now => {
+    if (!live || !box.isConnected) return;
+    const t = (now - t0) / 1000, k = Math.min(1, (now - t0) / dur);
+    ctx.clearRect(0, 0, W, H);
+    if (t < .4) { ctx.fillStyle = `rgba(255,246,220,${(1 - t / .4) * (hatch ? .62 : .4)})`; ctx.fillRect(0, 0, W, H); }
+    parts.forEach(p => {
+      if (t < p.delay) return;
+      const aim = hatch ? 0 : (W * .5 - p.x) * .015;
+      p.vx += aim; p.x += p.vx / 60; p.y += p.vy / 60; p.vy += hatch ? 8 / 60 : 6 / 60;
+      ctx.globalAlpha = Math.max(0, 1 - k * .85); ctx.fillStyle = p.c; star(p.x, p.y, p.r * 2.2, t * 2 + p.r); ctx.globalAlpha = 1;
+    });
+    if (hatch) {
+      const cx = W / 2, cy = H * .42;
+      if (t < .5) {
+        ctx.fillStyle = '#fff6c8'; ctx.beginPath(); ctx.ellipse(cx, cy, 18, 24, 0, 0, 7); ctx.fill(); ctx.strokeStyle = '#e6c35c'; ctx.lineWidth = 2; ctx.stroke();
+        if (t > .22) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx - 6, cy - 8); ctx.lineTo(cx + 3, cy + 1); ctx.lineTo(cx - 2, cy + 12); ctx.stroke(); ctx.strokeStyle = '#e6c35c'; ctx.stroke(); }
+      } else {
+        const u = Math.min(1, (t - .5) / .35), bounce = Math.sin(Math.min(1, u) * Math.PI) * 16 * (1 - u * .3), sc = .35 + u * .85;
+        ctx.save(); ctx.translate(cx, cy - bounce); ctx.scale(sc, sc);
+        ctx.fillStyle = '#ffe9a8'; ctx.beginPath(); ctx.ellipse(0, 0, 22, 18, 0, 0, 7); ctx.fill();
+        ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.ellipse(0, 5, 12, 9, 0, 0, 7); ctx.fill();
+        ctx.fillStyle = '#231c1c'; [-7, 7].forEach(dx => { ctx.beginPath(); ctx.arc(dx, -2, 2.2, 0, 7); ctx.fill(); });
+        ctx.fillStyle = '#ffd35c'; ctx.beginPath(); ctx.moveTo(0, -18); ctx.lineTo(5, -8); ctx.lineTo(-5, -8); ctx.fill();
+        ctx.restore();
+      }
+    }
+    if (now - t0 < dur) raf = requestAnimationFrame(frame);
+  };
+  raf = requestAnimationFrame(frame);
+  setTimeout(() => { if (box.isConnected) box.classList.add('out'); }, dur);
+  setTimeout(() => { live = false; cancelAnimationFrame(raf); if (box.isConnected) box.remove(); }, dur + 480);
+}
 function starHatch() {
   const s = starState(); if (s.hatched || s.got.length < 6) return;
   s.hatched = 1; const p = newPet('starling', 'baby', ''); G.pets.push(p); try { growDexAdd && growDexAdd('starling', 'baby'); } catch (e) {} saveGame();
   try { Sound.play('fanfare'); if (typeof confettiBurst === 'function') confettiBurst(150); showcase(renderPetPortrait(p, 150, 140), '星星蛋孵化了！是「星光小精靈」！', '只有找齊 6 個星光線索才遇得到的稀有寵物，在寵物頁可以帶牠出來喔！', { head: '🌟 好特別！' }); } catch (e) {}
+  try { playStarNotice('hatch'); } catch (e) {}
 }
 // 拿到星星蛋：放在房間角落（擺不下就放進「我的東西」）；已經破過的大魔王關一起補給她
 function starGiveEgg() {
   const s = starState(); if (s.egg) return; s.egg = 1;
   const room = G.rooms[0], spot = room && nearestFree(room, room.w - 1, 0);
   if (spot) room.items.push({ uid: G.uid++, id: 'star_egg', x: spot[0], y: spot[1], rot: 0 }); else G.inv.star_egg = (G.inv.star_egg || 0) + 1;
-  STAR_CLUES.forEach(c => { if (G.quest && G.quest.clear && G.quest.clear[c.w + '-3'] && !s.got.includes(c.w)) s.got.push(c.w); });
+  STAR_CLUES.forEach(c => { const q = G.quest && G.quest.clear, boss = typeof questBossId === 'function' ? questBossId(c.w) : (c.w + '-3'); if (q && (q[boss] === 1 || q[c.w + '-3'] === 1) && !s.got.includes(c.w)) s.got.push(c.w); });
   saveGame(); try { draw(); } catch (e) {}
-  showcase(el('div', 'magic-pic', '🥚'), '房間角落有一顆神祕的星星蛋！', `蛋上有 6 個空格，要找回 6 個「星光線索」才會孵化。\n每個世界闖關的大魔王那裡都有一個${s.got.length ? `（你已經找到 ${s.got.length} 個了！）` : ''}！點蛋可以看找到幾個。`, { head: '🌟 星星蛋' });
+  showcase(el('div', 'magic-pic', '🥚'), '✨ 房間多出一個星星蛋了！', `蛋上有 6 個空格，要找回 6 個「星光線索」才會孵化。\n每個世界最後的大魔王那裡都有一個${s.got.length ? `（你已經找到 ${s.got.length} 個了！）` : ''}！點蛋可以看找到幾個。`, { head: '🌟 星星蛋' });
+  try { playStarNotice('egg'); } catch (e) {}
   if (s.got.length >= 6) setTimeout(starHatch, 1500);
 }
 function openStarEgg() {
@@ -25992,7 +26144,7 @@ function openStarEgg() {
   card.appendChild(el('h2', '', s.hatched ? '🌟 星星蛋（已經孵化了）' : '🌟 神祕的星星蛋'));
   const row = el('div', 'star-slots'); STAR_CLUES.forEach(c => { const has = s.got.includes(c.w), t = el('div', 'star-slot' + (has ? ' on' : '')); t.append(el('span', 'star-e', has ? c.icon : '✦'), el('span', 'star-n', has ? c.name : `世界 ${c.w}`)); row.appendChild(t); }); card.appendChild(row);
   const nx = starNextW();
-  card.appendChild(note(s.hatched ? '星光小精靈已經孵出來了！謝謝你找回全部的星光。' : `找到 ${s.got.length} / 6 個。${nx ? `下一個在「世界 ${nx}」的大魔王關（${nx}-3）！` : ''}`));
+  card.appendChild(note(s.hatched ? '星光小精靈已經孵出來了！謝謝你找回全部的星光。' : `找到 ${s.got.length} / 6 個。${nx ? `下一個在「世界 ${nx}」的大魔王關（${typeof questBossId === 'function' ? questBossId(nx) : nx + '-3'}）！` : ''}`));
   if (!s.hatched) { const go = el('button', 'big', '🗺️ 去闖關找線索'); go.onclick = () => openQuestMap(); card.appendChild(go); }
   const ok = el('button', 'big alt', '好'); ok.onclick = () => { $('#modal').hidden = true; }; card.appendChild(ok);
   $('#modal').hidden = false;

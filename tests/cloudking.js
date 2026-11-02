@@ -28,10 +28,11 @@ const path = require('path');
       }
       return log;
     };
+    const skyBoss = questBossId(5);
     // 別的世界還是原本的大王
-    playQuest('1-3'); o.oldBoss = playQuest.test.ents.some(e => e.k === 'boss') && !playQuest.test.cloud(); closeGameWindow();
+    playQuest(questBossId(1)); o.oldBoss = playQuest.test.ents.some(e => e.k === 'boss') && !playQuest.test.cloud(); closeGameWindow();
     // 一般：從大魔王開始
-    questState().mode = 'normal'; playQuest('5-3', { bossStart: true }); let T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null;
+    questState().mode = 'normal'; playQuest(skyBoss, { bossStart: true }); let T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null;
     const ck = T.cloud(); o.isCloud = !!ck && ck.hp === 6 && ck.phase === 1;
     // 還沒走過去：不會下雨
     for (let i = 0; i < 60; i++) T.step(1 / 60); o.idle = T.rain.length === 0;
@@ -49,13 +50,13 @@ const path = require('path');
     T.ckHit(ck); ck.hurt = 0; T.ckHit(ck); o.ko = !ck.alive && T.P.cloudKO && T.items.some(it => it.k === 'goal' && !it.hidden);
     closeGameWindow();
     // 輸了：從階段繼續
-    playQuest('5-3', { bossStart: true, cloudPhase: 3 }); T = playQuest.test; o.resume = T.cloud().hp === 2 && T.cloud().phase === 3; closeGameWindow();
+    playQuest(skyBoss, { bossStart: true, cloudPhase: 3 }); T = playQuest.test; o.resume = T.cloud().hp === 2 && T.cloud().phase === 3; closeGameWindow();
     const fw = { stage: document.createElement('div'), btns: document.createElement('div'), status: {}, card: document.createElement('div') };
-    questFail(fw, '5-3', 1, 2); o.failBtn = /第 2 階段繼續/.test(fw.btns.textContent);
+    questFail(fw, skyBoss, 1, 2); o.failBtn = /第 2 階段繼續/.test(fw.btns.textContent);
     // 自動玩家打得過：一般（從大魔王開始）、簡單（從頭）
     const runs = {};
     for (const [mode, bs] of [['normal', true], ['normal', true], ['easy', false]]) {
-      questState().mode = mode; playQuest('5-3', bs ? { bossStart: true } : undefined); T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null;
+      questState().mode = mode; playQuest(skyBoss, bs ? { bossStart: true } : undefined); T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null;
       if (!bs) { for (let i = 0; i < 60 * 120 && !T.bossZone() && T.state() === 'play'; i++) { T.keys.ArrowRight = true; const P = T.P, fx = Math.floor((P.x + P.w + 14) / QT), feet = Math.floor((P.y + P.h + 2) / QT); if (P.on && (!T.solid(T.tileAt(fx, feet)) || T.solid(T.tileAt(fx, Math.floor((P.y + P.h - 6) / QT))))) T.jump(); T.step(1 / 60); } }
       const log = bot(T, 150); runs[mode + (bs ? 'B' : '')] = (runs[mode + (bs ? 'B' : '')] || []).concat([T.state() + ' hp' + (T.cloud() ? T.cloud().hp : '-') + ' hurt@' + log.join('')]);
       if (T.state() === 'flag' || T.state() === 'win') { for (let i = 0; i < 400 && T.state() !== 'win'; i++) T.frameStep(1 / 60); }
@@ -63,7 +64,7 @@ const path = require('path');
     }
     o.runs = runs; o.botWins = Object.values(runs).flat().filter(r => /^(flag|win)/.test(r)).length >= 2;
     // 打倒後過關：記次數、第一次送貼紙
-    G.cloudKing = null; questDone(fw, '5-3', { coins: 30, stars: 0, cloudKO: true }); o.beat = G.cloudKing && G.cloudKing.beat === 1;
+    G.cloudKing = null; questDone(fw, skyBoss, { coins: 30, stars: 0, cloudKO: true }); o.beat = G.cloudKing && G.cloudKing.beat === 1;
     await wait(1200); o.sticker = !!document.querySelector('#showcase') || SC_QUEUE.length > 0; document.querySelectorAll('#showcase').forEach(x => x.remove()); SC_QUEUE.length = 0;
     openTab('book'); await wait(200); o.book = /烏雲剋星/.test(document.getElementById('tabBody').textContent); openTab('inv');
     saveGame(); const raw = JSON.parse(localStorage.getItem(SAVE_KEY)); o.saved = raw.cloudKing && raw.cloudKing.beat === 1;

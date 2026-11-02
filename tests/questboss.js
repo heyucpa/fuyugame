@@ -27,7 +27,7 @@ const path = require('path');
     T.down(); run(T, 2); o.inPipe = T.inBonus();
     closeGameWindow();
     // 一般模式大魔王
-    questState().mode = 'normal'; playQuest('1-3', { bossStart: true }); T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null;
+    questState().mode = 'normal'; playQuest(questBossId(1), { bossStart: true }); T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null;
     const bs = T.ents.find(e => e.k === 'boss'); T.P.x = bs.x - 120; run(T, 5);
     const gy = bs.y; bs.mode = 'fly'; bs.mt = 0; run(T, 40); o.fly = bs.y < gy - 3 * QT;
     T.P.inv = 99; let landed = false; for (let i = 0; i < 200 && !landed; i++) { T.step(1 / 60); landed = !bs.mode; } o.slam = landed && Math.abs(bs.y - gy) < 2 && bs.dizzy > 1.2; T.P.inv = 0;
@@ -37,7 +37,7 @@ const path = require('path');
     T.P.inv = 99; bs.mode = null; bs.acts = 0; const seen = {}; for (let i = 0; i < 60 * 25; i++) { T.step(1 / 60); if (bs.mode) seen[bs.mode] = 1; } o.uses = !!(seen.fly && seen.fire);
     closeGameWindow();
     // 簡單模式大魔王不會
-    questState().mode = 'easy'; playQuest('1-3', { bossStart: true }); T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null;
+    questState().mode = 'easy'; playQuest(questBossId(1), { bossStart: true }); T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null;
     const be = T.ents.find(e => e.k === 'boss'); T.P.inv = 99; T.keys.ArrowRight = true; run(T, 30); T.keys.ArrowRight = false; let any = false; for (let i = 0; i < 60 * 20; i++) { T.P.inv = 99; T.step(1 / 60); if (be.mode) any = true; } o.easyPlain = !any && !T.bossFire.length;
     closeGameWindow();
     return o;
