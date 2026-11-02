@@ -72,10 +72,13 @@ const path = require('path');
     T.P.big = false; T.P.fire = false; T.P.starT = 0; T.P.vx = 0; T.P.x = 4 * QT - 6; T.P.y = 10 * QT + 1; T.P.vy = -300; run(T, 8);
     o.bonkPref = T.L.g[9][4] === 'u' && T.L.g[9][3] === 'B';
     // staircoin 粉紅在橋上、從地面頂得到；brickline／pipehouse／blocks 的問號磚沒有被另一層天花板擋住
-    const stairM = () => { for (let y = 0; y < gB.length; y++) for (let x = 3; x < gB[y].length - 3; x++) {
-      if (gB[y][x] !== 'M' || gB[y][x - 1] !== '=' || gB[y][x + 1] !== '=') continue;
-      const stacked = [-3, -2, -1, 1, 2, 3].some(dx => gB[y][x + dx] === '=' && gB[y + 1] && gB[y + 1][x + dx] === '=');
-      const gap = gapTo(gB, x, y); if (stacked && gap && gap.ch === '#' && gap.gap >= 0 && gap.gap <= 24) return true;
+    const stairM = () => { for (let y = 0; y < gB.length; y++) for (let x = 2; x < gB[y].length - 4; x++) {
+      if (![0, 1, 2, 3, 4].every(i => gB[y][x + i] === 'M')) continue;
+      const gap = gapTo(gB, x + 2, y);
+      const above = gB[y - 3] && (gB[y - 3][x + 2] === '?' || gB[y - 3][x + 2] === 'N');
+      let open = true;
+      for (let i = 0; i < 5; i++) for (let dy = 1; dy <= 2; dy++) if (gB[y + dy] && S(gB[y + dy][x + i])) open = false;
+      if (above && open && gap && gap.ch === '#' && gap.gap >= 0 && gap.gap <= 24) return true;
     } return false; };
     const lineM = () => { for (let y = 0; y < gB.length; y++) for (let x = 2; x < gB[y].length - 2; x++) {
       if (gB[y][x] !== 'M') continue;
@@ -107,6 +110,58 @@ const path = require('path');
     o.noFalseWorld = neu.rev === 2 && neu.legacy['1'] == null && neu.clear['1-3'] === 1 && neu.stars['1-1'] === 1;
     // 地圖
     openQuestMap(); o.map = document.querySelectorAll('.quest-world').length === 6 && /城堡世界/.test($('#modalCard').innerText) && /獎盃/.test($('#modalCard').innerText); $('#modal').hidden = true;
+    // 第 4 顆星星（1-3 藤蔓雲上）：以前 P.stars 變成 4，'☆'.repeat(-1) 把畫面迴圈弄停
+    if (!(G.pet && G.pet.stage && G.pet.stage !== 'egg')) G.pet = { species: 'bunny', stage: 'kid', hunger: 80, clean: 100, mood: 80 };
+    questState().mode = 'easy'; playQuest('1-3');
+    T = playQuest.test;
+    const vineStar = T.items.find(it => it.k === 'star' && it.y < 80);
+    T.P.stars = 3; T.P.vx = 0; T.P.vy = 0; T.P.x = vineStar.x - 6; T.P.y = 4 * QT - T.P.h;
+    let starErr = '';
+    try { for (let i = 0; i < 6; i++) T.frameStep(1 / 60); } catch (e) { starErr = e.message; }
+    const sx0 = T.P.x; T.keys.ArrowRight = true;
+    try { for (let i = 0; i < 24; i++) T.frameStep(1 / 60); } catch (e) { starErr += e.message; }
+    o.starLive = !starErr && vineStar.got === 1 && T.P.stars === 3 && T.P.x > sx0 + 12 && T.state() === 'play';
+    gameCleanup && gameCleanup(); gameCleanup = null; $('#modal').hidden = true;
+    // 階梯金幣：拱底連續粉紅，左邊走得進去。人站在左、中、右，點一下（不長按）都頂得到，而且拿到道具。上面仍有金色問號。
+    const g13 = questBuild('1-3', true).g;
+    let runX = -1, runY = -1, runN = 0;
+    for (let y = 0; y < g13.length; y++) for (let x = 0; x < g13[y].length; x++) {
+      let n = 0; while (g13[y][x + n] === 'M') n++;
+      const gold = n >= 5 && g13[y - 3] && [0, 1, 2, 3, 4].some(i => g13[y - 3][x + i] === 'N');
+      if (gold && n > runN) { runX = x; runY = y; runN = n; }
+    }
+    const wall = c => '#=?BMNPRQU'.includes(c);
+    let path = runN >= 5 && runY === 10;
+    for (let i = 0; i < runN; i++) if (wall(g13[12][runX + i]) || wall(g13[11][runX + i])) path = false;
+    for (let x = runX - 4; x < runX; x++) if (x >= 0 && (wall(g13[12][x]) || wall(g13[11][x]))) path = false;
+    o.archOpen = path && g13[runY - 3][runX + 2] === '?' && g13[runY - 3][runX + 4] === '?';
+    const tapAt = (col) => {
+      questState().mode = 'easy'; playQuest('1-3');
+      const T2 = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null;
+      T2.P.big = false; T2.P.fire = false; T2.P.starT = 0; T2.P.vx = 0; T2.P.inv = 9;
+      T2.P.x = col * QT + 2; T2.P.y = 13 * QT - T2.P.h; T2.P.vy = 0;
+      for (let i = 0; i < 4; i++) T2.step(1 / 60);
+      T2.jump(); T2.step(1 / 60); T2.release();
+      for (let i = 0; i < 50; i++) T2.step(1 / 60);
+      return T2.L.g[runY][col] === 'u' && T2.items.some(it => it.k === 'pow' && it.got === 1);
+    };
+    o.archHit = path && [0, 2, 4].every(i => tapAt(runX + i));
+    // 長跳頂得到、但道具以前掉在磚塊上面撿不到：火火花那一排、水管旁的粉紅
+    const reach = pred => {
+      questState().mode = 'easy'; playQuest('1-3');
+      const T2 = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null;
+      let mx = -1, my = -1;
+      T2.L.g.forEach((row, y) => row.forEach((ch, x) => { if (ch === 'M' && pred(T2, x, y)) { mx = x; my = y; } }));
+      if (mx < 0) return false;
+      T2.P.big = false; T2.P.fire = false; T2.P.starT = 0; T2.P.vx = 0; T2.P.inv = 9; T2.P.x = mx * QT + 2; T2.P.y = 13 * QT - T2.P.h;
+      for (let i = 0; i < 4; i++) T2.step(1 / 60);
+      T2.jump();
+      for (let i = 0; i < 100; i++) T2.step(1 / 60);
+      return T2.L.g[my][mx] === 'u' && T2.items.some(it => it.k === 'pow' && it.got === 1);
+    };
+    o.powReach = reach((T2, x, y) => y === 9 && T2.L.g[y][x - 1] === '=');
+    o.pipeReach = reach((T2, x, y) => y === 8 && T2.L.g[y][x - 1] === 'N');
+    closeGameWindow(); $('#modal').hidden = true;
     return o;
   });
   console.log(JSON.stringify(out));
