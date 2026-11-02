@@ -4909,6 +4909,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-12T21:00', title: '🗺️ 前面的闖關變長了', lines: [
+    ['🧱', '每個世界前面的舊關變長了：打得掉的磚、藤蔓、會動的雲、踢殼、頭頂的金幣房'],
+    ['🟢', '舊關也有水管，站上去按 ⬇ 進祕密房間'],
+    ['🐣', '簡單模式坑比較窄、怪比較少，被打到還是不會少愛心']
+  ] },
   { id: '2026-11-10T20:00', title: '🏁 起跑反應王', lines: [
     ['🏁', '點操場的起跑架就可以玩「起跑反應王」：聽到教練吹哨「嗶！」才可以衝，太早按是偷跑！'],
     ['⚡', '看看你的反應有多快（幾秒），跟同學比誰先衝出去；高手模式還有假動作喔']
@@ -22687,34 +22692,34 @@ const QUEST_WORLDS = [
 ];
 // 每一關由幾段組成（數字是難度：越大坑越寬、怪越多）
 const QUEST_LEVELS = {
-  '1-1': ['start', 'power', 'flat', 'hidden', 'blocks*', 'enemy1', 'gap2', 'flat', 'step', 'check', 'enemy1', 'plat*', 'spring*', 'flat', 'goal'],
-  '1-2': ['start', 'power', 'enemy1', 'gap2', 'blocks*', 'hill', 'pipe', 'enemy2', 'check', 'plat*', 'gap3', 'step', 'spring*', 'enemy1', 'goal'],
-  '1-3': ['start', 'power', 'blocks*', 'enemy2', 'gap3', 'check', 'plat*', 'hill', 'spring*', 'vine*', 'enemy2', 'goal'],
+  '1-1': ['start', 'power', 'flat', 'hidden', 'blocks*', 'enemy1', 'brickline', 'gap2', 'vine', 'staircoin', 'flat', 'step', 'check', 'parade', 'enemy1', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'kickline', 'alcove', 'pipehouse', 'check', 'goal'],
+  '1-2': ['start', 'power', 'enemy1', 'brickline', 'vine', 'gap2', 'blocks*', 'staircoin', 'hill', 'pipe', 'parade', 'enemy2', 'check', 'plat*', 'skyhop', 'gap3', 'step', 'spring*', 'cloudgap', 'kickline', 'alcove', 'enemy1', 'pipehouse', 'goal'],
+  '1-3': ['start', 'power', 'brickline', 'blocks*', 'enemy2', 'gap3', 'staircoin', 'check', 'parade', 'plat*', 'skyhop', 'hill', 'spring*', 'cloudgap', 'vine*', 'kickline', 'alcove', 'pipehouse', 'enemy2', 'goal'],
   '1-4': ['start', 'power', 'brow*', 'vine*', 'enemy1', 'gap2', 'pipe', 'mplat', 'check', 'hidden', 'uplat', 'spring*', 'goal'],
   '1-5': ['start', 'power', 'blocks*', 'enemy2', 'gap3', 'check', 'plat*', 'hill', 'spring*', 'enemy2', 'boss'],
-  '2-1': ['start', 'power', 'flat', 'hidden', 'enemy1', 'gap2', 'blocks*', 'spikes', 'check', 'plat*', 'enemy2', 'spring*', 'gap3', 'goal'],
-  '2-2': ['start', 'power', 'enemy2', 'gap3', 'blocks*', 'spikes', 'pipe', 'hill', 'check', 'plat*', 'enemy2', 'gap3', 'spring*', 'step', 'goal'],
-  '2-3': ['start', 'power', 'blocks*', 'spikes', 'enemy2', 'check', 'gap3', 'plat*', 'spring*', 'swim*', 'enemy2', 'goal'],
+  '2-1': ['start', 'power', 'flat', 'hidden', 'enemy1', 'brickline', 'gap2', 'blocks*', 'staircoin', 'spikes', 'check', 'parade', 'plat*', 'skyhop', 'enemy2', 'spring*', 'cloudgap', 'kickline', 'alcove', 'gap3', 'pipehouse', 'vine', 'goal'],
+  '2-2': ['start', 'power', 'brickline', 'enemy2', 'vine', 'gap3', 'blocks*', 'spikes', 'staircoin', 'pipe', 'hill', 'check', 'parade', 'plat*', 'skyhop', 'enemy2', 'gap3', 'spring*', 'cloudgap', 'kickline', 'alcove', 'step', 'pipehouse', 'goal'],
+  '2-3': ['start', 'power', 'brickline', 'blocks*', 'spikes', 'enemy2', 'staircoin', 'check', 'gap3', 'parade', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'swim*', 'kickline', 'alcove', 'pipehouse', 'enemy2', 'goal'],
   '2-4': ['start', 'power', 'swim*', 'wpipe', 'brow*', 'enemy1', 'check', 'mplat', 'vine*', 'spring*', 'goal'],
   '2-5': ['start', 'swim', 'power', 'blocks*', 'enemy2', 'check', 'gap3', 'plat*', 'spring*', 'boss'],
-  '3-1': ['start', 'power', 'flat', 'hidden', 'bees', 'gap2', 'blocks*', 'enemy2', 'check', 'plat*', 'bees', 'spring*', 'gap3', 'goal'],
-  '3-2': ['start', 'power', 'bees', 'gap3', 'blocks*', 'spikes', 'pipe', 'enemy2', 'check', 'plat*', 'bees', 'hill', 'spring*', 'gap3', 'goal'],
-  '3-3': ['start', 'power', 'bees', 'blocks*', 'enemy2', 'check', 'gap3', 'plat*', 'spikes', 'spring*', 'vine*', 'goal'],
+  '3-1': ['start', 'power', 'flat', 'hidden', 'vine', 'bees', 'beeweave', 'gap2', 'blocks*', 'staircoin', 'enemy2', 'check', 'parade', 'plat*', 'skyhop', 'bees', 'spring*', 'cloudgap', 'kickline', 'alcove', 'gap3', 'pipehouse', 'brickline', 'goal'],
+  '3-2': ['start', 'power', 'brickline', 'bees', 'vine', 'gap3', 'blocks*', 'beeweave', 'spikes', 'staircoin', 'pipe', 'enemy2', 'check', 'parade', 'plat*', 'skyhop', 'bees', 'hill', 'spring*', 'cloudgap', 'kickline', 'alcove', 'gap3', 'pipehouse', 'goal'],
+  '3-3': ['start', 'power', 'brickline', 'bees', 'blocks*', 'beeweave', 'enemy2', 'check', 'parade', 'gap3', 'plat*', 'skyhop', 'spikes', 'spring*', 'cloudgap', 'vine*', 'kickline', 'alcove', 'pipehouse', 'goal'],
   '3-4': ['start', 'power', 'vine*', 'bees', 'brow*', 'pipe', 'gap2', 'check', 'mplat', 'hidden', 'spring*', 'goal'],
   '3-5': ['start', 'power', 'bees', 'blocks*', 'enemy2', 'check', 'gap3', 'plat*', 'spring*', 'boss'],
-  '4-1': ['start', 'flat', 'power', 'enemy1', 'gap2', 'shell', 'check', 'hidden', 'plat*', 'spring*', 'blocks*', 'goal'],
-  '4-2': ['start', 'enemy2', 'power', 'gap3', 'pipe', 'check', 'blocks*', 'shell', 'plat*', 'spring*', 'gap2', 'goal'],
-  '4-3': ['start', 'power', 'blocks*', 'enemy2', 'check', 'shell', 'gap3', 'plat*', 'spring*', 'vine*', 'goal'],
+  '4-1': ['start', 'flat', 'power', 'brickline', 'vine', 'enemy1', 'iceglide', 'gap2', 'shell', 'staircoin', 'check', 'hidden', 'parade', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'kickline', 'blocks*', 'alcove', 'pipehouse', 'goal'],
+  '4-2': ['start', 'enemy2', 'power', 'brickline', 'vine', 'gap3', 'iceglide', 'pipe', 'staircoin', 'check', 'blocks*', 'parade', 'shell', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'kickline', 'alcove', 'gap2', 'pipehouse', 'goal'],
+  '4-3': ['start', 'power', 'brickline', 'blocks*', 'vine', 'enemy2', 'iceglide', 'check', 'parade', 'shell', 'gap3', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'vine*', 'kickline', 'alcove', 'pipehouse', 'goal'],
   '4-4': ['start', 'power', 'shell', 'vine*', 'gap2', 'check', 'brow*', 'mplat', 'pipe', 'spring*', 'goal'],
   '4-5': ['start', 'power', 'blocks*', 'enemy2', 'shell', 'check', 'gap3', 'plat*', 'spring*', 'boss'],
-  '5-1': ['start', 'flat', 'power', 'mplat', 'enemy1', 'check', 'plat*', 'hidden', 'mplat', 'blocks*', 'spring*', 'goal'],
-  '5-2': ['start', 'bees', 'power', 'mplat', 'blocks*', 'pipe', 'check', 'shell', 'mplat', 'plat*', 'spring*', 'goal'],
-  '5-3': ['start', 'power', 'blocks*', 'mplat', 'check', 'bees', 'plat*', 'mplat', 'vine*', 'spring*', 'goal'],
+  '5-1': ['start', 'flat', 'power', 'brickline', 'mplat', 'vine', 'enemy1', 'skyhop', 'check', 'plat*', 'cloudgap', 'hidden', 'parade', 'mplat', 'staircoin', 'blocks*', 'spring*', 'kickline', 'alcove', 'pipehouse', 'goal'],
+  '5-2': ['start', 'bees', 'power', 'brickline', 'mplat', 'vine', 'blocks*', 'beeweave', 'pipe', 'staircoin', 'check', 'parade', 'shell', 'mplat', 'skyhop', 'plat*', 'cloudgap', 'spring*', 'kickline', 'alcove', 'pipehouse', 'goal'],
+  '5-3': ['start', 'power', 'brickline', 'blocks*', 'mplat', 'skyhop', 'check', 'bees', 'beeweave', 'plat*', 'cloudgap', 'mplat', 'vine*', 'spring*', 'parade', 'kickline', 'alcove', 'pipehouse', 'goal'],
   '5-4': ['start', 'power', 'mplat', 'vine*', 'bees', 'check', 'brow*', 'hidden', 'mplat', 'uplat', 'spring*', 'goal'],
   '5-5': ['start', 'power', 'blocks*', 'mplat', 'check', 'bees', 'plat*', 'mplat', 'spring*', 'enemy2', 'boss'],
-  '6-1': ['start', 'power', 'enemy1', 'lava', 'blocks*', 'check', 'shell', 'lava', 'plat*', 'spring*', 'goal'],
-  '6-2': ['start', 'power', 'lava', 'shell', 'blocks*', 'pipe', 'check', 'enemy2', 'lava', 'plat*', 'hidden', 'spring*', 'goal'],
-  '6-3': ['start', 'power', 'blocks*', 'lava', 'shell', 'check', 'enemy2', 'lava', 'plat*', 'vine*', 'goal'],
+  '6-1': ['start', 'power', 'brickline', 'enemy1', 'vine', 'lava', 'lavahop', 'blocks*', 'staircoin', 'check', 'parade', 'shell', 'lava', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'kickline', 'alcove', 'pipehouse', 'goal'],
+  '6-2': ['start', 'power', 'brickline', 'lava', 'lavahop', 'shell', 'vine', 'blocks*', 'pipe', 'staircoin', 'check', 'parade', 'enemy2', 'lava', 'plat*', 'skyhop', 'hidden', 'spring*', 'cloudgap', 'kickline', 'alcove', 'pipehouse', 'goal'],
+  '6-3': ['start', 'power', 'brickline', 'blocks*', 'lava', 'lavahop', 'shell', 'check', 'parade', 'enemy2', 'lava', 'plat*', 'skyhop', 'vine*', 'spring*', 'cloudgap', 'kickline', 'alcove', 'pipehouse', 'goal'],
   '6-4': ['start', 'power', 'lava', 'brow*', 'shell', 'check', 'pipe', 'vine*', 'spring*', 'goal'],
   '6-5': ['start', 'power', 'blocks*', 'lava', 'shell', 'check', 'enemy2', 'lava', 'plat*', 'spring*', 'boss']
 };
@@ -22780,6 +22785,107 @@ function questBuild(id, easy) {   // easy：簡單模式的坑窄一格（家長
     else if (s === 'swim') { ground(x, x + 18); for (let xx = x + 2; xx < x + 16; xx++) for (let y = 10; y <= 12; y++) put(xx, y, 'W'); for (let i = 0; i < 4; i++) put(x + 4 + i * 3, 11, 'o'); put(x + 10, 10, 'n'); if (star) put(x + 8, 8, 's'); x += 18; }   // 水池：地板還在，走過去就游泳
     else if (s === 'wpipe') { ground(x, x + 12); for (let y = 11; y < 13; y++) { put(x + 5, y, 'U'); put(x + 6, y, 'U'); } waterPipes.push(x + 5); x += 12; }   // 藍色水管：進水裡的祕密房間
     else if (s === 'uplat') { ground(x, x + 10); put(x + 5, 8, 'Y'); if (star) put(x + 5, 4, 's'); x += 10; }   // 上下動的雲，在頭上，不擋路
+    // ── 舊關加長：每段都有事情做。磚的規則跟現在一樣（變大才打得破；N 一定有金幣）。怪都放在地面，不擋路。──
+    else if (s === 'brickline') {
+      ground(x, x + 14);
+      for (let i = 2; i <= 9; i++) put(x + i, 9, i === 4 ? '?' : i === 6 ? 'M' : i === 8 ? 'N' : 'B');
+      put(x + 3, 10, 'o'); put(x + 5, 10, 'o'); put(x + 7, 10, 'o'); put(x + 8, 7, 'o');
+      put(x + 12, 12, 'e');
+      x += 14;
+    }
+    else if (s === 'staircoin') {
+      ground(x, x + 16);
+      for (let i = 0; i < 3; i++) for (let y = 12 - i; y <= 12; y++) { put(x + 2 + i, y, '='); put(x + 10 - i, y, '='); }
+      put(x + 5, 10, 'B'); put(x + 6, 10, 'B'); put(x + 7, 10, 'B');
+      put(x + 5, 7, '?'); put(x + 6, 7, 'N'); put(x + 7, 7, 'M');
+      put(x + 4, 8, 'o'); put(x + 8, 8, 'o');
+      put(x + 13, 12, 'e');
+      x += 16;
+    }
+    else if (s === 'skyhop') {
+      ground(x, x + 3);
+      for (let i = 0; i < 4; i++) { put(x + 4 + i, 11, '-'); put(x + 4 + i, 9, 'o'); }
+      put(x + 6, easy ? 11 : 8, 'c');
+      if (!easy) { put(x + 5, 7, 'o'); put(x + 7, 7, 'o'); }
+      x += 10; ground(x, x + 3); x += 3;
+    }
+    else if (s === 'parade') {
+      ground(x, x + 16);
+      put(x + 3, 12, 'e');
+      put(x + 6, 12, '='); put(x + 6, 11, '=');
+      put(x + 7, 10, 'o'); put(x + 8, 10, 'o');
+      put(x + 10, 12, 'e');
+      if (!easy) { put(x + 12, 11, '='); put(x + 13, 12, 'e'); }
+      else { put(x + 13, 10, 'o'); put(x + 14, 10, 'o'); }
+      x += 16;
+    }
+    else if (s === 'cloudgap') {
+      const w = easy ? 2 : 3;
+      ground(x, x + 4);
+      put(x + 4, 11, 'p');
+      put(x + 4 + w - 1, easy ? 11 : 10, 'c');
+      for (let i = 0; i < w; i++) put(x + 4 + i, 8, 'o');
+      x += 4 + w; ground(x, x + 4); x += 4;
+    }
+    else if (s === 'kickline') {
+      ground(x, x + 16);
+      put(x + 2, 12, 't');
+      const n = easy ? 2 : 3;
+      for (let i = 0; i < n; i++) put(x + 6 + i * 3, 12, 'e');
+      for (let i = 0; i < 4; i++) put(x + 5 + i, 9, 'o');
+      put(x + 15, 11, '='); put(x + 15, 12, '=');
+      x += 16;
+    }
+    else if (s === 'alcove') {
+      ground(x, x + 16);
+      put(x + 2, 5, '='); put(x + 11, 5, '=');
+      for (let yy = 6; yy <= 8; yy++) { put(x + 2, yy, '='); put(x + 11, yy, '='); }
+      for (let i = 3; i <= 10; i++) put(x + i, 5, i === 7 ? 'M' : '=');
+      for (let i = 3; i <= 10; i++) put(x + i, 8, 'B');
+      for (let i = 3; i <= 10; i++) { put(x + i, 6, 'o'); put(x + i, 7, 'o'); }
+      put(x + 13, 9, 'N'); put(x + 14, 9, 'H');
+      x += 16;
+    }
+    else if (s === 'pipehouse') {
+      ground(x, x + 14);
+      for (let y = 10; y < 13; y++) { put(x + 4, y, 'P'); put(x + 5, y, 'P'); }
+      pipes.push(x + 4);
+      for (let i = 7; i <= 11; i++) put(x + i, 8, i === 9 ? 'M' : i === 8 ? 'N' : 'B');
+      put(x + 9, 6, 'o'); put(x + 10, 6, 'o');
+      if (easy) { put(x + 6, 11, '-'); put(x + 7, 10, '-'); }
+      put(x + 12, 12, 'e');
+      x += 14;
+    }
+    else if (s === 'beeweave') {
+      ground(x, x + 3);
+      const span = easy ? 7 : 9;
+      for (let i = 0; i < 3; i++) { put(x + 3 + i, 11, '-'); put(x + 3 + i, 9, 'o'); }
+      put(x + 6, easy ? 3 : 6, 'b');
+      for (let i = 0; i < 3; i++) { put(x + span + i, 11, '-'); put(x + span + i, 9, 'o'); }
+      x += 3 + span; ground(x, x + 3); x += 3;
+    }
+    else if (s === 'iceglide') {
+      ground(x, x + 11);
+      for (let i = 0; i < 4; i++) put(x + 2 + i, 10, 'o');
+      put(x + 8, 12, 't');
+      if (easy) put(x + 10, 11, '-');
+      x += 11;
+      const w = easy ? 2 : 3;
+      for (let i = 0; i < w; i++) put(x + i, 9, 'o');
+      x += w; ground(x, x + 5); x += 5;
+    }
+    else if (s === 'lavahop') {
+      const w = easy ? 2 : 3;
+      const lava = at => { for (let i = 0; i < w; i++) { put(at + i, 13, 'L'); put(at + i, 14, 'L'); } if (!easy) put(at + (w >> 1), 12, 'v'); };
+      ground(x, x + 3); lava(x + 3); x += 3 + w;
+      ground(x, x + 5);
+      put(x + 1, 9, '?'); put(x + 2, 9, 'B'); put(x + 3, 9, 'N');
+      put(x + 1, 7, 'o'); put(x + 2, 7, 'o'); put(x + 3, 7, 'o');
+      x += 5;
+      if (easy) put(x - 1, 11, '-');
+      lava(x); x += w;
+      ground(x, x + 4); x += 4;
+    }
   });
   let width = x, bonusX = 0;
   const waterRoom = waterPipes.length > 0 && !pipes.length;
@@ -22789,6 +22895,11 @@ function questBuild(id, easy) {   // easy：簡單模式的坑窄一格（家長
     for (let y = 3; y < 13; y++) put(bonusX + 19, y, '#');
     for (let i = 0; i < 12; i++) { put(bonusX + 3 + i, 7, 'o'); put(bonusX + 3 + i, 9, 'o'); put(bonusX + 3 + i, 11, 'o'); }
     for (let y = 11; y < 13; y++) { put(bonusX + 16, y, 'Q'); put(bonusX + 17, y, 'Q'); }
+    if (!waterRoom) {   // 一般祕密房間多一排磚和一根藤；水裡的房間維持原本的滿水
+      for (let i = 0; i < 6; i++) put(bonusX + 3 + i, 5, i === 3 ? 'M' : 'B');
+      for (let y = 4; y <= 9; y++) put(bonusX + 13, y, 'V');
+      put(bonusX + 14, 4, 'o'); put(bonusX + 15, 4, 'o');
+    }
     if (waterRoom) for (let yy = 3; yy < 13; yy++) for (let xx = bonusX + 2; xx < bonusX + 16; xx++) if (g[yy][xx] === ' ') g[yy][xx] = 'W';
     width = bonusX + 20;
   }
@@ -22899,7 +23010,10 @@ function playQuest(id, opt) {
     if (ch === 'e') { ents.push({ k: wd.enemy, x: px, y: py + QT - 14, w: 16, h: 14, vx: -30 * spd, alive: true }); r[x] = ' '; }
     if (ch === 't') { ents.push({ k: 'turtle', x: px, y: py + QT - 16, w: 16, h: 16, vx: -28 * spd, alive: true }); r[x] = ' '; }
     if (ch === 'n') { ents.push({ k: 'fish', x: px, y: py, w: 18, h: 12, vx: (easy ? -24 : -40), y0: py, alive: true, t: Math.random() * 3 }); r[x] = ' '; }
-    if (ch === 'p') { plats.push({ x: px, y: py, w: 54, h: 8, x0: px, range: (easy ? 3 : 4) * QT - 18, vx: 38, dx: 0, dy: 0 }); r[x] = ' '; }
+    if (ch === 'p' || ch === 'c') {   // c：對向的雲，行程短一點，簡單模式更慢
+      const back = ch === 'c', range = back ? (easy ? 2 : 3) * QT : (easy ? 3 : 4) * QT - 18;
+      plats.push({ x: px, y: py, w: 54, h: 8, x0: back ? px - range : px, range, vx: back ? (easy ? -26 : -34) : 38, dx: 0, dy: 0 }); r[x] = ' ';
+    }
     if (ch === 'Y') { plats.push({ x: px, y: py, w: 54, h: 8, y0: py, range: 42, vy: easy ? 22 : 32, vx: 0, dx: 0, dy: 0, vert: true }); r[x] = ' '; }
     if (ch === 'v') { ents.push({ k: 'flame', x: px + 1, y: QVH, base: py + QT, w: 14, h: 16, alive: true, t: Math.random() * 2 }); r[x] = ' '; }
     if (ch === 'b') { ents.push({ k: 'bee', x: px, y: py, w: 16, h: 14, vx: -25, y0: py, alive: true, t: Math.random() * 6 }); r[x] = ' '; }
