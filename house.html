@@ -4899,6 +4899,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-12T20:00', title: '🗺️ 闖關變長、更好玩', lines: [
+    ['🧱', '原本的 18 關都變長了！路上多了打得掉的金幣磚、要跳起來抓的藤蔓、會左右動的雲'],
+    ['🟢', '每一關都有水管。站上去按 ⬇，鑽進金幣房（裡面還有藤蔓和道具）'],
+    ['🐣', '簡單模式坑比較窄、刺還是小花、藤蔓更好爬，被打到也不會少愛心']
+  ] },
   { id: '2026-11-10T20:00', title: '🏁 起跑反應王', lines: [
     ['🏁', '點操場的起跑架就可以玩「起跑反應王」：聽到教練吹哨「嗶！」才可以衝，太早按是偷跑！'],
     ['⚡', '看看你的反應有多快（幾秒），跟同學比誰先衝出去；高手模式還有假動作喔']
@@ -22667,26 +22672,27 @@ const QUEST_WORLDS = [
   { id: 5, name: '天空世界', icon: '☁️', sky: ['#9fd8ff', '#ffe6f2'], hill: '#ffffff', hill2: '#ffeaf4', top: '#ffffff', dirt: '#dfe9ff', enemy: 'slime', bees: true, cloud: true },
   { id: 6, name: '城堡世界', icon: '🏰', sky: ['#3a2a3f', '#7a4a5a'], hill: '#4a3a50', hill2: '#3a2c40', top: '#8a8f96', dirt: '#5a5560', enemy: 'turtle', castle: true }
 ];
-// 每一關由幾段組成（數字是難度：越大坑越寬、怪越多）
+// 每一關由幾段組成（數字是難度：越大坑越寬、怪越多）。* 會放一顆星星，每關剛好 3 顆。
+// 經典 1-1…6-3 加長時只加「有事情做」的段落（打磚、藤蔓、雲、踢殼、水管房），不要拿空地灌長度。
 const QUEST_LEVELS = {
-  '1-1': ['start', 'power', 'flat', 'hidden', 'blocks*', 'enemy1', 'gap2', 'flat', 'step', 'check', 'enemy1', 'plat*', 'spring*', 'flat', 'goal'],
-  '1-2': ['start', 'power', 'enemy1', 'gap2', 'blocks*', 'hill', 'pipe', 'enemy2', 'check', 'plat*', 'gap3', 'step', 'spring*', 'enemy1', 'goal'],
-  '1-3': ['start', 'power', 'blocks*', 'enemy2', 'gap3', 'check', 'plat*', 'hill', 'spring*', 'enemy2', 'boss'],
-  '2-1': ['start', 'power', 'flat', 'hidden', 'enemy1', 'gap2', 'blocks*', 'spikes', 'check', 'plat*', 'enemy2', 'spring*', 'gap3', 'goal'],
-  '2-2': ['start', 'power', 'enemy2', 'gap3', 'blocks*', 'spikes', 'pipe', 'hill', 'check', 'plat*', 'enemy2', 'gap3', 'spring*', 'step', 'goal'],
-  '2-3': ['start', 'power', 'blocks*', 'spikes', 'enemy2', 'check', 'gap3', 'plat*', 'spring*', 'enemy2', 'boss'],
-  '3-1': ['start', 'power', 'flat', 'hidden', 'bees', 'gap2', 'blocks*', 'enemy2', 'check', 'plat*', 'bees', 'spring*', 'gap3', 'goal'],
-  '3-2': ['start', 'power', 'bees', 'gap3', 'blocks*', 'spikes', 'pipe', 'enemy2', 'check', 'plat*', 'bees', 'hill', 'spring*', 'gap3', 'goal'],
-  '3-3': ['start', 'power', 'bees', 'blocks*', 'enemy2', 'check', 'gap3', 'plat*', 'spikes', 'spring*', 'bees', 'boss'],
-  '4-1': ['start', 'flat', 'power', 'enemy1', 'gap2', 'shell', 'check', 'hidden', 'plat*', 'spring*', 'blocks*', 'goal'],
-  '4-2': ['start', 'enemy2', 'power', 'gap3', 'pipe', 'check', 'blocks*', 'shell', 'plat*', 'spring*', 'gap2', 'goal'],
-  '4-3': ['start', 'power', 'blocks*', 'enemy2', 'check', 'shell', 'gap3', 'plat*', 'spring*', 'enemy2', 'boss'],
-  '5-1': ['start', 'flat', 'power', 'mplat', 'enemy1', 'check', 'plat*', 'hidden', 'mplat', 'blocks*', 'spring*', 'goal'],
-  '5-2': ['start', 'bees', 'power', 'mplat', 'blocks*', 'pipe', 'check', 'shell', 'mplat', 'plat*', 'spring*', 'goal'],
-  '5-3': ['start', 'power', 'blocks*', 'mplat', 'check', 'bees', 'plat*', 'mplat', 'spring*', 'enemy2', 'boss'],
-  '6-1': ['start', 'power', 'enemy1', 'lava', 'blocks*', 'check', 'shell', 'lava', 'plat*', 'spring*', 'goal'],
-  '6-2': ['start', 'power', 'lava', 'shell', 'blocks*', 'pipe', 'check', 'enemy2', 'lava', 'plat*', 'hidden', 'spring*', 'goal'],
-  '6-3': ['start', 'power', 'blocks*', 'lava', 'shell', 'check', 'enemy2', 'lava', 'plat*', 'spring*', 'boss']
+  '1-1': ['start', 'power', 'brickline', 'flat', 'hidden', 'blocks*', 'vine', 'enemy1', 'gap2', 'staircoin', 'flat', 'step', 'check', 'parade', 'enemy1', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'kickline', 'alcove', 'pipehouse', 'check', 'goal'],
+  '1-2': ['start', 'power', 'brickline', 'enemy1', 'vine', 'gap2', 'blocks*', 'staircoin', 'hill', 'pipe', 'parade', 'enemy2', 'check', 'plat*', 'skyhop', 'gap3', 'step', 'spring*', 'cloudgap', 'kickline', 'alcove', 'enemy1', 'pipehouse', 'goal'],
+  '1-3': ['start', 'power', 'brickline', 'blocks*', 'vine', 'enemy2', 'gap3', 'staircoin', 'check', 'parade', 'plat*', 'skyhop', 'hill', 'spring*', 'cloudgap', 'kickline', 'alcove', 'pipehouse', 'enemy2', 'boss'],
+  '2-1': ['start', 'power', 'brickline', 'flat', 'hidden', 'vine', 'enemy1', 'gap2', 'blocks*', 'staircoin', 'spikes', 'check', 'parade', 'plat*', 'skyhop', 'enemy2', 'spring*', 'cloudgap', 'kickline', 'alcove', 'gap3', 'pipehouse', 'goal'],
+  '2-2': ['start', 'power', 'brickline', 'enemy2', 'vine', 'gap3', 'blocks*', 'spikes', 'staircoin', 'pipe', 'hill', 'check', 'parade', 'plat*', 'skyhop', 'enemy2', 'gap3', 'spring*', 'cloudgap', 'kickline', 'alcove', 'step', 'pipehouse', 'goal'],
+  '2-3': ['start', 'power', 'brickline', 'blocks*', 'vine', 'spikes', 'enemy2', 'staircoin', 'check', 'parade', 'gap3', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'kickline', 'alcove', 'pipehouse', 'enemy2', 'boss'],
+  '3-1': ['start', 'power', 'brickline', 'flat', 'hidden', 'vine', 'bees', 'beeweave', 'gap2', 'blocks*', 'staircoin', 'enemy2', 'check', 'parade', 'plat*', 'skyhop', 'bees', 'spring*', 'cloudgap', 'kickline', 'alcove', 'gap3', 'pipehouse', 'goal'],
+  '3-2': ['start', 'power', 'brickline', 'bees', 'vine', 'gap3', 'blocks*', 'beeweave', 'spikes', 'staircoin', 'pipe', 'enemy2', 'check', 'parade', 'plat*', 'skyhop', 'bees', 'hill', 'spring*', 'cloudgap', 'kickline', 'alcove', 'gap3', 'pipehouse', 'goal'],
+  '3-3': ['start', 'power', 'brickline', 'bees', 'vine', 'blocks*', 'beeweave', 'enemy2', 'check', 'parade', 'gap3', 'plat*', 'skyhop', 'spikes', 'spring*', 'cloudgap', 'kickline', 'alcove', 'bees', 'pipehouse', 'boss'],
+  '4-1': ['start', 'flat', 'power', 'brickline', 'vine', 'enemy1', 'iceglide', 'gap2', 'shell', 'staircoin', 'check', 'hidden', 'parade', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'kickline', 'blocks*', 'alcove', 'pipehouse', 'goal'],
+  '4-2': ['start', 'enemy2', 'power', 'brickline', 'vine', 'gap3', 'iceglide', 'pipe', 'staircoin', 'check', 'blocks*', 'parade', 'shell', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'kickline', 'alcove', 'gap2', 'pipehouse', 'goal'],
+  '4-3': ['start', 'power', 'brickline', 'blocks*', 'vine', 'enemy2', 'iceglide', 'check', 'parade', 'shell', 'gap3', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'kickline', 'alcove', 'pipehouse', 'enemy2', 'boss'],
+  '5-1': ['start', 'flat', 'power', 'brickline', 'mplat', 'vine', 'enemy1', 'skyhop', 'check', 'plat*', 'cloudgap', 'hidden', 'parade', 'mplat', 'staircoin', 'blocks*', 'spring*', 'kickline', 'alcove', 'pipehouse', 'goal'],
+  '5-2': ['start', 'bees', 'power', 'brickline', 'mplat', 'vine', 'blocks*', 'beeweave', 'pipe', 'staircoin', 'check', 'parade', 'shell', 'mplat', 'skyhop', 'plat*', 'cloudgap', 'spring*', 'kickline', 'alcove', 'pipehouse', 'goal'],
+  '5-3': ['start', 'power', 'brickline', 'blocks*', 'vine', 'mplat', 'skyhop', 'check', 'bees', 'beeweave', 'plat*', 'cloudgap', 'mplat', 'spring*', 'parade', 'kickline', 'alcove', 'pipehouse', 'enemy2', 'boss'],
+  '6-1': ['start', 'power', 'brickline', 'enemy1', 'vine', 'lava', 'lavahop', 'blocks*', 'staircoin', 'check', 'parade', 'shell', 'lava', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'kickline', 'alcove', 'pipehouse', 'goal'],
+  '6-2': ['start', 'power', 'brickline', 'lava', 'lavahop', 'shell', 'vine', 'blocks*', 'pipe', 'staircoin', 'check', 'parade', 'enemy2', 'lava', 'plat*', 'skyhop', 'hidden', 'spring*', 'cloudgap', 'kickline', 'alcove', 'pipehouse', 'goal'],
+  '6-3': ['start', 'power', 'brickline', 'blocks*', 'vine', 'lava', 'lavahop', 'shell', 'check', 'parade', 'enemy2', 'lava', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'kickline', 'alcove', 'pipehouse', 'boss']
 };
 const QUEST_IDS = Object.keys(QUEST_LEVELS);
 const QUEST_WORLD_PRIZE = 10000;   // 世界 4～6 破關獎金（家長：改成 10,000 元；直接給，不再乘倍數）
@@ -22730,6 +22736,119 @@ function questBuild(id, easy) {   // easy：簡單模式的坑窄一格（家長
     else if (s === 'shell') { ground(x, x + 12); put(x + 6, 12, 't'); coins(x + 2, 3, 10); x += 12; }   // 烏龜：踩一下變殼，再碰一下就踢出去
     else if (s === 'mplat') { const w = easy ? 3 : 4; ground(x, x + 3); put(x + 3, 10, 'p'); x += 3 + w; ground(x, x + 3); x += 3; }   // 坑上面有一朵會左右動的雲
     else if (s === 'lava') { const w = easy ? 2 : 3; ground(x, x + 3); for (let i = 0; i < w; i++) { put(x + 3 + i, 13, 'L'); put(x + 3 + i, 14, 'L'); } put(x + 3 + (w >> 1), 12, 'v'); x += 3 + w; ground(x, x + 3); x += 3; }   // 岩漿坑，會跳出火球
+    // ── 加長用的段落：每一段都有事情做（打磚、爬藤、踩雲、踢殼、找隱藏房）──
+    else if (s === 'brickline') {   // 一排打得掉的磚：金幣、問號、道具，上面再藏一顆。先跳再頂。
+      ground(x, x + 14);
+      for (let i = 2; i <= 9; i++) put(x + i, 9, i === 4 ? '?' : i === 6 ? 'M' : 'B');
+      put(x + 5, 6, 'H');
+      put(x + 3, 10, 'o'); put(x + 5, 10, 'o'); put(x + 7, 10, 'o'); put(x + 8, 7, 'o'); put(x + 9, 7, 'o');
+      put(x + 12, 12, 'e');
+      x += 14;
+    }
+    else if (s === 'vine') {   // 藤蔓從高台垂下來。跳起來抓住、按住跳往上爬。簡單模式多兩層雲，不爬也上得去。
+      ground(x, x + 16);
+      for (let i = 8; i <= 14; i++) put(x + i, 5, '=');
+      put(x + 10, 4, 'o'); put(x + 11, 4, 'o'); put(x + 12, 4, 'o'); put(x + 13, 4, 'o');
+      put(x + 11, 2, 'M');   // 站在高台上，頭不會卡進這顆磚，跳一下就頂得到
+      for (let y = 6; y <= 10; y++) put(x + 7, y, 'V');
+      if (easy) { for (let i = 0; i < 3; i++) put(x + 3 + i, 11, '-'); for (let i = 0; i < 2; i++) put(x + 5 + i, 8, '-'); }
+      put(x + 3, 12, 'e'); put(x + 4, 10, 'o'); put(x + 5, 10, 'o');
+      x += 16;
+    }
+    else if (s === 'staircoin') {   // 跟原本的階梯一樣爬得上去，階梯頂接一段打得掉的路，再上面是問號和道具。
+      ground(x, x + 16);
+      for (let i = 0; i < 3; i++) for (let y = 12 - i; y <= 12; y++) { put(x + 2 + i, y, '='); put(x + 10 - i, y, '='); }
+      put(x + 5, 10, 'B'); put(x + 6, 10, 'B'); put(x + 7, 10, 'B');
+      put(x + 5, 7, '?'); put(x + 6, 7, 'B'); put(x + 7, 7, 'M');
+      put(x + 4, 8, 'o'); put(x + 8, 8, 'o');
+      put(x + 13, 12, 'e');
+      x += 16;
+    }
+    else if (s === 'skyhop') {   // 低空雲朵可以走過去；上面還有金幣。一般模式中間多一朵會動、比較高的雲。
+      ground(x, x + 3);
+      for (let i = 0; i < 4; i++) { put(x + 4 + i, 11, '-'); put(x + 4 + i, 9, 'o'); }
+      put(x + 6, easy ? 11 : 8, 'c');
+      if (!easy) { put(x + 5, 7, 'o'); put(x + 6, 7, 'o'); put(x + 7, 7, 'o'); }
+      x += 10; ground(x, x + 3); x += 3;
+    }
+    else if (s === 'parade') {   // 一隻一隻來：先踩地上的，跳過矮牆，再踩下一隻。一般模式最後一隻站在磚上。
+      ground(x, x + 16);
+      put(x + 3, 12, 'e');
+      put(x + 6, 12, '='); put(x + 6, 11, '=');
+      put(x + 7, 10, 'o'); put(x + 8, 10, 'o');
+      put(x + 10, 12, 'e');
+      if (!easy) { put(x + 12, 11, '='); put(x + 13, 12, 'e'); }   // 矮牆隔開第三隻，都站在地上（跳過去再踩）
+      else { put(x + 13, 10, 'o'); put(x + 14, 10, 'o'); }
+      x += 16;
+    }
+    else if (s === 'cloudgap') {   // 小坑兩邊各一朵會動的雲，對向來回。坑不比原本的 gap 寬，雲是給想抄近路、撿高處金幣的人。
+      const w = easy ? 2 : 3;
+      ground(x, x + 4);
+      put(x + 4, 11, 'c');
+      put(x + 4 + w - 1, easy ? 11 : 10, 'n');
+      for (let i = 0; i < w; i++) put(x + 4 + i, 8, 'o');
+      x += 4 + w; ground(x, x + 4); x += 4;
+    }
+    else if (s === 'kickline') {   // 前面一隻烏龜，後面排好小怪：踩一下變殼，再踢過去。簡單模式少一隻。
+      ground(x, x + 16);
+      put(x + 2, 12, 't');
+      const n = easy ? 2 : 3;
+      for (let i = 0; i < n; i++) put(x + 6 + i * 3, 12, 'e');
+      for (let i = 0; i < 4; i++) put(x + 5 + i, 9, 'o');
+      put(x + 15, 11, '='); put(x + 15, 12, '=');
+      x += 16;
+    }
+    else if (s === 'alcove') {   // 頭頂是打得掉的地板，頂開才進得了上面的金幣房。旁邊還有一顆隱藏磚。
+      ground(x, x + 16);
+      put(x + 2, 5, '='); put(x + 11, 5, '=');
+      for (let yy = 6; yy <= 8; yy++) { put(x + 2, yy, '='); put(x + 11, yy, '='); }
+      for (let i = 3; i <= 10; i++) put(x + i, 5, '=');
+      for (let i = 3; i <= 10; i++) put(x + i, 8, 'B');
+      for (let i = 3; i <= 10; i++) { put(x + i, 6, 'o'); put(x + i, 7, 'o'); }
+      put(x + 7, 5, 'M');   // 道具在天花板，進房之後跳一下才拿得到，不會卡在身體裡
+      put(x + 13, 9, 'H');
+      x += 16;
+    }
+    else if (s === 'pipehouse') {   // 高一點的水管（按 ⬇ 進祕密房間），從水管頂跳上打得掉的屋頂，屋頂有道具。
+      ground(x, x + 14);
+      for (let y = 10; y < 13; y++) { put(x + 4, y, 'P'); put(x + 5, y, 'P'); }
+      pipes.push(x + 4);
+      for (let i = 7; i <= 11; i++) put(x + i, 8, i === 9 ? 'M' : 'B');
+      put(x + 9, 6, 'o'); put(x + 10, 6, 'o');
+      if (easy) { put(x + 6, 11, '-'); put(x + 7, 10, '-'); }
+      put(x + 12, 12, 'e');
+      x += 14;
+    }
+    else if (s === 'beeweave') {   // 雲朵橋。站在雲上蜜蜂碰不到；跳起來抄近路才會遇到。一般模式坑比較寬，簡單模式蜜蜂貼在天上。
+      ground(x, x + 3);
+      const span = easy ? 7 : 9;
+      for (let i = 0; i < 3; i++) { put(x + 3 + i, 11, '-'); put(x + 3 + i, 9, 'o'); }
+      put(x + 6, easy ? 3 : 6, 'b');
+      for (let i = 0; i < 3; i++) { put(x + span + i, 11, '-'); put(x + span + i, 9, 'o'); }
+      x += 3 + span; ground(x, x + 3); x += 3;
+    }
+    else if (s === 'iceglide') {   // 雪地：金幣在半空，落地前有一隻烏龜。後面一個小坑，簡單模式坑邊多一朵雲。
+      ground(x, x + 11);
+      for (let i = 0; i < 4; i++) put(x + 2 + i, 10, 'o');
+      put(x + 8, 12, 't');
+      if (easy) put(x + 10, 11, '-');
+      x += 11;
+      const w = easy ? 2 : 3;
+      for (let i = 0; i < w; i++) put(x + i, 9, 'o');
+      x += w; ground(x, x + 5); x += 5;
+    }
+    else if (s === 'lavahop') {   // 兩段岩漿中間一座有金幣磚的小島。簡單模式沒有火球，第二段坑邊有雲。
+      const w = easy ? 2 : 3;
+      const lava = at => { for (let i = 0; i < w; i++) { put(at + i, 13, 'L'); put(at + i, 14, 'L'); } if (!easy) put(at + (w >> 1), 12, 'v'); };
+      ground(x, x + 3); lava(x + 3); x += 3 + w;
+      ground(x, x + 5);
+      put(x + 1, 9, '?'); put(x + 2, 9, 'B'); put(x + 3, 9, 'B');
+      put(x + 1, 7, 'o'); put(x + 2, 7, 'o'); put(x + 3, 7, 'o');
+      x += 5;
+      if (easy) put(x - 1, 11, '-');
+      lava(x); x += w;
+      ground(x, x + 4); x += 4;
+    }
   });
   let width = x, bonusX = 0;
   if (pipes.length) {   // 🟢 祕密房間：接在關卡最後面（牆擋住走不進去，只能從水管進來），裡面好多金幣，右邊的水管回去
@@ -22737,6 +22856,9 @@ function questBuild(id, easy) {   // easy：簡單模式的坑窄一格（家長
     ground(bonusX + 1, bonusX + 20); for (let xx = bonusX + 1; xx < bonusX + 20; xx++) put(xx, 2, '#'); put(bonusX + 19, 3, '#');
     for (let y = 3; y < 13; y++) put(bonusX + 19, y, '#');
     for (let i = 0; i < 12; i++) { put(bonusX + 3 + i, 7, 'o'); put(bonusX + 3 + i, 9, 'o'); put(bonusX + 3 + i, 11, 'o'); }
+    for (let i = 0; i < 6; i++) put(bonusX + 3 + i, 5, i === 3 ? 'M' : 'B');   // 跳起來打掉的一排，中間是道具
+    for (let y = 4; y <= 9; y++) put(bonusX + 13, y, 'V');   // 爬上去才拿得到角落的金幣
+    put(bonusX + 14, 4, 'o'); put(bonusX + 15, 4, 'o');
     for (let y = 11; y < 13; y++) { put(bonusX + 16, y, 'Q'); put(bonusX + 17, y, 'Q'); }
     width = bonusX + 20;
   }
@@ -22835,7 +22957,7 @@ function playQuest(id, opt) {
   w.stage.append(pauseB, pauseOv);
   const L = questBuild(id, easy), lvW = L.W * QT;
   const tileAt = (tx, ty) => (tx < 0 || tx >= L.W) ? '#' : (ty < 0 || ty >= QH) ? ' ' : L.g[ty][tx];
-  const solid = ch => ch === '#' || ch === '=' || ch === '?' || ch === 'u' || ch === 'M' || ch === 'P' || ch === 'Q';
+  const solid = ch => ch === '#' || ch === '=' || ch === '?' || ch === 'u' || ch === 'M' || ch === 'P' || ch === 'Q' || ch === 'B';
   const ents = [], items = [], plats = [], fbs = [], rain = [], puddles = [], bolts = [];   // rain／puddles／bolts：烏雲大王的雨滴、水窪、閃電
   const ckPhase = (en, hp) => hp > en.hpMax * 2 / 3 ? 1 : hp > en.hpMax / 3 ? 2 : 3;
   let bossHome = null;
@@ -22845,7 +22967,13 @@ function playQuest(id, opt) {
     const px = x * QT, py = y * QT;
     if (ch === 'e') { ents.push({ k: wd.enemy, x: px, y: py + QT - 14, w: 16, h: 14, vx: -30, alive: true }); r[x] = ' '; }
     if (ch === 't') { ents.push({ k: 'turtle', x: px, y: py + QT - 16, w: 16, h: 16, vx: -28, alive: true }); r[x] = ' '; }
-    if (ch === 'p') { plats.push({ x: px, y: py, w: 54, h: 8, x0: px, range: (easy ? 3 : 4) * QT - 18, vx: 38, dx: 0 }); r[x] = ' '; }
+    if (ch === 'p' || ch === 'c' || ch === 'n') {   // p：原本的短程雲。c／n：加長關卡用，左右對向走
+      const long = ch !== 'p';
+      const range = long ? (easy ? 2 : 3) * QT : (easy ? 3 : 4) * QT - 18;
+      const x0 = ch === 'n' ? px - range : px;
+      plats.push({ x: px, y: py, w: 54, h: 8, x0, range, vx: ch === 'n' ? (easy ? -26 : -34) : (long && easy ? 26 : 38), dx: 0 });
+      r[x] = ' ';
+    }
     if (ch === 'v') { ents.push({ k: 'flame', x: px + 1, y: QVH, base: py + QT, w: 14, h: 16, alive: true, t: Math.random() * 2 }); r[x] = ' '; }
     if (ch === 'b') { ents.push({ k: 'bee', x: px, y: py, w: 16, h: 14, vx: -25, y0: py, alive: true, t: Math.random() * 6 }); r[x] = ' '; }
     if (ch === 'K' && !wd.cloud) bossHome = { x: px - 10, gy: py + QT };   // 一般模式大魔王飛的範圍、地面
@@ -23054,8 +23182,20 @@ function playQuest(id, opt) {
     P.on = r.landed;
     if (P.vy >= 0) plats.forEach(pl => { if (P.x + P.w > pl.x + 2 && P.x < pl.x + pl.w - 2 && prevBottom <= pl.y + 3 && P.y + P.h >= pl.y) { P.y = pl.y - P.h; P.vy = 0; P.on = true; r.landed = true; } });
     if (P.on) { const tx = Math.floor((P.x + P.w / 2) / QT); if (solid(tileAt(tx, Math.floor((P.y + P.h + 2) / QT)))) P.lastSafe = P.x; }
+    {   // 🌿 藤蔓：人在藤蔓中間、而且不是正在大跳的時候才抓住。按住跳往上爬，按 ⬇ 滑下去。頭上有東西就不再往上擠。
+      const tx = Math.floor((P.x + P.w / 2) / QT), y0 = Math.floor(P.y / QT), y1 = Math.floor((P.y + P.h - 1) / QT);
+      let vine = false; for (let ty = y0; ty <= y1; ty++) if (tileAt(tx, ty) === 'V') vine = true;
+      if (vine && P.vy > -200) {
+        const down = keys.ArrowDown || keys.KeyS, above = tileAt(tx, Math.floor((P.y - 2) / QT));
+        if (jumpHeld && !down && !solid(above)) P.vy = easy ? -150 : -118;
+        else if (down) P.vy = 120;
+        else if (!jumpHeld) P.vy = easy ? 18 : 40;
+        if (!P.vineSaid) { P.vineSaid = 1; say(easy ? '藤蔓！按住「跳」往上爬' : '抓住藤蔓了！按住跳往上爬', 1.6); }
+      }
+    }
     if (r.bonk) { const [tx, ty] = r.bonk; if (L.g[ty][tx] === 'M') { L.g[ty][tx] = 'u'; const k = ['grow', 'fire', 'inv', 'grow', 'fire'][Math.floor(Math.random() * 5)]; items.push({ k: 'pow', kind: k, x: tx * QT + 9, y: ty * QT - 10, pop: .3 }); Sound.play('pickUp'); }
       else if (L.g[ty][tx] === 'h') { L.g[ty][tx] = 'u'; P.coins += 5; for (let k = 0; k < 5; k++) coinPops.push({ x: tx * QT + 9 + (k - 2) * 6, y: ty * QT, t: -k * .08 }); Sound.play('coin'); say('隱藏磚塊！💰 +5'); }
+      else if (L.g[ty][tx] === 'B') { L.g[ty][tx] = ' '; P.coins++; coinPops.push({ x: tx * QT + 9, y: ty * QT, t: 0 }); Sound.play('coin'); if (!P.broke) { P.broke = 1; say('磚塊打碎了！💰', 1.2); } }
       else if (L.g[ty][tx] === '?') { L.g[ty][tx] = 'u'; P.coins++; coinPops.push({ x: tx * QT + 9, y: ty * QT, t: 0 }); Sound.play('coin'); } else Sound.play('click'); }
     // 刺
     { const tx = Math.floor((P.x + P.w / 2) / QT), ty = Math.floor((P.y + P.h + 1) / QT); if (tileAt(tx, ty - 0) === '^' || tileAt(tx, Math.floor((P.y + P.h - 2) / QT)) === '^') hurt(P.x + P.w / 2 - P.face * 10); }
@@ -23157,7 +23297,8 @@ function playQuest(id, opt) {
   };
   const drawTile = (ch, x, y) => {
     if (ch === '#') { const top = tileAt(Math.floor((x + camX) / QT), Math.floor(y / QT) - 1) !== '#'; g.fillStyle = wd.dirt; g.fillRect(x, y, QT, QT); g.fillStyle = 'rgba(0,0,0,.08)'; g.fillRect(x + 4, y + 8, 3, 3); g.fillRect(x + 12, y + 13, 3, 3); if (top) { g.fillStyle = wd.top; g.fillRect(x, y, QT, 6); g.fillStyle = 'rgba(255,255,255,.25)'; g.fillRect(x, y, QT, 2); } }
-    else if (ch === '=') { g.fillStyle = '#c96f3a'; g.fillRect(x, y, QT, QT); g.strokeStyle = '#8a4520'; g.lineWidth = 1; g.strokeRect(x + .5, y + .5, QT - 1, QT - 1); g.beginPath(); g.moveTo(x, y + 9); g.lineTo(x + QT, y + 9); g.moveTo(x + 9, y); g.lineTo(x + 9, y + 9); g.stroke(); }
+    else if (ch === '=' || ch === 'B') { g.fillStyle = ch === 'B' ? '#e39a62' : '#c96f3a'; g.fillRect(x, y, QT, QT); g.strokeStyle = '#8a4520'; g.lineWidth = 1; g.strokeRect(x + .5, y + .5, QT - 1, QT - 1); g.beginPath(); g.moveTo(x, y + 9); g.lineTo(x + QT, y + 9); g.moveTo(x + 9, y); g.lineTo(x + 9, y + 9); g.stroke(); if (ch === 'B') { g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(x + 9, y + 9, 2.4, 0, 7); g.fill(); } }   // B：打得掉，裡面有一枚金幣
+    else if (ch === 'V') { g.strokeStyle = '#2f8a3c'; g.lineWidth = 3; g.beginPath(); g.moveTo(x + 9, y); g.lineTo(x + 9, y + QT); g.stroke(); g.fillStyle = '#5fcf6f'; g.beginPath(); g.ellipse(x + 4, y + 5, 4, 2.4, -.7, 0, 7); g.fill(); g.beginPath(); g.ellipse(x + 14, y + 12, 4, 2.4, .7, 0, 7); g.fill(); }   // 藤蔓
     else if (ch === '?') { g.fillStyle = '#ffc93a'; g.fillRect(x, y, QT, QT); g.strokeStyle = '#c98a10'; g.lineWidth = 1.5; g.strokeRect(x + .5, y + .5, QT - 1, QT - 1); g.fillStyle = '#ffffff'; g.font = '900 13px Arial'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('★', x + 9, y + 10); g.textBaseline = 'alphabetic'; }
     else if (ch === 'u') { g.fillStyle = '#a07850'; g.fillRect(x, y, QT, QT); g.strokeStyle = '#6b4b30'; g.strokeRect(x + .5, y + .5, QT - 1, QT - 1); }
     else if (ch === '-') { g.fillStyle = '#ffffff'; g.beginPath(); g.roundRect(x - 1, y, QT + 2, 8, 4); g.fill(); g.fillStyle = 'rgba(150,190,230,.5)'; g.fillRect(x, y + 6, QT, 2); }
