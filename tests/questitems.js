@@ -44,6 +44,54 @@ const path = require('path');
     T = start('1-1'); const br = find(T, 'B'); T.P.big = false; T.P.x = br[0] * QT + 2; T.P.y = (br[1] + 1) * QT + 2; T.P.vy = -300; run(T, 8);
     o.brickBump = T.L.g[br[1]][br[0]] === 'B';
     T.P.big = true; T.P.x = br[0] * QT + 2; T.P.y = (br[1] + 1) * QT + 2; T.P.vy = -320; run(T, 8); o.brickBreak = T.L.g[br[1]][br[0]] === ' ';
+    // 簡單模式：小時也打得破一般磚，會有碎片
+    T = start('1-1', 'easy'); const ebr = find(T, 'B'); T.P.big = false; T.P.fire = false; T.P.starT = 0; T.P.vx = 0;
+    T.P.x = ebr[0] * QT + 2; T.P.y = (ebr[1] + 1) * QT + 2; T.P.vy = -300; run(T, 8);
+    o.easyBrick = T.L.g[ebr[1]][ebr[0]] === ' ' && T.bits.length >= 4;
+    // 1-1 粉紅問號：框（alcove）的 M 在從下面頂得到的那一排，頂了就拿到道具；左右留空，金幣跳得進去
+    const gB = questBuild('1-1', true).g, S = c => '#=?BMNRuPQU'.includes(c);
+    const gapTo = (g, x, y) => { for (let yy = y + 1; yy < g.length; yy++) if (S(g[yy][x])) return { yy, ch: g[yy][x], gap: yy * QT - 30 - (y + 1) * QT }; return null; };
+    let ax = -1, ay = -1, openX = -1, coinN = 0, roofOk = false, openBelow = false;
+    for (let y = 1; y < gB.length; y++) for (let x = 1; x < gB[y].length - 1; x++) {
+      if (gB[y][x] === 'M' && gB[y - 1][x] === 'o' && (gB[y][x - 1] === 'B' || gB[y][x - 1] === 'M' || gB[y][x + 1] === 'B' || gB[y][x + 1] === 'M')) { ax = x; ay = y; }
+    }
+    if (ay > 0) {
+      roofOk = gB[ay - 3][ax] === '=';
+      openBelow = true; for (let y = ay + 1; y < 13; y++) if (S(gB[y][ax])) openBelow = false;
+      for (let y = 0; y < ay; y++) for (let x = ax - 4; x <= ax + 3; x++) if (gB[y] && gB[y][x] === 'o') coinN++;
+      for (let x = ax - 4; x <= ax + 3; x++) if (gB[ay][x] === ' ' && gB[ay - 1][x] === 'o') openX = x;
+    }
+    o.alcovePlace = ay === 8 && roofOk && openBelow && coinN >= 8 && openX >= 0;
+    T = start('1-1', 'easy'); T.P.big = false; T.P.fire = false; T.P.starT = 0; T.P.vx = 0;
+    T.P.x = ax * QT + 2; T.P.y = (ay + 1) * QT + 2; T.P.vy = -300; run(T, 8);
+    o.alcovePow = T.L.g[ay][ax] === 'u' && (T.P.big || T.P.fire || T.P.starT > 0);
+    const coin0 = T.P.coins; T.P.x = openX * QT + 2; T.P.y = 13 * QT - T.P.h; T.P.vy = 0; T.P.vx = 0; run(T, 4); T.jump(); run(T, 45); T.release();
+    o.alcoveCoins = T.P.coins > coin0;
+    // 往上同時頂到粉紅和旁邊的 B：要算粉紅，B 留著
+    T = start('1-1', 'normal'); T.L.g[9][3] = 'B'; T.L.g[9][4] = 'M';
+    T.P.big = false; T.P.fire = false; T.P.starT = 0; T.P.vx = 0; T.P.x = 4 * QT - 6; T.P.y = 10 * QT + 1; T.P.vy = -300; run(T, 8);
+    o.bonkPref = T.L.g[9][4] === 'u' && T.L.g[9][3] === 'B';
+    // staircoin 粉紅在橋上、從地面頂得到；brickline／pipehouse／blocks 的問號磚沒有被另一層天花板擋住
+    const stairM = () => { for (let y = 0; y < gB.length; y++) for (let x = 3; x < gB[y].length - 3; x++) {
+      if (gB[y][x] !== 'M' || gB[y][x - 1] !== '=' || gB[y][x + 1] !== '=') continue;
+      const stacked = [-3, -2, -1, 1, 2, 3].some(dx => gB[y][x + dx] === '=' && gB[y + 1] && gB[y + 1][x + dx] === '=');
+      const gap = gapTo(gB, x, y); if (stacked && gap && gap.ch === '#' && gap.gap >= 0 && gap.gap <= 24) return true;
+    } return false; };
+    const lineM = () => { for (let y = 0; y < gB.length; y++) for (let x = 2; x < gB[y].length - 2; x++) {
+      if (gB[y][x] !== 'M') continue;
+      const has = (ch, ds) => ds.some(d => gB[y][x + d] === ch);
+      const gap = gapTo(gB, x, y);
+      if (has('?', [-3, -2, -1, 1, 2, 3]) && has('N', [-3, -2, -1, 1, 2, 3]) && gap && gap.ch === '#' && gap.gap <= 36) return true;
+    } return false; };
+    const pipeM = () => { for (let y = 0; y < gB.length; y++) for (let x = 6; x < gB[y].length; x++) {
+      if (gB[y][x] !== 'M') continue; let nearP = false; for (let dx = -6; dx <= -3; dx++) for (let dy = 1; dy <= 4; dy++) if (gB[y + dy] && gB[y + dy][x + dx] === 'P') nearP = true;
+      const gap = gapTo(gB, x, y); if (nearP && gap && gap.ch === '#' && gap.gap <= 50) return true;
+    } return false; };
+    const blocksRow = () => { let n = 0; for (let y = 0; y < gB.length; y++) for (let x = 0; x < gB[y].length - 4; x++) {
+      if (![0, 1, 2, 3, 4].every(i => '?NRB'.includes(gB[y][x + i]))) continue;
+      const gap = gapTo(gB, x + 2, y); if (!gap || gap.ch !== '#' || gap.gap > 36) return false; n++;
+    } return n >= 1; };
+    o.stairPink = stairM(); o.linePink = lineM(); o.pipePink = pipeM(); o.blocksRow = blocksRow();
     T = start('1-4'); let vx0 = -1, vy0 = -1; T.L.g.forEach((r, y) => { const x = r.indexOf('V'); if (x >= 0 && y >= 7) { vx0 = x; vy0 = y; } }); T.P.x = vx0 * QT + 2; T.P.y = vy0 * QT; T.jump(); const yv = T.P.y; run(T, 20); o.vine = vy0 >= 7 && T.P.y < yv - 12;
     T = start('2-4'); let sx = -1; T.L.g[12].forEach((ch, x) => { if (sx < 0 && ch === 'W' && T.L.g[13][x] === '#') sx = x; });
     T.P.x = sx * QT; T.P.y = 13 * QT - T.P.h; T.P.vy = 0; run(T, 4); o.swim = T.P.swim === true && T.penguin() === true;

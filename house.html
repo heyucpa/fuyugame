@@ -22851,7 +22851,7 @@ function questBuild(id, easy) {   // easy：簡單模式的坑窄一格（家長
     else if (s === 'swim') { ground(x, x + 18); for (let xx = x + 2; xx < x + 16; xx++) for (let y = 10; y <= 12; y++) put(xx, y, 'W'); for (let i = 0; i < 4; i++) put(x + 4 + i * 3, 11, 'o'); put(x + 10, 10, 'n'); if (star) put(x + 8, 8, 's'); x += 18; }   // 水池：地板還在，走過去就游泳
     else if (s === 'wpipe') { ground(x, x + 12); for (let y = 11; y < 13; y++) { put(x + 5, y, 'U'); put(x + 6, y, 'U'); } waterPipes.push(x + 5); x += 12; }   // 藍色水管：進水裡的祕密房間
     else if (s === 'uplat') { ground(x, x + 10); put(x + 5, 8, 'Y'); if (star) put(x + 5, 4, 's'); x += 10; }   // 上下動的雲，在頭上，不擋路
-    // ── 舊關加長：每段都有事情做。磚的規則跟現在一樣（變大才打得破；N 一定有金幣）。怪都放在地面，不擋路。──
+    // ── 舊關加長：每段都有事情做。一般模式要變大（或無敵）才打得破 B；簡單模式小時也打得破。N 一定有金幣。怪都放在地面，不擋路。──
     else if (s === 'brickline') {
       ground(x, x + 14);
       for (let i = 2; i <= 9; i++) put(x + i, 9, i === 4 ? '?' : i === 6 ? 'M' : i === 8 ? 'N' : 'B');
@@ -22862,8 +22862,9 @@ function questBuild(id, easy) {   // easy：簡單模式的坑窄一格（家長
     else if (s === 'staircoin') {
       ground(x, x + 16);
       for (let i = 0; i < 3; i++) for (let y = 12 - i; y <= 12; y++) { put(x + 2 + i, y, '='); put(x + 10 - i, y, '='); }
-      put(x + 5, 10, 'B'); put(x + 6, 10, 'B'); put(x + 7, 10, 'B');
-      put(x + 5, 7, '?'); put(x + 6, 7, 'N'); put(x + 7, 7, 'M');
+      // 粉紅放在橋上（離頭只有一點點，站在地面跳一下就頂到）。橋面用 =，頂過還走得過去。上面的 ?／N 要爬上台階再跳。
+      put(x + 5, 10, '='); put(x + 6, 10, 'M'); put(x + 7, 10, '=');
+      put(x + 5, 7, '?'); put(x + 6, 7, 'N'); put(x + 7, 7, '?');
       put(x + 4, 8, 'o'); put(x + 8, 8, 'o');
       put(x + 13, 12, 'e');
       x += 16;
@@ -22902,12 +22903,13 @@ function questBuild(id, easy) {   // easy：簡單模式的坑窄一格（家長
       put(x + 15, 11, '='); put(x + 15, 12, '=');
       x += 16;
     }
-    else if (s === 'alcove') {
+    else if (s === 'alcove') {   // 粉紅放在從下面頂得到的 y=8。以前 M 在 y=5 屋頂，跳起來只會頂到整排 B，粉紅永遠打不到。
       ground(x, x + 16);
       put(x + 2, 5, '='); put(x + 11, 5, '=');
       for (let yy = 6; yy <= 8; yy++) { put(x + 2, yy, '='); put(x + 11, yy, '='); }
-      for (let i = 3; i <= 10; i++) put(x + i, 5, i === 7 ? 'M' : '=');
-      for (let i = 3; i <= 10; i++) put(x + i, 8, 'B');
+      for (let i = 3; i <= 10; i++) put(x + i, 5, '=');   // 屋頂只做裝飾
+      // 左右各留兩格空，跳得進去拿金幣；中間兩塊粉紅，旁邊各一塊可頂的磚
+      put(x + 5, 8, 'B'); put(x + 6, 8, 'M'); put(x + 7, 8, 'M'); put(x + 8, 8, 'B');
       for (let i = 3; i <= 10; i++) { put(x + i, 6, 'o'); put(x + i, 7, 'o'); }
       put(x + 13, 9, 'N'); put(x + 14, 9, 'H');
       x += 16;
@@ -22916,7 +22918,7 @@ function questBuild(id, easy) {   // easy：簡單模式的坑窄一格（家長
       ground(x, x + 14);
       for (let y = 10; y < 13; y++) { put(x + 4, y, 'P'); put(x + 5, y, 'P'); }
       pipes.push(x + 4);
-      for (let i = 7; i <= 11; i++) put(x + i, 8, i === 9 ? 'M' : i === 8 ? 'N' : 'B');
+      for (let i = 7; i <= 11; i++) put(x + i, 8, i === 9 ? 'M' : i === 8 ? 'N' : 'B');   // 粉紅在 y=8，下面沒有擋路，從地面跳得到
       put(x + 9, 6, 'o'); put(x + 10, 6, 'o');
       if (easy) { put(x + 6, 11, '-'); put(x + 7, 10, '-'); }
       put(x + 12, 12, 'e');
@@ -23164,11 +23166,20 @@ function playQuest(id, opt) {
     for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) if (solid(tileAt(tx, ty))) { if (dx > 0) o.x = tx * QT - o.w; else if (dx < 0) o.x = (tx + 1) * QT; o.hitX = true; }
     o.y += dy; let landed = false, bonk = null;
     x0 = Math.floor(o.x / QT); x1 = Math.floor((o.x + o.w - .01) / QT); y0 = Math.floor(o.y / QT); y1 = Math.floor((o.y + o.h - .01) / QT);
+    let bonkTy = -1, bonkRank = -1;
     for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) {
       if (dy < 0 && o === P && tileAt(tx, ty) === 'H') L.g[ty][tx] = 'h';   // 隱藏磚：從下面頂到才出現
       const ch = tileAt(tx, ty) === 'h' ? 'h' : tileAt(tx, ty);
       const oneWay = ch === '-' && dy > 0 && (o.y + o.h - dy) <= ty * QT + 1;
-      if (solid(ch) || oneWay || ch === 'h') { if (dy > 0) { o.y = ty * QT - o.h; landed = true; } else if (dy < 0 && !oneWay) { o.y = (ty + 1) * QT; bonk = [tx, ty]; } o.vy = 0; }
+      if (solid(ch) || oneWay || ch === 'h') {
+        if (dy > 0) { o.y = ty * QT - o.h; landed = true; }
+        else if (dy < 0 && !oneWay) {
+          // 同一排頂到好幾格時，優先粉紅／問號／金幣磚／隱藏磚，不要被旁邊的 B 或 = 蓋掉。更近的那一排（比較下面）仍優先。
+          const rank = (ch === 'M' || ch === '?' || ch === 'N' || ch === 'R' || ch === 'h') ? 2 : 0;
+          if (ty > bonkTy || (ty === bonkTy && rank >= bonkRank)) { bonkTy = ty; bonkRank = rank; bonk = [tx, ty]; o.y = (ty + 1) * QT; }
+        }
+        o.vy = 0;
+      }
     }
     return { landed, bonk };
   };
@@ -23308,11 +23319,19 @@ function playQuest(id, opt) {
     if (P.on) { const tx = Math.floor((P.x + P.w / 2) / QT); if (solid(tileAt(tx, Math.floor((P.y + P.h + 2) / QT)))) P.lastSafe = P.x; }
     if (r.bonk) { const [tx, ty] = r.bonk, chb = L.g[ty][tx]; bumps.push({ tx, ty, t: .16 });
       const coinHere = () => { P.coins++; coinPops.push({ x: tx * QT + 9, y: ty * QT, t: 0 }); Sound.play('coin'); };
-      const powHere = () => { const k = ['grow', 'fire', 'inv', 'grow', 'fire'][(tx + ty) % 5]; items.push({ k: 'pow', kind: k, x: tx * QT + 9, y: ty * QT - 10, pop: .3 }); Sound.play('pickUp'); };
+      const powHere = () => {
+        const k = ['grow', 'fire', 'inv', 'grow', 'fire'][(tx + ty) % 5];
+        let iy = ty * QT - 10;
+        // 上面三格內有屋頂（金幣框、祕密房間）：道具掉到磚塊下面，跳著頂的人當下就拿得到，不會關在框裡
+        const capped = [1, 2, 3].some(d => solid(tileAt(tx, ty - d)));
+        if (capped && !solid(tileAt(tx, ty + 1))) iy = (ty + 1) * QT + 8;
+        items.push({ k: 'pow', kind: k, x: tx * QT + 9, y: iy, pop: .3 }); Sound.play('pickUp');
+      };
       if (chb === 'M' || chb === 'R') { L.g[ty][tx] = 'u'; powHere(); }
       else if (chb === 'N') { L.g[ty][tx] = 'u'; coinHere(); }
       else if (chb === 'B') {
-        if (P.big || P.fire || P.starT > 0) { L.g[ty][tx] = ' '; for (let i = 0; i < 4; i++) bits.push({ x: tx * QT + 6, y: ty * QT + 6, vx: (i % 2 ? 50 : -50), vy: -90 - i * 12, t: 0 }); Sound.play('squish'); }
+        // 簡單模式（妹妹）小時也打得破；一般模式仍要變大、火火花或無敵星星
+        if (easy || P.big || P.fire || P.starT > 0) { L.g[ty][tx] = ' '; for (let i = 0; i < 4; i++) bits.push({ x: tx * QT + 6, y: ty * QT + 6, vx: (i % 2 ? 50 : -50), vy: -90 - i * 12, t: 0 }); Sound.play('squish'); }
         else Sound.play('click');
       }
       else if (chb === 'h') { L.g[ty][tx] = 'u'; P.coins += 5; for (let k = 0; k < 5; k++) coinPops.push({ x: tx * QT + 9 + (k - 2) * 6, y: ty * QT, t: -k * .08 }); Sound.play('coin'); say('隱藏磚塊！💰 +5'); }
@@ -23609,7 +23628,7 @@ function playQuest(id, opt) {
     raf = requestAnimationFrame(frame);
   };
   raf = requestAnimationFrame(frame);
-  playQuest.test = { bossFire, bossSpecial: (en, dt) => bossSpecial(en, dt), pause: on => setPause(on), paused: () => paused, touches, zoneOf, canvas: c, pet: () => QP, petSpecial: () => petSpecial(), cloud: () => (boss && boss.k === 'cloudking' ? boss : null), ckHit: en => ckHit(en), rain, bolts, puddles, bossZone: () => bossZone, plats, givePower, shootFire, fbs, inBonus: () => inBonus, penguin: () => !!P.swim, down: () => { downBuf = .3; }, P, items, ents, L, keys, solid, tileAt, win: () => { state = 'win'; endT = 0; }, step, frameStep: dt => { last = performance.now() - dt * 1000; frame(performance.now()); }, flag: () => flag, state: () => state, jump: () => { jumpHeld = true; jumpBuf = .15; }, release: () => { jumpHeld = false; } };
+  playQuest.test = { bossFire, bossSpecial: (en, dt) => bossSpecial(en, dt), pause: on => setPause(on), paused: () => paused, touches, zoneOf, canvas: c, pet: () => QP, petSpecial: () => petSpecial(), cloud: () => (boss && boss.k === 'cloudking' ? boss : null), ckHit: en => ckHit(en), rain, bolts, puddles, bossZone: () => bossZone, plats, givePower, shootFire, fbs, inBonus: () => inBonus, penguin: () => !!P.swim, down: () => { downBuf = .3; }, P, items, ents, L, bits, keys, solid, tileAt, win: () => { state = 'win'; endT = 0; }, step, frameStep: dt => { last = performance.now() - dt * 1000; frame(performance.now()); }, flag: () => flag, state: () => state, jump: () => { jumpHeld = true; jumpBuf = .15; }, release: () => { jumpHeld = false; } };
 }
 /* 打輸了：在大魔王那裡輸的（家長：可以從大魔王關重新開始、難度變低）→ 多一顆「從大魔王開始」，
    每輸一次大王少一滴血、跳得慢一點（最少 1 滴血） */
