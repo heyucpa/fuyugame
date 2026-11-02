@@ -817,15 +817,29 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .dive-mode { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 120px; padding: 10px 12px; border-radius: 16px; border: 3px solid #8fd3ff; background: #eaf7ff; font: inherit; cursor: pointer; touch-action: manipulation; }
 .dive-mode b { font-size: 17px; } .dive-mode span { font-size: 12px; color: #6d7a88; }
 .quest-btn.dive-pose { min-width: 58px; font-size: 26px; }
-.qpad-split { justify-content: space-between; align-items: flex-end; width: 100%; max-width: 980px; margin: 8px auto 0; gap: 12px; }
-.qpad-l, .qpad-r { display: flex; gap: 12px; align-items: flex-end; touch-action: none; }
+/* 右手：⬇／🔥／🐾 疊在跳的左邊，跳本身不縮小到被擠出畫面。
+   一般 .qb-j 的 min-width:120、.qb-pet.glow 的 min-width:110 會蓋過下面的 width，窄螢幕一定要在這裡打掉。 */
+.qpad-split { justify-content: space-between; align-items: flex-end; width: 100%; max-width: 980px; margin: 8px auto 0; gap: 8px; }
+.qpad-l, .qpad-r { display: flex; gap: 8px; align-items: flex-end; touch-action: none; min-width: 0; }
+.qpad-r { flex: 0 0 auto; margin-left: auto; }
+.qpad-tools { display: flex; flex-flow: row wrap; justify-content: flex-end; align-content: flex-end; align-items: flex-end; gap: 6px; max-width: 148px; }
 .qpad-l { padding: 4px; border-radius: 26px; background: rgba(0,0,0,.04); }
-.qpad-split .qb-l, .qpad-split .qb-r { width: 96px; height: 88px; font-size: 36px; border-radius: 24px; }
+.qpad-split .qb-l, .qpad-split .qb-r { width: 96px; height: 88px; min-width: 0; font-size: 36px; border-radius: 24px; padding: 0; }
 .qpad-split .qb-l.on, .qpad-split .qb-r.on { background: #fff3e0; border-color: #ff9a3c; transform: scale(.96); }
-.qpad-split .qb-j { width: 112px; height: 112px; border-radius: 50%; font-size: 24px; background: #ffd98a; border-color: #e0a030; box-shadow: 0 4px 0 #c98a10; }
+.qpad-split .qb-j { width: 112px; min-width: 0; height: 112px; flex: 0 0 auto; border-radius: 50%; font-size: 24px; padding: 0; background: #ffd98a; border-color: #e0a030; box-shadow: 0 4px 0 #c98a10; }
 .qpad-split .qb-j:active { transform: translateY(3px); box-shadow: 0 1px 0 #c98a10; }
-.qpad-split .qb-dn, .qpad-split .qb-fire, .qpad-split .qb-pet { min-width: 66px; height: 66px; border-radius: 20px; }
-@media (max-width: 560px) { .qpad-split .qb-l, .qpad-split .qb-r { width: 70px; height: 70px; font-size: 28px; } .qpad-split .qb-j { width: 88px; height: 88px; font-size: 20px; } .qpad-split .qb-dn, .qpad-split .qb-fire, .qpad-split .qb-pet { min-width: 52px; height: 56px; } }
+.qpad-split .qb-dn, .qpad-split .qb-fire, .qpad-split .qb-pet { min-width: 0; width: 64px; height: 56px; padding: 0; border-radius: 16px; font-size: 22px; }
+.qpad-split .qb-pet.glow { min-width: 0; width: auto; flex: 1 0 120px; max-width: 148px; height: auto; min-height: 44px; font-size: 15px; line-height: 1.15; padding: 4px 6px; white-space: normal; }
+@media (max-width: 560px) {
+  .qpad-split { gap: 6px; }
+  .qpad-l, .qpad-r { gap: 4px; }
+  .qpad-l { padding: 3px; }
+  .qpad-tools { max-width: 108px; gap: 4px; }
+  .qpad-split .qb-l, .qpad-split .qb-r { width: 54px; height: 54px; font-size: 24px; }
+  .qpad-split .qb-j { width: 72px; height: 72px; font-size: 16px; }
+  .qpad-split .qb-dn, .qpad-split .qb-fire, .qpad-split .qb-pet { width: 48px; height: 44px; font-size: 18px; }
+  .qpad-split .qb-pet.glow { flex-basis: 100px; max-width: 108px; min-height: 40px; font-size: 12px; padding: 3px 4px; }
+}
 .voice-diag { white-space: pre-wrap; font-size: 12px; color: #6d6a75; background: #f4f1ec; border-radius: 10px; padding: 8px 10px; margin: 8px 0; line-height: 1.5; }
 .confetti-cv { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 90; pointer-events: none; }   /* 彩帶不擋點擊 */
 .star-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; } .star-slot { display: flex; flex-direction: column; align-items: center; padding: 10px 4px; border-radius: 16px; background: #f1ecf7; border: 2px dashed #c9b8e8; color: #a99ac9; }
@@ -22861,9 +22875,10 @@ function questBuild(id, easy) {   // easy：簡單模式的坑窄一格（家長
     }
     else if (s === 'staircoin') {
       ground(x, x + 16);
-      for (let i = 0; i < 3; i++) for (let y = 12 - i; y <= 12; y++) { put(x + 2 + i, y, '='); put(x + 10 - i, y, '='); }
-      // 粉紅放在橋上（離頭只有一點點，站在地面跳一下就頂到）。橋面用 =，頂過還走得過去。上面的 ?／N 要爬上台階再跳。
-      put(x + 5, 10, '='); put(x + 6, 10, 'M'); put(x + 7, 10, '=');
+      // 粉紅在懸空橋的底面。左邊整條平地走得進去（以前左右階梯在 y=12 連成牆，橋下的口袋走不進去，粉紅永遠頂不到）。
+      // 階梯只放右邊，爬上去再跳，才頂得到上面的金色問號。
+      for (let i = 0; i < 3; i++) for (let y = 12 - i; y <= 12; y++) put(x + 10 - i, y, '=');
+      put(x + 4, 10, '='); put(x + 5, 10, '='); put(x + 6, 10, 'M'); put(x + 7, 10, '=');
       put(x + 5, 7, '?'); put(x + 6, 7, 'N'); put(x + 7, 7, '?');
       put(x + 4, 8, 'o'); put(x + 8, 8, 'o');
       put(x + 13, 12, 'e');
@@ -23007,6 +23022,8 @@ const QPET_MOVES = {
   sand: { name: '沙沙旋風', icon: '🌪️', fx: '🌀', col: '#e8c27a' }
 };
 // 闖關頭頂那句話：單行會超出 480 寬被切掉。依字寬折成最多 4 行（大約畫面寬減 40），白邊紅字跟原本一樣。
+// 畫面上的星星最多 3 顆。n 超過 3 時 '☆'.repeat 會丟 RangeError，闖關的畫面迴圈就停住。
+function questStarMarks(n) { const k = Math.max(0, Math.min(3, n | 0)); return '★'.repeat(k) + '☆'.repeat(3 - k); }
 function questWrapLines(g, text, maxW, maxLines) {
   const lines = [], paras = String(text || '').split('\n');
   for (let p = 0; p < paras.length; p++) {
@@ -23034,10 +23051,12 @@ function playQuest(id, opt) {
   const { c, g } = gameCanvas(w.stage, QVW, QVH);
   /* 🎮 像手把一樣分兩邊（家長：iPad 上手指擠在中間小小的區域按不順）：
      左手拇指：◀ ▶ 大大的放左邊，手指按著往左右滑就換方向（不用抬起來）；
-     右手拇指：大大圓圓的「跳」放右邊，⬇ 🔥 🐾 放在跳的旁邊。 */
-  const pad = el('div', 'quest-pad qpad-split'), padL = el('div', 'qpad-l'), padR = el('div', 'qpad-r'); pad.append(padL, padR);
-  const mk = (txt, cls, side) => { const b = el('button', 'quest-btn ' + (cls || ''), txt); (side === 'L' ? padL : padR).appendChild(b); return b; };
-  const bL = mk('◀', 'qb-l', 'L'), bR = mk('▶', 'qb-r', 'L'), bDn = mk('⬇', 'qb-dn'), bF = mk('🔥', 'qb-fire'), bJ = mk('⤒ 跳', 'qb-j');
+     右手拇指：大大圓圓的「跳」固定在最右邊。⬇ 🔥 🐾 疊在跳的左邊，
+     必殺技亮起來（🐾 必殺技）也不會把跳擠出螢幕。 */
+  const pad = el('div', 'quest-pad qpad-split'), padL = el('div', 'qpad-l'), padR = el('div', 'qpad-r'), padX = el('div', 'qpad-tools');
+  padR.appendChild(padX); pad.append(padL, padR);
+  const mk = (txt, cls, side) => { const b = el('button', 'quest-btn ' + (cls || ''), txt); (side === 'L' ? padL : side === 'J' ? padR : padX).appendChild(b); return b; };
+  const bL = mk('◀', 'qb-l', 'L'), bR = mk('▶', 'qb-r', 'L'), bDn = mk('⬇', 'qb-dn'), bF = mk('🔥', 'qb-fire'), bJ = mk('⤒ 跳', 'qb-j', 'J');
   bDn.style.display = 'none'; bF.style.display = 'none';   // ⬇：站在水管上才出現；🔥：拿到火火花才出現
   /* 🐾 寵物一起闖關（Grok 建議、家長同意）：孵出來的寵物跟在小可愛後面跑；撿金幣、時間慢慢集能量，
      集滿按 🐾（或 C 鍵）放必殺技：畫面裡的小怪物全部打倒，大魔王扣一下（大約三成血）。
@@ -23046,8 +23065,7 @@ function playQuest(id, opt) {
   const QP = (() => { const p0 = G.pet; if (!p0 || p0.stage === 'egg' || !PET_SPECIES_BY_ID[p0.species]) return null;
     const tr = PET_TRAIT_OF[p0.species] || 'jump';
     return { sp: PET_SPECIES_BY_ID[p0.species], stage: lookStage(p0), trait: tr, name: petName(), mv: QPET_MOVES[tr], meter: 0, max: easy ? 12 : 18, x: 0, y: 0, act: 0, uses: 0, lastCoins: 0, ui: 0 }; })();
-  const bP = QP ? mk('🐾', 'qb-pet') : null;
-  if (bP) padR.insertBefore(bP, bJ);   // 跳永遠在最右邊
+  const bP = QP ? mk('🐾', 'qb-pet') : null;   // 放在跳左邊的小按鈕區，跳仍是 padR 最右邊那顆
   /* 家長：簡單、一般都要自己左右走，不要自動往前跑了 → 兩種都是 ◀ ▶ 自己走；簡單模式比較寬鬆（坑窄、刺變花、被打到不扣愛心、掉下去有泡泡）。 */
   let bossZone = false;
   w.stage.appendChild(pad);
@@ -23321,10 +23339,10 @@ function playQuest(id, opt) {
       const coinHere = () => { P.coins++; coinPops.push({ x: tx * QT + 9, y: ty * QT, t: 0 }); Sound.play('coin'); };
       const powHere = () => {
         const k = ['grow', 'fire', 'inv', 'grow', 'fire'][(tx + ty) % 5];
-        let iy = ty * QT - 10;
-        // 上面三格內有屋頂（金幣框、祕密房間）：道具掉到磚塊下面，跳著頂的人當下就拿得到，不會關在框裡
-        const capped = [1, 2, 3].some(d => solid(tileAt(tx, ty - d)));
-        if (capped && !solid(tileAt(tx, ty + 1))) iy = (ty + 1) * QT + 8;
+        // 下面是空的就掉到磚塊下面：頂到的人同一個畫面就拿得到。
+        // 以前掉在磚塊上面，長跳會從道具旁邊飛過去（距離超過撿取範圍），看起來像粉紅磚沒有反應。
+        let iy = (ty + 1) * QT + 8;
+        if (solid(tileAt(tx, ty + 1))) iy = ty * QT - 10;
         items.push({ k: 'pow', kind: k, x: tx * QT + 9, y: iy, pop: .3 }); Sound.play('pickUp');
       };
       if (chb === 'M' || chb === 'R') { L.g[ty][tx] = 'u'; powHere(); }
@@ -23360,7 +23378,7 @@ function playQuest(id, opt) {
       if (it.k === 'coin' && near(11, 18)) { it.got = 1; P.coins++; Sound.play('coin'); }
       if (it.k === 'pow' && near(13, 20)) { it.got = 1; givePower(it.kind); }
       if (it.k === 'heart' && near(13, 22)) { it.got = 1; Sound.play('pickUp'); if (!easy && P.hearts < 3) { P.hearts++; say('愛心 +1 ❤️'); } else say('好溫暖！❤️'); }
-      if (it.k === 'star' && near(13, 20)) { it.got = 1; P.stars++; Sound.play('perfect'); say(`找到星星了！⭐ ${P.stars} / 3`); }
+      if (it.k === 'star' && near(13, 20)) { it.got = 1; if (P.stars < 3) P.stars++; Sound.play('perfect'); say(`找到星星了！⭐ ${P.stars} / 3`); }   // 一關畫面上只留 3 顆；第 4 顆再加會讓 ☆.repeat 炸掉、畫面停住
       if (it.k === 'check' && !it.on && Math.abs(P.x - it.x) < 12) { it.on = true; checkX = it.x - 6; Sound.play('pickUp'); say('記錄點！'); }
       if (it.k === 'spring' && P.vy >= 0 && Math.abs(P.x + P.w / 2 - (it.x + 9)) < 11 && Math.abs(P.y + P.h - (it.y + 10)) < 12) { /* 走過去、跳下來踩到都會彈 */ P.boost = true; P.vy = -760; P.on = false; it.t = .3; Sound.play('boing'); }
       if (it.k === 'goal' && Math.abs(P.x + P.w / 2 - it.x) < 10) { const h = Math.max(0, it.y - (P.y + P.h)), bonus = 1 + Math.round(h / 110 * 9); P.coins += bonus; flag = { it, t: 0, drop: 0, bonus }; state = 'flag'; endT = 0; P.vx = 0; P.vy = 0; Sound.play('flagSlide'); say(`抓到旗子了！💰 +${bonus}`, 1.8); try { Sound.setSpecial(null); } catch (e) {} }   // 家長：跳到旗子要慢慢滑下去；抓越高金幣越多
@@ -23569,7 +23587,7 @@ function playQuest(id, opt) {
   const drawHud = () => {
     g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.roundRect(6, 6, easy ? 150 : 210, 26, 13); g.fill();
     g.font = '700 14px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillStyle = '#3a3240';
-    g.fillText(`💰 ${P.coins}　${'★'.repeat(P.stars)}${'☆'.repeat(3 - P.stars)}`, 14, 19);
+    g.fillText(`💰 ${P.coins}　${questStarMarks(P.stars)}`, 14, 19);
     if (!easy) g.fillText('❤️'.repeat(Math.max(0, P.hearts)) + '🤍'.repeat(Math.max(0, 3 - P.hearts)), 130, 19);
     const pw = P.swim ? '🐧 游泳' : P.starT > 0 ? '🌟 無敵！' : P.fire ? '🔥 火火花' : P.big ? '🍒 變大了' : ''; if (pw) { g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.roundRect(QVW - 104, 6, 98, 26, 13); g.fill(); g.fillStyle = P.swim ? '#1d6f9c' : '#e8505b'; g.textAlign = 'center'; g.fillText(pw, QVW - 55, 19); }
     if (touchUI && state === 'play' && (P.t < 6 || touches.size)) {   // 👆 平板：畫面上淡淡的分區提示（開始 6 秒、手指按著的時候）
@@ -23653,13 +23671,13 @@ function questDone(w, id, P) {
   }
   gameCleanup && gameCleanup(); gameCleanup = null;
   const q = questState(), first = !q.clear[id], wd = +id[0];
-  q.clear[id] = 1; q.stars[id] = Math.max(q.stars[id] || 0, P.stars);
+  q.clear[id] = 1; q.stars[id] = Math.max(q.stars[id] || 0, Math.max(0, Math.min(3, P.stars | 0)));
   const prize = (first ? 60 + wd * 40 : 0) + P.coins * 2;
   const bells = payReward(w, prize);
   kidMoodUp(10);
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   w.stage.appendChild(el('div', 'tkd-big', '🎉'));
-  w.stage.appendChild(el('div', 'quest-stars', '★'.repeat(P.stars) + '☆'.repeat(3 - P.stars)));
+  w.stage.appendChild(el('div', 'quest-stars', questStarMarks(P.stars)));
   w.status.textContent = `過關！金幣 ${P.coins} 枚${first ? '，第一次過關有獎金' : ''}　💰 +${fmt(bells)}`;
   const idx = QUEST_IDS.indexOf(id), next = QUEST_IDS[idx + 1];
   if (next) { const b = el('button', 'big', `下一關 ${next} ▶`); b.onclick = () => playQuest(next); w.btns.appendChild(b); }

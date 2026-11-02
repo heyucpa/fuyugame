@@ -107,6 +107,53 @@ const path = require('path');
     o.noFalseWorld = neu.rev === 2 && neu.legacy['1'] == null && neu.clear['1-3'] === 1 && neu.stars['1-1'] === 1;
     // 地圖
     openQuestMap(); o.map = document.querySelectorAll('.quest-world').length === 6 && /城堡世界/.test($('#modalCard').innerText) && /獎盃/.test($('#modalCard').innerText); $('#modal').hidden = true;
+    // 第 4 顆星星（1-3 藤蔓雲上）：以前 P.stars 變成 4，'☆'.repeat(-1) 把畫面迴圈弄停
+    if (!(G.pet && G.pet.stage && G.pet.stage !== 'egg')) G.pet = { species: 'bunny', stage: 'kid', hunger: 80, clean: 100, mood: 80 };
+    questState().mode = 'easy'; playQuest('1-3');
+    T = playQuest.test;
+    const vineStar = T.items.find(it => it.k === 'star' && it.y < 80);
+    T.P.stars = 3; T.P.vx = 0; T.P.vy = 0; T.P.x = vineStar.x - 6; T.P.y = 4 * QT - T.P.h;
+    let starErr = '';
+    try { for (let i = 0; i < 6; i++) T.frameStep(1 / 60); } catch (e) { starErr = e.message; }
+    const sx0 = T.P.x; T.keys.ArrowRight = true;
+    try { for (let i = 0; i < 24; i++) T.frameStep(1 / 60); } catch (e) { starErr += e.message; }
+    o.starLive = !starErr && vineStar.got === 1 && T.P.stars === 3 && T.P.x > sx0 + 12 && T.state() === 'play';
+    gameCleanup && gameCleanup(); gameCleanup = null; $('#modal').hidden = true;
+    // 階梯金幣：橋下從左邊平地走得進去，跳一下頂到粉紅而且拿到道具。上面仍有金色問號。
+    const g13 = questBuild('1-3', true).g;
+    let stx = -1, sty = -1;
+    for (let y = 0; y < g13.length; y++) for (let x = 2; x < g13[y].length - 2; x++) if (g13[y][x] === 'M' && g13[y - 3] && (g13[y - 3][x] === '?' || g13[y - 3][x] === 'N')) { stx = x; sty = y; }
+    const wall = c => '#=?BMNPRQU'.includes(c);
+    let path = stx > 2 && sty === 10;
+    for (let x = stx - 5; x <= stx; x++) if (wall(g13[12][x]) || wall(g13[11][x])) path = false;
+    o.archOpen = path && g13[sty - 3][stx - 1] === '?' && g13[sty - 3][stx + 1] === '?';
+    questState().mode = 'easy'; playQuest('1-3');
+    T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null;
+    T.P.big = false; T.P.fire = false; T.P.starT = 0; T.P.vy = 0; T.P.x = (stx - 5) * QT; T.P.y = 13 * QT - T.P.h; T.keys.ArrowRight = true;
+    let archHit = false;
+    for (let i = 0; i < 420 && !archHit; i++) {
+      const cx = (T.P.x + T.P.w / 2) / QT;
+      if (T.P.on && cx > stx - 0.4 && cx < stx + 1.3) T.jump();
+      T.step(1 / 60);
+      if (T.L.g[sty][stx] === 'u') archHit = true;
+    }
+    o.archHit = archHit && (T.P.big || T.P.fire || T.P.starT > 0);
+    // 長跳頂得到、但道具以前掉在磚塊上面撿不到：火火花那一排、水管旁的粉紅
+    const reach = pred => {
+      questState().mode = 'easy'; playQuest('1-3');
+      const T2 = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null;
+      let mx = -1, my = -1;
+      T2.L.g.forEach((row, y) => row.forEach((ch, x) => { if (ch === 'M' && pred(T2, x, y)) { mx = x; my = y; } }));
+      if (mx < 0) return false;
+      T2.P.big = false; T2.P.fire = false; T2.P.starT = 0; T2.P.vx = 0; T2.P.inv = 9; T2.P.x = mx * QT + 2; T2.P.y = 13 * QT - T2.P.h;
+      for (let i = 0; i < 4; i++) T2.step(1 / 60);
+      T2.jump();
+      for (let i = 0; i < 100; i++) T2.step(1 / 60);
+      return T2.L.g[my][mx] === 'u' && T2.items.some(it => it.k === 'pow' && it.got === 1);
+    };
+    o.powReach = reach((T2, x, y) => y === 9 && T2.L.g[y][x - 1] === '=');
+    o.pipeReach = reach((T2, x, y) => y === 8 && T2.L.g[y][x - 1] === 'N');
+    closeGameWindow(); $('#modal').hidden = true;
     return o;
   });
   console.log(JSON.stringify(out));
