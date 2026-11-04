@@ -4661,7 +4661,7 @@ const FURN_BY_ID = Object.fromEntries(FURNITURE.map(f => [f.id, f]));
    收在另一本「🎃 節日收藏」，錯過了明年還有。 */
 const SEASONS = [
   // from／to：月、日（含頭含尾）
-  { id: 'halloween', name: '萬聖節', icon: '🎃', from: [10, 1], to: [11, 1], clothes: ['pumpkin_clip', 'devil_horns', 'witch_hat'], food: 'hw_candy',
+  { id: 'halloween', name: '萬聖節', icon: '🎃', from: [10, 15], to: [10, 31], clothes: ['pumpkin_clip', 'devil_horns', 'witch_hat'], food: 'hw_candy',
     costumes: ['🎃', '👻', '🧙', '🦇'] }
 ];
 var SEASON_TODAY = null;   // 測試用：指定今天是幾月幾日 [月, 日]
@@ -4852,6 +4852,49 @@ TROPHY_SETS.forEach(t => {
     ] };
   ON_TABLE.push(t.item);
 });
+/* ===== 🎄 聖誕節資料（每年 12/1～12/31）=====
+   放在讀檔之前：買了、擺了、穿過的東西，活動結束後還在，舊存檔也讀得回來。
+   衣服沿用已經會畫的樣式（毛衣、毛帽），不改換裝的畫法。 */
+SEASONS.push({
+  id: 'christmas', name: '聖誕節', icon: '🎄', from: [12, 1], to: [12, 31],
+  clothes: ['santa_hat', 'antlers', 'xmas_sweater', 'snow_beanie'], food: 'xmas_cookie',
+  costumes: ['🎅', '🦌', '🎄', '⭐']
+});
+[
+  { id: 'xmas_sweater', slot: 'top', name: '聖誕毛衣', price: 1600, style: 'sweater', color: '#c4313a', print: '#ffe066' },
+  { id: 'snow_beanie', slot: 'head', name: '雪球毛帽', price: 900, style: 'beanie', color: '#f7fbff', pom: '#e8505b' }
+].forEach(c => { c.price = scaledPrice(c.price); CLOTHES.push(c); CLOTHES_BY_ID[c.id] = c; });
+{ const food = { id: 'xmas_cookie', name: '聖誕餅乾', emoji: '🍪', price: 80, hunger: 8, grow: 0, season: 'christmas' };
+  KID_FOODS.push(food); KID_FOOD_BY_ID[food.id] = food; }
+[
+  { id: 'xmas_tree', name: '聖誕樹', price: 1600, theme: 'cute', w: 1, d: 1, season: 'christmas', parts: [
+    { x: .42, y: .42, w: .16, d: .16, z: 0, h: 8, c: '#8a5a33' },
+    { k: 'ball', x: .5, y: .5, z: 16, r: 12, c: '#2f8f4e' },
+    { k: 'ball', x: .5, y: .5, z: 28, r: 9, c: '#3aaa62' },
+    { k: 'ball', x: .5, y: .5, z: 38, r: 6, c: '#57c47a' },
+    { k: 'ball', x: .5, y: .5, z: 46, r: 2.4, c: '#ffe066' },
+    { k: 'ball', x: .32, y: .62, z: 20, r: 2, c: '#e8505b' },
+    { k: 'ball', x: .68, y: .4, z: 30, r: 2, c: '#ffd23f' },
+    { k: 'ball', x: .4, y: .35, z: 34, r: 1.8, c: '#6fb7e8' }
+  ] },
+  { id: 'gift_pile', name: '禮物堆', price: 800, theme: 'cute', w: 1, d: 1, season: 'christmas', parts: [
+    { x: .16, y: .28, w: .34, d: .34, z: 0, h: 12, c: '#e8505b' },
+    { x: .28, y: .28, w: .08, d: .34, z: 12, h: 1.2, c: '#ffe066' },
+    { x: .42, y: .4, w: .36, d: .32, z: 0, h: 10, c: '#3f8fd1' },
+    { x: .42, y: .52, w: .36, d: .08, z: 10, h: 1.2, c: '#ffe066' },
+    { x: .28, y: .22, w: .28, d: .28, z: 12, h: 9, c: '#7bd389' },
+    { k: 'ball', x: .42, y: .36, z: 22, r: 2.2, c: '#ffe066' }
+  ] },
+  { id: 'snow_buddy', name: '小雪人', price: 1000, theme: 'cute', w: 1, d: 1, season: 'christmas', parts: [
+    { k: 'ball', x: .5, y: .5, z: 8, r: 11, c: '#ffffff' },
+    { k: 'ball', x: .5, y: .5, z: 22, r: 8, c: '#ffffff' },
+    { k: 'ball', x: .62, y: .72, z: 26, r: 1.3, c: '#3a3240' },
+    { k: 'ball', x: .76, y: .6, z: 26, r: 1.3, c: '#3a3240' },
+    { k: 'ball', x: .72, y: .76, z: 22, r: 1.5, c: '#ff9a3c' },
+    { x: .36, y: .36, w: .28, d: .28, z: 30, h: 2, c: '#e8505b' },
+    { k: 'ball', x: .5, y: .5, z: 36, r: 2.2, c: '#ffffff' }
+  ] }
+].forEach(d => { SEASON_FURNITURE.push(d); FURN_BY_ID[d.id] = d; });
 </script>
 <script>
 // 遊戲狀態、存檔、經濟與評分
@@ -5165,7 +5208,7 @@ const NEWS = [
     ['🍬', '萬聖節糖果收集：一共拿到 12／30／60 顆糖，有小幽靈巫師帽、糖果大罐、小幽靈洋裝可以領（點小可愛看進度，糖果還是可以吃、可以送人）'],
     ['🤡', '萬聖節新家具：小丑糖果管家（每天跟牠要糖果）、骷髏伯爵（找幽靈時蠟燭會亮、會幫你指方向）；換裝有小吸血鬼披風'],
     ['🎃', '點小可愛選「提著南瓜燈找小幽靈」：房間暗下來，用南瓜燈照，照到才會現身！隨時可以按「🔆 開燈」'],
-    ['📅', '萬聖節活動到 11/1']
+    ['📅', '萬聖節活動是每年 10/15～10/31']
   ], newItems: [] },
   { id: '2026-10-17T20:00', title: '升旗、看戰車也有動畫了！🚩', lines: [
     ['🚩', '學校看升旗：全校排排站，貓頭鷹校旗慢慢升到頂'],
@@ -5326,7 +5369,7 @@ const NEWS = [
     ['👣', '收到的禮物都會記在「🚗 出門 → 👣 訪客簿」，看得到誰來過']
   ], newItems: [] },
   { id: '2026-10-06T15:00', title: '萬聖節活動開始了！🎃', lines: [
-    ['🎃', '10 月是萬聖節！商店最上面有限定家具：南瓜燈、小幽靈玩偶、南瓜椅、魔女鍋…'],
+    ['🎃', '每年 10/15～10/31 是萬聖節！商店最上面有限定家具：南瓜燈、小幽靈玩偶、南瓜椅、魔女鍋…'],
     ['🍬', '動物朋友會打扮來玩：「不給糖就搗蛋！」點牠給糖果，牠會回送禮物'],
     ['🧙', '巫師帽、南瓜髮夾、小惡魔角也在限定區'],
     ['📖', '新的「🎃 節日收藏」圖鑑。錯過了也沒關係，明年還會再來']
@@ -5985,6 +6028,8 @@ function normalizeSave(g) {
   if (out.track != null) { if (!isObj(out.track)) delete out.track; else { ['best', 'lj'].forEach(k => { if (out.track[k] != null && !(num(out.track[k]) && out.track[k] > 0 && out.track[k] < 100)) delete out.track[k]; }); } }   // 🏟️ 田徑紀錄
   if (out.qIsleDay != null && !(isObj(out.qIsleDay) && typeof out.qIsleDay.d === 'string' && isObj(out.qIsleDay.got))) delete out.qIsleDay;
   if (out.funDay != null && !(isObj(out.funDay) && typeof out.funDay.d === 'string' && out.funDay.d.length <= 12 && Number.isInteger(out.funDay.n) && out.funDay.n >= 0 && out.funDay.n < 20)) delete out.funDay;   // 🎲 小島趣味事件今天領過幾次小禮物（沒有這個欄位＝還沒遇過，舊存檔照讀）
+  if (out.nightTreat != null && !(isObj(out.nightTreat) && typeof out.nightTreat.d === 'string' && out.nightTreat.d.length <= 12 && Number.isInteger(out.nightTreat.n) && out.nightTreat.n >= 0 && out.nightTreat.n < 20)) delete out.nightTreat;   // 🎃 夜晚小訪客今天領過幾次（沒有＝還沒遇過）
+  if (out.xmasGift != null && !(isObj(out.xmasGift) && typeof out.xmasGift.d === 'string' && out.xmasGift.d.length <= 12 && Number.isInteger(out.xmasGift.n) && out.xmasGift.n >= 0 && out.xmasGift.n < 20)) delete out.xmasGift;   // 🎄 聖誕小禮物今天領過幾次
   if (out.raceDay != null && !(isObj(out.raceDay) && typeof out.raceDay.d === 'string' && Number.isInteger(out.raceDay.n) && out.raceDay.n >= 0)) delete out.raceDay;   // 🏁 賽跑猜對的獎金（一天幾次）
   if (out.kid.magic != null && !(isObj(out.kid.magic) && num(out.kid.magic.until) && magicFxList().some(m => m.id === out.kid.magic.id))) delete out.kid.magic;   // 🔮 魔法藥水的效果
   if (out.kid.magicDex != null) { if (Array.isArray(out.kid.magicDex)) out.kid.magicDex = out.kid.magicDex.filter(id => magicFxList().some(m => m.id === id)); else delete out.kid.magicDex; }
@@ -10854,7 +10899,7 @@ function visitorArrive(now) {
   vis.costume = se0 && se0.costumes ? se0.costumes[NEIGHBORS.indexOf(n) % se0.costumes.length] : null;
   vis.gotCandy = false;
   vis.did = {}; // 這次來做了什麼（回家時寫進訪客簿）
-  visSay(kidStateLine('vis:' + n.id, true) || (se0 && se0.id === 'halloween' ? pickLine('visitorTrick', visVars()) : pickLine('visitorHello', visVars())));
+  visSay(kidStateLine('vis:' + n.id, true) || (se0 && se0.id === 'halloween' ? pickLine('visitorTrick', visVars()) : (typeof festVisitLine === 'function' && festVisitLine(se0)) || pickLine('visitorHello', visVars())));
   setTimeout(() => { if (vis.who === n && !fufu.pose) fufuSay(pickLine('kidWelcome', visVars()), 2800); }, 1800);
   // 走到小可愛附近
   const [ti, tj] = fufuTile();
@@ -15795,7 +15840,7 @@ function tabBook(body) {
     });
     body.appendChild(fg); }
   body.appendChild(sec('dexSeason', `🎃 節日收藏 ${seasonDexCount()} / ${SEASON_FURNITURE.length}`));
-  body.appendChild(note('節日限定的家具（萬聖節是 10 月）。錯過了也沒關係，明年還會再來。'));
+  body.appendChild(note('節日限定的家具（萬聖節 10/15～10/31、聖誕節 12/1～12/31）。錯過了也沒關係，明年還會再來。已經拿到的，活動結束了還是可以穿、可以擺。'));
   { const sg = el('div', 'grid');
     SEASON_FURNITURE.forEach(def => {
       const has = !!(G.seasonDex || {})[def.id];
@@ -17223,6 +17268,14 @@ function drawWelcome(g, t, info) {
     [[hx - 6, 190], [hx + 106, 190]].forEach(([x, y]) => { g.fillStyle = '#f0902f'; g.beginPath(); g.ellipse(x, y - 8, 11, 9, 0, 0, Math.PI * 2); g.fill(); g.fillStyle = '#ffe066'; g.fillRect(x - 5, y - 11, 3, 3); g.fillRect(x + 2, y - 11, 3, 3); g.fillRect(x - 4, y - 6, 8, 2); g.fillStyle = '#5f8a3a'; g.fillRect(x - 1, y - 19, 2, 4); });
     g.fillStyle = night ? '#d8c4ff' : '#4b3b6b';
     [0, 1, 2].forEach(i => { const bx = (40 + t / 9 + i * 90) % 440 - 20, by = 50 + i * 18 + Math.sin(t / 150 + i) * 6, f = Math.sin(t / 60 + i) * 4; g.beginPath(); g.moveTo(bx, by); g.lineTo(bx - 8, by - 4 - f); g.lineTo(bx - 4, by + 2); g.lineTo(bx, by); g.lineTo(bx + 4, by + 2); g.lineTo(bx + 8, by - 4 - f); g.closePath(); g.fill(); });
+  } else if (info.season === 'christmas') {
+    g.fillStyle = '#8a5a33'; g.fillRect(hx + 46, 176, 8, 16);
+    g.fillStyle = '#2f8f4e'; g.beginPath(); g.moveTo(hx + 50, 148); g.lineTo(hx + 28, 178); g.lineTo(hx + 72, 178); g.closePath(); g.fill();
+    g.fillStyle = '#3aaa62'; g.beginPath(); g.moveTo(hx + 50, 158); g.lineTo(hx + 34, 178); g.lineTo(hx + 66, 178); g.closePath(); g.fill();
+    g.fillStyle = '#ffe066'; g.beginPath(); g.arc(hx + 50, 146, 4, 0, 7); g.fill();
+    g.fillStyle = '#fff';
+    for (let i = 0; i < 8; i++) { const sx = (20 + i * 48 + t / 30) % 400, sy = (t / 18 + i * 28) % 150; g.globalAlpha = .8; g.beginPath(); g.arc(sx, sy, 2, 0, 7); g.fill(); }
+    g.globalAlpha = 1;
   } else {
     g.fillStyle = '#7bd389'; [[hx - 8, 190], [hx + 108, 190]].forEach(([x, y]) => { g.beginPath(); g.arc(x, y - 6, 9, 0, Math.PI * 2); g.fill(); });
   }
@@ -17253,7 +17306,8 @@ function maybeSeasonNotice(tries) {
   openSeasonNotice(se);
 }
 const SEASON_NOTICE = {
-  halloween: { pics: '🎃👻🦇🍬', title: '萬聖節活動開始了！', lines: [['🛒', '商店有萬聖節限定的家具和帽子'], ['🦊', '動物朋友會打扮來玩：「不給糖就搗蛋！」'], ['🍬', '給牠們糖果，會回送禮物喔'], ['📖', '收集「節日收藏」圖鑑']] }
+  halloween: { pics: '🎃👻🦇🍬', title: '萬聖節活動開始了！', lines: [['🛒', '商店有萬聖節限定的家具和帽子'], ['🦊', '動物朋友會打扮來玩：「不給糖就搗蛋！」'], ['🍬', '給牠們糖果，會回送禮物喔'], ['📖', '收集「節日收藏」圖鑑']] },
+  christmas: { pics: '🎄🎅🦌🎁', title: '聖誕節活動開始了！', lines: [['🎄', '小島上有聖誕樹，還會下雪'], ['🎅', '聖誕老公公或麋鹿會來溜達，點一下拿小禮物'], ['👗', '商店有聖誕帽、麋鹿角、聖誕毛衣、雪球毛帽'], ['📖', '收進「節日收藏」，明年還會再來']] }
 };
 function openSeasonNotice(se) {
   const n = SEASON_NOTICE[se.id] || { pics: se.icon, title: `${se.name}活動開始了！`, lines: [] };
@@ -20458,6 +20512,7 @@ function islWalkTo(goalFn, nx, ny) {
 function islTap(e, hold) {
   const t = islTile(e), m = isl.m;
   isl.keys = {};
+  if (!hold && typeof festTap === 'function' && festTap(t)) return;
   if (hold && isl.pressTile && t.x === isl.pressTile.x && t.y === isl.pressTile.y) return;   // 手指還按在原來那一格：不要重新找路
   if (hold) { isl.pending = null; isl.pressTile = null; }
   if (!hold && typeof isleFunHit === 'function' && isleFunHit(t)) { isleFunTap(); return; }
@@ -20632,6 +20687,7 @@ function islStep(dt) {
   });
   if (Math.random() < dt * .25) { const p = ISL_POND; islAddFx('fish', p.x + .6 + Math.random() * (p.w - 1.2), p.y + .8 + Math.random() * (p.h - 1.6), 1300); }   // 池塘偶爾有魚跳
   if (typeof isleFunStep === 'function') isleFunStep(dt);
+  if (typeof festStep === 'function') festStep(dt);
   isl.fx = isl.fx.filter(f => performance.now() - f.t0 < f.dur);
   const ct = isl.pan && performance.now() < isl.pan.until ? isl.pan : isl;   // 🏝️ 新小島出現：鏡頭先飛過去看一下
   isl.cam.x += (ct.x - isl.cam.x) * Math.min(1, dt * (ct === isl ? 6 : 2)); isl.cam.y += (ct.y - isl.cam.y) * Math.min(1, dt * (ct === isl ? 6 : 2));
@@ -20726,6 +20782,7 @@ function islDraw(now) {
   });
   // 會擋住、有前後的東西：照腳的位置排
   const items = [];
+  if (typeof festPush === 'function') festPush(items, ctx, now);
   if (typeof islDrawFootprints === 'function') islDrawFootprints(ctx, now);   // 沙灘上的腳印
   m.blds.forEach(b => items.push({ y: (b.y + b.h) * T, draw: () => islDrawBuilding(ctx, b, tt) }));
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (m.tree[y][x]) items.push({ y: (y + 1) * T, draw: () => islDrawTree(ctx, x, y, now) });
@@ -27769,7 +27826,7 @@ function worldAdTick() {
 }
 setInterval(() => { try { if (!resting) worldAdTick(); } catch (e) {} }, 2000);
 
-/* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動只到 11/1）=====
+/* ===== 🎃 萬聖節派對＋找小幽靈（家長：照建議做，萬聖節活動每年 10/15～10/31）=====
    🎉 派對：萬聖節期間、在自己家、這個房間擺了 3 件以上萬聖節家具 → 點小可愛「🎉 萬聖節派對」，
       動物朋友全都打扮來跳舞放煙火，每天第一次結束時每位送一顆糖（4 顆萬聖節糖果）。
    👻 小幽靈：每天一隻躲在家裡某個房間的某個角落（半透明、會飄），找到點一下拿 3 顆糖果，一天一次。 */
@@ -29770,6 +29827,272 @@ function openSlingGame() {
   }
   gameButtons(w, openSlingGame);
   raf = requestAnimationFrame(frame);
+}
+</script>
+<script>
+/* ===== 🎃🎄 節日散步（跟天氣事件分開，不共用 G.funDay）=====
+   夜晚：可愛的萬聖節小朋友一整年都會不定期來溜達。一句話、會念出來。
+   點一下有糖果或一點點零用錢，每天最多 3 次。不會扣東西、不會讓人失敗。
+   選單、小遊戲、釣魚開著的時候牠們先躲起來。
+   12/1～12/31：島上聖誕樹、下雪、聖誕老公公或麋鹿，小禮物每天最多 2 次。
+   這些函式都在讀檔之後，normalizeSave 不會呼叫它們。 */
+LINE_TYPES.push({ key: 'visitorXmas', label: '聖誕節：動物朋友來玩', hint: '可用 {名字}', lines: ['聖誕快樂！{名字}！', '我戴了聖誕的樣子來找你！', '叮叮噹～一起來過聖誕節！'] });
+const FEST_NIGHT_CAP = 3, FEST_XMAS_CAP = 2;
+const FEST_NIGHT_LINES = {
+  ghost: '嘿嘿，小幽靈來散步，不嚇你喔！',
+  pumpkin: '南瓜燈亮亮的，一起走一走！',
+  bat: '小蝙蝠來打招呼，晚上好！',
+  candy: '糖果精靈經過這裡，要不要一顆糖？'
+};
+const FEST_PAL_LINES = {
+  santa: '聖誕快樂！我帶小禮物來了！',
+  deer: '叮叮噹，小麋鹿來玩了！'
+};
+function festXmasOn() { const se = typeof seasonNow === 'function' ? seasonNow() : null; return !!(se && se.id === 'christmas'); }
+function festVisitLine(se) {
+  if (!se || se.id !== 'christmas') return '';
+  try { return pickLine('visitorXmas', typeof visVars === 'function' ? visVars() : {}); } catch (e) { return '聖誕快樂！'; }
+}
+function festBusy() {
+  if (!isl) return true;
+  const md = document.getElementById('modal');
+  if (md && !md.hidden) return true;
+  const menu = document.getElementById('itemMenu');
+  if (menu && !menu.hidden) return true;
+  if (isl.talk) return true;
+  if (isl.act) return true;
+  if (isl.pan && performance.now() < isl.pan.until) return true;
+  if (document.getElementById('showcase')) return true;
+  if (typeof introPlaying !== 'undefined' && introPlaying) return true;
+  if (typeof resting !== 'undefined' && resting) return true;
+  return false;
+}
+function festBag(key) {
+  const d = today();
+  const cur = G[key];
+  if (!cur || cur.d !== d || !Number.isInteger(cur.n) || cur.n < 0) G[key] = { d, n: 0 };
+  return G[key];
+}
+function festSpot() {
+  const m = isl.m;
+  for (let k = 0; k < 24; k++) {
+    const x = isl.x + (Math.random() * 7 - 3.5), y = isl.y + (Math.random() * 5 - 2.5);
+    if (islPass(m, Math.floor(x), Math.floor(y)) && Math.hypot(x - isl.x, y - isl.y) > 1.3) return { x, y };
+  }
+  return { x: isl.x + 1.8, y: isl.y + .4 };
+}
+function festSpeak(p, text) {
+  const line = text || (p && p.line) || '';
+  if (!line || !isl) return;
+  try { islAddFx('say', p ? p.x : isl.x, (p ? p.y : isl.y) - 1.6, 2400, { text: line }); } catch (e) {}
+  try { if (typeof stopSpeak === 'function') stopSpeak(); if (typeof speak === 'function') speak(line); } catch (e) {}
+}
+function festHide() {
+  if (!isl) return;
+  isl.festNight = null; isl.festPal = null;
+  const now = performance.now();
+  isl.festNextNight = now + 6000; isl.festNextPal = now + 6000;
+}
+function festMove(p, dt) {
+  p.t += dt;
+  p.x += p.vx * dt; p.y += p.vy * dt;
+  if (p.vx) p.f = p.vx > 0 ? 1 : -1;
+  if (!islPass(isl.m, Math.floor(p.x), Math.floor(p.y))) { p.vx *= -1; p.vy *= -1; p.x += p.vx * dt * 2; p.y += p.vy * dt * 2; }
+  return p.t <= p.dur;
+}
+function festMake(kind, lines) {
+  const spot = festSpot(), dir = Math.random() < .5 ? -1 : 1;
+  return { kind, x: spot.x, y: spot.y, vx: dir * (0.28 + Math.random() * 0.22), vy: (Math.random() - .5) * 0.22, t: 0, dur: 8, line: lines[kind], f: dir };
+}
+function festSpawnNight(kind) {
+  if (!isl) return null;
+  const kinds = ['ghost', 'pumpkin', 'bat', 'candy'];
+  const k = kinds.indexOf(kind) >= 0 ? kind : kinds[Math.floor(Math.random() * kinds.length)];
+  isl.festNight = festMake(k, FEST_NIGHT_LINES);
+  festSpeak(isl.festNight);
+  isl.festNextNight = performance.now() + 20000 + Math.random() * 22000;
+  return isl.festNight;
+}
+function festSpawnPal(kind) {
+  if (!isl) return null;
+  const k = kind === 'deer' || kind === 'santa' ? kind : (Math.random() < .5 ? 'santa' : 'deer');
+  isl.festPal = festMake(k, FEST_PAL_LINES);
+  festSpeak(isl.festPal);
+  isl.festNextPal = performance.now() + 18000 + Math.random() * 20000;
+  return isl.festPal;
+}
+function festStep(dt) {
+  if (!isl) return;
+  if (festBusy()) { festHide(); return; }
+  const now = performance.now();
+  if (isl.festNight && islPhase() !== 'night') isl.festNight = null;
+  if (isl.festNight) { if (!festMove(isl.festNight, dt)) { isl.festNight = null; isl.festNextNight = now + 16000 + Math.random() * 24000; } }
+  else if (islPhase() === 'night') {
+    if (isl.festNextNight == null) isl.festNextNight = now + 7000 + Math.random() * 16000;
+    if (now >= isl.festNextNight) festSpawnNight();
+  }
+  if (isl.festPal && !festXmasOn()) isl.festPal = null;
+  if (isl.festPal) { if (!festMove(isl.festPal, dt)) { isl.festPal = null; isl.festNextPal = now + 14000 + Math.random() * 20000; } }
+  else if (festXmasOn()) {
+    if (isl.festNextPal == null) isl.festNextPal = now + 5000 + Math.random() * 14000;
+    if (now >= isl.festNextPal) festSpawnPal();
+  }
+}
+function festPay(kind) {
+  const st = festBag(kind === 'night' ? 'nightTreat' : 'xmasGift');
+  const cap = kind === 'night' ? FEST_NIGHT_CAP : FEST_XMAS_CAP;
+  if (st.n >= cap) return 'capped';
+  st.n++;
+  if (kind === 'night' && st.n % 2) { if (typeof hwEarn === 'function') hwEarn(1); return 'candy'; }
+  if (kind === 'xmas' && st.n % 2) { G.kidFood.xmas_cookie = (G.kidFood.xmas_cookie || 0) + 1; return 'cookie'; }
+  const n = kind === 'night' ? 30 : 40;
+  addBells(n);
+  return 'bells';
+}
+function festFinish(p, what, line) {
+  festSpeak(p, line);
+  try { Sound.play(what === 'capped' ? 'petHappy' : 'coin'); } catch (e) {}
+  try { kidMoodUp(1); } catch (e) {}
+  try { saveGame(); refreshTop(); } catch (e) {}
+  return what;
+}
+function festNightClick(p) {
+  p = p || (isl && isl.festNight); if (!p) return false;
+  const what = festPay('night');
+  const line = what === 'candy' ? '送你一顆糖！' : what === 'bells' ? '送你 30 元！' : '今天的小驚喜送完了，明天再來玩！';
+  return festFinish(p, what, line);
+}
+function festPalClick(p) {
+  p = p || (isl && isl.festPal); if (!p) return false;
+  const what = festPay('xmas');
+  const line = what === 'cookie' ? '送你一塊聖誕餅乾！' : what === 'bells' ? '送你 40 元！' : '今天的小禮物送完了，明天再來！';
+  return festFinish(p, what, line);
+}
+function festTreeTile(m) {
+  const ok = (x, y) => m && m.land[y] && m.land[y][x] && islPass(m, x, y) && !m.path[y][x] && !m.beach[y][x] && !(m.tree && m.tree[y][x]);
+  const want = [[21, 18], [33, 18], [16, 18], [15, 20], [34, 20], [19, 21], [30, 21]];
+  for (let i = 0; i < want.length; i++) if (ok(want[i][0], want[i][1])) return want[i];
+  for (let y = 16; y < 24; y++) for (let x = 14; x < 36; x++) if (ok(x, y) && Math.hypot(x - 26, y - 19) > 2.4 && Math.hypot(x - 26, y - 19) < 8) return [x, y];
+  return [21, 18];
+}
+function festTreeClick() {
+  const what = festPay('xmas');
+  const tree = isl && isl.festTree;
+  const p = tree ? { x: tree[0] + .5, y: tree[1] + .5 } : null;
+  const line = what === 'cookie' ? '聖誕樹下有一塊餅乾！' : what === 'bells' ? '聖誕樹下有 40 元！' : '今天的小禮物送完了，樹還是亮亮的！';
+  return festFinish(p, what, line);
+}
+function festTap(t) {
+  if (!isl || !t || festBusy()) return false;
+  const fx = t.fx != null ? t.fx : t.x, fy = t.fy != null ? t.fy : t.y;
+  const night = isl.festNight;
+  if (night && Math.hypot(night.x - fx, night.y - fy) < 1.15) { festNightClick(night); return true; }
+  const pal = isl.festPal;
+  if (pal && Math.hypot(pal.x - fx, pal.y - fy) < 1.2) { festPalClick(pal); return true; }
+  if (festXmasOn()) {
+    const tree = isl.festTree || (isl.festTree = festTreeTile(isl.m));
+    if (Math.hypot(tree[0] + .5 - fx, tree[1] + .2 - fy) < 1.35) { festTreeClick(); return true; }
+  }
+  return false;
+}
+function festFace(ctx, x, y) {
+  ctx.fillStyle = '#3a3240';
+  ctx.beginPath(); ctx.arc(x - 4, y, 1.5, 0, 7); ctx.arc(x + 4, y, 1.5, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#e07088'; ctx.lineWidth = 1.3; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(x, y + 2.5, 3.1, .25, Math.PI - .25); ctx.stroke();
+}
+function festDrawNight(ctx, p, now) {
+  const T = ISL.T, px = p.x * T, py = p.y * T, bob = Math.sin(now / 180 + p.x) * 3;
+  ctx.fillStyle = 'rgba(40,30,20,.18)'; ctx.beginPath(); ctx.ellipse(px, py + 4, 10, 4, 0, 0, 7); ctx.fill();
+  ctx.save(); ctx.translate(px, py - 18 + bob); ctx.scale(p.f || 1, 1);
+  if (p.kind === 'pumpkin') {
+    ctx.fillStyle = '#f0902f'; ctx.beginPath(); ctx.arc(0, 2, 13, 0, 7); ctx.fill();
+    ctx.fillStyle = '#5f8a3a'; ctx.fillRect(-1.4, -14, 2.8, 5);
+    festFace(ctx, 0, 1);
+  } else if (p.kind === 'bat') {
+    ctx.fillStyle = '#b9a4e0';
+    ctx.beginPath(); ctx.ellipse(-12, 2, 8, 4, -.4, 0, 7); ctx.ellipse(12, 2, 8, 4, .4, 0, 7); ctx.fill();
+    ctx.fillStyle = '#7d68b0'; ctx.beginPath(); ctx.arc(0, 2, 9, 0, 7); ctx.fill();
+    ctx.fillStyle = '#5a4a86'; ctx.beginPath(); ctx.moveTo(-5, -6); ctx.lineTo(-2, -12); ctx.lineTo(0, -6); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(5, -6); ctx.lineTo(2, -12); ctx.lineTo(0, -6); ctx.fill();
+    festFace(ctx, 0, 2);
+  } else if (p.kind === 'candy') {
+    ctx.fillStyle = '#ff9ec4'; ctx.beginPath(); ctx.arc(0, 2, 10, 0, 7); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(-14, 2); ctx.lineTo(-8, -3); ctx.lineTo(-8, 7); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(14, 2); ctx.lineTo(8, -3); ctx.lineTo(8, 7); ctx.fill();
+    festFace(ctx, 0, 1);
+  } else {
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.ellipse(0, 0, 12, 14, 0, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-11, 6); ctx.quadraticCurveTo(-7, 14, -3, 7); ctx.quadraticCurveTo(1, 14, 5, 7); ctx.quadraticCurveTo(9, 14, 12, 5); ctx.lineTo(-12, 5); ctx.fill();
+    festFace(ctx, 0, -1);
+    ctx.fillStyle = '#ffb7cc'; ctx.beginPath(); ctx.arc(-6, 3, 2, 0, 7); ctx.arc(6, 3, 2, 0, 7); ctx.fill();
+  }
+  ctx.restore();
+}
+function festDrawPal(ctx, p, now) {
+  const T = ISL.T, px = p.x * T, py = p.y * T, bob = Math.abs(Math.sin(now / 160)) * 2;
+  ctx.fillStyle = 'rgba(40,30,20,.18)'; ctx.beginPath(); ctx.ellipse(px, py + 4, 11, 4, 0, 0, 7); ctx.fill();
+  ctx.save(); ctx.translate(px, py - 20 + bob); ctx.scale(p.f || 1, 1);
+  if (p.kind === 'deer') {
+    ctx.strokeStyle = '#8a5a33'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-4, -8); ctx.lineTo(-8, -18); ctx.moveTo(-6, -14); ctx.lineTo(-12, -16); ctx.moveTo(4, -8); ctx.lineTo(8, -18); ctx.moveTo(6, -14); ctx.lineTo(12, -16); ctx.stroke();
+    ctx.fillStyle = '#c9844a'; ctx.beginPath(); ctx.ellipse(0, 4, 11, 12, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#e8a06a'; ctx.beginPath(); ctx.ellipse(0, 8, 7, 6, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#e8505b'; ctx.beginPath(); ctx.arc(0, 6, 2.2, 0, 7); ctx.fill();
+    festFace(ctx, 0, 0);
+  } else {
+    ctx.fillStyle = '#d94a4a'; ctx.beginPath(); ctx.ellipse(0, 6, 12, 13, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(0, 10, 8, 6, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#fff6ea'; ctx.beginPath(); ctx.arc(0, -2, 8, 0, 7); ctx.fill();
+    ctx.fillStyle = '#d94a4a'; ctx.beginPath(); ctx.moveTo(-8, -4); ctx.quadraticCurveTo(0, -20, 8, -4); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(6, -16, 3, 0, 7); ctx.fill();
+    ctx.fillRect(-9, -6, 18, 3);
+    festFace(ctx, 0, -2);
+  }
+  ctx.restore();
+}
+function festDrawTree(ctx, x, y, now) {
+  const T = ISL.T, px = x * T + T / 2, py = (y + 1) * T - 2;
+  ctx.fillStyle = 'rgba(40,60,30,.2)'; ctx.beginPath(); ctx.ellipse(px, py, 14, 5, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(px, py + 1, 16, 5, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#8a5a33'; ctx.fillRect(px - 3, py - 16, 6, 16);
+  ctx.fillStyle = '#2f8f4e'; ctx.beginPath(); ctx.moveTo(px, py - 52); ctx.lineTo(px - 16, py - 18); ctx.lineTo(px + 16, py - 18); ctx.fill();
+  ctx.fillStyle = '#3aaa62'; ctx.beginPath(); ctx.moveTo(px, py - 40); ctx.lineTo(px - 12, py - 24); ctx.lineTo(px + 12, py - 24); ctx.fill();
+  const glow = .65 + .35 * Math.sin(now / 280);
+  ctx.fillStyle = '#ffe066'; ctx.globalAlpha = glow; ctx.beginPath(); ctx.arc(px, py - 54, 3.4, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+  [[-6, -36, '#e8505b'], [6, -32, '#ffd23f'], [-1, -26, '#6fb7e8']].forEach(([a, b, c]) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(px + a, py + b, 2.2, 0, 7); ctx.fill(); });
+}
+function festDrawPile(ctx, x, y) {
+  const T = ISL.T, px = x * T + 16, py = y * T + 20;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.ellipse(px, py, 11, 5, 0, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(px - 2, py - 3, 7, 4, 0, 0, 7); ctx.fill();
+}
+function festDrawSnow(ctx, now) {
+  const T = ISL.T;
+  ctx.fillStyle = '#fff';
+  for (let i = 0; i < 48; i++) {
+    const sx = (isl.cam.x - 7 + (i * 1.37) % 14) * T + Math.sin(now / 420 + i) * 10;
+    const sy = (isl.cam.y - 6 + ((now / 28 + i * 19) % 13)) * T;
+    ctx.globalAlpha = .9; ctx.beginPath(); ctx.arc(sx, sy, 2.1 + (i % 3) * .7, 0, 7); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+function festPush(items, ctx, now) {
+  if (!isl) return;
+  const T = ISL.T;
+  if (festXmasOn()) {
+    const tree = isl.festTree || (isl.festTree = festTreeTile(isl.m));
+    items.push({ y: (tree[1] + 1) * T, draw: () => festDrawTree(ctx, tree[0], tree[1], now) });
+    [[1, 1], [-1, 1], [2, 0]].forEach(([dx, dy]) => {
+      const x = tree[0] + dx, y = tree[1] + dy;
+      if (isl.m.land[y] && isl.m.land[y][x]) items.push({ y: (y + 1) * T, draw: () => festDrawPile(ctx, x, y) });
+    });
+    items.push({ y: 1e9, draw: () => festDrawSnow(ctx, now) });
+  }
+  if (isl.festNight && !festBusy()) items.push({ y: isl.festNight.y * T, draw: () => festDrawNight(ctx, isl.festNight, now) });
+  if (isl.festPal && !festBusy()) items.push({ y: isl.festPal.y * T, draw: () => festDrawPal(ctx, isl.festPal, now) });
 }
 </script>
 
