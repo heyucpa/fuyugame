@@ -4352,8 +4352,12 @@ function drawWallDecor(ctx, room, ghost) {
       ctx.globalAlpha = 1;
     });
   };
-  (room.wallItems || []).forEach(w => one(w.id, w.side, w.pos, 1, w.uid === ghost.hoverUid ? 'rgba(255,220,90,.25)' : null));
-  if (ghost.wall) one(ghost.wall.def.id, ghost.wall.side, ghost.wall.pos, .75, ghost.wall.ok ? 'rgba(90,200,120,.3)' : 'rgba(230,80,80,.35)');
+  (room.wallItems || []).forEach(w => {
+    if (ghost.only && w.id !== ghost.only) return;   // 會閃的燈不進靜態快取，每幀另外畫
+    if (ghost.skip && w.id === ghost.skip) return;
+    one(w.id, w.side, w.pos, 1, w.uid === ghost.hoverUid ? 'rgba(255,220,90,.25)' : null);
+  });
+  if (ghost.wall && !ghost.only) one(ghost.wall.def.id, ghost.wall.side, ghost.wall.pos, .75, ghost.wall.ok ? 'rgba(90,200,120,.3)' : 'rgba(230,80,80,.35)');
 }
 
 function drawFloor(ctx, room, fl) {
@@ -4428,15 +4432,104 @@ function drawFootprint(ctx, x, y, w, d, fill, stroke) {
   poly(ctx, [iso(x, y), iso(x + w, y), iso(x + w, y + d), iso(x, y + d)], fill, stroke);
 }
 
+/* 地板、牆壁、沒在動的家具每幀都重畫路徑，超寬螢幕上特別慢。
+   先畫進小圖，之後每幀只貼圖。使用中、會游的魚、在別的地方（道館泳池會動）仍直接畫。
+   星星串燈會閃，不放進牆壁那張圖，每幀另外畫。 */
+var furnScale = 1;
+var roomShell = null;
+const furnSprites = new Map();
+function furnLive(def, it) {
+  if (!it || !def) return true;
+  if (def.id === 'fishtank' || def.id === 'pond' || def.id === 'float_ring') return true;
+  try {
+    if (typeof itemState !== 'undefined' && itemState[it.uid]) return true;
+    if (typeof fufu !== 'undefined' && fufu.act && fufu.act.uid === it.uid) return true;
+    if (typeof G !== 'undefined' && G.away && typeof placeLook === 'function') return true;
+  } catch (e) { return true; }
+  return false;
+}
+function furnKey(def, rot, it) {
+  let g = '';
+  if (def.id === 'planter' && it) {
+    try { const p = G.garden && G.garden[it.uid]; g = p ? (p.s + ':' + (p.f || '')) : '0'; } catch (e) { g = '?'; }
+  }
+  return def.id + ':' + (rot || 0) + ':' + (it && it.top || '') + ':' + g + '@' + furnScale;
+}
+function furnSprite(def, rot, it) {
+  const key = furnKey(def, rot, it);
+  const hit = furnSprites.get(key);
+  if (hit) return hit;
+  const fp = footprint(def, rot || 0), pad = 18;
+  const minX = -fp.d * (TW / 2) - pad, maxX = fp.w * (TW / 2) + pad;
+  const minY = -itemHeight(def) - pad - 10, maxY = (fp.w + fp.d) * (TH / 2) + pad;
+  const ww = Math.ceil(maxX - minX), hh = Math.ceil(maxY - minY);
+  if (ww < 2 || hh < 2 || ww * hh > 700 * 500) return null;
+  const sc = furnScale || 1;
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.ceil(ww * sc));
+  c.height = Math.max(1, Math.ceil(hh * sc));
+  const g = c.getContext('2d');
+  if (!g) return null;
+  g.setTransform(sc, 0, 0, sc, -minX * sc, -minY * sc);
+  drawItem(g, def, 0, 0, rot || 0, it);
+  const sp = { c, minX, minY, ww, hh };
+  furnSprites.set(key, sp);
+  if (furnSprites.size > 80) furnSprites.delete(furnSprites.keys().next().value);
+  return sp;
+}
+function blitFurn(ctx, def, x, y, rot, it) {
+  if (furnLive(def, it)) { drawItem(ctx, def, x, y, rot || 0, it); return; }
+  const sp = furnSprite(def, rot, it);
+  if (!sp) { drawItem(ctx, def, x, y, rot || 0, it); return; }
+  const p = iso(x, y);
+  ctx.drawImage(sp.c, p.x + sp.minX, p.y + sp.minY, sp.ww, sp.hh);
+}
+function roomShellOf(room, hoverUid) {
+  let hov = '';
+  if (hoverUid && (room.wallItems || []).some(w => w.uid === hoverUid && w.id !== 'star_lights')) hov = String(hoverUid);
+  const walls = (room.wallItems || []).map(w => w.uid + ':' + w.id + ':' + w.side + ':' + w.pos).join(',');
+  let rk = '';
+  try { rk = typeof roomKey === 'function' ? roomKey() : ''; } catch (e) {}
+  const clock = new Date();
+  const key = rk + '|' + room.wall + '|' + room.floor + '|' + room.w + 'x' + room.d + '|' + walls + '|' + hov + '|' + clock.getHours() + ':' + clock.getDate() + '@' + furnScale;
+  if (roomShell && roomShell.key === key) return roomShell;
+  const pad = 48;
+  const minX = iso(0, room.d).x - pad, maxX = iso(room.w, 0).x + pad;
+  const minY = iso(0, 0, WALL_H).y - pad, maxY = iso(room.w, room.d).y + pad + 24;
+  const w = Math.ceil(maxX - minX), h = Math.ceil(maxY - minY);
+  if (w < 2 || h < 2 || w * h > 1100 * 800) return null;
+  const sc = furnScale || 1;
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.ceil(w * sc));
+  c.height = Math.max(1, Math.ceil(h * sc));
+  const g = c.getContext('2d');
+  if (!g) return null;
+  g.setTransform(sc, 0, 0, sc, -minX * sc, -minY * sc);
+  drawFloor(g, room, floorById(room.floor) || FLOORS[0]);
+  drawWalls(g, room, wallById(room.wall) || WALLPAPERS[0]);
+  drawWallDecor(g, room, { hoverUid: hov ? +hov || hoverUid : null, skip: 'star_lights' });
+  roomShell = { key, c, minX, minY, w, h };
+  return roomShell;
+}
+function blitRoomShell(ctx, room, hoverUid) {
+  const sh = roomShellOf(room, hoverUid);
+  if (!sh) return false;
+  ctx.drawImage(sh.c, sh.minX, sh.minY, sh.w, sh.h);
+  drawWallDecor(ctx, room, { hoverUid, only: 'star_lights' });
+  return true;
+}
 // room: {w,d,wall,floor,items:[{uid,id,x,y,rot}]}
 // opts: {ghost:{def,x,y,rot,ok}, hoverUid, showGrid}
 function drawRoom(ctx, room, opts) {
   const wp = wallById(room.wall) || WALLPAPERS[0];
   const fl = floorById(room.floor) || FLOORS[0];
-  drawFloor(ctx, room, fl);
-  drawWalls(ctx, room, wp);
   const isWallGhost = opts.ghost && opts.ghost.def.layer === 'wall';
-  drawWallDecor(ctx, room, { wall: isWallGhost ? opts.ghost : null, hoverUid: opts.hoverUid });
+  const shelled = !opts.showGrid && !opts.ghost && blitRoomShell(ctx, room, opts.hoverUid);
+  if (!shelled) {
+    drawFloor(ctx, room, fl);
+    drawWalls(ctx, room, wp);
+    drawWallDecor(ctx, room, { wall: isWallGhost ? opts.ghost : null, hoverUid: opts.hoverUid });
+  }
   if (isWallGhost) opts = Object.assign({}, opts, { ghost: null });
 
   const entries = room.items.map(it => {
@@ -4446,7 +4539,7 @@ function drawRoom(ctx, room, opts) {
   const flat = entries.filter(e => e.def.layer === 'floor');
   const solid = entries.filter(e => e.def.layer !== 'floor');
 
-  flat.forEach(e => drawItem(ctx, e.def, e.x, e.y, e.it.rot, e.it));
+  flat.forEach(e => blitFurn(ctx, e.def, e.x, e.y, e.it.rot, e.it));
   if (opts.showGrid) drawGrid(ctx, room);
 
   const g = opts.ghost;
@@ -4478,7 +4571,7 @@ function drawRoom(ctx, room, opts) {
       drawItem(ctx, e.def, e.x, e.y, e.ghost.rot);
       ctx.__baseAlpha = 1;
       ctx.globalAlpha = 1;
-    } else drawItem(ctx, e.def, e.x, e.y, e.it.rot, e.it);
+    } else blitFurn(ctx, e.def, e.x, e.y, e.it.rot, e.it);
   });
   if (g && g.def.layer === 'floor') {
     ctx.__baseAlpha = .7; ctx.globalAlpha = .7;
@@ -7012,7 +7105,59 @@ function kidFace() {
   return 'happy';
 }
 function kidMakeFace(kind, ms) { fufu.faceKind = kind; fufu.faceUntil = performance.now() + (ms || 1600); }
+/* 站著不動的時候，頭髮、衣服、臉每幀都重算路徑（麻花、捲髮、眼鏡、項鍊）會讓舊電腦和小島一起卡。
+   只有畫在房間或小島的大畫布上才快取；換裝預覽仍舊直接畫，像素比對才不會因為縮放變一樣。
+   走路、拿東西、彩虹髮、變色藥水每一幀都不一樣，不進快取。 */
+const GIRL_X0 = -54, GIRL_Y0 = -112, GIRL_W = 108, GIRL_H = 132;
+const girlSprites = new Map();
+function girlBakeKey(o) {
+  if (!o || o.walking || o.prop || o.hairC || o.sit) return '';
+  try { if (typeof kidMagic === 'function' && kidMagic() === 'color') return ''; } catch (e) {}
+  const fit = outfitOf(o);
+  const bit = it => it ? [it.id, it.style, it.color, it.trim, it.collar, it.bow, it.print, it.band, it.pom, it.inner, it.belt, it.dots, it.stitch, it.dress ? 1 : 0].join('/') : '';
+  let hair = 'bob/black';
+  try { const h = (o.hair || (G && G.hair) || DEFAULT_HAIR); hair = h.style + '/' + h.color; } catch (e) {}
+  return [o.back ? 1 : 0, o.blink ? 1 : 0, o.face || '', o.ouch || '', o.stage || '', o.dirty ? 1 : 0, o.headOnly ? 1 : 0, o.glasses || '', hair, bit(fit.head), bit(fit.face), bit(fit.neck), bit(fit.top), bit(fit.bottom), bit(fit.shoes)].join('|');
+}
+function girlOnStage(ctx) {
+  try {
+    const cv = ctx && ctx.canvas;
+    if (!cv) return false;
+    if (typeof canvas !== 'undefined' && cv === canvas) return true;
+    if (typeof isl !== 'undefined' && isl && isl.cv === cv) return true;
+  } catch (e) {}
+  return false;
+}
+function girlBlit(ctx, o) {
+  if (!girlOnStage(ctx)) return false;
+  const key0 = girlBakeKey(o);
+  if (!key0) return false;
+  let sc = 2;
+  try {
+    const t = ctx.getTransform();
+    sc = Math.min(3, Math.max(1.5, Math.round(Math.max(Math.abs(t.a), Math.abs(t.d)) * 2) / 2));
+  } catch (e) {}
+  const key = key0 + '@' + sc;
+  let sp = girlSprites.get(key);
+  if (!sp) {
+    const c = document.createElement('canvas');
+    c.width = Math.ceil(GIRL_W * sc); c.height = Math.ceil(GIRL_H * sc);
+    const g = c.getContext('2d');
+    if (!g) return false;
+    g.setTransform(sc, 0, 0, sc, -GIRL_X0 * sc, -GIRL_Y0 * sc);
+    drawGirlLive(g, o);
+    sp = c;
+    girlSprites.set(key, sp);
+    if (girlSprites.size > 28) girlSprites.delete(girlSprites.keys().next().value);
+  }
+  ctx.drawImage(sp, GIRL_X0, GIRL_Y0, GIRL_W, GIRL_H);
+  return true;
+}
 function drawGirl(ctx, o) {
+  if (o && girlBlit(ctx, o)) return;
+  drawGirlLive(ctx, o);
+}
+function drawGirlLive(ctx, o) {
   const swing = o.walking ? Math.sin(o.t * 11) : 0;
   const fit = outfitOf(o);
   /* 成長階段（只有小可愛會帶 stage）：身體從腳底往上拉長／縮短，頭跟著移到脖子上，頭的大小也變一點。
@@ -8519,6 +8664,7 @@ function fufuGoFind(kind) {
 function fufuBurst(emoji) {
   const { p, h } = fufuAnchor();
   fufu.fx.push({ emoji, x: p.x + (Math.random() - .5) * 24, y: p.y - h * .8, vy: -22 - Math.random() * 10, age: 0, life: 1.4 });
+  if (fufu.fx.length > 36) fufu.fx.splice(0, fufu.fx.length - 36);
 }
 
 function fufuUpdateAct(now) {
@@ -8612,6 +8758,7 @@ function fufuUpdate(dt, now) {
   if (fufu.jumpT > 0) fufu.jumpT = Math.max(0, fufu.jumpT - dt);
   fufu.fx.forEach(q => { q.age += dt; q.y += q.vy * dt; });
   fufu.fx = fufu.fx.filter(q => q.age < q.life);
+  if (fufu.fx.length > 36) fufu.fx.splice(0, fufu.fx.length - 36);
 
   // 換房間：出現在房間中央附近
   if (fufu.room !== roomKey()) {
@@ -9280,6 +9427,7 @@ function petBurst(opt, n, a) {
       life: 1.1 + Math.random() * .6, age: 0
     });
   }
+  if (a.particles.length > 40) a.particles.splice(0, a.particles.length - 40);
 }
 
 // ── 長大 ──
@@ -9367,6 +9515,7 @@ function actorSpring(a, dt, now, egg) {
   }
   a.particles.forEach(p => { p.age += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 6 * dt; });
   a.particles = a.particles.filter(p => p.age < p.life);
+  if (a.particles.length > 40) a.particles.splice(0, a.particles.length - 40);
 }
 // follow：閒下來時跑去小可愛旁邊的機率
 function actorWalk(a, dt, now, room, blk, follow) {
@@ -13850,10 +13999,25 @@ function thumb(def) {
 
 // ── 畫面 ──
 var canvasBox = null;   // 畫布的大小（computeView 用）；大小變了 ResizeObserver 會叫 resize 重新量
+/* 房間、小島每幀整張重畫。Windows 超寬螢幕和 iPad 的 devicePixelRatio 常常到 2、3，
+   畫布會變成好幾百萬像素。解析度上限 2；比一張 2560×1440 還大就再降一點（最低 0.75）。 */
+function canvasDpr(cssW, cssH) {
+  let dpr = window.devicePixelRatio || 1;
+  if (!(dpr > 0) || dpr > 8) dpr = 1;
+  dpr = Math.min(2, dpr);
+  const w = +cssW || 0, h = +cssH || 0;
+  if (w >= 32 && h >= 32) {
+    const cap = 2560 * 1440;
+    if (w * h * dpr * dpr > cap) dpr = Math.max(0.75, Math.sqrt(cap / (w * h)));
+  }
+  return dpr;
+}
+var viewDpr = 1;
 function resize() {
-  const r = canvasBox = canvas.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
-  canvas.width = Math.max(1, Math.round(r.width * dpr));
-  canvas.height = Math.max(1, Math.round(r.height * dpr));
+  const r = canvasBox = canvas.getBoundingClientRect();
+  viewDpr = canvasDpr(r.width, r.height);
+  canvas.width = Math.max(1, Math.round(r.width * viewDpr));
+  canvas.height = Math.max(1, Math.round(r.height * viewDpr));
   requestDraw();
 }
 new ResizeObserver(resize).observe(canvas);
@@ -13891,7 +14055,12 @@ function computeView() {
 
 function draw() {
   computeView();
-  const dpr = window.devicePixelRatio || 1;
+  const r = canvasBox || (canvasBox = canvas.getBoundingClientRect());
+  const dpr = canvasDpr(r.width, r.height);
+  viewDpr = dpr;
+  const bw = Math.max(1, Math.round(r.width * dpr)), bh = Math.max(1, Math.round(r.height * dpr));
+  if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
+  furnScale = Math.round(Math.min(2, Math.max(1, view.scale * dpr)) * 100) / 100;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const sea = seasonOfMonth();
@@ -14165,6 +14334,7 @@ let lastFrame = performance.now(), nextPetTick = 0, nextCard = 0;
 var nextSmallTick = 0;
 function gameStep(dt, now) {
   if (resting) return false;
+  if (document.hidden) return false;
   fufuUpdate(dt, now);
   fufuArrivalCheck();
   petUpdate(dt, now);
@@ -14177,6 +14347,8 @@ function gameStep(dt, now) {
   if (now > nextSmallTick) { nextSmallTick = now + 1000; smallTick(); }
   if (now > nextCard) { nextCard = now + 300; updatePetCard(); }
   if (hold) $('#btnPlace').disabled = !hold.ok; // 放不下的位置，「放這裡」按鈕變灰
+  const stage = document.querySelector('.stage');
+  if (stage && stage.classList.contains('island-on')) { dirty = false; return true; }   // 小島整片蓋住房間，底下不用每幀重畫
   draw(); // 小可愛一直在動，每幀都重畫
   dirty = false;
   return true;
@@ -14186,7 +14358,8 @@ const loopErrs = new Set();
 (function loop(now) {
   requestAnimationFrame(loop);
   now = now || performance.now();
-  if (now - lastFrame > 5000 && !document.hidden && Date.now() - crashHiddenSince > (now - lastFrame) + 1000) crashLog('畫面停住', `停了 ${((now - lastFrame) / 1000).toFixed(1)} 秒又恢復（跳出確認視窗也會這樣）`);   // 📋 當機紀錄
+  if (document.hidden) { lastFrame = now; return; }   // 切到別的 App、分頁在背景：不要繼續畫、也不要補一大段
+  if (now - lastFrame > 5000 && Date.now() - crashHiddenSince > (now - lastFrame) + 1000) crashLog('畫面停住', `停了 ${((now - lastFrame) / 1000).toFixed(1)} 秒又恢復（跳出確認視窗也會這樣）`);   // 📋 當機紀錄
   const dt = Math.max(0, Math.min(.05, (now - lastFrame) / 1000));
   lastFrame = now;
   try { gameStep(dt, now); }
@@ -17650,7 +17823,7 @@ function payReward(w, bells, extra) {
 }
 // 產生一個跟著裝置解析度的畫布
 function gameCanvas(stage, w, h) {
-  const dpr = window.devicePixelRatio || 1;
+  const dpr = typeof canvasDpr === 'function' ? canvasDpr(w, h) : Math.min(2, window.devicePixelRatio || 1);
   const c = document.createElement('canvas');
   c.width = w * dpr; c.height = h * dpr;
   c.className = 'game-canvas';
@@ -17661,6 +17834,7 @@ function gameCanvas(stage, w, h) {
     const fit = () => { if (!c.isConnected) return; c.style.maxWidth = ''; const over = card.scrollHeight - card.clientHeight; if (over > 0) c.style.maxWidth = Math.max(260, c.getBoundingClientRect().width - over * w / h - 2) + 'px'; };
     setTimeout(fit, 80); setTimeout(fit, 600);
   }
+  c._dpr = dpr;
   stage.appendChild(c);
   const g = c.getContext('2d');
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -19347,7 +19521,7 @@ function filmKid(g, A, x, y, k, t, opt) {
 function filmBubble(g, x, y, text) {
   g.font = 'bold 16px sans-serif';
   const w = g.measureText(text).width + 20;
-  const Wc = g.canvas.width / (window.devicePixelRatio || 1);
+  const Wc = g.canvas.width / (g.canvas._dpr || (typeof viewDpr === 'number' && viewDpr) || (window.devicePixelRatio || 1));
   x = Math.max(w / 2 + 6, Math.min(Wc - w / 2 - 6, x));   // 夾在畫面裡，字再長也不會被切掉
   g.fillStyle = 'rgba(255,255,255,.95)'; g.strokeStyle = '#3a3240'; g.lineWidth = 2;
   g.beginPath(); (g.roundRect ? g.roundRect(x - w / 2, y - 30, w, 28, 12) : g.rect(x - w / 2, y - 30, w, 28)); g.fill(); g.stroke();
@@ -19716,8 +19890,8 @@ function playRideFilm(key) {
   const stage = document.querySelector('.stage'); if (!stage) return false;
   const box = el('div', 'ride-film'), c = document.createElement('canvas'), skip = el('div', 'ride-skip', '點一下跳過 ⏭');
   box.append(c, skip); stage.appendChild(box);
-  const W = 480, H = 300, dpr = window.devicePixelRatio || 1;
-  c.width = W * dpr; c.height = H * dpr;
+  const W = 480, H = 300, dpr = typeof canvasDpr === 'function' ? canvasDpr(W, H) : Math.min(2, window.devicePixelRatio || 1);
+  c.width = W * dpr; c.height = H * dpr; c._dpr = dpr;
   const g = c.getContext('2d'), A = rideFilmActors(), start = performance.now(), info = RIDE_FILMS[key];
   let raf = 0, done = false;
   const end = () => { if (done) return; done = true; cancelAnimationFrame(raf); box.classList.add('out'); setTimeout(() => box.remove(), 350); rideFilmOn = null; };
@@ -19929,6 +20103,7 @@ function dailyGuideOn(id) {
 }
 function dailyGuideOff() { dailyGuide = null; const h = document.getElementById('dailyHand'); if (h) h.hidden = true; }
 function dailyGuideTick() {
+  if (document.hidden) return;
   const h = document.getElementById('dailyHand'); if (!dailyGuide || !h) return;
   if (Date.now() > dailyGuide.until) return dailyGuideOff();
   const tg = !$('#modal').hidden ? null : dailyGuideTarget(dailyGuide.go);
@@ -20689,12 +20864,99 @@ function islStep(dt) {
   if (typeof isleFunStep === 'function') isleFunStep(dt);
   if (typeof festStep === 'function') festStep(dt);
   isl.fx = isl.fx.filter(f => performance.now() - f.t0 < f.dur);
+  if (isl.fx.length > ISL_FX_CAP) isl.fx.splice(0, isl.fx.length - ISL_FX_CAP);
   const ct = isl.pan && performance.now() < isl.pan.until ? isl.pan : isl;   // 🏝️ 新小島出現：鏡頭先飛過去看一下
   isl.cam.x += (ct.x - isl.cam.x) * Math.min(1, dt * (ct === isl ? 6 : 2)); isl.cam.y += (ct.y - isl.cam.y) * Math.min(1, dt * (ct === isl ? 6 : 2));
   return true;
 }
+/* 海、沙灘、草地、路每幀依鏡頭重畫幾千格，超寬螢幕和 iPad 會卡。
+   靜態的地面畫一次存起來，之後只貼圖；海浪、噴水池的圈、池塘的漣漪仍每幀畫。
+   靠岸的白浪花烘在海面上（亮度取中間），不再每幀重算圓角。 */
+function islBakeGround(m) {
+  if (m._ground) return m._ground;
+  const T = ISL.T, W = m.W, H = m.H;
+  const water = document.createElement('canvas'), land = document.createElement('canvas');
+  water.width = land.width = W * T; water.height = land.height = H * T;
+  const wg = water.getContext('2d'), lg = land.getContext('2d');
+  if (!wg || !lg) return null;
+  const waves = [];
+  const shorePred = (i, j) => j >= 0 && j < H && i >= 0 && i < W && !m.land[j][i] && [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]].some(([a, b]) => m.land[j + b] && m.land[j + b][i + a]);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (m.land[y][x]) continue;
+    const h = islHash(x, y, 3);
+    wg.fillStyle = h < .5 ? '#74c8ea' : '#6ec2e6';
+    wg.fillRect(x * T, y * T, T + 1, T + 1);
+    if (h > .72) waves.push([x, y, h]);
+    let shore = false;
+    for (let j = -1; j <= 1 && !shore; j++) for (let i = -1; i <= 1; i++) {
+      const xx = x + i, yy = y + j;
+      if (yy >= 0 && yy < H && xx >= 0 && xx < W && m.land[yy][xx]) shore = true;
+    }
+    if (shore) { wg.fillStyle = 'rgba(255,255,255,.45)'; islRoundTile(wg, x, y, shorePred); }
+  }
+  const isLand = (x, y) => y >= 0 && y < H && x >= 0 && x < W && m.land[y][x];
+  const isGrass = (x, y) => isLand(x, y) && !m.beach[y][x];
+  const isPath = (x, y) => isLand(x, y) && m.path[y][x] && !(m.bridge && m.bridge[y][x]);
+  const beachC = (x, y) => islHash(x, y, 1) < .5 ? '#f7e6b4' : '#f3dfa6';
+  const grassC = (x, y) => islHash(x, y, 1) < .5 ? '#a4da7c' : '#9ed477';
+  const pathC = (x, y) => Math.hypot(x - ISL_HUB[0], y - ISL_HUB[1]) <= 2.4 ? '#e4dac8' : '#ecd5a0';
+  const layer = (pred, color) => {
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      if (pred(x, y)) { lg.fillStyle = color(x, y); islRoundTile(lg, x, y, pred); }
+      else [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([i, j]) => { if (pred(x + i, y) && pred(x, y + j) && pred(x + i, y + j)) { lg.fillStyle = color(x + i, y); islConcave(lg, x, y, i, j); } });
+    }
+  };
+  layer(isLand, beachC); layer(isGrass, grassC); layer(isPath, pathC);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (m.bridge && m.bridge[y][x]) {
+    lg.fillStyle = '#6ec2e6'; lg.fillRect(x * T, y * T, T + 1, T + 1);
+    lg.fillStyle = '#c9925a'; lg.fillRect(x * T + 2, y * T + 2, T - 3, T - 3);
+    lg.strokeStyle = '#9a6b3f'; lg.lineWidth = 1.5;
+    for (let i = 1; i < 4; i++) { lg.beginPath(); lg.moveTo(x * T + 2, y * T + i * T / 4); lg.lineTo(x * T + T - 1, y * T + i * T / 4); lg.stroke(); }
+    lg.fillStyle = '#8a5a33'; lg.fillRect(x * T, y * T, 4, 4); lg.fillRect(x * T + T - 4, y * T + T - 4, 4, 4);
+  }
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (!m.land[y][x] || m.path[y][x] || m.beach[y][x]) continue;
+    const h = islHash(x, y, 1);
+    if (h > .8) { lg.strokeStyle = '#8bc766'; lg.lineWidth = 1.5; lg.beginPath(); const px = x * T + h * 20 + 4, py = y * T + 18; lg.moveTo(px, py); lg.lineTo(px - 2, py - 5); lg.moveTo(px, py); lg.lineTo(px + 2, py - 5); lg.stroke(); }
+  }
+  { const fx = (ISL_HUB[0] + .5) * T, fy = (ISL_HUB[1] + .5) * T;
+    lg.fillStyle = '#cfc6b3'; lg.beginPath(); lg.arc(fx, fy, 22, 0, 7); lg.fill();
+    lg.fillStyle = '#7fd0ee'; lg.beginPath(); lg.arc(fx, fy, 16, 0, 7); lg.fill();
+    lg.fillStyle = '#bdb4a2'; lg.beginPath(); lg.arc(fx, fy, 4, 0, 7); lg.fill(); }
+  { const p = ISL_POND, px = (p.x + p.w / 2) * T, py = (p.y + p.h / 2) * T;
+    lg.fillStyle = '#f3dfa6'; lg.beginPath(); lg.ellipse(px, py, p.w * T / 2 + 6, p.h * T / 2 + 6, 0, 0, 7); lg.fill();
+    lg.fillStyle = '#6ec2e6'; lg.beginPath(); lg.ellipse(px, py, p.w * T / 2, p.h * T / 2, 0, 0, 7); lg.fill();
+    lg.fillStyle = '#5fae6f'; [[-30, -14], [26, 10], [-6, 16]].forEach(([a, b]) => { lg.beginPath(); lg.ellipse(px + a, py + b, 8, 5, 0, 0, 7); lg.fill(); }); }
+  m._ground = { water, land, waves };
+  return m._ground;
+}
+function islDrawGround(ctx, m, x0, x1, y0, y1, tt) {
+  let gnd = null;
+  try { gnd = islBakeGround(m); } catch (e) { gnd = null; }
+  if (!gnd) return false;
+  const T = ISL.T;
+  ctx.drawImage(gnd.water, 0, 0);
+  ctx.lineWidth = 2;
+  for (let n = 0; n < gnd.waves.length; n++) {
+    const w = gnd.waves[n], x = w[0], y = w[1], h = w[2];
+    if (x < x0 || x > x1 || y < y0 || y > y1) continue;
+    ctx.strokeStyle = 'rgba(255,255,255,' + (.25 + .2 * Math.sin(tt * 1.6 + h * 20)) + ')';
+    ctx.beginPath(); ctx.arc(x * T + T / 2 + Math.sin(tt + h * 9) * 3, y * T + T / 2, 6, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke();
+  }
+  ctx.drawImage(gnd.land, 0, 0);
+  { const fx = (ISL_HUB[0] + .5) * T, fy = (ISL_HUB[1] + .5) * T, r = 6 + (tt * 6) % 8;
+    ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(fx, fy, r, 0, 7); ctx.stroke();
+    ctx.fillStyle = '#bdb4a2'; ctx.beginPath(); ctx.arc(fx, fy, 4, 0, 7); ctx.fill(); }
+  { const p = ISL_POND, px = (p.x + p.w / 2) * T, py = (p.y + p.h / 2) * T;
+    ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 2;
+    for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(px - 22 + i * 22, py + Math.sin(tt + i) * 3, 7, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); }
+    ctx.fillStyle = '#5fae6f'; [[-30, -14], [26, 10], [-6, 16]].forEach(([a, b]) => { ctx.beginPath(); ctx.ellipse(px + a, py + b, 8, 5, 0, 0, 7); ctx.fill(); }); }
+  return true;
+}
 function islFrame(now) {
   if (!isl) return;
+  now = now || performance.now();
+  if (document.hidden) { isl.last = now; isl.raf = requestAnimationFrame(islFrame); return; }
   const dt = Math.min(.05, (now - isl.last) / 1000); isl.last = now; isl.t += dt;
   if (resting) { closeIsland(); return; }
   if (isl.press && now - isl.repath > 140) { isl.repath = now; islTap(isl.press, true); }
@@ -20702,8 +20964,10 @@ function islFrame(now) {
   if (isl) isl.raf = requestAnimationFrame(islFrame);
 }
 function islDraw(now) {
-  const cv = isl.cv, dpr = window.devicePixelRatio || 1, m = isl.m, T = ISL.T;
+  const cv = isl.cv, m = isl.m, T = ISL.T;
   const W = cv.clientWidth, H = cv.clientHeight;
+  const dpr = typeof canvasDpr === 'function' ? canvasDpr(W, H) : (window.devicePixelRatio || 1);
+  cv._dpr = dpr;
   if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
   const ctx = cv.getContext('2d'), v = islView(), tt = isl.t;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -20712,7 +20976,8 @@ function islDraw(now) {
   ctx.translate(W / 2, H / 2); ctx.scale(v.s, v.s); ctx.translate(-v.cx, -v.cy);
   const x0 = Math.max(0, Math.floor((v.cx - W / 2 / v.s) / T) - 1), x1 = Math.min(m.W - 1, Math.ceil((v.cx + W / 2 / v.s) / T) + 1);
   const y0 = Math.max(0, Math.floor((v.cy - H / 2 / v.s) / T) - 1), y1 = Math.min(m.H - 1, Math.ceil((v.cy + H / 2 / v.s) / T) + 1);
-  // 海：淺色的波紋；靠岸的地方有白色浪花
+  // 海、沙灘、草地、路：有快取就貼圖；烘不起來才每幀重畫（跟以前一樣）
+  if (!islDrawGround(ctx, m, x0, x1, y0, y1, tt)) {
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
     if (m.land[y][x]) continue;
     const h = islHash(x, y, 3);
@@ -20760,6 +21025,7 @@ function islDraw(now) {
     ctx.fillStyle = '#6ec2e6'; ctx.beginPath(); ctx.ellipse(px, py, p.w * T / 2, p.h * T / 2, 0, 0, 7); ctx.fill();
     ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 2; for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(px - 22 + i * 22, py + Math.sin(tt + i) * 3, 7, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); }
     ctx.fillStyle = '#5fae6f'; [[-30, -14], [26, 10], [-6, 16]].forEach(([a, b]) => { ctx.beginPath(); ctx.ellipse(px + a, py + b, 8, 5, 0, 0, 7); ctx.fill(); }); }
+  }
   // 花
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
     if (!m.flower[y][x]) continue;
@@ -21091,7 +21357,12 @@ function islFunAt(t) {
   const p = ISL_POND; if (fx >= p.x - .3 && fx <= p.x + p.w + .3 && fy >= p.y - .3 && fy <= p.y + p.h + .3) return { kind: 'pond', x: p.x + p.w / 2, y: p.y + p.h / 2, reach: 3.6 };
   return null;
 }
-const islAddFx = (k, x, y, dur, extra) => isl.fx.push(Object.assign({ k, x, y, t0: performance.now(), dur }, extra || {}));
+const ISL_FX_CAP = 64;
+const islAddFx = (k, x, y, dur, extra) => {
+  if (!isl) return;
+  isl.fx.push(Object.assign({ k, x, y, t0: performance.now(), dur }, extra || {}));
+  if (isl.fx.length > ISL_FX_CAP) isl.fx.splice(0, isl.fx.length - ISL_FX_CAP);
+};
 function islFun(o) {
   if (o.kind === 'pumpkin') {
     const pd = G.pumpDay = (G.pumpDay && G.pumpDay.d === today()) ? G.pumpDay : { d: today(), n: 0 };
@@ -21309,8 +21580,22 @@ function islDrawDaylight(ctx, v, W, H, now) {   // 🌤️ 早上、傍晚、晚
   // 燈光（世界座標）
   ctx.translate(W / 2, H / 2); ctx.scale(v.s, v.s); ctx.translate(-v.cx, -v.cy);
   ctx.globalCompositeOperation = 'lighter';
-  glows.forEach(([gx, gy, r]) => { const g = ctx.createRadialGradient(gx, gy, 2, gx, gy, r); g.addColorStop(0, ph === 'night' ? 'rgba(255,220,130,.55)' : 'rgba(255,220,130,.25)'); g.addColorStop(1, 'rgba(255,220,130,0)'); ctx.fillStyle = g; ctx.fillRect(gx - r, gy - r, r * 2, r * 2); });
+  glows.forEach(([gx, gy, r]) => islLampGlow(ctx, gx, gy, r, ph === 'night' ? .55 : .25));
+  ctx.globalAlpha = 1;
   ctx.globalCompositeOperation = 'source-over';
+}
+let islGlowSprite = null;
+function islLampGlow(ctx, gx, gy, r, a) {
+  if (!islGlowSprite) {
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const g = c.getContext('2d');
+    const gr = g.createRadialGradient(32, 32, 1, 32, 32, 32);
+    gr.addColorStop(0, 'rgba(255,220,130,1)'); gr.addColorStop(1, 'rgba(255,220,130,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+    islGlowSprite = c;
+  }
+  ctx.globalAlpha = a;
+  ctx.drawImage(islGlowSprite, gx - r, gy - r, r * 2, r * 2);
 }
 function islDrawTree(ctx, x, y, now) {
   if (isl.m.isletAt && isl.m.isletAt[y][x] === 'candy') return islDrawCandyTree(ctx, x, y, now);   // 🍬 糖果島：棒棒糖樹
@@ -28057,7 +28342,7 @@ function drawLanternPumpkin(ctx, x, y, r, now) {
 function huntDrawDark(ctx) {
   if (!huntActive()) { if (hunt && (G.away || resting)) endGhostHunt(); return; }
   if (!halloweenActive()) { endGhostHunt(); return; }   // 萬聖節過了（半夜跨日）：自動開燈
-  const dpr = window.devicePixelRatio || 1, W = canvas.clientWidth, H = canvas.clientHeight, now = performance.now();
+  const dpr = typeof viewDpr === 'number' && viewDpr ? viewDpr : Math.min(2, window.devicePixelRatio || 1), W = canvas.clientWidth, H = canvas.clientHeight, now = performance.now();
   const g = ghostHere(), lit = g ? ghostLit(g) : 0;
   // 表情：照到幽靈 → 驚訝；找的時候 → 緊張
   try { kidMakeFace(lit > .3 ? 'wow' : 'worried', 400); } catch (e) {}
