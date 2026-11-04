@@ -3,7 +3,7 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox'] });
+  const b = await chromium.launch({ executablePath: process.env.CHROME || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox'] });
   const ctx = await b.newContext({ viewport: { width: 1280, height: 900 } });
   const p = await ctx.newPage();
   const errs = [];
@@ -87,8 +87,8 @@ const path = require('path');
     const src = document.documentElement.innerHTML, drawn = {};
     const re = /h\.style === '(\w+)'/g; let mm;
     while ((mm = re.exec(src))) drawn[mm[1]] = 1;
-    CLOTHES.filter(c => c.slot === 'head' && c.style !== 'none').forEach(c => {
-      if (!drawn[c.style]) fails.push('頭飾「' + c.name + '」沒有畫法 ' + c.style);
+    CLOTHES.filter(c => (c.slot === 'head' || c.slot === 'clip') && c.style !== 'none').forEach(c => {
+      if (!drawn[c.style]) fails.push((c.slot === 'clip' ? '髮飾' : '頭飾') + '「' + c.name + '」沒有畫法 ' + c.style);
     });
 
     const old = {
@@ -133,6 +133,46 @@ const path = require('path');
     swap.wardrobe.push('santa_hat');
     const swapped = normalizeSave(swap);
     if (swapped && swapped.outfit.face === 'santa_hat') fails.push('頭飾被當成眼鏡戴上');
+
+    ['bald', 'azhi', 'quiff', 'afro', 'rocket', 'spike', 'mohawk', 'buns'].forEach(id => {
+      if (!HAIR_BY_ID[id]) fails.push('缺髮型 ' + id);
+      else if (HAIR_BY_ID[id].price < 50 || HAIR_BY_ID[id].price > 250) fails.push(HAIR_BY_ID[id].name + ' 價錢不在 50～250：' + HAIR_BY_ID[id].price);
+    });
+    const funny = normalizeSave(JSON.parse(JSON.stringify(old)));
+    funny.hair = { style: 'no-such-hair', color: 'orange' };
+    const funnyBad = normalizeSave(funny);
+    if (!funnyBad || funnyBad.hair.style !== 'bob' || funnyBad.hair.color !== 'orange') fails.push('不認得的髮型沒有安全退回');
+    const keepHair = JSON.parse(JSON.stringify(old));
+    keepHair.hair = { style: 'azhi', color: 'silver' };
+    keepHair.hairOwned = ['bob', 'azhi'];
+    const keptHair = normalizeSave(keepHair);
+    if (!keptHair || keptHair.hair.style !== 'azhi' || keptHair.hair.color !== 'silver') fails.push('新髮型存檔沒留住');
+    if (keptHair && keptHair.hairOwned.indexOf('azhi') < 0) fails.push('買過的阿志頭不見了');
+    const bowIn = JSON.parse(JSON.stringify(old));
+    bowIn.outfit.head = 'ribbon';
+    bowIn.wardrobe = bowIn.wardrobe.concat(['ribbon']);
+    const bowG = normalizeSave(bowIn);
+    if (!bowG || bowG.outfit.clip !== 'ribbon' || bowG.outfit.head !== 'head_none') fails.push('蝴蝶結沒從舊的頭飾格搬開 ' + (bowG && JSON.stringify(bowG.outfit)));
+    if (bowG && bowG.wardrobe.indexOf('ribbon') < 0) fails.push('買過的蝴蝶結被刪掉');
+    const glassIn = JSON.parse(JSON.stringify(old));
+    glassIn.outfit.face = 'gl_sun_yel';
+    glassIn.wardrobe = glassIn.wardrobe.concat(['gl_sun_yel', 'gl_round_red']);
+    const glassG = normalizeSave(glassIn);
+    if (!glassG || glassG.outfit.face !== 'gl_sun_yel') fails.push('穿著的黃色太陽墨鏡變色了 ' + (glassG && glassG.outfit.face));
+    if (glassG && (glassG.wardrobe.indexOf('gl_sun_yel') < 0 || glassG.wardrobe.indexOf('gl_round_red') < 0)) fails.push('舊的眼鏡色號被刪掉');
+    const keepWard = G.wardrobe, keepFace = G.outfit.face, keepHead = G.outfit.head;
+    G.wardrobe = glassG.wardrobe.slice();
+    G.outfit.face = glassG.outfit.face;
+    if (!ownsGlassLook('sun') || !ownsGlassLook('round')) fails.push('有一個顏色卻不算擁有那個造型');
+    const shopFaces = faceShopItems().filter(c => c.glass);
+    if (shopFaces.length !== 6) fails.push('換裝眼鏡不是 6 種：' + shopFaces.length);
+    const shopNames = shopFaces.map(c => (GLASS_LOOKS.find(s => s.id === c.glass) || {}).name);
+    if (shopNames.join(',') !== GLASS_LOOKS.map(s => s.name).join(',')) fails.push('眼鏡名稱還帶顏色 ' + shopNames.join(','));
+    G.outfit.head = 'bear_muffs';
+    const leaked = renderGirl(Object.assign({}, DEFAULT_OUTFIT, { head: 'bear_muffs', face: 'gl_sun_yel' }), 80, 100, { hair: { style: 'bob', color: 'black' } }).toDataURL();
+    const clean = renderGirl(previewOutfit('face', 'gl_sun_yel'), 80, 100, { hair: { style: 'bob', color: 'black' } }).toDataURL();
+    if (clean === leaked) fails.push('眼鏡預覽還帶著熊耳罩');
+    G.wardrobe = keepWard; G.outfit.face = keepFace; G.outfit.head = keepHead;
 
     G.bells = 80000;
     const gid = 'gl_cat_pnk';
@@ -197,6 +237,34 @@ const path = require('path');
       if (inv.o.face !== 'face_none' || inv.o.neck !== 'neck_none') fails.push('舊邀請卡被戴上新飾品');
     }
 
+    const baldA = shot(DEFAULT_OUTFIT, 70, 90, { hair: { style: 'bald', color: 'red' } });
+    const baldB = shot(DEFAULT_OUTFIT, 70, 90, { hair: { style: 'bald', color: 'silver' } });
+    if (baldA !== baldB) fails.push('尼姑頭還跟著髮色變');
+    const sidePx = (style, x, y) => {
+      const cv = document.createElement('canvas'); cv.width = 90; cv.height = 110;
+      const cx = cv.getContext('2d'); cx.translate(45, 100);
+      drawGirlHead(cx, { hair: { style: style, color: 'black' } });
+      return cx.getImageData(x, y, 1, 1).data;
+    };
+    const cap = sidePx('azhi', 45, 38), cheek = sidePx('azhi', 32, 58), bobCheek = sidePx('bob', 32, 58);
+    if (cap[0] > 80) fails.push('阿志頭的頭頂不是頭髮');
+    if (cheek[0] < 180 || cheek[2] < 120) fails.push('阿志頭兩側沒有露出皮膚 ' + [cheek[0], cheek[1], cheek[2]].join(','));
+    if (bobCheek[0] > 80 && cheek[0] > 180) { /* 妹妹頭兩側是頭髮、阿志頭是皮膚 */ }
+    else if (bobCheek[0] > 180) fails.push('取樣點沒有落在妹妹頭的頭髮上');
+    const cv = document.createElement('canvas'); cv.width = 140; cv.height = 160;
+    const gx = cv.getContext('2d'); gx.translate(70, 145);
+    const glassFit = {};
+    OUTFIT_SLOTS.forEach(({ key }) => { glassFit[key] = CLOTHES_BY_ID[previewOutfit('face', 'gl_sun_yel')[key]]; });
+    drawGirl(gx, { t: 0, outfit: glassFit, hair: { style: 'bob', color: 'black' } });
+    const mid = gx.getImageData(70, 100, 1, 1).data, lens = gx.getImageData(64, 100, 1, 1).data;
+    if (!(lens[0] > 150 && lens[2] < 110 && mid[2] > lens[2] + 30)) fails.push('太陽墨鏡兩片鏡片沒有分開（中間 ' + [mid[0], mid[1], mid[2]].join(',') + ' 鏡片 ' + [lens[0], lens[1], lens[2]].join(',') + '）');
+    const kA = girlBakeKey({ hair: { style: 'afro', color: 'red' }, outfit: currentOutfit() });
+    const kB = girlBakeKey({ hair: { style: 'buns', color: 'red' }, outfit: currentOutfit() });
+    if (!kA || kA === kB) fails.push('站著的圖快取沒有算進髮型');
+    const withClip = currentOutfit(); withClip.clip = CLOTHES_BY_ID.ribbon;
+    const kC = girlBakeKey({ hair: { style: 'bob', color: 'black' }, outfit: withClip });
+    const kD = girlBakeKey({ hair: { style: 'bob', color: 'black' }, outfit: currentOutfit() });
+    if (!kC || kC === kD) fails.push('站著的圖快取沒有算進髮飾');
     const bag = names + HAIR_STYLES.map(h => h.name).join('') + HAIR_COLORS.map(h => h.name).join('');
     for (const ch of bag) { const cp = ch.codePointAt(0); if (cp >= 0x1FA70 && cp <= 0x1FAFF) fails.push('用了 Windows 10 顯示不出的表情符號'); }
     CLOTHES.concat(HAIR_STYLES).forEach(x => { if (typeof x.price === 'number' && x.price % 50) fails.push(x.name + ' 價格不好看 ' + x.price); });
@@ -273,11 +341,9 @@ const path = require('path');
   fs.writeFileSync(path.join(outDir, 'hairstyles.png'), Buffer.from(shots.hair.split(',')[1], 'base64'));
   fs.writeFileSync(path.join(outDir, 'glasses.png'), Buffer.from(shots.glasses.split(',')[1], 'base64'));
   await p.evaluate(() => { const b = document.querySelector('#tabBody'); if (b) b.scrollTop = 0; $('#modal').hidden = true; });
-  const client = await p.context().newCDPSession(p);
   const cap = async (file, scroll) => {
     if (scroll) await p.evaluate(scroll);
-    const s = await client.send('Page.captureScreenshot', { format: 'png', clip: { x: 0, y: 0, width: 480, height: 900, scale: 1 } });
-    fs.writeFileSync(path.join(outDir, file), Buffer.from(s.data, 'base64'));
+    await p.screenshot({ path: path.join(outDir, file), clip: { x: 0, y: 0, width: 480, height: 900 }, timeout: 8000, animations: 'disabled' }).catch(() => {});
   };
   await cap('dress-tab.png');
   await cap('dress-glasses.png', () => {
