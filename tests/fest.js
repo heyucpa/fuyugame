@@ -38,7 +38,7 @@ const fs = require('fs');
     g.seasonDex = Object.assign({}, g.seasonDex, { pumpkin_lamp: true });
     const n = normalizeSave(g);
     o.keep = !!n && n.wardrobe.includes('pumpkin_clip') && n.wardrobe.includes('ghost_hat') && n.wardrobe.includes('ghost_dress')
-      && n.outfit.head === 'pumpkin_clip' && n.outfit.top === 'vampire_cape'
+      && n.outfit.clip === 'pumpkin_clip' && n.outfit.head === 'head_none' && n.outfit.top === 'vampire_cape'
       && n.inv.pumpkin_lamp >= 1 && n.rooms[0].items.some(it => it.id === 'pumpkin_lamp')
       && n.kidFood.hw_candy === 5 && n.hwEarned === 15 && n.hwPrize.includes('ghost_hat')
       && n.seasonDex.pumpkin_lamp === true && n.nightTreat == null && n.xmasGift == null;
