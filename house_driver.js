@@ -3147,16 +3147,22 @@
     try {
       SEASON_TODAY = [10, 15];
       if (!seasonNow() || seasonNow().id !== 'halloween') fails.push('10/15 不是萬聖節');
+      SEASON_TODAY = [10, 31]; if (!seasonNow() || seasonNow().id !== 'halloween') fails.push('10/31 不是萬聖節');
+      SEASON_TODAY = [10, 14]; if (seasonNow()) fails.push('10/14 就開始萬聖節');
+      SEASON_TODAY = [11, 1]; if (seasonNow()) fails.push('11/1 還在萬聖節');
       SEASON_TODAY = [11, 2]; if (seasonNow()) fails.push('11/2 還在萬聖節');
       SEASON_TODAY = [9, 30]; if (seasonNow()) fails.push('9/30 就開始萬聖節');
-      SEASON_TODAY = [10, 1]; if (!seasonNow()) fails.push('10/1 沒開始萬聖節');
-      SEASON_TODAY = [11, 1]; if (!seasonNow()) fails.push('11/1 萬聖節就結束了（應該含當天）');
+      SEASON_TODAY = [12, 1]; if (!seasonNow() || seasonNow().id !== 'christmas') fails.push('12/1 不是聖誕節');
+      SEASON_TODAY = [12, 31]; if (!seasonNow() || seasonNow().id !== 'christmas') fails.push('12/31 不是聖誕節');
+      SEASON_TODAY = [11, 30]; if (seasonNow()) fails.push('11/30 就開始聖誕節');
+      SEASON_TODAY = [1, 1]; if (seasonNow()) fails.push('1/1 還在聖誕節');
       // 限定家具：畫得出來、不算在一般家具圖鑑（不然家具金獎盃過了節日就拿不到）
       SEASON_FURNITURE.forEach(function(d){ if (FURNITURE.indexOf(d) >= 0) fails.push('限定家具「' + d.name + '」被算進一般家具圖鑑'); try { thumb(d); } catch (eT) { fails.push('限定家具「' + d.name + '」畫不出來：' + eT.message); } });
       // 商店：節日時最上面有限定區；平常沒有
       SEASON_TODAY = [10, 15]; openTab('shop');
       var sb = document.querySelector('#tabBody .season-box');
-      if (!sb || !/萬聖節限定/.test(sb.textContent) || sb.querySelectorAll('.card').length !== SEASON_FURNITURE.length + 3 + 1) fails.push('萬聖節的商店沒有限定區（或數量不對）');
+      var hwN = SEASON_FURNITURE.filter(function (d) { return d.season === 'halloween'; }).length;
+      if (!sb || !/萬聖節限定/.test(sb.textContent) || sb.querySelectorAll('.card').length !== hwN + (seasonNow().clothes || []).length + 1) fails.push('萬聖節的商店沒有限定區（或數量不對）');
       // 買限定家具：收進節日收藏、跳出大圖
       G.bells = 99999; delete G.seasonDex; SC_QUEUE.length = 0; var o91 = document.getElementById('showcase'); if (o91) o91.remove();
       var c0 = sb.querySelector('.card'); c0.onclick();
