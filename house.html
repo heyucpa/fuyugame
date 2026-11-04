@@ -123,7 +123,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* 換裝分頁 */
 .dress-head { display: flex; gap: 12px; align-items: center; margin: 10px 0 4px; }
 .dress-preview {
-  flex: none; width: 128px; height: 158px; display: grid; place-items: center;
+  flex: none; width: 148px; height: 186px; display: grid; place-items: center;
   background: radial-gradient(circle at 50% 60%, #fff 0 55%, var(--chip) 56%); border-radius: 16px;
 }
 .dress-side h3 { margin-top: 0; }
@@ -241,13 +241,25 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .textin:focus, .talkbox:focus { outline: none; border-color: var(--accent); }
 .talkbox.locked { background: #f4f1ea; color: var(--muted); border-style: dashed; }
-/* 髮色色票：圓形、夠大好按（小孩手指不準），選中的加一圈深色外框 */
-.hair-colors { display: flex; flex-wrap: wrap; gap: 10px; padding: 4px 2px 2px; }
+/* 髮色色票：圓形、夠大好按（小孩手指不準、iPad 也要好點），選中的加一圈深色外框 */
+.hair-colors { display: flex; flex-wrap: wrap; gap: 12px; padding: 4px 2px 2px; }
 .swatch {
-  width: 40px; height: 40px; border-radius: 50%; border: 3px solid #fff;
-  box-shadow: 0 0 0 2px var(--line); padding: 0;
+  width: 48px; height: 48px; border-radius: 50%; border: 3px solid #fff;
+  box-shadow: 0 0 0 2px var(--line); padding: 0; touch-action: manipulation;
 }
 .swatch.on { box-shadow: 0 0 0 3px var(--ink); }
+/* 換裝：一排兩張大圖，六歲用滑鼠或手指都好點。寬螢幕才放三張。 */
+.dress-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.dress-grid .card { padding: 8px 4px 10px; cursor: pointer; touch-action: manipulation; min-height: 132px; }
+.dress-grid .nm { font-size: 15px; font-weight: 800; line-height: 1.25; }
+.dress-grid .pr { font-size: 13px; }
+@media (min-width: 1500px) and (orientation: landscape) {
+  .dress-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (pointer: coarse) {
+  .swatch { width: 54px; height: 54px; }
+  .dress-grid .card { min-height: 148px; }
+}
 /* 拼圖：難度選單與拼盤 */
 /* 釣魚：水面的影子。越大的魚字越大越醒目，她一看就知道這竿值得拚 */
 .fish-shadow { text-align: center; font-weight: 800; margin: 4px 0 8px; color: #2f6f8f; font-size: 15px; }
@@ -744,8 +756,8 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .clip-x { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 16px; opacity: .85; padding: 4px; }
 .fs-theme { display: flex; align-items: center; gap: 8px; font-size: 18px; margin-bottom: 6px; } .fs-ti { font-size: 30px; } .fs-timer { margin-left: auto; font-weight: 900; color: #e8505b; }
 .fs-wrap { display: flex; gap: 10px; } .fs-prev { flex: 0 0 130px; display: flex; align-items: center; justify-content: center; background: #fff3fa; border-radius: 14px; }
-.fs-right { flex: 1; min-width: 0; } .fs-tabs { display: flex; gap: 4px; margin-bottom: 6px; } .fs-tabs button { flex: 1; font: inherit; font-size: 14px; padding: 6px 2px; border: 2px solid var(--line); border-radius: 10px; background: #fff; } .fs-tabs button.on { background: #ffe0ee; border-color: #ff8fb3; }
-.fs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; max-height: 240px; overflow: auto; }
+.fs-right { flex: 1; min-width: 0; } .fs-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; } .fs-tabs button { flex: 1 1 30%; font: inherit; font-size: 15px; font-weight: 800; min-height: 40px; padding: 6px 2px; border: 2px solid var(--line); border-radius: 10px; background: #fff; touch-action: manipulation; } .fs-tabs button.on { background: #ffe0ee; border-color: #ff8fb3; }
+.fs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 6px; max-height: 280px; overflow: auto; }
 .fs-item { display: flex; flex-direction: column; align-items: center; font: inherit; font-size: 11px; padding: 3px; border: 2px solid var(--line); border-radius: 10px; background: #fff; } .fs-item.on { border-color: #ff8fb3; background: #fff0f6; }
 .tyc-cash { text-align: center; font-weight: 800; margin: 6px 0; font-size: 14px; }
 .tyc-shop { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px; }
@@ -3465,6 +3477,8 @@ const GROWTH = { pat: 1, squish: 1, feed: 4, bath: 4, game: 6, eggPat: 2, patCoo
 // style 決定畫法（girl.js），顏色欄位各款自訂；price 為 0 的是一開始就有的
 const OUTFIT_SLOTS = [
   { key: 'head', name: '頭飾' },
+  { key: 'face', name: '眼鏡' },
+  { key: 'neck', name: '項鍊' },
   { key: 'top', name: '上衣' },
   { key: 'bottom', name: '下身' },
   { key: 'shoes', name: '鞋子' }
@@ -3527,8 +3541,53 @@ const CLOTHES = [
   { id: 'princess_shoes', slot: 'shoes', name: '公主鞋', price: 1100, style: 'princess', color: '#ff9ec4' },
   { id: 'brown_boots', slot: 'shoes', name: '咖啡靴', price: 1200, style: 'boots', color: '#8a5a33' },
   // 🧛 照補習班那位骷髏伯爵做的小吸血鬼披風（黑外套、紅背心、紅裡子的披風）
-  { id: 'vampire_cape', slot: 'top', name: '小吸血鬼披風', price: 2000, style: 'cape', color: '#2b2433', trim: '#c4313a' }
+  { id: 'vampire_cape', slot: 'top', name: '小吸血鬼披風', price: 2000, style: 'cape', color: '#2b2433', trim: '#c4313a' },
+  /* ── 第三批：髮夾、蝴蝶結、皇冠、帽子、耳罩。眼鏡、項鍊各佔一格，可以跟帽子一起戴。── */
+  { id: 'pink_ribbon', slot: 'head', name: '粉紅蝴蝶結', price: 250, style: 'ribbon', color: '#ff7eae' },
+  { id: 'blue_ribbon', slot: 'head', name: '藍色蝴蝶結', price: 250, style: 'ribbon', color: '#4f86e0' },
+  { id: 'yellow_ribbon', slot: 'head', name: '黃色蝴蝶結', price: 250, style: 'ribbon', color: '#f0c030' },
+  { id: 'heart_clip', slot: 'head', name: '愛心髮夾', price: 250, style: 'heartClip', color: '#ff5f8f' },
+  { id: 'bow_clip', slot: 'head', name: '蝴蝶結髮夾', price: 250, style: 'bowClip', color: '#ff8fb3' },
+  { id: 'dot_clip', slot: 'head', name: '圓點髮夾', price: 250, style: 'dotClip', color: '#5b84c4' },
+  { id: 'pink_crown', slot: 'head', name: '粉紅皇冠', price: 500, style: 'crown', color: '#ffb3d0' },
+  { id: 'pearl_crown', slot: 'head', name: '珍珠皇冠', price: 500, style: 'pearlCrown', color: '#f7f1e4' },
+  { id: 'beret', slot: 'head', name: '紅貝雷帽', price: 250, style: 'beret', color: '#c4313a' },
+  { id: 'sun_hat', slot: 'head', name: '遮陽帽', price: 250, style: 'sunhat', color: '#ffe08a', band: '#ff8fb3' },
+  { id: 'party_hat', slot: 'head', name: '派對帽', price: 250, style: 'partyHat', color: '#ff7eb3' },
+  { id: 'pink_muffs', slot: 'head', name: '粉紅耳罩', price: 250, style: 'earmuff', color: '#ff9ec4' },
+  { id: 'blue_muffs', slot: 'head', name: '藍色耳罩', price: 250, style: 'earmuff', color: '#7eb6ff' },
+  { id: 'bear_muffs', slot: 'head', name: '熊熊耳罩', price: 250, style: 'bearMuff', color: '#c9844a' },
+  { id: 'face_none', slot: 'face', name: '不戴', price: 0, style: 'none' },
+  { id: 'neck_none', slot: 'neck', name: '不戴', price: 0, style: 'none' },
+  { id: 'heart_neck', slot: 'neck', name: '愛心項鍊', price: 250, style: 'heartNeck', color: '#ff5f8f' },
+  { id: 'star_neck', slot: 'neck', name: '星星項鍊', price: 250, style: 'starNeck', color: '#ffd35c' },
+  { id: 'pearl_neck', slot: 'neck', name: '珍珠項鍊', price: 250, style: 'pearlNeck', color: '#fff8ee' },
+  { id: 'bow_neck', slot: 'neck', name: '蝴蝶結項鍊', price: 250, style: 'bowNeck', color: '#e8505b' },
+  { id: 'bead_neck', slot: 'neck', name: '珠珠項鍊', price: 250, style: 'beadNeck', color: '#7eb6ff' }
 ];
+/* 眼鏡：六種造型 × 六種顏色。face 跟頭飾分開，戴了帽子、蝴蝶結還是看得到。
+   新髮型、眼鏡、小飾品價錢刻意便宜（打折後大約 50～250）：件數多，
+   全部買齊還是要落在 22 萬以內，而且她會一直換著玩，太貴就不會試。
+   價格跟別的衣服一起在下面打折。 */
+const GLASS_LOOKS = [
+  { id: 'round', style: 'gRound', name: '圓框眼鏡' },
+  { id: 'square', style: 'gSquare', name: '方框眼鏡' },
+  { id: 'heart', style: 'gHeart', name: '愛心眼鏡' },
+  { id: 'star', style: 'gStar', name: '星星眼鏡' },
+  { id: 'cat', style: 'gCat', name: '貓眼眼鏡' },
+  { id: 'sun', style: 'gSun', name: '太陽墨鏡' }
+];
+const GLASS_TINTS = [
+  { id: 'blk', name: '黑色', c: '#2a2a32' },
+  { id: 'red', name: '紅色', c: '#e23b4a' },
+  { id: 'blu', name: '藍色', c: '#2f6fd6' },
+  { id: 'pnk', name: '粉色', c: '#ff4f93' },
+  { id: 'yel', name: '黃色', c: '#e6a317' },
+  { id: 'pur', name: '紫色', c: '#7a45c4' }
+];
+GLASS_LOOKS.forEach(st => GLASS_TINTS.forEach(col => {
+  CLOTHES.push({ id: 'gl_' + st.id + '_' + col.id, slot: 'face', name: col.name + st.name, price: 100, style: st.style, color: col.c });
+}));
 const CLOTHES_BY_ID = Object.fromEntries(CLOTHES.map(c => [c.id, c]));
 /* 🍬 萬聖節糖果收集的獎品衣服：商店買不到，不放進 CLOTHES（不然 price 0 會一開始就擁有、商店也會賣）。
    只登記在 CLOTHES_BY_ID（存檔讀取、穿著才認得），換裝頁只列出「已經拿到」的。 */
@@ -3549,20 +3608,27 @@ const PRIZE_CLOTHES = [
   { id: 'ghost_dress', slot: 'top', name: '小幽靈洋裝', price: 3000, style: 'dress', color: '#f4f1ff', trim: '#b9a8ff', dots: '#d9ccff', dress: true, prize: true }
 ];
 PRIZE_CLOTHES.forEach(c => { CLOTHES_BY_ID[c.id] = c; });
-const DEFAULT_OUTFIT = { head: 'head_none', top: 'uniform', bottom: 'red_shorts', shoes: 'black_shoes' };
+const DEFAULT_OUTFIT = { head: 'head_none', face: 'face_none', neck: 'neck_none', top: 'uniform', bottom: 'red_shorts', shoes: 'black_shoes' };
 
 /* ── 髮型與髮色 ──
    髮型要買，顏色買了之後隨便換——顏色不收錢是刻意的：
    小孩換髮色是一直換著玩的，每換一次收一次錢她就不會玩了。
 
-   五款都共用原本那顆「妹妹頭」當底，差別畫在外面（馬尾、長髮、丸子）。
-   這樣臉、瀏海、眨眼、腮紅全部沿用，不用為每一款重畫一次頭。 */
+   每一款都共用原本那顆「妹妹頭」當底，差別畫在外面（馬尾、麻花、捲髮）。
+   這樣臉、瀏海、眨眼、腮紅全部沿用，不用為每一款重畫一次頭。
+   short 是爸爸的短髮，不放進這裡。 */
 const HAIR_STYLES = [
   { id: 'bob',  name: '妹妹頭', price: 0 },
   { id: 'pony', name: '馬尾',   price: 900 },
   { id: 'twin', name: '雙馬尾', price: 1200 },
   { id: 'long', name: '長髮',   price: 1500 },
-  { id: 'bun',  name: '丸子頭', price: 1100 }
+  { id: 'bun',  name: '丸子頭', price: 1100 },
+  { id: 'braid', name: '麻花辮', price: 500 },
+  { id: 'twinbraid', name: '雙麻花', price: 625 },
+  { id: 'curly', name: '捲髮', price: 625 },
+  { id: 'pixie', name: '短髮', price: 375 },
+  { id: 'side', name: '側馬尾', price: 500 },
+  { id: 'half', name: '半扎髮', price: 500 }
 ];
 const HAIR_BY_ID = Object.fromEntries(HAIR_STYLES.map(h => [h.id, h]));
 // 常見的幾種就好，太多色她反而選不出來
@@ -3573,7 +3639,10 @@ const HAIR_COLORS = [
   { id: 'pink',  name: '粉紅色', c: '#ff9ec4', hi: '#ffc4dc' },
   { id: 'green', name: '綠色',   c: '#7bc98c', hi: '#a3e0b0' },
   { id: 'blue',  name: '水藍色', c: '#7fc0e8', hi: '#aedbf4' },
-  { id: 'purple', name: '紫色',  c: '#b998e8', hi: '#d4bdf5' }
+  { id: 'purple', name: '紫色',  c: '#b998e8', hi: '#d4bdf5' },
+  { id: 'red', name: '紅色', c: '#d64545', hi: '#f08a7a' },
+  { id: 'orange', name: '橘色', c: '#ef8a2f', hi: '#ffc07a' },
+  { id: 'silver', name: '銀色', c: '#c5c9d4', hi: '#f4f6fb' }
 ];
 const HAIR_COLOR_BY_ID = Object.fromEntries(HAIR_COLORS.map(h => [h.id, h]));
 const DEFAULT_HAIR = { style: 'bob', color: 'black' };
@@ -5924,19 +5993,23 @@ function normalizeSave(g) {
   if (!Number.isInteger(out.cur) || out.cur < 0 || out.cur >= out.rooms.length) out.cur = 0;
   // 衣服：補上預設款，穿著中的衣服若資料裡已不存在就換回預設
   out.wardrobe = Array.from(new Set((Array.isArray(g.wardrobe) ? g.wardrobe : []).concat(newGame().wardrobe))).filter(id => CLOTHES_BY_ID[id]);
-  out.outfit = Object.assign({}, DEFAULT_OUTFIT, g.outfit || {});
-  /* 舊存檔沒有髮型欄位，補上預設。髮型或髮色被刪掉（改版）就換回預設，
-     不然會畫出一顆沒有顏色的頭。 */
-  out.hair = Object.assign({}, DEFAULT_HAIR, g.hair || {});
-  if (!HAIR_BY_ID[out.hair.style]) out.hair.style = DEFAULT_HAIR.style;
-  if (!HAIR_COLOR_BY_ID[out.hair.color]) out.hair.color = DEFAULT_HAIR.color;
-  out.hairOwned = Array.from(new Set((Array.isArray(g.hairOwned) ? g.hairOwned : [])
-    .concat(HAIR_STYLES.filter(h => !h.price).map(h => h.id))
-    .concat([out.hair.style]))).filter(id => HAIR_BY_ID[id]);
+  /* 眼鏡（outfit.face）、項鍊（outfit.neck）是後來加的。舊存檔沒有這兩格就補「不戴」。
+     id 不是字串、沒有這件、放錯欄位、或還沒買，都換回預設。
+     舊的頭飾、上衣、髮型、髮色只要還認得就留著，不會被清掉。 */
+  out.outfit = Object.assign({}, DEFAULT_OUTFIT, isObj(g.outfit) ? g.outfit : {});
   OUTFIT_SLOTS.forEach(({ key }) => {
-    const c = CLOTHES_BY_ID[out.outfit[key]];
+    const id = out.outfit[key];
+    const c = typeof id === 'string' ? CLOTHES_BY_ID[id] : null;
     if (!c || c.slot !== key || !out.wardrobe.includes(c.id)) out.outfit[key] = DEFAULT_OUTFIT[key];
   });
+  /* 舊存檔沒有髮型欄位，補上預設。髮型或髮色被刪掉（改版）就換回預設，
+     不然會畫出一顆沒有顏色的頭。 */
+  out.hair = Object.assign({}, DEFAULT_HAIR, isObj(g.hair) ? g.hair : {});
+  if (typeof out.hair.style !== 'string' || !HAIR_BY_ID[out.hair.style]) out.hair.style = DEFAULT_HAIR.style;
+  if (typeof out.hair.color !== 'string' || !HAIR_COLOR_BY_ID[out.hair.color]) out.hair.color = DEFAULT_HAIR.color;
+  out.hairOwned = Array.from(new Set((Array.isArray(g.hairOwned) ? g.hairOwned : [])
+    .concat(HAIR_STYLES.filter(h => !h.price).map(h => h.id))
+    .concat([out.hair.style]))).filter(id => typeof id === 'string' && HAIR_BY_ID[id]);
   return out;
 }
 
@@ -5952,7 +6025,7 @@ function currentOutfit() {
   const o = {};
   if (G.away && (G.away.place === 'dojo' || G.away.place === 'pool')) {   // 道館穿道服（腰帶是她考到的那一條）、泳池穿泳衣
     const ids = G.away.place === 'dojo' ? { head: 'head_none', top: G.outfit.top === 'dobok' || Date.now() < tkdFormalUntil ? 'dobok' : 'tkd_tee', bottom: 'dobok_pants', shoes: 'barefoot' } : { head: 'swim_cap', top: 'swimsuit', bottom: 'swim_bottom', shoes: 'barefoot' };
-    OUTFIT_SLOTS.forEach(({ key }) => { o[key] = CLOTHES_BY_ID[ids[key]]; });
+    OUTFIT_SLOTS.forEach(({ key }) => { o[key] = CLOTHES_BY_ID[ids[key]] || CLOTHES_BY_ID[G.outfit[key]] || CLOTHES_BY_ID[DEFAULT_OUTFIT[key]]; });
     if (G.away.place === 'dojo') o.top = Object.assign({}, o.top, { belt: tkdBeltColors() });
     magicRecolor(o);
     return o;
@@ -6909,8 +6982,10 @@ function drawGirl(ctx, o) {
   }
   ctx.save();
   if (bk !== 1) ctx.translate(0, -33 * (bk - 1));
+  if (!o.headOnly) drawNecklace(ctx, o, fit.neck);
   if (hk !== 1) { ctx.translate(0, -40); ctx.scale(hk, hk); ctx.translate(0, 40); }
   drawGirlHead(ctx, o);
+  drawFacewear(ctx, o, fit.face);
   if (o.dirty && !o.back) { // 🧼 髒髒的：臉上、手上一點灰
     ctx.fillStyle = 'rgba(120,95,70,.45)';
     [[-7, -41, 2.2], [-4.5, -39, 1.4], [7.5, -43, 1.8]].forEach(([x, y, r]) => { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); });
@@ -7317,8 +7392,28 @@ function hairOf(o) {
   return { style: HAIR_BY_ID[h.style] || h.style === 'short' ? h.style : 'bob', c: col.c, hi: col.hi };
 }
 
+/* 麻花：一顆一顆交錯的橢圓，尾端綁一顆粉紅髮圈。小圖也看得出來不是直髮。 */
+function drawBraid(ctx, x0, y0, x1, y1, n, w, c, hi) {
+  ctx.fillStyle = c;
+  for (let i = 0; i < n; i++) {
+    const t = (i + .5) / n;
+    const x = x0 + (x1 - x0) * t + (i % 2 ? 1 : -1) * w * .42;
+    const y = y0 + (y1 - y0) * t;
+    ctx.beginPath();
+    ctx.ellipse(x, y, w, w * .62, i % 2 ? .55 : -.55, 0, Math.PI * 2);
+    ctx.fill();
+    if (i % 2 === 0) {
+      ctx.fillStyle = hi;
+      ctx.beginPath(); ctx.ellipse(x - w * .15, y - w * .12, w * .32, w * .2, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = c;
+    }
+  }
+  ctx.fillStyle = '#ff5f8f';
+  ctx.beginPath(); ctx.arc(x1, y1, w * .55, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = c;
+}
 /* 髮型多出來的那一塊，畫在頭之前（會被頭蓋住一部分，看起來才像長在後面）。
-   五款共用同一顆頭，差別只在這裡。 */
+   每一款共用同一顆頭，差別只在這裡。 */
 function drawHairBack(ctx, hair, hy) {
   ctx.fillStyle = hair.c;
   if (hair.style === 'long') {
@@ -7360,6 +7455,56 @@ function drawHairBack(ctx, hair, hy) {
     [-1, 1].forEach(s => {
       ctx.beginPath(); ctx.arc(s * 11, hy - 17, 6.2, 0, Math.PI * 2); ctx.fill();
     });
+  } else if (hair.style === 'braid') {
+    // 麻花辮：一條粗辮子搭在左邊肩膀，上面一顆蝴蝶結
+    ctx.fillStyle = '#ff5f8f';
+    ctx.beginPath(); ctx.moveTo(-12, hy - 8); ctx.lineTo(-18, hy - 13); ctx.lineTo(-18, hy - 6); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-12, hy - 8); ctx.lineTo(-6, hy - 13); ctx.lineTo(-6, hy - 6); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.arc(-12, hy - 8, 1.6, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
+    drawBraid(ctx, -10, hy - 4, -16, hy + 34, 8, 3.4, hair.c, hair.hi);
+  } else if (hair.style === 'twinbraid') {
+    // 雙麻花：兩條直直的辮子，跟往外甩的雙馬尾不一樣
+    [-1, 1].forEach(s => {
+      ctx.fillStyle = '#ff5f8f';
+      ctx.beginPath(); ctx.arc(s * 13, hy - 8, 2.2, 0, Math.PI * 2); ctx.fill();
+      drawBraid(ctx, s * 13, hy - 5, s * 16, hy + 32, 7, 2.7, hair.c, hair.hi);
+    });
+  } else if (hair.style === 'curly') {
+    // 捲髮：頭周圍一圈圓圓的捲，比妹妹頭寬一圈
+    [[-18, -12, 5.4], [-22, -1, 4.6], [-19, 10, 4.2], [18, -10, 5.4], [22, 1, 4.6], [18, 12, 4.2],
+      [-8, -20, 4.4], [8, -20, 4.4], [0, -22, 4.6], [-24, 8, 3.3], [24, 8, 3.3]].forEach(([x, dy, r]) => {
+      ctx.beginPath(); ctx.arc(x, hy + dy, r, 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.strokeStyle = hair.hi; ctx.lineWidth = 1.3;
+    [[-18, -14, 2.2], [18, -12, 2.2], [0, -23, 2], [-21, 2, 1.8]].forEach(([x, dy, r]) => {
+      ctx.beginPath(); ctx.arc(x, hy + dy, r, Math.PI * .8, Math.PI * 1.7); ctx.stroke();
+    });
+  } else if (hair.style === 'side') {
+    // 側馬尾：低低的綁在左邊（馬尾在右邊、比較高）
+    ctx.beginPath();
+    ctx.moveTo(-10, hy);
+    ctx.quadraticCurveTo(-32, hy + 8, -24, hy + 32);
+    ctx.quadraticCurveTo(-15, hy + 16, -7, hy + 4);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#ff5f8f';
+    ctx.beginPath(); ctx.arc(-13, hy + 2, 2.6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(-13.6, hy + 1.2, .8, 0, Math.PI * 2); ctx.fill();
+  } else if (hair.style === 'half') {
+    // 半扎髮：頭頂一顆丸子，兩邊只到肩膀（比長髮短、比丸子頭多一截）
+    ctx.beginPath(); ctx.arc(0, hy - 20, 5.6, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = hair.hi; ctx.lineWidth = 1.3;
+    ctx.beginPath(); ctx.arc(-1, hy - 21, 2.4, Math.PI * 1.1, Math.PI * 1.8); ctx.stroke();
+    ctx.fillStyle = '#ff5f8f';
+    ctx.fillRect(-3.2, hy - 16, 6.4, 1.8);
+    ctx.fillStyle = hair.c;
+    [-1, 1].forEach(s => {
+      ctx.beginPath();
+      ctx.moveTo(s * 11, hy);
+      ctx.quadraticCurveTo(s * 20, hy + 8, s * 15, hy + 18);
+      ctx.quadraticCurveTo(s * 10, hy + 12, s * 7, hy + 2);
+      ctx.closePath(); ctx.fill();
+    });
   }
 }
 
@@ -7369,7 +7514,8 @@ function drawGirlHead(ctx, o) {
   drawHairBack(ctx, hair, hy);
   /* 短髮（爸爸）：後髮只到耳朵上面，不蓋住臉頰。
      背影的時候下半顆頭沒有頭髮蓋著，要先把頭畫出來。 */
-  const short = hair.style === 'short', hb = short ? (o.back ? hy + 10 : hy + 3) : hy + 14; // 背影的短髮要蓋到後頸
+  const short = hair.style === 'short', pixie = hair.style === 'pixie';
+  const hb = short ? (o.back ? hy + 10 : hy + 3) : pixie ? (o.back ? hy + 6 : hy + 4) : hy + 14; // 背影的短髮要蓋到後頸；小女孩的短髮比爸爸長一點點
   if (short && o.back) {
     ctx.beginPath(); ctx.ellipse(0, hy + 1, 12.5, 13, 0, 0, Math.PI * 2);
     ctx.fillStyle = GIRL.skin; ctx.fill();
@@ -7385,6 +7531,13 @@ function drawGirlHead(ctx, o) {
   ctx.quadraticCurveTo(-16, hb, -16, hb - 2);
   ctx.fillStyle = hair.c;
   ctx.fill();
+  if (pixie) { // 短髮：頭頂一撮翹起來，跟妹妹頭、爸爸的平短髮都不一樣
+    ctx.beginPath();
+    ctx.moveTo(1, hy - 16);
+    ctx.quadraticCurveTo(8, hy - 28, 0, hy - 17);
+    ctx.quadraticCurveTo(-4, hy - 26, 1, hy - 16);
+    ctx.fill();
+  }
 
   if (o.back) {
     // 背影：只看到頭髮
@@ -7465,20 +7618,31 @@ function drawGirlHead(ctx, o) {
     ctx.beginPath(); ctx.arc(fx, hy + 5.5, 3.2, .2 * Math.PI, .8 * Math.PI); ctx.stroke();
   }
 
-  // 瀏海
-  ctx.beginPath();
-  ctx.moveTo(-14.5, hy + 2);
-  ctx.arc(0, hy - 2, 14.8, Math.PI * 1.05, Math.PI * 1.95);
-  ctx.lineTo(14.5, hy + 2);
-  ctx.lineTo(12, hy - 4);
-  // 參差的瀏海下緣
-  for (let x = 10; x >= -10; x -= 4) ctx.lineTo(x, hy - 5 + (x / 4 % 2 ? 1.5 : 0));
-  ctx.lineTo(-12, hy - 4);
-  ctx.closePath();
+  // 瀏海（短髮改成側分，露出比較多額頭）
   ctx.fillStyle = hair.c;
-  ctx.fill();
-  // 兩側髮絲蓋住臉頰（短髮沒有）
-  if (!short) {
+  if (pixie) {
+    ctx.beginPath();
+    ctx.moveTo(-13, hy - 2);
+    ctx.quadraticCurveTo(-4, hy - 10, 6, hy - 4);
+    ctx.quadraticCurveTo(11, hy - 1, 12, hy + 1);
+    ctx.lineTo(6, hy - 8);
+    ctx.quadraticCurveTo(-2, hy - 16, -13, hy - 8);
+    ctx.closePath();
+    ctx.fill();
+  } else {
+    ctx.beginPath();
+    ctx.moveTo(-14.5, hy + 2);
+    ctx.arc(0, hy - 2, 14.8, Math.PI * 1.05, Math.PI * 1.95);
+    ctx.lineTo(14.5, hy + 2);
+    ctx.lineTo(12, hy - 4);
+    // 參差的瀏海下緣
+    for (let x = 10; x >= -10; x -= 4) ctx.lineTo(x, hy - 5 + (x / 4 % 2 ? 1.5 : 0));
+    ctx.lineTo(-12, hy - 4);
+    ctx.closePath();
+    ctx.fill();
+  }
+  // 兩側髮絲蓋住臉頰（短髮、爸爸的平頭沒有）
+  if (!short && !pixie) {
     ctx.beginPath(); ctx.moveTo(-15.5, hy - 3); ctx.quadraticCurveTo(-12, hy + 6, -12.5, hy + 13); ctx.lineTo(-16, hy + 13); ctx.closePath(); ctx.fill();
     ctx.beginPath(); ctx.moveTo(15.5, hy - 3); ctx.quadraticCurveTo(12, hy + 6, 12.5, hy + 13); ctx.lineTo(16, hy + 13); ctx.closePath(); ctx.fill();
   }
@@ -7506,10 +7670,100 @@ function drawGirlHead(ctx, o) {
   }
 }
 
+/* 項鍊掛在胸口。頭飾是另一格，所以戴帽子的時候項鍊還在。 */
+function drawNecklace(ctx, o, item) {
+  if (!item || item.style === 'none' || o.headOnly) return;
+  const col = item.color || '#e8d7b0';
+  if (o.back) {
+    ctx.strokeStyle = col; ctx.lineWidth = 1.8;
+    ctx.beginPath(); ctx.arc(0, -40, 7.5, .2 * Math.PI, .8 * Math.PI); ctx.stroke();
+    return;
+  }
+  ctx.strokeStyle = col; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(-8, -34); ctx.quadraticCurveTo(0, -18, 8, -34); ctx.stroke();
+  if (item.style === 'heartNeck') heart(ctx, 0, -19, 3.4, col);
+  else if (item.style === 'starNeck') star(ctx, 0, -18.5, 4.2, col);
+  else if (item.style === 'pearlNeck') {
+    ctx.fillStyle = col; ctx.strokeStyle = '#e4d3b0'; ctx.lineWidth = .6;
+    [[-5, -27, 1.5], [-2.4, -23, 1.7], [0, -19.5, 2.3], [2.4, -23, 1.7], [5, -27, 1.5]].forEach(([x, y, r]) => {
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    });
+  } else if (item.style === 'bowNeck') {
+    ctx.fillStyle = col;
+    ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(-6, -24); ctx.lineTo(-6, -17); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(6, -24); ctx.lineTo(6, -17); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, -20, 1.6, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
+  } else if (item.style === 'beadNeck') {
+    ['#e8505b', '#ffd35c', '#5b84c4', '#7bd389', '#ff9ec4'].forEach((c, i) => {
+      const t = i / 4, x = -7 + t * 14, y = -33 + Math.sin(t * Math.PI) * 12;
+      ctx.beginPath(); ctx.arc(x, y, 1.9, 0, Math.PI * 2); ctx.fillStyle = c; ctx.fill();
+    });
+  }
+}
+/* 眼鏡畫在臉上，頭飾畫在更上面，所以圓框可以跟皇冠、蝴蝶結一起戴。
+   睡覺、泡澡（headOnly）先拿下來。 */
+function drawFacewear(ctx, o, item) {
+  if (!item || item.style === 'none' || o.headOnly) return;
+  const hy = -46, fx = 1.2, ey = hy + 1, col = item.color || '#2a2a32';
+  if (o.back) {
+    ctx.strokeStyle = col; ctx.lineWidth = item.style === 'gSun' ? 2.6 : 1.6; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-9, hy - 1); ctx.lineTo(-14, hy + 3);
+    ctx.moveTo(9, hy - 1); ctx.lineTo(14, hy + 3);
+    ctx.stroke();
+    ctx.lineCap = 'butt';
+    if (item.style === 'gStar') { star(ctx, -15, hy + 4, 2.2, col); star(ctx, 15, hy + 4, 2.2, col); }
+    else if (item.style === 'gHeart') { heart(ctx, -15, hy + 3, 1.6, col); heart(ctx, 15, hy + 3, 1.6, col); }
+    return;
+  }
+  ctx.lineJoin = 'round'; ctx.lineWidth = 2.1; ctx.strokeStyle = col;
+  const eyes = [-5 + fx, 5 + fx];
+  const lensFill = item.style === 'gSun' ? col : 'rgba(255,255,255,.34)';
+  const one = (x, draw) => { ctx.fillStyle = lensFill; draw(x); ctx.fill(); ctx.stroke(); };
+  if (item.style === 'gRound') {
+    eyes.forEach(x => one(x, px => { ctx.beginPath(); ctx.arc(px, ey, 4.6, 0, Math.PI * 2); }));
+  } else if (item.style === 'gSquare') {
+    eyes.forEach(x => one(x, px => { ctx.beginPath(); ctx.roundRect(px - 4.4, ey - 3.1, 8.8, 6.4, 1.3); }));
+  } else if (item.style === 'gHeart') {
+    eyes.forEach(x => { heart(ctx, x, ey + .4, 4.3, col); heart(ctx, x, ey + .9, 2.5, 'rgba(255,255,255,.62)'); });
+  } else if (item.style === 'gStar') {
+    eyes.forEach(x => { star(ctx, x, ey, 5.2, col); star(ctx, x, ey + .2, 2.8, 'rgba(255,255,255,.7)'); });
+  } else if (item.style === 'gCat') {
+    eyes.forEach(x => {
+      const s = x < fx ? -1 : 1;
+      one(x, () => {
+        ctx.beginPath();
+        ctx.moveTo(x - s * 4.6, ey + 1.6);
+        ctx.quadraticCurveTo(x - s * 3.2, ey - 2.6, x, ey - 2);
+        ctx.quadraticCurveTo(x + s * 3.6, ey - 5.6, x + s * 5.6, ey - 1.2);
+        ctx.quadraticCurveTo(x + s * 2.4, ey + 2.8, x - s * 4.6, ey + 1.6);
+        ctx.closePath();
+      });
+    });
+  } else if (item.style === 'gSun') {
+    ctx.fillStyle = col;
+    eyes.forEach(x => { ctx.beginPath(); ctx.roundRect(x - 5.2, ey - 3.4, 10.4, 7.4, 3.2); ctx.fill(); ctx.stroke(); });
+    ctx.fillStyle = 'rgba(255,255,255,.55)';
+    eyes.forEach(x => { ctx.beginPath(); ctx.arc(x - 1.6, ey - 1.2, 1.1, 0, Math.PI * 2); ctx.fill(); });
+  } else return;
+  if (item.style !== 'gHeart' && item.style !== 'gStar') {
+    ctx.strokeStyle = col; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(fx - 1.5, ey - .3); ctx.lineTo(fx + 1.5, ey - .3); ctx.stroke();
+    if (item.style !== 'gSun') {
+      ctx.fillStyle = 'rgba(255,255,255,.8)';
+      eyes.forEach(x => { ctx.beginPath(); ctx.arc(x - 1.5, ey - 1.4, .8, 0, Math.PI * 2); ctx.fill(); });
+    }
+  }
+  ctx.strokeStyle = col; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(eyes[0] - 4.4, ey - .4); ctx.lineTo(-13.5, hy);
+  ctx.moveTo(eyes[1] + 4.4, ey - .4); ctx.lineTo(13.5, hy);
+  ctx.stroke();
+}
 // ── 頭飾（正面、背面都看得到）──
 function drawHeadwear(ctx, o, h) {
   if (!h || h.style === 'none') return;
-  if (o.headOnly && (h.style === 'hat' || h.style === 'beanie' || h.style === 'glasses')) return; // 睡覺、泡澡時脫帽子、拿下墨鏡
+  if (o.headOnly && (h.style === 'hat' || h.style === 'beanie' || h.style === 'glasses' || h.style === 'beret' || h.style === 'sunhat' || h.style === 'partyHat' || h.style === 'earmuff' || h.style === 'bearMuff')) return; // 睡覺、泡澡時脫帽子、耳罩、拿下墨鏡
   const hy = -46, top = hy - 18; // 頭頂大約在 y = -64
   const line = 'rgba(50,35,30,.35)';
   if (h.style === 'ribbon') {
@@ -7681,6 +7935,81 @@ function drawHeadwear(ctx, o, h) {
     ctx.beginPath(); ctx.ellipse(0, top + 7.5, 15, 3.4, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
     // 頂上的小鈕
     ctx.fillStyle = h.band; ctx.beginPath(); ctx.arc(0, top - 9, 1.6, 0, Math.PI * 2); ctx.fill();
+  } else if (h.style === 'heartClip') { // 愛心髮夾
+    heart(ctx, -11, top + 8, 3.8, h.color);
+    ctx.fillStyle = 'rgba(255,255,255,.75)';
+    ctx.beginPath(); ctx.arc(-12.4, top + 6.2, .9, 0, Math.PI * 2); ctx.fill();
+  } else if (h.style === 'bowClip') { // 小蝴蝶結髮夾（有一根髮夾，跟大蝴蝶結不一樣）
+    const cx = -11, cy = top + 9;
+    ctx.fillStyle = '#d8d2c8'; ctx.strokeStyle = line; ctx.lineWidth = .6;
+    ctx.fillRect(cx - 7, cy - 1.1, 14, 2.4); ctx.strokeRect(cx - 7, cy - 1.1, 14, 2.4);
+    ctx.fillStyle = h.color;
+    ctx.beginPath(); ctx.ellipse(cx - 3.4, cy - 1.4, 3.4, 2.3, -.45, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx + 3.4, cy - 1.4, 3.4, 2.3, .45, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, cy, 1.4, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
+  } else if (h.style === 'dotClip') { // 三顆圓點髮夾
+    [[-8, top + 6, '#ff5f8f'], [-2.5, top + 3.5, h.color], [3, top + 6, '#ffd35c']].forEach(([x, y, c]) => {
+      ctx.beginPath(); ctx.arc(x, y, 2.3, 0, Math.PI * 2); ctx.fillStyle = c; ctx.fill();
+      ctx.strokeStyle = line; ctx.lineWidth = .6; ctx.stroke();
+    });
+  } else if (h.style === 'pearlCrown') { // 珍珠皇冠：矮矮的一圈珍珠，沒有尖角
+    ctx.fillStyle = h.color; ctx.strokeStyle = line; ctx.lineWidth = .8;
+    ctx.beginPath(); ctx.moveTo(-11, top + 5); ctx.quadraticCurveTo(0, top - 1, 11, top + 5); ctx.lineTo(11, top + 8); ctx.lineTo(-11, top + 8); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    [[-7, top + 2.5], [-2.2, top + .4], [2.6, top + .4], [7.4, top + 2.5]].forEach(([x, y]) => {
+      ctx.beginPath(); ctx.arc(x, y, 1.8, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
+      ctx.strokeStyle = '#e4d3b0'; ctx.stroke();
+    });
+    ctx.beginPath(); ctx.arc(0, top - 2.6, 2.3, 0, Math.PI * 2); ctx.fillStyle = '#ff9ec4'; ctx.fill();
+  } else if (h.style === 'beret') { // 貝雷帽：扁扁的、歪一邊
+    ctx.fillStyle = h.color; ctx.strokeStyle = line; ctx.lineWidth = .8;
+    ctx.beginPath(); ctx.ellipse(4, top + 2, 16, 6.5, -.45, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(10, top - 2, 1.7, 0, Math.PI * 2); ctx.fillStyle = '#2a2a32'; ctx.fill();
+  } else if (h.style === 'sunhat') { // 遮陽帽：帽沿比草帽寬，旁邊一朵蝴蝶結
+    ctx.fillStyle = h.color; ctx.strokeStyle = line; ctx.lineWidth = .8;
+    ctx.beginPath(); ctx.ellipse(0, top + 9, 26, 5.5, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(0, top + 2, 12, 9, 0, Math.PI, 0); ctx.lineTo(12, top + 8); ctx.lineTo(-12, top + 8); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = h.band || '#ff8fb3';
+    ctx.fillRect(-12, top + 4, 24, 3.2);
+    const bx = 16, by = top + 9;
+    ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + 7, by - 3.5); ctx.lineTo(bx + 7, by + 3.5); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx - 5, by - 3); ctx.lineTo(bx - 5, by + 3); ctx.closePath(); ctx.fill();
+  } else if (h.style === 'partyHat') { // 派對尖帽：直直的圓錐，黃條紋，頂上白球
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(-9, top + 8); ctx.lineTo(0, top - 22); ctx.lineTo(9, top + 8); ctx.closePath();
+    ctx.fillStyle = h.color; ctx.fill(); ctx.clip();
+    ctx.fillStyle = '#ffe066';
+    [0, 1, 2, 3].forEach(i => ctx.fillRect(-12, top - 16 + i * 6, 24, 2.6));
+    ctx.restore();
+    ctx.strokeStyle = line; ctx.lineWidth = .8;
+    ctx.beginPath(); ctx.moveTo(-9, top + 8); ctx.lineTo(0, top - 22); ctx.lineTo(9, top + 8); ctx.closePath(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, top - 23, 2.6, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill(); ctx.stroke();
+  } else if (h.style === 'earmuff') { // 耳罩：頭上一條帶，耳朵兩邊各一顆圓圓的
+    ctx.strokeStyle = h.color; ctx.lineWidth = 3.4; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(0, hy - 1, 15.2, Math.PI * 1.12, Math.PI * 1.88); ctx.stroke();
+    ctx.lineCap = 'butt';
+    [-1, 1].forEach(s => {
+      ctx.beginPath(); ctx.arc(s * 14.5, hy + 2, 5.4, 0, Math.PI * 2);
+      ctx.fillStyle = h.color; ctx.fill(); ctx.strokeStyle = line; ctx.lineWidth = .8; ctx.stroke();
+      ctx.beginPath(); ctx.arc(s * 13.2, hy + .4, 1.7, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.fill();
+    });
+  } else if (h.style === 'bearMuff') { // 熊熊耳罩：圓圓的上面還有兩隻小耳朵
+    ctx.strokeStyle = h.color; ctx.lineWidth = 3.4; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(0, hy - 1, 15.2, Math.PI * 1.12, Math.PI * 1.88); ctx.stroke();
+    ctx.lineCap = 'butt';
+    [-1, 1].forEach(s => {
+      ctx.fillStyle = h.color;
+      ctx.beginPath(); ctx.arc(s * 14.5, hy + 2, 5.5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(s * 12, hy - 3.2, 2.4, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(s * 17, hy - 3.2, 2.4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#f6d7b8';
+      ctx.beginPath(); ctx.arc(s * 12, hy - 3.2, 1.15, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(s * 17, hy - 3.2, 1.15, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#3a3240';
+      ctx.beginPath(); ctx.arc(s * 13, hy + 1.4, .75, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(s * 16, hy + 1.4, .75, 0, Math.PI * 2); ctx.fill();
+    });
   } else if (h.style === 'glasses') { // 愛心墨鏡（只有正面看得到）
     if (o.back) return;
     const fx = 1.2, ey = hy + 1;
@@ -15736,11 +16065,11 @@ function tabDress(body) {
   const name = charName();
   const head = el('div', 'dress-head');
   const preview = el('div', 'dress-preview');
-  preview.appendChild(renderGirl(G.outfit, 120, 150, { back: dressBack }));
+  preview.appendChild(renderGirl(G.outfit, 132, 168, { back: dressBack }));
   head.appendChild(preview);
   const side = el('div', 'dress-side');
   side.appendChild(el('h3', '', `幫${name}換衣服`));
-  side.appendChild(note('點衣服就能穿上；還沒有的衣服會先用錢買下來，買過的隨時可以換。'));
+  side.appendChild(note('點大圖就能穿上。眼鏡、項鍊可以跟帽子、蝴蝶結一起戴。還沒有的會先用錢買，買過的隨時可以換。'));
   const turn = el('button', 'mini', dressBack ? '看正面' : '轉身看背面');
   turn.onclick = () => { dressBack = !dressBack; renderTab(); };
   side.appendChild(turn);
@@ -15753,12 +16082,13 @@ function tabDress(body) {
      小孩換髮色是一直換著玩的，每換一次收一次錢她就不會玩了。 */
   if (!sellMode) {
     body.appendChild(h3('髮型'));
-    const hgrid = el('div', 'grid');
+    const hgrid = el('div', 'grid dress-grid');
     HAIR_STYLES.forEach(hs => {
       const has = (G.hairOwned || []).includes(hs.id), wearing = G.hair.style === hs.id;
-      const c = el('div', 'card' + (wearing ? ' cur' : ''));
+      const c = el('button', 'card' + (wearing ? ' cur' : ''));
+      c.type = 'button';
       // 預覽用現在的髮色畫，她才看得出換上去是什麼樣子
-      c.appendChild(renderGirl(G.outfit, 56, 70, { hair: { style: hs.id, color: G.hair.color } }));
+      c.appendChild(renderGirl(G.outfit, 96, 120, { hair: { style: hs.id, color: G.hair.color } }));
       c.appendChild(el('div', 'nm', hs.name));
       c.appendChild(el('div', 'pr', wearing ? '✓ 用這個' : has ? '已經有了' : `💰 ${fmt(hs.price)}`));
       c.onclick = () => {
@@ -15769,6 +16099,7 @@ function tabDress(body) {
           Sound.play('coin');
         } else Sound.play('click');
         G.hair.style = hs.id;
+        try { speak(hs.name); } catch (e) {}
         commit();
       };
       hgrid.appendChild(c);
@@ -15783,7 +16114,7 @@ function tabDress(body) {
       b.style.background = hc.c;
       b.title = hc.name;
       b.setAttribute('aria-label', hc.name);
-      b.onclick = () => { G.hair.color = hc.id; Sound.play('click'); commit(); };
+      b.onclick = () => { G.hair.color = hc.id; Sound.play('click'); try { speak(hc.name); } catch (e) {} commit(); };
       cgrid.appendChild(b);
     });
     body.appendChild(cgrid);
@@ -15791,18 +16122,18 @@ function tabDress(body) {
 
   OUTFIT_SLOTS.forEach(slot => {
     body.appendChild(h3(slot.name));
-    const grid = el('div', 'grid');
+    const grid = el('div', 'grid dress-grid');
     CLOTHES.concat(PRIZE_CLOTHES.filter(c => ownsClothes(c.id)), PLACE_CLOTHES.filter(c => ownsClothes(c.id))).filter(c => c.slot === slot.key).forEach(item => {
       const has = ownsClothes(item.id), wearing = G.outfit[slot.key] === item.id;
       if (sellMode) {
         if (!has) return; // 賣東西時只列出自己有的
-        const pic = renderGirl(Object.assign({}, G.outfit, { [slot.key]: item.id }), 56, 70);
+        const pic = renderGirl(Object.assign({}, G.outfit, { [slot.key]: item.id }), 96, 120);
         grid.appendChild(sellCard(pic, item.name, item.price, clothesSellBlock(item.id), 0, () => sellClothes(item.id)));
         return;
       }
       const card = el('button', 'card' + (wearing ? ' cur' : '') + (!has && G.bells < item.price ? ' dim' : ''));
       const tryOn = Object.assign({}, G.outfit, { [slot.key]: item.id });
-      card.appendChild(renderGirl(tryOn, 56, 70));
+      card.appendChild(renderGirl(tryOn, 96, 120));
       card.appendChild(el('div', 'nm', item.name));
       card.appendChild(el('div', 'pr', wearing ? '穿著中' : has ? '已擁有' : '💰 ' + fmt(item.price)));
       card.onclick = () => {
@@ -24435,17 +24766,17 @@ const FASHION_THEMES = [
   { id: 'beach', icon: '🏖️', name: '海邊玩水', kw: ['泳', '草帽', '短褲', 'T恤', '墨鏡', '光腳', '夏'] },
   { id: 'princess', icon: '👑', name: '公主舞會', kw: ['公主', '皇冠', '洋裝', '蓬蓬', '花冠', '蝴蝶結'] },
   { id: 'halloween', icon: '🎃', name: '萬聖節派對', kw: ['南瓜', '巫', '惡魔', '幽靈', '吸血鬼', '披風'] },
-  { id: 'winter', icon: '❄️', name: '下雪天', kw: ['毛', '外套', '靴', '聖誕', '麋鹿', '長褲', '帽T'] },
-  { id: 'school', icon: '🏫', name: '開心上學', kw: ['制服', '學', '百褶', '皮鞋', '格子', '水手'] },
+  { id: 'winter', icon: '❄️', name: '下雪天', kw: ['毛', '外套', '靴', '聖誕', '麋鹿', '長褲', '帽T', '耳罩'] },
+  { id: 'school', icon: '🏫', name: '開心上學', kw: ['制服', '學', '百褶', '皮鞋', '格子', '水手', '眼鏡'] },
   { id: 'sport', icon: '🏃', name: '運動會', kw: ['運動', '球鞋', '短褲', '帽T', '練習服', 'T恤', '道服'] },
   { id: 'picnic', icon: '🌸', name: '春天野餐', kw: ['花', '櫻', '草帽', '裙', '洋裝', '條紋', '草莓', '雨鞋'] },
-  { id: 'party', icon: '🎉', name: '生日派對', kw: ['彩虹', '星星', '蝴蝶結', '洋裝', '公主鞋', '愛心', '蓬蓬'] }
+  { id: 'party', icon: '🎉', name: '生日派對', kw: ['彩虹', '星星', '蝴蝶結', '洋裝', '公主鞋', '愛心', '蓬蓬', '項鍊', '派對'] }
 ];
 const FASHION_PRIZE = [150, 90, 50, 30];
 function fashionPool(slot) { return Object.values(CLOTHES_BY_ID).filter(c => c.slot === slot && !/^dad_/.test(c.id)); }
-function fashionScore(theme, ids) {   // 每一件：符合主題 3 分、普通 1 分、沒戴頭飾 .5；四件都符合多 3 分
+function fashionScore(theme, ids) {   // 每一件：符合主題 3 分、普通 1 分、沒戴 .5；四件都符合多 3 分
   let s = 0, hit = 0;
-  OUTFIT_SLOTS.forEach(({ key }) => { const c = CLOTHES_BY_ID[ids[key]]; if (!c) return; if (c.id === 'head_none') { s += .5; return; } const ok = theme.kw.some(k => c.name.includes(k)); s += ok ? 3 : 1; if (ok) hit++; });
+  OUTFIT_SLOTS.forEach(({ key }) => { const c = CLOTHES_BY_ID[ids[key]]; if (!c) return; if (/_none$/.test(c.id)) { s += .5; return; } const ok = theme.kw.some(k => c.name.includes(k)); s += ok ? 3 : 1; if (ok) hit++; });
   return s + (hit >= 4 ? 3 : hit >= 3 ? 1.5 : 0);
 }
 function openFashionShow() { const w = openGameWindow('👗 換裝走秀', '看主題，在時間內挑衣服搭配，再上台走秀！評審會給星星。衣服都可以借來穿（走秀完會換回來）。'); pickLevelRow(w, [{ name: '慢慢挑', t: 90, mul: 1 }, { name: '普通', t: 60, mul: 1 }, { name: '快快挑！', t: 40, mul: 2 }], L => `第一名 💰 ${FASHION_PRIZE[0] * L.mul}`, L => fashionDress(w, L)); }
@@ -24459,7 +24790,7 @@ function fashionDress(w, L) {
   const drawPrev = () => { prev.innerHTML = ''; prev.appendChild(renderGirl(pick, 130, 160)); };
   const drawGrid = () => {
     tabs.innerHTML = ''; OUTFIT_SLOTS.forEach(sl => { const b = el('button', sl.key === slot ? 'on' : '', sl.name); b.onclick = () => { slot = sl.key; drawGrid(); }; tabs.appendChild(b); });
-    grid.innerHTML = ''; fashionPool(slot).forEach(c => { const b = el('button', 'fs-item' + (pick[slot] === c.id ? ' on' : '')); b.appendChild(renderGirl(Object.assign({}, pick, { [slot]: c.id }), 48, 60)); b.appendChild(el('span', '', c.name)); b.onclick = () => { pick[slot] = c.id; Sound.play('click'); drawPrev(); drawGrid(); }; grid.appendChild(b); });
+    grid.innerHTML = ''; fashionPool(slot).forEach(c => { const b = el('button', 'fs-item' + (pick[slot] === c.id ? ' on' : '')); b.appendChild(renderGirl(Object.assign({}, pick, { [slot]: c.id }), 64, 80)); b.appendChild(el('span', '', c.name)); b.onclick = () => { pick[slot] = c.id; Sound.play('click'); drawPrev(); drawGrid(); }; grid.appendChild(b); });
   };
   drawPrev(); drawGrid();
   try { speak(`主題是${theme.name}！`); } catch (e) {}
