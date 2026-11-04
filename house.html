@@ -20416,15 +20416,49 @@ function islDraw(now) {
   isl.coins.forEach(c => items.push({ y: (c.y + .6) * T, draw: () => islDrawCoin(ctx, c, tt) }));
   isl.glow = [];
   items.sort((a, b) => a.y - b.y).forEach(it => it.draw());
+  if (typeof isleFunDraw === 'function') isleFunDraw(ctx, now);   // 天氣在人上面；說話泡泡稍後畫，才不會被沙子、彩虹蓋住
   islDrawFx(ctx, now);
   islDrawAct(ctx, now);
-  if (typeof isleFunDraw === 'function') isleFunDraw(ctx, now);
   islDrawDaylight(ctx, v, W, H, now);
   ctx.restore();
 }
 /* ===== 🎲 小島上的趣味事件（偶爾才來，不罰、不拿走東西）=====
-   龍捲風、颱風、下雪、小恐龍跑過。有動畫和一句話。點一下可以拿一點點零用錢（一天最多 3 次）。
-   小遊戲、選單、釣魚開著的時候不出現，也不會把人吹走。 */
+   龍捲風、颱風、下雪、小恐龍，還有打雷、沙塵暴、彩虹、流星雨、冰雹。
+   有動畫和一句話。點一下可以拿一點點零用錢（全部合在一起，一天最多 3 次，記在 G.funDay）。
+   小遊戲、選單、釣魚開著的時候不出現，也不會把人吹走、不會扣東西。
+   這些函式都在讀檔之後的 script，normalizeSave 不會呼叫它們。 */
+function isleFunKinds() {
+  return ['tornado', 'storm', 'snow', 'dino', 'thunder', 'sand', 'rainbow', 'meteor', 'hail'];
+}
+function isleFunWide(k) {   // 整片天氣：點小朋友附近就算點到；龍捲風和小恐龍要點在牠身上
+  return k === 'storm' || k === 'snow' || k === 'thunder' || k === 'sand' || k === 'rainbow' || k === 'meteor' || k === 'hail';
+}
+function isleFunReach(k) {
+  if (k === 'thunder' || k === 'rainbow') return 5.2;   // 閃電、彩虹在比較高的地方
+  if (k === 'meteor') return 4.2;
+  if (k === 'sand' || k === 'hail') return 2.6;
+  if (k === 'storm' || k === 'snow') return 2.2;
+  return 1.5;
+}
+function isleFunDur(k) {
+  if (k === 'thunder') return 6.8;
+  if (k === 'rainbow') return 8;
+  if (k === 'snow' || k === 'storm' || k === 'sand' || k === 'meteor' || k === 'hail') return 9;
+  return 7.5;
+}
+function isleFunTalk(k) {
+  return {
+    tornado: ['哇，小龍捲風！抓緊帽子！', '風在轉圈圈，點一下它！'],
+    storm: ['颱風來了，雨好大！', '站好就不會怎樣，點一下拿禮物！'],
+    snow: ['下雪了，好白好漂亮！', '接接看雪花！'],
+    dino: ['小恐龍跑來玩了！', '點一下牠，跟牠說你好！'],
+    thunder: ['天空閃了一下，是小小的閃電！', '點一下亮亮的光，拿小禮物！'],
+    sand: ['黃黃的沙子飄過來囉！', '點一下沙塵暴！'],
+    rainbow: ['哇，好大的彩虹！', '點一下彩虹，許個願！'],
+    meteor: ['流星雨來了，快許願！', '點一下亮亮的流星！'],
+    hail: ['小冰雹落下來了，像彈珠！', '點一下，接住冰冰的珠珠！']
+  }[k];
+}
 function isleFunBusy() {
   if (!isl) return true;
   const md = document.getElementById('modal');
@@ -20436,23 +20470,27 @@ function isleFunBusy() {
 }
 function isleFunSay(text) {
   if (!isl || !text) return;
+  isl.fx = isl.fx.filter(f => f.k !== 'say');   // 同時只留一句話
   islAddFx('say', isl.x, isl.y - 2.2, 2600, { text });
   try { if (typeof stopSpeak === 'function') stopSpeak(); if (typeof speak === 'function') speak(text); } catch (e) {}
 }
 function isleFunStart(kind) {
   if (!isl) return null;
-  const kinds = ['tornado', 'storm', 'snow', 'dino'];
+  const kinds = isleFunKinds();
   const k = kinds.indexOf(kind) >= 0 ? kind : kinds[Math.floor(Math.random() * kinds.length)];
-  const talk = {
-    tornado: ['哇，小龍捲風！抓緊帽子！', '風在轉圈圈，點一下它！'],
-    storm: ['颱風來了，雨好大！', '站好就不會怎樣，點一下拿禮物！'],
-    snow: ['下雪了，好白好漂亮！', '接接看雪花！'],
-    dino: ['小恐龍跑來玩了！', '點一下牠，跟牠說你好！']
-  }[k];
+  const talk = isleFunTalk(k);
   const dir = Math.random() < .5 ? 1 : -1;
-  isl.fun = { kind: k, t: 0, dur: k === 'snow' || k === 'storm' ? 9 : 7.5, x: isl.x - dir * 4.2, y: isl.y + (Math.random() - .5) * 1.2, vx: dir * (k === 'dino' ? 2.4 : 1.8), talk, got: false };
+  isl.fun = { kind: k, t: 0, dur: isleFunDur(k), x: isl.x - dir * 4.2, y: isl.y + (Math.random() - .5) * 1.2, vx: dir * (k === 'dino' ? 2.4 : 1.8), talk, got: false };
   isleFunSay(talk[0]);
-  try { Sound.play(k === 'dino' ? 'boing' : k === 'storm' ? 'whoosh' : 'magic'); } catch (e) {}
+  try {
+    if (k === 'thunder') Sound.play('thunder');   // 低低的一聲雷，只響一次，不要連轟
+    else if (k === 'sand') { Sound.play('whoosh'); Sound.play('sand'); }
+    else if (k === 'dino') Sound.play('boing');
+    else if (k === 'storm') Sound.play('whoosh');
+    else if (k === 'meteor') Sound.play('starDing');
+    else if (k === 'hail') Sound.play('knock');
+    else Sound.play('magic');
+  } catch (e) {}
   return isl.fun;
 }
 function isleFunStep(dt) {
@@ -20473,9 +20511,9 @@ function isleFunStep(dt) {
 function isleFunHit(t) {
   const f = isl && isl.fun; if (!f || !t) return false;
   const fx = t.fx != null ? t.fx : t.x, fy = t.fy != null ? t.fy : t.y;
-  const x = f.kind === 'storm' || f.kind === 'snow' ? isl.x : f.x;
-  const y = f.kind === 'storm' || f.kind === 'snow' ? isl.y : f.y;
-  return Math.hypot(fx - x, fy - y) < (f.kind === 'storm' || f.kind === 'snow' ? 2.2 : 1.5);
+  const wide = isleFunWide(f.kind);
+  const x = wide ? isl.x : f.x, y = wide ? isl.y : f.y;
+  return Math.hypot(fx - x, fy - y) < isleFunReach(f.kind);
 }
 function isleFunTap() {
   const f = isl && isl.fun; if (!f) return false;
@@ -20497,6 +20535,121 @@ function isleFunTap() {
     isleFunSay('今天的小禮物送完了，明天再來！');
   }
   return true;
+}
+function isleFunViewRect() {   // 現在鏡頭看得到的世界範圍（天氣畫在這一片）
+  const v = islView(), pad = 24;
+  return { x: v.cx - v.W / 2 / v.s - pad, y: v.cy - v.H / 2 / v.s - pad, w: v.W / v.s + pad * 2, h: v.H / v.s + pad * 2 };
+}
+function isleFunBoltOn(t) {   // 三次短短的亮一下，中間是暗的，不要一直閃
+  const hits = [0.45, 2.4, 4.6];
+  let a = 0;
+  hits.forEach(h => { const d = t - h; if (d >= 0 && d < 0.42) a = Math.max(a, 1 - d / 0.42); });
+  return a;
+}
+function isleFunZig(ctx, x, top, bot, jag) {
+  ctx.beginPath(); ctx.moveTo(x, top);
+  const n = 6;
+  for (let i = 1; i <= n; i++) ctx.lineTo(i === n ? x : x + (i % 2 ? jag : -jag), top + (bot - top) * (i / n));
+}
+function isleFunCloud(ctx, x, y, s) {   // 笑笑的小雲，打雷才不會看起來兇
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.fillStyle = 'rgba(255,255,255,.94)';
+  [[0, 2, 16], [-14, 6, 11], [14, 6, 12], [-2, -8, 10]].forEach(([a, b, r]) => { ctx.beginPath(); ctx.arc(a, b, r, 0, 7); ctx.fill(); });
+  ctx.fillStyle = '#6f93b4'; ctx.beginPath(); ctx.arc(-4, 2, 1.3, 0, 7); ctx.arc(4, 2, 1.3, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#6f93b4'; ctx.lineWidth = 1.3; ctx.beginPath(); ctx.arc(0, 6, 3.4, 0.25, Math.PI - 0.25); ctx.stroke();
+  ctx.restore();
+}
+function isleFunStar(ctx, x, y, ro, ri) {
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const rad = i % 2 ? ri : ro, a = -Math.PI / 2 + i * Math.PI / 5;
+    const px = x + Math.cos(a) * rad, py = y + Math.sin(a) * rad;
+    if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py);
+  }
+  ctx.closePath(); ctx.fill();
+}
+function isleFunDrawThunder(ctx, f) {
+  const T = ISL.T, px = isl.x * T, py = isl.y * T, flash = isleFunBoltOn(f.t), base = ctx.globalAlpha;
+  if (flash > 0.02) {
+    const r = isleFunViewRect();
+    ctx.globalAlpha = base * (0.32 * flash);
+    ctx.fillStyle = '#fff6dc'; ctx.fillRect(r.x, r.y, r.w, r.h);   // 暖暖的亮一下，不是白晃晃的
+    ctx.globalAlpha = base;
+  }
+  const bx = px + 2, top = py - 172, bot = py - 104;   // 停在說話泡泡上面，不要打到人
+  isleFunCloud(ctx, bx - 32, top + 10, .95);
+  isleFunCloud(ctx, bx + 30, top + 2, .74);
+  if (flash > 0.05) {
+    const jag = 14;
+    ctx.save(); ctx.globalAlpha = base * Math.min(1, flash * 1.3); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = 'rgba(255, 226, 120, .95)'; ctx.lineWidth = 7; isleFunZig(ctx, bx, top + 18, bot, jag); ctx.stroke();
+    ctx.strokeStyle = '#fffef8'; ctx.lineWidth = 2.4; ctx.stroke();
+    ctx.strokeStyle = 'rgba(255, 236, 160, .9)'; ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.moveTo(bx + 8, top + 18 + (bot - top - 18) * .42); ctx.lineTo(bx + 32, top + 18 + (bot - top - 18) * .58); ctx.lineTo(bx + 16, top + 18 + (bot - top - 18) * .78); ctx.stroke();
+    ctx.restore(); ctx.globalAlpha = base;
+  }
+}
+function isleFunDrawSand(ctx, f, now) {
+  const dir = f.vx < 0 ? -1 : 1, r = isleFunViewRect(), base = ctx.globalAlpha;
+  ctx.globalAlpha = base * 0.28; ctx.fillStyle = '#e7c56a'; ctx.fillRect(r.x, r.y, r.w, r.h);
+  ctx.globalAlpha = base;
+  const span = r.w + 90;
+  for (let i = 0; i < 56; i++) {
+    const speed = 80 + (i % 5) * 26;
+    let u = ((now / 1000) * speed * dir + i * 53) % span; if (u < 0) u += span;
+    const sx = r.x - 30 + u, sy = r.y + 16 + (i * 31) % Math.max(40, r.h - 28) + Math.sin(now / 260 + i) * 5;
+    ctx.fillStyle = i % 3 ? 'rgba(196, 142, 58, .78)' : 'rgba(232, 190, 96, .9)';
+    ctx.beginPath(); ctx.ellipse(sx, sy, 9 + (i % 4) * 2.4, 2.2, dir * -0.45, 0, 7); ctx.fill();
+  }
+  ctx.globalAlpha = base;
+}
+function isleFunDrawRainbow(ctx, now) {
+  const T = ISL.T, cx = isl.x * T, cy = isl.y * T + 4, base = ctx.globalAlpha;
+  const colors = ['#ff6b6b', '#ff9f43', '#ffe066', '#6dce62', '#5eb3f6', '#9a86f0'];
+  const inner = 108;   // 拱在說話泡泡上面，人還看得到
+  ctx.lineCap = 'butt';
+  colors.forEach((c, i) => {
+    ctx.globalAlpha = base * 0.92; ctx.strokeStyle = c; ctx.lineWidth = 8;
+    ctx.beginPath(); ctx.arc(cx, cy, inner + i * 8, Math.PI, Math.PI * 2); ctx.stroke();   // 從左到右、往上拱
+  });
+  ctx.fillStyle = '#fff';
+  for (let i = 0; i < 7; i++) {
+    const ang = Math.PI + (i / 6) * Math.PI, rr = inner + 5 * 8 + 8;
+    const x = cx + Math.cos(ang) * rr, y = cy + Math.sin(ang) * rr;
+    ctx.globalAlpha = base * (0.35 + 0.65 * Math.abs(Math.sin(now / 180 + i)));
+    ctx.beginPath(); ctx.arc(x, y, 2.4, 0, 7); ctx.fill();
+  }
+  ctx.globalAlpha = base;
+  isleFunCloud(ctx, cx - (inner + 36), cy - 2, .72); isleFunCloud(ctx, cx + (inner + 36), cy - 2, .68);
+}
+function isleFunDrawMeteor(ctx, f) {
+  const T = ISL.T, r = isleFunViewRect(), base = ctx.globalAlpha;
+  for (let i = 0; i < 8; i++) {
+    const u = ((f.t * 0.38 + i * 0.15) % 1);
+    const x0 = i === 0 ? isl.x * T - 140 : r.x + ((i * 89) % Math.max(40, r.w * 0.72));
+    const y0 = i === 0 ? isl.y * T - 175 : r.y + 10 + (i % 4) * 24;
+    const dx = i === 0 ? 190 : r.w * 0.36, dy = i === 0 ? 46 : r.h * 0.3;
+    const x = x0 + u * dx, y = y0 + u * dy;
+    const fade = u < 0.08 ? u / 0.08 : u > 0.88 ? (1 - u) / 0.12 : 1;
+    ctx.globalAlpha = base * fade; ctx.strokeStyle = i % 2 ? '#fff6c2' : '#ffe08a'; ctx.lineWidth = i === 0 ? 3 : 2; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x - dx * 0.16, y - dy * 0.16); ctx.lineTo(x, y); ctx.stroke();
+    ctx.fillStyle = '#fffef6'; isleFunStar(ctx, x, y, i === 0 ? 8 : 5.2, i === 0 ? 3.3 : 2.2);
+  }
+  ctx.globalAlpha = base;
+}
+function isleFunDrawHail(ctx, now) {
+  const r = isleFunViewRect(), base = ctx.globalAlpha, ground = isl.y * ISL.T + 6;
+  for (let i = 0; i < 30; i++) {
+    const sx = r.x + 12 + ((i * 67) % Math.max(30, r.w - 24));
+    const fall = ((now / 12 + i * 29) % 220);
+    let sy = r.y - 10 + fall;
+    if (sy > ground) { const b = Math.min(1, (sy - ground) / 36); sy = ground - Math.sin(b * Math.PI) * 16; }
+    const rad = 2.6 + (i % 3) * 1.15;
+    ctx.globalAlpha = base * 0.96; ctx.fillStyle = '#f4fbff'; ctx.strokeStyle = '#7ec4e4'; ctx.lineWidth = 1.3;
+    ctx.beginPath(); ctx.arc(sx, sy, rad, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(sx - rad * 0.28, sy - rad * 0.32, rad * 0.34, 0, 7); ctx.fill();
+  }
+  ctx.globalAlpha = base;
 }
 function isleFunDraw(ctx, now) {
   const f = isl && isl.fun; if (!f) return;
@@ -20526,7 +20679,12 @@ function isleFunDraw(ctx, now) {
       const sy = ((now / 22 + i * 29) % 240) - 30;
       ctx.beginPath(); ctx.arc(sx, sy, 1.6 + (i % 3), 0, 7); ctx.fill();
     }
-  } else if (typeof MV !== 'undefined' && MV.dino) {
+  } else if (f.kind === 'thunder') isleFunDrawThunder(ctx, f);
+  else if (f.kind === 'sand') isleFunDrawSand(ctx, f, now);
+  else if (f.kind === 'rainbow') isleFunDrawRainbow(ctx, now);
+  else if (f.kind === 'meteor') isleFunDrawMeteor(ctx, f);
+  else if (f.kind === 'hail') isleFunDrawHail(ctx, now);
+  else if (typeof MV !== 'undefined' && MV.dino) {
     MV.dino(ctx, px, py + 8, .62, '#7dba6a', now / 200, f.vx < 0);
   }
   ctx.restore();
@@ -20769,7 +20927,7 @@ function islDrawDaylight(ctx, v, W, H, now) {   // 🌤️ 早上、傍晚、晚
 function islDrawTree(ctx, x, y, now) {
   if (isl.m.isletAt && isl.m.isletAt[y][x] === 'candy') return islDrawCandyTree(ctx, x, y, now);   // 🍬 糖果島：棒棒糖樹
   const T = ISL.T, px = x * T + T / 2, py = (y + 1) * T - 3, st = isl.shake[x + ',' + y], sh0 = st && now - st < 500 ? Math.sin((now - st) / 40) * 3 * (1 - (now - st) / 500) : 0;
-  const wind = isl.fun && (isl.fun.kind === 'storm' || isl.fun.kind === 'tornado') ? Math.sin(now / 70 + x) * (isl.fun.kind === 'tornado' ? 5 : 3) : 0, sh = sh0 + wind;
+  const wind = isl.fun && (isl.fun.kind === 'storm' || isl.fun.kind === 'tornado' || isl.fun.kind === 'sand') ? Math.sin(now / 70 + x) * (isl.fun.kind === 'tornado' ? 5 : isl.fun.kind === 'sand' ? 3.2 : 3) : 0, sh = sh0 + wind;   // 沙塵暴也讓樹輕輕晃，人不會被吹走
   ctx.fillStyle = 'rgba(40,60,30,.2)'; ctx.beginPath(); ctx.ellipse(px, py, 15, 6, 0, 0, 7); ctx.fill();
   ctx.fillStyle = '#9a6b3f'; ctx.fillRect(px - 4, py - 22, 8, 22);
   ctx.save(); ctx.translate(sh, 0);

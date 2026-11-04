@@ -69,9 +69,13 @@ const path = require('path');
     const pth = islFindPath(m, home.door[0], home.door[1], (x, y) => x === bld.door[0] && y === bld.door[1]);
     const last = pth && pth[pth.length - 1];
     o.islePool = bld.w * bld.h >= 18 && last && last[0] === bld.door[0] && last[1] === bld.door[1];
-    // 趣味事件：四種都有、不移動玩家、點了有錢、壞存檔清掉、選單開著不跳出來
+    // 趣味事件：舊的四種＋打雷、沙塵暴、彩虹、流星雨、冰雹。不移動玩家、不扣東西、點了有錢、共用每天 3 次、壞存檔清掉、選單或小遊戲開著不跳出來
     openIsland(); $('#modal').hidden = true;
     const ix = isl.x, iy = isl.y, bell0 = G.bells;
+    const funKinds = isleFunKinds();
+    o.kindList = funKinds.join(',') === 'tornado,storm,snow,dino,thunder,sand,rainbow,meteor,hail';
+    const talks = funKinds.map(k => (isleFunTalk(k) || []).join('\n')).join('\n');
+    o.funEmoji = noBan(talks) && funKinds.every(k => { const t = isleFunTalk(k); return t && t.length === 2 && t[0].length >= 4 && t[1].length >= 4; });
     ['tornado', 'storm', 'snow', 'dino'].forEach(k => { isleFunStart(k); isleFunStep(0.2); });
     o.kinds = isl.fun && isl.fun.kind === 'dino' && isl.x === ix && isl.y === iy;
     isleFunTap();
@@ -82,10 +86,48 @@ const path = require('path');
     o.oldSave = normalizeSave(Object.assign({}, raw, { funDay: undefined })).rooms.length === G.rooms.length;
     const badDay = normalizeSave(Object.assign({}, raw, { funDay: { d: 3, n: -4 } }));
     o.badFun = badDay && badDay.funDay == null && badDay.bells === raw.bells;
+    const bare = JSON.parse(JSON.stringify(G)); delete bare.funDay;
+    const oldRead = normalizeSave(bare);
+    o.oldReads = !!(oldRead && oldRead.bells === raw.bells && oldRead.rooms.length === raw.rooms.length && oldRead.wardrobe.length === raw.wardrobe.length && oldRead.funDay == null);
     isl.fun = null; isl.nextFun = 0; $('#modal').hidden = false; isleFunStep(2);
     o.noCover = !isl.fun;
+    $('#modal').hidden = true;
+    const food0 = JSON.stringify(G.food), hunger0 = G.kid.hunger, mood0 = G.kid.mood, ward0 = G.wardrobe.length, keys0 = Object.keys(G).sort().join();
+    let stay = true, drew = true, hitOk = true;
+    ['thunder', 'sand', 'rainbow', 'meteor', 'hail'].forEach(k => {
+      isleFunStart(k); isleFunStep(0.25);
+      if (!isl.fun || isl.fun.kind !== k || isl.x !== ix || isl.y !== iy) stay = false;
+      if (!isleFunHit({ fx: isl.x, fy: isl.y }) || isleFunHit({ fx: isl.x + 12, fy: isl.y + 12 })) hitOk = false;
+      isl.fun.t = k === 'thunder' ? 0.48 : 1.3;
+      try { islDraw(performance.now()); } catch (e) { drew = false; }
+    });
+    o.newStay = stay && hitOk && isl.x === ix && isl.y === iy;
+    o.drawNew = drew;
+    o.noHarm = JSON.stringify(G.food) === food0 && G.kid.hunger === hunger0 && G.kid.mood === mood0 && G.wardrobe.length === ward0 && Object.keys(G).sort().join() === keys0;
+    // 打雷會讓畫面變亮；沙塵暴會偏黃。白天、跟沒有事件的同一張圖比
+    ISL_HOUR_TEST = 12;
+    const lum = () => { const c = isl.cv, g = c.getContext('2d'), w = c.width, h = c.height; const d = g.getImageData(Math.floor(w * .25), Math.floor(h * .15), Math.floor(w * .5), Math.floor(h * .55)).data; let s = 0, rb = 0, n = 0; for (let i = 0; i < d.length; i += 16) { s += d[i] + d[i + 1] + d[i + 2]; rb += d[i] - d[i + 2]; n++; } return { s: s / Math.max(1, n), rb: rb / Math.max(1, n) }; };
+    isl.fun = null; islDraw(performance.now()); const basePx = lum();
+    isleFunStart('thunder'); isl.fun.t = 0.48; islDraw(performance.now()); const boltPx = lum();
+    isleFunStart('sand'); isl.fun.t = 1.2; islDraw(performance.now()); const sandPx = lum();
+    o.flash = boltPx.s > basePx.s + 8;
+    o.dust = sandPx.rb > basePx.rb + 12;
+    // 次數上限是大家一起算：新事件也不會在送完之後再給錢，還沒滿還是給
+    G.funDay.n = 3; isl.fun.got = false; const bCap = G.bells; isleFunTap();
+    o.capStill = G.bells === bCap && G.funDay.n === 3;
+    G.funDay.n = 2; isl.fun.got = false; const bShare = G.bells; isleFunTap();
+    o.share = G.bells > bShare && G.funDay.n === 3 && JSON.stringify(G.food) === food0 && G.kid.hunger === hunger0 && G.wardrobe.length === ward0;
+    isleFunStart('hail'); const bx = isl.x, by = isl.y, bh = G.bells; isl.fun.t = isl.fun.dur + 1; isleFunStep(0.1);
+    o.ended = !isl.fun && isl.x === bx && isl.y === by && G.bells === bh;
+    isl.fun = null; isl.nextFun = 0; isl.act = { kind: 'fish' }; isleFunStep(3);
+    o.noFish = !isl.fun;
+    isl.act = null; $('#modal').hidden = false; isleFunStep(3);
+    o.noMenu = !isl.fun;
     $('#modal').hidden = true; isleFunStart('snow');
     try { islDraw(performance.now()); o.draw = true; } catch (e) { o.draw = false; }
+    let drawAll = true;
+    funKinds.forEach(k => { isleFunStart(k); isl.fun.t = k === 'thunder' ? 0.48 : 1.1; try { islDraw(performance.now()); } catch (e) { drawAll = false; } });
+    o.drawAll = drawAll;
     closeIsland();
     return o;
   });
