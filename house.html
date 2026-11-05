@@ -542,6 +542,8 @@ button.pass { font: inherit; }
 .itemmenu button { border: none; background: none; text-align: left; padding: 7px 12px; border-radius: 9px; font-size: 14px; white-space: nowrap; }
 .itemmenu button:hover { background: var(--chip); }
 .itemmenu .menu-sub { font-size: 12px; color: var(--muted); padding: 6px 12px 2px; border-top: 1px dashed var(--line); margin-top: 2px; }
+/* 餵食選單很長時留在舞台裡面自己捲，不要把整頁撐出捲軸（捲軸一閃，房間就跟著閃） */
+.foodmenu { max-height: min(420px, calc(100% - 16px)); overflow-y: auto; overscroll-behavior: contain; }
 .petcard {
   position: absolute; top: 12px; left: 12px; width: 168px; z-index: 4;
   background: rgba(255,250,240,.94); border: 2px solid var(--line); border-radius: 14px;
@@ -3760,7 +3762,7 @@ const Sound = (() => {
     squish() { tone({ f0: 320, f1: 190, dur: .22, type: 'triangle', vol: .45, vib: 25 }); },
     // 放開回彈「啵嚶」
     boing() { tone({ f0: 220, f1: 620, dur: .18, type: 'sine', vol: .45, vib: 40 }); },
-    eat() { [0, .16, .32].forEach(at => tone({ f0: 260, f1: 200, dur: .09, type: 'square', vol: .12, at })); setTimeout(fx.petHappy, 520); },
+    eat() { tone({ f0: 340, f1: 180, dur: .14, type: 'triangle', vol: .16 }); },
     bath() { for (let i = 0; i < 9; i++) tone({ f0: 900 + Math.random() * 900, f1: 1800 + Math.random() * 600, dur: .07, vol: .22, at: i * .07 + Math.random() * .03 }); },
     place() { tone({ f0: 180, f1: 90, dur: .14, type: 'sine', vol: .6 }); noise({ dur: .06, vol: .15, freq: 900 }); },
     pickUp() { tone({ f0: 420, f1: 640, dur: .08, vol: .3 }); },
@@ -5945,6 +5947,39 @@ function migrateWornAccessory(o) {
   }
   return o;
 }
+/* 進行中的世界大賽。只收這一屆的五場（場次、五個國家、對手、陪榜）。
+   壞掉就拿掉這一欄，其他成績（名次、冠軍次數、今天打了幾次）留著。舊存檔沒有這一欄也照常讀。 */
+function sanitizeWorldRun(wv) {
+  try {
+    if (!wv || wv.run == null) return;
+    const run = wv.run;
+    const obj = v => !!v && typeof v === 'object' && !Array.isArray(v);
+    const countries = { '冰雪國': 1, '沙漠國': 1, '森林國': 1, '大海國': 1, '火山國': 1, '雲朵國': 1, '糖果國': 1, '星星國': 1 };
+    const one = (p, allowMoon) => {
+      if (!obj(p) || typeof p.id !== 'string' || !NEIGHBOR_BY_ID[p.id]) return false;
+      if (typeof p.venue !== 'string') return false;
+      if (p.venue === '月球') return !!allowMoon;
+      if (!countries[p.venue]) return false;
+      if (!(Number.isInteger(p.bi) && p.bi >= 0 && p.bi <= 5)) return false;
+      if (typeof p.short !== 'string' || p.short.length < 1 || p.short.length > 24) return false;
+      return true;
+    };
+    let bad = !obj(run) || !(Number.isInteger(run.r) && run.r >= 0 && run.r <= 4);
+    bad = bad || !Array.isArray(run.path) || run.path.length !== 5 || run.path[4] !== '月球';
+    if (!bad) {
+      const seen = {};
+      for (let i = 0; i < 4; i++) {
+        if (!countries[run.path[i]] || seen[run.path[i]]) bad = true;
+        seen[run.path[i]] = 1;
+      }
+    }
+    bad = bad || !Array.isArray(run.opps) || run.opps.length !== 5;
+    if (!bad) for (let i = 0; i < 5; i++) if (!one(run.opps[i], true) || run.opps[i].venue !== run.path[i]) bad = true;
+    bad = bad || !Array.isArray(run.fillers) || run.fillers.length > 32;
+    if (!bad) for (let i = 0; i < run.fillers.length; i++) if (!one(run.fillers[i], false)) bad = true;
+    if (bad) delete wv.run;
+  } catch (e) { try { delete wv.run; } catch (e2) {} }
+}
 function normalizeSave(g) {
   if (!g || typeof g !== 'object' || !Array.isArray(g.rooms) || !g.rooms.length) return null;
   /* 舊版少欄位可以補；「型態不對」是壞掉的資料，不能當成舊版收下來
@@ -6123,7 +6158,7 @@ function normalizeSave(g) {
   if (out.enLearn != null) { if (!isObj(out.enLearn)) delete out.enLearn; else out.enLearn = Object.fromEntries(Object.entries(out.enLearn).filter(([k, v]) => k.length <= 30 && /^[A-Za-z ]+$/.test(k) && v === 1)); }   // 🔤 學過的英文單字
   if (out.cloudKing != null && !(isObj(out.cloudKing) && Number.isInteger(out.cloudKing.beat) && out.cloudKing.beat >= 0 && out.cloudKing.beat < 1e6)) delete out.cloudKing;   // ☁️ 打倒烏雲大王幾次
   if (out.noSeasonFx != null && out.noSeasonFx !== 1) delete out.noSeasonFx;   // 🍂 關掉季節裝飾
-  if (out.tkd && isObj(out.tkd)) { if (out.tkd.coach != null && !(Number.isInteger(out.tkd.coach) && out.tkd.coach >= 0 && out.tkd.coach < 1e6)) delete out.tkd.coach; if (out.tkd.world != null) { const wv = out.tkd.world; if (!isObj(wv)) delete out.tkd.world; else { if (!(Number.isInteger(wv.best) && wv.best >= -1 && wv.best <= 5)) wv.best = -1; if (!(Number.isInteger(wv.gold) && wv.gold >= 0 && wv.gold < 1e6)) wv.gold = 0; if (wv.v == null) { if (wv.best === 3) wv.best = 5; else if (wv.best === 2) wv.best = 4; else if (wv.best === 1) wv.best = 3; wv.v = 2; } else if (wv.v !== 2) { delete wv.v; wv.v = 2; } if (wv.d != null && typeof wv.d !== 'string') { delete wv.d; delete wv.n; } if (wv.n != null && !(Number.isInteger(wv.n) && wv.n >= 0 && wv.n < 100)) wv.n = 0; } } }   // 👑 教練、🌏 世界大賽（v 沒有＝舊三場：3 冠軍→5、2 銀→4、1 銅→3）
+  if (out.tkd && isObj(out.tkd)) { if (out.tkd.coach != null && !(Number.isInteger(out.tkd.coach) && out.tkd.coach >= 0 && out.tkd.coach < 1e6)) delete out.tkd.coach; if (out.tkd.world != null) { const wv = out.tkd.world; if (!isObj(wv)) delete out.tkd.world; else { if (!(Number.isInteger(wv.best) && wv.best >= -1 && wv.best <= 5)) wv.best = -1; if (!(Number.isInteger(wv.gold) && wv.gold >= 0 && wv.gold < 1e6)) wv.gold = 0; if (wv.v == null) { if (wv.best === 3) wv.best = 5; else if (wv.best === 2) wv.best = 4; else if (wv.best === 1) wv.best = 3; wv.v = 2; } else if (wv.v !== 2) { delete wv.v; wv.v = 2; } if (wv.d != null && typeof wv.d !== 'string') { delete wv.d; delete wv.n; } if (wv.n != null && !(Number.isInteger(wv.n) && wv.n >= 0 && wv.n < 100)) wv.n = 0; sanitizeWorldRun(wv); } } }   // 👑 教練、🌏 世界大賽（v 沒有＝舊三場：3 冠軍→5、2 銀→4、1 銅→3；run＝進行中的五場，休息或重開可以接著比）
   if (out.moves != null) { if (!isObj(out.moves)) delete out.moves; else out.moves = Object.fromEntries(Object.entries(out.moves).filter(([k, v]) => /^[a-z]{2,12}$/.test(k) && v === 1)); }   // 🥋 學會的朋友招式
   if (out.duel != null) { if (!isObj(out.duel)) delete out.duel; else ['win', 'lose'].forEach(k => { if (!(Number.isInteger(out.duel[k]) && out.duel[k] >= 0 && out.duel[k] < 1e6)) out.duel[k] = 0; }); }   // ⚔️ 對決贏輸幾次
   if (out.hanzi != null) { if (!isObj(out.hanzi)) delete out.hanzi; else out.hanzi = Object.fromEntries(Object.entries(out.hanzi).filter(([k, v]) => /^[\u4e00-\u9fff]$/.test(k) && v === 1)); }   // 🀄 認得的國字
@@ -8442,8 +8477,8 @@ const fufu = {
   fx: []        // 頭上冒出的小圖（音符、愛心…）
 };
 
-function fufuSay(text, ms) {
-  if (text && text !== fufu.say) Sound.play('talk', text);
+function fufuSay(text, ms, quiet) {
+  if (!quiet && text && text !== fufu.say) Sound.play('talk', text);
   fufu.say = text;
   fufu.sayUntil = performance.now() + (ms || 2600);
 }
@@ -9440,7 +9475,7 @@ function kidEat(foodId, src) {
     fufuSay(pickLine('kidGrow'), 3000);
     toast(`${f.emoji} 好營養！${charName()}會健康、快快長大、壯壯的！💪`);
   } else {
-    fufuSay(pickLine('kidEat'));
+    fufuSay(pickLine('kidEat'), 2600, true);   // 吃的聲音已經響過一次，不要再疊一串說話音
   }
   if (typeof dailyHit === 'function') try { dailyHit('kidEat'); } catch (e) {}
   saveGame();
@@ -10704,11 +10739,37 @@ function phTap(i, e) {
 }
 
 function petCallOver() {
-  if (isEgg()) { toast('蛋還不會走路喔～摸摸牠讓牠快點孵出來！'); return; }
-  petWake(false); pet.task = null;
+  if (isEgg()) { toast('蛋還不會走路喔～摸摸牠讓牠快點孵出來！'); try { Sound.play('click'); } catch (e) {} return; }
   const room = curRoom();
-  pet.path = findPath(room, Math.floor(pet.x), Math.floor(pet.y), Math.floor(fufu.x) + 1, Math.floor(fufu.y));
-  pet.idleUntil = performance.now() + 4000;
+  if (!room) return;
+  petWake(false);
+  pet.task = null;
+  pet.z = 0;
+  /* 先把自己算在這一間，下一格才不會被「換房間」清掉路線、又拉回房間中間（按鈕看起來像沒反應） */
+  pet.room = roomKey();
+  const blk = blockedGrid(room);
+  const free = (i, j) => i >= 0 && j >= 0 && i < room.w && j < room.d && blk[i] && !blk[i][j];
+  let sx = Math.floor(pet.x), sy = Math.floor(pet.y);
+  if (!free(sx, sy)) {
+    const c = nearestFree(room, fufu.x, fufu.y) || nearestFree(room, room.w / 2, room.d / 2);
+    if (c) { pet.x = c[0] + .5; pet.y = c[1] + .5; sx = c[0]; sy = c[1]; }
+  }
+  let tx = Math.max(0, Math.min(room.w - 1, Math.floor(fufu.x) + (fufu.facing < 0 ? -1 : 1)));
+  let ty = Math.max(0, Math.min(room.d - 1, Math.floor(fufu.y)));
+  if (!free(tx, ty)) {
+    const c = nearestFree(room, fufu.x, fufu.y);
+    if (c) { tx = c[0]; ty = c[1]; }
+  }
+  pet.path = (sx === tx && sy === ty) ? [] : findPath(room, sx, sy, tx, ty);
+  pet.idleUntil = performance.now() + 8000;
+  pet.happyUntil = performance.now() + 2200;
+  pet.squishV = -7;
+  pet.thinkUntil = 0;
+  try { Sound.play('petHappy'); } catch (e) {}
+  petBurst({ kind: 'heart' }, 3);
+  const line = pet.path.length ? (petName() + '跑過來了！') : (petName() + '在這裡呀！');
+  try { fufuSay(line, 2200, true); } catch (e) {}
+  try { toast(line); } catch (e) {}
 }
 
 // 換寵物時，新帶出來的那隻出現在小可愛旁邊
@@ -10804,7 +10865,7 @@ function petFeed(foodId) {
   pet.squishV = -6;
   petBurst({ kind: 'emoji', emoji: f.emoji }, 1);
   petBurst({ kind: 'heart' }, 3);
-  fufuSay(pickLine('petFeed', { 寵物: petName() }));
+  fufuSay(pickLine('petFeed', { 寵物: petName() }), 2000, true);   // 吃的那一聲已經響了，不要再疊說話音
   petGainGrowth(GROWTH.feed);
   saveGame();
   return true;
@@ -14218,8 +14279,13 @@ var viewDpr = 1;
 function resize() {
   const r = canvasBox = canvas.getBoundingClientRect();
   viewDpr = canvasDpr(r.width, r.height);
-  canvas.width = Math.max(1, Math.round(r.width * viewDpr));
-  canvas.height = Math.max(1, Math.round(r.height * viewDpr));
+  const bw = Math.max(1, Math.round(r.width * viewDpr));
+  const bh = Math.max(1, Math.round(r.height * viewDpr));
+  /* 設 canvas.width 會把整張圖清掉。大小沒變就不要重設，不然觀察視窗大小的程式一響，房間就閃一下。 */
+  if (canvas.width !== bw || canvas.height !== bh) {
+    canvas.width = bw;
+    canvas.height = bh;
+  }
   requestDraw();
 }
 new ResizeObserver(resize).observe(canvas);
@@ -14262,7 +14328,8 @@ function draw() {
   viewDpr = dpr;
   const bw = Math.max(1, Math.round(r.width * dpr)), bh = Math.max(1, Math.round(r.height * dpr));
   if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
-  furnScale = Math.round(Math.min(2, Math.max(1, view.scale * dpr)) * 100) / 100;
+  /* 家具圖的倍率用 0.05 一階。差一點點（捲軸、1px）不要換一把新的快取，不然整間房間會重畫、畫面就頓。 */
+  furnScale = Math.round(Math.min(2, Math.max(1, view.scale * dpr)) * 20) / 20;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const sea = seasonOfMonth();
@@ -14551,6 +14618,10 @@ function gameStep(dt, now) {
   if (hold) $('#btnPlace').disabled = !hold.ok; // 放不下的位置，「放這裡」按鈕變灰
   const stage = document.querySelector('.stage');
   if (stage && stage.classList.contains('island-on')) { dirty = false; return true; }   // 小島整片蓋住房間，底下不用每幀重畫
+  try {
+    const mc = document.getElementById('modalCard');
+    if (mc && mc.classList.contains('in-game') && !$('#modal').hidden) { dirty = false; return true; }   // 小遊戲自己在畫，後面的房間先停，舊電腦跟 iPad 才不會兩邊搶
+  } catch (e) {}
   draw(); // 小可愛一直在動，每幀都重畫
   dirty = false;
   return true;
@@ -14786,7 +14857,11 @@ function refreshSoundButtons() {
 }
 /* 🎵 音樂選單（家長：切換開關不太順——以前要一直按換歌，按到最後一首再按才會關）
    點 🎵 跳出一個小選單：最上面一顆大大的「開／關」，下面是每一首歌，點了就放那一首。 */
-function closeMusicMenu() { const m = document.getElementById('musicMenu'); if (m) m.remove(); document.removeEventListener('pointerdown', musicMenuOutside, true); }
+let musicOutsideOn = false;
+function closeMusicMenu() {
+  const m = document.getElementById('musicMenu'); if (m) m.remove();
+  if (musicOutsideOn) { document.removeEventListener('pointerdown', musicMenuOutside, true); musicOutsideOn = false; }
+}
 function musicMenuOutside(e) { const m = document.getElementById('musicMenu'); if (m && !m.contains(e.target) && e.target.id !== 'btnBgm') closeMusicMenu(); }
 function openMusicMenu() {
   if (document.getElementById('musicMenu')) { closeMusicMenu(); return; }
@@ -14808,7 +14883,11 @@ function openMusicMenu() {
   const w = m.offsetWidth;
   m.style.top = (r.bottom + 6) + 'px';
   m.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + 'px';
-  setTimeout(() => document.addEventListener('pointerdown', musicMenuOutside, true), 0);
+  setTimeout(() => {
+    if (!document.getElementById('musicMenu') || musicOutsideOn) return;   // 關得比這一拍快：不要留下沒人拿掉的監聽
+    document.addEventListener('pointerdown', musicMenuOutside, true);
+    musicOutsideOn = true;
+  }, 0);
 }
 $('#btnBgm').onclick = () => { Sound.play('click'); openMusicMenu(); };
 Sound.onAutoSong(n => { try { toast(`🎵 換一首：${n}`); refreshSoundButtons(); } catch (e) {} });
@@ -14855,6 +14934,47 @@ function updatePetCard() {
   row.classList.toggle('max', !sg.next);
   row.title = sg.next ? (st.stage === 'egg' ? `快孵出來了（${Math.round(st.growth)} / ${sg.next}）` : `長成${PET_STAGE_BY_ID[nextStageId(st.stage)].name}：${Math.round(st.growth)} / ${sg.next}`) : '已經是大朋友了！';
 }
+// 餵食一次只扣一份。點太快（滑鼠連點、iPad 的幽靈點）不要再吃一次、也不要整頁重畫。
+let careLock = 0;
+function refreshFoodStock() {
+  document.querySelectorAll('#tabBody [data-stock]').forEach(node => {
+    const i = (node.dataset.stock || '').indexOf(':');
+    if (i < 0) return;
+    const bag = node.dataset.stock.slice(0, i) === 'kid' ? G.kidFood : G.food;
+    const n = (bag && bag[node.dataset.stock.slice(i + 1)]) || 0;
+    node.hidden = !n;
+    node.textContent = n ? '×' + n : '';
+  });
+}
+function finishCare() {
+  try { refreshTop(); updatePetCard(); refreshFoodStock(); } catch (e) {}
+  requestDraw();
+  /* 賣東西的清單上有數量，才整頁重畫。平常餵食只改上面的數字，不要把側邊欄清掉再畫（那一下就是閃） */
+  try { if (typeof sellMode !== 'undefined' && sellMode && typeof renderTab === 'function') renderTab(); } catch (e) {}
+}
+function placeFoodMenu(menu) {
+  const card = $('#petCard').getBoundingClientRect(), stage = $('.stage').getBoundingClientRect();
+  menu.hidden = false;
+  const maxH = Math.max(96, Math.floor(stage.height - 16));
+  menu.style.maxHeight = maxH + 'px';
+  const mw = menu.offsetWidth, mh = menu.offsetHeight;
+  let left = card.left - stage.left;
+  let top = card.bottom - stage.top + 6;
+  if (top + mh > stage.height - 8) top = card.top - stage.top - mh - 6;
+  if (top < 8) top = 8;
+  if (left + mw > stage.width - 8) left = stage.width - mw - 8;
+  if (left < 8) left = 8;
+  menu.style.left = left + 'px';
+  menu.style.top = top + 'px';
+}
+function eatFromMenu(menu, go) {
+  if (menu.hidden || performance.now() < careLock) return;
+  menu.hidden = true;
+  careLock = performance.now() + 450;
+  const ok = go();
+  if (!ok) { careLock = 0; return; }
+  finishCare();
+}
 // who：'pet' 餵寵物、'kid' 給小可愛吃
 function showFoodMenu(who) {
   const menu = $('#foodMenu');
@@ -14863,18 +14983,19 @@ function showFoodMenu(who) {
   menu.innerHTML = '';
   if (who === 'kid' && kidBaby()) { // 小寶寶只喝奶奶（不用錢）
     const b = document.createElement('button');
+    b.type = 'button';
     b.textContent = '🍼 喝奶奶';
-    b.onclick = () => {
-      menu.hidden = true;
-      G.kid.hunger = clampStat(G.kid.hunger + 25);
-      Sound.play('eat'); fufu.jumpT = .35; fufuSay(pickLine('babyMilk'), 2600); fufuBurst('🍼');
-      saveGame(); commit();
+    b.onclick = ev => {
+      if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+      eatFromMenu(menu, () => {
+        G.kid.hunger = clampStat(G.kid.hunger + 25);
+        Sound.play('eat'); fufu.jumpT = .35; fufuSay(pickLine('babyMilk'), 2600); fufuBurst('🍼');
+        saveGame();
+        return true;
+      });
     };
     menu.appendChild(b);
-    const card = $('#petCard').getBoundingClientRect(), stage = $('.stage').getBoundingClientRect();
-    menu.style.left = (card.left - stage.left) + 'px';
-    menu.style.top = (card.bottom - stage.top + 6) + 'px';
-    menu.hidden = false;
+    placeFoodMenu(menu);
     return;
   }
   // 小可愛：自己的食物，再加上寵物食物（蘋果、牛奶、布丁這些她也能吃）
@@ -14892,8 +15013,12 @@ function showFoodMenu(who) {
     const ok = ids.filter(id => !(who === 'kid' && table[id].petOnly));   // 骨頭這種只給寵物吃
     const mk = id => {
       const f = table[id], b = document.createElement('button');
+      b.type = 'button';
       b.textContent = `${f.emoji} ${f.name} ×${stock[id]}${who === 'kid' && f.grow ? '　💪' : ''}`;
-      b.onclick = () => { menu.hidden = true; if (who === 'kid') kidEat(id, src); else petFeed(id); commit(); };
+      b.onclick = ev => {
+        if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+        eatFromMenu(menu, () => (who === 'kid' ? kidEat(id, src) : petFeed(id)));
+      };
       return b;
     };
     ok.filter(id => !table[id].potion).forEach(id => menu.appendChild(mk(id)));
@@ -14909,10 +15034,7 @@ function showFoodMenu(who) {
     b.onclick = () => { menu.hidden = true; shopTheme = 'food'; openTab('shop'); };
     menu.appendChild(b);
   }
-  const card = $('#petCard').getBoundingClientRect(), stage = $('.stage').getBoundingClientRect();
-  menu.style.left = (card.left - stage.left) + 'px';
-  menu.style.top = (card.bottom - stage.top + 6) + 'px';
-  menu.hidden = false;
+  placeFoodMenu(menu);
 }
 $('#btnFeed').onclick = () => { if (G.pet.stage === 'egg') eggNotYet(); else showFoodMenu('pet'); };
 $('#btnKidEat').onclick = () => showFoodMenu('kid');
@@ -15861,7 +15983,10 @@ function foodShopGrid(list, stock, buy, subText) {
     c.appendChild(el('div', 'emoji', food.emoji));
     c.appendChild(el('div', 'nm', food.name));
     c.appendChild(el('div', 'pr', `💰 ${fmt(food.price)}　${subText(food)}`));
-    if (stock[food.id]) c.appendChild(el('span', 'ct', '×' + stock[food.id]));
+    const ct = el('span', 'ct', stock[food.id] ? '×' + stock[food.id] : '');
+    ct.dataset.stock = (stock === G.kidFood ? 'kid' : 'pet') + ':' + food.id;
+    if (!stock[food.id]) ct.hidden = true;
+    c.appendChild(ct);
     const en = typeof enChip === 'function' ? enChip(food.id, food.name) : null; if (en) c.appendChild(en);   // 🔤 英文
     c.onclick = () => {
       if (buy(food.id)) { Sound.play('coin'); toast(`買了「${food.name}」`); commit(); }
@@ -28483,7 +28608,35 @@ function worldFlyTo(w, foe, done) {
   };
   raf = requestAnimationFrame(frame);
 }
+function worldPackOne(f) {
+  const key = Array.isArray(f.dobok) ? f.dobok.join(',') : '';
+  const bi = TKD_BELTS.findIndex(b => Array.isArray(b[1]) && b[1].join(',') === key);
+  return { id: f.id, venue: f.venue, bi: bi < 0 ? 1 : bi, short: String(f.short || '').slice(0, 24) };
+}
+function worldUnpackOne(p) {
+  const base = p && NEIGHBOR_BY_ID[p.id];
+  if (!base || !p.venue) return null;
+  const belt = TKD_BELTS[p.bi] || TKD_BELTS[1];
+  return Object.assign({}, base, { short: p.short || (p.venue + base.short), venue: p.venue, dobok: belt[1] });
+}
+function worldSaveRun(cup, r) {
+  const ws = worldState();
+  ws.run = { r, path: cup.path.slice(), opps: cup.opps.map(worldPackOne), fillers: cup.fillers.map(worldPackOne) };
+  ws.v = 2;
+}
+function worldReadRun() {
+  const ws = worldState(), run = ws.run;
+  if (!run || typeof run !== 'object') return null;
+  if (!(Number.isInteger(run.r) && run.r >= 0 && run.r < WORLD_ROUNDS.length)) return null;
+  if (!Array.isArray(run.path) || !Array.isArray(run.opps) || !Array.isArray(run.fillers)) return null;
+  const opps = run.opps.map(worldUnpackOne), fillers = run.fillers.map(worldUnpackOne);
+  if (opps.length !== 5 || opps.some(x => !x) || fillers.some(x => !x)) return null;
+  if (opps.some((f, i) => f.venue !== run.path[i])) return null;
+  return { cup: { opps, fillers, path: run.path.slice() }, r: run.r };
+}
 function worldShowBoard(w, cup, r, fromWin) {
+  worldSaveRun(cup, r);
+  try { saveGame(); } catch (e) {}   // 休息時間或關掉重開，都從這一場接著比
   const plan = worldRoundPlan(r), opp = cup.opps[r], field = worldField(cup, r);
   const h = w.card.querySelector('h2'); if (h) h.textContent = `🌏 世界大賽・${plan.name}`;
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
@@ -28520,6 +28673,8 @@ function worldShowBoard(w, cup, r, fromWin) {
   worldRound.test = { r, cup, plan, opp };
 }
 function worldStartDuel(cup, r) {
+  worldSaveRun(cup, r);
+  try { saveGame(); } catch (e) {}
   const plan = worldRoundPlan(r), f = cup.opps[r];
   if (G.kid && G.kid.hunger < DUEL_MIN_HUNGER) G.kid.hunger = DUEL_MIN_HUNGER;
   openDuelGame(f, {
@@ -28532,6 +28687,7 @@ function worldStartDuel(cup, r) {
       const ws = worldState(), got = win ? r + 1 : r, last = r === WORLD_ROUNDS.length - 1;
       if (win) learnSigMove(f.id);
       if (!win || last) {
+        if (ws.run) delete ws.run;   // 這一屆比完了（輸了或拿到冠軍）才清掉，下一屆才是新的
         ws.best = Math.max(ws.best == null ? -1 : ws.best, got); ws.v = 2;
         const champ = got === WORLD_ROUNDS.length, first = champ && !ws.gold; if (champ) ws.gold = (ws.gold || 0) + 1;
         const bells = payReward(w, WORLD_PRIZE[got]) + (first ? (addBells(2000), 2000) : 0);
@@ -28549,13 +28705,26 @@ function worldStartDuel(cup, r) {
 }
 function openWorldCup() {
   if (!worldCupOpen()) { toast('🌏 要先打贏熊熊教練，教練才會告訴你世界大賽喔！'); try { hostSay('先打贏我，我再告訴你一個大秘密！', 2800); speak('先打贏教練，再來參加世界大賽！'); } catch (e) {} return; }
-  const ws = worldState(), d = today();
+  const kept = worldReadRun();
+  if (kept) {
+    playDuel.test = null;
+    const w = openGameWindow('🌏 世界大賽', '比賽還沒比完，從剛剛那一場繼續！連贏 5 場就是世界冠軍。');
+    toast('🌏 從' + WORLD_ROUNDS[kept.r].name + '繼續比！');
+    worldShowBoard(w, kept.cup, kept.r);
+    return;
+  }
+  const ws = worldState();
+  if (ws.run) delete ws.run;   // 記下來的這一屆讀不回來：拿掉，不要卡住今天的次數
+  const d = today();
   if (ws.d !== d) { ws.d = d; ws.n = 0; }
   if (ws.n >= WORLD_DAY_MAX) { toast('🌏 今天的世界大賽打 3 次了，明天再來！'); return; }
-  ws.n++; saveGame();
+  ws.n++;
+  const cup = worldBuildCup();
+  worldSaveRun(cup, 0);
+  try { saveGame(); } catch (e) {}
   playDuel.test = null;
   const w = openGameWindow('🌏 世界大賽', '連贏 5 場就是世界冠軍！每一場會飛去不同的國家，決賽在月球。');
-  worldShowBoard(w, worldBuildCup(), 0);
+  worldShowBoard(w, cup, 0);
 }
 let worldNextAd = 0, worldAdSaid = false;
 function worldAdTick() {
