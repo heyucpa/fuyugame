@@ -24017,7 +24017,7 @@ function islQuestSpecial(o) {
    ・兩種玩法（每個存檔自己記）：
        🐣 簡單（妹妹）：一樣自己 ◀ ▶ 走（家長：不要自動往前跑了）；碰到怪物只會被彈開、掉下去會有泡泡接回來，一定過得了關。
        🦸 一般（姊姊）：←→ 走、跳（按久跳比較高），怪物走快一點、多一隻，3 顆愛心，碰到怪物或掉下去少一顆，沒了就重來。
-   ・磚塊可以頂、頂破（有時金幣或道具）；藤蔓爬上雲；會動的台子；水管進祕密房間；沙灘可以游泳（企鵝泳衣）。
+   ・磚塊可以頂、頂破（有時金幣或道具）；藤蔓爬上雲；會動的台子；水管進祕密房間；沙灘小水池可以游泳（企鵝泳衣）。2-4 整關在海底，橫著游。
    ・每關有 3 顆星星可以收集；金幣換成錢。
    ・破完一個世界（最後一關）：海上多一座新小島（🌸 花花島、🍬 糖果島、🦕 恐龍島）。更新前已破第 3 關的，小島維持開放。
    ・進度存在 G.quest = { mode, clear: {'1-1': 1}, stars: {'1-1': 2}, rev, legacy } */
@@ -24041,7 +24041,7 @@ const QUEST_LEVELS = {
   '2-1': ['start', 'power', 'flat', 'hidden', 'enemy1', 'brickline', 'gap2', 'blocks*', 'staircoin', 'spikes', 'check', 'parade', 'plat*', 'skyhop', 'enemy2', 'spring*', 'cloudgap', 'kickline', 'alcove', 'gap3', 'pipehouse', 'vine', 'goal'],
   '2-2': ['start', 'power', 'brickline', 'enemy2', 'vine', 'gap3', 'blocks*', 'spikes', 'staircoin', 'pipe', 'hill', 'check', 'parade', 'plat*', 'skyhop', 'enemy2', 'gap3', 'spring*', 'cloudgap', 'kickline', 'alcove', 'step', 'pipehouse', 'goal'],
   '2-3': ['start', 'power', 'brickline', 'blocks*', 'spikes', 'enemy2', 'staircoin', 'check', 'gap3', 'parade', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'swim*', 'kickline', 'alcove', 'pipehouse', 'enemy2', 'goal'],
-  '2-4': ['start', 'power', 'swim*', 'wpipe', 'brow*', 'enemy1', 'check', 'mplat', 'vine*', 'spring*', 'goal'],
+  '2-4': ['deep'],   // 整關海底。questBuild 看到 2-4 改走 questBuildDeep，不拿這列去拼關
   '2-5': ['start', 'swim', 'power', 'blocks*', 'enemy2', 'check', 'gap3', 'plat*', 'spring*', 'boss'],
   '3-1': ['start', 'power', 'flat', 'hidden', 'vine', 'bees', 'beeweave', 'gap2', 'blocks*', 'staircoin', 'enemy2', 'check', 'parade', 'plat*', 'skyhop', 'bees', 'spring*', 'cloudgap', 'kickline', 'alcove', 'gap3', 'pipehouse', 'brickline', 'goal'],
   '3-2': ['start', 'power', 'brickline', 'bees', 'vine', 'gap3', 'blocks*', 'beeweave', 'spikes', 'staircoin', 'pipe', 'enemy2', 'check', 'parade', 'plat*', 'skyhop', 'bees', 'hill', 'spring*', 'cloudgap', 'kickline', 'alcove', 'gap3', 'pipehouse', 'goal'],
@@ -24090,8 +24090,88 @@ function questWorldDone(w) {
 }
 function questWorldsCleared() { return [1, 2, 3].filter(w => questWorldDone(w)).length; }   // 只有前三個世界送小島（看最後一關，或更新前已破的世界）
 function questUnlocked(id) { const q = questState(); if (q.clear[id]) return true; const i = QUEST_IDS.indexOf(id); return i === 0 || !!q.clear[QUEST_IDS[i - 1]]; }
+/* 2-4 海底關：整張圖都是水，沒有岸。底下留一條安全水道（魚跟水母都在上面），
+   按住 ▶ 就能游到旗子。星星在比較高的地方，不拿也過得了關。簡單、一般同一張圖，不會比較難。 */
+function questBuildDeep(easy) {
+  const W = 96, g = [];
+  for (let y = 0; y < QH; y++) g.push(Array(W).fill(' '));
+  const put = (x, y, c) => { if (x >= 0 && x < W && y >= 0 && y < QH && g[y][x] === ' ') g[y][x] = c; };
+  const row = (x, y, n, c) => { for (let i = 0; i < n; i++) put(x + i, y, c); };
+  for (let x = 0; x < W; x++) g[14][x] = '#';   // 海底沙，只擋人掉出去，畫的時候不畫成磚
+  row(6, 10, 5, 'o'); row(18, 9, 4, 'o'); row(34, 10, 5, 'o'); row(52, 9, 4, 'o'); row(70, 10, 5, 'o'); row(82, 9, 4, 'o');
+  put(18, 4, 's'); put(50, 3, 's'); put(78, 4, 's');
+  put(12, 6, 'n'); put(34, 5, 'n'); put(56, 6, 'n'); put(72, 5, 'n'); put(88, 6, 'n');
+  put(26, 3, 'j'); put(44, 4, 'j'); put(64, 3, 'j');
+  put(32, 5, 'G');   // 浮著的長大果，游過去就拿到
+  put(44, 12, 'C');
+  put(90, 13, 'F');
+  return { g: g.map(r => r.slice(0, W)), W, pipes: [], waterPipes: [], bonusX: 0, waterRoom: false, deep: true, easy: !!easy };
+}
+/* 海底背景畫一次存起來，之後每幀只貼圖（跟房間地板的快取同一種做法，不要每幀重畫海草）。 */
+let questSeaWater = null, questSeaBed = null;
+function questSeaArt() {
+  if (questSeaWater) return;
+  const w = document.createElement('canvas'); w.width = 480; w.height = QVH;
+  const g = w.getContext('2d');
+  const gr = g.createLinearGradient(0, 0, 0, QVH);
+  gr.addColorStop(0, '#8fd4f8'); gr.addColorStop(.18, '#3aa0d8'); gr.addColorStop(.55, '#1468b0'); gr.addColorStop(1, '#08345e');
+  g.fillStyle = gr; g.fillRect(0, 0, 480, QVH);
+  g.globalAlpha = .16; g.fillStyle = '#e7f7ff';
+  for (let i = 0; i < 5; i++) { g.beginPath(); g.moveTo(30 + i * 96, 0); g.lineTo(58 + i * 96, 0); g.lineTo(110 + i * 96, QVH); g.lineTo(48 + i * 96, QVH); g.fill(); }
+  g.globalAlpha = 1;
+  g.fillStyle = '#145c45';
+  for (let i = 0; i < 8; i++) {
+    const x = 28 + i * 58, h = 70 + (i % 3) * 18;
+    g.beginPath(); g.moveTo(x, QVH - 20); g.quadraticCurveTo(x + 10, QVH - h * .6, x - 4, QVH - h); g.quadraticCurveTo(x + 8, QVH - h * .45, x + 16, QVH - 20); g.fill();
+    g.beginPath(); g.ellipse(x - 12, QVH - h * .55, 16, 5, -.5, 0, 7); g.fill();
+    g.beginPath(); g.ellipse(x + 14, QVH - h * .35, 18, 5, .45, 0, 7); g.fill();
+  }
+  const cols = ['#ff8aa8', '#ffb15a', '#d9a0ff'];
+  for (let i = 0; i < 6; i++) {
+    g.fillStyle = cols[i % 3]; const x = 40 + i * 78;
+    g.beginPath(); g.ellipse(x, QVH - 36, 9, 16, 0, 0, 7); g.fill();
+    g.beginPath(); g.arc(x - 8, QVH - 50, 6, 0, 7); g.fill();
+    g.beginPath(); g.arc(x + 7, QVH - 48, 5, 0, 7); g.fill();
+  }
+  questSeaWater = w;
+  const b = document.createElement('canvas'); b.width = 180; b.height = 42;
+  const bg = b.getContext('2d');
+  bg.fillStyle = '#e7c98a'; bg.fillRect(0, 10, 180, 32);
+  bg.fillStyle = '#f6e0b0'; bg.fillRect(0, 10, 180, 7);
+  bg.fillStyle = '#c9844a';
+  for (let i = 0; i < 5; i++) { bg.beginPath(); bg.ellipse(16 + i * 36, 28, 7, 3.5, 0, 0, 7); bg.fill(); }
+  bg.fillStyle = '#ff8aa8'; bg.beginPath(); bg.ellipse(60, 16, 8, 10, 0, 0, 7); bg.fill();
+  bg.fillStyle = '#7dcea0'; bg.beginPath(); bg.ellipse(120, 18, 10, 8, 0, 0, 7); bg.fill();
+  questSeaBed = b;
+}
+/* 闖關裡的游泳：身體橫著、手划、腳踢。臉朝 +x，外面用 scale 翻面。 */
+function drawQuestSwimmer(ctx, t, moving) {
+  const skin = GIRL.skin, line = GIRL.line, baby = typeof kidBaby === 'function' && kidBaby();
+  const cap = '#ff6b9a', suit = baby ? '#ffd6e6' : '#3fa9f5', suitDk = baby ? '#f5b5cc' : '#2b86c9';
+  const sp = moving ? 9 : 5.2, kick = Math.sin(t * sp), arm = t * sp;
+  const limb = (x1, y1, x2, y2, w) => { ctx.strokeStyle = skin; ctx.lineWidth = w; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); };
+  ctx.fillStyle = 'rgba(255,255,255,.28)'; ctx.beginPath(); ctx.ellipse(0, 2, 26, 9, 0, 0, 7); ctx.fill();
+  limb(-10, -1, -22, -7 * kick, 3.4); limb(-10, 1, -22, 7 * kick, 3.4);
+  ctx.fillStyle = skin;
+  ctx.beginPath(); ctx.ellipse(-23, -7 * kick, 3.4, 1.7, kick * .35, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(-23, 7 * kick, 3.4, 1.7, -kick * .35, 0, 7); ctx.fill();
+  const back = Math.sin(arm), front = Math.sin(arm + Math.PI);
+  // 後面那隻手往後撥，前面那隻手伸到頭的前面
+  limb(-2, 0, -8 + back * 5, 9 * Math.cos(arm), 3.3);
+  ctx.fillStyle = suit; ctx.beginPath(); ctx.ellipse(-1, 0, 15, 6.4, 0, 0, 7); ctx.fill();
+  ctx.strokeStyle = line; ctx.lineWidth = .8; ctx.stroke();
+  ctx.fillStyle = suitDk; ctx.fillRect(-8, -1.1, 12, 2.2);
+  ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(16, -2, 7.4, 0, 7); ctx.fill(); ctx.strokeStyle = line; ctx.lineWidth = .8; ctx.stroke();
+  ctx.fillStyle = cap; ctx.beginPath(); ctx.arc(16, -2, 7.5, Math.PI * .82, Math.PI * 1.72); ctx.fill();
+  ctx.fillStyle = '#231c1c'; ctx.beginPath(); ctx.ellipse(19.6, -3.1, 1.25, 1.55, 0, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#c0504a'; ctx.lineWidth = .9; ctx.beginPath(); ctx.arc(19.2, -.6, 1.7, .15, Math.PI - .25); ctx.stroke();
+  ctx.fillStyle = GIRL.blush; ctx.beginPath(); ctx.arc(18.2, .8, 1.5, 0, 7); ctx.fill();
+  limb(12, 2, 28 + front * 2, -8 * Math.cos(arm + Math.PI), 3.6);
+  if (moving) { ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.beginPath(); ctx.arc(-26, -3 * kick, 1.6, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(-24, 4, 1.1, 0, 7); ctx.fill(); }
+}
 // 把一段一段拼成一張關卡（grid[y][x] 一個字）
 function questBuild(id, easy) {   // easy：簡單模式的坑窄一格（家長：這邊太容易掉下去了）
+  if (id === '2-4') return questBuildDeep(easy);
   const segs = QUEST_LEVELS[id], g = [], W = 460, pipes = [], waterPipes = [];
   const brickKind = xx => { const k = Math.abs(xx * 5 + 1) % 6; return k === 0 ? 'N' : k === 1 ? 'R' : k === 2 ? '?' : 'B'; };
   for (let y = 0; y < QH; y++) g.push(Array(W).fill(' '));
@@ -24310,7 +24390,8 @@ function questWrapLines(g, text, maxW, maxLines) {
 function playQuest(id, opt) {
   opt = opt || {};   // opt.bossStart：從大魔王那裡開始；opt.weak：打輸幾次了（大王越來越弱）
   const q = questState(), easy = q.mode === 'easy', wd = QUEST_WORLDS[+id[0] - 1];
-  const w = openGameWindow(`${wd.icon} 世界 ${id}`, (easy ? '按住 ◀ ▶ 走、按「跳」跳（按久一點會跳更高 ✨）；也可以直接按畫面：左邊往左、右邊往右、中間跳。站在水管上按 ⬇ 鑽進去。簡單模式被打到不會少愛心！' : '← → 走、按「跳」（空白鍵／↑）跳，按久一點會跳更高 ✨。踩怪物的頭可以打倒牠！平板也可以直接按畫面：左邊往左、右邊往右、中間（或往上滑）跳。') + (G.pet && G.pet.stage !== 'egg' ? `${petName()}也一起來了：🐾 集滿了就按，放必殺技！` : ''));
+  const swimHelp = '這一關整關都在水裡！◀ ▶ 往前游，按「跳」或 ↑ 往上游，按 ⬇ 往下沉。愛心跟別的關一樣。';
+  const w = openGameWindow(`${wd.icon} 世界 ${id}`, (id === '2-4' ? swimHelp : (easy ? '按住 ◀ ▶ 走、按「跳」跳（按久一點會跳更高 ✨）；也可以直接按畫面：左邊往左、右邊往右、中間跳。站在水管上按 ⬇ 鑽進去。簡單模式被打到不會少愛心！' : '← → 走、按「跳」（空白鍵／↑）跳，按久一點會跳更高 ✨。踩怪物的頭可以打倒牠！平板也可以直接按畫面：左邊往左、右邊往右、中間（或往上滑）跳。')) + (G.pet && G.pet.stage !== 'egg' ? `${petName()}也一起來了：🐾 集滿了就按，放必殺技！` : ''));
   w.stage.innerHTML = ''; w.btns.innerHTML = ''; w.card.classList.add('quest-big');
   const { c, g } = gameCanvas(w.stage, QVW, QVH);
   /* 🎮 像手把一樣分兩邊（家長：iPad 上手指擠在中間小小的區域按不順）：
@@ -24341,7 +24422,7 @@ function playQuest(id, opt) {
   const pauseOv = el('div', 'quest-pauseov'); pauseOv.hidden = true;
   const resumeB = el('button', 'big', '▶ 繼續玩'), mapB = el('button', 'big alt', '🗺️ 回地圖');
   pauseOv.append(el('div', 'quest-pause-t', '⏸ 暫停中'), resumeB, mapB);
-  const setPause = on => { if (on && state !== 'play') return; paused = !!on; pauseOv.hidden = !paused; pauseB.hidden = paused; Object.keys(keys).forEach(k => { keys[k] = false; }); jumpHeld = false; touches.clear(); Sound.play('click'); };
+  const setPause = on => { if (on && state !== 'play') return; paused = !!on; pauseOv.hidden = !paused; pauseB.hidden = paused; Object.keys(keys).forEach(k => { keys[k] = false; }); jumpHeld = false; sinkHeld = false; bDn.classList.remove('on'); touches.clear(); Sound.play('click'); };
   pauseB.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); setPause(true); });
   resumeB.onclick = () => setPause(false);
   mapB.onclick = () => { closeGameWindow(); openQuestMap(); };
@@ -24360,6 +24441,8 @@ function playQuest(id, opt) {
     if (ch === 'e') { ents.push({ k: wd.enemy, x: px, y: py + QT - 14, w: 16, h: 14, vx: -30 * spd, alive: true }); r[x] = ' '; }
     if (ch === 't') { ents.push({ k: 'turtle', x: px, y: py + QT - 16, w: 16, h: 16, vx: -28 * spd, alive: true }); r[x] = ' '; }
     if (ch === 'n') { ents.push({ k: 'fish', x: px, y: py, w: 18, h: 12, vx: (easy ? -24 : -40), y0: py, alive: true, t: Math.random() * 3 }); r[x] = ' '; }
+    if (ch === 'j') { ents.push({ k: 'jelly', x: px, y: py, w: 16, h: 18, y0: py, amp: 20, alive: true, t: (x % 7) * .6 }); r[x] = ' '; }
+    if (ch === 'G') { items.push({ k: 'pow', kind: 'grow', x: px + 9, y: py + 9 }); r[x] = ' '; }
     if (ch === 'p' || ch === 'c') {   // c：對向的雲，行程短一點，簡單模式更慢
       const back = ch === 'c', range = back ? (easy ? 2 : 3) * QT : (easy ? 3 : 4) * QT - 18;
       plats.push({ x: px, y: py, w: 54, h: 8, x0: back ? px - range : px, range, vx: back ? (easy ? -26 : -34) : 38, dx: 0, dy: 0 }); r[x] = ' ';
@@ -24383,8 +24466,9 @@ function playQuest(id, opt) {
   }));
   if (opt.bossStart && boss) { startX = checkX = Math.max(0, boss.x - 9 * QT); items.forEach(it => { if (it.k === 'check' && it.x < startX) it.on = true; }); }
   const P = { x: startX, y: 12 * QT - 30 + QT, w: 13, h: 30, vx: 0, vy: 0, on: false, face: 1, hearts: 3, inv: 0, coins: 0, stars: 0, t: 0, lastSafe: startX, bubble: 0, big: false, fire: false, starT: 0, fireCd: 0, swim: false, wasSwim: false };
+  if (L.deep) { P.y = 14 * QT - P.h - 50; P.lastSafe = P.x; P.swim = true; bDn.style.display = ''; bDn.title = '往下沉'; }
   let inBonus = false, pipeBack = 0, downBuf = 0;   // 祕密房間
-  let flag = null, raf = 0, live = true, last = performance.now(), camX = 0, state = 'play', endT = 0, keys = {}, jumpHeld = false, jumpBuf = 0, msg = '', msgT = 0, coinPops = [];
+  let flag = null, raf = 0, live = true, last = performance.now(), camX = 0, state = 'play', endT = 0, keys = {}, jumpHeld = false, jumpBuf = 0, sinkHeld = false, msg = '', msgT = 0, coinPops = [];
   const say = (m2, s) => { msg = m2; msgT = s || 1.6; };
   try { const ln = typeof starIntroLine === 'function' ? starIntroLine(id) : ''; if (ln) setTimeout(() => say(ln, 4.5), 300); } catch (e) {}   // 🌟 線索關的開場
   const keyD = e => { const k = e.code; if ((k === 'Escape' || k === 'KeyP') && !e.repeat) { e.preventDefault(); setPause(!paused); return; } if (paused) return; if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space', 'KeyA', 'KeyD', 'KeyW', 'KeyS', 'KeyX', 'KeyF', 'KeyC', 'KeyQ'].includes(k)) e.preventDefault(); if (e.repeat) return; keys[k] = true; if (k === 'ArrowDown' || k === 'KeyS') downBuf = .3; if (k === 'KeyX' || k === 'KeyF') shootFire(); if (k === 'KeyC' || k === 'KeyQ') petSpecial(); if (k === 'Space' || k === 'ArrowUp' || k === 'KeyW') { jumpHeld = true; jumpBuf = .15; } };
@@ -24406,7 +24490,10 @@ function playQuest(id, opt) {
   bJ.addEventListener('pointerdown', e => { e.preventDefault(); try { bJ.setPointerCapture(e.pointerId); } catch (e2) {} jumpHeld = true; jumpBuf = .15; });
   ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => bJ.addEventListener(ev, () => { jumpHeld = false; }));
   if (bP) bP.addEventListener('pointerdown', e => { e.preventDefault(); petSpecial(); });
-  bDn.addEventListener('pointerdown', e => { e.preventDefault(); downBuf = .3; }); bF.addEventListener('pointerdown', e => { e.preventDefault(); shootFire(); });
+  bDn.addEventListener('pointerdown', e => { e.preventDefault(); try { bDn.setPointerCapture(e.pointerId); } catch (e2) {} if (L.deep) { sinkHeld = true; bDn.classList.add('on'); } else downBuf = .3; });
+  const dnOff = e => { if (!L.deep) return; if (e && e.type === 'lostpointercapture' && e.buttons > 0) return; sinkHeld = false; bDn.classList.remove('on'); };
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => bDn.addEventListener(ev, dnOff));
+  bF.addEventListener('pointerdown', e => { e.preventDefault(); shootFire(); });
   // 🔥 火火花：丟出會彈跳的火球，打到怪物就打倒（大魔王扣一下）
   function shootFire() { if (!P.fire || state !== 'play' || P.fireCd > 0 || fbs.length >= 2) return; P.fireCd = .3; fbs.push({ x: P.x + P.w / 2 + P.face * 8, y: P.y + 10, w: 8, h: 8, vx: P.face * 230, vy: 60, life: 2.5 }); Sound.play('whoosh'); }
   function petSpecial() {
@@ -24463,16 +24550,28 @@ function playQuest(id, opt) {
     touchSync();
     try { c.setPointerCapture(e.pointerId); } catch (e2) {}
   });
-  c.addEventListener('pointermove', e => { const t = touches.get(e.pointerId); if (!t || t.j) return; if (t.y0 - e.clientY > 28) { t.j = true; jumpHeld = true; jumpBuf = .15; } });   // 往上滑：跳
+  c.addEventListener('pointermove', e => {
+    const t = touches.get(e.pointerId); if (!t) return;
+    if (L.deep) {
+      const dy = e.clientY - t.y0;
+      if (dy < -28) { t.j = true; t.sink = false; jumpHeld = true; jumpBuf = .15; }
+      else if (dy > 28) { t.sink = true; t.j = false; if (![...touches.values()].some(x => x.j)) jumpHeld = false; }
+      sinkHeld = [...touches.values()].some(x => x.sink);
+      return;
+    }
+    if (t.j) return;
+    if (t.y0 - e.clientY > 28) { t.j = true; jumpHeld = true; jumpBuf = .15; }   // 往上滑：跳
+  });
   const touchEnd = e => {
     if (e && e.type === 'lostpointercapture' && e.buttons > 0 && downPointers.has(e.pointerId)) return;   // 剛抓指標時瀏覽器會先送一次 lost，手指其實還按著
     const t = touches.get(e.pointerId); if (!t) return; touches.delete(e.pointerId); if (!touchSync() && t.j) jumpHeld = false;
+    if (L.deep) sinkHeld = [...touches.values()].some(x => x.sink);
   };
   ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => c.addEventListener(ev, touchEnd));
   const releaseQuestInput = () => {
-    downPointers.clear(); touches.clear(); padPid = null; jumpHeld = false;
-    ['ArrowLeft', 'ArrowRight', 'KeyA', 'KeyD', 'TouchL', 'TouchR', 'ArrowUp', 'KeyW', 'Space'].forEach(k => { keys[k] = false; });
-    bL.classList.remove('on'); bR.classList.remove('on');
+    downPointers.clear(); touches.clear(); padPid = null; jumpHeld = false; sinkHeld = false;
+    ['ArrowLeft', 'ArrowRight', 'KeyA', 'KeyD', 'TouchL', 'TouchR', 'ArrowUp', 'KeyW', 'Space', 'ArrowDown', 'KeyS'].forEach(k => { keys[k] = false; });
+    bL.classList.remove('on'); bR.classList.remove('on'); bDn.classList.remove('on');
   };
   const onWinDown = e => { downPointers.add(e.pointerId); };
   const onWinUp = e => { downPointers.delete(e.pointerId); if (touches.has(e.pointerId)) touchEnd(e); if (padPid === e.pointerId) padOff(e); };
@@ -24620,7 +24719,7 @@ function playQuest(id, opt) {
     if (!QP) return;
     if (P.coins > QP.lastCoins) QP.meter += P.coins - QP.lastCoins; QP.lastCoins = P.coins;
     QP.meter = Math.min(QP.max, QP.meter + dt * .4); if (QP.act > 0) QP.act -= dt;
-    const tx = P.x + P.w / 2 - P.face * 22, ty = P.y + P.h; if (!QP.x) { QP.x = tx; QP.y = ty; }
+    const tx = P.x + P.w / 2 - P.face * 22, ty = L.deep ? P.y + P.h * .5 : P.y + P.h; if (!QP.x) { QP.x = tx; QP.y = ty; }
     QP.x += (tx - QP.x) * Math.min(1, dt * 6); QP.y += (ty - QP.y) * Math.min(1, dt * 8);
     if ((QP.ui -= dt) <= 0 && bP) { QP.ui = .15; const pc = Math.round(QP.meter / QP.max * 100), full = pc >= 100; bP.style.background = full ? '' : `linear-gradient(to top, #ffe08a ${pc}%, #fff ${pc}%)`; bP.classList.toggle('glow', full); bP.textContent = full ? '🐾 必殺技' : '🐾'; }
   };
@@ -24639,6 +24738,7 @@ function playQuest(id, opt) {
     want = (keys.ArrowRight || keys.KeyD || keys.TouchR ? 1 : 0) - (keys.ArrowLeft || keys.KeyA || keys.TouchL ? 1 : 0);
     if (P.backT > 0) { P.backT -= dt; if (want > 0) want = -1; }   // 卡在牆前太久：往後退一點，才跳得過（以前只記了時間，人沒有退）
     const inWater = () => {
+      if (L.deep) return true;
       if (L.waterRoom && inBonus) return true;
       const x0 = Math.floor(P.x / QT), x1 = Math.floor((P.x + P.w - .01) / QT), y0 = Math.floor(P.y / QT), y1 = Math.floor((P.y + P.h - .01) / QT);
       for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) if (tileAt(tx, ty) === 'W') return true;
@@ -24649,7 +24749,20 @@ function playQuest(id, opt) {
     const maxV = (easy ? 112 : 128) * (P.starT > 0 ? 1.2 : 1) * (P.wet ? .6 : 1) * (P.swim ? .72 : 1), ice = wd.ice && P.on && !P.swim;
     if (want) { P.vx += want * (ice ? 420 : 900) * dt; P.face = want; } else P.vx *= Math.pow(ice ? .3 : .0005, dt);   // ❄️ 雪地：起步慢、停不太下來
     if (Math.abs(P.vx) > maxV) P.vx = Math.sign(P.vx) * maxV;
-    // 跳
+    // 跳。2-4 海底：不站在地上跳，改成慢慢下沉，按住跳往上、按住 ⬇ 沉快一點。
+    if (L.deep) {
+      const up = jumpHeld || keys.ArrowUp || keys.KeyW;
+      const down = sinkHeld || keys.ArrowDown || keys.KeyS;
+      let target = 22;
+      if (up && !down) target = -96;
+      else if (down && !up) target = 120;
+      const floorTop = 14 * QT - P.h;
+      if (!down && P.y > floorTop - 56) target = Math.min(target, -30);
+      if (P.y < 10 && !down) target = Math.max(target, 18);
+      P.vy += (target - P.vy) * Math.min(1, dt * 3.6);
+      if (P.vy > 140) P.vy = 140; else if (P.vy < -140) P.vy = -140;
+      P.holdT = 0;
+    } else {
     const climbing = onVine() && (jumpHeld || keys.ArrowUp || keys.KeyW || keys.ArrowDown || keys.KeyS);
     if (climbing && !P.saidVine) { P.saidVine = 1; say('藤蔓！按住「跳」往上爬', 1.8); }
     if (jumpBuf > 0 && P.on && !climbing) { P.vy = -470; P.on = false; jumpBuf = 0; Sound.play(P.swim ? 'splash' : 'jump'); }
@@ -24660,6 +24773,7 @@ function playQuest(id, opt) {
     else {
       if (P.swim && jumpHeld && !P.on) P.vy -= 520 * dt;
       P.vy = Math.min(P.swim ? 150 : 600, P.vy + (jumpHeld && P.vy < 0 && !P.boost ? (P.swim ? 280 : 900) : (P.swim ? 420 : 1500)) * dt);   // 家長：長按跳比較高；水裡重力比較小，按住跳會往上游
+    }
     }
     P.hitX = false;
     const xFrame = P.x;
@@ -24696,19 +24810,23 @@ function playQuest(id, opt) {
     // 刺
     { const tx = Math.floor((P.x + P.w / 2) / QT), ty = Math.floor((P.y + P.h + 1) / QT); if (tileAt(tx, ty - 0) === '^' || tileAt(tx, Math.floor((P.y + P.h - 2) / QT)) === '^') hurt(P.x + P.w / 2 - P.face * 10); }
     { const fx2 = Math.floor((P.x + P.w / 2) / QT), fy2 = Math.floor((P.y + P.h + 2) / QT), under = tileAt(fx2, fy2), onPipe = P.on && (under === 'P' || under === 'Q' || under === 'U');
-      bDn.style.display = onPipe ? '' : 'none'; bDn.classList.toggle('glow', onPipe);
+      bDn.style.display = (L.deep || onPipe) ? '' : 'none'; bDn.classList.toggle('glow', onPipe || (L.deep && (sinkHeld || keys.ArrowDown || keys.KeyS)));
       if (easy && onPipe && P.pipeTile !== fx2 && P.pipeTile !== fx2 - 1 && P.pipeTile !== fx2 + 1) { P.pipeTile = fx2; say('🟢 水管！按 ⬇ 可以鑽進去', 2); }   // 簡單模式：提醒她可以按 ⬇
       if (onPipe && downBuf > 0) { downBuf = 0; Sound.play(under === 'U' ? 'splash' : 'whoosh');
         if (under === 'P' || under === 'U') { pipeBack = fx2; inBonus = true; P.tele = 1; P.x = (L.bonusX + 3) * QT; P.y = 8 * QT; P.vx = P.vy = 0; say(under === 'U' || L.waterRoom ? '🌊 潛到水裡了！換上企鵝泳衣！' : '🟢 祕密房間！好多金幣！', 2); }
         else { inBonus = false; P.tele = 1; P.x = (pipeBack + 3) * QT; P.y = 9 * QT; P.vx = P.vy = 0; say('回來了！', 1); } } }
     P.swim = inWater();
-    if (P.swim && !P.wasSwim) say('🐧 企鵝泳衣！游起來了～', 2);
+    if (P.swim && !P.wasSwim) say(L.deep ? '游泳！◀ ▶ 往前，按「跳」往上，按 ⬇ 往下' : '🐧 企鵝泳衣！游起來了～', L.deep ? 3.2 : 2);
     if (!P.swim && P.wasSwim) say('回到岸上，衣服換回來了！', 1.4);
     P.wasSwim = P.swim;
     for (let i = bumps.length - 1; i >= 0; i--) { bumps[i].t -= dt; if (bumps[i].t <= 0) bumps.splice(i, 1); }
     bits.forEach(b => { b.t += dt; b.vy += 500 * dt; b.x += b.vx * dt; b.y += b.vy * dt; });
     for (let i = bits.length - 1; i >= 0; i--) if (bits[i].t > .45) bits.splice(i, 1);
-    if (P.y > QVH + 40) fallOut();
+    if (L.deep) {
+      if (P.y < 6) { P.y = 6; if (P.vy < 0) P.vy = 0; }
+      const limY = 14 * QT - P.h;
+      if (P.y > limY) { P.y = limY; if (P.vy > 0) P.vy = 0; }
+    } else if (P.y > QVH + 40) fallOut();
     if (!P.tele) { const lim = (Math.max(Math.abs(P.vx), 160) + 90) * dt + 6; if (P.x > xFrame + lim) P.x = xFrame + lim; if (P.x < xFrame - lim) P.x = xFrame - lim; }
     P.tele = 0;
     P.x = Math.max(0, Math.min(lvW - P.w, P.x));
@@ -24740,6 +24858,7 @@ function playQuest(id, opt) {
       else if (en.k === 'shell') { /* 停著的殼 */ }
       else if (en.k === 'bee') { en.t += dt; en.x += en.vx * dt; en.y = en.y0 + Math.sin(en.t * 2) * 22; if (Math.abs(en.x - (en.x0 = en.x0 == null ? en.x : en.x0)) > 50) en.vx = -en.vx; }
       else if (en.k === 'fish') { en.t += dt; en.x += en.vx * dt; if (en.x0 == null) en.x0 = en.x; en.y = en.y0 + Math.sin(en.t * 3) * 8; if (Math.abs(en.x - en.x0) > 46) en.vx = -en.vx; }
+      else if (en.k === 'jelly') { en.t += dt; en.y = en.y0 + Math.sin(en.t * 1.25) * (en.amp || 20); en.x += Math.sin(en.t * .7) * 12 * dt; }
       else if (en.k === 'cloudking') ckStep(en, dt);
       else if (en.k === 'boss' && !easy && en.mode) bossSpecial(en, dt);   // 一般模式的大魔王：飛上天踩下來、噴火球
       else if (en.k === 'boss') {
@@ -24792,7 +24911,53 @@ function playQuest(id, opt) {
     camX = Math.max(camMin, Math.min(camMax, P.x - QVW * .35));
   };
   // ── 畫 ──
+  let seaFx = null;
+  const drawSeaBg = () => {
+    questSeaArt();
+    if (!seaFx) {
+      seaFx = {
+        last: P.t,
+        bubbles: Array.from({ length: 16 }, (_, i) => ({ x: (i * 73 + 18) % QVW, y: (i * 47) % QVH, r: 1.6 + (i % 5) * .85, s: 18 + (i % 4) * 7 }))
+      };
+    }
+    const dtb = Math.min(.05, Math.max(0, P.t - seaFx.last)); seaFx.last = P.t;
+    const par = ((camX * .22) % 480 + 480) % 480;
+    g.drawImage(questSeaWater, -par, 0); g.drawImage(questSeaWater, -par + 480, 0);
+    for (let i = 0; i < 4; i++) {
+      g.globalAlpha = .08 + Math.sin(P.t * .7 + i * 1.3) * .035; g.fillStyle = '#f7fcff';
+      const x0 = ((i * 130 - camX * .12) % (QVW + 90) + QVW + 90) % (QVW + 90) - 40;
+      g.beginPath(); g.moveTo(x0, 0); g.lineTo(x0 + 28, 0); g.lineTo(x0 + 78, QVH); g.lineTo(x0 + 16, QVH); g.fill();
+    }
+    g.globalAlpha = 1;
+    const cols = ['#ffd23f', '#ff9ec4', '#ffffff', '#7ee0c8', '#ffb15a', '#d7c6ff'];
+    for (let i = 0; i < 6; i++) {
+      const dir = i % 2 ? -1 : 1, sc = .55 + (i % 3) * .12;
+      const x = ((i * 96 + P.t * (16 + i * 3) * dir) % (QVW + 60) + QVW + 60) % (QVW + 60) - 30;
+      const y = 34 + (i % 4) * 30 + Math.sin(P.t * 1.6 + i) * 5;
+      g.save(); g.translate(x, y); g.scale(dir * sc, sc); g.fillStyle = cols[i];
+      g.beginPath(); g.ellipse(0, 0, 11, 5, 0, 0, 7); g.fill();
+      g.beginPath(); g.moveTo(-9, 0); g.lineTo(-16, -5); g.lineTo(-16, 5); g.fill();
+      g.fillStyle = '#231c1c'; g.beginPath(); g.arc(5, -1, 1.2, 0, 7); g.fill(); g.restore();
+    }
+    g.strokeStyle = '#1f8a5b'; g.fillStyle = '#1f8a5b'; g.lineCap = 'round';
+    [5, 15, 27, 39, 51, 63, 75, 87].forEach((tx, i) => {
+      const x = tx * QT - camX; if (x < -30 || x > QVW + 30) return;
+      const sway = Math.sin(P.t * 1.3 + i) * 5, top = QVH - 108 - (i % 3) * 14;
+      g.lineWidth = 4; g.beginPath(); g.moveTo(x, QVH - 20); g.quadraticCurveTo(x + sway, QVH - 70, x + sway * 1.3, top); g.stroke();
+      g.beginPath(); g.ellipse(x + sway - 12, top + 28, 13, 4.5, -.55, 0, 7); g.fill();
+      g.beginPath(); g.ellipse(x + sway + 14, top + 48, 15, 4.5, .5, 0, 7); g.fill();
+    });
+    const bw = questSeaBed.width; let x0 = -((camX % bw) + bw) % bw;
+    for (let x = x0; x < QVW; x += bw) g.drawImage(questSeaBed, x, QVH - 42);
+    seaFx.bubbles.forEach(b => {
+      b.y -= b.s * dtb; b.x += Math.sin(P.t * 1.4 + b.r) * .35;
+      if (b.y < -8) { b.y = QVH + 6; b.x = (b.x + 53) % QVW; }
+      g.fillStyle = 'rgba(255,255,255,.78)'; g.beginPath(); g.arc(b.x, b.y, b.r, 0, 7); g.fill();
+      g.strokeStyle = 'rgba(255,255,255,.45)'; g.lineWidth = 1; g.stroke();
+    });
+  };
   const drawBg = () => {
+    if (L.deep) { drawSeaBg(); return; }
     const gr = g.createLinearGradient(0, 0, 0, QVH); gr.addColorStop(0, wd.sky[0]); gr.addColorStop(.55, wd.sky[0]); gr.addColorStop(1, wd.sky[1]); g.fillStyle = gr; g.fillRect(0, 0, QVW, QVH);
     // 遠山、中景、近丘：三層視差，越遠越淡、移動越慢
     [[wd.hill2, .12, 110, 128, .55], [wd.hill, .28, 78, 150, .8], [wd.hill, .48, 52, 176, 1]].forEach(([col, par, r, base, al]) => { g.globalAlpha = al; g.fillStyle = col; for (let i = -1; i < 8; i++) { const x = ((i * 150 - camX * par) % 1050 + 1050) % 1050 - 150; g.beginPath(); g.ellipse(x, base + 40, r + (i % 2) * 18, r * .85, 0, Math.PI, 0); g.fill(); g.fillStyle = 'rgba(255,255,255,.22)'; g.beginPath(); g.ellipse(x - r * .2, base + 18, r * .45, r * .22, 0, Math.PI, 0); g.fill(); g.fillStyle = col; } g.globalAlpha = 1; });
@@ -24808,7 +24973,8 @@ function playQuest(id, opt) {
     const bump = bumps.find(b => b.tx === tx && b.ty === ty);
     if (bump) y -= Math.sin((.16 - bump.t) / .16 * Math.PI) * 5;
     const bevel = (face, edge) => { g.fillStyle = edge; g.fillRect(x + 2, y + 2, QT, QT); g.fillStyle = face; g.fillRect(x, y, QT - 2, QT - 2); g.fillStyle = 'rgba(255,255,255,.32)'; g.fillRect(x, y, QT - 2, 3); g.fillStyle = 'rgba(255,255,255,.16)'; g.fillRect(x, y, 3, QT - 2); g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(x + QT - 5, y + 3, 3, QT - 5); };
-    if (ch === '#') { const top = tileAt(tx, ty - 1) !== '#'; g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(x + 3, y + 3, QT, QT); g.fillStyle = wd.dirt; g.fillRect(x, y, QT - 1, QT - 1); g.fillStyle = 'rgba(0,0,0,.1)'; g.fillRect(x + QT - 5, y, 4, QT); g.fillRect(x, y + QT - 4, QT, 3); g.fillRect(x + 4, y + 8, 3, 3); g.fillRect(x + 11, y + 12, 3, 3); if (top) { g.fillStyle = wd.top; g.fillRect(x, y, QT - 1, 6); g.fillStyle = 'rgba(255,255,255,.4)'; g.fillRect(x, y, QT - 1, 2); g.fillStyle = 'rgba(0,0,0,.12)'; g.fillRect(x, y + 5, QT - 1, 2); } }
+    if (ch === '#' && L.deep && ty >= 14) { /* 海底的沙畫在背景上，不要再蓋一層沙磚 */ }
+    else if (ch === '#') { const top = tileAt(tx, ty - 1) !== '#'; g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(x + 3, y + 3, QT, QT); g.fillStyle = wd.dirt; g.fillRect(x, y, QT - 1, QT - 1); g.fillStyle = 'rgba(0,0,0,.1)'; g.fillRect(x + QT - 5, y, 4, QT); g.fillRect(x, y + QT - 4, QT, 3); g.fillRect(x + 4, y + 8, 3, 3); g.fillRect(x + 11, y + 12, 3, 3); if (top) { g.fillStyle = wd.top; g.fillRect(x, y, QT - 1, 6); g.fillStyle = 'rgba(255,255,255,.4)'; g.fillRect(x, y, QT - 1, 2); g.fillStyle = 'rgba(0,0,0,.12)'; g.fillRect(x, y + 5, QT - 1, 2); } }
     else if (ch === '=' || ch === 'B' || ch === 'N' || ch === 'R') { bevel(ch === '=' ? '#d4844e' : '#e08a52', '#8a4520'); g.strokeStyle = 'rgba(90,40,20,.45)'; g.lineWidth = 1; g.beginPath(); g.moveTo(x + 2, y + 9); g.lineTo(x + QT - 3, y + 9); g.moveTo(x + 9, y + 3); g.lineTo(x + 9, y + 9); g.moveTo(x + 3, y + 9); g.lineTo(x + 3, y + QT - 3); g.stroke(); if (ch === 'N') { g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(x + 13, y + 13, 2.2, 0, 7); g.fill(); } if (ch === 'R') { g.fillStyle = `rgba(255,255,255,${.35 + Math.abs(Math.sin(P.t * 4)) * .4})`; g.beginPath(); g.arc(x + 5, y + 5, 1.6, 0, 7); g.fill(); } }
     else if (ch === '?') { bevel('#ffd35c', '#c98a10'); g.fillStyle = '#ffffff'; g.font = '900 13px Arial'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('?', x + 8, y + 10 + Math.sin(P.t * 4) * .6); g.textBaseline = 'alphabetic'; }
     else if (ch === 'u') { bevel('#b08a62', '#6b4b30'); }
@@ -24852,10 +25018,18 @@ function playQuest(id, opt) {
       if (!en.up) { g.globalAlpha = 1; return; }
       g.fillStyle = '#ffb02e'; g.beginPath(); g.arc(x + 7, y + 9, 7, 0, 7); g.fill(); g.fillStyle = '#ff5a1f'; g.beginPath(); g.moveTo(x, y + 9); g.quadraticCurveTo(x + 7, y - 8 + Math.sin(P.t * 20) * 2, x + 14, y + 9); g.fill(); g.fillStyle = '#231c1c'; g.fillRect(x + 4, y + 8, 2, 2); g.fillRect(x + 9, y + 8, 2, 2);
     } else if (en.k === 'fish') {
-      g.fillStyle = '#3aa0d8'; g.beginPath(); g.ellipse(x + 9, y + 6, 9, 5, 0, 0, 7); g.fill();
-      g.fillStyle = '#7ec8f0'; g.beginPath(); g.ellipse(x + 10, y + 7, 5, 3, 0, 0, 7); g.fill();
-      g.fillStyle = '#1d6f9c'; g.beginPath(); g.moveTo(x + (en.vx < 0 ? 16 : 2), y + 6); g.lineTo(x + (en.vx < 0 ? 22 : -4), y + 2); g.lineTo(x + (en.vx < 0 ? 22 : -4), y + 10); g.fill();
+      const body = L.deep ? '#ffb03a' : '#3aa0d8', belly = L.deep ? '#ffe08a' : '#7ec8f0', tail = L.deep ? '#e07a12' : '#1d6f9c';
+      g.fillStyle = body; g.beginPath(); g.ellipse(x + 9, y + 6, 9, 5, 0, 0, 7); g.fill();
+      g.fillStyle = belly; g.beginPath(); g.ellipse(x + 10, y + 7, 5, 3, 0, 0, 7); g.fill();
+      g.fillStyle = tail; g.beginPath(); g.moveTo(x + (en.vx < 0 ? 16 : 2), y + 6); g.lineTo(x + (en.vx < 0 ? 22 : -4), y + 2); g.lineTo(x + (en.vx < 0 ? 22 : -4), y + 10); g.fill();
       g.fillStyle = '#231c1c'; g.beginPath(); g.arc(x + (en.vx < 0 ? 6 : 13), y + 5, 1.3, 0, 7); g.fill();
+    } else if (en.k === 'jelly') {
+      const jx = x + 8, jy = y + 6;
+      g.fillStyle = 'rgba(186,140,255,.9)'; g.beginPath(); g.arc(jx, jy, 9, Math.PI, 0); g.fill(); g.fillRect(jx - 9, jy, 18, 4);
+      g.fillStyle = 'rgba(255,255,255,.55)'; g.beginPath(); g.arc(jx - 3, jy - 2, 2.4, 0, 7); g.fill();
+      g.strokeStyle = 'rgba(150,90,220,.85)'; g.lineWidth = 1.6; g.lineCap = 'round';
+      for (let i = 0; i < 4; i++) { const tx2 = jx - 6 + i * 4; g.beginPath(); g.moveTo(tx2, jy + 4); g.quadraticCurveTo(tx2 + Math.sin(P.t * 4 + i) * 3, jy + 12, tx2 + Math.sin(P.t * 3 + i) * 2, jy + 18); g.stroke(); }
+      g.fillStyle = '#231c1c'; g.fillRect(jx - 4, jy - 2, 2, 2); g.fillRect(jx + 2, jy - 2, 2, 2);
     } else if (en.k === 'crab') {
       g.fillStyle = '#ff6b5b'; g.beginPath(); g.ellipse(x + 8, y + 9, 8, 5, 0, 0, Math.PI * 2); g.fill(); [-1, 1].forEach(s => { g.beginPath(); g.arc(x + 8 + s * 9, y + 4 + Math.sin(P.t * 8) * 1.5, 3, 0, Math.PI * 2); g.fill(); });
       g.fillStyle = '#231c1c'; g.fillRect(x + 5, y + 4, 2, 2); g.fillRect(x + 10, y + 4, 2, 2);
@@ -24905,6 +25079,16 @@ function playQuest(id, opt) {
   const drawKid = () => {
     if (P.inv > 0 && Math.floor(P.t * 14) % 2 && state === 'play') return;
     const x = P.x + P.w / 2 - camX, y = P.y + P.h;
+    if (L.deep) {
+      if (P.starT > 0) { g.fillStyle = `hsla(${(P.t * 400) % 360},90%,60%,.4)`; g.beginPath(); g.ellipse(x, y - P.h * .55, 30, 12, 0, 0, 7); g.fill(); }
+      g.fillStyle = 'rgba(255,255,255,.72)';
+      for (let i = 0; i < 3; i++) { const by = (P.t * 28 + i * 12) % 18; g.beginPath(); g.arc(x - (P.face || 1) * 26, y - P.h * .55 + 4 - by * .25, 1.5 + i * .35, 0, 7); g.fill(); }
+      const ks = P.big ? 1.35 : 1.08;
+      g.save(); g.translate(x, y - P.h * .55); g.scale((P.face || 1) * ks, ks);
+      drawQuestSwimmer(g, P.t, Math.abs(P.vx) > 12 || jumpHeld || sinkHeld || !!keys.ArrowDown || !!keys.KeyS);
+      g.restore();
+      return;
+    }
     if (P.bubble > 0) { g.fillStyle = 'rgba(190,230,255,.45)'; g.beginPath(); g.arc(x, y - 14, 22, 0, Math.PI * 2); g.fill(); g.strokeStyle = 'rgba(120,180,230,.8)'; g.stroke(); }
     if (P.holdT > .12) { g.font = '11px sans-serif'; g.textAlign = 'center'; for (let i = 0; i < 3; i++) g.fillText('✨', x + Math.sin(P.t * 20 + i * 2) * 10, y + 6 + i * 7); }   // 長按跳：腳下冒星星
     if (P.big) { g.fillStyle = 'rgba(255,120,160,.22)'; g.beginPath(); g.ellipse(x, y - 28 * (P.big ? 1.7 : 1), 16, 26, 0, 0, 7); g.fill(); }   // 變大時腳下一圈粉光，縮小就沒了
@@ -24931,11 +25115,11 @@ function playQuest(id, opt) {
     g.font = '700 14px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillStyle = '#3a3240';
     g.fillText(`💰 ${P.coins}　${questStarMarks(P.stars)}`, 14, 19);
     if (!easy) g.fillText('❤️'.repeat(Math.max(0, P.hearts)) + '🤍'.repeat(Math.max(0, 3 - P.hearts)), 130, 19);
-    const pw = P.swim ? '🐧 游泳' : P.starT > 0 ? '🌟 無敵！' : P.fire ? '🔥 火火花' : P.big ? '🍒 變大了' : ''; if (pw) { g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.roundRect(QVW - 104, 6, 98, 26, 13); g.fill(); g.fillStyle = P.swim ? '#1d6f9c' : '#e8505b'; g.textAlign = 'center'; g.fillText(pw, QVW - 55, 19); }
+    const pw = L.deep ? '🏊 游泳' : P.swim ? '🐧 游泳' : P.starT > 0 ? '🌟 無敵！' : P.fire ? '🔥 火火花' : P.big ? '🍒 變大了' : ''; if (pw) { g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.roundRect(QVW - 104, 6, 98, 26, 13); g.fill(); g.fillStyle = (L.deep || P.swim) ? '#1d6f9c' : '#e8505b'; g.textAlign = 'center'; g.fillText(pw, QVW - 55, 19); }
     if (touchUI && state === 'play' && (P.t < 6 || touches.size)) {   // 👆 平板：畫面上淡淡的分區提示（開始 6 秒、手指按著的時候）
       const split = true; g.globalAlpha = .55; g.textAlign = 'center'; g.font = '900 20px sans-serif'; g.fillStyle = '#ffffff'; g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 3;
       if (split) { g.fillStyle = 'rgba(255,255,255,.12)'; g.fillRect(QVW * .3 - 1, 40, 2, QVH - 40); g.fillRect(QVW * .7 - 1, 40, 2, QVH - 40); g.fillStyle = '#ffffff';
-        [['◀', QVW * .15], ['⤒ 跳', QVW * .5], ['▶', QVW * .85]].forEach(([t2, x2]) => { g.strokeText(t2, x2, QVH - 14); g.fillText(t2, x2, QVH - 14); }); }
+        [['◀', QVW * .15], [L.deep ? '⤒ 上' : '⤒ 跳', QVW * .5], ['▶', QVW * .85]].forEach(([t2, x2]) => { g.strokeText(t2, x2, QVH - 14); g.fillText(t2, x2, QVH - 14); }); }
       else { g.strokeText('👆 點畫面跳', QVW / 2, QVH - 14); g.fillText('👆 點畫面跳', QVW / 2, QVH - 14); }
       g.globalAlpha = 1;
     }
@@ -24988,7 +25172,7 @@ function playQuest(id, opt) {
     raf = requestAnimationFrame(frame);
   };
   raf = requestAnimationFrame(frame);
-  playQuest.test = { bossFire, bossSpecial: (en, dt) => bossSpecial(en, dt), pause: on => setPause(on), paused: () => paused, touches, zoneOf, canvas: c, pet: () => QP, petSpecial: () => petSpecial(), cloud: () => (boss && boss.k === 'cloudking' ? boss : null), ckHit: en => ckHit(en), rain, bolts, puddles, bossZone: () => bossZone, plats, givePower, shootFire, fbs, inBonus: () => inBonus, penguin: () => !!P.swim, down: () => { downBuf = .3; }, P, items, ents, L, bits, keys, solid, tileAt, win: () => { state = 'win'; endT = 0; }, step, frameStep: dt => { last = performance.now() - dt * 1000; frame(performance.now()); }, flag: () => flag, state: () => state, jump: () => { jumpHeld = true; jumpBuf = .15; }, release: () => { jumpHeld = false; }, kidScale: () => (P.big ? 1.05 : .54), releaseInput: releaseQuestInput };
+  playQuest.test = { deep: () => !!L.deep, sinkHeld: () => sinkHeld, pose: () => (L.deep ? 'swim' : 'stand'), bossFire, bossSpecial: (en, dt) => bossSpecial(en, dt), pause: on => setPause(on), paused: () => paused, touches, zoneOf, canvas: c, pet: () => QP, petSpecial: () => petSpecial(), cloud: () => (boss && boss.k === 'cloudking' ? boss : null), ckHit: en => ckHit(en), rain, bolts, puddles, bossZone: () => bossZone, plats, givePower, shootFire, fbs, inBonus: () => inBonus, penguin: () => !!P.swim, down: () => { downBuf = .3; }, P, items, ents, L, bits, keys, solid, tileAt, win: () => { state = 'win'; endT = 0; }, step, frameStep: dt => { last = performance.now() - dt * 1000; frame(performance.now()); }, flag: () => flag, state: () => state, jump: () => { jumpHeld = true; jumpBuf = .15; }, release: () => { jumpHeld = false; }, kidScale: () => (P.big ? 1.05 : .54), releaseInput: releaseQuestInput };
 }
 /* 打輸了：在大魔王那裡輸的（家長：可以從大魔王關重新開始、難度變低）→ 多一顆「從大魔王開始」，
    每輸一次大王少一滴血、跳得慢一點（最少 1 滴血） */
