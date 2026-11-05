@@ -40,7 +40,7 @@ const path = require('path');
     T = start('5-1'); const pl = T.plats[0], x1 = pl.x; run(T, 30); o.plat = T.plats.length >= 2 && pl.x !== x1;
     T = start('6-1'); o.flame = T.ents.some(e => e.k === 'flame') && !!find(T, 'L');
     closeGameWindow(); $('#modal').hidden = true;
-    // 磚塊：小的時候頂一下還在，變大就頂破；藤蔓按住跳會往上；水裡換成企鵝泳衣，上岸換回來
+    // 磚塊：小的時候頂一下還在，變大就頂破；藤蔓按住跳會往上；2-3 小水池游一下就上岸，2-4 整關在海底
     T = start('1-1'); const br = find(T, 'B'); T.P.big = false; T.P.x = br[0] * QT + 2; T.P.y = (br[1] + 1) * QT + 2; T.P.vy = -300; run(T, 8);
     o.brickBump = T.L.g[br[1]][br[0]] === 'B';
     T.P.big = true; T.P.x = br[0] * QT + 2; T.P.y = (br[1] + 1) * QT + 2; T.P.vy = -320; run(T, 8); o.brickBreak = T.L.g[br[1]][br[0]] === ' ';
@@ -96,10 +96,40 @@ const path = require('path');
     } return n >= 1; };
     o.stairPink = stairM(); o.linePink = lineM(); o.pipePink = pipeM(); o.blocksRow = blocksRow();
     T = start('1-4'); let vx0 = -1, vy0 = -1; T.L.g.forEach((r, y) => { const x = r.indexOf('V'); if (x >= 0 && y >= 7) { vx0 = x; vy0 = y; } }); T.P.x = vx0 * QT + 2; T.P.y = vy0 * QT; T.jump(); const yv = T.P.y; run(T, 20); o.vine = vy0 >= 7 && T.P.y < yv - 12;
-    T = start('2-4'); let sx = -1; T.L.g[12].forEach((ch, x) => { if (sx < 0 && ch === 'W' && T.L.g[13][x] === '#') sx = x; });
-    T.P.x = sx * QT; T.P.y = 13 * QT - T.P.h; T.P.vy = 0; run(T, 4); o.swim = T.P.swim === true && T.penguin() === true;
+    T = start('2-3'); let sx = -1; T.L.g[12].forEach((ch, x) => { if (sx < 0 && ch === 'W' && T.L.g[13][x] === '#') sx = x; });
+    T.P.x = sx * QT; T.P.y = 13 * QT - T.P.h; T.P.vy = 0; run(T, 4); o.swim = sx >= 0 && T.P.swim === true && T.penguin() === true && T.deep() === false;
     T.P.x = 2 * QT; T.P.y = 13 * QT - T.P.h; T.P.vy = 0; run(T, 6); o.shore = T.P.swim === false && T.penguin() === false;
-    const ux = T.L.waterPipes[0]; T.P.x = ux * QT + 4; T.P.y = 11 * QT - T.P.h; T.P.vy = 0; run(T, 3); T.down(); run(T, 3); o.waterPipe = T.inBonus() && T.P.swim === true;
+    o.beachSame = questBuild('2-1', true).deep !== true && questBuild('2-5', true).deep !== true && questBuild('1-1', true).deep !== true;
+    // 2-4 整關在海底：沒有岸、橫著游、慢慢沉、跳往上、⬇ 沉更快，直走得到旗子
+    T = start('2-4', 'easy');
+    const lane = 14 * QT - T.P.h - 50;
+    let swimAll = T.deep() === true && T.pose() === 'swim' && T.P.swim === true;
+    [2, 20, 50, 80].forEach(x => { T.P.x = x * QT; T.P.y = lane; T.P.vy = 0; T.P.vx = 0; run(T, 3); if (!T.P.swim) swimAll = false; });
+    o.deepSwim = swimAll && T.L.waterPipes.length === 0 && !T.L.g.some(r => r.includes('W'));
+    T.P.x = 8 * QT; T.P.y = 5 * QT; T.P.vx = 0; T.P.vy = 0; T.keys.ArrowDown = false;
+    const yA = T.P.y; run(T, 90); o.buoy = T.P.y > yA + 6 && T.P.y < yA + 80 && T.state() === 'play' && T.P.hearts === 3;
+    T.P.x = 8 * QT; T.P.y = 8 * QT; T.P.vy = 0; T.jump(); const yB = T.P.y; run(T, 36); o.swimUp = T.P.y < yB - 15; T.release();
+    T.P.x = 8 * QT; T.P.y = 4 * QT; T.P.vy = 0; T.keys.ArrowDown = false; run(T, 24); const idleY = T.P.y;
+    T.P.x = 8 * QT; T.P.y = 4 * QT; T.P.vy = 0; T.keys.ArrowDown = true; run(T, 24); o.sinkFast = T.P.y > idleY + 10; T.keys.ArrowDown = false;
+    const dn = document.querySelector('.qb-dn');
+    dn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 71, clientX: 8, clientY: 8 }));
+    o.sinkHold = dn.style.display !== 'none' && T.sinkHeld() === true;
+    dn.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 71, clientX: 8, clientY: 8 }));
+    o.sinkRelease = T.sinkHeld() === false;
+    o.seaFoes = T.ents.some(e => e.k === 'fish') && T.ents.some(e => e.k === 'jelly') && !T.ents.some(e => e.k === 'crab') && T.items.filter(it => it.k === 'star').length === 3;
+    const goal = T.items.find(it => it.k === 'goal');
+    T.P.inv = 9; T.P.x = 3 * QT; T.P.y = lane; T.P.vy = 0; T.P.vx = 0; T.keys.ArrowRight = true; T.keys.ArrowLeft = false;
+    let guard = 0; while (T.state() === 'play' && guard < 60 * 45) { T.step(1 / 60); guard++; }
+    T.keys.ArrowRight = false;
+    o.finish = (T.state() === 'flag' || T.state() === 'win') && !!goal;
+    // 藍色水管的程式還在：暫時把 2-2 拼成只有入水管，鑽進去仍是水底房間
+    const keep22 = QUEST_LEVELS['2-2'].slice();
+    QUEST_LEVELS['2-2'] = ['start', 'wpipe', 'goal'];
+    T = start('2-2', 'easy');
+    const ux = T.L.waterPipes[0];
+    T.P.x = ux * QT + 4; T.P.y = 11 * QT - T.P.h; T.P.vy = 0; T.P.vx = 0; run(T, 8); T.down(); run(T, 4);
+    o.waterPipe = T.L.waterRoom === true && ux >= 0 && T.inBonus() && T.P.swim === true;
+    QUEST_LEVELS['2-2'] = keep22;
     closeGameWindow(); $('#modal').hidden = true;
     // 存檔：6 個世界的關卡都留著，奇怪的拿掉
     const raw = JSON.parse(JSON.stringify(G)); raw.quest = { mode: 'easy', clear: { '6-3': 1, '7-1': 1 }, stars: { '5-2': 3 } };
