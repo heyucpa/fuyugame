@@ -14566,10 +14566,14 @@ function gameStep(dt, now) {
 }
 // 先排下一幀再畫：某一幀出錯（例如後面的 <script> 還沒載入完）也不會讓整個遊戲停住；錯誤照樣報出來（同一種只報一次）
 const loopErrs = new Set();
+var FRAME_MIN_MS = 1000 / 30 - 4;   // 房間、小島最多一秒畫 30 次（留 4 毫秒誤差，60Hz 螢幕剛好隔一格）
 (function loop(now) {
   requestAnimationFrame(loop);
   now = now || performance.now();
   if (document.hidden) { lastFrame = now; return; }   // 切到別的 App、分頁在背景：不要繼續畫、也不要補一大段
+  /* 🐢 房間一秒畫 30 次就夠順（家長：還有其他可以更快、避免卡卡的嗎）：工作量少一半，iPad 比較不燙、不卡。
+     螢幕 60 格就隔一格畫一次；本來就比較慢的機器不受影響。小遊戲有自己的迴圈，照樣 60 格。 */
+  if (now - lastFrame < FRAME_MIN_MS) return;
   if (now - lastFrame > 5000 && Date.now() - crashHiddenSince > (now - lastFrame) + 1000) crashLog('畫面停住', `停了 ${((now - lastFrame) / 1000).toFixed(1)} 秒又恢復（跳出確認視窗也會這樣）`);   // 📋 當機紀錄
   const dt = Math.max(0, Math.min(.05, (now - lastFrame) / 1000));
   lastFrame = now;
@@ -21240,6 +21244,7 @@ function islFrame(now) {
   if (!isl) return;
   now = now || performance.now();
   if (document.hidden) { isl.last = now; isl.raf = requestAnimationFrame(islFrame); return; }
+  if (now - isl.last < FRAME_MIN_MS) { isl.raf = requestAnimationFrame(islFrame); return; }   // 🐢 小島也是一秒 30 次
   const dt = Math.min(.05, (now - isl.last) / 1000); isl.last = now; isl.t += dt;
   if (resting) { closeIsland(); return; }
   if (isl.press && now - isl.repath > 140) { isl.repath = now; islTap(isl.press, true); }
