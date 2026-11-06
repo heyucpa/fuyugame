@@ -4493,8 +4493,9 @@ function furnSprite(def, rot, it) {
   if (furnSprites.size > 80) furnSprites.delete(furnSprites.keys().next().value);
   return sp;
 }
+var USE_FURN_SPRITE = false, USE_GIRL_SPRITE = false;   // 量過不會比較快，還多吃約 9MB 記憶體（iPad 容易當）→ 關掉，直接畫
 function blitFurn(ctx, def, x, y, rot, it) {
-  if (furnLive(def, it)) { drawItem(ctx, def, x, y, rot || 0, it); return; }
+  if (!USE_FURN_SPRITE || furnLive(def, it)) { drawItem(ctx, def, x, y, rot || 0, it); return; }
   const sp = furnSprite(def, rot, it);
   if (!sp) { drawItem(ctx, def, x, y, rot || 0, it); return; }
   const p = iso(x, y);
@@ -7166,6 +7167,7 @@ function girlOnStage(ctx) {
   return false;
 }
 function girlBlit(ctx, o) {
+  if (!USE_GIRL_SPRITE) return false;
   if (!girlOnStage(ctx)) return false;
   const key0 = girlBakeKey(o);
   if (!key0) return false;
@@ -17543,7 +17545,7 @@ function playIntro(onDone) {
     if (done) return; done = true;
     cancelAnimationFrame(raf); box.classList.add('out'); box.style.pointerEvents = 'none';
     introPlaying = false;   // 馬上算結束（畫面只是在淡出）
-    setTimeout(() => box.remove(), 400);
+    setTimeout(() => { freeCanvases(box); box.remove(); }, 400);
     G.introSeen = true; saveGame();
     try { stopSpeak(); } catch (e) {}
     if (onDone) onDone();
@@ -17668,7 +17670,7 @@ function playWelcome(info) {
     if (done) return; done = true;
     cancelAnimationFrame(raf); box.classList.add('out'); box.style.pointerEvents = 'none';
     introPlaying = false;
-    setTimeout(() => box.remove(), 400);
+    setTimeout(() => { freeCanvases(box); box.remove(); }, 400);
     try { stopSpeak(); } catch (e) {}
   };
   box.onclick = finish;
@@ -18057,9 +18059,13 @@ function fitGameDomSoon() { clearTimeout(gameDomFitT); gameDomFitT = setTimeout(
 (() => { const c = document.getElementById('modalCard'); if (!c || typeof MutationObserver !== 'function') return;
   new MutationObserver(() => { if (c.classList.contains('in-game')) fitGameDomSoon(); }).observe(c, { childList: true, subtree: true });
   window.addEventListener('resize', fitGameDomSoon); })();
+/* 🧹 家長：一直當機 → iPad 記憶體吃太多 Safari 會整頁關掉重開。畫布用完把大小設成 0，瀏覽器馬上把記憶體還回去
+   （只拿掉不設 0 的話，要等很久才回收；開場動畫那張全螢幕的畫布就有 15MB）。 */
+function freeCanvases(root) { try { if (!root) return; (root.tagName === 'CANVAS' ? [root] : root.querySelectorAll('canvas')).forEach(c => { c.width = 0; c.height = 0; }); } catch (e) {} }
 function closeGameWindow() {
   crashCrumb('關小遊戲');
   if (gameCleanup) { gameCleanup(); gameCleanup = null; }
+  freeCanvases($('#modalCard .game-stage') || null);
   $('#modalCard').classList.remove('game-card', 'in-game', 'game-big');
   $('#modal').hidden = true;
 }
@@ -19323,7 +19329,7 @@ function showcaseNext() {
   const close = () => {
     if (done) return; done = true;
     box.classList.add('out');
-    setTimeout(() => { box.remove(); showcaseNext(); }, 300);
+    setTimeout(() => { freeCanvases(box); box.remove(); showcaseNext(); }, 300);
   };
   // 孵蛋的時候前一秒半不給點掉（不然還沒看到寵物就關了）
   box.onclick = () => { if (!opts.hatch || box.querySelector('.sc-title')) close(); };
@@ -20259,13 +20265,13 @@ function confettiBurst(n) {
     if (document.querySelector('.confetti-cv')) return;
     const c = document.createElement('canvas'), W = innerWidth, H = innerHeight, dpr = 1;
     c.width = W * dpr; c.height = H * dpr; c.className = 'confetti-cv'; document.body.appendChild(c);
-    setTimeout(() => { live = false; c.remove(); }, 4000);
+    setTimeout(() => { live = false; (c.width = c.height = 0, c.remove()); }, 4000);
     const g = c.getContext('2d'); g.scale(dpr, dpr);
     const ps = Array.from({ length: Math.min(150, n || 120) }, () => ({ x: Math.random() * W, y: -20 - Math.random() * H * .4, vx: (Math.random() - .5) * 2, vy: 2 + Math.random() * 3, r: Math.random() * 6, w: 6 + Math.random() * 6, c: ['#FF9A3C', '#F58CA5', '#BFE8D2', '#A9D6F5', '#D9C7F0', '#FFE9A8'][Math.floor(Math.random() * 6)] }));
-    const T0 = performance.now(); let live = true; c.onpointerdown = () => { live = false; c.remove(); };
+    const T0 = performance.now(); let live = true; c.onpointerdown = () => { live = false; (c.width = c.height = 0, c.remove()); };
     const tick = now => { if (!live) return; const t = (now - T0) / 1000; g.clearRect(0, 0, W, H); g.globalAlpha = Math.max(0, Math.min(1, 3.2 - t));
       ps.forEach(p => { p.x += p.vx; p.y += p.vy; p.r += .1; g.save(); g.translate(p.x, p.y); g.rotate(p.r); g.fillStyle = p.c; g.fillRect(-p.w / 2, -p.w / 4, p.w, p.w / 2); g.restore(); });
-      if (t > 3.3) { live = false; c.remove(); return; } requestAnimationFrame(tick); };
+      if (t > 3.3) { live = false; (c.width = c.height = 0, c.remove()); return; } requestAnimationFrame(tick); };
     requestAnimationFrame(tick);
   } catch (e) {}
 }
@@ -20944,7 +20950,7 @@ function closeIsland() {
   if (typeof islTalkClose === 'function') islTalkClose();
   cancelAnimationFrame(isl.raf);
   document.removeEventListener('keydown', isl.kd); document.removeEventListener('keyup', isl.ku);
-  isl.layer.remove(); $('.stage').classList.remove('island-on');
+  freeCanvases(isl.layer); isl.layer.remove(); $('.stage').classList.remove('island-on');
   isl = null; requestDraw();
 }
 function islTile(e) {
@@ -25386,7 +25392,7 @@ function playIsletAppear(il) {
   const row = el('div', 'movie-pop'); row.append(go, later); go.style.visibility = 'hidden'; later.style.visibility = 'hidden';
   box.append(c, row); document.body.appendChild(box);
   const T0 = performance.now(); let raf = 0, live = true, said = {};
-  const close = () => { live = false; cancelAnimationFrame(raf); box.remove(); };
+  const close = () => { live = false; cancelAnimationFrame(raf); freeCanvases(box); box.remove(); };
   go.onclick = () => { close(); if (isl) { islShowNewIsle(); return; } closeGameWindow(); $('#modal').hidden = true; openIsland(); };
   later.onclick = close;
   const once = (k, f) => { if (!said[k]) { said[k] = 1; f(); } };
@@ -27786,7 +27792,7 @@ function playStarNotice(kind) {
   };
   raf = requestAnimationFrame(frame);
   setTimeout(() => { if (box.isConnected) box.classList.add('out'); }, dur);
-  setTimeout(() => { live = false; cancelAnimationFrame(raf); if (box.isConnected) box.remove(); }, dur + 480);
+  setTimeout(() => { live = false; cancelAnimationFrame(raf); freeCanvases(box); if (box.isConnected) box.remove(); }, dur + 480);
 }
 function starHatch() {
   const s = starState(); if (s.hatched || s.got.length < 6) return;
