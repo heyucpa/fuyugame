@@ -9,6 +9,8 @@ const path = require('path');
   try { await p.getByText('跳過').click({ timeout: 1500 }); } catch (e) {}
   const out = await p.evaluate(async () => {
     const wait = ms => new Promise(r => setTimeout(r, ms)), o = {};
+    o.defaultOff = SEASON_FX_ON === false;   /* 家長：背景四季特效先關掉；下面打開測原本的功能 */
+    SEASON_FX_ON = true;
     G.guide = 'done'; G.guideAsked = true; $('#modal').hidden = true;
     const m = md => { SEASON_TODAY = md; return seasonOfMonth(); };
     o.months = m([3, 1]) === 'spring' && m([5, 31]) === 'spring' && m([7, 4]) === 'summer' && m([10, 10]) === 'autumn' && m([12, 25]) === 'winter' && m([2, 1]) === 'winter';

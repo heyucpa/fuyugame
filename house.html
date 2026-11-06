@@ -14274,7 +14274,7 @@ function draw() {
   ctx.setTransform(view.scale * dpr, 0, 0, view.scale * dpr, view.ox * dpr, view.oy * dpr);
   const room = curRoom();
   // 陰影底座（四季換顏色：春天粉粉的、秋天金黃、冬天積雪）
-  ctx.fillStyle = SEASON_GROUND[sea] || 'rgba(60,90,60,.18)';
+  ctx.fillStyle = (SEASON_FX_ON && SEASON_GROUND[sea]) || 'rgba(60,90,60,.18)';
   ctx.beginPath();
   const c = iso(room.w / 2, room.d / 2);
   ctx.ellipse(c.x, c.y + 18, (room.w + room.d) * TW / 4 + 20, (room.w + room.d) * TH / 4 + 14, 0, 0, Math.PI * 2);
@@ -14297,8 +14297,11 @@ function seasonOfMonth() {
   const m = SEASON_TODAY ? SEASON_TODAY[0] : new Date().getMonth() + 1;
   return m >= 3 && m <= 5 ? 'spring' : m >= 6 && m <= 8 ? 'summer' : m >= 9 && m <= 11 ? 'autumn' : 'winter';
 }
+/* 家長：可以把背景四季特效關閉（一直卡）→ 整個關掉（花瓣、泡泡、落葉、雪和底下那圈換色）；要再打開改成 true。
+   存檔裡的 G.noSeasonFx 照樣讀得進來、不會壞。 */
+var SEASON_FX_ON = false;
 function drawSeasonBack(g, dpr, sea, now) {
-  if (G.noSeasonFx) return;
+  if (!SEASON_FX_ON || G.noSeasonFx) return;
   const W = g.canvas.width / dpr, H = g.canvas.height / dpr, t = now / 1000;
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
   for (let i = 0; i < 22; i++) {
@@ -17145,9 +17148,9 @@ function tabSave(body) {
   body.appendChild(nb);
   { const n = crashLogGet().length, cb = el('button', 'mini', `📋 當機紀錄（${n} 筆）`);   // 家長：常常當機 → 記下來複製給開發的人看
     cb.onclick = () => openCrashLog(); body.appendChild(cb); }
-  const sfx = el('button', 'mini', G.noSeasonFx ? '🍂 打開房間後面的季節裝飾' : '🍂 關掉房間後面的季節裝飾（花瓣、落葉、雪）');   // 美編：四季裝飾，嫌眼花可以關
+  if (SEASON_FX_ON) { const sfx = el('button', 'mini', G.noSeasonFx ? '🍂 打開房間後面的季節裝飾' : '🍂 關掉房間後面的季節裝飾（花瓣、落葉、雪）');   // 美編：四季裝飾，嫌眼花可以關
   sfx.onclick = () => { G.noSeasonFx = G.noSeasonFx ? undefined : 1; saveGame(); renderTab(); };
-  body.appendChild(sfx);
+  body.appendChild(sfx); }
   const rp = el('button', 'mini', '↩️ 小卡、📷、💡 位置歸位');
   rp.title = '小卡和按鈕可以拖到喜歡的地方；拖亂了按這裡放回原位';
   rp.onclick = () => { dragCard.reset(); dragPhoto.reset(); dragTheme.reset(); toast('放回原位了'); };
