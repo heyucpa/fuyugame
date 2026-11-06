@@ -15738,7 +15738,15 @@ function furnCard(def, sub, onClick, count) {
 function renderTab() {
   const body = $('#tabBody');
   body.innerHTML = '';
-  ({ inv: tabInv, shop: tabShop, deco: tabInv, build: tabBuild, earn: tabEarn, book: tabBook, talk: tabTalk, dress: tabDress, pets: tabPets, save: tabSave, backup: tabBackup })[tab](body);
+  /* 當機紀錄：iPad 遊戲還在載入（後面的程式還沒讀完）時就點了分頁 → 找不到後面才有的東西（例如 voiceOn）。
+     還在載入就等載完再畫一次，不要當掉。 */
+  try { ({ inv: tabInv, shop: tabShop, deco: tabInv, build: tabBuild, earn: tabEarn, book: tabBook, talk: tabTalk, dress: tabDress, pets: tabPets, save: tabSave, backup: tabBackup })[tab](body); }
+  catch (e) {
+    if (!(e instanceof ReferenceError) || document.readyState !== 'loading') throw e;
+    body.innerHTML = '';
+    body.appendChild(el('p', 'sell-q', '⏳ 還在準備中，等一下下…'));
+    if (!renderTab.waiting) { renderTab.waiting = true; document.addEventListener('DOMContentLoaded', () => { renderTab.waiting = false; renderTab(); }, { once: true }); }
+  }
 }
 
 // ── 賣回商店 ──
