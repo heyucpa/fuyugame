@@ -4527,7 +4527,11 @@ function roomShellOf(room, hoverUid) {
   roomShell = { key, c, minX, minY, w, h };
   return roomShell;
 }
+/* ⚠️ 量過（模擬慢 4 倍的機器）：每幀貼這張整個房間大小的圖，反而比直接畫地板牆壁慢（房間 30 → 16 格／秒），
+   家長回報一直卡、一直當 → 先關掉，回到直接畫。要再試把 USE_ROOM_SHELL 改成 true。 */
+var USE_ROOM_SHELL = false;
 function blitRoomShell(ctx, room, hoverUid) {
+  if (!USE_ROOM_SHELL) return false;
   const sh = roomShellOf(room, hoverUid);
   if (!sh) return false;
   ctx.drawImage(sh.c, sh.minX, sh.minY, sh.w, sh.h);
@@ -14551,7 +14555,9 @@ function gameStep(dt, now) {
   if (hold) $('#btnPlace').disabled = !hold.ok; // 放不下的位置，「放這裡」按鈕變灰
   const stage = document.querySelector('.stage');
   if (stage && stage.classList.contains('island-on')) { dirty = false; return true; }   // 小島整片蓋住房間，底下不用每幀重畫
-  draw(); // 小可愛一直在動，每幀都重畫
+  // 小遊戲視窗開著的時候房間被蓋住（後面是暗的）：一秒重畫兩次就好，把力氣留給小遊戲（家長：一直卡）
+  const gameOver = !$('#modal').hidden && $('#modalCard').classList.contains('in-game');
+  if (!gameOver || now - (gameStep.lastBg || 0) > 500) { gameStep.lastBg = now; draw(); } // 小可愛一直在動，每幀都重畫
   dirty = false;
   return true;
 }
@@ -21200,7 +21206,11 @@ function islBakeGround(m) {
   m._ground = { water, land, waves };
   return m._ground;
 }
+/* ⚠️ 小島地面先畫成兩張整座島大小的圖（2048×1760 兩張＝約 29MB）：iPad 記憶體吃太多會整頁當掉，
+   而且每幀貼整張比只畫看得到的格子還慢（小島 23 → 10 格／秒）→ 先關掉，回到只畫鏡頭看得到的那幾格。 */
+var USE_ISL_BAKE = false;
 function islDrawGround(ctx, m, x0, x1, y0, y1, tt) {
+  if (!USE_ISL_BAKE) return false;
   let gnd = null;
   try { gnd = islBakeGround(m); } catch (e) { gnd = null; }
   if (!gnd) return false;
