@@ -25712,7 +25712,7 @@ async function openClipInvite(fromBtn) {
   const gcode = giftCodeFrom(t || ''), code = inviteCodeFrom(t || '');
   if (!code && !gcode) { if (fromBtn) toast('剪貼簿裡沒有邀請卡耶，再去信裡按一次「複製」看看'); return false; }
   const pill = document.getElementById('clipInvite'); if (pill) pill.remove();
-  clipPillSet({ muteUntil: Date.now() + 864e5, ignored: 0 });   // 剛收下：一天內不再跳
+  clipPillSet({ done: 1, ignored: 0 });   // 家長：打開過邀請卡了還是會跳 → 收下過一次就再也不自動跳（手動的「📥 收到邀請卡」照樣在）
   $('#modal').hidden = true;
   handleInviteCodes(code, gcode);
   return true;
@@ -25728,12 +25728,14 @@ function showClipPill(awayMs) {
   if (!isIosApp() || !(navigator.clipboard && navigator.clipboard.readText) || document.getElementById('clipInvite')) return;
   const st = clipPillGet(), now = Date.now();
   if (awayMs != null && (awayMs < 5000 || awayMs > 15 * 60000)) return;
+  if (st.done) return;
+  try { if (loadInvites().length) { clipPillSet({ done: 1 }); return; } } catch (e) {}   // 已經收過邀請卡（舊存檔也算）就不再跳
   if (now < st.muteUntil || now - st.last < 30 * 60000) return;
   clipPillSet({ last: now });
   const b = el('button', 'clip-invite', '📥 打開剛剛複製的邀請卡'); b.id = 'clipInvite';
   let used = false;
   b.onclick = () => { used = true; openClipInvite(true); };
-  const x = el('span', 'clip-x', '✕'); x.onclick = e => { e.stopPropagation(); used = true; b.remove(); clipPillSet({ muteUntil: Date.now() + 7 * 864e5, ignored: 0 }); toast('好，7 天內不會再跳出來（要收邀請卡到「出門 → 📥 收到邀請卡」）'); }; b.appendChild(x);
+  const x = el('span', 'clip-x', '✕'); x.onclick = e => { e.stopPropagation(); used = true; b.remove(); clipPillSet({ done: 1, ignored: 0 }); toast('好，以後不會再跳出來（要收邀請卡到「出門 → 📥 收到邀請卡」）'); }; b.appendChild(x);
   document.body.appendChild(b);
   setTimeout(() => { if (!b.isConnected) return; b.remove(); if (!used) { const ig = clipPillGet().ignored + 1; clipPillSet(ig >= 3 ? { ignored: 0, muteUntil: Date.now() + 3 * 864e5 } : { ignored: ig }); } }, 20000);
 }
