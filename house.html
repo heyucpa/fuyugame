@@ -25698,22 +25698,34 @@ async function openClipInvite(fromBtn) {
   const gcode = giftCodeFrom(t || ''), code = inviteCodeFrom(t || '');
   if (!code && !gcode) { if (fromBtn) toast('剪貼簿裡沒有邀請卡耶，再去信裡按一次「複製」看看'); return false; }
   const pill = document.getElementById('clipInvite'); if (pill) pill.remove();
+  clipPillSet({ muteUntil: Date.now() + 864e5, ignored: 0 });   // 剛收下：一天內不再跳
   $('#modal').hidden = true;
   handleInviteCodes(code, gcode);
   return true;
 }
 function isIosApp() { return isIosDevice() && (navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches)); }
-function showClipPill() {
+/* 家長：已經打開邀請卡了，還是不定時跳出「打開邀請卡」→ 以前每次從背景回來（離開 3 秒以上）都跳。
+   iPad 不能偷看剪貼簿，所以改成「比較可能剛去複製」才跳：離開 5 秒～15 分鐘回來、30 分鐘內最多一次；
+   按 ✕ 七天不跳、剛收下一張一天不跳、連續跳 3 次都沒人理就三天不跳。手動的「📥 收到邀請卡」照樣在。記在這台機器。 */
+const CLIP_PILL_KEY = 'myHouse_clipPill';
+function clipPillGet() { try { return Object.assign({ last: 0, muteUntil: 0, ignored: 0 }, JSON.parse(localStorage.getItem(CLIP_PILL_KEY) || '{}')); } catch (e) { return { last: 0, muteUntil: 0, ignored: 0 }; } }
+function clipPillSet(patch) { try { localStorage.setItem(CLIP_PILL_KEY, JSON.stringify(Object.assign(clipPillGet(), patch))); } catch (e) {} }
+function showClipPill(awayMs) {
   if (!isIosApp() || !(navigator.clipboard && navigator.clipboard.readText) || document.getElementById('clipInvite')) return;
+  const st = clipPillGet(), now = Date.now();
+  if (awayMs != null && (awayMs < 5000 || awayMs > 15 * 60000)) return;
+  if (now < st.muteUntil || now - st.last < 30 * 60000) return;
+  clipPillSet({ last: now });
   const b = el('button', 'clip-invite', '📥 打開剛剛複製的邀請卡'); b.id = 'clipInvite';
-  b.onclick = () => openClipInvite(true);
-  const x = el('span', 'clip-x', '✕'); x.onclick = e => { e.stopPropagation(); b.remove(); }; b.appendChild(x);
+  let used = false;
+  b.onclick = () => { used = true; openClipInvite(true); };
+  const x = el('span', 'clip-x', '✕'); x.onclick = e => { e.stopPropagation(); used = true; b.remove(); clipPillSet({ muteUntil: Date.now() + 7 * 864e5, ignored: 0 }); toast('好，7 天內不會再跳出來（要收邀請卡到「出門 → 📥 收到邀請卡」）'); }; b.appendChild(x);
   document.body.appendChild(b);
-  setTimeout(() => { if (b.isConnected) b.remove(); }, 20000);
+  setTimeout(() => { if (!b.isConnected) return; b.remove(); if (!used) { const ig = clipPillGet().ignored + 1; clipPillSet(ig >= 3 ? { ignored: 0, muteUntil: Date.now() + 3 * 864e5 } : { ignored: ig }); } }, 20000);
 }
 // 小屋 App 從背景回到前面（剛從 Safari 回來）：出現那顆按鈕 20 秒
 let clipHiddenAt = 0;
-document.addEventListener('visibilitychange', () => { if (document.hidden) clipHiddenAt = Date.now(); else if (clipHiddenAt && Date.now() - clipHiddenAt > 3000) showClipPill(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) clipHiddenAt = Date.now(); else if (clipHiddenAt) showClipPill(Date.now() - clipHiddenAt); });
 // 🏡 快速出門去朋友家：一樣要坐船（到主島的碼頭 → 坐船到朋友島 → 走到她家門口進去）
 // 🏝️ 快速出門去闖關送的小島（家長：新增加的小島要出現在快速出門）：走到主島碼頭 → 坐船 → 走到島上的大東西旁邊
 function isletByBoat(id) {
