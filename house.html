@@ -14299,7 +14299,7 @@ function seasonOfMonth() {
 }
 /* 家長：可以把背景四季特效關閉（一直卡）→ 整個關掉（花瓣、泡泡、落葉、雪和底下那圈換色）；要再打開改成 true。
    存檔裡的 G.noSeasonFx 照樣讀得進來、不會壞。 */
-var SEASON_FX_ON = false;
+var SEASON_FX_ON = true;   // 家長：量過幾乎不影響速度（只佔 0.1～0.3%）→ 打開回來
 function drawSeasonBack(g, dpr, sea, now) {
   if (!SEASON_FX_ON || G.noSeasonFx) return;
   const W = g.canvas.width / dpr, H = g.canvas.height / dpr, t = now / 1000;
