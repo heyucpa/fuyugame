@@ -12,6 +12,7 @@ const { chromium } = require('playwright');
     const p0=iso(3.6,3.6,8); const w={x:p0.x, y:p0.y};
     const picked=pickItem(w); out.pickedTable = picked && picked.id;
     const ev={clientX: 500, clientY: 400};
+    setDecorMode(true);   // 🛠️ 桌上的東西拿起來、收起來在佈置模式裡
     if (canUse(picked) || picked.top) showItemMenu(picked, ev); out.menu = [...document.querySelectorAll('#itemMenu button')].map(x=>x.textContent);
     out.notHolding = !hold;
     // 收起來
@@ -21,7 +22,7 @@ const { chromium } = require('playwright');
     G.inv.flower_vase--; if(!G.inv.flower_vase) delete G.inv.flower_vase; t.top='flower_vase';
     showItemMenu(t, ev); [...document.querySelectorAll('#itemMenu button')].find(x=>/拿起來/.test(x.textContent)).click();
     out.holdingVase = hold && hold.def.id; out.tableEmpty = !t.top;
-    const t2=room.items[1]; hold.table=t2.uid; hold.ok=true; placeHold(); out.movedToT2 = t2.top==='flower_vase' && !(G.inv.flower_vase>0);
+    const t2=room.items[1]; hold.table=t2.uid; hold.ok=true; placeHold(); out.movedToT2 = t2.top==='flower_vase' && !(G.inv.flower_vase>0); setDecorMode(false);
     // 沒東西的桌子：點了照舊直接拿起來搬
     out.emptyTableNoMenu = !(canUse(t) || t.top);
     // 🎵 音樂選單

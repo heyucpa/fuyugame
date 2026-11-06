@@ -550,6 +550,10 @@ button.pass { font: inherit; }
 .stage.holding .petcard, .stage.holding .foodmenu { display: none; }
 .pc-head { display: flex; justify-content: space-between; align-items: center; cursor: grab; user-select: none; -webkit-user-select: none; touch-action: none; }
 .petcard.dragging, .photo-btn.dragging, .theme-btn.dragging { opacity: .85; cursor: grabbing; box-shadow: 0 10px 24px rgba(0,0,0,.2); }
+.decor-mode-btn { position: absolute; right: 10px; bottom: 152px; z-index: 6; border: 2px solid #f2a65a; background: #fff4e6; color: #b5651d; font: inherit; font-weight: 800; font-size: 14px; padding: 6px 12px; border-radius: 999px; box-shadow: 0 2px 0 rgba(0,0,0,.1); cursor: pointer; }
+.decor-mode-btn.on { background: #5fae7c; border-color: #3f8f5c; color: #fff; animation: glowPulse .8s infinite alternate; }
+.decor-mode-btn[hidden], .stage.island-on .decor-mode-btn, .stage.holding .decor-mode-btn { display: none; }
+.stage.decor-on #view { box-shadow: inset 0 0 0 4px #f2a65a; }
 .photo-btn, .theme-btn { touch-action: none; user-select: none; -webkit-user-select: none; }
 .pc-head button { border: none; background: none; font-size: 14px; padding: 0 4px; color: var(--muted); }
 .petcard.mini .pc-body { display: none; }
@@ -1111,6 +1115,7 @@ button, .card, .place-pick, .lv-btn, .dex-tile, .adv-ep, .gift-opt, .trick-cell,
     <button class="zoom-btn" id="btnZoom" title="放大房間">🔍 放大</button>
     <button class="theme-btn" id="btnTheme">💡 小主題</button>
     <button class="photo-btn" id="btnPhoto" title="拍照">📷</button>
+    <button class="decor-mode-btn" id="btnDecorMode" title="佈置家具">🛠️ 佈置</button>
     <button class="dup-btn" id="btnDup" hidden>🧺 重複的寵物</button>
     <button class="call-btn" id="btnCallAll" hidden>📣 叫大家</button>
     <div class="night-shade" id="nightShade" hidden></div>
@@ -5167,6 +5172,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-12T22:00', title: '🛠️ 佈置家具', lines: [
+    ['👆', '平常點家具只會出現「睡覺、坐下」這些可以用的'],
+    ['🛠️', '想搬家具或收起來，先按右邊的「🛠️ 佈置」'],
+    ['✅', '佈置好了按「✅ 完成」']
+  ] },
   { id: '2026-11-12T21:00', title: '🗺️ 前面的闖關變長了', lines: [
     ['🧱', '每個世界前面的舊關變長了：打得掉的磚、藤蔓、會動的雲、踢殼、頭頂的金幣房'],
     ['🟢', '舊關也有水管，站上去按 ⬇ 進祕密房間'],
@@ -14281,7 +14291,7 @@ function draw() {
   const c = iso(room.w / 2, room.d / 2);
   ctx.ellipse(c.x, c.y + 18, (room.w + room.d) * TW / 4 + 20, (room.w + room.d) * TH / 4 + 14, 0, 0, Math.PI * 2);
   ctx.fill();
-  drawRoom(ctx, room, { ghost: hold, hoverUid: hold ? null : hoverUid, showGrid: !!hold, extras: [fufuDrawEntry()].concat(petDrawEntries(), visitorDrawEntries(), (typeof ghostDrawEntries === 'function' ? ghostDrawEntries() : []), hostDrawEntries(),   /* 幽靈在後面的 script：第一幀可能還沒載入 */ supplyDrawEntries(), giftDrawEntries(), phDrawEntries()), occupants: [fufuOccupant(), petOccupant(), visitorOccupant()].concat(phOccupants(), compOccupants()) });
+  drawRoom(ctx, room, { ghost: hold, hoverUid: hold ? null : hoverUid, showGrid: !!hold || decorMode, extras: [fufuDrawEntry()].concat(petDrawEntries(), visitorDrawEntries(), (typeof ghostDrawEntries === 'function' ? ghostDrawEntries() : []), hostDrawEntries(),   /* 幽靈在後面的 script：第一幀可能還沒載入 */ supplyDrawEntries(), giftDrawEntries(), phDrawEntries()), occupants: [fufuOccupant(), petOccupant(), visitorOccupant()].concat(phOccupants(), compOccupants()) });
   petDrawOverlay(ctx);
   visitorDrawOverlay(ctx, performance.now());
   drawAmbient(ctx, performance.now());
@@ -15026,7 +15036,7 @@ function updateHoldUI() {
   const onWall = hold && hold.def.layer === 'wall', touch = isTouchDevice();
   $('#btnRotate').firstChild.textContent = onWall ? '↻ 換牆' : '↻ 旋轉';
   $('#hint').textContent = !hold
-    ? `點${charName()}叫她做事；點家具可以使用或搬動；點地板讓她走過去`
+    ? (decorMode ? '🛠️ 佈置中：點家具可以搬動、收起來；好了按右邊「✅ 完成」' : `點${charName()}叫她做事；點家具可以使用；要搬家具按「🛠️ 佈置」；點地板讓她走過去`)
     : touch
       ? (onWall
         ? `點牆面把「${hold.def.name}」移過去，再按「✓ 放這裡」`
@@ -15147,7 +15157,34 @@ function shakeSnowGlobe(it) {
   Sound.play('bath');
   fufuSay('雪花飄起來了！', 2600);
 }
+/* 🛠️ 佈置模式（家長：沒有要動家具的時候，搬動跟收起來要不要隱藏？→ 旁邊多一顆「佈置」鍵）
+   平常點家具只出現「使用」的選項（坐下、睡覺、讓寵物睡…），沒有可以用的就讓小可愛走過去；不會不小心搬走、收掉。
+   按「🛠️ 佈置」進入佈置模式：地板出現格線、畫面框起來，點家具只出現「搬動／收起來」，牆上的東西點了直接拿起來；
+   好了按「✅ 完成」。從「我的東西」拿家具出來擺，跟以前一樣直接放。在別人家（不能動東西的地方）不顯示這顆。 */
+var decorMode = false;
+function setDecorMode(on) {
+  decorMode = !!on; hideItemMenu();
+  const b = $('#btnDecorMode'); if (b) { b.classList.toggle('on', decorMode); b.textContent = decorMode ? '✅ 完成' : '🛠️ 佈置'; }
+  $('.stage').classList.toggle('decor-on', decorMode);
+  try { updateHoldUI(); } catch (e) {}
+  requestDraw();
+}
+function refreshDecorBtn() { const b = $('#btnDecorMode'); if (!b) return; const can = !G.away || inPetHouse(); b.hidden = !can; if (!can && decorMode) setDecorMode(false); }
+function decorHintOnce() { try { if (localStorage.getItem('myHouse_decorHint')) return; localStorage.setItem('myHouse_decorHint', '1'); } catch (e) {} toast('想搬家具、收起來，按右邊的「🛠️ 佈置」'); }
+// 佈置模式：點家具只有搬動／收起來（桌上的東西也在這裡處理）
+function showDecorMenu(it, e) {
+  stateOf(it.uid).tapAt = performance.now(); Sound.play('click');
+  const def = FURN_BY_ID[it.id], entries = [], add = (label, fn) => entries.push([label, fn]);
+  if (it.top) { const tdef = FURN_BY_ID[it.top];
+    add(`✋ 把${tdef ? tdef.name : '桌上的東西'}拿起來（放到別的地方）`, () => { const id = it.top; snapUndo(); it.top = null; addItem(id); commit(); startHoldFromInv(id); Sound.play('pickUp'); });
+    add(`⬇️ 把${tdef ? tdef.name : '桌上的東西'}收起來`, () => { snapUndo(); if (it.top) addItem(it.top); it.top = null; toast('收起來了'); commit(); offerUndo(); }); }
+  else if (canHaveTop(it.id)) { const can = ON_TABLE.filter(id => G.inv[id] > 0); if (can.length) add('🧺 放東西上去', () => openTopPicker(it)); }
+  add(it.top ? '✋ 搬動桌子（東西跟著走）' : '✋ 搬動', () => startHoldFromRoom(it));
+  add('📦 收起來', () => { snapUndo(); curRoom().items = curRoom().items.filter(x => x.uid !== it.uid); storeRoomItem(it); toast(`${def.name} 收起來了`); commit(); offerUndo(); });
+  openMenu(entries, e);
+}
 function showItemMenu(it, e) {
+  if (decorMode && (!G.away || inPetHouse())) { showDecorMenu(it, e); return; }
   stateOf(it.uid).tapAt = performance.now(); // 點到的家具輕輕跳一下，知道有點到
   Sound.play('click');
   const def = FURN_BY_ID[it.id], use = FURNITURE_USE[it.id], act = FURNITURE_ACT[it.id];
@@ -15172,39 +15209,12 @@ function showItemMenu(it, e) {
   if (G.away && !inPetHouse()) { openMenu(entries, e); return; } // 親戚家只能用，不能搬、不能收（寵物屋跟家裡一樣）
   /* 桌上放一樣小東西。一張桌子只放一樣——不然會疊在一起、會穿過桌面。
      收納裡沒有可以放的東西時就不顯示這一項，免得點了跳出空選單。 */
-  if (canHaveTop(it.id)) {
-    if (it.top) {
-      const tdef = FURN_BY_ID[it.top];
-      if (it.top === 'music_box') add('🎵 聽音樂盒', () => playMusicBox(it));
-      if (it.top === 'snow_globe') add('❄️ 搖一搖雪花球', () => shakeSnowGlobe(it));
-      add(`✋ 把${tdef ? tdef.name : '桌上的東西'}拿起來（放到別的地方）`, () => {   // 拿起來直接跟著手指走，可以放到別張桌子或地上
-        const id = it.top; snapUndo(); it.top = null; addItem(id); commit(); startHoldFromInv(id); Sound.play('pickUp');
-      });
-      add(`⬇️ 把${tdef ? tdef.name : '桌上的東西'}收起來`, () => {
-        snapUndo();
-        if (it.top) addItem(it.top);
-        it.top = null;
-        toast('收起來了');
-        commit();
-        offerUndo();
-      });
-    } else {
-      const can = ON_TABLE.filter(id => G.inv[id] > 0);
-      if (can.length) add('🧺 放東西上去', () => openTopPicker(it));
-      else add('🧺 放東西上去（我的東西裡沒有小東西）', () => {
-        toast('先去商店買小盆栽、公仔這類小東西吧！');
-      });
-    }
-  }
-  add(it.top ? '✋ 搬動桌子（東西跟著走）' : '✋ 搬動', () => startHoldFromRoom(it));
-  add('📦 收起來', () => {
-    snapUndo();
-    curRoom().items = curRoom().items.filter(x => x.uid !== it.uid);
-    storeRoomItem(it);
-    toast(`${def.name} 收起來了`);
-    commit();
-    offerUndo();
-  });
+  // 桌上的小東西：平常只能玩（音樂盒、雪花球）；拿起來、收起來、放東西上去都在「🛠️ 佈置」裡
+  if (it.top === 'music_box') add('🎵 聽音樂盒', () => playMusicBox(it));
+  if (it.top === 'snow_globe') add('❄️ 搖一搖雪花球', () => shakeSnowGlobe(it));
+  // 搬動、收起來只在「🛠️ 佈置」裡（平常點不到，不會不小心搬走）
+  if (!entries.length) { decorHintOnce(); const c = nearestFree(curRoom(), it.x + .5, it.y + .5); if (c) { fufu.pendingSay = null; fufuWalkTo(c[0], c[1]); } return; }
+  decorHintOnce();
   openMenu(entries, e);
 }
 
@@ -15239,9 +15249,10 @@ canvas.addEventListener('pointerup', e => {
   if (fa) { openMenu(farmMenuEntries(fa), e); return; }
   if (fufuHit(w)) { if (fufu.pose && fufu.pose.type === 'lie') fufuPoke(); else showKidMenu(e); return; } // 睡覺中點她就叫醒
   const it = pickItem(w);
-  if (it) { if (canUse(it) || (it.top && (!G.away || inPetHouse()))) showItemMenu(it, e); else if (!G.away || inPetHouse()) startHoldFromRoom(it); return; }   // 桌上有東西：點了先問要做什麼（以前一點就把整張桌子拿起來，桌上的東西收不掉）
+  if (it) { if (decorMode && (!G.away || inPetHouse())) showDecorMenu(it, e); else if (canUse(it) || (it.top && (!G.away || inPetHouse()))) showItemMenu(it, e); else if (!G.away || inPetHouse()) { decorHintOnce(); const c = nearestFree(curRoom(), it.x + .5, it.y + .5); if (c) { fufu.pendingSay = null; fufuWalkTo(c[0], c[1]); } } return; }   // 🛠️ 平常不會一點就拿起來   // 桌上有東西：點了先問要做什麼（以前一點就把整張桌子拿起來，桌上的東西收不掉）
   const wi = G.away && !inPetHouse() ? null : pickWallItem(w);
-  if (wi) { startHoldWall(wi); return; }
+  if (wi && decorMode) { startHoldWall(wi); return; }
+  if (wi) decorHintOnce();   // 平常點牆上的東西不會拿下來
   // 外面地方的牆上東西：有些點了可以玩（教室的注音布告欄）
   if (G.away && !inPetHouse()) { const wt = pickWallItem(w); if (wt && WALL_TAP[wt.id]) { WALL_TAP[wt.id](); return; } }
   const g = toGrid(w), room = curRoom();
@@ -15259,6 +15270,7 @@ canvas.addEventListener('contextmenu', e => {
   hideItemMenu();
   if (G.away && !inPetHouse()) return;
   if (hold) { storeHold(); return; }
+  if (!decorMode) { decorHintOnce(); return; }   // 🛠️ 右鍵收起來也只在佈置模式
   const wi = pickItem(toWorld(e)) ? null : pickWallItem(toWorld(e));
   if (wi) {
     snapUndo();
@@ -15423,6 +15435,8 @@ function setBigRoom(on) {
 }
 $('#btnTheme').onclick = () => { Sound.play('click'); openThemes(); };
 $('#btnPhoto').onclick = () => takePhoto();
+$('#btnDecorMode').onclick = () => { Sound.play('click'); setDecorMode(!decorMode); if (decorMode) toast('🛠️ 點家具可以搬動、收起來；好了按「✅ 完成」'); };
+setInterval(() => { try { refreshDecorBtn(); } catch (e) {} }, 800);
 $('#btnDup').onclick = () => { Sound.play('click'); openDupSell(); };
 $('#btnCallAll').onclick = () => {
   Sound.play('click');

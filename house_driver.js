@@ -3889,8 +3889,13 @@
         var wdef = FURN_BY_ID[wi12.id], uu = (wi12.pos + wdef.w / 2) * TW / 2, vv = wdef.z + wdef.h / 2;
         var ww = { x: wi12.side === 'R' ? uu : -uu, y: .5 * uu - vv }, rw2 = canvas.getBoundingClientRect();
         if (pickWallItem(ww) !== wi12) fails.push('（測試）算的牆上位置不對');
+        // 🛠️ 平常點牆上的東西不會拿下來；按「佈置」之後才可以
         canvas.dispatchEvent(new PointerEvent('pointerup', { clientX: rw2.left + ww.x * view.scale + view.ox, clientY: rw2.top + ww.y * view.scale + view.oy, bubbles: true }));
-        if (!hold || hold.fromUid !== wi12.uid) fails.push('寵物屋牆上的東西點了不能搬');
+        if (hold) fails.push('沒按佈置，點牆上的東西就被拿起來了');
+        setDecorMode(true);
+        canvas.dispatchEvent(new PointerEvent('pointerup', { clientX: rw2.left + ww.x * view.scale + view.ox, clientY: rw2.top + ww.y * view.scale + view.oy, bubbles: true }));
+        setDecorMode(false);
+        if (!hold || hold.fromUid !== wi12.uid) fails.push('寵物屋牆上的東西（佈置模式）點了不能搬');
         cancelHold();
       }
       // 換存檔再換回來：擺法跟著存檔
