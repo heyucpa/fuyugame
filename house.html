@@ -1207,9 +1207,16 @@ window.addEventListener('unhandledrejection', function (e) { var r = e.reason; c
 (function () {
   try {
     var prev = JSON.parse(localStorage.getItem(ALIVE_KEY) || 'null');
-    if (prev && !prev.clean && Date.now() - prev.t < 6 * 3600 * 1000) { crashCrumbs = (prev.did || []).slice(); crashLog('上次沒有正常關掉', '可能當掉、或被系統關掉（iPad 記憶體不夠也會這樣）；最後一次還活著是 ' + new Date(prev.t).toTimeString().slice(0, 8)); crashCrumbs = []; }
+    if (prev && !prev.clean && Date.now() - prev.t < 6 * 3600 * 1000) {
+      crashCrumbs = (prev.did || []).slice();
+      /* 多記一點線索：Chrome「省記憶體」把分頁收起來（document.wasDiscarded）跟真的當掉不一樣；最後一次還活著時用了多少記憶體 */
+      var why = document.wasDiscarded ? 'Chrome 為了省記憶體把這個分頁收起來了（不是遊戲壞掉；其他分頁開太多也會這樣）' : '可能當掉、或被系統關掉（iPad 記憶體不夠也會這樣）';
+      var mem = prev.mem ? '；那時候記憶體：程式 ' + prev.mem.js + 'MB、畫面 ' + prev.mem.cv + 'MB、元件 ' + prev.mem.n + ' 個' : '';
+      crashLog('上次沒有正常關掉', why + '；最後一次還活著是 ' + new Date(prev.t).toTimeString().slice(0, 8) + mem); crashCrumbs = [];
+    }
   } catch (e) {}
-  var beat = function (clean) { try { localStorage.setItem(ALIVE_KEY, JSON.stringify({ t: Date.now(), clean: !!clean, did: crashCrumbs.slice(-12) })); } catch (e) {} };
+  var memNow = function () { try { var cs = document.getElementsByTagName('canvas'), cv = 0; for (var i = 0; i < cs.length; i++) cv += cs[i].width * cs[i].height * 4; return { js: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1e6) : '?', cv: Math.round(cv / 1e6), n: document.getElementsByTagName('*').length }; } catch (e) { return null; } };
+  var beat = function (clean) { try { localStorage.setItem(ALIVE_KEY, JSON.stringify({ t: Date.now(), clean: !!clean, did: crashCrumbs.slice(-12), mem: memNow() })); } catch (e) {} };
   beat(false); setInterval(function () { if (!document.hidden) beat(false); }, 5000);
   document.addEventListener('visibilitychange', function () { if (document.hidden) { crashHiddenSince = Date.now(); beat(true); } else { beat(false); } });
   window.addEventListener('pagehide', function () { beat(true); });
