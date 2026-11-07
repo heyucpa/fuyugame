@@ -24,7 +24,8 @@ const path = require('path');
     QP.meter = QP.max; for (let i = 0; i < 12; i++) T.step(1 / 60); await wait(50); o.glow = document.querySelector('.qb-pet').classList.contains('glow');
     // 放在畫面裡放兩隻怪物、一隻很遠的
     T.ents.forEach(e => { e.alive = false; }); const mkE = dx => { const e = { k: 'slime', x: T.P.x + dx, y: T.P.y, w: 16, h: 14, vx: 0, alive: true }; T.ents.push(e); return e; }; const near = [mkE(100), mkE(300), mkE(2000)];
-    const c0 = T.P.coins; T.petSpecial(); o.kidHit = !near[0].alive && !near[1].alive && near[2].alive && T.P.coins === c0 + 2 && QP.meter === 0 && QP.uses === 1;
+    const c0 = T.P.coins; T.petSpecial(); o.kidHit = !near[0].alive && !near[1].alive && near[2].alive && T.P.coins >= c0 + 2 && QP.meter === 0 && QP.uses === 1;   // 每招小獎勵不同，金幣至少 +2
+    { const seen = new Set(); let last = null, rep = false; for (let i = 0; i < 60; i++) { const m = qpetPickMove('jump', last); if (m.id === last) rep = true; seen.add(m.id); last = m.id; } o.randomMoves = seen.size >= 5 && !rep; }
     closeGameWindow();
     // 寶寶：只打得到附近
     G.pet.stage = 'baby'; G.pet.species = 'bunny'; playQuest('1-1'); T = playQuest.test; gameCleanup && gameCleanup(); gameCleanup = null;

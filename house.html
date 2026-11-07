@@ -24534,6 +24534,22 @@ const QPET_MOVES = {
   fish: { name: '大浪花', icon: '🌊', fx: '💧', col: '#5cc4ec' },
   sand: { name: '沙沙旋風', icon: '🌪️', fx: '🌀', col: '#e8c27a' }
 };
+/* 家長：寵物的必殺技可以隨機用不同的 → 每次放都從這六招抽一招（不會連續兩次一樣；自己個性的那招機會大一點）。
+   每招都一樣會打倒畫面裡的小怪物、大魔王扣一下，另外各有一個小獎勵：
+   ⭐ 無敵 2 秒　💗 補一顆愛心　🌊 畫面裡的金幣全部吸過來　🌪️ 金幣多 3 枚　⚡ 被打倒的怪物金幣變兩倍　🌈 無敵 1 秒＋金幣多 2 枚 */
+const QPET_MOVE_LIST = [
+  Object.assign({ id: 'jump', bonus: '無敵 2 秒！' }, QPET_MOVES.jump),
+  Object.assign({ id: 'shy', bonus: '愛心 +1！' }, QPET_MOVES.shy),
+  Object.assign({ id: 'fish', bonus: '金幣都吸過來了！' }, QPET_MOVES.fish),
+  Object.assign({ id: 'sand', bonus: '金幣 +3！' }, QPET_MOVES.sand),
+  { id: 'zap', name: '雷雷閃電', icon: '⚡', fx: '⚡', col: '#ffe14a', bonus: '金幣兩倍！' },
+  { id: 'rainbow', name: '彩虹光束', icon: '🌈', fx: '🌈', col: '#c9a7ff', bonus: '閃閃發光！' }
+];
+function qpetPickMove(trait, lastId) {
+  const pool = [];
+  QPET_MOVE_LIST.forEach(m => { if (m.id === lastId) return; pool.push(m); if (m.id === trait) pool.push(m); });
+  return pool[Math.floor(Math.random() * pool.length)] || QPET_MOVE_LIST[0];
+}
 // 闖關頭頂那句話：單行會超出 480 寬被切掉。依字寬折成最多 4 行（大約畫面寬減 40），白邊紅字跟原本一樣。
 // 畫面上的星星最多 3 顆。n 超過 3 時 '☆'.repeat 會丟 RangeError，闖關的畫面迴圈就停住。
 function questStarMarks(n) { const k = Math.max(0, Math.min(3, n | 0)); return '★'.repeat(k) + '☆'.repeat(3 - k); }
@@ -24708,7 +24724,8 @@ function playQuest(id, opt) {
   function petSpecial() {
     if (!QP || state !== 'play' || QP.meter < QP.max || QP.act > 0) return;
     QP.meter = 0; QP.act = 1.6; QP.uses++; Sound.play('magic'); setTimeout(() => { try { Sound.play('perfect'); } catch (e) {} }, 250);
-    say(`${QP.name}的必殺技：${QP.mv.icon} ${QP.mv.name}！`, 2.4);
+    QP.mv = qpetPickMove(QP.trait, QP.mv && QP.mv.id);   // 每次隨機一招
+    say(`${QP.name}的必殺技：${QP.mv.icon} ${QP.mv.name}！${QP.mv.bonus || ''}`, 2.4);
     const baby = QP.stage === 'baby', lo = baby ? P.x - 150 : camX - 10, hi = baby ? P.x + 150 : camX + QVW + 10;
     let n = 0;
     ents.forEach(en => { if (!en.alive || en.x + en.w < lo || en.x > hi) return;
@@ -24718,6 +24735,13 @@ function playQuest(id, opt) {
       en.alive = false; n++; });
     P.coins += n + (QP.stage === 'adult' ? 3 : 0);
     if (QP.stage === 'adult') P.inv = Math.max(P.inv, 2);
+    const id = QP.mv.id;   // 每一招的小獎勵
+    if (id === 'jump') P.inv = Math.max(P.inv, 2);
+    else if (id === 'shy') { if (P.hearts < 3) P.hearts++; }
+    else if (id === 'fish') items.forEach(it => { if (it.k === 'coin' && !it.got && it.x > lo && it.x < hi) { it.got = 1; P.coins++; } });
+    else if (id === 'sand') P.coins += 3;
+    else if (id === 'zap') P.coins += n;
+    else if (id === 'rainbow') { P.inv = Math.max(P.inv, 1); P.coins += 2; }
   }
   const POWERS = { grow: ['長大果', '變大了！被打到也不會少愛心'], fire: ['火火花', '可以丟火球了！按 🔥（或 X 鍵）'], inv: ['無敵星星', '無敵了！碰到怪物就打倒！'] };
   const givePower = (k, el) => {
