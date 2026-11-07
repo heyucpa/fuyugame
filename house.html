@@ -25113,6 +25113,21 @@ function playQuest(id, opt) {
     if (bump) y -= Math.sin((.16 - bump.t) / .16 * Math.PI) * 5;
     const bevel = (face, edge) => { g.fillStyle = edge; g.fillRect(x + 2, y + 2, QT, QT); g.fillStyle = face; g.fillRect(x, y, QT - 2, QT - 2); g.fillStyle = 'rgba(255,255,255,.32)'; g.fillRect(x, y, QT - 2, 3); g.fillStyle = 'rgba(255,255,255,.16)'; g.fillRect(x, y, 3, QT - 2); g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(x + QT - 5, y + 3, 3, QT - 5); };
     if (ch === '#' && L.deep && ty >= 14) { /* 海底的沙畫在背景上，不要再蓋一層沙磚 */ }
+    else if (ch === '#' && L.deep && wd.ice) {   // 🧊 冰海的冰柱：半透明的冰，最下面那格是尖尖的
+      const tip = tileAt(tx, ty + 1) !== '#', leftEdge = tileAt(tx - 1, ty) !== '#';
+      g.fillStyle = 'rgba(200,236,255,.88)';
+      if (tip) { g.beginPath(); g.moveTo(x, y); g.lineTo(x + QT, y); g.lineTo(x + (leftEdge ? QT : 0), y + QT); g.closePath(); g.fill(); }
+      else g.fillRect(x, y, QT, QT);
+      g.fillStyle = 'rgba(255,255,255,.75)'; if (leftEdge && !tip) g.fillRect(x + 3, y, 3, QT);
+      g.fillStyle = 'rgba(120,180,225,.5)'; if (!leftEdge && !tip) g.fillRect(x + QT - 3, y, 3, QT);
+    }
+    else if (ch === '#' && L.deep) {   // 🪨 湖底的大石頭：圓圓的灰石頭，上面長青苔
+      const topT = tileAt(tx, ty - 1) !== '#', leftEdge = tileAt(tx - 1, ty) !== '#', rightEdge = tileAt(tx + 1, ty) !== '#';
+      g.fillStyle = '#6f6a73'; g.beginPath(); g.roundRect(x - (leftEdge ? 0 : 2), y - (topT ? 0 : 2), QT + (leftEdge ? 0 : 2) + (rightEdge ? 0 : 2), QT + (topT ? 0 : 2), [topT && leftEdge ? 8 : 0, topT && rightEdge ? 8 : 0, 0, 0]); g.fill();
+      g.fillStyle = '#8a8590'; g.beginPath(); g.ellipse(x + 7 + (tx % 2) * 3, y + 7 + (ty % 2) * 3, 4, 3, 0, 0, 7); g.fill();
+      g.fillStyle = '#56515a'; g.beginPath(); g.arc(x + 13 - (ty % 2) * 6, y + 13, 1.8, 0, 7); g.fill();
+      if (topT) { g.fillStyle = '#4fae5a'; g.beginPath(); g.ellipse(x + QT / 2, y + 1, QT / 2 + 1, 3, 0, Math.PI, 0); g.fill(); g.fillRect(x + (leftEdge ? 3 : 0), y, QT - (leftEdge ? 3 : 0) - (rightEdge ? 3 : 0), 2); }
+    }
     else if (ch === '#') { const top = tileAt(tx, ty - 1) !== '#'; g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(x + 3, y + 3, QT, QT); g.fillStyle = wd.dirt; g.fillRect(x, y, QT - 1, QT - 1); g.fillStyle = 'rgba(0,0,0,.1)'; g.fillRect(x + QT - 5, y, 4, QT); g.fillRect(x, y + QT - 4, QT, 3); g.fillRect(x + 4, y + 8, 3, 3); g.fillRect(x + 11, y + 12, 3, 3); if (top) { g.fillStyle = wd.top; g.fillRect(x, y, QT - 1, 6); g.fillStyle = 'rgba(255,255,255,.4)'; g.fillRect(x, y, QT - 1, 2); g.fillStyle = 'rgba(0,0,0,.12)'; g.fillRect(x, y + 5, QT - 1, 2); } }
     else if (ch === '=' || ch === 'B' || ch === 'N' || ch === 'R') { bevel(ch === '=' ? '#d4844e' : '#e08a52', '#8a4520'); g.strokeStyle = 'rgba(90,40,20,.45)'; g.lineWidth = 1; g.beginPath(); g.moveTo(x + 2, y + 9); g.lineTo(x + QT - 3, y + 9); g.moveTo(x + 9, y + 3); g.lineTo(x + 9, y + 9); g.moveTo(x + 3, y + 9); g.lineTo(x + 3, y + QT - 3); g.stroke(); if (ch === 'N') { g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(x + 13, y + 13, 2.2, 0, 7); g.fill(); } if (ch === 'R') { g.fillStyle = `rgba(255,255,255,${.35 + Math.abs(Math.sin(P.t * 4)) * .4})`; g.beginPath(); g.arc(x + 5, y + 5, 1.6, 0, 7); g.fill(); } }
     else if (ch === '?') { bevel('#ffd35c', '#c98a10'); g.fillStyle = '#ffffff'; g.font = '900 13px Arial'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('?', x + 8, y + 10 + Math.sin(P.t * 4) * .6); g.textBaseline = 'alphabetic'; }
