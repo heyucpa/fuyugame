@@ -15812,6 +15812,7 @@ function furnCard(def, sub, onClick, count) {
 
 function renderTab() {
   const body = $('#tabBody');
+  try { freeCanvases(body); } catch (e) {}   // 換分頁：舊頁面的小圖畫布馬上還記憶體
   body.innerHTML = '';
   /* 當機紀錄：iPad 遊戲還在載入（後面的程式還沒讀完）時就點了分頁 → 找不到後面才有的東西（例如 voiceOn）。
      還在載入就等載完再畫一次，不要當掉。 */
@@ -16609,31 +16610,31 @@ function wearGlassTint(tint) {
   commit();
 }
 // 畫一個穿著指定衣服的小可愛（ids: {slot: 衣服 id}）
-const girlThumbCache = {};
+const girlThumbCache = {}, girlThumbKeys = [];
 function renderGirl(ids, w, h, opts) {
   const back = !!(opts && opts.back);
   /* 髮型也要進快取的 key。不加的話，五款髮型的預覽圖會因為
      ids/w/h/back 都一樣而共用同一張快取——全部長成第一張畫的那一款。 */
   const hair = (opts && opts.hair) || (G && G.hair) || DEFAULT_HAIR;
   const key = JSON.stringify([ids, w, h, back, hair]);
-  const dpr = window.devicePixelRatio || 1;
+  /* 家長：重點是不要卡、不要當機 → 換裝頁一次有 95 張小圖，以前每張都是一塊畫布（iPad 上 18MB）。
+     現在畫一次存成圖片網址，畫布馬上還記憶體，頁面上放的是 <img>（瀏覽器自己會省記憶體）。快取最多留 160 張。 */
+  const img = new Image(); img.className = 'girl-thumb'; img.width = w; img.height = h; img.style.width = w + 'px'; img.style.height = h + 'px'; img.alt = ''; img.draggable = false;
+  if (girlThumbCache[key]) { img.src = girlThumbCache[key]; return img; }
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
   const c = document.createElement('canvas');
   c.width = w * dpr; c.height = h * dpr;
-  c.style.width = w + 'px'; c.style.height = h + 'px';
   const g = c.getContext('2d');
-  if (girlThumbCache[key]) {
-    const img = new Image();
-    img.onload = () => g.drawImage(img, 0, 0);
-    img.src = girlThumbCache[key];
-    return c;
-  }
   const outfit = {};
   OUTFIT_SLOTS.forEach(({ key: k }) => { outfit[k] = CLOTHES_BY_ID[ids[k]]; });
   const s = (h - 6) / 74 * dpr; // 含帽子約 74 高
   g.setTransform(s, 0, 0, s, c.width / 2, c.height - 3 * dpr);
   drawGirl(g, { t: 0, back, outfit, hair });
-  girlThumbCache[key] = c.toDataURL();
-  return c;
+  const url = c.toDataURL(); c.width = c.height = 0;
+  girlThumbCache[key] = url; girlThumbKeys.push(key);
+  while (girlThumbKeys.length > 160) delete girlThumbCache[girlThumbKeys.shift()];
+  img.src = url;
+  return img;
 }
 
 let dressBack = false; // 預覽看背面

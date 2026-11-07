@@ -15,7 +15,7 @@ const path = require('path');
   await p.waitForTimeout(400);
   const r = await p.evaluate(() => {
     const fails = [];
-    const shot = (ids, w, h, opt) => renderGirl(ids, w, h, opt).toDataURL();
+    const shot = (ids, w, h, opt) => renderGirl(ids, w, h, opt).src;
     const oldHair = ['bob', 'pony', 'twin', 'long', 'bun'];
     const fresh = HAIR_STYLES.map(h => h.id).filter(id => oldHair.indexOf(id) < 0);
     if (fresh.length < 5) fails.push('新髮型少於 5：' + fresh.join(','));
@@ -169,8 +169,8 @@ const path = require('path');
     const shopNames = shopFaces.map(c => (GLASS_LOOKS.find(s => s.id === c.glass) || {}).name);
     if (shopNames.join(',') !== GLASS_LOOKS.map(s => s.name).join(',')) fails.push('眼鏡名稱還帶顏色 ' + shopNames.join(','));
     G.outfit.head = 'bear_muffs';
-    const leaked = renderGirl(Object.assign({}, DEFAULT_OUTFIT, { head: 'bear_muffs', face: 'gl_sun_yel' }), 80, 100, { hair: { style: 'bob', color: 'black' } }).toDataURL();
-    const clean = renderGirl(previewOutfit('face', 'gl_sun_yel'), 80, 100, { hair: { style: 'bob', color: 'black' } }).toDataURL();
+    const leaked = renderGirl(Object.assign({}, DEFAULT_OUTFIT, { head: 'bear_muffs', face: 'gl_sun_yel' }), 80, 100, { hair: { style: 'bob', color: 'black' } }).src;
+    const clean = renderGirl(previewOutfit('face', 'gl_sun_yel'), 80, 100, { hair: { style: 'bob', color: 'black' } }).src;
     if (clean === leaked) fails.push('眼鏡預覽還帶著熊耳罩');
     G.wardrobe = keepWard; G.outfit.face = keepFace; G.outfit.head = keepHead;
 
@@ -277,7 +277,7 @@ const path = require('path');
     G.guide = 'done';
     $('#modal').hidden = true;
     openTab('dress');
-    const canvases = [].slice.call(document.querySelectorAll('#tabBody .dress-grid canvas'));
+    const canvases = [].slice.call(document.querySelectorAll('#tabBody .dress-grid canvas, #tabBody .dress-grid img.girl-thumb'));
     if (canvases.length < 20) fails.push('換裝大圖太少 ' + canvases.length);
     const w = canvases[0] ? parseInt(canvases[0].style.width, 10) : 0;
     if (w < 80) fails.push('換裝圖示太小 ' + w);

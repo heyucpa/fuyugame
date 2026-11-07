@@ -350,7 +350,7 @@
     // 五款髮型的預覽圖不可以长得一模一樣（快取 key 漏掉髮型的話會）
     var seenHair = {};
     HAIR_STYLES.forEach(function(h){
-      var d = renderGirl(G.outfit, 43, 53, { hair: { style: h.id, color: 'gold' } }).toDataURL();
+      var d = renderGirl(G.outfit, 43, 53, { hair: { style: h.id, color: 'gold' } }).src;
       if (seenHair[d]) fails.push(h.name + ' 跟 ' + seenHair[d] + ' 的預覽圖一模一樣');
       seenHair[d] = h.name;
     });
@@ -645,7 +645,7 @@
     CLOTHES.filter(function(c){ return c.slot === 'head'; }).forEach(function(c){
       var ids = Object.assign({}, G.outfit, { head: c.id });
       var d;
-      try { d = renderGirl(ids, 47, 59, { hair: { style: 'bob', color: 'black' } }).toDataURL(); }
+      try { d = renderGirl(ids, 47, 59, { hair: { style: 'bob', color: 'black' } }).src; }
       catch (e) { fails.push(c.name + ' 畫不出來：' + e.message); return; }
       if (seenHead[d]) fails.push('「' + c.name + '」跟「' + seenHead[d] + '」戴起來一模一樣');
       seenHead[d] = c.name;
@@ -883,9 +883,9 @@
        每次先把縮圖快取清掉，才比得到真的像素。 */
     var clearThumbs = function(){ Object.keys(girlThumbCache).forEach(function(k){ delete girlThumbCache[k]; }); };
     G.kid.hunger = 95; clearThumbs();
-    var prevFull = renderGirl(G.outfit, 52, 64, { hair: G.hair }).toDataURL();
+    var prevFull = renderGirl(G.outfit, 52, 64, { hair: G.hair }).src;
     G.kid.hunger = 5; clearThumbs();
-    var prevHungry2 = renderGirl(G.outfit, 52, 64, { hair: G.hair }).toDataURL();
+    var prevHungry2 = renderGirl(G.outfit, 52, 64, { hair: G.hair }).src;
     if (prevFull !== prevHungry2) fails.push('預覽圖竟然跟著肚子餓不餓變臉');
     clearThumbs();
     G.kid.hunger = keepH;
