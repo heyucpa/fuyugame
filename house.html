@@ -10900,8 +10900,10 @@ function drawCreature(ctx, sp, look) {
   // 耳朵（在身體後面）
   ctx.fillStyle = sp.earCol || body; ctx.strokeStyle = edge; ctx.lineWidth = L;
   if (sp.ears === 'round') {
-    [-7, 7].forEach(ex => { ctx.beginPath(); ctx.ellipse(ex, -21, 4, 5, ex * .03, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); });
+    if (sp.patches) { [-1, 1].forEach(s => { ctx.beginPath(); ctx.arc(s * 9, -18.5, 3.6, 0, Math.PI * 2); ctx.fill(); }); }   // 熊貓：小小圓圓的耳朵，靠兩邊一點
+    else [-7, 7].forEach(ex => { ctx.beginPath(); ctx.ellipse(ex, -21, 4, 5, ex * .03, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); });
     ctx.fillStyle = sp.earCol ? sp.earCol : inner;
+    if (sp.patches) ctx.fillStyle = 'rgba(0,0,0,0)';
     [-7, 7].forEach(ex => { ctx.beginPath(); ctx.ellipse(ex, -21, 2, 2.8, 0, 0, Math.PI * 2); ctx.fill(); });
   } else if (sp.ears === 'long') {
     [-1, 1].forEach(s => {
@@ -11004,7 +11006,7 @@ function drawCreature(ctx, sp, look) {
   }
   if (sp.patches) { // 熊貓：黑眼圈
     ctx.fillStyle = '#3a3240'; const pfx = look.fx || 0;
-    [-1, 1].forEach(s => { ctx.beginPath(); ctx.ellipse(s * 4.7 + pfx, -10.6, 3.3, 2.7, s * -.5, 0, Math.PI * 2); ctx.fill(); });
+    [-1, 1].forEach(s => { ctx.beginPath(); ctx.ellipse(s * 5 + pfx, -10, 2.5, 3.4, s * -.5, 0, Math.PI * 2); ctx.fill(); });   // 往下垂的水滴形黑眼圈，看起來比較呆萌
   }
   if (sp.spots) { // 小牛：黑色花斑
     ctx.fillStyle = '#3a3240';
@@ -11039,7 +11041,11 @@ function drawCreature(ctx, sp, look) {
     }
     else { ctx.arc(ex + fx, ey, 1.8, 0, Math.PI * 2); ctx.fill(); }
   });
-  if (sp.patches) { ctx.fillStyle = '#ffffff'; [-4.5, 4.5].forEach(ex => { ctx.beginPath(); ctx.arc(ex + fx + .6, ey - .7, .9, 0, Math.PI * 2); ctx.fill(); }); }   // 黑眼圈裡的眼睛亮點
+  if (sp.patches) {   // 黑眼圈裡的大亮點＋小亮點、小黑鼻子
+    ctx.fillStyle = '#ffffff';
+    [-4.5, 4.5].forEach(ex => { ctx.beginPath(); ctx.arc(ex + fx + .7, ey - .8, 1.15, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(ex + fx - .7, ey + .9, .5, 0, Math.PI * 2); ctx.fill(); });
+    ctx.fillStyle = '#3a3240'; ctx.beginPath(); ctx.ellipse(fx, -8.3, 1.5, 1, 0, 0, Math.PI * 2); ctx.fill();
+  }
   ctx.fillStyle = 'rgba(255,110,140,.5)';
   [-9, 9].forEach(cx => { ctx.beginPath(); ctx.arc(cx + fx, ey + 4, 2.2, 0, Math.PI * 2); ctx.fill(); });
   if (sp.snout) { // 小豬：圓圓的鼻子、兩個鼻孔
