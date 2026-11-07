@@ -25007,7 +25007,6 @@ function playQuest(id, opt) {
     if (inZone !== bossZone) { bossZone = inZone;
       if (inZone) { say(boss.k === 'cloudking' ? '☁️ 烏雲大王來了！躲開雨滴，等牠下來休息再跳到頭上！' : easy ? '大魔王來了！用 ◀ ▶ 自己走，跳到牠頭上！' : '大魔王來了！跳到牠頭上！', 3); try { Sound.setSpecial('boss'); } catch (e) {} } }
     want = (keys.ArrowRight || keys.KeyD || keys.TouchR ? 1 : 0) - (keys.ArrowLeft || keys.KeyA || keys.TouchL ? 1 : 0);
-    if (P.backT > 0) { P.backT -= dt; if (want > 0) want = -1; }   // 卡在牆前太久：往後退一點，才跳得過（以前只記了時間，人沒有退）
     const inWater = () => {
       if (L.deep) return true;
       if (L.waterRoom && inBonus) return true;
@@ -25114,7 +25113,7 @@ function playQuest(id, opt) {
       if (it.k === 'spring' && P.vy >= 0 && Math.abs(P.x + P.w / 2 - (it.x + 9)) < 11 && Math.abs(P.y + P.h - (it.y + 10)) < 12) { /* 走過去、跳下來踩到都會彈 */ P.boost = true; P.vy = -760; P.on = false; it.t = .3; Sound.play('boing'); }
       if (it.k === 'goal' && Math.abs(P.x + P.w / 2 - it.x) < 10) { const h = Math.max(0, it.y - (P.y + P.h)), bonus = 1 + Math.round(h / 110 * 9); P.coins += bonus; flag = { it, t: 0, drop: 0, bonus }; state = 'flag'; endT = 0; P.vx = 0; P.vy = 0; Sound.play('flagSlide'); say(`抓到旗子了！💰 +${bonus}`, 1.8); try { Sound.setSpecial(null); } catch (e) {} }   // 家長：跳到旗子要慢慢滑下去；抓越高金幣越多
     });
-    if (easy && P.on && P.hitX && want > 0) { P.stuck = (P.stuck || 0) + dt; if (msgT <= 0) say('按「跳」跳過去！', 1.2); if (P.stuck > 1.6) { P.stuck = 0; P.backT = .9; } } else if (!P.hitX) P.stuck = 0;
+    if (easy && P.on && P.hitX && want > 0) { P.stuck = (P.stuck || 0) + dt; if (msgT <= 0) say('按「跳」跳過去！', 1.2); if (P.stuck > 1.6) P.stuck = 0; } else if (!P.hitX) P.stuck = 0;   // 家長：跑一跑突然往左快速移動 → 以前自動往前跑時，卡在牆前會自己往後退；現在自己走了，不再自己退（只提示按跳）
     // 怪物
     ents.forEach(en => {
       if (!en.alive) { en.dead = (en.dead || 0) + dt; return; }
