@@ -888,6 +888,9 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .island { position: absolute; inset: 0; z-index: 9; background: #74c8ea; touch-action: none; overflow: hidden; }
 .island canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 .island-btn { position: absolute; top: 12px; font: inherit; font-size: 15px; font-weight: 800; border: 2px solid #fff; border-radius: 999px; padding: 8px 16px; min-height: 40px; background: rgba(255,255,255,.92); color: #4a3b2a; box-shadow: 0 3px 10px rgba(0,0,0,.2); cursor: pointer; touch-action: manipulation; }
+/* 家長：在外面時左邊的選單可以收起來 → 出門預設收起（地圖變大），按「☰ 選單」再打開 */
+body.isl-out:not(.isl-panel) .panel { display: none; }
+.isl-menu-btn { left: 12px; top: 204px; }
 .isl-back { left: 12px; } .isl-fast { right: 12px; } .isl-quest { right: 12px; top: 60px; background: #ffe9b8 !important; } .isl-ride { left: 12px; top: 108px; } .isl-emo { left: 12px; top: 156px; } .isl-run { left: 12px; top: 60px; }
 .isl-tools { position: absolute; left: 12px; bottom: 60px; display: flex; flex-direction: column; gap: 6px; }
 .isl-tools .island-btn { position: static; text-align: left; }
@@ -15394,6 +15397,7 @@ function leavePetHouse(i) {
 
 function openTab(name) {
   crashCrumb('分頁 ' + name);
+  if (document.body.classList.contains('isl-out') && !document.body.classList.contains('isl-panel')) islPanel(true);   // 在外面收起來了：要開分頁就打開選單
   if (name !== 'save' && typeof parentOkUntil !== 'undefined') parentOkUntil = 0;   // 離開設定頁：重新上鎖
   setBigRoom(false);                  // 放大房間時點了分頁：把面板打開
   if (tab !== name) sellMode = false; // 換分頁就離開賣東西模式
@@ -20948,7 +20952,10 @@ function openIsland() {
   const quest = el('button', 'island-btn isl-quest', '🗺️ 闖關'); quest.onclick = () => { Sound.play('click'); openQuestMap(); };
   const emo = el('button', 'island-btn isl-emo', '😊 表情'); emo.onclick = e => { Sound.play('click'); openEmoteMenu(e); };
   const ride = el('button', 'island-btn isl-ride', '🚲 交通工具'); ride.id = 'islRide'; ride.onclick = e => { Sound.play('click'); openRideMenu(e); };
-  layer.append(back, fast, run, quest, ride, emo, tools, tip);
+  const menuB = el('button', 'island-btn isl-menu-btn', '☰ 選單'); menuB.id = 'islMenuBtn';
+  menuB.onclick = () => { Sound.play('click'); islPanel(!document.body.classList.contains('isl-panel')); };
+  layer.append(back, fast, run, quest, ride, emo, menuB, tools, tip);
+  document.body.classList.add('isl-out'); islPanel(false);
   run.onclick = () => { setRun(!runOn()); Sound.play('click'); };
   stage.appendChild(layer); stage.classList.add('island-on');
   refreshRunBtn();
@@ -20985,12 +20992,18 @@ function openIsland() {
   setTimeout(() => { if (isl && isl.tip) isl.tip.classList.add('fade'); }, 7000);
   isl.raf = requestAnimationFrame(islFrame);
 }
+// 在外面：左邊的選單收起來／打開（出門預設收起來）
+function islPanel(on) {
+  document.body.classList.toggle('isl-panel', !!on); canvasBox = null;
+  const b = document.getElementById('islMenuBtn'); if (b) b.textContent = on ? '◀ 收起選單' : '☰ 選單';
+}
 function closeIsland() {
   if (!isl) return;
   if (typeof islTalkClose === 'function') islTalkClose();
   cancelAnimationFrame(isl.raf);
   document.removeEventListener('keydown', isl.kd); document.removeEventListener('keyup', isl.ku);
   freeCanvases(isl.layer); isl.layer.remove(); $('.stage').classList.remove('island-on');
+  document.body.classList.remove('isl-out', 'isl-panel'); canvasBox = null;
   isl = null; requestDraw();
 }
 function islTile(e) {
