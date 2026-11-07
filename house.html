@@ -5175,6 +5175,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-13T20:00', title: '⚡ 闖關的新招數', lines: [
+    ['🌸', '粉紅磚跳出來的花有五種顏色：🔥 火球、⚡ 閃電、❄️ 冰箭、⛰️ 大石頭、🌪️ 龍捲風'],
+    ['⚡', '閃電會打前面最近的怪物；冰箭一次穿過兩隻；大石頭會滾、還會撞破磚塊；龍捲風把碰到的怪物都捲走'],
+    ['👆', '一樣按右下角那顆（或 X 鍵）放招數']
+  ] },
   { id: '2026-11-12T22:00', title: '🛠️ 佈置家具', lines: [
     ['👆', '平常點家具只會出現「睡覺、坐下」這些可以用的'],
     ['🛠️', '想搬家具或收起來，先按右邊的「🛠️ 佈置」'],
@@ -24437,6 +24442,15 @@ function questWrapLines(g, text, maxW, maxLines) {
   out[maxLines - 1] = last + '…';
   return out;
 }
+// 闖關的五種花（招數）：粉紅磚跳出來的花有不同顏色，拿到哪一種就放哪一種
+const QUEST_ELEMS = {
+  fire: { icon: '🔥', name: '火火花', say: '可以丟火球了！', col: ['#ff8a3d', '#ffd23f'] },
+  zap: { icon: '⚡', name: '閃電花', say: '前面的怪物會被閃電打到！', col: ['#ffd23f', '#fff6a8'] },
+  ice: { icon: '❄️', name: '冰冰花', say: '可以射冰箭，一次穿過兩隻！', col: ['#7fd3ff', '#e8f8ff'] },
+  rock: { icon: '⛰️', name: '石頭花', say: '可以丟大石頭，會滾、還會撞破磚塊！', col: ['#9a7b5a', '#d9b98f'] },
+  wind: { icon: '🌪️', name: '龍捲風花', say: '放出龍捲風，把怪物都捲走！', col: ['#9fdcc4', '#ffffff'] }
+};
+const QUEST_ELEM_ORDER = ['fire', 'zap', 'ice', 'rock', 'wind'];
 function playQuest(id, opt) {
   opt = opt || {};   // opt.bossStart：從大魔王那裡開始；opt.weak：打輸幾次了（大王越來越弱）
   const q = questState(), easy = q.mode === 'easy', wd = QUEST_WORLDS[+id[0] - 1];
@@ -24545,7 +24559,33 @@ function playQuest(id, opt) {
   ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => bDn.addEventListener(ev, dnOff));
   bF.addEventListener('pointerdown', e => { e.preventDefault(); shootFire(); });
   // 🔥 火火花：丟出會彈跳的火球，打到怪物就打倒（大魔王扣一下）
-  function shootFire() { if (!P.fire || state !== 'play' || P.fireCd > 0 || fbs.length >= 2) return; P.fireCd = .3; fbs.push({ x: P.x + P.w / 2 + P.face * 8, y: P.y + 10, w: 8, h: 8, vx: P.face * 230, vy: 60, life: 2.5 }); Sound.play('whoosh'); }
+  /* 家長：除了火球，再加閃電、冰、土、龍捲風。粉紅磚跳出來的花有五種顏色，拿到哪一種就放哪一種（按鈕圖示跟著換）：
+     🔥 火球：在地上彈　⚡ 閃電：前面最近的怪物直接被電到　❄️ 冰箭：直直飛、穿過兩隻
+     ⛰️ 大石頭：丟高高、落地會滾、撞破磚塊　🌪️ 龍捲風：慢慢往前，碰到的怪物都捲走。被打到一樣變回原來的樣子。 */
+  function shootFire() {
+    if (!P.fire || state !== 'play' || P.fireCd > 0) return;
+    const el = P.elem || 'fire', fx = P.x + P.w / 2 + P.face * 8, n = fbs.filter(f => f.el === el).length;
+    if (el === 'fire') { if (n >= 2) return; P.fireCd = .3; fbs.push({ el, x: fx, y: P.y + 10, w: 8, h: 8, vx: P.face * 230, vy: 60, life: 2.5 }); Sound.play('whoosh'); }
+    else if (el === 'ice') { if (n >= 2) return; P.fireCd = .35; fbs.push({ el, x: fx - 5, y: P.y + P.h - 13, w: 12, h: 6, vx: P.face * 330, vy: 0, life: 1.3, pierce: 2 }); Sound.play('whoosh'); }
+    else if (el === 'rock') { if (n >= 1) return; P.fireCd = .5; fbs.push({ el, x: fx - 6, y: P.y + 4, w: 12, h: 12, vx: P.face * 170, vy: -300, life: 3 }); Sound.play('boing'); }
+    else if (el === 'wind') { if (n >= 1) return; P.fireCd = .8; fbs.push({ el, x: fx - 10, y: P.y + P.h - 34, w: 20, h: 34, vx: P.face * 120, vy: 0, life: 1.8 }); Sound.play('whoosh'); }
+    else if (el === 'zap') {
+      P.fireCd = .6;
+      const cx = P.x + P.w / 2; let best = null, bd = 1e9;
+      ents.forEach(en => { if (!en.alive || (en.k === 'flame' && !en.up)) return; const dx = (en.x + en.w / 2 - cx) * P.face, dy = Math.abs(en.y + en.h / 2 - (P.y + P.h / 2)); if (dx > -10 && dx < 300 && dy < 170 && dx < bd) { bd = dx; best = en; } });
+      const tx = best ? best.x + best.w / 2 : cx + P.face * 110, ty = best ? best.y + best.h / 2 : P.y + P.h;
+      fbs.push({ el, vis: true, x: tx, y: ty, w: 0, h: 0, vx: 0, vy: 0, life: .3, seed: Math.random() * 100 });
+      if (best) elemHit(best, { el }); Sound.play('pop');
+    }
+  }
+  // 招數打到怪物：一般怪物打倒（多 1 枚金幣）、大魔王扣一下、雲大王照原本的
+  function elemHit(en, f) {
+    if (en.k === 'cloudking') { if (!f.hitBoss) { f.hitBoss = 1; ckHit(en); } return; }
+    if (en.k === 'boss') { if (!f.hitBoss && en.hurt <= 0) { f.hitBoss = 1; en.hp--; en.hurt = 1; Sound.play('squish'); say(en.hp > 0 ? `再 ${en.hp} 下！` : '打倒大王了！'); if (en.hp <= 0) { en.alive = false; items.forEach(it => { if (it.k === 'goal') it.hidden = false; }); Sound.play('fanfare'); } } return; }
+    en.alive = false; P.coins++; Sound.play('squish');
+    const col = f.el === 'ice' ? '#bfe9ff' : f.el === 'rock' ? '#9a7b5a' : f.el === 'wind' ? '#d8f3e6' : f.el === 'zap' ? '#ffe14a' : null;
+    if (col) for (let i = 0; i < 4; i++) bits.push({ x: en.x + en.w / 2, y: en.y + en.h / 2, vx: (i % 2 ? 60 : -60), vy: (f.el === 'wind' ? -220 : -100) - i * 15, t: 0, col });
+  }
   function petSpecial() {
     if (!QP || state !== 'play' || QP.meter < QP.max || QP.act > 0) return;
     QP.meter = 0; QP.act = 1.6; QP.uses++; Sound.play('magic'); setTimeout(() => { try { Sound.play('perfect'); } catch (e) {} }, 250);
@@ -24561,9 +24601,10 @@ function playQuest(id, opt) {
     if (QP.stage === 'adult') P.inv = Math.max(P.inv, 2);
   }
   const POWERS = { grow: ['長大果', '變大了！被打到也不會少愛心'], fire: ['火火花', '可以丟火球了！按 🔥（或 X 鍵）'], inv: ['無敵星星', '無敵了！碰到怪物就打倒！'] };
-  const givePower = k => {
-    Sound.play('magic'); say(`${POWERS[k][0]}！${POWERS[k][1]}`, 2.4);
-    if (k === 'grow') P.big = true; else if (k === 'fire') { P.big = true; P.fire = true; bF.style.display = ''; } else { P.starT = 8; try { Sound.setSpecial('quest'); } catch (e) {} }
+  const givePower = (k, el) => {
+    const E = QUEST_ELEMS[el] || QUEST_ELEMS.fire;
+    Sound.play('magic'); say(k === 'fire' ? `${E.name}！${E.say}按 ${E.icon}（或 X 鍵）` : `${POWERS[k][0]}！${POWERS[k][1]}`, 2.4);
+    if (k === 'grow') P.big = true; else if (k === 'fire') { P.big = true; P.fire = true; P.elem = QUEST_ELEMS[el] ? el : 'fire'; bF.textContent = E.icon; bF.style.display = ''; } else { P.starT = 8; try { Sound.setSpecial('quest'); } catch (e) {} }
     if (k === 'grow' || k === 'fire') fitBody();
   };
   // 長大果：人變高、碰撞框跟著變高（頭頂才頂得到比較高的磚）。天花板太矮就只長到塞得進去的高度，不會卡進磚裡。
@@ -24846,7 +24887,8 @@ function playQuest(id, opt) {
         // 以前掉在磚塊上面，長跳會從道具旁邊飛過去（距離超過撿取範圍），看起來像粉紅磚沒有反應。
         let iy = (ty + 1) * QT + 8;
         if (solid(tileAt(tx, ty + 1))) iy = ty * QT - 10;
-        items.push({ k: 'pow', kind: k, x: tx * QT + 9, y: iy, pop: .3 }); Sound.play('pickUp');
+        const el = k === 'fire' ? QUEST_ELEM_ORDER[(tx * 3 + ty * 7) % QUEST_ELEM_ORDER.length] : undefined;   // 每塊粉紅磚固定跳出一種花
+        items.push({ k: 'pow', kind: k, el, x: tx * QT + 9, y: iy, pop: .3 }); Sound.play('pickUp');
       };
       if (chb === 'M' || chb === 'R') { L.g[ty][tx] = 'u'; powHere(); }
       else if (chb === 'N') { L.g[ty][tx] = 'u'; coinHere(); }
@@ -24885,7 +24927,7 @@ function playQuest(id, opt) {
       if (it.got || it.hidden) return;
       const near = (rx, ry) => Math.abs(P.x + P.w / 2 - it.x) < rx && Math.abs(P.y + P.h / 2 - it.y) < ry;
       if (it.k === 'coin' && near(11, 18)) { it.got = 1; P.coins++; Sound.play('coin'); }
-      if (it.k === 'pow' && near(13, 20)) { it.got = 1; givePower(it.kind); }
+      if (it.k === 'pow' && near(13, 20)) { it.got = 1; givePower(it.kind, it.el); }
       if (it.k === 'heart' && near(13, 22)) { it.got = 1; Sound.play('pickUp'); if (!easy && P.hearts < 3) { P.hearts++; say('愛心 +1 ❤️'); } else say('好溫暖！❤️'); }
       if (it.k === 'star' && near(13, 20)) { it.got = 1; if (P.stars < 3) P.stars++; Sound.play('perfect'); say(`找到星星了！⭐ ${P.stars} / 3`); }   // 一關畫面上只留 3 顆；第 4 顆再加會讓 ☆.repeat 炸掉、畫面停住
       if (it.k === 'check' && !it.on && Math.abs(P.x - it.x) < 12) { it.on = true; checkX = it.x - 6; Sound.play('pickUp'); say('記錄點！'); }
@@ -24945,11 +24987,27 @@ function playQuest(id, opt) {
       }
     });
     // 🔥 火球：會在地上彈，打到怪物就打倒
-    fbs.forEach(f => { f.life -= dt; f.vy = Math.min(500, f.vy + 1200 * dt); f.hitX = false; const rr = hitTiles(f, f.vx * dt, f.vy * dt); if (rr.landed) f.vy = -170; if (f.hitX) f.life = 0;
-      ents.forEach(en => { if (!en.alive || f.life <= 0 || (en.k === 'flame' && !en.up)) return; if (Math.abs(en.x + en.w / 2 - f.x - 4) < en.w / 2 + 7 && Math.abs(en.y + en.h / 2 - f.y - 4) < en.h / 2 + 8) { f.life = 0;
-        if (en.k === 'cloudking') ckHit(en);
-        else if (en.k === 'boss') { if (en.hurt <= 0) { en.hp--; en.hurt = 1; Sound.play('squish'); say(en.hp > 0 ? `再 ${en.hp} 下！` : '打倒大王了！'); if (en.hp <= 0) { en.alive = false; items.forEach(it => { if (it.k === 'goal') it.hidden = false; }); Sound.play('fanfare'); } } }
-        else { en.alive = false; P.coins++; Sound.play('squish'); } } }); });
+    fbs.forEach(f => { f.life -= dt; if (f.vis) return;   // ⚡ 閃電只是畫面，打到已經算過了
+      const el = f.el || 'fire';
+      if (el === 'fire') f.vy = Math.min(500, f.vy + 1200 * dt);
+      else if (el === 'rock' || el === 'wind') f.vy = Math.min(600, f.vy + 1300 * dt);
+      f.hitX = false; const rr = hitTiles(f, f.vx * dt, f.vy * dt);
+      if (rr.landed) { if (el === 'fire') f.vy = -170; else { f.vy = 0; if (el === 'rock') f.vx *= Math.pow(.6, dt); } }
+      if (f.hitX) {
+        if (el === 'rock') {   // ⛰️ 大石頭撞到磚塊：打得破的磚就撞破
+          const tx = Math.floor((f.vx > 0 ? f.x + f.w + 2 : f.x - 2) / QT), y0 = Math.floor(f.y / QT), y1 = Math.floor((f.y + f.h - .01) / QT);
+          for (let ty = y0; ty <= y1; ty++) if (tileAt(tx, ty) === 'B') { L.g[ty][tx] = ' '; for (let i = 0; i < 4; i++) bits.push({ x: tx * QT + 6, y: ty * QT + 6, vx: (i % 2 ? 50 : -50), vy: -90 - i * 12, t: 0 }); Sound.play('squish'); }
+        }
+        f.life = 0;
+      }
+      if (el === 'rock' && Math.abs(f.vx) < 15 && rr.landed) f.life = Math.min(f.life, .2);
+      ents.forEach(en => { if (!en.alive || f.life <= 0 || (en.k === 'flame' && !en.up)) return;
+        if (Math.abs(en.x + en.w / 2 - f.x - f.w / 2) < en.w / 2 + f.w / 2 + 3 && Math.abs(en.y + en.h / 2 - f.y - f.h / 2) < en.h / 2 + f.h / 2 + 4) {
+          if (el === 'fire') f.life = 0;
+          else if (el === 'ice') { if (en.k === 'boss' || en.k === 'cloudking' || --f.pierce <= 0) f.life = 0; }
+          else if (el === 'rock' && (en.k === 'boss' || en.k === 'cloudking')) f.life = 0;
+          elemHit(en, f);
+        } }); });
     for (let i = fbs.length - 1; i >= 0; i--) if (fbs[i].life <= 0 || fbs[i].y > QVH) fbs.splice(i, 1);
     for (let i = bossFire.length - 1; i >= 0; i--) { const f = bossFire[i]; f.life -= dt; f.vy = Math.min(500, f.vy + 900 * dt); f.hitX = false; const rr = hitTiles(f, f.vx * dt, f.vy * dt); if (rr.landed) f.vy = -230; if (f.hitX) f.life = 0;   // 🔥 大魔王的火球：在地上彈，碰到小可愛會痛
       if (P.bubble <= 0 && f.x + f.w > P.x + 1 && f.x < P.x + P.w - 1 && f.y + f.h > P.y + 2 && f.y < P.y + P.h) { f.life = 0; hurt(f.x + f.w / 2); }
@@ -25116,7 +25174,7 @@ function playQuest(id, opt) {
     const x = it.x - camX; if (x < -30 || x > QVW + 30) return;
     if (it.k === 'pow') { const yy = it.y + Math.sin(P.t * 3) * 2;   // 道具：長大果（紅色果子）、火火花（橘色花）、無敵星星（彩虹星星）
       if (it.kind === 'grow') { g.fillStyle = '#ff5a6b'; g.beginPath(); g.arc(x, yy, 7, 0, 7); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(x - 2, yy - 2, 2, 0, 7); g.fill(); g.fillStyle = '#3fae4f'; g.beginPath(); g.ellipse(x + 3, yy - 8, 4, 2, -.5, 0, 7); g.fill(); }
-      else if (it.kind === 'fire') { for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2 + P.t; g.fillStyle = '#ff8a3d'; g.beginPath(); g.arc(x + Math.cos(a) * 5, yy + Math.sin(a) * 5, 3.5, 0, 7); g.fill(); } g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(x, yy, 3.5, 0, 7); g.fill(); g.fillStyle = '#3fae4f'; g.fillRect(x - 1, yy + 6, 2, 6); }
+      else if (it.kind === 'fire') { const E = QUEST_ELEMS[it.el] || QUEST_ELEMS.fire; for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2 + P.t; g.fillStyle = E.col[0]; g.beginPath(); g.arc(x + Math.cos(a) * 5, yy + Math.sin(a) * 5, 3.5, 0, 7); g.fill(); } g.fillStyle = E.col[1]; g.beginPath(); g.arc(x, yy, 3.5, 0, 7); g.fill(); g.fillStyle = '#3fae4f'; g.fillRect(x - 1, yy + 6, 2, 6); }
       else { g.save(); g.translate(x, yy); g.rotate(P.t * 2); g.fillStyle = `hsl(${(P.t * 300) % 360},90%,60%)`; g.beginPath(); for (let k = 0; k < 10; k++) { const r = k % 2 ? 4 : 9, a = -Math.PI / 2 + k * Math.PI / 5; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); } g.closePath(); g.fill(); g.restore(); }
       return; }
     if (it.k === 'heart') { g.font = '16px sans-serif'; g.textAlign = 'center'; g.fillText('❤️', x, it.y + Math.sin(P.t * 4) * 2); return; }
@@ -25165,7 +25223,7 @@ function playQuest(id, opt) {
     g.font = '700 14px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillStyle = '#3a3240';
     g.fillText(`💰 ${P.coins}　${questStarMarks(P.stars)}`, 14, 19);
     if (!easy) g.fillText('❤️'.repeat(Math.max(0, P.hearts)) + '🤍'.repeat(Math.max(0, 3 - P.hearts)), 130, 19);
-    const pw = L.deep ? '🏊 游泳' : P.swim ? '🐧 游泳' : P.starT > 0 ? '🌟 無敵！' : P.fire ? '🔥 火火花' : P.big ? '🍒 變大了' : ''; if (pw) { g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.roundRect(QVW - 104, 6, 98, 26, 13); g.fill(); g.fillStyle = (L.deep || P.swim) ? '#1d6f9c' : '#e8505b'; g.textAlign = 'center'; g.fillText(pw, QVW - 55, 19); }
+    const pw = L.deep ? '🏊 游泳' : P.swim ? '🐧 游泳' : P.starT > 0 ? '🌟 無敵！' : P.fire ? ((QUEST_ELEMS[P.elem] || QUEST_ELEMS.fire).icon + ' ' + (QUEST_ELEMS[P.elem] || QUEST_ELEMS.fire).name) : P.big ? '🍒 變大了' : ''; if (pw) { g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.roundRect(QVW - 104, 6, 98, 26, 13); g.fill(); g.fillStyle = (L.deep || P.swim) ? '#1d6f9c' : '#e8505b'; g.textAlign = 'center'; g.fillText(pw, QVW - 55, 19); }
     if (touchUI && state === 'play' && (P.t < 6 || touches.size)) {   // 👆 平板：畫面上淡淡的分區提示（開始 6 秒、手指按著的時候）
       const split = true; g.globalAlpha = .55; g.textAlign = 'center'; g.font = '900 20px sans-serif'; g.fillStyle = '#ffffff'; g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 3;
       if (split) { g.fillStyle = 'rgba(255,255,255,.12)'; g.fillRect(QVW * .3 - 1, 40, 2, QVH - 40); g.fillRect(QVW * .7 - 1, 40, 2, QVH - 40); g.fillStyle = '#ffffff';
@@ -25202,10 +25260,16 @@ function playQuest(id, opt) {
     for (let ty = 0; ty < QH; ty++) for (let tx = tx0; tx <= tx1; tx++) { const ch = tileAt(tx, ty); if (ch !== ' ' && tx >= 0 && tx < L.W) drawTile(ch, tx * QT - camX, ty * QT); }
     items.forEach(drawItem); ents.forEach(drawEnemy);
     plats.forEach(pl => { const x = pl.x - camX; g.fillStyle = '#ffffff'; g.beginPath(); g.roundRect(x - 2, pl.y, pl.w + 4, 10, 5); g.fill(); MV.ball(g, x + 12, pl.y + 2, 7, '#ffffff'); MV.ball(g, x + 28, pl.y, 9, '#ffffff'); MV.ball(g, x + 42, pl.y + 2, 7, '#ffffff'); g.fillStyle = 'rgba(150,190,230,.5)'; g.fillRect(x, pl.y + 7, pl.w, 3); });   // ☁️ 會動的雲
-    fbs.forEach(f => { MV.ball(g, f.x - camX, f.y, 5, '#ff8a3d'); MV.ball(g, f.x - camX, f.y, 2.5, '#ffd23f'); });
+    fbs.forEach(f => { const el = f.el || 'fire', x = f.x - camX;
+      if (el === 'fire') { MV.ball(g, x, f.y, 5, '#ff8a3d'); MV.ball(g, x, f.y, 2.5, '#ffd23f'); }
+      else if (el === 'ice') { const d = f.vx > 0 ? 1 : -1, cx = x + f.w / 2, cy = f.y + f.h / 2; g.fillStyle = '#bfe9ff'; g.beginPath(); g.moveTo(cx + d * 12, cy); g.lineTo(cx - d * 9, cy - 6); g.lineTo(cx - d * 4, cy); g.lineTo(cx - d * 9, cy + 6); g.closePath(); g.fill(); g.fillStyle = '#ffffff'; g.fillRect(cx - 2, cy - 1, 5, 2); g.globalAlpha = .4; g.fillStyle = '#7fd3ff'; g.fillRect(cx - d * 26, cy - 1.5, d * 16, 3); g.globalAlpha = 1; }
+      else if (el === 'rock') { const cx = x + 6, cy = f.y + 6; g.save(); g.translate(cx, cy); g.rotate(f.x / 8); g.fillStyle = '#8a6b4c'; g.beginPath(); g.moveTo(-6, -2); g.lineTo(-2, -6); g.lineTo(5, -5); g.lineTo(7, 1); g.lineTo(3, 6); g.lineTo(-5, 5); g.closePath(); g.fill(); g.fillStyle = '#b9966f'; g.beginPath(); g.arc(-1, -2, 2.2, 0, 7); g.fill(); g.restore(); }
+      else if (el === 'wind') { const cx = x + 10, bot = f.y + f.h; g.strokeStyle = 'rgba(160,215,195,.9)'; g.lineWidth = 3; for (let k = 0; k < 6; k++) { const yy = bot - 4 - k * 7, rw = 4 + k * 3, ph = P.t * 14 + k; g.beginPath(); g.ellipse(cx + Math.sin(ph) * 2, yy, rw, 2.2, 0, 0, 7); g.stroke(); } g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 1.2; g.beginPath(); g.ellipse(cx, bot - 32, 14, 2.5, 0, 0, 7); g.stroke(); }
+      else if (el === 'zap') { g.globalAlpha = Math.min(1, f.life / .15); g.strokeStyle = '#ffe14a'; g.lineWidth = 4; g.beginPath(); let yy = 0, xx = x; g.moveTo(xx, 0); let i = 0; while (yy < f.y) { yy = Math.min(f.y, yy + 18); xx = x + (((i * 37 + f.seed) % 20) - 10) * (yy < f.y ? 1 : 0); g.lineTo(xx, yy); i++; } g.stroke(); g.strokeStyle = '#ffffff'; g.lineWidth = 1.5; g.stroke(); g.fillStyle = 'rgba(255,240,140,.6)'; g.beginPath(); g.arc(x, f.y, 14, 0, 7); g.fill(); g.globalAlpha = 1; }
+    });
     bossFire.forEach(f => { const fx3 = f.x + f.w / 2 - camX, fy3 = f.y + f.h / 2; MV.ball(g, fx3, fy3, 7, '#e8505b'); MV.ball(g, fx3, fy3, 4.5, '#ff8a3d'); MV.ball(g, fx3, fy3, 2, '#ffe14a'); });   // 🔥 大魔王的火球（紅色，跟自己的不一樣）
     coinPops.forEach(cp => { g.fillStyle = '#ffd23f'; g.beginPath(); g.ellipse(cp.x - camX, cp.y - cp.t * 50, 5, 6, 0, 0, Math.PI * 2); g.fill(); });
-    bits.forEach(b => { g.fillStyle = '#c96f3a'; g.fillRect(b.x - camX, b.y, 5, 4); g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(b.x - camX + 3, b.y + 2, 2, 2); });
+    bits.forEach(b => { g.fillStyle = b.col || '#c96f3a'; g.fillRect(b.x - camX, b.y, 5, 4); g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(b.x - camX + 3, b.y + 2, 2, 2); });
     if (QP) {   // 🐾 寵物：跟在後面蹦蹦跳；放必殺技的時候衝出去、整排都是招式的圖案
       const a = QP.act > 0 ? 1 - QP.act / 1.6 : 0, hop = Math.abs(Math.sin(P.t * 9)) * (Math.abs(P.vx) > 10 ? 5 : 1.5);
       const px = QP.act > 0 ? P.x + P.w / 2 - camX + Math.sin(a * Math.PI) * 120 * P.face : QP.x - camX, py = QP.act > 0 ? QP.y - Math.sin(a * Math.PI) * 50 : QP.y - hop;
