@@ -27127,7 +27127,7 @@ function playKart(w, L, car) {
   // 小地圖：橢圓形跑道，車子照「這一圈跑到哪」繞圈（彎道很小，照實畫會變一條線，妹妹看不懂）
   const MAX = SEG * 46 * car.sp, ACC = MAX / 4;
   const mates = arenaMates(), rivals = mates.rivals.concat(mates.friend ? [] : []).slice(0, 3).map((n, i) => ({ who: n, z: SEG * (2 + i * 2), x: [-.5, .5, 0][i], v: 0, top: SEG * 46 * L.rival * (.96 + i * .03), spin: 0, c: ['#3f8fd1', '#7bd389', '#b18cff'][i], tx: 0 }));
-  let z = 0, px = 0, speed = 0, lap = 0, state = 'ready', T0 = performance.now(), last = T0, raf = 0, live = true, steer = 0, drift = false, charge = 0, boost = 0, star = 0, spin = 0, item = null, coins = 0, sky = 0, msg = '', msgT = 0, bananas = [], bananaT = 6, finishT = 0, place = 0, keys = {};
+  let z = 0, px = 0, speed = 0, lap = 0, state = 'ready', T0 = performance.now(), last = T0, raf = 0, live = true, steer = 0, drift = false, charge = 0, driftDir = 0, hop = 0, puffs = [], boost = 0, star = 0, spin = 0, item = null, coins = 0, sky = 0, msg = '', msgT = 0, bananas = [], bananaT = 6, finishT = 0, place = 0, keys = {};
   gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); document.removeEventListener('keyup', ku); };
   const say = (m, s) => { msg = m; msgT = s || 1.2; };
   const dist = () => lap * LEN + z;
@@ -27139,13 +27139,16 @@ function playKart(w, L, car) {
     else { bananas.push({ z: ((z - SEG * 3) % LEN + LEN) % LEN, x: px, mine: true }); Sound.play('pickUp'); say('🍌 香蕉皮丟在後面了！'); }
   };
   const giveItem = k => { item = k; bI.textContent = KART_ITEMS[k][0]; bI.classList.add('glow'); Sound.play('coin'); say(`拿到 ${KART_ITEMS[k][0]} ${KART_ITEMS[k][1]}！按「${KART_ITEMS[k][0]}」使用`, 1.6); };
-  const kd = e => { if (e.repeat) return; keys[e.code] = true; if (['ArrowLeft', 'ArrowRight', 'Space', 'ArrowUp', 'ShiftLeft', 'KeyZ', 'KeyX', 'KeyA', 'KeyD'].includes(e.code)) e.preventDefault(); if (e.code === 'ArrowUp' || e.code === 'KeyX' || e.code === 'KeyZ') useItem(); if (e.code === 'Space' || e.code === 'ShiftLeft') drift = true; };
+  const kd = e => { if (e.repeat) return; keys[e.code] = true; if (['ArrowLeft', 'ArrowRight', 'Space', 'ArrowUp', 'ShiftLeft', 'KeyZ', 'KeyX', 'KeyA', 'KeyD'].includes(e.code)) e.preventDefault(); if (e.code === 'ArrowUp' || e.code === 'KeyX' || e.code === 'KeyZ') useItem(); if (e.code === 'Space' || e.code === 'ShiftLeft') startDrift(); };
   const ku = e => { keys[e.code] = false; if (e.code === 'Space' || e.code === 'ShiftLeft') endDrift(); };
   document.addEventListener('keydown', kd); document.addEventListener('keyup', ku);
-  const endDrift = () => { if (drift && charge > .6) { boost = Math.max(boost, charge > 1.3 ? 1.1 : .6); Sound.play(charge > 1.3 ? 'perfect' : 'coin'); say(charge > 1.3 ? '🔥 超級甩尾加速！' : '💨 甩尾加速！', .9); } drift = false; charge = 0; };
+  /* 🌀 甩尾（家長：按了好像沒什麼變化）→ 一按下去就看得到：車子跳一下、車身斜一邊往旁邊滑、輪子冒白煙；
+     按住越久火花 白 → 藍 → 橘，上面有一條集氣條；放開衝刺（藍 0.8 秒、橘 1.4 秒），畫面有速度線。不用一直轉彎也集得到氣。 */
+  const startDrift = () => { if (drift || state !== 'race') { drift = drift || state === 'race'; return; } drift = true; charge = 0; hop = .22; const st0 = touchSteer || ((keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0)); driftDir = st0 || Math.sign(steer) || Math.sign(segAt(z + CAM_H * DEPTH).curve) || 1; Sound.play('boing'); };
+  const endDrift = () => { if (drift && charge > .5) { boost = Math.max(boost, charge > 1.1 ? 1.4 : .8); Sound.play(charge > 1.1 ? 'perfect' : 'coin'); say(charge > 1.1 ? '🔥 超級甩尾加速！' : '💨 甩尾加速！', .9); } drift = false; charge = 0; driftDir = 0; };
   const hold = (b, on, off) => { b.addEventListener('pointerdown', e => { e.preventDefault(); on(); }); ['pointerup', 'pointerleave', 'pointercancel'].forEach(k => b.addEventListener(k, off)); };
   let touchSteer = 0; hold(bL, () => { touchSteer = -1; }, () => { if (touchSteer < 0) touchSteer = 0; }); hold(bR, () => { touchSteer = 1; }, () => { if (touchSteer > 0) touchSteer = 0; });
-  hold(bD, () => { drift = true; }, endDrift); bI.addEventListener('pointerdown', e => { e.preventDefault(); useItem(); });
+  bD.addEventListener('pointerdown', e => { e.preventDefault(); try { bD.setPointerCapture(e.pointerId); } catch (e2) {} startDrift(); }); ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(k => bD.addEventListener(k, endDrift));   // 手指滑出按鈕一點點也不會斷 bI.addEventListener('pointerdown', e => { e.preventDefault(); useItem(); });
   c.addEventListener('pointerdown', e => { e.preventDefault(); touchSteer = cpos(e).x < W / 2 ? -1 : 1; }); ['pointerup', 'pointerleave', 'pointercancel'].forEach(k => c.addEventListener(k, () => { touchSteer = 0; }));
   const finish = () => {
     state = 'done'; place = 1 + rivals.filter(r => r.z > dist() - 1).length; place = Math.min(4, place);
@@ -27168,11 +27171,15 @@ function playKart(w, L, car) {
       speed += (speed < cap ? ACC * (boost > 0 ? 2.5 : 1) : -ACC * 1.5) * dt; speed = Math.max(0, speed);
       const pct = speed / MAX;
       if (spin <= 0) px += steer * dt * 2.1 * Math.min(1, pct + .2) * (drift ? 1.3 : 1);
+      if (drift && spin <= 0) px += driftDir * dt * .55 * pct;   // 甩尾：車身往轉彎那一邊滑
+      if (hop > 0) hop = Math.max(0, hop - dt);
       px -= dt * 2 * pct * sg.curve * (L.assist ? .18 : .28);   // 彎道往外甩
       if (L.assist && !st) px *= Math.pow(.6, dt);   // 簡單：放開會慢慢回到路中間
       if (Math.abs(px) > 1 && speed > MAX / 4) speed -= MAX * (L.assist ? .35 : .6) * dt;   // 開到草地會變慢
       px = Math.max(-2, Math.min(2, px));
-      if (drift && Math.abs(st) > 0 && pct > .5) charge += dt; else if (drift && !st) charge = Math.max(0, charge - dt);
+      if (drift && pct > .4 && spin <= 0) charge += dt * (st || Math.abs(sg.curve) > .2 ? 1 : .7);
+      if (drift && speed > 10) { if (Math.random() < dt * 30) puffs.push({ x: W / 2 + (Math.random() < .5 ? -36 : 36) + (Math.random() - .5) * 8, y: H - 18, r: 4, a: .7, c: charge > 1.1 ? '#ff8a3d' : charge > .5 ? '#6bb6ff' : '#ffffff' }); }
+      puffs.forEach(q => { q.r += dt * 26; q.a -= dt * 1.6; q.y -= dt * 14; q.x -= driftDir * dt * 40; }); puffs = puffs.filter(q => q.a > 0);
       const before = z; z += speed * dt;
       if (z >= LEN) { z -= LEN; if (state === 'race') { lap++; if (lap >= LAPS) finish(); else { say(lap === LAPS - 1 ? '🏁 最後一圈！' : `第 ${lap + 1} 圈！`, 1.4); Sound.play('pickUp'); segs.forEach(s2 => s2.items.forEach(it => { it.got = 0; })); } } }
       // 碰到東西（看小可愛那一格）
@@ -27234,10 +27241,18 @@ function playKart(w, L, car) {
     }
     // 自己的車
     const bounce = speed > 10 ? Math.sin(t * 30) * 1 : 0;
-    if (drift && charge > .6) { g.fillStyle = charge > 1.3 ? '#ff8a3d' : '#6bb6ff'; for (let k = 0; k < 4; k++) { g.beginPath(); g.arc(W / 2 - 34 + Math.random() * 6 + (k % 2) * 62, H - 22 + Math.random() * 6, 3 + Math.random() * 3, 0, 7); g.fill(); } }
+    puffs.forEach(q => { g.globalAlpha = Math.max(0, q.a); g.fillStyle = q.c; g.beginPath(); g.arc(q.x, q.y, q.r, 0, 7); g.fill(); }); g.globalAlpha = 1;
+    if (drift && charge > .5) { g.fillStyle = charge > 1.1 ? '#ff8a3d' : '#6bb6ff'; for (let k = 0; k < 8; k++) { g.beginPath(); g.arc(W / 2 - 38 + Math.random() * 10 + (k % 2) * 70, H - 20 + Math.random() * 8, 3 + Math.random() * 4, 0, 7); g.fill(); } }
+    if (drift) {   // 集氣條：白 → 藍 → 橘
+      const bw = 90, bx = W / 2 - bw / 2, by = H - 120, f = Math.min(1, charge / 1.4);
+      g.fillStyle = 'rgba(0,0,0,.45)'; g.beginPath(); g.roundRect(bx - 3, by - 3, bw + 6, 14, 7); g.fill();
+      g.fillStyle = charge > 1.1 ? '#ff8a3d' : charge > .5 ? '#6bb6ff' : '#ffffff'; g.beginPath(); g.roundRect(bx, by, Math.max(4, bw * f), 8, 4); g.fill();
+      g.fillStyle = 'rgba(255,255,255,.7)'; g.fillRect(bx + bw * .5 / 1.4, by, 2, 8); g.fillRect(bx + bw * 1.1 / 1.4, by, 2, 8);
+    }
+    if (boost > 0) { g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 2; for (let k = 0; k < 10; k++) { const a = (k / 10) * Math.PI * 2 + t * 3, r1 = 150 + ((t * 600 + k * 53) % 120); g.beginPath(); g.moveTo(W / 2 + Math.cos(a) * r1, H / 2 + Math.sin(a) * r1 * .6); g.lineTo(W / 2 + Math.cos(a) * (r1 + 60), H / 2 + Math.sin(a) * (r1 + 60) * .6); g.stroke(); } }   // 衝刺的速度線
     if (star > 0) { g.fillStyle = `hsla(${(now / 2) % 360},90%,60%,.45)`; g.beginPath(); g.ellipse(W / 2, H - 40, 50, 36, 0, 0, 7); g.fill(); }
     if (boost > 0) { g.fillStyle = 'rgba(255,140,40,.8)'; g.beginPath(); g.moveTo(W / 2 - 14, H - 14); g.lineTo(W / 2, H + 10 + Math.random() * 10); g.lineTo(W / 2 + 14, H - 14); g.fill(); }
-    drawKartRear(g, W / 2, H - 14 + bounce, 1.35, car.c, 'kid', steer, t, spin > 0 ? spin * 14 : 0);
+    drawKartRear(g, W / 2 + (drift ? driftDir * 6 : 0), H - 14 + bounce - Math.sin(Math.min(1, hop / .22) * Math.PI) * 14, 1.35, car.c, 'kid', drift ? steer + driftDir * 2.6 : steer, t, spin > 0 ? spin * 14 : 0);
     // 介面
     g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(8, 8, 128, 46); g.fillStyle = '#fff'; g.font = '900 16px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'left';
     g.fillText(`第 ${Math.min(LAPS, lap + 1)} / ${LAPS} 圈`, 16, 28); g.fillStyle = '#ffd23f'; g.fillText(`第 ${place || 4} 名`, 16, 48); g.fillStyle = '#fff'; g.font = '700 12px sans-serif'; g.fillText(`● ${coins}`, 92, 48);
@@ -27252,7 +27267,7 @@ function playKart(w, L, car) {
     raf = requestAnimationFrame(tick);
   };
   raf = requestAnimationFrame(tick);
-  playKart.test = { st: () => ({ state, lap, z, place, speed, item, coins, spin, px, LEN }), giveItem, useItem, go: () => { T0 -= 3000; }, lastLap: () => { lap = LAPS - 1; z = LEN - SEG * 6; }, setPx: v => { px = v; }, rivals, bananas: () => bananas };
+  playKart.test = { st: () => ({ state, lap, z, place, speed, item, coins, spin, px, LEN, drift, charge, boost, hop, puffs: puffs.length }), startDrift: () => startDrift(), endDrift: () => endDrift(), canvas: c, giveItem, useItem, go: () => { T0 -= 3000; }, lastLap: () => { lap = LAPS - 1; z = LEN - SEG * 6; }, setPx: v => { px = v; }, rivals, bananas: () => bananas };
 }
 /* ===== 💪 健身房（家長：繼續做健身房）=====
    運動島上（田徑場原本的位置），河馬教練。五種器材，每一種是一個小遊戲，練「速度／力量／耐力」：
