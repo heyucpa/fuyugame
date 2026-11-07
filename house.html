@@ -14267,6 +14267,7 @@ function canvasDpr(cssW, cssH) {
 }
 var viewDpr = 1;
 function resize() {
+  if (document.querySelector('.stage.island-on')) { canvasBox = null; if (canvas.width > 1) { canvas.width = 1; canvas.height = 1; } return; }   // 在外面：房間看不到，畫布先還記憶體（回家再畫）
   const r = canvasBox = canvas.getBoundingClientRect();
   viewDpr = canvasDpr(r.width, r.height);
   canvas.width = Math.max(1, Math.round(r.width * viewDpr));
@@ -20988,7 +20989,10 @@ function openIsland() {
   stage.appendChild(layer); stage.classList.add('island-on');
   refreshRunBtn();
   setTimeout(() => { if (typeof islRideBtn === 'function') islRideBtn(); if (typeof islShowNewIsle === 'function') islShowNewIsle(); }, 0);
+  /* 家長：最近比較容易當機、卡頓 → 選單收起來後地圖變寬，iPad 上小島畫布從 22MB 變 30MB（房間的畫布也跟著變大躲在底下）。
+     小島最多用 1.5 倍解析度（iPad 本來是 2 倍，看起來差不多），底下看不到的房間畫布先縮成 1 格。 */
   const dpr = () => window.devicePixelRatio || 1;
+  canvas.width = 1; canvas.height = 1; canvasBox = null;
   isl = { fx: [], gulls: [], shellGot: {}, tool: null, act: null, holes: [], bees: null, layer, cv, m, invites, x: st.x + .5, y: st.y + .5, path: [], pending: null, skipDoor: st.id, facing: 1, back: false,
     t: 0, last: performance.now(), keys: {}, press: null, repath: 0, shake: {}, picked: {}, trail: [], pet: { x: st.x + .5, y: st.y + 1.2, f: 1 }, raf: 0, tip, cam: { x: st.x + .5, y: st.y + .5 }, from: G.away ? G.away.place : null, nextFun: performance.now() + 32000 };
   const reqWho = G.islReq && G.islReq.d === today() && !G.islReq.done ? G.islReq.npc : null;   // 🙋 請她幫忙的那一位：一定要在島上（不然找不到）
@@ -21341,7 +21345,7 @@ function islFrame(now) {
 function islDraw(now) {
   const cv = isl.cv, m = isl.m, T = ISL.T;
   const W = cv.clientWidth, H = cv.clientHeight;
-  const dpr = typeof canvasDpr === 'function' ? canvasDpr(W, H) : (window.devicePixelRatio || 1);
+  const dpr = Math.min(1.5, typeof canvasDpr === 'function' ? canvasDpr(W, H) : (window.devicePixelRatio || 1));   // 小島最多 1.5 倍解析度：iPad 上省一半記憶體、畫得比較快
   cv._dpr = dpr;
   if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
   const ctx = cv.getContext('2d'), v = islView(), tt = isl.t;
