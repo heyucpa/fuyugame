@@ -785,6 +785,11 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .rename-t { flex: 1; display: flex; flex-direction: column; } .rename-t span { font-size: 12px; color: #8a7a6a; }
 .rename-b { display: flex; gap: 4px; flex-wrap: wrap; } .rename-b .on { background: #ffe0ee; border-color: #ff8fb3; }
 .quest-btn.qb-pet { min-width: 64px; } .quest-btn.qb-pet.glow { min-width: 110px; }
+/* 家長：按鍵旁邊標示鍵盤 → 有滑鼠、鍵盤的電腦才顯示（iPad 不顯示）；用 data-key，按鈕文字換了標示還在 */
+@media (hover: hover) and (pointer: fine) {
+  button[data-key] { position: relative; }
+  button[data-key]::after { content: attr(data-key); position: absolute; right: -6px; bottom: -8px; background: #fff; color: #3a3240; border: 1.5px solid #8a7f90; border-radius: 6px; font: 800 11px/1.35 system-ui, sans-serif; padding: 0 5px; white-space: nowrap; pointer-events: none; box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+}
 .quest-btn.glow { animation: glowPulse .6s infinite alternate; border-color: #ffd23f; background: #fff3b0; }
 @keyframes glowPulse { from { box-shadow: 0 0 0 0 rgba(255,210,63,.8); } to { box-shadow: 0 0 0 8px rgba(255,210,63,0); } }
 .spar-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 8px 0; }
@@ -22768,7 +22773,7 @@ function playSwim(w, L) {
   const W = 340, H = 220, { g } = gameCanvas(w.stage, W, H), LEN = 25;
   const mates = NEIGHBORS.filter(Boolean).slice(0, 3).map((n, i) => ({ n, x: 0, v: L.sp * (.9 + Math.random() * .15) * (1 - i * .04), done: 0, cap: ['#ffd23f', '#7bd389', '#b18cff'][i] }));
   let me = 0, myDone = 0, t = 0, raf = 0, last = performance.now(), ended = false, splash = 0, order = [];
-  const go = el('button', 'big run-go', '🏊 游！'), bSp = el('button', 'big run-go db-sp', '🐬 海豚衝刺'); bSp.style.display = 'none'; w.stage.append(go, bSp);
+  const go = el('button', 'big run-go', '🏊 游！'), bSp = el('button', 'big run-go db-sp', '🐬 海豚衝刺'); go.dataset.key = '空白'; bSp.dataset.key = 'S'; bSp.style.display = 'none'; w.stage.append(go, bSp);
   // 🐬 必殺技「海豚衝刺」：游越多下能量越多，滿了按一下，變成海豚一下衝好遠
   const DOLPHIN = { name: '海豚衝刺', fx: '🐬', c: '#3fa9f5', c2: '#dff0ff' };
   let pw = 0, cutAt = 0, dash = 0, dashes = 0;
@@ -23273,7 +23278,7 @@ function playSpar(w, L, who) {
   const mates = NEIGHBORS.filter(Boolean), base = who || mates[Math.floor(Math.random() * mates.length)];
   const foe = base.dobok ? base : Object.assign({}, base, { dobok: TKD_BELTS[Math.floor(Math.random() * 4)][1] });   // 對手也穿道服
   const row = el('div', 'spar-row'), bKick = el('button', 'big spar-kick', '🦵 踢！'), bBlock = el('button', 'big spar-block', '🛡️ 擋！');   // 家長：妹妹看不懂字 → 按鈕顏色跟頭上的提示一樣（綠踢、紅擋）
-  const bSp = el('button', 'big spar-sp', '💥 必殺技'); bSp.disabled = true;
+  const bSp = el('button', 'big spar-sp', '💥 必殺技'); bSp.disabled = true; bKick.dataset.key = '空白'; bBlock.dataset.key = 'B'; bSp.dataset.key = 'S';
   row.append(bKick, bBlock, bSp); w.stage.appendChild(row); leaveButton(w);
   let ki = 0, spAt = 0, spMv = null, spN = 0, spHit = false;   // ki：氣（0～100），滿了可以放必殺技
   const addKi = n => { ki = Math.min(100, ki + n * fitMul('sta')); bSp.disabled = ki < 100 || state !== 'fight'; bSp.classList.toggle('spar-on', ki >= 100); }; w.status.textContent = '綠色「踢！」按綠色的；紅色「擋！」按紅色的';
@@ -24525,7 +24530,7 @@ function playQuest(id, opt) {
   const pad = el('div', 'quest-pad qpad-split'), padL = el('div', 'qpad-l'), padR = el('div', 'qpad-r'), padX = el('div', 'qpad-tools');
   padR.appendChild(padX); pad.append(padL, padR);
   const mk = (txt, cls, side) => { const b = el('button', 'quest-btn ' + (cls || ''), txt); (side === 'L' ? padL : side === 'J' ? padR : padX).appendChild(b); return b; };
-  const bL = mk('◀', 'qb-l', 'L'), bR = mk('▶', 'qb-r', 'L'), bDn = mk('⬇', 'qb-dn'), bF = mk('🔥', 'qb-fire'), bJ = mk('⤒ 跳', 'qb-j', 'J');
+  const bL = mk('◀', 'qb-l', 'L'), bR = mk('▶', 'qb-r', 'L'), bDn = mk('⬇', 'qb-dn'), bF = mk('🔥', 'qb-fire'), bJ = mk('⤒ 跳', 'qb-j', 'J'); bL.dataset.key = '←'; bR.dataset.key = '→'; bDn.dataset.key = '↓'; bF.dataset.key = 'X'; bJ.dataset.key = '空白';
   bDn.style.display = 'none'; bF.style.display = 'none';   // ⬇：站在水管上才出現；🔥：拿到火火花才出現
   /* 🐾 寵物一起闖關（Grok 建議、家長同意）：孵出來的寵物跟在小可愛後面跑；撿金幣、時間慢慢集能量，
      集滿按 🐾（或 C 鍵）放必殺技：畫面裡的小怪物全部打倒，大魔王扣一下（大約三成血）。
@@ -24534,7 +24539,7 @@ function playQuest(id, opt) {
   const QP = (() => { const p0 = G.pet; if (!p0 || p0.stage === 'egg' || !PET_SPECIES_BY_ID[p0.species]) return null;
     const tr = PET_TRAIT_OF[p0.species] || 'jump';
     return { sp: PET_SPECIES_BY_ID[p0.species], stage: lookStage(p0), trait: tr, name: petName(), mv: QPET_MOVES[tr], meter: 0, max: easy ? 12 : 18, x: 0, y: 0, act: 0, uses: 0, lastCoins: 0, ui: 0 }; })();
-  const bP = QP ? mk('🐾', 'qb-pet') : null;   // 放在跳左邊的小按鈕區，跳仍是 padR 最右邊那顆
+  const bP = QP ? mk('🐾', 'qb-pet') : null; if (bP) bP.dataset.key = 'C';   // 放在跳左邊的小按鈕區，跳仍是 padR 最右邊那顆
   /* 家長：簡單、一般都要自己左右走，不要自動往前跑了 → 兩種都是 ◀ ▶ 自己走；簡單模式比較寬鬆（坑窄、刺變花、被打到不扣愛心、掉下去有泡泡）。 */
   let bossZone = false;
   w.stage.appendChild(pad);
@@ -26947,7 +26952,7 @@ function playDodge(w, L) {
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   const W = 480, H = 270, { c, g, pos } = gameCanvas(w.stage, W, H);
   const pad = el('div', 'quest-pad'); w.stage.appendChild(pad);
-  const bMain = el('button', 'quest-btn qb-j', '🎯 丟！'), bSp = el('button', 'quest-btn db-sp', '💥 必殺技'); pad.append(bMain, bSp); leaveButton(w); w.status.textContent = '把對面三個人都打出局就贏了！集滿能量可以放必殺技！';
+  const bMain = el('button', 'quest-btn qb-j', '🎯 丟！'), bSp = el('button', 'quest-btn db-sp', '💥 必殺技'); bMain.dataset.key = '空白'; bSp.dataset.key = 'S'; pad.append(bMain, bSp); leaveButton(w); w.status.textContent = '把對面三個人都打出局就贏了！集滿能量可以放必殺技！';
   bSp.disabled = true;
   const tm = arenaMates(), TOP = 112, MID = W / 2;
   const kid = { who: 'kid', x: 120, y: 200, out: false }, us = [kid, { who: tm.pet, x: 70, y: 160, out: false }, { who: tm.friend, x: 80, y: 240, out: false }];
@@ -27265,7 +27270,7 @@ function playKart(w, L, car) {
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   const W = 480, H = 300, { c, g, pos: cpos } = gameCanvas(w.stage, W, H);
   const pad = el('div', 'quest-pad'); w.stage.appendChild(pad);
-  const bL = el('button', 'quest-btn', '◀'), bD = el('button', 'quest-btn', '🌀 甩尾'), bI = el('button', 'quest-btn qb-j', '🎁'), bR = el('button', 'quest-btn', '▶');
+  const bL = el('button', 'quest-btn', '◀'), bD = el('button', 'quest-btn', '🌀 甩尾'), bI = el('button', 'quest-btn qb-j', '🎁'), bR = el('button', 'quest-btn', '▶'); bL.dataset.key = '←'; bR.dataset.key = '→'; bD.dataset.key = '空白'; bI.dataset.key = 'X';
   pad.append(bL, bD, bI, bR); leaveButton(w); w.status.textContent = `開${car.name}！跑 3 圈`;
   // 跑道：一段一段（長度、彎的程度）
   const SEG = 200, ROAD = 2000, DRAW = 110, CAM_H = 1000, DEPTH = 1 / Math.tan(50 * Math.PI / 180), LAPS = 3;
@@ -27424,7 +27429,7 @@ function playKart(w, L, car) {
     raf = requestAnimationFrame(tick);
   };
   raf = requestAnimationFrame(tick);
-  playKart.test = { st: () => ({ state, lap, z, place, speed, item, coins, spin, px, LEN, drift, charge, boost, hop, puffs: puffs.length }), startDrift: () => startDrift(), endDrift: () => endDrift(), canvas: c, giveItem, useItem, go: () => { T0 -= 3000; }, lastLap: () => { lap = LAPS - 1; z = LEN - SEG * 6; }, setPx: v => { px = v; }, rivals, bananas: () => bananas };
+  playKart.test = { st: () => ({ state, lap, z, place, speed, item, coins, spin, px, LEN, drift, charge, boost, hop, driftDir, puffs: puffs.length }), startDrift: () => startDrift(), endDrift: () => endDrift(), canvas: c, giveItem, useItem, go: () => { T0 -= 3000; }, lastLap: () => { lap = LAPS - 1; z = LEN - SEG * 6; }, setPx: v => { px = v; }, rivals, bananas: () => bananas };
 }
 /* ===== 💪 健身房（家長：繼續做健身房）=====
    運動島上（田徑場原本的位置），河馬教練。五種器材，每一種是一個小遊戲，練「速度／力量／耐力」：
@@ -28429,7 +28434,7 @@ function playDuel(w, who, opt) {
   const pow = opt.foePow || 0, spX = opt.spExtra || 0;
   const lvl = opt.lvl != null ? opt.lvl : Math.min(4, Math.floor((st.win || 0) / 3)), hunger = (G.kid && G.kid.hunger) || 50;
   const S = { me: Math.min(10, 5 + Math.round(hunger / 20)), meMax: 10, foe: opt.hp || 8 + lvl, foeMax: opt.hp || 8 + lvl, ki: 0, intent: 'atk', phase: 'intro', at: performance.now(), anim: null, pops: [], shake: 0, spMv: null, over: false, turn: 0, moves: [pickOne(DUEL_FOE_MOVES), pickOne(DUEL_FOE_MOVES)] };
-  const row = el('div', 'spar-row'), bHit = el('button', 'big duel-hit', '👊 打'), bBlock = el('button', 'big spar-block', '🛡️ 擋'), bSp = el('button', 'big spar-sp', '💥 必殺技');
+  const row = el('div', 'spar-row'), bHit = el('button', 'big duel-hit', '👊 打'), bBlock = el('button', 'big spar-block', '🛡️ 擋'), bSp = el('button', 'big spar-sp', '💥 必殺技'); bHit.dataset.key = '空白'; bBlock.dataset.key = 'B'; bSp.dataset.key = 'D';
   row.append(bHit, bBlock, bSp); w.stage.appendChild(row); leaveButton(w);
   let live = true, raf = 0, msg = opt.intro || `${foe.short}來挑戰了！`, msgC = '#5a4636';
   gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', key); };

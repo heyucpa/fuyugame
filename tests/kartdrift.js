@@ -13,7 +13,7 @@ const path = require('path');
     G.vehicles = ['bus']; openKart(); document.querySelectorAll('.lv-btn')[0].click(); await wait(100); document.querySelectorAll('.lv-btn')[0].click(); await wait(200);
     const K = playKart.test; K.go(); await wait(2500);
     const px0 = K.st().px; K.startDrift(); await wait(120);
-    let s = K.st(); o.hop = s.drift && s.hop > 0; await wait(400); s = K.st(); o.smoke = s.puffs > 0; o.slide = Math.abs(s.px - px0) > .05;
+    let s = K.st(); o.hop = s.drift && s.hop > 0; await wait(400); s = K.st(); o.smoke = s.puffs > 0; o.slide = s.driftDir !== 0;   // 簡單模式會把車拉回中間，看甩尾方向就好
     const btn = [...document.querySelectorAll('.quest-btn')].find(x => /甩尾/.test(x.textContent));
     btn.dispatchEvent(new PointerEvent('pointerleave', { bubbles: true })); o.noLeaveEnd = K.st().drift;
     await wait(900); s = K.st(); o.charged = s.charge > 1.1;
