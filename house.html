@@ -520,6 +520,11 @@ button.pass { font: inherit; }
 .rest-done:empty { display: none; }
 .rest-bye { background: #ffe08a; color: #4a3b2a; border: none; border-radius: 999px; padding: 10px 20px; font-size: 16px; font-weight: 800; }
 .rest-bye[hidden] { display: none; }
+/* 家長：在家只想玩小屋、左邊選單沒用到 → 寬螢幕（電腦、橫拿 iPad）也可以把整個選單收起來，房間變大；記在這台機器 */
+@media (min-width: 761px) and (orientation: landscape), (min-width: 1101px) {
+  body.bigroom .panel { display: none; }
+  .zoom-btn.wide { display: block; }
+}
 .zoom-btn { display: none; position: absolute; top: 8px; right: 8px; z-index: 6; border: 2px solid var(--line);
   background: rgba(255,250,240,.92); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 700; }
 /* ③ 提示條玩過幾次就不顯示（拿著家具的時候還是會出現，那時候需要它） */
@@ -890,6 +895,7 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .island-btn { position: absolute; top: 12px; font: inherit; font-size: 15px; font-weight: 800; border: 2px solid #fff; border-radius: 999px; padding: 8px 16px; min-height: 40px; background: rgba(255,255,255,.92); color: #4a3b2a; box-shadow: 0 3px 10px rgba(0,0,0,.2); cursor: pointer; touch-action: manipulation; }
 /* 家長：在外面時左邊的選單可以收起來 → 出門預設收起（地圖變大），按「☰ 選單」再打開 */
 body.isl-out:not(.isl-panel) .panel { display: none; }
+body.isl-out.isl-panel .panel { display: flex; }   /* 在外面按「☰ 選單」：就算在家收起來了也打開 */
 .isl-menu-btn { left: 12px; top: 204px; }
 .isl-back { left: 12px; } .isl-fast { right: 12px; } .isl-quest { right: 12px; top: 60px; background: #ffe9b8 !important; } .isl-ride { left: 12px; top: 108px; } .isl-emo { left: 12px; top: 156px; } .isl-run { left: 12px; top: 60px; }
 .isl-tools { position: absolute; left: 12px; bottom: 60px; display: flex; flex-direction: column; gap: 6px; }
@@ -15451,8 +15457,7 @@ function setBigRoom(on) {
   const was = document.body.classList.contains('bigroom');
   if (was === !!on) return;
   document.body.classList.toggle('bigroom', !!on);   canvasBox = null;   // 版面變了：畫布大小重新量
-  const b = $('#btnZoom');
-  if (b) b.textContent = on ? '🔍 縮小' : '🔍 放大';
+  zoomBtnLabel();
   lsSet(BIG_KEY, on ? '1' : '0');
 }
 $('#btnTheme').onclick = () => { Sound.play('click'); openThemes(); };
@@ -15467,6 +15472,17 @@ $('#btnCallAll').onclick = () => {
   openCallAll();
 };
 setTimeout(() => { try { refreshThemeBtn(); } catch (e) {} }, 0);
+// 寬螢幕：收起整個選單（「◀ 收起選單／☰ 選單」）；直拿、手機：原本的放大房間（只留一排分頁）
+const WIDE_MQ = window.matchMedia ? matchMedia('(min-width: 761px) and (orientation: landscape), (min-width: 1101px)') : null;
+function zoomBtnLabel() {
+  const b = $('#btnZoom'); if (!b) return;
+  const on = document.body.classList.contains('bigroom'), wide = !!(WIDE_MQ && WIDE_MQ.matches);
+  b.classList.toggle('wide', wide);
+  b.textContent = wide ? (on ? '☰ 選單' : '◀ 收起選單') : (on ? '🔍 縮小' : '🔍 放大');
+  b.title = wide ? (on ? '打開左邊的選單' : '把左邊的選單收起來，房間變大') : '放大房間';
+}
+try { WIDE_MQ && (WIDE_MQ.addEventListener ? WIDE_MQ.addEventListener('change', () => { zoomBtnLabel(); canvasBox = null; requestDraw(); }) : WIDE_MQ.addListener(zoomBtnLabel)); } catch (e) {}
+zoomBtnLabel();
 $('#btnZoom').onclick = () => { setBigRoom(!document.body.classList.contains('bigroom')); Sound.play('click'); };
 if (lsGet(BIG_KEY) === '1') setBigRoom(true);
 const hintRuns = Number(lsGet(HINT_KEY) || 0) + 1;
@@ -21012,7 +21028,7 @@ function islTile(e) {
   return { x: Math.floor(wx / ISL.T), y: Math.floor(wy / ISL.T), fx: wx / ISL.T, fy: wy / ISL.T };
 }
 function islView() {
-  const W = isl.cv.clientWidth, H = isl.cv.clientHeight, s = Math.max(.85, Math.min(1.3, Math.min(W, H) / (11 * ISL.T)));
+  const W = isl.cv.clientWidth, H = isl.cv.clientHeight, s = Math.max(.85, Math.min(1.55, Math.min(W, H) / (10 * ISL.T)));   // 家長：選單收起來之後地圖可以放大 → 最大 1.3 倍改 1.55 倍（人、房子、門口都大一點，比較好點）
   const ww = ISL.W * ISL.T, wh = ISL.H * ISL.T;
   let cx = isl.cam.x * ISL.T, cy = isl.cam.y * ISL.T;
   const hw = W / 2 / s, hh = H / 2 / s;

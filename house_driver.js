@@ -4647,7 +4647,7 @@
        放大時房間可以比螢幕寬並跟著小可愛、提示條玩過幾次就收起來（拿著家具時還是要有） */
     setBigRoom(false);
     $('#btnZoom').onclick();
-    if (!document.body.classList.contains('bigroom') || !/縮小/.test($('#btnZoom').textContent)) fails.push('按放大沒有進入放大模式');
+    if (!document.body.classList.contains('bigroom') || !/縮小|選單/.test($('#btnZoom').textContent)) fails.push('按放大沒有進入放大模式');
     if (localStorage.getItem(BIG_KEY) !== '1') fails.push('放大模式沒有記住');
     document.querySelector('#tabs button[data-tab="shop"]').onclick();
     if (document.body.classList.contains('bigroom')) fails.push('放大時點分頁，面板沒有打開');
