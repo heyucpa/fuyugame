@@ -25121,7 +25121,7 @@ function playQuest(id, opt) {
       g.fillStyle = 'rgba(255,255,255,.75)'; if (leftEdge && !tip) g.fillRect(x + 3, y, 3, QT);
       g.fillStyle = 'rgba(120,180,225,.5)'; if (!leftEdge && !tip) g.fillRect(x + QT - 3, y, 3, QT);
     }
-    else if (ch === '#' && L.deep) {   // 🪨 湖底的大石頭：圓圓的灰石頭，上面長青苔
+    else if (ch === '#' && L.deep) {   // ⛰️ 湖底的大石頭：圓圓的灰石頭，上面長青苔
       const topT = tileAt(tx, ty - 1) !== '#', leftEdge = tileAt(tx - 1, ty) !== '#', rightEdge = tileAt(tx + 1, ty) !== '#';
       g.fillStyle = '#6f6a73'; g.beginPath(); g.roundRect(x - (leftEdge ? 0 : 2), y - (topT ? 0 : 2), QT + (leftEdge ? 0 : 2) + (rightEdge ? 0 : 2), QT + (topT ? 0 : 2), [topT && leftEdge ? 8 : 0, topT && rightEdge ? 8 : 0, 0, 0]); g.fill();
       g.fillStyle = '#8a8590'; g.beginPath(); g.ellipse(x + 7 + (tx % 2) * 3, y + 7 + (ty % 2) * 3, 4, 3, 0, 0, 7); g.fill();
