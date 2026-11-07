@@ -14315,13 +14315,16 @@ function draw() {
   fufuDrawBubble(ctx, performance.now());
 }
 /* ===== 🍂 四季裝飾（美編）=====
-   照月份換：春 3～5 月飄櫻花瓣、夏 6～8 月往上飄泡泡、秋 9～11 月落葉、冬 12～2 月下雪；房間底下那一圈也換顏色。
+   每天換一季（以前照月份）：春飄櫻花瓣、夏往上飄泡泡、秋落葉、冬下雪；房間底下那一圈也換顏色。
    只畫在房間「後面」（不擋家具、不擋點擊），每季 22 片，用時間算位置（不存狀態，也不花電）。
    設定裡可以關掉（G.noSeasonFx）。測試可以用 SEASON_TODAY 指定日期。 */
 const SEASON_GROUND = { spring: 'rgba(240,150,190,.2)', summer: 'rgba(60,150,200,.16)', autumn: 'rgba(210,140,50,.22)', winter: 'rgba(255,255,255,.75)' };
+/* 家長：每天就換一季 → 不看月份了，照日子輪：春 → 夏 → 秋 → 冬 → 春…（每天半夜 12 點換）。
+   節日（萬聖節、聖誕節）還是照真的日期，跟這個無關。 */
 function seasonOfMonth() {
-  const m = SEASON_TODAY ? SEASON_TODAY[0] : new Date().getMonth() + 1;
-  return m >= 3 && m <= 5 ? 'spring' : m >= 6 && m <= 8 ? 'summer' : m >= 9 && m <= 11 ? 'autumn' : 'winter';
+  const d = new Date(), y = d.getFullYear(), md = SEASON_TODAY || [d.getMonth() + 1, d.getDate()];
+  const day = Math.round(Date.UTC(y, md[0] - 1, md[1]) / 864e5);
+  return ['spring', 'summer', 'autumn', 'winter'][(((day + 2) % 4) + 4) % 4];   // +2：2026/11/7 是秋天（接著原本的季節），11/8 冬天、11/9 春天…
 }
 /* 家長：可以把背景四季特效關閉（一直卡）→ 整個關掉（花瓣、泡泡、落葉、雪和底下那圈換色）；要再打開改成 true。
    存檔裡的 G.noSeasonFx 照樣讀得進來、不會壞。 */

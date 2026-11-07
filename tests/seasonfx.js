@@ -1,4 +1,4 @@
-// 🍂 四季裝飾＋🎊 彩帶：月份對到季節；四季都畫得出來不出錯；設定可以關；存檔驗證；慶祝的大事會撒彩帶、普通的新東西不會；彩帶不擋點擊
+// 🍂 四季裝飾＋🎊 彩帶：每天換一季（春夏秋冬輪流）；四季都畫得出來不出錯；設定可以關；存檔驗證；慶祝的大事會撒彩帶、普通的新東西不會；彩帶不擋點擊
 const { chromium } = require('playwright');
 const path = require('path');
 (async () => {
@@ -13,7 +13,8 @@ const path = require('path');
     SEASON_FX_ON = true;
     G.guide = 'done'; G.guideAsked = true; $('#modal').hidden = true;
     const m = md => { SEASON_TODAY = md; return seasonOfMonth(); };
-    o.months = m([3, 1]) === 'spring' && m([5, 31]) === 'spring' && m([7, 4]) === 'summer' && m([10, 10]) === 'autumn' && m([12, 25]) === 'winter' && m([2, 1]) === 'winter';
+    const seq = [[11, 7], [11, 8], [11, 9], [11, 10], [11, 11]].map(m); o.daily = seq.join() === 'autumn,winter,spring,summer,autumn';
+    o.sameDay = m([6, 3]) === m([6, 3]) && m([6, 3]) !== m([6, 4]);
     for (const md of [[4, 1], [7, 1], [10, 1], [1, 1]]) { SEASON_TODAY = md; draw(); await wait(80); }
     o.drew = true;
     openTab('save'); await wait(200); const btn = [...document.querySelectorAll('#tabBody button')].find(x => /季節裝飾/.test(x.textContent)); btn.click(); o.off = G.noSeasonFx === 1;
