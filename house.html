@@ -24442,6 +24442,9 @@ function questWrapLines(g, text, maxW, maxLines) {
   out[maxLines - 1] = last + '…';
   return out;
 }
+// 每個世界的小怪物（輪流出現）和大魔王的樣子：只換長相和走路方式，關卡、血量都不變
+const QUEST_FOES = { 1: ['slime', 'mush', 'frog'], 2: ['crab', 'snail'], 3: ['slime', 'mush', 'frog'], 4: ['penguin', 'snowman'], 5: ['slime', 'bird'], 6: ['turtle', 'imp'] };
+const QUEST_BOSS_LOOK = { 1: 'slime', 2: 'crab', 3: 'mush', 4: 'snow', 6: 'dragon' };
 // 闖關的五種花（招數）：粉紅磚跳出來的花有不同顏色，拿到哪一種就放哪一種
 const QUEST_ELEMS = {
   fire: { icon: '🔥', name: '火火花', say: '可以丟火球了！', col: ['#ff8a3d', '#ffd23f'] },
@@ -24498,11 +24501,13 @@ function playQuest(id, opt) {
   const ckPhase = (en, hp) => hp > en.hpMax * 2 / 3 ? 1 : hp > en.hpMax / 3 ? 2 : 3;
   let bossHome = null;
   const bossFire = [];   // 一般模式大魔王噴的火球
-  let boss = null, startX = 2 * QT, checkX = startX;
+  let boss = null, startX = 2 * QT, checkX = startX, eN = 0;
   L.g.forEach((r, y) => r.forEach((ch, x) => {
     const px = x * QT, py = y * QT;
     const spd = easy ? 1 : 1.18;   // 一般模式：小怪走快一點
-    if (ch === 'e') { ents.push({ k: wd.enemy, x: px, y: py + QT - 14, w: 16, h: 14, vx: -30 * spd, alive: true }); r[x] = ' '; }
+    if (ch === 'e') {   // 家長：小怪物看起來都差不多 → 每個世界有兩三種，輪流出現（第一隻還是原本那種）
+      const kinds = QUEST_FOES[wd.id] || [wd.enemy], k = L.deep ? wd.enemy : kinds[(eN++) % kinds.length], sp = k === 'snail' ? .55 : k === 'snowman' ? .75 : 1;
+      ents.push({ k, x: px, y: py + QT - 14, w: 16, h: 14, vx: -30 * spd * sp, alive: true, hopT: 1 + (x % 5) * .3 }); r[x] = ' '; }
     if (ch === 't') { ents.push({ k: 'turtle', x: px, y: py + QT - 16, w: 16, h: 16, vx: -28 * spd, alive: true }); r[x] = ' '; }
     if (ch === 'n') { ents.push({ k: 'fish', x: px, y: py, w: 18, h: 12, vx: (easy ? -24 : -40), y0: py, alive: true, t: Math.random() * 3 }); r[x] = ' '; }
     if (ch === 'j') { ents.push({ k: 'jelly', x: px, y: py, w: 16, h: 18, y0: py, amp: 20, alive: true, t: (x % 7) * .6 }); r[x] = ' '; }
@@ -24964,6 +24969,7 @@ function playQuest(id, opt) {
         const r2 = hitTiles(en, en.vx * dt, en.vy * dt);
         const ahead = Math.floor((en.vx < 0 ? en.x - 1 : en.x + en.w + 1) / QT), below = Math.floor((en.y + en.h + 2) / QT);
         if (en.hitX || (r2.landed && !solid(tileAt(ahead, below)))) en.vx = -en.vx;   // 碰到牆或懸崖：轉身
+        if (en.k === 'frog' && r2.landed && (en.hopT -= dt) <= 0) { en.hopT = 1.4 + Math.random() * .6; en.vy = easy ? -260 : -330; }   // 🐸 青蛙：走一走跳一下
         if (en.y > QVH + 40) en.alive = false;
       }
       // 碰到小可愛
@@ -25100,14 +25106,56 @@ function playQuest(id, opt) {
       if (topT) { g.fillStyle = lip; g.fillRect(x - (left ? 2 : 0), y, QT + 2, 7); g.strokeStyle = edge; g.strokeRect(x - (left ? 2 : 0) + .5, y + .5, QT + 1, 6); if (left) { g.font = '900 16px sans-serif'; g.textAlign = 'center'; g.lineWidth = 3; g.strokeStyle = edge; g.strokeText('⬇', x + QT, y - 6 + Math.sin(P.t * 5) * 2); g.fillStyle = '#fff'; g.fillText('⬇', x + QT, y - 6 + Math.sin(P.t * 5) * 2); } } }   // 🟢 水管／🔵 入水的水管
     else if (ch === 'L') { g.fillStyle = Math.floor(y / QT) === 13 ? '#ff6a2a' : '#d9381e'; g.fillRect(x, y, QT, QT); if (Math.floor(y / QT) === 13) { g.fillStyle = '#ffb02e'; g.beginPath(); g.arc(x + 9 + Math.sin(P.t * 3 + x) * 4, y + 4, 3, 0, 7); g.fill(); } }   // 岩漿
   };
+  // 每個世界的大魔王長得不一樣（家長：小怪物跟大魔王看起來都差不多）。動作、血量都跟原本一樣，只是換樣子。
+  const drawBossLook = (look, x, y, en, sq, flash) => {
+    const W2 = en.w, H2 = en.h, cx = x + W2 / 2, bot = y + H2, F = c => flash ? '#ffffff' : c, P2 = Math.sin(P.t * 6);
+    const eyes = (ey, sp, r, angry) => { [-1, 1].forEach(s => { g.fillStyle = '#ffffff'; g.beginPath(); g.arc(cx + s * sp, ey, r, 0, 7); g.fill(); g.fillStyle = '#231c1c'; g.beginPath(); g.arc(cx + s * sp + (P.x < en.x ? -1 : 1), ey + .5, r * .5, 0, 7); g.fill(); if (angry) { g.strokeStyle = '#231c1c'; g.lineWidth = 2; g.beginPath(); g.moveTo(cx + s * (sp - r), ey - r - 1); g.lineTo(cx + s * (sp + r), ey - r - 3); g.stroke(); } }); };
+    if (look === 'crab') {   // 🦀 螃蟹大王：大鉗子一開一合
+      g.fillStyle = F('#e8432f'); [-1, 1].forEach(s => { g.strokeStyle = F('#c43020'); g.lineWidth = 3; for (let k = 0; k < 3; k++) { g.beginPath(); g.moveTo(cx + s * 10, bot - 8 - k * 3); g.lineTo(cx + s * 22, bot - (k % 2) * 2); g.stroke(); } });
+      g.beginPath(); g.ellipse(cx, bot - 12 * sq, 18, 11 * sq, 0, 0, 7); g.fill();
+      [-1, 1].forEach(s => { const ox = cx + s * 24, oy = bot - 26 + P2 * 2, op = .35 + Math.abs(P2) * .45;   // 鉗子：上下兩片一開一合
+        g.strokeStyle = F('#e8432f'); g.lineWidth = 3; g.beginPath(); g.moveTo(cx + s * 14, bot - 16); g.lineTo(ox, oy + 4); g.stroke();
+        g.fillStyle = F('#e8432f'); [-1, 1].forEach(v => { g.save(); g.translate(ox, oy); g.rotate(v * op * (s > 0 ? -1 : 1)); g.beginPath(); g.ellipse(s * 5, 0, 7, 3.5, 0, 0, 7); g.fill(); g.restore(); }); });
+      [-1, 1].forEach(s => { g.strokeStyle = F('#e8432f'); g.lineWidth = 2; g.beginPath(); g.moveTo(cx + s * 5, bot - 20); g.lineTo(cx + s * 6, bot - 28); g.stroke(); });
+      eyes(bot - 29, 6, 3.5, true);
+    } else if (look === 'mush') {   // 🍄 蘑菇大王
+      g.fillStyle = F('#fff1dc'); g.beginPath(); g.roundRect(cx - 11, bot - 18, 22, 18, 6); g.fill();
+      g.fillStyle = F('#9a3ad8'); g.beginPath(); g.ellipse(cx, bot - 18 * sq, 22, 18 * sq, 0, Math.PI, 0); g.fill(); g.fillRect(cx - 22, bot - 19 * sq, 44, 3);
+      g.fillStyle = '#ffd23f'; [[-12, -26], [0, -32], [12, -26], [-5, -22], [7, -21]].forEach(([dx, dy]) => { g.beginPath(); g.arc(cx + dx, bot + dy * sq, 3, 0, 7); g.fill(); });
+      eyes(bot - 11, 5, 3, true); g.fillStyle = '#231c1c'; g.fillRect(cx - 4, bot - 5, 8, 2);
+    } else if (look === 'snow') {   // ⛄ 雪人大王
+      g.fillStyle = F('#ffffff'); g.strokeStyle = '#a9c9e6'; g.lineWidth = 1.5; g.beginPath(); g.arc(cx, bot - 11, 13, 0, 7); g.fill(); g.stroke(); g.beginPath(); g.arc(cx, bot - 28 * sq, 10, 0, 7); g.fill(); g.stroke();
+      g.strokeStyle = '#7a5a3a'; g.lineWidth = 2; [-1, 1].forEach(s => { g.beginPath(); g.moveTo(cx + s * 12, bot - 15); g.lineTo(cx + s * 22, bot - 24 + P2 * 3 * s); g.stroke(); });
+      g.fillStyle = '#3f8fd1'; g.fillRect(cx - 10, bot - 21, 20, 4); g.fillRect(cx + 4, bot - 21, 4, 10);
+      eyes(bot - 30 * sq, 4, 2.6, true); g.fillStyle = '#ff8a3d'; g.beginPath(); g.moveTo(cx, bot - 27 * sq); g.lineTo(cx + (P.x < en.x ? -9 : 9), bot - 25.5 * sq); g.lineTo(cx, bot - 24.5 * sq); g.fill();
+      g.fillStyle = '#231c1c'; [0, 1, 2].forEach(k => g.fillRect(cx - 1.5, bot - 14 + k * 5, 3, 3));
+    } else if (look === 'dragon') {   // 🐉 火龍大王（自己畫的）
+      const d = P.x < en.x ? -1 : 1;
+      g.fillStyle = F('#c43a3a'); g.beginPath(); g.moveTo(cx - d * 14, bot - 12); g.quadraticCurveTo(cx - d * 30, bot - 6 + P2 * 3, cx - d * 34, bot - 18); g.lineTo(cx - d * 26, bot - 10); g.fill();   // 尾巴
+      g.fillStyle = F('#7a2a5a'); [-1, 1].forEach(s => { g.beginPath(); g.moveTo(cx + s * 6, bot - 24); g.lineTo(cx + s * 24, bot - 36 - P2 * 4); g.lineTo(cx + s * 18, bot - 20); g.fill(); });   // 翅膀
+      g.fillStyle = F('#e8505b'); g.beginPath(); g.ellipse(cx, bot - 13 * sq, 15, 13 * sq, 0, 0, 7); g.fill();
+      g.fillStyle = F('#ffd08a'); g.beginPath(); g.ellipse(cx, bot - 10 * sq, 9, 9 * sq, 0, 0, 7); g.fill();
+      g.fillStyle = F('#e8505b'); g.beginPath(); g.ellipse(cx + d * 6, bot - 29 * sq, 11, 9, 0, 0, 7); g.fill(); g.beginPath(); g.ellipse(cx + d * 15, bot - 27 * sq, 6, 4.5, 0, 0, 7); g.fill();   // 頭、鼻子
+      g.fillStyle = '#ffd23f'; [-1, 1].forEach(s => { g.beginPath(); g.moveTo(cx + d * 6 + s * 4, bot - 36 * sq); g.lineTo(cx + d * 6 + s * 7, bot - 44 * sq); g.lineTo(cx + d * 6 + s * 1, bot - 37 * sq); g.fill(); });   // 角
+      g.fillStyle = '#231c1c'; g.beginPath(); g.arc(cx + d * 18, bot - 28 * sq, 1, 0, 7); g.fill();
+      g.fillStyle = '#ffffff'; g.beginPath(); g.arc(cx + d * 8, bot - 31 * sq, 3, 0, 7); g.fill(); g.fillStyle = '#231c1c'; g.beginPath(); g.arc(cx + d * 9, bot - 31 * sq, 1.6, 0, 7); g.fill();
+      g.strokeStyle = '#231c1c'; g.lineWidth = 2; g.beginPath(); g.moveTo(cx + d * 4, bot - 35 * sq); g.lineTo(cx + d * 11, bot - 34 * sq); g.stroke();
+      if (Math.floor(P.t * 3) % 3 === 0) { g.fillStyle = 'rgba(160,160,160,.6)'; g.beginPath(); g.arc(cx + d * 22, bot - 30 * sq - (P.t * 20 % 6), 2.5, 0, 7); g.fill(); }   // 鼻子冒煙
+    }
+  };
   const drawEnemy = en => {
     const x = en.x - camX, y = en.y;
     if (en.k === 'cloudking') { drawCloudKing(en); return; }
     if (!en.alive) { if ((en.dead || 0) > .5) return; g.globalAlpha = 1 - (en.dead || 0) * 2; }
     if (en.k === 'slime' || en.k === 'boss') {
       const big = en.k === 'boss', sq = en.alive ? 1 + Math.sin(P.t * 8 + en.x) * .06 : .4, col = big ? (en.hurt > 0 && Math.floor(P.t * 12) % 2 ? '#ffffff' : wd.castle ? '#e8505b' : '#b18cff') : wd.cloud ? '#ff9ec4' : '#7bd389';
+      const look = big ? (QUEST_BOSS_LOOK[wd.id] || 'slime') : 'slime', flash = big && en.hurt > 0 && Math.floor(P.t * 12) % 2;
+      if (look !== 'slime') drawBossLook(look, x, y, en, sq, flash);
+      else {
       g.fillStyle = col; g.beginPath(); g.ellipse(x + en.w / 2, y + en.h - en.h * .5 * sq, en.w / 2, en.h * .5 * sq, 0, 0, Math.PI * 2); g.fill();
       g.fillStyle = '#231c1c'; const ey = y + en.h - en.h * .6 * sq; [-1, 1].forEach(s => { g.beginPath(); g.arc(x + en.w / 2 + s * en.w * .18, ey, big ? 3.5 : 2, 0, Math.PI * 2); g.fill(); });
+      if (big) { g.fillStyle = '#ffffff'; [-1, 1].forEach(s => { g.beginPath(); g.moveTo(x + en.w / 2 + s * 4, ey + 7); g.lineTo(x + en.w / 2 + s * 7, ey + 7); g.lineTo(x + en.w / 2 + s * 5.5, ey + 11); g.fill(); }); g.strokeStyle = '#231c1c'; g.lineWidth = 2; [-1, 1].forEach(s => { g.beginPath(); g.moveTo(x + en.w / 2 + s * 3, ey - 6); g.lineTo(x + en.w / 2 + s * 10, ey - 8); g.stroke(); }); }   // 大魔王：生氣的眉毛、尖牙
+      }
       if (big && en.mode === 'fly' && en.alive) { g.fillStyle = 'rgba(255,255,255,.95)'; const fl = Math.sin(P.t * 22) * 6; [-1, 1].forEach(s2 => { g.beginPath(); g.ellipse(x + en.w / 2 + s2 * (en.w / 2 + 4), y + 8 - fl * .5, 10, 5 + Math.abs(fl) * .4, s2 * .5, 0, 7); g.fill(); });   // 翅膀
         const sh = bossHome ? bossHome.gy : y + en.h; g.fillStyle = 'rgba(40,30,60,.25)'; g.beginPath(); g.ellipse(x + en.w / 2, sh - 1, en.w * .45, 4, 0, 0, 7); g.fill(); }   // 地上的影子
       if (big && en.mode === 'fire' && en.alive && en.mt < .6 && Math.floor(P.t * 10) % 2) { g.fillStyle = '#ff8a3d'; g.beginPath(); g.arc(x + en.w / 2, y + en.h * .62, 6, 0, 7); g.fill(); }   // 張嘴：要噴火了
@@ -25138,9 +25186,43 @@ function playQuest(id, opt) {
       g.strokeStyle = 'rgba(150,90,220,.85)'; g.lineWidth = 1.6; g.lineCap = 'round';
       for (let i = 0; i < 4; i++) { const tx2 = jx - 6 + i * 4; g.beginPath(); g.moveTo(tx2, jy + 4); g.quadraticCurveTo(tx2 + Math.sin(P.t * 4 + i) * 3, jy + 12, tx2 + Math.sin(P.t * 3 + i) * 2, jy + 18); g.stroke(); }
       g.fillStyle = '#231c1c'; g.fillRect(jx - 4, jy - 2, 2, 2); g.fillRect(jx + 2, jy - 2, 2, 2);
+    } else if (en.k === 'mush') {   // 🍄 蘑菇怪
+      const bob = en.alive ? Math.abs(Math.sin(P.t * 8 + en.x)) * 1.5 : 0;
+      g.fillStyle = '#fff1dc'; g.fillRect(x + 4, y + 7 - bob, 8, 7 + bob); g.fillStyle = '#231c1c'; g.fillRect(x + 5, y + 9 - bob, 2, 2); g.fillRect(x + 9, y + 9 - bob, 2, 2);
+      g.fillStyle = '#e8505b'; g.beginPath(); g.ellipse(x + 8, y + 6 - bob, 9, 6, 0, Math.PI, 0); g.fill(); g.fillRect(x - 1, y + 5 - bob, 18, 2);
+      g.fillStyle = '#ffffff'; [[4, 3], [11, 2], [8, 0]].forEach(([dx, dy]) => { g.beginPath(); g.arc(x + dx, y + dy + 1 - bob, 1.6, 0, 7); g.fill(); });
+      g.fillStyle = '#8a5a3a'; g.fillRect(x + 3, y + 13, 4, 1.5); g.fillRect(x + 9, y + 13, 4, 1.5);
+    } else if (en.k === 'frog') {   // 🐸 青蛙（會跳）
+      const air = en.vy < -20 || en.vy > 40;
+      g.fillStyle = '#4fbf5a'; g.beginPath(); g.ellipse(x + 8, y + 9, 8, air ? 6 : 5, 0, 0, 7); g.fill();
+      [-1, 1].forEach(s2 => { g.fillStyle = '#4fbf5a'; g.beginPath(); g.arc(x + 8 + s2 * 4, y + 4, 3.2, 0, 7); g.fill(); g.fillStyle = '#ffffff'; g.beginPath(); g.arc(x + 8 + s2 * 4, y + 4, 2, 0, 7); g.fill(); g.fillStyle = '#231c1c'; g.beginPath(); g.arc(x + 8 + s2 * 4, y + 4, 1, 0, 7); g.fill(); });
+      g.fillStyle = '#c6f0b8'; g.beginPath(); g.ellipse(x + 8, y + 11, 5, 2.5, 0, 0, 7); g.fill();
+      g.fillStyle = '#3a9a46'; if (air) { g.fillRect(x - 1, y + 12, 5, 2); g.fillRect(x + 12, y + 12, 5, 2); } else { g.fillRect(x + 1, y + 12, 4, 2); g.fillRect(x + 11, y + 12, 4, 2); }
+    } else if (en.k === 'snail') {   // 🐌 蝸牛（慢慢爬）
+      const d = en.vx < 0 ? -1 : 1;
+      g.fillStyle = '#ffd08a'; g.beginPath(); g.ellipse(x + 8 + d * 2, y + 12, 8, 2.5, 0, 0, 7); g.fill(); g.fillRect(x + 8 + d * 6 - 1.5, y + 5, 3, 7);
+      g.strokeStyle = '#ffd08a'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(x + 8 + d * 6, y + 6); g.lineTo(x + 8 + d * 8, y + 1); g.stroke(); g.fillStyle = '#231c1c'; g.beginPath(); g.arc(x + 8 + d * 8, y + 1, 1.2, 0, 7); g.fill();
+      g.fillStyle = '#c47ad8'; g.beginPath(); g.arc(x + 8 - d * 2, y + 7, 6, 0, 7); g.fill(); g.strokeStyle = '#8a4aa8'; g.lineWidth = 1.2; g.beginPath(); g.arc(x + 8 - d * 2, y + 7, 3, 0, 5.5); g.stroke();
+    } else if (en.k === 'snowman') {   // ⛄ 小雪人（自己畫的）
+      g.fillStyle = '#ffffff'; g.strokeStyle = '#b9d4ea'; g.lineWidth = 1; g.beginPath(); g.arc(x + 8, y + 10, 5.5, 0, 7); g.fill(); g.stroke(); g.beginPath(); g.arc(x + 8, y + 3.5, 4, 0, 7); g.fill(); g.stroke();
+      g.fillStyle = '#231c1c'; g.fillRect(x + 6, y + 2.5, 1.5, 1.5); g.fillRect(x + 9, y + 2.5, 1.5, 1.5); g.fillStyle = '#ff8a3d'; g.beginPath(); g.moveTo(x + 8, y + 4); g.lineTo(x + 8 + (en.vx < 0 ? -4 : 4), y + 5); g.lineTo(x + 8, y + 5.5); g.fill();
+      g.fillStyle = '#e8505b'; g.fillRect(x + 4, y + 6.5, 8, 2); g.fillStyle = '#5a4a8a'; g.fillRect(x + 5, y - 2, 6, 3); g.fillRect(x + 3.5, y + .5, 9, 1);
+    } else if (en.k === 'bird') {   // 🐤 小胖鳥（在雲上走）
+      const fl = Math.sin(P.t * 16) * 2;
+      g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(x + 8, y + 8, 7, 0, 7); g.fill(); g.fillStyle = '#ffb02e'; g.beginPath(); g.ellipse(x + 8 - (en.vx < 0 ? -3 : 3), y + 8 + fl * .3, 4, 2.5, .4, 0, 7); g.fill();
+      g.fillStyle = '#ff8a3d'; g.beginPath(); g.moveTo(x + 8 + (en.vx < 0 ? -6 : 6), y + 6); g.lineTo(x + 8 + (en.vx < 0 ? -10 : 10), y + 7.5); g.lineTo(x + 8 + (en.vx < 0 ? -6 : 6), y + 9); g.fill();
+      g.fillStyle = '#231c1c'; g.beginPath(); g.arc(x + 8 + (en.vx < 0 ? -3 : 3), y + 5.5, 1.2, 0, 7); g.fill(); g.fillStyle = '#ff8a3d'; g.fillRect(x + 5, y + 14, 2, 1.5); g.fillRect(x + 9, y + 14, 2, 1.5);
+    } else if (en.k === 'imp') {   // 😈 城堡的小惡魔（自己畫的）
+      g.fillStyle = '#8a4ad8'; g.beginPath(); g.ellipse(x + 8, y + 8, 7, 6.5, 0, 0, 7); g.fill(); g.beginPath(); g.moveTo(x + 2, y + 4); g.lineTo(x + 1, y - 2); g.lineTo(x + 6, y + 2); g.moveTo(x + 14, y + 4); g.lineTo(x + 15, y - 2); g.lineTo(x + 10, y + 2); g.fill();
+      g.fillStyle = '#ffd23f'; g.fillRect(x + 4.5, y + 6, 2.5, 2); g.fillRect(x + 9, y + 6, 2.5, 2); g.fillStyle = '#ffffff'; g.fillRect(x + 6, y + 10.5, 1.5, 1.5); g.fillRect(x + 8.5, y + 10.5, 1.5, 1.5);
+      g.strokeStyle = '#8a4ad8'; g.lineWidth = 1.4; g.beginPath(); g.moveTo(x + 8 - (en.vx < 0 ? -7 : 7), y + 10); g.quadraticCurveTo(x + 8 - (en.vx < 0 ? -12 : 12), y + 6 + Math.sin(P.t * 8) * 2, x + 8 - (en.vx < 0 ? -11 : 11), y + 2); g.stroke();
+      g.fillStyle = '#5a2a9a'; g.fillRect(x + 3, y + 13, 4, 1.5); g.fillRect(x + 9, y + 13, 4, 1.5);
     } else if (en.k === 'crab') {
       g.fillStyle = '#ff6b5b'; g.beginPath(); g.ellipse(x + 8, y + 9, 8, 5, 0, 0, Math.PI * 2); g.fill(); [-1, 1].forEach(s => { g.beginPath(); g.arc(x + 8 + s * 9, y + 4 + Math.sin(P.t * 8) * 1.5, 3, 0, Math.PI * 2); g.fill(); });
       g.fillStyle = '#231c1c'; g.fillRect(x + 5, y + 4, 2, 2); g.fillRect(x + 10, y + 4, 2, 2);
+    } else if (en.k === 'bee' && wd.castle) {   // 城堡裡飛的是蝙蝠（動作跟蜜蜂一樣）
+      const fl = Math.sin(P.t * 18) * 5; g.fillStyle = '#4a3a6a'; [-1, 1].forEach(s => { g.beginPath(); g.moveTo(x + 8, y + 7); g.lineTo(x + 8 + s * 10, y + 2 - fl); g.lineTo(x + 8 + s * 7, y + 8); g.lineTo(x + 8 + s * 4, y + 6); g.fill(); });
+      g.beginPath(); g.arc(x + 8, y + 7, 4.5, 0, 7); g.fill(); g.fillStyle = '#ffd23f'; g.fillRect(x + 6, y + 6, 1.5, 1.5); g.fillRect(x + 9, y + 6, 1.5, 1.5);
     } else if (en.k === 'bee') {
       g.fillStyle = '#ffd23f'; g.beginPath(); g.ellipse(x + 8, y + 7, 8, 6, 0, 0, Math.PI * 2); g.fill(); g.fillStyle = '#231c1c'; g.fillRect(x + 6, y + 2, 2, 10); g.fillRect(x + 10, y + 2, 2, 10);
       g.fillStyle = 'rgba(255,255,255,.8)'; g.beginPath(); g.ellipse(x + 8, y - 1 + Math.sin(P.t * 30) * 1.5, 5, 3, 0, 0, Math.PI * 2); g.fill();
