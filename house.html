@@ -728,6 +728,8 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .game-card.in-movie { background: #1c1726; color: #f4eefc; }
 .game-card.in-movie .note, .game-card.in-movie .game-status { color: #d9d0ea; }
 .game-card.in-movie canvas.game-canvas { border-radius: 10px; background: #000; }
+.movie-sub-en { font-weight: 800; } .movie-sub-zh { font-size: .8em; opacity: .75; margin-top: 2px; font-weight: 600; }
+.movie-lang { display: block; margin: 8px auto 0; }
 .movie-sub { min-height: 44px; margin-top: 8px; padding: 8px 12px; border-radius: 10px; background: rgba(0,0,0,.55); color: #fff; font-size: 17px; font-weight: 700; text-align: center; line-height: 1.4; }
 .fee-big { font-size: 72px; text-align: center; line-height: 1.2; }
 .fee-have { text-align: center; font-weight: 700; font-size: 17px; }
@@ -23658,6 +23660,52 @@ function askEntryFee(id, go, back) {
 let entryTicketPending = false;   // 快速出門會先走一段路才到：到了再把票給她
 const MOVIE_BY_ID = Object.fromEntries(MOVIES.map(m => [m.id, m]));
 const MOVIE_REGULAR = MOVIES.filter(m => !m.season).map(m => m.id);
+/* 🔤 電影念英文（家長：電影換成英文發音）：每一句的英文。名字、寵物名字是中文，英文聲音念不出來，所以用 you、your pet。字幕英文在上、中文在下。 */
+const MOVIE_EN = {
+  "{名字}和{寵物}在院子裡玩球，好開心！": "{You} and {pet} play ball in the yard. So much fun!",
+  "球滾走了，{寵物}追了出去……咦？{寵物}不見了！": "The ball rolls away, and {pet} runs after it... Oh no! Where did {pet} go?",
+  "{名字}到公園問朋友：「你有看到{寵物}嗎？」": "{You} go to the park and ask a friend, \"Have you seen my pet?\"",
+  "草叢裡好像有東西在動！": "Something is moving in the grass!",
+  "找到你了！{名字}緊緊抱住{寵物}。": "Found you! {You} give {pet} a big hug.",
+  "夕陽下一起走回家。以後要一起玩，不要跑太遠喔！": "You walk home together at sunset. Let's play together, and don't run too far!",
+  "晚上，{名字}看著月亮說：「好想去月亮上玩喔！」": "At night, {you} look at the moon and say, \"I want to play on the moon!\"",
+  "火箭準備好了！倒數：三、二、一！": "The rocket is ready! Three, two, one!",
+  "咻——火箭飛過好多好多星星！": "Whoosh! The rocket flies past lots and lots of stars!",
+  "到月亮了！月亮上跳一下就飛得好高～": "We are on the moon! One little jump, and you fly so high!",
+  "一個綠色的外星小朋友揮揮手：「你好！要一起玩嗎？」": "A little green alien waves, \"Hello! Do you want to play?\"",
+  "玩到好晚才回家。晚安，月亮上的好朋友！": "It's late. Time to go home. Good night, my friend on the moon!",
+  "{名字}和{寵物}坐上時光機……按下按鈕，咻！": "{You} and {pet} get in the time machine. Push the button... whoosh!",
+  "哇！來到好久好久以前，到處都是大恐龍！": "Wow! This is a long, long time ago. Big dinosaurs are everywhere!",
+  "草地上有一顆蛋在動！": "An egg is moving on the grass!",
+  "恐龍寶寶好喜歡{名字}，一直跟在後面跑來跑去！": "The baby dinosaur loves {you}, and runs after {you} all the time!",
+  "恐龍媽媽來找寶寶了！{名字}把寶寶送回媽媽身邊。": "Mommy dinosaur is looking for her baby! {You} take the baby back to Mommy.",
+  "回到家，恐龍寶寶送的葉子還在手上。下次再去玩吧！": "Back home, you still have the leaf from the baby dinosaur. Let's visit again!",
+  "{名字}坐船出海，戴上蛙鏡——噗通！跳下去囉！": "{You} take a boat to the sea, put on goggles, and... splash! Jump in!",
+  "海底好漂亮！小丑魚住在海葵裡面喔。": "The sea is so pretty! Clownfish live in the sea anemone.",
+  "一隻大海龜游過來，載著{名字}一起游！": "A big sea turtle swims by and gives {you} a ride!",
+  "章魚嚇了一跳，噴出黑黑的墨汁！哈哈哈！": "The octopus gets scared and squirts black ink! Ha ha ha!",
+  "沙子裡有一個寶箱！": "There is a treasure chest in the sand!",
+  "{名字}帶著一顆亮晶晶的珍珠回到船上。海底真好玩！": "{You} bring a shiny pearl back to the boat. The sea is so much fun!",
+  "今天是媽媽的生日，{名字}和{寵物}要做一個大蛋糕！": "Today is Mommy's birthday. {You} and {pet} will make a big cake!",
+  "倒麵粉……噗！麵粉飛得到處都是！": "Pour the flour... poof! Flour is everywhere!",
+  "{寵物}偷偷舔了一口奶油……被抓到了！": "{Pet} licks the cream... Caught you!",
+  "蛋糕越疊越高……搖搖晃晃，好危險！": "The cake gets taller and taller... wobble, wobble! Be careful!",
+  "最後放上一顆草莓——": "And last, one strawberry on top!",
+  "蛋糕歪歪的，可是媽媽笑著說：「這是我吃過最好吃的蛋糕！」": "The cake is a little crooked, but Mommy smiles and says, \"This is the best cake ever!\"",
+  "萬聖節的晚上，{名字}提著南瓜燈出門要糖果。": "On Halloween night, {you} go trick-or-treating with a pumpkin lantern.",
+  "咦？樹後面有一個白白的……小幽靈！": "Huh? There is something white behind the tree... a little ghost!",
+  "小幽靈小小聲地說：「我迷路了，找不到回家的路……」": "The little ghost says softly, \"I'm lost. I can't find my way home...\"",
+  "路好黑喔。": "The road is so dark.",
+  "小幽靈找到家了！幽靈爸爸媽媽送{名字}好多糖果。": "The little ghost is home! Ghost Mommy and Daddy give {you} lots of candy.",
+  "萬聖節快樂！明年再來找小幽靈玩吧！": "Happy Halloween! Come and play with the little ghost again next year!"
+};
+const MOVIE_TITLE_EN = {"{寵物}去哪裡了？": "Where Is My Pet?", "{名字}上月球": "Trip to the Moon", "恐龍寶寶": "Baby Dinosaur", "海底大冒險": "Under the Sea", "蛋糕大作戰": "The Big Cake", "南瓜燈小幽靈": "The Little Ghost"};
+const MOVIE_LANG_KEY = 'myHouse_movieLang';
+function movieLang() { try { return localStorage.getItem(MOVIE_LANG_KEY) === 'zh' ? 'zh' : 'en'; } catch (e) { return 'en'; } }
+function movieEn(s) {
+  const t = MOVIE_EN[s]; if (!t) return null;
+  return t.split('{You}').join('You').split('{you}').join('you').split('{Pet}').join('Your pet').split('{pet}').join('your pet');
+}
 function movieText(s) { return String(s).split('{名字}').join(charName()).split('{寵物}').join(G.pet ? petName() : '小寵物'); }
 function moviesNow() { return MOVIES.filter(m => !m.season || (m.season === 'halloween' && typeof halloweenActive === 'function' && halloweenActive())); }
 function moviesSeen() { return G.movies && typeof G.movies === 'object' ? G.movies : (G.movies = {}); }
@@ -23677,6 +23725,8 @@ function openMoviePicker(preId) {
   const seen = moviesSeen(), grid = el('div', 'movie-grid');
   moviesNow().forEach(m => { const b = el('button', 'movie-pick'); b.appendChild(posterCanvas(m.id, 96, 132)); b.appendChild(el('b', '', movieText(m.title))); b.appendChild(el('span', '', seen[m.id] ? `✅ 看過 ${seen[m.id]} 次` : '🆕 還沒看過')); b.onclick = () => moviePopcorn(w, m); grid.appendChild(b); });
   w.stage.appendChild(grid);
+  { const en = movieLang() === 'en', lb = el('button', 'mini movie-lang', en ? '🔤 電影念英文（點一下換中文）' : '🗣️ 電影念中文（點一下換英文）');
+    lb.onclick = () => { try { localStorage.setItem(MOVIE_LANG_KEY, en ? 'zh' : 'en'); } catch (e) {} Sound.play('click'); openMoviePicker(); }; w.stage.appendChild(lb); }
   const n = MOVIE_REGULAR.filter(id => seen[id]).length;
   w.status.textContent = `🎟️ 集章 ${n} / ${MOVIE_REGULAR.length}${n >= MOVIE_REGULAR.length ? '（全部看過了！）' : `（全部看過送一張電影海報）`}`;
   leaveButton(w);
@@ -23702,7 +23752,7 @@ function playMovie(w, m, popcorn) {
   addBells(-(tk + (popcorn ? MOVIE_POPCORN : 0))); refreshTop(); saveGame();
   Sound.play('coin');
   w.card.classList.add('in-movie');
-  { const h = w.card.querySelector('h2'); if (h) h.textContent = `🎬 ${movieText(m.title)}`; const nt = w.card.querySelector('h2 + *'); if (nt && nt !== w.stage) nt.style.display = 'none'; }
+  { const h = w.card.querySelector('h2'); if (h) h.textContent = `🎬 ${movieText(m.title)}` + (movieLang() === 'en' && MOVIE_TITLE_EN[m.title] ? `　${MOVIE_TITLE_EN[m.title]}` : ''); const nt = w.card.querySelector('h2 + *'); if (nt && nt !== w.stage) nt.style.display = 'none'; }
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   const { c, g } = gameCanvas(w.stage, MOVIE_W, MOVIE_H);
   const sub = el('div', 'movie-sub', '　'); w.stage.appendChild(sub);
@@ -23716,7 +23766,9 @@ function playMovie(w, m, popcorn) {
     si++; T0 = now;
     if (si >= m.scenes.length) { phase = 'end'; sub.textContent = '— 完 —'; Sound.play('fanfare'); return; }
     const sc = m.scenes[si]; st = { tapped: false, tt: 0, waitFrom: 0 }; react = null;
-    sub.textContent = movieText(sc.say); try { speak(movieText(sc.say)); } catch (e) {}
+    const en = movieLang() === 'en' ? movieEn(sc.say) : null;
+    if (en) { sub.innerHTML = ''; sub.append(el('div', 'movie-sub-en', en), el('div', 'movie-sub-zh', movieText(sc.say))); try { if (voiceOn()) enSpeak(en); } catch (e) {} }
+    else { sub.textContent = movieText(sc.say); try { speak(movieText(sc.say)); } catch (e) {} }
   };
   const tap = () => {
     if (phase !== 'film' || !st || st.tapped) return;
