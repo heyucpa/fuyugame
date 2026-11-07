@@ -3451,6 +3451,8 @@ const PET_SPECIES = [
   { id: 'angelbunny', name: '天使兔', body: '#fffaf2', edge: '#e6d3a8', belly: '#ffffff', inner: '#ffd6e6', ears: 'long', wings: '#ffffff', halo: '#ffd35c', sparkle: true, rare: true, special: true, weight: 2 },
   { id: 'galaxydragon', name: '銀河龍', body: '#5b4b9e', edge: '#3c2f75', belly: '#a99ae0', inner: '#ffe066', ears: 'horns', wings: '#8f7fe0', starMark: true, sparkle: true, rare: true, special: true, weight: 2 },
   /* 🌟 星光小精靈（家長：故事主線）：找齊 6 個星光線索，星星蛋才孵得出來；買的蛋永遠抽不到（story） */
+  /* 🥋 黑帶熊貓（家長：跆拳道世界大賽冠軍的獎勵可以多一個寵物）：拿到世界冠軍才會來，買蛋抽不到（story） */
+  { id: 'bbpanda', name: '黑帶熊貓', body: '#ffffff', edge: '#c9c9d4', belly: '#ffffff', inner: '#3a3240', ears: 'round', earCol: '#3a3240', patches: true, belt: '#26232a', sparkle: true, rare: true, story: true, weight: 0 },
   { id: 'starling', name: '星光小精靈', body: '#fff3b0', edge: '#e0b832', belly: '#ffffff', inner: '#ffb3c7', ears: 'tuft', wings: '#ffe9a8', halo: '#ffd35c', starMark: true, sparkle: true, rare: true, special: true, story: true, weight: 0 }
 ];
 const PET_SPECIES_BY_ID = Object.fromEntries(PET_SPECIES.map(s => [s.id, s]));
@@ -5196,6 +5198,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-13T22:00', title: '🥋 世界冠軍送新寵物', lines: [
+    ['🐼', '跆拳道「🌏 世界大賽」拿到世界冠軍，會送一隻「黑帶熊貓」（只有冠軍才有，買蛋抽不到）'],
+    ['🏆', '以前就拿過世界冠軍的，回到家就會收到'],
+    ['🐾', '闖關時寵物的必殺技每次隨機一招，各有小獎勵']
+  ] },
   { id: '2026-11-13T21:00', title: '🌊 闖關：水裡的關卡、新怪物', lines: [
     ['🏊', '在水裡會趴著游、腳一直踢水；新的水裡關卡：3-4 森林湖底、4-4 冰海（2-4 海底也還在）'],
     ['🍄', '每個世界多了新怪物：蘑菇、會跳的青蛙、蝸牛、小雪人、小胖鳥、小惡魔、蝙蝠'],
@@ -9607,7 +9614,7 @@ const PET_TRAIT_OF = {
   chick: 'sand', peachmouse: 'sand', marshpig: 'sand', cocoadog: 'sand',
   bunny: 'shy', sheep: 'shy', mochi: 'shy', bear: 'shy',
   dragon: 'jump', starfox: 'jump', strawcow: 'jump', rainbowuni: 'jump',
-  angelbunny: 'shy', galaxydragon: 'jump', starling: 'jump'
+  angelbunny: 'shy', galaxydragon: 'jump', starling: 'jump', bbpanda: 'jump'
 };
 const petTrait = () => (G.pet && PET_TRAIT_OF[G.pet.species]) || 'jump';
 const PET_TRAIT_NAMES = { fish: '愛看魚', sand: '愛玩沙', shy: '有點害羞', jump: '很活潑' };
@@ -10891,10 +10898,10 @@ function drawCreature(ctx, sp, look) {
   }
 
   // 耳朵（在身體後面）
-  ctx.fillStyle = body; ctx.strokeStyle = edge; ctx.lineWidth = L;
+  ctx.fillStyle = sp.earCol || body; ctx.strokeStyle = edge; ctx.lineWidth = L;
   if (sp.ears === 'round') {
     [-7, 7].forEach(ex => { ctx.beginPath(); ctx.ellipse(ex, -21, 4, 5, ex * .03, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); });
-    ctx.fillStyle = inner;
+    ctx.fillStyle = sp.earCol ? sp.earCol : inner;
     [-7, 7].forEach(ex => { ctx.beginPath(); ctx.ellipse(ex, -21, 2, 2.8, 0, 0, Math.PI * 2); ctx.fill(); });
   } else if (sp.ears === 'long') {
     [-1, 1].forEach(s => {
@@ -10989,6 +10996,16 @@ function drawCreature(ctx, sp, look) {
       ctx.globalAlpha = a; star(ctx, x, y, 1.6 + a * 1.4, '#ffe066'); ctx.globalAlpha = 1;
     });
   }
+  if (sp.belt) { // 黑帶熊貓：肚子綁一條黑帶，前面打結
+    ctx.fillStyle = sp.belt; ctx.fillRect(-13.9, -3.3, 27.8, 2.3);
+    ctx.beginPath(); ctx.ellipse(4, -2.2, 2, 1.5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(3.4, -1.4); ctx.lineTo(1.8, 1.6); ctx.lineTo(3.4, 1.4); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(4.6, -1.4); ctx.lineTo(6.8, 1.4); ctx.lineTo(5.2, 1.7); ctx.closePath(); ctx.fill();
+  }
+  if (sp.patches) { // 熊貓：黑眼圈
+    ctx.fillStyle = '#3a3240'; const pfx = look.fx || 0;
+    [-1, 1].forEach(s => { ctx.beginPath(); ctx.ellipse(s * 4.7 + pfx, -10.6, 3.3, 2.7, s * -.5, 0, Math.PI * 2); ctx.fill(); });
+  }
   if (sp.spots) { // 小牛：黑色花斑
     ctx.fillStyle = '#3a3240';
     [[-10, -14, 2.8, 2.2], [9, -6, 2.6, 2], [7, -17, 2, 1.6]].forEach(([x, y, rx, ry]) => { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, .3, 0, Math.PI * 2); ctx.fill(); });
@@ -11022,6 +11039,7 @@ function drawCreature(ctx, sp, look) {
     }
     else { ctx.arc(ex + fx, ey, 1.8, 0, Math.PI * 2); ctx.fill(); }
   });
+  if (sp.patches) { ctx.fillStyle = '#ffffff'; [-4.5, 4.5].forEach(ex => { ctx.beginPath(); ctx.arc(ex + fx + .6, ey - .7, .9, 0, Math.PI * 2); ctx.fill(); }); }   // 黑眼圈裡的眼睛亮點
   ctx.fillStyle = 'rgba(255,110,140,.5)';
   [-9, 9].forEach(cx => { ctx.beginPath(); ctx.arc(cx + fx, ey + 4, 2.2, 0, Math.PI * 2); ctx.fill(); });
   if (sp.snout) { // 小豬：圓圓的鼻子、兩個鼻孔
@@ -16233,6 +16251,15 @@ function tabEarn(body) {
 
 /* 🌟 星光小精靈不在商店的蛋裡（story）。圖鑑提示、以及「商店蛋都買完」的那句用這個判斷，不要改孵蛋池。 */
 const STARLING_DEX_HINT = '🌟 星光小精靈要闖關湊齊 6 個線索才會孵出，買蛋抽不到';
+const PANDA_DEX_HINT = '🥋 黑帶熊貓：跆拳道「🌏 世界大賽」拿到世界冠軍才會來，買蛋抽不到';
+function pandaKept() { return G.pets.some(p => p.species === 'bbpanda'); }
+/* 🥋 世界冠軍送黑帶熊貓：還沒有才送（以前就拿過冠軍的，回到家會補送一次） */
+function giveChampPanda() {
+  if (pandaKept()) return false;
+  const p = newPet('bbpanda', 'baby', ''); G.pets.push(p); try { growDexAdd && growDexAdd('bbpanda', 'baby'); } catch (e) {} saveGame();
+  try { Sound.play('fanfare'); showcase(renderPetPortrait(p, 150, 140), '世界冠軍的獎品：「黑帶熊貓」來了！', '只有拿到世界冠軍才遇得到的寵物，在寵物頁照顧牠喔！', { head: '🥋 新寵物！' }); } catch (e) {}
+  return true;
+}
 function starlingKept() { return !!(collectedSpecies().has('starling') || (G.star && G.star.hatched)); }
 /* 📖 圖鑑：所有收集都在這一頁。最上面一排是總覽，點了跳到那一段。
    妹妹看不懂字，所以每一段都有圖示，總覽也是圖示＋數字。 */
@@ -16287,6 +16314,7 @@ function tabBook(body) {
   body.appendChild(sec('dexPet', `🐾 寵物圖鑑 ${tc('pet')[0]} / ${PET_SPECIES.length}`));
   body.appendChild(note('寵物蛋摸一摸就會孵出來。「寵物」分頁可以買新的蛋。'));
   if (!starlingKept()) body.appendChild(note(STARLING_DEX_HINT));
+  if (!pandaKept()) body.appendChild(note(PANDA_DEX_HINT));
   body.appendChild(petDexGrid());
   body.appendChild(sec('dexGrow', `🌱 成長圖鑑 ${growDexCount()} / ${growDexAll()}`));
   body.appendChild(note(`${charName()}吃營養的東西、做各種事、看繪本，會慢慢長大。寵物有寶寶、小朋友、大朋友三個樣子，養大就會收進來。還有一格隱藏的喔！`));
@@ -28213,6 +28241,8 @@ Object.assign(ACTIVITIES, { stareggs: { label: '🌟 看星星蛋', name: '看�
 FURNITURE_ACT.star_egg = 'stareggs';
 if (!LINE_TYPES.some(t => t.key === 'act_stareggs')) LINE_TYPES.push({ key: 'act_stareggs', label: '做事：看星星蛋', hint: '', lines: ACTIVITIES.stareggs.lines });
 // 教學做完、畫面穩定的時候送星星蛋
+// 以前就拿過世界冠軍的：補送黑帶熊貓（在家、沒有視窗開著的時候）
+setInterval(() => { try { if (!G || G.guide !== 'done' || SAVE_LOCKED != null || pandaKept() || !(G.tkd && G.tkd.world && G.tkd.world.gold > 0)) return; if (!$('#modal').hidden || document.getElementById('showcase') || document.querySelector('.stage.island-on')) return; giveChampPanda(); } catch (e) {} }, 4000);
 setInterval(() => { try { if (!G || !G.openGift || G.guide !== 'done' || SAVE_LOCKED != null || G.away || starState().egg) return; if (!$('#modal').hidden || document.getElementById('showcase') || document.querySelector('.stage.island-on') || (typeof giftVisit !== 'undefined' && giftVisit.state !== 'none') || hold) return; const li = typeof lastStageInput !== 'undefined' ? lastStageInput : 0; if (!li || Date.now() - li < 1500) return; starGiveEgg(); } catch (e) {} }, 3000);
 /* ===== 🔤 英文小達人（家長：偷偷學英文，要好玩不要像考試）=====
    家具、食物卡片左上角有一顆小小的「🔤」：點了會跳出英文單字，自動念一次（瀏覽器支援才念，🔊 可以再聽一次）。
@@ -28952,6 +28982,7 @@ function worldStartDuel(cup, r) {
         Sound.play(champ ? 'fanfare' : 'questClear');
         setTimeout(() => { try { if (champ) confettiBurst(140); showcase(el('div', 'magic-pic', medal.split(' ')[0]), `世界大賽：${medal.split(' ')[1]}！`, champ ? (first ? '第一次拿到世界冠軍！多送你 💰 2,000！' : `又拿到世界冠軍了！（${ws.gold} 次）`) : '下次再來挑戰更好的名次！', { head: champ ? '🎉 太棒了！' : '🌏 世界大賽' }); } catch (e) {} }, 500);
         try { speak(champ ? '世界冠軍！' : medal.split(' ')[1] + '！好棒！'); } catch (e) {}
+        if (champ) setTimeout(() => { try { giveChampPanda(); } catch (e) {} }, 400);   // 🥋 世界冠軍：送黑帶熊貓（只送一次，排在獎牌後面出來）
         saveGame(); refreshTop(); duelEndButtons(w, win, () => openWorldCup()); return;
       }
       if (G.kid) G.kid.hunger = Math.min(100, G.kid.hunger + 6);
