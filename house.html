@@ -5175,6 +5175,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-13T21:00', title: '🌊 闖關：水裡的關卡、新怪物', lines: [
+    ['🏊', '在水裡會趴著游、腳一直踢水；新的水裡關卡：3-4 森林湖底、4-4 冰海（2-4 海底也還在）'],
+    ['🍄', '每個世界多了新怪物：蘑菇、會跳的青蛙、蝸牛、小雪人、小胖鳥、小惡魔、蝙蝠'],
+    ['🦀', '大魔王每個世界長得不一樣：螃蟹大王、蘑菇大王、雪人大王、火龍大王'],
+    ['🏎️', '賽車按住「🌀 甩尾」會跳一下、冒煙、集氣條變藍變橘，放開衝刺']
+  ] },
   { id: '2026-11-13T20:00', title: '⚡ 闖關的新招數', lines: [
     ['🌸', '粉紅磚跳出來的花有五種顏色：🔥 火球、⚡ 閃電、❄️ 冰箭、⛰️ 大石頭、🌪️ 龍捲風'],
     ['⚡', '閃電會打前面最近的怪物；冰箭一次穿過兩隻；大石頭會滾、還會撞破磚塊；龍捲風把碰到的怪物都捲走'],
@@ -24101,12 +24107,12 @@ const QUEST_LEVELS = {
   '3-1': ['start', 'power', 'flat', 'hidden', 'vine', 'bees', 'beeweave', 'gap2', 'blocks*', 'staircoin', 'enemy2', 'check', 'parade', 'plat*', 'skyhop', 'bees', 'spring*', 'cloudgap', 'kickline', 'alcove', 'gap3', 'pipehouse', 'brickline', 'goal'],
   '3-2': ['start', 'power', 'brickline', 'bees', 'vine', 'gap3', 'blocks*', 'beeweave', 'spikes', 'staircoin', 'pipe', 'enemy2', 'check', 'parade', 'plat*', 'skyhop', 'bees', 'hill', 'spring*', 'cloudgap', 'kickline', 'alcove', 'gap3', 'pipehouse', 'goal'],
   '3-3': ['start', 'power', 'brickline', 'bees', 'blocks*', 'beeweave', 'enemy2', 'check', 'parade', 'gap3', 'plat*', 'skyhop', 'spikes', 'spring*', 'cloudgap', 'vine*', 'kickline', 'alcove', 'pipehouse', 'goal'],
-  '3-4': ['start', 'power', 'vine*', 'bees', 'brow*', 'pipe', 'gap2', 'check', 'mplat', 'hidden', 'spring*', 'goal'],
+  '3-4': ['deep'],   // 家長：要多完全在水裡的關卡 → 森林的湖底（原本的陸地關換成水底）
   '3-5': ['start', 'power', 'bees', 'blocks*', 'enemy2', 'check', 'gap3', 'plat*', 'spring*', 'boss'],
   '4-1': ['start', 'flat', 'power', 'brickline', 'vine', 'enemy1', 'iceglide', 'gap2', 'shell', 'staircoin', 'check', 'hidden', 'parade', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'kickline', 'blocks*', 'alcove', 'pipehouse', 'goal'],
   '4-2': ['start', 'enemy2', 'power', 'brickline', 'vine', 'gap3', 'iceglide', 'pipe', 'staircoin', 'check', 'blocks*', 'parade', 'shell', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'kickline', 'alcove', 'gap2', 'pipehouse', 'goal'],
   '4-3': ['start', 'power', 'brickline', 'blocks*', 'vine', 'enemy2', 'iceglide', 'check', 'parade', 'shell', 'gap3', 'plat*', 'skyhop', 'spring*', 'cloudgap', 'vine*', 'kickline', 'alcove', 'pipehouse', 'goal'],
-  '4-4': ['start', 'power', 'shell', 'vine*', 'gap2', 'check', 'brow*', 'mplat', 'pipe', 'spring*', 'goal'],
+  '4-4': ['deep'],   // 冰山下面的海（上面垂下來的冰柱要從下面游過去）
   '4-5': ['start', 'power', 'blocks*', 'enemy2', 'shell', 'check', 'gap3', 'plat*', 'spring*', 'boss'],
   '5-1': ['start', 'flat', 'power', 'brickline', 'mplat', 'vine', 'enemy1', 'skyhop', 'check', 'plat*', 'cloudgap', 'hidden', 'parade', 'mplat', 'staircoin', 'blocks*', 'spring*', 'kickline', 'alcove', 'pipehouse', 'goal'],
   '5-2': ['start', 'bees', 'power', 'brickline', 'mplat', 'vine', 'blocks*', 'beeweave', 'pipe', 'staircoin', 'check', 'parade', 'shell', 'mplat', 'skyhop', 'plat*', 'cloudgap', 'spring*', 'kickline', 'alcove', 'pipehouse', 'goal'],
@@ -24147,7 +24153,8 @@ function questWorldsCleared() { return [1, 2, 3].filter(w => questWorldDone(w)).
 function questUnlocked(id) { const q = questState(); if (q.clear[id]) return true; const i = QUEST_IDS.indexOf(id); return i === 0 || !!q.clear[QUEST_IDS[i - 1]]; }
 /* 2-4 海底關：整張圖都是水，沒有岸。底下留一條安全水道（魚跟水母都在上面），
    按住 ▶ 就能游到旗子。星星在比較高的地方，不拿也過得了關。簡單、一般同一張圖，不會比較難。 */
-function questBuildDeep(easy) {
+function questBuildDeep(easy, id) {
+  if (id === '3-4' || id === '4-4') return questBuildDeep2(easy, id);
   const W = 96, g = [];
   for (let y = 0; y < QH; y++) g.push(Array(W).fill(' '));
   const put = (x, y, c) => { if (x >= 0 && x < W && y >= 0 && y < QH && g[y][x] === ' ') g[y][x] = c; };
@@ -24160,6 +24167,24 @@ function questBuildDeep(easy) {
   put(32, 5, 'G');   // 浮著的長大果，游過去就拿到
   put(44, 12, 'C');
   put(90, 13, 'F');
+  return { g: g.map(r => r.slice(0, W)), W, pipes: [], waterPipes: [], bonusX: 0, waterRoom: false, deep: true, easy: !!easy };
+}
+/* 🌊 更多整關在水裡的關卡：3-4 森林湖底（地上有大石頭要游過去）、4-4 冰海（上面垂下冰柱）。
+   一樣底下留得出路、沒有坑、被打到才扣愛心；星星在比較難拿的地方。 */
+function questBuildDeep2(easy, id) {
+  const W = 110, g = [], ice = id === '4-4';
+  for (let y = 0; y < QH; y++) g.push(Array(W).fill(' '));
+  const put = (x, y, c) => { if (x >= 0 && x < W && y >= 0 && y < QH && g[y][x] === ' ') g[y][x] = c; };
+  for (let x = 0; x < W; x++) g[14][x] = '#';
+  const cols = [14, 30, 46, 62, 78, 94];
+  cols.forEach((cx, i) => {
+    if (ice) { const h = easy ? 4 : 5 + (i % 2); for (let y = 0; y < h; y++) for (let dx = 0; dx < 2; dx++) put(cx + dx, y, '#'); for (let k = 0; k < 4; k++) put(cx + k - 1, h + 2, 'o'); }   // 冰柱：從上面垂下來，金幣在冰柱下面
+    else { const h = easy ? 2 : 3 + (i % 2); for (let y = 14 - h; y < 14; y++) for (let dx = 0; dx < 2; dx++) put(cx + dx, y, '#'); for (let k = 0; k < 4; k++) put(cx + k - 1, 14 - h - 2, 'o'); }   // 湖底大石頭：從上面游過去，金幣在石頭上面
+  });
+  if (ice) { put(22, 12, 's'); put(55, 12, 's'); put(86, 11, 's'); } else { put(22, 3, 's'); put(55, 2, 's'); put(86, 3, 's'); }
+  [10, 26, 40, 58, 72, 90, 102].forEach((x, i) => put(x, ice ? 9 + (i % 2) * 2 : 5 + (i % 3), 'n'));
+  [20, 36, 52, 68, 84].forEach((x, i) => put(x, ice ? 8 + (i % 2) : 4 + (i % 2) * 3, 'j'));
+  put(8, 9, 'G'); put(54, 8, 'C'); put(106, 13, 'F');
   return { g: g.map(r => r.slice(0, W)), W, pipes: [], waterPipes: [], bonusX: 0, waterRoom: false, deep: true, easy: !!easy };
 }
 /* 海底背景畫一次存起來，之後每幀只貼圖（跟房間地板的快取同一種做法，不要每幀重畫海草）。 */
@@ -24226,7 +24251,7 @@ function drawQuestSwimmer(ctx, t, moving) {
 }
 // 把一段一段拼成一張關卡（grid[y][x] 一個字）
 function questBuild(id, easy) {   // easy：簡單模式的坑窄一格（家長：這邊太容易掉下去了）
-  if (id === '2-4') return questBuildDeep(easy);
+  if ((QUEST_LEVELS[id] || [])[0] === 'deep') return questBuildDeep(easy, id);
   const segs = QUEST_LEVELS[id], g = [], W = 460, pipes = [], waterPipes = [];
   const brickKind = xx => { const k = Math.abs(xx * 5 + 1) % 6; return k === 0 ? 'N' : k === 1 ? 'R' : k === 2 ? '?' : 'B'; };
   for (let y = 0; y < QH; y++) g.push(Array(W).fill(' '));
@@ -24458,7 +24483,7 @@ function playQuest(id, opt) {
   opt = opt || {};   // opt.bossStart：從大魔王那裡開始；opt.weak：打輸幾次了（大王越來越弱）
   const q = questState(), easy = q.mode === 'easy', wd = QUEST_WORLDS[+id[0] - 1];
   const swimHelp = '這一關整關都在水裡！◀ ▶ 往前游，按「跳」或 ↑ 往上游，按 ⬇ 往下沉。愛心跟別的關一樣。';
-  const w = openGameWindow(`${wd.icon} 世界 ${id}`, (id === '2-4' ? swimHelp : (easy ? '按住 ◀ ▶ 走、按「跳」跳（按久一點會跳更高 ✨）；也可以直接按畫面：左邊往左、右邊往右、中間跳。站在水管上按 ⬇ 鑽進去。簡單模式被打到不會少愛心！' : '← → 走、按「跳」（空白鍵／↑）跳，按久一點會跳更高 ✨。踩怪物的頭可以打倒牠！平板也可以直接按畫面：左邊往左、右邊往右、中間（或往上滑）跳。')) + (G.pet && G.pet.stage !== 'egg' ? `${petName()}也一起來了：🐾 集滿了就按，放必殺技！` : ''));
+  const w = openGameWindow(`${wd.icon} 世界 ${id}`, ((QUEST_LEVELS[id] || [])[0] === 'deep' ? swimHelp : (easy ? '按住 ◀ ▶ 走、按「跳」跳（按久一點會跳更高 ✨）；也可以直接按畫面：左邊往左、右邊往右、中間跳。站在水管上按 ⬇ 鑽進去。簡單模式被打到不會少愛心！' : '← → 走、按「跳」（空白鍵／↑）跳，按久一點會跳更高 ✨。踩怪物的頭可以打倒牠！平板也可以直接按畫面：左邊往左、右邊往右、中間（或往上滑）跳。')) + (G.pet && G.pet.stage !== 'egg' ? `${petName()}也一起來了：🐾 集滿了就按，放必殺技！` : ''));
   w.stage.innerHTML = ''; w.btns.innerHTML = ''; w.card.classList.add('quest-big');
   const { c, g } = gameCanvas(w.stage, QVW, QVH);
   /* 🎮 像手把一樣分兩邊（家長：iPad 上手指擠在中間小小的區域按不順）：
@@ -25292,7 +25317,10 @@ function playQuest(id, opt) {
       shoes: CLOTHES_BY_ID.barefoot
     });
     g.save(); g.translate(x, y); g.scale(P.face * ks, ks);
-    if (kidBaby()) drawBabyKid(g, { t: P.t, walking: Math.abs(P.vx) > 10 }); else drawGirl(g, { t: P.t, walking: P.on && Math.abs(P.vx) > 10, blink: false, outfit: P.swim ? penguinFit() : currentOutfit(), face: state === 'win' ? 'joy' : kidFace(), stage: kidLookStage() });
+    /* 🏊 游泳的樣子（家長：游泳的動作不像游泳）：在水裡身體往前趴、腳一直踢水；往上游身體抬高一點，停著就斜斜的踩水。 */
+    const swimNow = P.swim && !P.on;
+    if (swimNow) { const moving = Math.abs(P.vx) > 15, up = Math.max(0, Math.min(1, -P.vy / 260)), ang = (moving ? 1.35 : .55) - up * .55 + Math.sin(P.t * (moving ? 9 : 4)) * .06; g.translate(0, -26); g.rotate(ang); g.translate(0, 26 - (moving ? 6 : 0)); }
+    if (kidBaby()) drawBabyKid(g, { t: P.t, walking: Math.abs(P.vx) > 10 || swimNow }); else drawGirl(g, { t: swimNow ? P.t * 2.2 : P.t, walking: (P.on && Math.abs(P.vx) > 10) || swimNow, blink: false, outfit: P.swim ? penguinFit() : currentOutfit(), face: state === 'win' ? 'joy' : kidFace(), stage: kidLookStage() });
     if (P.swim && !kidBaby()) {   // 企鵝泳衣：白肚、橘嘴、橘腳。上岸就換回原本的衣服（只改這一幀的畫法）
       g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(1, -23, 6.2, 7.2, 0, 0, 7); g.fill();
       g.fillStyle = '#ffb02e'; g.beginPath(); g.moveTo(10, -44); g.lineTo(16, -41); g.lineTo(10, -38); g.fill();
