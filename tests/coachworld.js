@@ -17,7 +17,7 @@ const path = require('path');
     const away0 = G.away; G.away = { place: 'dojo', idx: 0 }; worldNextAd = 1; worldAdSaid = false; $('#modal').hidden = true;
     worldAdTick(); o.noAd = !worldAdSaid; G.away = away0;
     said = ''; openCoachChallenge(); o.needBlack = /黑帶/.test(said) && $('#modal').hidden; toast = rt;
-    t.belt = TKD_BELTS.length - 1; openCoachChallenge(); await wait(1400); let D = playDuel.test;
+    t.belt = TKD_BELTS.length - 1; coachTries = 2; openCoachChallenge(); await wait(1400); o.coachEase = playDuel.test && playDuel.test.S.foe === 12 && playDuel.test.opt.lvl === 2 && /累了/.test(playDuel.test.opt.intro); closeGameWindow(); await wait(100); coachTries = 0; openCoachChallenge(); await wait(1400); let D = playDuel.test;
     o.coach = D.foe.id === 'tkd' && D.S.foe === 16 && D.S.foeMax === 16;
     // 教練的必殺技：擋住痛 2
     D.S.turn = 3; D.newIntent(); o.fsp = D.S.intent === 'fsp' && /一定要擋/.test(document.querySelector('#modalCard').textContent + '') !== null;

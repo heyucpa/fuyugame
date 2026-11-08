@@ -5205,8 +5205,8 @@ const OPEN_GIFT_BELLS = 100000;
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
   { id: '2026-11-14T20:00', title: '🌏 世界大賽可以一直挑戰', lines: [
-    ['🥋', '世界大賽的四強、冠軍賽輸了，可以按「再挑戰」一直打到贏為止（不算今天的次數）'],
-    ['📉', '每輸一次，對手就變弱一點：血比較少、大招比較少出'],
+    ['🥋', '世界大賽每一場輸了，都可以按「再挑戰」一直打到贏為止（不算今天的次數）'],
+    ['📉', '每輸一次，對手就變弱一點：血比較少、大招比較少出（挑戰熊熊教練也一樣）'],
     ['🏅', '不想比了，按「不比了」一樣拿這次的獎牌和獎金']
   ] },
   { id: '2026-11-13T22:00', title: '🥋 世界冠軍送新寵物', lines: [
@@ -28722,11 +28722,15 @@ AWAY_GAMES.push(['⚔️', '對決', 'dojo', () => openDuelGame()]);
 const COACH_SP = { name: '熊熊大地震', fx: '🐻', c: '#8a5a33', c2: '#e8cfa9' };
 SIG_MOVES.tkd = COACH_SP;
 const tkdBlack = () => (tkdState().belt || 0) >= TKD_BELTS.length - 1;
+// 家長：小孩一直打不贏 → 挑戰教練每輸一次，教練就累一點（血少 2、最少 8；等級少 1、最少 1）。只記在這次開著的遊戲裡，不存進存檔。
+let coachTries = 0;
 function openCoachChallenge() {
   if (!tkdBlack()) { toast(`🥋 要考到黑帶才能挑戰教練喔！現在是${tkdBeltName()}`); try { hostSay(`考到黑帶，再來挑戰我吧！`, 2600); } catch (e) {} return; }
   const coach = HOSTS.tkd, t = tkdState();
-  openDuelGame(coach, { title: '👑 挑戰熊熊教練', hp: 16, lvl: 4, foeSp: COACH_SP, intro: '黑帶了啊！來吧，讓我看看你的實力！',
+  const ct = coachTries;
+  openDuelGame(coach, { title: '👑 挑戰熊熊教練', hp: Math.max(8, 16 - 2 * ct), lvl: Math.max(1, 4 - ct), foeSp: COACH_SP, intro: ct ? `教練有點累了（第 ${ct + 1} 次挑戰）！加油！` : '黑帶了啊！來吧，讓我看看你的實力！',
     onEnd: (win, w) => {
+      coachTries = win ? 0 : coachTries + 1;
       const first = win && !t.coach; if (win) { t.coach = (t.coach || 0) + 1; learnSigMove('tkd'); }
       if (first) { addBells(3000); setTimeout(() => { try { Sound.play('fanfare'); confettiBurst(120); showcase(el('div', 'magic-pic', '🏆'), '打贏熊熊教練了！', '你是「道館冠軍」！送你 💰 3,000！世界上也有跆拳道大賽喔。想參加的話，再點我，選「🌏 報名世界大賽」。', { head: '👑 太厲害了！' }); } catch (e) {} }, 400); }
       const bells = win && !first ? payReward(w, 300) : 0;
@@ -28979,7 +28983,8 @@ function worldShowBoard(w, cup, r, fromWin) {
   worldRound.test = { r, cup, plan, opp };
 }
 /* 家長：四強（準決賽）、冠軍賽輸了可以一直挑戰到贏為止，每輸一次對手就弱一點。
-   再挑戰不算今天的次數、對手還是同一位；每輸一次：血少 2（最少 4）、等級少 1、大招比較少出、比較不兇。 */
+   再挑戰不算今天的次數、對手還是同一位；每輸一次：血少 2（最少 4）、等級少 1、大招比較少出、比較不兇。
+   小孩反應一直打不贏 → 每一場（不只四強、冠軍賽）輸了都可以再挑戰。 */
 function worldEase(plan, tries) {
   if (!tries) return plan;
   const p = Object.assign({}, plan);
@@ -29001,7 +29006,7 @@ function worldStartDuel(cup, r, tries) {
     onEnd: (win, w) => {
       const ws = worldState(), got = win ? r + 1 : r, last = r === WORLD_ROUNDS.length - 1;
       if (win) learnSigMove(f.id);
-      if (!win && r >= WORLD_ROUNDS.length - 2) {   // 四強、冠軍賽輸了：可以再挑戰（對手變弱），或結束拿這次的名次
+      if (!win) {   // 家長：小孩一直打不贏 → 每一場輸了都可以再挑戰（對手變弱），或結束拿這次的名次
         ws.best = Math.max(ws.best == null ? -1 : ws.best, got); ws.v = 2; saveGame();
         w.status.textContent = `在${plan.name}輸給${f.short}～沒關係！可以再挑戰，${f.short}會變弱一點喔！`;
         try { speak('沒關係！再挑戰一次！'); } catch (e) {}
