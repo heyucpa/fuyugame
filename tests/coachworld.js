@@ -17,7 +17,7 @@ const path = require('path');
     const away0 = G.away; G.away = { place: 'dojo', idx: 0 }; worldNextAd = 1; worldAdSaid = false; $('#modal').hidden = true;
     worldAdTick(); o.noAd = !worldAdSaid; G.away = away0;
     said = ''; openCoachChallenge(); o.needBlack = /黑帶/.test(said) && $('#modal').hidden; toast = rt;
-    t.belt = TKD_BELTS.length - 1; coachTries = 2; openCoachChallenge(); await wait(1400); o.coachEase = playDuel.test && playDuel.test.S.foe === 12 && playDuel.test.opt.lvl === 2 && /累了/.test(playDuel.test.opt.intro); closeGameWindow(); await wait(100); coachTries = 0; openCoachChallenge(); await wait(1400); let D = playDuel.test;
+    t.belt = TKD_BELTS.length - 1; openCoachChallenge(); await wait(1400); let D = playDuel.test;
     o.coach = D.foe.id === 'tkd' && D.S.foe === 16 && D.S.foeMax === 16;
     // 教練的必殺技：擋住痛 2
     D.S.turn = 3; D.newIntent(); o.fsp = D.S.intent === 'fsp' && /一定要擋/.test(document.querySelector('#modalCard').textContent + '') !== null;
@@ -33,7 +33,7 @@ const path = require('path');
     const easyPlans = [0, 1, 2, 3, 4].map(worldRoundPlan);
     o.ramp = easyPlans.every((p, i) => i === 0 || (p.hp > easyPlans[i - 1].hp && p.agg > easyPlans[i - 1].agg && (easyPlans[i - 1].every === 0 || p.every < easyPlans[i - 1].every))) && easyPlans[0].every === 0 && easyPlans[4].moon;
     const q0 = G.quest; G.quest = Object.assign({}, G.quest, { mode: 'normal' }); const hardF = worldRoundPlan(4); G.quest = q0 && typeof q0 === 'object' ? q0 : {}; if (G.quest) G.quest.mode = 'easy';
-    o.hard = hardF.hp > easyPlans[4].hp && hardF.every < easyPlans[4].every && hardF.pow >= easyPlans[4].pow && hardF.fast && !easyPlans[4].fast;
+    o.hard = hardF.hp === easyPlans[4].hp + 1 && hardF.every < easyPlans[4].every && hardF.pow === easyPlans[4].pow && !hardF.fast && !easyPlans[4].fast;   // 一般模式決賽只難一點點
     const sig = c => c.path.join('|') + '/' + c.opps.map(x => x.id + x.venue).join('|');
     let prevS = sig(worldBuildCup()), differ = false;
     for (let i = 0; i < 6 && !differ; i++) { const s = sig(worldBuildCup()); if (s !== prevS) differ = true; prevS = s; }
@@ -72,7 +72,7 @@ const path = require('path');
         D2.S.phase = 'foe'; D2.S.intent = 'atk'; D2.S.myAct = 'hit'; D2.S.foeDone = false; D2.S.at = performance.now() - 700; await wait(300); o.meHurt = !!D2.faceOf('me');
       }
       if (r === 4) {
-        o.rFinal = D2.S.foe === 13 && !!D2.opt.foeSp && D2.opt.venue === '月球' && /月球/.test(D2.opt.arena);
+        o.rFinal = D2.S.foe === 12 && !!D2.opt.foeSp && D2.opt.venue === '月球' && /月球/.test(D2.opt.arena);
         D2.S.me = 1; D2.S.intent = 'big'; D2.S.phase = 'choose'; D2.act('hit'); await wait(4200);
       } else {
         D2.S.foe = 1; D2.S.intent = 'rest'; D2.S.phase = 'choose'; D2.act('hit'); await wait(2800);
@@ -80,15 +80,15 @@ const path = require('path');
         o['next' + r] = /晉級|飛去|坐火箭/.test(document.querySelector('#modalCard').textContent);
       }
     }
-    o.hps = hps.join() === '7,8,10,12,13';
+    o.hps = hps.join() === '7,8,10,11,12';
     // 冠軍賽輸了：可以再挑戰（不算今天次數、同一位對手、變弱），也可以不比了拿銀牌
     const nDay = worldState().n, btnTxt = [...document.querySelectorAll('#modalCard button')].map(x => x.textContent).join('|');
     o.retryBtn = /再挑戰決賽（對手變弱）/.test(btnTxt) && /不比了，拿銀牌/.test(btnTxt) && worldState().best === 4;
     const hp0 = worldRoundPlan(4).hp, e1 = worldEase(worldRoundPlan(4), 1), e3 = worldEase(worldRoundPlan(4), 3);
-    o.easier = e1.hp === hp0 - 2 && e1.lvl < worldRoundPlan(4).lvl && e3.hp < e1.hp && e3.hp >= 4 && e3.agg <= e1.agg;
+    o.easier = e1.hp === hp0 - 3 && e1.lvl < worldRoundPlan(4).lvl && e3.hp < e1.hp && e3.hp >= 4 && e3.agg <= e1.agg;
     clickRe(/再挑戰決賽/); let D3 = null;
     for (let i = 0; i < 25; i++) { await wait(200); if (playDuel.test && playDuel.test.S.phase === 'choose') { D3 = playDuel.test; break; } }
-    o.retryEasier = !!D3 && D3.S.foe === hp0 - 2 && worldState().n === nDay && D3.opt.venue === '月球';
+    o.retryEasier = !!D3 && D3.S.foe === hp0 - 3 && worldState().n === nDay && D3.opt.venue === '月球';
     D3.S.me = 1; D3.S.intent = 'big'; D3.S.phase = 'choose'; D3.act('hit'); await wait(4200);
     clickRe(/不比了/); await wait(300);
     o.silver = worldState().best === 4 && /銀牌/.test(document.querySelector('.game-status').textContent) && [...document.querySelectorAll('#modalCard button')].some(x => /去吃東西/.test(x.textContent));
@@ -104,6 +104,8 @@ const path = require('path');
     o.migSilver = mig({ best: 2, gold: 0 }).best === 4;
     o.migBronze = mig({ best: 1, gold: 0 }).best === 3;
     o.noRemig = mig({ best: 1, gold: 0, v: 2 }).best === 1;
+    // 挑戰教練：每輸一次教練變弱（輸 2 次 → 12 血、等級 2）
+    $('#modal').hidden = true; coachTries = 2; openCoachChallenge(); await wait(1400); o.coachEase = !!playDuel.test && playDuel.test.S.foe === 12 && playDuel.test.opt.lvl === 2 && /累了/.test(playDuel.test.opt.intro); closeGameWindow(); coachTries = 0;
     return o;
   });
   console.log(JSON.stringify(o));
