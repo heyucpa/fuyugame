@@ -81,6 +81,16 @@ const path = require('path');
       }
     }
     o.hps = hps.join() === '7,8,10,12,13';
+    // 冠軍賽輸了：可以再挑戰（不算今天次數、同一位對手、變弱），也可以不比了拿銀牌
+    const nDay = worldState().n, btnTxt = [...document.querySelectorAll('#modalCard button')].map(x => x.textContent).join('|');
+    o.retryBtn = /再挑戰決賽（對手變弱）/.test(btnTxt) && /不比了，拿銀牌/.test(btnTxt) && worldState().best === 4;
+    const hp0 = worldRoundPlan(4).hp, e1 = worldEase(worldRoundPlan(4), 1), e3 = worldEase(worldRoundPlan(4), 3);
+    o.easier = e1.hp === hp0 - 2 && e1.lvl < worldRoundPlan(4).lvl && e3.hp < e1.hp && e3.hp >= 4 && e3.agg <= e1.agg;
+    clickRe(/再挑戰決賽/); let D3 = null;
+    for (let i = 0; i < 25; i++) { await wait(200); if (playDuel.test && playDuel.test.S.phase === 'choose') { D3 = playDuel.test; break; } }
+    o.retryEasier = !!D3 && D3.S.foe === hp0 - 2 && worldState().n === nDay && D3.opt.venue === '月球';
+    D3.S.me = 1; D3.S.intent = 'big'; D3.S.phase = 'choose'; D3.act('hit'); await wait(4200);
+    clickRe(/不比了/); await wait(300);
     o.silver = worldState().best === 4 && /銀牌/.test(document.querySelector('.game-status').textContent) && [...document.querySelectorAll('#modalCard button')].some(x => /去吃東西/.test(x.textContent));
     closeGameWindow(); await wait(100); clear();
     // 一天 3 次

@@ -5204,6 +5204,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-14T20:00', title: '🌏 世界大賽可以一直挑戰', lines: [
+    ['🥋', '世界大賽的四強、冠軍賽輸了，可以按「再挑戰」一直打到贏為止（不算今天的次數）'],
+    ['📉', '每輸一次，對手就變弱一點：血比較少、大招比較少出'],
+    ['🏅', '不想比了，按「不比了」一樣拿這次的獎牌和獎金']
+  ] },
   { id: '2026-11-13T22:00', title: '🥋 世界冠軍送新寵物', lines: [
     ['🐼', '跆拳道「🌏 世界大賽」拿到世界冠軍，會送一隻「黑帶熊貓」（只有冠軍才有，買蛋抽不到）'],
     ['🏆', '以前就拿過世界冠軍的，回到家就會收到'],
@@ -28973,34 +28978,58 @@ function worldShowBoard(w, cup, r, fromWin) {
   w.btns.appendChild(go); leaveButton(w);
   worldRound.test = { r, cup, plan, opp };
 }
-function worldStartDuel(cup, r) {
-  const plan = worldRoundPlan(r), f = cup.opps[r];
+/* 家長：四強（準決賽）、冠軍賽輸了可以一直挑戰到贏為止，每輸一次對手就弱一點。
+   再挑戰不算今天的次數、對手還是同一位；每輸一次：血少 2（最少 4）、等級少 1、大招比較少出、比較不兇。 */
+function worldEase(plan, tries) {
+  if (!tries) return plan;
+  const p = Object.assign({}, plan);
+  p.hp = Math.max(4, plan.hp - 2 * tries); p.lvl = Math.max(0, plan.lvl - tries); p.pow = Math.max(0, plan.pow - tries);
+  p.every = plan.every ? (plan.every + tries * 2 > 10 ? 0 : plan.every + tries * 2) : 0; p.spX = tries >= 2 ? 0 : plan.spX;
+  p.agg = Math.max(0, +(plan.agg - .05 * tries).toFixed(2)); p.fast = false;
+  return p;
+}
+function worldStartDuel(cup, r, tries) {
+  tries = tries || 0;
+  const plan = worldEase(worldRoundPlan(r), tries), f = cup.opps[r];
   if (G.kid && G.kid.hunger < DUEL_MIN_HUNGER) G.kid.hunger = DUEL_MIN_HUNGER;
   openDuelGame(f, {
     title: `🌏 世界大賽・${plan.name}・${f.venue}`, hp: plan.hp, lvl: plan.lvl,
     arena: plan.moon ? `🌙 月球決賽會場　${plan.name}` : `🌏 ${f.venue}跆拳道場　${plan.name}`,
     venue: f.venue, foeSp: plan.every ? (plan.moon ? WORLD_SP : WORLD_SP_LITE) : null, fEvery: plan.every || undefined,
     foePow: plan.pow, spExtra: plan.spX, agg: plan.agg, foeFast: plan.fast,
-    intro: plan.moon ? `月球決賽！對手是${f.short}！` : `${plan.name}！${f.venue}的${f.short}！`,
+    intro: tries ? `再挑戰（第 ${tries + 1} 次）！${f.short}有點累了，變弱一點！` : plan.moon ? `月球決賽！對手是${f.short}！` : `${plan.name}！${f.venue}的${f.short}！`,
     onEnd: (win, w) => {
       const ws = worldState(), got = win ? r + 1 : r, last = r === WORLD_ROUNDS.length - 1;
       if (win) learnSigMove(f.id);
-      if (!win || last) {
-        ws.best = Math.max(ws.best == null ? -1 : ws.best, got); ws.v = 2;
-        const champ = got === WORLD_ROUNDS.length, first = champ && !ws.gold; if (champ) ws.gold = (ws.gold || 0) + 1;
-        const bells = payReward(w, WORLD_PRIZE[got]) + (first ? (addBells(2000), 2000) : 0);
-        const medal = WORLD_MEDAL[got] || WORLD_MEDAL[0];
-        w.status.textContent = `${medal}！${champ ? '你是世界冠軍！' : win ? '' : `在${plan.name}輸給${f.short}～沒關係，去吃東西補體力！`}　💰 +${fmt(bells)}`;
-        Sound.play(champ ? 'fanfare' : 'questClear');
-        setTimeout(() => { try { if (champ) confettiBurst(140); showcase(el('div', 'magic-pic', medal.split(' ')[0]), `世界大賽：${medal.split(' ')[1]}！`, champ ? (first ? '第一次拿到世界冠軍！多送你 💰 2,000！' : `又拿到世界冠軍了！（${ws.gold} 次）`) : '下次再來挑戰更好的名次！', { head: champ ? '🎉 太棒了！' : '🌏 世界大賽' }); } catch (e) {} }, 500);
-        try { speak(champ ? '世界冠軍！' : medal.split(' ')[1] + '！好棒！'); } catch (e) {}
-        if (champ) setTimeout(() => { try { giveChampPanda(); } catch (e) {} }, 400);   // 🥋 世界冠軍：送黑帶熊貓（只送一次，排在獎牌後面出來）
-        saveGame(); refreshTop(); duelEndButtons(w, win, () => openWorldCup()); return;
+      if (!win && r >= WORLD_ROUNDS.length - 2) {   // 四強、冠軍賽輸了：可以再挑戰（對手變弱），或結束拿這次的名次
+        ws.best = Math.max(ws.best == null ? -1 : ws.best, got); ws.v = 2; saveGame();
+        w.status.textContent = `在${plan.name}輸給${f.short}～沒關係！可以再挑戰，${f.short}會變弱一點喔！`;
+        try { speak('沒關係！再挑戰一次！'); } catch (e) {}
+        w.btns.innerHTML = '';
+        const again = el('button', 'big', `⚔️ 再挑戰${plan.name}（對手變弱）`); again.onclick = () => { Sound.play('click'); worldStartDuel(cup, r, tries + 1); }; w.btns.appendChild(again);
+        const stop = el('button', 'big alt', `🏅 不比了，拿${(WORLD_MEDAL[got] || '').split(' ')[1] || '獎牌'}`); stop.onclick = () => worldFinish(w, cup, r, false, plan, f); w.btns.appendChild(stop);
+        worldStartDuel.test = { r, tries, plan };
+        return;
       }
+      if (!win || last) { worldFinish(w, cup, r, win, plan, f); return; }
       if (G.kid) G.kid.hunger = Math.min(100, G.kid.hunger + 6);
       Sound.play('questClear'); worldShowBoard(w, cup, r + 1, true);
     }
   });
+}
+// 比完了（輸了不再挑戰、或拿到冠軍）：記名次、發獎金和獎牌
+function worldFinish(w, cup, r, win, plan, f) {
+  const ws = worldState(), got = win ? r + 1 : r;
+  ws.best = Math.max(ws.best == null ? -1 : ws.best, got); ws.v = 2;
+  const champ = got === WORLD_ROUNDS.length, first = champ && !ws.gold; if (champ) ws.gold = (ws.gold || 0) + 1;
+  const bells = payReward(w, WORLD_PRIZE[got]) + (first ? (addBells(2000), 2000) : 0);
+  const medal = WORLD_MEDAL[got] || WORLD_MEDAL[0];
+  w.status.textContent = `${medal}！${champ ? '你是世界冠軍！' : win ? '' : `在${plan.name}輸給${f.short}～沒關係，去吃東西補體力！`}　💰 +${fmt(bells)}`;
+  Sound.play(champ ? 'fanfare' : 'questClear');
+  setTimeout(() => { try { if (champ) confettiBurst(140); showcase(el('div', 'magic-pic', medal.split(' ')[0]), `世界大賽：${medal.split(' ')[1]}！`, champ ? (first ? '第一次拿到世界冠軍！多送你 💰 2,000！' : `又拿到世界冠軍了！（${ws.gold} 次）`) : '下次再來挑戰更好的名次！', { head: champ ? '🎉 太棒了！' : '🌏 世界大賽' }); } catch (e) {} }, 500);
+  try { speak(champ ? '世界冠軍！' : medal.split(' ')[1] + '！好棒！'); } catch (e) {}
+  if (champ) setTimeout(() => { try { giveChampPanda(); } catch (e) {} }, 400);   // 🥋 世界冠軍：送黑帶熊貓（只送一次，排在獎牌後面出來）
+    saveGame(); refreshTop(); duelEndButtons(w, win, () => openWorldCup());
 }
 function openWorldCup() {
   if (!worldCupOpen()) { toast('🌏 要先打贏熊熊教練，教練才會告訴你世界大賽喔！'); try { hostSay('先打贏我，我再告訴你一個大秘密！', 2800); speak('先打贏教練，再來參加世界大賽！'); } catch (e) {} return; }
