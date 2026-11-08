@@ -911,6 +911,13 @@ body.isl-out .rooms { visibility: hidden; }   /* 家長：都出門了，上面�
 .isl-back { left: 12px; } .isl-fast { right: 12px; } .isl-quest { right: 12px; top: 60px; background: #ffe9b8 !important; } .isl-ride { left: 12px; top: 108px; } .isl-emo { left: 12px; top: 156px; } .isl-run { left: 12px; top: 60px; }
 .isl-tools { position: absolute; left: 12px; bottom: 60px; display: flex; flex-direction: column; gap: 6px; }
 .isl-tools .island-btn { position: static; text-align: left; }
+/* 家長：手機玩的時候左邊擠在一起 → 畫面矮或窄的時候：釣竿、網子、鏟子搬到右下，左上那排按鈕小一點、間距密一點 */
+@media (max-width: 760px), (max-height: 620px) {
+  .island-btn { font-size: 13px; padding: 5px 11px; min-height: 34px; }
+  .isl-back { top: 8px; } .isl-run { top: 48px; } .isl-ride { top: 88px; } .isl-emo { top: 128px; } .isl-menu-btn { top: 168px; }
+  .isl-fast { top: 8px; } .isl-quest { top: 48px; }
+  .isl-tools { left: auto; right: 12px; bottom: 56px; gap: 5px; }
+}
 .island-tip { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); background: rgba(255,255,255,.92); color: #5a4630; font-weight: 700; font-size: 14px; padding: 8px 16px; border-radius: 999px; box-shadow: 0 3px 10px rgba(0,0,0,.18); pointer-events: none; transition: opacity 1.2s; max-width: 90%; text-align: center; }
 .island-tip.fade { opacity: 0; }
 .island-on .petcard, .island-on .zoom-btn, .island-on .theme-btn, .island-on .photo-btn, .island-on .dup-btn, .island-on .call-btn, .island-on .hint, .island-on .itemmenu, .island-on .actions { display: none !important; }
