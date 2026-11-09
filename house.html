@@ -795,6 +795,13 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
   button[data-key] { position: relative; }
   button[data-key]::after { content: attr(data-key); position: absolute; right: -6px; bottom: -8px; background: #fff; color: #3a3240; border: 1.5px solid #8a7f90; border-radius: 6px; font: 800 11px/1.35 system-ui, sans-serif; padding: 0 5px; white-space: nowrap; pointer-events: none; box-shadow: 0 1px 2px rgba(0,0,0,.15); }
 }
+.exam-ladder { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 8px; }
+.exam-step { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 14px; background: #fff; border: 2px solid var(--line); }
+.exam-step.done { background: #eefaf0; border-color: #7bd389; } .exam-step.next { background: #fff7e0; border-color: #ffd23f; box-shadow: 0 0 0 3px rgba(255,210,63,.3); } .exam-step.lock { opacity: .6; }
+.exam-step .exam-ic { font-size: 26px; width: 34px; text-align: center; flex: none; } .exam-step b { flex: none; min-width: 84px; font-size: 15px; }
+.exam-info { flex: 1; min-width: 0; font-size: 13px; line-height: 1.4; } .exam-need { font-weight: 800; color: #b5651d; } .exam-prize { color: var(--muted); }
+.exam-pic { flex: none; }
+.tkd-move.glow { animation: glowPulse .6s infinite alternate; border-color: #ffd23f; }
 .quest-btn.glow { animation: glowPulse .6s infinite alternate; border-color: #ffd23f; background: #fff3b0; }
 @keyframes glowPulse { from { box-shadow: 0 0 0 0 rgba(255,210,63,.8); } to { box-shadow: 0 0 0 8px rgba(255,210,63,0); } }
 .spar-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 8px 0; }
@@ -3657,7 +3664,24 @@ const PLACE_CLOTHES = [
 PLACE_CLOTHES.forEach(c => { CLOTHES_BY_ID[c.id] = c; });
 const PRIZE_CLOTHES = [
   { id: 'ghost_hat', slot: 'head', name: '小幽靈巫師帽', price: 800, style: 'witchHat', color: '#f4f1ff', band: '#b9a8ff', prize: true },
-  { id: 'ghost_dress', slot: 'top', name: '小幽靈洋裝', price: 3000, style: 'dress', color: '#f4f1ff', trim: '#b9a8ff', dots: '#d9ccff', dress: true, prize: true }
+  { id: 'ghost_dress', slot: 'top', name: '小幽靈洋裝', price: 3000, style: 'dress', color: '#f4f1ff', trim: '#b9a8ff', dots: '#d9ccff', dress: true, prize: true },
+  // 🎖️ 升級考試的獎品（考過才有，商店買不到）
+  { id: 'cap_duck', slot: 'head', name: '小鴨泳帽', price: 300, style: 'beanie', color: '#ffd23f', pom: '#ff9f1c', prize: true },
+  { id: 'cap_fish', slot: 'head', name: '小魚泳帽', price: 500, style: 'beanie', color: '#ff8a3d', pom: '#ffffff', prize: true },
+  { id: 'cap_dolphin', slot: 'head', name: '海豚泳帽', price: 800, style: 'beanie', color: '#5cc4ec', pom: '#ffffff', prize: true },
+  { id: 'cap_shark', slot: 'head', name: '鯊魚泳帽', price: 1200, style: 'beanie', color: '#6c7a89', pom: '#e8505b', prize: true },
+  { id: 'chef_hat', slot: 'head', name: '小廚師帽', price: 300, style: 'chefHat', color: '#ffffff', band: '#e8e1d5', prize: true },
+  { id: 'chef_jacket', slot: 'top', name: '小廚師服', price: 600, style: 'jacket', color: '#fbfaf6', trim: '#e8505b', prize: true },
+  { id: 'chef_pants', slot: 'bottom', name: '小廚師褲', price: 500, style: 'pants', color: '#3a3240', prize: true },
+  { id: 'chef_hat_gold', slot: 'head', name: '金牌主廚帽', price: 1200, style: 'chefHat', color: '#fff7d6', band: '#ffd23f', prize: true },
+  { id: 'jersey_white', slot: 'top', name: '新手球衣', price: 300, style: 'tee', color: '#ffffff', num: '1', numCol: '#3f8fd1', prize: true },
+  { id: 'jersey_blue', slot: 'top', name: '校隊球衣', price: 500, style: 'tee', color: '#3f8fd1', num: '7', numCol: '#ffffff', prize: true },
+  { id: 'jersey_red', slot: 'top', name: '明星球衣', price: 800, style: 'tee', color: '#e8505b', num: '10', numCol: '#ffffff', prize: true },
+  { id: 'jersey_gold', slot: 'top', name: 'MVP 金球衣', price: 1200, style: 'tee', color: '#ffd23f', num: '1', numCol: '#7a5a00', prize: true },
+  { id: 'medal_bronze', slot: 'neck', name: '銅牌', price: 300, style: 'medalNeck', color: '#cd7f32', prize: true },
+  { id: 'medal_silver', slot: 'neck', name: '銀牌', price: 500, style: 'medalNeck', color: '#c0c6cf', prize: true },
+  { id: 'medal_gold', slot: 'neck', name: '金牌', price: 800, style: 'medalNeck', color: '#ffd23f', prize: true },
+  { id: 'champ_jacket', slot: 'top', name: '運動會冠軍外套', price: 1200, style: 'jacket', color: '#ffd23f', trim: '#e8505b', prize: true }
 ];
 PRIZE_CLOTHES.forEach(c => { CLOTHES_BY_ID[c.id] = c; });
 const DEFAULT_OUTFIT = { clip: 'clip_none', head: 'head_none', face: 'face_none', neck: 'neck_none', top: 'uniform', bottom: 'red_shorts', shoes: 'black_shoes' };
@@ -5211,6 +5235,13 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-15T20:00', title: '🎖️ 新的升級考試', lines: [
+    ['🏊', '游泳池鴨鴨教練：游泳檢定（小鴨級 → 小魚級 → 海豚級 → 鯊魚級），送泳帽'],
+    ['👩‍🍳', '餐廳：小廚師檢定（一星 → 二星 → 三星 → 金牌主廚），送廚師帽、廚師服'],
+    ['🏀', '體育館猴子教練：球類檢定（新手 → 校隊 → 明星 → MVP），送球衣'],
+    ['🏃', '操場：運動會檢定（銅牌 → 銀牌 → 金牌 → 冠軍），送獎牌'],
+    ['✨', '考過還會學到招數：游得更快、投籃更準、跑得更快…考不過可以一直重考，會越考越簡單']
+  ] },
   { id: '2026-11-14T20:00', title: '🌏 世界大賽可以一直挑戰', lines: [
     ['🥋', '世界大賽每一場輸了，都可以按「再挑戰」一直打到贏為止（不算今天的次數）'],
     ['📉', '每輸一次，對手就變弱一點：血比較少、大招比較少出（挑戰熊熊教練也一樣）'],
@@ -6199,6 +6230,7 @@ function normalizeSave(g) {
   if (out.enLearn != null) { if (!isObj(out.enLearn)) delete out.enLearn; else out.enLearn = Object.fromEntries(Object.entries(out.enLearn).filter(([k, v]) => k.length <= 30 && /^[A-Za-z ]+$/.test(k) && v === 1)); }   // 🔤 學過的英文單字
   if (out.cloudKing != null && !(isObj(out.cloudKing) && Number.isInteger(out.cloudKing.beat) && out.cloudKing.beat >= 0 && out.cloudKing.beat < 1e6)) delete out.cloudKing;   // ☁️ 打倒烏雲大王幾次
   if (out.noSeasonFx != null && out.noSeasonFx !== 1) delete out.noSeasonFx;   // 🍂 關掉季節裝飾
+  if (out.exams != null) { if (!isObj(out.exams)) delete out.exams; else Object.keys(out.exams).forEach(k => { const v = out.exams[k]; if (!['swim', 'chef', 'ball', 'track'].includes(k) || !(Number.isInteger(v) && v >= 0 && v <= 4)) delete out.exams[k]; }); }   // 🎖️ 升級考試（每種 0～4 級）
   if (out.tkd && isObj(out.tkd)) { if (out.tkd.coach != null && !(Number.isInteger(out.tkd.coach) && out.tkd.coach >= 0 && out.tkd.coach < 1e6)) delete out.tkd.coach; if (out.tkd.world != null) { const wv = out.tkd.world; if (!isObj(wv)) delete out.tkd.world; else { if (!(Number.isInteger(wv.best) && wv.best >= -1 && wv.best <= 5)) wv.best = -1; if (!(Number.isInteger(wv.gold) && wv.gold >= 0 && wv.gold < 1e6)) wv.gold = 0; if (wv.v == null) { if (wv.best === 3) wv.best = 5; else if (wv.best === 2) wv.best = 4; else if (wv.best === 1) wv.best = 3; wv.v = 2; } else if (wv.v !== 2) { delete wv.v; wv.v = 2; } if (wv.d != null && typeof wv.d !== 'string') { delete wv.d; delete wv.n; } if (wv.n != null && !(Number.isInteger(wv.n) && wv.n >= 0 && wv.n < 100)) wv.n = 0; } } }   // 👑 教練、🌏 世界大賽（v 沒有＝舊三場：3 冠軍→5、2 銀→4、1 銅→3）
   if (out.moves != null) { if (!isObj(out.moves)) delete out.moves; else out.moves = Object.fromEntries(Object.entries(out.moves).filter(([k, v]) => /^[a-z]{2,12}$/.test(k) && v === 1)); }   // 🥋 學會的朋友招式
   if (out.duel != null) { if (!isObj(out.duel)) delete out.duel; else ['win', 'lose'].forEach(k => { if (!(Number.isInteger(out.duel[k]) && out.duel[k] >= 0 && out.duel[k] < 1e6)) out.duel[k] = 0; }); }   // ⚔️ 對決贏輸幾次
@@ -7595,7 +7627,8 @@ function drawTop(ctx, t, back) {
     ctx.fillStyle = GIRL.uniformStripe; ctx.fillRect(-10, -23, 20, 1.3);
     ctx.fillStyle = GIRL.uniformCollar; ctx.fillRect(-10, -21.7, 20, 1.6);
   } else if (t.style === 'tee') {
-    if (!back && t.print) heart(ctx, 0, -24, 3, t.print); // 爸爸的素色 T 恤沒有圖案
+    if (!back && t.num) { ctx.fillStyle = t.numCol || '#ffffff'; ctx.font = '900 7px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(t.num, 0, -24); ctx.textBaseline = 'alphabetic'; }   // 球衣號碼
+    else if (!back && t.print) heart(ctx, 0, -24, 3, t.print); // 爸爸的素色 T 恤沒有圖案
   } else if (t.style === 'hoodie') {
     ctx.fillStyle = t.trim; ctx.fillRect(-9.5, -18.5, 19, 2.5);         // 下擺羅紋
     if (!back) rr(ctx, -6, -24, 12, 5, 2, t.trim);                       // 口袋
@@ -8132,6 +8165,11 @@ function drawNecklace(ctx, o, item) {
   ctx.beginPath(); ctx.moveTo(-8, -34); ctx.quadraticCurveTo(0, -18, 8, -34); ctx.stroke();
   if (item.style === 'heartNeck') heart(ctx, 0, -19, 3.4, col);
   else if (item.style === 'starNeck') star(ctx, 0, -18.5, 4.2, col);
+  else if (item.style === 'medalNeck') {   // 🏅 獎牌：圓牌子＋白星星
+    ctx.fillStyle = col; ctx.strokeStyle = 'rgba(0,0,0,.28)'; ctx.lineWidth = .7;
+    ctx.beginPath(); ctx.arc(0, -18.5, 4.4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    star(ctx, 0, -18.5, 2.2, 'rgba(255,255,255,.9)');
+  }
   else if (item.style === 'pearlNeck') {
     ctx.fillStyle = col; ctx.strokeStyle = '#e4d3b0'; ctx.lineWidth = .6;
     [[-5, -27, 1.5], [-2.4, -23, 1.7], [0, -19.5, 2.3], [2.4, -23, 1.7], [5, -27, 1.5]].forEach(([x, y, r]) => {
@@ -8226,7 +8264,7 @@ function drawHairAcc(ctx, o, h, hat) {
 // ── 頭飾（正面、背面都看得到）──
 function drawHeadwear(ctx, o, h) {
   if (!h || h.style === 'none') return;
-  if (o.headOnly && (h.style === 'hat' || h.style === 'beanie' || h.style === 'glasses' || h.style === 'beret' || h.style === 'sunhat' || h.style === 'partyHat' || h.style === 'earmuff' || h.style === 'bearMuff')) return; // 睡覺、泡澡時脫帽子、耳罩、拿下墨鏡
+  if (o.headOnly && (h.style === 'hat' || h.style === 'beanie' || h.style === 'glasses' || h.style === 'beret' || h.style === 'sunhat' || h.style === 'partyHat' || h.style === 'chefHat' || h.style === 'earmuff' || h.style === 'bearMuff')) return; // 睡覺、泡澡時脫帽子、耳罩、拿下墨鏡
   const hy = -46, top = hy - 18; // 頭頂大約在 y = -64
   const line = 'rgba(50,35,30,.35)';
   if (h.style === 'ribbon') {
@@ -8438,6 +8476,11 @@ function drawHeadwear(ctx, o, h) {
     const bx = 16, by = top + 9;
     ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + 7, by - 3.5); ctx.lineTo(bx + 7, by + 3.5); ctx.closePath(); ctx.fill();
     ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx - 5, by - 3); ctx.lineTo(bx - 5, by + 3); ctx.closePath(); ctx.fill();
+  } else if (h.style === 'chefHat') { // 👩‍🍳 廚師帽：一圈帽帶＋上面三團蓬蓬的
+    ctx.fillStyle = h.color; ctx.strokeStyle = line; ctx.lineWidth = .8;
+    [[-6.5, top - 2, 5.5], [6.5, top - 2, 5.5], [0, top - 5, 6.5]].forEach(([x, y, r]) => { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); });
+    ctx.beginPath(); ctx.rect(-11, top, 22, 7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = h.band || '#e8e1d5'; ctx.fillRect(-11, top + 4, 22, 3);
   } else if (h.style === 'partyHat') { // 派對尖帽：直直的圓錐，黃條紋，頂上白球
     ctx.save();
     ctx.beginPath(); ctx.moveTo(-9, top + 8); ctx.lineTo(0, top - 22); ctx.lineTo(9, top + 8); ctx.closePath();
@@ -12767,6 +12810,7 @@ function hostMenuEntries() {
   if (host.n.id === 'gym') { list.push(['🏃 跑步機（速度）', openFitRun]); list.push(['🏋️ 舉啞鈴（力量）', openFitLift]); list.push(['🚴 飛輪（耐力）', openFitBike]); list.push(['📦 跳箱（速度＋力量）', openFitBox]); list.push(['🧘 瑜珈（耐力）', openFitYoga]); list.push(['📊 我的體能', openFitStats]); }
   if (host.n.id === 'arena') { list.push(['⛹️ 籃球比賽（2 對 2）', openBball]); list.push(['🏀 投籃機', openBasket]); list.push(['🔴 躲避球', openDodge]); list.push(['🏓 桌球', openPingPong]); }
   if (host.n.id === 'track') { list.push(['🏁 起跑反應王', openStartGame]); list.push(['🚧 障礙賽跑', openRunGame]); list.push(['🏃 百米衝刺', openSprint]); list.push(['🏃‍♀️ 大隊接力', openRelay]); list.push(['🏖️ 跳遠', openLongJump]); if (G.away && G.away.place === 'school' && G.away.idx !== 0) list.push(['🏫 回教室', () => goPlaceRoom(0)]); }
+  { const ex = EXAM_ORDER.find(id => EXAM_TRACKS[id].host === host.n.id); if (ex) list.push([examMenuLabel(ex), () => openExam(ex)]); }   // 🎖️ 升級考試
   if (host.n.id === 'swim') {
     list.push(['🏊 打水比賽', openSwimRace]);
     list.push(['🤿 潛水撿寶', openDiveGame]);
@@ -18149,6 +18193,7 @@ if (hoursAway >= WELCOME_BACK_HOURS) {
 // ── 共用：開一個遊戲視窗，關掉時清掉計時器與事件 ──
 let gameCleanup = null;
 function openGameWindow(title, howTo) {
+  if (typeof EXAM !== 'undefined') EXAM = null;   // 開別的小遊戲：不算考試
   crashCrumb('開 ' + title);
   closeGameWindow();
   const card = $('#modalCard');
@@ -18190,7 +18235,7 @@ function fitGameDomSoon() { clearTimeout(gameDomFitT); gameDomFitT = setTimeout(
    （只拿掉不設 0 的話，要等很久才回收；開場動畫那張全螢幕的畫布就有 15MB）。 */
 function freeCanvases(root) { try { if (!root) return; (root.tagName === 'CANVAS' ? [root] : root.querySelectorAll('canvas')).forEach(c => { c.width = 0; c.height = 0; }); } catch (e) {} }
 function closeGameWindow() {
-  crashCrumb('關小遊戲');
+  crashCrumb('關小遊戲'); EXAM = null;
   if (gameCleanup) { gameCleanup(); gameCleanup = null; }
   freeCanvases($('#modalCard .game-stage') || null);
   $('#modalCard').classList.remove('game-card', 'in-game', 'game-big');
@@ -19695,7 +19740,7 @@ function playRun(w, L) {
   }
   function tap() {
     if (ended || countdown > 0 || jumpT > 0) return;
-    advance(RUN_STEP, false);
+    advance(RUN_STEP * examMul('track', .04), false);
     bounce = 1;
   }
   function jump() {
@@ -19764,7 +19809,7 @@ function playRun(w, L) {
     Sound.play(p === 1 ? 'fanfare' : 'coin');
     if (p <= 3) for (let k = 0; k < 40; k++) confetti.push({ x: Math.random() * W, y: -Math.random() * H * .6, v: 60 + Math.random() * 80, r: Math.random() * 6, c: ['#ff6b8b', '#ffd35c', '#5fd0ff', '#8be07a', '#c79bff'][k % 5] });
     go.disabled = true; hop.disabled = true;
-    gameButtons(w, openRunGame);
+    gameButtons(w, openRunGame); examHook('run', { place: p }, w);
   }
   openRunGame.test = { tap, jump, tick, me: () => me, mates, place, finish, level: L, hurdles, stars, standings,
                        jumping: () => jumpT > 0, skipCountdown: () => { countdown = 0; } };
@@ -22726,6 +22771,110 @@ function playRhythm(w, L) {
   raf = requestAnimationFrame(tick);
   playRhythm.test = { notes: () => notes, t: () => performance.now() - T0, hit };
 }
+/* ===== 🎖️ 升級考試（家長：像跆拳道考腰帶一樣，其他小遊戲也要有；考過有獎勵、有招數）=====
+   四種：🏊 游泳檢定（鴨鴨教練）、👩‍🍳 小廚師檢定（餐廳）、🏀 球類檢定（猴子教練）、🏃 運動會檢定（操場）。
+   每種 4 級，一級一級考。每一級＝玩一次原本的小遊戲、達到目標就過。
+   考過：💰 獎金＋一件只有考過才有的衣服（泳帽、廚師帽、球衣、獎牌…）＋那個遊戲的「招數」（游得更快、投籃更準…）。
+   考不過可以一直重考，每考一次目標就簡單一點（只記在這次開著的遊戲裡）。成績存在 G.exams（每種 0～4）。 */
+const EXAM_TRACKS = {
+  swim: { host: 'swim', icon: '🏊', title: '游泳檢定', who: '鴨鴨教練', ranks: [
+    { name: '小鴨級', icon: '🐥', kind: 'swimRace', L: 0, need: 3, ease: (n, t) => Math.min(4, n + Math.floor((t + 1) / 2)), desc: n => `打水比賽（慢慢游）拿到前 ${n} 名`, bells: 300, item: 'cap_duck', perk: '🌊 划水招：打水比賽游得更快' },
+    { name: '小魚級', icon: '🐟', kind: 'dive', need: 7, ease: (n, t) => Math.max(3, n - t), desc: n => `潛水撿寶撿到 ${n} 樣`, bells: 600, item: 'cap_fish', perk: '👀 尋寶眼：潛水的寶物停比較久' },
+    { name: '海豚級', icon: '🐬', kind: 'swimRace', L: 1, need: 1, ease: (n, t) => Math.min(4, n + Math.floor(t / 2)), desc: n => n === 1 ? '打水比賽（普通）拿到第一名' : `打水比賽（普通）拿到前 ${n} 名`, bells: 1000, item: 'cap_dolphin', perk: '🐬 海豚划水：游得再更快' },
+    { name: '鯊魚級', icon: '🦈', kind: 'swimRace', L: 2, need: 1, ease: (n, t) => Math.min(4, n + Math.floor(t / 2)), desc: n => n === 1 ? '打水比賽（比賽！）拿到第一名' : `打水比賽（比賽！）拿到前 ${n} 名`, bells: 2000, item: 'cap_shark', perk: '🦈 鯊魚衝刺：游得最快' }
+  ] },
+  chef: { host: 'restaurant', icon: '👩‍🍳', title: '小廚師檢定', who: '餐廳老闆', ranks: [
+    { name: '一星小廚師', icon: '⭐', kind: 'chef', need: 2, ease: (n, t) => Math.max(1, n - t), desc: n => `做 5 個漢堡，${n} 個一次都沒放錯`, bells: 300, item: 'chef_hat', perk: '💰 打工錢變多' },
+    { name: '二星小廚師', icon: '🌟', kind: 'chef', need: 3, ease: (n, t) => Math.max(1, n - t), desc: n => `做 5 個漢堡，${n} 個一次都沒放錯`, bells: 600, item: 'chef_jacket', perk: '✨ 小提示：下一層要放的食材會發亮' },
+    { name: '三星小廚師', icon: '💫', kind: 'chef', need: 4, ease: (n, t) => Math.max(1, n - t), desc: n => `做 5 個漢堡，${n} 個一次都沒放錯`, bells: 1000, item: 'chef_pants', perk: '💰 打工錢再變多' },
+    { name: '金牌主廚', icon: '🏅', kind: 'chef', need: 5, ease: (n, t) => Math.max(1, n - t), desc: n => n === 5 ? '做 5 個漢堡，全部一次都沒放錯' : `做 5 個漢堡，${n} 個一次都沒放錯`, bells: 2000, item: 'chef_hat_gold', perk: '👑 主廚：打工錢最多' }
+  ] },
+  ball: { host: 'arena', icon: '🏀', title: '球類檢定', who: '猴子教練', ranks: [
+    { name: '新手球員', icon: '🏀', kind: 'basket', L: 0, need: 1, ease: (n, t) => n, desc: () => '投籃機（簡單）過第 1 關', bells: 300, item: 'jersey_white', perk: '🎯 投籃更準' },
+    { name: '校隊球員', icon: '🎽', kind: 'basket', L: 0, need: 2, ease: (n, t) => Math.max(1, n - Math.floor(t / 2)), desc: n => `投籃機（簡單）過 ${n} 關`, bells: 600, item: 'jersey_blue', perk: '🎯 投籃再更準' },
+    { name: '明星球員', icon: '🌟', kind: 'dodge', L: 0, need: 1, ease: (n, t) => n, desc: () => '熱血躲避球（簡單）贏一場', bells: 1000, item: 'jersey_red', perk: '🎯 投籃又更準' },
+    { name: 'MVP', icon: '🏆', kind: 'basket', L: 0, need: 3, ease: (n, t) => Math.max(1, n - Math.floor(t / 2)), desc: n => n === 3 ? '投籃機（簡單）三關全破' : `投籃機（簡單）過 ${n} 關`, bells: 2000, item: 'jersey_gold', perk: '🏆 MVP：投籃最準' }
+  ] },
+  track: { host: 'track', icon: '🏃', title: '運動會檢定', who: '體育老師', ranks: [
+    { name: '銅牌小跑手', icon: '🥉', kind: 'run', L: 0, need: 3, ease: (n, t) => Math.min(4, n + Math.floor((t + 1) / 2)), desc: n => `障礙賽跑（慢慢跑）拿到前 ${n} 名`, bells: 300, item: 'medal_bronze', perk: '👟 跑步招：賽跑跑得更快' },
+    { name: '銀牌小跑手', icon: '🥈', kind: 'sprint', L: 0, need: 2, ease: (n, t) => Math.min(4, n + Math.floor((t + 1) / 2)), desc: n => `百米衝刺（簡單）拿到前 ${n} 名`, bells: 600, item: 'medal_silver', perk: '🦘 彈跳招：跳遠跳得更遠' },
+    { name: '金牌小跑手', icon: '🥇', kind: 'longjump', L: 0, need: 3.2, ease: (n, t) => Math.max(1.8, Math.round((n - .4 * t) * 10) / 10), desc: n => `跳遠（簡單）跳到 ${n} 公尺`, bells: 1000, item: 'medal_gold', perk: '👟 跑步招：賽跑再更快' },
+    { name: '運動會冠軍', icon: '🏆', kind: 'run', L: 1, need: 1, ease: (n, t) => Math.min(4, n + Math.floor(t / 2)), desc: n => n === 1 ? '障礙賽跑（普通）拿到第一名' : `障礙賽跑（普通）拿到前 ${n} 名`, bells: 2000, item: 'champ_jacket', perk: '🏆 冠軍：跑得最快、跳得最遠' }
+  ] }
+};
+const EXAM_ORDER = ['swim', 'chef', 'ball', 'track'];
+let EXAM = null;                 // 正在考的：{ id, r, need, w }
+const examTries = {};            // 這次開著的遊戲裡，每一級考了幾次（越考越簡單）
+function examState() { if (!G.exams || typeof G.exams !== 'object') G.exams = {}; return G.exams; }
+function examRank(id) { const v = examState()[id]; return Number.isInteger(v) ? Math.max(0, Math.min(4, v)) : 0; }
+function examMul(id, per) { return 1 + (per || .05) * examRank(id); }   // 招數：每考過一級，那個遊戲就好一點
+function examNeed(id, r) { const rk = EXAM_TRACKS[id].ranks[r]; return rk.ease(rk.need, examTries[id + r] || 0); }
+function examMenuLabel(id) { const T = EXAM_TRACKS[id], r = examRank(id); return r >= 4 ? `🎖️ ${T.title}（${T.ranks[3].icon} ${T.ranks[3].name}！）` : `🎖️ ${T.title}（現在：${r ? T.ranks[r - 1].icon + ' ' + T.ranks[r - 1].name : '還沒考'}）`; }
+function openExam(id) {
+  const T = EXAM_TRACKS[id], r = examRank(id);
+  EXAM = null;
+  const w = openGameWindow(`🎖️ ${T.title}`, `${T.who}幫你考試！一級一級考，考過有獎金、新衣服，還會學到新招數。考不過沒關係，可以一直重考，會越考越簡單。`);
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const ladder = el('div', 'exam-ladder');
+  T.ranks.forEach((rk, i) => {
+    const row = el('div', 'exam-step' + (i < r ? ' done' : i === r ? ' next' : ' lock'));
+    const item = CLOTHES_BY_ID[rk.item];
+    row.append(el('span', 'exam-ic', i < r ? '✅' : i === r ? rk.icon : '🔒'), el('b', '', rk.name));
+    const info = el('div', 'exam-info');
+    if (i === r) info.appendChild(el('div', 'exam-need', '📝 ' + rk.desc(examNeed(id, i))));
+    info.appendChild(el('div', 'exam-prize', `🎁 💰 ${fmt(rk.bells)}＋${item ? item.name : ''}＋${rk.perk}`));
+    row.appendChild(info);
+    if (item) { const pic = renderGirl(previewOutfit(item.slot, item.id), 44, 54, { hair: G.hair }); pic.classList.add('exam-pic'); row.appendChild(pic); }
+    ladder.appendChild(row);
+  });
+  w.stage.appendChild(ladder);
+  if (r >= 4) { w.status.textContent = `${T.ranks[3].icon} 你已經是「${T.ranks[3].name}」了！全部考過了！`; leaveButton(w); return; }
+  const tries = examTries[id + r] || 0;
+  w.status.textContent = tries ? `第 ${tries + 1} 次考「${T.ranks[r].name}」，目標變簡單一點了！加油！` : `下一級：${T.ranks[r].icon} ${T.ranks[r].name}`;
+  const go = el('button', 'big', `📝 開始考「${T.ranks[r].name}」`);
+  go.onclick = () => { Sound.play('click'); examStart(w, id, r); };
+  w.btns.appendChild(go); leaveButton(w);
+  openExam.test = { w, id, r };
+}
+function examStart(w, id, r) {
+  const rk = EXAM_TRACKS[id].ranks[r];
+  EXAM = { id, r, need: examNeed(id, r), w };
+  const k = rk.kind;
+  if (k === 'swimRace') playSwim(w, SWIM_LEVELS[rk.L]);
+  else if (k === 'dive') playDive(w);
+  else if (k === 'chef') { closeGameWindow(); openChefGame(); EXAM = { id, r, need: examNeed(id, r), w: null }; }
+  else if (k === 'basket') playBasket(w, BB_LEVELS[rk.L]);
+  else if (k === 'dodge') playDodge(w, DB_LEVELS[rk.L]);
+  else if (k === 'run') playRun(w, RUN_LEVELS[rk.L]);
+  else if (k === 'sprint') playSprint(w, SPRINT_LEVELS[rk.L]);
+  else if (k === 'longjump') playLongJump(w, LJ_LEVELS[rk.L]);
+}
+// 小遊戲結束時呼叫：正在考試而且是這個遊戲，就判斷過了沒（v：名次越小越好的傳 {place}，越大越好的傳 {score}）
+function examHook(kind, res, w) {
+  const E = EXAM; if (!E) return;
+  const rk = EXAM_TRACKS[E.id].ranks[E.r]; if (rk.kind !== kind) { EXAM = null; return; }
+  EXAM = null;
+  const pass = res.place != null ? res.place <= E.need : res.score >= E.need;
+  const key = E.id + E.r, T = EXAM_TRACKS[E.id];
+  w.btns.innerHTML = '';
+  if (pass) {
+    examTries[key] = 0;
+    const st = examState(); st[E.id] = Math.max(examRank(E.id), E.r + 1);
+    const item = CLOTHES_BY_ID[rk.item]; if (item && !ownsClothes(item.id)) G.wardrobe.push(item.id);
+    addBells(rk.bells); refreshTop(); saveGame();
+    Sound.play('fanfare'); try { confettiBurst(110); } catch (e) {}
+    w.status.textContent = `🎉 考過了！你是「${rk.icon} ${rk.name}」！💰 +${fmt(rk.bells)}　🎁 ${item ? item.name : ''}　${rk.perk}`;
+    try { speak(`考過了！你是${rk.name}！`); } catch (e) {}
+    setTimeout(() => { try { showcase(item ? renderGirl(previewOutfit(item.slot, item.id), 110, 130, { hair: G.hair }) : el('div', 'magic-pic', rk.icon), `${T.title}：${rk.name}！`, `💰 ${fmt(rk.bells)}＋${item ? item.name + '（在換裝可以穿）' : ''}\n學會新招數：${rk.perk}`, { head: '🎖️ 考過了！' }); } catch (e) {} }, 300);
+    const nxt = el('button', 'big', E.r + 1 < 4 ? '🎖️ 看下一級' : '🏆 看我的成績'); nxt.onclick = () => { if (rk.kind === 'chef') closeGameWindow(); openExam(E.id); }; w.btns.appendChild(nxt);
+  } else {
+    examTries[key] = (examTries[key] || 0) + 1;
+    w.status.textContent = `差一點點！沒關係，再考一次，目標會變簡單：${rk.desc(examNeed(E.id, E.r))}`;
+    try { speak('差一點點！再考一次！'); } catch (e) {}
+    const again = el('button', 'big', '📝 再考一次'); again.onclick = () => { Sound.play('click'); if (rk.kind === 'chef') { closeGameWindow(); openExam(E.id); } else examStart(w, E.id, E.r); }; w.btns.appendChild(again);
+  }
+  const home = el('button', 'big alt', G.away ? '離開' : '回家'); home.onclick = () => { closeGameWindow(); renderTab(); }; w.btns.appendChild(home);
+}
 // 🎖️ 考腰帶：做一套比較長的動作（全對）＋踢 3 塊板（至少 2 塊）
 function openBeltExam() {
   const t = tkdState(), w = openGameWindow('🎖️ 考腰帶', '');
@@ -22842,7 +22991,7 @@ function playSwim(w, L) {
   // 🐬 必殺技「海豚衝刺」：游越多下能量越多，滿了按一下，變成海豚一下衝好遠
   const DOLPHIN = { name: '海豚衝刺', fx: '🐬', c: '#3fa9f5', c2: '#dff0ff' };
   let pw = 0, cutAt = 0, dash = 0, dashes = 0;
-  const stroke = () => { if (ended || t < 0 || cutAt) return; me = Math.min(LEN, me + .9 * fitMul('sta')); splash = .25; Sound.play('splash'); pw = Math.min(100, pw + 7); if (pw >= 100) bSp.style.display = ''; };
+  const stroke = () => { if (ended || t < 0 || cutAt) return; me = Math.min(LEN, me + .9 * fitMul('sta') * examMul('swim')); splash = .25; Sound.play('splash'); pw = Math.min(100, pw + 7); if (pw >= 100) bSp.style.display = ''; };
   const special = () => { if (ended || t < 0 || pw < 100 || cutAt) return; pw = 0; bSp.style.display = 'none'; cutAt = performance.now(); dashes++; Sound.play('magic'); try { speak(tkdSpecialName(DOLPHIN) + '！'); } catch (e) {} };
   bSp.onclick = special;
   const key = e => { if (ended) return; if (e.repeat) { if (e.code === 'Space') e.preventDefault(); return; } if (e.code === 'Space') { e.preventDefault(); stroke(); } else if (e.code === 'KeyS' || e.code === 'ArrowUp') { e.preventDefault(); special(); } };
@@ -22871,7 +23020,7 @@ function playSwim(w, L) {
       if (me >= LEN && !myDone) { myDone = 1; order.push('me'); }
       if (myDone) { ended = true; const rank = order.indexOf('me') + 1; document.removeEventListener('keydown', key); go.remove();
         const bells = payReward(w, SWIM_PRIZE[rank - 1] * L.mul); w.status.textContent = `${['🥇 第一名！', '🥈 第二名！', '🥉 第三名！', '第四名，下次加油！'][rank - 1]}💰 +${fmt(bells)}`;
-        try { fufuSay(rank === 1 ? '我游第一名！' : '好好玩喔！', 2400); } catch (e) {} gameButtons(w, openSwimRace); }
+        try { fufuSay(rank === 1 ? '我游第一名！' : '好好玩喔！', 2400); } catch (e) {} gameButtons(w, openSwimRace); examHook('swimRace', { place: rank }, w); }
     }
     draw(); if (!ended) raf = requestAnimationFrame(tick); else draw();
   };
@@ -22885,13 +23034,13 @@ function playDive(w) {
   w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
   const W = 320, H = 240, { c, g, pos } = gameCanvas(w.stage, W, H);
   let items = [], score = 0, got = 0, t = 0, next = .4, raf = 0, last = performance.now(), ended = false; const DUR = 30;
-  const end = () => { ended = true; cancelAnimationFrame(raf); const bells = payReward(w, score * 12); w.status.textContent = `撿到 ${got} 樣寶物！💰 +${fmt(bells)}`; try { fufuSay('噗哈！好多寶物！', 2400); } catch (e) {} gameButtons(w, openDiveGame); };
+  const end = () => { ended = true; cancelAnimationFrame(raf); const bells = payReward(w, score * 12); w.status.textContent = `撿到 ${got} 樣寶物！💰 +${fmt(bells)}`; try { fufuSay('噗哈！好多寶物！', 2400); } catch (e) {} gameButtons(w, openDiveGame); examHook('dive', { score: got }, w); };
   gameCleanup = () => { ended = true; cancelAnimationFrame(raf); };
   c.onpointerdown = e => { if (ended) return; e.preventDefault(); const p = pos(e); const it = items.find(q => !q.got && Math.hypot(q.x - p.x, q.y - p.y) < 26); if (it) { it.got = t; score += it.v; got++; Sound.play(it.v >= 3 ? 'perfect' : 'coin'); } else Sound.play('splash'); };
   const tick = now => {
     if (ended) return; const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
     if (t >= DUR) { end(); return; }
-    next -= dt; if (next <= 0) { next = .6 + Math.random() * .5; const r = Math.random(), pick = r < .06 ? DIVE_ITEMS[4] : r < .18 ? DIVE_ITEMS[3] : DIVE_ITEMS[Math.floor(Math.random() * 3)]; items.push({ e: pick[0], v: pick[1], x: 30 + Math.random() * (W - 60), y: 40 + Math.random() * (H - 70), t0: t, life: 1.6 + Math.random() * .8 }); }
+    next -= dt; if (next <= 0) { next = .6 + Math.random() * .5; const r = Math.random(), pick = r < .06 ? DIVE_ITEMS[4] : r < .18 ? DIVE_ITEMS[3] : DIVE_ITEMS[Math.floor(Math.random() * 3)]; items.push({ e: pick[0], v: pick[1], x: 30 + Math.random() * (W - 60), y: 40 + Math.random() * (H - 70), t0: t, life: (1.6 + Math.random() * .8) * (examRank('swim') >= 2 ? 1.3 : 1) }); }
     items = items.filter(q => (q.got ? t - q.got < .5 : t - q.t0 < q.life));
     g.fillStyle = '#4bb8e4'; g.fillRect(0, 0, W, H); g.fillStyle = '#3aa6d4'; for (let i = 0; i < 6; i++) g.fillRect(0, i * 44 + ((t * 20) % 44), W, 2);
     g.fillStyle = 'rgba(255,255,255,.18)'; for (let i = 0; i < 8; i++) { const bx = (i * 47 + t * 15) % W, by = H - ((t * 40 + i * 31) % H); g.beginPath(); g.arc(bx, by, 3, 0, Math.PI * 2); g.fill(); }
@@ -26528,7 +26677,7 @@ function playSprint(w, L) {
       w.status.textContent = `${place === 1 ? '🥇 第一名！' : `第 ${place} 名！`} ${time.toFixed(2)} 秒${rec ? '　🎉 新紀錄！' : ''}　起跑反應 ${react.toFixed(2)} 秒　💰 +${fmt(bells)}`;
       try { speak(place === 1 ? '第一名！好快！' : `第${place}名！`); } catch (e) {}
       kidMoodUp(place === 1 ? 10 : 5); saveGame();
-      gameButtons(w, openSprint);
+      gameButtons(w, openSprint); examHook('sprint', { place }, w);
     }, 1400);
   };
   const tick = now => {
@@ -26640,7 +26789,7 @@ function playLongJump(w, L) {
     if (ph !== 'run') return;
     if (x > LJ_BOARD) return foul();
     const gap = LJ_BOARD - x, eff = Math.max(0, 1 - gap / 140), sp = Math.min(1, v / 300);
-    dist = Math.round((1.4 + sp * 5.2 * (.45 + .55 * eff) + Math.random() * .25) * fitMul('spd') * 100) / 100;   // 💪 速度等級越高跳越遠
+    dist = Math.round((1.4 + sp * 5.2 * (.45 + .55 * eff) + Math.random() * .25) * fitMul('spd') * examMul('track', .03) * 100) / 100;   // 💪 速度等級越高跳越遠
     jx = x; ph = 'fly'; fly = 0; flyDur = .7 + dist * .08; Sound.play('jump');
     msg = gap < 25 ? '踏板踩得剛剛好！' : gap < 70 ? '起跳！' : '太早跳了～'; msgT = 1;
   };
@@ -26650,7 +26799,7 @@ function playLongJump(w, L) {
     if (n >= 3) {
       gameCleanup(); gameCleanup = null; const ts = trackState(), rec = best > 0 && (!ts.lj || best > ts.lj); if (rec) ts.lj = Math.round(best * 100) / 100;
       const bells = payReward(w, Math.round(best * 20 * L.mul) + (rec ? 40 : 0));
-      w.status.textContent = `最遠 ${best.toFixed(2)} 公尺${rec ? '　🎉 新紀錄！' : ''}　💰 +${fmt(bells)}`; try { speak(`${best.toFixed(1)}公尺！`); } catch (e) {} kidMoodUp(8); saveGame(); gameButtons(w, openLongJump); return;
+      w.status.textContent = `最遠 ${best.toFixed(2)} 公尺${rec ? '　🎉 新紀錄！' : ''}　💰 +${fmt(bells)}`; try { speak(`${best.toFixed(1)}公尺！`); } catch (e) {} kidMoodUp(8); saveGame(); gameButtons(w, openLongJump); examHook('longjump', { score: best }, w); return;
     }
     ph = 'ready'; x = 0; v = 0; msg = '再一次！'; msgT = 1; w.status.textContent = `第 ${n + 1} / 3 跳　最遠 ${best.toFixed(2)} 公尺`;
   };
@@ -26835,7 +26984,7 @@ const BB_LEVELS = [
 ];   // rounds：[秒數, 這關結束時要到的總分, 籃框移動速度]
 function openBasket() { const w = openGameWindow('🏀 投籃機', '點畫面上想投的地方，球就飛過去！一般、高手要等右邊的力量條到綠色再點。三關，每關要到目標分數才能進下一關！'); pickLevelRow(w, BB_LEVELS, L => L.power ? '三關＋力量條' : '三關，不用管力量', L => playBasket(w, L)); }
 function playBasket(w, L) {
-  L = Object.assign({}, L, { tol: L.tol * fitMul('str') });   // 💪 力量等級越高，越容易投進
+  L = Object.assign({}, L, { tol: L.tol * fitMul('str') * examMul('ball', .06) });   // 💪 力量等級越高，越容易投進
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   const W = 480, H = 300, { c, g, pos } = gameCanvas(w.stage, W, H);
   const pad = el('div', 'quest-pad'); w.stage.appendChild(pad);
@@ -26866,7 +27015,7 @@ function playBasket(w, L) {
       if (!live) return; gameCleanup(); const a = arenaState(), rec = score > (a.bm || 0); if (rec) a.bm = score;
       const bells = payReward(w, Math.round(score * 4 * L.mul) + cleared * 60 * L.mul + (rec && score >= 10 ? 50 : 0));
       w.status.textContent = `${cleared >= 3 ? '🏆 三關全破！' : `過了 ${cleared} 關`}　投進 ${made} / ${shots} 球，${score} 分${rec && score ? '　🎉 新紀錄！' : ''}　💰 +${fmt(bells)}`;
-      try { speak(cleared >= 3 ? '三關全破！好厲害！' : `${score}分！`); } catch (e) {} kidMoodUp(10); saveGame(); gameButtons(w, openBasket);
+      try { speak(cleared >= 3 ? '三關全破！好厲害！' : `${score}分！`); } catch (e) {} kidMoodUp(10); saveGame(); gameButtons(w, openBasket); examHook('basket', { score: cleared }, w);
     }, 1600);
   };
   const endRound = () => {
@@ -27112,7 +27261,7 @@ function playDodge(w, L) {
       if (!live) return; gameCleanup(); const a = arenaState(); if (win) a.db = (a.db || 0) + 1;
       const bells = payReward(w, DB_PRIZE[win ? 0 : 1] * L.mul + spCount * 20);
       w.status.textContent = `${win ? '🏆 我們贏了！' : '💪 好可惜！'}　打中 ${outs} 人${catches ? `　接住 ${catches} 球` : ''}${spCount ? `　必殺技 ${spCount} 次` : ''}　💰 +${fmt(bells)}`;
-      try { speak(win ? '我們贏了！' : '好可惜！'); } catch (e) {} kidMoodUp(win ? 12 : 5); saveGame(); gameButtons(w, openDodge);
+      try { speak(win ? '我們贏了！' : '好可惜！'); } catch (e) {} kidMoodUp(win ? 12 : 5); saveGame(); gameButtons(w, openDodge); examHook('dodge', { score: win ? 1 : 0 }, w);
     }, 1500);
   };
   const checkEnd = () => { if (!aliveThem().length) { finish(true); return true; } if (kid.out && us.every(q => q.out)) { finish(false); return true; } return false; };
@@ -28034,7 +28183,7 @@ function openChefGame() {
     const a = el('div', 'chef-col'); a.append(el('div', 'tkd-say', `${c.short || c.name} 要的：`), stackEl(want, 'want'));
     const b2 = el('div', 'chef-col'); b2.append(el('div', 'tkd-say', '你做的：'), got.length ? stackEl(got, 'got') : el('div', 'burger got empty', '🍽️'));
     top.append(a, b2); view.appendChild(top);
-    const row = el('div', 'tkd-moves'); BURGER_PARTS.forEach(([k, e, nm]) => { const bt = el('button', 'tkd-move'); bt.append(el('span', 'tkd-e', e), el('span', '', nm)); bt.onclick = () => add(k); row.appendChild(bt); }); view.appendChild(row);
+    const row = el('div', 'tkd-moves'); BURGER_PARTS.forEach(([k, e, nm]) => { const bt = el('button', 'tkd-move' + (examRank('chef') >= 2 && k === want[got.length] ? ' glow' : '')); bt.append(el('span', 'tkd-e', e), el('span', '', nm)); bt.onclick = () => add(k); row.appendChild(bt); }); view.appendChild(row);
     w.status.textContent = `第 ${i + 1} / ${N} 位客人　🍔 疊好了 ${got.length} / ${want.length} 層`;
   };
   const add = k => {
@@ -28044,7 +28193,7 @@ function openChefGame() {
     if (got.length === want.length) { Sound.play('perfect'); toast(`🍔 ${custs[i].short || ''}：好好吃！謝謝！`); if (!miss) perfect++; i++; next(); } else draw();
   };
   const next = () => {
-    if (i >= N) { const bells = payReward(w, 50 * N + perfect * 20); view.innerHTML = ''; view.appendChild(el('div', 'tkd-big', '🍔')); w.status.textContent = `做了 ${N} 個漢堡！一次都沒錯 ${perfect} 個　💰 打工錢 +${fmt(bells)}`; try { hostSay('辛苦了！你是很棒的小幫手！', 2600); } catch (e) {} gameButtons(w, openChefGame); return; }
+    if (i >= N) { const bells = payReward(w, Math.round((50 * N + perfect * 20) * examMul('chef', .15))); view.innerHTML = ''; view.appendChild(el('div', 'tkd-big', '🍔')); w.status.textContent = `做了 ${N} 個漢堡！一次都沒錯 ${perfect} 個　💰 打工錢 +${fmt(bells)}`; try { hostSay('辛苦了！你是很棒的小幫手！', 2600); } catch (e) {} gameButtons(w, openChefGame); examHook('chef', { score: perfect }, w); return; }
     const mids = ['meat', 'cheese', 'lettuce', 'tomato', 'egg'], n = 1 + Math.min(3, i); want = ['bun']; for (let k = 0; k < n; k++) want.push(mids[Math.floor(Math.random() * mids.length)]); want.push('top'); got = []; miss = 0; draw();
   };
   openChefGame.test = { want: () => want.slice(), add, i: () => i };
