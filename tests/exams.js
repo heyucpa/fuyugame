@@ -10,7 +10,7 @@ const path = require('path');
   const o = await p.evaluate(async () => {
     const o = {}, wait = ms => new Promise(r => setTimeout(r, ms)); G.guide = 'done'; $('#modal').hidden = true;
     const clear = () => { document.querySelectorAll('#showcase').forEach(x => x.remove()); if (typeof SC_QUEUE !== 'undefined') SC_QUEUE.length = 0; };
-    o.tracks = EXAM_ORDER.length === 4 && EXAM_ORDER.every(id => EXAM_TRACKS[id].ranks.length === 4 && EXAM_TRACKS[id].ranks.every(r => CLOTHES_BY_ID[r.item] && CLOTHES_BY_ID[r.item].prize));
+    o.tracks = EXAM_ORDER.length === 5 && EXAM_ORDER.every(id => EXAM_TRACKS[id].ranks.length === 4 && EXAM_TRACKS[id].ranks.every(r => CLOTHES_BY_ID[r.item] && CLOTHES_BY_ID[r.item].prize));
     // 考試畫面
     G.exams = {}; openExam('swim'); await wait(100);
     o.ladder = document.querySelectorAll('.exam-step').length === 4 && document.querySelectorAll('.exam-step.next').length === 1 && /開始考「小鴨級」/.test(document.querySelector('#modalCard').textContent);
