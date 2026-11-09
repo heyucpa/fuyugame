@@ -3473,6 +3473,8 @@ const PET_SPECIES = [
   /* 🌟 星光小精靈（家長：故事主線）：找齊 6 個星光線索，星星蛋才孵得出來；買的蛋永遠抽不到（story） */
   /* 🥋 黑帶熊貓（家長：跆拳道世界大賽冠軍的獎勵可以多一個寵物）：拿到世界冠軍才會來，買蛋抽不到（story） */
   { id: 'bbpanda', name: '黑帶熊貓', body: '#ffffff', edge: '#c9c9d4', belly: '#ffffff', inner: '#3a3240', ears: 'round', earCol: '#3a3240', patches: true, belt: '#26232a', sparkle: true, rare: true, story: true, weight: 0 },
+  /* 🦁 球球獅（家長：世界躲避球大賽冠軍送寵物）：拿到世界躲避球冠軍才會來，買蛋抽不到（story） */
+  { id: 'balllion', name: '球球獅', body: '#ffcf5a', edge: '#d99a2b', belly: '#fff1c4', inner: '#e0892b', ears: 'round', lionMane: '#f0902f', ballMark: true, sparkle: true, rare: true, story: true, weight: 0 },
   { id: 'starling', name: '星光小精靈', body: '#fff3b0', edge: '#e0b832', belly: '#ffffff', inner: '#ffb3c7', ears: 'tuft', wings: '#ffe9a8', halo: '#ffd35c', starMark: true, sparkle: true, rare: true, special: true, story: true, weight: 0 }
 ];
 const PET_SPECIES_BY_ID = Object.fromEntries(PET_SPECIES.map(s => [s.id, s]));
@@ -5240,6 +5242,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-16T21:00', title: '🏆 世界躲避球冠軍的新獎品', lines: [
+    ['🏝️', '拿到世界躲避球冠軍，地圖上會多一座「冠軍球場島」，點獎盃就能打躲避球'],
+    ['🦁', '還會送一隻新寵物「球球獅」（只有冠軍才有，買蛋抽不到）'],
+    ['🏆', '以前就拿過冠軍的，回到家就會收到']
+  ] },
   { id: '2026-11-16T20:00', title: '🔴 熱血躲避球大升級', lines: [
     ['🏟️', '躲避球換新球場：看台上的動物朋友會加油、猴子教練當裁判、出局會跳出大大的 OUT!'],
     ['💥', '必殺技有漫畫一樣的特寫，每一招的球都有特效'],
@@ -9688,7 +9695,7 @@ const PET_TRAIT_OF = {
   chick: 'sand', peachmouse: 'sand', marshpig: 'sand', cocoadog: 'sand',
   bunny: 'shy', sheep: 'shy', mochi: 'shy', bear: 'shy',
   dragon: 'jump', starfox: 'jump', strawcow: 'jump', rainbowuni: 'jump',
-  angelbunny: 'shy', galaxydragon: 'jump', starling: 'jump', bbpanda: 'jump'
+  angelbunny: 'shy', galaxydragon: 'jump', starling: 'jump', bbpanda: 'jump', balllion: 'jump'
 };
 const petTrait = () => (G.pet && PET_TRAIT_OF[G.pet.species]) || 'jump';
 const PET_TRAIT_NAMES = { fish: '愛看魚', sand: '愛玩沙', shy: '有點害羞', jump: '很活潑' };
@@ -10971,6 +10978,11 @@ function drawCreature(ctx, sp, look) {
     });
   }
 
+  if (sp.lionMane) {   // 🦁 獅子的鬃毛：頭的後面一圈蓬蓬的
+    ctx.fillStyle = sp.lionMane; ctx.strokeStyle = edge; ctx.lineWidth = L;
+    for (let i = 0; i < 11; i++) { const a = Math.PI + i / 10 * Math.PI, x = Math.cos(a) * 14, y = -9 + Math.sin(a) * 13; ctx.beginPath(); ctx.arc(x, y, 5.2, 0, Math.PI * 2); ctx.fill(); }
+    [-1, 1].forEach(sd => { ctx.beginPath(); ctx.arc(sd * 15, -3, 4.5, 0, Math.PI * 2); ctx.fill(); });
+  }
   // 耳朵（在身體後面）
   ctx.fillStyle = sp.earCol || body; ctx.strokeStyle = edge; ctx.lineWidth = L;
   if (sp.ears === 'round') {
@@ -11077,6 +11089,11 @@ function drawCreature(ctx, sp, look) {
     ctx.beginPath(); ctx.ellipse(4, -2.2, 2, 1.5, 0, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.moveTo(3.4, -1.4); ctx.lineTo(1.8, 1.6); ctx.lineTo(3.4, 1.4); ctx.closePath(); ctx.fill();
     ctx.beginPath(); ctx.moveTo(4.6, -1.4); ctx.lineTo(6.8, 1.4); ctx.lineTo(5.2, 1.7); ctx.closePath(); ctx.fill();
+  }
+  if (sp.ballMark) {   // 🔴 肚子上一顆小躲避球
+    const bx = 12, by = -3.5;   // 抱在身體旁邊
+    ctx.fillStyle = '#e8505b'; ctx.strokeStyle = '#b8323d'; ctx.lineWidth = .7; ctx.beginPath(); ctx.arc(bx, by, 3.6, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.beginPath(); ctx.moveTo(bx - 3.6, by); ctx.lineTo(bx + 3.6, by); ctx.moveTo(bx, by - 3.6); ctx.quadraticCurveTo(bx + 1.9, by, bx, by + 3.6); ctx.stroke();
   }
   if (sp.patches) { // 熊貓：黑眼圈
     ctx.fillStyle = '#3a3240'; const pfx = look.fx || 0;
@@ -13307,6 +13324,7 @@ function openTravelMenu() {
     const here = !!(G.away && G.away.place === 'friend' && PLACES.friend && PLACES.friend.inviteAt === inv.at && PLACES.friend.inviteName === inv.n);
     pick(renderInviteGirl(inv, 64, 58), `🏡 ${inviteWho(inv)}的家${here ? '（你在這裡）' : ''}`, `${inv.f ? inv.n + '・' : ''}邀請卡（${inviteDate(inv.at)}）・房間 ${inv.r.length} 間・寵物 ${inv.pn.length} 隻`, () => (typeof friendByBoat === 'function' && ii < ISL_FRIEND_SPOTS.length ? friendByBoat(ii) : visitFriend(inv)), here);   // 🏡 朋友家在朋友島：一樣坐船過去
   });
+  if (typeof champIsleOn === 'function' && champIsleOn()) pick(el('div', 'place-emoji', CHAMP_ISLE.icon), `🏝️ ${CHAMP_ISLE.icon} ${CHAMP_ISLE.name}`, CHAMP_ISLE.desc + '（走到碼頭坐船去）', () => isletByBoat('champ'), false);
   // 🏝️ 闖關送的小島（破完那個世界才有）
   QUEST_ISLETS.forEach((il, i) => { if (!(typeof questWorldDone === 'function' ? questWorldDone(i + 1) : questState().clear[(i + 1) + '-3'])) return; pick(el('div', 'place-emoji', il.icon), `🏝️ ${il.icon} ${typeof isleName === 'function' ? isleName(il.id) : il.name}`, il.desc + `（島主：${charName()}，走到碼頭坐船去）`, () => isletByBoat(il.id), false); });
   if (trickActive()) {
@@ -16335,6 +16353,14 @@ function tabEarn(body) {
 /* 🌟 星光小精靈不在商店的蛋裡（story）。圖鑑提示、以及「商店蛋都買完」的那句用這個判斷，不要改孵蛋池。 */
 const STARLING_DEX_HINT = '🌟 星光小精靈要闖關湊齊 6 個線索才會孵出，買蛋抽不到';
 const PANDA_DEX_HINT = '🥋 黑帶熊貓：跆拳道「🌏 世界大賽」拿到世界冠軍才會來，買蛋抽不到';
+const LION_DEX_HINT = '🦁 球球獅：「🌏 世界躲避球大賽」拿到冠軍才會來，買蛋抽不到';
+function lionKept() { return G.pets.some(p => p.species === 'balllion'); }
+function giveChampLion() {
+  if (lionKept()) return false;
+  const p = newPet('balllion', 'baby', ''); G.pets.push(p); try { growDexAdd && growDexAdd('balllion', 'baby'); } catch (e) {} saveGame();
+  try { Sound.play('fanfare'); showcase(renderPetPortrait(p, 150, 140), '世界躲避球冠軍的獎品：「球球獅」來了！', '只有拿到世界躲避球冠軍才遇得到的寵物，在寵物頁照顧牠喔！', { head: '🦁 新寵物！' }); } catch (e) {}
+  return true;
+}
 function pandaKept() { return G.pets.some(p => p.species === 'bbpanda'); }
 /* 🥋 世界冠軍送黑帶熊貓：還沒有才送（以前就拿過冠軍的，回到家會補送一次） */
 function giveChampPanda() {
@@ -16398,6 +16424,7 @@ function tabBook(body) {
   body.appendChild(note('寵物蛋摸一摸就會孵出來。「寵物」分頁可以買新的蛋。'));
   if (!starlingKept()) body.appendChild(note(STARLING_DEX_HINT));
   if (!pandaKept()) body.appendChild(note(PANDA_DEX_HINT));
+  if (!lionKept()) body.appendChild(note(LION_DEX_HINT));
   body.appendChild(petDexGrid());
   body.appendChild(sec('dexGrow', `🌱 成長圖鑑 ${growDexCount()} / ${growDexAll()}`));
   body.appendChild(note(`${charName()}吃營養的東西、做各種事、看繪本，會慢慢長大。寵物有寶寶、小朋友、大朋友三個樣子，養大就會收進來。還有一格隱藏的喔！`));
@@ -20931,7 +20958,8 @@ function islBuildings(n) {   // 固定的房子＋收到邀請卡的朋友家（
 }
 function islMap(nFriends) {
   const nQ = typeof questWorldsCleared === 'function' ? questWorldsCleared() : 0;   // 🗺️ 闖關破了幾個世界＝多幾座小島
-  if (islMapCache && islMapCache.nf === nFriends && islMapCache.nQ === nQ) return islMapCache;
+  const champ = typeof champIsleOn === 'function' && champIsleOn();
+  if (islMapCache && islMapCache.nf === nFriends && islMapCache.nQ === nQ && islMapCache.champ === champ) return islMapCache;
   const W = ISL.W, H = ISL.H, cx = 25.5, cy = 19.5;   // 主島的中心固定（地圖往下加大了也不會跟著跑）
   const land = [], beach = [], block = [], path = [], tree = [], flower = [];
   for (let y = 0; y < H; y++) {
@@ -20957,7 +20985,7 @@ function islMap(nFriends) {
   /* 🗺️ 闖關解鎖的小島：一樣是圓圓的小島＋木橋（先畫島，再從島心往主島鋪橋） */
   const isletAt = land.map(r => r.map(() => null)), specials = [], docks = [];
   /* 家長：新小島要坐船才能過去——不鋪橋，主島和小島各有一個小碼頭，點碼頭就坐船過去 */
-  (typeof QUEST_ISLETS !== 'undefined' ? QUEST_ISLETS.slice(0, nQ) : []).forEach(il => {
+  (typeof QUEST_ISLETS !== 'undefined' ? QUEST_ISLETS.slice(0, nQ) : []).concat(champ ? [CHAMP_ISLE] : []).forEach(il => {
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (Math.hypot(x - il.cx, y - il.cy) <= il.r && !land[y][x]) { isletAt[y][x] = il.id; land[y][x] = true; }
     let best = null, bd = 1e9;
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (isletAt[y][x] === il.id) { const d = Math.hypot(x - il.to[0], y - il.to[1]); if (d < bd) { bd = d; best = [x, y]; } }
@@ -21037,7 +21065,7 @@ function islMap(nFriends) {
   }
   const shells = [];   // 沙灘上的貝殼（點了可以撿）
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (land[y][x] && beach[y][x] && !block[y][x] && !path[y][x] && islHash(x, y, 11) > .955) shells.push({ x, y, id: shells.length });
-  islMapCache = { nf: nFriends, nQ, W, H, land, beach, block, path, tree, flower, blds, shells, bridge, isletAt, specials, docks };
+  islMapCache = { nf: nFriends, nQ, champ, W, H, land, beach, block, path, tree, flower, blds, shells, bridge, isletAt, specials, docks };
   return islMapCache;
 }
 const islPass = (m, x, y) => x >= 0 && y >= 0 && x < m.W && y < m.H && m.land[y][x] && !m.block[y][x];
@@ -24303,6 +24331,11 @@ PH_EXTRA.fetch = {
   }
 };
 /* 🏝️ 闖關解鎖的小島：位置、名字、島上的大東西（每天點一次有禮物） */
+/* 🏆 冠軍球場島（家長：世界躲避球大賽冠軍送一座島）：主島東邊的海上，坐船過去。
+   島上一座小球場、冠軍獎盃、看台和旗子；點獎盃就可以直接打躲避球。拿過冠軍（G.dbcup.gold > 0）才會出現。 */
+const CHAMP_ISLE = { id: 'champ', name: '冠軍球場島', icon: '🏆', desc: '世界躲避球冠軍的球場！點獎盃就可以打躲避球。', cx: 57, cy: 23, r: 3.9, to: [48, 22], sx: 57, sy: 23 };
+function champIsleOn() { return !!(G && G.dbcup && G.dbcup.gold > 0); }
+function anyIsle(id) { return id === 'champ' ? CHAMP_ISLE : (typeof QUEST_ISLETS !== 'undefined' ? QUEST_ISLETS.find(q => q.id === id) : null); }
 const QUEST_ISLETS = [
   { id: 'flower', name: '花花島', icon: '🌸', desc: '開滿花的小島，花可以摘，還有一棵大向日葵。', cx: 5, cy: 4, r: 3.9, to: [11, 8], sx: 5, sy: 4 },
   { id: 'candy', name: '糖果島', icon: '🍬', desc: '長滿棒棒糖樹，還有一根超大棒棒糖！', cx: 45, cy: 6, r: 4.6, to: [37, 9], sx: 45, sy: 6 },
@@ -24333,6 +24366,20 @@ function islDrawSpecial(ctx, sp, now) {
     ctx.fillStyle = '#fffaf0'; ctx.fillRect(-3, -56, 6, 56);
     ctx.translate(0, -70); ctx.fillStyle = '#ff6fa3'; ctx.beginPath(); ctx.arc(0, 0, 22, 0, 7); ctx.fill();
     ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 5; ctx.beginPath(); for (let a = 0; a < 20; a += .25) ctx.lineTo(Math.cos(a + t) * a, Math.sin(a + t) * a); ctx.stroke();
+    ctx.restore();
+  } else if (sp.id === 'champ') {   // 🏆 冠軍球場：小球場＋看台＋大獎盃＋旗子
+    ctx.save(); ctx.translate(px, py);
+    ctx.fillStyle = '#e9cf98'; ctx.fillRect(-58, -8, 116, 50); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.strokeRect(-54, -4, 108, 42); ctx.beginPath(); ctx.moveTo(0, -4); ctx.lineTo(0, 38); ctx.stroke(); ctx.beginPath(); ctx.ellipse(0, 17, 12, 7, 0, 0, 7); ctx.stroke();
+    ctx.fillStyle = 'rgba(47,111,209,.18)'; ctx.fillRect(-54, -4, 54, 42); ctx.fillStyle = 'rgba(232,80,91,.18)'; ctx.fillRect(0, -4, 54, 42);
+    ctx.fillStyle = '#c98b52'; ctx.fillRect(-58, -26, 116, 8); ctx.fillStyle = '#d99a5e'; ctx.fillRect(-58, -18, 116, 8);   // 看台
+    [-48, -28, -8, 12, 32, 50].forEach((x, i) => { MV.ball(ctx, x, -30 - Math.abs(Math.sin(t * 4 + i)) * 3, 5, ['#e8505b', '#ffd23f', '#6bb6ff', '#7bd389', '#ff9ec4', '#b18cff'][i]); });
+    [-62, 62].forEach((x, i) => { ctx.fillStyle = '#7a5230'; ctx.fillRect(x - 1, -58, 2, 50); ctx.fillStyle = i ? '#e8505b' : '#3f8fd1'; ctx.beginPath(); ctx.moveTo(x, -58); ctx.lineTo(x + (i ? -1 : 1) * (16 + Math.sin(t * 5) * 2), -52); ctx.lineTo(x, -46); ctx.fill(); });
+    ctx.translate(0, -4); ctx.rotate(Math.sin(now / 60) * .08 * k);
+    ctx.fillStyle = '#8a6a3a'; ctx.fillRect(-12, -10, 24, 10); ctx.fillStyle = '#ffd23f'; ctx.fillRect(-4, -26, 8, 16);   // 獎盃
+    ctx.beginPath(); ctx.moveTo(-15, -50); ctx.lineTo(15, -50); ctx.quadraticCurveTo(14, -26, 0, -24); ctx.quadraticCurveTo(-14, -26, -15, -50); ctx.fill();
+    ctx.strokeStyle = '#ffd23f'; ctx.lineWidth = 3; [-1, 1].forEach(s2 => { ctx.beginPath(); ctx.arc(s2 * 16, -42, 6, s2 > 0 ? -Math.PI / 2 : Math.PI / 2, s2 > 0 ? Math.PI / 2 : Math.PI * 1.5, s2 < 0); ctx.stroke(); });
+    ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.fillRect(-9, -47, 4, 14); MV.ball(ctx, 0, -40, 5, '#e8505b');
+    if (Math.floor(t * 2) % 2) { ctx.font = '12px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('✨', 18, -54); }
     ctx.restore();
   } else if (sp.id === 'dino') {   // 🦕 恐龍石像（點了會抖、會吼）
     ctx.save(); ctx.translate(px + Math.sin(now / 30) * 3 * k, py);
@@ -24381,6 +24428,11 @@ function isleOwnerLine(id, reuse) {
   return line;
 }
 function islQuestSpecial(o) {
+  if (o.id === 'champ') {   // 🏆 點獎盃：歡呼一下，直接打躲避球
+    isl.spTap = { id: o.id, t: performance.now() }; Sound.play('fanfare'); kidMoodUp(3);
+    islAddFx('say', o.x, o.y - 3.4, 2200, { text: '冠軍球場！來打一場躲避球吧！' }); try { speak('冠軍球場！來打一場躲避球吧！'); } catch (e) {}
+    setTimeout(() => { if (isl) openDodge(); }, 700); return;
+  }
   const day = today(), d = G.qIsleDay = (G.qIsleDay && G.qIsleDay.d === day) ? G.qIsleDay : { d: day, got: {} };
   isl.spTap = { id: o.id, t: performance.now() };
   kidMoodUp(2);
@@ -25922,7 +25974,7 @@ function islDrawDock(ctx, d, now) {
     ctx.restore();
   }
   ctx.font = '700 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ffffff'; ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.lineWidth = 3;
-  const il = d.id === 'friend' ? FRIEND_ISLE_INFO : QUEST_ISLETS.find(q => q.id === d.id), label = d.side === 'main' ? `⛵ ${il ? il.name : ''}` : '⛵ 回大島';
+  const il = d.id === 'friend' ? FRIEND_ISLE_INFO : anyIsle(d.id), label = d.side === 'main' ? `⛵ ${il ? il.name : ''}` : '⛵ 回大島';
   ctx.strokeText(label, x + T / 2, y - 2); ctx.fillText(label, x + T / 2, y - 2);
 }
 function islBoatRide(d) {
@@ -26020,7 +26072,7 @@ function friendIsleCheck() {
 function islShowNewIsle() {
   if (!G.fIsle && loadInvites().length) { friendIsleCheck(); return; }
   const q = questState(); if (!isl || !q.newIsle) return;
-  const il = q.newIsle === 'friend' ? FRIEND_ISLE_INFO : QUEST_ISLETS.find(x => x.id === q.newIsle); delete q.newIsle; saveGame();
+  const il = q.newIsle === 'friend' ? FRIEND_ISLE_INFO : anyIsle(q.newIsle); delete q.newIsle; saveGame();
   if (!il) return;
   isl.pan = { x: il.cx, y: il.cy, until: performance.now() + 3200 };
   for (let i = 0; i < 6; i++) setTimeout(() => { if (isl) islAddFx('spark', il.cx + (Math.random() - .5) * 4, il.cy + (Math.random() - .5) * 3, 900); }, 600 + i * 300);
@@ -27562,10 +27614,11 @@ function dbCupEnd(w, cup, r, win) {
   if (win && r < 4) { st.best = Math.max(st.best || 0, r + 1); saveGame(); Sound.play('questClear'); try { speak('贏了！晉級！'); } catch (e) {} dbCupBoard(w, cup, r + 1); return; }
   if (win) {   // 🏆 世界冠軍
     st.best = 5; const first = !st.gold; st.gold = (st.gold || 0) + 1;
-    let bells = payReward(w, DBCUP_PRIZE[5]); if (first) { addBells(2000); bells += 2000; if (!ownsClothes('db_crown')) G.wardrobe.push('db_crown'); }
+    let bells = payReward(w, DBCUP_PRIZE[5]); if (first) { addBells(2000); bells += 2000; if (!ownsClothes('db_crown')) G.wardrobe.push('db_crown'); questState().newIsle = 'champ'; try { islMapCache = null; } catch (e) {} }   // 🏆 新島：下次出門鏡頭會帶過去
     saveGame(); refreshTop(); Sound.play('fanfare'); try { confettiBurst(150); speak('世界冠軍！'); } catch (e) {}
     w.status.textContent = `🏆 世界躲避球冠軍！💰 +${fmt(bells)}${first ? '　🎁 世界躲避球冠軍金冠' : ''}`;
-    setTimeout(() => { try { showcase(first ? renderGirl(previewOutfit('head', 'db_crown'), 110, 130, { hair: G.hair }) : el('div', 'magic-pic', '🏆'), '世界躲避球冠軍！', first ? '第一次拿冠軍！送你 💰 2,000 和金冠（在換裝可以戴）' : `又拿到冠軍了！（${st.gold} 次）`, { head: '🎉 太棒了！' }); } catch (e) {} }, 300);
+    setTimeout(() => { try { showcase(first ? renderGirl(previewOutfit('head', 'db_crown'), 110, 130, { hair: G.hair }) : el('div', 'magic-pic', '🏆'), '世界躲避球冠軍！', first ? '第一次拿冠軍！送你 💰 2,000、金冠，還有一座「🏆 冠軍球場島」（出門就看得到）！' : `又拿到冠軍了！（${st.gold} 次）`, { head: '🎉 太棒了！' }); } catch (e) {} }, 300);
+    setTimeout(() => { try { giveChampLion(); } catch (e) {} }, 700);   // 🦁 球球獅（只送一次）
     const again = el('button', 'big', '🌏 再參加一次'); again.onclick = openDbCup; w.btns.appendChild(again);
   } else {
     cup.tries++;
@@ -28588,6 +28641,8 @@ Object.assign(ACTIVITIES, { stareggs: { label: '🌟 看星星蛋', name: '看�
 FURNITURE_ACT.star_egg = 'stareggs';
 if (!LINE_TYPES.some(t => t.key === 'act_stareggs')) LINE_TYPES.push({ key: 'act_stareggs', label: '做事：看星星蛋', hint: '', lines: ACTIVITIES.stareggs.lines });
 // 教學做完、畫面穩定的時候送星星蛋
+// 以前就拿過世界躲避球冠軍的：補送球球獅
+setInterval(() => { try { if (!G || G.guide !== 'done' || SAVE_LOCKED != null || lionKept() || !(G.dbcup && G.dbcup.gold > 0)) return; if (!$('#modal').hidden || document.getElementById('showcase') || document.querySelector('.stage.island-on')) return; giveChampLion(); } catch (e) {} }, 4000);
 // 以前就拿過世界冠軍的：補送黑帶熊貓（在家、沒有視窗開著的時候）
 setInterval(() => { try { if (!G || G.guide !== 'done' || SAVE_LOCKED != null || pandaKept() || !(G.tkd && G.tkd.world && G.tkd.world.gold > 0)) return; if (!$('#modal').hidden || document.getElementById('showcase') || document.querySelector('.stage.island-on')) return; giveChampPanda(); } catch (e) {} }, 4000);
 setInterval(() => { try { if (!G || !G.openGift || G.guide !== 'done' || SAVE_LOCKED != null || G.away || starState().egg) return; if (!$('#modal').hidden || document.getElementById('showcase') || document.querySelector('.stage.island-on') || (typeof giftVisit !== 'undefined' && giftVisit.state !== 'none') || hold) return; const li = typeof lastStageInput !== 'undefined' ? lastStageInput : 0; if (!li || Date.now() - li < 1500) return; starGiveEgg(); } catch (e) {} }, 3000);
