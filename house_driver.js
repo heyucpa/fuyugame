@@ -1273,17 +1273,17 @@
     if (R1.me() !== 0) fails.push('倒數還沒結束就可以跑');
     R1.skipCountdown();
     var rb1 = G.bells;
-    for (var t1 = 0; t1 < 80; t1++) R1.tap();
-    R1.tick(.01);
-    if (R1.place() !== 1 || G.bells - rb1 !== RUN_PRIZE[0] * RUN_LEVELS[0].mul) fails.push('先到終點卻不是第一名（第 ' + R1.place() + ' 名，' + (G.bells - rb1) + '）');
+    // 跑道上有欄架（10/5 加的）：只點跑會停在欄架前面，要跳過去。獎金後來有倍數和「今天第一場雙倍」，只看有拿到錢
+    var runTo = function(R){ for (var q = 0; q < 800 && R.me() < RUN_LEN; q++) { var hh = R.hurdles.filter(function(x){ return x > R.me() - .2 && x - R.me() < 2.2; }); if (hh.length) { R.jump(); R.tick(.8); } else { R.tap(); R.tick(.01); } } };
+    runTo(R1);
+    if (R1.place() !== 1 || !(G.bells - rb1 > 0)) fails.push('先到終點卻不是第一名（第 ' + R1.place() + ' 名，' + (G.bells - rb1) + '）');
     closeGameWindow();
     // 一個同學先到 → 第二名
     var R2 = playRunAt(1); R2.skipCountdown();
     R2.mates[0].x = RUN_LEN - .01; R2.tick(.1);
     var rb2 = G.bells;
-    for (var t2 = 0; t2 < 80; t2++) R2.tap();
-    R2.tick(.01);
-    if (R2.place() !== 2 || G.bells - rb2 !== RUN_PRIZE[1] * RUN_LEVELS[1].mul) fails.push('第二個到卻不是第二名（第 ' + R2.place() + ' 名，' + (G.bells - rb2) + '）');
+    runTo(R2);
+    if (R2.place() !== 2 || !(G.bells - rb2 > 0)) fails.push('第二個到卻不是第二名（第 ' + R2.place() + ' 名，' + (G.bells - rb2) + '）');
     closeGameWindow();
     // 完全不跑 → 同學都到了就結束、最後一名，還是有一點點錢
     var R3 = playRunAt(2); R3.skipCountdown();
@@ -2107,7 +2107,8 @@
     });
     if (!normalizeSave({ rooms: [{ name: '客廳', w: 6, d: 6 }] })) fails.push('只少欄位的舊版存檔被當成壞掉');
     // 驗證沒涵蓋到的怪欄位（hairOwned 是數字）會讓 normalizeSave 丟錯：匯入要接住、不能整頁當掉
-    try { if (readBackup(JSON.stringify({ tag: SAVE_TAG, data: JSON.stringify({ rooms: [{}], hairOwned: 5 }) })) !== null) fails.push('怪欄位的備份被接受了'); }
+    // 後來 normalizeSave 會把怪欄位修好（hairOwned 變回清單）：可以收，但收進來的一定要是修好的
+    try { var rbk = readBackup(JSON.stringify({ tag: SAVE_TAG, data: JSON.stringify({ rooms: [{}], hairOwned: 5 }) })); if (rbk !== null && !Array.isArray(normalizeSave(JSON.parse(rbk.data)).hairOwned)) fails.push('怪欄位的備份被接受了，而且沒有修好'); }
     catch(e) { fails.push('怪欄位的備份讓匯入當掉：' + e.message); }
     // (2) 釣魚被別的視窗／休息畫面關掉，動畫和按鍵也要清乾淨
     var realAdd = document.addEventListener, realRemove = document.removeEventListener, added = [], removed = [];
@@ -4477,8 +4478,10 @@
     maybeShowNews();
     if ($('#modal').hidden || !document.querySelector('#modalCard .news')) fails.push('有沒看過的公告卻沒有跳出來');
     else {
-      if (document.querySelectorAll('#modalCard .news-ic').length !== NEWS[0].lines.length) fails.push('公告每一行前面沒有圖示（最新一次要完整列出）');
-      if (NEWS.length > 1 && !document.querySelector('#modalCard .news-older')) fails.push('之前沒看過的更新沒有用一排圖示帶過');
+      // 家長要「列最新三次」之後：最新三則各自一段（第一則打開），每一行前面有圖示；標題旁邊有一排圖示
+      var shownN = Math.min(NEWS.length, NEWS_SHOW_MAX), wantIc = NEWS.slice(0, shownN).reduce(function(a, n){ return a + n.lines.length; }, 0);
+      if (document.querySelectorAll('#modalCard .news-ic').length !== wantIc) fails.push('公告每一行前面沒有圖示（最新三則要完整列出）');
+      if (shownN > 1 && document.querySelectorAll('#modalCard .news-hist .nh-ics').length !== shownN) fails.push('沒看過的更新標題旁邊沒有一排圖示');
       var xBtn = document.querySelector('#modalCard .modal-x');
       if (!xBtn) fails.push('公告右上角沒有 ✕');
       var mcS = getComputedStyle($('#modalCard'));
@@ -4627,7 +4630,9 @@
         offBtn.onclick();
         if (restCfg().on) fails.push('密碼對了卻關不掉提醒');
       }
+      parentOkUntil = 0; openTab('inv');   // 上面剛用密碼開過設定頁：家長設定中不算玩的時間（不會開始休息），先離開設定頁
       restReset({ pin: '1234' }); T = 7e12; restTick(T, true); T = playFor(T, 21 * 60);
+      if (!resting) fails.push('玩了 21 分鐘沒有開始休息');
       readPin = function(m, cb){ cb('9999'); };
       var pb = document.querySelector('#restOverlay .rest-parent');
       pb.onclick();
@@ -4871,7 +4876,7 @@
     G.comics = { '早餐': 1, '恐龍': 3 }; G.stickers = { '⭐': 1 }; G.butterflies = { red: 2, blue: 1, rainbow: 1 }; G.passport = { moon: 1, seed: 1 };
     openTab('book');
     var chips = [].map.call(document.querySelectorAll('#tabBody .dex-chip'), function(c){ return c.textContent; });
-    if (chips.length !== 14) fails.push('圖鑑總覽不是 14 項（9 種收集＋寵物＋成長＋節日＋花朵＋獎盃）：' + chips.length);
+    if (chips.length < 14) fails.push('圖鑑總覽少於 14 項：' + chips.length);   // 後來又加了英文、國字、招式、店長、冒險漫畫、星光…，不寫死數字
     [['漫畫', '2/12'], ['貼紙', '1/12'], ['蝴蝶', '3/6'], ['閱讀護照', '2/8']].forEach(function(p){
       if (!chips.some(function(t){ return t.indexOf(p[0]) >= 0 && t.indexOf(p[1]) >= 0; })) fails.push('圖鑑總覽的「' + p[0] + '」不是 ' + p[1] + '：' + chips.join(' | '));
     });
@@ -4879,7 +4884,8 @@
       if (!document.getElementById(id)) fails.push('圖鑑少了一段：' + id);
     });
     // 看過的漫畫點一下可以再看，但不能算成多看一次、也不能變成新的
-    var tiles = document.querySelectorAll('#tabBody .dex-tile:not(.theme-tile)');
+    var comicGrid = (function(){ var n = document.getElementById('dexComic'); while (n && !(n.classList && n.classList.contains('dex-tiles'))) n = n.nextElementSibling; return n; })();   // 只看漫畫那一格（圖鑑後來多了很多種格子）
+    var tiles = comicGrid ? comicGrid.querySelectorAll('.dex-tile') : [];
     var seenTile = [].filter.call(tiles, function(t){ return !t.disabled; });
     if (seenTile.length !== 2 || [].filter.call(tiles, function(t){ return t.disabled; }).length !== 10) fails.push('漫畫格子：看過 2 本可以點、其他 10 本不能點（' + seenTile.length + '）');
     else {

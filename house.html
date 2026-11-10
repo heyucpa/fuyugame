@@ -15837,7 +15837,7 @@ function showRest(until) {
     };
     ov.appendChild(bye);
     const unlock = el('button', 'rest-parent', '👨‍👩‍👧 家長提早結束');
-    unlock.onclick = () => askPin('提早結束休息', () => { const s = restState(); s.restUntil = 0; s.lastSeen = Date.now(); saveRestState(s); endRest(); });
+    unlock.onclick = () => askPin('提早結束休息', () => { const s = restState(); s.restUntil = 0; s.lastSeen = Date.now(); saveRestState(s); endRest(); }, true);   // 一定要輸入密碼：設定頁剛解鎖過也一樣（不然設定頁開著，小朋友自己就能結束休息）
     ov.appendChild(unlock);
     document.body.appendChild(ov);
   }
@@ -15889,10 +15889,10 @@ function endRest() {
   if (restPhoto) { const d = restPhoto; restPhoto = null; if ($('#modal').hidden) openPhotoSwap(d); }
 }
 // 家長密碼：沒有設密碼就直接通過；設了就要輸入對
-function askPin(why, ok) {
+function askPin(why, ok, always) {
   const c = restCfg();
   if (!c.pin) { ok(); return; } // 每次都要輸入：只輸入一次就整段免驗證，小朋友就可以自己改
-  if (tab === 'save' && Date.now() < parentOkUntil) { ok(); return; }   // 剛剛已經用密碼打開設定頁：設定頁裡的按鈕不用再問一次
+  if (!always && tab === 'save' && Date.now() < parentOkUntil) { ok(); return; }   // 剛剛已經用密碼打開設定頁：設定頁裡的按鈕不用再問一次（提早結束休息不算，一定要問）
   readPin(`${why}：請輸入家長密碼（4 位數字）`, v => {
     if (v === null) return;
     if (v.trim() === c.pin) ok();
