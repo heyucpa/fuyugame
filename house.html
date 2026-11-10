@@ -795,6 +795,7 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
   button[data-key] { position: relative; }
   button[data-key]::after { content: attr(data-key); position: absolute; right: -6px; bottom: -8px; background: #fff; color: #3a3240; border: 1.5px solid #8a7f90; border-radius: 6px; font: 800 11px/1.35 system-ui, sans-serif; padding: 0 5px; white-space: nowrap; pointer-events: none; box-shadow: 0 1px 2px rgba(0,0,0,.15); }
 }
+.find-banner { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 7; background: rgba(255,250,240,.96); border: 2px solid #ffd23f; border-radius: 999px; padding: 6px 16px; font-weight: 800; color: #6b4a1a; box-shadow: 0 4px 12px rgba(0,0,0,.12); white-space: nowrap; max-width: 92%; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
 .sock-grid { display: grid; grid-template-columns: repeat(4, 64px); gap: 8px; justify-content: center; margin: 8px 0; }
 .sock { width: 64px; height: 72px; border-radius: 12px; border: 2px solid var(--line); background: #fff; display: flex; align-items: center; justify-content: center; }
 .sock.on { border-color: #ffd23f; box-shadow: 0 0 0 3px rgba(255,210,63,.4); } .sock.done { opacity: .25; }
@@ -2692,6 +2693,30 @@ const PLACE_FURNITURE = [
       { x: 2.82, y: .12, w: .1, d: .1, z: 0, h: 72, c: '#3f6fd1' }, { x: 2.82, y: .78, w: .1, d: .1, z: 0, h: 72, c: '#3f6fd1' },
       { x: 2.1, y: .12, w: .8, d: .06, z: 53, h: 10, c: '#3f6fd1' }, { x: 2.1, y: .82, w: .8, d: .06, z: 53, h: 10, c: '#3f6fd1' }  // 平台欄杆
     ] },
+  /* ☁️ 爸爸媽媽家的天空花園才有的東西（商店不賣） */
+  { id: 'cloud_tramp', name: '雲朵彈跳床', theme: 'cute', w: 2, d: 2,
+    parts: [
+      { k: 'ball', x: .35, y: .35, z: 8, r: 13, c: '#ffffff' }, { k: 'ball', x: 1.65, y: .35, z: 8, r: 13, c: '#ffffff' },
+      { k: 'ball', x: .35, y: 1.65, z: 8, r: 13, c: '#ffffff' }, { k: 'ball', x: 1.65, y: 1.65, z: 8, r: 13, c: '#ffffff' },
+      { k: 'ball', x: 1, y: .3, z: 10, r: 14, c: '#f4f9ff' }, { k: 'ball', x: 1, y: 1.7, z: 10, r: 14, c: '#f4f9ff' },
+      { k: 'ball', x: .3, y: 1, z: 10, r: 14, c: '#f4f9ff' }, { k: 'ball', x: 1.7, y: 1, z: 10, r: 14, c: '#f4f9ff' },
+      { x: .45, y: .45, w: 1.1, d: 1.1, z: 16, h: 3, c: '#bfe6ff' }
+    ] },
+  { id: 'rainbow_arch', name: '彩虹拱門', theme: 'cute', w: 3, d: 1,
+    parts: [{ x: .05, y: .3, w: .3, d: .4, z: 0, h: 6, c: '#ffffff' }, { x: 2.65, y: .3, w: .3, d: .4, z: 0, h: 6, c: '#ffffff' }].concat(['#ff6b6b', '#ffb84d', '#ffe066', '#7bd389', '#6bb6ff', '#b18cff'].flatMap((c, b) => Array.from({ length: 13 }, (_, i) => { const a = Math.PI * i / 12, R = 1.35 - b * .13; return { k: 'ball', x: 1.5 - Math.cos(a) * R, y: .5, z: 6 + Math.sin(a) * (66 - b * 7), r: 4.5, c }; }))) },
+  { id: 'hot_air_balloon', name: '熱氣球', theme: 'cute', w: 2, d: 2,
+    parts: [
+      { x: .7, y: .7, w: .6, d: .6, z: 0, h: 16, c: '#b07a4a' }, { x: .7, y: .7, w: .6, d: .6, z: 16, h: 2, c: '#8a5a33' },
+      { x: .72, y: .72, w: .04, d: .04, z: 18, h: 38, c: '#7a5230' }, { x: 1.24, y: .72, w: .04, d: .04, z: 18, h: 38, c: '#7a5230' },
+      { x: .72, y: 1.24, w: .04, d: .04, z: 18, h: 38, c: '#7a5230' }, { x: 1.24, y: 1.24, w: .04, d: .04, z: 18, h: 38, c: '#7a5230' },
+      { k: 'ball', x: 1, y: 1, z: 64, r: 18, c: '#ff6b6b' }, { k: 'ball', x: 1, y: 1, z: 90, r: 32, c: '#ff6b6b' }, { k: 'ball', x: 1.12, y: 1.12, z: 92, r: 12, c: '#ffd23f' }, { k: 'ball', x: 1.2, y: 1.2, z: 70, r: 7, c: '#ffd23f' }
+    ] },
+  { id: 'kite_post', name: '風箏', theme: 'cute', w: 1, d: 1,
+    parts: [
+      { x: .45, y: .45, w: .1, d: .1, z: 0, h: 96, c: '#c9c3b8' },
+      { k: 'ball', x: .5, y: .5, z: 108, r: 10, c: '#ff8fb3' }, { k: 'ball', x: .5, y: .5, z: 114, r: 6, c: '#ffd23f' },
+      { k: 'ball', x: .35, y: .6, z: 92, r: 3, c: '#6bb6ff' }, { k: 'ball', x: .25, y: .7, z: 84, r: 3, c: '#7bd389' }, { k: 'ball', x: .15, y: .8, z: 76, r: 3, c: '#ff6b6b' }
+    ] },
   { id: 'slide', name: '溜滑梯', theme: 'cute', w: 3, d: 1,
     parts: [
       { x: .05, y: .15, w: .1, d: .1, z: 0, h: 58, c: '#e8505b' },
@@ -3168,12 +3193,16 @@ const PLACES = {
   /* ☁️ 天空島（家長：多一個爸爸媽媽家，在天空，坐直升機上去）：媽媽在家裡、爸爸在天空花園 */
   sky: { name: '爸爸媽媽家', host: 'mom', emoji: '☁️', desc: '坐直升機飛上天！爸爸媽媽的家：一起吃飯、聽故事、舉高高、修東西、放風箏。', rooms: [
     { name: '爸爸媽媽家', host: 'mom', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_wood', items: [
-      ['kitchen', 0, 0], ['fridge', 2, 0], ['bookshelf', 6, 0], ['plant_l', 9, 0],
-      ['dining_table', 1, 3], ['dining_chair', 1, 2], ['dining_chair', 2, 5, 2],
-      ['sofa', 6, 4, 3], ['flower_vase', 5, 8], ['photo_frame', 9, 8], ['plant_l', 0, 9]
-    ], wallItems: [['window', 'L', 3], ['heart_frame', 'R', 4], ['wall_clock', 'R', 7]] },
+      // 家長：爸媽家有些單調 → 廚房、餐桌、鋼琴、落地鐘、客廳（沙發對電視、地毯、立燈）、衣帽架、牆上掛你的獎狀和全家的畫
+      ['kitchen', 0, 0], ['fridge', 2, 0], ['clock', 3, 0], ['piano', 4, 0], ['bookshelf', 6, 0], ['plant_l', 9, 0],
+      ['dining_table', 1, 3], ['dining_chair', 1, 2], ['dining_chair', 2, 5, 2], ['lamp', 9, 2],
+      ['sofa', 6, 4, 3], ['cute_rug', 7, 4], ['tv', 9, 4, 3],
+      ['star_lamp', 0, 7], ['flower_vase', 5, 8], ['photo_frame', 9, 7], ['coat_rack', 9, 9], ['plant_l', 0, 9]
+    ], wallItems: [['window', 'L', 3], ['art_mountain', 'L', 6], ['certificate', 'L', 8], ['art_flower', 'R', 1], ['heart_frame', 'R', 4], ['wall_clock', 'R', 7]] },
     { name: '天空花園', host: 'dad', w: 10, d: 10, wall: 'wp_balcony', floor: 'fl_grass', items: [
-      ['slide', 1, 1], ['swing', 6, 1], ['cloud_sofa', 4, 5], ['flower_bed', 0, 8], ['flower_bed', 7, 8], ['sunflower', 9, 4], ['sunflower', 0, 5], ['park_bench', 6, 7]
+      // 家長：天空花園很普通 → 雲朵彈跳床、彩虹拱門、熱氣球、風箏，雲上才有的東西（點了可以玩）
+      ['slide', 1, 1], ['swing', 6, 1], ['kite_post', 9, 1], ['rainbow_arch', 4, 3], ['sunflower', 0, 4],
+      ['cloud_tramp', 1, 5], ['hot_air_balloon', 8, 6], ['cloud_sofa', 4, 7], ['flower_bed', 0, 8], ['star_lamp', 9, 9]
     ], wallItems: [] }
   ] },
   grandma: { name: '阿婆家', host: 'grandma', emoji: '🐐', desc: '水果、小果園，還有小牛小羊！', rooms: [
@@ -5267,6 +5296,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-18T22:00', title: '☁️ 爸爸媽媽家變漂亮了', lines: [
+    ['☁️', '爸爸媽媽家的外面變成藍天白雲，房子坐在一朵大白雲上'],
+    ['🔎', '新遊戲「幫媽媽找東西」：媽媽的眼鏡、鑰匙藏在家具旁邊，點點看，會說好冷還是好熱'],
+    ['🎏', '新遊戲「跟爸爸放風箏」：按住拉線，讓風箏飛高高碰星星'],
+    ['🌈', '天空花園多了雲朵彈跳床、彩虹拱門、熱氣球，彈跳床可以玩小遊戲']
+  ] },
   { id: '2026-11-18T20:00', title: '☁️ 爸爸媽媽家（在天上）', lines: [
     ['🚁', '地圖上我的家上面多了停機坪，坐直升機就能飛到天上的爸爸媽媽家'],
     ['👩', '媽媽家：一起吃飯、聽床邊故事、拿零用錢、拍全家福'],
@@ -12862,14 +12897,15 @@ function parMenu(list, who) {
     list.push(['🍚 跟媽媽一起吃飯', () => { if (!parOnce('meal')) { hostSay('今天已經吃飽飽了，明天再來吃喔！', 2600); return; } G.kid.hunger = 100; kidMoodUp(12); const d = ['咖哩飯', '番茄蛋炒飯', '玉米濃湯', '水餃', '蛋包飯'][Math.floor(Math.random() * 5)]; Sound.play('pickUp'); hostSay(`媽媽煮了${d}，多吃一點喔！`, 3000); toast(`🍚 媽媽煮的${d}好好吃！肚子飽飽、心情變好了`); saveGame(); refreshTop(); }]);
     list.push(['📖 聽媽媽講床邊故事', () => { if (parOnce('story')) kidMoodUp(10); hostSay('來，媽媽講故事給你聽～', 2200); setTimeout(() => { try { openNextStorybook({ aloud: true }); } catch (e) {} }, 600); }]);
     list.push(['💵 拿今天的零用錢', () => { if (typeof allowanceWanted === 'function' && allowanceWanted()) { hostSay('乖孩子，來拿零用錢喔！', 2400); openAllowanceBox(); } else hostSay('零用錢已經拿過了喔～明天再來！', 2600); }]);
+    list.push(['🔎 幫媽媽找東西', () => { $('#modal').hidden = true; startFindGame(); }]);
     list.push(['📷 拍全家福', () => { hostSay('來～大家笑一個！一、二、三！', 2400); setTimeout(() => { try { $('#modal').hidden = true; takePhoto(); } catch (e) {} }, 900); }]);
     list.push(['🎨 幫爸媽家換外觀', () => openHomeLook('par')]);
   } else if (who === 'dad') {
     list.push(['✈️ 爸爸舉高高', () => { Sound.play('jump'); try { fufu.jumpT = .35; setTimeout(() => { fufu.jumpT = .35; }, 420); setTimeout(() => { fufu.jumpT = .35; }, 840); } catch (e) {} if (parOnce('lift')) kidMoodUp(10); hostSay('飛高高囉～咻～！', 2400); fufuSay('哇～我在飛！', 2400); host.a.happyUntil = performance.now() + 2000; }]);
     list.push(['🔧 跟爸爸一起修東西', openFixGame]);
     list.push(['🧺 幫忙摺襪子（做家事）', openChoreGame]);
-    list.push(['🎏 跟爸爸放風箏', () => { if (parOnce('kite')) kidMoodUp(8); Sound.play('magic'); hostSay('風好大！風箏飛好高喔！', 2800); fufuSay('風箏飛到雲上面了！', 2600); toast('🎏 風箏飛得好高好高！'); }]);
-    list.push(['☁️ 跳雲朵彈跳床', () => { Sound.play('boing'); try { [0, 380, 760, 1140].forEach(d => setTimeout(() => { fufu.jumpT = .35; }, d)); } catch (e) {} kidMoodUp(4); fufuSay('彈～彈～彈！好好玩！', 2400); }]);
+    list.push(['🎏 跟爸爸放風箏（小遊戲）', () => { if (parOnce('kite')) kidMoodUp(4); openKiteGame(); }]);
+    list.push(['☁️ 跳雲朵彈跳床（小遊戲）', openBounceGame]);
   }
 }
 // 🔧 跟爸爸修東西：爸爸說要什麼工具，點對的那一個（六歲也會：錯了會告訴你是哪一個）
@@ -12915,6 +12951,137 @@ function openChoreGame() {
   };
   draw(); openChoreGame.test = { cards, tap };
 }
+/* ☁️ 爸爸媽媽家的背景（家長：背景應該是雲朵）：藍天、慢慢飄的雲，房間底下是一大朵白雲 */
+function skyRoomBackdrop(ctx, cw, ch, now) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  const gr = ctx.createLinearGradient(0, 0, 0, ch); gr.addColorStop(0, '#8fcfff'); gr.addColorStop(.7, '#d6efff'); gr.addColorStop(1, '#fdfaff'); ctx.fillStyle = gr; ctx.fillRect(0, 0, cw, ch);
+  const t = now / 1000, s = Math.max(.6, Math.min(cw, ch) / 600);
+  for (let i = 0; i < 9; i++) {
+    const y = ch * (.08 + (i % 5) * .18), sp = 8 + (i % 3) * 5, x = ((i * 271 + t * sp * s) % (cw + 300 * s)) - 150 * s, r = (26 + (i % 4) * 9) * s;
+    ctx.fillStyle = `rgba(255,255,255,${.75 + (i % 2) * .15})`; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.arc(x + r * 1.1, y + r * .2, r * .8, 0, 7); ctx.arc(x - r, y + r * .25, r * .7, 0, 7); ctx.arc(x + r * .3, y - r * .45, r * .7, 0, 7); ctx.fill();
+  }
+}
+function skyRoomCloudBase(ctx, room) {   // 房間底下一大朵雲（取代地上的影子）
+  const c = iso(room.w / 2, room.d / 2), rx = (room.w + room.d) * TW / 4 + 30, ry = (room.w + room.d) * TH / 4 + 22;
+  ctx.fillStyle = '#ffffff';
+  for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2; ctx.beginPath(); ctx.arc(c.x + Math.cos(a) * rx * .92, c.y + 22 + Math.sin(a) * ry * .92, 26 + (i % 3) * 8, 0, 7); ctx.fill(); }
+  ctx.beginPath(); ctx.ellipse(c.x, c.y + 22, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(180,210,240,.35)'; ctx.beginPath(); ctx.ellipse(c.x, c.y + 40, rx * .9, ry * .7, 0, 0, Math.PI); ctx.fill();
+}
+/* 🔎 幫媽媽找東西（只有這裡有）：媽媽的眼鏡、鑰匙…藏在家裡某件家具旁邊，點家具找；點錯會說「好冷／溫溫的／好熱！」 */
+const FIND_THINGS = [['👓', '眼鏡'], ['🔑', '鑰匙'], ['📱', '手機'], ['👛', '錢包'], ['🧦', '襪子'], ['📖', '食譜'], ['🎀', '髮夾']];
+let findGame = null;
+function findBanner(text) { let b = document.getElementById('findBanner'); if (!text) { if (b) b.remove(); return; } if (!b) { b = el('div', 'find-banner'); b.id = 'findBanner'; $('.stage').appendChild(b); } b.textContent = text; }
+function startFindGame() {
+  if (!G.away || G.away.place !== 'sky' || G.away.idx !== 0) return;
+  const room = curRoom(), pool = (room.items || []).filter(it => { const d = FURN_BY_ID[it.id]; return d && d.layer !== 'floor'; }).sort(() => Math.random() - .5);
+  const things = FIND_THINGS.slice().sort(() => Math.random() - .5).slice(0, 3);
+  findGame = { list: things.map((th, i) => ({ uid: pool[i % pool.length].uid, emoji: th[0], name: th[1] })), i: 0, tries: 0, got: 0 };
+  const cur = findGame.list[0]; hostSay(`媽媽的${cur.name}不見了！幫媽媽找一找～`, 3200); findBanner(`🔎 幫媽媽找 ${cur.emoji} ${cur.name}：點家具找找看！（1 / 3）`); Sound.play('magic');
+  startFindGame.test = findGame;
+}
+function findTap(it) {
+  const g0 = findGame, cur = g0.list[g0.i], room = curRoom(), tgt = (room.items || []).find(x => x.uid === cur.uid);
+  if (!tgt) { findGame = null; findBanner(''); return; }
+  if (it.uid === cur.uid) {
+    Sound.play('perfect'); g0.got++; toast(`${cur.emoji} 找到媽媽的${cur.name}了！`); hostSay('哇！找到了！謝謝你～', 2200); kidMoodUp(4);
+    g0.i++;
+    if (g0.i >= g0.list.length) { findGame = null; findBanner(''); const bonus = g0.tries <= 4 ? 100 : 0; addBells(150 + bonus); refreshTop(); saveGame(); Sound.play('fanfare'); setTimeout(() => { try { showcase(el('div', 'magic-pic', g0.list.map(x => x.emoji).join('')), '全部找到了！', `媽媽說你是找東西小偵探！💰 +${fmt(150 + bonus)}`, { head: '🔎 找東西' }); } catch (e) {} }, 400); return; }
+    const nx = g0.list[g0.i]; setTimeout(() => hostSay(`還有${nx.name}也不見了…`, 2400), 900); findBanner(`🔎 幫媽媽找 ${nx.emoji} ${nx.name}：點家具找找看！（${g0.i + 1} / 3）`);
+    return;
+  }
+  g0.tries++; const d = Math.hypot(it.x - tgt.x, it.y - tgt.y);
+  const hint = d <= 2.2 ? '🔥 好熱！就在旁邊了！' : d <= 4.5 ? '♨️ 溫溫的，有一點近了' : '🧊 好冷～不在這附近';
+  Sound.play(d <= 2.2 ? 'starPop' : 'click'); hostSay(hint, 1800);
+  findBanner(`🔎 找 ${cur.emoji} ${cur.name}：${hint}（${g0.i + 1} / 3）`);
+}
+setInterval(() => { if (findGame && !(G.away && G.away.place === 'sky' && G.away.idx === 0)) { findGame = null; findBanner(''); } }, 1000);
+/* 🎏 放風箏（只有這裡有）：按住拉線風箏會往上，放開會往下；風一陣一陣的。讓風箏留在天上、碰到星星得分。40 秒 */
+function openKiteGame() {
+  const w = openGameWindow('🎏 跟爸爸放風箏', '按住畫面（或空白鍵）拉線，風箏就往上飛；放開會慢慢往下。碰到 ⭐ 得分，不要讓風箏掉到地上！');
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const W = 360, H = 260, { c, g } = gameCanvas(w.stage, W, H);
+  let y = 120, vy = 0, x = 230, hold = false, live = true, raf = 0, last = performance.now(), t = 0, score = 0, wind = 0, windT = 0, stars = [], fall = 0, ended = false; const DUR = 40;
+  const down = e => { if (e) e.preventDefault(); hold = true; }, up = () => { hold = false; };
+  c.addEventListener('pointerdown', down); ['pointerup', 'pointerleave', 'pointercancel'].forEach(k => c.addEventListener(k, up));
+  const kd = e => { if (e.code === 'Space') { e.preventDefault(); hold = true; } }, ku = e => { if (e.code === 'Space') hold = false; };
+  document.addEventListener('keydown', kd); document.addEventListener('keyup', ku);
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); document.removeEventListener('keyup', ku); };
+  const end = () => { ended = true; gameCleanup(); const bells = payReward(w, 30 + score * 15); w.status.textContent = `風箏飛了 ${DUR} 秒！碰到 ${score} 顆星星　💰 +${fmt(bells)}`; kidMoodUp(8); try { hostSay(score >= 8 ? '哇！你是放風箏高手！' : '風箏飛得好高喔！', 2600); } catch (e) {} saveGame(); gameButtons(w, openKiteGame); };
+  const tick = now => {
+    if (!live) return; const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+    windT -= dt; if (windT <= 0) { windT = 1.5 + Math.random() * 2; wind = (Math.random() - .5) * 120; }
+    if (fall > 0) { fall -= dt; y = Math.min(H - 30, y + 120 * dt); if (fall <= 0) { y = 120; vy = 0; } }
+    else { vy += (hold ? -320 : 300) * dt + wind * dt * .6; vy = Math.max(-140, Math.min(120, vy)); y += vy * dt; x = 230 + Math.sin(t * .8) * 40 + wind * .2;
+      if (y < 30) { y = 30; vy = 0; } if (y > H - 40) { fall = 1.2; Sound.play('miss'); toast('風箏掉下來了！再拉起來～'); } }
+    if (Math.random() < dt * 1.3) stars.push({ x: W + 10, y: 40 + Math.random() * (H - 110) });
+    stars.forEach(s2 => { s2.x -= 70 * dt; if (!s2.got && fall <= 0 && Math.hypot(s2.x - x, s2.y - y) < 22) { s2.got = 1; score++; Sound.play('coin'); } }); stars = stars.filter(s2 => s2.x > -20 && !s2.got);
+    const sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#8fcfff'); sky.addColorStop(1, '#e8f7ff'); g.fillStyle = sky; g.fillRect(0, 0, W, H);
+    for (let i = 0; i < 5; i++) { const cx = ((i * 97 - t * 20) % (W + 80) + W + 80) % (W + 80) - 40, cy = 30 + (i % 3) * 50; g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.arc(cx, cy, 16, 0, 7); g.arc(cx + 18, cy + 4, 12, 0, 7); g.arc(cx - 16, cy + 5, 11, 0, 7); g.fill(); }
+    g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(W / 2, H + 10, W * .7, 40, 0, 0, 7); g.fill();
+    g.font = '18px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; stars.forEach(s2 => g.fillText('⭐', s2.x, s2.y));
+    g.strokeStyle = 'rgba(80,80,80,.6)'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(40, H - 34); g.quadraticCurveTo((40 + x) / 2, Math.max(y, H - 60), x, y + 14); g.stroke();
+    g.save(); g.translate(x, y); g.rotate(Math.sin(t * 3) * .12 + wind * .002); g.fillStyle = '#ff8fb3'; g.beginPath(); g.moveTo(0, -18); g.lineTo(14, 0); g.lineTo(0, 18); g.lineTo(-14, 0); g.closePath(); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(0, -18); g.lineTo(0, 18); g.moveTo(-14, 0); g.lineTo(14, 0); g.stroke();
+    ['#ffd23f', '#6bb6ff', '#7bd389'].forEach((cc, i) => { g.fillStyle = cc; g.beginPath(); g.arc(Math.sin(t * 5 + i) * 6, 22 + i * 9, 3.5, 0, 7); g.fill(); }); g.restore();
+    g.save(); g.translate(40, H - 22); g.scale(.42, .42); try { if (kidBaby()) drawBabyKid(g, { t }); else drawGirl(g, { t, blink: false, outfit: currentOutfit(), face: 'joy', stage: kidLookStage() }); } catch (e) {} g.restore();
+    g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(8, 8, 120, 22); g.fillStyle = '#fff'; g.font = '700 13px sans-serif'; g.textAlign = 'left'; g.fillText(`⭐ ${score}　⏱️ ${Math.max(0, Math.ceil(DUR - t))}`, 14, 20);
+    if (Math.abs(wind) > 40) { g.font = '14px sans-serif'; g.textAlign = 'right'; g.fillStyle = '#fff'; g.fillText(wind > 0 ? '💨 風往下吹！' : '💨 風往上吹～', W - 10, 20); }
+    g.textBaseline = 'alphabetic';
+    if (t >= DUR && !ended) { end(); return; }
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+  openKiteGame.test = { st: () => ({ y, score, t, fall, ended }), hold: v => { hold = v; }, addStar: () => stars.push({ x, y }), fast: () => { t = DUR; } };
+}
+/* ☁️ 雲朵彈跳床（只有這裡有）：小可愛落到雲上的一瞬間按「彈！」就彈更高；越高越能碰到上面的星星。彈 10 下 */
+function openBounceGame() {
+  const w = openGameWindow('☁️ 雲朵彈跳床', '小可愛快落到雲朵上的時候按「彈！」（或空白鍵），時機對了會彈得更高！碰到 ⭐ 得分。');
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const W = 300, H = 300, { c, g } = gameCanvas(w.stage, W, H);
+  const pad = el('div', 'quest-pad'), bB = el('button', 'quest-btn qb-j', '☁️ 彈！'); bB.dataset.key = '空白'; pad.appendChild(bB); w.stage.appendChild(pad);
+  let h = 0, vh = 260, live = true, raf = 0, last = performance.now(), t = 0, n = 0, best = 0, score = 0, pressed = -1, msg = '', msgT = 0, ended = false, stars = [], cam = 0;
+  for (let i = 0; i < 40; i++) stars.push({ h: 80 + i * 55 + Math.random() * 30, x: 40 + Math.random() * (W - 80) });
+  const press = () => { if (!ended) pressed = t; };
+  bB.addEventListener('pointerdown', e => { e.preventDefault(); press(); }); c.addEventListener('pointerdown', e => { e.preventDefault(); press(); });
+  const kd = e => { if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) press(); } }; document.addEventListener('keydown', kd);
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); };
+  const end = () => { ended = true; gameCleanup(); const bells = payReward(w, 20 + score * 12 + Math.round(best / 20)); w.status.textContent = `最高 ${Math.round(best / 10)} 公尺！碰到 ${score} 顆星星　💰 +${fmt(bells)}`; kidMoodUp(8); try { hostSay('彈得好高喔！好厲害！', 2400); } catch (e) {} saveGame(); gameButtons(w, openBounceGame); };
+  const tick = now => {
+    if (!live) return; const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt; msgT -= dt;
+    vh -= 520 * dt; h += vh * dt;
+    if (h <= 0) {   // 落到雲上：看按的時機
+      h = 0; n++; const good = pressed >= 0 && t - pressed < .28;
+      vh = good ? Math.min(900, Math.max(320, vh * -1 + 90)) : Math.max(260, -vh * .75);
+      msg = good ? (vh > 700 ? '🌟 超級彈！' : '✨ 彈得好！') : '再早一點點按～'; msgT = .8; Sound.play(good ? 'boing' : 'jump'); pressed = -1;
+      if (n >= 10) { msg = '最後一下！'; }
+      if (n > 10 && !ended) { end(); return; }
+    }
+    best = Math.max(best, h);
+    stars.forEach(s2 => { if (!s2.got && Math.abs(s2.h - h) < 18 && Math.abs(s2.x - W / 2) < 60) { s2.got = 1; score++; Sound.play('coin'); } });
+    cam += ((h > 150 ? h - 150 : 0) - cam) * Math.min(1, dt * 6);
+    const sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, `hsl(${205 + Math.min(40, cam / 40)},75%,${76 - Math.min(30, cam / 60)}%)`); sky.addColorStop(1, '#eaf7ff'); g.fillStyle = sky; g.fillRect(0, 0, W, H);
+    const Y = hh => H - 50 - (hh - cam);
+    g.font = '18px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; stars.forEach(s2 => { const yy = Y(s2.h); if (!s2.got && yy > -20 && yy < H) g.fillText('⭐', s2.x, yy); });
+    const by = Y(0); if (by < H + 40) { g.fillStyle = '#ffffff'; [[-60, 6, 22], [-25, 0, 26], [20, 2, 26], [58, 6, 20], [0, 12, 24]].forEach(([a, b2, r]) => { g.beginPath(); g.arc(W / 2 + a, by + 26 + b2, r, 0, 7); g.fill(); }); g.fillStyle = '#bfe6ff'; g.fillRect(W / 2 - 50, by + 10, 100, 5); }
+    const ky = Y(h), sq = h < 6 ? .82 : 1;
+    g.save(); g.translate(W / 2, ky + 10); g.scale(.55, .55 * sq); try { if (kidBaby()) drawBabyKid(g, { t }); else drawGirl(g, { t, blink: false, outfit: currentOutfit(), face: 'joy', stage: kidLookStage() }); } catch (e) {} g.restore();
+    if (h < 60 && vh < 0) { const k = Math.max(0, 1 - h / 60); g.strokeStyle = `rgba(255,210,63,${k})`; g.lineWidth = 3; g.beginPath(); g.arc(W / 2, by + 10, 30 + (1 - k) * 30, 0, 7); g.stroke(); }   // 快落地：圈圈縮小＝準備按
+    g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(8, 8, 150, 22); g.fillStyle = '#fff'; g.font = '700 13px sans-serif'; g.textAlign = 'left'; g.fillText(`⭐ ${score}　📏 ${Math.round(h / 10)} 公尺　${Math.min(n, 10)}/10`, 14, 20);
+    if (msgT > 0 && msg) { g.font = '900 20px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.lineWidth = 5; g.strokeStyle = '#fff'; g.strokeText(msg, W / 2, 60); g.fillStyle = '#e8505b'; g.fillText(msg, W / 2, 60); }
+    g.textBaseline = 'alphabetic';
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+  openBounceGame.test = { st: () => ({ h, vh, n, best, score, ended }), press };
+}
+// 天空花園的東西點了可以玩
+Object.assign(FURNITURE_ACT, { cloud_tramp: 'skybounce', kite_post: 'skykite', hot_air_balloon: 'skyballoon', rainbow_arch: 'skyrainbow' });
+Object.assign(ACTIVITIES, {
+  skybounce: { label: '☁️ 跳雲朵彈跳床', name: '跳彈跳床', fx: '☁️', open: () => openBounceGame(), lines: ['彈～彈～彈！'] },
+  skykite: { label: '🎏 放風箏', name: '放風箏', fx: '🎏', open: () => openKiteGame(), lines: ['風箏飛高高！'] },
+  skyballoon: { label: '🎈 坐上熱氣球看風景', name: '坐熱氣球', fx: '🎈', lines: ['好高喔！看得到我們家！', '雲朵就在旁邊耶！', '熱氣球飄啊飄～', '下面的小島好小喔！'] },
+  skyrainbow: { label: '🌈 穿過彩虹', name: '穿過彩虹', fx: '🌈', lines: ['我穿過彩虹了！', '彩虹有七個顏色喔！', '許一個願望～', '彩虹好漂亮！'] }
+});
 function hostMenuEntries() {
   const s = host.n.short, now = () => performance.now();
   const list = [
@@ -14553,15 +14720,20 @@ function draw() {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const sea = seasonOfMonth();
-  try { drawSeasonBack(ctx, dpr, sea, performance.now()); } catch (e) {}   // 🍂 四季：房間後面飄花瓣／泡泡／落葉／雪
+  const inSky = !!(G.away && G.away.place === 'sky');
+  if (inSky) { try { skyRoomBackdrop(ctx, canvas.width, canvas.height, performance.now()); } catch (e) {} }   // ☁️ 爸爸媽媽家：藍天白雲
+  else try { drawSeasonBack(ctx, dpr, sea, performance.now()); } catch (e) {}   // 🍂 四季：房間後面飄花瓣／泡泡／落葉／雪
   ctx.setTransform(view.scale * dpr, 0, 0, view.scale * dpr, view.ox * dpr, view.oy * dpr);
   const room = curRoom();
   // 陰影底座（四季換顏色：春天粉粉的、秋天金黃、冬天積雪）
+  if (inSky) skyRoomCloudBase(ctx, room);   // 房間坐在一朵大白雲上
+  else {
   ctx.fillStyle = (SEASON_FX_ON && SEASON_GROUND[sea]) || 'rgba(60,90,60,.18)';
   ctx.beginPath();
   const c = iso(room.w / 2, room.d / 2);
   ctx.ellipse(c.x, c.y + 18, (room.w + room.d) * TW / 4 + 20, (room.w + room.d) * TH / 4 + 14, 0, 0, Math.PI * 2);
   ctx.fill();
+  }
   drawRoom(ctx, room, { ghost: hold, hoverUid: hold ? null : hoverUid, showGrid: !!hold || decorMode, extras: [fufuDrawEntry()].concat(petDrawEntries(), visitorDrawEntries(), (typeof ghostDrawEntries === 'function' ? ghostDrawEntries() : []), hostDrawEntries(),   /* 幽靈在後面的 script：第一幀可能還沒載入 */ supplyDrawEntries(), giftDrawEntries(), phDrawEntries()), occupants: [fufuOccupant(), petOccupant(), visitorOccupant()].concat(phOccupants(), compOccupants()) });
   petDrawOverlay(ctx);
   visitorDrawOverlay(ctx, performance.now());
@@ -15524,6 +15696,7 @@ canvas.addEventListener('pointerup', e => {
   if (fa) { openMenu(farmMenuEntries(fa), e); return; }
   if (fufuHit(w)) { if (fufu.pose && fufu.pose.type === 'lie') fufuPoke(); else showKidMenu(e); return; } // 睡覺中點她就叫醒
   const it = pickItem(w);
+  if (it && findGame) { findTap(it); return; }   // 🔎 幫媽媽找東西：點家具找
   if (it) { if (decorMode && (!G.away || inPetHouse())) showDecorMenu(it, e); else if (canUse(it) || (it.top && (!G.away || inPetHouse()))) showItemMenu(it, e); else if (!G.away || inPetHouse()) { decorHintOnce(); const c = nearestFree(curRoom(), it.x + .5, it.y + .5); if (c) { fufu.pendingSay = null; fufuWalkTo(c[0], c[1]); } } return; }   // 🛠️ 平常不會一點就拿起來   // 桌上有東西：點了先問要做什麼（以前一點就把整張桌子拿起來，桌上的東西收不掉）
   const wi = G.away && !inPetHouse() ? null : pickWallItem(w);
   if (wi && decorMode) { startHoldWall(wi); return; }
