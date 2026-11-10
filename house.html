@@ -795,6 +795,9 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
   button[data-key] { position: relative; }
   button[data-key]::after { content: attr(data-key); position: absolute; right: -6px; bottom: -8px; background: #fff; color: #3a3240; border: 1.5px solid #8a7f90; border-radius: 6px; font: 800 11px/1.35 system-ui, sans-serif; padding: 0 5px; white-space: nowrap; pointer-events: none; box-shadow: 0 1px 2px rgba(0,0,0,.15); }
 }
+.sock-grid { display: grid; grid-template-columns: repeat(4, 64px); gap: 8px; justify-content: center; margin: 8px 0; }
+.sock { width: 64px; height: 72px; border-radius: 12px; border: 2px solid var(--line); background: #fff; display: flex; align-items: center; justify-content: center; }
+.sock.on { border-color: #ffd23f; box-shadow: 0 0 0 3px rgba(255,210,63,.4); } .sock.done { opacity: .25; }
 .home-shop-btn { width: 100%; margin: 4px 0 10px; }
 .home-prev { display: block; margin: 0 auto 6px; border-radius: 14px; max-width: 100%; }
 .home-info { text-align: center; font-weight: 800; color: #b5651d; font-size: 13px; margin-bottom: 6px; }
@@ -3139,6 +3142,8 @@ const HOSTS = {
   restaurant: { id: 'restaurant', name: '貓咪主廚', short: '貓主廚', body: '#ffd9a8', edge: '#d9a86a', belly: '#fff4e0', inner: '#ffb3c7', ears: 'pointy', acc: 'hat', accColor: '#ffffff' },
   hospital: { id: 'hospital', name: '小羊醫生', short: '羊醫生', body: '#fbfbf7', edge: '#d9d4c9', belly: '#ffffff', inner: '#ffb3c7', ears: 'curl', acc: 'glasses', accColor: '#3a3842' },
   gym: { id: 'gym', name: '河馬教練', short: '河教練', body: '#b9a6d9', edge: '#8a78b0', belly: '#e9dcf7', inner: '#ffb3c7', ears: 'round', acc: 'scarf', accColor: '#e8505b' },
+  mom: { id: 'mom', name: '媽媽', short: '媽媽', parentOf: 0, body: '#ffd9c2', edge: '#e0a888', belly: '#fff4ec', inner: '#ffb3c7', ears: 'round' },   // 👩 天空島的媽媽（畫成人，不是動物）
+  dad: { id: 'dad', name: '爸爸', short: '爸爸', parentOf: 1, body: '#e8c4a8', edge: '#c49a78', belly: '#fff4ec', inner: '#c49a78', ears: 'round' },
   arena: { id: 'arena', name: '猴子教練', short: '猴教練', body: '#b07a4a', edge: '#86572e', belly: '#f2d6b0', inner: '#f2d6b0', ears: 'round', acc: 'hat', accColor: '#e8505b' },
   track: { id: 'track', name: '花豹教練', short: '豹教練', body: '#f2b04a', edge: '#c98a2a', belly: '#fff1d6', inner: '#c98a2a', ears: 'round', acc: 'scarf', accColor: '#2f6fd1' },
   swim: { id: 'swim', name: '鴨鴨教練', short: '鴨教練', body: '#ffe066', edge: '#e0b630', belly: '#fff6c8', inner: '#e0b630', ears: 'tuft', acc: 'bill', accColor: '#ff9a3c' },
@@ -3159,6 +3164,17 @@ const PLACES = {
       ['beanbag', 6, 2], ['beanbag', 8, 2],
       ['gaming_desk', 7, 6, 1], ['gaming_chair', 8, 6, 3], ['comic_pile', 2, 8]
     ], wallItems: [['anime_poster', 'L', 6], ['game_poster', 'L', 8], ['star_lights', 'R', 4], ['anime_poster', 'R', 8]] } // 海報不要掛在漫畫櫃後面
+  ] },
+  /* ☁️ 天空島（家長：多一個爸爸媽媽家，在天空，坐直升機上去）：媽媽在家裡、爸爸在天空花園 */
+  sky: { name: '天空島・爸爸媽媽家', host: 'mom', emoji: '☁️', desc: '坐直升機飛上天！爸爸媽媽的家：一起吃飯、聽故事、舉高高、修東西、放風箏。', rooms: [
+    { name: '爸爸媽媽家', host: 'mom', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_wood', items: [
+      ['kitchen', 0, 0], ['fridge', 2, 0], ['bookshelf', 6, 0], ['plant_l', 9, 0],
+      ['dining_table', 1, 3], ['dining_chair', 1, 2], ['dining_chair', 2, 5, 2],
+      ['sofa', 6, 4, 3], ['flower_vase', 5, 8], ['photo_frame', 9, 8], ['plant_l', 0, 9]
+    ], wallItems: [['window', 'L', 3], ['heart_frame', 'R', 4], ['wall_clock', 'R', 7]] },
+    { name: '天空花園', host: 'dad', w: 10, d: 10, wall: 'wp_balcony', floor: 'fl_grass', items: [
+      ['slide', 1, 1], ['swing', 6, 1], ['cloud_sofa', 4, 5], ['flower_bed', 0, 8], ['flower_bed', 7, 8], ['sunflower', 9, 4], ['sunflower', 0, 5], ['park_bench', 6, 7]
+    ], wallItems: [] }
   ] },
   grandma: { name: '阿婆家', host: 'grandma', emoji: '🐐', desc: '水果、小果園，還有小牛小羊！', rooms: [
     { name: '阿婆家', w: 10, d: 10, wall: 'wp_log', floor: 'fl_wood', items: [
@@ -3356,6 +3372,8 @@ LINE_TYPES.push(
   { key: 'hostSwim', label: '游泳教練說的話', hint: '可用 {名字}', lines: ['{名字}，下水前先做暖身操喔！', '不可以在池邊跑步，會滑倒喔', '憋氣、吐氣，咕嚕咕嚕～', '打水的時候腳要伸直', '游完記得擦乾、多喝水！'] },
   { key: 'hostRanger', label: '園長說的話', hint: '可用 {名字}', lines: ['{名字}，歡迎來公園玩！', '花圃的蝴蝶今天好多喔', '公園的花不能摘，拍照就好囉', '池塘裡的魚很會躲喔', '垃圾要記得帶回家喔', '天氣好熱，要不要吃冰淇淋？', '要不要在草地上野餐？'] },
   { key: 'hostTeacher', label: '老師說的話', hint: '可用 {名字}', lines: ['{名字}早安！今天也要開心上課喔', '下課了，去操場玩一下吧！', '要不要來小考？答對有獎勵喔', '去操場跟同學賽跑吧！', '寫字的時候背要挺直喔', '有問題要舉手問老師喔', '下課記得喝水、上廁所～', '作業寫好了可以拿給老師看喔'] },
+  { key: 'hostMom', label: '媽媽說的話（天空島）', hint: '可用 {名字}', lines: ['{名字}回來啦！媽媽好想你～', '肚子餓不餓？媽媽煮好吃的給你吃！', '今天在外面玩得開心嗎？', '要不要聽媽媽講故事？', '{名字}又長高了耶！'] },
+  { key: 'hostDad', label: '爸爸說的話（天空島）', hint: '可用 {名字}', lines: ['{名字}！來，爸爸舉高高！', '要不要一起修東西？爸爸教你！', '今天風很大，最適合放風箏了！', '幫爸爸摺襪子好不好？', '{名字}好厲害，爸爸以你為榮！'] },
   { key: 'hostGrandma', label: '阿婆說的話', hint: '可用 {名字}', lines: ['{名字}來啦！快來吃水果～', '後面的果園水果熟了，要不要去摘？', '多吃點水果，身體才會壯壯的', '阿婆泡了茶，要不要喝一點？', '寫完功課，阿婆帶你去果園散步好不好？', '慢慢吃，不要噎到喔～', '小牛小羊肚子餓了，要不要幫阿婆餵牠們？', '農場的小羊最喜歡你了～', '今天小農場又來了新朋友喔！', '有時候山上的猴子會跑下來，只能遠遠看喔'] },
   { key: 'travelGo', label: '出門', hint: '可用 {地點}', lines: ['出發去{地點}囉！', '要去{地點}玩了～'] },
   { key: 'travelHome', label: '回家', lines: ['回家囉！', '還是自己家最舒服～', '我回來了！'] },
@@ -5249,6 +5267,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-18T20:00', title: '☁️ 天空島：爸爸媽媽的家', lines: [
+    ['🚁', '地圖上我的家上面多了停機坪，坐直升機就能飛上天空島'],
+    ['👩', '媽媽家：一起吃飯、聽床邊故事、拿零用錢、拍全家福'],
+    ['👨', '天空花園的爸爸：舉高高、一起修東西、摺襪子做家事、放風箏、跳雲朵彈跳床'],
+    ['🎨', '還可以幫爸媽家換外觀，送給爸爸媽媽！']
+  ] },
   { id: '2026-11-17T20:00', title: '🏡 房子可以換外觀了', lines: [
     ['🎨', '商店最上面「🏡 房子外觀」：牆壁、屋頂、門換顏色，還有木頭小屋、蘑菇屋、糖果屋、樹屋、小城堡'],
     ['🏷️', '可以掛自己的門牌、在屋頂插小旗子、門口擺信箱、花圃、小狗屋、鞦韆'],
@@ -6261,6 +6285,7 @@ function normalizeSave(g) {
   if (out.enLearn != null) { if (!isObj(out.enLearn)) delete out.enLearn; else out.enLearn = Object.fromEntries(Object.entries(out.enLearn).filter(([k, v]) => k.length <= 30 && /^[A-Za-z ]+$/.test(k) && v === 1)); }   // 🔤 學過的英文單字
   if (out.cloudKing != null && !(isObj(out.cloudKing) && Number.isInteger(out.cloudKing.beat) && out.cloudKing.beat >= 0 && out.cloudKing.beat < 1e6)) delete out.cloudKing;   // ☁️ 打倒烏雲大王幾次
   if (out.noSeasonFx != null && out.noSeasonFx !== 1) delete out.noSeasonFx;   // 🍂 關掉季節裝飾
+  if (out.par != null) { if (!isObj(out.par)) delete out.par; else Object.keys(out.par).forEach(k => { if (!['meal', 'story', 'lift', 'kite'].includes(k) || typeof out.par[k] !== 'string' || out.par[k].length > 12) delete out.par[k]; }); }   // 👨👩 天空島每天一次的事
   if (out.famVisit != null) { if (!isObj(out.famVisit)) delete out.famVisit; else Object.keys(out.famVisit).forEach(k => { if (!['uncle', 'grandma'].includes(k) || !(Number.isInteger(out.famVisit[k]) && out.famVisit[k] >= 0 && out.famVisit[k] < 1e5)) delete out.famVisit[k]; }); }   // ⑧ 拜訪阿婆、叔叔的次數
   if (out.home != null) {   // 🏡 房子外觀
     if (!isObj(out.home)) delete out.home;
@@ -6269,6 +6294,7 @@ function normalizeSave(g) {
       ['wall', 'roof', 'door', 'style', 'flag'].forEach(k => { if (!okId(k, hm[k])) delete hm[k]; });
       ['decoL', 'decoR'].forEach(k => { if (!okId('deco', hm[k])) delete hm[k]; });
       if (hm.sign != null && typeof hm.sign !== 'string') delete hm.sign; else if (typeof hm.sign === 'string') hm.sign = hm.sign.slice(0, 8);
+      if (hm.par != null) { if (!isObj(hm.par)) delete hm.par; else { ['wall', 'roof', 'door', 'style', 'flag'].forEach(k => { if (!okId(k, hm.par[k])) delete hm.par[k]; }); ['decoL', 'decoR'].forEach(k => { if (!okId('deco', hm.par[k])) delete hm.par[k]; }); Object.keys(hm.par).forEach(k => { if (!['wall', 'roof', 'door', 'style', 'flag', 'decoL', 'decoR'].includes(k)) delete hm.par[k]; }); } }
       if (hm.contest != null && !(isObj(hm.contest) && Number.isInteger(hm.contest.wk) && Number.isInteger(hm.contest.stars) && hm.contest.stars >= 1 && hm.contest.stars <= 3)) delete hm.contest;
       if (hm.newAt != null && !(typeof hm.newAt === 'number' && isFinite(hm.newAt))) delete hm.newAt; if (hm.seenAt != null && !(typeof hm.seenAt === 'number' && isFinite(hm.seenAt))) delete hm.seenAt; } }
   if (out.dbcup != null) { if (!isObj(out.dbcup)) delete out.dbcup; else { if (!(Number.isInteger(out.dbcup.best) && out.dbcup.best >= 0 && out.dbcup.best <= 5)) out.dbcup.best = 0; if (!(Number.isInteger(out.dbcup.gold) && out.dbcup.gold >= 0 && out.dbcup.gold < 1e6)) out.dbcup.gold = 0; } }   // 🌏 世界躲避球大賽
@@ -12641,7 +12667,7 @@ function hostMemoryLine(id) {
 
 // ── 親戚家：叔叔、阿婆在家裡陪小可愛（跟著她走，偶爾說話）──
 const host = { n: null, a: null, say: null, sayUntil: 0, nextTalkAt: 0, danceUntil: 0, nextHop: 0 };
-const HOST_LINE_KEYS = { restaurant: 'hostRestaurant', hospital: 'hostHospital', gym: 'hostGym', arena: 'hostArena', track: 'hostTrack', cinema: 'hostCinema', tkd: 'hostTkd', swim: 'hostSwim', amuse: 'hostAmuse', friend: 'hostFriend', uncle: 'hostUncle', grandma: 'hostGrandma', teacher: 'hostTeacher', ranger: 'hostRanger', librarian: 'hostLibrarian' };
+const HOST_LINE_KEYS = { mom: 'hostMom', dad: 'hostDad', restaurant: 'hostRestaurant', hospital: 'hostHospital', gym: 'hostGym', arena: 'hostArena', track: 'hostTrack', cinema: 'hostCinema', tkd: 'hostTkd', swim: 'hostSwim', amuse: 'hostAmuse', friend: 'hostFriend', uncle: 'hostUncle', grandma: 'hostGrandma', teacher: 'hostTeacher', ranger: 'hostRanger', librarian: 'hostLibrarian' };
 const hostLineKey = () => HOST_LINE_KEYS[host.n.id] || 'hostGrandma';
 function hostSay(text, ms) {
   if (!text) return;
@@ -12828,6 +12854,67 @@ function hostHit(w) {
   const a = host.a, p = iso(a.x, a.y, 0), k = VISITOR_K, h = host.n.girl ? 66 : 32 * k;
   return w.x > p.x - 18 * k && w.x < p.x + 18 * k && w.y > p.y - h && w.y < p.y + 5;
 }
+/* 👨👩 天空島：爸爸媽媽可以一起做的事（每天一次的有記在 G.par = { meal, story, lift, kite }，值是日期） */
+function parState() { if (!G.par || typeof G.par !== 'object') G.par = {}; return G.par; }
+function parOnce(k) { const p = parState(); if (p[k] === today()) return false; p[k] = today(); return true; }
+function parMenu(list, who) {
+  if (who === 'mom') {
+    list.push(['🍚 跟媽媽一起吃飯', () => { if (!parOnce('meal')) { hostSay('今天已經吃飽飽了，明天再來吃喔！', 2600); return; } G.kid.hunger = 100; kidMoodUp(12); const d = ['咖哩飯', '番茄蛋炒飯', '玉米濃湯', '水餃', '蛋包飯'][Math.floor(Math.random() * 5)]; Sound.play('pickUp'); hostSay(`媽媽煮了${d}，多吃一點喔！`, 3000); toast(`🍚 媽媽煮的${d}好好吃！肚子飽飽、心情變好了`); saveGame(); refreshTop(); }]);
+    list.push(['📖 聽媽媽講床邊故事', () => { if (parOnce('story')) kidMoodUp(10); hostSay('來，媽媽講故事給你聽～', 2200); setTimeout(() => { try { openNextStorybook({ aloud: true }); } catch (e) {} }, 600); }]);
+    list.push(['💵 拿今天的零用錢', () => { if (typeof allowanceWanted === 'function' && allowanceWanted()) { hostSay('乖孩子，來拿零用錢喔！', 2400); openAllowanceBox(); } else hostSay('零用錢已經拿過了喔～明天再來！', 2600); }]);
+    list.push(['📷 拍全家福', () => { hostSay('來～大家笑一個！一、二、三！', 2400); setTimeout(() => { try { $('#modal').hidden = true; takePhoto(); } catch (e) {} }, 900); }]);
+    list.push(['🎨 幫爸媽家換外觀', () => openHomeLook('par')]);
+  } else if (who === 'dad') {
+    list.push(['✈️ 爸爸舉高高', () => { Sound.play('jump'); try { fufu.jumpT = .35; setTimeout(() => { fufu.jumpT = .35; }, 420); setTimeout(() => { fufu.jumpT = .35; }, 840); } catch (e) {} if (parOnce('lift')) kidMoodUp(10); hostSay('飛高高囉～咻～！', 2400); fufuSay('哇～我在飛！', 2400); host.a.happyUntil = performance.now() + 2000; }]);
+    list.push(['🔧 跟爸爸一起修東西', openFixGame]);
+    list.push(['🧺 幫忙摺襪子（做家事）', openChoreGame]);
+    list.push(['🎏 跟爸爸放風箏', () => { if (parOnce('kite')) kidMoodUp(8); Sound.play('magic'); hostSay('風好大！風箏飛好高喔！', 2800); fufuSay('風箏飛到雲上面了！', 2600); toast('🎏 風箏飛得好高好高！'); }]);
+    list.push(['☁️ 跳雲朵彈跳床', () => { Sound.play('boing'); try { [0, 380, 760, 1140].forEach(d => setTimeout(() => { fufu.jumpT = .35; }, d)); } catch (e) {} kidMoodUp(4); fufuSay('彈～彈～彈！好好玩！', 2400); }]);
+  }
+}
+// 🔧 跟爸爸修東西：爸爸說要什麼工具，點對的那一個（六歲也會：錯了會告訴你是哪一個）
+const FIX_JOBS = [['💺', '椅子腳鬆了', ['🔩', '🔨']], ['🚲', '腳踏車鏈子掉了', ['🔧', '🔩']], ['⏰', '時鐘不會走了', ['🔋', '🔧']], ['📚', '書架歪了', ['📏', '🔨']], ['🖼️', '畫要掛起來', ['📏', '🔨']], ['🧸', '玩具車輪子掉了', ['🔩', '🔧']]];
+const FIX_TOOLS = [['🔨', '鐵鎚'], ['🔧', '扳手'], ['🔩', '螺絲'], ['📏', '尺'], ['🔋', '電池'], ['✂️', '剪刀']];
+function openFixGame() {
+  const w = openGameWindow('🔧 跟爸爸一起修東西', '爸爸說要什麼工具，就點那一個工具給爸爸！修好 4 樣東西。');
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const jobs = FIX_JOBS.slice().sort(() => Math.random() - .5).slice(0, 4); let j = 0, step = 0, good = 0, miss = 0;
+  const view = el('div', 'chef-view'); w.stage.appendChild(view);
+  const draw = () => {
+    const [ic, nm, tools] = jobs[j], need = tools[step], tn = FIX_TOOLS.find(x => x[0] === need)[1];
+    view.innerHTML = ''; view.append(el('div', 'tkd-big', ic), el('div', 'tkd-say', `${nm}！爸爸說：「給我 ${need} ${tn}！」`));
+    const row = el('div', 'tkd-moves'); FIX_TOOLS.forEach(([e, n]) => { const b = el('button', 'tkd-move' + (miss && e === need ? ' glow' : '')); b.append(el('span', 'tkd-e', e), el('span', '', n)); b.onclick = () => pick(e); row.appendChild(b); }); view.appendChild(row);
+    w.status.textContent = `第 ${j + 1} / ${jobs.length} 樣　（${step + 1} / ${tools.length} 步）`;
+  };
+  const pick = e => {
+    const need = jobs[j][2][step];
+    if (e !== need) { miss++; Sound.play('miss'); hostSay('不是這個喔～是會發亮的那一個！', 1800); draw(); return; }
+    Sound.play('click'); step++; if (!miss) good++; miss = 0;
+    if (step >= jobs[j][2].length) { Sound.play('perfect'); toast(`${jobs[j][0]} 修好了！`); j++; step = 0; }
+    if (j >= jobs.length) { const bells = payReward(w, 80 * jobs.length + good * 10); view.innerHTML = ''; view.appendChild(el('div', 'tkd-big', '🛠️')); w.status.textContent = `全部修好了！爸爸說你是小幫手！　💰 +${fmt(bells)}`; kidMoodUp(8); try { hostSay('哇！全部修好了，你是爸爸的小幫手！', 3000); } catch (e2) {} saveGame(); gameButtons(w, openFixGame); return; }
+    draw();
+  };
+  draw(); openFixGame.test = { pick, need: () => jobs[j] && jobs[j][2][step], done: () => j >= jobs.length };
+}
+// 🧺 幫忙摺襪子：一樣的兩隻點在一起就摺好了（6 雙）
+const SOCKS = [['#e8505b', '●'], ['#3f8fd1', '★'], ['#7bd389', '♥'], ['#ffd23f', '▲'], ['#b18cff', '●'], ['#ff9f43', '★'], ['#5cc4ec', '♥'], ['#ff8fb3', '▲']];
+function openChoreGame() {
+  const w = openGameWindow('🧺 幫忙摺襪子', '點兩隻一模一樣的襪子，就會摺好放進籃子！');
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const pairs = SOCKS.slice().sort(() => Math.random() - .5).slice(0, 6), cards = pairs.concat(pairs).map((s2, i) => ({ s: s2, id: i, done: false })).sort(() => Math.random() - .5);
+  let sel = null, done = 0, tries = 0; const grid = el('div', 'sock-grid'); w.stage.appendChild(grid);
+  const draw = () => { grid.innerHTML = ''; cards.forEach(c => { const b = el('button', 'sock' + (c.done ? ' done' : '') + (sel === c ? ' on' : '')); b.innerHTML = `<svg viewBox="0 0 40 56" width="40" height="56"><path d="M12 2h16v26l8 10c4 5 1 14-7 14H14c-8 0-10-6-6-11l4-5z" fill="${c.s[0]}" stroke="rgba(0,0,0,.25)" stroke-width="1.5"/><rect x="12" y="2" width="16" height="6" fill="#fff" opacity=".7"/><text x="20" y="34" text-anchor="middle" font-size="12" fill="#fff">${c.s[1]}</text></svg>`; b.disabled = c.done; b.onclick = () => tap(c); grid.appendChild(b); }); w.status.textContent = `摺好 ${done} / ${pairs.length} 雙`; };
+  const tap = c => {
+    if (c.done || c === sel) return;
+    if (!sel) { sel = c; Sound.play('click'); draw(); return; }
+    tries++;
+    if (sel.s === c.s) { sel.done = c.done = true; done++; sel = null; Sound.play('perfect'); }
+    else { Sound.play('miss'); sel = null; }
+    draw();
+    if (done >= pairs.length) { const bells = payReward(w, 60 * pairs.length + Math.max(0, 12 - tries) * 10); grid.innerHTML = ''; grid.appendChild(el('div', 'tkd-big', '🧺')); w.status.textContent = `襪子全部摺好了！　💰 +${fmt(bells)}`; kidMoodUp(8); try { hostSay('哇，摺得好整齊！謝謝你！', 2800); } catch (e) {} saveGame(); gameButtons(w, openChoreGame); }
+  };
+  draw(); openChoreGame.test = { cards, tap };
+}
 function hostMenuEntries() {
   const s = host.n.short, now = () => performance.now();
   const list = [
@@ -12847,6 +12934,7 @@ function hostMenuEntries() {
     list.push(['🖥️ 一起打磚塊', openBrickGame]);
   }
   if (host.n.id === 'cinema') list.push(['🎬 看電影', () => openMoviePicker()]);
+  if (host.n.id === 'mom' || host.n.id === 'dad') parMenu(list, host.n.id);   // 👨👩 天空島的爸爸媽媽
   if (host.n.id === 'tkd') {
     list.push(['🦵 踢板（看準時機）', openKickGame]);
     list.push(['👊 跟著做動作', openFormsGame]);
@@ -12965,7 +13053,9 @@ function openTrickCard() {
 }
 function hostDrawEntries() {
   if (!host.n) return [];
-  const list = [host.n.girl
+  const list = [host.n.parentOf != null
+    ? { x: host.a.x - .2, y: host.a.y - .2, w: .4, d: .4, z: 0, h: 80, drawFn: ctx => drawParentActor(ctx, host.a, PARENTS[host.n.parentOf], 1, false) }   // 👨👩 爸爸媽媽
+    : host.n.girl
     ? { x: host.a.x - .2, y: host.a.y - .2, w: .4, d: .4, z: 0, h: 64, drawFn: ctx => drawFriendGirl(ctx, host.a, host.n) }
     : { x: host.a.x - .2, y: host.a.y - .2, w: .4, d: .4, z: 0, h: 30 * VISITOR_K, drawFn: ctx => drawNeighborActor(ctx, host.a, host.n, 1, false, false) }];
   (host.crowd || []).forEach(cr => { if (cr.a.room === roomKey()) list.push({ x: cr.a.x - .2, y: cr.a.y - .2, w: .4, d: .4, z: 0, h: 30 * VISITOR_K, drawFn: ctx => { if (cr.swim && typeof drawPoolMate === 'function' && poolWaterAt(cr.a.x, cr.a.y)) { drawPoolMate(ctx, cr); return; } drawNeighborActor(ctx, cr.a, cr.n, 1, false, false); if (cr.challenge) drawChallengeMark(ctx, cr); if (cr.balloon) drawCrowdBalloon(ctx, cr); if (cr.book) drawCrowdBook(ctx, cr); } }); });
@@ -13280,6 +13370,7 @@ function travelTo(place) {
   if (G.away && G.away.place === place) return;
   cancelHold(); hideItemMenu();
   if (fufu.pose) fufuStandUp(false);
+  if (place === 'sky') { heliTrip('up', () => travelArrive('sky')); return; }   // 🚁 天空島坐直升機
   if (typeof placeFee === 'function' && placeFee(place)) { askEntryFee(place, () => walkTrip(PLACES[place].name, () => travelArrive(place), place)); return; }   // 🎟️ 先付錢才出發
   walkTrip(PLACES[place].name, () => travelArrive(place), place);
 }
@@ -20913,6 +21004,7 @@ function decorGo(theme, redo) {
 const ISL = { W: 64, H: 55, T: 32 };   // 右邊多一塊海，放運動島   // 下面多一塊海，放朋友島
 const ISL_BLD = [   // 房子：x, y 是左上角的格子，w×h 格；門在正下方一格
   { id: 'home', x: 24, y: 11, w: 4, h: 3 },
+  { id: 'helipad', x: 27, y: 5, w: 3, h: 2 },   // 🚁 停機坪：坐直升機上天空島（爸爸媽媽家）
   { id: 'school', x: 12, y: 13, w: 5, h: 3 },
   { id: 'playground', x: 7, y: 13, w: 4, h: 3 },   // 🏟️ 操場：緊鄰學校西側，中間留一條路；進門是學校的操場房間
   { id: 'library', x: 32, y: 13, w: 4, h: 3 },
@@ -21120,7 +21212,8 @@ function islStartTile(m) {
   let id = 'home';
   if (G.away) {
     const pl = PLACES[G.away.place];
-    if (G.away.place === 'friend') {
+    if (G.away.place === 'sky') id = 'helipad';   // 從天空島下來：降落在停機坪
+    else if (G.away.place === 'friend') {
       const i = loadInvites().findIndex(v => PLACES.friend && v.at === PLACES.friend.inviteAt && v.n === PLACES.friend.inviteName);
       id = i >= 0 && i < ISL_FRIEND_SPOTS.length ? 'friend' + i : 'home';
     } else if (G.away.place === 'school' && G.away.idx === 1) id = 'playground';   // 人在操場房間：從小島的操場門口出來
@@ -21132,6 +21225,7 @@ function islStartTile(m) {
 function openIsland() {
   crashCrumb('去小島');
   if (isl) return;
+  if (G.away && G.away.place === 'sky' && !heliTrip.landing && G.guide === 'done') { heliTrip('down', () => { heliTrip.landing = true; try { openIsland(); } finally { heliTrip.landing = false; } }); return; }   // 🚁 從天空島下來：先坐直升機降落
   if (resting) { toast('現在是休息時間喔'); return; }
   cancelHold(); hideItemMenu();
   const md = $('#modal'); if (md) md.hidden = true;
@@ -21337,6 +21431,7 @@ function islEnter(id) {   // 走到門口：關掉地圖、進去（家：回家
     travelArrive('school', idx);
     return;
   }
+  if (id === 'helipad') { if (G.away && G.away.place === 'sky') return; heliTrip('up', () => travelArrive('sky')); return; }   // 🚁 停機坪
   if (G.away && G.away.place === id) return;
   if (!PLACES[id]) return;
   if (typeof placeFee === 'function' && placeFee(id)) { askEntryFee(id, () => travelArrive(id), () => openIsland()); return; }   // 🎟️ 電影院、游泳池：先付錢
@@ -21614,6 +21709,7 @@ function islDraw(now) {
   if (isl.bike) items.push({ y: isl.bike.y * T, draw: () => islDrawBike(ctx, isl.bike, now) });
   if (typeof islReqGuideDraw === 'function') items.push({ y: 1e9, draw: () => islReqGuideDraw(ctx, now) });   // 👇 任務的小手指
   (m.specials || []).forEach(sp => items.push({ y: (sp.y + 1) * T, draw: () => islDrawSpecial(ctx, sp, now) }));
+  items.push({ y: -999, draw: () => islDrawSkyIsle(ctx, now) });   // ☁️ 天空島（在雲裡，坐直升機才上得去）
   (m.docks || []).forEach(d => items.push({ y: (d.y + .2) * T, draw: () => islDrawDock(ctx, d, now) }));
   isl.coins.forEach(c => items.push({ y: (c.y + .6) * T, draw: () => islDrawCoin(ctx, c, tt) }));
   isl.glow = [];
@@ -22181,9 +22277,10 @@ function homeState() {
 function homeOwns(kind, id) { const h = homeState(); if (kind === 'flag' && id === 'champ') return homeChampion(); return h.owned.includes(kind + ':' + id); }
 function homeChampion() { return !!((G.dbcup && G.dbcup.gold > 0) || (G.tkd && G.tkd.world && G.tkd.world.gold > 0)); }
 function homeItem(kind, id) { return (HOME_KINDS[kind] || []).find(x => x[0] === id); }
-function homeLook() {
-  const h = homeState(), c = (k, id, d) => { const it = homeItem(k, id); return it ? it[2] : d; };
-  return { style: h.style, wall: c('wall', h.wall, '#ffd9c9'), roof: c('roof', h.roof, '#ff7b7b'), door: c('door', h.door, '#7a4a2a'), flag: h.flag !== 'none' ? (homeItem('flag', h.flag) || [])[2] || '' : '', sign: (typeof h.sign === 'string' && h.sign.trim()) || '', decoL: h.decoL, decoR: h.decoR, tier: homeTier() };
+function homeParState() { const h = homeState(); if (!h.par || typeof h.par !== 'object') h.par = {}; const p = h.par; if (!p.wall) p.wall = 'cream'; if (!p.roof) p.roof = 'blue'; if (!p.door) p.door = 'wood'; if (!p.style) p.style = 'cottage'; if (!p.flag) p.flag = 'heart'; if (!p.decoL) p.decoL = 'flowerbed'; if (!p.decoR) p.decoR = 'none'; return p; }   // 👪 爸媽家（天空島）的外觀
+function homeLook(target) {
+  const h = target === 'par' ? homeParState() : homeState(), c = (k, id, d) => { const it = homeItem(k, id); return it ? it[2] : d; };
+  return { style: h.style, wall: c('wall', h.wall, '#ffd9c9'), roof: c('roof', h.roof, '#ff7b7b'), door: c('door', h.door, '#7a4a2a'), flag: h.flag !== 'none' ? (homeItem('flag', h.flag) || [])[2] || '' : '', sign: target === 'par' ? '爸爸媽媽的家' : (typeof h.sign === 'string' && h.sign.trim()) || '', decoL: h.decoL, decoR: h.decoR, tier: target === 'par' ? 1 : homeTier() };
 }
 function homeTier() { const n = G && Array.isArray(G.rooms) ? G.rooms.length : 1; return n >= 5 ? 2 : n >= 3 ? 1 : 0; }   // ④ 房子會長大
 function homeRoofFill(ctx, c, x, y, w, h) {
@@ -22290,8 +22387,9 @@ function homeCheckRewards() {
   if (n >= all && !h.owned.includes('style:rainbowCastle')) { h.owned.push('style:rainbowCastle'); got.push(['🌈', '彩虹城堡']); }
   got.forEach(([ic, nm], i) => setTimeout(() => { try { Sound.play('fanfare'); confettiBurst(100); showcase(el('div', 'magic-pic', ic), `外觀收集獎勵：${nm}！`, `收集了 ${n} 種房子外觀，送你「${nm}」！到房子外觀裡就可以換上。`, { head: '🎨 收集獎勵' }); } catch (e) {} }, 400 + i * 600));
 }
-function openHomeLook() {
-  const w = openGameWindow('🏡 房子外觀', '幫我的家換顏色、換造型、掛門牌！買過的顏色可以一直換。換好出門就看得到。');
+function openHomeLook(target) {
+  const par = target === 'par';
+  const w = openGameWindow(par ? '👪 幫爸媽家換外觀' : '🏡 房子外觀', par ? '用你買過的顏色和造型，幫天空島上的爸爸媽媽家換外觀！還沒買的一樣可以買。' : '幫我的家換顏色、換造型、掛門牌！買過的顏色可以一直換。換好出門就看得到。');
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   const { c, g } = gameCanvas(w.stage, 300, 190); c.classList.add('home-prev');
   const tabs = el('div', 'filter kinds home-tabs'), grid = el('div', 'grid home-grid'), info = el('div', 'home-info');
@@ -22301,14 +22399,14 @@ function openHomeLook() {
   const draw = now => { if (!live) return; const t = now / 1000;
     const sky = g.createLinearGradient(0, 0, 0, 190); sky.addColorStop(0, '#bfe6ff'); sky.addColorStop(1, '#e8f7ff'); g.fillStyle = sky; g.fillRect(0, 0, 300, 190);
     g.fillStyle = '#8fd18f'; g.fillRect(0, 150, 300, 40); g.fillStyle = '#e8cf9a'; g.fillRect(132, 150, 36, 40);
-    drawHomeExterior(g, 86, 58, 128, 92, 134, homeLook(), { tt: t, season: typeof seasonOfMonth === 'function' ? seasonOfMonth() : '' });
-    const sg = homeLook().sign || '我的家'; g.font = '700 12px "Microsoft JhengHei","PingFang TC",sans-serif'; const tw = g.measureText(sg).width + 14; g.fillStyle = 'rgba(255,255,255,.92)'; g.beginPath(); g.roundRect ? g.roundRect(150 - tw / 2, 6, tw, 18, 9) : g.rect(150 - tw / 2, 6, tw, 18); g.fill(); g.fillStyle = '#4a3b2a'; g.textAlign = 'center'; g.fillText(sg, 150, 19);
+    drawHomeExterior(g, 86, 58, 128, 92, 134, homeLook(target), { tt: t, season: typeof seasonOfMonth === 'function' ? seasonOfMonth() : '' });
+    const sg = homeLook(target).sign || '我的家'; g.font = '700 12px "Microsoft JhengHei","PingFang TC",sans-serif'; const tw = g.measureText(sg).width + 14; g.fillStyle = 'rgba(255,255,255,.92)'; g.beginPath(); g.roundRect ? g.roundRect(150 - tw / 2, 6, tw, 18, 9) : g.rect(150 - tw / 2, 6, tw, 18); g.fill(); g.fillStyle = '#4a3b2a'; g.textAlign = 'center'; g.fillText(sg, 150, 19);
     raf = requestAnimationFrame(draw); };
   raf = requestAnimationFrame(draw);
   const render = () => {
-    const h = homeState(), n = homeCollected(), all = homeBuyable().length;
+    const h0 = homeState(), h = par ? homeParState() : h0, n = homeCollected(), all = homeBuyable().length;
     info.textContent = `🎨 外觀收集 ${n} / ${all}　${n < 10 ? `（再 ${10 - n} 種送 🌟 金色屋頂）` : n < all ? `（全部收集送 🌈 彩虹城堡）` : '（全部收集了！）'}`;
-    tabs.innerHTML = ''; HOME_TABS.forEach(([k, nm]) => { const b = el('button', k === homeTab ? 'on' : '', nm); b.onclick = () => { homeTab = k; Sound.play('click'); render(); }; tabs.appendChild(b); });
+    tabs.innerHTML = ''; HOME_TABS.filter(([k]) => !par || k !== 'sign').forEach(([k, nm]) => { const b = el('button', k === homeTab ? 'on' : '', nm); b.onclick = () => { homeTab = k; Sound.play('click'); render(); }; tabs.appendChild(b); });
     grid.innerHTML = '';
     if (homeTab === 'sign') {
       const box = el('div', 'home-sign'); const inp = document.createElement('input'); inp.maxLength = 8; inp.value = h.sign || ''; inp.placeholder = `${charName()}的家`;
@@ -22328,10 +22426,10 @@ function openHomeLook() {
         if (!own) {
           if (price < 0) { toast(price === -1 ? '🎁 這個要收集房子外觀才拿得到喔！' : price === -3 ? '⭐ 「最美房子比賽」拿到 3 顆星才有！' : '🏆 拿到跆拳道或躲避球的世界冠軍才有冠軍旗！'); return; }
           if (!spend(price)) { toast('💰 錢不夠喔～去玩小遊戲賺錢吧！'); return; }
-          h.owned.push(kind + ':' + id); Sound.play('coin'); refreshTop();
+          h0.owned.push(kind + ':' + id); Sound.play('coin'); refreshTop();
         } else Sound.play('click');
         if (homeTab === 'decoL') h.decoL = id; else if (homeTab === 'decoR') h.decoR = id; else h[kind] = id;
-        h.newAt = Date.now(); saveGame(); homeCheckRewards(); render();
+        if (!par) h.newAt = Date.now(); else try { hostSay('哇！謝謝你幫爸爸媽媽的家變漂亮！', 2600); } catch (e) {} saveGame(); homeCheckRewards(); render();
       };
       grid.appendChild(b);
     });
@@ -22379,6 +22477,67 @@ function famDecor(ctx, b, x, y, w, h, tt) {
   if (lv >= 3) { const fx = x + w * .75; ctx.strokeStyle = '#7a5230'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(fx, y + 2); ctx.lineTo(fx, y - 26); ctx.stroke(); ctx.fillStyle = '#ff8fb3'; ctx.beginPath(); ctx.moveTo(fx, y - 26); ctx.lineTo(fx + 18 + Math.sin(tt * 4) * 2, y - 21); ctx.lineTo(fx, y - 16); ctx.fill(); ctx.font = '8px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.fillText('♥', fx + 7, y - 18); }
   if (lv >= 4) { for (let k = 0; k <= 10; k++) { const lx = x + k * w / 10, ly = y + 22 + Math.sin(k / 10 * Math.PI) * 6; ctx.fillStyle = Math.floor(tt * 3 + k) % 2 ? ['#ff6b6b', '#ffd23f', '#6bb6ff', '#7bd389'][k % 4] : 'rgba(255,255,255,.6)'; ctx.beginPath(); ctx.arc(lx, ly, 2.2, 0, 7); ctx.fill(); } }
 }
+/* 🚁 坐直升機（上天空島／回地面）：螺旋槳轉起來 → 往上飛穿過白雲 → 降落在雲上的爸爸媽媽家（下來就反過來） */
+function heliTrip(dir, done) {
+  crashCrumb(dir === 'up' ? '坐直升機上天空島' : '坐直升機回地面');
+  const w = openGameWindow(dir === 'up' ? '🚁 坐直升機去天空島' : '🚁 坐直升機回地面', dir === 'up' ? '抓好喔～直升機要起飛了！' : '要降落囉～');
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const W = 360, H = 240, { g } = gameCanvas(w.stage, W, H);
+  let live = true, raf = 0; const t0 = performance.now(), DUR = 3600;
+  try { Sound.play('whoosh'); speak(dir === 'up' ? '起飛！' : '降落！'); } catch (e) {}
+  const finish = () => { if (!live) return; live = false; cancelAnimationFrame(raf); gameCleanup = null; closeGameWindow(); $('#modal').hidden = true; done && done(); };
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); };
+  const skip = el('button', 'big alt', '⏩ 到了'); skip.onclick = finish; w.btns.appendChild(skip);
+  const heli = (x, y, t) => {   // 自己畫的小直升機
+    g.save(); g.translate(x, y);
+    g.strokeStyle = '#4a4452'; g.lineWidth = 3; g.beginPath(); g.moveTo(-34, 0); g.lineTo(-12, 0); g.stroke();
+    g.fillStyle = '#4a4452'; g.save(); g.translate(-36, 0); g.rotate(t * 30); g.fillRect(-1.5, -9, 3, 18); g.restore();
+    g.fillStyle = '#ff7b7b'; g.beginPath(); g.ellipse(0, 0, 24, 15, 0, 0, 7); g.fill();
+    g.fillStyle = '#bfe6f6'; g.beginPath(); g.ellipse(10, -3, 11, 9, 0, 0, 7); g.fill();
+    g.save(); g.beginPath(); g.ellipse(10, -3, 11, 9, 0, 0, 7); g.clip(); g.translate(10, 6); g.scale(.18, .18); try { if (kidBaby()) drawBabyKid(g, { t }); else drawGirl(g, { t, blink: false, outfit: currentOutfit(), face: 'joy', stage: kidLookStage() }); } catch (e) {} g.restore();
+    g.strokeStyle = '#4a4452'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(-12, 17); g.lineTo(16, 17); g.moveTo(-6, 13); g.lineTo(-6, 17); g.moveTo(10, 13); g.lineTo(10, 17); g.stroke();
+    g.fillStyle = '#4a4452'; g.fillRect(-1.5, -20, 3, 6); const bl = Math.abs(Math.cos(t * 26)) * 32 + 4; g.fillRect(-bl, -21, bl * 2, 2.5);
+    g.restore();
+  };
+  const tick = now => {
+    if (!live) return;
+    const k = Math.min(1, (now - t0) / DUR), t = (now - t0) / 1000, u = dir === 'up' ? k : 1 - k;   // u：0＝地面、1＝天上
+    const sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, `hsl(205,${70 + u * 10}%,${78 - u * 8}%)`); sky.addColorStop(1, '#eaf7ff'); g.fillStyle = sky; g.fillRect(0, 0, W, H);
+    const gy = H - 30 + u * 260;   // 地面越飛越下面
+    if (gy < H + 10) { g.fillStyle = '#8fd18f'; g.fillRect(0, gy, W, H); g.fillStyle = '#e9e4da'; g.beginPath(); g.ellipse(W / 2, gy + 8, 46, 12, 0, 0, 7); g.fill(); g.fillStyle = '#ffd23f'; g.font = '900 16px Arial'; g.textAlign = 'center'; g.fillText('H', W / 2, gy + 14); }
+    for (let i = 0; i < 9; i++) { const cy = ((i * 61 + u * 700) % (H + 120)) - 60, cx = (i * 97) % W; g.fillStyle = 'rgba(255,255,255,.88)'; g.beginPath(); g.arc(cx, cy, 18, 0, 7); g.arc(cx + 20, cy + 4, 14, 0, 7); g.arc(cx - 18, cy + 6, 12, 0, 7); g.fill(); }   // 穿過的白雲
+    const iy = -160 + u * 330;   // 天空島從上面降下來
+    if (iy > -150) { g.fillStyle = '#ffffff'; [[-70, 0, 34], [-30, 8, 40], [20, 6, 42], [66, 2, 32], [0, 18, 36]].forEach(([a, b, r]) => { g.beginPath(); g.arc(W / 2 + a, iy + b, r, 0, 7); g.fill(); }); g.fillStyle = '#9fd38a'; g.fillRect(W / 2 - 80, iy - 18, 160, 14);
+      try { drawHomeExterior(g, W / 2 - 40, iy - 70, 80, 54, W / 2 - 16, homeLook('par'), { tt: t }); } catch (e) {} }
+    const hx = W / 2 + Math.sin(t * 2) * 8, hy = dir === 'up' ? (k < .15 ? gy - 22 - k * 60 : H * .55) : (k > .85 ? H - 52 : H * .55);
+    heli(hx, hy + Math.sin(t * 6) * 2, t);
+    if (k >= 1) { finish(); return; }
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+  heliTrip.test = { finish };
+}
+/* 天空島：主島上方的雲裡，看得到一點點（走不到，要坐直升機） */
+function islDrawSkyIsle(ctx, now) {
+  const T = ISL.T, x = 13 * T, y = 3.5 * T, t = now / 1000, bob = Math.sin(t * .8) * 4;
+  ctx.save(); ctx.globalAlpha = .92; ctx.translate(0, bob);
+  ctx.fillStyle = '#ffffff'; [[-60, 10, 26], [-25, 18, 32], [15, 16, 34], [52, 10, 26], [0, 26, 28]].forEach(([a, b, r]) => { ctx.beginPath(); ctx.arc(x + a, y + b, r, 0, 7); ctx.fill(); });
+  ctx.fillStyle = '#9fd38a'; ctx.fillRect(x - 60, y - 4, 120, 10);
+  try { drawHomeExterior(ctx, x - 34, y - 52, 68, 48, x - 14, homeLook('par'), { tt: t }); } catch (e) {}
+  ctx.font = '700 12px "Microsoft JhengHei","PingFang TC",sans-serif'; ctx.textAlign = 'center'; const lb = '☁️ 天空島・爸爸媽媽家'; const tw = ctx.measureText(lb).width + 14; ctx.fillStyle = 'rgba(255,255,255,.92)'; ctx.fillRect(x - tw / 2, y + 40, tw, 18); ctx.fillStyle = '#4a3b2a'; ctx.fillText(lb, x, y + 53);
+  ctx.restore();
+}
+function islDrawHelipad(ctx, b, tt) {
+  const T = ISL.T, x = b.x * T, y = b.y * T, w = b.w * T, h = b.h * T;
+  ctx.fillStyle = '#d8d4cc'; ctx.beginPath(); ctx.ellipse(x + w / 2, y + h / 2 + 6, w / 2, h / 2, 0, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(x + w / 2, y + h / 2 + 6, w / 2 - 6, h / 2 - 6, 0, 0, 7); ctx.stroke();
+  ctx.fillStyle = '#ffd23f'; ctx.font = '900 22px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('H', x + w / 2, y + h / 2 + 7); ctx.textBaseline = 'alphabetic';
+  // 停著的直升機
+  const hx = x + w / 2 + 24, hy = y + 6;
+  ctx.fillStyle = '#ff7b7b'; ctx.beginPath(); ctx.ellipse(hx, hy, 15, 9, 0, 0, 7); ctx.fill(); ctx.fillStyle = '#bfe6f6'; ctx.beginPath(); ctx.ellipse(hx + 6, hy - 2, 6, 5, 0, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#4a4452'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(hx - 15, hy); ctx.lineTo(hx - 28, hy - 2); ctx.moveTo(hx - 8, hy + 11); ctx.lineTo(hx + 10, hy + 11); ctx.stroke();
+  const bl = Math.abs(Math.cos(tt * .6)) * 20 + 4; ctx.fillStyle = '#4a4452'; ctx.fillRect(hx - bl, hy - 13, bl * 2, 2);
+}
 function islDrawBuilding(ctx, b, tt) {
   const T = ISL.T, x = b.x * T, y = b.y * T, w = b.w * T, h = b.h * T, fr = /^friend/.test(b.id);
   const sty = ISL_STYLE[fr ? 'friend' : b.id] || ISL_STYLE.home, roofC = fr ? ['#6fb7e8', '#ff8fb3', '#ffc94d', '#9be0a0'][+b.id.slice(6)] : sty[1];
@@ -22386,6 +22545,7 @@ function islDrawBuilding(ctx, b, tt) {
   let label = b.id === 'playground' ? '操場' : fr ? '' : b.id === 'home' ? (homeLook().sign || '我的家') : (pl ? pl.name : '');
   if (fr) { const inv = isl.invites[+b.id.slice(6)]; label = inv ? inviteWho(inv) + '的家' : '朋友的家'; }
   ctx.fillStyle = 'rgba(40,60,30,.18)'; ctx.fillRect(x + 4, y + h - 4, w, 8);
+  if (b.id === 'helipad') { islDrawHelipad(ctx, b, tt); const bx0 = x + w / 2, by0 = y - 16; ctx.font = '700 13px "Microsoft JhengHei","PingFang TC",sans-serif'; const lb = '🚁 停機坪（去爸爸媽媽家）'; const tw = ctx.measureText(lb).width + 14; ctx.fillStyle = 'rgba(255,255,255,.92)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(bx0 - tw / 2, by0 - 10, tw, 18, 9) : ctx.rect(bx0 - tw / 2, by0 - 10, tw, 18); ctx.fill(); ctx.fillStyle = '#4a3b2a'; ctx.textAlign = 'center'; ctx.fillText(lb, bx0, by0 + 4); return; }
   const frInv = fr ? isl.invites[+b.id.slice(6)] : null; b.hlDrawn = false;
   if (frInv && frInv.hl) {   // 🏡 朋友家：朋友在自己遊戲裡換好的外觀，邀請卡帶過來
     const L0 = frInv.hl, c = (k, id, d) => { const it = homeItem(k, id); return it ? it[2] : d; };
