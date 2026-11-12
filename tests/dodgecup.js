@@ -24,7 +24,7 @@ const path = require('path');
     closeGameWindow(); $('#modal').hidden = true; clear();
     // 世界大賽：還沒考到正式隊員 → 鎖住
     G.exams.dodge = 0; openDbCup(); o.locked = $('#modal').hidden;
-    G.exams.dodge = 1; openDbCup(); await wait(100); const B = dbCupBoard.test; o.board = !!B && document.querySelectorAll('.exam-step').length === 5 && B.cup.path[4] === '月球';
+    G.exams.dodge = 1; openDbCup(); await wait(100); const B = dbCupBoard.test; o.board = !!B && document.querySelectorAll('.exam-step').length === 5 && B.cup.path[4] === '太陽';
     // 第一場：直接開打（不等飛機），打贏 → 晉級
     dbCupPlay(B.w, B.cup, 0); await wait(300); playDodge.test.finish(true); await wait(1900);
     o.advance = dbCupBoard.test.r === 1 && dbCupState().best === 1;

@@ -5323,7 +5323,7 @@ const NEWS = [
     ['🏟️', '躲避球換新球場：看台上的動物朋友會加油、猴子教練當裁判、出局會跳出大大的 OUT!'],
     ['💥', '必殺技有漫畫一樣的特寫，每一招的球都有特效'],
     ['🎖️', '新的躲避球段位：正式隊員 → 王牌 → 隊長 → 傳說球王，每升一級學一招新必殺技（龍捲風、冰凍、彩虹、飛龍）'],
-    ['🌏', '考到正式隊員就能參加「世界躲避球大賽」，飛去各國比賽，決賽在月球！輸了可以一直再挑戰']
+    ['🌏', '考到正式隊員就能參加「世界躲避球大賽」，飛去各國比賽，決賽在太陽！輸了可以一直再挑戰']
   ] },
   { id: '2026-11-15T20:00', title: '🎖️ 新的升級考試', lines: [
     ['🏊', '游泳池鴨鴨教練：游泳檢定（小鴨級 → 小魚級 → 海豚級 → 鯊魚級），送泳帽'],
@@ -27916,7 +27916,8 @@ function dbBuildBg(W, H, TOP, venue) {
   const sky = g.createLinearGradient(0, 0, 0, TOP); sky.addColorStop(0, V ? V.sky[0] : '#8fd0ff'); sky.addColorStop(1, V ? V.sky[1] : '#dff3ff'); g.fillStyle = sky; g.fillRect(0, 0, W, TOP);
   g.fillStyle = 'rgba(255,255,255,.9)'; [[70, 22, 1], [300, 16, .8], [420, 30, .7]].forEach(([x, y, k]) => { g.beginPath(); g.arc(x, y, 12 * k, 0, 7); g.arc(x + 14 * k, y + 3, 9 * k, 0, 7); g.arc(x - 12 * k, y + 4, 8 * k, 0, 7); g.fill(); });
   if (V) { g.font = '22px sans-serif'; g.textAlign = 'center'; g.fillText(V.mark, 40, 36); g.fillText(V.mark, W - 40, 36); }
-  g.fillStyle = V && V.id === '月球' ? '#8d96a3' : '#9fd38a'; g.beginPath(); g.moveTo(0, 60); for (let x = 0; x <= W; x += 40) g.quadraticCurveTo(x + 20, 38 + (x % 80 ? 8 : -6), x + 40, 58); g.lineTo(W, TOP); g.lineTo(0, TOP); g.fill();   // 遠山
+  if (V && V.sun) { const sx = W - 125, sy = 30; g.fillStyle = 'rgba(255,240,150,.55)'; g.beginPath(); g.arc(sx, sy, 36, 0, 7); g.fill(); g.fillStyle = '#ff922b'; for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6; g.beginPath(); g.moveTo(sx + Math.cos(a - .14) * 25, sy + Math.sin(a - .14) * 25); g.lineTo(sx + Math.cos(a) * 34, sy + Math.sin(a) * 34); g.lineTo(sx + Math.cos(a + .14) * 25, sy + Math.sin(a + .14) * 25); g.fill(); } g.fillStyle = '#ffd43b'; g.beginPath(); g.arc(sx, sy, 25, 0, 7); g.fill(); g.fillStyle = '#212529'; g.beginPath(); g.roundRect(sx - 15, sy - 7, 12, 7, 3); g.roundRect(sx + 3, sy - 7, 12, 7, 3); g.fill(); g.strokeStyle = '#c2410c'; g.lineWidth = 2; g.beginPath(); g.arc(sx, sy + 4, 7, .3, Math.PI - .3); g.stroke(); }   // ☀️ 太陽決賽：戴墨鏡的大太陽在看
+  g.fillStyle = V && V.id === '月球' ? '#8d96a3' : V && V.sun ? '#ffb347' : '#9fd38a'; g.beginPath(); g.moveTo(0, 60); for (let x = 0; x <= W; x += 40) g.quadraticCurveTo(x + 20, 38 + (x % 80 ? 8 : -6), x + 40, 58); g.lineTo(W, TOP); g.lineTo(0, TOP); g.fill();   // 遠山
   [[24, 52], [110, 48], [380, 50], [458, 54]].forEach(([x, y]) => { g.fillStyle = '#8a5a3a'; g.fillRect(x - 2, y, 4, 12); g.fillStyle = '#4fae5a'; g.beginPath(); g.arc(x, y - 4, 11, 0, 7); g.arc(x - 8, y + 2, 8, 0, 7); g.arc(x + 8, y + 2, 8, 0, 7); g.fill(); });
   // 看台：三層木頭長椅
   for (let r = 0; r < 3; r++) { const y = 66 + r * 15; g.fillStyle = r % 2 ? '#c98b52' : '#d99a5e'; g.fillRect(8, y, W - 16, 9); g.fillStyle = 'rgba(0,0,0,.12)'; g.fillRect(8, y + 9, W - 16, 3); }
@@ -27932,6 +27933,7 @@ function dbBuildBg(W, H, TOP, venue) {
   // 裁判的高椅子
   g.strokeStyle = '#7a5230'; g.lineWidth = 3; g.beginPath(); g.moveTo(W / 2 - 14, TOP + 14); g.lineTo(W / 2 - 9, TOP - 18); g.moveTo(W / 2 + 14, TOP + 14); g.lineTo(W / 2 + 9, TOP - 18); g.moveTo(W / 2 - 12, TOP); g.lineTo(W / 2 + 12, TOP); g.stroke();
   g.fillStyle = '#a06b3c'; g.fillRect(W / 2 - 13, TOP - 21, 26, 5);
+  if (V && V.sun) { g.fillStyle = 'rgba(255,150,40,.13)'; g.fillRect(0, 0, W, H); }   // ☀️ 太陽上暖暖的橘色光
   return c;
 }
 function dbFans(n) { const pal = NEIGHBORS.filter(Boolean).map(x => [x.body, x.edge || x.body, x.ears]); return Array.from({ length: n }, (_, i) => { const p = pal[i % pal.length]; return { x: 22 + (i % 13) * 34.5 + (Math.floor(i / 13) % 2) * 16, y: 72 + Math.floor(i / 13) * 15, c: p[0], e: p[1], ears: p[2], ph: i * 1.7 }; }); }
@@ -28170,7 +28172,7 @@ function playDodge(w, L, opt) {
 }
 
 /* 🌏 世界躲避球大賽（家長：躲避球也要有世界大賽）：躲避球段位考到「正式隊員」才能報名。
-   五場：三十二強 → 十六強 → 八強 → 準決賽 → 決賽（月球）；每場搭飛機去不同國家，天空、對手都不一樣。
+   五場：三十二強 → 十六強 → 八強 → 準決賽 → 決賽（太陽，家長改的）；每場搭飛機去不同國家，天空、對手都不一樣。
    輸了可以一直再挑戰，每輸一次對手少 1 顆愛心（最少 1 顆），輸兩次以上還會換比較簡單的難度。
    第一次拿冠軍送「世界躲避球冠軍金冠」＋💰 2,000。成績在 G.dbcup（best：最好到第幾輪、gold：冠軍次數）。 */
 const DBCUP_ROUNDS = [{ name: '三十二強', L: 0, hp: 2 }, { name: '十六強', L: 0, hp: 3 }, { name: '八強', L: 1, hp: 3 }, { name: '準決賽', L: 1, hp: 4 }, { name: '決賽', L: 2, hp: 4 }];
@@ -28179,8 +28181,8 @@ function dbCupState() { if (!G.dbcup || typeof G.dbcup !== 'object') G.dbcup = {
 function dbCupOpen() { return typeof examRank === 'function' && examRank('dodge') >= 1; }
 function openDbCup() {
   if (!dbCupOpen()) { toast('🌏 要先考到躲避球段位「正式隊員」，才能報名世界躲避球大賽喔！'); try { hostSay('先考躲避球段位，考到正式隊員就帶你去比世界大賽！', 3000); } catch (e) {} return; }
-  const w = openGameWindow('🌏 世界躲避球大賽', '連贏 5 場就是世界冠軍！每一場會飛去不同的國家，決賽在月球。輸了可以一直再挑戰，對手會越來越弱。');
-  const nb = worldShuffle(NEIGHBORS.filter(Boolean)), path = worldShuffle(WORLD_FROM).slice(0, 4).concat(['月球']);
+  const w = openGameWindow('🌏 世界躲避球大賽', '連贏 5 場就是世界冠軍！每一場會飛去不同的國家，決賽在太陽。輸了可以一直再挑戰，對手會越來越弱。');
+  const nb = worldShuffle(NEIGHBORS.filter(Boolean)), path = worldShuffle(WORLD_FROM).slice(0, 4).concat(['太陽']);
   const cup = { path, teams: path.map((v, i) => ({ venue: v, rivals: [0, 1, 2].map(k => nb[(i * 3 + k) % nb.length]) })), tries: 0 };
   dbCupBoard(w, cup, 0);
 }
@@ -28188,11 +28190,11 @@ function dbCupBoard(w, cup, r) {
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   const list = el('div', 'exam-ladder');
   DBCUP_ROUNDS.forEach((R, i) => { const V = worldVenue(cup.path[i]), row = el('div', 'exam-step' + (i < r ? ' done' : i === r ? ' next' : ' lock'));
-    row.append(el('span', 'exam-ic', i < r ? '✅' : V.mark), el('b', '', R.name)); const info = el('div', 'exam-info'); info.append(el('div', 'exam-need', `${V.id}隊：${cup.teams[i].rivals.map(n => worldEmo(n)).join('')}`), el('div', 'exam-prize', i === 4 ? '🌕 月球決賽' : `✈️ 飛去${V.id}`)); row.appendChild(info); list.appendChild(row); });
+    row.append(el('span', 'exam-ic', i < r ? '✅' : V.mark), el('b', '', R.name)); const info = el('div', 'exam-info'); info.append(el('div', 'exam-need', `${V.id}隊：${cup.teams[i].rivals.map(n => worldEmo(n)).join('')}`), el('div', 'exam-prize', i === 4 ? '☀️ 太陽決賽' : `✈️ 飛去${V.id}`)); row.appendChild(info); list.appendChild(row); });
   w.stage.appendChild(list);
   const R = DBCUP_ROUNDS[r], V = worldVenue(cup.path[r]);
   w.status.textContent = r ? `晉級了！下一場：${R.name}，對手是${V.id}隊！` : `第一場：${R.name}，對手是${V.id}隊！`;
-  const go = el('button', 'big', r === 4 ? '🚀 坐火箭去月球' : `✈️ 飛去${V.id}`);
+  const go = el('button', 'big', r === 4 ? '🚀 坐火箭去太陽' : `✈️ 飛去${V.id}`);
   go.onclick = () => { Sound.play('click'); cup.tries = 0; worldFlyTo(w, { venue: cup.path[r] }, () => dbCupPlay(w, cup, r)); };
   w.btns.appendChild(go); leaveButton(w);
   dbCupBoard.test = { w, cup, r };
@@ -29755,6 +29757,7 @@ const WORLD_VENUES = {
   '雲朵國': { id: '雲朵國', sky: ['#f8f9fa', '#dbe4ff'], floor: '#fff4e6', floor2: '#bac8ff', accent: '#5c7cfa', mark: '☁️', land: '雲城堡', flag: ['#ffffff', '#91a7ff', '#ffffff'] },
   '糖果國': { id: '糖果國', sky: ['#fff0f6', '#ffdeeb'], floor: '#ffc9c9', floor2: '#ffec99', accent: '#e64980', mark: '🍬', land: '糖果塔', flag: ['#ff6b9d', '#ffd43b', '#74c0fc'] },
   '星星國': { id: '星星國', sky: ['#1a1440', '#3a0ca3'], floor: '#5c4d7a', floor2: '#ffd43b', accent: '#ffe066', mark: '⭐', land: '星星塔', flag: ['#240046', '#ffd43b', '#240046'], dark: 1 },
+  '太陽': { id: '太陽', sky: ['#ff8a3d', '#ffd166'], floor: '#ffd43b', floor2: '#ff922b', accent: '#d9480f', mark: '☀️', land: '太陽', flag: ['#ff6b00', '#ffe066', '#ff6b00'], sun: 1 },
   '月球': { id: '月球', sky: ['#070b18', '#24185c'], floor: '#d0d4dc', floor2: '#8d96a3', accent: '#ffe066', mark: '🌕', land: '月球', flag: ['#24185c', '#ffe066', '#f8f9fa'], dark: 1, moon: 1 }
 };
 function worldShuffle(a) { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = b[i]; b[i] = b[j]; b[j] = t; } return b; }
@@ -29827,6 +29830,20 @@ function drawCupAlien(g, x, y, sc) {
   g.save(); g.translate(11, 12); g.rotate(-1 + wv); g.fillStyle = '#8ce99a'; g.beginPath(); g.ellipse(7, 0, 7, 3, 0, 0, 7); g.fill(); g.stroke(); g.restore();
   g.restore();
 }
+/* ☀️ 太陽上的嚮導「小陽陽」：圓圓的小太陽、戴墨鏡、會揮手（自己畫的） */
+function drawCupSunny(g, x, y, sc) {
+  g.save(); g.translate(x, y); g.scale(sc, sc);
+  const t = performance.now() / 1000, wv = Math.sin(t * 5.5) * .4;
+  g.save(); g.rotate(t * .6); g.fillStyle = '#ff922b'; for (let i = 0; i < 10; i++) { g.rotate(Math.PI / 5); g.beginPath(); g.moveTo(-4, -17); g.lineTo(0, -26); g.lineTo(4, -17); g.fill(); } g.restore();
+  g.fillStyle = '#ffd43b'; g.strokeStyle = '#f08c00'; g.lineWidth = 2; g.beginPath(); g.arc(0, 0, 17, 0, 7); g.fill(); g.stroke();
+  g.fillStyle = '#212529'; g.beginPath(); g.roundRect(-12, -6, 10, 6, 3); g.roundRect(2, -6, 10, 6, 3); g.fill(); g.fillRect(-2, -5, 4, 2);   // 墨鏡
+  g.fillStyle = 'rgba(255,255,255,.7)'; g.fillRect(-10, -5, 3, 2); g.fillRect(4, -5, 3, 2);
+  g.fillStyle = 'rgba(255,107,107,.55)'; g.beginPath(); g.arc(-11, 5, 3, 0, 7); g.arc(11, 5, 3, 0, 7); g.fill();
+  g.strokeStyle = '#c2410c'; g.lineWidth = 2; g.lineCap = 'round'; g.beginPath(); g.arc(0, 4, 5, .2, Math.PI - .2); g.stroke();
+  g.strokeStyle = '#f08c00'; g.lineWidth = 3; g.beginPath(); g.moveTo(15, 6); g.lineTo(24 + wv * 6, -4 - wv * 6); g.stroke();
+  g.fillStyle = '#ffd43b'; g.beginPath(); g.arc(24 + wv * 6, -4 - wv * 6, 3.5, 0, 7); g.fill();
+  g.restore();
+}
 function drawVenueLand(g, id) {
   if (id === '冰雪國') {
     g.fillStyle = '#e7f5ff'; g.beginPath(); g.moveTo(30, 176); g.lineTo(100, 78); g.lineTo(160, 176); g.fill();
@@ -29856,6 +29873,12 @@ function drawVenueLand(g, id) {
   } else if (id === '星星國') {
     for (let i = 0; i < 7; i++) star(g, 36 + i * 48, 36 + (i % 3) * 18, 7, '#ffe066');
     g.fillStyle = '#5c4d7a'; g.fillRect(156, 96, 40, 80); star(g, 176, 74, 14, '#ffd43b');
+  } else if (id === '太陽') {
+    const sg = g.createRadialGradient(180, 120, 20, 180, 120, 130); sg.addColorStop(0, 'rgba(255,240,150,.9)'); sg.addColorStop(1, 'rgba(255,170,60,0)'); g.fillStyle = sg; g.fillRect(40, 0, 280, 176);
+    g.fillStyle = '#ffd43b'; g.beginPath(); g.arc(180, 120, 62, Math.PI, 0); g.fill();
+    g.fillStyle = '#ff922b'; for (let i = 0; i < 9; i++) { const a = Math.PI + Math.PI * (i + .5) / 9; g.beginPath(); g.moveTo(180 + Math.cos(a - .1) * 66, 120 + Math.sin(a - .1) * 66); g.lineTo(180 + Math.cos(a) * 88, 120 + Math.sin(a) * 88); g.lineTo(180 + Math.cos(a + .1) * 66, 120 + Math.sin(a + .1) * 66); g.fill(); }
+    g.fillStyle = '#212529'; g.beginPath(); g.roundRect(150, 92, 24, 12, 5); g.roundRect(186, 92, 24, 12, 5); g.fill(); g.fillRect(172, 95, 16, 3);
+    g.strokeStyle = '#c2410c'; g.lineWidth = 3; g.lineCap = 'round'; g.beginPath(); g.arc(180, 108, 10, .3, Math.PI - .3); g.stroke();
   } else if (id === '月球') {
     g.fillStyle = '#4dabf7'; g.beginPath(); g.arc(64, 54, 18, 0, 7); g.fill();
     g.fillStyle = '#69db7c'; g.beginPath(); g.arc(58, 50, 6, 0, 7); g.arc(70, 58, 5, 0, 7); g.fill();
@@ -29878,7 +29901,8 @@ function drawWorldArena(g, W, H, ven, label) {
   if (!ven.moon) { g.font = '20px sans-serif'; g.fillText(ven.mark, W - 26, 164); }
 }
 function worldFlyTo(w, foe, done) {
-  const moon = foe.venue === '月球', ven = worldVenue(foe.venue);
+  const sun = foe.venue === '太陽', moon = foe.venue === '月球' || sun, ven = worldVenue(foe.venue);   // ☀️ 躲避球決賽在太陽：一樣坐火箭，換小陽陽來接
+  const place = sun ? '太陽' : '月球', guide = sun ? '小陽陽' : '小綠';
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   w.stage.dataset.travel = foe.venue; w.stage.dataset.kind = moon ? 'rocket' : 'plane';
   const W = 360, H = 230, { g } = gameCanvas(w.stage, W, H);
@@ -29887,34 +29911,37 @@ function worldFlyTo(w, foe, done) {
   const finish = () => { if (ended) return; ended = true; live = false; cancelAnimationFrame(raf); gameCleanup = null; done(); };
   gameCleanup = () => { ended = true; live = false; cancelAnimationFrame(raf); try { stopSpeak(); } catch (e) {} };
   const skip = el('button', 'big', moon ? '🚀 到了！' : '✈️ 到了！'); skip.onclick = finish; w.btns.appendChild(skip); leaveButton(w);
-  w.status.textContent = moon ? '🚀 火箭飛向月球…' : `✈️ 飛去${foe.venue}…`;
-  try { speak(moon ? '決賽在月球！坐火箭出發！' : `坐飛機去${foe.venue}！`); } catch (e) {}
+  w.status.textContent = moon ? `🚀 火箭飛向${place}…` : `✈️ 飛去${foe.venue}…`;
+  try { speak(moon ? `決賽在${place}！坐火箭出發！` : `坐飛機去${foe.venue}！`); } catch (e) {}
   Sound.play('whoosh');
   const frame = now => {
     if (!live) return;
     const t = (now - t0) / 1000, next = moon ? (t > 3.2 ? 'alien' : 'rocket') : (t > 2.2 ? 'land' : 'plane');
     if (next !== phase) {
       phase = next; w.stage.dataset.kind = moon ? (t > 3.2 ? 'alien' : 'rocket') : 'plane';
-      if (moon && t > 3.2 && !saidAlien) { saidAlien = true; w.status.textContent = '👽 小綠：決賽會場在這邊，跟我走！'; try { speak('你好呀！我是小綠！我帶你去月球的比賽會場！'); } catch (e) {} }
+      if (moon && t > 3.2 && !saidAlien) { saidAlien = true; w.status.textContent = `${sun ? '☀️' : '👽'} ${guide}：決賽會場在這邊，跟我走！`; try { speak(`你好呀！我是${guide}！我帶你去${place}的比賽會場！${sun ? '別擔心，這裡的太陽是暖暖的，不會燙！' : ''}`); } catch (e) {} }
       else if (!moon && t > 2.2) w.status.textContent = `抵達${foe.venue}！${ven.land}的比賽場地到了。`;
     }
     const sky = g.createLinearGradient(0, 0, 0, H);
-    sky.addColorStop(0, moon ? '#070b18' : '#7ec8f0'); sky.addColorStop(1, moon ? '#24185c' : '#e7f5ff');
+    sky.addColorStop(0, moon ? '#070b18' : '#7ec8f0'); sky.addColorStop(1, sun && t > 2.5 ? '#ff922b' : moon ? '#24185c' : '#e7f5ff');
     g.fillStyle = sky; g.fillRect(0, 0, W, H);
     if (moon) {
       for (let i = 0; i < 32; i++) { g.globalAlpha = .4 + (i % 4) * .15; g.fillStyle = '#fff'; g.fillRect((i * 47) % W, (i * 23) % 150, 1.7, 1.7); } g.globalAlpha = 1;
       g.fillStyle = '#4dabf7'; g.beginPath(); g.arc(70, Math.min(240, 210 + t * 20), Math.max(8, 36 - t * 7), 0, 7); g.fill();
-      if (t > 2.5) { g.fillStyle = '#c5c9d1'; g.fillRect(0, 168, W, 62); g.fillStyle = '#9aa3b2'; [[48, 200, 14], [150, 210, 8], [250, 196, 16]].forEach(([x, y, r]) => { g.beginPath(); g.ellipse(x, y, r, r * .4, 0, 0, 7); g.fill(); }); }
+      if (sun) {   // 太陽越飛越大
+        const R = 20 + Math.min(1, t / 2.6) * 70; g.fillStyle = 'rgba(255,200,80,.35)'; g.beginPath(); g.arc(290, 60, R * 1.4, 0, 7); g.fill(); g.fillStyle = '#ffd43b'; g.beginPath(); g.arc(290, 60, R, 0, 7); g.fill();
+        if (t > 2.5) { g.fillStyle = '#ffc94d'; g.fillRect(0, 168, W, 62); g.fillStyle = '#ff922b'; [[48, 200, 14], [150, 210, 8], [250, 196, 16]].forEach(([x, y, r]) => { g.beginPath(); g.ellipse(x, y, r, r * .4, 0, 0, 7); g.fill(); }); }
+      } else if (t > 2.5) { g.fillStyle = '#c5c9d1'; g.fillRect(0, 168, W, 62); g.fillStyle = '#9aa3b2'; [[48, 200, 14], [150, 210, 8], [250, 196, 16]].forEach(([x, y, r]) => { g.beginPath(); g.ellipse(x, y, r, r * .4, 0, 0, 7); g.fill(); }); }
       drawCupRocket(g, 180, 150 - Math.min(1, t / 2.4) * 88, 1.15);
       if (t > 3.2) {
-        drawCupAlien(g, 262, 162, 1.25);
-        g.fillStyle = 'rgba(255,255,255,.96)'; g.strokeStyle = '#2f9e44'; g.lineWidth = 2;
+        if (sun) drawCupSunny(g, 262, 150, 1.5); else drawCupAlien(g, 262, 162, 1.25);
+        g.fillStyle = 'rgba(255,255,255,.96)'; g.strokeStyle = sun ? '#f08c00' : '#2f9e44'; g.lineWidth = 2;
         g.beginPath(); g.roundRect(18, 78, 210, 52, 12); g.fill(); g.stroke();
-        g.fillStyle = '#2b8a3e'; g.font = '700 14px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'left';
-        g.fillText('你好呀！我是小綠！', 30, 100); g.fillText('決賽會場在這邊，跟我走～', 30, 120);
+        g.fillStyle = sun ? '#d9480f' : '#2b8a3e'; g.font = '700 14px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'left';
+        g.fillText(`你好呀！我是${guide}！`, 30, 100); g.fillText('決賽會場在這邊，跟我走～', 30, 120);
       }
       g.fillStyle = '#ffe066'; g.font = '900 20px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center';
-      g.fillText(t < 3.2 ? '🚀 飛向月球' : '🌕 月球決賽', W / 2, 32);
+      g.fillText(t < 3.2 ? `🚀 飛向${place}` : sun ? '☀️ 太陽決賽' : '🌕 月球決賽', W / 2, 32);
     } else {
       for (let i = 0; i < 4; i++) drawCupCloud(g, ((i * 130 - t * 80) % (W + 120) + W + 120) % (W + 120) - 50, 48 + (i % 3) * 26, .85 + (i % 2) * .35);
       if (t > 1.5) { g.globalAlpha = Math.min(1, (t - 1.5) / .7); drawVenueLand(g, foe.venue); drawCupFlag(g, W / 2 - 16, 168, 52, ven.flag); g.globalAlpha = 1; }
