@@ -27773,7 +27773,7 @@ function playBball(w, L) {
   const say = (m, s) => { msg = m; msgT = s || 1.1; };
   // 🌈 必殺技「彩虹灌籃」：投進、蓋火鍋會集能量，滿了在進攻的時候按，一定灌進，一次算 2 球
   const DUNK = { name: '彩虹灌籃', fx: '🌈', c: '#ff8fb3', c2: '#ffffff' };
-  let pw = 20, cutAt = 0, dunks = 0;
+  let pw = 20, cutAt = 0, dunks = 0, dk = null, shake = 0;   // dk：灌籃動畫（助跑 → 起跳 → 雙手把球往下塞進籃框 → 掛在籃框上 → 落地）
   const gainPw = n => { pw = Math.min(100, pw + n); };
   const pause = (s, fn) => { phase = 'pause'; pauseT = s; after = fn; };
   const throwBall = (x0, y0, x1, y1, dur, peak, land) => { fly = { x0, y0, x1, y1, dur, peak, t: 0, land }; };
@@ -27847,10 +27847,25 @@ function playBball(w, L) {
     if (!live) return;
     const dt = Math.min(.05, (now - last) / 1000); last = now; const t = (now - T0) / 1000; msgT -= dt; jumpT = Math.max(0, jumpT - dt); coolT = Math.max(0, coolT - dt);
     bSp.disabled = !(pw >= 100 && phase === 'atk'); bSp.classList.toggle('glow', !bSp.disabled);
-    if (phase === 'cut' && now - cutAt > 1100) {   // 特寫完：小可愛飛到籃框灌進去
-      phase = 'dunk'; holder = us[0]; us[0].tx = HR - 40; us[0].ty = 200; Sound.play('jump');
-      throwBall(us[0].x + 10, us[0].y - 60, HR - 14, RIM - 6, .7, 120, () => { Sound.play('perfect'); say(`${tkdSpecialName(DUNK)}！進 2 球！🌈`, 1.6); throwBall(HR - 14, RIM, HR - 14, 250, .45, 0, null); if (!goal(0) && !goal(0)) pause(1.3, startDef); });
+    if (phase === 'cut' && now - cutAt > 1100) {   // 特寫完：真正的灌籃
+      phase = 'dunk'; holder = us[0]; dk = { t: 0, x0: us[0].x, y0: us[0].y, up: 0, jumped: false, slam: false, won: false, trail: [] };
+      them.forEach(q => { q.tx = Math.min(q.x, 330); });   // 對手嚇得往旁邊閃
     }
+    if (dk) {
+      dk.t += dt; const T = dk.t, K = us[0], RX = HR - 26, GY = 200, ease = u => u < 0 ? 0 : u > 1 ? 1 : u * u * (3 - 2 * u);
+      if (T < .5) { K.x = dk.x0 + (RX - 90 - dk.x0) * ease(T / .5); K.y = dk.y0 + (GY - dk.y0) * ease(T / .5); dk.up = 0; }   // 運球助跑
+      else if (T < 1.0) { if (!dk.jumped) { dk.jumped = true; Sound.play('jump'); say('飛～起～來！', .8); } const u = (T - .5) / .5; K.x = RX - 90 + 90 * ease(u); K.y = GY; dk.up = 96 * Math.sin(u * Math.PI / 2); }   // 起跳飛到籃框上面
+      else if (T < 1.15) { dk.up = 96 - 30 * (T - 1) / .15; }   // 往下塞！
+      else if (T < 1.6) { dk.up = 66 + Math.sin((T - 1.15) * 18) * 2.5 * (1.6 - T); }   // 掛在籃框上晃一晃
+      else if (T < 1.95) { const u = (T - 1.6) / .35; dk.up = 66 * (1 - u * u); K.x = RX - 18 * u; }   // 放手落地
+      else { dk.up = 0; K.y = GY; const won = dk.won; dk = null; if (!won) pause(.7, startDef); }
+      if (dk && T >= 1.15 && !dk.slam) {   // 💥 灌進去了
+        dk.slam = true; shake = .35; Sound.play('crack'); Sound.play('perfect'); say(`💥 ${tkdSpecialName(DUNK)}！進 2 球！🌈`, 1.8);
+        throwBall(HR - 14, RIM + 6, HR - 20, 250, .42, 0, null); dk.won = goal(0) || goal(0);
+      }
+      if (dk) { K.tx = K.x; K.ty = K.y; if (T > .5 && T < 1.02) { dk.trail.push([K.x, K.y - dk.up - 40]); if (dk.trail.length > 14) dk.trail.shift(); } else if (dk.trail.length) dk.trail.shift(); }
+    }
+    shake = Math.max(0, shake - dt);
     if (phase === 'pause') { pauseT -= dt; if (pauseT <= 0 && after) { const f = after; after = null; f(); } }
     if (phase === 'atk') { pT += dt * (1.7 + L.mul * .35); p = (Math.sin(pT) + 1) / 2; them[0].tx = holder.x + 48; them[0].ty = holder.y; }
     if (phase === 'def') {
@@ -27861,17 +27876,32 @@ function playBball(w, L) {
     all.forEach(q => { q.x += (q.tx - q.x) * Math.min(1, dt * 3); q.y += (q.ty - q.y) * Math.min(1, dt * 3); });
     if (fly) { fly.t += dt; if (fly.t >= fly.dur) { const f = fly; fly = null; if (f.land) f.land(); } }
     // 畫
+    g.save(); if (shake > 0) g.translate((Math.random() - .5) * 10 * shake / .35, (Math.random() - .5) * 8 * shake / .35);   // 灌進去畫面震一下
     arenaFloor(g, W, H, 150);
     g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 2; g.beginPath(); g.moveTo(W / 2, 150); g.lineTo(W / 2, H); g.stroke(); g.beginPath(); g.ellipse(W / 2, 210, 40, 16, 0, 0, 7); g.stroke();
-    hoop(HL, -1); hoop(HR, 1);
+    hoop(HL, -1);
+    { const bend = dk && dk.slam && dk.t < 1.6 ? 7 * (1 - (dk.t - 1.15) / .45) : 0; g.save(); if (bend > 0) { g.translate(HR - 14, RIM); g.rotate(bend * .02); g.translate(-(HR - 14), -RIM + bend * .4); } hoop(HR, 1); g.restore(); }   // 籃框被拉彎
+    if (dk && dk.trail.length > 1) { for (let k = 0; k < 6; k++) { g.strokeStyle = `hsl(${k * 55},90%,62%)`; g.globalAlpha = .55; g.lineWidth = 4; g.beginPath(); dk.trail.forEach(([x, y], i) => { const yy = y + (k - 2.5) * 5; i ? g.lineTo(x, yy) : g.moveTo(x, yy); }); g.stroke(); } g.globalAlpha = 1; }   // 🌈 彩虹尾巴
     all.slice().sort((a, b) => a.y - b.y).forEach(q => {
       let up = 0; if (q === us[0] && jumpT > 0) up = Math.sin((.5 - jumpT) / .5 * Math.PI) * 44; if (phase === 'def' && q === holder) up = Math.sin(oppJ * Math.PI / 2) * 30;
+      if (q === us[0] && dk) up = dk.up;
       const kid = q.who === 'kid'; trackRunner(g, q.who, q.x, q.y - up, kid ? .78 : 1.35, t, Math.abs(q.tx - q.x) > 4, us.includes(q) ? 1 : -1);
       if (phase === 'def' && q === holder && defT >= shootAt && defT <= shootAt + L.block) { g.font = '900 30px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#e8505b'; g.fillText('！', q.x, q.y - up - 92); }
     });
     // 球
+    if (dk && dk.slam && dk.t < 1.6) {   // 雙手抓著籃框
+      const K = us[0], sy = K.y - dk.up - 26; g.strokeStyle = '#ffd9c2'; g.lineWidth = 4; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(K.x - 3, sy); g.lineTo(HR - 20, RIM + 1); g.moveTo(K.x + 6, sy); g.lineTo(HR - 8, RIM + 1); g.stroke();
+      g.fillStyle = '#ffd9c2'; g.beginPath(); g.arc(HR - 20, RIM + 1, 3, 0, 7); g.arc(HR - 8, RIM + 1, 3, 0, 7); g.fill();
+    }
     let bx, by;
-    if (fly) { const u = Math.min(1, fly.t / fly.dur); bx = fly.x0 + (fly.x1 - fly.x0) * u; by = fly.y0 + (fly.y1 - fly.y0) * u - Math.sin(u * Math.PI) * fly.peak; }
+    if (dk && !dk.slam) {   // 灌籃時球的位置：助跑運球 → 舉高高 → 往下塞
+      const K = us[0], T = dk.t;
+      if (T < .5) { bx = K.x + 16; by = K.y - 8 - Math.abs(Math.sin(t * 9)) * 30; }
+      else if (T < 1.0) { bx = K.x + 6; by = K.y - dk.up - 56; }   // 雙手把球舉過頭
+      else { const u = (T - 1) / .15; bx = K.x + 6 + (HR - 14 - K.x - 6) * u; by = K.y - dk.up - 56 + (RIM + 2 - (K.y - dk.up - 56)) * u; }   // 往下塞進籃框
+      if (T >= .5) { const sy = K.y - dk.up - 26; g.strokeStyle = '#ffd9c2'; g.lineWidth = 4; g.lineCap = 'round'; g.beginPath(); g.moveTo(K.x - 3, sy); g.lineTo(bx - 6, by + 4); g.moveTo(K.x + 6, sy); g.lineTo(bx + 6, by + 4); g.stroke(); }   // 手臂
+    } else if (fly) { const u = Math.min(1, fly.t / fly.dur); bx = fly.x0 + (fly.x1 - fly.x0) * u; by = fly.y0 + (fly.y1 - fly.y0) * u - Math.sin(u * Math.PI) * fly.peak; }
     else { const h = holder, dir = us.includes(h) ? 1 : -1, up = phase === 'def' && h === holder ? Math.sin(oppJ * Math.PI / 2) * 30 : 0; bx = h.x + 16 * dir; by = phase === 'atk' || phase === 'def' ? h.y - 8 - Math.abs(Math.sin(t * 7)) * 30 - (oppJ > 0 && phase === 'def' ? 50 + up : 0) : h.y - 50; }
     arenaBall(g, bx, by, 8, '#ff7a3c', !fly || fly.peak ? 245 : null);
     if (phase === 'atk') {   // 力量條
@@ -27882,9 +27912,15 @@ function playBball(w, L) {
     }
     arenaScore(g, W, score[0], score[1], '我們', '對手');
     g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(10, 8, 100, 16); g.fillStyle = pw >= 100 ? `hsl(${(now / 3) % 360},90%,60%)` : '#ff8fb3'; g.fillRect(12, 10, 96 * pw / 100, 12); g.fillStyle = '#fff'; g.font = '700 9px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'left'; g.fillText(pw >= 100 ? '灌籃 OK！' : '能量', 16, 20); g.textAlign = 'center';
-    if (phase === 'dunk' && fly) { for (let k = 0; k < 6; k++) { g.strokeStyle = `hsl(${k * 60},90%,60%)`; g.globalAlpha = .6; g.lineWidth = 3; g.beginPath(); g.arc(HR - 14, RIM + 40, 60 + k * 5, Math.PI * 1.1, Math.PI * 1.6); g.stroke(); } g.globalAlpha = 1; }
+    if (dk && dk.slam && dk.t < 1.75) {   // 💥 砰！星星炸開
+      const u = (dk.t - 1.15) / .6; g.globalAlpha = Math.max(0, 1 - u);
+      for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2, r = 14 + u * 46; g.fillStyle = `hsl(${k * 36},95%,60%)`; g.beginPath(); g.arc(HR - 14 + Math.cos(a) * r, RIM + Math.sin(a) * r * .7, 4.5, 0, 7); g.fill(); }
+      g.font = '900 30px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.lineWidth = 6; g.strokeStyle = '#fff'; g.strokeText('砰！', HR - 70, RIM - 20 - u * 14); g.fillStyle = '#ff5a1f'; g.fillText('砰！', HR - 70, RIM - 20 - u * 14);
+      g.globalAlpha = 1;
+    }
+    g.restore();
     if (phase === 'cut') tkdSpecialCut(g, W, H, DUNK, (now - cutAt) / 600, now / 1000);
-    if (msgT > 0 && msg) arenaMsg(g, W, msg, 96);
+    if (msgT > 0 && msg) arenaMsg(g, W, msg, dk ? 236 : 96);   // 灌籃時字放下面，才看得到籃框
     raf = requestAnimationFrame(tick);
   };
   raf = requestAnimationFrame(tick);
