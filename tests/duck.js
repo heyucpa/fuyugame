@@ -15,6 +15,9 @@ const { chromium } = require('playwright');
     closeGameWindow(); await wait(300); out.prefAfter = Sound.prefs.bgm; out.gainAfter = +Sound._t.bgmGain().toFixed(3);
     // 開關音樂按鈕在遊戲中也不會把靜音打破
     openEnglishGame(); await wait(300); Sound.setPref('bgm', true); await wait(600); out.gainPrefToggle = +Sound._t.bgmGain().toFixed(3); closeGameWindow(); await wait(600); out.gainRestored = +Sound._t.bgmGain().toFixed(3);
+    // 🔴 躲避球：打球的時候背景音樂安靜，關掉就恢復（家長：沒放絕招也一直有背景聲音、會 lag）
+    openDodge(); document.querySelectorAll('.lv-btn')[0].click(); await wait(900); out.dodgeDuck = +Sound._t.bgmGain().toFixed(3);
+    closeGameWindow(); await wait(900); out.dodgeBack = +Sound._t.bgmGain().toFixed(3);
     out.noThrow = true; return out; });
   console.log(JSON.stringify(r), errs); await b.close();
 })();

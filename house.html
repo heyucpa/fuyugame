@@ -4101,8 +4101,9 @@ const Sound = (() => {
   function schedule() {
     if (!ac || ac.state !== 'running') return;
     // 分頁被暫停太久、排程落後時，從頭重新對齊，避免一次擠出一堆音
-    if (nextTime < ac.currentTime - .3) { restartTimeline(); return; }
-    const horizon = ac.currentTime + .6;
+    // 🎵 家長：音樂會 lag → 排得更前面（1.2 秒）；畫面忙到排程落後時，接著原本那句往下唱，不要整首從頭開始
+    if (nextTime < ac.currentTime - .05) { const d = ac.currentTime + .1 - nextTime; nextTime += d; nextBass += d; }
+    const horizon = ac.currentTime + 1.2;
     while (nextTime < horizon) {
       const [name, beats] = song.melody[nextIdx];
       if (name) (song.chip ? chipNote : musicBoxNote)(N[name], nextTime, beats);
@@ -4124,7 +4125,7 @@ const Sound = (() => {
   function startBgm() {
     restartTimeline();
     clearInterval(bgmTimer);
-    bgmTimer = setInterval(schedule, 150);
+    bgmTimer = setInterval(schedule, 250);
   }
 
   function setPref(key, on) {
@@ -15018,7 +15019,7 @@ function gameStep(dt, now) {
   if (stage && stage.classList.contains('island-on')) { dirty = false; return true; }   // 小島整片蓋住房間，底下不用每幀重畫
   // 小遊戲視窗開著的時候房間被蓋住（後面是暗的）：一秒重畫兩次就好，把力氣留給小遊戲（家長：一直卡）
   const gameOver = !$('#modal').hidden && $('#modalCard').classList.contains('in-game');
-  if (!gameOver || now - (gameStep.lastBg || 0) > 500) { gameStep.lastBg = now; draw(); } // 小可愛一直在動，每幀都重畫
+  if (!gameOver) draw(); // 小可愛一直在動，每幀都重畫（小遊戲開著時房間被蓋住，完全不畫：以前每半秒畫一次，玩躲避球會一頓一頓）
   dirty = false;
   return true;
 }
@@ -15032,6 +15033,9 @@ var FRAME_MIN_MS = 1000 / 30 - 4;   // 房間、小島最多一秒畫 30 次（�
   /* 🐢 房間一秒畫 30 次就夠順（家長：還有其他可以更快、避免卡卡的嗎）：工作量少一半，iPad 比較不燙、不卡。
      螢幕 60 格就隔一格畫一次；本來就比較慢的機器不受影響。小遊戲有自己的迴圈，照樣 60 格。 */
   if (now - lastFrame < FRAME_MIN_MS) return;
+  /* 🏐 小遊戲開著（躲避球、籃球…）：房間的事情一秒只做 4 次，把手機／平板的力氣全部留給小遊戲（家長：玩躲避球會卡卡） */
+  if (!loop.modal) { loop.modal = document.getElementById('modal'); loop.card = document.getElementById('modalCard'); }
+  if (loop.modal && !loop.modal.hidden && loop.card && loop.card.classList.contains('in-game') && now - lastFrame < 250) return;
   if (now - lastFrame > 5000 && Date.now() - crashHiddenSince > (now - lastFrame) + 1000) { const gap = now - lastFrame, bl = window.crashBlurSince || 0, away = bl && Date.now() - bl <= gap + 1000;   // 停住的這段時間裡 iPad 跑去別的畫面過
     crashLog('畫面停住', `停了 ${(gap / 1000).toFixed(1)} 秒又恢復` + (away ? '（那時候 iPad 在別的畫面：多工、控制中心或詢問框，不是遊戲卡住）' : '（跳出確認視窗也會這樣）')); }   // 📋 當機紀錄
   const dt = Math.max(0, Math.min(.05, (now - lastFrame) / 1000));
@@ -18568,6 +18572,7 @@ function freeCanvases(root) { try { if (!root) return; (root.tagName === 'CANVAS
 function closeGameWindow() {
   crashCrumb('關小遊戲'); EXAM = null;
   if (gameCleanup) { gameCleanup(); gameCleanup = null; }
+  try { Sound.duck(false); } catch (e) {}   // 關掉小遊戲一定把背景音樂還原
   freeCanvases($('#modalCard .game-stage') || null);
   $('#modalCard').classList.remove('game-card', 'in-game', 'game-big');
   $('#modal').hidden = true;
@@ -27973,8 +27978,13 @@ function dbBuildBg(W, H, TOP, venue) {
   return c;
 }
 function dbFans(n) { const pal = NEIGHBORS.filter(Boolean).map(x => [x.body, x.edge || x.body, x.ears]); return Array.from({ length: n }, (_, i) => { const p = pal[i % pal.length]; return { x: 22 + (i % 13) * 34.5 + (Math.floor(i / 13) % 2) * 16, y: 72 + Math.floor(i / 13) * 15, c: p[0], e: p[1], ears: p[2], ph: i * 1.7 }; }); }
-function dbDrawFan(g, f, t, cheer) {
-  const up = Math.abs(Math.sin(t * (cheer > 0 ? 12 : 3) + f.ph)) * (cheer > 0 ? 7 : 2), y = f.y - up;
+function dbDrawFan(g, f, t, cheer) {   // ⚡ 每個觀眾先畫成小圖存起來（一般／歡呼兩張），之後每格只貼圖：26 個觀眾不再每格重畫（家長：躲避球卡卡）
+  const up = Math.abs(Math.sin(t * (cheer > 0 ? 12 : 3) + f.ph)) * (cheer > 0 ? 7 : 2), k = cheer > 0 ? 1 : 0;
+  if (!f.spr) f.spr = [];
+  if (!f.spr[k]) { const d = 2, c = document.createElement('canvas'); c.width = 32 * d; c.height = 32 * d; const g2 = c.getContext('2d'); g2.scale(d, d); dbDrawFanRaw(g2, Object.assign({}, f, { x: 16, y: 20 }), 20, cheer); f.spr[k] = c; }
+  g.drawImage(f.spr[k], f.x - 16, f.y - up - 20, 32, 32);
+}
+function dbDrawFanRaw(g, f, y, cheer) {
   g.fillStyle = f.c; g.strokeStyle = f.e; g.lineWidth = 1;
   if (f.ears === 'long') { [-1, 1].forEach(s => { g.beginPath(); g.ellipse(f.x + s * 3, y - 11, 2, 5, 0, 0, 7); g.fill(); }); } else if (f.ears === 'pointy') { [-1, 1].forEach(s => { g.beginPath(); g.moveTo(f.x + s * 2, y - 7); g.lineTo(f.x + s * 6, y - 13); g.lineTo(f.x + s * 8, y - 5); g.fill(); }); } else { [-1, 1].forEach(s => { g.beginPath(); g.arc(f.x + s * 6, y - 7, 3, 0, 7); g.fill(); }); }
   g.beginPath(); g.arc(f.x, y, 8, 0, 7); g.fill(); g.stroke();
@@ -28025,7 +28035,8 @@ function playDodge(w, L, opt) {
   let sp = 40, cut = null, spCount = 0, flash = 0, theirN = 0;
   const bg = dbBuildBg(W, H, TOP, opt.venue), fans = dbFans(26), ref = HOSTS.arena, outPops = [], fx = [];
   let cheer = 0, shake = 0, refFlag = 0, refSide = 0, lastSp = '';
-  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', key); bg.width = bg.height = 0; };
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', key); bg.width = bg.height = 0; try { Sound.duck(false); } catch (e) {} };
+  try { Sound.duck(true); } catch (e) {}   // 🔇 家長：沒放絕招也一直有背景聲音、會 lag → 打躲避球時背景音樂先安靜，只留打球的音效
   const say = (m, s) => { msg = m; msgT = s || 1.1; };
   const pause = (s, fn) => { phase = 'pause'; pauseT = s; after = fn; };
   const gain = n => { sp = Math.min(100, Math.max(0, sp + n)); bSp.disabled = sp < 100; bSp.classList.toggle('glow', sp >= 100); };
