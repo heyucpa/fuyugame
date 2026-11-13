@@ -22575,6 +22575,8 @@ function drawHomeExterior(ctx, x, y, w, h, doorX, look, o) {
   // ③ 門口裝飾
   homeDrawDeco(ctx, look.decoL, x - 22, y + h, tt, night, o);
   homeDrawDeco(ctx, look.decoR, x + w + 22, y + h, tt, night, o);
+  // 回傳畫到最高的地方（旗子、城堡塔的小旗）：外觀店的預覽用來縮小，免得旗子跑出畫面（家長：愛心旗沒出來）
+  return Math.min(roofTop - (look.flag ? 28 : 0), st === 'castle' || st === 'rainbowCastle' ? y - 58 - lift : Infinity);
 }
 function homeDrawDeco(ctx, id, cx, gy, tt, night, o) {
   if (!id || id === 'none') return;
@@ -22618,8 +22620,13 @@ function openHomeLook(target) {
   const draw = now => { if (!live) return; const t = now / 1000;
     const sky = g.createLinearGradient(0, 0, 0, 190); sky.addColorStop(0, '#bfe6ff'); sky.addColorStop(1, '#e8f7ff'); g.fillStyle = sky; g.fillRect(0, 0, 300, 190);
     g.fillStyle = '#8fd18f'; g.fillRect(0, 150, 300, 40); g.fillStyle = '#e8cf9a'; g.fillRect(132, 150, 36, 40);
-    drawHomeExterior(g, 86, 58, 128, 92, 134, homeLook(target), { tt: t, season: typeof seasonOfMonth === 'function' ? seasonOfMonth() : '' });
-    const sg = homeLook(target).sign || '我的家'; g.font = '700 12px "Microsoft JhengHei","PingFang TC",sans-serif'; const tw = g.measureText(sg).width + 14; g.fillStyle = 'rgba(255,255,255,.92)'; g.beginPath(); g.roundRect ? g.roundRect(150 - tw / 2, 6, tw, 18, 9) : g.rect(150 - tw / 2, 6, tw, 18); g.fill(); g.fillStyle = '#4a3b2a'; g.textAlign = 'center'; g.fillText(sg, 150, 19);
+    const look = homeLook(target);
+    /* 房子長大、城堡、插旗子會超出畫面上面：整間縮小一點（以地面中間為準）；門牌改掛在左下角，不要蓋住屋頂的旗子 */
+    if (draw.key !== JSON.stringify(look)) { draw.key = JSON.stringify(look); draw.top = drawHomeExterior(document.createElement('canvas').getContext('2d'), 86, 58, 128, 92, 134, look, {}); }
+    const sc = Math.min(1, 142 / (150 - Math.min(150, draw.top - 4)));
+    g.save(); g.translate(150, 150); g.scale(sc, sc); g.translate(-150, -150);
+    drawHomeExterior(g, 86, 58, 128, 92, 134, look, { tt: t, season: typeof seasonOfMonth === 'function' ? seasonOfMonth() : '' }); g.restore();
+    const sg = look.sign || '我的家'; g.font = '700 12px "Microsoft JhengHei","PingFang TC",sans-serif'; const tw = g.measureText(sg).width + 14; g.fillStyle = 'rgba(255,255,255,.92)'; g.beginPath(); g.roundRect ? g.roundRect(8, 164, tw, 20, 10) : g.rect(8, 164, tw, 20); g.fill(); g.fillStyle = '#4a3b2a'; g.textAlign = 'center'; g.fillText(sg, 8 + tw / 2, 178);
     raf = requestAnimationFrame(draw); };
   raf = requestAnimationFrame(draw);
   const render = () => {
@@ -22823,7 +22830,7 @@ function islDrawBuilding(ctx, b, tt) {
     ctx.fillStyle = '#ffd24d'; ctx.beginPath(); ctx.arc(dx + 23, y + h - 10, 1.8, 0, 7); ctx.fill();
   }
   // 屋頂上的小圖示＋名字
-  const hl = b.id === 'home' ? homeLook() : null, up = hl ? hl.tier * 16 + ({ castle: 46, rainbowCastle: 46, tree: 46, mushroom: 6, log: 8 }[hl.style] || 0) : 0;   // 房子變高、城堡有塔：圖示跟名字往上
+  const hl = b.id === 'home' ? homeLook() : null, up = hl ? hl.tier * 16 + ({ castle: 46, rainbowCastle: 46, tree: 46, mushroom: 6, log: 8 }[hl.style] || 0) + (hl.flag && !/castle|tree/i.test(hl.style) ? 24 : 0) : 0;   // 房子變高、城堡有塔、插了旗子：圖示跟名字往上（不要蓋住旗子）
   const bx = x + w / 2, by = y - 14 - up + Math.sin(tt * 2 + b.x) * 1.2;
   ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.beginPath(); ctx.arc(bx, by, 15, 0, 7); ctx.fill(); ctx.strokeStyle = roofC; ctx.lineWidth = 2; ctx.stroke();
   ctx.font = '19px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#000'; ctx.fillText(icon, bx, by + 1);
