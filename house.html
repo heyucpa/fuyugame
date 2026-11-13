@@ -6342,7 +6342,8 @@ function normalizeSave(g) {
       ['wall', 'roof', 'door', 'style', 'flag'].forEach(k => { if (!okId(k, hm[k])) delete hm[k]; });
       ['decoL', 'decoR'].forEach(k => { if (!okId('deco', hm[k])) delete hm[k]; });
       if (hm.sign != null && typeof hm.sign !== 'string') delete hm.sign; else if (typeof hm.sign === 'string') hm.sign = hm.sign.slice(0, 8);
-      if (hm.par != null) { if (!isObj(hm.par)) delete hm.par; else { ['wall', 'roof', 'door', 'style', 'flag'].forEach(k => { if (!okId(k, hm.par[k])) delete hm.par[k]; }); ['decoL', 'decoR'].forEach(k => { if (!okId('deco', hm.par[k])) delete hm.par[k]; }); Object.keys(hm.par).forEach(k => { if (!['wall', 'roof', 'door', 'style', 'flag', 'decoL', 'decoR'].includes(k)) delete hm.par[k]; }); } }
+      if (hm.par != null) { if (!isObj(hm.par)) delete hm.par; else { ['wall', 'roof', 'door', 'style', 'flag'].forEach(k => { if (!okId(k, hm.par[k])) delete hm.par[k]; }); ['decoL', 'decoR'].forEach(k => { if (!okId('deco', hm.par[k])) delete hm.par[k]; }); Object.keys(hm.par).forEach(k => { if (!['wall', 'roof', 'door', 'style', 'flag', 'decoL', 'decoR', 'wallPicked'].includes(k) || (k === 'wallPicked' && hm.par[k] !== 1)) delete hm.par[k]; }); } }
+      if (hm.wallPicked != null && hm.wallPicked !== 1) delete hm.wallPicked;   // 自己選過牆壁顏色（選蜜桃粉就真的是蜜桃粉）
       if (hm.contest != null && !(isObj(hm.contest) && Number.isInteger(hm.contest.wk) && Number.isInteger(hm.contest.stars) && hm.contest.stars >= 1 && hm.contest.stars <= 3)) delete hm.contest;
       if (hm.newAt != null && !(typeof hm.newAt === 'number' && isFinite(hm.newAt))) delete hm.newAt; if (hm.seenAt != null && !(typeof hm.seenAt === 'number' && isFinite(hm.seenAt))) delete hm.seenAt; } }
   if (out.dbcup != null) { if (!isObj(out.dbcup)) delete out.dbcup; else { if (!(Number.isInteger(out.dbcup.best) && out.dbcup.best >= 0 && out.dbcup.best <= 5)) out.dbcup.best = 0; if (!(Number.isInteger(out.dbcup.gold) && out.dbcup.gold >= 0 && out.dbcup.gold < 1e6)) out.dbcup.gold = 0; } }   // 🌏 世界躲避球大賽
@@ -22488,7 +22489,7 @@ function homeItem(kind, id) { return (HOME_KINDS[kind] || []).find(x => x[0] ===
 function homeParState() { const h = homeState(); if (!h.par || typeof h.par !== 'object') h.par = {}; const p = h.par; if (!p.wall) p.wall = 'cream'; if (!p.roof) p.roof = 'blue'; if (!p.door) p.door = 'wood'; if (!p.style) p.style = 'cottage'; if (!p.flag) p.flag = 'heart'; if (!p.decoL) p.decoL = 'flowerbed'; if (!p.decoR) p.decoR = 'none'; return p; }   // 👪 爸媽家（天空島）的外觀
 function homeLook(target) {
   const h = target === 'par' ? homeParState() : homeState(), c = (k, id, d) => { const it = homeItem(k, id); return it ? it[2] : d; };
-  return { style: h.style, wall: c('wall', h.wall, '#ffd9c9'), roof: c('roof', h.roof, '#ff7b7b'), door: c('door', h.door, '#7a4a2a'), flag: h.flag !== 'none' ? (homeItem('flag', h.flag) || [])[2] || '' : '', sign: target === 'par' ? '爸爸媽媽的家' : (typeof h.sign === 'string' && h.sign.trim()) || '', decoL: h.decoL, decoR: h.decoR, tier: target === 'par' ? 1 : homeTier() };
+  return { style: h.style, wall: c('wall', h.wall, '#ffd9c9'), roof: c('roof', h.roof, '#ff7b7b'), door: c('door', h.door, '#7a4a2a'), flag: h.flag !== 'none' ? (homeItem('flag', h.flag) || [])[2] || '' : '', sign: target === 'par' ? '爸爸媽媽的家' : (typeof h.sign === 'string' && h.sign.trim()) || '', decoL: h.decoL, decoR: h.decoR, tier: target === 'par' ? 1 : homeTier(), wallAuto: h.wallPicked !== 1 };
 }
 function homeTier() { const n = G && Array.isArray(G.rooms) ? G.rooms.length : 1; return n >= 5 ? 2 : n >= 3 ? 1 : 0; }   // ④ 房子會長大
 function homeRoofFill(ctx, c, x, y, w, h) {
@@ -22521,7 +22522,7 @@ function drawHomeExterior(ctx, x, y, w, h, doorX, look, o) {
     if (look.tier >= 1) { ctx.fillStyle = winC; ctx.beginPath(); ctx.arc(x + w / 2, y + 12 - lift, 7, 0, 7); ctx.fill(); glow(x + w / 2, y + 12 - lift); }
     roofTop = y - 10 - lift; snowLine = 'dome';
   } else if (st === 'castle' || st === 'rainbowCastle') {   // 🏰 小城堡：石牆＋城垛＋兩座塔
-    const wallC = st === 'rainbowCastle' ? '#fff4fb' : (look.wall === '#ffd9c9' ? '#dcd6cc' : look.wall), RR = st === 'rainbowCastle' ? homeRoofFill(ctx, 'rainbow', x - 10, y - 60, w + 20, 60) : R;
+    const wallC = st === 'rainbowCastle' ? '#fff4fb' : (look.wall === '#ffd9c9' && look.wallAuto !== false ? '#dcd6cc' : look.wall), RR = st === 'rainbowCastle' ? homeRoofFill(ctx, 'rainbow', x - 10, y - 60, w + 20, 60) : R;
     ctx.fillStyle = wallC; ctx.fillRect(x, y + 14 - lift, w, h - 14 + lift);
     ctx.strokeStyle = 'rgba(0,0,0,.08)'; ctx.lineWidth = 1; for (let yy = y + 22 - lift; yy < y + h; yy += 10) { ctx.beginPath(); ctx.moveTo(x, yy); ctx.lineTo(x + w, yy); ctx.stroke(); }
     ctx.fillStyle = wallC; for (let i = 0; i < 7; i++) if (i % 2 === 0) ctx.fillRect(x + 6 + i * (w - 12) / 7, y + 4 - lift, (w - 12) / 7, 12);
@@ -22533,8 +22534,9 @@ function drawHomeExterior(ctx, x, y, w, h, doorX, look, o) {
     roofTop = y + 4 - lift; snowLine = 'castle';   // 旗子插在城垛中間
   } else {   // 🏡 小屋、🌲 木頭小屋、🍬 糖果屋：方方的牆＋斜屋頂
     let wallC = look.wall;
-    if (st === 'log' && (look.wall === '#ffd9c9' || look.wall === '#fff3e0')) wallC = '#c08a55';
-    if (st === 'candy' && look.wall === '#ffd9c9') wallC = '#e8b77a';
+    // 還沒自己選過牆壁顏色：木頭小屋、糖果屋用造型本來的顏色；選過（例如家長：選蜜桃粉顏色怪怪的）就照選的畫
+    if (st === 'log' && look.wallAuto !== false && (look.wall === '#ffd9c9' || look.wall === '#fff3e0')) wallC = '#c08a55';
+    if (st === 'candy' && look.wallAuto !== false && look.wall === '#ffd9c9') wallC = '#e8b77a';
     ctx.fillStyle = wallC; ctx.fillRect(x, y + 20 - lift, w, h - 20 + lift);
     ctx.strokeStyle = 'rgba(0,0,0,.08)'; ctx.lineWidth = 2; ctx.strokeRect(x, y + 20 - lift, w, h - 20 + lift);
     if (st === 'log') { ctx.strokeStyle = 'rgba(80,45,20,.28)'; ctx.lineWidth = 2; for (let yy = y + 26 - lift; yy < y + h; yy += 8) { ctx.beginPath(); ctx.moveTo(x, yy); ctx.lineTo(x + w, yy); ctx.stroke(); } ctx.fillStyle = 'rgba(80,45,20,.35)'; for (let yy = y + 24 - lift; yy < y + h; yy += 8) { ctx.beginPath(); ctx.arc(x + 3, yy + 2, 3, 0, 7); ctx.arc(x + w - 3, yy + 2, 3, 0, 7); ctx.fill(); } }
@@ -22587,13 +22589,22 @@ function homeDrawDeco(ctx, id, cx, gy, tt, night, o) {
 /* 🏡 房子外觀店：上面是會動的預覽，下面分頁選。買過的可以一直換；收集 10 種送金色屋頂、全部送彩虹城堡（⑦） */
 const HOME_TABS = [['style', '🏠 造型'], ['wall', '🧱 牆壁'], ['roof', '🔺 屋頂'], ['door', '🚪 門'], ['flag', '🚩 旗子'], ['sign', '🏷️ 門牌'], ['decoL', '🌼 門口左邊'], ['decoR', '🌼 門口右邊']];
 let homeTab = 'style';
-function homeBuyable() { const out = []; Object.keys(HOME_KINDS).forEach(k => HOME_KINDS[k].forEach(it => { if (it[3] > 0) out.push(k + ':' + it[0]); })); return out; }
+// 🎄 聖誕燈串只有 12 月買得到：不算在收集裡，不然 12 月以前永遠拿不到彩虹城堡
+function homeBuyable() { const out = []; Object.keys(HOME_KINDS).forEach(k => HOME_KINDS[k].forEach(it => { if (it[3] > 0 && !(k === 'deco' && it[0] === 'xmas')) out.push(k + ':' + it[0]); })); return out; }
 function homeCollected() { const h = homeState(), all = homeBuyable(); return all.filter(k => h.owned.includes(k)).length; }
 function homeCheckRewards() {
   const h = homeState(), n = homeCollected(), all = homeBuyable().length, got = [];
   if (n >= 10 && !h.owned.includes('roof:gold')) { h.owned.push('roof:gold'); got.push(['🌟', '金色屋頂']); }
   if (n >= all && !h.owned.includes('style:rainbowCastle')) { h.owned.push('style:rainbowCastle'); got.push(['🌈', '彩虹城堡']); }
   got.forEach(([ic, nm], i) => setTimeout(() => { try { Sound.play('fanfare'); confettiBurst(100); showcase(el('div', 'magic-pic', ic), `外觀收集獎勵：${nm}！`, `收集了 ${n} 種房子外觀，送你「${nm}」！到房子外觀裡就可以換上。`, { head: '🎨 收集獎勵' }); } catch (e) {} }, 400 + i * 600));
+}
+/* 🎁 收集獎勵怎麼拿：說清楚還差幾種、還沒買的是哪幾個（家長：彩虹城堡要怎麼拿到？） */
+function homeRewardHint(id) {
+  const h = homeState(), n = homeCollected(), all = homeBuyable(), need = id === 'gold' ? 10 : all.length, left = Math.max(0, need - n);
+  const nm = id === 'gold' ? '🌟 金色屋頂' : '🌈 彩虹城堡';
+  if (!left) return `🎁 ${nm}已經可以拿了！`;
+  const miss = all.filter(k => !h.owned.includes(k)).map(k => { const [kd, i] = k.split(':'), it = homeItem(kd, i); return it ? it[1].replace(/^\S+ /, '') : ''; }).filter(Boolean);
+  return `🎁 ${nm}：把房子外觀收集到 ${need} 種就送！現在 ${n} 種，還差 ${left} 種` + (id !== 'gold' && miss.length <= 8 ? `（還沒買：${miss.join('、')}）` : '');
 }
 function openHomeLook(target) {
   const par = target === 'par';
@@ -22632,11 +22643,12 @@ function openHomeLook(target) {
       b.appendChild(el('div', 'pr', using ? '使用中' : own ? '已擁有' : price === -1 ? '🎁 收集獎勵' : price === -2 ? '🏆 拿過世界冠軍' : price === -3 ? '⭐ 最美房子 3 顆星' : `💰 ${fmt(price)}`));
       b.onclick = () => {
         if (!own) {
-          if (price < 0) { toast(price === -1 ? '🎁 這個要收集房子外觀才拿得到喔！' : price === -3 ? '⭐ 「最美房子比賽」拿到 3 顆星才有！' : '🏆 拿到跆拳道或躲避球的世界冠軍才有冠軍旗！'); return; }
+          if (price < 0) { toast(price === -1 ? homeRewardHint(id) : price === -3 ? '⭐ 「最美房子比賽」拿到 3 顆星才有！' : '🏆 拿到跆拳道或躲避球的世界冠軍才有冠軍旗！'); return; }
           if (!spend(price)) { toast('💰 錢不夠喔～去玩小遊戲賺錢吧！'); return; }
           h0.owned.push(kind + ':' + id); Sound.play('coin'); refreshTop();
         } else Sound.play('click');
         if (homeTab === 'decoL') h.decoL = id; else if (homeTab === 'decoR') h.decoR = id; else h[kind] = id;
+        if (kind === 'wall') h.wallPicked = 1;
         if (!par) h.newAt = Date.now(); else try { hostSay('哇！謝謝你幫爸爸媽媽的家變漂亮！', 2600); } catch (e) {} saveGame(); homeCheckRewards(); render();
       };
       grid.appendChild(b);

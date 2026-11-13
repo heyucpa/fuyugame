@@ -45,6 +45,14 @@ const path = require('path');
     const bad = normalizeSave(Object.assign({}, raw, { home: { wall: 'zzz', style: 'ufo', owned: ['wall:pink', 'bad', 'roof:nope', 5], sign: 'x'.repeat(30), decoL: 'rocket' } })).home;
     o.bad = bad.wall == null && bad.style == null && bad.owned.join() === 'wall:pink' && bad.sign.length === 8 && bad.decoL == null;
     o.bad2 = normalizeSave(Object.assign({}, raw, { home: 'oops' })).home == null;
+    // 蜜桃粉：還沒選過牆壁 → 糖果屋用自己的顏色；自己選了蜜桃粉 → 真的畫蜜桃粉（家長：蜜桃粉的顏色怪怪的）
+    { const px = (lk) => { const c = document.createElement('canvas'); c.width = 300; c.height = 190; const g = c.getContext('2d'); drawHomeExterior(g, 86, 58, 128, 92, 134, lk, { tt: 0 }); return Array.from(g.getImageData(100, 130, 1, 1).data.slice(0, 3)).join(); };
+      const base = Object.assign(homeLook(), { style: 'candy', wall: '#ffd9c9', decoL: 'none', decoR: 'none', tier: 0 });
+      o.peachAuto = px(Object.assign({}, base, { wallAuto: true })) === '232,183,122';
+      o.peachPicked = px(Object.assign({}, base, { wallAuto: false })) === '255,217,201'; }
+    o.noXmasInCollect = !homeBuyable().includes('deco:xmas');
+    o.hint = /還差 \d+ 種/.test(homeRewardHint('rainbowCastle')) || /已經可以拿/.test(homeRewardHint('rainbowCastle'));
+    o.pickedSaved = normalizeSave(Object.assign({}, raw, { home: { wallPicked: 1, wall: 'peach' } })).home.wallPicked === 1 && normalizeSave(Object.assign({}, raw, { home: { wallPicked: 'x' } })).home.wallPicked == null;
     return o;
   });
   console.log(JSON.stringify(o));
