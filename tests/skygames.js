@@ -26,6 +26,7 @@ const path = require('path');
     goPlaceRoom(1); await wait(200); hostTick(.016, performance.now());
     hostMenuEntries().find(e => /風箏/.test(e[0]))[1](); await wait(300); const K = openKiteGame.test;
     K.hold(true); await wait(500); const y1 = K.st().y; K.hold(false); await wait(600); o.kiteMove = K.st().y > y1;
+    K.wind(60); K.hold(true); await wait(1800); o.kiteTopInWind = K.st().y <= 45; K.hold(false); K.wind(0); await wait(300);   // 風往下吹也拉得到最上面
     K.addStar(); await wait(100); o.kiteStar = K.st().score >= 1; K.fast(); await wait(200); o.kiteEnd = K.st().ended && /風箏飛了/.test(document.querySelector('.game-status').textContent);
     closeGameWindow(); $('#modal').hidden = true;
     hostMenuEntries().find(e => /彈跳床/.test(e[0]))[1](); await wait(200); const B = openBounceGame.test;

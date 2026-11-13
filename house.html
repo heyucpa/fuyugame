@@ -13026,7 +13026,8 @@ function openKiteGame() {
     if (!live) return; const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
     windT -= dt; if (windT <= 0) { windT = 1.5 + Math.random() * 2; wind = (Math.random() - .5) * 120; }
     if (fall > 0) { fall -= dt; y = Math.min(H - 30, y + 120 * dt); if (fall <= 0) { y = 120; vy = 0; } }
-    else { vy += (hold ? -320 : 300) * dt + wind * dt * .6; vy = Math.max(-140, Math.min(120, vy)); y += vy * dt; x = 230 + Math.sin(t * .8) * 40 + wind * .2;
+    else { /* 按住拉線要明顯往上（家長：很難按到最上去：以前往上 320、往下 300 差不多抵銷，風往下吹就拉不上去） */
+      vy += (hold ? -640 : vy < 0 ? 760 : 280) * dt + wind * dt * .35; /* 放開：馬上停住不再往上衝，再慢慢往下 */ vy = Math.max(-180, Math.min(130, vy)); y += vy * dt; x = 230 + Math.sin(t * .8) * 40 + wind * .2;
       if (y < 30) { y = 30; vy = 0; } if (y > H - 40) { fall = 1.2; Sound.play('miss'); toast('風箏掉下來了！再拉起來～'); } }
     if (Math.random() < dt * 1.3) stars.push({ x: W + 10, y: 40 + Math.random() * (H - 110) });
     stars.forEach(s2 => { s2.x -= 70 * dt; if (!s2.got && fall <= 0 && Math.hypot(s2.x - x, s2.y - y) < 22) { s2.got = 1; score++; Sound.play('coin'); } }); stars = stars.filter(s2 => s2.x > -20 && !s2.got);
@@ -13045,7 +13046,7 @@ function openKiteGame() {
     raf = requestAnimationFrame(tick);
   };
   raf = requestAnimationFrame(tick);
-  openKiteGame.test = { st: () => ({ y, score, t, fall, ended }), hold: v => { hold = v; }, addStar: () => stars.push({ x, y }), fast: () => { t = DUR; } };
+  openKiteGame.test = { st: () => ({ y, score, t, fall, ended }), hold: v => { hold = v; }, wind: v => { wind = v; windT = 99; }, addStar: () => stars.push({ x, y }), fast: () => { t = DUR; } };
 }
 /* ☁️ 雲朵彈跳床（只有這裡有）：小可愛落到雲上的一瞬間按「彈！」就彈更高；越高越能碰到上面的星星。彈 10 下 */
 function openBounceGame() {
