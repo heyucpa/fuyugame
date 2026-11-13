@@ -5319,6 +5319,7 @@ const NEWS = [
     ['🏊', '游泳池的鴨鴨教練：報名「世界全國游泳大賽」，先換漂亮的泳裝給評審打星星，再奮力游過去'],
     ['🏃', '學校操場的花豹教練：報名「世界全國跑步大賽」，跳遠＋百米賽跑，簡單就能玩'],
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
+    ['🤖', '商店「🚗 交通工具」多了機器人（💰 10,000）：坐在機器人頭上的玻璃罩裡，機器人一步一步走路帶你出門！'],
     ['🎉', '更好玩：選手出場、頒獎台典禮、更多泳裝配件（墨鏡、皇冠、亮晶晶）和「🎲 幫我搭」、評審會講評、游泳撿小鴨加分、腳踏車有加速板和跳台']
   ] },
   { id: '2026-11-18T22:00', title: '☁️ 爸爸媽媽家變漂亮了', lines: [
@@ -6329,7 +6330,7 @@ function normalizeSave(g) {
         for (let w = 1; w <= 6; w++) if (q.clear[w + '-3'] === 1) leg[String(w)] = 1;
         q.legacy = leg; q.rev = 2;
       } else q.legacy = legOk(q.legacy); } }
-  if (out.vehicles != null) { if (Array.isArray(out.vehicles)) out.vehicles = [...new Set(out.vehicles.filter(v => /^(bike|suv|bus|truck|sports)$/.test(v)))]; else delete out.vehicles; }   // 🚗 買的交通工具
+  if (out.vehicles != null) { if (Array.isArray(out.vehicles)) out.vehicles = [...new Set(out.vehicles.filter(v => /^(bike|suv|bus|truck|sports|robot)$/.test(v)))]; else delete out.vehicles; }   // 🚗 買的交通工具
   if (out.ride != null && !(typeof out.ride === 'string' && (out.vehicles || []).includes(out.ride))) delete out.ride;
   if (out.islReq != null && !(isObj(out.islReq) && typeof out.islReq.d === 'string' && /^(shell|bug|fish|flower)$/.test(out.islReq.kind) && typeof out.islReq.npc === 'string')) delete out.islReq;   // 🐻 動物朋友請她幫忙
   if (out.fIsle != null && out.fIsle !== 1) delete out.fIsle;   // 🏡 朋友島的動畫播過了
@@ -26537,7 +26538,8 @@ const VEHICLES = [
   { id: 'suv', name: '休旅車', icon: '🚙', price: 6000, speed: 2.1, verb: '開' },
   { id: 'truck', name: '工程車', icon: '🚧', price: 7000, speed: 1.8, verb: '開' },
   { id: 'bus', name: '公車', icon: '🚌', price: 8000, speed: 1.9, verb: '開' },
-  { id: 'sports', name: '跑車', icon: '🏎️', price: 12000, speed: 2.6, verb: '開' }
+  { id: 'sports', name: '跑車', icon: '🏎️', price: 12000, speed: 2.6, verb: '開' },
+  { id: 'robot', name: '機器人', icon: '🤖', price: 10000, speed: 2.3, verb: '坐' }   // 🤖 妹妹：可不可以坐著機器人出門？坐在頭上的玻璃罩裡，機器人走路帶你去
 ];
 const VEHICLE_BY_ID = Object.fromEntries(VEHICLES.map(v => [v.id, v]));
 function rideNow() { if (isl && isl.act && isl.act.kind === 'boat') return null; const v = G.ride && VEHICLE_BY_ID[G.ride]; return v && (G.vehicles || []).includes(v.id) ? v : null; }
@@ -26573,6 +26575,23 @@ function drawVehicle(g, id, s, t, moving, kid) {
     g.fillStyle = '#e8505b'; g.fillRect(-38, -20, 76, 4); g.fillStyle = '#ffffff'; g.font = '700 7px sans-serif'; g.textAlign = 'center'; g.fillText('公車', -10, -11);
     g.fillStyle = '#3a3240'; g.fillRect(4, -22, 10, 16);   // 車門
     wheel(-24, -6, 7); wheel(24, -6, 7);
+  } else if (id === 'robot') {   // 🤖 大機器人：兩隻腳一步一步走、手前後擺，小可愛坐在頭上的玻璃罩裡，天線燈一閃一閃
+    const step = moving ? Math.sin(t * 9) : 0, lift = v => Math.max(0, v) * 4, body = moving ? Math.abs(Math.cos(t * 9)) * 1.5 : 0;
+    [[-8, step], [8, -step]].forEach(([lx, ph]) => {   // 腳
+      g.save(); g.translate(lx + ph * 3, -lift(ph)); g.fillStyle = '#6f8fae'; g.fillRect(-3.5, -17, 7, 13); g.fillStyle = '#3d4f63'; g.beginPath(); g.roundRect(-6, -5, 13, 5, 2); g.fill(); g.restore(); });
+    g.translate(0, -body);
+    [[-17, step], [17, -step]].forEach(([ax, ph]) => {   // 手
+      g.save(); g.translate(ax, -36); g.rotate(ph * .5); g.fillStyle = '#6f8fae'; g.fillRect(-2.5, 0, 5, 13); g.fillStyle = '#ffb81c'; g.beginPath(); g.arc(0, 15, 4, 0, Math.PI * 2); g.fill(); g.restore(); });
+    g.fillStyle = '#9cc4e8'; g.beginPath(); g.roundRect(-16, -40, 32, 24, 6); g.fill();   // 身體
+    g.fillStyle = '#dff0ff'; g.beginPath(); g.roundRect(-10, -35, 20, 12, 3); g.fill();
+    ['#ff6b6b', '#ffd23f', '#7bd389'].forEach((c, i) => { g.fillStyle = (Math.floor(t * 4) + i) % 3 === 0 ? '#ffffff' : c; g.beginPath(); g.arc(-5 + i * 5, -29, 2, 0, Math.PI * 2); g.fill(); });
+    g.strokeStyle = '#3d4f63'; g.lineWidth = 1.2; g.beginPath(); g.arc(0, -21, 3, .2, Math.PI - .2); g.stroke();   // 笑笑的嘴
+    g.fillStyle = '#6f8fae'; g.fillRect(-12, -42, 24, 3);   // 脖子
+    g.save(); g.beginPath(); g.arc(0, -52, 12, 0, Math.PI * 2); g.clip(); g.fillStyle = '#e6f4ff'; g.fillRect(-12, -64, 24, 24); if (kid) kid(0, -34, .9); g.restore();   // 玻璃罩裡的小可愛
+    g.fillStyle = 'rgba(170,215,245,.3)'; g.beginPath(); g.arc(0, -52, 12, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#6f8fae'; g.lineWidth = 2; g.stroke();
+    g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 1.5; g.beginPath(); g.arc(0, -52, 9, Math.PI * 1.1, Math.PI * 1.45); g.stroke();
+    g.strokeStyle = '#3d4f63'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(0, -64); g.lineTo(0, -70); g.stroke();   // 天線
+    g.fillStyle = Math.floor(t * 3) % 2 ? '#ff3b3b' : '#ffd0d0'; g.beginPath(); g.arc(0, -71, 2.5, 0, Math.PI * 2); g.fill();
   } else if (id === 'truck') {   // 工程車：黃色砂石車，後面的斗會一上一下
     g.translate(0, -bob);
     g.fillStyle = '#ffb81c'; g.beginPath(); g.roundRect(8, -38, 24, 30, 4); g.fill(); win(13, -36, 16, 14, 21, -13, .66); glass(13, -36, 16, 14);
@@ -26585,7 +26604,7 @@ function drawVehicle(g, id, s, t, moving, kid) {
 }
 function vehicleCanvas(id, w, h) {
   const c = document.createElement('canvas'), dpr = window.devicePixelRatio || 1; c.width = w * dpr; c.height = h * dpr; c.style.width = w + 'px'; c.style.height = h + 'px';
-  const g = c.getContext('2d'); g.scale(dpr, dpr); g.translate(w / 2, h - 6); drawVehicle(g, id, Math.min(w / 90, h / 52), 0, false); return c;
+  const g = c.getContext('2d'); g.scale(dpr, dpr); g.translate(w / 2, h - 6); drawVehicle(g, id, Math.min(w / 90, h / (id === 'robot' ? 80 : 52)), 0, false); return c;
 }
 // 小島上：騎在車上／坐在船上的小可愛
 function islDrawRiding(ctx, px, py, walking, t) {
