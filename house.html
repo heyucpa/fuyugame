@@ -676,6 +676,8 @@ button.pass { font: inherit; }
   font-size: 13px; font-weight: 700; padding: 6px 14px; border-radius: 999px; pointer-events: none; white-space: nowrap; }
 @media (max-width: 700px) { .pause-badge { top: auto; bottom: 56px; font-size: 12px; } }
 .modal-card.in-game, .modal-card.in-game * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+/* 打字的格子永遠可以打字（iPad 上 user-select:none 的輸入框會打不了字，看起來像當機） */
+.modal-card.in-game input, .modal-card.in-game textarea { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
 .nosel, .nosel * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 /* 📱 iPad 長按畫面會跳出「拷貝／貼上」、反白字（家長：按比較久容易跳出來）：整個遊戲都不能選字、不跳選單；
    只有要打字、要複製的框框（輸入框、邀請卡連結框）還可以選 */
@@ -17842,7 +17844,7 @@ function openPetNamer(i, opts) {
   const p = G.pets[i];
   if (!p) return;
   opts = opts || {};
-  const card = $('#modalCard');
+  const card = plainModalCard();
   card.innerHTML = '';
   card.appendChild(el('h2', '', opts.hatch ? '🎉 孵出來了！幫牠取個名字吧' : '🏷️ 幫牠取名字'));
   const pic = el('div', 'namer-pic');
@@ -18601,6 +18603,24 @@ const gamePlay = { sec: 0, last: 0 };
 function gamePlayReset() { gamePlay.sec = 0; gamePlay.last = Date.now(); }
 function gameTimeBonus() { return Math.round(Math.min(GAME_PAY.maxSec, gamePlay.sec) / 60 * GAME_PAY.perMin / 10) * 10; }
 ['pointerdown', 'keydown'].forEach(k => document.addEventListener(k, () => { const c = document.getElementById('modalCard'); if (c && c.classList.contains('in-game')) gamePlay.last = Date.now(); }, true));
+/* 視窗關起來就拿掉「遊戲中」標記：有些小遊戲直接把視窗藏起來，標記留著，
+   下一個打開的視窗（例如幫寵物取名字）會被當成遊戲：房間變很慢、iPad 打不了字，看起來像當機。 */
+(function () {
+  const m = document.getElementById('modal'), c = document.getElementById('modalCard');
+  if (!m || !c || !window.MutationObserver) return;
+  new MutationObserver(() => { if (m.hidden) c.classList.remove('game-card', 'in-game', 'game-big'); })
+    .observe(m, { attributes: true, attributeFilter: ['hidden'] });
+})();
+/* 在一般視窗（不是小遊戲）的輸入框打字時，按鍵不要傳給小遊戲：
+   沒關乾淨的小遊戲會搶空白鍵，注音選不了字，取名字時看起來像當機。 */
+['keydown', 'keyup', 'keypress'].forEach(k => document.body.addEventListener(k, e => {
+  const t = e.target;
+  if (!t || !/^(INPUT|TEXTAREA)$/.test(t.tagName)) return;
+  const c = document.getElementById('modalCard');
+  if (c && c.contains(t) && c.classList.contains('in-game')) return;   // 小遊戲裡自己的輸入框照舊
+  e.stopPropagation();
+}));
+function plainModalCard() { const c = $('#modalCard'); c.classList.remove('game-card', 'in-game', 'game-big'); return c; }
 setInterval(() => { const c = document.getElementById('modalCard'), m = document.getElementById('modal'); if (c && m && !m.hidden && c.classList.contains('in-game') && Date.now() - gamePlay.last < 8000) gamePlay.sec++; }, 1000);
 function payReward(w, bells, extra) {
   const tb = gameTimeBonus(), mins = Math.floor(gamePlay.sec / 60); gamePlayReset();
@@ -28866,7 +28886,7 @@ function isleCraft(id, fid, nm, n) {
   gotCard(ISLE_CRAFT[id].find(c => c[0] === fid)[1], `做好了「${nm}」！`, '放在「我的東西」裡，可以擺在家裡'); saveGame();
 }
 function openIsleRename(id) {
-  const card = $('#modalCard'); card.innerHTML = '';
+  const card = plainModalCard(); card.innerHTML = '';
   card.appendChild(el('h2', '', `🏷️ 幫${isleInfo(id).icon}取名字`));
   const inp = document.createElement('input'); inp.className = 'textin'; inp.maxLength = 8; inp.value = isleName(id); card.appendChild(inp);
   const ok = el('button', 'big', '好了！'); ok.onclick = () => { const v = inp.value.trim().slice(0, 8); isleState(id).name = v || ''; saveGame(); toast(`🏝️ 小島叫「${isleName(id)}」了！`); openIsleMenu(id); };
