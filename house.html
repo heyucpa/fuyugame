@@ -1257,6 +1257,16 @@ window.addEventListener('unhandledrejection', function (e) { var r = e.reason; c
 // 遊戲資料：家具、壁紙、地板、魚、擴建價格
 // 家具 parts 單位：x/y/w/d 為格數（可小數），z/h 為像素高度
 'use strict';
+/* 名字格子的字數限制：不要用 maxLength。iPad 打注音時，還沒選字的ㄅㄆㄇ也算字數，
+   打到一半就卡住打不下去（像「書房的家」再多打一個字就不行）。改成選好字以後才剪掉多的。 */
+function typeLimit(inp, n) {
+  let composing = false;
+  const cut = () => { if (composing) return; const a = Array.from(inp.value); if (a.length > n) inp.value = a.slice(0, n).join(''); };
+  inp.addEventListener('compositionstart', () => { composing = true; });
+  inp.addEventListener('compositionend', () => { composing = false; setTimeout(cut, 0); });
+  inp.addEventListener('input', e => { if (!e.isComposing) cut(); });
+  inp.addEventListener('blur', () => { composing = false; cut(); });
+}
 var introPlaying = false;   // 🎬 開場動畫播放中（遊戲迴圈一開始就會讀到，所以放在最前面宣告）
 
 function schoolDeskParts(bag) {
@@ -13814,7 +13824,7 @@ function openInviteFrom(after) {
   });
   card.appendChild(note('不是姊姊、妹妹（例如寄給其他朋友）：在下面寫自己的名字。'));
   const inp = document.createElement('input');
-  inp.className = 'invite-name'; inp.maxLength = 6; inp.placeholder = '自己的名字（最多 6 個字）';
+  inp.className = 'invite-name'; typeLimit(inp, 6); inp.placeholder = '自己的名字（最多 6 個字）';
   if (G.inviteFrom && G.inviteFrom !== '姊姊' && G.inviteFrom !== '妹妹') inp.value = G.inviteFrom;
   card.appendChild(inp);
   const own = el('button', 'big alt', '✏️ 用這個名字');
@@ -17718,7 +17728,7 @@ function tabSave(body) {
   // 改名字：直接改現在這一格，打完就存
   const nm = el('input', 'textin');
   nm.value = curSlotName();
-  nm.maxLength = 10;
+  typeLimit(nm, 10);
   nm.placeholder = '幫這個存檔取名字（例如：姊姊、妹妹）';
   /* 邊打邊改上面的名字。以前一離開輸入框就整頁重畫：馬上去點「開新存檔」會點不到
      （按下去的按鈕在放開前被換掉了），要點第二次。 */
@@ -17797,7 +17807,7 @@ function tabTalk(body) {
   const name = el('input', 'textin');
   name.value = G.charName || '';
   name.placeholder = DEFAULT_CHAR_NAME;
-  name.maxLength = 12;
+  typeLimit(name, 12);
   name.oninput = () => { G.charName = name.value; saveGame(); updateHoldUI(); };
   body.appendChild(name);
 
@@ -17808,7 +17818,7 @@ function tabTalk(body) {
     const pn = el('input', 'textin');
     pn.value = p.name || '';
     pn.placeholder = p.stage === 'egg' ? '神秘的蛋（孵出來再取也可以）' : PET_SPECIES_BY_ID[p.species].name;
-    pn.maxLength = 10;
+    typeLimit(pn, 10);
     let before = p.name || '';
     pn.oninput = () => { p.name = pn.value; saveGame(); updatePetCard(); };
     pn.onchange = () => { rememberOldName(p, before, pn.value); before = pn.value; saveGame(); };
@@ -17822,7 +17832,7 @@ function tabTalk(body) {
     const rn = el('input', 'textin');
     rn.value = r.name;
     rn.placeholder = ROOM_NAMES[i] || '房間';
-    rn.maxLength = 8;
+    typeLimit(rn, 8);
     rn.style.marginBottom = '6px';
     rn.oninput = () => { renameRoom(i, rn.value); saveGame(); refreshTop(); };
     body.appendChild(rn);
@@ -17853,7 +17863,7 @@ function openPetNamer(i, opts) {
   const inp = el('input', 'textin namer-in');
   inp.value = p.name || '';
   inp.placeholder = p.stage === 'egg' ? '神秘的蛋' : PET_SPECIES_BY_ID[p.species].name;
-  inp.maxLength = 10;
+  typeLimit(inp, 10);
   card.appendChild(inp);
   const chipRow = (cls, names) => {
     const row = el('div', 'namer-chips');
@@ -22607,7 +22617,7 @@ function openHomeLook(target) {
     tabs.innerHTML = ''; HOME_TABS.filter(([k]) => !par || k !== 'sign').forEach(([k, nm]) => { const b = el('button', k === homeTab ? 'on' : '', nm); b.onclick = () => { homeTab = k; Sound.play('click'); render(); }; tabs.appendChild(b); });
     grid.innerHTML = '';
     if (homeTab === 'sign') {
-      const box = el('div', 'home-sign'); const inp = document.createElement('input'); inp.maxLength = 8; inp.value = h.sign || ''; inp.placeholder = `${charName()}的家`;
+      const box = el('div', 'home-sign'); const inp = document.createElement('input'); typeLimit(inp, 8); inp.value = h.sign || ''; inp.placeholder = `${charName()}的家`;
       const ok = el('button', 'big', '✅ 掛上門牌'); ok.onclick = () => { h.sign = inp.value.trim().slice(0, 8); h.newAt = Date.now(); saveGame(); Sound.play('coin'); toast(h.sign ? `🏷️ 門牌換成「${h.sign}」了！` : '🏷️ 門牌換回「我的家」'); render(); };
       box.append(el('div', 'note', '門牌免費！寫上想要的名字（最多 8 個字），出門時房子上面就會寫這個。'), inp, ok); grid.appendChild(box); return;
     }
@@ -28888,7 +28898,7 @@ function isleCraft(id, fid, nm, n) {
 function openIsleRename(id) {
   const card = plainModalCard(); card.innerHTML = '';
   card.appendChild(el('h2', '', `🏷️ 幫${isleInfo(id).icon}取名字`));
-  const inp = document.createElement('input'); inp.className = 'textin'; inp.maxLength = 8; inp.value = isleName(id); card.appendChild(inp);
+  const inp = document.createElement('input'); inp.className = 'textin'; typeLimit(inp, 8); inp.value = isleName(id); card.appendChild(inp);
   const ok = el('button', 'big', '好了！'); ok.onclick = () => { const v = inp.value.trim().slice(0, 8); isleState(id).name = v || ''; saveGame(); toast(`🏝️ 小島叫「${isleName(id)}」了！`); openIsleMenu(id); };
   const no = el('button', 'big alt', '不改了'); no.onclick = () => openIsleMenu(id);
   card.append(ok, no); $('#modal').hidden = false; setTimeout(() => inp.focus(), 50);
