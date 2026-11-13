@@ -812,7 +812,7 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .cup-dress-cv { display: block; margin: 0 auto 6px; border-radius: 14px; }
 .cup-row { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; justify-content: center; margin: 4px 0; } .cup-lab { font-weight: 800; min-width: 64px; }
 .cup-chip { border: 2px solid var(--line); background: #fff; border-radius: 14px; padding: 5px 9px; font: inherit; font-size: 13px; cursor: pointer; } .cup-chip.sw { color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.45); } .cup-chip.on { border-color: #3a3a3a; box-shadow: 0 0 0 2px #ffd23f; font-weight: 900; }
-.cup-judges { display: flex; gap: 8px; justify-content: center; margin: 4px 0; } .cup-judge { background: #fff8e6; border-radius: 12px; padding: 4px 10px; text-align: center; min-width: 80px; } .cup-judge b { display: block; font-size: 13px; } .cup-stars { font-size: 15px; min-height: 20px; display: block; }
+.cup-judges { display: flex; gap: 8px; justify-content: center; margin: 4px 0; } .cup-judge { background: #fff8e6; border-radius: 12px; padding: 4px 10px; text-align: center; min-width: 80px; } .cup-judge b { display: block; font-size: 13px; } .cup-stars { font-size: 15px; min-height: 20px; display: block; } .cup-say { display: block; font-size: 12px; color: #b5651d; font-weight: 700; min-height: 16px; }
 .home-sign { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px; align-items: center; } .home-sign input { font: inherit; font-size: 18px; padding: 8px 12px; border-radius: 12px; border: 2px solid var(--line); width: min(260px, 90%); text-align: center; }
 .exam-ladder { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 8px; }
 .exam-step { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 14px; background: #fff; border: 2px solid var(--line); }
@@ -5318,7 +5318,8 @@ const NEWS = [
   { id: '2026-11-19T20:00', title: '🏆 運動大賽開始報名！', lines: [
     ['🏊', '游泳池的鴨鴨教練：報名「世界全國游泳大賽」，先換漂亮的泳裝給評審打星星，再奮力游過去'],
     ['🏃', '學校操場的花豹教練：報名「世界全國跑步大賽」，跳遠＋百米賽跑，簡單就能玩'],
-    ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌']
+    ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
+    ['🎉', '更好玩：選手出場、頒獎台典禮、更多泳裝配件（墨鏡、皇冠、亮晶晶）和「🎲 幫我搭」、評審會講評、游泳撿小鴨加分、腳踏車有加速板和跳台']
   ] },
   { id: '2026-11-18T22:00', title: '☁️ 爸爸媽媽家變漂亮了', lines: [
     ['☁️', '爸爸媽媽家的外面變成藍天白雲，房子坐在一朵大白雲上'],
@@ -23705,6 +23706,8 @@ function playSwim(w, L) {
   // 🐬 必殺技「海豚衝刺」：游越多下能量越多，滿了按一下，變成海豚一下衝好遠
   const DOLPHIN = { name: '海豚衝刺', fx: '🐬', c: '#3fa9f5', c2: '#dff0ff' };
   let pw = 0, cutAt = 0, dash = 0, dashes = 0;
+  const ducks = L.fun ? [6, 12.5, 19].map(x => ({ x: x + Math.random() * 2, got: 0 })) : [];   // 🦆 大賽限定：游過小鴨就撿起來，一隻加 1 分
+  let ducksGot = 0, quack = 0;
   const stroke = () => { if (ended || t < 0 || cutAt) return; me = Math.min(LEN, me + .9 * fitMul('sta') * examMul('swim')); splash = .25; Sound.play('splash'); pw = Math.min(100, pw + 7); if (pw >= 100) bSp.style.display = ''; };
   const special = () => { if (ended || t < 0 || pw < 100 || cutAt) return; pw = 0; bSp.style.display = 'none'; cutAt = performance.now(); dashes++; Sound.play('magic'); try { speak(tkdSpecialName(DOLPHIN) + '！'); } catch (e) {} };
   bSp.onclick = special;
@@ -23719,7 +23722,9 @@ function playSwim(w, L) {
     const px = x => 20 + x / LEN * (W - 44);
     const swimmer = (x, y, cap, label, sp) => { const X = px(x); g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 2; g.beginPath(); g.arc(X - 14, y + Math.sin(t * 12) * 2, 6 + sp * 10, 0, Math.PI * 2); g.stroke(); g.fillStyle = cap; g.beginPath(); g.arc(X, y, 9, 0, Math.PI * 2); g.fill(); g.fillStyle = '#f6cfb0'; g.beginPath(); g.arc(X + 5, y + 2, 5, 0, Math.PI * 2); g.fill(); g.fillStyle = '#26232a'; g.font = '700 11px sans-serif'; g.textAlign = 'center'; g.fillText(label, X, y - 13); };
     mates.forEach((m, i) => swimmer(m.x, lane(i), m.cap, m.n.short, .1));
+    ducks.forEach(d => { if (d.got) return; g.font = '18px sans-serif'; g.textAlign = 'center'; g.fillText('🦆', px(d.x), lane(3) + 6 + Math.sin(t * 3 + d.x) * 2); });
     swimmer(me, lane(3), L.cap || '#ff6b9a', charName(), splash);
+    if (quack > 0) { g.font = '900 16px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#ff9f1c'; g.fillText('🦆 +1！', px(me), lane(3) - 18 - (1 - quack) * 14); }
     if (dash > 0) { const X = 20 + me / LEN * (W - 44); g.font = '26px sans-serif'; g.textAlign = 'center'; g.fillText('🐬', X + 4, lane(3) + 8); for (let k = 1; k < 5; k++) { g.fillStyle = `rgba(255,255,255,${.6 - k * .12})`; g.beginPath(); g.arc(X - k * 12, lane(3) + 4, 6 - k, 0, 7); g.fill(); } }
     g.fillStyle = 'rgba(0,0,0,.3)'; g.fillRect(W - 92, H - 18, 80, 10); g.fillStyle = pw >= 100 ? `hsl(${(performance.now() / 3) % 360},90%,60%)` : '#ffd23f'; g.fillRect(W - 91, H - 17, 78 * pw / 100, 8);
     if (cutAt) tkdSpecialCut(g, W, H, DOLPHIN, (performance.now() - cutAt) / 600, performance.now() / 1000);
@@ -23729,12 +23734,13 @@ function playSwim(w, L) {
     if (ended) return; const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt; splash = Math.max(0, splash - dt);
     if (cutAt && now - cutAt > 1000) { cutAt = 0; dash = 1.1; Sound.play('whoosh'); }
     if (dash > 0) { dash -= dt; me = Math.min(LEN, me + 6.5 * dt); }
+    quack = Math.max(0, quack - dt); ducks.forEach(d => { if (!d.got && me >= d.x) { d.got = 1; ducksGot++; quack = 1; Sound.play('squish'); } });
     if (t >= 0 && !cutAt) {
       mates.forEach(m => { if (m.x < LEN) { m.x = Math.min(LEN, m.x + m.v * dt); if (m.x >= LEN && !order.includes(m)) order.push(m); } });
       if (me >= LEN && !myDone) { myDone = 1; order.push('me'); }
       if (myDone) { ended = true; const rank = order.indexOf('me') + 1; document.removeEventListener('keydown', key); go.remove();
         const bells = payReward(w, SWIM_PRIZE[rank - 1] * L.mul); w.status.textContent = `${['🥇 第一名！', '🥈 第二名！', '🥉 第三名！', '第四名，下次加油！'][rank - 1]}💰 +${fmt(bells)}`;
-        try { fufuSay(rank === 1 ? '我游第一名！' : '好好玩喔！', 2400); } catch (e) {} gameButtons(w, openSwimRace); examHook('swimRace', { place: rank }, w); }
+        try { fufuSay(rank === 1 ? '我游第一名！' : '好好玩喔！', 2400); } catch (e) {} gameButtons(w, openSwimRace); examHook('swimRace', { place: rank, ducks: ducksGot }, w); }
     }
     draw(); if (!ended) raf = requestAnimationFrame(tick); else draw();
   };
@@ -27609,12 +27615,25 @@ const cupPlacePts = p => [10, 7, 5, 3][Math.max(0, Math.min(3, (p || 4) - 1))];
 function openSportsCup(id) {
   const C = SPORT_CUPS[id], w = openGameWindow(`${C.icon} ${C.title}`, C.host ? `${C.host}幫你報名了！一關一關比，最後看總分拿獎牌。` : '游泳、跑步、騎腳踏車，三關比完看總分拿獎牌！');
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  /* 🎺 出場：看台上的觀眾揮旗子，大大的布條寫比賽名字，小可愛揮手出場（家長：趣味要更多） */
+  { const W = 360, H = 170, { g } = gameCanvas(w.stage, W, H); let raf = 0, live = true, t = 0, last = performance.now();
+    gameCleanup = () => { live = false; cancelAnimationFrame(raf); };
+    const tick = now => { if (!live) return; t += Math.min(.05, (now - last) / 1000); last = now;
+      try { trackBg(g, W, H, t * 25, t); } catch (e) { g.fillStyle = '#9fd8ff'; g.fillRect(0, 0, W, H); }
+      g.fillStyle = '#fff'; g.fillRect(40, 10, W - 80, 30); g.strokeStyle = '#e8505b'; g.lineWidth = 3; g.strokeRect(40, 10, W - 80, 30);
+      g.fillStyle = '#e8505b'; g.font = '900 17px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillText(`${C.icon} ${C.title} ${C.icon}`, W / 2, 31);
+      for (let k = 0; k < 6; k++) { const fx = 30 + k * 60, wav = Math.sin(t * 6 + k) * 4; g.strokeStyle = '#7a5230'; g.lineWidth = 2; g.beginPath(); g.moveTo(fx, 120); g.lineTo(fx, 92); g.stroke(); g.fillStyle = ['#e8505b', '#ffd23f', '#3fa9f5', '#7bd389', '#ff9ec4', '#b18cff'][k]; g.beginPath(); g.moveTo(fx, 92); g.lineTo(fx + 16, 97 + wav); g.lineTo(fx, 103); g.closePath(); g.fill(); }
+      const kx = Math.min(W / 2, -20 + t * 90); trackRunner(g, 'kid', kx, H - 10, .9, t, kx < W / 2, 1);
+      if (kx >= W / 2) { g.font = '18px sans-serif'; g.fillText('👋', kx + 22, H - 62 + Math.sin(t * 8) * 3); }
+      raf = requestAnimationFrame(tick); };
+    raf = requestAnimationFrame(tick);
+    try { speak(`歡迎來到${C.title}！選手${charName()}出場！`); } catch (e) {} }
   const box = el('div', 'cup-steps');
   C.steps.forEach(([ic, nm], i) => box.appendChild(el('div', 'cup-step', `${i + 1}. ${ic} ${nm}`)));
   w.stage.appendChild(box);
   const b = sportsCupState()[id] || 0;
   w.status.textContent = b ? `之前拿過 ${CUP_MEDALS[b]}，這次加油！` : '總分越高：🥇 金牌、🥈 銀牌、🥉 銅牌';
-  const go = el('button', 'big', '🏁 開始比賽！'); go.onclick = () => { Sound.play('click'); cupNext(w, id, 0, []); };
+  const go = el('button', 'big', '🏁 開始比賽！'); go.onclick = () => { Sound.play('click'); if (gameCleanup) { gameCleanup(); gameCleanup = null; } cupNext(w, id, 0, []); };
   w.btns.appendChild(go); leaveButton(w);
   openSportsCup.test = { w };
 }
@@ -27634,18 +27653,48 @@ function cupNext(w, id, i, pts) {
   const kind = id === 'swim' ? ['dress', 'swim'][i] : id === 'run' ? ['jump', 'sprint'][i] : ['swim', 'sprint', 'bike'][i];
   try { speak(`第${i + 1}關，${C.steps[i][1].replace(/（.*）/, '')}！`); } catch (e) {}
   if (kind === 'dress') cupDress(w, done);
-  else if (kind === 'swim') { hook('swimRace', r => cupPlacePts(r.place)); playSwim(w, { name: '大賽', sp: id === 'tri' ? 2.0 : 2.4, mul: 1, cap: (w.cupSuit && w.cupSuit.cap) || null }); }
+  else if (kind === 'swim') { hook('swimRace', r => cupPlacePts(r.place) + (r.ducks || 0)); playSwim(w, { name: '大賽', sp: id === 'tri' ? 2.0 : 2.4, mul: 1, fun: true, cap: (w.cupSuit && w.cupSuit.cap) || null }); w.status.textContent = '游過 🦆 小鴨可以撿起來加分喔！'; }
   else if (kind === 'jump') { hook('longjump', r => Math.max(2, Math.min(10, Math.round((r.score || 0) * 2)))); playLongJump(w, Object.assign({}, LJ_LEVELS[0], { tries: 2 })); }
   else if (kind === 'sprint') { hook('sprint', r => cupPlacePts(r.place)); playSprint(w, SPRINT_LEVELS[0]); }
   else if (kind === 'bike') { hook('triBike', r => cupPlacePts(r.place)); playTriBike(w); }
+}
+/* 🏅 頒獎台：小可愛站在自己的名次上（金牌站中間最高），動物朋友站旁邊，獎牌閃閃發亮、彩帶一直掉 */
+function cupPodium(w, medal) {
+  const W = 360, H = 210, { g } = gameCanvas(w.stage, W, H); let raf = 0, live = true, t = 0, last = performance.now();
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); };
+  const spots = [{ x: 180, h: 70, n: 1 }, { x: 110, h: 46, n: 2 }, { x: 250, h: 30, n: 3 }], mine = 3 - medal;   // 金→第 1 台、銀→第 2、銅→第 3
+  const pals = NEIGHBORS.filter(Boolean).sort(() => Math.random() - .5).slice(0, 2);
+  const conf = Array.from({ length: 50 }, () => ({ x: Math.random() * W, y: Math.random() * -H, v: 30 + Math.random() * 40, c: ['#e8505b', '#ffd23f', '#3fa9f5', '#7bd389', '#ff9ec4'][Math.floor(Math.random() * 5)], r: Math.random() * 6 }));
+  const medC = ['#ffd23f', '#d6dbe0', '#d08a4a'];
+  const tick = now => { if (!live) return; const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+    try { trackBg(g, W, H, 0, t); } catch (e) { g.fillStyle = '#9fd8ff'; g.fillRect(0, 0, W, H); }
+    g.fillStyle = '#e9dcc6'; g.fillRect(0, H - 14, W, 14);
+    let pi = 0;
+    spots.forEach((sp, k) => {
+      const top = H - 14 - sp.h; g.fillStyle = ['#ffe680', '#e6e9ee', '#f0c79a'][k]; g.fillRect(sp.x - 34, top, 68, sp.h); g.strokeStyle = 'rgba(0,0,0,.12)'; g.lineWidth = 2; g.strokeRect(sp.x - 34, top, 68, sp.h);
+      g.fillStyle = '#7a5230'; g.font = '900 22px sans-serif'; g.textAlign = 'center'; g.fillText(String(sp.n), sp.x, top + Math.min(sp.h - 6, 28));
+      const isMe = k === mine, who = isMe ? 'kid' : pals[pi++];
+      const hop = isMe ? Math.abs(Math.sin(t * 5)) * 6 : 0;
+      try { if (who) trackRunner(g, who, sp.x, top - hop, isMe ? .75 : 1.25, t, false, 1); } catch (e) {}
+      if (isMe) {   // 掛在脖子上的獎牌
+        const my = top - hop - 17; g.strokeStyle = '#e8505b'; g.lineWidth = 3; g.beginPath(); g.moveTo(sp.x - 7, my - 14); g.lineTo(sp.x, my); g.lineTo(sp.x + 7, my - 14); g.stroke();
+        g.fillStyle = medC[k]; g.beginPath(); g.arc(sp.x, my + 4, 7, 0, 7); g.fill(); g.strokeStyle = 'rgba(0,0,0,.2)'; g.lineWidth = 1; g.stroke();
+        g.globalAlpha = .5 + .5 * Math.sin(t * 6); g.font = '14px sans-serif'; g.fillText('✨', sp.x + 12, my - 4); g.globalAlpha = 1;
+      }
+    });
+    conf.forEach(c => { c.y += c.v * dt; c.r += dt * 4; if (c.y > H) { c.y = -10; c.x = Math.random() * W; } g.fillStyle = c.c; g.save(); g.translate(c.x + Math.sin(c.r) * 6, c.y); g.rotate(c.r); g.fillRect(-3, -1.5, 6, 3); g.restore(); });
+    g.fillStyle = '#fff'; g.fillRect(70, 8, W - 140, 26); g.fillStyle = '#e8505b'; g.font = '900 16px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillText('🏆 頒獎典禮 🏆', W / 2, 27);
+    raf = requestAnimationFrame(tick); };
+  raf = requestAnimationFrame(tick);
 }
 function cupFinish(w, id, pts) {
   const C = SPORT_CUPS[id], total = pts.reduce((a, b) => a + b, 0), max = id === 'swim' ? 25 : id === 'run' ? 20 : 30;
   const r = total / max, medal = r >= .7 ? 3 : r >= .45 ? 2 : 1, st = sportsCupState(), first = !st[id] || st[id] < medal;
   st[id] = Math.max(st[id] || 0, medal); st.n = Math.min(1e6, (st.n || 0) + 1);
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  cupPodium(w, medal);
   const card = el('div', 'cup-result');
-  card.append(el('div', 'cup-medal', CUP_MEDALS[medal].split(' ')[0]), el('div', 'cup-total', `總分 ${total} 分`));
+  card.append(el('div', 'cup-total', `${CUP_MEDALS[medal]}　總分 ${total} 分`));
   C.steps.forEach(([ic, nm], k) => card.appendChild(el('div', 'cup-step', `${ic} ${nm}：${pts[k]} 分`)));
   w.stage.appendChild(card);
   const bells = payReward(w, CUP_PRIZE[medal] + (first ? 200 : 0));
@@ -27654,7 +27703,7 @@ function cupFinish(w, id, pts) {
   try { speak(`${CUP_MEDALS[medal].split(' ')[1]}！好棒！`); } catch (e) {}
   kidMoodUp(10 + medal * 3); saveGame();
   if (first) setTimeout(() => { try { showcase(el('div', 'magic-pic', CUP_MEDALS[medal].split(' ')[0]), `${C.title}：${CUP_MEDALS[medal].split(' ')[1]}！`, `總分 ${total} 分。💰 ${fmt(bells)}`, { head: '🏆 運動大賽' }); } catch (e) {} }, 600);
-  const again = el('button', 'big', '🔁 再比一次'); again.onclick = () => openSportsCup(id);
+  const again = el('button', 'big', '🔁 再比一次'); again.onclick = () => { if (gameCleanup) { gameCleanup(); gameCleanup = null; } openSportsCup(id); };
   w.btns.appendChild(again); leaveButton(w);
   cupFinish.last = { total, medal };
 }
@@ -27662,7 +27711,8 @@ function cupFinish(w, id, pts) {
    不會有「醜」：隨便選都有 2 顆星以上；搭配得好（泳帽跟泳衣同色系、有點點、有配件）星星比較多 */
 const CUP_SUIT_COLORS = [['#ff6b9a', '粉紅'], ['#ff8a3d', '橘子'], ['#ffd23f', '檸檬'], ['#4cc38a', '薄荷'], ['#3fa9f5', '海藍'], ['#9b7be0', '葡萄']];
 const CUP_DOTS = [['', '沒有'], ['#ffffff', '白點點'], ['#ffd23f', '黃點點'], ['#ff6b9a', '粉點點']];
-const CUP_EXTRAS = [['goggle', '🥽', '蛙鏡'], ['flower', '🌺', '花花'], ['ring', '⭕', '游泳圈']];
+const CUP_EXTRAS = [['goggle', '🥽', '蛙鏡'], ['shades', '🕶️', '墨鏡'], ['flower', '🌺', '花花'], ['crown', '👑', '皇冠'], ['ring', '⭕', '游泳圈'], ['sparkle', '⭐', '亮晶晶']];
+const CUP_JUDGE_SAY = { 5: ['哇！超級漂亮！', '我給滿分！', '好閃亮喔！', '是泳裝公主！'], 4: ['好可愛！', '顏色好配！', '我好喜歡！'], 3: ['很不錯喔！', '再多一個配件會更棒！'], 2: ['加油～', '試試看同色系的泳帽！'] };
 function cupSuitOutfit(s) {
   const o = {}; OUTFIT_SLOTS.forEach(({ key }) => { o[key] = CLOTHES_BY_ID[G.outfit[key]] || CLOTHES_BY_ID[DEFAULT_OUTFIT[key]]; });
   o.head = Object.assign({}, CLOTHES_BY_ID.swim_cap, { color: s.cap, pom: s.cap });
@@ -27680,7 +27730,7 @@ function cupDressScore(s) {   // 三位評審：顏色搭配、花樣、配件�
 }
 function cupDress(w, done) {
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
-  const s = { suit: CUP_SUIT_COLORS[0][0], dots: '#ffffff', cap: CUP_SUIT_COLORS[4][0], extra: { goggle: false, flower: false, ring: false } };
+  const s = { suit: CUP_SUIT_COLORS[0][0], dots: '#ffffff', cap: CUP_SUIT_COLORS[4][0], extra: {} }; CUP_EXTRAS.forEach(([k]) => { s.extra[k] = false; });
   w.cupSuit = s;
   const W = 200, H = 210, { c, g } = gameCanvas(w.stage, W, H); c.classList.add('cup-dress-cv');
   let raf = 0, live = true; gameCleanup = () => { live = false; cancelAnimationFrame(raf); };
@@ -27694,16 +27744,20 @@ function cupDress(w, done) {
     const hx = W / 2, hy = H - 30 - 1.55 * 50;   // 頭大約在這裡
     if (s.extra.ring) { g.lineWidth = 9; g.strokeStyle = '#ff5a5a'; g.beginPath(); g.ellipse(hx, H - 30 - 1.55 * 12, 27, 7, 0, 0, 7); g.stroke(); g.strokeStyle = '#fff'; g.setLineDash([8, 10]); g.beginPath(); g.ellipse(hx, H - 30 - 1.55 * 12, 27, 7, 0, 0, 7); g.stroke(); g.setLineDash([]); }
     g.font = '22px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    if (s.extra.goggle) g.fillText('🥽', hx, hy - 4);
+    if (s.extra.goggle) g.fillText('🥽', hx, s.extra.shades ? hy - 16 : hy - 4);   // 兩個都戴：蛙鏡推到泳帽上
+    if (s.extra.shades) { g.font = '20px sans-serif'; g.fillText('🕶️', hx, hy - 2); g.font = '22px sans-serif'; }
     if (s.extra.flower) g.fillText('🌺', hx + 22, hy - 18);
+    if (s.extra.crown) g.fillText('👑', hx, hy - 34 + Math.sin(t * 3) * 1.5);
+    if (s.extra.sparkle) for (let k = 0; k < 6; k++) { const a = t * 2 + k * 1.05; g.globalAlpha = .6 + .4 * Math.sin(t * 5 + k); g.font = '13px sans-serif'; g.fillText('⭐', hx + Math.cos(a) * 46, hy + 30 + Math.sin(a) * 52); g.globalAlpha = 1; g.font = '22px sans-serif'; }
     for (let k = 0; k < 4; k++) { const a = t * 1.5 + k * 1.6; g.globalAlpha = .5 + .5 * Math.sin(t * 3 + k); g.font = '12px sans-serif'; g.fillText('✨', W / 2 + Math.cos(a) * 80, 60 + Math.sin(a) * 40); } g.globalAlpha = 1;
     g.textBaseline = 'alphabetic';
     raf = requestAnimationFrame(draw);
   };
   raf = requestAnimationFrame(draw);
+  const paints = [];
   const row = (label, items, get, set) => {
     const r = el('div', 'cup-row'); r.appendChild(el('span', 'cup-lab', label));
-    const paint = () => [...r.querySelectorAll('button')].forEach((b, k) => b.classList.toggle('on', get(items[k])));
+    const paint = () => [...r.querySelectorAll('button')].forEach((b, k) => b.classList.toggle('on', get(items[k]))); paints.push(paint);
     items.forEach(it => { const b = el('button', 'cup-chip', it.txt); if (it.bg) { b.style.background = it.bg; b.classList.add('sw'); } b.onclick = () => { set(it); Sound.play('click'); paint(); }; r.appendChild(b); });
     paint(); w.stage.appendChild(r);
   };
@@ -27712,12 +27766,17 @@ function cupDress(w, done) {
   row('🧢 泳帽', CUP_SUIT_COLORS.map(([c2, n]) => ({ v: c2, bg: c2, txt: n })), it => s.cap === it.v, it => { s.cap = it.v; });
   row('✨ 配件', CUP_EXTRAS.map(([k, e, n]) => ({ v: k, txt: `${e} ${n}` })), it => s.extra[it.v], it => { s.extra[it.v] = !s.extra[it.v]; });
   w.status.textContent = '選好漂亮的泳裝，給評審看！（點配件可以戴上或拿掉）';
-  const ok = el('button', 'big', '✨ 換好了！給評審看'); w.btns.appendChild(ok); leaveButton(w);
+  const ok = el('button', 'big', '✨ 換好了！給評審看'), rnd = el('button', 'big alt', '🎲 幫我搭');
+  rnd.onclick = () => { const pick = a => a[Math.floor(Math.random() * a.length)]; s.suit = pick(CUP_SUIT_COLORS)[0]; s.cap = Math.random() < .5 ? s.suit : pick(CUP_SUIT_COLORS)[0]; s.dots = pick(CUP_DOTS)[0];
+    CUP_EXTRAS.forEach(([k]) => { s.extra[k] = Math.random() < .4; }); paints.forEach(f => f()); Sound.play('magic'); };
+  w.btns.append(rnd, ok); leaveButton(w);
   ok.onclick = () => {
     ok.disabled = true; Sound.play('magic');
     const stars = cupDressScore(s), judges = NEIGHBORS.filter(Boolean).slice(0, 3), jb = el('div', 'cup-judges');
     stars.forEach((n, k) => { const j = el('div', 'cup-judge'); j.append(el('b', '', (judges[k] && judges[k].short) || ['評審 A', '評審 B', '評審 C'][k]), el('span', 'cup-stars', '')); jb.appendChild(j);
-      setTimeout(() => { if (!live) return; j.querySelector('.cup-stars').textContent = '⭐'.repeat(n); Sound.play('starDing'); }, 500 + k * 700); });
+      j.appendChild(el('span', 'cup-say', ''));
+      setTimeout(() => { if (!live) return; j.querySelector('.cup-stars').textContent = '⭐'.repeat(n); const ls = CUP_JUDGE_SAY[n] || CUP_JUDGE_SAY[3]; j.querySelector('.cup-say').textContent = ls[Math.floor(Math.random() * ls.length)]; Sound.play(n >= 5 ? 'perfect' : 'starDing'); }, 500 + k * 700); });
+    rnd.disabled = true;
     w.stage.insertBefore(jb, w.stage.children[1] || null);
     const total = stars.reduce((a, b) => a + b, 0);
     setTimeout(() => { if (!live) return; try { speak(total >= 13 ? '好漂亮！' : '好可愛！'); } catch (e) {} gameCleanup(); gameCleanup = null; done(total); }, 500 + 3 * 700 + 300);
@@ -27732,6 +27791,8 @@ function playTriBike(w) {
   const mates = NEIGHBORS.filter(Boolean).sort(() => Math.random() - .5).slice(0, 3);
   const riders = [{ who: 'kid', x: 0, v: 0, lane: 2 }].concat(mates.map((n, i) => ({ who: n, x: 0, v: 0, lane: [0, 1, 3][i], top: 6.6 + i * .5 + Math.random() * .6 })));
   const me = riders[0]; let t = -2.5, last = performance.now(), raf = 0, live = true, order = [], ended = false;
+  /* ⚡ 加速板（踩過去衝一下）、🚀 跳台（飛起來）：只在小可愛的車道上（家長：趣味要更多） */
+  const pads = [28, 55, 105, 128].map(x => ({ x, hit: 0 })), ramp = { x: 80, hit: 0 }; let air = 0, msg = '', msgT = 0;
   const pedal = () => { if (!live || t < 0 || me.done) return; me.v = Math.min(14 * fitMul('sta'), me.v + 3.2); Sound.play('click'); };
   const key = e => { if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) pedal(); } };
   document.addEventListener('keydown', key); bGo.addEventListener('pointerdown', e => { e.preventDefault(); pedal(); });
@@ -27746,7 +27807,11 @@ function playTriBike(w) {
     if (!live) return; const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
     if (t >= 0) riders.forEach(r => {
       if (r.done) { r.v *= .97; r.x += r.v * dt; return; }
-      if (r === me) r.v = Math.max(0, r.v - 1.6 * dt * Math.max(1, r.v / 4)); else r.v = Math.min(r.top, r.v + 3 * dt);
+      if (r === me) {
+        r.v = Math.max(0, r.v - 1.6 * dt * Math.max(1, r.v / 4) * (air > 0 ? .2 : 1));
+        pads.forEach(pd => { if (!pd.hit && r.x >= pd.x) { pd.hit = 1; r.v = Math.min(18, r.v + 5); msg = '⚡ 加速！'; msgT = .9; Sound.play('whoosh'); } });
+        if (!ramp.hit && r.x >= ramp.x) { ramp.hit = 1; air = .9; r.v = Math.min(18, r.v + 3); msg = '🚀 飛起來！'; msgT = 1.1; Sound.play('boing'); }
+      } else r.v = Math.min(r.top, r.v + 3 * dt);
       r.x += r.v * dt;
       if (r.x >= LEN) { r.done = t; order.push(r); if (r === me) Sound.play('fanfare'); }
     });
@@ -27759,6 +27824,7 @@ function playTriBike(w) {
         gameButtons(w, () => { const w2 = openGameWindow('🚴 騎腳踏車', '一直點「踩！」（或空白鍵）！'); playTriBike(w2); }); examHook('triBike', { place }, w); }, 1000);
     }
     // 畫：天空、草地、四條車道，跟著小可愛捲動
+    air = Math.max(0, air - dt); msgT -= dt;
     const cam = Math.max(0, me.x * 10 - 120);
     const sky = g.createLinearGradient(0, 0, 0, 110); sky.addColorStop(0, '#9fd8ff'); sky.addColorStop(1, '#e8f7ff'); g.fillStyle = sky; g.fillRect(0, 0, W, H);
     g.fillStyle = '#7cc576'; g.fillRect(0, 100, W, H - 100);
@@ -27766,8 +27832,11 @@ function playTriBike(w) {
     g.fillStyle = '#9aa0a8'; g.fillRect(0, 118, W, 130);
     for (let k = 1; k < 4; k++) { g.strokeStyle = 'rgba(255,255,255,.8)'; g.setLineDash([14, 12]); g.lineDashOffset = cam; g.lineWidth = 2; g.beginPath(); g.moveTo(0, 118 + k * 32); g.lineTo(W, 118 + k * 32); g.stroke(); } g.setLineDash([]); g.lineDashOffset = 0;
     const fx = LEN * 10 - cam + 60; if (fx < W + 20) { for (let k = 0; k < 13; k++) { g.fillStyle = k % 2 ? '#222' : '#fff'; g.fillRect(fx, 118 + k * 10, 8, 10); } }
+    { const ly = 140 + 2 * 32;   // 小可愛車道上的加速板和跳台
+      pads.forEach(pd => { const X = pd.x * 10 - cam + 60; if (X < -30 || X > W + 30) return; g.fillStyle = pd.hit ? 'rgba(255,210,63,.35)' : '#ffd23f'; for (let k = 0; k < 3; k++) { g.beginPath(); g.moveTo(X + k * 9 - 10, ly - 7); g.lineTo(X + k * 9 - 2, ly); g.lineTo(X + k * 9 - 10, ly + 7); g.lineTo(X + k * 9 - 6, ly); g.closePath(); g.fill(); } });
+      const RX = ramp.x * 10 - cam + 60; if (RX > -40 && RX < W + 40) { g.fillStyle = '#c08a55'; g.beginPath(); g.moveTo(RX - 34, ly + 9); g.lineTo(RX, ly - 10); g.lineTo(RX, ly + 9); g.closePath(); g.fill(); g.fillStyle = '#e8505b'; g.fillRect(RX - 2, ly - 12, 3, 22); } }
     riders.slice().sort((a, b) => a.lane - b.lane).forEach(r => {
-      const x = r.x * 10 - cam + 60, y = 140 + r.lane * 32, spin = r.x * 1.2;
+      const x = r.x * 10 - cam + 60, y = 140 + r.lane * 32 - (r === me && air > 0 ? Math.sin(Math.PI * (1 - air / .9)) * 34 : 0), spin = r.x * 1.2;
       trackRunner(g, r.who, x, y - 8, r.who === 'kid' ? .62 : 1.1, t, r.v > .5, 1);
       bike(x, y, .9, spin, r.who === 'kid' ? '#ff6b9a' : ['#3fa9f5', '#ffd23f', '#7bd389'][(r.lane + 3) % 3]);
     });
@@ -27775,10 +27844,12 @@ function playTriBike(w) {
     // 小地圖：大家騎到哪裡（朋友跑出畫面外也看得到）
     { const x0 = 172, x1 = W - 26; g.fillStyle = 'rgba(255,255,255,.85)'; g.fillRect(x0 - 6, 10, x1 - x0 + 22, 18); g.fillStyle = '#c9ced6'; g.fillRect(x0, 18, x1 - x0, 3); g.font = '12px sans-serif'; g.textAlign = 'center'; g.fillText('🏁', x1 + 8, 24);
       riders.forEach(r => { g.fillStyle = r === me ? '#ff6b9a' : ['#3fa9f5', '#ffd23f', '#7bd389'][(r.lane + 3) % 3]; g.beginPath(); g.arc(x0 + (x1 - x0) * Math.min(1, r.x / LEN), 19.5, r === me ? 6 : 4.5, 0, 7); g.fill(); }); }
+    if (msgT > 0 && msg) { g.font = '900 26px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.lineWidth = 6; g.strokeStyle = '#fff'; g.strokeText(msg, W / 2, 70); g.fillStyle = '#e8505b'; g.fillText(msg, W / 2, 70); }
     if (t < 0) { g.fillStyle = 'rgba(0,0,0,.3)'; g.fillRect(0, 0, W, H); g.fillStyle = '#fff'; g.font = '800 48px sans-serif'; g.textAlign = 'center'; g.fillText(String(Math.ceil(-t)), W / 2, H / 2); }
     raf = requestAnimationFrame(tick);
   };
   raf = requestAnimationFrame(tick);
+  playTriBike.fx = () => ({ pads: pads.filter(p2 => p2.hit).length, ramp: ramp.hit, air });
   playTriBike.test = { pedal, me, st: () => ({ t, ended, order: order.length }), fin: () => { me.x = LEN - .1; me.v = 10; t = Math.max(t, 0); } };
 }
 /* 🏁 起跑反應王（家長：按「起跑預備」是不是該有小遊戲？）：點起跑架就玩。
