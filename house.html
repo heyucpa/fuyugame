@@ -3547,6 +3547,10 @@ const PET_SPECIES = [
   { id: 'bbpanda', name: '黑帶熊貓', body: '#ffffff', edge: '#c9c9d4', belly: '#ffffff', inner: '#3a3240', ears: 'round', earCol: '#3a3240', patches: true, belt: '#26232a', sparkle: true, rare: true, story: true, weight: 0 },
   /* 🦁 球球獅（家長：世界躲避球大賽冠軍送寵物）：拿到世界躲避球冠軍才會來，買蛋抽不到（story） */
   { id: 'balllion', name: '球球獅', body: '#ffcf5a', edge: '#d99a2b', belly: '#fff1c4', inner: '#e0892b', ears: 'round', lionMane: '#f0902f', ballMark: true, sparkle: true, rare: true, story: true, weight: 0 },
+  /* 🏆 運動大賽的冠軍寵物（妹妹：新的世界大賽打贏後會有新的寵物，要非常可愛）：拿到那個大賽的 🥇 金牌才會來，買蛋抽不到（story） */
+  { id: 'bubbleseal', name: '泡泡小海豹', body: '#e3f3ff', edge: '#9cc8e8', belly: '#ffffff', inner: '#ffb3c7', ears: 'none', swimRing: '#ff6b9a', bubbles: true, blushHeart: true, sparkle: true, rare: true, story: true, weight: 0 },
+  { id: 'zoomcheetah', name: '閃電小豹', body: '#ffdb8f', edge: '#d9a24a', belly: '#fff6dc', inner: '#ffb3c7', ears: 'round', leoSpots: '#d08f3a', headband: '#ff5a7a', bolt: true, sparkle: true, rare: true, story: true, weight: 0 },
+  { id: 'medalcorgi', name: '鐵人小柯基', body: '#ffc27a', edge: '#e0944a', belly: '#ffffff', inner: '#ffb3c7', ears: 'pointy', helmet: '#7bd389', medalMark: true, blushHeart: true, sparkle: true, rare: true, story: true, weight: 0 },
   { id: 'starling', name: '星光小精靈', body: '#fff3b0', edge: '#e0b832', belly: '#ffffff', inner: '#ffb3c7', ears: 'tuft', wings: '#ffe9a8', halo: '#ffd35c', starMark: true, sparkle: true, rare: true, special: true, story: true, weight: 0 }
 ];
 const PET_SPECIES_BY_ID = Object.fromEntries(PET_SPECIES.map(s => [s.id, s]));
@@ -5319,6 +5323,7 @@ const NEWS = [
     ['🏊', '游泳池的鴨鴨教練：報名「世界全國游泳大賽」，先換漂亮的泳裝給評審打星星，再奮力游過去'],
     ['🏃', '學校操場的花豹教練：報名「世界全國跑步大賽」，跳遠＋百米賽跑，簡單就能玩'],
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
+    ['🐾', '拿到大賽 🥇 金牌會來新寵物：游泳大賽 → 泡泡小海豹、跑步大賽 → 閃電小豹、小鐵人三項 → 鐵人小柯基'],
     ['🤖', '商店「🚗 交通工具」多了機器人（💰 10,000）：坐在機器人頭上的玻璃罩裡，機器人一步一步走路帶你出門！'],
     ['🎉', '更好玩：選手出場、頒獎台典禮、更多泳裝配件（墨鏡、皇冠、亮晶晶）和「🎲 幫我搭」、評審會講評、游泳撿小鴨加分、腳踏車有加速板和跳台']
   ] },
@@ -9807,7 +9812,7 @@ const PET_TRAIT_OF = {
   chick: 'sand', peachmouse: 'sand', marshpig: 'sand', cocoadog: 'sand',
   bunny: 'shy', sheep: 'shy', mochi: 'shy', bear: 'shy',
   dragon: 'jump', starfox: 'jump', strawcow: 'jump', rainbowuni: 'jump',
-  angelbunny: 'shy', galaxydragon: 'jump', starling: 'jump', bbpanda: 'jump', balllion: 'jump'
+  angelbunny: 'shy', galaxydragon: 'jump', starling: 'jump', bbpanda: 'jump', balllion: 'jump', bubbleseal: 'fish', zoomcheetah: 'jump', medalcorgi: 'jump'
 };
 const petTrait = () => (G.pet && PET_TRAIT_OF[G.pet.species]) || 'jump';
 const PET_TRAIT_NAMES = { fish: '愛看魚', sand: '愛玩沙', shy: '有點害羞', jump: '很活潑' };
@@ -11206,6 +11211,38 @@ function drawCreature(ctx, sp, look) {
     const bx = 12, by = -3.5;   // 抱在身體旁邊
     ctx.fillStyle = '#e8505b'; ctx.strokeStyle = '#b8323d'; ctx.lineWidth = .7; ctx.beginPath(); ctx.arc(bx, by, 3.6, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
     ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.beginPath(); ctx.moveTo(bx - 3.6, by); ctx.lineTo(bx + 3.6, by); ctx.moveTo(bx, by - 3.6); ctx.quadraticCurveTo(bx + 1.9, by, bx, by + 3.6); ctx.stroke();
+  }
+  /* 🏆 運動大賽冠軍寵物的記號 */
+  if (sp.leoSpots) { ctx.fillStyle = sp.leoSpots; [[-10, -15, 1.3], [-7, -19, 1], [9, -16, 1.2], [11, -9, 1.1], [-12, -8, 1.1], [6, -20, .9]].forEach(([x, y, r]) => { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); }); }   // 小豹的點點
+  if (sp.bolt) { ctx.fillStyle = '#ffd23f'; ctx.strokeStyle = '#e0a21c'; ctx.lineWidth = .6; ctx.save(); ctx.translate(10.5, -1.5); ctx.scale(.8, .8); ctx.beginPath(); ctx.moveTo(1, -8); ctx.lineTo(-2.5, -3); ctx.lineTo(0, -3); ctx.lineTo(-1.5, 1); ctx.lineTo(3, -4.5); ctx.lineTo(.5, -4.5); ctx.lineTo(2.5, -8); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore(); }   // ⚡ 身體旁邊的小閃電
+  if (sp.headband) {   // 運動頭帶，旁邊兩條帶子會飄
+    const tt = (look.t != null ? look.t : performance.now() / 1000);
+    ctx.fillStyle = sp.headband; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-12.5, -20.5, 25, 3, 1.5) : ctx.rect(-12.5, -20.5, 25, 3); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(12, -20); ctx.lineTo(17, -21 + Math.sin(tt * 6) * 1.5); ctx.lineTo(16.5, -18.5 + Math.sin(tt * 6 + 1) * 1.5); ctx.lineTo(12, -18); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(-2, -20.2, 4, 2.4);
+  }
+  if (sp.swimRing) {   // 🛟 抱著粉紅白相間的游泳圈
+    ctx.lineWidth = 3.2; for (let i = 0; i < 6; i++) { ctx.strokeStyle = i % 2 ? '#ffffff' : sp.swimRing; ctx.beginPath(); ctx.ellipse(0, -1.6, 15.5, 3.4, 0, -.15 + i / 6 * (Math.PI + .3), -.15 + (i + 1) / 6 * (Math.PI + .3)); ctx.stroke(); }   // 只畫前面那一半，不擋到嘴巴
+  }
+  if (sp.medalMark) {   // 🥇 脖子上掛金牌
+    ctx.strokeStyle = '#3f8fd1'; ctx.lineWidth = 1.1; ctx.beginPath(); ctx.moveTo(6, -6); ctx.lineTo(9.5, -3.2); ctx.lineTo(13, -6); ctx.stroke();   // 掛在身體旁邊，不擋到臉
+    ctx.fillStyle = '#ffd23f'; ctx.strokeStyle = '#d9a21c'; ctx.lineWidth = .7; ctx.beginPath(); ctx.arc(9.5, -1.4, 2.8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    try { star(ctx, 9.5, -1.4, 1.4, '#fff6c7'); } catch (e) {}
+  }
+  if (sp.helmet) {   // 🚴 小小的腳踏車安全帽
+    ctx.fillStyle = sp.helmet; ctx.strokeStyle = 'rgba(0,0,0,.15)'; ctx.lineWidth = .7; ctx.beginPath(); ctx.ellipse(0, -20.5, 9.5, 6, 0, Math.PI, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.85)'; [-4, 0, 4].forEach(x => { ctx.beginPath(); ctx.ellipse(x, -23, .9, 2, 0, 0, Math.PI * 2); ctx.fill(); });
+    ctx.fillStyle = sp.helmet; ctx.fillRect(-10.5, -21, 21, 1.6);
+  }
+  if (sp.blushHeart) {   // 💗 臉頰是小愛心（超可愛）
+    const hfx = look.fx || 0; ctx.fillStyle = 'rgba(255,120,160,.75)';
+    [-1, 1].forEach(sd => { const x = sd * 8.2 + hfx, y = -9.3; ctx.beginPath(); ctx.moveTo(x, y + 1.6); ctx.bezierCurveTo(x - 2.4, y - .2, x - 1.2, y - 2, x, y - .7); ctx.bezierCurveTo(x + 1.2, y - 2, x + 2.4, y - .2, x, y + 1.6); ctx.fill(); });
+  }
+  if (sp.bubbles) {   // 身邊一直冒小泡泡
+    const tt = (look.t != null ? look.t : performance.now() / 1000);
+    ctx.strokeStyle = 'rgba(120,190,240,.9)'; ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = .6;
+    [[-15, 0], [16, .4], [-12, .7]].forEach(([x, ph]) => { const k = (tt * .45 + ph) % 1, y = -6 - k * 22, r = 1.4 + k * 1.6; ctx.globalAlpha = 1 - k * .7; ctx.beginPath(); ctx.arc(x + Math.sin(tt * 3 + ph * 6) * 1.2, y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); });
+    ctx.globalAlpha = 1;
   }
   if (sp.patches) { // 熊貓：黑眼圈
     ctx.fillStyle = '#3a3240'; const pfx = look.fx || 0;
@@ -16686,6 +16723,17 @@ function giveChampLion() {
   try { Sound.play('fanfare'); showcase(renderPetPortrait(p, 150, 140), '世界躲避球冠軍的獎品：「球球獅」來了！', '只有拿到世界躲避球冠軍才遇得到的寵物，在寵物頁照顧牠喔！', { head: '🦁 新寵物！' }); } catch (e) {}
   return true;
 }
+/* 🏆 運動大賽的金牌寵物：游泳大賽 → 泡泡小海豹、跑步大賽 → 閃電小豹、小鐵人三項 → 鐵人小柯基。還沒有才送（以前就拿過金牌的，回到家會補送） */
+const CUP_PETS = { swim: 'bubbleseal', run: 'zoomcheetah', tri: 'medalcorgi' };
+const CUP_PET_HINT = '🏆 泡泡小海豹、閃電小豹、鐵人小柯基：游泳大賽、跑步大賽、小鐵人三項拿到 🥇 金牌才會來，買蛋抽不到';
+function cupPetKept(id) { return G.pets.some(p => p.species === CUP_PETS[id]); }
+function giveCupPet(id) {
+  const sid = CUP_PETS[id]; if (!sid || cupPetKept(id)) return false;
+  const p = newPet(sid, 'baby', ''); G.pets.push(p); try { growDexAdd && growDexAdd(sid, 'baby'); } catch (e) {} saveGame();
+  const C = SPORT_CUPS[id], nm = PET_SPECIES_BY_ID[sid].name;
+  try { Sound.play('fanfare'); showcase(renderPetPortrait(p, 150, 140), `${C.title}金牌的獎品：「${nm}」來了！`, '只有拿到這個大賽的金牌才遇得到的寵物，在寵物頁照顧牠喔！', { head: '🏆 新寵物！' }); } catch (e) {}
+  return true;
+}
 function pandaKept() { return G.pets.some(p => p.species === 'bbpanda'); }
 /* 🥋 世界冠軍送黑帶熊貓：還沒有才送（以前就拿過冠軍的，回到家會補送一次） */
 function giveChampPanda() {
@@ -16750,6 +16798,7 @@ function tabBook(body) {
   if (!starlingKept()) body.appendChild(note(STARLING_DEX_HINT));
   if (!pandaKept()) body.appendChild(note(PANDA_DEX_HINT));
   if (!lionKept()) body.appendChild(note(LION_DEX_HINT));
+  if (Object.keys(CUP_PETS).some(k => !cupPetKept(k))) body.appendChild(note(CUP_PET_HINT));
   body.appendChild(petDexGrid());
   body.appendChild(sec('dexGrow', `🌱 成長圖鑑 ${growDexCount()} / ${growDexAll()}`));
   body.appendChild(note(`${charName()}吃營養的東西、做各種事、看繪本，會慢慢長大。寵物有寶寶、小朋友、大朋友三個樣子，養大就會收進來。還有一格隱藏的喔！`));
@@ -27721,6 +27770,7 @@ function cupFinish(w, id, pts) {
   Sound.play('fanfare'); try { confettiBurst(medal * 40); } catch (e) {}
   try { speak(`${CUP_MEDALS[medal].split(' ')[1]}！好棒！`); } catch (e) {}
   kidMoodUp(10 + medal * 3); saveGame();
+  if (medal === 3 && !cupPetKept(id)) { const nm = PET_SPECIES_BY_ID[CUP_PETS[id]].name; w.status.textContent += `　🐾 「${nm}」要來當你的寵物了！`; setTimeout(() => { try { giveCupPet(id); } catch (e) {} }, 900); }
   if (first) setTimeout(() => { try { showcase(el('div', 'magic-pic', CUP_MEDALS[medal].split(' ')[0]), `${C.title}：${CUP_MEDALS[medal].split(' ')[1]}！`, `總分 ${total} 分。💰 ${fmt(bells)}`, { head: '🏆 運動大賽' }); } catch (e) {} }, 600);
   const again = el('button', 'big', '🔁 再比一次'); again.onclick = () => { if (gameCleanup) { gameCleanup(); gameCleanup = null; } openSportsCup(id); };
   w.btns.appendChild(again); leaveButton(w);
@@ -29634,6 +29684,7 @@ FURNITURE_ACT.star_egg = 'stareggs';
 if (!LINE_TYPES.some(t => t.key === 'act_stareggs')) LINE_TYPES.push({ key: 'act_stareggs', label: '做事：看星星蛋', hint: '', lines: ACTIVITIES.stareggs.lines });
 // 教學做完、畫面穩定的時候送星星蛋
 // 以前就拿過世界躲避球冠軍的：補送球球獅
+setInterval(() => { try { if (!G || G.guide !== 'done' || SAVE_LOCKED != null || !G.sportsCup) return; const id = Object.keys(CUP_PETS).find(k => G.sportsCup[k] === 3 && !cupPetKept(k)); if (!id) return; if (!$('#modal').hidden || document.getElementById('showcase') || document.querySelector('.stage.island-on')) return; giveCupPet(id); } catch (e) {} }, 4500);   // 🏆 拿過金牌但還沒有寵物：補送
 setInterval(() => { try { if (!G || G.guide !== 'done' || SAVE_LOCKED != null || lionKept() || !(G.dbcup && G.dbcup.gold > 0)) return; if (!$('#modal').hidden || document.getElementById('showcase') || document.querySelector('.stage.island-on')) return; giveChampLion(); } catch (e) {} }, 4000);
 // 以前就拿過世界冠軍的：補送黑帶熊貓（在家、沒有視窗開著的時候）
 setInterval(() => { try { if (!G || G.guide !== 'done' || SAVE_LOCKED != null || pandaKept() || !(G.tkd && G.tkd.world && G.tkd.world.gold > 0)) return; if (!$('#modal').hidden || document.getElementById('showcase') || document.querySelector('.stage.island-on')) return; giveChampPanda(); } catch (e) {} }, 4000);

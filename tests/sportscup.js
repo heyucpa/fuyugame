@@ -46,9 +46,17 @@ const path = require('path');
     o.triDone = sportsCupState().tri >= 1 && cupFinish.last.total >= 5 + 10 + 3;
     // 中途離開：不會把成績交給下一個遊戲
     openSportsCup('swim'); btn(/開始比賽/).click(); await wait(100); closeGameWindow(); o.leaveClears = CUPRUN === null;
+    // 🐾 金牌送寵物（跑步大賽 → 閃電小豹）；銅牌不送；拿過金牌的會補送
+    G.pets = G.pets.filter(q => !['bubbleseal', 'zoomcheetah', 'medalcorgi'].includes(q.species));
+    openSportsCup('run'); cupFinish(openSportsCup.test.w, 'run', [2, 3]); await wait(1300); o.noPetBronze = !G.pets.some(q => q.species === 'zoomcheetah');
+    openSportsCup('run'); cupFinish(openSportsCup.test.w, 'run', [10, 10]); await wait(1300); o.petGold = G.pets.some(q => q.species === 'zoomcheetah') && /閃電小豹/.test(document.querySelector('.game-status').textContent);
+    closeGameWindow(); document.querySelectorAll('#showcase').forEach(x => x.remove());
+    o.petStory = ['bubbleseal', 'zoomcheetah', 'medalcorgi'].every(id => PET_SPECIES_BY_ID[id] && PET_SPECIES_BY_ID[id].story && !PET_SPECIES_BY_ID[id].weight);
+    G.guide = 'done'; sportsCupState().tri = 3; document.getElementById('modal').hidden = true; await wait(5200); o.backfill = G.pets.some(q => q.species === 'medalcorgi');
+    { const cv = document.createElement('canvas'); cv.width = cv.height = 60; const g = cv.getContext('2d'); g.translate(30, 50); g.scale(2, 2); ['bubbleseal', 'zoomcheetah', 'medalcorgi'].forEach(id => drawCreature(g, PET_SPECIES_BY_ID[id], { happy: true, blink: false, fx: 0, clean: 100, t: 1 })); o.petDraw = g.getImageData(30, 30, 1, 1).data[3] > 0; }
     // 存檔
     saveGame(); const raw = JSON.parse(localStorage.getItem(SAVE_KEY));
-    o.saved = raw.sportsCup && raw.sportsCup.swim >= 2;
+    o.saved = raw.sportsCup && raw.sportsCup.swim >= 2 && normalizeSave(raw).pets.some(q => q.species === 'zoomcheetah');
     const n = normalizeSave(Object.assign({}, raw, { sportsCup: { swim: 9, run: 2, tri: 'x', bad: 1, n: 3 } })).sportsCup;
     o.norm = n.swim == null && n.run === 2 && n.tri == null && n.bad == null && n.n === 3 && normalizeSave(Object.assign({}, raw, { sportsCup: 5 })).sportsCup == null;
     o.oldSave = (() => { const r2 = Object.assign({}, raw); delete r2.sportsCup; return normalizeSave(r2).sportsCup == null; })();

@@ -324,8 +324,8 @@
     if (document.querySelector('#tabBody').textContent.indexOf('重新開始') < 0)
       fails.push('設定分頁沒有「重新開始」');
 
-    /* ⑩.8 寵物跟髮型的數量與資料完整性 */
-    if (PET_SPECIES.length !== 23) fails.push('寵物變成 ' + PET_SPECIES.length + ' 種了');
+    /* ⑩.8 寵物跟髮型的數量與資料完整性 */   // 26：多了運動大賽的泡泡小海豹、閃電小豹、鐵人小柯基
+    if (PET_SPECIES.length !== 26) fails.push('寵物變成 ' + PET_SPECIES.length + ' 種了');
     var pid = {};
     PET_SPECIES.forEach(function(sp){
       if (pid[sp.id]) fails.push('寵物 id 重複：' + sp.id);
