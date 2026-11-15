@@ -5088,9 +5088,14 @@
     /* ㊼ 價格：全部買齊（四間房擴建到最大＋每樣一個）要在 15～20 萬之間（大約玩兩小時），
        不能有東西變成免費、價格要是整數好看的數字 */
     var sumP = function(l){ return l.reduce(function(s2, x){ return s2 + (x.price || 0); }, 0); };
-    var allCost = NEW_ROOM_COST.reduce(function(a2, b2){ return a2 + b2; }, 0)
-      + ROOM_NAMES.length * Object.values(EXPAND_COST).reduce(function(a2, b2){ return a2 + b2; }, 0)
+    /* 原本的部分（前 4 間房、擴建到 10×10、所有東西）維持 15～22 萬；
+       家長後來要「房間再大一點、再多幾間」：第 5～8 間房和 12×12、14×14 是另外的長期目標，另外算（不超過 40 萬） */
+    var coreExp = [8, 10].reduce(function(a2, k){ return a2 + (EXPAND_COST[k] || 0); }, 0);
+    var allCost = NEW_ROOM_COST.slice(0, 3).reduce(function(a2, b2){ return a2 + b2; }, 0)
+      + 4 * coreExp
       + sumP(FURNITURE.filter(function(d){ return !d.gift; })) + sumP(WALLPAPERS) + sumP(FLOORS) + sumP(CLOTHES) + sumP(HAIR_STYLES);
+    var extraCost = NEW_ROOM_COST.slice(3).reduce(function(a2, b2){ return a2 + b2; }, 0) + ROOM_NAMES.length * (Object.values(EXPAND_COST).reduce(function(a2, b2){ return a2 + b2; }, 0) - coreExp) + (ROOM_NAMES.length - 4) * coreExp;
+    if (extraCost > 400000) fails.push('多出來的房間和擴建要 ' + extraCost + '，超過 40 萬');
     // ✨ 一鍵佈置
     (function(){
       var keep = JSON.stringify({ rooms: G.rooms, inv: G.inv, noSell: G.noSell, walls: G.walls, floors: G.floors, cur: G.cur, uid: G.uid }); var realSC = showcase; showcase = function(){};
