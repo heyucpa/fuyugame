@@ -807,6 +807,8 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .home-tabs { justify-content: center; flex-wrap: wrap; }
 .home-grid .card { padding: 6px 4px; } .home-sw { width: 46px; height: 34px; border-radius: 10px; margin: 2px auto 4px; border: 2px solid rgba(0,0,0,.08); }
 .home-sw.emo { border: none; font-size: 26px; line-height: 34px; text-align: center; }
+.shop-new { background: #fff6e0; border: 2px dashed #ffb84d; border-radius: 16px; padding: 4px 10px 10px; margin: 6px 0 12px; } .shop-new-sub { font-weight: 800; color: #b5651d; margin: 6px 2px 2px; }
+.filter button.new-kind { border-color: #ff9f1c; box-shadow: 0 0 0 2px rgba(255,159,28,.35); }
 .cup-steps, .cup-result { display: flex; flex-direction: column; gap: 6px; align-items: center; margin: 6px 0; } .cup-step { font-weight: 700; font-size: 16px; }
 .cup-medal { font-size: 64px; line-height: 1.1; } .cup-total { font-weight: 900; font-size: 22px; color: #b5651d; }
 .cup-dress-cv { display: block; margin: 0 auto 6px; border-radius: 14px; }
@@ -5341,6 +5343,7 @@ const NEWS = [
     ['🏊', '游泳池的鴨鴨教練：報名「世界全國游泳大賽」，先換漂亮的泳裝給評審打星星，再奮力游過去'],
     ['🏃', '學校操場的花豹教練：報名「世界全國跑步大賽」，跳遠＋百米賽跑，簡單就能玩'],
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
+    ['🆕', '商店多了「🆕 新東西」：最近更新才有、還沒買的東西集中在這裡，買起來比較方便'],
     ['🏆', '大賽拿到 🥇 金牌還會送一座金盃（游泳大賽、跑步大賽、小鐵人三項各一座），可以擺在家裡或桌上'],
     ['🐾', '拿到大賽 🥇 金牌會來新寵物：游泳大賽 → 泡泡小海豹、跑步大賽 → 閃電小豹、小鐵人三項 → 鐵人小柯基'],
     ['🤖', '商店「🚗 交通工具」多了機器人（💰 10,000）：坐在機器人頭上的玻璃罩裡，機器人一步一步走路帶你出門！'],
@@ -6383,6 +6386,7 @@ function normalizeSave(g) {
       if (hm.wallPicked != null && hm.wallPicked !== 1) delete hm.wallPicked;   // 自己選過牆壁顏色（選蜜桃粉就真的是蜜桃粉）
       if (hm.contest != null && !(isObj(hm.contest) && Number.isInteger(hm.contest.wk) && Number.isInteger(hm.contest.stars) && hm.contest.stars >= 1 && hm.contest.stars <= 3)) delete hm.contest;
       if (hm.newAt != null && !(typeof hm.newAt === 'number' && isFinite(hm.newAt))) delete hm.newAt; if (hm.seenAt != null && !(typeof hm.seenAt === 'number' && isFinite(hm.seenAt))) delete hm.seenAt; } }
+  if (out.shopFirst != null) { if (!isObj(out.shopFirst)) delete out.shopFirst; else out.shopFirst = Object.fromEntries(Object.entries(out.shopFirst).filter(([k, v]) => /^[a-z]{1,2}:[A-Za-z0-9_]{1,40}$/.test(k) && Number.isInteger(v) && v >= 0 && v < 1e6).slice(0, 3000)); }   // 🆕 商店商品第一次出現的日子
   if (out.sportsCup != null) { if (!isObj(out.sportsCup)) delete out.sportsCup; else { const sc = out.sportsCup; Object.keys(sc).forEach(k => { if (['swim', 'run', 'tri'].includes(k)) { if (!(Number.isInteger(sc[k]) && sc[k] >= 0 && sc[k] <= 3)) delete sc[k]; } else if (k === 'n') { if (!(Number.isInteger(sc.n) && sc.n >= 0 && sc.n <= 1e6)) delete sc.n; } else delete sc[k]; }); } }   // 🏆 運動大賽拿過的獎牌
   if (out.dbcup != null) { if (!isObj(out.dbcup)) delete out.dbcup; else { if (!(Number.isInteger(out.dbcup.best) && out.dbcup.best >= 0 && out.dbcup.best <= 5)) out.dbcup.best = 0; if (!(Number.isInteger(out.dbcup.gold) && out.dbcup.gold >= 0 && out.dbcup.gold < 1e6)) out.dbcup.gold = 0; } }   // 🌏 世界躲避球大賽
   if (out.exams != null) { if (!isObj(out.exams)) delete out.exams; else Object.keys(out.exams).forEach(k => { const v = out.exams[k]; if (!['swim', 'chef', 'ball', 'dodge', 'track'].includes(k) || !(Number.isInteger(v) && v >= 0 && v <= 4)) delete out.exams[k]; }); }   // 🎖️ 升級考試（每種 0～4 級）
@@ -16493,16 +16497,82 @@ function seasonShop(body, se) {
   body.appendChild(box);
 }
 function seasonDexCount() { return SEASON_FURNITURE.filter(d => (G.seasonDex || {})[d.id]).length; }
+/* 🆕 商店的「新東西」區（家長：商店有新增的東西，多一個新增物品的區域，方便購買）
+   每一樣商品第一次出現在這份存檔的那天記在 G.shopFirst（'f:家具'、'k:小可愛食物'、'p:寵物食物'、'v:交通工具'、'w:壁紙'、'fl:地板' → 第幾天）。
+   第一次有這個欄位的舊存檔：現在有的全部算舊的（0），只有 SHOP_RECENT_SEED 這幾樣最近才加的算新的。
+   之後更新多出來的東西，第一次打開商店那天就記下來：14 天內、還沒買的，會放在「🆕 新東西」。 */
+const SHOP_NEW_DAYS = 14, SHOP_RECENT_SEED = ['v:robot'];
+const shopDayNum = () => Math.floor((Date.now() + 8 * 3600e3) / 864e5);
+function shopCatalog() {
+  const L = [];
+  FURNITURE.filter(d => !d.gift && !d.season).forEach(d => L.push(['f:' + d.id, d]));
+  KID_FOODS.filter(f => !f.season && !f.placeOnly).forEach(f => L.push(['k:' + f.id, f]));
+  FOODS.filter(f => !f.season).forEach(f => L.push(['p:' + f.id, f]));
+  VEHICLES.forEach(v => L.push(['v:' + v.id, v]));
+  WALLPAPERS.filter(w => !w.season).forEach(w => L.push(['w:' + w.id, w]));
+  FLOORS.filter(f => !f.season).forEach(f => L.push(['fl:' + f.id, f]));
+  return L;
+}
+function shopFirstInit() {
+  const day = shopDayNum(), cat = shopCatalog();
+  if (!G.shopFirst || typeof G.shopFirst !== 'object' || Array.isArray(G.shopFirst)) { G.shopFirst = {}; cat.forEach(([k]) => { G.shopFirst[k] = SHOP_RECENT_SEED.includes(k) ? day : 0; }); return; }
+  cat.forEach(([k]) => { if (G.shopFirst[k] == null) G.shopFirst[k] = day; });
+}
+function shopNewItems() {
+  shopFirstInit();
+  const day = shopDayNum(), out = { furn: [], kid: [], pet: [], veh: [], wall: [], floor: [], n: 0 };
+  const fresh = k => { const d = G.shopFirst[k]; return d > 0 && day - d <= SHOP_NEW_DAYS; };
+  shopCatalog().forEach(([k, it]) => {
+    const t = k.split(':')[0];
+    const owned = t === 'f' ? !!(G.seen || {})[it.id] : t === 'v' ? (G.vehicles || []).includes(it.id) : t === 'w' ? G.walls.includes(it.id) : t === 'fl' ? G.floors.includes(it.id) : false;
+    const isNew = !owned && (fresh(k) || (t === 'f' && isNewItem(it.id)));
+    if (!isNew) return;
+    ({ f: out.furn, k: out.kid, p: out.pet, v: out.veh, w: out.wall, fl: out.floor })[t].push(it); out.n++;
+  });
+  return out;
+}
+function shopFurnGrid(defs) {
+  const grid = el('div', 'grid');
+  defs.forEach(def => {
+    const card = furnCard(def, '💰 ' + fmt(def.price), () => {
+      if (buyFurniture(def.id)) { Sound.play('coin'); toast(`買了「${def.name}」，放進「我的東西」了`); commit(); }
+      else toast('錢不夠，去賺一點吧！');
+    }, G.inv[def.id]);
+    if (G.bells < def.price) card.classList.add('dim');
+    if (def.fresh || isNewItem(def.id) || (G.shopFirst && G.shopFirst['f:' + def.id] > 0 && shopDayNum() - G.shopFirst['f:' + def.id] <= SHOP_NEW_DAYS)) card.appendChild(el('span', 'tag new', '新'));
+    grid.appendChild(card);
+  });
+  return grid;
+}
+function shopNewSection(body, nw) {
+  const th = shopTheme; shopTheme = 'all';   // 新東西不分風格，全部列出來
+  try { shopNewSectionInner(body, nw); } finally { shopTheme = th; }
+}
+function shopNewSectionInner(body, nw) {
+  const box = el('div', 'shop-new');
+  box.appendChild(h3(`🆕 新東西（${nw.n} 樣，最近更新才有的）`));
+  if (nw.veh.length) { box.appendChild(el('div', 'shop-new-sub', '🚗 交通工具')); const tmp = el('div'); shopVehicles(tmp, nw.veh.map(v => v.id)); box.appendChild(tmp); }
+  if (nw.furn.length) { box.appendChild(el('div', 'shop-new-sub', '🛋️ 家具')); box.appendChild(shopFurnGrid(nw.furn)); }
+  if (nw.kid.length) { box.appendChild(el('div', 'shop-new-sub', `🍎 ${charName()}的食物`)); box.appendChild(foodShopGrid(nw.kid, G.kidFood, buyKidFood, food => food.potion ? '隨機魔法 10 分鐘' : food.grow ? '💪 健康長大' : `飽足+${food.hunger}`)); }
+  if (nw.pet.length) { box.appendChild(el('div', 'shop-new-sub', '🐾 寵物食物')); box.appendChild(foodShopGrid(nw.pet, G.food, buyFood, food => food.potion ? '寵物變回寶寶 10 分鐘' : `飽足+${food.hunger}`)); }
+  if (!G.away && (nw.wall.length || nw.floor.length)) {
+    const room = curRoom();
+    if (nw.wall.length) { box.appendChild(el('div', 'shop-new-sub', '🧱 壁紙')); box.appendChild(decoGrid('wall', nw.wall, G.walls, room.wall, 'shop')); }
+    if (nw.floor.length) { box.appendChild(el('div', 'shop-new-sub', '🟫 地板')); box.appendChild(decoGrid('floor', nw.floor, G.floors, room.floor, 'shop')); }
+  }
+  body.appendChild(box);
+}
 function tabShop(body) {
   body.appendChild(h3('小狸商店'));
   { const hb = el('button', 'big alt home-shop-btn', '🏡 房子外觀（油漆、造型、門牌、門口裝飾）'); hb.onclick = () => { Sound.play('click'); openHomeLook(); }; body.appendChild(hb); }
   { const se = seasonNow(); if (se) seasonShop(body, se); }
   // 第一排：她在想的事（我要一張床）。第二排：想湊風格加成的時候才用
-  const f = el('div', 'filter kinds');
-  [['all', '', '全部'], ['food', '🍎', '食物'], ['paper', '🎨', '壁紙地板'], ['car', '🚗', '交通工具']]
+  const f = el('div', 'filter kinds'), nw = shopNewItems();
+  if (shopKind === 'new' && !nw.n) shopKind = 'all';
+  [['all', '', '全部']].concat(nw.n ? [['new', '🆕', `新東西 ${nw.n}`]] : []).concat([['food', '🍎', '食物'], ['paper', '🎨', '壁紙地板'], ['car', '🚗', '交通工具']])
     .concat(FURN_KINDS.map(k => [k.id, k.icon, k.name]))
     .forEach(([k, icon, n]) => {
-      const b = el('button', k === shopKind ? 'on' : '');
+      const b = el('button', (k === shopKind ? 'on' : '') + (k === 'new' ? ' new-kind' : ''));
       if (icon) b.appendChild(el('span', 'fi', icon));
       b.appendChild(el('span', '', n));
       b.onclick = () => { shopKind = k; renderTab(); };
@@ -16512,6 +16582,8 @@ function tabShop(body) {
   /* 風格：只列「這一類真的有東西」的風格，後面寫有幾樣，前面加小圖示（妹妹看圖就知道）。
      以前五個風格永遠都在，選「佈置」再選「衛浴」就是一整頁空白。
      這一類只有一種風格（或是食物）就不顯示這一排。 */
+  if (shopKind === 'new') { shopNewSection(body, nw); return; }   // 🆕 只看新東西
+  if (shopKind === 'all' && shopTheme === 'all' && nw.n && sellMode !== true) shopNewSection(body, nw);   // 「全部」（沒選風格）最上面也先列新東西
   const counts = shopThemeCounts(shopKind);
   const themes = Object.keys(THEME_NAMES).filter(t => counts[t] > 0);
   if (shopTheme !== 'all' && !themes.includes(shopTheme)) shopTheme = 'all';
@@ -16540,20 +16612,9 @@ function tabShop(body) {
     if (shopKind === 'food') return;
     body.appendChild(h3('家具'));
   } else if (shopKind === 'all') body.appendChild(h3(`${THEME_ICONS[shopTheme]} ${THEME_NAMES[shopTheme]}風格的家具`));
-  const grid = el('div', 'grid');
-  FURNITURE.filter(d => !d.gift)
+  body.appendChild(shopFurnGrid(FURNITURE.filter(d => !d.gift)
     .filter(d => shopKind === 'all' || shopKind === 'food' || furnKind(d.id) === shopKind)
-    .filter(d => shopTheme === 'all' || d.theme === shopTheme)
-    .forEach(def => {
-    const card = furnCard(def, '💰 ' + fmt(def.price), () => {
-      if (buyFurniture(def.id)) { Sound.play('coin'); toast(`買了「${def.name}」，放進「我的東西」了`); commit(); }
-      else toast('錢不夠，去賺一點吧！');
-    }, G.inv[def.id]);
-    if (G.bells < def.price) card.classList.add('dim');
-    if (def.fresh || isNewItem(def.id)) card.appendChild(el('span', 'tag new', '新'));
-    grid.appendChild(card);
-  });
-  body.appendChild(grid);
+    .filter(d => shopTheme === 'all' || d.theme === shopTheme)));
   if (shopKind === 'all') shopDeco(body);
 }
 // 這一類商品裡，每個風格有幾樣（壁紙地板只算還沒買的）
@@ -26723,10 +26784,10 @@ function openRideMenu(e) {
   openMenu(entries, e);
 }
 function islRideBtn() { const b = document.getElementById('islRide'), v = rideNow(); if (b) { b.textContent = v ? `${v.icon} ${v.name}` : '🚲 交通工具'; b.classList.toggle('on', !!v); } }
-function shopVehicles(body) {
-  body.appendChild(note('在小島上騎、開，走得比較快！買了以後，到小島點左上角的「🚲 交通工具」選要騎哪一台。'));
+function shopVehicles(body, only) {
+  if (!only) body.appendChild(note('在小島上騎、開，走得比較快！買了以後，到小島點左上角的「🚲 交通工具」選要騎哪一台。'));
   const grid = el('div', 'grid');
-  VEHICLES.forEach(v => {
+  VEHICLES.filter(v => !only || only.includes(v.id)).forEach(v => {
     const own = (G.vehicles || []).includes(v.id), card = el('div', 'card' + (own ? ' owned' : ''));
     card.appendChild(vehicleCanvas(v.id, 120, 70));
     card.appendChild(el('div', 'name', `${v.icon} ${v.name}`));
