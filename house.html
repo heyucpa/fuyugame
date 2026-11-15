@@ -807,6 +807,8 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .home-tabs { justify-content: center; flex-wrap: wrap; }
 .home-grid .card { padding: 6px 4px; } .home-sw { width: 46px; height: 34px; border-radius: 10px; margin: 2px auto 4px; border: 2px solid rgba(0,0,0,.08); }
 .home-sw.emo { border: none; font-size: 26px; line-height: 34px; text-align: center; }
+.art-topic { text-align: center; margin: 10px 0; } .art-topic-ic { font-size: 72px; line-height: 1.1; } .art-topic-t { font-size: 24px; font-weight: 900; color: #b5651d; }
+.art-frame { display: flex; justify-content: center; margin: 4px 0 8px; } .art-frame canvas { border: 8px solid #f2c14e; border-radius: 6px; box-shadow: 0 0 0 3px #b07a1e, 0 4px 10px rgba(0,0,0,.15); }
 .shop-new { background: #fff6e0; border: 2px dashed #ffb84d; border-radius: 16px; padding: 4px 10px 10px; margin: 6px 0 12px; } .shop-new-sub { font-weight: 800; color: #b5651d; margin: 6px 2px 2px; }
 .filter button.new-kind { border-color: #ff9f1c; box-shadow: 0 0 0 2px rgba(255,159,28,.35); }
 .cup-steps, .cup-result { display: flex; flex-direction: column; gap: 6px; align-items: center; margin: 6px 0; } .cup-step { font-weight: 700; font-size: 16px; }
@@ -3554,6 +3556,7 @@ const PET_SPECIES = [
   { id: 'bubbleseal', name: '泡泡小海豹', body: '#e3f3ff', edge: '#9cc8e8', belly: '#ffffff', inner: '#ffb3c7', ears: 'none', swimRing: '#ff6b9a', bubbles: true, blushHeart: true, sparkle: true, rare: true, story: true, weight: 0 },
   { id: 'zoomcheetah', name: '閃電小豹', body: '#ffdb8f', edge: '#d9a24a', belly: '#fff6dc', inner: '#ffb3c7', ears: 'round', leoSpots: '#d08f3a', headband: '#ff5a7a', bolt: true, sparkle: true, rare: true, story: true, weight: 0 },
   { id: 'medalcorgi', name: '鐵人小柯基', body: '#ffc27a', edge: '#e0944a', belly: '#ffffff', inner: '#ffb3c7', ears: 'pointy', helmet: '#7bd389', medalMark: true, blushHeart: true, sparkle: true, rare: true, story: true, weight: 0 },
+  { id: 'paintcat', name: '調色盤小貓', body: '#fffaf2', edge: '#e0c9a6', belly: '#ffffff', inner: '#ffb3c7', ears: 'pointy', paintSpots: true, beret: '#e8505b', blushHeart: true, sparkle: true, rare: true, story: true, weight: 0 },   // 🎨 畫畫大賽金牌
   { id: 'starling', name: '星光小精靈', body: '#fff3b0', edge: '#e0b832', belly: '#ffffff', inner: '#ffb3c7', ears: 'tuft', wings: '#ffe9a8', halo: '#ffd35c', starMark: true, sparkle: true, rare: true, special: true, story: true, weight: 0 }
 ];
 const PET_SPECIES_BY_ID = Object.fromEntries(PET_SPECIES.map(s => [s.id, s]));
@@ -5123,7 +5126,16 @@ TROPHY_SETS.forEach(t => {
 });
 /* 🏆 運動大賽金盃（家長：拿金牌送一座獎盃擺在家裡）：游泳大賽、跑步大賽、小鐵人三項拿到 🥇 各送一座。
    比集滿獎盃大一點、底座是那個比賽的顏色，前面有一顆記號。可以擺地上也可以擺桌上；價格 0＝不會不小心賣掉太便宜。 */
-const CUP_TROPHIES = [['swim', '游泳大賽金盃', '#3fa9f5', '🏊'], ['run', '跑步大賽金盃', '#ff8a3d', '🏃'], ['tri', '小鐵人三項金盃', '#7bd389', '🏅']];
+const CUP_TROPHIES = [['swim', '游泳大賽金盃', '#3fa9f5', '🏊'], ['run', '跑步大賽金盃', '#ff8a3d', '🏃'], ['tri', '小鐵人三項金盃', '#7bd389', '🏅'], ['art', '畫畫大賽金盃', '#ff8fb8', '🎨']];
+/* 🖼️ 我的名畫：畫畫大賽送的畫框，掛在牆上，裡面是她最近一次比賽畫的那張（G.artCup.frame） */
+FURN_BY_ID.art_frame = { id: 'art_frame', name: '我的名畫', price: 0, sellPrice: 300, theme: 'cute', w: 2, h: 32, z: 50, layer: 'wall', d: 1, parts: [], gift: true,
+  draw(ctx, W, H) {
+    ctx.fillStyle = '#d9a23a'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#f2c14e'; ctx.fillRect(1.2, 1.2, W - 2.4, H - 2.4); ctx.fillStyle = '#fffdf8'; ctx.fillRect(2.6, 2.6, W - 5.2, H - 5.2);
+    const iw = W - 6, ih = H - 6, k = Math.min(iw / PAD_W, ih / PAD_H); let fr = null; try { fr = G.artCup && G.artCup.frame; } catch (e) {}
+    ctx.save(); ctx.translate(3 + (iw - PAD_W * k) / 2, 3 + (ih - PAD_H * k) / 2);
+    if (fr && typeof drawCardStrokesCached === 'function') drawCardStrokesCached(ctx, fr, k); else { ctx.fillStyle = '#fffdf8'; ctx.fillRect(0, 0, PAD_W * k, PAD_H * k); }
+    ctx.restore();
+  } };
 CUP_TROPHIES.forEach(([k, nm, col]) => {
   const id = 'trophy_cup_' + k, gold = '#f2c14e';
   FURN_BY_ID[id] = { id, name: nm, price: 0, sellPrice: 800, theme: 'modern', w: 1, d: 1, gift: true, trophy: true, parts: [
@@ -5344,6 +5356,7 @@ const NEWS = [
     ['🏊', '游泳池的鴨鴨教練：報名「世界全國游泳大賽」，先換漂亮的泳裝給評審打星星，再奮力游過去'],
     ['🏃', '學校操場的花豹教練：報名「世界全國跑步大賽」，跳遠＋百米賽跑，簡單就能玩'],
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
+    ['🏆', '學校老師辦「畫畫大賽」！抽題目畫畫，三位評審打星星、頒獎台；畫會裝進「我的名畫」畫框掛在家裡，金牌送金盃和新寵物「調色盤小貓」'],
     ['🎨', '美勞課、畫校旗可以畫更多、一直塗滿了；多了「🖌️ 超粗」筆刷，塗顏色更快'],
     ['🚀', '機器人會飛了！坐機器人出門按「🚀 飛起來」，腳底噴火飛到空中，可以飛過海和房子，到草地或路上按「🛬 降落」'],
     ['🆕', '商店多了「🆕 新東西」：最近更新才有、還沒買的東西集中在這裡，買起來比較方便'],
@@ -6393,7 +6406,8 @@ function normalizeSave(g) {
       if (hm.contest != null && !(isObj(hm.contest) && Number.isInteger(hm.contest.wk) && Number.isInteger(hm.contest.stars) && hm.contest.stars >= 1 && hm.contest.stars <= 3)) delete hm.contest;
       if (hm.newAt != null && !(typeof hm.newAt === 'number' && isFinite(hm.newAt))) delete hm.newAt; if (hm.seenAt != null && !(typeof hm.seenAt === 'number' && isFinite(hm.seenAt))) delete hm.seenAt; } }
   if (out.shopFirst != null) { if (!isObj(out.shopFirst)) delete out.shopFirst; else out.shopFirst = Object.fromEntries(Object.entries(out.shopFirst).filter(([k, v]) => /^[a-z]{1,2}:[A-Za-z0-9_]{1,40}$/.test(k) && Number.isInteger(v) && v >= 0 && v < 1e6).slice(0, 3000)); }   // 🆕 商店商品第一次出現的日子
-  if (out.sportsCup != null) { if (!isObj(out.sportsCup)) delete out.sportsCup; else { const sc = out.sportsCup; Object.keys(sc).forEach(k => { if (['swim', 'run', 'tri'].includes(k)) { if (!(Number.isInteger(sc[k]) && sc[k] >= 0 && sc[k] <= 3)) delete sc[k]; } else if (k === 'n') { if (!(Number.isInteger(sc.n) && sc.n >= 0 && sc.n <= 1e6)) delete sc.n; } else delete sc[k]; }); } }   // 🏆 運動大賽拿過的獎牌
+  if (out.artCup != null) { if (!isObj(out.artCup)) delete out.artCup; else { const ac = out.artCup, fr = ac.frame != null ? cleanDrawing(ac.frame, PAD_BIG) : null; out.artCup = {}; if (fr) out.artCup.frame = fr; if (typeof ac.topic === 'string') out.artCup.topic = ac.topic.slice(0, 20); } }   // 🎨 畫畫大賽：名畫框裡的那張畫
+  if (out.sportsCup != null) { if (!isObj(out.sportsCup)) delete out.sportsCup; else { const sc = out.sportsCup; Object.keys(sc).forEach(k => { if (['swim', 'run', 'tri', 'art'].includes(k)) { if (!(Number.isInteger(sc[k]) && sc[k] >= 0 && sc[k] <= 3)) delete sc[k]; } else if (k === 'n') { if (!(Number.isInteger(sc.n) && sc.n >= 0 && sc.n <= 1e6)) delete sc.n; } else delete sc[k]; }); } }   // 🏆 運動大賽拿過的獎牌
   if (out.dbcup != null) { if (!isObj(out.dbcup)) delete out.dbcup; else { if (!(Number.isInteger(out.dbcup.best) && out.dbcup.best >= 0 && out.dbcup.best <= 5)) out.dbcup.best = 0; if (!(Number.isInteger(out.dbcup.gold) && out.dbcup.gold >= 0 && out.dbcup.gold < 1e6)) out.dbcup.gold = 0; } }   // 🌏 世界躲避球大賽
   if (out.exams != null) { if (!isObj(out.exams)) delete out.exams; else Object.keys(out.exams).forEach(k => { const v = out.exams[k]; if (!['swim', 'chef', 'ball', 'dodge', 'track'].includes(k) || !(Number.isInteger(v) && v >= 0 && v <= 4)) delete out.exams[k]; }); }   // 🎖️ 升級考試（每種 0～4 級）
   if (out.tkd && isObj(out.tkd)) { if (out.tkd.coach != null && !(Number.isInteger(out.tkd.coach) && out.tkd.coach >= 0 && out.tkd.coach < 1e6)) delete out.tkd.coach; if (out.tkd.world != null) { const wv = out.tkd.world; if (!isObj(wv)) delete out.tkd.world; else { if (!(Number.isInteger(wv.best) && wv.best >= -1 && wv.best <= 5)) wv.best = -1; if (!(Number.isInteger(wv.gold) && wv.gold >= 0 && wv.gold < 1e6)) wv.gold = 0; if (wv.v == null) { if (wv.best === 3) wv.best = 5; else if (wv.best === 2) wv.best = 4; else if (wv.best === 1) wv.best = 3; wv.v = 2; } else if (wv.v !== 2) { delete wv.v; wv.v = 2; } if (wv.d != null && typeof wv.d !== 'string') { delete wv.d; delete wv.n; } if (wv.n != null && !(Number.isInteger(wv.n) && wv.n >= 0 && wv.n < 100)) wv.n = 0; } } }   // 👑 教練、🌏 世界大賽（v 沒有＝舊三場：3 冠軍→5、2 銀→4、1 銅→3）
@@ -9841,7 +9855,7 @@ const PET_TRAIT_OF = {
   chick: 'sand', peachmouse: 'sand', marshpig: 'sand', cocoadog: 'sand',
   bunny: 'shy', sheep: 'shy', mochi: 'shy', bear: 'shy',
   dragon: 'jump', starfox: 'jump', strawcow: 'jump', rainbowuni: 'jump',
-  angelbunny: 'shy', galaxydragon: 'jump', starling: 'jump', bbpanda: 'jump', balllion: 'jump', bubbleseal: 'fish', zoomcheetah: 'jump', medalcorgi: 'jump'
+  angelbunny: 'shy', galaxydragon: 'jump', starling: 'jump', bbpanda: 'jump', balllion: 'jump', bubbleseal: 'fish', zoomcheetah: 'jump', medalcorgi: 'jump', paintcat: 'shy'
 };
 const petTrait = () => (G.pet && PET_TRAIT_OF[G.pet.species]) || 'jump';
 const PET_TRAIT_NAMES = { fish: '愛看魚', sand: '愛玩沙', shy: '有點害羞', jump: '很活潑' };
@@ -11262,6 +11276,11 @@ function drawCreature(ctx, sp, look) {
     ctx.fillStyle = sp.helmet; ctx.strokeStyle = 'rgba(0,0,0,.15)'; ctx.lineWidth = .7; ctx.beginPath(); ctx.ellipse(0, -20.5, 9.5, 6, 0, Math.PI, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.fillStyle = 'rgba(255,255,255,.85)'; [-4, 0, 4].forEach(x => { ctx.beginPath(); ctx.ellipse(x, -23, .9, 2, 0, 0, Math.PI * 2); ctx.fill(); });
     ctx.fillStyle = sp.helmet; ctx.fillRect(-10.5, -21, 21, 1.6);
+  }
+  if (sp.paintSpots) { [[-10, -14, '#ff6b6b', 1.8], [10, -15, '#3fa9f5', 1.6], [-12, -6, '#ffd23f', 1.5], [12, -6, '#7bd389', 1.7], [-5, -20, '#b18cff', 1.2]].forEach(([x, y, c, r]) => { ctx.fillStyle = c; ctx.beginPath(); ctx.ellipse(x, y, r * 1.2, r, .4, 0, Math.PI * 2); ctx.fill(); }); }   // 🎨 身上沾到的顏料點點
+  if (sp.beret) {   // 🎨 小畫家的貝雷帽（歪歪的）
+    ctx.save(); ctx.translate(3, -21.5); ctx.rotate(-.25); ctx.fillStyle = sp.beret; ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = .7;
+    ctx.beginPath(); ctx.ellipse(0, 0, 9, 3.6, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.arc(0, -3.2, 1.3, 0, Math.PI * 2); ctx.fill(); ctx.restore();
   }
   if (sp.blushHeart) {   // 💗 臉頰是小愛心（超可愛）
     const hfx = look.fx || 0; ctx.fillStyle = 'rgba(255,120,160,.75)';
@@ -13238,6 +13257,7 @@ function hostMenuEntries() {
     list.push(['🔤 注音小遊戲', openZhuyinGame]);
     list.push(['🀄 小一國字', openHanziGame]);
     list.push(['🔤 小一英文（妹妹）', openKidEnGame]);
+    list.push(['🏆 畫畫大賽' + ((sportsCupState().art || 0) ? `（拿過${CUP_MEDALS[sportsCupState().art].split(' ')[0]}）` : ''), openArtCup]);   // 🎨
     list.push(['🏳️ 選校旗／畫新的', openFlagPicker]);
     list.push(['🏃 跟同學賽跑', openRunGame]);
     list.push(['🛋️ 姊姊的挑戰：新家大採購', () => openYuanyuan()]);
@@ -16822,8 +16842,8 @@ function giveChampLion() {
   return true;
 }
 /* 🏆 運動大賽的金牌寵物：游泳大賽 → 泡泡小海豹、跑步大賽 → 閃電小豹、小鐵人三項 → 鐵人小柯基。還沒有才送（以前就拿過金牌的，回到家會補送） */
-const CUP_PETS = { swim: 'bubbleseal', run: 'zoomcheetah', tri: 'medalcorgi' };
-const CUP_PET_HINT = '🏆 泡泡小海豹、閃電小豹、鐵人小柯基：游泳大賽、跑步大賽、小鐵人三項拿到 🥇 金牌才會來，買蛋抽不到';
+const CUP_PETS = { swim: 'bubbleseal', run: 'zoomcheetah', tri: 'medalcorgi', art: 'paintcat' };
+const CUP_PET_HINT = '🏆 泡泡小海豹、閃電小豹、鐵人小柯基、調色盤小貓：游泳大賽、跑步大賽、小鐵人三項、畫畫大賽拿到 🥇 金牌才會來，買蛋抽不到';
 function giveCupTrophy(id) {   // 🏆 金盃：沒拿過才送（賣掉了不會再送）
   const item = 'trophy_cup_' + id; if (!FURN_BY_ID[item] || (G.seen && G.seen[item])) return false;
   addItem(item); saveGame();
@@ -27819,6 +27839,7 @@ var CUPRUN = null;   // 🏆 運動大賽正在比的那一關：{ kind, cb }（
    每一關沿用原本的小遊戲，結束時 examHook 會把成績交給 CUPRUN（不是考試）。
    紀錄：G.sportsCup = { swim, run, tri }，各是拿過最好的獎牌（3 金、2 銀、1 銅），舊存檔沒有這個欄位＝都沒拿過。 */
 const SPORT_CUPS = {
+  art: { icon: '🎨', title: '畫畫大賽', host: '老師', steps: [['🎨', '看題目畫畫']] },   // 畫畫大賽不走 openSportsCup，只借名字（送寵物、金盃用）
   swim: { icon: '🏊', title: '世界全國游泳大賽', host: '鴨鴨教練', steps: [['👙', '換泳裝（評審打分數）'], ['🏊', '游泳比賽']] },
   run: { icon: '🏃', title: '世界全國跑步大賽', host: '花豹教練', steps: [['🏖️', '跳遠（跳 2 次）'], ['🏃', '百米賽跑']] },
   tri: { icon: '🏅', title: '小鐵人三項', host: '', steps: [['🏊', '游泳'], ['🏃', '跑步'], ['🚴', '騎腳踏車']] }
@@ -27875,6 +27896,69 @@ function cupNext(w, id, i, pts) {
   else if (kind === 'bike') { hook('triBike', r => cupPlacePts(r.place)); playTriBike(w); }
 }
 /* 🏅 頒獎台：小可愛站在自己的名次上（金牌站中間最高），動物朋友站旁邊，獎牌閃閃發亮、彩帶一直掉 */
+/* ===== 🎨 畫畫大賽（家長：舉辦畫畫大賽）=====
+   老師抽一個題目 → 用畫畫板畫（美勞課的大畫板，可以塗滿）→ 三位動物評審各給 2～5 顆星 → 頒獎台。
+   電腦看不懂畫的是什麼，所以只看：用了幾種顏色、塗得多滿、畫了幾筆（加一點運氣），隨便畫也有 2 顆星。
+   畫好的那張會：貼到教室作品牆、放進「我的名畫」畫框（第一次比完送畫框）。金牌送畫畫大賽金盃＋調色盤小貓。 */
+const ART_TOPICS = [['🐶', '我的寵物'], ['🐠', '海底世界'], ['🏠', '我的家'], ['🍰', '最喜歡的食物'], ['🌈', '彩虹和天空'], ['🌸', '漂亮的花園'], ['🚀', '去太空'], ['🎂', '生日派對'], ['👨‍👩‍👧', '我的家人'], ['🦄', '夢幻的動物'], ['🏖️', '去海邊玩'], ['🎄', '下雪的日子']];
+const ART_SAY = { color: ['顏色好繽紛！', '好多漂亮的顏色！', '顏色配得好好看！'], fill: ['塗得好滿！', '好認真塗顏色！', '整張都好漂亮！'], care: ['好有創意！', '畫得好用心！', '我好喜歡這張！'], low: ['很可愛喔！', '下次多用幾種顏色看看！', '塗滿一點會更漂亮！'] };
+function artJudge(d) {
+  const colors = new Set(d.s.map(st => st[0])).size, strokes = d.s.length;
+  let cov = 0; try { const c = document.createElement('canvas'); c.width = 48; c.height = 32; const g = c.getContext('2d'); drawCardStrokes(g, d, 48 / PAD_W); const px = g.getImageData(0, 0, 48, 32).data; let n = 0; for (let i = 0; i < px.length; i += 4) if (Math.abs(px[i] - 255) + Math.abs(px[i + 1] - 253) + Math.abs(px[i + 2] - 248) > 30) n++; cov = n / (48 * 32); } catch (e) {}
+  const luck = () => (Math.random() < .25 ? 1 : 0), cap = v => Math.max(2, Math.min(5, v));
+  const a = cap((colors >= 5 ? 5 : colors >= 3 ? 4 : colors >= 2 ? 3 : 2) + luck()), b = cap((cov >= .5 ? 5 : cov >= .3 ? 4 : cov >= .15 ? 3 : 2) + luck()), c2 = cap((strokes >= 20 ? 5 : strokes >= 10 ? 4 : strokes >= 4 ? 3 : 2) + luck());
+  return { stars: [a, b, c2], colors, cov, strokes };
+}
+function openArtCup(topicIdx) {
+  const T = ART_TOPICS[topicIdx != null ? topicIdx : Math.floor(Math.random() * ART_TOPICS.length)];
+  const w = openGameWindow('🎨 畫畫大賽', '老師出題目，畫好給三位評審看！用越多顏色、塗得越滿、畫得越用心，星星越多。');
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const box = el('div', 'art-topic'); box.append(el('div', 'art-topic-ic', T[0]), el('div', 'art-topic-t', `題目：${T[1]}`)); w.stage.appendChild(box);
+  w.status.textContent = (sportsCupState().art || 0) ? `之前拿過 ${CUP_MEDALS[sportsCupState().art]}，這次加油！` : '金牌送 🏆 畫畫大賽金盃和新寵物！';
+  try { speak(`畫畫大賽！題目是：${T[1]}！`); } catch (e) {}
+  const go = el('button', 'big', '🎨 開始畫！'), re = el('button', 'big alt', '🎲 換一個題目');
+  go.onclick = () => { Sound.play('click'); closeGameWindow();
+    openDrawPad(`🎨 畫畫大賽：${T[0]} ${T[1]}`, d => { if (!d) { $('#modal').hidden = true; toast('下次再來比賽喔！'); return; } artCupJudge(T, d); }, { big: true }); };
+  re.onclick = () => { Sound.play('click'); openArtCup((ART_TOPICS.indexOf(T) + 1 + Math.floor(Math.random() * (ART_TOPICS.length - 1))) % ART_TOPICS.length); };
+  w.btns.append(go, re); leaveButton(w);
+  openArtCup.test = { T, go: () => go.click() };
+}
+function artCupJudge(T, d) {
+  const w = openGameWindow('🎨 畫畫大賽：評審時間', `題目：${T[0]} ${T[1]}`);
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const fr = el('div', 'art-frame'); fr.appendChild(renderCardDrawing(d, 270)); w.stage.appendChild(fr);
+  const J = artJudge(d), judges = NEIGHBORS.filter(Boolean).sort(() => Math.random() - .5).slice(0, 3), jb = el('div', 'cup-judges'), kinds = ['color', 'fill', 'care'];
+  let live = true; gameCleanup = () => { live = false; };
+  J.stars.forEach((n, k) => { const j = el('div', 'cup-judge'); j.append(el('b', '', (judges[k] && judges[k].short) || ['評審 A', '評審 B', '評審 C'][k]), el('span', 'cup-stars', ''), el('span', 'cup-say', '')); jb.appendChild(j);
+    setTimeout(() => { if (!live) return; j.querySelector('.cup-stars').textContent = '⭐'.repeat(n); const ls = n >= 4 ? ART_SAY[kinds[k]] : ART_SAY.low; j.querySelector('.cup-say').textContent = ls[Math.floor(Math.random() * ls.length)]; Sound.play(n >= 5 ? 'perfect' : 'starDing'); }, 600 + k * 800); });
+  w.stage.appendChild(jb);
+  w.status.textContent = '評審正在看你的畫…';
+  const total = J.stars.reduce((a, b) => a + b, 0), medal = total >= 13 ? 3 : total >= 10 ? 2 : 1;
+  setTimeout(() => { if (!live) return; w.status.textContent = `總共 ${total} 顆星！`; try { speak(total >= 13 ? '哇！畫得太棒了！' : '畫得好可愛！'); } catch (e) {}
+    const nx = el('button', 'big', '🏆 頒獎典禮'); nx.onclick = () => { Sound.play('click'); live = false; artCupFinish(w, T, d, total, medal); }; w.btns.appendChild(nx); leaveButton(w); }, 600 + 3 * 800 + 300);
+  artCupJudge.test = { J, total, medal };
+}
+function artCupFinish(w, T, d, total, medal) {
+  const st = sportsCupState(), first = !st.art || st.art < medal;
+  st.art = Math.max(st.art || 0, medal); st.n = Math.min(1e6, (st.n || 0) + 1);
+  G.artCup = { frame: d, topic: T[1] };
+  G.artWall = [d].concat(Array.isArray(G.artWall) ? G.artWall : []).slice(0, 4);   // 也貼到教室作品牆
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  cupPodium(w, medal);
+  const card = el('div', 'cup-result'); card.append(el('div', 'cup-total', `${CUP_MEDALS[medal]}　${total} 顆星`), el('div', 'cup-step', `題目：${T[0]} ${T[1]}`)); w.stage.appendChild(card);
+  const bells = payReward(w, CUP_PRIZE[medal] + (first ? 200 : 0));
+  w.status.textContent = `畫畫大賽：${CUP_MEDALS[medal]}！💰 +${fmt(bells)}` + (first ? '　🎉 新的最好成績！' : '');
+  Sound.play('fanfare'); try { confettiBurst(medal * 40); } catch (e) {}
+  kidMoodUp(10 + medal * 3);
+  const firstFrame = !(G.seen || {}).art_frame;
+  if (firstFrame) { addItem('art_frame'); setTimeout(() => { try { showcase(renderThumb(FURN_BY_ID.art_frame, 150), '🖼️ 我的名畫！', '你的畫裝進畫框了，在「我的東西」裡，可以掛在家裡的牆上！之後每次比賽，畫框裡就換成新的那張。', { head: '🎨 畫畫大賽' }); } catch (e) {} }, 500); }
+  else toast('🖼️ 家裡「我的名畫」換成這張了！');
+  if (medal === 3) { setTimeout(() => { try { giveCupTrophy('art'); } catch (e) {} }, 800); if (!cupPetKept('art')) { w.status.textContent += `　🐾 「${PET_SPECIES_BY_ID[CUP_PETS.art].name}」要來當你的寵物了！`; setTimeout(() => { try { giveCupPet('art'); } catch (e) {} }, 1000); } }
+  saveGame();
+  const again = el('button', 'big', '🔁 再比一次'); again.onclick = () => { if (gameCleanup) { gameCleanup(); gameCleanup = null; } openArtCup(); };
+  w.btns.appendChild(again); leaveButton(w);
+  artCupFinish.last = { total, medal };
+}
 function cupPodium(w, medal) {
   const W = 360, H = 210, { g } = gameCanvas(w.stage, W, H); let raf = 0, live = true, t = 0, last = performance.now();
   gameCleanup = () => { live = false; cancelAnimationFrame(raf); };
