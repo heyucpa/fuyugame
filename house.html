@@ -22570,6 +22570,15 @@ function drawHomeExterior(ctx, x, y, w, h, doorX, look, o) {
   const glow = (gx, gy) => { if (night && o.glow) o.glow.push([gx, gy, 26]); };
   const win = (wx, wy, wd, hd) => { ctx.fillStyle = winC; ctx.fillRect(wx, wy, wd, hd); ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 1.5; ctx.strokeRect(wx, wy, wd, hd); ctx.beginPath(); ctx.moveTo(wx + wd / 2, wy); ctx.lineTo(wx + wd / 2, wy + hd); ctx.stroke(); glow(wx + wd / 2, wy + hd / 2); };
   let chim = null, roofTop = y - 4 - lift, snowLine = null;
+  /* 🌈 彩虹城堡：後面有一道大彩虹（家長：彩虹城堡背景要不要有彩虹），慢慢一閃一閃 */
+  let rbTop = Infinity;
+  if (st === 'rainbowCastle') {
+    const cx = x + w / 2, cy = y + h, R = w * .78 + lift * .6 + 34, bw = Math.max(3, w * .045);
+    ctx.save(); ctx.globalAlpha = .55 + .15 * Math.sin(tt * 1.5); ctx.lineWidth = bw;
+    ['#ff6b6b', '#ffb84d', '#ffe066', '#7bd389', '#6bb6ff', '#b18cff'].forEach((c, i) => { ctx.strokeStyle = c; ctx.beginPath(); ctx.arc(cx, cy, R - i * bw, Math.PI, 0); ctx.stroke(); });
+    ctx.restore(); rbTop = cy - R - bw / 2;
+    ctx.fillStyle = 'rgba(255,255,255,.9)'; [[cx - R + bw * 2.5, cy - 4], [cx + R - bw * 2.5, cy - 4]].forEach(([qx, qy]) => { [[-8, 0, 7], [0, -5, 9], [9, 0, 7]].forEach(([a, b, r]) => { ctx.beginPath(); ctx.arc(qx + a, qy + b, r, 0, Math.PI * 2); ctx.fill(); }); });   // 彩虹兩頭的小雲朵
+  }
   if (st === 'tree') {   // 🌳 樹屋：大樹幹＋樹冠，房子蓋在樹上，梯子接到門口
     ctx.fillStyle = '#8a5a33'; ctx.fillRect(x + w / 2 - 14, y + 10 - lift, 28, h - 10 + lift);
     ctx.fillStyle = '#4fa14a'; [[-40, 6, 26], [40, 6, 26], [0, -6, 32], [-22, 22, 22], [22, 22, 22]].forEach(([a, b, r]) => { ctx.beginPath(); ctx.arc(x + w / 2 + a, y + b - lift, r, 0, 7); ctx.fill(); });
@@ -22642,7 +22651,7 @@ function drawHomeExterior(ctx, x, y, w, h, doorX, look, o) {
   homeDrawDeco(ctx, look.decoL, x - 22, y + h, tt, night, o);
   homeDrawDeco(ctx, look.decoR, x + w + 22, y + h, tt, night, o);
   // 回傳畫到最高的地方（旗子、城堡塔的小旗）：外觀店的預覽用來縮小，免得旗子跑出畫面（家長：愛心旗沒出來）
-  return Math.min(roofTop - (look.flag ? 28 : 0), st === 'castle' || st === 'rainbowCastle' ? y - 58 - lift : Infinity);
+  return Math.min(roofTop - (look.flag ? 28 : 0), st === 'castle' || st === 'rainbowCastle' ? y - 58 - lift : Infinity, rbTop);
 }
 function homeDrawDeco(ctx, id, cx, gy, tt, night, o) {
   if (!id || id === 'none') return;

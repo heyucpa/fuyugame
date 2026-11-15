@@ -50,6 +50,10 @@ const path = require('path');
       const base = Object.assign(homeLook(), { style: 'candy', wall: '#ffd9c9', decoL: 'none', decoR: 'none', tier: 0 });
       o.peachAuto = px(Object.assign({}, base, { wallAuto: true })) === '232,183,122';
       o.peachPicked = px(Object.assign({}, base, { wallAuto: false })) === '255,217,201'; }
+    { const c = document.createElement('canvas'); c.width = 300; c.height = 190; const g = c.getContext('2d'); const base = Object.assign(homeLook(), { decoL: 'none', decoR: 'none', tier: 0, flag: '' });
+      drawHomeExterior(g, 86, 58, 128, 92, 134, Object.assign({}, base, { style: 'rainbowCastle' }), { tt: 0 }); const a1 = g.getImageData(40, 130, 1, 1).data[3];
+      g.clearRect(0, 0, 300, 190); drawHomeExterior(g, 86, 58, 128, 92, 134, Object.assign({}, base, { style: 'castle' }), { tt: 0 }); const a2 = g.getImageData(40, 130, 1, 1).data[3];
+      o.rainbowBehind = a1 > 0 && a2 === 0; }   // 🌈 彩虹城堡後面有彩虹，小城堡沒有
     o.noXmasInCollect = !homeBuyable().includes('deco:xmas');
     o.hint = /還差 \d+ 種/.test(homeRewardHint('rainbowCastle')) || /已經可以拿/.test(homeRewardHint('rainbowCastle'));
     o.pickedSaved = normalizeSave(Object.assign({}, raw, { home: { wallPicked: 1, wall: 'peach' } })).home.wallPicked === 1 && normalizeSave(Object.assign({}, raw, { home: { wallPicked: 'x' } })).home.wallPicked == null;
