@@ -936,13 +936,14 @@ body.isl-out:not(.isl-panel) .panel { display: none; }
 body.isl-out.isl-panel .panel { display: flex; }
 body.isl-out .rooms { visibility: hidden; }   /* 家長：都出門了，上面那排房間（客廳、臥室…）不用出現；回家用地圖上的「🔙 回去」 */   /* 在外面按「☰ 選單」：就算在家收起來了也打開 */
 .isl-menu-btn { left: 12px; top: 204px; }
+.isl-fly { left: 140px; top: 108px; } .isl-fly.on { background: #ffe9b8 !important; }
 .isl-back { left: 12px; } .isl-fast { right: 12px; } .isl-quest { right: 12px; top: 60px; background: #ffe9b8 !important; } .isl-ride { left: 12px; top: 108px; } .isl-emo { left: 12px; top: 156px; } .isl-run { left: 12px; top: 60px; }
 .isl-tools { position: absolute; left: 12px; bottom: 60px; display: flex; flex-direction: column; gap: 6px; }
 .isl-tools .island-btn { position: static; text-align: left; }
 /* 家長：手機玩的時候左邊擠在一起 → 畫面矮或窄的時候：釣竿、網子、鏟子搬到右下，左上那排按鈕小一點、間距密一點 */
 @media (max-width: 760px), (max-height: 620px) {
   .island-btn { font-size: 13px; padding: 5px 11px; min-height: 34px; }
-  .isl-back { top: 8px; } .isl-run { top: 48px; } .isl-ride { top: 88px; } .isl-emo { top: 128px; } .isl-menu-btn { top: 168px; }
+  .isl-back { top: 8px; } .isl-run { top: 48px; } .isl-ride { top: 88px; } .isl-fly { top: 88px; left: 128px; } .isl-emo { top: 128px; } .isl-menu-btn { top: 168px; }
   .isl-fast { top: 8px; } .isl-quest { top: 48px; }
   .isl-tools { left: auto; right: 12px; bottom: 56px; gap: 5px; }
 }
@@ -5343,6 +5344,7 @@ const NEWS = [
     ['🏊', '游泳池的鴨鴨教練：報名「世界全國游泳大賽」，先換漂亮的泳裝給評審打星星，再奮力游過去'],
     ['🏃', '學校操場的花豹教練：報名「世界全國跑步大賽」，跳遠＋百米賽跑，簡單就能玩'],
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
+    ['🚀', '機器人會飛了！坐機器人出門按「🚀 飛起來」，腳底噴火飛到空中，可以飛過海和房子，到草地或路上按「🛬 降落」'],
     ['🆕', '商店多了「🆕 新東西」：最近更新才有、還沒買的東西集中在這裡，買起來比較方便'],
     ['🏆', '大賽拿到 🥇 金牌還會送一座金盃（游泳大賽、跑步大賽、小鐵人三項各一座），可以擺在家裡或桌上'],
     ['🐾', '拿到大賽 🥇 金牌會來新寵物：游泳大賽 → 泡泡小海豹、跑步大賽 → 閃電小豹、小鐵人三項 → 鐵人小柯基'],
@@ -21613,7 +21615,8 @@ function openIsland() {
   const ride = el('button', 'island-btn isl-ride', '🚲 交通工具'); ride.id = 'islRide'; ride.onclick = e => { Sound.play('click'); openRideMenu(e); };
   const menuB = el('button', 'island-btn isl-menu-btn', '☰ 選單'); menuB.id = 'islMenuBtn';
   menuB.onclick = () => { Sound.play('click'); islPanel(!document.body.classList.contains('isl-panel')); };
-  layer.append(back, fast, run, quest, ride, emo, menuB, tools, tip);
+  const flyB = el('button', 'island-btn isl-fly', '🚀 飛起來'); flyB.id = 'islFly'; flyB.hidden = true; flyB.onclick = () => { Sound.play('click'); islToggleFly(); };   // 🤖 坐機器人才有
+  layer.append(back, fast, run, quest, ride, flyB, emo, menuB, tools, tip);
   document.body.classList.add('isl-out'); islPanel(false);
   run.onclick = () => { setRun(!runOn()); Sound.play('click'); };
   stage.appendChild(layer); stage.classList.add('island-on');
@@ -21693,6 +21696,7 @@ function islWalkTo(goalFn, nx, ny) {
 function islTap(e, hold) {
   const t = islTile(e), m = isl.m;
   isl.keys = {};
+  if (isl.fly && isl.fly.on) { isl.flyTo = [Math.max(.5, Math.min(m.W - .5, t.x + .5)), Math.max(.5, Math.min(m.H - .5, t.y + .5))]; isl.path = []; isl.pending = null; return; }   // 🚀 飛的時候：直直飛過去
   if (!hold && typeof festTap === 'function' && festTap(t)) return;
   if (hold && isl.pressTile && t.x === isl.pressTile.x && t.y === isl.pressTile.y) return;   // 手指還按在原來那一格：不要重新找路
   if (hold) { isl.pending = null; isl.pressTile = null; }
@@ -21815,8 +21819,13 @@ function islStep(dt) {
   const K = isl.keys, kx = (K.arrowright || K.d ? 1 : 0) - (K.arrowleft || K.a ? 1 : 0), ky = (K.arrowdown || K.s ? 1 : 0) - (K.arrowup || K.w ? 1 : 0);
   if (kx || ky) {
     const n = Math.hypot(kx, ky), sp = 4.2 * islSpd() * dt; isl.path = []; isl.pending = null;
-    const nx = isl.x + kx / n * sp, ny = isl.y + ky / n * sp, ok = (x, y) => [[-.28, -.2], [.28, -.2], [-.28, .2], [.28, .2]].every(([a, b]) => islPass(m, Math.floor(x + a), Math.floor(y + b)));
+    const flying = isl.fly && isl.fly.on, nx = isl.x + kx / n * sp * (flying ? 1.3 : 1), ny = isl.y + ky / n * sp * (flying ? 1.3 : 1), ok = flying ? (x, y) => x > .5 && y > .5 && x < m.W - .5 && y < m.H - .5 : (x, y) => [[-.28, -.2], [.28, -.2], [-.28, .2], [.28, .2]].every(([a, b]) => islPass(m, Math.floor(x + a), Math.floor(y + b)));
+    isl.flyTo = null;
     if (ok(nx, isl.y)) { dx = nx - isl.x; isl.x = nx; } if (ok(isl.x, ny)) { dy = ny - isl.y; isl.y = ny; }
+    moving = true;
+  } else if (isl.fly && isl.fly.on && isl.flyTo) {   // 🚀 直直飛過去
+    const [px, py] = isl.flyTo, d = Math.hypot(px - isl.x, py - isl.y), sp = 3.8 * islSpd() * 1.3 * dt;
+    if (d <= sp) { dx = px - isl.x; dy = py - isl.y; isl.x = px; isl.y = py; isl.flyTo = null; } else { dx = (px - isl.x) / d * sp; dy = (py - isl.y) / d * sp; isl.x += dx; isl.y += dy; }
     moving = true;
   } else if (isl.path.length) {
     const [tx, ty] = isl.path[0], px = tx + .5, py = ty + .5, d = Math.hypot(px - isl.x, py - isl.y), sp = 3.8 * islSpd() * dt;
@@ -21826,13 +21835,14 @@ function islStep(dt) {
   if (dx > .0005) isl.facing = 1; else if (dx < -.0005) isl.facing = -1;
   if (Math.abs(dy) > Math.abs(dx) * 1.2) isl.back = dy < 0; else if (dx) isl.back = false;
   isl.walking = moving;
+  if (isl.fly) { isl.fly.h += ((isl.fly.on ? 1 : 0) - isl.fly.h) * Math.min(1, dt * 4); }
   if (moving && typeof islFootStep === 'function') islFootStep();
   if (typeof islReqHud === 'function') islReqHud();
   const tx = Math.floor(isl.x), ty = Math.floor(isl.y);
   const door = m.blds.find(b => b.door[0] === tx && b.door[1] === ty);
   if (isl.skipDoor && !(door && door.id === isl.skipDoor)) isl.skipDoor = null;
   if (!isl.path.length && isl.pending) { islDoPending(); if (!isl) return false; }
-  else if (door && !isl.skipDoor && moving && ((isl.pending && isl.pending.id === door.id) || !isl.path.length || kx || ky)) { islEnter(door.id); return false; }
+  else if (door && !isl.skipDoor && moving && !(isl.fly && isl.fly.on) && ((isl.pending && isl.pending.id === door.id) || !isl.path.length || kx || ky)) { islEnter(door.id); return false; }
   const last = isl.trail[isl.trail.length - 1];
   if (!last || Math.hypot(last[0] - isl.x, last[1] - isl.y) > .15) { isl.trail.push([isl.x, isl.y]); if (isl.trail.length > 30) isl.trail.shift(); }
   const tg = isl.trail[Math.max(0, isl.trail.length - 7)], pp = isl.pet, pd = Math.hypot(tg[0] - pp.x, tg[1] - pp.y);
@@ -26764,26 +26774,45 @@ function islDrawRiding(ctx, px, py, walking, t) {
   if (!boat && !v) return false;
   const T = ISL.T, s = T / 32, k = kidHeightScale(), u = T * 1.55 / 76;
   const kid = (sx, sy, sc) => { ctx.save(); ctx.translate(sx, sy + 12 * sc * k * u / s); ctx.scale(sc * k * u / s, sc * k * u / s); if (kidBaby()) drawBabyKid(ctx, { t }); else drawGirl(ctx, { t, sit: true, blink: fufuBlink(), outfit: currentOutfit(), face: 'joy', stage: kidLookStage() }); ctx.restore(); };
-  ctx.fillStyle = 'rgba(40,30,20,.22)'; ctx.beginPath(); ctx.ellipse(px, py, boat ? 22 : 24 * s, 5, 0, 0, 7); ctx.fill();
-  ctx.save(); ctx.translate(px, py); ctx.scale(isl.facing, 1);
+  const fh = !boat && v.id === 'robot' && isl.fly ? isl.fly.h : 0;   // 🚀 飛多高（0～1）
+  ctx.fillStyle = 'rgba(40,30,20,.22)'; ctx.beginPath(); ctx.ellipse(px, py, (boat ? 22 : 24 * s) * (1 - fh * .45), 5 * (1 - fh * .4), 0, 0, 7); ctx.fill();
+  ctx.save(); ctx.translate(px, py - fh * 34 * s + (fh > .5 ? Math.sin(t * 3) * 2 * s : 0)); ctx.scale(isl.facing, 1);
+  if (fh > .02) {   // 腳底兩道火焰，一閃一閃
+    [-8, 8].forEach((fx, i) => { const L = (10 + Math.sin(t * 30 + i * 2) * 3) * fh * s; ctx.fillStyle = 'rgba(255,170,40,.9)'; ctx.beginPath(); ctx.moveTo((fx - 4) * s, 0); ctx.lineTo((fx + 4) * s, 0); ctx.lineTo(fx * s, L); ctx.closePath(); ctx.fill(); ctx.fillStyle = 'rgba(255,240,150,.95)'; ctx.beginPath(); ctx.moveTo((fx - 2) * s, 0); ctx.lineTo((fx + 2) * s, 0); ctx.lineTo(fx * s, L * .55); ctx.closePath(); ctx.fill(); });
+  }
   if (boat) {   // ⛵ 小船：船身＋帆，小可愛坐在船上，船邊有水花
     const bob = Math.sin(t * 4) * 1.5; ctx.translate(0, bob);
     ctx.fillStyle = 'rgba(255,255,255,.8)'; for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(-24 - i * 7, -2 + Math.sin(t * 8 + i) * 1.5, 2.5 - i * .5, 0, 7); ctx.fill(); }
     ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.moveTo(2, -10); ctx.lineTo(2, -46); ctx.lineTo(20, -14); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#8a5a33'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, -6); ctx.lineTo(0, -48); ctx.stroke();
     kid(-10, -10, .8);
     ctx.fillStyle = '#c0392b'; ctx.beginPath(); ctx.moveTo(-24, -12); ctx.lineTo(24, -12); ctx.lineTo(16, 0); ctx.lineTo(-16, 0); ctx.closePath(); ctx.fill(); ctx.fillStyle = '#ffffff'; ctx.fillRect(-22, -12, 44, 2.5);
-  } else drawVehicle(ctx, v.id, s, t, walking, kid);
+  } else drawVehicle(ctx, v.id, s, t, walking && fh < .3, kid);
   ctx.restore();
   return true;
 }
 function openRideMenu(e) {
   const own = VEHICLES.filter(v => (G.vehicles || []).includes(v.id));
   if (!own.length) { toast('🚲 商店「🚗 交通工具」可以買腳踏車、汽車喔！'); try { shopKind = 'car'; openTab('shop'); } catch (er) {} return; }
+  if (isl && isl.fly && isl.fly.on) { if (!islCanLand()) { toast('🚀 還在天上！先飛到草地、路上降落，才能換車喔'); return; } }
   const entries = own.map(v => [`${v.icon} ${v.verb}${v.name}${G.ride === v.id ? '（現在）' : ''}`, () => { if (isl && isl.act && isl.act.kind !== 'boat') isl.act = null; G.ride = v.id; saveGame(); Sound.play('boing'); islRideBtn(); toast(`${v.icon} ${v.verb}${v.name}出發！`); }]);
   if (G.ride) entries.push(['🚶 下車走路', () => { G.ride = null; saveGame(); Sound.play('click'); islRideBtn(); }]);
   openMenu(entries, e);
 }
-function islRideBtn() { const b = document.getElementById('islRide'), v = rideNow(); if (b) { b.textContent = v ? `${v.icon} ${v.name}` : '🚲 交通工具'; b.classList.toggle('on', !!v); } }
+function islRideBtn() { const b = document.getElementById('islRide'), v = rideNow(); if (b) { b.textContent = v ? `${v.icon} ${v.name}` : '🚲 交通工具'; b.classList.toggle('on', !!v); }
+  const f = document.getElementById('islFly'), robot = !!(v && v.id === 'robot'); if (f) { f.hidden = !robot; f.textContent = isl && isl.fly && isl.fly.on ? '🛬 降落' : '🚀 飛起來'; f.classList.toggle('on', !!(isl && isl.fly && isl.fly.on)); }
+  if (!robot && isl && isl.fly) isl.fly.on = false; }
+/* 🚀 機器人飛起來（妹妹：機器人可以飛起來嗎）：坐機器人時按「🚀 飛起來」，腳底噴火飛到空中，
+   可以飛過海、房子、樹，點哪裡就直直飛過去（不用找路），飛到別的小島也可以。
+   降落要在草地、路、沙灘這種可以走的地方；下面是海或房子就先不降落，叫她飛到陸地。飛的時候不會走進門。 */
+function islCanLand() { return isl && islPass(isl.m, Math.floor(isl.x), Math.floor(isl.y)); }
+function islToggleFly() {
+  if (!isl) return; isl.fly = isl.fly || { on: false, h: 0 };
+  const v = rideNow(); if (!v || v.id !== 'robot') { isl.fly.on = false; islRideBtn(); return; }
+  if (!isl.fly.on) { if (isl.act) isl.act = null; isl.fly.on = true; isl.path = []; isl.pending = null; isl.flyTo = null; Sound.play('whoosh'); toast('🚀 飛起來了！點哪裡就飛到哪裡，海和房子都飛得過去'); }
+  else if (islCanLand()) { isl.fly.on = false; isl.flyTo = null; isl.skipDoor = (isl.m.blds.find(b => b.door[0] === Math.floor(isl.x) && b.door[1] === Math.floor(isl.y)) || {}).id || null; Sound.play('boing'); toast('🛬 降落了！'); }
+  else { Sound.play('miss'); toast('下面是海或房子，飛到草地、路上再降落喔！'); }
+  islRideBtn();
+}
 function shopVehicles(body, only) {
   if (!only) body.appendChild(note('在小島上騎、開，走得比較快！買了以後，到小島點左上角的「🚲 交通工具」選要騎哪一台。'));
   const grid = el('div', 'grid');
