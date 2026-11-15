@@ -50,13 +50,15 @@ const path = require('path');
     G.pets = G.pets.filter(q => !['bubbleseal', 'zoomcheetah', 'medalcorgi'].includes(q.species));
     openSportsCup('run'); cupFinish(openSportsCup.test.w, 'run', [2, 3]); await wait(1300); o.noPetBronze = !G.pets.some(q => q.species === 'zoomcheetah');
     openSportsCup('run'); cupFinish(openSportsCup.test.w, 'run', [10, 10]); await wait(1300); o.petGold = G.pets.some(q => q.species === 'zoomcheetah') && /閃電小豹/.test(document.querySelector('.game-status').textContent);
+    o.trophyGold = (G.inv.trophy_cup_run || 0) === 1 && FURN_BY_ID.trophy_cup_run.trophy && ON_TABLE.includes('trophy_cup_run');
+    o.noTrophyTwice = !giveCupTrophy('run') && G.inv.trophy_cup_run === 1;
     closeGameWindow(); document.querySelectorAll('#showcase').forEach(x => x.remove());
     o.petStory = ['bubbleseal', 'zoomcheetah', 'medalcorgi'].every(id => PET_SPECIES_BY_ID[id] && PET_SPECIES_BY_ID[id].story && !PET_SPECIES_BY_ID[id].weight);
-    G.guide = 'done'; sportsCupState().tri = 3; document.getElementById('modal').hidden = true; await wait(5200); o.backfill = G.pets.some(q => q.species === 'medalcorgi');
+    G.guide = 'done'; sportsCupState().tri = 3; document.getElementById('modal').hidden = true; await wait(5200); document.querySelectorAll('#showcase').forEach(x => x.remove()); await wait(5200); o.backfill = G.pets.some(q => q.species === 'medalcorgi') && (G.inv.trophy_cup_tri || 0) === 1;
     { const cv = document.createElement('canvas'); cv.width = cv.height = 60; const g = cv.getContext('2d'); g.translate(30, 50); g.scale(2, 2); ['bubbleseal', 'zoomcheetah', 'medalcorgi'].forEach(id => drawCreature(g, PET_SPECIES_BY_ID[id], { happy: true, blink: false, fx: 0, clean: 100, t: 1 })); o.petDraw = g.getImageData(30, 30, 1, 1).data[3] > 0; }
     // 存檔
     saveGame(); const raw = JSON.parse(localStorage.getItem(SAVE_KEY));
-    o.saved = raw.sportsCup && raw.sportsCup.swim >= 2 && normalizeSave(raw).pets.some(q => q.species === 'zoomcheetah');
+    o.saved = raw.sportsCup && raw.sportsCup.swim >= 2 && normalizeSave(raw).pets.some(q => q.species === 'zoomcheetah') && normalizeSave(raw).inv.trophy_cup_run === 1;
     const n = normalizeSave(Object.assign({}, raw, { sportsCup: { swim: 9, run: 2, tri: 'x', bad: 1, n: 3 } })).sportsCup;
     o.norm = n.swim == null && n.run === 2 && n.tri == null && n.bad == null && n.n === 3 && normalizeSave(Object.assign({}, raw, { sportsCup: 5 })).sportsCup == null;
     o.oldSave = (() => { const r2 = Object.assign({}, raw); delete r2.sportsCup; return normalizeSave(r2).sportsCup == null; })();

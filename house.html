@@ -5118,6 +5118,24 @@ TROPHY_SETS.forEach(t => {
     ] };
   ON_TABLE.push(t.item);
 });
+/* 🏆 運動大賽金盃（家長：拿金牌送一座獎盃擺在家裡）：游泳大賽、跑步大賽、小鐵人三項拿到 🥇 各送一座。
+   比集滿獎盃大一點、底座是那個比賽的顏色，前面有一顆記號。可以擺地上也可以擺桌上；價格 0＝不會不小心賣掉太便宜。 */
+const CUP_TROPHIES = [['swim', '游泳大賽金盃', '#3fa9f5', '🏊'], ['run', '跑步大賽金盃', '#ff8a3d', '🏃'], ['tri', '小鐵人三項金盃', '#7bd389', '🏅']];
+CUP_TROPHIES.forEach(([k, nm, col]) => {
+  const id = 'trophy_cup_' + k, gold = '#f2c14e';
+  FURN_BY_ID[id] = { id, name: nm, price: 0, sellPrice: 800, theme: 'modern', w: 1, d: 1, gift: true, trophy: true, parts: [
+    { x: .28, y: .28, w: .44, d: .44, z: 0, h: 6, c: col },
+    { x: .33, y: .33, w: .34, d: .34, z: 6, h: 4, c: '#5a3a22' },
+    { x: .45, y: .45, w: .1, d: .1, z: 10, h: 8, c: gold },
+    { k: 'ball', x: .5, y: .5, z: 26, r: 8, c: gold },
+    { k: 'ball', x: .27, y: .5, z: 27, r: 2.6, c: gold },
+    { k: 'ball', x: .73, y: .5, z: 27, r: 2.6, c: gold },
+    { x: .4, y: .4, w: .2, d: .2, z: 33, h: 2, c: '#ffe58a' },
+    { k: 'ball', x: .5, y: .68, z: 26, r: 3, c: col },
+    { k: 'ball', x: .5, y: .5, z: 39, r: 2.6, c: '#fff6c7' }
+  ] };
+  ON_TABLE.push(id);
+});
 /* ===== 🎄 聖誕節資料（每年 12/1～12/31）=====
    放在讀檔之前：買了、擺了、穿過的東西，活動結束後還在，舊存檔也讀得回來。
    衣服沿用已經會畫的樣式（毛衣、毛帽），不改換裝的畫法。 */
@@ -5323,6 +5341,7 @@ const NEWS = [
     ['🏊', '游泳池的鴨鴨教練：報名「世界全國游泳大賽」，先換漂亮的泳裝給評審打星星，再奮力游過去'],
     ['🏃', '學校操場的花豹教練：報名「世界全國跑步大賽」，跳遠＋百米賽跑，簡單就能玩'],
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
+    ['🏆', '大賽拿到 🥇 金牌還會送一座金盃（游泳大賽、跑步大賽、小鐵人三項各一座），可以擺在家裡或桌上'],
     ['🐾', '拿到大賽 🥇 金牌會來新寵物：游泳大賽 → 泡泡小海豹、跑步大賽 → 閃電小豹、小鐵人三項 → 鐵人小柯基'],
     ['🤖', '商店「🚗 交通工具」多了機器人（💰 10,000）：坐在機器人頭上的玻璃罩裡，機器人一步一步走路帶你出門！'],
     ['🎉', '更好玩：選手出場、頒獎台典禮、更多泳裝配件（墨鏡、皇冠、亮晶晶）和「🎲 幫我搭」、評審會講評、游泳撿小鴨加分、腳踏車有加速板和跳台']
@@ -16726,6 +16745,13 @@ function giveChampLion() {
 /* 🏆 運動大賽的金牌寵物：游泳大賽 → 泡泡小海豹、跑步大賽 → 閃電小豹、小鐵人三項 → 鐵人小柯基。還沒有才送（以前就拿過金牌的，回到家會補送） */
 const CUP_PETS = { swim: 'bubbleseal', run: 'zoomcheetah', tri: 'medalcorgi' };
 const CUP_PET_HINT = '🏆 泡泡小海豹、閃電小豹、鐵人小柯基：游泳大賽、跑步大賽、小鐵人三項拿到 🥇 金牌才會來，買蛋抽不到';
+function giveCupTrophy(id) {   // 🏆 金盃：沒拿過才送（賣掉了不會再送）
+  const item = 'trophy_cup_' + id; if (!FURN_BY_ID[item] || (G.seen && G.seen[item])) return false;
+  addItem(item); saveGame();
+  try { sessionLog.newThings.push('🏆 ' + FURN_BY_ID[item].name); } catch (e) {}
+  try { showcase(renderThumb(FURN_BY_ID[item], 150), `🏆 ${FURN_BY_ID[item].name}！`, '拿到金牌送的獎盃，放進「我的東西」了，可以擺在房間或桌上！', { head: '🏆 金盃！' }); } catch (e) {}
+  return true;
+}
 function cupPetKept(id) { return G.pets.some(p => p.species === CUP_PETS[id]); }
 function giveCupPet(id) {
   const sid = CUP_PETS[id]; if (!sid || cupPetKept(id)) return false;
@@ -16781,7 +16807,8 @@ function tabBook(body) {
   body.appendChild(sum);
   const sec = (id, text) => { const h = h3(text); h.id = id; return h; };
   // 🏆 獎盃架：每一種圖鑑集滿送一座。還沒拿到的淡淡的，寫還差幾個——看得到目標
-  body.appendChild(sec('dexTrophy', `🏆 獎盃 ${count(G.trophies)} / ${TROPHY_SETS.length}`));
+  const cupGot = CUP_TROPHIES.filter(([k]) => (G.seen || {})['trophy_cup_' + k]).length;
+  body.appendChild(sec('dexTrophy', `🏆 獎盃 ${count(G.trophies) + cupGot} / ${TROPHY_SETS.length + CUP_TROPHIES.length}`));
   body.appendChild(note('每一種圖鑑集滿，就會拿到一座獎盃，可以擺在房間或桌上。家具分成三座：收集 20 件銅、45 件銀、全部集滿金。閱讀護照蓋滿會拿到獎狀。'));
   const trG = el('div', 'grid');
   TROPHY_SETS.forEach(t => {
@@ -16790,6 +16817,12 @@ function tabBook(body) {
     c.appendChild(thumb(FURN_BY_ID[t.item]));
     c.appendChild(el('div', 'nm', `${t.icon} ${t.name}${t.tier ? '・' + t.tier : ''}`));
     c.appendChild(el('div', 'pr', has ? (t.need ? `${t.need} 件達成！` : '集滿了！') : `還差 ${all - n} 個`));
+    trG.appendChild(c);
+  });
+  CUP_TROPHIES.forEach(([k, nm, , ic]) => {   // 🏆 運動大賽金盃
+    const has = !!(G.seen || {})['trophy_cup_' + k], c = el('div', 'card dex' + (has ? '' : ' dim'));
+    c.appendChild(thumb(FURN_BY_ID['trophy_cup_' + k])); c.appendChild(el('div', 'nm', `${ic} ${nm}`));
+    c.appendChild(el('div', 'pr', has ? '拿到金牌了！' : '大賽拿 🥇 金牌'));
     trG.appendChild(c);
   });
   body.appendChild(trG);
@@ -27779,6 +27812,7 @@ function cupFinish(w, id, pts) {
   Sound.play('fanfare'); try { confettiBurst(medal * 40); } catch (e) {}
   try { speak(`${CUP_MEDALS[medal].split(' ')[1]}！好棒！`); } catch (e) {}
   kidMoodUp(10 + medal * 3); saveGame();
+  if (medal === 3) setTimeout(() => { try { giveCupTrophy(id); } catch (e) {} }, 700);   // 🏆 金牌送金盃
   if (medal === 3 && !cupPetKept(id)) { const nm = PET_SPECIES_BY_ID[CUP_PETS[id]].name; w.status.textContent += `　🐾 「${nm}」要來當你的寵物了！`; setTimeout(() => { try { giveCupPet(id); } catch (e) {} }, 900); }
   if (first) setTimeout(() => { try { showcase(el('div', 'magic-pic', CUP_MEDALS[medal].split(' ')[0]), `${C.title}：${CUP_MEDALS[medal].split(' ')[1]}！`, `總分 ${total} 分。💰 ${fmt(bells)}`, { head: '🏆 運動大賽' }); } catch (e) {} }, 600);
   const again = el('button', 'big', '🔁 再比一次'); again.onclick = () => { if (gameCleanup) { gameCleanup(); gameCleanup = null; } openSportsCup(id); };
@@ -29693,7 +29727,7 @@ FURNITURE_ACT.star_egg = 'stareggs';
 if (!LINE_TYPES.some(t => t.key === 'act_stareggs')) LINE_TYPES.push({ key: 'act_stareggs', label: '做事：看星星蛋', hint: '', lines: ACTIVITIES.stareggs.lines });
 // 教學做完、畫面穩定的時候送星星蛋
 // 以前就拿過世界躲避球冠軍的：補送球球獅
-setInterval(() => { try { if (!G || G.guide !== 'done' || SAVE_LOCKED != null || !G.sportsCup) return; const id = Object.keys(CUP_PETS).find(k => G.sportsCup[k] === 3 && !cupPetKept(k)); if (!id) return; if (!$('#modal').hidden || document.getElementById('showcase') || document.querySelector('.stage.island-on')) return; giveCupPet(id); } catch (e) {} }, 4500);   // 🏆 拿過金牌但還沒有寵物：補送
+setInterval(() => { try { if (!G || G.guide !== 'done' || SAVE_LOCKED != null || !G.sportsCup) return; const id = Object.keys(CUP_PETS).find(k => G.sportsCup[k] === 3 && (!cupPetKept(k) || !(G.seen || {})['trophy_cup_' + k])); if (!id) return; if (!$('#modal').hidden || document.getElementById('showcase') || document.querySelector('.stage.island-on')) return; if (!(G.seen || {})['trophy_cup_' + id]) giveCupTrophy(id); else giveCupPet(id); } catch (e) {} }, 4500);   // 🏆 拿過金牌但還沒有寵物：補送
 setInterval(() => { try { if (!G || G.guide !== 'done' || SAVE_LOCKED != null || lionKept() || !(G.dbcup && G.dbcup.gold > 0)) return; if (!$('#modal').hidden || document.getElementById('showcase') || document.querySelector('.stage.island-on')) return; giveChampLion(); } catch (e) {} }, 4000);
 // 以前就拿過世界冠軍的：補送黑帶熊貓（在家、沒有視窗開著的時候）
 setInterval(() => { try { if (!G || G.guide !== 'done' || SAVE_LOCKED != null || pandaKept() || !(G.tkd && G.tkd.world && G.tkd.world.gold > 0)) return; if (!$('#modal').hidden || document.getElementById('showcase') || document.querySelector('.stage.island-on')) return; giveChampPanda(); } catch (e) {} }, 4000);
