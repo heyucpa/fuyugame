@@ -2676,7 +2676,7 @@ const PLACE_FURNITURE = [
       [0, 1].forEach(i => {
         const x = 4 + i * (pw + 4), y = (H - ph) / 2;
         ctx.save(); ctx.translate(x, y);
-        if (art[i]) drawCardStrokes(ctx, art[i], pw / PAD_W); else { ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.fillRect(0, 0, pw, ph); }
+        if (art[i]) drawCardStrokesCached(ctx, art[i], pw / PAD_W); else { ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.fillRect(0, 0, pw, ph); }
         ctx.restore();
         ctx.fillStyle = '#e8505b'; ctx.beginPath(); ctx.arc(x + pw / 2, y + 1, 1.6, 0, Math.PI * 2); ctx.fill();   // 圖釘
       });
@@ -5344,6 +5344,7 @@ const NEWS = [
     ['🏊', '游泳池的鴨鴨教練：報名「世界全國游泳大賽」，先換漂亮的泳裝給評審打星星，再奮力游過去'],
     ['🏃', '學校操場的花豹教練：報名「世界全國跑步大賽」，跳遠＋百米賽跑，簡單就能玩'],
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
+    ['🎨', '美勞課、畫校旗可以畫更多、一直塗滿了；多了「🖌️ 超粗」筆刷，塗顏色更快'],
     ['🚀', '機器人會飛了！坐機器人出門按「🚀 飛起來」，腳底噴火飛到空中，可以飛過海和房子，到草地或路上按「🛬 降落」'],
     ['🆕', '商店多了「🆕 新東西」：最近更新才有、還沒買的東西集中在這裡，買起來比較方便'],
     ['🏆', '大賽拿到 🥇 金牌還會送一座金盃（游泳大賽、跑步大賽、小鐵人三項各一座），可以擺在家裡或桌上'],
@@ -6080,20 +6081,23 @@ const GUESTBOOK_MAX = 30, GUESTBOOK_DRAW_MAX = 12, ANIMAL_DRAW_MAX = 12;   // �
 const ANIMAL_BOOK_MAX = 24;
 const PET_OLD_NAMES_MAX = 6;
 const PAD_W = 240, PAD_H = 160, PAD_MAX_PTS = 1500, PAD_MAX_STROKES = 80;
+/* 🎨 美勞課、校旗不用放進連結，可以畫多很多（家長：還想繼續塗滿，一直跳「畫好滿了」）；卡片要放進連結，維持原本的上限 */
+const PAD_BIG = { pts: 8000, strokes: 400 };
 const PAD_COLORS = ['#3a3240', '#e8505b', '#ff8fb8', '#f0902f', '#f2c14e', '#5fae7c', '#5b84c4', '#9b72d0'];
-const PAD_SIZES = [3, 7];
-function cleanDrawing(d) {
+const PAD_SIZES = [3, 7, 16];   // 第三種：🖌️ 超粗，塗滿用
+function cleanDrawing(d, lim) {   // lim：{ pts, strokes }（.map(cleanDrawing) 會傳數字進來，不算）
   if (!d || typeof d !== 'object' || !Array.isArray(d.s)) return null;
+  const L = lim && typeof lim === 'object' ? lim : { pts: PAD_MAX_PTS, strokes: PAD_MAX_STROKES };
   const out = [];
   let pts = 0;
-  for (const st of d.s.slice(0, PAD_MAX_STROKES)) {
+  for (const st of d.s.slice(0, L.strokes)) {
     if (!Array.isArray(st) || st.length < 4 || st.length % 2 || !st.every(Number.isInteger)) continue;
     if (st[0] < 0 || st[0] >= PAD_COLORS.length || st[1] < 0 || st[1] >= PAD_SIZES.length) continue;
     let x = st[2], y = st[3], ok = x >= 0 && x <= PAD_W && y >= 0 && y <= PAD_H;
     for (let i = 4; ok && i < st.length; i += 2) { x += st[i]; y += st[i + 1]; ok = x >= 0 && x <= PAD_W && y >= 0 && y <= PAD_H; }
     if (!ok) continue;
     pts += (st.length - 2) / 2;
-    if (pts > PAD_MAX_PTS) break;
+    if (pts > L.pts) break;
     out.push(st.slice());
   }
   return out.length ? { s: out } : null;
@@ -6291,9 +6295,9 @@ function normalizeSave(g) {
   if (out.daily) { const d = out.daily; d.n = isObj(d.n) ? Object.fromEntries(Object.entries(d.n).filter(([, v]) => Number.isInteger(v) && v >= 0 && v < 100)) : {}; d.paid = isObj(d.paid) ? Object.fromEntries(Object.entries(d.paid).filter(([, v]) => v === 1)) : {}; if (d.seen != null && typeof d.seen !== 'string') delete d.seen; d.done = d.done === true; }   // 🎯 今日目標
   if (out.newsAt != null && !isObj(out.newsAt)) delete out.newsAt;
   if (out.trick != null && !(isObj(out.trick) && isObj(out.trick.got) && num(out.trick.y))) delete out.trick;
-  if (out.artWall != null) out.artWall = (Array.isArray(out.artWall) ? out.artWall : []).map(cleanDrawing).filter(Boolean).slice(0, 4);
+  if (out.artWall != null) out.artWall = (Array.isArray(out.artWall) ? out.artWall : []).map(d => cleanDrawing(d, PAD_BIG)).filter(Boolean).slice(0, 4);
   // 校旗收藏；舊版只有一面（schoolFlag）→ 搬進收藏
-  out.schoolFlags = (Array.isArray(out.schoolFlags) ? out.schoolFlags : []).map(cleanDrawing).filter(Boolean).slice(0, 6);
+  out.schoolFlags = (Array.isArray(out.schoolFlags) ? out.schoolFlags : []).map(d => cleanDrawing(d, PAD_BIG)).filter(Boolean).slice(0, 6);
   if (out.schoolFlag != null) { const sf = cleanDrawing(out.schoolFlag); if (sf && !out.schoolFlags.length) { out.schoolFlags.push(sf); out.schoolFlagIdx = 0; } delete out.schoolFlag; }
   if (!(Number.isInteger(out.schoolFlagIdx) && out.schoolFlagIdx >= 0 && out.schoolFlagIdx < out.schoolFlags.length)) out.schoolFlagIdx = null;
   if (Array.isArray(out.guestbook)) out.guestbook.forEach((e, i) => { if (e && typeof e === 'object' && i >= GUESTBOOK_DRAW_MAX) delete e.d; });   // 畫只留最近幾張（從備份還原的也一樣）；空的那格跳過
@@ -14096,6 +14100,14 @@ function drawCardStrokes(ctx, d, k) {
   });
   ctx.restore();
 }
+/* 畫很多筆的畫（美勞作品牆、校旗）每一格都重畫會卡：同一張畫、同一個大小，先畫成小圖存起來，之後只貼圖 */
+const STROKE_CACHE = new WeakMap();
+function drawCardStrokesCached(ctx, d, k) {
+  if (!d || typeof d !== 'object') return drawCardStrokes(ctx, d, k);
+  let c = STROKE_CACHE.get(d);
+  if (!c || c.k !== k) { const cv = document.createElement('canvas'), q = 2; cv.width = Math.max(1, Math.ceil(PAD_W * k * q)); cv.height = Math.max(1, Math.ceil(PAD_H * k * q)); drawCardStrokes(cv.getContext('2d'), d, k * q); c = { k, cv }; STROKE_CACHE.set(d, c); }
+  ctx.drawImage(c.cv, 0, 0, PAD_W * k, PAD_H * k);
+}
 function renderCardDrawing(d, w) {
   const dpr = window.devicePixelRatio || 1, h = Math.round(w * PAD_H / PAD_W);
   const c = document.createElement('canvas');
@@ -14105,7 +14117,8 @@ function renderCardDrawing(d, w) {
 }
 // 別人畫的：每一筆都檢查（顏色、粗細、不能畫出框外、點數上限）
 // 畫畫板：done(畫好的 d 或 null)
-function openDrawPad(title, done) {
+function openDrawPad(title, done, opts) {
+  const LIM = opts && opts.big ? PAD_BIG : { pts: PAD_MAX_PTS, strokes: PAD_MAX_STROKES };
   const card = $('#modalCard');
   card.innerHTML = '';
   card.appendChild(el('h2', '', title));
@@ -14118,7 +14131,8 @@ function openDrawPad(title, done) {
   let col = 0, size = 0, cur = null, lx = 0, ly = 0;
   const repaint = () => drawCardStrokes(g, { s: strokes }, cv.width / PAD_W);
   const at = e => { const r = cv.getBoundingClientRect(); return [Math.max(0, Math.min(PAD_W, Math.round((e.clientX - r.left) / r.width * PAD_W))), Math.max(0, Math.min(PAD_H, Math.round((e.clientY - r.top) / r.height * PAD_H)))]; };
-  const full = () => padPoints({ s: strokes }) >= PAD_MAX_PTS;
+  const full = () => padPoints({ s: strokes }) >= LIM.pts;
+  let warnAt = 0; const warn = msg => { const n = Date.now(); if (n - warnAt < 4000) return; warnAt = n; toast(msg); };   // 同一句提醒 4 秒內只跳一次（以前每點一下就跳一個，疊滿整個畫面）
   /* 畫的時候手滑到旁邊會把字「反白」（選取）：畫畫板裡的東西全部不能選取；
      按住畫的時候，連畫面上其他的字也不給選（放開就恢復）。 */
   const md = $('#modal');
@@ -14127,20 +14141,22 @@ function openDrawPad(title, done) {
   cv.addEventListener('selectstart', noSel);
   cv.onpointerdown = e => {
     e.preventDefault();
-    if (full()) { toast('畫好滿了！可以按「↩️ 上一筆」擦掉一些'); return; }
-    if (strokes.length >= PAD_MAX_STROKES) { toast('畫好多筆了！可以按「↩️ 上一筆」擦掉一些'); return; }
+    if (full()) { warn('畫好滿了！可以按「↩️ 上一筆」擦掉一些'); return; }
+    if (strokes.length >= LIM.strokes) { warn('畫好多筆了！可以按「↩️ 上一筆」擦掉一些'); return; }
     document.addEventListener('selectstart', noSel);   // 真的開始畫才擋（不然提早 return 沒人把它拿掉）
     try { const sel = window.getSelection && window.getSelection(); if (sel) sel.removeAllRanges(); } catch (er) {}
     try { cv.setPointerCapture(e.pointerId); } catch (er) {}
     const [x, y] = at(e);
-    cur = [col, size, x, y]; lx = x; ly = y; strokes.push(cur); repaint();
+    cur = [col, size, x, y]; lx = x; ly = y; strokes.push(cur);
+    { const k = cv.width / PAD_W; g.fillStyle = PAD_COLORS[col]; g.beginPath(); g.arc(x * k, y * k, PAD_SIZES[size] / 2 * k, 0, Math.PI * 2); g.fill(); }   // 只畫新的這一點（不整張重畫，畫很多也不會卡）
   };
   cv.onpointermove = e => {
     if (!cur) return;
     e.preventDefault();
     const [x, y] = at(e);
     if (Math.abs(x - lx) + Math.abs(y - ly) < 2 || full()) return;   // 太近的點不記（連結才不會太長）
-    cur.push(x - lx, y - ly); lx = x; ly = y; repaint();
+    { const k = cv.width / PAD_W; g.strokeStyle = PAD_COLORS[cur[0]]; g.lineWidth = PAD_SIZES[cur[1]] * k; g.lineCap = 'round'; g.lineJoin = 'round'; g.beginPath(); g.moveTo(lx * k, ly * k); g.lineTo(x * k, y * k); g.stroke(); }   // 只補畫新的一小段
+    cur.push(x - lx, y - ly); lx = x; ly = y;
   };
   cv.onpointerup = cv.onpointercancel = () => { cur = null; stopNoSel(); };
   const pal = el('div', 'pad-pal');
@@ -14152,7 +14168,7 @@ function openDrawPad(title, done) {
   });
   card.appendChild(pal);
   const tools = el('div', 'pad-tools');
-  const sz = PAD_SIZES.map((w, i) => { const b = el('button', 'pad-t' + (i === size ? ' on' : ''), i ? '✏️ 粗' : '✏️ 細'); b.onclick = () => { size = i; sz.forEach((x, j) => x.classList.toggle('on', j === i)); }; return b; });
+  const sz = PAD_SIZES.map((w, i) => { const b = el('button', 'pad-t' + (i === size ? ' on' : ''), ['✏️ 細', '✏️ 粗', '🖌️ 超粗'][i]); b.onclick = () => { size = i; sz.forEach((x, j) => x.classList.toggle('on', j === i)); }; return b; });
   const undo = el('button', 'pad-t', '↩️ 上一筆'); undo.onclick = () => { strokes.pop(); repaint(); };
   tools.append(...sz, undo);
   card.appendChild(tools);
@@ -14173,7 +14189,7 @@ function openDrawPad(title, done) {
   card.appendChild(clr);
   const ok = el('button', 'big', '✅ 畫好了');
   const unlock = () => { md.classList.remove('nosel'); stopNoSel(); };
-  ok.onclick = () => { unlock(); done(strokes.length ? cleanDrawing({ s: strokes }) : null); };
+  ok.onclick = () => { unlock(); done(strokes.length ? cleanDrawing({ s: strokes }, LIM) : null); };
   const skip = el('button', 'big alt', '不畫了');
   skip.onclick = () => { unlock(); done(null); };
   card.append(ok, skip);
@@ -14493,7 +14509,7 @@ function lessonArt() {
   hostSay('美勞課！畫一張你喜歡的東西吧～', 2600);
   setTimeout(() => {
     if (!lesson) return;
-    openDrawPad('🎨 美勞課：畫一張圖', d => {
+    openDrawPad('🎨 美勞課：畫一張圖', d => {   // big：可以畫很多、塗滿
       $('#modal').hidden = true;
       if (!d) { lessonEnd('下次再畫也可以喔！', true); return; }   // 沒畫不算上完一堂課
       G.artWall = [d].concat(Array.isArray(G.artWall) ? G.artWall : []).slice(0, 4);
@@ -14501,7 +14517,7 @@ function lessonArt() {
       saveGame(); commit();
       lessonEnd('畫得好棒！老師把它貼在作品牆上了 ⭐');
       toast('🎨 你的畫貼在教室的作品牆上了！還送你一張貼紙');
-    });
+    }, { big: true });
   }, 1200);
 }
 // 😴 午睡：大家趴下來睡、畫面變暗冒 💤，鐘聲響了起床伸懶腰
@@ -20721,7 +20737,7 @@ function drawSchoolFlag(g, x, y, w, h, now, d) {
   g.translate(x, y); g.transform(1, wave / w * .6, 0, 1, 0, 0);   // 隨風微微斜
   if (d) {
     g.fillStyle = '#fffaf0'; g.fillRect(0, 0, w, h);
-    g.save(); g.beginPath(); g.rect(0, 0, w, h); g.clip(); drawCardStrokes(g, d, w / PAD_W); g.restore();
+    g.save(); g.beginPath(); g.rect(0, 0, w, h); g.clip(); drawCardStrokesCached(g, d, w / PAD_W); g.restore();
     g.strokeStyle = '#ffd35c'; g.lineWidth = 3; g.strokeRect(1.5, 1.5, w - 3, h - 3);
   } else {
     g.fillStyle = '#ff9ec4'; g.fillRect(0, 0, w, h);
@@ -20747,7 +20763,7 @@ function openFlagDesigner() {
     toast(`🏳️ 新校旗加進收藏了（${schoolFlagList().length} / ${SCHOOL_FLAG_MAX}）！去點旗桿看升旗～`);
     fufuSay('這是我畫的校旗！', 2800);
     if (host.n && host.n.id === 'teacher') hostSay('畫得真好，升旗的時候就升這一面！', 3000);
-  });
+  }, { big: true });
 }
 function flagThumb(d, w, h) {
   const dpr = window.devicePixelRatio || 1, c = document.createElement('canvas');
