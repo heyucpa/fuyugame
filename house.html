@@ -2241,7 +2241,23 @@ const ACTIVITIES = {
   warm: { label: '🔥 烤火', name: '烤火', fx: '✨', lines: ['暖呼呼的～', '好溫暖喔', '手手不冷了', '劈哩啪啦的聲音好好聽'] },
   water: { label: '💧 澆花', name: '澆花', fx: '💧', lines: ['喝水水，快快長大～', '小花要開花喔', '葉子綠油油的', '一點點水就好'] },
   time: { label: '🕰️ 看時間', name: '看時間', fx: '🕰️', lines: ['現在是 {時間}！'] },
-  light: { label: '💡 開燈', name: '開燈', fx: '💡', lines: ['開燈～', '亮晶晶的', '房間變亮了'] }
+  light: { label: '💡 開燈', name: '開燈', fx: '💡', lines: ['開燈～', '亮晶晶的', '房間變亮了'] },
+  /* 家長：每個家具是不是都有對應的動作？→ 沒有動作的都補上 */
+  treat: { label: '🍪 吃一口', name: '吃一口', fx: '😋', lines: ['好甜喔～', '只吃一口就好！', '嗯～好好吃', '留一點給寵物'] },
+  roll: { label: '🤸 在地毯上滾滾', name: '滾來滾去', fx: '💫', lines: ['滾過來～滾過去～', '地毯軟綿綿的！', '咕嚕咕嚕～', '好好玩喔！'] },
+  smell: { label: '🌷 聞花香', name: '聞花香', fx: '🌸', lines: ['好香喔～', '花花好漂亮', '香香的味道', '我最喜歡這朵花了'] },
+  photo: { label: '🖼️ 看照片', name: '看照片', fx: '💖', lines: ['這是我小時候！', '大家都笑得好開心', '好想再去一次', '這張好可愛喔'] },
+  candle: { label: '🕯️ 聞香香', name: '聞香香', fx: '✨', lines: ['香香的～', '好舒服的味道', '燭光一閃一閃', '房間變得好溫暖'] },
+  tea: { label: '☕ 喝下午茶', name: '喝下午茶', fx: '☕', lines: ['請喝茶～', '下午茶時間！', '要加糖嗎？', '小口小口喝'] },
+  snowglobe: { label: '❄️ 搖一搖雪花球', name: '搖雪花球', fx: '❄️', lines: ['雪花飄起來了！', '下雪囉～', '亮晶晶的雪', '再搖一次！'] },
+  musicbox: { label: '🎵 聽音樂盒', name: '聽音樂盒', fx: '🎵', sound: 'note', lines: ['好好聽的音樂～', '叮叮叮～', '轉呀轉', '好像在跳舞'] },
+  artlook: { label: '🖼️ 欣賞這幅畫', name: '欣賞畫', fx: '🎨', lines: ['畫得好漂亮！', '我也想畫一張', '顏色好好看', '好像真的一樣'] },
+  window: { label: '☁️ 看窗外', name: '看窗外', fx: '☁️', lines: ['外面天氣好好！', '有小鳥飛過去', '雲朵像棉花糖', '想出去玩～'] },
+  date: { label: '📅 看今天幾號', name: '看月曆', fx: '📅', lines: ['今天是 {日期}！'] },
+  award: { label: '🏅 看我的獎狀', name: '看獎狀', fx: '🏅', lines: ['這是我的獎狀！', '我好厲害！', '要繼續加油！', '爸爸媽媽會很開心'] },
+  sparkle: { label: '✨ 開燈亮晶晶', name: '亮晶晶', fx: '✨', lines: ['亮晶晶的好漂亮！', '一閃一閃亮晶晶～', '好像星星喔', '房間好夢幻'] },
+  towel: { label: '🧺 擦擦手', name: '擦手', fx: '💦', lines: ['擦乾乾～', '毛巾軟軟的', '手手乾淨了！'] },
+  poster: { label: '⭐ 看海報', name: '看海報', fx: '⭐', lines: ['好漂亮的星空！', '好想去太空', '那顆星星好亮'] }
 };
 // 家具 → 可以做的事
 const FURNITURE_ACT = {
@@ -2250,8 +2266,20 @@ const FURNITURE_ACT = {
   dresser: 'mirror', wardrobe: 'dress', coat_rack: 'dress', fishtank: 'fish', globe: 'globe',
   toybox: 'toys', teddy: 'hug', bath_sink: 'wash', washer: 'laundry', fireplace: 'warm',
   plant_s: 'water', plant_l: 'water', sunflower: 'water', cactus: 'water', planter: 'water',
-  clock: 'time', lamp: 'light', nightstand: 'light'
+  clock: 'time', lamp: 'light', nightstand: 'light',
+  // 換顏色的同一種家具，跟原本那件一樣的動作
+  pink_bookshelf: 'read', lemon_bookshelf: 'read', pink_desk: 'study', lemon_desk: 'study', pink_wardrobe: 'dress', lemon_wardrobe: 'dress',
+  pink_nightstand: 'light', lemon_nightstand: 'light', star_lamp: 'light', icecream_lamp: 'light', book_stack: 'read', pencil_cup: 'study', alarm_clock: 'time',
+  // 新的動作
+  cookie_jar: 'treat', small_cake: 'treat', lollipop_tree: 'treat', flower_vase: 'smell', photo_frame: 'photo', aroma_candle: 'candle', tea_set: 'tea',
+  snow_globe: 'snowglobe', music_box: 'musicbox',
+  cute_rug: 'roll', gray_rug: 'roll', leaf_rug: 'roll', bath_mat: 'roll', rainbow_rug: 'roll', donut_rug: 'roll'
 };
+/* 牆上的東西點了也可以做事：走到那面牆前面，面對牆做（佈置模式時一樣是拿下來） */
+const WALL_ACT = { art_mountain: 'artlook', art_flower: 'artlook', wall_clock: 'time', calendar: 'date', window: 'window', star_poster: 'poster',
+  bath_mirror: 'mirror', heart_mirror: 'mirror', towel_rack: 'towel', certificate: 'award', rainbow_art: 'sparkle', star_lights: 'sparkle', heart_frame: 'photo' };
+// 桌上放的小東西：點桌子時多一個用它的選項
+const TOP_ACT = { flower_vase: 'smell', photo_frame: 'photo', aroma_candle: 'candle', alarm_clock: 'time', small_cake: 'treat', tea_set: 'tea', book_stack: 'read', pencil_cup: 'study' };
 // 第四批家具的分類、用法（家具定義在上面 FURNITURE_4）
 Object.assign(FURN_KIND_OF, {
   cupcake_chair: 'sit', macaron_table: 'sit', strawberry_sofa: 'sit', cloud_sofa: 'sit', bunny_cushion: 'sit',
@@ -5356,6 +5384,7 @@ const NEWS = [
     ['🏊', '游泳池的鴨鴨教練：報名「世界全國游泳大賽」，先換漂亮的泳裝給評審打星星，再奮力游過去'],
     ['🏃', '學校操場的花豹教練：報名「世界全國跑步大賽」，跳遠＋百米賽跑，簡單就能玩'],
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
+    ['🛋️', '每樣家具都可以用了：地毯上滾滾、聞花香、喝下午茶、搖雪花球；牆上的畫、掛鐘、月曆、窗戶、鏡子點了也會走過去用'],
     ['🏠', '房間可以再大、再多了：擴建到 12×12、14×14，還可以多蓋遊戲室、書房、玩具房、音樂室（最多 8 間）'],
     ['🏆', '學校老師辦「畫畫大賽」！抽題目畫畫，三位評審打星星、頒獎台；畫會裝進「我的名畫」畫框掛在家裡，金牌送金盃和新寵物「調色盤小貓」'],
     ['🎨', '美勞課、畫校旗可以畫更多、一直塗滿了；多了「🖌️ 超粗」筆刷，塗顏色更快'],
@@ -8835,6 +8864,17 @@ function fufuWalkTo(ti, tj) {
 function canUse(it) { return !!((!G.away && (it.id === 'clown_butler' || it.id === 'skeleton_count')) || FURNITURE_USE[it.id] || FURNITURE_ACT[it.id] || PET_BEDS[it.id]); }
 
 // act 省略時是坐、躺；有 act 時走到旁邊做那件事
+function wallActOf(id) { return WALL_ACT[id] || FURNITURE_ACT[id] || null; }
+function fufuGoWall(wi) {   // 走到牆上那樣東西的正前方
+  const act = wallActOf(wi.id), def = FURN_BY_ID[wi.id], room = curRoom(); if (!act || !def) return false;
+  const mid = Math.min((wi.side === 'R' ? room.w : room.d) - 1, Math.floor(wi.pos + def.w / 2));
+  let ti = wi.side === 'R' ? mid : 0, tj = wi.side === 'R' ? 0 : mid;
+  const c = typeof nearestFree === 'function' ? nearestFree(room, ti + .5, tj + .5) : [ti, tj]; if (c) { ti = c[0]; tj = c[1]; }
+  fufuWalkTo(ti, tj);
+  fufu.task = { wall: wi.uid, act }; fufu.pendingSay = null;
+  if (!fufu.path || !fufu.path.length) { const [si, sj] = fufuTile(); if (si === ti && sj === tj) fufuArrive(performance.now()); else { fufu.task = null; fufuSay(pickLine('blocked')); return false; } }
+  return true;
+}
 function fufuGoUse(it, quiet, act) {
   if (fufu.pose) fufuStandUp(false);
   fufu.act = null;
@@ -8852,6 +8892,12 @@ function fufuGoUse(it, quiet, act) {
 function fufuArrive(now) {
   const task = fufu.task;
   if (task.pet) { fufu.task = null; fufuStartPlayPet(now); return; }
+  if (task.wall) {   // 🖼️ 牆上的東西：面對那面牆做
+    fufu.task = null;
+    const wi = (curRoom().wallItems || []).find(x => x.uid === task.wall);
+    if (wi) { const def = FURN_BY_ID[wi.id]; fufuStartAct(task.act, now, { uid: wi.uid, id: wi.id, rot: 0, x: wi.side === 'R' ? wi.pos : -1, y: wi.side === 'R' ? -1 : wi.pos, wall: true }, false); if (fufu.act) fufu.back = true; }
+    return;
+  }
   if (task.act) {
     fufu.task = null;
     const it = curRoom().items.find(x => x.uid === task.uid);
@@ -9065,7 +9111,7 @@ function fufuStartAct(key, now, it, auto) {
     fufuSay(pickLine('act_pick', { 水果: f.name }), 3000);
     if (typeof gotCard === 'function') gotCard(f.emoji, f.name, `摘到了！果園還有 ${G.orchard.n} 顆`); else toast(`🧺 摘到${f.emoji}${f.name}！（果園還有 ${G.orchard.n} 顆）`);
     Sound.play('coin');
-  } else fufuSay(pickLine('act_' + key, { 時間: timeText() }), 3000);
+  } else fufuSay(pickLine('act_' + key, { 時間: timeText(), 日期: `${new Date().getMonth() + 1} 月 ${new Date().getDate()} 日，星期${'日一二三四五六'[new Date().getDay()]}` }), 3000);
   if (key === 'fruit') G.kid.hunger = clampStat(G.kid.hunger + 15); // 阿婆的水果免費吃
   if (key === 'water' && it.id === 'planter') { // 🌱 花盆澆水：長大一階（要隔一下才會再長）
     const r = gardenWater(it), gs = gardenOf(it.uid).s;
@@ -9169,7 +9215,7 @@ function fufuBurst(emoji) {
 
 function fufuUpdateAct(now) {
   const a = fufu.act;
-  if (a.uid && !curRoom().items.some(x => x.uid === a.uid)) { fufu.ride = null; fufu.act = null; return; } // 家具被收走了
+  if (a.uid && !curRoom().items.some(x => x.uid === a.uid) && !(curRoom().wallItems || []).some(x => x.uid === a.uid)) { fufu.ride = null; fufu.act = null; return; } // 家具被收走了（牆上的東西也算）
   if (now > a.until) { endRide(); fufu.act = null; fufu.back = false; fufu.idleUntil = now + 2500; return; }
   if (now < a.nextFx) return;
   a.nextFx = now + a.fxEvery;
@@ -15790,6 +15836,7 @@ function showItemMenu(it, e) {
   /* 桌上放一樣小東西。一張桌子只放一樣——不然會疊在一起、會穿過桌面。
      收納裡沒有可以放的東西時就不顯示這一項，免得點了跳出空選單。 */
   // 桌上的小東西：平常只能玩（音樂盒、雪花球）；拿起來、收起來、放東西上去都在「🛠️ 佈置」裡
+  if (it.top && TOP_ACT[it.top]) { const k = TOP_ACT[it.top]; add(`${ACTIVITIES[k].label}（${FURN_BY_ID[it.top].name}）`, () => fufuGoUse(it, false, k)); }   // 桌上的小東西也可以用
   if (it.top === 'music_box') add('🎵 聽音樂盒', () => playMusicBox(it));
   if (it.top === 'snow_globe') add('❄️ 搖一搖雪花球', () => shakeSnowGlobe(it));
   // 搬動、收起來只在「🛠️ 佈置」裡（平常點不到，不會不小心搬走）
@@ -15833,6 +15880,7 @@ canvas.addEventListener('pointerup', e => {
   if (it) { if (decorMode && (!G.away || inPetHouse())) showDecorMenu(it, e); else if (canUse(it) || (it.top && (!G.away || inPetHouse()))) showItemMenu(it, e); else if (!G.away || inPetHouse()) { decorHintOnce(); const c = nearestFree(curRoom(), it.x + .5, it.y + .5); if (c) { fufu.pendingSay = null; fufuWalkTo(c[0], c[1]); } } return; }   // 🛠️ 平常不會一點就拿起來   // 桌上有東西：點了先問要做什麼（以前一點就把整張桌子拿起來，桌上的東西收不掉）
   const wi = G.away && !inPetHouse() ? null : pickWallItem(w);
   if (wi && decorMode) { startHoldWall(wi); return; }
+  if (wi && wallActOf(wi.id)) { Sound.play('click'); fufuGoWall(wi); return; }   // 🖼️ 牆上的東西可以用（看畫、看時間、照鏡子…）
   if (wi) decorHintOnce();   // 平常點牆上的東西不會拿下來
   // 外面地方的牆上東西：有些點了可以玩（教室的注音布告欄）
   if (G.away && !inPetHouse()) { const wt = pickWallItem(w); if (wt && WALL_TAP[wt.id]) { WALL_TAP[wt.id](); return; } }
