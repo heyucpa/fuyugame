@@ -1863,13 +1863,15 @@
     var jumpT = (Math.ceil(performance.now() / 1000 / 7) * 7 - seedP + 70) % 7;   // 讓 (t + seed) % 7 落在 0.4
     var ell = 0, realEll = CanvasRenderingContext2D.prototype.ellipse;
     CanvasRenderingContext2D.prototype.ellipse = function(){ ell++; return realEll.apply(this, arguments); };
+    var keepItems = curRoom().items; curRoom().items = [pondI];   // 只看池塘（公園放大後多了會飄落葉的樹，落葉也是橢圓，會干擾計數）
     try {
       var base3 = Math.floor((performance.now() / 1000 + seedP) / 7) * 7 - seedP;
       drawAmbient(ctx, (base3 + .4) * 1000);
       var withFish = ell; ell = 0;
       drawAmbient(ctx, (base3 + 3.5) * 1000);
+      curRoom().items = keepItems;
       if (!(withFish > ell)) fails.push('池塘不會有魚跳出水面');
-    } finally { CanvasRenderingContext2D.prototype.ellipse = realEll; }
+    } finally { CanvasRenderingContext2D.prototype.ellipse = realEll; curRoom().items = keepItems; }
     // 音效跟著動作：溜滑梯滑下來的時候「咻」一次
     var played = [], realPlay = Sound.play;
     Sound.play = function(n){ played.push(n); };

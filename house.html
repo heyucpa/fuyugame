@@ -3425,6 +3425,47 @@ LINE_TYPES.push(
   { key: 'giftUncle', label: '叔叔送禮物', hint: '可用 {名字}', lines: ['這個送你，叔叔多買了一個！', '{名字}，這個給你玩～', '叔叔的收藏分你一個！'] },
   { key: 'giftGrandma', label: '阿婆送食物', hint: '可用 {名字}', lines: ['帶回去吃，要吃飽飽喔！', '{名字}，這些給你帶回家～', '阿婆準備了好吃的給你！'] }
 );
+/* 📐 外面的地方全部放大成 14×14（家長：游泳池、健身房也可以擴張到 14×14？→ 一起改大）。
+   原本的東西都在原來的位置（後面 10×10），多出來的右邊（x 10～13）和前面（y 10～13）照每個地方的主題多擺一些；
+   x＝10 那一行、y＝10 那一列大多留空當走道。牆變長了，也多掛幾樣東西。 */
+const PLACE_GROW = {
+  uncle: [{ items: [['arcade', 11, 0], ['arcade', 12, 0], ['arcade', 13, 0], ['comic_shelf', 11, 3], ['beanbag', 12, 6], ['beanbag', 13, 8], ['sofa', 11, 12],
+    ['comic_pile', 1, 12], ['figure_shelf', 4, 13], ['figure_shelf', 5, 13], ['gaming_desk', 7, 12], ['plant_l', 0, 13]], wall: [['game_poster', 'R', 11], ['anime_poster', 'L', 11]] }],
+  sky: [{ items: [['bookshelf', 11, 0], ['plant_l', 13, 0], ['piano', 11, 3], ['dining_table', 11, 6], ['dining_chair', 13, 6], ['dining_chair', 13, 7],
+      ['star_lamp', 13, 12], ['flower_vase', 1, 12], ['teddy', 4, 12], ['toybox', 6, 12], ['plant_l', 0, 13]], wall: [['window', 'R', 11], ['art_flower', 'L', 11]] },
+    { items: [['cloud_tramp', 11, 1], ['swing', 11, 5], ['sunflower', 13, 8], ['flower_bed', 11, 11], ['rainbow_arch', 2, 12], ['cloud_sofa', 6, 12], ['sunflower', 0, 13], ['star_lamp', 13, 13]] }],
+  grandma: [{ items: [['plant_l', 11, 0], ['fruit_crate', 13, 0], ['tea_table', 11, 3], ['rocking_chair', 12, 3, 3], ['sofa', 11, 6], ['leaf_rug', 11, 8],
+      ['dining_table', 6, 11], ['dining_chair', 8, 11], ['dining_chair', 8, 12], ['fruit_basket', 2, 12], ['flower_vase', 4, 12], ['plant_l', 13, 13]], wall: [['window', 'R', 11], ['art_mountain', 'L', 11]] },
+    { items: [['apple_tree', 11, 1], ['banana_tree', 11, 5], ['orange_tree', 11, 9], ['apple_tree', 1, 11], ['orange_tree', 5, 11], ['fruit_crate', 8, 12], ['sunflower', 13, 0], ['log_stool', 13, 7], ['sunflower', 13, 13]] },
+    { items: [['hay_bale', 11, 0], ['hay_bale', 12, 0], ['sunflower', 13, 0], ['trough', 11, 3], ['barn', 12, 6], ['log_stool', 3, 12], ['hay_bale', 6, 12], ['sunflower', 11, 12], ['sunflower', 12, 12]] }],
+  library: [{ items: [['low_shelf', 11, 0], ['low_shelf', 12, 3], ['step_stool', 11, 5], ['story_stand', 11, 7], ['story_stand', 12, 7], ['egg_seat', 11, 9], ['egg_seat_g', 13, 9],
+    ['tablet_table', 1, 12], ['egg_seat', 2, 13], ['story_rug', 6, 11], ['bunny_sign', 13, 13]], wall: [['window', 'R', 11], ['quiet_sign', 'L', 11]] }],
+  park: [{ items: [['street_lamp', 11, 0], ['shade_tree', 12, 0], ['flower_bed', 11, 3], ['park_bench', 11, 6], ['picnic_mat', 12, 8], ['slide', 10, 12],
+    ['shade_tree', 0, 12], ['street_lamp', 3, 12], ['flower_bed', 8, 12], ['sandbox', 6, 10]] }],
+  dojo: [{ items: [['tkd_sandbag', 11, 0], ['tkd_sandbag', 13, 0], ['tkd_target', 12, 3], ['tkd_target', 12, 6], ['tkd_bench', 11, 9], ['tkd_boards', 2, 12], ['tkd_boards', 5, 12], ['tkd_bench', 8, 12]],
+    wall: [['tkd_banner', 'R', 11], ['tkd_banner2', 'L', 11]] }],
+  cinema: [{ items: [['cinema_seat', 7, 4], ['cinema_seat', 8, 4], ['cinema_seat', 7, 6], ['cinema_seat', 8, 6],
+    ['cinema_seat', 2, 10], ['cinema_seat', 3, 10], ['cinema_seat', 4, 10], ['cinema_seat', 5, 10], ['cinema_seat', 6, 10], ['cinema_seat', 7, 10], ['cinema_seat', 8, 10],
+    ['popcorn_cart', 11, 8], ['plant_l', 13, 0], ['plant_l', 13, 13]], wall: [['movie_poster_pet', 'L', 11], ['movie_poster_space', 'L', 13]] }],
+  restaurant: [{ items: [['dining_table', 11, 1], ['dining_chair', 11, 3], ['dining_chair', 12, 3], ['dining_table', 11, 6], ['dining_chair', 11, 8], ['dining_chair', 12, 8],
+    ['dining_table', 2, 11], ['dining_chair', 2, 13], ['dining_chair', 3, 13], ['dining_table', 6, 11], ['dining_chair', 6, 13], ['dining_chair', 7, 13], ['plant_l', 13, 0], ['plant_l', 13, 13]],
+    wall: [['art_flower', 'R', 11], ['window', 'L', 11]] }],
+  hospital: [{ items: [['hosp_bed', 0, 10], ['hosp_bed', 11, 2], ['hosp_bed', 11, 6], ['hosp_cabinet', 13, 0], ['hosp_scale', 4, 12], ['ar_bench', 6, 12], ['plant_l', 9, 13], ['plant_l', 13, 13]],
+    wall: [['window', 'R', 11], ['art_flower', 'L', 11]] }],
+  gym: [{ items: [['gym_treadmill', 11, 0], ['gym_treadmill', 13, 0], ['gym_bike', 11, 4], ['gym_bike', 13, 4], ['gym_dumbbell', 12, 7], ['gym_box', 12, 9],
+    ['gym_mat', 1, 11], ['gym_mat', 4, 11], ['gym_mat', 7, 11], ['gym_dumbbell', 2, 13], ['plant_l', 13, 13]], wall: [['window', 'R', 11], ['wall_clock', 'L', 11]] }],
+  arena: [{ items: [['ar_balls', 13, 0], ['ar_pingpong', 11, 1], ['ar_bench', 11, 6], ['ar_hoop', 13, 9], ['ar_bench', 2, 12], ['ar_bench', 6, 12], ['ar_balls', 9, 12], ['plant_l', 13, 13]],
+    wall: [['wall_clock', 'R', 11], ['window', 'L', 11]] }],
+  pool: [{ items: [['pool_shower', 13, 0], ['beach_umbrella', 11, 1], ['float_ring', 12, 3], ['lifeguard_chair', 13, 6], ['beach_umbrella', 11, 9], ['towel_rack2', 13, 9],
+    ['float_ring', 3, 11], ['beach_umbrella', 6, 12], ['slide', 10, 12]] }],
+  amusement: [{ items: [['teacup_ride', 11, 0], ['balloon_stand', 13, 3], ['balloon_stand', 12, 6], ['carousel', 11, 10], ['cotton_cart', 6, 10], ['ferris_wheel', 1, 12], ['street_lamp', 0, 10],
+    ['flower_bed', 5, 12], ['icecream_cart', 8, 12], ['street_lamp', 13, 13]], wall: [['pennant', 'L', 11], ['pennant', 'R', 11]] }],
+  school: [{ items: [['school_desk', 3, 8, 3], ['school_chair', 4, 8, 3], ['school_desk_b', 6, 8, 3], ['school_chair', 7, 8, 3],
+      ['bookshelf', 11, 0], ['plant_l', 13, 0], ['cubby_lockers', 12, 8, 3], ['toybox', 2, 12], ['piano', 6, 12], ['globe', 10, 12], ['plant_l', 13, 13]], wall: [['class_window', 'R', 11], ['art_flower', 'L', 11]] },
+    { items: [['street_lamp', 13, 0], ['sunflower', 13, 6], ['park_bench', 2, 13], ['flower_bed', 6, 13], ['park_bench', 9, 13], ['sunflower', 13, 13]] }]
+  // 🐾 寵物屋不放大：寵物要聚在一起（派對、跳舞、找小可愛玩），太大要走很久
+};
+Object.entries(PLACE_GROW).forEach(([pid, list]) => { const pl = PLACES[pid]; if (!pl) return; list.forEach((g, i) => { const r = pl.rooms[i]; if (!r) return; r.w = Math.max(r.w, 14); r.d = Math.max(r.d, 14); r.items = r.items.concat(g.items || []); r.wallItems = (r.wallItems || []).concat(g.wall || []); }); });
 // 轉成跟 G.rooms 一樣的格式；uid 用負數，不會跟自己家的家具重複
 let placeUid = -1;
 Object.values(PLACES).forEach(pl => {
@@ -5384,6 +5425,7 @@ const NEWS = [
     ['🏊', '游泳池的鴨鴨教練：報名「世界全國游泳大賽」，先換漂亮的泳裝給評審打星星，再奮力游過去'],
     ['🏃', '學校操場的花豹教練：報名「世界全國跑步大賽」，跳遠＋百米賽跑，簡單就能玩'],
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
+    ['📐', '外面的地方全部變大成 14×14：游泳池、健身房、遊樂園、電影院、圖書館、公園、學校、親戚家…都多了好多新東西'],
     ['🛋️', '每樣家具都可以用了：地毯上滾滾、聞花香、喝下午茶、搖雪花球；牆上的畫、掛鐘、月曆、窗戶、鏡子點了也會走過去用'],
     ['🏠', '房間可以再大、再多了：擴建到 12×12、14×14，還可以多蓋遊戲室、書房、玩具房、音樂室（最多 8 間）'],
     ['🏆', '學校老師辦「畫畫大賽」！抽題目畫畫，三位評審打星星、頒獎台；畫會裝進「我的名畫」畫框掛在家裡，金牌送金盃和新寵物「調色盤小貓」'],
