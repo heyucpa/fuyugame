@@ -5425,6 +5425,7 @@ const NEWS = [
     ['🏊', '游泳池的鴨鴨教練：報名「世界全國游泳大賽」，先換漂亮的泳裝給評審打星星，再奮力游過去'],
     ['🏃', '學校操場的花豹教練：報名「世界全國跑步大賽」，跳遠＋百米賽跑，簡單就能玩'],
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
+    ['💻', '筆電玩起來更順了：大螢幕不再畫太多點，電腦比較慢的時候會自動把畫面調得輕一點'],
     ['📐', '外面的地方全部變大成 14×14：游泳池、健身房、遊樂園、電影院、圖書館、公園、學校、親戚家…都多了好多新東西'],
     ['🛋️', '每樣家具都可以用了：地毯上滾滾、聞花香、喝下午茶、搖雪花球；牆上的畫、掛鐘、月曆、窗戶、鏡子點了也會走過去用'],
     ['🏠', '房間可以再大、再多了：擴建到 12×12、14×14，還可以多蓋遊戲室、書房、玩具房、音樂室（最多 8 間）'],
@@ -14874,17 +14875,40 @@ function thumb(def) {
 var canvasBox = null;   // 畫布的大小（computeView 用）；大小變了 ResizeObserver 會叫 resize 重新量
 /* 房間、小島每幀整張重畫。Windows 超寬螢幕和 iPad 的 devicePixelRatio 常常到 2、3，
    畫布會變成好幾百萬像素。解析度上限 2；比一張 2560×1440 還大就再降一點（最低 0.75）。 */
+/* 💻 家長：用筆電玩很容易當機、卡卡的 → 大螢幕＋Windows 放大 125～150%，畫布會變成三、四百萬像素，筆電畫不動。
+   ① 上限從 2560×1440 降到 1920×1080（看起來一樣清楚）；
+   ② 自動畫質 VIEW_Q：畫面一直很慢就自動把解析度降一點（最低 0.55 倍），順了再慢慢調回來。iPad 夠快就維持原本的清楚度。 */
+var VIEW_Q = 1;
 function canvasDpr(cssW, cssH) {
   let dpr = window.devicePixelRatio || 1;
   if (!(dpr > 0) || dpr > 8) dpr = 1;
   dpr = Math.min(2, dpr);
   const w = +cssW || 0, h = +cssH || 0;
   if (w >= 32 && h >= 32) {
-    const cap = 2560 * 1440;
+    const cap = 1920 * 1080;
     if (w * h * dpr * dpr > cap) dpr = Math.max(0.75, Math.sqrt(cap / (w * h)));
   }
-  return dpr;
+  return Math.max(.5, dpr * VIEW_Q);
 }
+(function autoQuality() {   // 每 1.5 秒看一次平均一格要多久
+  let last = 0, sum = 0, n = 0, t0 = 0, good = 0, maxQ = 1, raisedAt = 0;
+  const apply = () => { try { resize(); } catch (e) {} };
+  function tick(now) {
+    requestAnimationFrame(tick);
+    if (document.hidden) { last = 0; return; }
+    if (last) { const d = now - last; if (d < 1000) { sum += d; n++; } }   // 切出去回來的大空檔不算
+    last = now; if (!t0) t0 = now;
+    if (now - t0 < 1500 || n < 5) return;
+    const avg = sum / n; sum = 0; n = 0; t0 = now;
+    if (avg > 34 && VIEW_Q > .55) {   // 一秒不到 30 格：降畫質
+      if (now - raisedAt < 8000) maxQ = Math.max(.55, VIEW_Q - .1);   // 剛調高就又變慢：不要再調到這麼高
+      VIEW_Q = Math.max(.55, Math.round((VIEW_Q - .15) * 100) / 100); good = 0; apply();
+    } else if (avg < 20 && VIEW_Q < maxQ) {   // 很順：連續 12 秒左右再慢慢調回來
+      if (++good >= 8) { VIEW_Q = Math.min(maxQ, Math.round((VIEW_Q + .1) * 100) / 100); good = 0; raisedAt = now; apply(); }
+    } else good = 0;
+  }
+  requestAnimationFrame(tick);
+})();
 var viewDpr = 1;
 function resize() {
   if (document.querySelector('.stage.island-on')) { canvasBox = null; if (canvas.width > 1) { canvas.width = 1; canvas.height = 1; } return; }   // 在外面：房間看不到，畫布先還記憶體（回家再畫）
