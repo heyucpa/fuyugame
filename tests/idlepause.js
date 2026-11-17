@@ -11,7 +11,7 @@ const path = require('path');
     const o = {}, w = ms => new Promise(r => setTimeout(r, ms)); document.getElementById('modal').hidden = true;
     o.fps15 = LITE === true && FRAME_MIN_MS > 60;
     o.bgmOffInLite = Sound.prefs.bgm === false && localStorage.getItem('myHouseGame_bgmLite') === '1';
-    VIEW_Q = .75; o.liteSharp = canvasDpr(2560, 1080) >= .89 && canvasDpr(1707, 613) >= .89; setLite(false); o.normalStillAdapts = canvasDpr(1707, 613) < .8; setLite(true); VIEW_Q = 1;
+    VIEW_Q = 1; o.liteSharpNormally = Math.abs(canvasDpr(1707, 613) - 1) < .01; VIEW_Q = .75; o.liteDropsALittle = canvasDpr(1707, 613) > .84 && canvasDpr(1707, 613) < .86; setLite(false); o.normalStillAdapts = canvasDpr(1707, 613) < .8; setLite(true); VIEW_Q = 1;
     Sound.setPref('bgm', true); o.bgmCanTurnOn = Sound.prefs.bgm === true;
     // 大地圖：背景小動物不動
     G.guide = 'done'; openIsland(); await w(800);
