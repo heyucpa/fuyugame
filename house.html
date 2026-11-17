@@ -809,6 +809,8 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .home-sw.emo { border: none; font-size: 26px; line-height: 34px; text-align: center; }
 .art-topic { text-align: center; margin: 10px 0; } .art-topic-ic { font-size: 72px; line-height: 1.1; } .art-topic-t { font-size: 24px; font-weight: 900; color: #b5651d; }
 .art-frame { display: flex; justify-content: center; margin: 4px 0 8px; } .art-frame canvas { border: 8px solid #f2c14e; border-radius: 6px; box-shadow: 0 0 0 3px #b07a1e, 0 4px 10px rgba(0,0,0,.15); }
+.lite-ask { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 9000; background: #fff8e6; border: 2px solid #ffb84d; border-radius: 16px; padding: 10px 14px; display: flex; gap: 8px; align-items: center; box-shadow: 0 6px 18px rgba(0,0,0,.18); font-weight: 700; max-width: 92vw; flex-wrap: wrap; justify-content: center; }
+.lite-ask button { font: inherit; border: 0; border-radius: 12px; padding: 6px 12px; background: #ffb84d; color: #fff; cursor: pointer; } .lite-ask button + button { background: #e9e2d6; color: #5a4630; }
 .shop-new { background: #fff6e0; border: 2px dashed #ffb84d; border-radius: 16px; padding: 4px 10px 10px; margin: 6px 0 12px; } .shop-new-sub { font-weight: 800; color: #b5651d; margin: 6px 2px 2px; }
 .filter button.new-kind { border-color: #ff9f1c; box-shadow: 0 0 0 2px rgba(255,159,28,.35); }
 .cup-steps, .cup-result { display: flex; flex-direction: column; gap: 6px; align-items: center; margin: 6px 0; } .cup-step { font-weight: 700; font-size: 16px; }
@@ -1268,6 +1270,9 @@ window.addEventListener('unhandledrejection', function (e) { var r = e.reason; c
 // 遊戲資料：家具、壁紙、地板、魚、擴建價格
 // 家具 parts 單位：x/y/w/d 為格數（可小數），z/h 為像素高度
 'use strict';
+/* 💻 順暢模式（家長：在電腦上玩一樣會卡）：比較慢的電腦打開，一秒少畫幾格、解析度固定低一點、不畫飄花瓣／落葉／雪、不放開場動畫。
+   記在這台機器上（不是存檔），姊姊、妹妹各自的電腦自己決定。 */
+var LITE = (() => { try { return localStorage.getItem('myHouseGame_lite') === '1'; } catch (e) { return false; } })();
 /* 名字格子的字數限制：不要用 maxLength。iPad 打注音時，還沒選字的ㄅㄆㄇ也算字數，
    打到一半就卡住打不下去（像「書房的家」再多打一個字就不行）。改成選好字以後才剪掉多的。 */
 function typeLimit(inp, n) {
@@ -5662,6 +5667,7 @@ const NEWS = [
     ['🏃', '學校操場的花豹教練：報名「世界全國跑步大賽」，跳遠＋百米賽跑，簡單就能玩'],
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
     ['🚀', '剛打開遊戲比較不會卡了：畫畫存起來小很多（存檔變成原本的一半以下），打開時的存檔紀錄改到電腦有空的時候才做'],
+    ['💻', '新的「順暢模式」：電腦玩起來卡卡的話，到「⚙️ 設定」打開，畫面會變得比較輕；遊戲發現電腦很慢也會問你要不要打開'],
     ['🛋️', '原木、現代、自然、衛浴也都擴充到 40 件以上：原木大餐桌、木琴、咕咕鐘、中島廚房、電競椅、室內大樹、吊床、石燈籠、貓腳浴缸、牙刷杯（會刷牙）、泡泡機…'],
     ['🍰', '甜點風格擴充到 40 件：棉花糖沙發、杯子蛋糕床、薑餅屋、巧克力噴泉、三層蛋糕架、爆米花機、甜甜圈掛鐘…'],
     ['🛋️', '原木、現代、自然、衛浴、甜點風格各多了 10 件家具（雙層床、遊樂器、竹子盆栽、按摩浴缸、布丁床…），每一種風格都能布置一整間了'],
@@ -15154,7 +15160,11 @@ function canvasDpr(cssW, cssH) {
     const cap = 1920 * 1080;
     if (w * h * dpr * dpr > cap) dpr = Math.max(0.75, Math.sqrt(cap / (w * h)));
   }
-  return Math.max(.5, dpr * VIEW_Q);
+  return Math.max(.5, dpr * (LITE ? Math.min(VIEW_Q, .7) : VIEW_Q));
+}
+function setLite(on) {
+  LITE = !!on; try { localStorage.setItem('myHouseGame_lite', on ? '1' : '0'); } catch (e) {}
+  FRAME_MIN_MS = LITE ? 1000 / 20 - 4 : 1000 / 30 - 4; try { resize(); } catch (e) {}
 }
 (function autoQuality() {   // 每 1.5 秒看一次平均一格要多久
   let last = 0, sum = 0, n = 0, t0 = 0, good = 0, maxQ = 1, raisedAt = 0;
@@ -15166,6 +15176,7 @@ function canvasDpr(cssW, cssH) {
     last = now; if (!t0) t0 = now;
     if (now - t0 < 1500 || n < 5) return;
     const avg = sum / n; sum = 0; n = 0; t0 = now;
+    if (avg > 40 && VIEW_Q <= .55 && !LITE) { if (++tick.slow >= 6) { tick.slow = 0; liteSuggest(); } } else tick.slow = 0;   // 降到最低還是很慢：問要不要打開順暢模式
     if (avg > 34 && VIEW_Q > .55) {   // 一秒不到 30 格：降畫質
       if (now - raisedAt < 8000) maxQ = Math.max(.55, VIEW_Q - .1);   // 剛調高就又變慢：不要再調到這麼高
       VIEW_Q = Math.max(.55, Math.round((VIEW_Q - .15) * 100) / 100); good = 0; apply();
@@ -15173,8 +15184,18 @@ function canvasDpr(cssW, cssH) {
       if (++good >= 8) { VIEW_Q = Math.min(maxQ, Math.round((VIEW_Q + .1) * 100) / 100); good = 0; raisedAt = now; apply(); }
     } else good = 0;
   }
+  tick.slow = 0;
   requestAnimationFrame(tick);
 })();
+function liteSuggest() {   // 一天最多問一次
+  try { const k = 'myHouseGame_liteAsked', d = new Date().toDateString(); if (localStorage.getItem(k) === d || document.getElementById('liteAsk')) return; localStorage.setItem(k, d); } catch (e) { return; }
+  const bar = document.createElement('div'); bar.id = 'liteAsk'; bar.className = 'lite-ask';
+  bar.innerHTML = '<span>💻 這台電腦好像比較慢，要不要打開「順暢模式」？</span>';
+  const yes = document.createElement('button'), no = document.createElement('button'); yes.textContent = '好，打開'; no.textContent = '不用';
+  yes.onclick = () => { setLite(true); bar.remove(); try { toast('💻 順暢模式打開了！想關掉到「⚙️ 設定」'); } catch (e) {} };
+  no.onclick = () => bar.remove(); bar.append(yes, no); document.body.appendChild(bar);
+  setTimeout(() => { if (bar.isConnected) bar.remove(); }, 20000);
+}
 var viewDpr = 1;
 function resize() {
   if (document.querySelector('.stage.island-on')) { canvasBox = null; if (canvas.width > 1) { canvas.width = 1; canvas.height = 1; } return; }   // 在外面：房間看不到，畫布先還記憶體（回家再畫）
@@ -15230,7 +15251,7 @@ function draw() {
   const sea = seasonOfMonth();
   const inSky = !!(G.away && G.away.place === 'sky');
   if (inSky) { try { skyRoomBackdrop(ctx, canvas.width, canvas.height, performance.now()); } catch (e) {} }   // ☁️ 爸爸媽媽家：藍天白雲
-  else try { drawSeasonBack(ctx, dpr, sea, performance.now()); } catch (e) {}   // 🍂 四季：房間後面飄花瓣／泡泡／落葉／雪
+  else if (!LITE) try { drawSeasonBack(ctx, dpr, sea, performance.now()); } catch (e) {}   // 🍂 四季：房間後面飄花瓣／泡泡／落葉／雪
   ctx.setTransform(view.scale * dpr, 0, 0, view.scale * dpr, view.ox * dpr, view.oy * dpr);
   const room = curRoom();
   // 陰影底座（四季換顏色：春天粉粉的、秋天金黃、冬天積雪）
@@ -15532,7 +15553,7 @@ function gameStep(dt, now) {
 }
 // 先排下一幀再畫：某一幀出錯（例如後面的 <script> 還沒載入完）也不會讓整個遊戲停住；錯誤照樣報出來（同一種只報一次）
 const loopErrs = new Set();
-var FRAME_MIN_MS = 1000 / 30 - 4;   // 房間、小島最多一秒畫 30 次（留 4 毫秒誤差，60Hz 螢幕剛好隔一格）
+var FRAME_MIN_MS = LITE ? 1000 / 20 - 4 : 1000 / 30 - 4;   // 順暢模式一秒 20 次   // 房間、小島最多一秒畫 30 次（留 4 毫秒誤差，60Hz 螢幕剛好隔一格）
 (function loop(now) {
   requestAnimationFrame(loop);
   now = now || performance.now();
@@ -18247,6 +18268,9 @@ function tabSave(body) {
   upd.onclick = () => { upd.disabled = true; upd.textContent = '更新中…'; forceUpdate(); };
   body.appendChild(upd);
   body.appendChild(note('按了不會動到任何進度，只是把遊戲本身重新下載。'));
+  body.appendChild(h3('💻 順暢模式'));
+  body.appendChild(note('電腦玩起來卡卡的時候打開：畫面一秒少畫幾格、解析度低一點、不畫飄落的花瓣和雪、不放開場動畫。只影響這台機器，不會動到進度。'));
+  { const lb = el('button', 'big' + (LITE ? '' : ' alt'), LITE ? '✅ 順暢模式：開著（按一下關掉）' : '💻 打開順暢模式'); lb.onclick = () => { setLite(!LITE); Sound.play('click'); toast(LITE ? '💻 順暢模式打開了' : '順暢模式關掉了'); renderTab(); }; body.appendChild(lb); }
   const nb = el('button', 'mini', '📜 更新紀錄（以前更新了什麼）');
   nb.onclick = () => openNewsHistory();
   body.appendChild(nb);
@@ -18847,7 +18871,7 @@ function drawWelcome(g, t, info) {
 // 打開遊戲時：第一次玩 → 開場動畫；隔 6 小時以上 → 歡迎回家
 function maybeOpening() {
   if (SAVE_LOCKED != null || introPlaying) return;
-  if (!G.introSeen) playIntro();
+  if (!G.introSeen && !LITE) playIntro();   // 💻 順暢模式不放開場動畫
   else if (hoursAway >= WELCOME_BACK_HOURS) playWelcome();
 }
 
@@ -19072,6 +19096,7 @@ function olderCopies() {
   return out;
 }
 function maybePlayIntro() {
+  if (LITE) return;   // 💻 順暢模式：不放開場動畫
   if (G.introSeen || SAVE_LOCKED != null || introPlaying) return;
   playIntro();
 }
