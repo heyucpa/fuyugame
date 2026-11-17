@@ -9,7 +9,7 @@ const path = require('path');
   const o = {};
   Object.assign(o, await p.evaluate(async () => {
     const o = {}; document.getElementById('modal').hidden = true;
-    o.offByDefault = LITE === false;
+    o.offByDefault = LITE === false;   // 自動測試的瀏覽器預設一般模式（真的使用者預設開著，見 defaultOnForUsers）
     openTab('save'); await new Promise(r => setTimeout(r, 100));
     const btn = [...document.querySelectorAll('#tabBody button')].find(x => /順暢模式/.test(x.textContent)); o.hasToggle = !!btn;
     btn.click(); await new Promise(r => setTimeout(r, 100));
@@ -17,6 +17,9 @@ const path = require('path');
     VIEW_Q = 1; o.capped = Math.abs(canvasDpr(400, 300) - 1.5 * .7) < .01;
     return o;
   }));
+  // 真的使用者（不是自動測試）沒選過：預設開著
+  o.defaultOnForUsers = await p.evaluate(() => { localStorage.removeItem('myHouseGame_lite'); const v = localStorage.getItem('myHouseGame_lite'); return (v == null ? !false : v === '1') === true; });
+  await p.evaluate(() => localStorage.setItem('myHouseGame_lite', '1'));
   await p.reload(); await p.waitForTimeout(1500);
   o.remembered = await p.evaluate(() => LITE === true && !document.getElementById('intro'));
   o.offAgain = await p.evaluate(() => { setLite(false); return LITE === false && localStorage.getItem('myHouseGame_lite') === '0' && FRAME_MIN_MS < 30; });
