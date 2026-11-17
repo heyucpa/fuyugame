@@ -9756,6 +9756,20 @@ function fufuDraw(ctx) {
   const swimming = inWater && walking && !kidBaby();   // 🏊 在泳池裡移動：真的在游（自由式／蛙式／仰式輪流）
   if (typeof swimTick === 'function') swimTick(swimming);
   if (swimming) { ctx.save(); ctx.translate(p.x, p.y - 8 * kidHeightScale()); ctx.scale(fufu.facing * kidHeightScale(), kidHeightScale()); drawSwimmer(ctx, fufu.t, swimStroke()); ctx.restore(); return; }
+  /* 🤸 在地毯上滾滾（家長：實際上沒有真的在滾）：整個人捲起來一圈一圈轉，從地毯這頭滾到那頭再滾回來 */
+  if (fufu.act && fufu.act.key === 'roll' && !walking) {
+    const it = curRoom().items.find(x => x.uid === fufu.act.uid);
+    if (it) {
+      const fp = footprint(FURN_BY_ID[it.id], it.rot || 0), span = Math.max(.15, Math.max(fp.w, fp.d) / 2 - .4), along = fp.w >= fp.d;
+      const u = Math.sin(fufu.t * 1.4) * span, q = iso(it.x + fp.w / 2 + (along ? u : 0), it.y + fp.d / 2 + (along ? 0 : u)), k = kidHeightScale() * .8;
+      ctx.fillStyle = 'rgba(40,30,20,.2)'; ctx.beginPath(); ctx.ellipse(q.x, q.y, 15, 6, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.save(); ctx.translate(q.x, q.y - 24 * k); ctx.rotate(u / .2 * (along ? 1 : -1)); ctx.scale(k, k); ctx.translate(0, 30);
+      if (kidBaby()) drawBabyKid(ctx, { t: fufu.t }); else drawGirl(ctx, { t: fufu.t, walking: false, blink: false, outfit: currentOutfit(), face: 'joy', stage: kidLookStage() });
+      ctx.restore();
+      if (Math.sin(fufu.t * 9) > .95) { ctx.font = '12px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('💫', q.x + 14, q.y - 40 * k); }
+      return;
+    }
+  }
 
   ctx.fillStyle = 'rgba(40,30,20,.22)';
   ctx.beginPath();
@@ -15182,10 +15196,10 @@ function setLite(on) {
     if (now - t0 < 1500 || n < 5) return;
     const avg = sum / n; sum = 0; n = 0; t0 = now;
     if (avg > 40 && VIEW_Q <= .55 && !LITE) { if (++tick.slow >= 6) { tick.slow = 0; liteSuggest(); } } else tick.slow = 0;   // 降到最低還是很慢：問要不要打開順暢模式
-    if (avg > 34 && VIEW_Q > .55) {   // 一秒不到 30 格：降畫質
+    if (avg > 25 && VIEW_Q > .55) {   // 一秒不到 40 格就降一點（家長的筆電：平均 29 毫秒一格、還是 100% 畫質）
       if (now - raisedAt < 8000) maxQ = Math.max(.55, VIEW_Q - .1);   // 剛調高就又變慢：不要再調到這麼高
       VIEW_Q = Math.max(.55, Math.round((VIEW_Q - .15) * 100) / 100); good = 0; apply();
-    } else if (avg < 20 && VIEW_Q < maxQ) {   // 很順：連續 12 秒左右再慢慢調回來
+    } else if (avg < 18 && VIEW_Q < maxQ) {   // 很順：連續 12 秒左右再慢慢調回來
       if (++good >= 8) { VIEW_Q = Math.min(maxQ, Math.round((VIEW_Q + .1) * 100) / 100); good = 0; raisedAt = now; apply(); }
     } else good = 0;
   }
@@ -15223,8 +15237,9 @@ function openPerfCheck() {
       `順暢模式：${LITE ? '開' : '關'}；處理器 ${navigator.hardwareConcurrency || '?'} 核；記憶體 ${navigator.deviceMemory ? navigator.deviceMemory + ' GB' : '?'}`,
       `存檔大小：${Math.round(((localStorage.getItem(SAVE_KEY) || '').length) / 1024)} KB；全部 ${(() => { let t = 0; try { Object.keys(localStorage).forEach(k => { t += (localStorage.getItem(k) || '').length; }); } catch (e) {} return Math.round(t / 1024); })()} KB`,
       `在哪裡：${G.away ? (PLACES[G.away.place] || {}).name : document.querySelector('.stage.island-on') ? '小島' : '家裡'}；遊戲版本 ${isNaN(lm) ? document.lastModified : lm.toLocaleString()}`,
-      `瀏覽器：${navigator.userAgent.replace(/^Mozilla\/5\.0 /, '').slice(0, 110)}`
-    ];
+      `瀏覽器：${navigator.userAgent.replace(/^Mozilla\/5\.0 /, '').slice(0, 110)}`,
+      `最慢的幾格（打開遊戲到現在）：` + (SLOW_FRAMES.length ? '' : '（沒有記錄，或這個瀏覽器不支援）')
+    ].concat(SLOW_FRAMES.map(f => `  ${f.d}ms（第 ${f.at} 秒）程式：${f.sc || '—'}；排版 ${f.layout}ms${f.where ? '；在做：' + f.where : ''}`));
     info.textContent = lines.join('\n');
     const cp = el('button', 'big', '📋 複製'); cp.onclick = () => { try { navigator.clipboard.writeText(info.textContent).then(() => toast('複製好了，貼給幫忙改遊戲的人')); } catch (e) { toast('複製不了，請拍照'); } };
     card.insertBefore(cp, close);
@@ -15233,6 +15248,18 @@ function openPerfCheck() {
     openPerfCheck.last = { avg, gi, lines };
   }
 }
+/* 📊 記下最慢的幾格（家長：最慢的一格 2871 毫秒）：Chrome 的 long-animation-frame 會告訴我們那一格是哪段程式在跑。
+   只留最慢的 6 筆，很省；效能檢查會列出來，複製給幫忙改遊戲的人。 */
+var SLOW_FRAMES = [];
+try {
+  new PerformanceObserver(list => list.getEntries().forEach(e => {
+    if (e.duration < 120) return;
+    const sc = (e.scripts || []).slice().sort((a, b) => b.duration - a.duration).slice(0, 3).map(x => `${x.sourceFunctionName || x.invoker || '?'}${x.sourceCharPosition > 0 ? '@' + x.sourceCharPosition : ''} ${Math.round(x.duration)}ms`);
+    let where = ''; try { where = (typeof crashCrumbs !== 'undefined' && crashCrumbs.length ? crashCrumbs[crashCrumbs.length - 1].slice(9) : '') || ''; } catch (er) {}
+    SLOW_FRAMES.push({ d: Math.round(e.duration), at: Math.round(e.startTime / 1000), blocking: Math.round(e.blockingDuration || 0), render: Math.round((e.renderStart && e.styleAndLayoutStart) ? e.styleAndLayoutStart - e.renderStart : 0), layout: Math.round(e.styleAndLayoutStart ? e.startTime + e.duration - e.styleAndLayoutStart : 0), sc: sc.join('、'), where });
+    SLOW_FRAMES.sort((a, b) => b.d - a.d); if (SLOW_FRAMES.length > 6) SLOW_FRAMES.length = 6;
+  })).observe({ type: 'long-animation-frame', buffered: true });
+} catch (e) {}
 function liteSuggest() {   // 一天最多問一次
   try { const k = 'myHouseGame_liteAsked', d = new Date().toDateString(); if (localStorage.getItem(k) === d || document.getElementById('liteAsk')) return; localStorage.setItem(k, d); } catch (e) { return; }
   const bar = document.createElement('div'); bar.id = 'liteAsk'; bar.className = 'lite-ask';
