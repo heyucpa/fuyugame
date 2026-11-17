@@ -2073,6 +2073,37 @@ const FURNITURE_5 = [
   { id: 'candy_wardrobe', name: '糖果衣櫃', price: 3600, theme: 'sweet', w: 2, d: 1, parts: cabinetParts('#ffc2d8', '#ff9ec4', '#ffffff', 108).concat([{ k: 'ball', x: .5, y: .6, z: 112, r: 6, c: '#6bb6ff' }, { k: 'ball', x: 1.5, y: .6, z: 112, r: 6, c: '#ffe066' }]) }
 ];
 FURNITURE_5.forEach(d => { d.fresh5 = true; FURNITURE.push(d); });
+/* 第六批：🍰 甜點風再多 20 件（家長：甜點風格也擴充到 40 個）——18 件放地上＋2 件掛牆上 */
+const FURNITURE_6 = [
+  { id: 'cottoncandy_sofa', name: '棉花糖沙發', price: 3800, theme: 'sweet', w: 3, d: 1, parts: sofaParts({ base: '#ffb3d9', cushion: '#bfe3ff' }) },
+  { id: 'lollipop_chair', name: '棒棒糖椅', price: 1400, theme: 'sweet', w: 1, d: 1, parts: chairParts({ leg: '#ffffff', seat: '#ff6b9a', back: '#ffd23f' }).concat([{ k: 'ball', x: .5, y: .2, z: 60, r: 7, c: '#ff6b9a' }, { k: 'ball', x: .5, y: .2, z: 60, r: 3.5, c: '#ffffff' }]) },
+  { id: 'cookie_table', name: '餅乾圓桌', price: 1700, theme: 'sweet', w: 1, d: 1, parts: [{ x: .4, y: .4, w: .2, d: .2, z: 0, h: 22, c: '#c08a55' }, { x: .08, y: .08, w: .84, d: .84, z: 22, h: 6, c: '#e2b06b' }].concat([[.3, .3], [.65, .4], [.4, .65], [.7, .7]].map(([x, y]) => ({ x, y, w: .08, d: .08, z: 28, h: 1, c: '#6b4524' }))) },
+  { id: 'cupcake_bed', name: '杯子蛋糕床', price: 5000, theme: 'sweet', w: 2, d: 3, parts: bedParts({ frame: '#ff9ec4', pillow: '#fff5e6', blanket: '#fff5e6' }).concat([{ k: 'ball', x: 1, y: .08, z: 60, r: 9, c: '#e8505b' }, { k: 'ball', x: .4, y: .08, z: 56, r: 5, c: '#fff5e6' }, { k: 'ball', x: 1.6, y: .08, z: 56, r: 5, c: '#fff5e6' }]) },
+  { id: 'gingerbread_house', name: '薑餅屋', price: 2200, theme: 'sweet', w: 1, d: 1, parts: [{ x: .15, y: .15, w: .7, d: .7, z: 0, h: 22, c: '#c08a55' }, { x: .1, y: .1, w: .8, d: .8, z: 22, h: 6, c: '#ffffff' }, { x: .25, y: .25, w: .5, d: .5, z: 28, h: 10, c: '#c08a55' }, { x: .42, y: .85, w: .16, d: .02, z: 0, h: 12, c: '#6b4524' }, { k: 'ball', x: .3, y: .86, z: 16, r: 2.5, c: '#e8505b' }, { k: 'ball', x: .7, y: .86, z: 16, r: 2.5, c: '#7bd389' }] },
+  { id: 'candycane_lamp', name: '拐杖糖燈', price: 1400, theme: 'sweet', w: 1, d: 1, parts: [{ x: .34, y: .34, w: .32, d: .32, z: 0, h: 4, c: '#ffffff' }].concat([0, 1, 2, 3, 4, 5].map(i => ({ x: .45, y: .45, w: .1, d: .1, z: 4 + i * 10, h: 10, c: i % 2 ? '#ffffff' : '#e8505b' }))).concat([{ k: 'ball', x: .5, y: .5, z: 70, r: 8, c: '#fff1c4', shade: true }]) },
+  { id: 'choco_fountain', name: '巧克力噴泉', price: 2600, theme: 'sweet', w: 1, d: 1, parts: [{ x: .15, y: .15, w: .7, d: .7, z: 0, h: 8, c: '#e9edf1' }, { x: .25, y: .25, w: .5, d: .5, z: 8, h: 4, c: '#8a5a33' }, { x: .44, y: .44, w: .12, d: .12, z: 12, h: 24, c: '#e9edf1' }, { x: .32, y: .32, w: .36, d: .36, z: 24, h: 3, c: '#6b4524' }, { k: 'ball', x: .5, y: .5, z: 40, r: 5, c: '#6b4524' }, { k: 'ball', x: .22, y: .5, z: 14, r: 3, c: '#ff6b6b' }] },
+  { id: 'cake_stand', name: '三層蛋糕架', price: 1900, theme: 'sweet', w: 1, d: 1, parts: [{ x: .44, y: .44, w: .12, d: .12, z: 0, h: 50, c: '#e8c36a' }, { x: .1, y: .1, w: .8, d: .8, z: 10, h: 2, c: '#ffffff' }, { x: .2, y: .2, w: .6, d: .6, z: 26, h: 2, c: '#ffffff' }, { x: .28, y: .28, w: .44, d: .44, z: 42, h: 2, c: '#ffffff' },
+      { k: 'ball', x: .25, y: .5, z: 16, r: 3.5, c: '#ff9ec4' }, { k: 'ball', x: .75, y: .5, z: 16, r: 3.5, c: '#b8ecd7' }, { k: 'ball', x: .35, y: .5, z: 32, r: 3, c: '#ffe066' }, { k: 'ball', x: .65, y: .5, z: 32, r: 3, c: '#c9b8ff' }, { k: 'ball', x: .5, y: .5, z: 48, r: 3, c: '#e8505b' }] },
+  { id: 'strawberry_rug', name: '草莓地毯', price: 1500, theme: 'sweet', w: 2, d: 2, layer: 'floor', parts: rugParts('#e8505b', '#ff8fa8', '#7bd389').concat([[.5, .5], [1.4, .6], [.7, 1.4], [1.3, 1.3]].map(([x, y]) => ({ x, y, w: .08, d: .06, z: 1.2, h: .5, c: '#fff6c7' }))) },
+  { id: 'marshmallow_stool', name: '棉花糖凳', price: 900, theme: 'sweet', w: 1, d: 1, parts: [{ x: .2, y: .2, w: .6, d: .6, z: 0, h: 16, c: '#ffe6f0' }, { x: .2, y: .2, w: .6, d: .6, z: 8, h: 1, c: '#ffc2d8' }] },
+  { id: 'donut_shelf', name: '甜甜圈展示櫃', price: 2800, theme: 'sweet', w: 2, d: 1, parts: [{ x: 0, y: 0, w: 2, d: .7, z: 0, h: 40, c: '#fff5e6' }, { x: .05, y: .05, w: 1.9, d: .6, z: 40, h: 22, c: '#cfe8f5', a: .6 }].concat([['#ff9ec4', .35], ['#8a5a33', .8], ['#ffe066', 1.25], ['#b8ecd7', 1.7]].map(([c, x]) => ({ k: 'ball', x, y: .35, z: 46, r: 5, c }))) },
+  { id: 'icecream_chair', name: '甜筒椅', price: 1500, theme: 'sweet', w: 1, d: 1, parts: [{ x: .3, y: .3, w: .4, d: .4, z: 0, h: 18, c: '#e2b06b' }, { x: .18, y: .18, w: .64, d: .64, z: 18, h: 6, c: '#b8ecd7' }, { k: 'ball', x: .5, y: .22, z: 40, r: 9, c: '#ff9ec4' }, { k: 'ball', x: .5, y: .22, z: 52, r: 3, c: '#e8505b' }] },
+  { id: 'choco_bookshelf', name: '巧克力書櫃', price: 3000, theme: 'sweet', w: 2, d: 1, parts: shelfParts('#8a5a33', ['#ff9ec4', '#fff5e6', '#ffe066', '#b8ecd7', '#c9b8ff', '#ff6b6b'], 70) },
+  { id: 'macaron_nightstand', name: '馬卡龍床頭櫃', price: 1400, theme: 'sweet', w: 1, d: 1, parts: [{ x: .15, y: .15, w: .7, d: .7, z: 0, h: 12, c: '#c9b8ff' }, { x: .18, y: .18, w: .64, d: .64, z: 12, h: 4, c: '#fff5e6' }, { x: .15, y: .15, w: .7, d: .7, z: 16, h: 12, c: '#c9b8ff' }, { x: .42, y: .42, w: .16, d: .16, z: 28, h: 12, c: '#ffffff' }, { x: .3, y: .3, w: .4, d: .4, z: 40, h: 12, c: '#ffe6f0', shade: true }] },
+  { id: 'caramel_dresser', name: '焦糖梳妝台', price: 2600, theme: 'sweet', w: 1, d: 1, parts: [{ x: .1, y: .1, w: .8, d: .7, z: 0, h: 34, c: '#d99a4e' }, { x: .2, y: .1, w: .6, d: .08, z: 34, h: 34, c: '#ffe6f0' }, { x: .15, y: .06, w: .7, d: .06, z: 34, h: 38, c: '#ff9ec4' }, { k: 'ball', x: .5, y: .08, z: 76, r: 4, c: '#e8505b' }] },
+  { id: 'popcorn_machine', name: '爆米花機', price: 2400, theme: 'sweet', w: 1, d: 1, parts: [{ x: .2, y: .2, w: .6, d: .6, z: 0, h: 26, c: '#e8505b' }, { x: .18, y: .18, w: .64, d: .64, z: 26, h: 26, c: '#fff5e6', a: .7 }, { x: .16, y: .16, w: .68, d: .68, z: 52, h: 6, c: '#e8505b' }, { k: 'ball', x: .4, y: .45, z: 34, r: 4, c: '#ffe680' }, { k: 'ball', x: .6, y: .5, z: 38, r: 4, c: '#ffffff' }] },
+  { id: 'candy_toybox', name: '糖果玩具箱', price: 1800, theme: 'sweet', w: 2, d: 1, parts: [{ x: .05, y: .1, w: 1.9, d: .8, z: 0, h: 26, c: '#ffd1e0' }, { x: 0, y: .05, w: 2, d: .9, z: 26, h: 5, c: '#ff9ec4' }, { k: 'ball', x: .5, y: .5, z: 36, r: 5, c: '#6bb6ff' }, { k: 'ball', x: 1.4, y: .5, z: 36, r: 5, c: '#ffe066' }] },
+  { id: 'dessert_counter', name: '甜點吧台', price: 3600, theme: 'sweet', w: 2, d: 1, parts: [{ x: 0, y: .1, w: 2, d: .8, z: 0, h: 34, c: '#ffc2d8' }, { x: 0, y: .1, w: 2, d: .8, z: 34, h: 4, c: '#fff5e6' }, { x: .2, y: .9, w: 1.6, d: .02, z: 6, h: 22, c: '#ff9ec4' }, { k: 'ball', x: .4, y: .5, z: 44, r: 5, c: '#e8505b' }, { k: 'ball', x: 1.0, y: .5, z: 44, r: 5, c: '#8a5a33' }, { k: 'ball', x: 1.6, y: .5, z: 44, r: 5, c: '#ffe066' }] },
+  { id: 'sweet_clock', name: '甜甜圈掛鐘', price: 1300, theme: 'sweet', w: 1, h: 22, z: 70,
+    draw(ctx, W, H) { const cx = W / 2, cy = H / 2, r = Math.min(W, H) / 2 - 1; ctx.fillStyle = '#e2b06b'; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#ff9ec4'; ctx.beginPath(); ctx.arc(cx, cy, r * .82, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff5e6'; ctx.beginPath(); ctx.arc(cx, cy, r * .5, 0, Math.PI * 2); ctx.fill(); const d = new Date(), h = (d.getHours() % 12 + d.getMinutes() / 60) / 12 * Math.PI * 2, m = d.getMinutes() / 60 * Math.PI * 2;
+      ctx.strokeStyle = '#6b4524'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.sin(h) * r * .3, cy - Math.cos(h) * r * .3); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.sin(m) * r * .45, cy - Math.cos(m) * r * .45); ctx.stroke(); } },
+  { id: 'cake_painting', name: '蛋糕畫', price: 1200, theme: 'sweet', w: 1, h: 26, z: 58,
+    draw(ctx, W, H) { ctx.fillStyle = '#ff9ec4'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#fff5f8'; ctx.fillRect(3, 3, W - 6, H - 6);
+      ctx.fillStyle = '#e2b06b'; ctx.fillRect(W * .25, H * .55, W * .5, H * .25); ctx.fillStyle = '#ffffff'; ctx.fillRect(W * .25, H * .5, W * .5, H * .08); ctx.fillStyle = '#e8505b'; ctx.beginPath(); ctx.arc(W / 2, H * .45, 2.4, 0, Math.PI * 2); ctx.fill(); } }
+];
+FURNITURE_6.filter(d => d.draw).forEach(d => { d.layer = 'wall'; d.parts = []; d.d = 1; });
+FURNITURE_6.forEach(d => { d.fresh5 = true; FURNITURE.push(d); });
 
 const WALLPAPERS = [
   { id: 'wp_cream', name: '奶油素面', price: 0, theme: 'wood', base: '#f3e6cc', pattern: 'plain' },
@@ -2374,6 +2405,15 @@ Object.assign(PET_BEDS, {
   pet_castle: { x: 1, y: 1, z: 16 },
   cat_tower: { x: .5, y: .5, z: 51 }
 });
+// 第六批（🍰 甜點風再 20 件）的分類、用法
+Object.assign(FURN_KIND_OF, { cottoncandy_sofa: 'sit', lollipop_chair: 'sit', cookie_table: 'sit', cupcake_bed: 'sleep', gingerbread_house: 'deco', candycane_lamp: 'deco', choco_fountain: 'eat', cake_stand: 'eat',
+  strawberry_rug: 'deco', marshmallow_stool: 'sit', donut_shelf: 'eat', icecream_chair: 'sit', choco_bookshelf: 'study', macaron_nightstand: 'sleep', caramel_dresser: 'sleep', popcorn_machine: 'eat', candy_toybox: 'toy', dessert_counter: 'eat', sweet_clock: 'wall', cake_painting: 'wall' });
+Object.assign(FURNITURE_USE, { cottoncandy_sofa: { use: 'sit', seats: [{ x: .9, y: .62, z: 28 }, { x: 2.1, y: .62, z: 28 }], front: [0, 1] }, lollipop_chair: { use: 'sit', seats: [{ x: .5, y: .55, z: 24 }], front: [0, 1] },
+  icecream_chair: { use: 'sit', seats: [{ x: .5, y: .55, z: 24 }], front: [0, 1] }, marshmallow_stool: { use: 'sit', seats: [{ x: .5, y: .5, z: 16 }], front: [0, 1] }, cupcake_bed: { use: 'lie', pillow: { x: 1, y: .62, z: 30 } } });
+PET_BEDS.cupcake_bed = { x: 1.2, y: 2.2, z: 30, withKid: true };
+Object.assign(FURNITURE_ACT, { gingerbread_house: 'treat', candycane_lamp: 'light', choco_fountain: 'treat', cake_stand: 'treat', strawberry_rug: 'roll', donut_shelf: 'snack', choco_bookshelf: 'read',
+  macaron_nightstand: 'light', caramel_dresser: 'mirror', popcorn_machine: 'snack', candy_toybox: 'toys', dessert_counter: 'cook' });
+Object.assign(WALL_ACT, { sweet_clock: 'time', cake_painting: 'artlook' });
 // 第五批家具（FURNITURE_5）的分類、用法
 Object.assign(FURN_KIND_OF, {
   log_sofa: 'sit', log_bunk: 'sleep', log_desk: 'study', wood_bench: 'sit', wood_toyshelf: 'toy', wood_lamp: 'deco', wood_rug: 'deco', wood_dresser: 'sleep', wood_horse: 'toy', crate_shelf: 'study',
@@ -5515,6 +5555,7 @@ const NEWS = [
     ['🏊', '游泳池的鴨鴨教練：報名「世界全國游泳大賽」，先換漂亮的泳裝給評審打星星，再奮力游過去'],
     ['🏃', '學校操場的花豹教練：報名「世界全國跑步大賽」，跳遠＋百米賽跑，簡單就能玩'],
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
+    ['🍰', '甜點風格擴充到 40 件：棉花糖沙發、杯子蛋糕床、薑餅屋、巧克力噴泉、三層蛋糕架、爆米花機、甜甜圈掛鐘…'],
     ['🛋️', '原木、現代、自然、衛浴、甜點風格各多了 10 件家具（雙層床、遊樂器、竹子盆栽、按摩浴缸、布丁床…），每一種風格都能布置一整間了'],
     ['💻', '筆電玩起來更順了：大螢幕不再畫太多點，電腦比較慢的時候會自動把畫面調得輕一點'],
     ['📐', '外面的地方全部變大成 14×14：游泳池、健身房、遊樂園、電影院、圖書館、公園、學校、親戚家…都多了好多新東西'],
