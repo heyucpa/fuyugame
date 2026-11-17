@@ -31,6 +31,15 @@ const path = require('path');
     IDLE_MS = 300; document.getElementById('modal').hidden = false; document.getElementById('modalCard').classList.add('in-movie'); await w(5600);
     o.noPauseInMovie = IDLE_PAUSED === false;
     document.getElementById('modalCard').classList.remove('in-movie'); document.getElementById('modal').hidden = true;
+    // 🔇 比賽中：後面房間肚子餓的聲音不放，比賽自己的聲音照放
+    G.kid.hunger = 5; G.pet.hunger = 5; openDodge(); await w(300); const lb = document.querySelectorAll('.lv-btn')[0]; if (lb) lb.click(); await w(500);
+    o.inGame = document.getElementById('modalCard').classList.contains('in-game');
+    let roomSnd = 0; const of = fufuWander; fufuWander = function (r) { const was = ROOM_MUTED; G.kid.hunger = 5; const sp = Sound.play; let c = 0; Sound.play = function () { c++; return sp.apply(this, arguments); }; try { return of.apply(this, arguments); } finally { Sound.play = sp; if (c && !was) roomSnd++; } };
+    for (let i = 0; i < 20; i++) { ROOM_MUTED = true; fufuWander(curRoom()); ROOM_MUTED = false; }
+    o.mutedFlagWorks = roomSnd === 0;
+    let seen = false; const t1 = performance.now(); while (performance.now() - t1 < 3000) { await w(100); if (ROOM_MUTED === false) seen = true; }
+    o.gameSoundsStillOn = seen;   // 迴圈外面（小遊戲自己的聲音）不受影響
+    fufuWander = of; closeGameWindow();
     IDLE_MS = Infinity; return o;
   });
   const ok = Object.values(o).every(v => v === true) && !errs.length;

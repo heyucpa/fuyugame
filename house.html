@@ -4492,6 +4492,7 @@ const Sound = (() => {
 
   function play(name, arg) {
     if (!prefs.sfx || !ac || ac.state !== 'running') return;
+    if (typeof ROOM_MUTED !== 'undefined' && ROOM_MUTED) return;   // 比賽中：後面房間的聲音不放
     try { fx[name](arg); } catch (e) { /* 音效失敗不影響遊戲 */ }
   }
 
@@ -15279,6 +15280,7 @@ try {
    房間、大地圖就停止重畫、聲音停掉，蓋一層「休息中」；點一下（或按任何鍵）就繼續。電腦才不會一直被佔著。
    看電影、休息時間、小遊戲進行中不暫停（不打斷她正在看、正在玩的）。 */
 var IDLE_PAUSED = false;
+var ROOM_MUTED = false;   // 小遊戲進行中，房間在後面跑的那一下：不出聲
 var IDLE_MS = navigator.webdriver ? Infinity : 120000, IDLE_BLUR_MS = navigator.webdriver ? Infinity : 60000;   // 自動測試時不暫停（測試可以自己改小）
 let idleLastInput = performance.now(), idleBlurAt = 0;
 function idleBusy() {
@@ -15694,8 +15696,11 @@ var FRAME_MIN_MS = LITE ? 1000 / 15 - 4 : 1000 / 30 - 4;   // 順暢模式一秒
     crashLog('畫面停住', `停了 ${(gap / 1000).toFixed(1)} 秒又恢復` + (away ? '（那時候 iPad 在別的畫面：多工、控制中心或詢問框，不是遊戲卡住）' : '（跳出確認視窗也會這樣）')); }   // 📋 當機紀錄
   const dt = Math.max(0, Math.min(.05, (now - lastFrame) / 1000));
   lastFrame = now;
+  /* 🔇 家長：比賽中怎麼還會有肚子餓的聲音 → 小遊戲／電影開著時，後面房間發出的聲音（肚子餓、寵物叫、說話）一律不放 */
+  const md = loop.modal, cd = loop.card; ROOM_MUTED = !!(md && !md.hidden && cd && (cd.classList.contains('in-game') || cd.classList.contains('in-movie')));
   try { gameStep(dt, now); }
   catch (e) { const k = String(e && e.message); if (!loopErrs.has(k)) { loopErrs.add(k); setTimeout(() => { throw e; }, 0); } }
+  ROOM_MUTED = false;
 })();
 
 // ── 座標換算與點選 ──
