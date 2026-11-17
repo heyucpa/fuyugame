@@ -809,6 +809,8 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .home-sw.emo { border: none; font-size: 26px; line-height: 34px; text-align: center; }
 .art-topic { text-align: center; margin: 10px 0; } .art-topic-ic { font-size: 72px; line-height: 1.1; } .art-topic-t { font-size: 24px; font-weight: 900; color: #b5651d; }
 .art-frame { display: flex; justify-content: center; margin: 4px 0 8px; } .art-frame canvas { border: 8px solid #f2c14e; border-radius: 6px; box-shadow: 0 0 0 3px #b07a1e, 0 4px 10px rgba(0,0,0,.15); }
+.idle-pause { position: fixed; inset: 0; z-index: 9500; background: rgba(40,30,20,.35); display: flex; align-items: center; justify-content: center; }
+.idle-card { background: #fffaf0; border-radius: 22px; padding: 22px 28px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,.25); max-width: 86vw; } .idle-ic { font-size: 54px; } .idle-t { font-size: 22px; font-weight: 900; color: #5a4630; } .idle-s { color: #8a7a66; margin: 4px 0 12px; }
 .lite-ask { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 9000; background: #fff8e6; border: 2px solid #ffb84d; border-radius: 16px; padding: 10px 14px; display: flex; gap: 8px; align-items: center; box-shadow: 0 6px 18px rgba(0,0,0,.18); font-weight: 700; max-width: 92vw; flex-wrap: wrap; justify-content: center; }
 .lite-ask button { font: inherit; border: 0; border-radius: 12px; padding: 6px 12px; background: #ffb84d; color: #fff; cursor: pointer; } .lite-ask button + button { background: #e9e2d6; color: #5a4630; }
 .shop-new { background: #fff6e0; border: 2px dashed #ffb84d; border-radius: 16px; padding: 4px 10px 10px; margin: 6px 0 12px; } .shop-new-sub { font-weight: 800; color: #b5651d; margin: 6px 2px 2px; }
@@ -4142,6 +4144,8 @@ const Sound = (() => {
     const saved = JSON.parse(localStorage.getItem('myHouseAudio') || 'null');
     if (saved) Object.assign(prefs, saved);
   } catch (e) { /* 讀不到就用預設 */ }
+  /* 💻 順暢模式（預設開著）：背景音樂第一次先關掉（家長：都做）；想聽按上面的 🎵 打開，之後照她選的 */
+  try { if (LITE && !localStorage.getItem('myHouseGame_bgmLite')) { prefs.bgm = false; localStorage.setItem('myHouseGame_bgmLite', '1'); localStorage.setItem('myHouseAudio', JSON.stringify(prefs)); } } catch (e) {}
   const savePrefs = () => { try { localStorage.setItem('myHouseAudio', JSON.stringify(prefs)); } catch (e) { /* 忽略 */ } };
 
   /* 瀏覽器規定：要等使用者點過畫面才能出聲。
@@ -4440,6 +4444,7 @@ const Sound = (() => {
   }
   function schedule() {
     if (!ac || ac.state !== 'running') return;
+    if (!prefs.bgm || ducked) return;   // 音樂關著（或暫時靜音）：不要再排音量 0 的音符，白白用處理器
     // 分頁被暫停太久、排程落後時，從頭重新對齊，避免一次擠出一堆音
     // 🎵 家長：音樂會 lag → 排得更前面（1.2 秒）；畫面忙到排程落後時，接著原本那句往下唱，不要整首從頭開始
     if (nextTime < ac.currentTime - .05) { const d = ac.currentTime + .1 - nextTime; nextTime += d; nextBass += d; }
@@ -4516,7 +4521,9 @@ const Sound = (() => {
   }
 
   const setShuffle = on => { prefs.shuffle = !!on; savePrefs(); };
-  return { setShuffle, onAutoSong: f => { onAutoSong = f; }, play, setPref, duck, prefs, nextSong, pickSong, songName, setSpecial, special: () => special, songNames: () => SONGS.map(x => x.name), songCount: SONGS.length,
+  // ⏸️ 沒在玩自動暫停：整個聲音先停（音樂、音效都不跑），回來再繼續
+  function pause(on) { try { if (!ac) return; if (on) ac.suspend(); else if (!document.hidden) ac.resume(); } catch (e) {} }
+  return { setShuffle, onAutoSong: f => { onAutoSong = f; }, play, setPref, duck, pause, prefs, nextSong, pickSong, songName, setSpecial, special: () => special, songNames: () => SONGS.map(x => x.name), songCount: SONGS.length,
            _t: { songAge: () => (ac ? ac.currentTime - songT0 : 0), ageSong: sec => { songT0 -= sec; }, shuffleNow: () => { songT0 = -1e9; maybeShuffle(); }, bgmGain: () => (bgmBus ? bgmBus.gain.value : null), getAc: () => ac, setAc: v => { ac = v; }, songs: SONGS, notes: N } }; // _t：測試用
 })();
 </script>
@@ -5669,6 +5676,8 @@ const NEWS = [
     ['🏃', '學校操場的花豹教練：報名「世界全國跑步大賽」，跳遠＋百米賽跑，簡單就能玩'],
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
     ['🚀', '剛打開遊戲比較不會卡了：畫畫存起來小很多（存檔變成原本的一半以下），打開時的存檔紀錄改到電腦有空的時候才做'],
+    ['⏸️', '好一陣子沒玩（2 分鐘），或切到別的視窗超過 1 分鐘，遊戲會自動暫停、電腦不用一直忙；點一下就繼續'],
+    ['💻', '順暢模式更省力：一秒畫 15 次、大地圖不畫蝴蝶海鷗和騎腳踏車的人、背景音樂先關掉（按上面的 🎵 可以打開）'],
     ['🔇', '大家不會一直說話了：自動念出來和嘰嘰的說話聲預設關掉（對話泡泡還是看得到），想聽可以到「⚙️ 設定」打開'],
     ['💻', '順暢模式現在預設就是開著的（比較順，解析度不變）；房間後面飄落的花瓣、落葉、雪也預設關掉，想要可以到「⚙️ 設定」打開'],
     ['🛬', '機器人飛到房子上面按「降落」，會直接降在門口進去：飛到停機坪降落就坐直升機去爸爸媽媽家'],
@@ -15188,7 +15197,7 @@ function canvasDpr(cssW, cssH) {
 }
 function setLite(on) {
   LITE = !!on; try { localStorage.setItem('myHouseGame_lite', on ? '1' : '0'); } catch (e) {}
-  FRAME_MIN_MS = LITE ? 1000 / 20 - 4 : 1000 / 30 - 4; try { resize(); } catch (e) {}
+  FRAME_MIN_MS = LITE ? 1000 / 15 - 4 : 1000 / 30 - 4; try { resize(); } catch (e) {}
 }
 (function autoQuality() {   // 每 1.5 秒看一次平均一格要多久
   let last = 0, sum = 0, n = 0, t0 = 0, good = 0, maxQ = 1, raisedAt = 0;
@@ -15265,6 +15274,44 @@ try {
     SLOW_FRAMES.sort((a, b) => b.d - a.d); if (SLOW_FRAMES.length > 6) SLOW_FRAMES.length = 6;
   })).observe({ type: 'long-animation-frame', buffered: true });
 } catch (e) {}
+/* ⏸️ 沒在玩就自動暫停（家長：都做）：2 分鐘沒有碰滑鼠／鍵盤／螢幕，或切到別的視窗超過 1 分鐘，
+   房間、大地圖就停止重畫、聲音停掉，蓋一層「休息中」；點一下（或按任何鍵）就繼續。電腦才不會一直被佔著。
+   看電影、休息時間、小遊戲進行中不暫停（不打斷她正在看、正在玩的）。 */
+var IDLE_PAUSED = false;
+var IDLE_MS = navigator.webdriver ? Infinity : 120000, IDLE_BLUR_MS = navigator.webdriver ? Infinity : 60000;   // 自動測試時不暫停（測試可以自己改小）
+let idleLastInput = performance.now(), idleBlurAt = 0;
+function idleBusy() {
+  try {
+    if (typeof resting !== 'undefined' && resting) return true;
+    const c = document.getElementById('modalCard'), md = document.getElementById('modal');
+    if (md && !md.hidden && c && (c.classList.contains('in-movie') || c.classList.contains('in-game'))) return true;
+  } catch (e) {}
+  return false;
+}
+function idlePause() {
+  if (IDLE_PAUSED || idleBusy()) return;
+  IDLE_PAUSED = true; try { crashCrumb('沒在玩，自動暫停'); } catch (e) {}
+  try { Sound.pause(true); } catch (e) {}
+  const ov = document.createElement('div'); ov.id = 'idlePause'; ov.className = 'idle-pause';
+  ov.innerHTML = '<div class="idle-card"><div class="idle-ic">⏸️</div><div class="idle-t">遊戲先暫停了</div><div class="idle-s">好一陣子沒有玩，先讓電腦休息一下</div><button class="big">▶️ 繼續玩</button></div>';
+  ov.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); idleResume(); });
+  document.body.appendChild(ov);
+}
+function idleResume() {
+  if (!IDLE_PAUSED) return;
+  IDLE_PAUSED = false; idleLastInput = performance.now(); idleBlurAt = 0;
+  const ov = document.getElementById('idlePause'); if (ov) ov.remove();
+  try { Sound.pause(false); } catch (e) {}
+}
+['pointerdown', 'keydown', 'wheel', 'touchstart', 'pointermove'].forEach(k => window.addEventListener(k, () => { idleLastInput = performance.now(); if (IDLE_PAUSED && k !== 'pointermove') idleResume(); }, { capture: true, passive: true }));
+window.addEventListener('blur', () => { idleBlurAt = performance.now(); });
+window.addEventListener('focus', () => { idleBlurAt = 0; idleLastInput = performance.now(); });
+setInterval(() => {
+  if (IDLE_PAUSED || document.hidden) return;
+  const now = performance.now();
+  if (idleBusy()) { idleLastInput = now; return; }
+  if (now - idleLastInput > IDLE_MS || (idleBlurAt && now - idleBlurAt > IDLE_BLUR_MS)) idlePause();
+}, 5000);
 function liteSuggest() {   // 一天最多問一次
   try { const k = 'myHouseGame_liteAsked', d = new Date().toDateString(); if (localStorage.getItem(k) === d || document.getElementById('liteAsk')) return; localStorage.setItem(k, d); } catch (e) { return; }
   const bar = document.createElement('div'); bar.id = 'liteAsk'; bar.className = 'lite-ask';
@@ -15631,11 +15678,11 @@ function gameStep(dt, now) {
 }
 // 先排下一幀再畫：某一幀出錯（例如後面的 <script> 還沒載入完）也不會讓整個遊戲停住；錯誤照樣報出來（同一種只報一次）
 const loopErrs = new Set();
-var FRAME_MIN_MS = LITE ? 1000 / 20 - 4 : 1000 / 30 - 4;   // 順暢模式一秒 20 次   // 房間、小島最多一秒畫 30 次（留 4 毫秒誤差，60Hz 螢幕剛好隔一格）
+var FRAME_MIN_MS = LITE ? 1000 / 15 - 4 : 1000 / 30 - 4;   // 順暢模式一秒 15 次   // 房間、小島最多一秒畫 30 次（留 4 毫秒誤差，60Hz 螢幕剛好隔一格）
 (function loop(now) {
   requestAnimationFrame(loop);
   now = now || performance.now();
-  if (document.hidden) { lastFrame = now; return; }   // 切到別的 App、分頁在背景：不要繼續畫、也不要補一大段
+  if (document.hidden || IDLE_PAUSED) { lastFrame = now; return; }   // 切到別的 App、分頁在背景、⏸️ 沒在玩自動暫停：不要繼續畫、也不要補一大段
   /* 🐢 房間一秒畫 30 次就夠順（家長：還有其他可以更快、避免卡卡的嗎）：工作量少一半，iPad 比較不燙、不卡。
      螢幕 60 格就隔一格畫一次；本來就比較慢的機器不受影響。小遊戲有自己的迴圈，照樣 60 格。 */
   if (now - lastFrame < FRAME_MIN_MS) return;
@@ -22376,18 +22423,18 @@ function islStep(dt) {
       if (d <= sp) { q.x = px; q.y = py; q.path.shift(); } else { q.f = px > q.x ? 1 : -1; q.x += (px - q.x) / d * sp; q.y += (py - q.y) / d * sp; }
     } else { q.wait -= dt; if (q.wait <= 0) { q.wait = 2 + Math.random() * 4; const gx = Math.floor(q.x) + Math.floor(Math.random() * 9) - 4, gy = Math.floor(q.y) + Math.floor(Math.random() * 7) - 3; if (islPass(m, gx, gy)) { const pth = islFindPath(m, Math.floor(q.x), Math.floor(q.y), (x, y) => x === gx && y === gy); if (pth && pth.length < 14) q.path = pth; } } }
   });
-  isl.gulls.forEach(g => {
+  if (!LITE) isl.gulls.forEach(g => {
     g.ph += dt * 2; g.x += g.vx * dt * (g.scared > 0 ? 3 : 1); g.y += Math.sin(g.ph) * dt * .6; g.scared = Math.max(0, g.scared - dt);
     if (g.x < -4) g.x = ISL.W + 3; if (g.x > ISL.W + 4) g.x = -3;
   });
-  isl.critters.forEach(c => {
+  if (!LITE) isl.critters.forEach(c => {
     c.ph += dt * 3; c.hop = Math.max(0, c.hop - dt * 2.5);
     if (c.fly) { c.x += (c.tx - c.x) * dt * .9; c.y += (c.ty - c.y) * dt * .9; c.wait -= dt; if (c.wait <= 0 || Math.hypot(c.tx - c.x, c.ty - c.y) < .2) { c.wait = 2 + Math.random() * 3; let nx = c.x + (Math.random() - .5) * 8, ny = c.y + (Math.random() - .5) * 6; if (islPass(m, Math.floor(nx), Math.floor(ny))) { c.tx = nx; c.ty = ny; } } c.f = c.tx > c.x ? 1 : -1; return; }
     const d = Math.hypot(c.tx - c.x, c.ty - c.y);
     if (d > .05) { const sp = Math.min(d, 2.2 * dt); c.x += (c.tx - c.x) / d * sp; c.y += (c.ty - c.y) / d * sp; if (!c.hop) c.hop = .6; }
     else { c.wait -= dt; if (c.wait <= 0) { c.wait = 1.5 + Math.random() * 4; const nx = Math.floor(c.x) + Math.floor(Math.random() * 5) - 2, ny = Math.floor(c.y) + Math.floor(Math.random() * 5) - 2; if (islPass(m, nx, ny) && !m.path[ny][nx] && !m.beach[ny][nx]) { c.tx = nx + .5; c.ty = ny + .5; c.f = c.tx > c.x ? 1 : -1; } } }
   });
-  if (isl.bike) { const b = isl.bike;
+  if (isl.bike && !LITE) { const b = isl.bike;
     if (b.path.length) { const [tx, ty] = b.path[0], px = tx + .5, py = ty + .5, d = Math.hypot(px - b.x, py - b.y), sp = 3.6 * dt; if (d <= sp) { b.x = px; b.y = py; b.path.shift(); } else { b.f = px > b.x ? 1 : -1; b.x += (px - b.x) / d * sp; b.y += (py - b.y) / d * sp; } }
     else { b.wait -= dt; if (b.wait <= 0) { b.wait = 1 + Math.random() * 2; const tiles = []; for (let y = 0; y < m.H; y++) for (let x = 0; x < m.W; x++) if (m.path[y][x] && islPass(m, x, y)) tiles.push([x, y]); const g = tiles[Math.floor(Math.random() * tiles.length)]; if (g) { const pth = islFindPath(m, Math.floor(b.x), Math.floor(b.y), (x, y) => x === g[0] && y === g[1]); if (pth) b.path = pth.filter(([x, y]) => m.path[y][x]).length === pth.length ? pth : pth.slice(0, 6); } } } }
   // 💰 走過金幣就撿起來（不用點）
@@ -22504,7 +22551,7 @@ function islDrawGround(ctx, m, x0, x1, y0, y1, tt) {
 function islFrame(now) {
   if (!isl) return;
   now = now || performance.now();
-  if (document.hidden) { isl.last = now; isl.raf = requestAnimationFrame(islFrame); return; }
+  if (document.hidden || IDLE_PAUSED) { isl.last = now; isl.raf = requestAnimationFrame(islFrame); return; }
   if (now - isl.last < FRAME_MIN_MS) { isl.raf = requestAnimationFrame(islFrame); return; }   // 🐢 小島也是一秒 30 次
   const dt = Math.min(.05, (now - isl.last) / 1000); isl.last = now; isl.t += dt;
   if (resting) { closeIsland(); return; }
@@ -22674,8 +22721,8 @@ function islDraw(now) {
   if (!isEgg()) items.push({ y: isl.pet.y * T, draw: () => islDrawPet(ctx) });
   if (halloweenActive()) ISL_PUMPKINS.forEach(([x, y], i) => items.push({ y: (y + 1) * T, draw: () => islDrawPumpkin(ctx, x, y, i, now) }));
   ISL_LAMPS.forEach(([x, y]) => items.push({ y: (y + 1) * T, draw: () => islDrawLamp(ctx, x, y) }));
-  isl.critters.forEach(c => items.push({ y: (c.fly ? c.y - 1.5 : c.y) * T, draw: () => islDrawCritter(ctx, c) }));
-  if (isl.bike) items.push({ y: isl.bike.y * T, draw: () => islDrawBike(ctx, isl.bike, now) });
+  if (!LITE) isl.critters.forEach(c => items.push({ y: (c.fly ? c.y - 1.5 : c.y) * T, draw: () => islDrawCritter(ctx, c) }));   // 💻 順暢模式：蝴蝶、小動物、騎腳踏車的人、海鷗不畫
+  if (isl.bike && !LITE) items.push({ y: isl.bike.y * T, draw: () => islDrawBike(ctx, isl.bike, now) });
   if (typeof islReqGuideDraw === 'function') items.push({ y: 1e9, draw: () => islReqGuideDraw(ctx, now) });   // 👇 任務的小手指
   (m.specials || []).forEach(sp => items.push({ y: (sp.y + 1) * T, draw: () => islDrawSpecial(ctx, sp, now) }));
   items.push({ y: -999, draw: () => islDrawSkyIsle(ctx, now) });   // ☁️ 天空島（在雲裡，坐直升機才上得去）
@@ -23110,7 +23157,7 @@ function islDrawPumpkin(ctx, x, y, i, now) {
 }
 function islDrawFx(ctx, now) {
   const T = ISL.T;
-  isl.gulls.forEach(g => {   // 海鷗：高高飛在島的上面，翅膀一拍一拍
+  if (!LITE) isl.gulls.forEach(g => {   // 海鷗：高高飛在島的上面，翅膀一拍一拍
     const px = g.x * T, py = g.y * T, w = Math.sin(g.ph * 5) * 5;
     ctx.fillStyle = 'rgba(40,60,30,.1)'; ctx.beginPath(); ctx.ellipse(px, py + 26, 8, 3, 0, 0, 7); ctx.fill();
     ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(px - 12, py + w); ctx.quadraticCurveTo(px - 5, py - 6, px, py); ctx.quadraticCurveTo(px + 5, py - 6, px + 12, py + w); ctx.stroke();
