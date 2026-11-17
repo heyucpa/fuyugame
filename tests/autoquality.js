@@ -13,7 +13,7 @@ const path = require('path');
     const cdp = await ctx.newCDPSession(p); await cdp.send('Emulation.setCPUThrottlingRate', { rate: 8 });
     await p.evaluate(() => { document.getElementById('modal').hidden = true; try { openIsland(); } catch (e) {} });
     let q = 1; for (let k = 0; k < 20 && q >= 1; k++) { await p.waitForTimeout(1000); q = await p.evaluate(() => VIEW_Q); }
-    o.dropsWhenSlow = q < 1 && q >= .55;
+    o.dropsWhenSlow = q < 1 && q >= .75;   // 最多降到 75%
     await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
     o.noErr1 = !errs.length; await ctx.close();
   }

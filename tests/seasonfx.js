@@ -1,4 +1,4 @@
-// 🍂 四季裝飾＋🎊 彩帶：每天換一季（春夏秋冬輪流）；四季都畫得出來不出錯；設定可以關；存檔驗證；慶祝的大事會撒彩帶、普通的新東西不會；彩帶不擋點擊
+// 🍂 四季裝飾＋🎊 彩帶：每天換一季（春夏秋冬輪流）；四季都畫得出來不出錯；飄落效果預設關掉、設定可以打開；存檔驗證；慶祝的大事會撒彩帶、普通的新東西不會；彩帶不擋點擊
 const { chromium } = require('playwright');
 const path = require('path');
 (async () => {
@@ -17,10 +17,10 @@ const path = require('path');
     o.sameDay = m([6, 3]) === m([6, 3]) && m([6, 3]) !== m([6, 4]);
     for (const md of [[4, 1], [7, 1], [10, 1], [1, 1]]) { SEASON_TODAY = md; draw(); await wait(80); }
     o.drew = true;
-    openTab('save'); await wait(200); const btn = [...document.querySelectorAll('#tabBody button')].find(x => /季節裝飾/.test(x.textContent)); btn.click(); o.off = G.noSeasonFx === 1;
-    saveGame(); o.saved = JSON.parse(localStorage.getItem(SAVE_KEY)).noSeasonFx === 1; draw();
-    [...document.querySelectorAll('#tabBody button')].find(x => /季節裝飾/.test(x.textContent)).click(); o.on = !G.noSeasonFx; openTab('inv');
-    o.bad = normalizeSave(Object.assign({}, JSON.parse(localStorage.getItem(SAVE_KEY)), { noSeasonFx: 'x' })).noSeasonFx == null;
+    openTab('save'); await wait(200); o.defaultOff = G.seasonFx !== 1; const btn = [...document.querySelectorAll('#tabBody button')].find(x => /飄落效果/.test(x.textContent)); btn.click(); o.off = G.seasonFx === 1;   // 預設關掉，按一下打開
+    saveGame(); o.saved = JSON.parse(localStorage.getItem(SAVE_KEY)).seasonFx === 1; draw();
+    [...document.querySelectorAll('#tabBody button')].find(x => /飄落效果/.test(x.textContent)).click(); o.on = G.seasonFx !== 1; openTab('inv');
+    o.bad = normalizeSave(Object.assign({}, JSON.parse(localStorage.getItem(SAVE_KEY)), { seasonFx: 'x', noSeasonFx: 'x' })).seasonFx == null;
     SEASON_TODAY = null;
     // 彩帶
     document.querySelectorAll('.confetti-cv,#showcase').forEach(x => x.remove()); SC_QUEUE.length = 0;

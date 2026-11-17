@@ -5668,7 +5668,7 @@ const NEWS = [
     ['🏃', '學校操場的花豹教練：報名「世界全國跑步大賽」，跳遠＋百米賽跑，簡單就能玩'],
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
     ['🚀', '剛打開遊戲比較不會卡了：畫畫存起來小很多（存檔變成原本的一半以下），打開時的存檔紀錄改到電腦有空的時候才做'],
-    ['💻', '順暢模式現在預設就是開著的（比較順）；想要畫面更細緻，可以到「⚙️ 設定」關掉'],
+    ['💻', '順暢模式現在預設就是開著的（比較順，解析度不變）；房間後面飄落的花瓣、落葉、雪也預設關掉，想要可以到「⚙️ 設定」打開'],
     ['🛬', '機器人飛到房子上面按「降落」，會直接降在門口進去：飛到停機坪降落就坐直升機去爸爸媽媽家'],
     ['🚪', '出門到大地圖的時候，家裡不會有訪客來敲門了'],
     ['📊', '「⚙️ 設定」多了「📊 效能檢查」：量量看這台電腦順不順，可以複製給爸爸媽媽看'],
@@ -6741,7 +6741,8 @@ function normalizeSave(g) {
     else { const st = out.star; st.got = Array.isArray(st.got) ? [...new Set(st.got.filter(w => Number.isInteger(w) && w >= 1 && w <= 6))].sort((a, b) => a - b) : []; ['egg', 'hatched'].forEach(k => { if (st[k] != null && st[k] !== 1) delete st[k]; }); } }
   if (out.enLearn != null) { if (!isObj(out.enLearn)) delete out.enLearn; else out.enLearn = Object.fromEntries(Object.entries(out.enLearn).filter(([k, v]) => k.length <= 30 && /^[A-Za-z ]+$/.test(k) && v === 1)); }   // 🔤 學過的英文單字
   if (out.cloudKing != null && !(isObj(out.cloudKing) && Number.isInteger(out.cloudKing.beat) && out.cloudKing.beat >= 0 && out.cloudKing.beat < 1e6)) delete out.cloudKing;   // ☁️ 打倒烏雲大王幾次
-  if (out.noSeasonFx != null && out.noSeasonFx !== 1) delete out.noSeasonFx;   // 🍂 關掉季節裝飾
+  if (out.noSeasonFx != null && out.noSeasonFx !== 1) delete out.noSeasonFx;   // 🍂 舊的「關掉季節裝飾」（現在預設就是關的，留著不會壞）
+  if (out.seasonFx != null && out.seasonFx !== 1) delete out.seasonFx;   // 🍂 自己打開了飄落效果
   if (out.par != null) { if (!isObj(out.par)) delete out.par; else Object.keys(out.par).forEach(k => { if (!['meal', 'story', 'lift', 'kite'].includes(k) || typeof out.par[k] !== 'string' || out.par[k].length > 12) delete out.par[k]; }); }   // 👨👩 天空島每天一次的事
   if (out.famVisit != null) { if (!isObj(out.famVisit)) delete out.famVisit; else Object.keys(out.famVisit).forEach(k => { if (!['uncle', 'grandma'].includes(k) || !(Number.isInteger(out.famVisit[k]) && out.famVisit[k] >= 0 && out.famVisit[k] < 1e5)) delete out.famVisit[k]; }); }   // ⑧ 拜訪阿婆、叔叔的次數
   if (out.home != null) {   // 🏡 房子外觀
@@ -15181,7 +15182,7 @@ function canvasDpr(cssW, cssH) {
     const cap = 1920 * 1080;
     if (w * h * dpr * dpr > cap) dpr = Math.max(0.75, Math.sqrt(cap / (w * h)));
   }
-  return Math.max(.5, dpr * (LITE ? Math.min(VIEW_Q, .7) : VIEW_Q));
+  return Math.max(.5, dpr * VIEW_Q);   // 家長：順暢模式解析度變好差 → 順暢模式不再壓解析度（只少畫幾格、不畫飄落效果）
 }
 function setLite(on) {
   LITE = !!on; try { localStorage.setItem('myHouseGame_lite', on ? '1' : '0'); } catch (e) {}
@@ -15197,10 +15198,10 @@ function setLite(on) {
     last = now; if (!t0) t0 = now;
     if (now - t0 < 1500 || n < 5) return;
     const avg = sum / n; sum = 0; n = 0; t0 = now;
-    if (avg > 40 && VIEW_Q <= .55 && !LITE) { if (++tick.slow >= 6) { tick.slow = 0; liteSuggest(); } } else tick.slow = 0;   // 降到最低還是很慢：問要不要打開順暢模式
-    if (avg > 25 && VIEW_Q > .55) {   // 一秒不到 40 格就降一點（家長的筆電：平均 29 毫秒一格、還是 100% 畫質）
-      if (now - raisedAt < 8000) maxQ = Math.max(.55, VIEW_Q - .1);   // 剛調高就又變慢：不要再調到這麼高
-      VIEW_Q = Math.max(.55, Math.round((VIEW_Q - .15) * 100) / 100); good = 0; apply();
+    if (avg > 40 && VIEW_Q <= .75 && !LITE) { if (++tick.slow >= 6) { tick.slow = 0; liteSuggest(); } } else tick.slow = 0;   // 降到最低還是很慢：問要不要打開順暢模式
+    if (avg > 30 && VIEW_Q > .75) {   // 真的很慢（一秒不到 33 格）才降，最多降到 75%（家長：解析度太差）
+      if (now - raisedAt < 8000) maxQ = Math.max(.75, VIEW_Q - .1);   // 剛調高就又變慢：不要再調到這麼高
+      VIEW_Q = Math.max(.75, Math.round((VIEW_Q - .1) * 100) / 100); good = 0; apply();
     } else if (avg < 18 && VIEW_Q < maxQ) {   // 很順：連續 12 秒左右再慢慢調回來
       if (++good >= 8) { VIEW_Q = Math.min(maxQ, Math.round((VIEW_Q + .1) * 100) / 100); good = 0; raisedAt = now; apply(); }
     } else good = 0;
@@ -15363,7 +15364,7 @@ function seasonOfMonth() {
    存檔裡的 G.noSeasonFx 照樣讀得進來、不會壞。 */
 var SEASON_FX_ON = true;   // 家長：量過幾乎不影響速度（只佔 0.1～0.3%）→ 打開回來
 function drawSeasonBack(g, dpr, sea, now) {
-  if (!SEASON_FX_ON || G.noSeasonFx) return;
+  if (!SEASON_FX_ON || G.seasonFx !== 1) return;   // 家長：飄落效果預設關掉 → 要在設定裡自己打開（G.seasonFx = 1）才畫
   const W = g.canvas.width / dpr, H = g.canvas.height / dpr, t = now / 1000;
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
   for (let i = 0; i < 22; i++) {
@@ -18344,7 +18345,7 @@ function tabSave(body) {
   body.appendChild(upd);
   body.appendChild(note('按了不會動到任何進度，只是把遊戲本身重新下載。'));
   body.appendChild(h3('💻 順暢模式'));
-  body.appendChild(note('電腦玩起來卡卡的時候打開：畫面一秒少畫幾格、解析度低一點、不畫飄落的花瓣和雪、不放開場動畫。只影響這台機器，不會動到進度。'));
+  body.appendChild(note('預設開著：畫面一秒少畫幾格、不放開場動畫（解析度不變）。只影響這台機器，不會動到進度。'));
   { const pc = el('button', 'mini', '📊 效能檢查（量量看這台電腦順不順）'); pc.onclick = () => openPerfCheck(); body.appendChild(pc); }
   { const lb = el('button', 'big' + (LITE ? '' : ' alt'), LITE ? '✅ 順暢模式：開著（按一下關掉）' : '💻 打開順暢模式'); lb.onclick = () => { setLite(!LITE); Sound.play('click'); toast(LITE ? '💻 順暢模式打開了' : '順暢模式關掉了'); renderTab(); }; body.appendChild(lb); }
   const nb = el('button', 'mini', '📜 更新紀錄（以前更新了什麼）');
@@ -18352,8 +18353,8 @@ function tabSave(body) {
   body.appendChild(nb);
   { const n = crashLogGet().length, cb = el('button', 'mini', `📋 當機紀錄（${n} 筆）`);   // 家長：常常當機 → 記下來複製給開發的人看
     cb.onclick = () => openCrashLog(); body.appendChild(cb); }
-  if (SEASON_FX_ON) { const sfx = el('button', 'mini', G.noSeasonFx ? '🍂 打開房間後面的季節裝飾' : '🍂 關掉房間後面的季節裝飾（花瓣、落葉、雪）');   // 美編：四季裝飾，嫌眼花可以關
-  sfx.onclick = () => { G.noSeasonFx = G.noSeasonFx ? undefined : 1; saveGame(); renderTab(); };
+  if (SEASON_FX_ON) { const sfx = el('button', 'mini', G.seasonFx === 1 ? '🍂 關掉房間後面的飄落效果（花瓣、落葉、雪）' : '🍂 打開房間後面的飄落效果（花瓣、落葉、雪）');   // 家長：預設關掉，想要再打開
+  sfx.onclick = () => { G.seasonFx = G.seasonFx === 1 ? undefined : 1; saveGame(); renderTab(); };
   body.appendChild(sfx); }
   const rp = el('button', 'mini', '↩️ 小卡、📷、💡 位置歸位');
   rp.title = '小卡和按鈕可以拖到喜歡的地方；拖亂了按這裡放回原位';

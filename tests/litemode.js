@@ -14,7 +14,7 @@ const path = require('path');
     const btn = [...document.querySelectorAll('#tabBody button')].find(x => /順暢模式/.test(x.textContent)); o.hasToggle = !!btn;
     btn.click(); await new Promise(r => setTimeout(r, 100));
     o.on = LITE === true && localStorage.getItem('myHouseGame_lite') === '1' && FRAME_MIN_MS > 40;
-    VIEW_Q = 1; o.capped = Math.abs(canvasDpr(400, 300) - 1.5 * .7) < .01;
+    VIEW_Q = 1; o.sharp = Math.abs(canvasDpr(400, 300) - 1.5) < .01;   // 順暢模式不壓解析度
     return o;
   }));
   // 真的使用者（不是自動測試）沒選過：預設開著
@@ -24,7 +24,7 @@ const path = require('path');
   o.remembered = await p.evaluate(() => LITE === true && !document.getElementById('intro'));
   o.offAgain = await p.evaluate(() => { setLite(false); return LITE === false && localStorage.getItem('myHouseGame_lite') === '0' && FRAME_MIN_MS < 30; });
   // 電腦很慢：會跳出問要不要打開
-  await p.evaluate(() => { localStorage.removeItem('myHouseGame_liteAsked'); VIEW_Q = .55; });
+  await p.evaluate(() => { localStorage.removeItem('myHouseGame_liteAsked'); VIEW_Q = .75; });
   const cdp = await ctx.newCDPSession(p); await cdp.send('Emulation.setCPUThrottlingRate', { rate: 20 });
   let asked = false; for (let k = 0; k < 40 && !asked; k++) { await p.waitForTimeout(1000); asked = await p.evaluate(() => !!document.getElementById('liteAsk')); }
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
