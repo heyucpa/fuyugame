@@ -4261,6 +4261,7 @@ const Sound = (() => {
     starPop() { noise({ dur: .08, vol: .22, freq: 2600 }); [523, 659, 880, 1175, 1568].forEach((f, i) => tone({ f0: f, dur: .15, type: 'triangle', vol: .24, at: .06 + i * .07 })); tone({ f0: 1760, dur: .42, type: 'sine', vol: .12, at: .42 }); },
     // 小可愛說話：像動物森友會那樣的嘰哩咕嚕
     talk(text) {
+      try { if (typeof voiceOn === 'function' && !voiceOn()) return; } catch (e) {}   // 說話音效跟「自動念出來」一起開關（預設關）
       const n = Math.min(7, Math.max(2, Math.ceil((text || '').length / 3)));
       for (let i = 0; i < n; i++) tone({ f0: 520 + Math.random() * 260, dur: .06, type: 'triangle', vol: .16, at: i * .075 });
     }
@@ -5668,6 +5669,7 @@ const NEWS = [
     ['🏃', '學校操場的花豹教練：報名「世界全國跑步大賽」，跳遠＋百米賽跑，簡單就能玩'],
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
     ['🚀', '剛打開遊戲比較不會卡了：畫畫存起來小很多（存檔變成原本的一半以下），打開時的存檔紀錄改到電腦有空的時候才做'],
+    ['🔇', '大家不會一直說話了：自動念出來和嘰嘰的說話聲預設關掉（對話泡泡還是看得到），想聽可以到「⚙️ 設定」打開'],
     ['💻', '順暢模式現在預設就是開著的（比較順，解析度不變）；房間後面飄落的花瓣、落葉、雪也預設關掉，想要可以到「⚙️ 設定」打開'],
     ['🛬', '機器人飛到房子上面按「降落」，會直接降在門口進去：飛到停機坪降落就坐直升機去爸爸媽媽家'],
     ['🚪', '出門到大地圖的時候，家裡不會有訪客來敲門了'],
@@ -31917,7 +31919,8 @@ try { if (typeof speechSynthesis !== 'undefined') { speechSynthesis.getVoices();
 /* 🔇 自動念出來可以關掉（家長：小女兒沒在聽）。存在這台裝置上（姊姊的 iPad、妹妹的電腦各自設定）。
    關掉以後：遊戲自己念的都不念；她自己按 🔊、長按按鈕、試聽語音還是會念；英文單字的念法不受影響。 */
 const VOICE_ON_KEY = 'myHouse_voiceOn';
-function voiceOn() { try { return localStorage.getItem(VOICE_ON_KEY) !== '0'; } catch (e) { return true; } }
+/* 家長：不用一直說話 → 預設不自動念（也不發出嘰嘰的說話音效）；設定裡打開才會念。自己按 🔊 還是會念 */
+function voiceOn() { try { return localStorage.getItem(VOICE_ON_KEY) === '1'; } catch (e) { return false; } }
 function setVoiceOn(on) { try { localStorage.setItem(VOICE_ON_KEY, on ? '1' : '0'); } catch (e) {} if (!on) stopSpeak(); }
 /* 🗣️ 念中文／念英文（家長：iPad 的中文聲音像大陸腔 → 可以調成英文：常用的話改用英文念，畫面的字還是中文）
    設定裡切換，記在這台機器（myHouse_voiceLang：zh／en，預設中文）。

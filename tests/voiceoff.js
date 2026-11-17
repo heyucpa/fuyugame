@@ -16,21 +16,23 @@ const path = require('path');
   const out = await p.evaluate(async () => {
     const wait = ms => new Promise(r => setTimeout(r, ms)), o = {};
     G.guide = 'done'; $('#modal').hidden = true;
-    o.defaultOn = voiceOn();
-    __said.length = 0; speak('自動念'); o.onSays = __said.length === 1;
+    // 家長：不用一直說話 → 預設關掉；按一下打開、再按一下關掉
+    o.defaultOff = !voiceOn();
+    __said.length = 0; speak('自動念'); o.defaultSilent = __said.length === 0;
     openTab('save'); await wait(100);
     const btn = [...document.querySelectorAll('#tabBody button')].find(x => /自動念出來/.test(x.textContent)); o.hasToggle = !!btn;
-    btn.click(); await wait(100); o.off = !voiceOn();
+    btn.click(); await wait(100); o.on = voiceOn();
+    __said.length = 0; speak('自動念'); o.onSays = __said.length === 1;
+    [...document.querySelectorAll('#tabBody button')].find(x => /自動念出來/.test(x.textContent)).click(); await wait(100); o.off = !voiceOn();
     o.label = [...document.querySelectorAll('#tabBody button')].find(x => /自動念出來/.test(x.textContent)).textContent;
     __said.length = 0; speak('自動念'); o.offSilent = __said.length === 0;
     speakPlain('她自己按的'); o.askedSays = __said.includes('她自己按的');
     __said.length = 0; enSpeak('apple'); o.english = __said.length === 1;
     o.saved = localStorage.getItem('myHouse_voiceOn') === '0';
-    [...document.querySelectorAll('#tabBody button')].find(x => /自動念出來/.test(x.textContent)).click(); o.backOn = voiceOn();
     return o;
   });
   console.log(JSON.stringify(out));
-  const ok = out.defaultOn && out.onSays && out.hasToggle && out.off && /關/.test(out.label) && out.offSilent && out.askedSays && out.english && out.saved && out.backOn && !errs.length;
+  const ok = out.defaultOff && out.defaultSilent && out.hasToggle && out.on && out.onSays && out.off && /關/.test(out.label) && out.offSilent && out.askedSays && out.english && out.saved && !errs.length;
   console.log(ok ? '✅ 全部通過' : '❌ 有問題 ' + errs.join(' | '));
   await b.close();
 })();
