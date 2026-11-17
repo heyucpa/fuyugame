@@ -29,7 +29,16 @@ const path = require('path');
     o.noDoorWhileFlying = !entered && !!isl;
     // 換腳踏車：在陸地上（門口）可以，會自動降落
     G.ride = 'bike'; islRideBtn(); o.switchLands = !isl.fly.on && document.getElementById('islFly').hidden;
-    closeIsland && closeIsland();
+    // 🏠 飛到停機坪上面按降落：直接去爸爸媽媽家
+    try { closeIsland(); } catch (e) {} await wait(400); G.away = null; G.guide = 'done'; G.ride = 'robot'; document.getElementById('modal').hidden = true; document.querySelectorAll('#showcase').forEach(x => x.remove()); for (let k = 0; k < 10 && !isl; k++) { openIsland(); await wait(400); }
+    islToggleFly(); const hp = isl.m.blds.find(bd => bd.id === 'helipad');
+    isl.flyTo = [hp.x + hp.w / 2, hp.y + hp.h / 2]; for (let k = 0; k < 600 && isl.flyTo; k++) islStep(.05);
+    islToggleFly(); for (let k = 0; k < 40 && !(G.away && G.away.place === 'sky'); k++) await wait(250);
+    o.landHelipad = !isl && G.away && G.away.place === 'sky';
+    // 👥 在大地圖上：家裡不會有訪客
+    G.away = null; try { closeIsland(); } catch (e) {} openIsland(); await wait(500);
+    vis.nextAt = performance.now() - 1; visitorTick(.016, performance.now()); o.noVisitorOnIsland = !vis.who && vis.nextAt > performance.now() + 50000;
+    try { closeIsland(); } catch (e) {}
     return o;
   });
   const ok = Object.values(o).every(v => v === true) && !errs.length;

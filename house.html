@@ -5667,6 +5667,9 @@ const NEWS = [
     ['🏃', '學校操場的花豹教練：報名「世界全國跑步大賽」，跳遠＋百米賽跑，簡單就能玩'],
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
     ['🚀', '剛打開遊戲比較不會卡了：畫畫存起來小很多（存檔變成原本的一半以下），打開時的存檔紀錄改到電腦有空的時候才做'],
+    ['🛬', '機器人飛到房子上面按「降落」，會直接降在門口進去：飛到停機坪降落就坐直升機去爸爸媽媽家'],
+    ['🚪', '出門到大地圖的時候，家裡不會有訪客來敲門了'],
+    ['📊', '「⚙️ 設定」多了「📊 效能檢查」：量量看這台電腦順不順，可以複製給爸爸媽媽看'],
     ['💻', '新的「順暢模式」：電腦玩起來卡卡的話，到「⚙️ 設定」打開，畫面會變得比較輕；遊戲發現電腦很慢也會問你要不要打開'],
     ['🛋️', '原木、現代、自然、衛浴也都擴充到 40 件以上：原木大餐桌、木琴、咕咕鐘、中島廚房、電競椅、室內大樹、吊床、石燈籠、貓腳浴缸、牙刷杯（會刷牙）、泡泡機…'],
     ['🍰', '甜點風格擴充到 40 件：棉花糖沙發、杯子蛋糕床、薑餅屋、巧克力噴泉、三層蛋糕架、爆米花機、甜甜圈掛鐘…'],
@@ -12087,6 +12090,8 @@ function visitorGift() {
 
 // ── 每一幀 ──
 function visitorTick(dt, now) {
+  /* 家長：出門的時候，家裡不會有訪客 → 在大地圖（小島）上也算出門：正在玩的鄰居先回家，回家後至少一分鐘才會有人來 */
+  if (!G.away && typeof isl !== 'undefined' && isl) { if (vis.who) visitorGone(now); vis.nextAt = Math.max(vis.nextAt, now + 60000); return; }
   if (G.away) { // 去親戚家時鄰居不會來；正在玩的鄰居先回家
     if (vis.who) visitorGone(now);
     else vis.nextAt = Math.max(vis.nextAt, now + 60000);
@@ -15187,6 +15192,47 @@ function setLite(on) {
   tick.slow = 0;
   requestAnimationFrame(tick);
 })();
+/* 📊 顯示晶片：Chrome 沒有用顯示晶片（圖形加速關掉、或顯示晶片出過錯改用處理器畫）的時候，所有畫面都會很慢。
+   查 WebGL 的 renderer 名字：SwiftShader / llvmpipe / Microsoft Basic Render 都是「用處理器硬畫」。 */
+function gfxInfo() {
+  const o = { gl: false, renderer: '', soft: false };
+  try { const c = document.createElement('canvas'), gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+    if (gl) { o.gl = true; const ext = gl.getExtension('WEBGL_debug_renderer_info'); o.renderer = String(ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)).slice(0, 120); try { const lose = gl.getExtension('WEBGL_lose_context'); if (lose) lose.loseContext(); } catch (e) {} }
+  } catch (e) {}
+  o.soft = !o.gl || /swiftshader|llvmpipe|basic render|software|softpipe/i.test(o.renderer);
+  return o;
+}
+// 第一次發現是「用處理器硬畫」而且家長還沒自己選過：自動打開順暢模式
+setTimeout(() => { try { const gi = gfxInfo(); window.GFX = gi; if (gi.soft && !navigator.webdriver && localStorage.getItem('myHouseGame_lite') == null) { setLite(true); toast('💻 這台電腦畫圖比較慢，自動打開了「順暢模式」（可以到 ⚙️ 設定 關掉）'); } } catch (e) {} }, 4000);
+// 📊 效能檢查：量 5 秒，列出這台電腦的狀況，可以複製給幫忙改遊戲的人
+function openPerfCheck() {
+  const card = $('#modalCard'); card.classList.remove('game-card', 'in-game', 'game-big'); card.innerHTML = '';
+  card.appendChild(el('h2', '', '📊 效能檢查'));
+  const info = el('pre', 'crash-box', '正在量，請等 5 秒，這段時間不要動…'); card.appendChild(info);
+  const close = el('button', 'big alt', '關掉'); close.onclick = () => { $('#modal').hidden = true; }; card.appendChild(close);
+  $('#modal').hidden = false; $('#modal').hidden = true;   // 量的時候把視窗收起來，量的是平常玩的畫面
+  const fr = []; let last = performance.now(); const t0 = last;
+  (function f(n) { fr.push(n - last); last = n; if (n - t0 < 5000) requestAnimationFrame(f); else done(); })(performance.now());
+  function done() {
+    fr.shift(); const a = fr.slice().sort((x, y) => x - y), avg = a.reduce((x, y) => x + y, 0) / Math.max(1, a.length);
+    const gi = gfxInfo(), cv = document.getElementById('view'), lm = new Date(document.lastModified);
+    const lines = [
+      `一秒幾格：${Math.round(1000 / avg)}（最慢的一格 ${Math.round(a[a.length - 1] || 0)} 毫秒，比 50 毫秒還慢的有 ${a.filter(x => x > 50).length} 格）`,
+      `顯示晶片：${gi.soft ? '❌ 沒有用（用處理器硬畫，會很慢）' : '✅ 有用'}　${gi.renderer || '（查不到）'}`,
+      `螢幕：${innerWidth}×${innerHeight}，放大 ${Math.round((window.devicePixelRatio || 1) * 100)}%；房間畫布 ${cv ? cv.width + '×' + cv.height : '—'}；自動畫質 ${Math.round(VIEW_Q * 100)}%`,
+      `順暢模式：${LITE ? '開' : '關'}；處理器 ${navigator.hardwareConcurrency || '?'} 核；記憶體 ${navigator.deviceMemory ? navigator.deviceMemory + ' GB' : '?'}`,
+      `存檔大小：${Math.round(((localStorage.getItem(SAVE_KEY) || '').length) / 1024)} KB；全部 ${(() => { let t = 0; try { Object.keys(localStorage).forEach(k => { t += (localStorage.getItem(k) || '').length; }); } catch (e) {} return Math.round(t / 1024); })()} KB`,
+      `在哪裡：${G.away ? (PLACES[G.away.place] || {}).name : document.querySelector('.stage.island-on') ? '小島' : '家裡'}；遊戲版本 ${isNaN(lm) ? document.lastModified : lm.toLocaleString()}`,
+      `瀏覽器：${navigator.userAgent.replace(/^Mozilla\/5\.0 /, '').slice(0, 110)}`
+    ];
+    info.textContent = lines.join('\n');
+    const cp = el('button', 'big', '📋 複製'); cp.onclick = () => { try { navigator.clipboard.writeText(info.textContent).then(() => toast('複製好了，貼給幫忙改遊戲的人')); } catch (e) { toast('複製不了，請拍照'); } };
+    card.insertBefore(cp, close);
+    if (gi.soft) card.insertBefore(note('👉 Chrome 沒有用顯示晶片：請到 Chrome 的「設定 → 系統」，打開「可用時使用圖形加速功能」，然後把 Chrome 整個關掉再打開。'), cp);
+    $('#modal').hidden = false;
+    openPerfCheck.last = { avg, gi, lines };
+  }
+}
 function liteSuggest() {   // 一天最多問一次
   try { const k = 'myHouseGame_liteAsked', d = new Date().toDateString(); if (localStorage.getItem(k) === d || document.getElementById('liteAsk')) return; localStorage.setItem(k, d); } catch (e) { return; }
   const bar = document.createElement('div'); bar.id = 'liteAsk'; bar.className = 'lite-ask';
@@ -18270,6 +18316,7 @@ function tabSave(body) {
   body.appendChild(note('按了不會動到任何進度，只是把遊戲本身重新下載。'));
   body.appendChild(h3('💻 順暢模式'));
   body.appendChild(note('電腦玩起來卡卡的時候打開：畫面一秒少畫幾格、解析度低一點、不畫飄落的花瓣和雪、不放開場動畫。只影響這台機器，不會動到進度。'));
+  { const pc = el('button', 'mini', '📊 效能檢查（量量看這台電腦順不順）'); pc.onclick = () => openPerfCheck(); body.appendChild(pc); }
   { const lb = el('button', 'big' + (LITE ? '' : ' alt'), LITE ? '✅ 順暢模式：開著（按一下關掉）' : '💻 打開順暢模式'); lb.onclick = () => { setLite(!LITE); Sound.play('click'); toast(LITE ? '💻 順暢模式打開了' : '順暢模式關掉了'); renderTab(); }; body.appendChild(lb); }
   const nb = el('button', 'mini', '📜 更新紀錄（以前更新了什麼）');
   nb.onclick = () => openNewsHistory();
@@ -27247,11 +27294,24 @@ function islRideBtn() { const b = document.getElementById('islRide'), v = rideNo
 /* 🚀 機器人飛起來（妹妹：機器人可以飛起來嗎）：坐機器人時按「🚀 飛起來」，腳底噴火飛到空中，
    可以飛過海、房子、樹，點哪裡就直直飛過去（不用找路），飛到別的小島也可以。
    降落要在草地、路、沙灘這種可以走的地方；下面是海或房子就先不降落，叫她飛到陸地。飛的時候不會走進門。 */
+/* 🏠 飛在房子（停機坪、學校、遊樂園…）上面按降落：降在門口，直接進去（家長：機器人飛行時，無法降落在爸爸媽媽家） */
+function islLandOnBuilding() {
+  const m = isl.m, tx = Math.floor(isl.x), ty = Math.floor(isl.y);
+  const b = m.blds.find(q => tx >= q.x - 1 && tx <= q.x + q.w && ty >= q.y - 1 && ty <= q.y + q.h && q.door);   // 房子上面或旁邊一格
+  if (!b) return false;
+  isl.fly.on = false; isl.fly.h = 0; isl.flyTo = null; isl.path = []; isl.pending = null;
+  isl.x = b.door[0] + .5; isl.y = b.door[1] + .5; isl.skipDoor = null;
+  Sound.play('boing'); toast(`🛬 降落在${b.id === 'helipad' ? '停機坪，去爸爸媽媽家' : '門口'}！`);
+  try { islRideBtn(); } catch (e) {}
+  setTimeout(() => { if (isl) islEnter(b.id); }, 350);
+  return true;
+}
 function islCanLand() { return isl && islPass(isl.m, Math.floor(isl.x), Math.floor(isl.y)); }
 function islToggleFly() {
   if (!isl) return; isl.fly = isl.fly || { on: false, h: 0 };
   const v = rideNow(); if (!v || v.id !== 'robot') { isl.fly.on = false; islRideBtn(); return; }
   if (!isl.fly.on) { if (isl.act) isl.act = null; isl.fly.on = true; isl.path = []; isl.pending = null; isl.flyTo = null; Sound.play('whoosh'); toast('🚀 飛起來了！點哪裡就飛到哪裡，海和房子都飛得過去'); }
+  else if (islLandOnBuilding()) { /* 降在房子上＝直接進去（例如停機坪：去爸爸媽媽家） */ }
   else if (islCanLand()) { isl.fly.on = false; isl.flyTo = null; isl.skipDoor = (isl.m.blds.find(b => b.door[0] === Math.floor(isl.x) && b.door[1] === Math.floor(isl.y)) || {}).id || null; Sound.play('boing'); toast('🛬 降落了！'); }
   else { Sound.play('miss'); toast('下面是海或房子，飛到草地、路上再降落喔！'); }
   islRideBtn();
