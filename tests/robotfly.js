@@ -35,6 +35,11 @@ const path = require('path');
     isl.flyTo = [hp.x + hp.w / 2, hp.y + hp.h / 2]; for (let k = 0; k < 600 && isl.flyTo; k++) islStep(.05);
     islToggleFly(); for (let k = 0; k < 40 && !(G.away && G.away.place === 'sky'); k++) await wait(250);
     o.landHelipad = !isl && G.away && G.away.place === 'sky';
+    // ☁️ 飛到天上那朵雲的爸爸媽媽家按降落：直接飛上去
+    G.away = null; try { closeIsland(); } catch (e) {} await wait(400); document.getElementById('modal').hidden = true; for (let k = 0; k < 10 && !isl; k++) { openIsland(); await wait(400); }
+    islToggleFly(); isl.flyTo = [13.5, 3.5]; for (let k = 0; k < 600 && isl.flyTo; k++) islStep(.05); islToggleFly();
+    for (let k = 0; k < 20 && !(G.away && G.away.place === 'sky'); k++) await wait(200);
+    o.landSkyIsle = G.away && G.away.place === 'sky';
     // 👥 在大地圖上：家裡不會有訪客
     G.away = null; try { closeIsland(); } catch (e) {} openIsland(); await wait(500);
     vis.nextAt = performance.now() - 1; visitorTick(.016, performance.now()); o.noVisitorOnIsland = !vis.who && vis.nextAt > performance.now() + 50000;

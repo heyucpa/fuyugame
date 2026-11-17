@@ -27326,6 +27326,13 @@ function islRideBtn() { const b = document.getElementById('islRide'), v = rideNo
 /* 🏠 飛在房子（停機坪、學校、遊樂園…）上面按降落：降在門口，直接進去（家長：機器人飛行時，無法降落在爸爸媽媽家） */
 function islLandOnBuilding() {
   const m = isl.m, tx = Math.floor(isl.x), ty = Math.floor(isl.y);
+  /* ☁️ 天上那朵雲的「爸爸媽媽家」（家長：沒辦法降落）：是畫在天上的，不是地上的房子。飛到它上面按降落：機器人直接飛上去 */
+  if (Math.abs(isl.x - 13) <= 2.8 && isl.y >= 1 && isl.y <= 6 && !(G.away && G.away.place === 'sky')) {
+    isl.fly.on = false; isl.fly.h = 0; isl.flyTo = null; isl.path = [];
+    Sound.play('whoosh'); toast('🤖 機器人飛到雲上的爸爸媽媽家囉！');
+    setTimeout(() => { if (!isl) return; closeIsland(); travelArrive('sky'); }, 350);
+    return true;
+  }
   const b = m.blds.find(q => tx >= q.x - 1 && tx <= q.x + q.w && ty >= q.y - 1 && ty <= q.y + q.h && q.door);   // 房子上面或旁邊一格
   if (!b) return false;
   isl.fly.on = false; isl.fly.h = 0; isl.flyTo = null; isl.path = []; isl.pending = null;
