@@ -22478,9 +22478,14 @@ function islDrawGround(ctx, m, x0, x1, y0, y1, tt) {
   try { gnd = islBakeGround(m); } catch (e) { gnd = null; }
   if (!gnd) return false;
   const T = ISL.T;
-  ctx.drawImage(gnd.water, 0, 0);
+  /* 🌊 順暢模式（預設開著）：海浪先畫在海上存起來，之後每一格只貼圖，不再一條一條重畫（家長：海浪在動會不會不順？） */
+  if (LITE) {
+    if (!gnd.waterWaves) { try { const c = document.createElement('canvas'); c.width = gnd.water.width; c.height = gnd.water.height; const g2 = c.getContext('2d'); g2.drawImage(gnd.water, 0, 0); g2.lineWidth = 2;
+      gnd.waves.forEach(w => { g2.strokeStyle = 'rgba(255,255,255,' + (.25 + .2 * Math.sin(w[2] * 20)) + ')'; g2.beginPath(); g2.arc(w[0] * T + T / 2 + Math.sin(w[2] * 9) * 3, w[1] * T + T / 2, 6, Math.PI * 1.1, Math.PI * 1.9); g2.stroke(); }); gnd.waterWaves = c; } catch (e) { gnd.waterWaves = gnd.water; } }
+    ctx.drawImage(gnd.waterWaves, 0, 0);
+  } else ctx.drawImage(gnd.water, 0, 0);
   ctx.lineWidth = 2;
-  for (let n = 0; n < gnd.waves.length; n++) {
+  for (let n = 0; !LITE && n < gnd.waves.length; n++) {
     const w = gnd.waves[n], x = w[0], y = w[1], h = w[2];
     if (x < x0 || x > x1 || y < y0 || y > y1) continue;
     ctx.strokeStyle = 'rgba(255,255,255,' + (.25 + .2 * Math.sin(tt * 1.6 + h * 20)) + ')';
