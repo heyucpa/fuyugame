@@ -5677,6 +5677,7 @@ const NEWS = [
     ['🏃', '學校操場的花豹教練：報名「世界全國跑步大賽」，跳遠＋百米賽跑，簡單就能玩'],
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
     ['🚀', '剛打開遊戲比較不會卡了：畫畫存起來小很多（存檔變成原本的一半以下），打開時的存檔紀錄改到電腦有空的時候才做'],
+    ['🖥️', '接大螢幕玩大地圖不會卡了：以前畫面太大，地面每一格都在重畫；現在畫好就存著，飛的時候前面也會先準備好'],
     ['⏸️', '好一陣子沒玩（2 分鐘），或切到別的視窗超過 1 分鐘，遊戲會自動暫停、電腦不用一直忙；點一下就繼續'],
     ['💻', '順暢模式更省力：一秒畫 15 次、大地圖不畫蝴蝶海鷗和騎腳踏車的人、背景音樂先關掉（按上面的 🎵 可以打開）；畫面平常清楚，真的卡的時候才稍微降一點（最多 85%）'],
     ['🔇', '大家不會一直說話了：自動念出來和嘰嘰的說話聲預設關掉（對話泡泡還是看得到），想聽可以到「⚙️ 設定」打開'],
@@ -15233,7 +15234,8 @@ function gfxInfo() {
   return o;
 }
 // 第一次發現是「用處理器硬畫」而且家長還沒自己選過：自動打開順暢模式
-setTimeout(() => { try { const gi = gfxInfo(); window.GFX = gi; if (gi.soft && !navigator.webdriver && localStorage.getItem('myHouseGame_lite') == null) { setLite(true); toast('💻 這台電腦畫圖比較慢，自動打開了「順暢模式」（可以到 ⚙️ 設定 關掉）'); } } catch (e) {} }, 4000);
+// 剛開遊戲時不要多開一個 WebGL（筆電上會多忙一下）：只有還沒選過順暢模式時才檢查
+setTimeout(() => { try { if (navigator.webdriver || localStorage.getItem('myHouseGame_lite') != null) return; const gi = gfxInfo(); window.GFX = gi; if (gi.soft && !navigator.webdriver && localStorage.getItem('myHouseGame_lite') == null) { setLite(true); toast('💻 這台電腦畫圖比較慢，自動打開了「順暢模式」（可以到 ⚙️ 設定 關掉）'); } } catch (e) {} }, 4000);
 // 📊 效能檢查：量 5 秒，列出這台電腦的狀況，可以複製給幫忙改遊戲的人
 function openPerfCheck() {
   const card = $('#modalCard'); card.classList.remove('game-card', 'in-game', 'game-big'); card.innerHTML = '';
@@ -22606,21 +22608,57 @@ function islPaintStaticGround(ctx, m, x0, x1, y0, y1) {
     else if (!m.beach[y][x] && h > .8) { ctx.strokeStyle = '#8bc766'; ctx.lineWidth = 1.5; ctx.beginPath(); const px = x * T + h * 20 + 4, py = y * T + 18; ctx.moveTo(px, py); ctx.lineTo(px - 2, py - 5); ctx.moveTo(px, py); ctx.lineTo(px + 2, py - 5); ctx.stroke(); }
   }
 }
+/* 地面一塊（8×8 格）畫一次存起來 */
+function islBuildChunk(m, cx, cy, q) {
+  const CH = 8, S = CH * ISL.T;
+  const c = document.createElement('canvas'); c.width = c.height = Math.ceil(S * q); const g = c.getContext('2d'); if (!g) throw new Error('no ctx');
+  g.setTransform(q, 0, 0, q, -cx * S * q, -cy * S * q); g.fillStyle = '#74c8ea'; g.fillRect(cx * S, cy * S, S, S);
+  g.beginPath(); g.rect(cx * S, cy * S, S, S); g.clip();
+  islPaintStaticGround(g, m, Math.max(0, cx * CH - 1), Math.min(m.W - 1, cx * CH + CH), Math.max(0, cy * CH - 1), Math.min(m.H - 1, cy * CH + CH));
+  return c;
+}
+/* 家長：筆電接大螢幕（2560×1080）飛起來卡卡的 → 一查：大螢幕一次看得到 28 塊地面，可是快取只留 20 塊，
+   每一格都在丟掉、重畫（一格要 40 毫秒）。現在快取大小跟著畫面：看得到的塊數 + 12 塊（前方預先畫好的）。 */
 function islGroundChunked(ctx, m, x0, x1, y0, y1, q) {
-  const CH = 8, T = ISL.T, S = CH * T; m._chunks = m._chunks || new Map();
-  for (let cy = Math.floor(y0 / CH); cy <= Math.floor(y1 / CH); cy++) for (let cx = Math.floor(x0 / CH); cx <= Math.floor(x1 / CH); cx++) {
+  const CH = 8, S = CH * ISL.T; m._chunks = m._chunks || new Map();
+  const cx0 = Math.floor(x0 / CH), cx1 = Math.floor(x1 / CH), cy0 = Math.floor(y0 / CH), cy1 = Math.floor(y1 / CH);
+  const limit = (cx1 - cx0 + 1) * (cy1 - cy0 + 1) + 12;
+  for (let cy = cy0; cy <= cy1; cy++) for (let cx = cx0; cx <= cx1; cx++) {
     const key = cx + ',' + cy + '@' + q; let c = m._chunks.get(key);
     if (c) { m._chunks.delete(key); m._chunks.set(key, c); }   // 最近用過的放最後（LRU）
     else {
-      c = document.createElement('canvas'); c.width = c.height = Math.ceil(S * q); const g = c.getContext('2d'); if (!g) throw new Error('no ctx');
-      g.setTransform(q, 0, 0, q, -cx * S * q, -cy * S * q); g.fillStyle = '#74c8ea'; g.fillRect(cx * S, cy * S, S, S);
-      g.beginPath(); g.rect(cx * S, cy * S, S, S); g.clip();
-      islPaintStaticGround(g, m, Math.max(0, cx * CH - 1), Math.min(m.W - 1, cx * CH + CH), Math.max(0, cy * CH - 1), Math.min(m.H - 1, cy * CH + CH));
-      m._chunks.set(key, c);
-      while (m._chunks.size > 20) { const k0 = m._chunks.keys().next().value; const old = m._chunks.get(k0); m._chunks.delete(k0); if (old) old.width = old.height = 0; }
+      c = islBuildChunk(m, cx, cy, q); m._chunks.set(key, c);
+      while (m._chunks.size > limit) { const k0 = m._chunks.keys().next().value; const old = m._chunks.get(k0); m._chunks.delete(k0); if (old) old.width = old.height = 0; }
     }
     ctx.drawImage(c, cx * S, cy * S, S, S);
   }
+  // 往哪邊移動，就趁電腦有空先把前面那一排畫好（飛到新地方不會頓一下）
+  const mx = (cx0 + cx1) / 2, my = (cy0 + cy1) / 2, last = m._chunkView;
+  m._chunkView = { cx0, cx1, cy0, cy1, q, mx, my, limit, dx: last ? Math.sign(Math.round((mx - last.mx) * 100) / 100 || last.dx || 0) : 0, dy: last ? Math.sign(Math.round((my - last.my) * 100) / 100 || last.dy || 0) : 0 };
+  islPrefetchSoon(m);
+}
+function islPrefetchSoon(m) {
+  if (m._pfQueued) return; m._pfQueued = true;
+  const ric = window.requestIdleCallback || (f => setTimeout(() => f({ timeRemaining: () => 8 }), 120));
+  ric(dl => {
+    m._pfQueued = false;
+    try {
+      const v = m._chunkView; if (!v || !m._chunks || !isl || isl.m !== m || (!v.dx && !v.dy)) return;
+      const nW = Math.ceil(ISL.W / 8), nH = Math.ceil(ISL.H / 8), want = [];
+      if (v.dx) { const cx = v.dx > 0 ? v.cx1 + 1 : v.cx0 - 1; for (let cy = v.cy0 - (v.dy < 0 ? 1 : 0); cy <= v.cy1 + (v.dy > 0 ? 1 : 0); cy++) want.push([cx, cy]); }
+      if (v.dy) { const cy = v.dy > 0 ? v.cy1 + 1 : v.cy0 - 1; for (let cx = v.cx0; cx <= v.cx1; cx++) want.push([cx, cy]); }
+      let made = 0;
+      for (const [cx, cy] of want) {
+        if (cx < 0 || cy < 0 || cx >= nW || cy >= nH) continue;
+        const key = cx + ',' + cy + '@' + v.q; if (m._chunks.has(key)) continue;
+        if (made >= 2 || dl.timeRemaining() < 5) { islPrefetchSoon(m); return; }   // 一次只畫一兩塊，不搶走畫面的時間
+        // 預先畫的放在「最舊」那邊：快取滿了先丟它，不會把看得到的擠掉
+        const c = islBuildChunk(m, cx, cy, v.q), rest = [...m._chunks]; m._chunks.clear(); m._chunks.set(key, c); rest.forEach(([k, x]) => m._chunks.set(k, x));
+        while (m._chunks.size > v.limit) { const k0 = m._chunks.keys().next().value; if (k0 === key) break; const old = m._chunks.get(k0); m._chunks.delete(k0); if (old) old.width = old.height = 0; }
+        made++;
+      }
+    } catch (e) {}
+  });
 }
 function islDraw(now) {
   const cv = isl.cv, m = isl.m, T = ISL.T;
