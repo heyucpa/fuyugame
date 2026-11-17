@@ -22512,6 +22512,63 @@ function islFrame(now) {
   try { if (!islStep(dt)) return; islDraw(now); } catch (e) { console.error(e); }
   if (isl) isl.raf = requestAnimationFrame(islFrame);
 }
+/* 🏝️ 大地圖的地面分塊存起來（家長：大地圖卡卡）：量到畫大地圖的時間 58% 都在每一格重畫地面的圓角。
+   以前整座島存成兩張大圖（約 29MB）iPad 會當掉 → 改成 8×8 格一塊、只存看得到的、最多 20 塊（約 10MB），舊的自動丟掉。
+   海浪、噴水池、池塘、花照樣每一格畫（會動）。 */
+var USE_ISL_CHUNKS = true;
+function islPaintStaticGround(ctx, m, x0, x1, y0, y1) {
+  const T = ISL.T;
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+    if (m.land[y][x]) continue;
+    const h = islHash(x, y, 3);
+    ctx.fillStyle = h < .5 ? '#74c8ea' : '#6ec2e6'; ctx.fillRect(x * T, y * T, T + 1, T + 1);
+    let shore = false; for (let j = -1; j <= 1 && !shore; j++) for (let i = -1; i <= 1; i++) { const xx = x + i, yy = y + j; if (yy >= 0 && yy < m.H && xx >= 0 && xx < m.W && m.land[yy][xx]) { shore = true; break; } }
+    if (shore) { ctx.fillStyle = 'rgba(255,255,255,' + (.45) + ')'; islRoundTile(ctx, x, y, (i, j) => j >= 0 && j < m.H && i >= 0 && i < m.W && !m.land[j][i] && [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]].some(([a, b]) => m.land[j + b] && m.land[j + b][i + a])); }   // 浪花也磨圓
+  }
+  // 地面：海岸、草地、路的邊都磨圓（凸角切圓、凹角補圓）
+  const isLand = (x, y) => y >= 0 && y < m.H && x >= 0 && x < m.W && m.land[y][x];
+  const isGrass = (x, y) => isLand(x, y) && !m.beach[y][x];
+  const isPath = (x, y) => isLand(x, y) && m.path[y][x] && !(m.bridge && m.bridge[y][x]);
+  const beachC = (x, y) => islHash(x, y, 1) < .5 ? '#f7e6b4' : '#f3dfa6', grassC = (x, y) => islHash(x, y, 1) < .5 ? '#a4da7c' : '#9ed477';
+  const pathC = (x, y) => Math.hypot(x - ISL_HUB[0], y - ISL_HUB[1]) <= 2.4 ? '#e4dac8' : '#ecd5a0';
+  const layer = (pred, color) => {
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      if (pred(x, y)) { ctx.fillStyle = color(x, y); islRoundTile(ctx, x, y, pred); }
+      else { // 凹角：這一格不是，但左右和上下的鄰居是 → 補一小塊圓角
+        [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([i, j]) => { if (pred(x + i, y) && pred(x, y + j) && pred(x + i, y + j)) { ctx.fillStyle = color(x + i, y); islConcave(ctx, x, y, i, j); } });
+      }
+    }
+  };
+  layer(isLand, beachC); layer(isGrass, grassC); layer(isPath, pathC);
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (m.bridge && m.bridge[y][x]) {   // 🌉 木橋
+    ctx.fillStyle = '#6ec2e6'; ctx.fillRect(x * T, y * T, T + 1, T + 1);
+    ctx.fillStyle = '#c9925a'; ctx.fillRect(x * T + 2, y * T + 2, T - 3, T - 3);
+    ctx.strokeStyle = '#9a6b3f'; ctx.lineWidth = 1.5; for (let i = 1; i < 4; i++) { ctx.beginPath(); ctx.moveTo(x * T + 2, y * T + i * T / 4); ctx.lineTo(x * T + T - 1, y * T + i * T / 4); ctx.stroke(); }
+    ctx.fillStyle = '#8a5a33'; ctx.fillRect(x * T, y * T, 4, 4); ctx.fillRect(x * T + T - 4, y * T + T - 4, 4, 4);
+  }
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+    if (!m.land[y][x]) continue;
+    const h = islHash(x, y, 1);
+    if (m.path[y][x]) {}
+    else if (!m.beach[y][x] && h > .8) { ctx.strokeStyle = '#8bc766'; ctx.lineWidth = 1.5; ctx.beginPath(); const px = x * T + h * 20 + 4, py = y * T + 18; ctx.moveTo(px, py); ctx.lineTo(px - 2, py - 5); ctx.moveTo(px, py); ctx.lineTo(px + 2, py - 5); ctx.stroke(); }
+  }
+}
+function islGroundChunked(ctx, m, x0, x1, y0, y1, q) {
+  const CH = 8, T = ISL.T, S = CH * T; m._chunks = m._chunks || new Map();
+  for (let cy = Math.floor(y0 / CH); cy <= Math.floor(y1 / CH); cy++) for (let cx = Math.floor(x0 / CH); cx <= Math.floor(x1 / CH); cx++) {
+    const key = cx + ',' + cy + '@' + q; let c = m._chunks.get(key);
+    if (c) { m._chunks.delete(key); m._chunks.set(key, c); }   // 最近用過的放最後（LRU）
+    else {
+      c = document.createElement('canvas'); c.width = c.height = Math.ceil(S * q); const g = c.getContext('2d'); if (!g) throw new Error('no ctx');
+      g.setTransform(q, 0, 0, q, -cx * S * q, -cy * S * q); g.fillStyle = '#74c8ea'; g.fillRect(cx * S, cy * S, S, S);
+      g.beginPath(); g.rect(cx * S, cy * S, S, S); g.clip();
+      islPaintStaticGround(g, m, Math.max(0, cx * CH - 1), Math.min(m.W - 1, cx * CH + CH), Math.max(0, cy * CH - 1), Math.min(m.H - 1, cy * CH + CH));
+      m._chunks.set(key, c);
+      while (m._chunks.size > 20) { const k0 = m._chunks.keys().next().value; const old = m._chunks.get(k0); m._chunks.delete(k0); if (old) old.width = old.height = 0; }
+    }
+    ctx.drawImage(c, cx * S, cy * S, S, S);
+  }
+}
 function islDraw(now) {
   const cv = isl.cv, m = isl.m, T = ISL.T;
   const W = cv.clientWidth, H = cv.clientHeight;
@@ -22527,6 +22584,11 @@ function islDraw(now) {
   const y0 = Math.max(0, Math.floor((v.cy - H / 2 / v.s) / T) - 1), y1 = Math.min(m.H - 1, Math.ceil((v.cy + H / 2 / v.s) / T) + 1);
   // 海、沙灘、草地、路：有快取就貼圖；烘不起來才每幀重畫（跟以前一樣）
   if (!islDrawGround(ctx, m, x0, x1, y0, y1, tt)) {
+  let chunked = false;
+  if (USE_ISL_CHUNKS) { try { islGroundChunked(ctx, m, x0, x1, y0, y1, Math.min(1.5, Math.max(1, Math.round(v.s * dpr * 2) / 2))); chunked = true; } catch (e) { USE_ISL_CHUNKS = false; } }
+  if (chunked) {   // 海浪：每一格畫（順暢模式不畫，省力）
+    if (!LITE) { const T2 = ISL.T; ctx.lineWidth = 2; for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { if (m.land[y][x]) continue; const h = islHash(x, y, 3); if (h > .72) { ctx.strokeStyle = 'rgba(255,255,255,' + (.25 + .2 * Math.sin(tt * 1.6 + h * 20)) + ')'; ctx.beginPath(); ctx.arc(x * T2 + T2 / 2 + Math.sin(tt + h * 9) * 3, y * T2 + T2 / 2, 6, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); } } }
+  } else {
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
     if (m.land[y][x]) continue;
     const h = islHash(x, y, 3);
@@ -22561,6 +22623,7 @@ function islDraw(now) {
     const h = islHash(x, y, 1);
     if (m.path[y][x]) {}
     else if (!m.beach[y][x] && h > .8) { ctx.strokeStyle = '#8bc766'; ctx.lineWidth = 1.5; ctx.beginPath(); const px = x * T + h * 20 + 4, py = y * T + 18; ctx.moveTo(px, py); ctx.lineTo(px - 2, py - 5); ctx.moveTo(px, py); ctx.lineTo(px + 2, py - 5); ctx.stroke(); }
+  }
   }
   // 廣場的噴水池
   { const fx = (ISL_HUB[0] + .5) * T, fy = (ISL_HUB[1] + .5) * T;
