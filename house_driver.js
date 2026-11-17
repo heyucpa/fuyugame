@@ -5148,8 +5148,8 @@
       finally { var k = JSON.parse(keep); G.rooms = k.rooms; G.inv = k.inv; G.noSell = k.noSell; G.walls = k.walls; G.floors = k.floors; G.cur = k.cur; G.uid = k.uid; showcase = realSC; }
     })();
     // 116.10 家長要多加家具（第四批），全部買齊從約 18 萬變約 20 萬；上限放到 22 萬
-    // 家長：除了可愛風格之外其他風格家具都好少 → 第五批 50 件，全部買齊約 27 萬；再加甜點風 20 件約 29 萬；上限放到 30 萬
-    if (allCost < 150000 || allCost > 300000) fails.push('全部買齊要 ' + allCost + '，不在 15～30 萬');
+    // 家長：除了可愛風格之外其他風格家具都好少 → 第五批 50 件約 27 萬；甜點風 +20 約 29 萬；其他風格都擴充到 40 件（+65）約 34 萬；上限放到 36 萬
+    if (allCost < 150000 || allCost > 360000) fails.push('全部買齊要 ' + allCost + '，不在 15～36 萬');
     [FURNITURE, WALLPAPERS, FLOORS, CLOTHES, HAIR_STYLES].forEach(function(l){ l.forEach(function(x){
       if (typeof x.price !== 'number') return;
       if (x.price % 50) fails.push(x.name + ' 的價格不是整數好看的數字：' + x.price);

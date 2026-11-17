@@ -2104,6 +2104,86 @@ const FURNITURE_6 = [
 ];
 FURNITURE_6.filter(d => d.draw).forEach(d => { d.layer = 'wall'; d.parts = []; d.d = 1; });
 FURNITURE_6.forEach(d => { d.fresh5 = true; FURNITURE.push(d); });
+/* 第七批（家長：其他風格也擴充到差不多 40 個以上）：原木 +12、現代 +10、自然 +20、衛浴 +23，一部分掛牆上 */
+const wallFrame = (frame, inner, paint) => function (ctx, W, H) { ctx.fillStyle = frame; ctx.fillRect(0, 0, W, H); ctx.fillStyle = inner; ctx.fillRect(2.5, 2.5, W - 5, H - 5); paint(ctx, W, H); };
+const roundWall = (ring, inner, paint) => function (ctx, W, H) { const cx = W / 2, cy = H / 2, r = Math.min(W, H) / 2 - 1; ctx.fillStyle = ring; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = inner; ctx.beginPath(); ctx.arc(cx, cy, r * .78, 0, Math.PI * 2); ctx.fill(); paint(ctx, W, H, cx, cy, r); };
+const clockHands = (ctx, cx, cy, r, col) => { const d = new Date(), h = (d.getHours() % 12 + d.getMinutes() / 60) / 12 * Math.PI * 2, m = d.getMinutes() / 60 * Math.PI * 2; ctx.strokeStyle = col; ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.sin(h) * r * .35, cy - Math.cos(h) * r * .35); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.sin(m) * r * .55, cy - Math.cos(m) * r * .55); ctx.stroke(); };
+const windowPaint = (ctx, W, H) => { ctx.fillStyle = '#bfe6f6'; ctx.fillRect(3, 3, W - 6, H - 6); ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(W * .35, H * .4, 3, 0, Math.PI * 2); ctx.arc(W * .45, H * .4, 3.5, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.fillRect(W / 2 - .6, 3, 1.2, H - 6); ctx.fillRect(3, H / 2 - .6, W - 6, 1.2); };
+const potParts = (pot, leaves) => [{ x: .3, y: .3, w: .4, d: .4, z: 0, h: 16, c: pot }].concat(leaves);
+const FURNITURE_7 = [
+  // ── 🌲 原木 +12 ──
+  { id: 'wood_bigtable', name: '原木大餐桌', price: 3200, theme: 'wood', w: 2, d: 2, parts: tableParts({ leg: '#8a5a33', top: '#c9925a' }, 2, 2) },
+  { id: 'wood_dchair', name: '原木餐椅', price: 900, theme: 'wood', w: 1, d: 1, parts: chairParts({ leg: '#8a5a33', seat: '#d9a16a', back: '#a8733f' }) },
+  { id: 'wood_bigwardrobe', name: '原木大衣櫃', price: 4200, theme: 'wood', w: 2, d: 1, parts: cabinetParts('#9b6a3e', '#6b4524', '#e8c36a', 116) },
+  { id: 'wood_cradle', name: '原木搖籃', price: 2200, theme: 'wood', w: 2, d: 1, parts: [{ x: .1, y: .2, w: 1.8, d: .6, z: 0, h: 4, c: '#8a5a33' }, { x: .2, y: .15, w: 1.6, d: .7, z: 6, h: 18, c: '#c68b52' }, { x: .3, y: .25, w: 1.4, d: .5, z: 24, h: 2, c: '#fff6e6' }] },
+  { id: 'wood_coffeetable', name: '原木茶几', price: 1800, theme: 'wood', w: 2, d: 1, parts: [{ x: .1, y: .1, w: .15, d: .8, z: 0, h: 16, c: '#8a5a33' }, { x: 1.75, y: .1, w: .15, d: .8, z: 0, h: 16, c: '#8a5a33' }, { x: .04, y: .04, w: 1.92, d: .92, z: 16, h: 5, c: '#c9925a' }] },
+  { id: 'wood_plantstand', name: '原木花架', price: 1200, theme: 'wood', w: 1, d: 1, parts: [{ x: .3, y: .3, w: .4, d: .4, z: 0, h: 30, c: '#a8733f' }].concat(plantParts('#c68b52', '#7bbf6a', .7).map(q => Object.assign({}, q, { z: q.z + 30 }))) },
+  { id: 'wood_stool', name: '原木小板凳', price: 700, theme: 'wood', w: 1, d: 1, parts: [{ x: .3, y: .3, w: .4, d: .4, z: 0, h: 12, c: '#8a5a33' }, { x: .22, y: .22, w: .56, d: .56, z: 12, h: 5, c: '#c68b52' }] },
+  { id: 'wood_tvstand', name: '原木電視櫃', price: 3600, theme: 'wood', w: 2, d: 1, parts: [{ x: 0, y: .2, w: 2, d: .6, z: 0, h: 18, c: '#a8733f' }, { x: .25, y: .4, w: 1.5, d: .1, z: 18, h: 34, c: '#2a2a30' }, { x: .3, y: .48, w: 1.4, d: .02, z: 21, h: 28, c: '#6bb6e8' }] },
+  { id: 'xylophone', name: '木琴', price: 2600, theme: 'wood', w: 2, d: 1, parts: [{ x: .1, y: .3, w: 1.8, d: .4, z: 0, h: 14, c: '#8a5a33' }].concat(['#e8505b', '#ff8a3d', '#ffd23f', '#7bd389', '#6bb6ff', '#b18cff'].map((c, i) => ({ x: .15 + i * .29, y: .2 + i * .02, w: .24, d: .6 - i * .04, z: 14, h: 3, c }))) },
+  { id: 'wood_lantern', name: '木框燈籠', price: 1300, theme: 'wood', w: 1, d: 1, parts: [{ x: .3, y: .3, w: .4, d: .4, z: 0, h: 4, c: '#8a5a33' }, { x: .32, y: .32, w: .36, d: .36, z: 4, h: 30, c: '#fff1c4', shade: true }, { x: .28, y: .28, w: .44, d: .44, z: 34, h: 4, c: '#8a5a33' }] },
+  { id: 'cuckoo_clock', name: '咕咕鐘', price: 1600, theme: 'wood', w: 1, h: 28, z: 66, draw: wallFrame('#8a5a33', '#c9925a', (ctx, W, H) => { ctx.fillStyle = '#6b4524'; ctx.beginPath(); ctx.moveTo(0, 6); ctx.lineTo(W / 2, 0); ctx.lineTo(W, 6); ctx.fill(); const r = W * .3; ctx.fillStyle = '#fff6e6'; ctx.beginPath(); ctx.arc(W / 2, H * .55, r, 0, Math.PI * 2); ctx.fill(); clockHands(ctx, W / 2, H * .55, r, '#3a3240'); }) },
+  { id: 'wood_window', name: '木框窗', price: 1400, theme: 'wood', w: 1, h: 28, z: 56, draw: wallFrame('#9b6a3e', '#bfe6f6', windowPaint) },
+  // ── 🏙️ 現代 +10 ──
+  { id: 'white_desk', name: '白色書桌', price: 2600, theme: 'modern', w: 2, d: 1, parts: tableParts({ leg: '#c9ced6', top: '#ffffff' }, 2, 1).concat([{ x: 1.3, y: .2, w: .5, d: .4, z: 36, h: 22, c: '#2f3238' }]) },
+  { id: 'gaming_chair2', name: '電競椅', price: 2200, theme: 'modern', w: 1, d: 1, parts: chairParts({ leg: '#2f3238', seat: '#e8505b', back: '#2f3238' }).concat([{ x: .3, y: .13, w: .4, d: .1, z: 36, h: 14, c: '#e8505b' }]) },
+  { id: 'gray_loveseat', name: '灰色雙人沙發', price: 3200, theme: 'modern', w: 2, d: 1, parts: [{ x: 0, y: .1, w: 2, d: .9, z: 0, h: 20, c: '#7d828c' }, { x: 0, y: 0, w: 2, d: .3, z: 0, h: 44, c: '#7d828c' }, { x: .32, y: .32, w: 1.36, d: .64, z: 20, h: 7, c: '#a7acb5' }] },
+  { id: 'kitchen_island', name: '中島廚房', price: 5200, theme: 'modern', w: 2, d: 1, parts: [{ x: 0, y: .1, w: 2, d: .8, z: 0, h: 34, c: '#f4f5f7' }, { x: 0, y: .1, w: 2, d: .8, z: 34, h: 3, c: '#3a3d44' }, { x: .3, y: .3, w: .4, d: .4, z: 37, h: 1, c: '#5c606b' }, { x: 1.2, y: .35, w: .5, d: .3, z: 37, h: 6, c: '#c9ced6' }] },
+  { id: 'double_fridge', name: '雙門冰箱', price: 4200, theme: 'modern', w: 1, d: 1, parts: [{ x: .05, y: .1, w: .9, d: .8, z: 0, h: 100, c: '#d9dde3' }, { x: .48, y: .9, w: .04, d: .02, z: 10, h: 82, c: '#9aa0a8' }, { x: .36, y: .9, w: .05, d: .04, z: 50, h: 18, c: '#5c606b' }, { x: .59, y: .9, w: .05, d: .04, z: 50, h: 18, c: '#5c606b' }] },
+  { id: 'coffee_machine', name: '咖啡機', price: 1800, theme: 'modern', w: 1, d: 1, parts: [{ x: .25, y: .3, w: .5, d: .45, z: 0, h: 34, c: '#2f3238' }, { x: .35, y: .7, w: .3, d: .1, z: 10, h: 4, c: '#9aa0a8' }, { x: .42, y: .62, w: .16, d: .16, z: 14, h: 8, c: '#ffffff' }] },
+  { id: 'speaker', name: '藍牙音響', price: 1500, theme: 'modern', w: 1, d: 1, parts: [{ x: .3, y: .3, w: .4, d: .4, z: 0, h: 40, c: '#2f3238' }, { k: 'ball', x: .5, y: .72, z: 26, r: 5, c: '#5c606b' }, { k: 'ball', x: .5, y: .72, z: 12, r: 3.5, c: '#5c606b' }] },
+  { id: 'robot_vacuum', name: '掃地機器人', price: 2400, theme: 'modern', w: 1, d: 1, parts: [{ x: .2, y: .2, w: .6, d: .6, z: 0, h: 6, c: '#3a3d44' }, { x: .3, y: .3, w: .4, d: .4, z: 6, h: 1, c: '#5cc4ec' }] },
+  { id: 'digital_clock', name: '數字掛鐘', price: 1200, theme: 'modern', w: 1, h: 18, z: 72, draw: wallFrame('#2f3238', '#111316', (ctx, W, H) => { const d = new Date(); ctx.fillStyle = '#5cf08a'; ctx.font = `700 ${Math.floor(H * .5)}px monospace`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(`${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`, W / 2, H / 2 + 1); ctx.textBaseline = 'alphabetic'; }) },
+  { id: 'abstract_art', name: '抽象畫', price: 1500, theme: 'modern', w: 1, h: 28, z: 56, draw: wallFrame('#2f3238', '#f4f5f7', (ctx, W, H) => { ctx.fillStyle = '#e8505b'; ctx.fillRect(4, 5, W * .4, H * .35); ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(W * .65, H * .62, W * .2, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#3f8fd1'; ctx.fillRect(W * .55, 4, W * .3, 5); }) },
+  // ── 🌿 自然 +20 ──
+  { id: 'palm_pot', name: '椰子樹盆栽', price: 1800, theme: 'nature', w: 1, d: 1, parts: potParts('#c08a55', [{ x: .44, y: .44, w: .12, d: .12, z: 16, h: 50, c: '#a8733f' }, { k: 'ball', x: .35, y: .45, z: 68, r: 9, c: '#5fae6f' }, { k: 'ball', x: .65, y: .5, z: 68, r: 9, c: '#7bbf6a' }, { k: 'ball', x: .5, y: .35, z: 72, r: 8, c: '#4f9d4f' }]) },
+  { id: 'lavender_pot', name: '薰衣草盆栽', price: 1000, theme: 'nature', w: 1, d: 1, parts: potParts('#e9d8c4', [[.38, .4], [.5, .45], [.62, .4], [.45, .58], [.58, .56]].map(([x, y], i) => ({ x: x - .03, y: y - .03, w: .06, d: .06, z: 16, h: 24 + (i % 2) * 6, c: '#9b7be0' }))) },
+  { id: 'fern_pot', name: '蕨類盆栽', price: 1000, theme: 'nature', w: 1, d: 1, parts: plantParts('#7a5230', '#3f8a4f', .8) },
+  { id: 'rose_pot', name: '玫瑰盆栽', price: 1300, theme: 'nature', w: 1, d: 1, parts: potParts('#ffffff', [{ k: 'ball', x: .5, y: .5, z: 30, r: 10, c: '#5fae6f' }, { k: 'ball', x: .42, y: .45, z: 38, r: 4, c: '#e8505b' }, { k: 'ball', x: .6, y: .55, z: 36, r: 4, c: '#e8505b' }, { k: 'ball', x: .5, y: .6, z: 42, r: 3.5, c: '#ff6b9a' }]) },
+  { id: 'tulip_pot', name: '鬱金香盆栽', price: 1100, theme: 'nature', w: 1, d: 1, parts: potParts('#6bb6e8', ['#ff6b6b', '#ffd23f', '#ff9ec4'].flatMap((c, i) => [{ x: .36 + i * .12, y: .46, w: .04, d: .04, z: 16, h: 18, c: '#4f9d4f' }, { k: 'ball', x: .38 + i * .12, y: .48, z: 37, r: 3.5, c }])) },
+  { id: 'cactus_trio', name: '仙人掌三兄弟', price: 1200, theme: 'nature', w: 1, d: 1, parts: [{ x: .15, y: .3, w: .7, d: .4, z: 0, h: 10, c: '#e2b06b' }, { x: .2, y: .42, w: .14, d: .14, z: 10, h: 24, c: '#5fae6f' }, { x: .43, y: .42, w: .14, d: .14, z: 10, h: 34, c: '#4f9d4f' }, { x: .66, y: .42, w: .14, d: .14, z: 10, h: 18, c: '#7bbf6a' }, { k: 'ball', x: .5, y: .5, z: 46, r: 3, c: '#ff9ec4' }] },
+  { id: 'indoor_tree', name: '室內大樹', price: 3600, theme: 'nature', w: 2, d: 2, parts: [{ x: .6, y: .6, w: .8, d: .8, z: 0, h: 20, c: '#a8733f' }, { x: .9, y: .9, w: .2, d: .2, z: 20, h: 50, c: '#7a5230' }, { k: 'ball', x: 1, y: 1, z: 86, r: 26, c: '#5fae6f' }, { k: 'ball', x: .7, y: 1.1, z: 74, r: 16, c: '#7bbf6a' }, { k: 'ball', x: 1.3, y: .9, z: 76, r: 16, c: '#4f9d4f' }] },
+  { id: 'vine_arch', name: '藤蔓拱門', price: 2400, theme: 'nature', w: 2, d: 1, parts: [{ x: .05, y: .4, w: .12, d: .2, z: 0, h: 70, c: '#7a5230' }, { x: 1.83, y: .4, w: .12, d: .2, z: 0, h: 70, c: '#7a5230' }, { x: .05, y: .4, w: 1.9, d: .2, z: 70, h: 8, c: '#7a5230' }].concat([.2, .6, 1, 1.4, 1.8].map((x, i) => ({ k: 'ball', x, y: .5, z: 74 - (i % 2) * 6, r: 6, c: i % 2 ? '#ff9ec4' : '#5fae6f' }))) },
+  { id: 'stump_table', name: '樹墩桌', price: 1400, theme: 'nature', w: 1, d: 1, parts: [{ x: .12, y: .12, w: .76, d: .76, z: 0, h: 26, c: '#a8733f' }, { x: .14, y: .14, w: .72, d: .72, z: 26, h: 2, c: '#e2c08a' }] },
+  { id: 'stump_stool', name: '樹墩小凳', price: 700, theme: 'nature', w: 1, d: 1, parts: [{ x: .25, y: .25, w: .5, d: .5, z: 0, h: 16, c: '#a8733f' }, { x: .27, y: .27, w: .46, d: .46, z: 16, h: 2, c: '#e2c08a' }] },
+  { id: 'hammock', name: '吊床', price: 3400, theme: 'nature', w: 2, d: 1, parts: [{ x: .05, y: .4, w: .12, d: .2, z: 0, h: 50, c: '#7a5230' }, { x: 1.83, y: .4, w: .12, d: .2, z: 0, h: 50, c: '#7a5230' }, { x: .2, y: .2, w: 1.6, d: .6, z: 22, h: 4, c: '#f2d6a2' }, { x: .3, y: .25, w: .4, d: .5, z: 26, h: 5, c: '#ffffff' }] },
+  { id: 'moss_rug', name: '苔蘚地毯', price: 1400, theme: 'nature', w: 2, d: 2, layer: 'floor', parts: rugParts('#5fae6f', '#7bbf6a', '#a8d98a') },
+  { id: 'stone_lantern', name: '石燈籠', price: 1600, theme: 'nature', w: 1, d: 1, parts: [{ x: .25, y: .25, w: .5, d: .5, z: 0, h: 8, c: '#a7a29a' }, { x: .38, y: .38, w: .24, d: .24, z: 8, h: 20, c: '#a7a29a' }, { x: .28, y: .28, w: .44, d: .44, z: 28, h: 14, c: '#fff1c4', shade: true }, { x: .2, y: .2, w: .6, d: .6, z: 42, h: 6, c: '#8e8a84' }] },
+  { id: 'pebble_fountain', name: '石頭噴泉', price: 2600, theme: 'nature', w: 1, d: 1, parts: [{ x: .1, y: .1, w: .8, d: .8, z: 0, h: 8, c: '#a7a29a' }, { x: .2, y: .2, w: .6, d: .6, z: 8, h: 1, c: '#6bb6e8' }, { k: 'ball', x: .5, y: .5, z: 16, r: 6, c: '#c9c4bb' }, { k: 'ball', x: .5, y: .5, z: 28, r: 4, c: '#cfeeff' }] },
+  { id: 'bird_feeder', name: '餵鳥器', price: 1300, theme: 'nature', w: 1, d: 1, parts: [{ x: .44, y: .44, w: .12, d: .12, z: 0, h: 50, c: '#7a5230' }, { x: .25, y: .25, w: .5, d: .5, z: 50, h: 4, c: '#c08a55' }, { k: 'ball', x: .4, y: .4, z: 58, r: 3, c: '#e2c08a' }, { k: 'ball', x: .68, y: .5, z: 60, r: 4, c: '#ffd23f' }] },
+  { id: 'flower_wagon', name: '花車', price: 2200, theme: 'nature', w: 2, d: 1, parts: [{ x: .1, y: .2, w: 1.8, d: .6, z: 8, h: 14, c: '#c08a55' }, { k: 'ball', x: .4, y: .85, z: 8, r: 6, c: '#7a5230' }, { k: 'ball', x: 1.6, y: .85, z: 8, r: 6, c: '#7a5230' }].concat(['#ff6b6b', '#ffd23f', '#b18cff', '#ff9ec4', '#6bb6ff'].map((c, i) => ({ k: 'ball', x: .3 + i * .35, y: .5, z: 28, r: 5, c }))) },
+  { id: 'tree_wardrobe', name: '樹屋衣櫃', price: 3800, theme: 'nature', w: 2, d: 1, parts: cabinetParts('#a8733f', '#7a5230', '#7bbf6a', 108).concat([{ k: 'ball', x: .4, y: .4, z: 114, r: 9, c: '#5fae6f' }, { k: 'ball', x: 1.6, y: .4, z: 114, r: 9, c: '#5fae6f' }]) },
+  { id: 'branch_desk', name: '樹枝書桌', price: 2600, theme: 'nature', w: 2, d: 1, parts: tableParts({ leg: '#7a5230', top: '#c08a55' }, 2, 1).concat([{ k: 'ball', x: 1.7, y: .3, z: 40, r: 5, c: '#7bbf6a' }]) },
+  { id: 'pinecone_lamp', name: '松果燈', price: 1400, theme: 'nature', w: 1, d: 1, parts: [{ x: .34, y: .34, w: .32, d: .32, z: 0, h: 4, c: '#7a5230' }, { x: .46, y: .46, w: .08, d: .08, z: 4, h: 40, c: '#7a5230' }, { k: 'ball', x: .5, y: .5, z: 52, r: 10, c: '#c08a55', shade: true }, { k: 'ball', x: .5, y: .5, z: 60, r: 6, c: '#a8733f' }] },
+  { id: 'forest_art', name: '森林畫', price: 1300, theme: 'nature', w: 1, h: 26, z: 58, draw: wallFrame('#7a5230', '#dff3e2', (ctx, W, H) => { [[.3, '#4f9d4f'], [.55, '#5fae6f'], [.78, '#3f8a4f']].forEach(([f, c]) => { ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(W * f, 5); ctx.lineTo(W * f - 5, H - 6); ctx.lineTo(W * f + 5, H - 6); ctx.fill(); }); }) },
+  { id: 'butterfly_frame', name: '蝴蝶標本框', price: 1200, theme: 'nature', w: 1, h: 22, z: 62, draw: wallFrame('#a8733f', '#fff8ee', (ctx, W, H) => { ctx.fillStyle = '#b18cff'; ctx.beginPath(); ctx.ellipse(W / 2 - 3, H / 2, 3, 4.5, -.4, 0, Math.PI * 2); ctx.ellipse(W / 2 + 3, H / 2, 3, 4.5, .4, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#3a3240'; ctx.fillRect(W / 2 - .5, H / 2 - 4, 1, 8); }) },
+  // ── 🛁 衛浴 +23 ──
+  { id: 'clawfoot_tub', name: '貓腳浴缸', price: 6200, theme: 'bath', w: 2, d: 1, parts: [{ x: .15, y: .1, w: .15, d: .15, z: 0, h: 8, c: '#e8c36a' }, { x: 1.7, y: .1, w: .15, d: .15, z: 0, h: 8, c: '#e8c36a' }, { x: .15, y: .75, w: .15, d: .15, z: 0, h: 8, c: '#e8c36a' }, { x: 1.7, y: .75, w: .15, d: .15, z: 0, h: 8, c: '#e8c36a' }, { x: 0, y: 0, w: 2, d: 1, z: 8, h: 24, c: '#ffffff' }, { x: .1, y: .1, w: 1.8, d: .8, z: 32, h: 1, c: '#9fd8f0', a: .85, cover: true }, { k: 'ball', x: 1.2, y: .5, z: 35, r: 5, c: '#ffffff', cover: true }] },
+  { id: 'kid_toilet', name: '小朋友馬桶', price: 1500, theme: 'bath', w: 1, d: 1, parts: [{ x: .35, y: .38, w: .3, d: .34, z: 0, h: 12, c: '#e9edf1' }, { x: .28, y: .32, w: .44, d: .48, z: 12, h: 5, c: '#ffd23f' }, { x: .26, y: .12, w: .48, d: .2, z: 8, h: 26, c: '#ffe680' }] },
+  { id: 'kid_sink', name: '小洗手台', price: 1600, theme: 'bath', w: 1, d: 1, parts: [{ x: .3, y: .35, w: .4, d: .3, z: 0, h: 22, c: '#9fd8f0' }, { x: .15, y: .2, w: .7, d: .6, z: 22, h: 6, c: '#ffffff' }, { x: .45, y: .22, w: .1, d: .1, z: 28, h: 8, c: '#c0c7ce' }] },
+  { id: 'toothbrush_cup', name: '牙刷杯', price: 600, theme: 'bath', w: 1, d: 1, parts: [{ x: .38, y: .38, w: .24, d: .24, z: 0, h: 14, c: '#6bb6e8' }, { x: .42, y: .44, w: .04, d: .04, z: 14, h: 12, c: '#ff6b6b' }, { x: .54, y: .48, w: .04, d: .04, z: 14, h: 10, c: '#7bd389' }] },
+  { id: 'bubble_machine', name: '泡泡機', price: 1400, theme: 'bath', w: 1, d: 1, parts: [{ x: .3, y: .3, w: .4, d: .4, z: 0, h: 18, c: '#ff9ec4' }, { k: 'ball', x: .5, y: .5, z: 24, r: 5, c: '#ffffff' }, { k: 'ball', x: .3, y: .3, z: 36, r: 3, c: '#cfeeff' }, { k: 'ball', x: .7, y: .4, z: 44, r: 4, c: '#cfeeff' }] },
+  { id: 'duck_bathtub', name: '小鴨澡盆', price: 2200, theme: 'bath', w: 2, d: 1, parts: [{ x: .1, y: .1, w: 1.8, d: .8, z: 0, h: 16, c: '#6bb6e8' }, { x: .2, y: .2, w: 1.6, d: .6, z: 16, h: 1, c: '#cfeeff', cover: true }, { k: 'ball', x: .6, y: .5, z: 20, r: 4, c: '#ffd23f', cover: true }, { k: 'ball', x: 1.3, y: .4, z: 20, r: 3.5, c: '#ffd23f', cover: true }] },
+  { id: 'round_bathmat', name: '圓形腳踏墊', price: 900, theme: 'bath', w: 2, d: 2, layer: 'floor', parts: rugParts('#9fd8f0', '#cfeeff', '#ffffff') },
+  { id: 'laundry_shelf', name: '洗衣用品架', price: 1200, theme: 'bath', w: 1, d: 1, parts: [{ x: .15, y: .15, w: .7, d: .5, z: 0, h: 50, c: '#e9edf1' }, { x: .2, y: .35, w: .2, d: .2, z: 50, h: 12, c: '#6bb6e8' }, { x: .5, y: .35, w: .25, d: .2, z: 50, h: 10, c: '#ff9ec4' }] },
+  { id: 'ironing_board', name: '燙衣板', price: 1300, theme: 'bath', w: 2, d: 1, parts: [{ x: .4, y: .4, w: .1, d: .2, z: 0, h: 30, c: '#c0c7ce' }, { x: 1.5, y: .4, w: .1, d: .2, z: 0, h: 30, c: '#c0c7ce' }, { x: .05, y: .3, w: 1.9, d: .4, z: 30, h: 3, c: '#9fd8f0' }, { x: 1.3, y: .35, w: .3, d: .25, z: 33, h: 6, c: '#5c606b' }] },
+  { id: 'foot_bath', name: '泡腳桶', price: 1100, theme: 'bath', w: 1, d: 1, parts: [{ x: .2, y: .2, w: .6, d: .6, z: 0, h: 18, c: '#c08a55' }, { x: .25, y: .25, w: .5, d: .5, z: 18, h: 1, c: '#9fd8f0' }] },
+  { id: 'bath_lamp', name: '浴室燈', price: 1200, theme: 'bath', w: 1, d: 1, parts: lampParts('#c0c7ce', '#e9edf1', '#ffffff') },
+  { id: 'step_stool_bath', name: '洗手小踏階', price: 700, theme: 'bath', w: 1, d: 1, parts: [{ x: .2, y: .2, w: .6, d: .6, z: 0, h: 8, c: '#7bd389' }, { x: .2, y: .2, w: .6, d: .3, z: 8, h: 8, c: '#7bd389' }] },
+  { id: 'bath_bench', name: '浴室長椅', price: 1600, theme: 'bath', w: 2, d: 1, parts: [{ x: .1, y: .3, w: .14, d: .4, z: 0, h: 18, c: '#c0c7ce' }, { x: 1.76, y: .3, w: .14, d: .4, z: 0, h: 18, c: '#c0c7ce' }, { x: 0, y: .2, w: 2, d: .6, z: 18, h: 5, c: '#d9c7a6' }] },
+  { id: 'towel_cabinet', name: '毛巾櫃', price: 1800, theme: 'bath', w: 1, d: 1, parts: [{ x: .1, y: .1, w: .8, d: .7, z: 0, h: 60, c: '#ffffff' }, { x: .18, y: .8, w: .64, d: .02, z: 8, h: 12, c: '#ff9ec4' }, { x: .18, y: .8, w: .64, d: .02, z: 24, h: 12, c: '#9fd8f0' }, { x: .18, y: .8, w: .64, d: .02, z: 40, h: 12, c: '#ffe680' }] },
+  { id: 'dryer_stand', name: '吹風機架', price: 1100, theme: 'bath', w: 1, d: 1, parts: [{ x: .35, y: .35, w: .3, d: .3, z: 0, h: 4, c: '#c0c7ce' }, { x: .46, y: .46, w: .08, d: .08, z: 4, h: 44, c: '#c0c7ce' }, { k: 'ball', x: .5, y: .5, z: 52, r: 5, c: '#ff9ec4' }] },
+  { id: 'aroma_diffuser', name: '香氛機', price: 1300, theme: 'bath', w: 1, d: 1, parts: [{ x: .35, y: .35, w: .3, d: .3, z: 0, h: 14, c: '#e9d8c4' }, { k: 'ball', x: .5, y: .5, z: 22, r: 4, c: '#ffffff', shade: true }, { k: 'ball', x: .45, y: .45, z: 32, r: 3, c: '#f4f9ff' }] },
+  { id: 'bath_bigplant', name: '浴室大盆栽', price: 1500, theme: 'bath', w: 1, d: 1, parts: plantParts('#ffffff', '#5fae6f', 1.1) },
+  { id: 'bath_toybox', name: '洗澡玩具籃', price: 1000, theme: 'bath', w: 1, d: 1, parts: [{ x: .2, y: .25, w: .6, d: .5, z: 0, h: 16, c: '#6bb6e8' }, { k: 'ball', x: .4, y: .5, z: 20, r: 4, c: '#ffd23f' }, { k: 'ball', x: .6, y: .45, z: 21, r: 3.5, c: '#ff6b6b' }] },
+  { id: 'round_mirror', name: '圓形鏡子', price: 1300, theme: 'bath', w: 1, h: 26, z: 62, draw: roundWall('#c0c7ce', '#d9eef8', (ctx, W, H, cx, cy, r) => { ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(cx, cy, r * .55, Math.PI * 1.1, Math.PI * 1.45); ctx.stroke(); }) },
+  { id: 'shell_mirror', name: '貝殼鏡', price: 1500, theme: 'bath', w: 1, h: 26, z: 62, draw: roundWall('#ffd1e0', '#e6f4fb', (ctx, W, H, cx, cy, r) => { ctx.strokeStyle = '#ffb3c7'; ctx.lineWidth = 1; for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.moveTo(cx, cy + r * .78); ctx.lineTo(cx + Math.cos(Math.PI * (1.15 + i * .175)) * r, cy + Math.sin(Math.PI * (1.15 + i * .175)) * r); ctx.stroke(); } }) },
+  { id: 'towel_hook', name: '毛巾掛勾', price: 800, theme: 'bath', w: 1, h: 22, z: 56, draw: (ctx, W, H) => { ctx.fillStyle = '#c0c7ce'; ctx.fillRect(2, 2, W - 4, 3); [['#ff9ec4', 3], ['#9fd8f0', W / 2 + 1]].forEach(([c, x]) => { ctx.fillStyle = c; ctx.fillRect(x, 5, W / 2 - 4, H - 8); }); } },
+  { id: 'bath_wallshelf', name: '浴室置物架', price: 1100, theme: 'bath', w: 1, h: 20, z: 64, draw: (ctx, W, H) => { ctx.fillStyle = '#ffffff'; ctx.fillRect(1, H - 4, W - 2, 3); ctx.fillRect(1, H / 2 - 2, W - 2, 3); [['#ff9ec4', 3, H / 2 - 9, 5, 7], ['#7bd389', W - 9, H / 2 - 8, 5, 6], ['#6bb6e8', W / 2 - 3, H - 11, 6, 7]].forEach(([c, x, y, w, h]) => { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); }); } },
+  { id: 'bath_window', name: '浴室小窗', price: 1200, theme: 'bath', w: 1, h: 22, z: 66, draw: wallFrame('#ffffff', '#bfe6f6', windowPaint) }
+];
+FURNITURE_7.filter(d => d.draw).forEach(d => { d.layer = 'wall'; d.parts = []; d.d = 1; });
+FURNITURE_7.forEach(d => { d.fresh5 = true; FURNITURE.push(d); });
 
 const WALLPAPERS = [
   { id: 'wp_cream', name: '奶油素面', price: 0, theme: 'wood', base: '#f3e6cc', pattern: 'plain' },
@@ -2357,7 +2437,8 @@ const ACTIVITIES = {
   sparkle: { label: '✨ 開燈亮晶晶', name: '亮晶晶', fx: '✨', lines: ['亮晶晶的好漂亮！', '一閃一閃亮晶晶～', '好像星星喔', '房間好夢幻'] },
   towel: { label: '🧺 擦擦手', name: '擦手', fx: '💦', lines: ['擦乾乾～', '毛巾軟軟的', '手手乾淨了！'] },
   poster: { label: '⭐ 看海報', name: '看海報', fx: '⭐', lines: ['好漂亮的星空！', '好想去太空', '那顆星星好亮'] },
-  bird: { label: '🐦 看小鳥', name: '看小鳥', fx: '🐦', lines: ['小鳥在唱歌～', '啾啾啾！', '小鳥你好！', '牠在吃東西耶'] }
+  bird: { label: '🐦 看小鳥', name: '看小鳥', fx: '🐦', lines: ['小鳥在唱歌～', '啾啾啾！', '小鳥你好！', '牠在吃東西耶'] },
+  brush: { label: '😁 刷牙', name: '刷牙', fx: '✨', lines: ['刷刷刷～', '上面刷一刷、下面刷一刷', '牙齒白白的！', '漱漱口～'] }
 };
 // 家具 → 可以做的事
 const FURNITURE_ACT = {
@@ -2405,6 +2486,31 @@ Object.assign(PET_BEDS, {
   pet_castle: { x: 1, y: 1, z: 16 },
   cat_tower: { x: .5, y: .5, z: 51 }
 });
+// 第七批（原木、現代、自然、衛浴擴充到 40 件）的分類、用法
+Object.assign(FURN_KIND_OF, {
+  wood_bigtable: 'eat', wood_dchair: 'eat', wood_bigwardrobe: 'sleep', wood_cradle: 'pet', wood_coffeetable: 'sit', wood_plantstand: 'plant', wood_stool: 'sit', wood_tvstand: 'deco', xylophone: 'toy', wood_lantern: 'deco', cuckoo_clock: 'wall', wood_window: 'wall',
+  white_desk: 'study', gaming_chair2: 'study', gray_loveseat: 'sit', kitchen_island: 'eat', double_fridge: 'eat', coffee_machine: 'eat', speaker: 'deco', robot_vacuum: 'toy', digital_clock: 'wall', abstract_art: 'wall',
+  palm_pot: 'plant', lavender_pot: 'plant', fern_pot: 'plant', rose_pot: 'plant', tulip_pot: 'plant', cactus_trio: 'plant', indoor_tree: 'plant', vine_arch: 'deco', stump_table: 'sit', stump_stool: 'sit', hammock: 'sleep', moss_rug: 'deco',
+  stone_lantern: 'deco', pebble_fountain: 'deco', bird_feeder: 'deco', flower_wagon: 'plant', tree_wardrobe: 'sleep', branch_desk: 'study', pinecone_lamp: 'deco', forest_art: 'wall', butterfly_frame: 'wall',
+  clawfoot_tub: 'bath', kid_toilet: 'bath', kid_sink: 'bath', toothbrush_cup: 'bath', bubble_machine: 'bath', duck_bathtub: 'bath', round_bathmat: 'bath', laundry_shelf: 'bath', ironing_board: 'bath', foot_bath: 'bath', bath_lamp: 'bath',
+  step_stool_bath: 'bath', bath_bench: 'bath', towel_cabinet: 'bath', dryer_stand: 'bath', aroma_diffuser: 'bath', bath_bigplant: 'plant', bath_toybox: 'bath', round_mirror: 'wall', shell_mirror: 'wall', towel_hook: 'wall', bath_wallshelf: 'wall', bath_window: 'wall'
+});
+{ const chair = { use: 'sit', seats: [{ x: .5, y: .55, z: 24 }], front: [0, 1] };
+  Object.assign(FURNITURE_USE, { wood_dchair: chair, gaming_chair2: chair, wood_stool: { use: 'sit', seats: [{ x: .5, y: .5, z: 17 }], front: [0, 1] }, stump_stool: { use: 'sit', seats: [{ x: .5, y: .5, z: 18 }], front: [0, 1] },
+    step_stool_bath: { use: 'sit', seats: [{ x: .5, y: .5, z: 16 }], front: [0, 1] }, kid_toilet: { use: 'sit', seats: [{ x: .5, y: .6, z: 17 }], front: [0, 1] },
+    gray_loveseat: { use: 'sit', seats: [{ x: .64, y: .62, z: 27 }, { x: 1.36, y: .62, z: 27 }], front: [0, 1] }, bath_bench: { use: 'sit', seats: [{ x: .5, y: .5, z: 23 }, { x: 1.5, y: .5, z: 23 }], front: [0, 1] },
+    hammock: { use: 'lie', pillow: { x: .5, y: .5, z: 30 } }, clawfoot_tub: { use: 'lie', pillow: { x: .45, y: .5, z: 46 }, bath: true } });
+  PET_BEDS.wood_cradle = { x: 1, y: .5, z: 26 }; }
+Object.assign(FURNITURE_ACT, {
+  wood_bigwardrobe: 'dress', wood_plantstand: 'water', wood_tvstand: 'tv', xylophone: 'piano', wood_lantern: 'light',
+  white_desk: 'study', kitchen_island: 'cook', double_fridge: 'snack', coffee_machine: 'tea', speaker: 'musicbox', robot_vacuum: 'toys',
+  palm_pot: 'water', lavender_pot: 'smell', fern_pot: 'water', rose_pot: 'smell', tulip_pot: 'smell', cactus_trio: 'water', indoor_tree: 'water', vine_arch: 'smell', moss_rug: 'roll',
+  stone_lantern: 'light', pebble_fountain: 'water', bird_feeder: 'bird', flower_wagon: 'smell', tree_wardrobe: 'dress', branch_desk: 'study', pinecone_lamp: 'light',
+  kid_sink: 'wash', toothbrush_cup: 'brush', bubble_machine: 'toys', duck_bathtub: 'toys', round_bathmat: 'roll', laundry_shelf: 'laundry', ironing_board: 'laundry', foot_bath: 'wash', bath_lamp: 'light',
+  towel_cabinet: 'towel', dryer_stand: 'mirror', aroma_diffuser: 'candle', bath_bigplant: 'water', bath_toybox: 'toys'
+});
+Object.assign(WALL_ACT, { cuckoo_clock: 'time', wood_window: 'window', digital_clock: 'time', abstract_art: 'artlook', forest_art: 'artlook', butterfly_frame: 'artlook',
+  round_mirror: 'mirror', shell_mirror: 'mirror', towel_hook: 'towel', bath_wallshelf: 'brush', bath_window: 'window' });
 // 第六批（🍰 甜點風再 20 件）的分類、用法
 Object.assign(FURN_KIND_OF, { cottoncandy_sofa: 'sit', lollipop_chair: 'sit', cookie_table: 'sit', cupcake_bed: 'sleep', gingerbread_house: 'deco', candycane_lamp: 'deco', choco_fountain: 'eat', cake_stand: 'eat',
   strawberry_rug: 'deco', marshmallow_stool: 'sit', donut_shelf: 'eat', icecream_chair: 'sit', choco_bookshelf: 'study', macaron_nightstand: 'sleep', caramel_dresser: 'sleep', popcorn_machine: 'eat', candy_toybox: 'toy', dessert_counter: 'eat', sweet_clock: 'wall', cake_painting: 'wall' });
@@ -5556,6 +5662,7 @@ const NEWS = [
     ['🏃', '學校操場的花豹教練：報名「世界全國跑步大賽」，跳遠＋百米賽跑，簡單就能玩'],
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
     ['🚀', '剛打開遊戲比較不會卡了：畫畫存起來小很多（存檔變成原本的一半以下），打開時的存檔紀錄改到電腦有空的時候才做'],
+    ['🛋️', '原木、現代、自然、衛浴也都擴充到 40 件以上：原木大餐桌、木琴、咕咕鐘、中島廚房、電競椅、室內大樹、吊床、石燈籠、貓腳浴缸、牙刷杯（會刷牙）、泡泡機…'],
     ['🍰', '甜點風格擴充到 40 件：棉花糖沙發、杯子蛋糕床、薑餅屋、巧克力噴泉、三層蛋糕架、爆米花機、甜甜圈掛鐘…'],
     ['🛋️', '原木、現代、自然、衛浴、甜點風格各多了 10 件家具（雙層床、遊樂器、竹子盆栽、按摩浴缸、布丁床…），每一種風格都能布置一整間了'],
     ['💻', '筆電玩起來更順了：大螢幕不再畫太多點，電腦比較慢的時候會自動把畫面調得輕一點'],
