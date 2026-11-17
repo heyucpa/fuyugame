@@ -5555,6 +5555,7 @@ const NEWS = [
     ['🏊', '游泳池的鴨鴨教練：報名「世界全國游泳大賽」，先換漂亮的泳裝給評審打星星，再奮力游過去'],
     ['🏃', '學校操場的花豹教練：報名「世界全國跑步大賽」，跳遠＋百米賽跑，簡單就能玩'],
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
+    ['🚀', '剛打開遊戲比較不會卡了：畫畫存起來小很多（存檔變成原本的一半以下），打開時的存檔紀錄改到電腦有空的時候才做'],
     ['🍰', '甜點風格擴充到 40 件：棉花糖沙發、杯子蛋糕床、薑餅屋、巧克力噴泉、三層蛋糕架、爆米花機、甜甜圈掛鐘…'],
     ['🛋️', '原木、現代、自然、衛浴、甜點風格各多了 10 件家具（雙層床、遊樂器、竹子盆栽、按摩浴缸、布丁床…），每一種風格都能布置一整間了'],
     ['💻', '筆電玩起來更順了：大螢幕不再畫太多點，電腦比較慢的時候會自動把畫面調得輕一點'],
@@ -6303,7 +6304,33 @@ const PAD_W = 240, PAD_H = 160, PAD_MAX_PTS = 1500, PAD_MAX_STROKES = 80;
 const PAD_BIG = { pts: 8000, strokes: 400 };
 const PAD_COLORS = ['#3a3240', '#e8505b', '#ff8fb8', '#f0902f', '#f2c14e', '#5fae7c', '#5b84c4', '#9b72d0'];
 const PAD_SIZES = [3, 7, 16];   // 第三種：🖌️ 超粗，塗滿用
+/* 💾 畫的省空間寫法（家長：剛打開容易當機、卡頓）：一份玩很久的存檔有 500 多 KB 是畫（每一點存成 "12,-3," 好幾個字），
+   存檔紀錄 16 份就超過瀏覽器的空間、每次存檔也很慢。改成手指的一小步（上下左右 3 格以內）只用 1 個字，大跳才用比較多字。
+   記憶體裡還是 { s: [[顏色, 粗細, x, y, dx, dy, …], …] }；只有存起來（JSON）時變成 { z: '…' }，讀回來 cleanDrawing 會轉回去。舊存檔的寫法照樣讀得懂。 */
+const PADZ = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_';
+function padEncode(s) {   // 每一段 (dx, dy)：都在 ±3 以內 → 1 個字；±31 以內 → '~'＋2 個字；更遠 → '!'＋4 個字
+  const c2 = v => PADZ[(v >> 6) & 63] + PADZ[v & 63];
+  return s.map(st => { let t = PADZ[st[0]] + PADZ[st[1]] + c2(st[2]) + c2(st[3]);
+    for (let i = 4; i + 1 < st.length; i += 2) { const dx = st[i], dy = st[i + 1];
+      if (dx >= -3 && dx <= 3 && dy >= -3 && dy <= 3) t += PADZ[(dx + 3) * 7 + dy + 3];
+      else if (dx >= -31 && dx <= 31 && dy >= -31 && dy <= 31) t += '~' + PADZ[dx + 32] + PADZ[dy + 32];
+      else t += '!' + c2(Math.max(0, Math.min(4095, dx + 2048))) + c2(Math.max(0, Math.min(4095, dy + 2048))); }
+    return t; }).join(',');
+}
+function padDecode(z) {
+  const out = []; if (typeof z !== 'string' || z.length > 400000) return out;
+  const v1 = c => PADZ.indexOf(c), v2 = (t, i) => (v1(t[i]) << 6) | v1(t[i + 1]);
+  z.split(',').forEach(t => { if (t.length < 6) return; const st = [v1(t[0]), v1(t[1]), v2(t, 2), v2(t, 4)];
+    for (let i = 6; i < t.length;) {
+      if (t[i] === '!') { st.push(v2(t, i + 1) - 2048, v2(t, i + 3) - 2048); i += 5; }
+      else if (t[i] === '~') { st.push(v1(t[i + 1]) - 32, v1(t[i + 2]) - 32); i += 3; }
+      else { const k = v1(t[i]); st.push(Math.floor(k / 7) - 3, k % 7 - 3); i++; } }
+    out.push(st); });
+  return out;
+}
+function padPack(d) { if (d && typeof d === 'object') Object.defineProperty(d, 'toJSON', { value() { return { z: padEncode(this.s) }; }, configurable: true }); return d; }
 function cleanDrawing(d, lim) {   // lim：{ pts, strokes }（.map(cleanDrawing) 會傳數字進來，不算）
+  if (d && typeof d === 'object' && typeof d.z === 'string' && !Array.isArray(d.s)) d = { s: padDecode(d.z) };   // 省空間寫法讀回來
   if (!d || typeof d !== 'object' || !Array.isArray(d.s)) return null;
   const L = lim && typeof lim === 'object' ? lim : { pts: PAD_MAX_PTS, strokes: PAD_MAX_STROKES };
   const out = [];
@@ -6318,7 +6345,7 @@ function cleanDrawing(d, lim) {   // lim：{ pts, strokes }（.map(cleanDrawing)
     if (pts > L.pts) break;
     out.push(st.slice());
   }
-  return out.length ? { s: out } : null;
+  return out.length ? padPack({ s: out }) : null;
 }
 /* ===== 🕒 存檔紀錄：自動存一份、手動存一份，可以回到之前 =====
    家長：「應該有自動存檔跟手動存檔的功能，剛才紀錄被刪除了」。
@@ -6513,7 +6540,7 @@ function normalizeSave(g) {
   if (out.daily) { const d = out.daily; d.n = isObj(d.n) ? Object.fromEntries(Object.entries(d.n).filter(([, v]) => Number.isInteger(v) && v >= 0 && v < 100)) : {}; d.paid = isObj(d.paid) ? Object.fromEntries(Object.entries(d.paid).filter(([, v]) => v === 1)) : {}; if (d.seen != null && typeof d.seen !== 'string') delete d.seen; d.done = d.done === true; }   // 🎯 今日目標
   if (out.newsAt != null && !isObj(out.newsAt)) delete out.newsAt;
   if (out.trick != null && !(isObj(out.trick) && isObj(out.trick.got) && num(out.trick.y))) delete out.trick;
-  if (out.artWall != null) out.artWall = (Array.isArray(out.artWall) ? out.artWall : []).map(d => cleanDrawing(d, PAD_BIG)).filter(Boolean).slice(0, 4);
+  if (out.artWall != null) out.artWall = (Array.isArray(out.artWall) ? out.artWall : []).map(d => cleanDrawing(d, PAD_BIG)).filter(Boolean).slice(0, 2);   // 作品牆只看得到最新 2 張，多存佔空間
   // 校旗收藏；舊版只有一面（schoolFlag）→ 搬進收藏
   out.schoolFlags = (Array.isArray(out.schoolFlags) ? out.schoolFlags : []).map(d => cleanDrawing(d, PAD_BIG)).filter(Boolean).slice(0, 6);
   if (out.schoolFlag != null) { const sf = cleanDrawing(out.schoolFlag); if (sf && !out.schoolFlags.length) { out.schoolFlags.push(sf); out.schoolFlagIdx = 0; } delete out.schoolFlag; }
@@ -14754,7 +14781,7 @@ function lessonArt() {
     openDrawPad('🎨 美勞課：畫一張圖', d => {   // big：可以畫很多、塗滿
       $('#modal').hidden = true;
       if (!d) { lessonEnd('下次再畫也可以喔！', true); return; }   // 沒畫不算上完一堂課
-      G.artWall = [d].concat(Array.isArray(G.artWall) ? G.artWall : []).slice(0, 4);
+      G.artWall = [d].concat(Array.isArray(G.artWall) ? G.artWall : []).slice(0, 2);
       giveSticker();
       saveGame(); commit();
       lessonEnd('畫得好棒！老師把它貼在作品牆上了 ⭐');
@@ -18965,7 +18992,8 @@ setTimeout(() => { // 還原連結的結果：寫清楚讀到幾隻，家長一�
   alert(ok ? `✅ 還原好了！\n現在有 ${G.pets.length} 隻寵物、💰 ${fmt(G.bells)}。\n\n記得到「💾 備份」按「📋 複製備份」多留一份。`
            : `⚠️ 還原後讀到的不對（寵物 ${G.pets.length} 隻，應該是 ${r.pets} 隻）${SAVE_LOCK_WHY ? '\n原因：' + SAVE_LOCK_WHY : ''}\n請把這個畫面拍給我。`);
 }, 600);
-setTimeout(() => autoSnap(), 3000);                 // 打開遊戲：存一份（載入成功的那份）
+/* 打開遊戲：存一份（載入成功的那份）。以前 3 秒就存，剛好撞上開場動畫、公告，舊筆電剛打開會頓（家長：剛開啟容易卡）→ 20 秒後、電腦有空的時候再存 */
+setTimeout(() => { try { if (window.requestIdleCallback) requestIdleCallback(() => autoSnap(), { timeout: 15000 }); else autoSnap(); } catch (e) { autoSnap(); } }, 20000);
 setInterval(() => autoSnap(), SNAP_AUTO_MS);        // 之後每 10 分鐘（跟上一份一樣就不存）
 setTimeout(() => maybeShowNews(), 1500);
 setTimeout(() => maybeSeasonNotice(), 2500);
@@ -28189,7 +28217,7 @@ function artCupFinish(w, T, d, total, medal) {
   const st = sportsCupState(), first = !st.art || st.art < medal;
   st.art = Math.max(st.art || 0, medal); st.n = Math.min(1e6, (st.n || 0) + 1);
   G.artCup = { frame: d, topic: T[1] };
-  G.artWall = [d].concat(Array.isArray(G.artWall) ? G.artWall : []).slice(0, 4);   // 也貼到教室作品牆
+  G.artWall = [d].concat(Array.isArray(G.artWall) ? G.artWall : []).slice(0, 2);   // 也貼到教室作品牆
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   cupPodium(w, medal);
   const card = el('div', 'cup-result'); card.append(el('div', 'cup-total', `${CUP_MEDALS[medal]}　${total} 顆星`), el('div', 'cup-step', `題目：${T[0]} ${T[1]}`)); w.stage.appendChild(card);
