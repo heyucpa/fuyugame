@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<!doctype html><html lang="zh-Hant" translate="no" class="notranslate"><head><meta charset=utf8><meta name="google" content="notranslate"><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>我的小屋 🏡</title>
 <!-- ===== 加到主畫面之後會變成全螢幕的獨立 App =====
      這幾行是搬出 Artifact 之後加的。除了好看以外，它還解決存檔：
@@ -11346,12 +11346,12 @@ function refreshDupBtn(now) {
   if (now != null && now < nextDupCheck) return;
   nextDupCheck = (now || performance.now()) + 500;
   const b = $('#btnDup'); if (!b) return;
-  b.hidden = !(inPetHouse() && dupGroups().length);
+  const bh = !(inPetHouse() && dupGroups().length); if (b.hidden !== bh) b.hidden = bh;   // 一樣就不重寫
   const c = $('#btnCallAll');
   if (c) {
-    c.hidden = !inPetHouse();
+    const ch = !inPetHouse(); if (c.hidden !== ch) c.hidden = ch;
     const md = phMode && PH_MODES.find(m => m.id === phMode.id);
-    c.textContent = md && md.endLabel ? md.endLabel : '📣 叫大家';
+    const ct = md && md.endLabel ? md.endLabel : '📣 叫大家'; if (c.textContent !== ct) c.textContent = ct;
   }
 }
 function openDupSell() {
@@ -13225,8 +13225,8 @@ function refreshThemeBtn() {
   const b = $('#btnTheme'); if (!b) return;
   if (G.theme && THEME_BY_ID[G.theme.id]) {
     const t = THEME_BY_ID[G.theme.id], pr = themeProgress(t);
-    b.textContent = `${t.icon} ${t.title} ${pr.done}/${pr.total}`;
-  } else b.textContent = '💡 小主題';
+    const tx = `${t.icon} ${t.title} ${pr.done}/${pr.total}`; if (b.textContent !== tx) b.textContent = tx;
+  } else if (b.textContent !== '💡 小主題') b.textContent = '💡 小主題';
 }
 // 選主題：隨機三個（做過的比較少出現），大圖示；或看現在這個的進度
 function openThemes() {
@@ -15860,13 +15860,13 @@ function openGuideAsk() {
   $('#modal').hidden = false;
 }
 function guideTick(now) {
-  if (introPlaying) { const h = $('#guideHand'); if (h) h.hidden = true; return; }
-  try { guideTickInner(now); } catch (e) { const h = $('#guideHand'); if (h) h.hidden = true; }
+  if (introPlaying) { const h = $('#guideHand'); if (h && !h.hidden) h.hidden = true; return; }
+  try { guideTickInner(now); } catch (e) { const h = $('#guideHand'); if (h && !h.hidden) h.hidden = true; }
 }
 function guideTickInner(now) {
   const hand = $('#guideHand');
   if (!hand) return;
-  if (G.guide === 'done' || !G.guide) { hand.hidden = true; return; }
+  if (G.guide === 'done' || !G.guide) { if (!hand.hidden) hand.hidden = true; return; }   // 一樣就不要再寫一次：每寫一次，瀏覽器和擴充功能都要跟著忙一下
   if (now < guideNext) return;
   guideNext = now + 100;
   const busy = !G.openGift || giftVisit.state !== 'none' || G.away || !$('#modal').hidden || resting;
@@ -15874,10 +15874,10 @@ function guideTickInner(now) {
   if (!busy && !G.guideAsked) { hand.hidden = true; openGuideAsk(); return; }
   if (!busy) guideAdvance();
   const t = busy || G.guide === 'done' ? null : guideTarget();
-  hand.hidden = !t;
+  if (hand.hidden !== !t) hand.hidden = !t;
   if (!t) return;
-  hand.style.left = t.x + 'px';
-  hand.style.top = t.y + 'px';
+  if (hand.style.left !== t.x + 'px') hand.style.left = t.x + 'px';
+  if (hand.style.top !== t.y + 'px') hand.style.top = t.y + 'px';
   if (guideSaid !== G.guide) { guideSaid = G.guide; if (GUIDE_SAY[G.guide]) fufuSay(GUIDE_SAY[G.guide], 3200); }
 }
 
@@ -16199,8 +16199,19 @@ function setBar(sel, value) {
   bar.classList.toggle('low', v < 35);
   bar.parentElement.title = `${v} / 100`;
 }
+/* 家長：無痕視窗比較不卡 → 量到：什麼都沒做，遊戲每秒也改網頁 80 次（一樣的字、一樣的寬度重寫一遍）。
+   翻譯、擋廣告這類擴充功能每改一次就要檢查一次，瀏覽器也要重算版面。現在內容一樣就整個跳過。 */
+let petCardSig = '';
 function updatePetCard() {
   const st = G.pet;
+  try {
+    const sm0 = kidSmall(), ks0 = kidStage(), sg0 = stageOf(st);
+    const sig = [G.activePet, petName(), st.stage, charName(), Math.round(G.kid.hunger), Math.round(G.kid.mood != null ? G.kid.mood : 80), Math.round(G.kid.clean != null ? G.kid.clean : 100),
+      ks0.id, sm0 ? (sm0.baby ? 'b' : 's') + Math.max(0, Math.ceil((sm0.until - Date.now()) / 1000)) : '', Math.round(kidGrowPct() * 100), ks0.id !== 'big' && kidRestedToday(),
+      Math.round(st.hunger), Math.round(st.clean), Math.round(st.mood), Math.round(st.growth * 10), sg0.next].join('|');
+    if (sig === petCardSig && $('#petNameLbl').textContent === petName()) return;
+    petCardSig = sig;
+  } catch (e) { petCardSig = ''; }
   $('#petNameLbl').textContent = petName();
   $('#btnTrick').hidden = !(G.pet && G.pet.stage === 'adult');   // 🎪 大朋友才會表演
   $('#petNameLbl').onclick = () => { if ($('#modal').hidden) openPetNamer(G.activePet); };
