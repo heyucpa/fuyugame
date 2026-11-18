@@ -811,6 +811,7 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .home-sw.emo { border: none; font-size: 26px; line-height: 34px; text-align: center; }
 .art-topic { text-align: center; margin: 10px 0; } .art-topic-ic { font-size: 72px; line-height: 1.1; } .art-topic-t { font-size: 24px; font-weight: 900; color: #b5651d; }
 .art-frame { display: flex; justify-content: center; margin: 4px 0 8px; } .art-frame canvas { border: 8px solid #f2c14e; border-radius: 6px; box-shadow: 0 0 0 3px #b07a1e, 0 4px 10px rgba(0,0,0,.15); }
+.ver-tag { position: fixed; right: 4px; bottom: 2px; z-index: 3; font: 10px/1 ui-monospace, Consolas, monospace; color: rgba(60,45,30,.5); background: rgba(255,250,240,.55); padding: 2px 4px; border-radius: 5px; pointer-events: none; user-select: none; }   /* 家長：版本寫在畫面右下角，一眼看得出是不是新版 */
 .idle-pause { position: fixed; inset: 0; z-index: 9500; background: rgba(40,30,20,.35); display: flex; align-items: center; justify-content: center; }
 .idle-card { background: #fffaf0; border-radius: 22px; padding: 22px 28px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,.25); max-width: 86vw; } .idle-ic { font-size: 54px; } .idle-t { font-size: 22px; font-weight: 900; color: #5a4630; } .idle-s { color: #8a7a66; margin: 4px 0 12px; }
 .lite-ask { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 9000; background: #fff8e6; border: 2px solid #ffb84d; border-radius: 16px; padding: 10px 14px; display: flex; gap: 8px; align-items: center; box-shadow: 0 6px 18px rgba(0,0,0,.18); font-weight: 700; max-width: 92vw; flex-wrap: wrap; justify-content: center; }
@@ -1220,6 +1221,7 @@ button, .card, .place-pick, .lv-btn, .dex-tile, .adv-ep, .gift-opt, .trick-cell,
 </div>
 <div class="toasts" id="toasts"></div>
 <div class="guide-hand" id="guideHand" hidden>👇</div>
+<div id="verTag" class="ver-tag" aria-hidden="true"></div>
 <script>
 /* ===== 📋 當機紀錄（家長：「常常玩一下就當機」，在這邊重現不出來）=====
    在家裡的機器上記下發生了什麼，家長到「⚙️ 設定 → 📋 當機紀錄」複製給我看：
@@ -34153,6 +34155,10 @@ function shrinkBigRooms() {
   return { moved, refund };
 }
 setTimeout(() => { try { const r = shrinkBigRooms(); if (r) toast(`📐 房間最大改成 12×12 了${r.moved ? `，超出去的 ${r.moved} 件東西收進「我的東西」` : ''}${r.refund ? `，退還 💰 ${fmt(r.refund)}` : ''}`); } catch (e) { try { console.error(e); } catch (e2) {} } }, 1200);
+
+/* 🏷️ 右下角的小小版本字：用網頁檔案的更新時間（每次上線自動變），例如「版本 11/19 01:16」。點不到、不擋東西。 */
+function gameVersionText() { const d = new Date(document.lastModified), p2 = n => String(n).padStart(2, '0'); return isNaN(d) ? String(document.lastModified) : `${d.getMonth() + 1}/${d.getDate()} ${p2(d.getHours())}:${p2(d.getMinutes())}`; }
+try { const vt = document.getElementById('verTag'); if (vt) vt.textContent = '版本 ' + gameVersionText(); } catch (e) {}
 </script>
 
 </body></html>
