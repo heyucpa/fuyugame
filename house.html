@@ -550,6 +550,8 @@ button.pass { font: inherit; }
 .itemmenu button { border: none; background: none; text-align: left; padding: 7px 12px; border-radius: 9px; font-size: 14px; white-space: nowrap; }
 .itemmenu button:hover { background: var(--chip); }
 .itemmenu .menu-sub { font-size: 12px; color: var(--muted); padding: 6px 12px 2px; border-top: 1px dashed var(--line); margin-top: 2px; }
+/* 餵食選單很長時留在舞台裡面自己捲，不要把整頁撐出捲軸（捲軸一閃，房間就跟著閃） */
+.foodmenu { max-height: min(420px, calc(100% - 16px)); overflow-y: auto; overscroll-behavior: contain; }
 .petcard {
   position: absolute; top: 12px; left: 12px; width: 168px; z-index: 4;
   background: rgba(255,250,240,.94); border: 2px solid var(--line); border-radius: 14px;
@@ -862,6 +864,7 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .spark-fly { position: fixed; z-index: 90; pointer-events: none; font-size: 20px; transform: translate(-50%, -50%); animation: sparkFly .9s ease-out forwards; }
 @keyframes sparkFly { to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.4); opacity: 0; } }
 .crash-box { width: 100%; height: 220px; font: 12px/1.45 ui-monospace, Consolas, monospace; border: 2px solid var(--line); border-radius: 12px; padding: 8px; box-sizing: border-box; white-space: pre-wrap; }
+pre.crash-box { height: auto; max-height: min(46vh, 320px); overflow: auto; margin: 0 0 10px; text-align: left; word-break: break-word; -webkit-overflow-scrolling: touch; }   /* 📊 效能檢查：字太多就在框裡捲，不要蓋到下面的按鈕 */
 .quest-pause { position: absolute; top: 6px; right: 6px; z-index: 3; width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--line); background: rgba(255,255,255,.9); font-size: 20px; padding: 0; touch-action: none; }
 .quest-pause[hidden] { display: none; }
 .quest-pauseov { position: absolute; inset: 0; z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: rgba(40,30,50,.55); border-radius: 12px; }
@@ -4232,7 +4235,7 @@ const Sound = (() => {
     squish() { tone({ f0: 320, f1: 190, dur: .22, type: 'triangle', vol: .45, vib: 25 }); },
     // 放開回彈「啵嚶」
     boing() { tone({ f0: 220, f1: 620, dur: .18, type: 'sine', vol: .45, vib: 40 }); },
-    eat() { [0, .16, .32].forEach(at => tone({ f0: 260, f1: 200, dur: .09, type: 'square', vol: .12, at })); setTimeout(fx.petHappy, 520); },
+    eat() { tone({ f0: 340, f1: 180, dur: .14, type: 'triangle', vol: .16 }); },
     bath() { for (let i = 0; i < 9; i++) tone({ f0: 900 + Math.random() * 900, f1: 1800 + Math.random() * 600, dur: .07, vol: .22, at: i * .07 + Math.random() * .03 }); },
     place() { tone({ f0: 180, f1: 90, dur: .14, type: 'sine', vol: .6 }); noise({ dur: .06, vol: .15, freq: 900 }); },
     pickUp() { tone({ f0: 420, f1: 640, dur: .08, vol: .3 }); },
@@ -5677,6 +5680,9 @@ const NEWS = [
     ['🏃', '學校操場的花豹教練：報名「世界全國跑步大賽」，跳遠＋百米賽跑，簡單就能玩'],
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
     ['🚀', '剛打開遊戲比較不會卡了：畫畫存起來小很多（存檔變成原本的一半以下），打開時的存檔紀錄改到電腦有空的時候才做'],
+    ['🐢', '切到商店、換衣服不會轉圈圈了：小圖先畫看得到的，其他的一下子就補上'],
+    ['🚶', '順暢模式走路變回正常速度，不再像慢動作'],
+    ['🍙', '餵食只響一聲、不會連按吃兩份；按「叫牠」寵物會跑過來；世界大賽比到一半關掉，下次可以接著比'],
     ['🖥️', '接大螢幕玩大地圖不會卡了：以前畫面太大，地面每一格都在重畫；現在畫好就存著，飛的時候前面也會先準備好'],
     ['⏸️', '好一陣子沒玩（2 分鐘），或切到別的視窗超過 1 分鐘，遊戲會自動暫停、電腦不用一直忙；點一下就繼續'],
     ['💻', '順暢模式更省力：一秒畫 15 次、大地圖不畫蝴蝶海鷗和騎腳踏車的人、背景音樂先關掉（按上面的 🎵 可以打開）；畫面平常清楚，真的卡的時候才稍微降一點（最多 85%）'],
@@ -6577,6 +6583,39 @@ function migrateWornAccessory(o) {
   }
   return o;
 }
+/* 進行中的世界大賽。只收這一屆的五場（場次、五個國家、對手、陪榜）。
+   壞掉就拿掉這一欄，其他成績（名次、冠軍次數、今天打了幾次）留著。舊存檔沒有這一欄也照常讀。 */
+function sanitizeWorldRun(wv) {
+  try {
+    if (!wv || wv.run == null) return;
+    const run = wv.run;
+    const obj = v => !!v && typeof v === 'object' && !Array.isArray(v);
+    const countries = { '冰雪國': 1, '沙漠國': 1, '森林國': 1, '大海國': 1, '火山國': 1, '雲朵國': 1, '糖果國': 1, '星星國': 1 };
+    const one = (p, allowMoon) => {
+      if (!obj(p) || typeof p.id !== 'string' || !NEIGHBOR_BY_ID[p.id]) return false;
+      if (typeof p.venue !== 'string') return false;
+      if (p.venue === '月球') return !!allowMoon;
+      if (!countries[p.venue]) return false;
+      if (!(Number.isInteger(p.bi) && p.bi >= 0 && p.bi <= 5)) return false;
+      if (typeof p.short !== 'string' || p.short.length < 1 || p.short.length > 24) return false;
+      return true;
+    };
+    let bad = !obj(run) || !(Number.isInteger(run.r) && run.r >= 0 && run.r <= 4);
+    bad = bad || !Array.isArray(run.path) || run.path.length !== 5 || run.path[4] !== '月球';
+    if (!bad) {
+      const seen = {};
+      for (let i = 0; i < 4; i++) {
+        if (!countries[run.path[i]] || seen[run.path[i]]) bad = true;
+        seen[run.path[i]] = 1;
+      }
+    }
+    bad = bad || !Array.isArray(run.opps) || run.opps.length !== 5;
+    if (!bad) for (let i = 0; i < 5; i++) if (!one(run.opps[i], true) || run.opps[i].venue !== run.path[i]) bad = true;
+    bad = bad || !Array.isArray(run.fillers) || run.fillers.length > 32;
+    if (!bad) for (let i = 0; i < run.fillers.length; i++) if (!one(run.fillers[i], false)) bad = true;
+    if (bad) delete wv.run;
+  } catch (e) { try { delete wv.run; } catch (e2) {} }
+}
 function normalizeSave(g) {
   if (!g || typeof g !== 'object' || !Array.isArray(g.rooms) || !g.rooms.length) return null;
   /* 舊版少欄位可以補；「型態不對」是壞掉的資料，不能當成舊版收下來
@@ -6774,7 +6813,7 @@ function normalizeSave(g) {
   if (out.sportsCup != null) { if (!isObj(out.sportsCup)) delete out.sportsCup; else { const sc = out.sportsCup; Object.keys(sc).forEach(k => { if (['swim', 'run', 'tri', 'art'].includes(k)) { if (!(Number.isInteger(sc[k]) && sc[k] >= 0 && sc[k] <= 3)) delete sc[k]; } else if (k === 'n') { if (!(Number.isInteger(sc.n) && sc.n >= 0 && sc.n <= 1e6)) delete sc.n; } else delete sc[k]; }); } }   // 🏆 運動大賽拿過的獎牌
   if (out.dbcup != null) { if (!isObj(out.dbcup)) delete out.dbcup; else { if (!(Number.isInteger(out.dbcup.best) && out.dbcup.best >= 0 && out.dbcup.best <= 5)) out.dbcup.best = 0; if (!(Number.isInteger(out.dbcup.gold) && out.dbcup.gold >= 0 && out.dbcup.gold < 1e6)) out.dbcup.gold = 0; } }   // 🌏 世界躲避球大賽
   if (out.exams != null) { if (!isObj(out.exams)) delete out.exams; else Object.keys(out.exams).forEach(k => { const v = out.exams[k]; if (!['swim', 'chef', 'ball', 'dodge', 'track'].includes(k) || !(Number.isInteger(v) && v >= 0 && v <= 4)) delete out.exams[k]; }); }   // 🎖️ 升級考試（每種 0～4 級）
-  if (out.tkd && isObj(out.tkd)) { if (out.tkd.coach != null && !(Number.isInteger(out.tkd.coach) && out.tkd.coach >= 0 && out.tkd.coach < 1e6)) delete out.tkd.coach; if (out.tkd.world != null) { const wv = out.tkd.world; if (!isObj(wv)) delete out.tkd.world; else { if (!(Number.isInteger(wv.best) && wv.best >= -1 && wv.best <= 5)) wv.best = -1; if (!(Number.isInteger(wv.gold) && wv.gold >= 0 && wv.gold < 1e6)) wv.gold = 0; if (wv.v == null) { if (wv.best === 3) wv.best = 5; else if (wv.best === 2) wv.best = 4; else if (wv.best === 1) wv.best = 3; wv.v = 2; } else if (wv.v !== 2) { delete wv.v; wv.v = 2; } if (wv.d != null && typeof wv.d !== 'string') { delete wv.d; delete wv.n; } if (wv.n != null && !(Number.isInteger(wv.n) && wv.n >= 0 && wv.n < 100)) wv.n = 0; } } }   // 👑 教練、🌏 世界大賽（v 沒有＝舊三場：3 冠軍→5、2 銀→4、1 銅→3）
+  if (out.tkd && isObj(out.tkd)) { if (out.tkd.coach != null && !(Number.isInteger(out.tkd.coach) && out.tkd.coach >= 0 && out.tkd.coach < 1e6)) delete out.tkd.coach; if (out.tkd.world != null) { const wv = out.tkd.world; if (!isObj(wv)) delete out.tkd.world; else { if (!(Number.isInteger(wv.best) && wv.best >= -1 && wv.best <= 5)) wv.best = -1; if (!(Number.isInteger(wv.gold) && wv.gold >= 0 && wv.gold < 1e6)) wv.gold = 0; if (wv.v == null) { if (wv.best === 3) wv.best = 5; else if (wv.best === 2) wv.best = 4; else if (wv.best === 1) wv.best = 3; wv.v = 2; } else if (wv.v !== 2) { delete wv.v; wv.v = 2; } if (wv.d != null && typeof wv.d !== 'string') { delete wv.d; delete wv.n; } if (wv.n != null && !(Number.isInteger(wv.n) && wv.n >= 0 && wv.n < 100)) wv.n = 0; sanitizeWorldRun(wv); } } }   // 👑 教練、🌏 世界大賽（v 沒有＝舊三場：3 冠軍→5、2 銀→4、1 銅→3）
   if (out.moves != null) { if (!isObj(out.moves)) delete out.moves; else out.moves = Object.fromEntries(Object.entries(out.moves).filter(([k, v]) => /^[a-z]{2,12}$/.test(k) && v === 1)); }   // 🥋 學會的朋友招式
   if (out.duel != null) { if (!isObj(out.duel)) delete out.duel; else ['win', 'lose'].forEach(k => { if (!(Number.isInteger(out.duel[k]) && out.duel[k] >= 0 && out.duel[k] < 1e6)) out.duel[k] = 0; }); }   // ⚔️ 對決贏輸幾次
   if (out.hanzi != null) { if (!isObj(out.hanzi)) delete out.hanzi; else out.hanzi = Object.fromEntries(Object.entries(out.hanzi).filter(([k, v]) => /^[\u4e00-\u9fff]$/.test(k) && v === 1)); }   // 🀄 認得的國字
@@ -9105,8 +9144,8 @@ const fufu = {
   fx: []        // 頭上冒出的小圖（音符、愛心…）
 };
 
-function fufuSay(text, ms) {
-  if (text && text !== fufu.say) Sound.play('talk', text);
+function fufuSay(text, ms, quiet) {
+  if (!quiet && text && text !== fufu.say) Sound.play('talk', text);
   fufu.say = text;
   fufu.sayUntil = performance.now() + (ms || 2600);
 }
@@ -10134,7 +10173,7 @@ function kidEat(foodId, src) {
     fufuSay(pickLine('kidGrow'), 3000);
     toast(`${f.emoji} 好營養！${charName()}會健康、快快長大、壯壯的！💪`);
   } else {
-    fufuSay(pickLine('kidEat'));
+    fufuSay(pickLine('kidEat'), 2600, true);   // 吃的聲音已經響過一次，不要再疊一串說話音
   }
   if (typeof dailyHit === 'function') try { dailyHit('kidEat'); } catch (e) {}
   saveGame();
@@ -11398,11 +11437,37 @@ function phTap(i, e) {
 }
 
 function petCallOver() {
-  if (isEgg()) { toast('蛋還不會走路喔～摸摸牠讓牠快點孵出來！'); return; }
-  petWake(false); pet.task = null;
+  if (isEgg()) { toast('蛋還不會走路喔～摸摸牠讓牠快點孵出來！'); try { Sound.play('click'); } catch (e) {} return; }
   const room = curRoom();
-  pet.path = findPath(room, Math.floor(pet.x), Math.floor(pet.y), Math.floor(fufu.x) + 1, Math.floor(fufu.y));
-  pet.idleUntil = performance.now() + 4000;
+  if (!room) return;
+  petWake(false);
+  pet.task = null;
+  pet.z = 0;
+  /* 先把自己算在這一間，下一格才不會被「換房間」清掉路線、又拉回房間中間（按鈕看起來像沒反應） */
+  pet.room = roomKey();
+  const blk = blockedGrid(room);
+  const free = (i, j) => i >= 0 && j >= 0 && i < room.w && j < room.d && blk[i] && !blk[i][j];
+  let sx = Math.floor(pet.x), sy = Math.floor(pet.y);
+  if (!free(sx, sy)) {
+    const c = nearestFree(room, fufu.x, fufu.y) || nearestFree(room, room.w / 2, room.d / 2);
+    if (c) { pet.x = c[0] + .5; pet.y = c[1] + .5; sx = c[0]; sy = c[1]; }
+  }
+  let tx = Math.max(0, Math.min(room.w - 1, Math.floor(fufu.x) + (fufu.facing < 0 ? -1 : 1)));
+  let ty = Math.max(0, Math.min(room.d - 1, Math.floor(fufu.y)));
+  if (!free(tx, ty)) {
+    const c = nearestFree(room, fufu.x, fufu.y);
+    if (c) { tx = c[0]; ty = c[1]; }
+  }
+  pet.path = (sx === tx && sy === ty) ? [] : findPath(room, sx, sy, tx, ty);
+  pet.idleUntil = performance.now() + 8000;
+  pet.happyUntil = performance.now() + 2200;
+  pet.squishV = -7;
+  pet.thinkUntil = 0;
+  try { Sound.play('petHappy'); } catch (e) {}
+  petBurst({ kind: 'heart' }, 3);
+  const line = pet.path.length ? (petName() + '跑過來了！') : (petName() + '在這裡呀！');
+  try { fufuSay(line, 2200, true); } catch (e) {}
+  try { toast(line); } catch (e) {}
 }
 
 // 換寵物時，新帶出來的那隻出現在小可愛旁邊
@@ -11498,7 +11563,7 @@ function petFeed(foodId) {
   pet.squishV = -6;
   petBurst({ kind: 'emoji', emoji: f.emoji }, 1);
   petBurst({ kind: 'heart' }, 3);
-  fufuSay(pickLine('petFeed', { 寵物: petName() }));
+  fufuSay(pickLine('petFeed', { 寵物: petName() }), 2000, true);   // 吃的那一聲已經響了，不要再疊說話音
   petGainGrowth(GROWTH.feed);
   saveGame();
   return true;
@@ -15169,10 +15234,28 @@ function commit() {
 function requestDraw() { dirty = true; }
 
 const thumbCache = {};
+/* 🐢 家長：從商店切到換裝會轉圈圈 → 第一次開分頁要畫幾百張小圖。
+   現在每一格畫面最多花 8 毫秒畫小圖：上面先看到的先畫好，其他的下一格、再下一格慢慢補上，畫面不會停住。
+   畫過的照樣存起來，第二次打開直接用。（自動測試時照舊一次畫完，測試才看得到每一張） */
+var THUMB_LAZY = !(navigator.webdriver || /HeadlessChrome/.test(navigator.userAgent));
+const THUMB_BLANK = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+const thumbQ = []; let thumbBudgetAt = 0, thumbBudget = 0, thumbRaf = 0;
+function thumbLater(img, job) {   // job() 回傳圖片網址
+  const now = performance.now();
+  if (now - thumbBudgetAt > 30) { thumbBudgetAt = now; thumbBudget = 0; }
+  if (!THUMB_LAZY || thumbBudget < 8) { const s = performance.now(); img.src = job(); thumbBudget += performance.now() - s; return; }
+  img.src = THUMB_BLANK; thumbQ.push([img, job]);
+  if (!thumbRaf) thumbRaf = requestAnimationFrame(thumbPump);
+}
+function thumbPump() {
+  thumbRaf = 0; const s = performance.now();
+  while (thumbQ.length && performance.now() - s < 8) { const [img, job] = thumbQ.shift(); try { img.src = job(); } catch (e) {} }   // 已經切走的分頁也畫完（存起來，下次就快）
+  if (thumbQ.length) thumbRaf = requestAnimationFrame(thumbPump);
+}
 function thumb(def) {
-  if (!thumbCache[def.id]) thumbCache[def.id] = renderThumb(def, 64).toDataURL();
   const img = new Image();
-  img.src = thumbCache[def.id];
+  if (thumbCache[def.id]) img.src = thumbCache[def.id];
+  else thumbLater(img, () => thumbCache[def.id] || (thumbCache[def.id] = renderThumb(def, 64).toDataURL()));
   img.width = img.height = 64;
   img.alt = '';
   return img;
@@ -15283,7 +15366,8 @@ try {
    看電影、休息時間、小遊戲進行中不暫停（不打斷她正在看、正在玩的）。 */
 var IDLE_PAUSED = false;
 var ROOM_MUTED = false;   // 小遊戲進行中，房間在後面跑的那一下：不出聲
-var IDLE_MS = navigator.webdriver ? Infinity : 120000, IDLE_BLUR_MS = navigator.webdriver ? Infinity : 60000;   // 自動測試時不暫停（測試可以自己改小）
+var IDLE_AUTO = navigator.webdriver || /HeadlessChrome/.test(navigator.userAgent);
+var IDLE_MS = IDLE_AUTO ? Infinity : 120000, IDLE_BLUR_MS = IDLE_AUTO ? Infinity : 60000;   // 自動測試時不暫停（測試可以自己改小）
 let idleLastInput = performance.now(), idleBlurAt = 0;
 function idleBusy() {
   try {
@@ -15331,8 +15415,13 @@ function resize() {
   if (document.querySelector('.stage.island-on')) { canvasBox = null; if (canvas.width > 1) { canvas.width = 1; canvas.height = 1; } return; }   // 在外面：房間看不到，畫布先還記憶體（回家再畫）
   const r = canvasBox = canvas.getBoundingClientRect();
   viewDpr = canvasDpr(r.width, r.height);
-  canvas.width = Math.max(1, Math.round(r.width * viewDpr));
-  canvas.height = Math.max(1, Math.round(r.height * viewDpr));
+  const bw = Math.max(1, Math.round(r.width * viewDpr));
+  const bh = Math.max(1, Math.round(r.height * viewDpr));
+  /* 設 canvas.width 會把整張圖清掉。大小沒變就不要重設，不然觀察視窗大小的程式一響，房間就閃一下。 */
+  if (canvas.width !== bw || canvas.height !== bh) {
+    canvas.width = bw;
+    canvas.height = bh;
+  }
   requestDraw();
 }
 new ResizeObserver(resize).observe(canvas);
@@ -15375,7 +15464,8 @@ function draw() {
   viewDpr = dpr;
   const bw = Math.max(1, Math.round(r.width * dpr)), bh = Math.max(1, Math.round(r.height * dpr));
   if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
-  furnScale = Math.round(Math.min(2, Math.max(1, view.scale * dpr)) * 100) / 100;
+  /* 家具圖的倍率用 0.05 一階。差一點點（捲軸、1px）不要換一把新的快取，不然整間房間會重畫、畫面就頓。 */
+  furnScale = Math.round(Math.min(2, Math.max(1, view.scale * dpr)) * 20) / 20;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const sea = seasonOfMonth();
@@ -15696,7 +15786,8 @@ var FRAME_MIN_MS = LITE ? 1000 / 15 - 4 : 1000 / 30 - 4;   // 順暢模式一秒
   if (loop.modal && !loop.modal.hidden && loop.card && loop.card.classList.contains('in-game') && now - lastFrame < 250) return;
   if (now - lastFrame > 5000 && Date.now() - crashHiddenSince > (now - lastFrame) + 1000) { const gap = now - lastFrame, bl = window.crashBlurSince || 0, away = bl && Date.now() - bl <= gap + 1000;   // 停住的這段時間裡 iPad 跑去別的畫面過
     crashLog('畫面停住', `停了 ${(gap / 1000).toFixed(1)} 秒又恢復` + (away ? '（那時候 iPad 在別的畫面：多工、控制中心或詢問框，不是遊戲卡住）' : '（跳出確認視窗也會這樣）')); }   // 📋 當機紀錄
-  const dt = Math.max(0, Math.min(.05, (now - lastFrame) / 1000));
+  /* 一格最多算 0.075 秒：順暢模式一秒 15 格（一格 0.067 秒），以前上限 0.05 秒 → 走路只剩 75% 速度，像慢動作 */
+  const dt = Math.max(0, Math.min(.075, (now - lastFrame) / 1000));
   lastFrame = now;
   /* 🔇 家長：比賽中怎麼還會有肚子餓的聲音 → 小遊戲／電影開著時，後面房間發出的聲音（肚子餓、寵物叫、說話）一律不放 */
   const md = loop.modal, cd = loop.card; ROOM_MUTED = !!(md && !md.hidden && cd && (cd.classList.contains('in-game') || cd.classList.contains('in-movie')));
@@ -15923,7 +16014,11 @@ function refreshSoundButtons() {
 }
 /* 🎵 音樂選單（家長：切換開關不太順——以前要一直按換歌，按到最後一首再按才會關）
    點 🎵 跳出一個小選單：最上面一顆大大的「開／關」，下面是每一首歌，點了就放那一首。 */
-function closeMusicMenu() { const m = document.getElementById('musicMenu'); if (m) m.remove(); document.removeEventListener('pointerdown', musicMenuOutside, true); }
+let musicOutsideOn = false;
+function closeMusicMenu() {
+  const m = document.getElementById('musicMenu'); if (m) m.remove();
+  if (musicOutsideOn) { document.removeEventListener('pointerdown', musicMenuOutside, true); musicOutsideOn = false; }
+}
 function musicMenuOutside(e) { const m = document.getElementById('musicMenu'); if (m && !m.contains(e.target) && e.target.id !== 'btnBgm') closeMusicMenu(); }
 function openMusicMenu() {
   if (document.getElementById('musicMenu')) { closeMusicMenu(); return; }
@@ -15945,7 +16040,11 @@ function openMusicMenu() {
   const w = m.offsetWidth;
   m.style.top = (r.bottom + 6) + 'px';
   m.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + 'px';
-  setTimeout(() => document.addEventListener('pointerdown', musicMenuOutside, true), 0);
+  setTimeout(() => {
+    if (!document.getElementById('musicMenu') || musicOutsideOn) return;   // 關得比這一拍快：不要留下沒人拿掉的監聽
+    document.addEventListener('pointerdown', musicMenuOutside, true);
+    musicOutsideOn = true;
+  }, 0);
 }
 $('#btnBgm').onclick = () => { Sound.play('click'); openMusicMenu(); };
 Sound.onAutoSong(n => { try { toast(`🎵 換一首：${n}`); refreshSoundButtons(); } catch (e) {} });
@@ -15992,6 +16091,47 @@ function updatePetCard() {
   row.classList.toggle('max', !sg.next);
   row.title = sg.next ? (st.stage === 'egg' ? `快孵出來了（${Math.round(st.growth)} / ${sg.next}）` : `長成${PET_STAGE_BY_ID[nextStageId(st.stage)].name}：${Math.round(st.growth)} / ${sg.next}`) : '已經是大朋友了！';
 }
+// 餵食一次只扣一份。點太快（滑鼠連點、iPad 的幽靈點）不要再吃一次、也不要整頁重畫。
+let careLock = 0;
+function refreshFoodStock() {
+  document.querySelectorAll('#tabBody [data-stock]').forEach(node => {
+    const i = (node.dataset.stock || '').indexOf(':');
+    if (i < 0) return;
+    const bag = node.dataset.stock.slice(0, i) === 'kid' ? G.kidFood : G.food;
+    const n = (bag && bag[node.dataset.stock.slice(i + 1)]) || 0;
+    node.hidden = !n;
+    node.textContent = n ? '×' + n : '';
+  });
+}
+function finishCare() {
+  try { refreshTop(); updatePetCard(); refreshFoodStock(); } catch (e) {}
+  requestDraw();
+  /* 賣東西的清單上有數量，才整頁重畫。平常餵食只改上面的數字，不要把側邊欄清掉再畫（那一下就是閃） */
+  try { if (typeof sellMode !== 'undefined' && sellMode && typeof renderTab === 'function') renderTab(); } catch (e) {}
+}
+function placeFoodMenu(menu) {
+  const card = $('#petCard').getBoundingClientRect(), stage = $('.stage').getBoundingClientRect();
+  menu.hidden = false;
+  const maxH = Math.max(96, Math.floor(stage.height - 16));
+  menu.style.maxHeight = maxH + 'px';
+  const mw = menu.offsetWidth, mh = menu.offsetHeight;
+  let left = card.left - stage.left;
+  let top = card.bottom - stage.top + 6;
+  if (top + mh > stage.height - 8) top = card.top - stage.top - mh - 6;
+  if (top < 8) top = 8;
+  if (left + mw > stage.width - 8) left = stage.width - mw - 8;
+  if (left < 8) left = 8;
+  menu.style.left = left + 'px';
+  menu.style.top = top + 'px';
+}
+function eatFromMenu(menu, go) {
+  if (menu.hidden || performance.now() < careLock) return;
+  menu.hidden = true;
+  careLock = performance.now() + 450;
+  const ok = go();
+  if (!ok) { careLock = 0; return; }
+  finishCare();
+}
 // who：'pet' 餵寵物、'kid' 給小可愛吃
 function showFoodMenu(who) {
   const menu = $('#foodMenu');
@@ -16000,18 +16140,19 @@ function showFoodMenu(who) {
   menu.innerHTML = '';
   if (who === 'kid' && kidBaby()) { // 小寶寶只喝奶奶（不用錢）
     const b = document.createElement('button');
+    b.type = 'button';
     b.textContent = '🍼 喝奶奶';
-    b.onclick = () => {
-      menu.hidden = true;
-      G.kid.hunger = clampStat(G.kid.hunger + 25);
-      Sound.play('eat'); fufu.jumpT = .35; fufuSay(pickLine('babyMilk'), 2600); fufuBurst('🍼');
-      saveGame(); commit();
+    b.onclick = ev => {
+      if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+      eatFromMenu(menu, () => {
+        G.kid.hunger = clampStat(G.kid.hunger + 25);
+        Sound.play('eat'); fufu.jumpT = .35; fufuSay(pickLine('babyMilk'), 2600); fufuBurst('🍼');
+        saveGame();
+        return true;
+      });
     };
     menu.appendChild(b);
-    const card = $('#petCard').getBoundingClientRect(), stage = $('.stage').getBoundingClientRect();
-    menu.style.left = (card.left - stage.left) + 'px';
-    menu.style.top = (card.bottom - stage.top + 6) + 'px';
-    menu.hidden = false;
+    placeFoodMenu(menu);
     return;
   }
   // 小可愛：自己的食物，再加上寵物食物（蘋果、牛奶、布丁這些她也能吃）
@@ -16029,8 +16170,12 @@ function showFoodMenu(who) {
     const ok = ids.filter(id => !(who === 'kid' && table[id].petOnly));   // 骨頭這種只給寵物吃
     const mk = id => {
       const f = table[id], b = document.createElement('button');
+      b.type = 'button';
       b.textContent = `${f.emoji} ${f.name} ×${stock[id]}${who === 'kid' && f.grow ? '　💪' : ''}`;
-      b.onclick = () => { menu.hidden = true; if (who === 'kid') kidEat(id, src); else petFeed(id); commit(); };
+      b.onclick = ev => {
+        if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+        eatFromMenu(menu, () => (who === 'kid' ? kidEat(id, src) : petFeed(id)));
+      };
       return b;
     };
     ok.filter(id => !table[id].potion).forEach(id => menu.appendChild(mk(id)));
@@ -16046,10 +16191,7 @@ function showFoodMenu(who) {
     b.onclick = () => { menu.hidden = true; shopTheme = 'food'; openTab('shop'); };
     menu.appendChild(b);
   }
-  const card = $('#petCard').getBoundingClientRect(), stage = $('.stage').getBoundingClientRect();
-  menu.style.left = (card.left - stage.left) + 'px';
-  menu.style.top = (card.bottom - stage.top + 6) + 'px';
-  menu.hidden = false;
+  placeFoodMenu(menu);
 }
 $('#btnFeed').onclick = () => { if (G.pet.stage === 'egg') eggNotYet(); else showFoodMenu('pet'); };
 $('#btnKidEat').onclick = () => showFoodMenu('kid');
@@ -17025,7 +17167,10 @@ function foodShopGrid(list, stock, buy, subText) {
     c.appendChild(el('div', 'emoji', food.emoji));
     c.appendChild(el('div', 'nm', food.name));
     c.appendChild(el('div', 'pr', `💰 ${fmt(food.price)}　${subText(food)}`));
-    if (stock[food.id]) c.appendChild(el('span', 'ct', '×' + stock[food.id]));
+    const ct = el('span', 'ct', stock[food.id] ? '×' + stock[food.id] : '');
+    ct.dataset.stock = (stock === G.kidFood ? 'kid' : 'pet') + ':' + food.id;
+    if (!stock[food.id]) ct.hidden = true;
+    c.appendChild(ct);
     const en = typeof enChip === 'function' ? enChip(food.id, food.name) : null; if (en) c.appendChild(en);   // 🔤 英文
     c.onclick = () => {
       if (buy(food.id)) { Sound.play('coin'); toast(`買了「${food.name}」`); commit(); }
@@ -17765,6 +17910,7 @@ function renderGirl(ids, w, h, opts) {
      現在畫一次存成圖片網址，畫布馬上還記憶體，頁面上放的是 <img>（瀏覽器自己會省記憶體）。快取最多留 160 張。 */
   const img = new Image(); img.className = 'girl-thumb'; img.width = w; img.height = h; img.style.width = w + 'px'; img.style.height = h + 'px'; img.alt = ''; img.draggable = false;
   if (girlThumbCache[key]) { img.src = girlThumbCache[key]; return img; }
+  if (w <= 100 && !(opts && opts.now)) { thumbLater(img, () => { if (girlThumbCache[key]) return girlThumbCache[key]; const im = renderGirl(ids, w, h, Object.assign({}, opts, { now: 1 })); return im.src; }); return img; }   // 小圖：畫面停不住就分批補
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   const c = document.createElement('canvas');
   c.width = w * dpr; c.height = h * dpr;
@@ -22561,7 +22707,7 @@ function islFrame(now) {
   now = now || performance.now();
   if (document.hidden || IDLE_PAUSED) { isl.last = now; isl.raf = requestAnimationFrame(islFrame); return; }
   if (now - isl.last < FRAME_MIN_MS) { isl.raf = requestAnimationFrame(islFrame); return; }   // 🐢 小島也是一秒 30 次
-  const dt = Math.min(.05, (now - isl.last) / 1000); isl.last = now; isl.t += dt;
+  const dt = Math.min(.075, (now - isl.last) / 1000); isl.last = now; isl.t += dt;   // 順暢模式 15 格：不要變慢動作
   if (resting) { closeIsland(); return; }
   if (isl.press && now - isl.repath > 140) { isl.repath = now; islTap(isl.press, true); }
   try { if (!islStep(dt)) return; islDraw(now); } catch (e) { console.error(e); }
@@ -31298,7 +31444,35 @@ function worldFlyTo(w, foe, done) {
   };
   raf = requestAnimationFrame(frame);
 }
+function worldPackOne(f) {
+  const key = Array.isArray(f.dobok) ? f.dobok.join(',') : '';
+  const bi = TKD_BELTS.findIndex(b => Array.isArray(b[1]) && b[1].join(',') === key);
+  return { id: f.id, venue: f.venue, bi: bi < 0 ? 1 : bi, short: String(f.short || '').slice(0, 24) };
+}
+function worldUnpackOne(p) {
+  const base = p && NEIGHBOR_BY_ID[p.id];
+  if (!base || !p.venue) return null;
+  const belt = TKD_BELTS[p.bi] || TKD_BELTS[1];
+  return Object.assign({}, base, { short: p.short || (p.venue + base.short), venue: p.venue, dobok: belt[1] });
+}
+function worldSaveRun(cup, r) {
+  const ws = worldState();
+  ws.run = { r, path: cup.path.slice(), opps: cup.opps.map(worldPackOne), fillers: cup.fillers.map(worldPackOne) };
+  ws.v = 2;
+}
+function worldReadRun() {
+  const ws = worldState(), run = ws.run;
+  if (!run || typeof run !== 'object') return null;
+  if (!(Number.isInteger(run.r) && run.r >= 0 && run.r < WORLD_ROUNDS.length)) return null;
+  if (!Array.isArray(run.path) || !Array.isArray(run.opps) || !Array.isArray(run.fillers)) return null;
+  const opps = run.opps.map(worldUnpackOne), fillers = run.fillers.map(worldUnpackOne);
+  if (opps.length !== 5 || opps.some(x => !x) || fillers.some(x => !x)) return null;
+  if (opps.some((f, i) => f.venue !== run.path[i])) return null;
+  return { cup: { opps, fillers, path: run.path.slice() }, r: run.r };
+}
 function worldShowBoard(w, cup, r, fromWin) {
+  worldSaveRun(cup, r);
+  try { saveGame(); } catch (e) {}   // 休息時間或關掉重開，都從這一場接著比
   const plan = worldRoundPlan(r), opp = cup.opps[r], field = worldField(cup, r);
   const h = w.card.querySelector('h2'); if (h) h.textContent = `🌏 世界大賽・${plan.name}`;
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
@@ -31347,6 +31521,8 @@ function worldEase(plan, tries) {
 }
 function worldStartDuel(cup, r, tries) {
   tries = tries || 0;
+  worldSaveRun(cup, r);
+  try { saveGame(); } catch (e) {}   // 休息時間或關掉重開，都從這一場接著比
   const plan = worldEase(worldRoundPlan(r), tries), f = cup.opps[r];
   if (G.kid && G.kid.hunger < DUEL_MIN_HUNGER) G.kid.hunger = DUEL_MIN_HUNGER;
   openDuelGame(f, {
@@ -31377,6 +31553,7 @@ function worldStartDuel(cup, r, tries) {
 // 比完了（輸了不再挑戰、或拿到冠軍）：記名次、發獎金和獎牌
 function worldFinish(w, cup, r, win, plan, f) {
   const ws = worldState(), got = win ? r + 1 : r;
+  if (ws.run) delete ws.run;   // 這一屆比完了（拿到名次）才清掉，下一屆才是新的
   ws.best = Math.max(ws.best == null ? -1 : ws.best, got); ws.v = 2;
   const champ = got === WORLD_ROUNDS.length, first = champ && !ws.gold; if (champ) ws.gold = (ws.gold || 0) + 1;
   const bells = payReward(w, WORLD_PRIZE[got]) + (first ? (addBells(2000), 2000) : 0);
@@ -31390,13 +31567,26 @@ function worldFinish(w, cup, r, win, plan, f) {
 }
 function openWorldCup() {
   if (!worldCupOpen()) { toast('🌏 要先打贏熊熊教練，教練才會告訴你世界大賽喔！'); try { hostSay('先打贏我，我再告訴你一個大秘密！', 2800); speak('先打贏教練，再來參加世界大賽！'); } catch (e) {} return; }
-  const ws = worldState(), d = today();
+  const kept = worldReadRun();
+  if (kept) {
+    playDuel.test = null;
+    const w = openGameWindow('🌏 世界大賽', '比賽還沒比完，從剛剛那一場繼續！連贏 5 場就是世界冠軍。');
+    toast('🌏 從' + WORLD_ROUNDS[kept.r].name + '繼續比！');
+    worldShowBoard(w, kept.cup, kept.r);
+    return;
+  }
+  const ws = worldState();
+  if (ws.run) delete ws.run;   // 記下來的這一屆讀不回來：拿掉，不要卡住今天的次數
+  const d = today();
   if (ws.d !== d) { ws.d = d; ws.n = 0; }
   if (ws.n >= WORLD_DAY_MAX) { toast('🌏 今天的世界大賽打 3 次了，明天再來！'); return; }
-  ws.n++; saveGame();
+  ws.n++;
+  const cup = worldBuildCup();
+  worldSaveRun(cup, 0);
+  try { saveGame(); } catch (e) {}
   playDuel.test = null;
   const w = openGameWindow('🌏 世界大賽', '連贏 5 場就是世界冠軍！每一場會飛去不同的國家，決賽在月球。');
-  worldShowBoard(w, worldBuildCup(), 0);
+  worldShowBoard(w, cup, 0);
 }
 let worldNextAd = 0, worldAdSaid = false;
 function worldAdTick() {
