@@ -15374,6 +15374,49 @@ function openPerfCheck() {
     openPerfCheck.last = { avg, gi, lines };
   }
 }
+/* 🔬 自動找原因（家長：你幫我測試 → 我碰不到那台電腦，所以讓遊戲自己測）
+   第一段 20 秒：遊戲完全停下來（不畫房間、不畫地圖、不跑任何遊戲的事），只看瀏覽器自己一秒能更新幾次畫面。
+   第二段 20 秒：遊戲照常跑。
+   兩段都記「最久停了多久」「停超過半秒幾次」，還有心跳（程式有沒有跟著停）。
+   ・第一段就會停 → 遊戲什麼都沒做也卡：是這台電腦／Chrome／擴充功能，不是遊戲。
+   ・第一段很順、第二段才停 → 是遊戲造成的。
+   結果寫進當機紀錄，可以複製。 */
+var FIND_CAUSE_HOLD = false;
+function openFindCause() {
+  const card = $('#modalCard'); card.classList.remove('game-card', 'in-game', 'game-big'); card.innerHTML = '';
+  card.appendChild(el('h2', '', '🔬 自動找原因'));
+  const info = el('pre', 'crash-box', ''); card.appendChild(info);
+  const close = el('button', 'big alt', '關掉'); close.onclick = () => { FIND_CAUSE_HOLD = false; $('#modal').hidden = true; }; card.appendChild(close);
+  $('#modal').hidden = false;
+  const SEC = openFindCause.sec || 20;
+  const measure = (label, hold) => new Promise(res => {
+    FIND_CAUSE_HOLD = hold; const gaps = []; let last = performance.now(), hb = last, hbMax = 0; const t0 = last;
+    const iv = setInterval(() => { const t = performance.now(); hbMax = Math.max(hbMax, t - hb); hb = t; }, 100);
+    (function f(n) { gaps.push(n - last); last = n;
+      const left = Math.ceil(SEC - (n - t0) / 1000); if (left !== f.left) { f.left = left; info.textContent = (openFindCause.text || '') + `${label}：還有 ${Math.max(0, left)} 秒…（請不要切到別的視窗）`; }
+      if (n - t0 < SEC * 1000 && !$('#modal').hidden) requestAnimationFrame(f); else { clearInterval(iv); FIND_CAUSE_HOLD = false; gaps.shift(); const a = gaps.slice().sort((x, y) => x - y), sum = a.reduce((x, y) => x + y, 0);
+        res({ fps: Math.round(1000 * a.length / Math.max(1, sum)), max: Math.round(a[a.length - 1] || 0), n500: a.filter(x => x > 500).length, n100: a.filter(x => x > 100).length, hb: Math.round(hbMax) }); } })(performance.now());
+  });
+  openFindCause.text = '';
+  (async () => {
+    const A = await measure('① 遊戲先停下來，只看電腦', true);
+    const line = (nm, r) => `${nm}：一秒 ${r.fps} 格；最久停 ${(r.max / 1000).toFixed(1)} 秒；停超過半秒 ${r.n500} 次；程式最久停 ${(r.hb / 1000).toFixed(1)} 秒\n`;
+    openFindCause.text = line('① 遊戲停下來', A);
+    const B = await measure('② 遊戲照常跑', false);
+    openFindCause.text += line('② 遊戲照常跑', B);
+    const badA = A.max > 700 || A.fps < 20, badB = B.max > 700 || B.fps < 12;
+    const why = badA ? '👉 遊戲完全停下來的時候，畫面也會停住：問題在這台電腦／Chrome（顯示晶片驅動、擴充功能、或別的程式佔住電腦），不是遊戲。\n   可以試：Chrome 設定 → 系統 → 關掉「圖形加速」再重開；或改用 Edge；或更新顯示晶片驅動。'
+      : badB ? (B.hb > B.max * .6 ? '👉 只有遊戲在跑的時候才停，而且是程式自己卡住：是遊戲的問題，請把這段複製給幫忙改遊戲的人。' : '👉 只有遊戲在跑的時候才停，可是程式沒有卡住：是遊戲畫圖的方式讓瀏覽器停住，請把這段複製給幫忙改遊戲的人。')
+      : '👉 這 40 秒兩邊都很順，沒有抓到停住。可以再按一次，或在會卡的地方（例如大地圖）按。';
+    const gi = (() => { try { return gfxInfo(); } catch (e) { return {}; } })();
+    const extra = `畫圖方式：${SOFT_CANVAS ? '處理器' : '顯示晶片'}；順暢模式：${LITE ? '開' : '關'}；放大 ${Math.round((window.devicePixelRatio || 1) * 100)}%；顯示晶片：${gi.renderer || '?'}；在哪裡：${G.away ? (PLACES[G.away.place] || {}).name : document.querySelector('.stage.island-on') ? '小島' : '家裡'}`;
+    info.textContent = openFindCause.text + why + '\n' + extra;
+    try { crashLog('自動找原因', (openFindCause.text + extra).replace(/\n/g, '｜').slice(0, 290)); } catch (e) {}
+    const cp = el('button', 'big', '📋 複製'); cp.onclick = async () => { let ok = false; try { await navigator.clipboard.writeText(info.textContent); ok = true; } catch (e) {} cp.textContent = ok ? '✅ 複製好了，可以貼上了！' : '複製不了，請拍照'; setTimeout(() => { cp.textContent = '📋 複製'; }, 2500); };
+    if (close.parentNode === card) card.insertBefore(cp, close);
+    openFindCause.last = { A, B, badA, badB };
+  })();
+}
 /* 📊 記下最慢的幾格（家長：最慢的一格 2871 毫秒）：Chrome 的 long-animation-frame 會告訴我們那一格是哪段程式在跑。
    只留最慢的 6 筆，很省；效能檢查會列出來，複製給幫忙改遊戲的人。 */
 var SLOW_FRAMES = [];
@@ -15927,7 +15970,7 @@ setInterval(() => { const t = performance.now(); hbWorst = Math.max(hbWorst, t -
 (function loop(now) {
   requestAnimationFrame(loop);
   now = now || performance.now();
-  if (document.hidden || IDLE_PAUSED) { lastFrame = now; return; }   // 切到別的 App、分頁在背景、⏸️ 沒在玩自動暫停：不要繼續畫、也不要補一大段
+  if (document.hidden || IDLE_PAUSED || FIND_CAUSE_HOLD) { lastFrame = now; return; }   // 切到別的 App、分頁在背景、⏸️ 沒在玩自動暫停：不要繼續畫、也不要補一大段
   /* 🐢 房間一秒畫 30 次就夠順（家長：還有其他可以更快、避免卡卡的嗎）：工作量少一半，iPad 比較不燙、不卡。
      螢幕 60 格就隔一格畫一次；本來就比較慢的機器不受影響。小遊戲有自己的迴圈，照樣 60 格。 */
   if (now - lastFrame < FRAME_MIN_MS) return;
@@ -18712,6 +18755,7 @@ function tabSave(body) {
   body.appendChild(h3('💻 順暢模式'));
   body.appendChild(note('預設開著：畫面一秒少畫幾格、不放開場動畫（解析度不變）。只影響這台機器，不會動到進度。'));
   { const pc = el('button', 'mini', '📊 效能檢查（量量看這台電腦順不順）'); pc.onclick = () => openPerfCheck(); body.appendChild(pc); }
+  { const fc = el('button', 'big', '🔬 自動找原因（按一下，等 40 秒）'); fc.onclick = () => openFindCause(); body.appendChild(fc); }
   { const lb = el('button', 'big' + (LITE ? '' : ' alt'), LITE ? '✅ 順暢模式：開著（按一下關掉）' : '💻 打開順暢模式'); lb.onclick = () => { setLite(!LITE); Sound.play('click'); toast(LITE ? '💻 順暢模式打開了' : '順暢模式關掉了'); renderTab(); }; body.appendChild(lb); }
   { const sb = el('button', 'chip', SOFT_CANVAS ? '🖌️ 畫圖方式：用處理器畫（比較穩）｜按一下改用顯示晶片' : '🖌️ 畫圖方式：用顯示晶片畫｜按一下改用處理器（卡好幾秒時試試）');
     sb.onclick = () => { try { localStorage.setItem('myHouseGame_soft', SOFT_CANVAS ? '0' : '1'); saveGame(); } catch (e) {} location.reload(); }; body.appendChild(sb); }
@@ -22869,7 +22913,7 @@ function islDrawGround(ctx, m, x0, x1, y0, y1, tt) {
 function islFrame(now) {
   if (!isl) return;
   now = now || performance.now();
-  if (document.hidden || IDLE_PAUSED) { isl.last = now; isl.raf = requestAnimationFrame(islFrame); return; }
+  if (document.hidden || IDLE_PAUSED || FIND_CAUSE_HOLD) { isl.last = now; isl.raf = requestAnimationFrame(islFrame); return; }
   if (now - isl.last < FRAME_MIN_MS) { isl.raf = requestAnimationFrame(islFrame); return; }   // 🐢 小島也是一秒 30 次
   const dt = Math.min(.075, (now - isl.last) / 1000); isl.last = now; isl.t += dt;   // 順暢模式 15 格：不要變慢動作
   if (resting) { closeIsland(); return; }
