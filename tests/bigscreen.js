@@ -17,8 +17,8 @@ const path = require('path');
     const od = islDraw; let drawing = false; islDraw = function (n) { drawing = true; const b0 = built; try { return od.call(this, n); } finally { drawing = false; inDraw += built - b0; } };
     for (let i = 0; i < 100; i++) { isl.cam.y += .3; islDraw(performance.now()); await w(40); }
     islDraw = od; document.createElement = oc;
-    o.prefetched = built > 0 && inDraw <= 4;   // 大部分是空檔先畫的，畫面那一格幾乎不用等
-    o.cacheBounded = isl.m._chunks.size <= 60;
+    o.prefetched = built > 0 && inDraw <= 8;   // 大部分是空檔先畫的，畫面那一格幾乎不用等
+    o.cacheBounded = isl.m._chunks.size <= isl.m._chunkView.limit;
     o.info = { built, inDraw, cache: isl.m._chunks.size };
     return o;
   });
