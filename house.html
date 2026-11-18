@@ -6235,7 +6235,7 @@ function openCrashLog() {
   card.appendChild(note('遊戲當掉、畫面停住、出現錯誤的時候，這台機器會記下來。按「複製」，貼給幫你改遊戲的人看。'));
   const txt = crashLogText(), box = el('textarea', 'crash-box'); box.value = txt; box.readOnly = true; card.appendChild(box);
   const cp = el('button', 'big', '📋 複製');
-  cp.onclick = async () => { let ok = false; try { await navigator.clipboard.writeText(txt); ok = true; } catch (e) {} if (!ok) { try { box.select(); ok = document.execCommand('copy'); } catch (e) {} } toast(ok ? '複製好了，可以貼上了！' : '請長按上面的字，自己全選複製'); };
+  cp.onclick = async () => { let ok = false; try { await navigator.clipboard.writeText(txt); ok = true; } catch (e) {} if (!ok) { try { box.select(); ok = document.execCommand('copy'); } catch (e) {} } cp.textContent = ok ? '✅ 複製好了，可以貼上了！' : '複製不了：請點上面的字，按 Ctrl+A 全選再 Ctrl+C'; setTimeout(() => { cp.textContent = '📋 複製'; }, 2500); toast(ok ? '複製好了，可以貼上了！' : '請長按上面的字，自己全選複製'); };
   const clr = el('button', 'big alt', '🧹 清掉紀錄');
   clr.onclick = () => { try { localStorage.removeItem(CRASH_KEY); } catch (e) {} openCrashLog(); };
   const ok = el('button', 'big alt', '好了'); ok.onclick = () => { $('#modal').hidden = true; try { renderTab(); } catch (e) {} };
@@ -15356,7 +15356,8 @@ function openPerfCheck() {
       `最慢的幾格（打開遊戲到現在）：` + (SLOW_FRAMES.length ? '' : '（沒有記錄，或這個瀏覽器不支援）')
     ].concat(SLOW_FRAMES.map(f => `  ${f.d}ms（第 ${f.at} 秒）程式：${f.sc || '—'}；排版 ${f.layout}ms${f.where ? '；在做：' + f.where : ''}`));
     info.textContent = lines.join('\n');
-    const cp = el('button', 'big', '📋 複製'); cp.onclick = () => { try { navigator.clipboard.writeText(info.textContent).then(() => toast('複製好了，貼給幫忙改遊戲的人')); } catch (e) { toast('複製不了，請拍照'); } };
+    const cp = el('button', 'big', '📋 複製'); cp.onclick = async () => { let ok = false; try { await navigator.clipboard.writeText(info.textContent); ok = true; } catch (e) {} if (!ok) { try { const r = document.createRange(); r.selectNodeContents(info); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); ok = document.execCommand('copy'); } catch (e) {} } cp.textContent = ok ? '✅ 複製好了，可以貼上了！' : '複製不了，請拍照'; setTimeout(() => { cp.textContent = '📋 複製'; }, 2500); };
+    if (close.parentNode !== card) return;   // 量的這 5 秒裡開了別的視窗：不要硬塞（以前會跳錯誤）
     card.insertBefore(cp, close);
     if (gi.soft) card.insertBefore(note('👉 Chrome 沒有用顯示晶片：請到 Chrome 的「設定 → 系統」，打開「可用時使用圖形加速功能」，然後把 Chrome 整個關掉再打開。'), cp);
     $('#modal').hidden = false;
@@ -15909,6 +15910,10 @@ function gameStep(dt, now) {
 // 先排下一幀再畫：某一幀出錯（例如後面的 <script> 還沒載入完）也不會讓整個遊戲停住；錯誤照樣報出來（同一種只報一次）
 const loopErrs = new Set();
 var FRAME_MIN_MS = LITE ? 1000 / 15 - 4 : 1000 / 30 - 4;   // 順暢模式一秒 15 次   // 房間、小島最多一秒畫 30 次（留 4 毫秒誤差，60Hz 螢幕剛好隔一格）
+/* 💓 心跳：每 0.25 秒用計時器跳一下（跟畫面無關）。畫面停住的時候看心跳有沒有跟著停：
+   心跳也停 → 程式自己卡住；心跳照跳 → 程式沒事，是瀏覽器或顯示晶片沒有把畫面送出來。 */
+let hbLast = performance.now(), hbWorst = 0;
+setInterval(() => { const t = performance.now(); hbWorst = Math.max(hbWorst, t - hbLast); hbLast = t; }, 250);
 (function loop(now) {
   requestAnimationFrame(loop);
   now = now || performance.now();
@@ -15920,12 +15925,13 @@ var FRAME_MIN_MS = LITE ? 1000 / 15 - 4 : 1000 / 30 - 4;   // 順暢模式一秒
   if (!loop.modal) { loop.modal = document.getElementById('modal'); loop.card = document.getElementById('modalCard'); }
   if (loop.modal && !loop.modal.hidden && loop.card && loop.card.classList.contains('in-game') && now - lastFrame < 250) return;
   if (now - lastFrame > 5000 && Date.now() - crashHiddenSince > (now - lastFrame) + 1000) { const gap = now - lastFrame, bl = window.crashBlurSince || 0, away = bl && Date.now() - bl <= gap + 1000;   // 停住的這段時間裡 iPad 跑去別的畫面過
-    crashLog('畫面停住', `停了 ${(gap / 1000).toFixed(1)} 秒又恢復` + (away ? '（那時候 iPad 在別的畫面：多工、控制中心或詢問框，不是遊戲卡住）' : '（跳出確認視窗也會這樣）')); }   // 📋 當機紀錄
+    crashLog('畫面停住', `停了 ${(gap / 1000).toFixed(1)} 秒又恢復；${hbWorst > gap * .6 ? '程式也停了 ' + (hbWorst / 1000).toFixed(1) + ' 秒（程式自己卡住）' : '這段時間程式有在跑、只是畫面沒更新（瀏覽器或顯示晶片停住，最長只停 ' + (hbWorst / 1000).toFixed(1) + ' 秒）'}；${LITE ? '順暢' : '一般'}模式，放大 ${Math.round((window.devicePixelRatio || 1) * 100)}%` + (away ? '（那時候視窗不在最前面：切到別的視窗、多工或詢問框）' : '（跳出確認視窗也會這樣）')); }   // 📋 當機紀錄
   /* 一格最多算 0.075 秒：順暢模式一秒 15 格（一格 0.067 秒），以前上限 0.05 秒 → 走路只剩 75% 速度，像慢動作 */
   const dt = Math.max(0, Math.min(.075, (now - lastFrame) / 1000));
   lastFrame = now;
   /* 🔇 家長：比賽中怎麼還會有肚子餓的聲音 → 小遊戲／電影開著時，後面房間發出的聲音（肚子餓、寵物叫、說話）一律不放 */
   const md = loop.modal, cd = loop.card; ROOM_MUTED = !!(md && !md.hidden && cd && (cd.classList.contains('in-game') || cd.classList.contains('in-movie')));
+  hbWorst = 0;
   try { gameStep(dt, now); }
   catch (e) { const k = String(e && e.message); if (!loopErrs.has(k)) { loopErrs.add(k); setTimeout(() => { throw e; }, 0); } }
   ROOM_MUTED = false;
