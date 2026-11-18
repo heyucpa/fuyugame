@@ -15401,15 +15401,16 @@ function openFindCause() {
   const card = $('#modalCard'); card.classList.remove('game-card', 'in-game', 'game-big'); card.innerHTML = '';
   card.appendChild(el('h2', '', '🔬 自動找原因'));
   const info = el('pre', 'crash-box', ''); card.appendChild(info);
-  const close = el('button', 'big alt', '關掉'); close.onclick = () => { FIND_CAUSE_HOLD = false; $('#modal').hidden = true; }; card.appendChild(close);
+  const close = el('button', 'big alt', '關掉'); close.onclick = () => { FIND_CAUSE_HOLD = false; try { Sound.pause(false); } catch (e) {} $('#modal').hidden = true; }; card.appendChild(close);
   $('#modal').hidden = false;
   const SEC = openFindCause.sec || 20;
   const measure = (label, hold) => new Promise(res => {
-    FIND_CAUSE_HOLD = hold; const gaps = []; let last = performance.now(), hb = last, hbMax = 0; const t0 = last;
+    FIND_CAUSE_HOLD = hold; try { Sound.pause(!!hold); } catch (e) {}   // 停下來那一段連聲音也停
+    const gaps = []; let last = performance.now(), hb = last, hbMax = 0; const t0 = last;
     const iv = setInterval(() => { const t = performance.now(); hbMax = Math.max(hbMax, t - hb); hb = t; }, 100);
     (function f(n) { gaps.push(n - last); last = n;
       const left = Math.ceil(SEC - (n - t0) / 1000); if (left !== f.left) { f.left = left; info.textContent = (openFindCause.text || '') + `${label}：還有 ${Math.max(0, left)} 秒…（請不要切到別的視窗）`; }
-      if (n - t0 < SEC * 1000 && !$('#modal').hidden) requestAnimationFrame(f); else { clearInterval(iv); FIND_CAUSE_HOLD = false; gaps.shift(); const a = gaps.slice().sort((x, y) => x - y), sum = a.reduce((x, y) => x + y, 0);
+      if (n - t0 < SEC * 1000 && !$('#modal').hidden) requestAnimationFrame(f); else { clearInterval(iv); FIND_CAUSE_HOLD = false; try { Sound.pause(false); } catch (e) {} gaps.shift(); const a = gaps.slice().sort((x, y) => x - y), sum = a.reduce((x, y) => x + y, 0);
         res({ fps: Math.round(1000 * a.length / Math.max(1, sum)), max: Math.round(a[a.length - 1] || 0), n500: a.filter(x => x > 500).length, n100: a.filter(x => x > 100).length, hb: Math.round(hbMax) }); } })(performance.now());
   });
   openFindCause.text = '';
@@ -15420,7 +15421,12 @@ function openFindCause() {
     const B = await measure('② 遊戲照常跑', false);
     openFindCause.text += line('② 遊戲照常跑', B);
     const badA = A.max > 700 || A.fps < 20, badB = B.max > 700 || B.fps < 12;
-    const why = badA ? '👉 遊戲完全停下來的時候，畫面也會停住：問題在這台電腦／Chrome（顯示晶片驅動、擴充功能、或別的程式佔住電腦），不是遊戲。\n   可以試：Chrome 設定 → 系統 → 關掉「圖形加速」再重開；或改用 Edge；或更新顯示晶片驅動。'
+    /* 結論要看「程式有沒有跟著停」（心跳）：
+       ・畫面停、程式也停 → 網頁被佔住了。就算遊戲的畫面停下來，背景還可能有東西在跑（遊戲的聲音、計時器，或擴充功能），不能說「不是遊戲」。
+       ・畫面停、程式照跑 → 才是瀏覽器或顯示晶片沒把畫面送出來。 */
+    const why = badA ? (A.hb > A.max * .6
+        ? '👉 遊戲的畫面停下來了，可是整個網頁還是被卡住（程式也跟著停）：有東西在背景佔住網頁，可能是遊戲背景的工作，也可能是擴充功能。\n   先不用改電腦設定，請把這段複製給幫忙改遊戲的人。想分辨是不是擴充功能：用無痕視窗再測一次。'
+        : '👉 遊戲停下來、程式也有在跑，可是畫面沒有更新：是瀏覽器或顯示晶片沒有把畫面送出來。\n   可以試：Chrome 設定 → 系統 → 關掉「圖形加速」再重開；或改用 Edge；或更新顯示晶片驅動。')
       : badB ? (B.hb > B.max * .6 ? '👉 只有遊戲在跑的時候才停，而且是程式自己卡住：是遊戲的問題，請把這段複製給幫忙改遊戲的人。' : '👉 只有遊戲在跑的時候才停，可是程式沒有卡住：是遊戲畫圖的方式讓瀏覽器停住，請把這段複製給幫忙改遊戲的人。')
       : '👉 這 40 秒兩邊都很順，沒有抓到停住。可以再按一次，或在會卡的地方（例如大地圖）按。';
     const gi = (() => { try { return gfxInfo(); } catch (e) { return {}; } })();
@@ -15443,7 +15449,7 @@ try {
     SLOW_FRAMES.push({ d: Math.round(e.duration), at: Math.round(e.startTime / 1000), blocking: Math.round(e.blockingDuration || 0), render: Math.round((e.renderStart && e.styleAndLayoutStart) ? e.styleAndLayoutStart - e.renderStart : 0), layout: Math.round(e.styleAndLayoutStart ? e.startTime + e.duration - e.styleAndLayoutStart : 0), sc: sc.join('、'), where });
     SLOW_FRAMES.sort((a, b) => b.d - a.d); if (SLOW_FRAMES.length > 6) SLOW_FRAMES.length = 6;
     /* 家長：卡了 10 秒 → 卡 2 秒以上的那一格直接寫進當機紀錄：是哪段程式在跑、花多久；沒有程式在跑就是瀏覽器／顯示晶片自己停住 */
-    if (e.duration >= 2000) { try { const all = (e.scripts || []).reduce((t, x) => t + x.duration, 0); crashLog('很慢的一格', `${Math.round(e.duration)} 毫秒；程式共 ${Math.round(all)} 毫秒${sc.length ? '（' + sc.join('、') + '）' : '（沒有程式在跑：是瀏覽器或顯示晶片停住）'}；排版 ${Math.round(e.styleAndLayoutStart ? e.startTime + e.duration - e.styleAndLayoutStart : 0)} 毫秒；${LITE ? '順暢模式' : '一般模式'}；畫質 ${Math.round(VIEW_Q * 100)}%；${SOFT_CANVAS ? '處理器畫' : '顯示晶片畫'}`); } catch (er) {} }
+    if (e.duration >= 2000 && !document.hidden && document.hasFocus() && !IDLE_PAUSED) { try { const all = (e.scripts || []).reduce((t, x) => t + x.duration, 0); crashLog('很慢的一格', `${Math.round(e.duration)} 毫秒；程式共 ${Math.round(all)} 毫秒${sc.length ? '（' + sc.join('、') + '）' : '（沒有程式在跑：是瀏覽器或顯示晶片停住）'}；排版 ${Math.round(e.styleAndLayoutStart ? e.startTime + e.duration - e.styleAndLayoutStart : 0)} 毫秒；${LITE ? '順暢模式' : '一般模式'}；畫質 ${Math.round(VIEW_Q * 100)}%；${SOFT_CANVAS ? '處理器畫' : '顯示晶片畫'}`); } catch (er) {} }
   })).observe({ type: 'long-animation-frame', buffered: true });
 } catch (e) {}
 /* ⏸️ 沒在玩就自動暫停（家長：都做）：2 分鐘沒有碰滑鼠／鍵盤／螢幕，或切到別的視窗超過 1 分鐘，
