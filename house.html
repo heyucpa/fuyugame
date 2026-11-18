@@ -9193,6 +9193,7 @@ function blockedGrid(room) {
   const g = Array.from({ length: room.w }, () => new Array(room.d).fill(false));
   room.items.forEach(it => {
     const def = FURN_BY_ID[it.id];
+    if (!def) return;   // 認不得的東西：當作沒有（不要讓整個走路的程式停掉）
     if (def.layer === 'floor') return; // 地毯可以踩
     const fp = footprint(def, it.rot);
     for (let i = it.x; i < it.x + fp.w; i++)
@@ -9733,17 +9734,30 @@ function roomKeyStep(room, blk) {
   fufu.path = [t]; fufu.pendingSay = null;
   return true;
 }
-/* 空白鍵：最近的、可以用的家具 */
+/* 空白鍵：跟最近的東西互動（家長：小孩不太會用滑鼠 → 滑鼠點得到的，空白鍵也要碰得到）。
+   家具、牆上可以用的東西、包裹、訪客、主人（老師、教練、爸爸媽媽）、在場的小朋友、農場動物、朋友的寵物、自己的寵物。
+   旁邊什麼都沒有：打開小可愛自己的選單（吃東西、跳舞、去睡覺…）。 */
 function roomKeyUse() {
-  const room = curRoom(); let best = null, bd = 2.5;
+  const room = curRoom(), c = [], r = canvas.getBoundingClientRect();
+  const at = (x, y, z) => { const p = iso(x, y, z || 0); return { clientX: r.left + p.x * view.scale + view.ox, clientY: r.top + p.y * view.scale + view.oy }; };
+  const near = (x, y) => Math.hypot(x - fufu.x, y - fufu.y);
+  const safe = fn => { try { fn(); } catch (e) {} };
   room.items.forEach(it => { const def = FURN_BY_ID[it.id]; if (!def || !(canUse(it) || (it.top && (!G.away || inPetHouse())))) return; const fp = footprint(def, it.rot || 0);
-    const dx = Math.max(it.x - fufu.x, 0, fufu.x - (it.x + fp.w)), dy = Math.max(it.y - fufu.y, 0, fufu.y - (it.y + fp.d)), dist = Math.hypot(dx, dy); if (dist < bd) { bd = dist; best = it; } });
-  if (!best) return false;
-  const def = FURN_BY_ID[best.id], fp = footprint(def, best.rot || 0), p = iso(best.x + fp.w / 2, best.y + fp.d / 2, itemHeight(def) / 2), r = canvas.getBoundingClientRect();
-  showItemMenu(best, { clientX: r.left + p.x * view.scale + view.ox, clientY: r.top + p.y * view.scale + view.oy });
+    const dx = Math.max(it.x - fufu.x, 0, fufu.x - (it.x + fp.w)), dy = Math.max(it.y - fufu.y, 0, fufu.y - (it.y + fp.d)), d = Math.hypot(dx, dy);
+    if (d < 2.5) c.push([d, () => showItemMenu(it, at(it.x + fp.w / 2, it.y + fp.d / 2, itemHeight(def) / 2))]); });
+  safe(() => { if (!(G.away && !inPetHouse())) (room.wallItems || []).forEach(wi => { const def = FURN_BY_ID[wi.id]; if (!def || !wallActOf(wi.id)) return; const mid = wi.pos + def.w / 2, d = wi.side === 'R' ? Math.hypot(mid - fufu.x, fufu.y) : Math.hypot(fufu.x, mid - fufu.y); if (d < 2.2) c.push([d + .3, () => { Sound.play('click'); fufuGoWall(wi); }]); }); });
+  safe(() => { const bx = giftBoxHere(); if (bx && giftWanted()) { const d = near(bx.x, bx.y); if (d < 3) c.push([d - .5, () => (giftVisit.spec || GIFT_SPECS[0]).open()]); } });
+  safe(() => { if (vis.who && vis.state === 'visit') { const d = near(vis.a.x, vis.a.y); if (d < 3) c.push([d, () => openMenu(visitorMenuEntries(), at(vis.a.x, vis.a.y, 30))]); } });
+  safe(() => { if (host.n) { const d = near(host.a.x, host.a.y); if (d < 3) c.push([d, () => openMenu(hostMenuEntries(), at(host.a.x, host.a.y, 30))]); } });
+  safe(() => (host.crowd || []).forEach(cr => { const d = near(cr.a.x, cr.a.y); if (d < 2.5) c.push([d + .1, () => crowdTalk(cr, at(cr.a.x, cr.a.y, 30))]); }));
+  safe(() => farm.actors.forEach(fa => { const d = near(fa.a.x, fa.a.y); if (d < 2.5) c.push([d, () => openMenu(farmMenuEntries(fa), at(fa.a.x, fa.a.y, 20))]); }));
+  safe(() => { if (host.n && host.pets) host.pets.forEach(fp => { const d = near(fp.a.x, fp.a.y); if (d < 2) c.push([d + .2, () => patFriendPet(fp)]); }); });
+  safe(() => { if (!G.away || inPetHouse()) { const d = near(pet.x, pet.y); if (d < 1.6) c.push([d + 1.2, () => fufuPlayPet()]); } });   // 寵物一直跟在旁邊：排比較後面，不然永遠先選到牠
+  if (!c.length) { showKidMenu(at(fufu.x, fufu.y, 40)); }
+  else { c.sort((a, b) => a[0] - b[0]); c[0][1](); }
   const menu = $('#itemMenu'), bs = menu.hidden ? [] : [...menu.querySelectorAll('button')];
   if (bs.length === 1) bs[0].click();   // 只有一件事可以做：直接做
-  else if (bs.length) { bs[0].classList.add('kbd'); menu._kbd = 0; }
+  else if (bs.length) { bs.forEach(b => b.classList.remove('kbd')); bs[0].classList.add('kbd'); menu._kbd = 0; }
   return true;
 }
 function menuKey(code) {   // 小選單開著：上下選、空白／Enter 決定
@@ -9764,8 +9778,8 @@ function islKeyUse() {
   m.blds.forEach(b => { const d = Math.hypot(b.door[0] + .5 - isl.x, b.door[1] + .5 - isl.y); if (d < 2.6) c.push([d + .2, null, { type: 'enter', id: b.id, door: b.door }]); });
   const ix = Math.floor(isl.x), iy = Math.floor(isl.y);
   for (let y = iy - 2; y <= iy + 2; y++) for (let x = ix - 2; x <= ix + 2; x++) { if (x < 0 || y < 0 || x >= m.W || y >= m.H) continue; const d = Math.hypot(x + .5 - isl.x, y + .5 - isl.y);
-    if (m.tree[y][x] && d < 2.2) c.push([d + .4, { x, y, fx: x + .5, fy: y + .5 }]);
-    else if (m.flower[y][x] && !isl.picked[x + ',' + y] && d < 1.6) c.push([d + .6, { x, y, fx: x + .5, fy: y + .5 }]); }
+    if (m.tree[y][x] && d < 2.2) c.push([d + .8, { x, y, fx: x + .5, fy: y + .5 }]);   // 朋友、門口優先；樹和花排後面（不然站在花上就一直摘花、說不到話）
+    else if (m.flower[y][x] && !isl.picked[x + ',' + y] && d < 1.6) c.push([d + 1.4, { x, y, fx: x + .5, fy: y + .5 }]); }
   if (!c.length) return false;
   c.sort((a, b) => a[0] - b[0]);
   const pick = c[0]; isl.keys = {};
