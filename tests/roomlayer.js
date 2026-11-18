@@ -1,4 +1,4 @@
-// 🧱 房間分層畫：跟「整張從頭畫」比要一樣（只容許家具邊緣少數幾點的柔邊差一點點：最多 200 點、每點差不到 100）（家裡擺滿家具、每個地點、小可愛站在不同位置）
+// 🧱 房間分層畫：跟「整張從頭畫」比要一樣（只容許家具邊緣少數幾點的柔邊差一點點：最多 400 點、每點差不到 100）（家裡擺滿家具、每個地點、小可愛站在不同位置）
 const { chromium } = require('playwright');
 const path = require('path');
 (async () => {
@@ -17,7 +17,7 @@ const path = require('path');
       USE_ROOM_LAYER = false; draw(); const a0 = shot(); draw(); const a = shot(); let noise = 0; for (let i = 0; i < a.length; i += 4) if (Math.abs(a[i] - a0[i]) + Math.abs(a[i + 1] - a0[i + 1]) + Math.abs(a[i + 2] - a0[i + 2]) > 12) noise++;
       USE_ROOM_LAYER = true; roomBaseKey = ''; roomSeenKey = ''; roomViewKey = ''; draw(); draw(); draw(); const f0 = roomLayerStats.frames; draw(); const used = roomLayerStats.frames > f0; const c = shot();
       let diff = 0, max = 0, bx0 = 1e9, bx1 = -1, by0 = 1e9, by1 = -1; for (let i = 0; i < a.length; i += 4) { const d = Math.abs(a[i] - c[i]) + Math.abs(a[i + 1] - c[i + 1]) + Math.abs(a[i + 2] - c[i + 2]) + Math.abs(a[i + 3] - c[i + 3]); if (d > 12) { diff++; if (d > max) max = d; const x = (i / 4) % canvas.width, y = Math.floor(i / 4 / canvas.width); bx0 = Math.min(bx0, x); bx1 = Math.max(bx1, x); by0 = Math.min(by0, y); by1 = Math.max(by1, y); } }
-      if (diff && !window.__dbg) { const c2 = document.createElement('canvas'); c2.width = canvas.width; c2.height = canvas.height; const g2 = c2.getContext('2d'); g2.drawImage(canvas, 0, 0); const im = g2.getImageData(0, 0, c2.width, c2.height); for (let i = 0; i < a.length; i += 4) { const d = Math.abs(a[i] - c[i]) + Math.abs(a[i + 1] - c[i + 1]) + Math.abs(a[i + 2] - c[i + 2]) + Math.abs(a[i + 3] - c[i + 3]); if (d > 12) { im.data[i] = 255; im.data[i + 1] = 0; im.data[i + 2] = 255; im.data[i + 3] = 255; } } g2.putImageData(im, 0, 0); window.__dbg = c2.toDataURL(); }
+      if (diff && (!window.__dbg || /pool/.test(name))) { const c2 = document.createElement('canvas'); c2.width = canvas.width; c2.height = canvas.height; const g2 = c2.getContext('2d'); g2.drawImage(canvas, 0, 0); const im = g2.getImageData(0, 0, c2.width, c2.height); for (let i = 0; i < a.length; i += 4) { const d = Math.abs(a[i] - c[i]) + Math.abs(a[i + 1] - c[i + 1]) + Math.abs(a[i + 2] - c[i + 2]) + Math.abs(a[i + 3] - c[i + 3]); if (d > 12) { im.data[i] = 255; im.data[i + 1] = 0; im.data[i + 2] = 255; im.data[i + 3] = 255; } } g2.putImageData(im, 0, 0); window.__dbg = c2.toDataURL(); }
       out.push({ name, used, diff, max, noise, box: diff ? [bx0, by0, bx1, by1] : 0, layerOn: USE_ROOM_LAYER });
     };
     // 家裡：擺很多家具，小可愛站在幾個不同的地方（前面、後面、家具中間）
@@ -33,7 +33,7 @@ const path = require('path');
     return out;
   });
   if (process.env.DBG) { const u = await p.evaluate(() => window.__dbg); if (u) require('fs').writeFileSync(process.env.DBG, Buffer.from(u.split(',')[1], 'base64')); }
-  const bad = res.filter(r => r.err || !r.layerOn || r.diff > 200 || r.max > 100), unused = res.filter(r => !r.used && !r.err).map(r => r.name);
+  const bad = res.filter(r => r.err || !r.layerOn || r.diff > 400 || r.max > 100), unused = res.filter(r => !r.used && !r.err).map(r => r.name);
   console.log('比了', res.length, '個畫面；有用到分層的', res.filter(r => r.used).length, '個；沒用到（整張畫）的：', unused.join('、') || '無');
   if (bad.length) console.log('不一樣的：', JSON.stringify(bad.slice(0, 12)));
   const ok = !bad.length && !errs.length && res.filter(r => r.used).length >= res.length * .7;

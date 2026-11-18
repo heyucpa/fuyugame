@@ -1,4 +1,4 @@
-// 📐 外面的地方都放大成 14×14（寵物屋除外）：每個房間東西不重疊、不超出、牆上的東西掛得下、空地都連在一起、可以用的東西都走得到
+// 📐 外面的地方都是 12×12（家長：14×14 太大）（寵物屋除外）：每個房間東西不重疊、不超出、牆上的東西掛得下、空地都連在一起、可以用的東西都走得到
 const { chromium } = require('playwright');
 const path = require('path');
 (async () => {
@@ -24,7 +24,7 @@ const path = require('path');
       if (seen.size !== free) bad.push(`${tag} 有 ${free - seen.size} 格空地走不到`);
       room.items.filter(it => canUse(it)).forEach(it => { if (!findPathToItem(room, start[0], start[1], it)) bad.push(`${tag} 走不到 ${it.id}@${it.x},${it.y}`); });
     }));
-    return { bad, allBig: sizes.every(s => s === '14x14'), sizes: [...new Set(sizes)] };
+    return { bad, allBig: sizes.every(s => { const [w, d] = s.split('x').map(Number); return w >= 12 && d >= 12 && w <= 13 && d <= 13; })   /* 12×12；本來就 13 格寬的那一間維持 13 */, sizes: [...new Set(sizes)] };
   });
   const ok = !o.bad.length && o.allBig && !errs.length;
   console.log(JSON.stringify(o, null, 1), errs);

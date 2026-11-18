@@ -2343,7 +2343,9 @@ const fishTier = f => FISH_TIERS.findIndex(t => f.price <= t.max);
 
 // 房間擴建：尺寸階梯與價格
 // 115.9.17 起一開始就是 6×6（4×4 太擠），擴建也調便宜
-const ROOM_SIZES = [6, 8, 10, 12, 14];   // 家長：房間可以再大一點 → 多兩級 12×12、14×14
+/* 家長：14×14 好像又太大了，小孩都還在 10×10 → 最大改成 12×12。
+   已經擴到 14×14 的房間（如果有）照樣讀得進來、家具都在，只是不能再變大（不會把房間縮小、不會丟家具）。 */
+const ROOM_SIZES = [6, 8, 10, 12];
 const MIN_ROOM_SIZE = ROOM_SIZES[0];
 const EXPAND_COST = { 8: 3200, 10: 10000, 12: 12000, 14: 16000 };   // 12、14 是之後加的長期目標 // 116.10 調成原本的四折（見下面 PRICE_SCALE）
 // 115.9.18 調降：一週玩一小時的節奏，臥室約 1～2 週、餐廳再 3～4 週蓋得起來；閣樓是長期目標
@@ -3712,7 +3714,14 @@ const PLACE_GROW = {
     { items: [['street_lamp', 13, 0], ['sunflower', 13, 6], ['park_bench', 2, 13], ['flower_bed', 6, 13], ['park_bench', 9, 13], ['sunflower', 13, 13]] }]
   // 🐾 寵物屋不放大：寵物要聚在一起（派對、跳舞、找小可愛玩），太大要走很久
 };
-Object.entries(PLACE_GROW).forEach(([pid, list]) => { const pl = PLACES[pid]; if (!pl) return; list.forEach((g, i) => { const r = pl.rooms[i]; if (!r) return; r.w = Math.max(r.w, 14); r.d = Math.max(r.d, 14); r.items = r.items.concat(g.items || []); r.wallItems = (r.wallItems || []).concat(g.wall || []); }); });
+/* 家長：14×14 太大 → 外面的地方改成 12×12。上面多擺的東西裡，放得進 12×12 的留著，超出去的就不擺
+   （原本 10×10 裡的東西一樣都不動，所以每個地方該有的都還在）。 */
+const PLACE_SIZE = 12;
+Object.entries(PLACE_GROW).forEach(([pid, list]) => { const pl = PLACES[pid]; if (!pl) return; list.forEach((g, i) => { const r = pl.rooms[i]; if (!r) return;
+  const defOf = id => FURNITURE.find(f => f.id === id);
+  const fits = ([id, x, y, rot]) => { const d = defOf(id); if (!d) return false; const w = (rot || 0) % 2 ? d.d : d.w, dd = (rot || 0) % 2 ? d.w : d.d; return x + w <= PLACE_SIZE && y + dd <= PLACE_SIZE; };
+  const wallFits = ([id, side, pos]) => { const d = defOf(id); return !!d && pos + (d.w || 1) <= PLACE_SIZE; };
+  r.w = Math.max(r.w, PLACE_SIZE); r.d = Math.max(r.d, PLACE_SIZE); r.items = r.items.concat((g.items || []).filter(fits)); r.wallItems = (r.wallItems || []).concat((g.wall || []).filter(wallFits)); }); });
 // 轉成跟 G.rooms 一樣的格式；uid 用負數，不會跟自己家的家具重複
 let placeUid = -1;
 Object.values(PLACES).forEach(pl => {
@@ -5683,6 +5692,7 @@ const NEWS = [
     ['🏃', '學校操場的花豹教練：報名「世界全國跑步大賽」，跳遠＋百米賽跑，簡單就能玩'],
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
     ['🚀', '剛打開遊戲比較不會卡了：畫畫存起來小很多（存檔變成原本的一半以下），打開時的存檔紀錄改到電腦有空的時候才做'],
+    ['📐', '房間和外面的地方最大改成 12×12：14×14 太大了，要走很久；該有的東西都還在'],
     ['🚀', '家裡和公園、學校這些地方順很多：地板、牆壁和不會動的家具畫一次就存起來，不用每一格從頭畫'],
     ['🐢', '切到商店、換衣服不會轉圈圈了：小圖先畫看得到的，其他的一下子就補上'],
     ['🚶', '順暢模式走路變回正常速度，不再像慢動作'],
