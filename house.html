@@ -1229,6 +1229,13 @@ button, .card, .place-pick, .lv-btn, .dex-tile, .adv-ep, .gift-opt, .trick-cell,
    ・畫面停住超過 5 秒又恢復
    每筆都附上「當時在做什麼」（最近 12 個動作：開哪個分頁、哪個小遊戲、去哪裡）。最多留 30 筆，放這台機器的 localStorage。
    放在最前面的 <script>：後面的程式載入時出錯也記得到。 */
+/* 🖌️ 用處理器畫圖（家長的當機紀錄：一格卡 3～14 秒，可是「程式共 0 毫秒」＝遊戲程式沒在跑，是瀏覽器的顯示晶片那一邊停住；
+   有幾格是程式在等顯示晶片畫完，一等就 2～5 秒）。
+   遊戲的畫布本來交給顯示晶片畫（每一格幾千個圖形指令丟過去），有些電腦的顯示晶片驅動會被塞住。
+   Windows 預設改成用處理器畫（willReadFrequently：畫布放在一般記憶體），顯示晶片只負責把畫好的圖貼到螢幕上。
+   現在房間、大地圖都有存圖，處理器畫得動。設定裡可以切回去；只記在這台機器（myHouseGame_soft），不動存檔。iPad 照舊。 */
+var SOFT_CANVAS = (function () { try { var v = localStorage.getItem('myHouseGame_soft'); if (v != null) return v === '1'; } catch (e) {} return /Windows/.test(navigator.userAgent); })();
+if (SOFT_CANVAS) { try { (function () { var gc = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (type, opts) { if (type === '2d') { var o = { willReadFrequently: true }; if (opts) for (var k in opts) o[k] = opts[k]; return gc.call(this, type, o); } return gc.apply(this, arguments); }; })(); } catch (e) {} }
 var CRASH_KEY = 'myHouse_crashlog', ALIVE_KEY = 'myHouse_alive', crashCrumbs = [], crashHiddenSince = 0;
 function crashCrumb(s) { try { crashCrumbs.push(new Date().toTimeString().slice(0, 8) + ' ' + String(s).slice(0, 60)); if (crashCrumbs.length > 12) crashCrumbs.shift(); } catch (e) {} }
 function crashLogGet() { try { var a = JSON.parse(localStorage.getItem(CRASH_KEY) || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
@@ -1278,6 +1285,8 @@ window.addEventListener('unhandledrejection', function (e) { var r = e.reason; c
 /* 💻 順暢模式（家長：在電腦上玩一樣會卡）：比較慢的電腦打開，一秒少畫幾格、解析度固定低一點、不畫飄花瓣／落葉／雪、不放開場動畫。
    記在這台機器上（不是存檔），姊姊、妹妹各自的電腦自己決定。 */
 /* 家長：預設就打開順暢模式。沒選過（沒有這個值）＝開著；在設定裡關掉才會記成 '0'。（自動測試的瀏覽器維持一般模式，才測得到完整的畫面） */
+/* 家長（11/18）：預設開啟順暢模式 → 以前關掉過的機器也重新打開一次（只做一次；之後在設定裡關掉會記住） */
+try { if (!navigator.webdriver && !localStorage.getItem('myHouseGame_liteOn2')) { localStorage.setItem('myHouseGame_liteOn2', '1'); localStorage.setItem('myHouseGame_lite', '1'); } } catch (e) {}
 var LITE = (() => { try { const v = localStorage.getItem('myHouseGame_lite'); return v == null ? !navigator.webdriver : v === '1'; } catch (e) { return true; } })();
 /* 名字格子的字數限制：不要用 maxLength。iPad 打注音時，還沒選字的ㄅㄆㄇ也算字數，
    打到一半就卡住打不下去（像「書房的家」再多打一個字就不行）。改成選好字以後才剪掉多的。 */
@@ -5693,6 +5702,7 @@ const NEWS = [
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
     ['🚀', '剛打開遊戲比較不會卡了：畫畫存起來小很多（存檔變成原本的一半以下），打開時的存檔紀錄改到電腦有空的時候才做'],
     ['📐', '房間和外面的地方最大改成 12×12：14×14 太大了，要走很久；該有的東西都還在'],
+    ['🖌️', '電腦上卡好幾秒的問題：畫圖改成用處理器畫，不再塞住顯示晶片（設定裡可以切換）'],
     ['🚀', '家裡和公園、學校這些地方順很多：地板、牆壁和不會動的家具畫一次就存起來，不用每一格從頭畫'],
     ['🐢', '切到商店、換衣服不會轉圈圈了：小圖先畫看得到的，其他的一下子就補上'],
     ['🚶', '順暢模式走路變回正常速度，不再像慢動作'],
@@ -15349,7 +15359,7 @@ function openPerfCheck() {
       `一秒幾格：${Math.round(1000 / avg)}（最慢的一格 ${Math.round(a[a.length - 1] || 0)} 毫秒，比 50 毫秒還慢的有 ${a.filter(x => x > 50).length} 格）`,
       `顯示晶片：${gi.soft ? '❌ 沒有用（用處理器硬畫，會很慢）' : '✅ 有用'}　${gi.renderer || '（查不到）'}`,
       `螢幕：${innerWidth}×${innerHeight}，放大 ${Math.round((window.devicePixelRatio || 1) * 100)}%；房間畫布 ${cv ? cv.width + '×' + cv.height : '—'}；自動畫質 ${Math.round(VIEW_Q * 100)}%`,
-      `順暢模式：${LITE ? '開' : '關'}；處理器 ${navigator.hardwareConcurrency || '?'} 核；記憶體 ${navigator.deviceMemory ? navigator.deviceMemory + ' GB' : '?'}`,
+      `順暢模式：${LITE ? '開' : '關'}；畫圖方式：${SOFT_CANVAS ? '處理器' : '顯示晶片'}；處理器 ${navigator.hardwareConcurrency || '?'} 核；記憶體 ${navigator.deviceMemory ? navigator.deviceMemory + ' GB' : '?'}`,
       `存檔大小：${Math.round(((localStorage.getItem(SAVE_KEY) || '').length) / 1024)} KB；全部 ${(() => { let t = 0; try { Object.keys(localStorage).forEach(k => { t += (localStorage.getItem(k) || '').length; }); } catch (e) {} return Math.round(t / 1024); })()} KB`,
       `在哪裡：${G.away ? (PLACES[G.away.place] || {}).name : document.querySelector('.stage.island-on') ? '小島' : '家裡'}；遊戲版本 ${isNaN(lm) ? document.lastModified : lm.toLocaleString()}`,
       `瀏覽器：${navigator.userAgent.replace(/^Mozilla\/5\.0 /, '').slice(0, 110)}`,
@@ -15375,7 +15385,7 @@ try {
     SLOW_FRAMES.push({ d: Math.round(e.duration), at: Math.round(e.startTime / 1000), blocking: Math.round(e.blockingDuration || 0), render: Math.round((e.renderStart && e.styleAndLayoutStart) ? e.styleAndLayoutStart - e.renderStart : 0), layout: Math.round(e.styleAndLayoutStart ? e.startTime + e.duration - e.styleAndLayoutStart : 0), sc: sc.join('、'), where });
     SLOW_FRAMES.sort((a, b) => b.d - a.d); if (SLOW_FRAMES.length > 6) SLOW_FRAMES.length = 6;
     /* 家長：卡了 10 秒 → 卡 2 秒以上的那一格直接寫進當機紀錄：是哪段程式在跑、花多久；沒有程式在跑就是瀏覽器／顯示晶片自己停住 */
-    if (e.duration >= 2000) { try { const all = (e.scripts || []).reduce((t, x) => t + x.duration, 0); crashLog('很慢的一格', `${Math.round(e.duration)} 毫秒；程式共 ${Math.round(all)} 毫秒${sc.length ? '（' + sc.join('、') + '）' : '（沒有程式在跑：是瀏覽器或顯示晶片停住）'}；排版 ${Math.round(e.styleAndLayoutStart ? e.startTime + e.duration - e.styleAndLayoutStart : 0)} 毫秒；${LITE ? '順暢模式' : '一般模式'}；畫質 ${Math.round(VIEW_Q * 100)}%`); } catch (er) {} }
+    if (e.duration >= 2000) { try { const all = (e.scripts || []).reduce((t, x) => t + x.duration, 0); crashLog('很慢的一格', `${Math.round(e.duration)} 毫秒；程式共 ${Math.round(all)} 毫秒${sc.length ? '（' + sc.join('、') + '）' : '（沒有程式在跑：是瀏覽器或顯示晶片停住）'}；排版 ${Math.round(e.styleAndLayoutStart ? e.startTime + e.duration - e.styleAndLayoutStart : 0)} 毫秒；${LITE ? '順暢模式' : '一般模式'}；畫質 ${Math.round(VIEW_Q * 100)}%；${SOFT_CANVAS ? '處理器畫' : '顯示晶片畫'}`); } catch (er) {} }
   })).observe({ type: 'long-animation-frame', buffered: true });
 } catch (e) {}
 /* ⏸️ 沒在玩就自動暫停（家長：都做）：2 分鐘沒有碰滑鼠／鍵盤／螢幕，或切到別的視窗超過 1 分鐘，
@@ -18703,6 +18713,8 @@ function tabSave(body) {
   body.appendChild(note('預設開著：畫面一秒少畫幾格、不放開場動畫（解析度不變）。只影響這台機器，不會動到進度。'));
   { const pc = el('button', 'mini', '📊 效能檢查（量量看這台電腦順不順）'); pc.onclick = () => openPerfCheck(); body.appendChild(pc); }
   { const lb = el('button', 'big' + (LITE ? '' : ' alt'), LITE ? '✅ 順暢模式：開著（按一下關掉）' : '💻 打開順暢模式'); lb.onclick = () => { setLite(!LITE); Sound.play('click'); toast(LITE ? '💻 順暢模式打開了' : '順暢模式關掉了'); renderTab(); }; body.appendChild(lb); }
+  { const sb = el('button', 'chip', SOFT_CANVAS ? '🖌️ 畫圖方式：用處理器畫（比較穩）｜按一下改用顯示晶片' : '🖌️ 畫圖方式：用顯示晶片畫｜按一下改用處理器（卡好幾秒時試試）');
+    sb.onclick = () => { try { localStorage.setItem('myHouseGame_soft', SOFT_CANVAS ? '0' : '1'); saveGame(); } catch (e) {} location.reload(); }; body.appendChild(sb); }
   const nb = el('button', 'mini', '📜 更新紀錄（以前更新了什麼）');
   nb.onclick = () => openNewsHistory();
   body.appendChild(nb);
