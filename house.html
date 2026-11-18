@@ -4179,9 +4179,18 @@ const Sound = (() => {
   let unlockEl = null;
   function iosUnlock() {
     try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
-    if (unlockEl) return;
+    if (unlockEl !== null) return;
+    /* 🐛 卡住好幾秒的主因（11/18 找到）：這段無聲的 <audio> 以前長度是 0，又設成一直重播，而且每一台機器都放。
+       瀏覽器等於一秒重播幾千次空的聲音，背景工作越堆越多：電腦上走一走就整個沒反應、分頁上一直有喇叭圖示。
+       現在：只有舊版 iPad／iPhone（沒有 audioSession 的）才放；而且放的是真的 1 秒無聲，不是長度 0。 */
+    unlockEl = false;
+    const ua = navigator.userAgent, isIos = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    if (!isIos || navigator.audioSession) return;
     try {
-      unlockEl = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=');
+      const n = 8000, buf = new Uint8Array(44 + n), dv = new DataView(buf.buffer), wr = (o, t) => { for (let i = 0; i < t.length; i++) buf[o + i] = t.charCodeAt(i); };
+      wr(0, 'RIFF'); dv.setUint32(4, 36 + n, true); wr(8, 'WAVEfmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+      dv.setUint32(24, 8000, true); dv.setUint32(28, 8000, true); dv.setUint16(32, 1, true); dv.setUint16(34, 8, true); wr(36, 'data'); dv.setUint32(40, n, true); buf.fill(128, 44);
+      unlockEl = new Audio(URL.createObjectURL(new Blob([buf], { type: 'audio/wav' })));
       unlockEl.setAttribute('playsinline', ''); unlockEl.loop = true; unlockEl.volume = 0;
       const pr = unlockEl.play(); if (pr && pr.catch) pr.catch(() => {});
     } catch (e) {}
@@ -5702,6 +5711,7 @@ const NEWS = [
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
     ['🚀', '剛打開遊戲比較不會卡了：畫畫存起來小很多（存檔變成原本的一半以下），打開時的存檔紀錄改到電腦有空的時候才做'],
     ['📐', '房間和外面的地方最大改成 12×12：14×14 太大了，要走很久；該有的東西都還在'],
+    ['🐛', '找到電腦上卡好幾秒的原因了：一段長度是 0 的無聲聲音一直重播，把瀏覽器塞住。修掉了，分頁上也不會一直有喇叭圖示'],
     ['😴', '站著不動、沒在碰的時候，畫面一秒只更新 10 次（一碰就恢復），電腦比較不忙'],
     ['🖌️', '電腦上卡好幾秒的問題：畫圖改成用處理器畫，不再塞住顯示晶片（設定裡可以切換）'],
     ['🚀', '家裡和公園、學校這些地方順很多：地板、牆壁和不會動的家具畫一次就存起來，不用每一格從頭畫'],
