@@ -5026,7 +5026,8 @@ function drawRoom(ctx, room, opts) {
   const wp = wallById(room.wall) || WALLPAPERS[0];
   const fl = floorById(room.floor) || FLOORS[0];
   const isWallGhost = opts.ghost && opts.ghost.def.layer === 'wall';
-  const shelled = !opts.showGrid && !opts.ghost && blitRoomShell(ctx, room, opts.hoverUid);
+  const pass = opts.pass;   // 分層畫（roomLayerFrame）：'base' 只畫地板牆壁和地毯；'solids' 只畫家具和角色
+  const shelled = pass === 'solids' || (!opts.showGrid && !opts.ghost && blitRoomShell(ctx, room, opts.hoverUid));
   if (!shelled) {
     drawFloor(ctx, room, fl);
     drawWalls(ctx, room, wp);
@@ -5041,7 +5042,7 @@ function drawRoom(ctx, room, opts) {
   const flat = entries.filter(e => e.def.layer === 'floor');
   const solid = entries.filter(e => e.def.layer !== 'floor');
 
-  flat.forEach(e => blitFurn(ctx, e.def, e.x, e.y, e.it.rot, e.it));
+  if (pass !== 'solids') flat.forEach(e => blitFurn(ctx, e.def, e.x, e.y, e.it.rot, e.it));
   if (opts.showGrid) drawGrid(ctx, room);
 
   const g = opts.ghost;
@@ -5053,10 +5054,11 @@ function drawRoom(ctx, room, opts) {
     const fp = footprint(g.def, g.rot);
     drawFootprint(ctx, g.x, g.y, fp.w, fp.d, g.ok ? 'rgba(90,200,120,.35)' : 'rgba(230,80,80,.35)', g.ok ? '#3fa86a' : '#d04545');
   }
-  const hov = entries.find(e => e.it.uid === opts.hoverUid);
+  const hov = pass === 'solids' ? null : entries.find(e => e.it.uid === opts.hoverUid);
   if (hov) drawFootprint(ctx, hov.x, hov.y, hov.w, hov.d, 'rgba(255,220,90,.3)', '#e8b43a');
+  if (pass === 'base') return;
 
-  const draw = solid.slice();
+  const draw = opts.pick ? solid.filter(opts.pick) : solid.slice();
   if (g && g.def.layer !== 'floor' && !onTable) {
     const fp = footprint(g.def, g.rot);
     draw.push({ x: g.x, y: g.y, w: fp.w, d: fp.d, z: 0, h: itemHeight(g.def), def: g.def, ghost: g });
@@ -5073,7 +5075,8 @@ function drawRoom(ctx, room, opts) {
       drawItem(ctx, e.def, e.x, e.y, e.ghost.rot);
       ctx.__baseAlpha = 1;
       ctx.globalAlpha = 1;
-    } else blitFurn(ctx, e.def, e.x, e.y, e.it.rot, e.it);
+    } else if (opts.blit && opts.blit(ctx, e)) { /* 貼存好的小圖 */ }
+    else blitFurn(ctx, e.def, e.x, e.y, e.it.rot, e.it);
   });
   if (g && g.def.layer === 'floor') {
     ctx.__baseAlpha = .7; ctx.globalAlpha = .7;
@@ -5680,6 +5683,7 @@ const NEWS = [
     ['🏃', '學校操場的花豹教練：報名「世界全國跑步大賽」，跳遠＋百米賽跑，簡單就能玩'],
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
     ['🚀', '剛打開遊戲比較不會卡了：畫畫存起來小很多（存檔變成原本的一半以下），打開時的存檔紀錄改到電腦有空的時候才做'],
+    ['🚀', '家裡和公園、學校這些地方順很多：地板、牆壁和不會動的家具畫一次就存起來，不用每一格從頭畫'],
     ['🐢', '切到商店、換衣服不會轉圈圈了：小圖先畫看得到的，其他的一下子就補上'],
     ['🚶', '順暢模式走路變回正常速度，不再像慢動作'],
     ['🍙', '餵食只響一聲、不會連按吃兩份；按「叫牠」寵物會跑過來；世界大賽比到一半關掉，下次可以接著比'],
@@ -15457,6 +15461,127 @@ function computeView() {
   };
 }
 
+/* 房間後面：天空或四季、底下那一圈影子。畫完之後 ctx 是房間的座標。 */
+function drawRoomBack(g, room, dpr, sea, inSky, now) {
+  if (inSky) { try { skyRoomBackdrop(g, g.canvas.width, g.canvas.height, now); } catch (e) {} }   // ☁️ 爸爸媽媽家：藍天白雲
+  else if (!LITE) try { drawSeasonBack(g, dpr, sea, now); } catch (e) {}   // 🍂 四季：房間後面飄花瓣／泡泡／落葉／雪
+  g.setTransform(view.scale * dpr, 0, 0, view.scale * dpr, view.ox * dpr, view.oy * dpr);
+  // 陰影底座（四季換顏色：春天粉粉的、秋天金黃、冬天積雪）
+  if (inSky) skyRoomCloudBase(g, room);   // 房間坐在一朵大白雲上
+  else {
+    g.fillStyle = (SEASON_FX_ON && SEASON_GROUND[sea]) || 'rgba(60,90,60,.18)';
+    g.beginPath();
+    const c = iso(room.w / 2, room.d / 2);
+    g.ellipse(c.x, c.y + 18, (room.w + room.d) * TW / 4 + 20, (room.w + room.d) * TH / 4 + 14, 0, 0, Math.PI * 2);
+    g.fill();
+  }
+}
+/* ===== 🧱 房間分層畫（家長：不管順暢模式或一般模式都卡卡的）=====
+   以前每一格都把地板、牆壁、每一件家具從頭畫一遍（量過：九成的時間花在這裡）。
+   現在：
+   ・底圖：天空／影子、地板、牆、地毯畫一次，存成一張跟畫面一樣大的圖，每一格直接貼。
+   ・家具：每一件不會動的家具各自存成一張小圖（就照它在畫面上的位置和大小畫，貼回去每個點都一樣），每一格照前後順序貼。
+   ・會動的照舊每一格畫：小可愛、寵物、訪客、正在用的家具、魚缸池塘這些。前後遮擋跟以前一模一樣（同一套排序）。
+   家具有沒有在動是自動看的：每一格比對它的零件有沒有變，剛變過的 0.6 秒內當它會動。
+   擺家具、佈置模式、打開飄落效果、鏡頭還在動的時候照舊整張畫。壞掉會自動關掉（USE_ROOM_LAYER = false），回到以前的畫法。 */
+var USE_ROOM_LAYER = true;
+let roomBase = null, roomBaseKey = '', roomSeenKey = '', roomBaseAt = 0, roomViewKey = '';
+const roomSigs = new Map(), roomSprites = new Map();
+var roomLayerStats = { builds: 0, frames: 0, full: 0, sprites: 0 };
+function roomSigHash(str) { let h = 5381; for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0; return h; }
+function roomItemSig(def, it) {
+  try {
+    const st = itemState[it.uid], active = fufu.act && fufu.act.uid === it.uid;
+    const plain = !st && !active && !G.away && def.id !== 'fishtank' && def.id !== 'pond' && def.id !== 'float_ring' && def.id !== 'planter';
+    if (plain) return 'p' + (it.top || '');
+    const parts = itemLook(def, it.rot || 0, it, getParts(def, it.rot || 0));
+    return roomSigHash(JSON.stringify(parts)) + ':' + (it.top || '');
+  } catch (e) { return 'x' + Math.random(); }
+}
+function roomBoxRect(e, padX, padTop, padBot) {
+  const a = iso(e.x, e.y + e.d), b = iso(e.x + e.w, e.y), t = iso(e.x, e.y, (e.z || 0) + (e.h || 0)), q = iso(e.x + e.w, e.y + e.d, e.z || 0);
+  return { x0: a.x - padX, x1: b.x + padX, y0: t.y - padTop, y1: q.y + padBot };
+}
+/* 一件家具實際畫到哪裡：照它的零件算（一種家具、一個方向只算一次），再跟「佔的格子」取大的。 */
+const roomDefRects = {};
+function roomItemRect(def, it) {
+  const rot = it.rot || 0, key = def.id + ':' + rot; let r = roomDefRects[key];
+  if (!r) {
+    const fp = footprint(def, rot), q = roomBoxRect({ x: 0, y: 0, w: fp.w, d: fp.d, z: 0, h: itemHeight(def) }, 0, 0, 0);
+    r = { x0: q.x0, x1: q.x1, y0: q.y0, y1: q.y1 };
+    try {
+      for (const p of getParts(def, rot)) { const b = toBounds(p);
+        if (![b.x, b.y, b.w, b.d, b.z, b.h].every(v => typeof v === 'number' && isFinite(v))) throw 0;
+        const c = roomBoxRect(b, 0, 0, 0); r.x0 = Math.min(r.x0, c.x0); r.x1 = Math.max(r.x1, c.x1); r.y0 = Math.min(r.y0, c.y0); r.y1 = Math.max(r.y1, c.y1); }
+    } catch (e) { r.x0 -= 30; r.x1 += 30; r.y0 -= 40; r.y1 += 26; }
+    roomDefRects[key] = r;
+  }
+  const o = iso(it.x, it.y), pad = 10;
+  return { x0: o.x + r.x0 - pad, x1: o.x + r.x1 + pad, y0: o.y + r.y0 - pad - (it.top ? 70 : 0), y1: o.y + r.y1 + pad };
+}
+function roomSpritesClear() { roomSprites.forEach(sp => { try { sp.c.width = sp.c.height = 0; } catch (e) {} }); roomSprites.clear(); }
+function roomLayerFrame(room, dpr, sea, inSky, now, extras, occupants) {
+  if (!USE_ROOM_LAYER || hold || decorMode || !room) return false;
+  if (!inSky && !LITE && SEASON_FX_ON && G.seasonFx === 1) return false;   // 飄落效果開著：整張都在動
+  const W = canvas.width, H = canvas.height; if (W < 8 || H < 8) return false;
+  const sc = view.scale * dpr, ox = view.ox * dpr, oy = view.oy * dpr;
+  let rk = ''; try { rk = roomKey(); } catch (e) {}
+  const viewKey = [W, H, sc, ox, oy, rk].join(';');
+  const occUid = new Set(occupants.filter(Boolean).map(o => o.uid));
+  const info = new Map(); let flatSig = '', flatMoving = false;
+  for (const it of room.items) {
+    const def = FURN_BY_ID[it.id]; if (!def) return false;
+    const sg = roomItemSig(def, it); let rec = roomSigs.get(it.uid);
+    if (!rec) { rec = { sig: sg, at: -1e9 }; roomSigs.set(it.uid, rec); }
+    if (rec.sig !== sg) { rec.sig = sg; rec.at = now; }
+    const moving = now - rec.at < 600;   // 剛剛變過：這 0.6 秒當它會動
+    if (def.layer === 'floor') { if (moving) flatMoving = true; flatSig += it.uid + ':' + it.id + ':' + it.x + ':' + it.y + ':' + (it.rot || 0) + ':' + sg + ','; continue; }
+    info.set(it.uid, { live: moving || occUid.has(it.uid), key: it.id + ':' + it.x + ':' + it.y + ':' + (it.rot || 0) + ':' + sg });
+  }
+  if (flatMoving) return false;
+  if (roomSigs.size > 600) roomSigs.clear();
+  const wallItems = room.wallItems || [], twinkle = wallItems.some(w => w.id === 'star_lights');
+  const baseKey = [viewKey, dpr, room.w, room.d, room.wall, room.floor, hoverUid || '', sea, LITE ? 1 : 0, Math.floor(Date.now() / 60000),
+    inSky ? Math.floor(now / 1500) : 0, twinkle ? Math.floor(now / 400) : 0, wallItems.map(w => w.uid + ':' + w.id + ':' + w.side + ':' + w.pos).join('|'), flatSig].join(';');
+  if (baseKey !== roomBaseKey || now - roomBaseAt > 5000) {
+    if (viewKey !== roomSeenKey) { roomSeenKey = viewKey; roomBaseKey = ''; roomLayerStats.full++; return false; }   // 畫面還在變（剛換房間、鏡頭在動）：這一格照舊整張畫，穩了再存
+    if (!roomBase) roomBase = document.createElement('canvas');
+    if (roomBase.width !== W || roomBase.height !== H) { roomBase.width = W; roomBase.height = H; }
+    const gb = roomBase.getContext('2d'); if (!gb) throw new Error('no layer ctx');
+    gb.setTransform(1, 0, 0, 1, 0, 0); gb.clearRect(0, 0, W, H);
+    drawRoomBack(gb, room, dpr, sea, inSky, now);
+    drawRoom(gb, room, { pass: 'base', hoverUid });
+    roomBaseKey = baseKey; roomBaseAt = now; roomLayerStats.builds++;
+  }
+  if (viewKey !== roomViewKey) { roomSpritesClear(); roomViewKey = viewKey; }   // 畫面大小、位置變了：小圖全部重畫
+  // 不在這個房間的小圖丟掉
+  if (roomSprites.size > info.size + 8) roomSprites.forEach((sp, uid) => { if (!info.has(uid)) { sp.c.width = sp.c.height = 0; roomSprites.delete(uid); } });
+  let area = 0; roomSprites.forEach(sp => { area += sp.w * sp.h; });
+  const blit = (g, e) => {
+    const it = e.it, inf = it && info.get(it.uid); if (!inf || inf.live) return false;
+    let sp = roomSprites.get(it.uid);
+    if (!sp || sp.key !== inf.key) {
+      const r = roomItemRect(e.def, it);
+      const x0 = Math.max(0, Math.floor(r.x0 * sc + ox)), y0 = Math.max(0, Math.floor(r.y0 * sc + oy)), x1 = Math.min(W, Math.ceil(r.x1 * sc + ox)), y1 = Math.min(H, Math.ceil(r.y1 * sc + oy));
+      const w = x1 - x0, h = y1 - y0;
+      if (w <= 0 || h <= 0) return true;   // 整件在畫面外
+      if (area + w * h > 14e6) return false;   // 小圖加起來太大（很多很大的家具）：這件直接畫，不要吃太多記憶體
+      const c = sp ? sp.c : document.createElement('canvas'); c.width = w; c.height = h;
+      const sg2 = c.getContext('2d'); if (!sg2) return false;
+      sg2.setTransform(sc, 0, 0, sc, ox - x0, oy - y0);
+      drawItem(sg2, e.def, e.x, e.y, it.rot || 0, it);
+      if (sp) area -= sp.w * sp.h; area += w * h;
+      sp = { c, key: inf.key, x0, y0, w, h }; roomSprites.set(it.uid, sp); roomLayerStats.sprites++;
+    }
+    g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(sp.c, sp.x0, sp.y0); g.setTransform(sc, 0, 0, sc, ox, oy);
+    return true;
+  };
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.__baseAlpha = 1; ctx.clearRect(0, 0, W, H); ctx.drawImage(roomBase, 0, 0);
+  ctx.setTransform(sc, 0, 0, sc, ox, oy);
+  drawRoom(ctx, room, { pass: 'solids', extras, occupants, blit });
+  roomLayerStats.frames++;
+  return true;
+}
 function draw() {
   computeView();
   const r = canvasBox || (canvasBox = canvas.getBoundingClientRect());
@@ -15470,20 +15595,18 @@ function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const sea = seasonOfMonth();
   const inSky = !!(G.away && G.away.place === 'sky');
-  if (inSky) { try { skyRoomBackdrop(ctx, canvas.width, canvas.height, performance.now()); } catch (e) {} }   // ☁️ 爸爸媽媽家：藍天白雲
-  else if (!LITE) try { drawSeasonBack(ctx, dpr, sea, performance.now()); } catch (e) {}   // 🍂 四季：房間後面飄花瓣／泡泡／落葉／雪
-  ctx.setTransform(view.scale * dpr, 0, 0, view.scale * dpr, view.ox * dpr, view.oy * dpr);
-  const room = curRoom();
-  // 陰影底座（四季換顏色：春天粉粉的、秋天金黃、冬天積雪）
-  if (inSky) skyRoomCloudBase(ctx, room);   // 房間坐在一朵大白雲上
-  else {
-  ctx.fillStyle = (SEASON_FX_ON && SEASON_GROUND[sea]) || 'rgba(60,90,60,.18)';
-  ctx.beginPath();
-  const c = iso(room.w / 2, room.d / 2);
-  ctx.ellipse(c.x, c.y + 18, (room.w + room.d) * TW / 4 + 20, (room.w + room.d) * TH / 4 + 14, 0, 0, Math.PI * 2);
-  ctx.fill();
+  const room = curRoom(), nowT = performance.now();
+  const extras = [fufuDrawEntry()].concat(petDrawEntries(), visitorDrawEntries(), (typeof ghostDrawEntries === 'function' ? ghostDrawEntries() : []), hostDrawEntries(),   /* 幽靈在後面的 script：第一幀可能還沒載入 */ supplyDrawEntries(), giftDrawEntries(), phDrawEntries());
+  const occupants = [fufuOccupant(), petOccupant(), visitorOccupant()].concat(phOccupants(), compOccupants());
+  let layered = false;
+  try { layered = roomLayerFrame(room, dpr, sea, inSky, nowT, extras, occupants); } catch (e) { USE_ROOM_LAYER = false; layered = false; try { console.error(e); } catch (e2) {} }
+  if (!layered) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawRoomBack(ctx, room, dpr, sea, inSky, nowT);
+    drawRoom(ctx, room, { ghost: hold, hoverUid: hold ? null : hoverUid, showGrid: !!hold || decorMode, extras, occupants });
   }
-  drawRoom(ctx, room, { ghost: hold, hoverUid: hold ? null : hoverUid, showGrid: !!hold || decorMode, extras: [fufuDrawEntry()].concat(petDrawEntries(), visitorDrawEntries(), (typeof ghostDrawEntries === 'function' ? ghostDrawEntries() : []), hostDrawEntries(),   /* 幽靈在後面的 script：第一幀可能還沒載入 */ supplyDrawEntries(), giftDrawEntries(), phDrawEntries()), occupants: [fufuOccupant(), petOccupant(), visitorOccupant()].concat(phOccupants(), compOccupants()) });
+  ctx.setTransform(view.scale * dpr, 0, 0, view.scale * dpr, view.ox * dpr, view.oy * dpr);
   petDrawOverlay(ctx);
   visitorDrawOverlay(ctx, performance.now());
   drawAmbient(ctx, performance.now());
