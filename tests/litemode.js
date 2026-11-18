@@ -24,7 +24,7 @@ const path = require('path');
   o.remembered = await p.evaluate(() => LITE === true && !document.getElementById('intro'));
   o.offAgain = await p.evaluate(() => { setLite(false); return LITE === false && localStorage.getItem('myHouseGame_lite') === '0' && FRAME_MIN_MS < 30; });
   // 電腦很慢：會跳出問要不要打開
-  await p.evaluate(() => { localStorage.removeItem('myHouseGame_liteAsked'); VIEW_Q = .75; });
+  await p.evaluate(() => { localStorage.removeItem('myHouseGame_liteAsked'); VIEW_Q = .75; USE_ROOM_LAYER = false; idleLastInput = performance.now() + 1e9; });   // 現在分層畫＋沒在動少畫，慢 20 倍也不夠慢：測試時關掉這兩樣才慢得下來
   const cdp = await ctx.newCDPSession(p); await cdp.send('Emulation.setCPUThrottlingRate', { rate: 20 });
   let asked = false; for (let k = 0; k < 40 && !asked; k++) { await p.waitForTimeout(1000); asked = await p.evaluate(() => !!document.getElementById('liteAsk')); }
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });

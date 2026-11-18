@@ -1269,7 +1269,7 @@ window.addEventListener('unhandledrejection', function (e) { var r = e.reason; c
   } catch (e) {}
   var memNow = function () { try { var cs = document.getElementsByTagName('canvas'), cv = 0; for (var i = 0; i < cs.length; i++) cv += cs[i].width * cs[i].height * 4; return { js: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1e6) : '?', cv: Math.round(cv / 1e6), n: document.getElementsByTagName('*').length }; } catch (e) { return null; } };
   var beat = function (clean) { try { localStorage.setItem(ALIVE_KEY, JSON.stringify({ t: Date.now(), clean: !!clean, did: crashCrumbs.slice(-12), mem: memNow() })); } catch (e) {} };
-  beat(false); setInterval(function () { if (!document.hidden) beat(false); }, 5000);
+  beat(false); setInterval(function () { if (!document.hidden) beat(false); }, 15000);   // 15 秒寫一次就夠（以前 5 秒）
   document.addEventListener('visibilitychange', function () { if (document.hidden) { crashHiddenSince = Date.now(); beat(true); } else { beat(false); } });
   window.addEventListener('pagehide', function () { beat(true); });
   // iPad 拉出多工畫面、控制中心、貼上的詢問框時，畫面會暫停但不算「切到背景」→ 記下離開焦點的時間，分得出是真的卡住還是 iPad 讓畫面休息
@@ -5702,6 +5702,7 @@ const NEWS = [
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
     ['🚀', '剛打開遊戲比較不會卡了：畫畫存起來小很多（存檔變成原本的一半以下），打開時的存檔紀錄改到電腦有空的時候才做'],
     ['📐', '房間和外面的地方最大改成 12×12：14×14 太大了，要走很久；該有的東西都還在'],
+    ['😴', '站著不動、沒在碰的時候，畫面一秒只更新 10 次（一碰就恢復），電腦比較不忙'],
     ['🖌️', '電腦上卡好幾秒的問題：畫圖改成用處理器畫，不再塞住顯示晶片（設定裡可以切換）'],
     ['🚀', '家裡和公園、學校這些地方順很多：地板、牆壁和不會動的家具畫一次就存起來，不用每一格從頭畫'],
     ['🐢', '切到商店、換衣服不會轉圈圈了：小圖先畫看得到的，其他的一下子就補上'],
@@ -10465,10 +10466,14 @@ function actorSpring(a, dt, now, egg) {
     a.lean += (a.press.dragX - a.lean) * Math.min(1, dt * 16);
     a.squishV = a.leanV = 0;
   } else {
-    a.squishV += (-260 * a.squish - 9 * a.squishV) * dt;
-    a.squish += a.squishV * dt;
-    a.leanV += (-200 * a.lean - 8 * a.leanV) * dt;
-    a.lean += a.leanV * dt;
+    /* 彈簧要小步小步算：一格的時間太長（一秒 10～15 格）一次算完會越彈越大，身體寬度變負的、畫圖就出錯。 */
+    for (let n = Math.max(1, Math.ceil(dt / .02)), h = dt / n, i = 0; i < n; i++) {
+      a.squishV += (-260 * a.squish - 9 * a.squishV) * h;
+      a.squish += a.squishV * h;
+      a.leanV += (-200 * a.lean - 8 * a.leanV) * h;
+      a.lean += a.leanV * h;
+    }
+    if (!(a.squish > -.7 && a.squish < .9)) { a.squish = Math.max(-.7, Math.min(.9, a.squish || 0)); a.squishV = 0; }   // 保險：不會壓到負的
   }
   a.particles.forEach(p => { p.age += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 6 * dt; });
   a.particles = a.particles.filter(p => p.age < p.life);
@@ -11963,7 +11968,7 @@ function drawPetActorBody(ctx, pet, st) {
   // 影子
   ctx.fillStyle = 'rgba(40,30,20,.2)';
   ctx.beginPath();
-  ctx.ellipse(p.x, p.y, (13 * sx - hop * .5) * k, 5 * k, 0, 0, Math.PI * 2);
+  ctx.ellipse(p.x, p.y, Math.max(.5, (13 * sx - hop * .5) * k), Math.max(.5, 5 * k), 0, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.save();
@@ -15967,20 +15972,30 @@ var FRAME_MIN_MS = LITE ? 1000 / 15 - 4 : 1000 / 30 - 4;   // 順暢模式一秒
    心跳也停 → 程式自己卡住；心跳照跳 → 程式沒事，是瀏覽器或顯示晶片沒有把畫面送出來。 */
 let hbLast = performance.now(), hbWorst = 0;
 setInterval(() => { const t = performance.now(); hbWorst = Math.max(hbWorst, t - hbLast); hbLast = t; }, 250);
+var CALM_MS = 1000 / 10 - 4;
+function calmNow(now) {
+  try {
+    if (now - idleLastInput < 4000) return false;
+    if ((fufu.path && fufu.path.length) || fufu.act || fufu.ride || hold || decorMode || fufu.jumpT > 0) return false;
+    if (typeof isl !== 'undefined' && isl && (isl.flyTo || isl.path && isl.path.length || isl.fun)) return false;
+    return true;
+  } catch (e) { return false; }
+}
 (function loop(now) {
   requestAnimationFrame(loop);
   now = now || performance.now();
   if (document.hidden || IDLE_PAUSED || FIND_CAUSE_HOLD) { lastFrame = now; return; }   // 切到別的 App、分頁在背景、⏸️ 沒在玩自動暫停：不要繼續畫、也不要補一大段
   /* 🐢 房間一秒畫 30 次就夠順（家長：還有其他可以更快、避免卡卡的嗎）：工作量少一半，iPad 比較不燙、不卡。
      螢幕 60 格就隔一格畫一次；本來就比較慢的機器不受影響。小遊戲有自己的迴圈，照樣 60 格。 */
-  if (now - lastFrame < FRAME_MIN_MS) return;
+  /* 😴 沒東西需要快：4 秒沒碰滑鼠鍵盤螢幕、小可愛也沒在走路或做事 → 一秒畫 10 次就夠；一碰就馬上恢復。 */
+  if (now - lastFrame < (calmNow(now) ? Math.max(FRAME_MIN_MS, CALM_MS) : FRAME_MIN_MS)) return;
   /* 🏐 小遊戲開著（躲避球、籃球…）：房間的事情一秒只做 4 次，把手機／平板的力氣全部留給小遊戲（家長：玩躲避球會卡卡） */
   if (!loop.modal) { loop.modal = document.getElementById('modal'); loop.card = document.getElementById('modalCard'); }
   if (loop.modal && !loop.modal.hidden && loop.card && loop.card.classList.contains('in-game') && now - lastFrame < 250) return;
   if (now - lastFrame > 5000 && Date.now() - crashHiddenSince > (now - lastFrame) + 1000) { const gap = now - lastFrame, bl = window.crashBlurSince || 0, away = bl && Date.now() - bl <= gap + 1000;   // 停住的這段時間裡 iPad 跑去別的畫面過
     crashLog('畫面停住', `停了 ${(gap / 1000).toFixed(1)} 秒又恢復；${hbWorst > gap * .6 ? '程式也停了 ' + (hbWorst / 1000).toFixed(1) + ' 秒（程式自己卡住）' : '這段時間程式有在跑、只是畫面沒更新（瀏覽器或顯示晶片停住，最長只停 ' + (hbWorst / 1000).toFixed(1) + ' 秒）'}；${LITE ? '順暢' : '一般'}模式，放大 ${Math.round((window.devicePixelRatio || 1) * 100)}%` + (away ? '（那時候視窗不在最前面：切到別的視窗、多工或詢問框）' : '（跳出確認視窗也會這樣）')); }   // 📋 當機紀錄
   /* 一格最多算 0.075 秒：順暢模式一秒 15 格（一格 0.067 秒），以前上限 0.05 秒 → 走路只剩 75% 速度，像慢動作 */
-  const dt = Math.max(0, Math.min(.075, (now - lastFrame) / 1000));
+  const dt = Math.max(0, Math.min(.11, (now - lastFrame) / 1000));   // 沒在動時一秒 10 格：一格 0.1 秒也要算足，寵物才不會變慢動作
   lastFrame = now;
   /* 🔇 家長：比賽中怎麼還會有肚子餓的聲音 → 小遊戲／電影開著時，後面房間發出的聲音（肚子餓、寵物叫、說話）一律不放 */
   const md = loop.modal, cd = loop.card; ROOM_MUTED = !!(md && !md.hidden && cd && (cd.classList.contains('in-game') || cd.classList.contains('in-movie')));
@@ -16950,12 +16965,26 @@ function restCfg() {
   return Object.assign({ on: true, play: 20, rest: 5, pin: '' }, c || {});
 }
 function saveRestCfg(c) { lsSet(REST_CFG_KEY, JSON.stringify(c)); }
+/* 家長：電腦上要更順 → 玩了幾秒以前每秒寫一次到瀏覽器的儲存區，現在先記在記憶體，10 秒才真的寫一次；
+   重要的變化（開始休息、提醒過了、歸零）還是馬上寫；切走或關掉網頁時也馬上寫。最多少算 10 秒玩的時間。 */
+let restWritten = null, restPending = null, restWroteAt = 0;
 function restState() {
+  let raw = null; try { raw = lsGet(REST_STATE_KEY); } catch (e) { raw = null; }
   let s = null;
-  try { s = JSON.parse(lsGet(REST_STATE_KEY) || 'null'); } catch (e) { s = null; }
+  if (restPending && raw === restWritten) { try { s = JSON.parse(restPending); } catch (e) { s = null; } }   // 儲存區沒被別人動過：用記憶體裡比較新的那份
+  else { restPending = null; try { s = JSON.parse(raw || 'null'); } catch (e) { s = null; } }
   return Object.assign({ played: 0, restUntil: 0, lastSeen: 0, dueAt: 0, warned: false }, s || {});
 }
-function saveRestState(s) { lsSet(REST_STATE_KEY, JSON.stringify(s)); }
+function saveRestState(s) {
+  const json = JSON.stringify(s), now = Date.now();
+  let prev = null; try { prev = JSON.parse(restWritten || 'null'); } catch (e) { prev = null; }
+  const big = !prev || prev.restUntil !== s.restUntil || prev.dueAt !== s.dueAt || prev.warned !== s.warned || s.played < prev.played;
+  if (big || now - restWroteAt >= 10000 || lsGet(REST_STATE_KEY) !== restWritten) { lsSet(REST_STATE_KEY, json); restWritten = json; restPending = null; restWroteAt = now; }
+  else restPending = json;
+}
+function restFlush() { if (restPending && lsGet(REST_STATE_KEY) === restWritten) { lsSet(REST_STATE_KEY, restPending); restWritten = restPending; restWroteAt = Date.now(); } restPending = null; }
+window.addEventListener('pagehide', () => { try { restFlush(); } catch (e) {} });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { try { restFlush(); } catch (e) {} } });
 // 用 var：畫面的 loop 在載入時就先跑第一格（比這一行早），let 會在那時候丟錯、讓整段程式停掉
 var resting = false, restUnlocked = false;
 // 這次打開遊戲之後做了什麼（給休息畫面的「今天做了」用；不存檔）
@@ -22914,8 +22943,9 @@ function islFrame(now) {
   if (!isl) return;
   now = now || performance.now();
   if (document.hidden || IDLE_PAUSED || FIND_CAUSE_HOLD) { isl.last = now; isl.raf = requestAnimationFrame(islFrame); return; }
-  if (now - isl.last < FRAME_MIN_MS) { isl.raf = requestAnimationFrame(islFrame); return; }   // 🐢 小島也是一秒 30 次
-  const dt = Math.min(.075, (now - isl.last) / 1000); isl.last = now; isl.t += dt;   // 順暢模式 15 格：不要變慢動作
+  if (now - isl.last < (calmNow(now) && isl._still ? Math.max(FRAME_MIN_MS, CALM_MS) : FRAME_MIN_MS)) { isl.raf = requestAnimationFrame(islFrame); return; }   // 🐢 小島也是一秒 30 次；沒在動、沒在碰就 10 次
+  isl._still = isl._px === isl.x && isl._py === isl.y; isl._px = isl.x; isl._py = isl.y;
+  const dt = Math.min(.11, (now - isl.last) / 1000); isl.last = now; isl.t += dt;   // 順暢模式 15 格：不要變慢動作
   if (resting) { closeIsland(); return; }
   if (isl.press && now - isl.repath > 140) { isl.repath = now; islTap(isl.press, true); }
   try { if (!islStep(dt)) return; islDraw(now); } catch (e) { console.error(e); }
