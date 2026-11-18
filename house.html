@@ -548,7 +548,7 @@ button.pass { font: inherit; }
 .itemmenu[hidden] { display: none; }
 .island-on .itemmenu.isl-menu:not([hidden]) { display: flex !important; z-index: 30; }   /* 小島上的選單（交通工具、表情）：要蓋在地圖上面 */
 .itemmenu button { border: none; background: none; text-align: left; padding: 7px 12px; border-radius: 9px; font-size: 14px; white-space: nowrap; }
-.itemmenu button:hover { background: var(--chip); }
+.itemmenu button:hover, .itemmenu button:focus-visible, .itemmenu button.kbd { background: var(--chip); outline: 2px solid var(--line); }
 .itemmenu .menu-sub { font-size: 12px; color: var(--muted); padding: 6px 12px 2px; border-top: 1px dashed var(--line); margin-top: 2px; }
 /* 餵食選單很長時留在舞台裡面自己捲，不要把整頁撐出捲軸（捲軸一閃，房間就跟著閃） */
 .foodmenu { max-height: min(420px, calc(100% - 16px)); overflow-y: auto; overscroll-behavior: contain; }
@@ -5713,6 +5713,7 @@ const NEWS = [
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
     ['🚀', '剛打開遊戲比較不會卡了：畫畫存起來小很多（存檔變成原本的一半以下），打開時的存檔紀錄改到電腦有空的時候才做'],
     ['📐', '房間和外面的地方最大改成 12×12：14×14 太大了，要走很久；該有的東西都還在'],
+    ['⌨️', '電腦可以用鍵盤玩了：方向鍵（或 W A S D）走路；空白鍵跟最近的東西互動（家具、朋友、門、樹、花）'],
     ['🐛', '找到電腦上卡好幾秒的原因了：一段長度是 0 的無聲聲音一直重播，把瀏覽器塞住。修掉了，分頁上也不會一直有喇叭圖示'],
     ['😴', '站著不動、沒在碰的時候，畫面一秒只更新 10 次（一碰就恢復），電腦比較不忙'],
     ['🖌️', '電腦上卡好幾秒的問題：畫圖改成用處理器畫，不再塞住顯示晶片（設定裡可以切換）'],
@@ -9707,6 +9708,72 @@ function fufuUpdatePose(now) {
   }
 }
 
+/* ===== ⌨️ 鍵盤（家長：上下左右鍵能不能移動？空白鍵能不能跟物品反應）=====
+   家裡／外面的地方：
+   ・方向鍵或 W A S D：照畫面上的方向走（上＝往裡面、下＝往前面、左、右）。房間是斜的，所以一次走斜的一格；
+     斜的被擋住就沿著牆或家具滑過去。按兩個鍵（例如上＋右）就沿著格子直直走。
+   ・空白鍵：跟最近的東西互動（2.5 格以內可以用的家具）。只有一件事可以做就直接做；有好幾件就開小選單，
+     用上下鍵選、再按空白鍵決定，Esc 關掉。附近沒有東西就不會有反應。
+   大地圖：方向鍵本來就可以走；空白鍵＝跟最近的朋友說話、進門、搖樹、摘花、釣魚時拉竿。
+   打字的時候（取名字…）、開著視窗、小遊戲進行中都不會觸發。 */
+const roomKeys = {};
+function roomKeyDir() {
+  const kx = (roomKeys.arrowright || roomKeys.d ? 1 : 0) - (roomKeys.arrowleft || roomKeys.a ? 1 : 0), ky = (roomKeys.arrowdown || roomKeys.s ? 1 : 0) - (roomKeys.arrowup || roomKeys.w ? 1 : 0);
+  if (!kx && !ky) return null;
+  return [Math.sign(kx + ky), Math.sign(ky - kx)];   // 畫面方向 → 格子方向（右＝x+1,y-1；下＝x+1,y+1）
+}
+function roomKeyStep(room, blk) {
+  const d = roomKeyDir(); if (!d) return false;
+  if (hold || fufu.pose || fufu.act || !$('#modal').hidden || (typeof isl !== 'undefined' && isl)) return false;
+  const [ci, cj] = fufuTile(), free = (i, j) => i >= 0 && j >= 0 && i < room.w && j < room.d && blk[i] && !blk[i][j];
+  const [di, dj] = d; let t = null;
+  if (di && dj) { if (free(ci + di, cj + dj) && (free(ci + di, cj) || free(ci, cj + dj))) t = [ci + di, cj + dj]; else if (free(ci + di, cj)) t = [ci + di, cj]; else if (free(ci, cj + dj)) t = [ci, cj + dj]; }
+  else if (free(ci + di, cj + dj)) t = [ci + di, cj + dj];
+  if (!t) return false;
+  fufu.path = [t]; fufu.pendingSay = null;
+  return true;
+}
+/* 空白鍵：最近的、可以用的家具 */
+function roomKeyUse() {
+  const room = curRoom(); let best = null, bd = 2.5;
+  room.items.forEach(it => { const def = FURN_BY_ID[it.id]; if (!def || !(canUse(it) || (it.top && (!G.away || inPetHouse())))) return; const fp = footprint(def, it.rot || 0);
+    const dx = Math.max(it.x - fufu.x, 0, fufu.x - (it.x + fp.w)), dy = Math.max(it.y - fufu.y, 0, fufu.y - (it.y + fp.d)), dist = Math.hypot(dx, dy); if (dist < bd) { bd = dist; best = it; } });
+  if (!best) return false;
+  const def = FURN_BY_ID[best.id], fp = footprint(def, best.rot || 0), p = iso(best.x + fp.w / 2, best.y + fp.d / 2, itemHeight(def) / 2), r = canvas.getBoundingClientRect();
+  showItemMenu(best, { clientX: r.left + p.x * view.scale + view.ox, clientY: r.top + p.y * view.scale + view.oy });
+  const menu = $('#itemMenu'), bs = menu.hidden ? [] : [...menu.querySelectorAll('button')];
+  if (bs.length === 1) bs[0].click();   // 只有一件事可以做：直接做
+  else if (bs.length) { bs[0].classList.add('kbd'); menu._kbd = 0; }
+  return true;
+}
+function menuKey(code) {   // 小選單開著：上下選、空白／Enter 決定
+  const menu = $('#itemMenu'); if (menu.hidden) return false;
+  const bs = [...menu.querySelectorAll('button')]; if (!bs.length) return false;
+  let i = Number.isInteger(menu._kbd) ? menu._kbd : -1;
+  if (code === 'ArrowDown' || code === 'KeyS') i = (i + 1) % bs.length;
+  else if (code === 'ArrowUp' || code === 'KeyW') i = (i - 1 + bs.length) % bs.length;
+  else if (code === 'Space' || code === 'Enter') { (bs[i < 0 ? 0 : i] || bs[0]).click(); menu._kbd = null; return true; }
+  else return false;
+  bs.forEach((b, k) => b.classList.toggle('kbd', k === i)); menu._kbd = i; return true;
+}
+function islKeyUse() {
+  if (!isl) return false;
+  if (isl.act) { if (isl.act.kind === 'fish') islPull(); return true; }
+  const m = isl.m, c = [];
+  isl.npcs.forEach(q => { const d = Math.hypot(q.x - isl.x, q.y - isl.y); if (d < 2.6) c.push([d, null, { type: 'talk', npc: q }]); });
+  m.blds.forEach(b => { const d = Math.hypot(b.door[0] + .5 - isl.x, b.door[1] + .5 - isl.y); if (d < 2.6) c.push([d + .2, null, { type: 'enter', id: b.id, door: b.door }]); });
+  const ix = Math.floor(isl.x), iy = Math.floor(isl.y);
+  for (let y = iy - 2; y <= iy + 2; y++) for (let x = ix - 2; x <= ix + 2; x++) { if (x < 0 || y < 0 || x >= m.W || y >= m.H) continue; const d = Math.hypot(x + .5 - isl.x, y + .5 - isl.y);
+    if (m.tree[y][x] && d < 2.2) c.push([d + .4, { x, y, fx: x + .5, fy: y + .5 }]);
+    else if (m.flower[y][x] && !isl.picked[x + ',' + y] && d < 1.6) c.push([d + .6, { x, y, fx: x + .5, fy: y + .5 }]); }
+  if (!c.length) return false;
+  c.sort((a, b) => a[0] - b[0]);
+  const pick = c[0]; isl.keys = {};
+  if (pick[2] && pick[2].type === 'talk') { isl.pending = pick[2]; isl.path = []; islDoPending(); }   // 朋友就在旁邊：直接說話（不會被旁邊的蝴蝶、椅子搶走）
+  else if (pick[2]) { isl.pending = { type: 'enter', id: pick[2].id }; isl.skipDoor = null; Sound.play('click'); if (Math.floor(isl.x) === pick[2].door[0] && Math.floor(isl.y) === pick[2].door[1]) islDoPending(); else if (!islWalkTo((x, y) => x === pick[2].door[0] && y === pick[2].door[1])) isl.pending = null; }
+  else islTap({ _tile: pick[1] }, false);
+  return true;
+}
 // ── 每一幀更新 ──
 function fufuUpdate(dt, now) {
   const room = curRoom();
@@ -9744,6 +9811,7 @@ function fufuUpdate(dt, now) {
     }
   }
 
+  if (!fufu.path.length && !fufu.task) roomKeyStep(room, blk);   // ⌨️ 按著方向鍵：往那邊走一格
   if (fufu.path.length) {
     const [ni, nj] = fufu.path[0];
     if (blk[ni] && blk[ni][nj]) { // 路被擋住就重新找
@@ -9763,6 +9831,7 @@ function fufuUpdate(dt, now) {
     if (dist <= step) {
       fufu.x = tx; fufu.y = ty;
       fufu.path.shift();
+      if (!fufu.path.length && !fufu.task) roomKeyStep(room, blk);   // ⌨️ 還按著：接著走下一格，不會一頓一頓
       if (!fufu.path.length) {
         fufu.back = false;
         if (fufu.task) fufuArrive(now);
@@ -16788,11 +16857,31 @@ canvas.addEventListener('contextmenu', e => {
     offerUndo();
   }
 });
+const ROOM_MOVE_CODES = { ArrowUp: 'arrowup', ArrowDown: 'arrowdown', ArrowLeft: 'arrowleft', ArrowRight: 'arrowright', KeyW: 'w', KeyA: 'a', KeyS: 's', KeyD: 'd' };
+document.addEventListener('keyup', e => { const mk = ROOM_MOVE_CODES[e.code]; if (mk) delete roomKeys[mk]; });
+window.addEventListener('blur', () => { Object.keys(roomKeys).forEach(k => delete roomKeys[k]); });
 document.addEventListener('keydown', e => {
-  if (!$('#modal').hidden) return;
-  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return; // 正在打字時不觸發快捷鍵
+  if (!$('#modal').hidden) { Object.keys(roomKeys).forEach(k => delete roomKeys[k]); return; }
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || (e.target.isContentEditable)) return; // 正在打字時不觸發快捷鍵
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
   // 注音等中文輸入法開著時，e.key 會變成 'Process'，所以同時看實體按鍵 e.code
   const k = (e.key || '').toLowerCase(), code = e.code || '';
+  // ⌨️ 小選單開著：上下選、空白決定
+  if ((ROOM_MOVE_CODES[code] || code === 'Space' || code === 'Enter') && menuKey(code)) { e.preventDefault(); return; }
+  const onIsland = typeof isl !== 'undefined' && !!isl;
+  if (code === 'Space' && !hold) {
+    /* 剛用滑鼠按過某顆按鈕（商店、交通工具…），焦點會留在那顆按鈕上，空白鍵會變成「再按一次那顆」。
+       這裡視窗都關著，空白鍵就是遊戲的鍵：把焦點拿開，照樣跟東西互動。 */
+    if (e.target && e.target.tagName === 'BUTTON' && !e.target.closest('#itemMenu')) { try { e.target.blur(); } catch (er) {} }
+    e.preventDefault(); if (e.repeat) return;
+    if (onIsland) islKeyUse(); else if (!resting) { if (fufu.pose) { fufuStandUp(true); } else roomKeyUse(); }
+    return;
+  }
+  if (ROOM_MOVE_CODES[code] && !onIsland) {
+    e.preventDefault(); hideItemMenu();
+    if (!hold && !e.repeat) { if (fufu.pose) fufuStandUp(false); if (fufu.act) { try { endRide(); } catch (er) {} fufu.act = null; fufu.back = false; } fufu.task = null; if (fufu.path.length > 1) fufu.path.length = 1; }   // 按方向鍵：站起來、不做事了、改用鍵盤走
+    roomKeys[ROOM_MOVE_CODES[code]] = true; return;
+  }
   if (k === 'r' || code === 'KeyR') { if (hold) { e.preventDefault(); rotateHold(); } }
   else if (k === 'escape' || code === 'Escape') { hideItemMenu(); cancelHold(); }
   else if (k === 'delete' || k === 'backspace' || code === 'Delete' || code === 'Backspace') { if (hold) { e.preventDefault(); storeHold(); } }
@@ -22652,6 +22741,7 @@ function closeIsland() {
   isl = null; requestDraw();
 }
 function islTile(e) {
+  if (e && e._tile) return e._tile;   // ⌨️ 空白鍵：直接指定哪一格
   const r = isl.cv.getBoundingClientRect(), v = islView();
   const wx = (e.clientX - r.left - v.W / 2) / v.s + v.cx, wy = (e.clientY - r.top - v.H / 2) / v.s + v.cy;
   return { x: Math.floor(wx / ISL.T), y: Math.floor(wy / ISL.T), fx: wx / ISL.T, fy: wy / ISL.T };
