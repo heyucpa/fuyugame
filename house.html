@@ -15424,7 +15424,7 @@ function openFindCause() {
       : badB ? (B.hb > B.max * .6 ? '👉 只有遊戲在跑的時候才停，而且是程式自己卡住：是遊戲的問題，請把這段複製給幫忙改遊戲的人。' : '👉 只有遊戲在跑的時候才停，可是程式沒有卡住：是遊戲畫圖的方式讓瀏覽器停住，請把這段複製給幫忙改遊戲的人。')
       : '👉 這 40 秒兩邊都很順，沒有抓到停住。可以再按一次，或在會卡的地方（例如大地圖）按。';
     const gi = (() => { try { return gfxInfo(); } catch (e) { return {}; } })();
-    const extra = `畫圖方式：${SOFT_CANVAS ? '處理器' : '顯示晶片'}；順暢模式：${LITE ? '開' : '關'}；放大 ${Math.round((window.devicePixelRatio || 1) * 100)}%；顯示晶片：${gi.renderer || '?'}；在哪裡：${G.away ? (PLACES[G.away.place] || {}).name : document.querySelector('.stage.island-on') ? '小島' : '家裡'}`;
+    const extra = `畫圖方式：${SOFT_CANVAS ? '處理器' : '顯示晶片'}；順暢模式：${LITE ? '開' : '關'}；放大 ${Math.round((window.devicePixelRatio || 1) * 100)}%；顯示晶片：${gi.renderer || '?'}；在哪裡：${G.away ? (PLACES[G.away.place] || {}).name : document.querySelector('.stage.island-on') ? '小島' : '家裡'}；遊戲版本 ${(() => { const d = new Date(document.lastModified); return isNaN(d) ? document.lastModified : d.toLocaleString(); })()}（v1118c：已修無聲聲音重播）`;
     info.textContent = openFindCause.text + why + '\n' + extra;
     try { crashLog('自動找原因', (openFindCause.text + extra).replace(/\n/g, '｜').slice(0, 290)); } catch (e) {}
     const cp = el('button', 'big', '📋 複製'); cp.onclick = async () => { let ok = false; try { await navigator.clipboard.writeText(info.textContent); ok = true; } catch (e) {} cp.textContent = ok ? '✅ 複製好了，可以貼上了！' : '複製不了，請拍照'; setTimeout(() => { cp.textContent = '📋 複製'; }, 2500); };
