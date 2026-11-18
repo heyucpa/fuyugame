@@ -17566,7 +17566,7 @@ function tabBuild(body) {
     body.appendChild(bb);
   }
   body.appendChild(h3('擴建價目'));
-  Object.entries(EXPAND_COST).forEach(([s, c]) => {
+  Object.entries(EXPAND_COST).filter(([s]) => ROOM_SIZES.includes(+s)).forEach(([s, c]) => {
     const r = el('div', 'row');
     r.append(el('span', '', `擴建成 ${s}×${s}`), el('span', '', '💰 ' + fmt(c)));
     body.appendChild(r);
@@ -34004,6 +34004,33 @@ function festPush(items, ctx, now) {
   if (isl.festNight && !festBusy()) items.push({ y: isl.festNight.y * T, draw: () => festDrawNight(ctx, isl.festNight, now) });
   if (isl.festPal && !festBusy()) items.push({ y: isl.festPal.y * T, draw: () => festDrawPal(ctx, isl.festPal, now) });
 }
+
+/* 📐 家長：怎麼還是 14×14？→ 已經擴到 14×14 的房間改回 12×12。
+   ・先把改之前的存檔留一份在「存檔紀錄」裡；
+   ・超出 12×12 的家具、牆上的東西全部收進「我的東西」（桌上放的也一起收），一件都不丟；
+   ・擴建 14×14 花的錢退回來。
+   只做一次：改完房間就是 12×12，下次打開不會再進來。 */
+function shrinkBigRooms() {
+  const MAXS = ROOM_SIZES[ROOM_SIZES.length - 1];
+  if (!G || !Array.isArray(G.rooms) || !G.rooms.some(r => r.w > MAXS || r.d > MAXS)) return null;
+  try { addSnap('auto', localStorage.getItem(SAVE_KEY)); } catch (e) {}
+  let moved = 0, refund = 0;
+  G.rooms.forEach(r => {
+    if (!(r.w > MAXS || r.d > MAXS)) return;
+    const keep = [];
+    (r.items || []).forEach(it => { const def = FURN_BY_ID[it.id]; if (!def) { keep.push(it); return; } const fp = footprint(def, it.rot || 0);
+      if (it.x + fp.w <= MAXS && it.y + fp.d <= MAXS) keep.push(it); else { storeRoomItem(it); try { if (G.garden) delete G.garden[it.uid]; } catch (e) {} moved++; } });
+    r.items = keep;
+    r.wallItems = (r.wallItems || []).filter(w => { const def = FURN_BY_ID[w.id]; if (!def || w.pos + (def.w || 1) <= MAXS) return true; addItem(w.id); moved++; return false; });
+    Object.keys(EXPAND_COST).forEach(k => { if (+k > MAXS && +k <= Math.max(r.w, r.d)) refund += EXPAND_COST[k]; });
+    r.w = Math.min(r.w, MAXS); r.d = Math.min(r.d, MAXS);
+  });
+  G.bells += refund;
+  try { const room = curRoom(); if (!G.away && room) { fufu.x = Math.min(fufu.x, room.w - .5); fufu.y = Math.min(fufu.y, room.d - .5); pet.x = Math.min(pet.x, room.w - .5); pet.y = Math.min(pet.y, room.d - .5); fufu.path = []; pet.path = []; } } catch (e) {}
+  try { saveGame(); refreshTop(); renderTab(); requestDraw(); } catch (e) {}
+  return { moved, refund };
+}
+setTimeout(() => { try { const r = shrinkBigRooms(); if (r) toast(`📐 房間最大改成 12×12 了${r.moved ? `，超出去的 ${r.moved} 件東西收進「我的東西」` : ''}${r.refund ? `，退還 💰 ${fmt(r.refund)}` : ''}`); } catch (e) { try { console.error(e); } catch (e2) {} } }, 1200);
 </script>
 
 </body></html>
