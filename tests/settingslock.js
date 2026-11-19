@@ -1,4 +1,4 @@
-// 🔒 設定整頁上鎖：點「⚙️ 設定」要密碼（沒密碼就算數學題）、錯了進不去、對了進去後裡面不再重複問、換分頁重新上鎖；其他分頁、備份照常
+// 🔒 設定整頁上鎖：點「⚙️ 設定」要密碼（沒密碼的電腦直接打開；開關打開時才算數學題）、錯了進不去、對了進去後裡面不再重複問、換分頁重新上鎖；其他分頁、備份照常
 const { chromium } = require('playwright');
 const path = require('path');
 (async () => {
@@ -15,9 +15,12 @@ const path = require('path');
     // 沒有密碼：算數學題
     const c = restCfg(); c.pin = ''; saveRestCfg(c);
     btn('shop').click(); await wait(50); btn('save').click(); await wait(100);
+    o.noPinOpensDirectly = !pinBox() && tab === 'save';   // 家長：學校的電腦沒設密碼 → 不要跳出密碼／算術題
+    // 開關打開時（以前的做法）還是可以出算術題
+    SETTINGS_MATH_GATE = true; parentOkUntil = 0; btn('shop').click(); await wait(50); btn('save').click(); await wait(100);
     o.asked = !!pinBox() && tab !== 'save';
     await type('1'); o.wrongStays = tab !== 'save';
-    btn('save').click(); await wait(100); await type(String(settingsGate.test)); o.mathIn = tab === 'save';
+    btn('save').click(); await wait(100); await type(String(settingsGate.test)); o.mathIn = tab === 'save'; SETTINGS_MATH_GATE = false;
     // 有密碼
     btn('shop').click(); await wait(50); const c2 = restCfg(); c2.pin = '2468'; saveRestCfg(c2);
     btn('save').click(); await wait(100); await type('1111'); o.badPin = tab !== 'save';
