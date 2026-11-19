@@ -5,7 +5,8 @@ const path = require('path');
 (async () => {
   const b = await chromium.launch({ executablePath: process.env.CHROME || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox'] });
   const ctx = await b.newContext({ viewport: { width: 1280, height: 720 } }); const p = await ctx.newPage();
-  const errs = []; p.on('pageerror', async e => { errs.push(e.stack || e.message); try { errs.push('ITEMS ' + await p.evaluate(() => JSON.stringify(curRoom().items.map(i => i.id)) + ' away=' + JSON.stringify(G.away))); } catch (x) {} });
+  const errs = []; p.on('pageerror', async e => { errs.push(e.stack || e.message); try { errs.push('ITEMS ' + await p.evaluate(() => JSON.stringify(curRoom().items.map(i => i.id + (FURN_BY_ID[i.id] ? '' : '(不認得)'))) + ' away=' + JSON.stringify(G.away) + ' cur=' + G.cur + ' rooms=' + G.rooms.length + ' one=' + window.__one)); } catch (x) {} });
+  await p.addInitScript(() => { window.addEventListener('error', () => { try { window.__snap = window.__snap || JSON.stringify(curRoom().items.map(i => i.id + (FURN_BY_ID[i.id] ? '' : '(不認得)'))) + ' away=' + JSON.stringify(G.away) + ' cur=' + G.cur; } catch (e) {} }); });
   await p.goto('file://' + path.resolve(__dirname, '../house.html'), { timeout: 90000 }); await p.waitForTimeout(1500);
   const o = {};
   const pos = () => p.evaluate(() => [fufu.x, fufu.y]);
@@ -30,7 +31,8 @@ const path = require('path');
   await p.waitForTimeout(1500); await p.keyboard.press('Space'); await p.waitForTimeout(400);
   o.spaceStands = await p.evaluate(() => !fufu.pose);
   // 好幾件事 → 開選單，上下選、空白決定
-  const multi = await p.evaluate(() => { const id = Object.keys(FURNITURE_USE).find(k => FURNITURE_ACT[k] && FURN_BY_ID[k]); const r = curRoom(); r.items = [{ uid: 7002, id, x: 3, y: 1, rot: 0 }]; fufu.x = 3.5; fufu.y = 3.5; fufu.path = []; fufu.pose = null; fufu.task = null; fufu.act = null; return id; });
+  const multi = await p.evaluate(() => { const id = FURN_BY_ID.cotton_cart ? 'cotton_cart' : null; if (!id) return null; const r = curRoom(); r.items = [{ uid: 7002, id, x: 3, y: 1, rot: 0 }];   /* 點心車：有好幾件事可以選 */ fufu.x = 3.5; fufu.y = 3.5; fufu.path = []; fufu.pose = null; fufu.task = null; fufu.act = null; return id; });
+  o.hasMultiItem = !!multi;
   if (multi) { await p.keyboard.press('Space'); await p.waitForTimeout(200);
     o.menuOpens = await p.evaluate(() => !document.getElementById('itemMenu').hidden && document.querySelectorAll('#itemMenu button').length >= 2 && document.querySelectorAll('#itemMenu button')[0].classList.contains('kbd'));
     await p.keyboard.press('ArrowDown'); o.menuDown = await p.evaluate(() => document.querySelectorAll('#itemMenu button')[1].classList.contains('kbd') && fufu.path.length === 0);
@@ -53,6 +55,25 @@ const path = require('path');
   // 打字、開視窗時不動
   await p.evaluate(() => { const i = document.createElement('input'); i.id = 'tIn'; document.body.appendChild(i); i.focus(); fufu.path = []; fufu.task = null; fufu.idleUntil = performance.now() + 1e6; }); await p.waitForTimeout(300); a = await pos(); await hold('ArrowRight', 500); c = await pos(); o.typingSafe = a[0] === c[0] && a[1] === c[1] && await p.evaluate(() => { const v = document.getElementById('tIn'); v.remove(); return true; });
   await p.evaluate(() => { document.getElementById('modal').hidden = false; fufu.path = []; fufu.task = null; fufu.idleUntil = performance.now() + 1e6; }); await p.waitForTimeout(300); a = await pos(); await hold('ArrowRight', 500); c = await pos(); o.modalSafe = a[0] === c[0] && a[1] === c[1]; await p.evaluate(() => { document.getElementById('modal').hidden = true; });
+  // 數字鍵：換房間；0 出門；在外面 1＝回家；開著視窗不換
+  Object.assign(o, await (async () => {
+    const o = {}; await p.evaluate(() => { while (G.rooms.length < 3) G.rooms.push({ name: '臥室' + G.rooms.length, w: 6, d: 6, wall: G.rooms[0].wall, floor: G.rooms[0].floor, items: [], wallItems: [] }); G.away = null; G.cur = 0; refreshTop(); });
+    o.badges = await p.evaluate(() => { const b = [...document.querySelectorAll('#roomTabs button')]; return b[0].dataset.key === '1' && b[1].dataset.key === '2' && b.find(x => /出門/.test(x.textContent)).dataset.key === '0'; });
+    await p.keyboard.press('Digit2'); await p.waitForTimeout(300); o.digit2 = await p.evaluate(() => G.cur === 1);
+    await p.keyboard.press('Numpad3'); await p.waitForTimeout(300); o.numpad3 = await p.evaluate(() => G.cur === 2);
+    await p.evaluate(() => { document.getElementById('modal').hidden = false; }); await p.keyboard.press('Digit1'); await p.waitForTimeout(200); o.modalNoSwitch = await p.evaluate(() => { const ok = G.cur === 2; document.getElementById('modal').hidden = true; return ok; });
+    await p.keyboard.press('Digit1'); await p.waitForTimeout(300); o.digit1 = await p.evaluate(() => G.cur === 0);
+    await p.keyboard.press('Digit0'); await p.waitForTimeout(1200); o.zeroGoesOut = await p.evaluate(() => !!isl);
+    await p.keyboard.press('Digit2'); await p.waitForTimeout(300); o.islandNoSwitch = await p.evaluate(() => !!isl && G.cur === 0);
+    await p.evaluate(() => { closeIsland(); G.away = { place: 'park', idx: 0 }; refreshTop(); }); await p.waitForTimeout(300);
+    o.awayHomeIs1 = await p.evaluate(() => /回家/.test(document.querySelector('#roomTabs button[data-key="1"]').textContent));
+    await p.keyboard.press('Digit1'); let home = false, started = false;
+    for (let k = 0; k < 40 && !home; k++) { await p.waitForTimeout(500); const st = await p.evaluate(() => ({ away: !!G.away, trip: !!document.getElementById('tripLayer'), modal: !document.getElementById('modal').hidden })); if (st.trip || st.modal || !st.away) started = true; home = !st.away; if (st.modal) await p.evaluate(() => { const b = [...document.querySelectorAll('#modalCard button')].find(x => /到了|跳過|好/.test(x.textContent)); if (b) b.click(); }); }
+    o.backHome = home || started;   // 按 1 開始回家（有過場動畫）
+    await p.evaluate(() => { document.getElementById('modal').hidden = true; document.querySelectorAll('#tripLayer').forEach(x => x.remove()); });
+    await p.evaluate(() => { G.away = null; G.cur = 0; refreshTop(); });
+    return o;
+  })());
   // 大地圖：空白鍵跟旁邊的朋友說話
   await p.evaluate(() => { curRoom().items = []; openIsland(); }); await p.waitForTimeout(1200);
   await p.evaluate(() => { const q = isl.npcs[0]; isl.x = q.x + .8; isl.y = q.y; isl.path = []; isl.pending = null; isl.act = null; q.path = []; q.wait = 9; hideItemMenu(); document.querySelectorAll('#showcase').forEach(x => x.remove()); try { document.activeElement.blur(); } catch (e) {} window.__kd = 0; document.addEventListener('keydown', e => { if (e.code === 'Space') window.__kd++; }, true); });
@@ -62,6 +83,7 @@ const path = require('path');
   await p.evaluate(() => { try { islTalkClose(); } catch (e) {} document.getElementById('modal').hidden = true; if (!isl) openIsland(); }); await p.waitForTimeout(900);
   await p.evaluate(() => { isl.pending = null; isl.path = []; isl.act = null; });
   { const x0 = await p.evaluate(() => isl.x); await hold('ArrowRight', 600); const x1 = await p.evaluate(() => isl ? isl.x : null); const x2 = await (async () => { await hold('ArrowLeft', 600); return p.evaluate(() => isl ? isl.x : null); })(); o.islandArrows = x1 !== x0 || x2 !== x1; }
+  if (errs.length) console.log('SNAP', await p.evaluate(() => window.__snap));
   const ok = Object.values(o).every(v => v === true) && !errs.length;
   console.log(JSON.stringify(o), errs.slice(0, 2)); console.log(ok ? '✅ 全部通過' : '❌ 有問題');
   await b.close(); process.exit(ok ? 0 : 1);

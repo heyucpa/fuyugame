@@ -5713,7 +5713,7 @@ const NEWS = [
     ['🏅', '新的「小鐵人三項」：游泳 → 跑步 → 騎腳踏車，三關比完看總分拿金牌、銀牌、銅牌'],
     ['🚀', '剛打開遊戲比較不會卡了：畫畫存起來小很多（存檔變成原本的一半以下），打開時的存檔紀錄改到電腦有空的時候才做'],
     ['📐', '房間和外面的地方最大改成 12×12：14×14 太大了，要走很久；該有的東西都還在'],
-    ['⌨️', '電腦可以用鍵盤玩了：方向鍵（或 W A S D）走路；空白鍵跟最近的東西互動（家具、朋友、門、樹、花）'],
+    ['⌨️', '電腦可以用鍵盤玩了：方向鍵（或 W A S D）走路；空白鍵跟最近的東西互動（家具、朋友、門、樹、花）；數字鍵 1、2、3… 換房間，0 出門（按鈕右下角有小數字）'],
     ['🐛', '找到電腦上卡好幾秒的原因了：一段長度是 0 的無聲聲音一直重播，把瀏覽器塞住。修掉了，分頁上也不會一直有喇叭圖示'],
     ['😴', '站著不動、沒在碰的時候，畫面一秒只更新 10 次（一碰就恢復），電腦比較不忙'],
     ['🖌️', '電腦上卡好幾秒的問題：畫圖改成用處理器畫，不再塞住顯示晶片（設定裡可以切換）'],
@@ -16891,6 +16891,9 @@ document.addEventListener('keydown', e => {
     if (onIsland) islKeyUse(); else if (!resting) { if (fufu.pose) { fufuStandUp(true); } else roomKeyUse(); }
     return;
   }
+  // ⌨️ 數字鍵：上面那一排房間（1、2、3…），0＝出門。大地圖開著時不換（按 Esc 回去）
+  { const dg = /^(?:Digit|Numpad)([0-9])$/.exec(code);
+    if (dg && !onIsland && !hold && !resting) { const btn = document.querySelector('#roomTabs button[data-key="' + dg[1] + '"]'); if (btn) { e.preventDefault(); if (!e.repeat) { hideItemMenu(); Object.keys(roomKeys).forEach(q => delete roomKeys[q]); Sound.play('click'); btn.click(); } return; } } }
   if (ROOM_MOVE_CODES[code] && !onIsland) {
     e.preventDefault(); hideItemMenu();
     if (!hold && !e.repeat) { if (fufu.pose) fufuStandUp(false); if (fufu.act) { try { endRide(); } catch (er) {} fufu.act = null; fufu.back = false; } fufu.task = null; if (fufu.path.length > 1) fufu.path.length = 1; }   // 按方向鍵：站起來、不做事了、改用鍵盤走
@@ -16925,11 +16928,15 @@ function refreshTop() {
   $('#score').textContent = fmt(totalScore());
   const tabs = $('#roomTabs');
   tabs.innerHTML = '';
+  /* ⌨️ 家長：小孩不太會用滑鼠 → 上面這一排可以用數字鍵按：從左到右是 1、2、3…，「出門」是 0。
+     電腦上每顆按鈕右下角會有小小的數字（iPad 不顯示）。 */
+  let keyN = 0;
   const add = (label, on, fn, cls) => {
     const btn = document.createElement('button');
     btn.textContent = label;
     btn.className = (on ? 'on ' : '') + (cls || '');
     btn.onclick = fn;
+    if (/出門/.test(label)) btn.dataset.key = '0'; else if (keyN < 9) btn.dataset.key = String(++keyN);
     tabs.appendChild(btn);
   };
   if (G.away && PLACES[G.away.place].inHouse) { // 在寵物屋：自己家的房間直接走回去（不用走路過場）
