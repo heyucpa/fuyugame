@@ -5753,7 +5753,7 @@ const NEWS = [
     ['🚀', '剛打開遊戲比較不會卡了：畫畫存起來小很多（存檔變成原本的一半以下），打開時的存檔紀錄改到電腦有空的時候才做'],
     ['📐', '房間和外面的地方最大改成 12×12：14×14 太大了，要走很久；該有的東西都還在'],
     ['🔄', '遊戲會自己檢查有沒有新版本，有的話自動更新（進度都在）：學校的電腦也不用再手動重新整理'],
-    ['🌋', '恐龍島有危險了！火山爆發、隕石雨：點恐龍石像解除三關危險，石像會活過來，變成可以騎的🦕恐龍！'],
+    ['🌋', '恐龍島有危險了！躲岩漿、在隕石雨裡救出嚇壞的小恐龍、澆熄火山：三關都過，恐龍石像會活過來，變成可以騎的🦕恐龍！'],
     ['🚔', '警察局的小房間裡關了兩位動物朋友：偷吃布丁、偷打電動、偷放屁…點小房間問問他們為什麼被關！'],
     ['🚓', '大地圖多了警察局（叔叔家旁邊）：跟狗狗警官一起抓小偷，三關都過送你一台警車和警察制服！'],
     ['🎭', '警察局的演習：你當小偷，躲開手電筒拿寶石；被照到就到小房間待 3 分鐘，寵物們會想辦法來救你，也可以打電話叫爸爸媽媽來接'],
@@ -34877,11 +34877,12 @@ function prisonersDrawOverlay(ctx) {
 /* ===== 🌋 恐龍島的危險（家長 11/19：恐龍島可能會遇到危險，火山爆發、隕石飛下來；解除危險送一隻恐龍當交通工具）=====
    恐龍島上多了一座會冒煙的小火山。點恐龍石像 → 島主選單 →「🌋 解除恐龍島的危險」，三關：
    ① 🌋 火山爆發：岩漿球從天上掉下來，地上先出現紅色圓圈，快躲開！撐過 30 秒（被打到「好燙！」掉一顆愛心，5 顆都掉了再試一次）
-   ② ☄️ 隕石雨：隕石掉下來會留下發光的碎片 ✨，撿 5 片（被打到只會頭暈一下）
+   ② 🦕 隕石雨：救小恐龍（家長：好幾隻小恐龍害怕的跑來跑去，小可愛去救他們，全部救完就結束）。
+      碰到小恐龍，牠就跟在你後面；帶到恐龍媽媽（石像）旁邊的安全區，就救到了。5 隻都救到就過關。被隕石打到只會頭暈一下
    ③ 💧 澆熄火山：去池塘裝水，走到火山口倒進去，倒 3 桶火就熄了（岩漿球打到水會灑掉，再去裝）
    三關都過：火山不冒煙了，恐龍石像活過來，變成可以騎的🦕恐龍（大地圖「🚲 交通工具」）。
    進度記在 G.dinoQ = { s: 過了幾關 }，不會倒退。不會扣錢、不會讓東西不見。 */
-const DINO_STEPS = [['🌋', '火山爆發：躲開岩漿球 30 秒'], ['☄️', '隕石雨：撿 5 片隕石碎片'], ['💧', '澆熄火山：倒 3 桶水進火山口']];
+const DINO_STEPS = [['🌋', '火山爆發：躲開岩漿球 30 秒'], ['🦕', '隕石雨：救 5 隻小恐龍'], ['💧', '澆熄火山：倒 3 桶水進火山口']];
 function dinoQ() { if (!G.dinoQ || typeof G.dinoQ !== 'object') G.dinoQ = { s: 0 }; if (!Number.isInteger(G.dinoQ.s)) G.dinoQ.s = 0; return G.dinoQ; }
 function dinoSafe() { return dinoQ().s >= DINO_STEPS.length; }
 function openDinoDanger() {
@@ -34900,13 +34901,15 @@ function dinoReward() {
 }
 function dinoPlay(step) {
   const W = 320, H = 240, [e, nm] = DINO_STEPS[step];
-  const w = openGameWindow(`${e} 第 ${step + 1} 關`, ['岩漿球要掉下來的地方會先出現紅色圓圈，趕快走開！撐過 30 秒就過關。', '隕石掉下來會留下發光的碎片 ✨，走過去撿起來，撿 5 片就過關。小心不要被隕石打到喔！', '先走到藍色的池塘裝水，再走到上面的火山口倒水。倒 3 桶，火山就熄了！'][step] + '（方向鍵、W A S D，或手指按住畫面往那邊走）');
+  const w = openGameWindow(`${e} 第 ${step + 1} 關`, ['岩漿球要掉下來的地方會先出現紅色圓圈，趕快走開！撐過 30 秒就過關。', '小恐龍們嚇得跑來跑去！走過去碰到牠，牠就會跟著你；把大家帶到右下角恐龍媽媽旁邊的安全區（綠色圈圈），5 隻都救到就過關。小心隕石！', '先走到藍色的池塘裝水，再走到上面的火山口倒水。倒 3 桶，火山就熄了！'][step] + '（方向鍵、W A S D，或手指按住畫面往那邊走）');
   w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
   const f = copField(w, W, H), g = f.g, me = { x: W / 2, y: H - 40, face: 1 }, ME_SP = 92;
   const volc = { x: W / 2 + 40, y: 74 }, pond = { x: 46, y: H - 40 };   // 火山放低一點，上面的資訊列才不會擋住火山口
-  const drops = [], shards = []; let t = 0, last = performance.now(), raf = 0, live = true, done = false, spawn = 1, hearts = 5, hurtUntil = 0, stunUntil = 0, got = 0, water = false, pours = 0, ouch = 0;
+  const drops = [], shards = [], BABY_C = ['#ff9ec4', '#7fc4ff', '#ffd23f', '#b18cff', '#ff9f5a'], SAFE = { x: 262, y: 200, r: 46 };
+  const babies = step === 1 ? BABY_C.map((c, i) => ({ x: 40 + Math.random() * 200, y: 110 + Math.random() * 90, vx: 0, vy: 0, turn: 0, c, st: 'scared', i, hop: Math.random() * 6 })) : [];
+  let t = 0, last = performance.now(), raf = 0, live = true, done = false, spawn = 1, hearts = 5, hurtUntil = 0, stunUntil = 0, got = 0, water = false, pours = 0, ouch = 0;
   gameCleanup = () => { live = false; cancelAnimationFrame(raf); f.stop(); };
-  const LIMIT = [30, 60, 120][step];
+  const LIMIT = [30, 90, 120][step];
   const finish = win => {
     if (done) return; done = true; live = false; f.stop();
     if (!win) { Sound.play('miss'); w.status.textContent = step === 0 ? '被燙到太多次了～休息一下再試一次！' : '時間到了！再試一次！'; gameButtons(w, () => dinoPlay(step)); return; }
@@ -34935,9 +34938,23 @@ function dinoPlay(step) {
           if (step === 0) { hearts--; Sound.play('miss'); w.status.textContent = '好燙！'; if (hearts <= 0) { finish(false); return; } }
           else if (step === 1) { stunUntil = now + 700; w.status.textContent = '頭暈暈…'; }
           else if (water) { water = false; w.status.textContent = '水灑掉了！再去池塘裝水'; } }
-        if (step === 1) shards.push({ x: d.x, y: d.y }); }
+        }
       if (d.t > d.land + .5) drops.splice(i, 1); }
-    if (step === 1) for (let i = shards.length - 1; i >= 0; i--) if (Math.hypot(shards[i].x - me.x, shards[i].y - me.y) < 16) { shards.splice(i, 1); got++; Sound.play('coin'); w.status.textContent = `撿到 ${got} / 5 片！`; }
+    if (step === 1) {
+      let follow = 0;
+      babies.forEach(bb => { bb.hop += dt * 10;
+        if (bb.st === 'scared') {   // 嚇得亂跑：每隔一下換方向，看到紅圈就跑開
+          bb.turn -= dt; if (bb.turn <= 0) { bb.turn = .8 + Math.random() * 1.2; const a = Math.random() * Math.PI * 2; bb.vx = Math.cos(a); bb.vy = Math.sin(a); }
+          const dz = drops.find(d => !d.hit && Math.hypot(d.x - bb.x, d.y - bb.y) < 34); if (dz) { const L = Math.hypot(bb.x - dz.x, bb.y - dz.y) || 1; bb.vx = (bb.x - dz.x) / L; bb.vy = (bb.y - dz.y) / L; }
+          if (bb.x < 30) bb.vx = Math.abs(bb.vx); if (bb.x > W - 30) bb.vx = -Math.abs(bb.vx); if (bb.y < 100) bb.vy = Math.abs(bb.vy); if (bb.y > H - 24) bb.vy = -Math.abs(bb.vy);
+          if (Math.hypot(bb.x - SAFE.x, bb.y - SAFE.y) < SAFE.r + 6) { bb.vx = -Math.abs(bb.vx) - .3; bb.vy = -Math.abs(bb.vy) - .3; }   // 自己不會跑進安全區（要你帶）
+          copMove(bb, bb.vx, bb.vy, 38, dt, [{ x: volc.x - 30, y: volc.y - 26, w: 60, h: 30 }], W, H, 6);
+          if (Math.hypot(bb.x - me.x, bb.y - me.y) < 20) { bb.st = 'follow'; Sound.play('petHappy'); w.status.textContent = '小恐龍跟著你了！帶牠去恐龍媽媽那裡！'; } }
+        else if (bb.st === 'follow') {   // 排隊跟在小可愛後面
+          const k = ++follow, tx = me.x - me.face * (12 + k * 13), ty = me.y + 2 + (k % 2) * 6, L = Math.hypot(tx - bb.x, ty - bb.y);
+          if (L > 2) { const sp = Math.min(L, 120 * dt); bb.x += (tx - bb.x) / L * sp; bb.y += (ty - bb.y) / L * sp; bb.vx = tx - bb.x; }
+          if (Math.hypot(me.x - SAFE.x, me.y - SAFE.y) < SAFE.r) { bb.st = 'safe'; got++; const a = got * 1.2; bb.x = SAFE.x - 14 + Math.cos(a) * 22; bb.y = SAFE.y + 4 + Math.sin(a) * 10; Sound.play('coin'); w.status.textContent = `救到 ${got} / 5 隻小恐龍！`; } } });
+    }
     if (step === 2) {
       if (!water && Math.hypot(pond.x - me.x, pond.y - me.y) < 34) { water = true; Sound.play('splash'); w.status.textContent = '裝好水了！走到火山口倒進去！'; }
       if (water && Math.hypot(volc.x - me.x, volc.y + 6 - me.y) < 40) { water = false; pours++; Sound.play('splash'); w.status.textContent = pours >= 3 ? '火山熄了！' : `倒了 ${pours} / 3 桶！再去裝水`; }
@@ -34955,19 +34972,25 @@ function dinoPlay(step) {
     drops.forEach(d => { if (d.t < d.land) { const k = d.t / d.land; g.strokeStyle = `rgba(232,60,40,${.4 + .5 * k})`; g.lineWidth = 2.5; g.beginPath(); g.ellipse(d.x, d.y, d.r, d.r * .55, 0, 0, 7); g.stroke();
         const fy = d.y - (1 - k) * 160; g.font = `${step === 1 ? 18 : 16}px sans-serif`; g.textAlign = 'center'; g.fillText(step === 1 ? '☄️' : '🔥', d.x + (1 - k) * 20, fy); }
       else { const k = (d.t - d.land) / .5; g.fillStyle = step === 1 ? `rgba(160,140,200,${.5 * (1 - k)})` : `rgba(255,120,40,${.6 * (1 - k)})`; g.beginPath(); g.arc(d.x, d.y, d.r * (1 + k), 0, 7); g.fill(); } });
-    shards.forEach(s2 => { g.font = '16px sans-serif'; g.textAlign = 'center'; g.fillText('✨', s2.x, s2.y + 6 + Math.sin(t * 5 + s2.x) * 2); });
+    if (step === 1) {
+      g.fillStyle = 'rgba(120,220,120,.28)'; g.strokeStyle = 'rgba(60,160,60,.8)'; g.lineWidth = 2; g.setLineDash([5, 4]); g.beginPath(); g.ellipse(SAFE.x, SAFE.y, SAFE.r, SAFE.r * .55, 0, 0, 7); g.fill(); g.stroke(); g.setLineDash([]);
+      babies.slice().sort((a1, b1) => a1.y - b1.y).forEach(bb => { const hop = bb.st === 'safe' ? 0 : Math.abs(Math.sin(bb.hop)) * 3;
+        MV.dino(g, bb.x, bb.y - hop, .22, bb.c, bb.st === 'safe' ? t * 2 : t * 9, bb.vx < 0);
+        g.font = '10px sans-serif'; g.textAlign = 'center';
+        if (bb.st === 'scared') g.fillText(Math.floor(t * 3 + bb.i) % 2 ? '💦' : '❗', bb.x, bb.y - 24); else if (bb.st === 'safe') g.fillText('💗', bb.x, bb.y - 18 - Math.abs(Math.sin(t * 3 + bb.i)) * 3); });
+    }
     const blink = now < hurtUntil && Math.floor(now / 100) % 2;
     if (!blink) copDrawKid(g, me.x, me.y, .4, t, !!(dx || dy), me.face, now - ouch < 700 ? 'ouch' : step === 0 ? 'worried' : 'focus');
     if (water) { g.font = '14px sans-serif'; g.fillText('💧', me.x + 12, me.y - 30); }
     // 上面的資訊
-    const info = step === 0 ? `${'❤️'.repeat(hearts)}${'🤍'.repeat(5 - hearts)}　⏱️ ${Math.max(0, Math.ceil(LIMIT - t))}` : step === 1 ? `✨ ${got} / 5　⏱️ ${Math.max(0, Math.ceil(LIMIT - t))}` : `💧 ${pours} / 3${water ? '　💧 有水' : ''}`;
+    const info = step === 0 ? `${'❤️'.repeat(hearts)}${'🤍'.repeat(5 - hearts)}　⏱️ ${Math.max(0, Math.ceil(LIMIT - t))}` : step === 1 ? `🦕 救到 ${got} / 5　⏱️ ${Math.max(0, Math.ceil(LIMIT - t))}` : `💧 ${pours} / 3${water ? '　💧 有水' : ''}`;
     g.fillStyle = 'rgba(255,255,255,.88)'; g.beginPath(); g.roundRect(6, 6, 160, 22, 8); g.fill(); g.fillStyle = '#3a3240'; g.font = '700 13px sans-serif'; g.textAlign = 'left'; g.fillText(info, 14, 22);
     if (step === 0 && t >= LIMIT) finish(true);
     else if (step === 1) { if (got >= 5) finish(true); else if (t >= LIMIT) finish(false); }
     else if (step === 2) { if (pours >= 3) finish(true); else if (t >= LIMIT) finish(false); }
   };
   w.status.textContent = nm;
-  dinoPlay.test = { me, drops, shards, pond, volc, win: () => { if (step === 0) t = LIMIT; else if (step === 1) got = 5; else pours = 3; }, hurt: () => { hearts = 0; finish(false); }, state: () => ({ hearts, got, pours, water }) };
+  dinoPlay.test = { me, drops, shards, babies, SAFE, pond, volc, win: () => { if (step === 0) t = LIMIT; else if (step === 1) { got = 5; babies.forEach(bb => { bb.st = 'safe'; }); } else pours = 3; }, hurt: () => { hearts = 0; finish(false); }, state: () => ({ hearts, got, pours, water }) };
   raf = requestAnimationFrame(tick);
 }
 </script>
