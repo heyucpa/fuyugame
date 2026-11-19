@@ -2690,11 +2690,25 @@ const COASTER_H = [14, 70, 18, 44, 12];
 const PLACE_FURNITURE = [
   // 🚓 警察局
   { id: 'police_desk', name: '警察辦公桌', theme: 'modern', w: 2, d: 1, parts: [{ x: 0, y: .1, w: 2, d: .8, z: 0, h: 26, c: '#4a6fa8' }, { x: 0, y: .1, w: 2, d: .8, z: 26, h: 3, c: '#e8eef8' }, { x: .2, y: .3, w: .6, d: .4, z: 29, h: 16, c: '#3a3842' }, { x: .25, y: .32, w: .5, d: .36, z: 32, h: 10, c: '#9fd8ff' }, { k: 'ball', x: 1.4, y: .5, z: 36, r: 6, c: '#ffd23f' }, { x: 1.3, y: .45, w: .2, d: .1, z: 29, h: 4, c: '#26232a' }] },
-  { id: 'jail_cell', name: '小房間（演習用）', theme: 'modern', w: 2, d: 2, parts: [
-    { x: 0, y: 0, w: 2, d: 2, z: 0, h: 2, c: '#cfd6e0' }, { x: .2, y: .15, w: .7, d: 1.2, z: 2, h: 10, c: '#ffffff' }, { x: .2, y: .15, w: .7, d: .3, z: 12, h: 5, c: '#ffd6e6' }, { k: 'ball', x: 1.5, y: .5, z: 10, r: 7, c: '#c98d5a' },
-    ...[0, .4, .8, 1.2, 1.6, 1.94].map(x => ({ x, y: 1.94, w: .06, d: .06, z: 2, h: 58, c: '#8a94a6' })),
-    ...[0, .4, .8, 1.2, 1.6].map(y => ({ x: 1.94, y, w: .06, d: .06, z: 2, h: 58, c: '#8a94a6' })),
-    { x: 0, y: 1.94, w: 2, d: .06, z: 58, h: 4, c: '#6f7a8c', cover: true }, { x: 1.94, y: 0, w: .06, d: 2, z: 58, h: 4, c: '#6f7a8c', cover: true }] },
+  /* 🚔 小房間（家長：監獄要再大一點、四面都有鐵欄杆、鐵門要有鎖）：3×3，四面欄杆，前面（朝房間那一面）中間是鐵門＋金色大鎖。
+     零件照「後面先畫、前面後畫」排好：地板 → 後面兩面欄杆 → 床、玩具 → 前面兩面欄杆 → 鐵門、鎖 → 上面的橫桿 */
+  { id: 'jail_cell', name: '小房間（演習用）', theme: 'modern', w: 3, d: 3, parts: (() => {
+    const B = '#8a94a6', T = '#6f7a8c', H = 62, bar = (x, y) => ({ x, y, w: .07, d: .07, z: 2, h: H, c: B }), P = [];
+    P.push({ x: 0, y: 0, w: 3, d: 3, z: 0, h: 2, c: '#cfd6e0' });   // 地板
+    for (let i = 0; i <= 10; i++) P.push(bar(i * .293, 0));          // 後面（靠牆）
+    for (let i = 1; i <= 10; i++) P.push(bar(0, i * .293));          // 左後
+    P.push({ x: .25, y: .2, w: .9, d: 1.5, z: 2, h: 10, c: '#ffffff' }, { x: .25, y: .2, w: .9, d: .35, z: 12, h: 5, c: '#ffd6e6' });   // 床、枕頭
+    P.push({ k: 'ball', x: 2.2, y: .6, z: 10, r: 7, c: '#c98d5a' }, { k: 'ball', x: 2.4, y: 1.3, z: 6, r: 5, c: '#7fc4ff' });   // 小熊、球
+    for (let i = 1; i <= 10; i++) P.push(bar(2.93, i * .293 - .07)); // 右邊
+    for (let i = 0; i <= 10; i++) { const x = i * .293; if (x > 1.0 && x < 2.0) continue; P.push(bar(x, 2.93)); }   // 前面（中間留鐵門）
+    // 🚪 鐵門：比較粗的門框＋直條＋兩條橫條；金色大鎖
+    const DR = '#4a5263';   // 鐵門顏色深一點，一眼看得出是門
+    P.push({ x: .98, y: 2.9, w: .12, d: .12, z: 2, h: H, c: DR }, { x: 1.9, y: 2.9, w: .12, d: .12, z: 2, h: H, c: DR });
+    for (let k = 1; k <= 3; k++) P.push({ x: 1.0 + k * .225, y: 2.93, w: .07, d: .07, z: 2, h: H, c: DR });
+    P.push({ x: 1.0, y: 2.92, w: 1, d: .08, z: 4, h: 4, c: DR }, { x: 1.0, y: 2.92, w: 1, d: .08, z: 30, h: 4, c: DR }, { x: 1.0, y: 2.92, w: 1, d: .08, z: H - 6, h: 4, c: DR });
+    P.push({ k: 'ball', x: 1.83, y: 3.03, z: 46, r: 5, c: '#c9ccd0' }, { k: 'ball', x: 1.83, y: 3.03, z: 46, r: 2.6, c: '#4a5263' }, { x: 1.68, y: 3.0, w: .3, d: .07, z: 26, h: 18, c: '#ffc61a' }, { k: 'ball', x: 1.83, y: 3.08, z: 35, r: 2.2, c: '#5a3d00' });   // 🔒 大大的金色鎖
+    P.push({ x: 0, y: 2.93, w: 3, d: .07, z: H, h: 4, c: T }, { x: 2.93, y: 0, w: .07, d: 3, z: H, h: 4, c: T }, { x: 0, y: 0, w: 3, d: .07, z: H, h: 4, c: T }, { x: 0, y: 0, w: .07, d: 3, z: H, h: 4, c: T });   // 上面的框
+    return P; })() },
   { id: 'lost_box', name: '失物招領箱', theme: 'wood', w: 1, d: 1, parts: [{ x: .1, y: .1, w: .8, d: .8, z: 0, h: 26, c: '#d9a066' }, { x: .1, y: .1, w: .8, d: .8, z: 26, h: 3, c: '#b07f48' }, { x: .3, y: .88, w: .4, d: .04, z: 8, h: 12, c: '#fff4e0' }, { k: 'ball', x: .5, y: .5, z: 36, r: 6, c: '#ffd23f' }] },
   { id: 'traffic_cone', name: '三角錐', theme: 'modern', w: 1, d: 1, parts: [{ x: .25, y: .25, w: .5, d: .5, z: 0, h: 3, c: '#3a3842' }, { x: .35, y: .35, w: .3, d: .3, z: 3, h: 12, c: '#ff7a1c' }, { x: .38, y: .38, w: .24, d: .24, z: 15, h: 6, c: '#ffffff' }, { x: .42, y: .42, w: .16, d: .16, z: 21, h: 8, c: '#ff7a1c' }] },
   { id: 'police_board', name: '抓小偷公布欄', theme: 'modern', w: 2, h: 34, z: 48, layer: 'wall', d: 1, parts: [],
@@ -3605,7 +3619,7 @@ const PLACES = {
   /* 🚓 警察局（家長：多一個警察抓小偷的遊戲）：狗狗警官。辦公桌＝抓小偷遊戲、小房間＝演習當小偷、失物招領箱＝領回被偷的東西 */
   police: { name: '警察局', host: 'police', emoji: '🚓', desc: '跟狗狗警官一起抓小偷！通過三關就送你一台警車！', rooms: [
     { name: '警察局', w: 12, d: 12, wall: 'wp_cream', floor: 'fl_terrazzo', items: [
-      ['police_desk', 3, 0], ['police_desk', 6, 0], ['lost_box', 10, 0], ['plant_l', 0, 0], ['jail_cell', 10, 4],
+      ['police_desk', 3, 0], ['police_desk', 6, 0], ['lost_box', 10, 0], ['plant_l', 0, 0], ['jail_cell', 9, 3],
       ['bookshelf', 0, 3, 1], ['traffic_cone', 2, 10], ['traffic_cone', 4, 10], ['ar_bench', 7, 10], ['plant_l', 11, 11]
     ], wallItems: [['police_board', 'R', 1], ['window', 'L', 5], ['wall_clock', 'R', 8]] }
   ] },
@@ -34620,6 +34634,8 @@ function openJail() {
     copDrawKid(g, 140, H - 30, .62, t, false, 1, stage >= 2 ? 'joy' : 'worried');
     g.strokeStyle = '#8a94a6'; g.lineWidth = 5; for (let x = 20; x < 190; x += 26) { g.beginPath(); g.moveTo(x, 6); g.lineTo(x, H - 6); g.stroke(); }   // 欄杆（右邊是外面）
     g.fillStyle = '#6f7a8c'; g.fillRect(0, 0, 196, 8); g.fillRect(0, H - 8, 196, 8); g.fillRect(190, 0, 6, H);
+    g.fillStyle = '#6f7a8c'; g.fillRect(150, 6, 6, H - 12); g.fillRect(150, 60, 44, 4); g.fillRect(150, 110, 44, 4);   // 鐵門的框
+    g.font = '22px sans-serif'; g.fillText(stage >= 2 ? '🔓' : '🔒', 182, 96 + (stage >= 2 ? Math.sin(t * 6) * 2 : 0));   // 鎖：寵物找到鑰匙就打開
     // 🐾 寵物們在外面想辦法
     const want = PET_TRY_MS.filter(ms => el2 >= ms).length - 1;
     if (pets.length && want > stage) { stage = want; Sound.play(stage >= 2 ? 'fanfare' : 'boing'); w.status.textContent = `🐾 ${petNameOf(pets[0])}${pets.length > 1 ? '和大家' : ''}：${PET_SAY[stage]}`;
