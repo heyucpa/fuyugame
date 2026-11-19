@@ -5753,6 +5753,7 @@ const NEWS = [
     ['🚀', '剛打開遊戲比較不會卡了：畫畫存起來小很多（存檔變成原本的一半以下），打開時的存檔紀錄改到電腦有空的時候才做'],
     ['📐', '房間和外面的地方最大改成 12×12：14×14 太大了，要走很久；該有的東西都還在'],
     ['🔄', '遊戲會自己檢查有沒有新版本，有的話自動更新（進度都在）：學校的電腦也不用再手動重新整理'],
+    ['🚔', '警察局的小房間裡關了兩位動物朋友：偷吃布丁、偷打電動、偷放屁…點小房間問問他們為什麼被關！'],
     ['🚓', '大地圖多了警察局（叔叔家旁邊）：跟狗狗警官一起抓小偷，三關都過送你一台警車和警察制服！'],
     ['🎭', '警察局的演習：你當小偷，躲開手電筒拿寶石；被照到就到小房間待 3 分鐘，寵物們會想辦法來救你，也可以打電話叫爸爸媽媽來接'],
     ['🐭', '小偷鼠偶爾會溜進家裡偷小東西（一天最多一次），快點他抓住！沒抓到的東西去警察局失物招領領回來'],
@@ -15872,7 +15873,7 @@ function draw() {
   const inSky = !!(G.away && G.away.place === 'sky');
   const room = curRoom(), nowT = performance.now();
   const extras = [fufuDrawEntry()].concat(petDrawEntries(), visitorDrawEntries(), (typeof ghostDrawEntries === 'function' ? ghostDrawEntries() : []), hostDrawEntries(),   /* 幽靈在後面的 script：第一幀可能還沒載入 */ supplyDrawEntries(), giftDrawEntries(), phDrawEntries(), (typeof thiefDrawEntries === 'function' ? thiefDrawEntries() : []));
-  const occupants = [fufuOccupant(), petOccupant(), visitorOccupant()].concat(phOccupants(), compOccupants());
+  const occupants = [fufuOccupant(), petOccupant(), visitorOccupant()].concat(phOccupants(), compOccupants(), (typeof prisonerOccupants === 'function' ? prisonerOccupants() : []));
   let layered = false;
   try { layered = roomLayerFrame(room, dpr, sea, inSky, nowT, extras, occupants); } catch (e) { USE_ROOM_LAYER = false; layered = false; try { console.error(e); } catch (e2) {} }
   if (!layered) {
@@ -15884,6 +15885,7 @@ function draw() {
   ctx.setTransform(view.scale * dpr, 0, 0, view.scale * dpr, view.ox * dpr, view.oy * dpr);
   petDrawOverlay(ctx);
   visitorDrawOverlay(ctx, performance.now());
+  if (typeof prisonersDrawOverlay === 'function') prisonersDrawOverlay(ctx);   // 🚔 小房間裡的犯人說話
   drawAmbient(ctx, performance.now());
   if (typeof huntDrawDark === 'function') huntDrawDark(ctx);   // 🔦 找幽靈：房間變暗、手電筒的光圈
   drawTargetMarker(ctx, performance.now());
@@ -16157,6 +16159,7 @@ function gameStep(dt, now) {
   giftTick(now);
   guideTick(now);
   if (typeof thiefTick === 'function') try { thiefTick(now, dt); } catch (e) {}   // 🐭 小偷鼠
+  if (typeof prisonersTick === 'function') try { prisonersTick(now, dt); } catch (e) {}   // 🚔 小房間裡的犯人
   if (typeof checkTrophies === 'function') try { checkTrophies(now); } catch (e) {}
   if (now > nextPetTick) { nextPetTick = now + 5000; if (petTick()) saveGame(); }
   if (now > nextSmallTick) { nextSmallTick = now + 1000; smallTick(); }
@@ -16873,6 +16876,7 @@ function showItemMenu(it, e) {
   if (act) add(ACTIVITIES[act].label, () => fufuGoUse(it, false, act));
   if (it.id === 'clown_butler') { add('🍬 跟小丑要糖果', () => clownCandy(it)); add('🤫 偷摸一下牠的碗', () => clownPeek(it)); }   // 🤡 萬聖節
   if (it.id === 'skeleton_count') add('🕯️ 跟骷髏伯爵打招呼', () => skeletonHi(it));
+  if (it.id === 'jail_cell' && typeof prisonersHere === 'function') prisonersHere().forEach(pr => add(`💬 ${pr.n.short}為什麼被關？`, () => prisonerTalk(pr)));   // 🚔 問問犯人
   if (it.id === 'flagpole' && G.away && G.away.place === 'school') add('🏳️ 選校旗／畫新的', openFlagPicker);   // 🏳️ 校旗收藏
   if (it.id === 'cotton_cart') { add(ACTIVITIES.popcorn.label, () => fufuGoUse(it, false, 'popcorn')); add('🍦 買冰淇淋', () => fufuGoUse(it, false, 'icecream')); }   // 🍭 點心車：選要買什麼
   if (it.id === 'planter') { // 🌱 花盆：長到哪裡、多久可以再澆；開花了可以剪下來插花
@@ -34599,6 +34603,7 @@ function openThiefDrill() {
 // 🚔 小房間（演習被抓）：3 分鐘；寵物們會想辦法救你、打電話叫爸爸媽媽來接，或幫忙找小貓做好事，就可以提早出來
 function jailLeft() { return G.jail && typeof G.jail.until === 'number' ? Math.max(0, G.jail.until - Date.now()) : 0; }
 function startJail() {
+  try { const pr = prisonersToday()[0]; setTimeout(() => { try { toast(`🚔 室友${pr.n.short}：我是${pr.crime[1]}${pr.crime[0]}被關的！你呢？`); } catch (e) {} }, 1500); } catch (e) {}
   G.jail = { until: Date.now() + JAIL_MS }; const cs = copState(); cs.jailed = (cs.jailed || 0) + 1; saveGame();
   openJail();
 }
@@ -34796,6 +34801,64 @@ Object.assign(ACTIVITIES, {
 });
 // 打開遊戲時還在小房間裡（關到一半關掉網頁）：接著關完，時間到了就放出來
 setTimeout(() => { try { if (G.jail) { if (jailLeft() > 0) openJail(); else jailRelease('time'); } if (thiefBag().length && !G.away) setTimeout(() => { try { toast(`📦 警察局的失物招領有 ${thiefBag().length} 件你的東西，去領回來吧！`); } catch (e) {} }, 4000); } catch (e) {} }, 2500);
+
+/* ===== 🚔 小房間裡的犯人（家長：裡面的犯人可能都是偷吃東西、偷玩電動、偷放屁、偷看書之類的趣味小事被關）=====
+   警察局的小房間裡每天關兩位動物朋友，關的理由都是好笑的小事。點小房間 →「💬 ○○為什麼被關？」他會自己說；
+   偶爾也會自己嘟囔一句。演習被抓進去的時候，室友也會跟你打招呼。每天換兩位、換理由（同一天都一樣）。
+   畫法：當成小房間的「住客」跟欄杆一起排前後，所以會被前面的欄杆擋住，看起來真的在裡面。 */
+const PRISON_CRIMES = [
+  ['🍮', '偷吃了冰箱裡的布丁', '下次會先問媽媽的…'],
+  ['🎮', '半夜偷偷打電動', '可是我差一點就破關了嘛～'],
+  ['💨', '在電梯裡偷放屁', '噗～對不起啦！'],
+  ['📖', '上課偷看漫畫書', '因為漫畫太好看了…'],
+  ['🥦', '偷偷把青菜藏在碗底', '我下次會吃一口青菜的！'],
+  ['🍭', '偷吃妹妹的棒棒糖', '我會買一支新的還她…'],
+  ['😴', '午睡偷偷打呼太大聲', '呼～嚕～嚕～（又睡著了）'],
+  ['🧦', '把臭襪子藏在沙發底下', '臭臭的，對不起大家…'],
+  ['👠', '偷穿媽媽的高跟鞋跳舞', '可是我跳得很漂亮喔！'],
+  ['🍪', '把餅乾屑掉滿整張床', '床上癢癢的…我會掃乾淨！'],
+  ['🛁', '洗澡偷懶只洗臉', '我現在就去洗香香！'],
+  ['📺', '偷看電視看到很晚', '明天會早點睡覺的…']
+];
+const PRISON_SPOTS = [[2.45, 1.75], [0.5, 2.45]];   // 一個在右邊、一個在床前面（畫面上左右分開）   // 小房間裡站的位置（床在左後方）
+let prisonCache = null;
+function prisonersToday() {
+  const d = today();
+  if (prisonCache && prisonCache.d === d) return prisonCache.list;
+  let seed = 0; for (const ch of d) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
+  const pool = NEIGHBORS.filter(Boolean), rnd = () => { seed = (seed * 1103515245 + 12345) >>> 0; return seed / 4294967296; };
+  const a = Math.floor(rnd() * pool.length); let b = Math.floor(rnd() * pool.length); if (b === a) b = (a + 1) % pool.length;
+  const c1 = Math.floor(rnd() * PRISON_CRIMES.length); let c2 = Math.floor(rnd() * PRISON_CRIMES.length); if (c2 === c1) c2 = (c1 + 1) % PRISON_CRIMES.length;
+  const list = [[pool[a], c1], [pool[b], c2]].map(([n, ci], i) => ({ n, crime: PRISON_CRIMES[ci], spot: PRISON_SPOTS[i],
+    a: { x: 0, y: 0, z: 2, path: [], t: Math.random() * 5, squish: 0, squishV: 0, lean: 0, blinkAt: 0, happyUntil: 0, facing: i ? 1 : -1 }, say: '', sayUntil: 0 }));
+  prisonCache = { d, list, nextSay: performance.now() + 6000 };
+  return list;
+}
+function jailCellHere() {
+  if (!G.away || G.away.place !== 'police') return null;
+  return curRoom().items.find(it => it.id === 'jail_cell') || null;
+}
+function prisonersHere() { return jailCellHere() ? prisonersToday() : []; }
+function prisonerSay(pr, text, ms) { pr.say = text; pr.sayUntil = performance.now() + (ms || 4200); pr.a.happyUntil = performance.now() + 1200; pr.a.squishV = -5; }
+function prisonerTalk(pr) {
+  Sound.play('petHappy');
+  prisonerSay(pr, `我${pr.crime[1]}${pr.crime[0]}…${pr.crime[2]}`, 5200);
+  setTimeout(() => { try { fufuSay(['哈哈哈，好好笑！', '下次不要這樣喔！', '原來是這樣被抓的～', '要乖乖的喔！'][Math.floor(Math.random() * 4)], 2600); } catch (e) {} }, 2200);
+}
+function prisonerOccupants() {
+  const cell = jailCellHere(); if (!cell) return [];
+  return prisonersToday().map(pr => ({ uid: cell.uid, pose: 'stand', lx: pr.spot[0], ly: pr.spot[1], z: 2, h: 46,
+    draw: ctx => { const a = pr.a; a.x = cell.x + pr.spot[0]; a.y = cell.y + pr.spot[1]; drawNeighborActor(ctx, a, pr.n, 1, false, false, 1.3); } }));
+}
+function prisonersTick(now, dt) {
+  const list = prisonersHere(); if (!list.length) return;
+  list.forEach(pr => { const a = pr.a; a.t += dt; a.squishV += (-260 * a.squish - 9 * a.squishV) * Math.min(dt, .02); a.squish += a.squishV * Math.min(dt, .02); if (!(a.squish > -.6 && a.squish < .6)) { a.squish = 0; a.squishV = 0; } });
+  if (now > prisonCache.nextSay) { prisonCache.nextSay = now + 11000 + Math.random() * 8000; const pr = list[Math.floor(Math.random() * list.length)]; if (now > pr.sayUntil) prisonerSay(pr, ['放我出去～我知道錯了！', `都是${pr.crime[0]}害的啦…`, pr.crime[2], '我下次不敢了！'][Math.floor(Math.random() * 4)], 3200); }
+}
+function prisonersDrawOverlay(ctx) {
+  const now = performance.now();
+  prisonersHere().forEach(pr => { if (now < pr.sayUntil && pr.say) { const a = pr.a; try { drawNeighborBubble(ctx, { x: a.x, y: a.y, z: 18 }, pr.n, pr.say, 1); } catch (e) {} } });
+}
 </script>
 
 </body></html>

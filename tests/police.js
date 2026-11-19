@@ -19,6 +19,11 @@ const path = require('path');
     o.furnUsable = ['police_desk', 'jail_cell', 'lost_box'].every(id => curRoom().items.some(it => it.id === id && canUse(it)));
     for (let k = 0; k < 30 && !host.n; k++) await w(100);
     o.hostMenu = !!host.n && host.n.id === 'police' && hostMenuEntries().some(e => /抓小偷/.test(e[0])) && hostMenuEntries().some(e => /演習/.test(e[0])) && hostMenuEntries().some(e => /失物/.test(e[0]));
+    // 🚔 小房間裡的犯人：兩位、理由好笑、點小房間可以問
+    { const pr = prisonersHere(); o.prisoners = pr.length === 2 && pr.every(x => x.n && PRISON_CRIMES.includes(x.crime)) && prisonerOccupants().length === 2;
+      const cell = jailCellHere(); showItemMenu(cell, { clientX: 600, clientY: 400 }); o.askMenu = (document.getElementById('itemMenu').textContent.match(/為什麼被關/g) || []).length === 2; hideItemMenu();
+      prisonerTalk(pr[0]); o.prisonerSays = pr[0].say.includes(pr[0].crime[1]) && performance.now() < pr[0].sayUntil;
+      o.sameAllDay = prisonersToday()[0].n === pr[0].n && prisonersToday()[0].crime === pr[0].crime; }
     // 抓小偷：選關、第一關會跑
     openCopChase(); o.levelPick = document.querySelectorAll('#modalCard .lv-btn').length === 3;
     openCopChase(1); await w(500); const t0 = openCopChase.test; const x0 = t0.thieves[0].x, y0 = t0.thieves[0].y; await w(800); o.thiefMoves = Math.hypot(t0.thieves[0].x - x0, t0.thieves[0].y - y0) > 3;
