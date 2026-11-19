@@ -2690,24 +2690,25 @@ const COASTER_H = [14, 70, 18, 44, 12];
 const PLACE_FURNITURE = [
   // 🚓 警察局
   { id: 'police_desk', name: '警察辦公桌', theme: 'modern', w: 2, d: 1, parts: [{ x: 0, y: .1, w: 2, d: .8, z: 0, h: 26, c: '#4a6fa8' }, { x: 0, y: .1, w: 2, d: .8, z: 26, h: 3, c: '#e8eef8' }, { x: .2, y: .3, w: .6, d: .4, z: 29, h: 16, c: '#3a3842' }, { x: .25, y: .32, w: .5, d: .36, z: 32, h: 10, c: '#9fd8ff' }, { k: 'ball', x: 1.4, y: .5, z: 36, r: 6, c: '#ffd23f' }, { x: 1.3, y: .45, w: .2, d: .1, z: 29, h: 4, c: '#26232a' }] },
-  /* 🚔 小房間（家長：監獄要再大一點、四面都有鐵欄杆、鐵門要有鎖）：3×3，四面欄杆，前面（朝房間那一面）中間是鐵門＋金色大鎖。
-     零件照「後面先畫、前面後畫」排好：地板 → 後面兩面欄杆 → 床、玩具 → 前面兩面欄杆 → 鐵門、鎖 → 上面的橫桿 */
-  { id: 'jail_cell', name: '小房間（演習用）', theme: 'modern', w: 3, d: 3, parts: (() => {
-    const B = '#8a94a6', T = '#6f7a8c', H = 62, bar = (x, y) => ({ x, y, w: .07, d: .07, z: 2, h: H, c: B }), P = [];
-    P.push({ x: 0, y: 0, w: 3, d: 3, z: 0, h: 2, c: '#cfd6e0' });   // 地板
-    for (let i = 0; i <= 10; i++) P.push(bar(i * .293, 0));          // 後面（靠牆）
-    for (let i = 1; i <= 10; i++) P.push(bar(0, i * .293));          // 左後
+  /* 🚔 小房間（家長：監獄要再大一點、四面都有鐵欄杆、鐵門要有鎖；11/19 再大一點，兩位犯人才有地方走、不會被擋住）：
+     4×4，四面欄杆（欄杆間隔寬一點，裡面看得比較清楚），前面（朝房間那一面）中間是深色鐵門＋金色大鎖。
+     零件照「後面先畫、前面後畫」排好：地板 → 後面兩面欄杆 → 床、玩具 → 前面兩面欄杆 → 鐵門、鎖 → 上面的框 */
+  { id: 'jail_cell', name: '小房間（演習用）', theme: 'modern', w: 4, d: 4, parts: (() => {
+    const N = 4, GAP = .4, B = '#8a94a6', T = '#6f7a8c', DR = '#4a5263', H = 62, bar = (x, y) => ({ x, y, w: .06, d: .06, z: 2, h: H, c: B }), P = [];
+    const D0 = 1.4, D1 = 2.6;   // 鐵門在前面中間
+    P.push({ x: 0, y: 0, w: N, d: N, z: 0, h: 2, c: '#cfd6e0' });   // 地板
+    for (let x = 0; x <= N - .05; x += GAP) P.push(bar(x, 0));       // 後面（靠牆）
+    for (let y = GAP; y <= N - .05; y += GAP) P.push(bar(0, y));     // 左後
     P.push({ x: .25, y: .2, w: .9, d: 1.5, z: 2, h: 10, c: '#ffffff' }, { x: .25, y: .2, w: .9, d: .35, z: 12, h: 5, c: '#ffd6e6' });   // 床、枕頭
-    P.push({ k: 'ball', x: 2.2, y: .6, z: 10, r: 7, c: '#c98d5a' }, { k: 'ball', x: 2.4, y: 1.3, z: 6, r: 5, c: '#7fc4ff' });   // 小熊、球
-    for (let i = 1; i <= 10; i++) P.push(bar(2.93, i * .293 - .07)); // 右邊
-    for (let i = 0; i <= 10; i++) { const x = i * .293; if (x > 1.0 && x < 2.0) continue; P.push(bar(x, 2.93)); }   // 前面（中間留鐵門）
-    // 🚪 鐵門：比較粗的門框＋直條＋兩條橫條；金色大鎖
-    const DR = '#4a5263';   // 鐵門顏色深一點，一眼看得出是門
-    P.push({ x: .98, y: 2.9, w: .12, d: .12, z: 2, h: H, c: DR }, { x: 1.9, y: 2.9, w: .12, d: .12, z: 2, h: H, c: DR });
-    for (let k = 1; k <= 3; k++) P.push({ x: 1.0 + k * .225, y: 2.93, w: .07, d: .07, z: 2, h: H, c: DR });
-    P.push({ x: 1.0, y: 2.92, w: 1, d: .08, z: 4, h: 4, c: DR }, { x: 1.0, y: 2.92, w: 1, d: .08, z: 30, h: 4, c: DR }, { x: 1.0, y: 2.92, w: 1, d: .08, z: H - 6, h: 4, c: DR });
-    P.push({ k: 'ball', x: 1.83, y: 3.03, z: 46, r: 5, c: '#c9ccd0' }, { k: 'ball', x: 1.83, y: 3.03, z: 46, r: 2.6, c: '#4a5263' }, { x: 1.68, y: 3.0, w: .3, d: .07, z: 26, h: 18, c: '#ffc61a' }, { k: 'ball', x: 1.83, y: 3.08, z: 35, r: 2.2, c: '#5a3d00' });   // 🔒 大大的金色鎖
-    P.push({ x: 0, y: 2.93, w: 3, d: .07, z: H, h: 4, c: T }, { x: 2.93, y: 0, w: .07, d: 3, z: H, h: 4, c: T }, { x: 0, y: 0, w: 3, d: .07, z: H, h: 4, c: T }, { x: 0, y: 0, w: .07, d: 3, z: H, h: 4, c: T });   // 上面的框
+    P.push({ k: 'ball', x: 3.4, y: .5, z: 10, r: 7, c: '#c98d5a' }, { k: 'ball', x: 1.6, y: .5, z: 6, r: 5, c: '#7fc4ff' });   // 小熊、球（放後面，不擋人）
+    for (let y = GAP; y <= N - .05; y += GAP) P.push(bar(N - .06, y)); // 右邊
+    for (let x = 0; x <= N - .05; x += GAP) { if (x > D0 - .05 && x < D1 + .05) continue; P.push(bar(x, N - .06)); }   // 前面（中間留鐵門）
+    P.push({ x: D0, y: N - .1, w: .12, d: .12, z: 2, h: H, c: DR }, { x: D1 - .12, y: N - .1, w: .12, d: .12, z: 2, h: H, c: DR });
+    for (let k = 1; k <= 3; k++) P.push({ x: D0 + k * (D1 - D0) / 4, y: N - .07, w: .07, d: .07, z: 2, h: H, c: DR });
+    [4, 30, H - 6].forEach(z => P.push({ x: D0, y: N - .08, w: D1 - D0, d: .08, z, h: 4, c: DR }));
+    const L = D1 - .25;   // 🔒 大大的金色鎖
+    P.push({ k: 'ball', x: L, y: N + .03, z: 46, r: 5, c: '#c9ccd0' }, { k: 'ball', x: L, y: N + .03, z: 46, r: 2.6, c: DR }, { x: L - .15, y: N, w: .3, d: .07, z: 26, h: 18, c: '#ffc61a' }, { k: 'ball', x: L, y: N + .08, z: 35, r: 2.2, c: '#5a3d00' });
+    P.push({ x: 0, y: N - .06, w: N, d: .06, z: H, h: 4, c: T }, { x: N - .06, y: 0, w: .06, d: N, z: H, h: 4, c: T }, { x: 0, y: 0, w: N, d: .06, z: H, h: 4, c: T }, { x: 0, y: 0, w: .06, d: N, z: H, h: 4, c: T });   // 上面的框
     return P; })() },
   { id: 'lost_box', name: '失物招領箱', theme: 'wood', w: 1, d: 1, parts: [{ x: .1, y: .1, w: .8, d: .8, z: 0, h: 26, c: '#d9a066' }, { x: .1, y: .1, w: .8, d: .8, z: 26, h: 3, c: '#b07f48' }, { x: .3, y: .88, w: .4, d: .04, z: 8, h: 12, c: '#fff4e0' }, { k: 'ball', x: .5, y: .5, z: 36, r: 6, c: '#ffd23f' }] },
   { id: 'traffic_cone', name: '三角錐', theme: 'modern', w: 1, d: 1, parts: [{ x: .25, y: .25, w: .5, d: .5, z: 0, h: 3, c: '#3a3842' }, { x: .35, y: .35, w: .3, d: .3, z: 3, h: 12, c: '#ff7a1c' }, { x: .38, y: .38, w: .24, d: .24, z: 15, h: 6, c: '#ffffff' }, { x: .42, y: .42, w: .16, d: .16, z: 21, h: 8, c: '#ff7a1c' }] },
@@ -3619,7 +3620,7 @@ const PLACES = {
   /* 🚓 警察局（家長：多一個警察抓小偷的遊戲）：狗狗警官。辦公桌＝抓小偷遊戲、小房間＝演習當小偷、失物招領箱＝領回被偷的東西 */
   police: { name: '警察局', host: 'police', emoji: '🚓', desc: '跟狗狗警官一起抓小偷！通過三關就送你一台警車！', rooms: [
     { name: '警察局', w: 12, d: 12, wall: 'wp_cream', floor: 'fl_terrazzo', items: [
-      ['police_desk', 3, 0], ['police_desk', 6, 0], ['lost_box', 10, 0], ['plant_l', 0, 0], ['jail_cell', 9, 3],
+      ['police_desk', 3, 0], ['police_desk', 6, 0], ['lost_box', 10, 0], ['plant_l', 0, 0], ['jail_cell', 8, 3],
       ['bookshelf', 0, 3, 1], ['traffic_cone', 2, 10], ['traffic_cone', 4, 10], ['ar_bench', 7, 10], ['plant_l', 11, 11]
     ], wallItems: [['police_board', 'R', 1], ['window', 'L', 5], ['wall_clock', 'R', 8]] }
   ] },
@@ -34834,7 +34835,7 @@ const PRISON_CRIMES = [
   ['🛁', '洗澡偷懶只洗臉', '我現在就去洗香香！'],
   ['📺', '偷看電視看到很晚', '明天會早點睡覺的…']
 ];
-const PRISON_SPOTS = [[2.45, 1.75], [0.5, 2.45]];   // 一個在右邊、一個在床前面（畫面上左右分開）   // 小房間裡站的位置（床在左後方）
+const PRISON_SPOTS = [[2.9, 2.0], [1.0, 2.5]];   // 4×4 的小房間：一個在右邊、一個在床前面，中間隔開，不會躲在鐵門後面   // 一個在右邊、一個在床前面（畫面上左右分開）   // 小房間裡站的位置（床在左後方）
 let prisonCache = null;
 function prisonersToday() {
   const d = today();
@@ -34861,11 +34862,16 @@ function prisonerTalk(pr) {
 }
 function prisonerOccupants() {
   const cell = jailCellHere(); if (!cell) return [];
-  return prisonersToday().map(pr => ({ uid: cell.uid, pose: 'stand', lx: pr.spot[0], ly: pr.spot[1], z: 2, h: 46,
-    draw: ctx => { const a = pr.a; a.x = cell.x + pr.spot[0]; a.y = cell.y + pr.spot[1]; drawNeighborActor(ctx, a, pr.n, 1, false, false, 1.3); } }));
+  return prisonersToday().map(pr => ({ uid: cell.uid, pose: 'stand', lx: pr.lx != null ? pr.lx : pr.spot[0], ly: pr.ly != null ? pr.ly : pr.spot[1], z: 2, h: 46,
+    draw: ctx => { const a = pr.a; a.x = cell.x + (pr.lx != null ? pr.lx : pr.spot[0]); a.y = cell.y + (pr.ly != null ? pr.ly : pr.spot[1]); drawNeighborActor(ctx, a, pr.n, 1, false, false, 1.3); } }));
 }
 function prisonersTick(now, dt) {
   const list = prisonersHere(); if (!list.length) return;
+  list.forEach(pr => {   // 在小房間裡慢慢走來走去（範圍在床前面的空地）
+    if (pr.lx == null) { pr.lx = pr.spot[0]; pr.ly = pr.spot[1]; pr.tx = pr.lx; pr.ty = pr.ly; pr.wait = 1 + Math.random() * 2; }
+    const ddx = pr.tx - pr.lx, ddy = pr.ty - pr.ly, dd = Math.hypot(ddx, ddy);
+    if (dd > .03) { const st = Math.min(dd, .5 * dt); pr.lx += ddx / dd * st; pr.ly += ddy / dd * st; if (Math.abs(ddx - ddy) > .01) pr.a.facing = ddx - ddy > 0 ? 1 : -1; pr.a.path = [1]; }
+    else { pr.a.path = []; pr.wait -= dt; if (pr.wait <= 0) { pr.wait = 2 + Math.random() * 3; pr.tx = .7 + Math.random() * 2.7; pr.ty = 1.9 + Math.random() * 1.4; if (pr.tx < 1.3 && pr.ty < 2) pr.ty = 2; } } });
   list.forEach(pr => { const a = pr.a; a.t += dt; a.squishV += (-260 * a.squish - 9 * a.squishV) * Math.min(dt, .02); a.squish += a.squishV * Math.min(dt, .02); if (!(a.squish > -.6 && a.squish < .6)) { a.squish = 0; a.squishV = 0; } });
   if (now > prisonCache.nextSay) { prisonCache.nextSay = now + 11000 + Math.random() * 8000; const pr = list[Math.floor(Math.random() * list.length)]; if (now > pr.sayUntil) prisonerSay(pr, ['放我出去～我知道錯了！', `都是${pr.crime[0]}害的啦…`, pr.crime[2], '我下次不敢了！'][Math.floor(Math.random() * 4)], 3200); }
 }
