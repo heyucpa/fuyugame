@@ -5753,6 +5753,7 @@ const NEWS = [
     ['🚀', '剛打開遊戲比較不會卡了：畫畫存起來小很多（存檔變成原本的一半以下），打開時的存檔紀錄改到電腦有空的時候才做'],
     ['📐', '房間和外面的地方最大改成 12×12：14×14 太大了，要走很久；該有的東西都還在'],
     ['🔄', '遊戲會自己檢查有沒有新版本，有的話自動更新（進度都在）：學校的電腦也不用再手動重新整理'],
+    ['🌋', '恐龍島有危險了！火山爆發、隕石雨：點恐龍石像解除三關危險，石像會活過來，變成可以騎的🦕恐龍！'],
     ['🚔', '警察局的小房間裡關了兩位動物朋友：偷吃布丁、偷打電動、偷放屁…點小房間問問他們為什麼被關！'],
     ['🚓', '大地圖多了警察局（叔叔家旁邊）：跟狗狗警官一起抓小偷，三關都過送你一台警車和警察制服！'],
     ['🎭', '警察局的演習：你當小偷，躲開手電筒拿寶石；被照到就到小房間待 3 分鐘，寵物們會想辦法來救你，也可以打電話叫爸爸媽媽來接'],
@@ -6868,8 +6869,9 @@ function normalizeSave(g) {
   if (out.jail && out.jail.until > Date.now() + 5 * 60000) out.jail.until = Date.now() + 180000;   // 時間亂掉：最多關 3 分鐘
   if (out.thief != null) { if (!isObj(out.thief)) delete out.thief; else { const t = out.thief; if (t.day != null && typeof t.day !== 'string') delete t.day; if (t.n != null && !(Number.isInteger(t.n) && t.n >= 0 && t.n < 1e6)) delete t.n;
     t.bag = Array.isArray(t.bag) ? t.bag.filter(b => isObj(b) && typeof b.id === 'string' && FURN_BY_ID[b.id] && (b.top == null || (typeof b.top === 'string' && FURN_BY_ID[b.top]))).map(b => (b.top ? { id: b.id, top: b.top } : { id: b.id })).slice(0, 30) : []; Object.keys(t).forEach(k => { if (!['day', 'n', 'bag'].includes(k)) delete t[k]; }); } }   // 🐭 小偷：今天來過了沒、抓到幾次、失物招領（被偷走還沒領回的東西）
-  if (out.noThief != null && out.noThief !== 1) delete out.noThief;   // 家長把小偷關掉了
-  if (out.vehicles != null) { if (Array.isArray(out.vehicles)) out.vehicles = [...new Set(out.vehicles.filter(v => /^(bike|suv|bus|truck|sports|robot|police|ambulance)$/.test(v)))]; else delete out.vehicles; }   // 🚗 買的交通工具
+  if (out.noThief != null && out.noThief !== 1) delete out.noThief;
+  if (out.dinoQ != null) { if (!(isObj(out.dinoQ) && Number.isInteger(out.dinoQ.s) && out.dinoQ.s >= 0)) delete out.dinoQ; else out.dinoQ = { s: Math.min(3, out.dinoQ.s) }; }   // 🌋 恐龍島危險解除到第幾關   // 家長把小偷關掉了
+  if (out.vehicles != null) { if (Array.isArray(out.vehicles)) out.vehicles = [...new Set(out.vehicles.filter(v => /^(bike|suv|bus|truck|sports|robot|police|ambulance|dino)$/.test(v)))]; else delete out.vehicles; }   // 🚗 買的交通工具
   if (out.ride != null && !(typeof out.ride === 'string' && (out.vehicles || []).includes(out.ride))) delete out.ride;
   if (out.islReq != null && !(isObj(out.islReq) && typeof out.islReq.d === 'string' && /^(shell|bug|fish|flower)$/.test(out.islReq.kind) && typeof out.islReq.npc === 'string')) delete out.islReq;   // 🐻 動物朋友請她幫忙
   if (out.fIsle != null && out.fIsle !== 1) delete out.fIsle;   // 🏡 朋友島的動畫播過了
@@ -26528,8 +26530,14 @@ function islDrawSpecial(ctx, sp, now) {
     ctx.restore();
   } else if (sp.id === 'dino') {   // 🦕 恐龍石像（點了會抖、會吼）
     ctx.save(); ctx.translate(px + Math.sin(now / 30) * 3 * k, py);
+    const safe = typeof dinoSafe === 'function' && dinoSafe();
+    // 🌋 旁邊的小火山：危險還沒解除就一直冒煙、火山口紅紅的
+    ctx.save(); ctx.translate(40, 2); ctx.fillStyle = '#8a6040'; ctx.beginPath(); ctx.moveTo(-22, 0); ctx.lineTo(-7, -26); ctx.lineTo(7, -26); ctx.lineTo(22, 0); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = safe ? '#6f9d4f' : '#ff7a3c'; ctx.beginPath(); ctx.ellipse(0, -26, 7, 2.5, 0, 0, 7); ctx.fill();
+    if (!safe) for (let i = 0; i < 3; i++) { const ph = (t * .5 + i / 3) % 1; ctx.fillStyle = `rgba(120,120,130,${.5 * (1 - ph)})`; ctx.beginPath(); ctx.arc(Math.sin(t + i) * 4, -30 - ph * 26, 4 + ph * 6, 0, 7); ctx.fill(); }
+    ctx.restore();
     ctx.fillStyle = '#b8b2a4'; ctx.fillRect(-26, -8, 52, 8);
-    MV.dino(ctx, -2, -8, .55, '#9a9488', k > 0 ? t * 6 : 0);
+    MV.dino(ctx, -2, -8, .55, safe ? '#7bc96f' : '#9a9488', k > 0 || safe ? t * 6 : 0);   // 危險解除：石像活過來（綠色、會動）
     ctx.restore();
   }
 }
@@ -28013,7 +28021,8 @@ const VEHICLES = [
   { id: 'sports', name: '跑車', icon: '🏎️', price: 12000, speed: 2.6, verb: '開' },
   { id: 'robot', name: '機器人', icon: '🤖', price: 10000, speed: 2.3, verb: '坐' },   // 🤖 妹妹：可不可以坐著機器人出門？坐在頭上的玻璃罩裡，機器人走路帶你去
   { id: 'police', name: '警車', icon: '🚓', price: 0, speed: 2.3, verb: '開', prize: '警察局抓小偷通過三關' },   // 🚓 任務獎品，商店不賣
-  { id: 'ambulance', name: '救護車', icon: '🚑', price: 0, speed: 2.2, verb: '開', prize: '醫院當小醫生 3 次' }   // 🚑 任務獎品，商店不賣
+  { id: 'ambulance', name: '救護車', icon: '🚑', price: 0, speed: 2.2, verb: '開', prize: '醫院當小醫生 3 次' },   // 🚑 任務獎品，商店不賣
+  { id: 'dino', name: '恐龍', icon: '🦕', price: 0, speed: 2.4, verb: '騎', prize: '解除恐龍島的危險' }   // 🦕 任務獎品，商店不賣
 ];
 const VEHICLE_BY_ID = Object.fromEntries(VEHICLES.map(v => [v.id, v]));
 function rideNow() { if (isl && isl.act && isl.act.kind === 'boat') return null; const v = G.ride && VEHICLE_BY_ID[G.ride]; return v && (G.vehicles || []).includes(v.id) ? v : null; }
@@ -28066,6 +28075,10 @@ function drawVehicle(g, id, s, t, moving, kid) {
     g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 1.5; g.beginPath(); g.arc(0, -52, 9, Math.PI * 1.1, Math.PI * 1.45); g.stroke();
     g.strokeStyle = '#3d4f63'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(0, -64); g.lineTo(0, -70); g.stroke();   // 天線
     g.fillStyle = Math.floor(t * 3) % 2 ? '#ff3b3b' : '#ffd0d0'; g.beginPath(); g.arc(0, -71, 2.5, 0, Math.PI * 2); g.fill();
+  } else if (id === 'dino') {   // 🦕 恐龍坐騎：長脖子恐龍，小可愛坐在背上，走路時腳會動
+    MV.dino(g, -6, 0, .62, '#7bc96f', moving ? t * 9 : t * 1.5);
+    g.fillStyle = '#e8505b'; g.beginPath(); g.ellipse(-6, -24, 12, 3, 0, 0, 7); g.fill();   // 小鞍
+    if (kid) kid(-6, -25, .9);
   } else if (id === 'police' || id === 'ambulance') {   // 🚓 警車：白藍、車頂紅藍燈；🚑 救護車：白色、紅十字、車頂紅燈
     const pol = id === 'police';
     g.translate(0, -bob);
@@ -28091,7 +28104,7 @@ function drawVehicle(g, id, s, t, moving, kid) {
 }
 function vehicleCanvas(id, w, h) {
   const c = document.createElement('canvas'), dpr = window.devicePixelRatio || 1; c.width = w * dpr; c.height = h * dpr; c.style.width = w + 'px'; c.style.height = h + 'px';
-  const g = c.getContext('2d'); g.scale(dpr, dpr); g.translate(w / 2, h - 6); drawVehicle(g, id, Math.min(w / 90, h / (id === 'robot' ? 80 : 52)), 0, false); return c;
+  const g = c.getContext('2d'); g.scale(dpr, dpr); g.translate(w / 2, h - 6); drawVehicle(g, id, Math.min(w / 90, h / (id === 'robot' || id === 'dino' ? 80 : 52)), 0, false); return c;
 }
 // 小島上：騎在車上／坐在船上的小可愛
 function islDrawRiding(ctx, px, py, walking, t) {
@@ -30791,6 +30804,7 @@ function openIsleMenu(id) {
     btn('😋 吃一顆糖果', () => { s.stock--; kidMoodUp(4); G.kid.hunger = clampStat((G.kid.hunger || 0) + 3); Sound.play('eat'); toast('😋 甜甜的！'); saveGame(); openIsleMenu(id); }, s.stock < 1);
     ISLE_CRAFT.candy.forEach(([fid, e, nm, n]) => btn(`${e} 做${nm}帶回家（用 ${n} 顆糖果）`, () => { isleCraft('candy', fid, nm, n); openIsleMenu(id); }, s.stock < n));
   } else {
+    if (typeof openDinoDanger === 'function') btn(dinoSafe() ? ((G.vehicles || []).includes('dino') ? '🦕 恐龍島安全了！（恐龍可以騎了）' : '🦕 領恐龍坐騎') : `🌋 解除恐龍島的危險（${dinoQ().s} / ${DINO_STEPS.length}）`, () => openDinoDanger());
     btn('⛏️ 挖化石（找恐龍骨頭）', () => openDigGame());
     btn('📖 恐龍圖鑑', () => openDinoBook());
   }
@@ -34858,6 +34872,103 @@ function prisonersTick(now, dt) {
 function prisonersDrawOverlay(ctx) {
   const now = performance.now();
   prisonersHere().forEach(pr => { if (now < pr.sayUntil && pr.say) { const a = pr.a; try { drawNeighborBubble(ctx, { x: a.x, y: a.y, z: 18 }, pr.n, pr.say, 1); } catch (e) {} } });
+}
+
+/* ===== 🌋 恐龍島的危險（家長 11/19：恐龍島可能會遇到危險，火山爆發、隕石飛下來；解除危險送一隻恐龍當交通工具）=====
+   恐龍島上多了一座會冒煙的小火山。點恐龍石像 → 島主選單 →「🌋 解除恐龍島的危險」，三關：
+   ① 🌋 火山爆發：岩漿球從天上掉下來，地上先出現紅色圓圈，快躲開！撐過 30 秒（被打到「好燙！」掉一顆愛心，5 顆都掉了再試一次）
+   ② ☄️ 隕石雨：隕石掉下來會留下發光的碎片 ✨，撿 5 片（被打到只會頭暈一下）
+   ③ 💧 澆熄火山：去池塘裝水，走到火山口倒進去，倒 3 桶火就熄了（岩漿球打到水會灑掉，再去裝）
+   三關都過：火山不冒煙了，恐龍石像活過來，變成可以騎的🦕恐龍（大地圖「🚲 交通工具」）。
+   進度記在 G.dinoQ = { s: 過了幾關 }，不會倒退。不會扣錢、不會讓東西不見。 */
+const DINO_STEPS = [['🌋', '火山爆發：躲開岩漿球 30 秒'], ['☄️', '隕石雨：撿 5 片隕石碎片'], ['💧', '澆熄火山：倒 3 桶水進火山口']];
+function dinoQ() { if (!G.dinoQ || typeof G.dinoQ !== 'object') G.dinoQ = { s: 0 }; if (!Number.isInteger(G.dinoQ.s)) G.dinoQ.s = 0; return G.dinoQ; }
+function dinoSafe() { return dinoQ().s >= DINO_STEPS.length; }
+function openDinoDanger() {
+  const q = dinoQ();
+  const w = openGameWindow('🌋 解除恐龍島的危險', dinoSafe() ? '恐龍島安全了！恐龍朋友可以載你到處跑囉！' : '恐龍島的火山在冒煙，還會掉隕石！一關一關解除危險，恐龍石像就會活過來，變成你的坐騎！');
+  w.stage.innerHTML = '';
+  const list = el('div', 'invite-row');
+  DINO_STEPS.forEach(([e, nm], i) => { const b = el('button', 'big lv-btn' + (i > q.s ? ' alt' : ''), `${i < q.s ? '✅' : i === q.s ? e : '🔒'} 第 ${i + 1} 關：${nm}`); b.onclick = () => { if (i > q.s) { toast('先過前一關喔！'); Sound.play('miss'); return; } Sound.play('click'); dinoPlay(i); }; list.appendChild(b); });
+  w.stage.appendChild(list); w.btns.innerHTML = '';
+  if (dinoSafe()) { const r = el('button', 'big', (G.vehicles || []).includes('dino') ? '🦕 去騎恐龍（大地圖「🚲 交通工具」）' : '🦕 領恐龍坐騎'); r.onclick = () => { if (!(G.vehicles || []).includes('dino')) dinoReward(); else toast('🦕 到大地圖點左上角「🚲 交通工具」選恐龍！'); }; w.btns.appendChild(r); }
+  leaveButton(w);
+  w.status.textContent = dinoSafe() ? '🦕 恐龍島安全了！' : `解除了 ${q.s} / ${DINO_STEPS.length} 個危險`;
+}
+function dinoReward() {
+  if (giveVehicle('dino', '恐龍石像活過來了！', '恐龍島的危險都解除了！恐龍朋友要載你到處跑！到大地圖點「🚲 交通工具」選🦕恐龍。')) { try { Sound.play('fanfare'); } catch (e) {} }
+}
+function dinoPlay(step) {
+  const W = 320, H = 240, [e, nm] = DINO_STEPS[step];
+  const w = openGameWindow(`${e} 第 ${step + 1} 關`, ['岩漿球要掉下來的地方會先出現紅色圓圈，趕快走開！撐過 30 秒就過關。', '隕石掉下來會留下發光的碎片 ✨，走過去撿起來，撿 5 片就過關。小心不要被隕石打到喔！', '先走到藍色的池塘裝水，再走到上面的火山口倒水。倒 3 桶，火山就熄了！'][step] + '（方向鍵、W A S D，或手指按住畫面往那邊走）');
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const f = copField(w, W, H), g = f.g, me = { x: W / 2, y: H - 40, face: 1 }, ME_SP = 92;
+  const volc = { x: W / 2 + 40, y: 74 }, pond = { x: 46, y: H - 40 };   // 火山放低一點，上面的資訊列才不會擋住火山口
+  const drops = [], shards = []; let t = 0, last = performance.now(), raf = 0, live = true, done = false, spawn = 1, hearts = 5, hurtUntil = 0, stunUntil = 0, got = 0, water = false, pours = 0, ouch = 0;
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); f.stop(); };
+  const LIMIT = [30, 60, 120][step];
+  const finish = win => {
+    if (done) return; done = true; live = false; f.stop();
+    if (!win) { Sound.play('miss'); w.status.textContent = step === 0 ? '被燙到太多次了～休息一下再試一次！' : '時間到了！再試一次！'; gameButtons(w, () => dinoPlay(step)); return; }
+    const q = dinoQ(), first = q.s === step; if (first) q.s = step + 1;
+    const bells = payReward(w, 120 + step * 60); Sound.play('fanfare');
+    w.status.textContent = `過關了！${dinoSafe() ? '恐龍島安全了！' : ''}　💰 +${fmt(bells)}`;
+    if (first && dinoSafe()) dinoReward();
+    saveGame(); refreshTop();
+    w.btns.innerHTML = '';
+    if (!dinoSafe()) { const nb = el('button', 'big', `${DINO_STEPS[q.s][0]} 下一關`); nb.onclick = () => dinoPlay(q.s); w.btns.appendChild(nb); }
+    const back = el('button', 'big alt', '📋 看三關的進度'); back.onclick = () => openDinoDanger(); w.btns.appendChild(back); leaveButton(w);
+  };
+  const tick = now => {
+    if (!live) return; raf = requestAnimationFrame(tick);
+    const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+    const [dx, dy] = now < stunUntil ? [0, 0] : f.dirFor(me); if (dx) me.face = dx > 0 ? 1 : -1;
+    copMove(me, dx, dy, ME_SP, dt, [{ x: volc.x - 30, y: volc.y - 26, w: 60, h: 30 }], W, H, 9);
+    // 掉東西（岩漿球、隕石）：先出現圓圈，1.1 秒後落地
+    spawn -= dt;
+    const every = [.75, 1.2, 1.9][step];
+    if (spawn <= 0) { spawn = every; const near = Math.random() < .5; let x = near ? me.x + (Math.random() - .5) * 60 : 20 + Math.random() * (W - 40), y = near ? me.y + (Math.random() - .5) * 50 : 80 + Math.random() * (H - 100);
+      x = Math.max(16, Math.min(W - 16, x)); y = Math.max(96, Math.min(H - 14, y)); drops.push({ x, y, t: 0, land: 1.1, r: step === 1 ? 14 : 16 }); }
+    for (let i = drops.length - 1; i >= 0; i--) { const d = drops[i]; d.t += dt;
+      if (d.t >= d.land && !d.hit) { d.hit = true; Sound.play(step === 1 ? 'boing' : 'whoosh');
+        if (Math.hypot(d.x - me.x, d.y - me.y) < d.r + 7 && now > hurtUntil) { hurtUntil = now + 1000; ouch = now;
+          if (step === 0) { hearts--; Sound.play('miss'); w.status.textContent = '好燙！'; if (hearts <= 0) { finish(false); return; } }
+          else if (step === 1) { stunUntil = now + 700; w.status.textContent = '頭暈暈…'; }
+          else if (water) { water = false; w.status.textContent = '水灑掉了！再去池塘裝水'; } }
+        if (step === 1) shards.push({ x: d.x, y: d.y }); }
+      if (d.t > d.land + .5) drops.splice(i, 1); }
+    if (step === 1) for (let i = shards.length - 1; i >= 0; i--) if (Math.hypot(shards[i].x - me.x, shards[i].y - me.y) < 16) { shards.splice(i, 1); got++; Sound.play('coin'); w.status.textContent = `撿到 ${got} / 5 片！`; }
+    if (step === 2) {
+      if (!water && Math.hypot(pond.x - me.x, pond.y - me.y) < 34) { water = true; Sound.play('splash'); w.status.textContent = '裝好水了！走到火山口倒進去！'; }
+      if (water && Math.hypot(volc.x - me.x, volc.y + 6 - me.y) < 40) { water = false; pours++; Sound.play('splash'); w.status.textContent = pours >= 3 ? '火山熄了！' : `倒了 ${pours} / 3 桶！再去裝水`; }
+    }
+    // 畫
+    g.fillStyle = '#7fc4ff'; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#f0d9a0'; g.beginPath(); g.ellipse(W / 2, H / 2 + 10, W / 2 - 4, H / 2 - 4, 0, 0, 7); g.fill();
+    g.fillStyle = '#9ccf7a'; g.beginPath(); g.ellipse(W / 2, H / 2 + 12, W / 2 - 20, H / 2 - 22, 0, 0, 7); g.fill();
+    if (step === 2) { g.fillStyle = '#5fb7f0'; g.beginPath(); g.ellipse(pond.x, pond.y, 26, 15, 0, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.5)'; g.beginPath(); g.ellipse(pond.x - 6, pond.y - 4, 8, 3, 0, 0, 7); g.fill(); }
+    const calm = step === 2 ? pours / 3 : 0;
+    g.fillStyle = '#8a6040'; g.beginPath(); g.moveTo(volc.x - 42, volc.y + 18); g.lineTo(volc.x - 14, volc.y - 26); g.lineTo(volc.x + 14, volc.y - 26); g.lineTo(volc.x + 42, volc.y + 18); g.closePath(); g.fill();
+    g.fillStyle = calm >= 1 ? '#5a4030' : `rgba(255,${Math.round(90 + calm * 80)},40,1)`; g.beginPath(); g.ellipse(volc.x, volc.y - 25, 14, 4, 0, 0, 7); g.fill();
+    if (calm < 1) for (let i = 0; i < 4; i++) { const ph = (t * .6 + i / 4) % 1; g.fillStyle = `rgba(120,120,130,${.45 * (1 - ph)})`; g.beginPath(); g.arc(volc.x + Math.sin(t + i) * 8, volc.y - 30 - ph * 40, 6 + ph * 10, 0, 7); g.fill(); }
+    MV.dino(g, 270, 214, .32, dinoSafe() ? '#7bc96f' : '#9a9488', 0);   // 恐龍石像在旁邊等你
+    drops.forEach(d => { if (d.t < d.land) { const k = d.t / d.land; g.strokeStyle = `rgba(232,60,40,${.4 + .5 * k})`; g.lineWidth = 2.5; g.beginPath(); g.ellipse(d.x, d.y, d.r, d.r * .55, 0, 0, 7); g.stroke();
+        const fy = d.y - (1 - k) * 160; g.font = `${step === 1 ? 18 : 16}px sans-serif`; g.textAlign = 'center'; g.fillText(step === 1 ? '☄️' : '🔥', d.x + (1 - k) * 20, fy); }
+      else { const k = (d.t - d.land) / .5; g.fillStyle = step === 1 ? `rgba(160,140,200,${.5 * (1 - k)})` : `rgba(255,120,40,${.6 * (1 - k)})`; g.beginPath(); g.arc(d.x, d.y, d.r * (1 + k), 0, 7); g.fill(); } });
+    shards.forEach(s2 => { g.font = '16px sans-serif'; g.textAlign = 'center'; g.fillText('✨', s2.x, s2.y + 6 + Math.sin(t * 5 + s2.x) * 2); });
+    const blink = now < hurtUntil && Math.floor(now / 100) % 2;
+    if (!blink) copDrawKid(g, me.x, me.y, .4, t, !!(dx || dy), me.face, now - ouch < 700 ? 'ouch' : step === 0 ? 'worried' : 'focus');
+    if (water) { g.font = '14px sans-serif'; g.fillText('💧', me.x + 12, me.y - 30); }
+    // 上面的資訊
+    const info = step === 0 ? `${'❤️'.repeat(hearts)}${'🤍'.repeat(5 - hearts)}　⏱️ ${Math.max(0, Math.ceil(LIMIT - t))}` : step === 1 ? `✨ ${got} / 5　⏱️ ${Math.max(0, Math.ceil(LIMIT - t))}` : `💧 ${pours} / 3${water ? '　💧 有水' : ''}`;
+    g.fillStyle = 'rgba(255,255,255,.88)'; g.beginPath(); g.roundRect(6, 6, 160, 22, 8); g.fill(); g.fillStyle = '#3a3240'; g.font = '700 13px sans-serif'; g.textAlign = 'left'; g.fillText(info, 14, 22);
+    if (step === 0 && t >= LIMIT) finish(true);
+    else if (step === 1) { if (got >= 5) finish(true); else if (t >= LIMIT) finish(false); }
+    else if (step === 2) { if (pours >= 3) finish(true); else if (t >= LIMIT) finish(false); }
+  };
+  w.status.textContent = nm;
+  dinoPlay.test = { me, drops, shards, pond, volc, win: () => { if (step === 0) t = LIMIT; else if (step === 1) got = 5; else pours = 3; }, hurt: () => { hearts = 0; finish(false); }, state: () => ({ hearts, got, pours, water }) };
+  raf = requestAnimationFrame(tick);
 }
 </script>
 
