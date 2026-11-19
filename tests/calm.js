@@ -9,7 +9,7 @@ const path = require('path');
   const o = await p.evaluate(async () => {
     const o = {}, w = ms => new Promise(r => setTimeout(r, ms)); document.getElementById('modal').hidden = true; G.guide = 'done';
     const fps = async ms => { const f0 = roomLayerStats.frames + roomLayerStats.full; await w(ms); return (roomLayerStats.frames + roomLayerStats.full - f0) / (ms / 1000); };
-    idleLastInput = performance.now() - 10000; fufu.path = []; fufu.act = null; await w(300);
+    idleLastInput = performance.now() - 10000; fufu.path = []; fufu.act = null; fufu.task = null; fufu.idleUntil = performance.now() + 1e7; vis.who = null; await w(300);   // 不要讓她自己走來走去（走路時本來就是全速）
     const calm = await fps(2000); o.calm10 = calm > 7 && calm < 12.5;
     idleLastInput = performance.now() + 1e7; const act = await fps(1500); o.activeFast = act > 20;   // 自動測試預設一般模式 30 格
     idleLastInput = performance.now() - 10000; fufu.path = [[3, 3], [4, 3], [5, 3], [5, 4], [5, 5]]; const walk = await fps(700); o.walkFast = walk > 18;
