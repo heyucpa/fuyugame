@@ -8,7 +8,7 @@
 
    同一個資源每次連得上就順手更新一份，所以她離線時拿到的
    一定是「最後一次有網路時的版本」。 */
-const CACHE = 'fuyugame-v5';   // v5：開網頁一律跟網站確認最新版（不要用瀏覽器存著的舊檔）
+const CACHE = 'fuyugame-v6';   // v5：開網頁一律跟網站確認最新版；v6：從舊版換過來時，把開著的遊戲自動重新載入成新版
 const FILES = ['./house.html', './theater.html', './index.html', './yuanyuan_shopping.html', './yuanyuan_shopping_g1.html', './'];
 
 self.addEventListener('install', e => {
@@ -22,10 +22,15 @@ self.addEventListener('install', e => {
 
 self.addEventListener('activate', e => {
   // 舊版的快取清掉，不然改了名字之後會留著永遠用不到的東西
+  /* 家長：學校的小朋友只會玩、不會按重新整理。
+     舊版的遊戲網頁自己不會檢查新版，但瀏覽器每次打開網頁都會順便看這個 sw.js 有沒有換新；
+     換新了就裝這個新的，裝好的時候把開著的遊戲網頁自動重新載入一次 → 直接變成新版（新版之後會自己檢查更新）。
+     只有「從舊版換過來」才重新載入；第一次裝（本來就是新的）不動。 */
   e.waitUntil(
     caches.keys()
-      .then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k))))
-      .then(() => self.clients.claim())
+      .then(ks => { const old = ks.filter(k => k !== CACHE); return Promise.all(old.map(k => caches.delete(k))).then(() => old.length > 0); })
+      .then(hadOld => self.clients.claim().then(() => hadOld))
+      .then(hadOld => { if (!hadOld) return; return self.clients.matchAll({ type: 'window' }).then(cs => Promise.all(cs.map(c => (c.navigate ? c.navigate(c.url).catch(() => {}) : null)))); })
   );
 });
 
