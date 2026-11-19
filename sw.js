@@ -8,7 +8,7 @@
 
    同一個資源每次連得上就順手更新一份，所以她離線時拿到的
    一定是「最後一次有網路時的版本」。 */
-const CACHE = 'fuyugame-v4';   // 加了「圓圓的新家大採購」：換版本號，舊快取會被清掉
+const CACHE = 'fuyugame-v5';   // v5：開網頁一律跟網站確認最新版（不要用瀏覽器存著的舊檔）
 const FILES = ['./house.html', './theater.html', './index.html', './yuanyuan_shopping.html', './yuanyuan_shopping_g1.html', './'];
 
 self.addEventListener('install', e => {
@@ -35,8 +35,10 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   if (new URL(req.url).origin !== self.location.origin) return;
 
+  // 打開網頁（navigate）：跟網站確認有沒有新版，不要直接用瀏覽器存著的那份（家長：學校的電腦一直是舊版）
+  const fresh = req.mode === 'navigate' ? fetch(req, { cache: 'no-cache' }) : fetch(req);
   e.respondWith(
-    fetch(req)
+    fresh
       .then(res => {
         // 連得上就順便更新存的那一份（只存成功的回應）
         if (res && res.ok) {

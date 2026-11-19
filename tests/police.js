@@ -1,4 +1,4 @@
-// 🚓 警察局：大地圖有房子、進得去、警官選單；抓小偷三關過了送警車＋制服；演習被抓關 1 分鐘（叫爸媽、找小貓可以提早出來、重開還在關）；
+// 🚓 警察局（被抓關 3 分鐘、寵物會來救）：大地圖有房子、進得去、警官選單；抓小偷三關過了送警車＋制服；演習被抓關 1 分鐘（叫爸媽、找小貓可以提早出來、重開還在關）；
 //    小偷鼠來家裡偷東西：抓到放回去、沒抓到進失物招領可以領回；存檔驗證；🚑 小醫生 3 次送救護車；商店不賣這兩台
 const { chromium } = require('playwright');
 const path = require('path');
@@ -35,8 +35,17 @@ const path = require('path');
     // 演習：拿到寶石走到出口＝成功；被照到＝關起來
     openThiefDrill(); await w(400); openThiefDrill.test.win(); await w(400); o.drillWin = (copState().drill || 0) >= 1 && !G.jail;
     openThiefDrill(); await w(1200); openThiefDrill.test.caught(); await w(1600);
-    o.jailed = !!G.jail && jailLeft() > 50000 && jailLeft() <= 60000 && /被抓到/.test(document.querySelector('#modalCard h2').textContent);
-    openJail.test.call(); for (let k = 0; k < 80 && G.jail; k++) await w(100); o.parentsFree = !G.jail;
+    o.jailed = !!G.jail && jailLeft() > 170000 && jailLeft() <= 180000 && /被抓到/.test(document.querySelector('#modalCard h2').textContent);
+    openJail.test.call(); await w(1500); o.parentsDrive = !!G.jail && !!G.jail.parentsAt;   // 爸爸媽媽開車要 30 秒
+    G.jail.parentsAt = Date.now() - 31000; for (let k = 0; k < 80 && G.jail; k++) await w(100); o.parentsFree = !G.jail;
+    document.querySelectorAll('#showcase').forEach(x => x.remove());
+    // 🐾 寵物們來救：40 秒推、80 秒挖、2 分鐘找到鑰匙
+    if (G.pet.stage === 'egg') G.pet.stage = 'kid';
+    startJail(); await w(300); o.petsComing = openJail.test.pets.length >= 1 && openJail.test.stage() === -1;
+    G.jail.until = Date.now() + JAIL_MS - 41000; await w(400); o.petPush = openJail.test.stage() === 0;
+    G.jail.until = Date.now() + JAIL_MS - 81000; await w(400); o.petDig = openJail.test.stage() === 1;
+    G.jail.until = Date.now() + JAIL_MS - 121000; await w(400); o.petKey = openJail.test.stage() === 2 && [...document.querySelectorAll('#modalCard button')].some(x => /鑰匙/.test(x.textContent));
+    openJail.test.key(); await w(300); o.petsFree = !G.jail;
     document.querySelectorAll('#showcase').forEach(x => x.remove());
     startJail(); await w(300); openJail.test.kitten(); await w(100); const at = jailKitten.test.at; document.querySelectorAll('#modalCard .tkd-move')[at].click(); await w(1600); o.kittenFree = !G.jail;
     document.querySelectorAll('#showcase').forEach(x => x.remove());
@@ -76,7 +85,7 @@ const path = require('path');
     // 存檔驗證
     const bad = normalizeSave(Object.assign(JSON.parse(JSON.stringify(G)), { cop: { lv: 99, x: 1 }, jail: { until: 'x' }, thief: { day: 5, bag: [{ id: 'nope' }, { id: 'flower_vase' }, 7], n: -1 }, vehicles: ['police', 'ambulance', 'ufo'], noThief: 2 }));
     o.saveSafe = bad.cop.lv === 3 && !('x' in bad.cop) && !bad.jail && bad.thief.bag.length === 1 && !('day' in bad.thief) && !('n' in bad.thief) && bad.vehicles.join() === 'police,ambulance' && !('noThief' in bad);
-    const far = normalizeSave(Object.assign(JSON.parse(JSON.stringify(G)), { jail: { until: Date.now() + 1e9 } })); o.jailCapped = far.jail.until <= Date.now() + 61000;
+    const far = normalizeSave(Object.assign(JSON.parse(JSON.stringify(G)), { jail: { until: Date.now() + 1e9 } })); o.jailCapped = far.jail.until <= Date.now() + 181000;
     // 🚑 救護車：小醫生 3 次
     G.vehicles = (G.vehicles || []).filter(v => v !== 'ambulance'); townState().docN = 0;
     for (let i = 0; i < 3; i++) { openDoctorGame(); for (let n = 0; n < 4; n++) { const st = openDoctorGame.test.steps(); st.forEach(s => openDoctorGame.test.use(s)); } await w(100); }
