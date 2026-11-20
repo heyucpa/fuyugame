@@ -947,7 +947,7 @@ body.isl-out:not(.isl-panel) .panel { display: none; }
 body.isl-out.isl-panel .panel { display: flex; }
 body.isl-out .rooms { visibility: hidden; }   /* 家長：都出門了，上面那排房間（客廳、臥室…）不用出現；回家用地圖上的「🔙 回去」 */   /* 在外面按「☰ 選單」：就算在家收起來了也打開 */
 .isl-menu-btn { left: 12px; top: 204px; }
-.isl-fly { left: 140px; top: 108px; } .isl-fly.on { background: #ffe9b8 !important; }
+.isl-fly { left: 140px; top: 108px; } .isl-fly.on { background: #ffe9b8 !important; } .isl-sos.on { background: #ffd6d6 !important; }
 .isl-back { left: 12px; } .isl-fast { right: 12px; } .isl-quest { right: 12px; top: 60px; background: #ffe9b8 !important; } .isl-ride { left: 12px; top: 108px; } .isl-emo { left: 12px; top: 156px; } .isl-run { left: 12px; top: 60px; }
 .isl-tools { position: absolute; left: 12px; bottom: 60px; display: flex; flex-direction: column; gap: 6px; }
 .isl-tools .island-btn { position: static; text-align: left; }
@@ -5764,6 +5764,7 @@ const NEWS = [
     ['🚀', '剛打開遊戲比較不會卡了：畫畫存起來小很多（存檔變成原本的一半以下），打開時的存檔紀錄改到電腦有空的時候才做'],
     ['📐', '房間和外面的地方最大改成 12×12：14×14 太大了，要走很久；該有的東西都還在'],
     ['🔄', '遊戲會自己檢查有沒有新版本，有的話自動更新（進度都在）：學校的電腦也不用再手動重新整理'],
+    ['🚨', '開警車或救護車的時候按「🚨 出勤」：島上有人需要幫忙，跟著箭頭開過去！救護車要把受傷的朋友載到醫院'],
     ['🔍', '警察局多了「小偵探破案」：找三個線索，指出是誰偷吃蛋糕、亂畫牆壁…抓到的犯人會關進小房間！'],
     ['🛏️', '醫院多了「病房照顧」：看病床上的朋友想要什麼，給他喝水、吃藥、抱抱、講故事、吃水果'],
     ['🎖️', '警察、醫生可以升級了！玩警察局、醫院的遊戲拿點數，升到警察局長、醫院院長，每升一級送新衣服'],
@@ -22838,7 +22839,8 @@ function openIsland() {
   const menuB = el('button', 'island-btn isl-menu-btn', '☰ 選單'); menuB.id = 'islMenuBtn';
   menuB.onclick = () => { Sound.play('click'); islPanel(!document.body.classList.contains('isl-panel')); };
   const flyB = el('button', 'island-btn isl-fly', '🚀 飛起來'); flyB.id = 'islFly'; flyB.hidden = true; flyB.onclick = () => { Sound.play('click'); islToggleFly(); };   // 🤖 坐機器人才有
-  layer.append(back, fast, run, quest, ride, flyB, emo, menuB, tools, tip);
+  const sosB = el('button', 'island-btn isl-fly isl-sos', '🚨 出勤'); sosB.id = 'islSos'; sosB.hidden = true; sosB.onclick = () => { Sound.play('click'); dispatchStart(); };   // 🚓🚑 開警車、救護車才有
+  layer.append(back, fast, run, quest, ride, flyB, sosB, emo, menuB, tools, tip);
   document.body.classList.add('isl-out'); islPanel(false);
   run.onclick = () => { setRun(!runOn()); Sound.play('click'); };
   stage.appendChild(layer); stage.classList.add('island-on');
@@ -23015,6 +23017,7 @@ function islDoPending() {
   }
 }
 function islEnter(id) {   // 走到門口：關掉地圖、進去（家：回家；一樣的地方：留在原地）
+  if (id === 'hospital' && typeof dispatchDeliver === 'function') try { dispatchDeliver(); } catch (e) {}   // 🚑 救護車載著病人到醫院
   const invites = isl.invites;
   closeIsland();
   if (id === 'home') { if (G.away) { if (fufu.pose) fufuStandUp(false); homeArrive(); } return; }
@@ -23211,7 +23214,7 @@ function islFrame(now) {
   const dt = Math.min(.11, (now - isl.last) / 1000); isl.last = now; isl.t += dt;   // 順暢模式 15 格：不要變慢動作
   if (resting) { closeIsland(); return; }
   if (isl.press && now - isl.repath > 140) { isl.repath = now; islTap(isl.press, true); }
-  try { if (!islStep(dt)) return; islDraw(now); } catch (e) { console.error(e); }
+  try { if (!islStep(dt)) return; try { dispatchTick(); } catch (e) {} islDraw(now); try { dispatchDraw(isl.cv.getContext('2d'), now); } catch (e) {} } catch (e) { console.error(e); }
   if (isl) isl.raf = requestAnimationFrame(islFrame);
 }
 /* 🏝️ 大地圖的地面分塊存起來（家長：大地圖卡卡）：量到畫大地圖的時間 58% 都在每一格重畫地面的圓角。
@@ -28154,6 +28157,7 @@ function openRideMenu(e) {
   openMenu(entries, e);
 }
 function islRideBtn() { const b = document.getElementById('islRide'), v = rideNow(); if (b) { b.textContent = v ? `${v.icon} ${v.name}` : '🚲 交通工具'; b.classList.toggle('on', !!v); }
+  try { dispatchBtn(); } catch (e) {}
   const f = document.getElementById('islFly'), robot = !!(v && v.id === 'robot'); if (f) { f.hidden = !robot; f.textContent = isl && isl.fly && isl.fly.on ? '🛬 降落' : '🚀 飛起來'; f.classList.toggle('on', !!(isl && isl.fly && isl.fly.on)); }
   if (!robot && isl && isl.fly) isl.fly.on = false; }
 /* 🚀 機器人飛起來（妹妹：機器人可以飛起來嗎）：坐機器人時按「🚀 飛起來」，腳底噴火飛到空中，
@@ -35194,6 +35198,91 @@ Object.assign(ACTIVITIES, {
   ward_care: { label: '🛏️ 病房照顧', name: '照顧病人', fx: '💗', open: () => openWard(), lines: ['我來照顧大家！', '要喝水嗎？'] }
 });
 Object.assign(FURNITURE_ACT, { police_board: 'cop_case' });
+
+/* ===== 🚨 出勤（第二批：警車、救護車共用一套）=====
+   在大地圖開著🚓警車或🚑救護車的時候，左上角會多一顆「🚨 出勤」。按下去，島上某個地方會有人需要幫忙，
+   頭上冒出驚嘆號，畫面邊邊有箭頭指方向（在畫面外也找得到）。
+   🚓 警車：開過去就幫好了（小貓卡在樹上、氣球飛走、阿婆過馬路、小朋友迷路、小狗跑丟）→ 💰 ＋ 警察點數 +1
+   🚑 救護車：開過去把受傷的朋友接上車（車子上面會看到他），再開到小鎮島的醫院門口，送進去就完成 → 💰 ＋ 醫生點數 +1
+   一次一件；換車或下車就取消。不存檔（關掉地圖就沒了），不會扣東西。 */
+const DISPATCH_POLICE = [['🐱', '小貓卡在樹上了！', '把小貓抱下來了！'], ['🎈', '小朋友的氣球飛走了！', '幫忙把氣球抓回來了！'], ['👵', '阿婆要過馬路！', '牽阿婆安全過馬路了！'], ['🧒', '有小朋友迷路了！', '帶他找到媽媽了！'], ['🐶', '小狗跑丟了！', '把小狗帶回家了！']];
+const DISPATCH_AMB = [['🤕', '騎腳踏車跌倒了'], ['🤒', '發燒了，好不舒服'], ['😵', '頭暈暈的'], ['🤧', '一直打噴嚏']];
+let dispatch = null;
+function dispatchBtn() {
+  const b = document.getElementById('islSos'); if (!b) return;
+  const v = typeof rideNow === 'function' ? rideNow() : null, ok = !!(v && (v.id === 'police' || v.id === 'ambulance'));
+  b.hidden = !ok; if (!ok && dispatch) dispatch = null;
+  b.textContent = dispatch ? (dispatch.carry ? '🏥 送去醫院' : `${dispatch.e} 出勤中`) : '🚨 出勤';
+  b.classList.toggle('on', !!dispatch);
+}
+function dispatchSpot(m) {
+  for (let k = 0; k < 400; k++) {
+    const x = 6 + Math.floor(Math.random() * 38), y = 6 + Math.floor(Math.random() * 26);   // 主島上
+    if (!islPass(m, x, y) || m.beach[y][x] || m.blds.some(b => x >= b.x - 1 && x <= b.x + b.w && y >= b.y - 1 && y <= b.y + b.h)) continue;
+    if (Math.hypot(x + .5 - isl.x, y + .5 - isl.y) < 8) continue;   // 不要太近
+    return [x + .5, y + .5];
+  }
+  return null;
+}
+function dispatchStart() {
+  const v = rideNow(); if (!v || !isl) return;
+  if (dispatch) { toast(dispatch.carry ? `🚑 先把${dispatch.n.short}送到醫院！` : `${dispatch.e} ${dispatch.say}`); return; }
+  const at = dispatchSpot(isl.m); if (!at) { toast('現在大家都很平安！'); return; }
+  const pool = NEIGHBORS.filter(Boolean), n = pool[Math.floor(Math.random() * pool.length)];
+  if (v.id === 'police') { const c = DISPATCH_POLICE[Math.floor(Math.random() * DISPATCH_POLICE.length)]; dispatch = { kind: 'police', x: at[0], y: at[1], e: c[0], say: c[1], done: c[2], n }; }
+  else { const c = DISPATCH_AMB[Math.floor(Math.random() * DISPATCH_AMB.length)]; dispatch = { kind: 'amb', x: at[0], y: at[1], e: c[0], say: `${n.short}${c[1]}！`, n, carry: false }; }
+  Sound.play('whoosh'); toast(`🚨 ${dispatch.say}${dispatch.kind === 'amb' ? '快去接他！' : '快去幫忙！'}（跟著箭頭走）`);
+  dispatchBtn();
+}
+function dispatchTick() {
+  if (!dispatch || !isl) return;
+  const v = rideNow(); if (!v || (dispatch.kind === 'police' ? v.id !== 'police' : v.id !== 'ambulance')) { dispatch = null; dispatchBtn(); return; }
+  if (dispatch.carry) return;   // 載著病人：到醫院門口才算（islEnter 那裡）
+  if (Math.hypot(dispatch.x - isl.x, dispatch.y - isl.y) < 1.4) {
+    if (dispatch.kind === 'police') {
+      const d = dispatch; dispatch = null; addBells(150); try { addRankXp('cop', 1); } catch (e) {} Sound.play('fanfare'); kidMoodUp(4);
+      try { islAddFx('say', d.x, d.y - 1.4, 1800, { text: '謝謝小警察！' }); } catch (e) {}
+      toast(`🚓 ${d.done}　💰 +150　🎖️ 警察點數 +1`); saveGame(); refreshTop();
+    } else {
+      dispatch.carry = true; Sound.play('petHappy');
+      try { islAddFx('say', dispatch.x, dispatch.y - 1.4, 1800, { text: '謝謝你來接我！' }); } catch (e) {}
+      toast(`🚑 ${dispatch.n.short}上車了！開到小鎮島的醫院門口，送他去看醫生！`);
+    }
+    dispatchBtn();
+  }
+}
+function dispatchDeliver() {   // 救護車到醫院門口：送進去
+  if (!dispatch || !dispatch.carry) return false;
+  const d = dispatch; dispatch = null; addBells(200); try { addRankXp('doc', 1); } catch (e) {} Sound.play('fanfare'); kidMoodUp(4);
+  toast(`🏥 把${d.n.short}送到醫院了！羊醫生說：謝謝你！　💰 +200　🎖️ 醫生點數 +1`); saveGame(); refreshTop();
+  return true;
+}
+function dispatchDraw(ctx, now) {
+  if (!dispatch || !isl) return;
+  const cv = isl.cv, W = cv.clientWidth, H = cv.clientHeight, v = islView(), T = ISL.T, dpr = cv._dpr || 1, t = now / 1000;
+  const goal = dispatch.carry ? (() => { const b = isl.m.blds.find(q => q.id === 'hospital'); return b ? [b.door[0] + .5, b.door[1] + .5] : null; })() : [dispatch.x, dispatch.y];
+  ctx.save(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const sx = (dispatch.x * T - v.cx) * v.s + W / 2, sy = (dispatch.y * T - v.cy) * v.s + H / 2;
+  if (!dispatch.carry) {   // 需要幫忙的人：大大的圖案＋驚嘆號，一跳一跳
+    const bob = Math.abs(Math.sin(t * 4)) * 6; ctx.font = `${Math.round(30 * Math.min(1.2, v.s))}px sans-serif`; ctx.textAlign = 'center'; ctx.fillText(dispatch.e, sx, sy - bob);
+    ctx.fillStyle = '#e8505b'; ctx.font = `bold ${Math.round(22 * Math.min(1.2, v.s))}px sans-serif`; ctx.fillText('!', sx + 18, sy - 22 - bob);
+    ctx.strokeStyle = `rgba(232,80,91,${.5 + .3 * Math.sin(t * 6)})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(sx, sy + 6, 24, 10, 0, 0, 7); ctx.stroke();
+  } else {   // 載著病人：小可愛上面冒出他
+    const kx = (isl.x * T - v.cx) * v.s + W / 2, ky = (isl.y * T - v.cy) * v.s + H / 2;
+    ctx.font = '20px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(dispatch.e, kx + 22, ky - 56);
+  }
+  if (goal) {   // 畫面外：邊邊的箭頭指過去
+    const gx = (goal[0] * T - v.cx) * v.s + W / 2, gy = (goal[1] * T - v.cy) * v.s + H / 2, m = 34;
+    if (gx < m || gx > W - m || gy < m || gy > H - m) {
+      const cx = W / 2, cy = H / 2, a = Math.atan2(gy - cy, gx - cx), k = Math.min((W / 2 - m) / Math.abs(Math.cos(a) || 1e-6), (H / 2 - m) / Math.abs(Math.sin(a) || 1e-6));
+      const ax = cx + Math.cos(a) * k, ay = cy + Math.sin(a) * k;
+      ctx.save(); ctx.translate(ax, ay); ctx.fillStyle = 'rgba(255,255,255,.92)'; ctx.beginPath(); ctx.arc(0, 0, 22, 0, 7); ctx.fill(); ctx.strokeStyle = '#e8505b'; ctx.lineWidth = 3; ctx.stroke();
+      ctx.font = '20px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(dispatch.carry ? '🏥' : dispatch.e, 0, 1);
+      ctx.rotate(a); ctx.fillStyle = '#e8505b'; ctx.beginPath(); ctx.moveTo(32, 0); ctx.lineTo(22, -8); ctx.lineTo(22, 8); ctx.closePath(); ctx.fill(); ctx.restore();
+    }
+  }
+  ctx.restore();
+}
 </script>
 
 </body></html>
