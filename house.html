@@ -947,14 +947,14 @@ body.isl-out:not(.isl-panel) .panel { display: none; }
 body.isl-out.isl-panel .panel { display: flex; }
 body.isl-out .rooms { visibility: hidden; }   /* 家長：都出門了，上面那排房間（客廳、臥室…）不用出現；回家用地圖上的「🔙 回去」 */   /* 在外面按「☰ 選單」：就算在家收起來了也打開 */
 .isl-menu-btn { left: 12px; top: 204px; }
-.isl-fly { left: 140px; top: 108px; } .isl-fly.on { background: #ffe9b8 !important; } .isl-sos.on { background: #ffd6d6 !important; }
+.isl-fly { left: 140px; top: 108px; } .isl-fly.on { background: #ffe9b8 !important; } .isl-sos.on { background: #ffd6d6 !important; } .isl-xmas { left: 140px; top: 60px; background: #dff5e1 !important; } .isl-xmas.on { background: #ffe9b8 !important; }
 .isl-back { left: 12px; } .isl-fast { right: 12px; } .isl-quest { right: 12px; top: 60px; background: #ffe9b8 !important; } .isl-ride { left: 12px; top: 108px; } .isl-emo { left: 12px; top: 156px; } .isl-run { left: 12px; top: 60px; }
 .isl-tools { position: absolute; left: 12px; bottom: 60px; display: flex; flex-direction: column; gap: 6px; }
 .isl-tools .island-btn { position: static; text-align: left; }
 /* 家長：手機玩的時候左邊擠在一起 → 畫面矮或窄的時候：釣竿、網子、鏟子搬到右下，左上那排按鈕小一點、間距密一點 */
 @media (max-width: 760px), (max-height: 620px) {
   .island-btn { font-size: 13px; padding: 5px 11px; min-height: 34px; }
-  .isl-back { top: 8px; } .isl-run { top: 48px; } .isl-ride { top: 88px; } .isl-fly { top: 88px; left: 128px; } .isl-emo { top: 128px; } .isl-menu-btn { top: 168px; }
+  .isl-back { top: 8px; } .isl-run { top: 48px; } .isl-ride { top: 88px; } .isl-fly { top: 88px; left: 128px; } .isl-xmas { top: 48px; left: 128px; } .isl-emo { top: 128px; } .isl-menu-btn { top: 168px; }
   .isl-fast { top: 8px; } .isl-quest { top: 48px; }
   .isl-tools { left: auto; right: 12px; bottom: 56px; gap: 5px; }
 }
@@ -4156,7 +4156,10 @@ const PRIZE_CLOTHES = [
   { id: 'nurse_cap', slot: 'head', name: '小護士帽', price: 500, style: 'schoolCap', color: '#ffffff', band: '#e8505b', prize: true },
   { id: 'doc_coat', slot: 'top', name: '醫生白袍', price: 1000, style: 'jacket', color: '#fbfdff', trim: '#9fd8ff', prize: true },
   { id: 'steth_neck', slot: 'neck', name: '聽診器項鍊', price: 1200, style: 'medalNeck', color: '#5b84c4', prize: true },
-  { id: 'doc_coat_gold', slot: 'top', name: '院長白袍', price: 2000, style: 'jacket', color: '#ffffff', trim: '#ffd23f', prize: true }
+  { id: 'doc_coat_gold', slot: 'top', name: '院長白袍', price: 2000, style: 'jacket', color: '#ffffff', trim: '#ffd23f', prize: true },
+  // 🎅 聖誕星星收藏送的
+  { id: 'santa_suit', slot: 'top', name: '聖誕老公公外套', price: 1500, style: 'jacket', color: '#d94a4a', trim: '#ffffff', prize: true },
+  { id: 'xmas_star_clip', slot: 'clip', name: '金色星星髮夾', price: 1200, style: 'starClip', color: '#ffd23f', prize: true }
 ];
 PRIZE_CLOTHES.forEach(c => { CLOTHES_BY_ID[c.id] = c; });
 const DEFAULT_OUTFIT = { clip: 'clip_none', head: 'head_none', face: 'face_none', neck: 'neck_none', top: 'uniform', bottom: 'red_shorts', shoes: 'black_shoes' };
@@ -5598,7 +5601,28 @@ SEASONS.push({
     { x: .36, y: .36, w: .28, d: .28, z: 30, h: 2, c: '#e8505b' },
     { k: 'ball', x: .5, y: .5, z: 36, r: 2.2, c: '#ffffff' }
   ] }
+  // 🧦 聖誕襪（牆上）：每天點一下，聖誕老公公會在襪子裡放小禮物
+  , { id: 'xmas_stocking', name: '聖誕襪', price: 600, theme: 'cute', w: 1, h: 34, z: 46, layer: 'wall', d: 1, season: 'christmas', parts: [],
+    draw(ctx, W, H) { const s = Math.min(W / 30, H / 34); ctx.save(); ctx.translate(W / 2, 2); ctx.scale(s, s);
+      ctx.strokeStyle = '#8a5a33'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, 4); ctx.stroke();
+      ctx.fillStyle = '#d94a4a'; ctx.beginPath(); ctx.moveTo(-6, 8); ctx.lineTo(6, 8); ctx.lineTo(6, 24); ctx.quadraticCurveTo(6, 31, -2, 31); ctx.lineTo(-10, 31); ctx.quadraticCurveTo(-14, 27, -10, 24); ctx.lineTo(-6, 22); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.roundRect(-8, 4, 16, 6, 3); ctx.fill(); ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(0, 18, 2.4, 0, 7); ctx.fill(); ctx.restore(); } }
+  , { id: 'xmas_wreath', name: '聖誕花圈', price: 700, theme: 'cute', w: 1, h: 30, z: 52, layer: 'wall', d: 1, season: 'christmas', parts: [],
+    draw(ctx, W, H) { const s = Math.min(W / 30, H / 30); ctx.save(); ctx.translate(W / 2, H / 2); ctx.scale(s, s);
+      ctx.strokeStyle = '#2f8a3c'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(0, 0, 10, 0, 7); ctx.stroke(); ctx.strokeStyle = '#45a854'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 12, 0, 7); ctx.stroke();
+      ['#e8505b', '#ffd23f', '#e8505b', '#ffd23f', '#e8505b'].forEach((c, i) => { const a = i * 1.26 + .4; ctx.fillStyle = c; ctx.beginPath(); ctx.arc(Math.cos(a) * 10, Math.sin(a) * 10, 1.8, 0, 7); ctx.fill(); });
+      ctx.fillStyle = '#d94a4a'; ctx.beginPath(); ctx.moveTo(0, 10); ctx.lineTo(-6, 6); ctx.lineTo(-6, 13); ctx.closePath(); ctx.moveTo(0, 10); ctx.lineTo(6, 6); ctx.lineTo(6, 13); ctx.closePath(); ctx.fill(); ctx.restore(); } }
 ].forEach(d => { SEASON_FURNITURE.push(d); FURN_BY_ID[d.id] = d; });
+/* 🎅 聖誕節獎品（不在商店）：⭐ 聖誕星星收藏送的麋鹿雪橇、平安夜聖誕老公公送的聖誕熊 */
+FURN_BY_ID.reindeer_sleigh = { id: 'reindeer_sleigh', name: '麋鹿雪橇', price: 0, theme: 'cute', w: 2, d: 1, gift: true, parts: [
+  { x: .05, y: .2, w: 1.0, d: .6, z: 0, h: 3, c: '#c9a24a' }, { x: .05, y: .2, w: .1, d: .6, z: 0, h: 12, c: '#c9a24a' },
+  { x: .12, y: .22, w: .85, d: .56, z: 3, h: 14, c: '#d94a4a' }, { x: .12, y: .22, w: .25, d: .56, z: 17, h: 12, c: '#d94a4a' }, { x: .38, y: .3, w: .55, d: .4, z: 17, h: 3, c: '#ffd23f' },
+  { x: 1.25, y: .4, w: .08, d: .08, z: 0, h: 14, c: '#8a5a33' }, { x: 1.7, y: .4, w: .08, d: .08, z: 0, h: 14, c: '#8a5a33' }, { x: 1.25, y: .55, w: .08, d: .08, z: 0, h: 14, c: '#8a5a33' }, { x: 1.7, y: .55, w: .08, d: .08, z: 0, h: 14, c: '#8a5a33' },
+  { x: 1.2, y: .38, w: .65, d: .26, z: 14, h: 12, c: '#b07f48' }, { k: 'ball', x: 1.95, y: .5, z: 32, r: 7, c: '#b07f48' }, { k: 'ball', x: 2.05, y: .5, z: 31, r: 2.6, c: '#e8505b' },
+  { x: 1.82, y: .42, w: .04, d: .04, z: 38, h: 10, c: '#7a5230' }, { x: 1.82, y: .56, w: .04, d: .04, z: 38, h: 10, c: '#7a5230' }] };
+FURN_BY_ID.xmas_teddy = { id: 'xmas_teddy', name: '聖誕老公公送的聖誕熊', price: 0, theme: 'cute', w: 1, d: 1, gift: true, parts: [
+  { k: 'ball', x: .5, y: .5, z: 10, r: 12, c: '#c98d5a' }, { k: 'ball', x: .5, y: .5, z: 30, r: 9, c: '#c98d5a' }, { k: 'ball', x: .36, y: .5, z: 38, r: 3.6, c: '#c98d5a' }, { k: 'ball', x: .64, y: .5, z: 38, r: 3.6, c: '#c98d5a' },
+  { k: 'ball', x: .5, y: .62, z: 29, r: 3, c: '#f0d9b5' }, { k: 'ball', x: .5, y: .5, z: 41, r: 6, c: '#d94a4a' }, { k: 'ball', x: .5, y: .5, z: 48, r: 2.4, c: '#ffffff' }, { k: 'ball', x: .5, y: .62, z: 14, r: 3.4, c: '#d94a4a' }] };
 </script>
 <script>
 // 遊戲狀態、存檔、經濟與評分
@@ -5764,6 +5788,7 @@ const NEWS = [
     ['🚀', '剛打開遊戲比較不會卡了：畫畫存起來小很多（存檔變成原本的一半以下），打開時的存檔紀錄改到電腦有空的時候才做'],
     ['📐', '房間和外面的地方最大改成 12×12：14×14 太大了，要走很久；該有的東西都還在'],
     ['🔄', '遊戲會自己檢查有沒有新版本，有的話自動更新（進度都在）：學校的電腦也不用再手動重新整理'],
+    ['🎄', '聖誕節活動（12 月）：大地圖「🎅 送禮物」幫聖誕老公公送禮物、集 ⭐ 聖誕星星換獎品；聖誕襪每天有小禮物；平安夜聖誕老公公會偷偷來喔！'],
     ['🚨', '開警車或救護車的時候按「🚨 出勤」：島上有人需要幫忙，跟著箭頭開過去！救護車要把受傷的朋友載到醫院'],
     ['🔍', '警察局多了「小偵探破案」：找三個線索，指出是誰偷吃蛋糕、亂畫牆壁…抓到的犯人會關進小房間！'],
     ['🛏️', '醫院多了「病房照顧」：看病床上的朋友想要什麼，給他喝水、吃藥、抱抱、講故事、吃水果'],
@@ -6888,6 +6913,8 @@ function normalizeSave(g) {
   if (out.thief != null) { if (!isObj(out.thief)) delete out.thief; else { const t = out.thief; if (t.day != null && typeof t.day !== 'string') delete t.day; if (t.n != null && !(Number.isInteger(t.n) && t.n >= 0 && t.n < 1e6)) delete t.n;
     t.bag = Array.isArray(t.bag) ? t.bag.filter(b => isObj(b) && typeof b.id === 'string' && FURN_BY_ID[b.id] && (b.top == null || (typeof b.top === 'string' && FURN_BY_ID[b.top]))).map(b => (b.top ? { id: b.id, top: b.top } : { id: b.id })).slice(0, 30) : []; Object.keys(t).forEach(k => { if (!['day', 'n', 'bag'].includes(k)) delete t[k]; }); } }   // 🐭 小偷：今天來過了沒、抓到幾次、失物招領（被偷走還沒領回的東西）
   if (out.noThief != null && out.noThief !== 1) delete out.noThief;
+  if (out.xmas != null) { if (!isObj(out.xmas)) delete out.xmas; else { const x = out.xmas, ok = { stars: v => Number.isInteger(v) && v >= 0 && v < 1e6, n: v => Number.isInteger(v) && v >= 0 && v < 100, sockN: v => Number.isInteger(v) && v >= 0 && v < 1e6, eve: v => Number.isInteger(v) && v > 2000 && v < 3000, d: v => typeof v === 'string' && v.length <= 12, sock: v => typeof v === 'string' && v.length <= 12, got: v => Array.isArray(v) };
+    Object.keys(x).forEach(k => { if (!ok[k] || !ok[k](x[k])) delete x[k]; }); if (x.got) x.got = x.got.filter(id => typeof id === 'string' && (FURN_BY_ID[id] || CLOTHES_BY_ID[id])).slice(0, 20); } }   // 🎄 聖誕星星、送禮物、聖誕襪、平安夜
   if (out.dinoQ != null) { if (!(isObj(out.dinoQ) && Number.isInteger(out.dinoQ.s) && out.dinoQ.s >= 0)) delete out.dinoQ; else out.dinoQ = { s: Math.min(3, out.dinoQ.s) }; }   // 🌋 恐龍島危險解除到第幾關   // 家長把小偷關掉了
   if (out.vehicles != null) { if (Array.isArray(out.vehicles)) out.vehicles = [...new Set(out.vehicles.filter(v => /^(bike|suv|bus|truck|sports|robot|police|ambulance|dino)$/.test(v)))]; else delete out.vehicles; }   // 🚗 買的交通工具
   if (out.ride != null && !(typeof out.ride === 'string' && (out.vehicles || []).includes(out.ride))) delete out.ride;
@@ -22840,7 +22867,8 @@ function openIsland() {
   menuB.onclick = () => { Sound.play('click'); islPanel(!document.body.classList.contains('isl-panel')); };
   const flyB = el('button', 'island-btn isl-fly', '🚀 飛起來'); flyB.id = 'islFly'; flyB.hidden = true; flyB.onclick = () => { Sound.play('click'); islToggleFly(); };   // 🤖 坐機器人才有
   const sosB = el('button', 'island-btn isl-fly isl-sos', '🚨 出勤'); sosB.id = 'islSos'; sosB.hidden = true; sosB.onclick = () => { Sound.play('click'); dispatchStart(); };   // 🚓🚑 開警車、救護車才有
-  layer.append(back, fast, run, quest, ride, flyB, sosB, emo, menuB, tools, tip);
+  const xmasB = el('button', 'island-btn isl-xmas', '🎅 送禮物'); xmasB.id = 'islXmas'; xmasB.hidden = true; xmasB.onclick = () => { Sound.play('click'); if (typeof xmasRun !== 'undefined' && xmasRun) xmasStartRun(); else openXmasPrizes(); };   // 🎄 聖誕節才有
+  layer.append(back, fast, run, quest, ride, flyB, sosB, xmasB, emo, menuB, tools, tip);
   document.body.classList.add('isl-out'); islPanel(false);
   run.onclick = () => { setRun(!runOn()); Sound.play('click'); };
   stage.appendChild(layer); stage.classList.add('island-on');
@@ -23214,7 +23242,7 @@ function islFrame(now) {
   const dt = Math.min(.11, (now - isl.last) / 1000); isl.last = now; isl.t += dt;   // 順暢模式 15 格：不要變慢動作
   if (resting) { closeIsland(); return; }
   if (isl.press && now - isl.repath > 140) { isl.repath = now; islTap(isl.press, true); }
-  try { if (!islStep(dt)) return; try { dispatchTick(); } catch (e) {} islDraw(now); try { dispatchDraw(isl.cv.getContext('2d'), now); } catch (e) {} } catch (e) { console.error(e); }
+  try { if (!islStep(dt)) return; try { dispatchTick(); } catch (e) {} try { xmasTick(); } catch (e) {} islDraw(now); try { dispatchDraw(isl.cv.getContext('2d'), now); } catch (e) {} try { xmasDraw(isl.cv.getContext('2d'), now); } catch (e) {} } catch (e) { console.error(e); }
   if (isl) isl.raf = requestAnimationFrame(islFrame);
 }
 /* 🏝️ 大地圖的地面分塊存起來（家長：大地圖卡卡）：量到畫大地圖的時間 58% 都在每一格重畫地面的圓角。
@@ -28158,6 +28186,7 @@ function openRideMenu(e) {
 }
 function islRideBtn() { const b = document.getElementById('islRide'), v = rideNow(); if (b) { b.textContent = v ? `${v.icon} ${v.name}` : '🚲 交通工具'; b.classList.toggle('on', !!v); }
   try { dispatchBtn(); } catch (e) {}
+  try { xmasBtn(); } catch (e) {}
   const f = document.getElementById('islFly'), robot = !!(v && v.id === 'robot'); if (f) { f.hidden = !robot; f.textContent = isl && isl.fly && isl.fly.on ? '🛬 降落' : '🚀 飛起來'; f.classList.toggle('on', !!(isl && isl.fly && isl.fly.on)); }
   if (!robot && isl && isl.fly) isl.fly.on = false; }
 /* 🚀 機器人飛起來（妹妹：機器人可以飛起來嗎）：坐機器人時按「🚀 飛起來」，腳底噴火飛到空中，
@@ -35283,6 +35312,104 @@ function dispatchDraw(ctx, now) {
   }
   ctx.restore();
 }
+
+/* ===== 🎄 聖誕節活動（家長 11/20：聖誕節活動開始；12/1～12/31，沿用萬聖節的節日系統）=====
+   原本就有：聖誕樹、禮物堆、小雪人、聖誕帽、麋鹿角、聖誕毛衣、雪球毛帽、聖誕餅乾（節日限定區）、
+            動物朋友戴聖誕的樣子來玩、小島上的聖誕樹和雪、聖誕老公公和麋鹿來溜達。
+   這次加的：
+   ・🧦 聖誕襪、💚 聖誕花圈（節日限定家具，掛在牆上）。聖誕襪每天點一下，聖誕老公公會在裡面放小禮物。
+   ・🎅 幫聖誕老公公送禮物：大地圖左上角「🎅 送禮物」。島上三戶人家在等禮物，跟著箭頭走（騎車開車都可以）到門口就送到了，
+     每送一份拿一顆 ⭐ 聖誕星星。一天最多送 3 份。
+   ・⭐ 聖誕星星收藏：3 顆 → 聖誕老公公外套、8 顆 → 麋鹿雪橇、15 顆 → 金色星星髮夾。
+   ・🧸 平安夜：12/24～12/26 第一次打開遊戲，聖誕老公公已經偷偷來過了，送一隻聖誕熊（每年一次）。
+   G.xmas = { stars, d, n（今天送了幾份）, sock（今天點過襪子沒）, eve（哪一年拿過聖誕熊）, got: [獎品] }。不會扣東西。 */
+const XMAS_GIFT_DAY = 3;
+const XMAS_PRIZES = [{ need: 3, id: 'santa_suit', kind: 'clothes', icon: '🎅' }, { need: 8, id: 'reindeer_sleigh', kind: 'furn', icon: '🛷' }, { need: 15, id: 'xmas_star_clip', kind: 'clothes', icon: '⭐' }];
+const XMAS_HOUSES = ['school', 'library', 'uncle', 'grandma', 'park', 'amusement', 'cinema', 'police', 'playground'];
+function xmasActive() { const se = seasonNow(); return !!(se && se.id === 'christmas'); }
+function xmasState() { const x = G.xmas && typeof G.xmas === 'object' ? G.xmas : (G.xmas = {}); if (!Array.isArray(x.got)) x.got = []; if (!Number.isInteger(x.stars)) x.stars = 0; const d = today(); if (x.d !== d) { x.d = d; x.n = 0; } return x; }
+const xmasPrizeName = pz => (pz.kind === 'furn' ? FURN_BY_ID[pz.id] : CLOTHES_BY_ID[pz.id]).name;
+function xmasStar(n) {
+  const x = xmasState(); x.stars += n; let k = 0;
+  XMAS_PRIZES.forEach(pz => { if (x.stars < pz.need || x.got.includes(pz.id)) return; x.got.push(pz.id);
+    if (pz.kind === 'furn') addItem(pz.id); else if (!G.wardrobe.includes(pz.id)) G.wardrobe.push(pz.id);
+    setTimeout(() => { try { showcase(pz.kind === 'furn' ? renderThumb(FURN_BY_ID[pz.id], 150) : renderGirl(previewOutfit(CLOTHES_BY_ID[pz.id].slot, pz.id), 110, 130, { hair: G.hair, now: 1 }), '⭐ 聖誕星星獎品：' + xmasPrizeName(pz), pz.kind === 'furn' ? '放進「我的東西」了，擺在家裡吧！' : '放進「換裝」了，去穿穿看！', { head: '🎄 聖誕快樂！' }); } catch (e) { toast('⭐ 聖誕星星獎品：' + xmasPrizeName(pz)); } }, 1500 + 1500 * k++); });
+  saveGame();
+}
+function openXmasPrizes() {
+  const card = $('#modalCard'), x = xmasState(); closeGameWindow(); card.innerHTML = '';
+  card.appendChild(el('h2', '', `⭐ 聖誕星星 ${x.stars} 顆`));
+  card.appendChild(note(`幫聖誕老公公送禮物，每送一份拿一顆星星（一天最多 ${XMAS_GIFT_DAY} 份，今天還可以送 ${Math.max(0, XMAS_GIFT_DAY - x.n)} 份）。累積到了就有獎品！`));
+  const grid = el('div', 'trick-grid');
+  XMAS_PRIZES.forEach(pz => { const got = x.got.includes(pz.id), cell = el('div', 'trick-cell' + (got ? ' got' : ''));
+    cell.append(el('div', 'trick-e', got ? pz.icon : '❔'), el('b', '', xmasPrizeName(pz)), el('span', '', got ? '已經拿到' : `${Math.min(x.stars, pz.need)} / ${pz.need} 顆`)); grid.appendChild(cell); });
+  card.appendChild(grid);
+  if (isl && xmasActive()) { const go = el('button', 'big', xmasRun ? '🎁 繼續送禮物' : '🎅 去送禮物'); go.onclick = () => { $('#modal').hidden = true; xmasStartRun(); }; card.appendChild(go); }
+  const ok = el('button', 'big alt', '好'); ok.onclick = () => { $('#modal').hidden = true; }; card.appendChild(ok);
+  $('#modal').hidden = false;
+}
+// 🎅 送禮物（大地圖）
+let xmasRun = null;
+function xmasBtn() { const b = document.getElementById('islXmas'); if (!b) return; b.hidden = !xmasActive(); if (xmasRun) { const bd = FURN_BY_ID && isl && isl.m.blds.find(q => q.id === xmasRun.left[0]); b.textContent = `🎁 送禮物中（${xmasRun.done} / ${xmasRun.total}）`; } else b.textContent = '🎅 送禮物'; b.classList.toggle('on', !!xmasRun); }
+function xmasStartRun() {
+  if (!isl || !xmasActive()) return;
+  if (xmasRun) { toast(`🎁 跟著箭頭，把禮物送到${PLACES[xmasRun.left[0]] ? PLACES[xmasRun.left[0]].name : '那一戶'}！`); return; }
+  const x = xmasState(), left = XMAS_GIFT_DAY - x.n;
+  if (left <= 0) { openXmasPrizes(); toast('🎅 今天的禮物都送完了，明天聖誕老公公還有禮物要送！'); return; }
+  const have = XMAS_HOUSES.filter(id => isl.m.blds.some(b => b.id === id) && PLACES[id]).sort(() => Math.random() - .5).slice(0, left);
+  if (!have.length) return;
+  xmasRun = { left: have, done: 0, total: have.length };
+  Sound.play('fanfare'); toast(`🎅 聖誕老公公：拜託你幫我送 ${have.length} 份禮物！第一份送到${PLACES[have[0]].name}（跟著箭頭走）`);
+  xmasBtn();
+}
+function xmasTick() {
+  if (!xmasRun || !isl) return;
+  const id = xmasRun.left[0], b = isl.m.blds.find(q => q.id === id); if (!b) { xmasRun.left.shift(); return; }
+  if (Math.hypot(b.door[0] + .5 - isl.x, b.door[1] + .5 - isl.y) < 1.8) {
+    xmasRun.left.shift(); xmasRun.done++; const x = xmasState(); x.n++;
+    Sound.play('coin'); try { islAddFx('say', b.door[0] + .5, b.door[1] - .6, 1800, { text: '謝謝！聖誕快樂！' }); } catch (e) {}
+    xmasStar(1); addBells(80); kidMoodUp(3);
+    if (xmasRun.left.length) toast(`🎁 送到${PLACES[id].name}了！⭐ +1　下一份送到${PLACES[xmasRun.left[0]].name}！`);
+    else { toast(`🎅 禮物全部送完了！聖誕老公公說：謝謝你！⭐ 一共 ${x.stars} 顆`); xmasRun = null; }
+    saveGame(); refreshTop(); xmasBtn();
+  }
+}
+function xmasDraw(ctx, now) {
+  if (!xmasRun || !isl) return;
+  const b = isl.m.blds.find(q => q.id === xmasRun.left[0]); if (!b) return;
+  const cv = isl.cv, W = cv.clientWidth, H = cv.clientHeight, v = islView(), T = ISL.T, dpr = cv._dpr || 1, t = now / 1000;
+  const gx = (b.door[0] + .5) * T, gy = (b.door[1] + .5) * T, sx = (gx - v.cx) * v.s + W / 2, sy = (gy - v.cy) * v.s + H / 2;
+  ctx.save(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.font = `${Math.round(26 * Math.min(1.2, v.s))}px sans-serif`; ctx.textAlign = 'center'; ctx.fillText('🎁', sx, sy - 10 - Math.abs(Math.sin(t * 4)) * 6);
+  ctx.strokeStyle = `rgba(232,80,91,${.5 + .3 * Math.sin(t * 6)})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(sx, sy + 4, 22, 9, 0, 0, 7); ctx.stroke();
+  const m = 34;
+  if (sx < m || sx > W - m || sy < m || sy > H - m) { const cx = W / 2, cy = H / 2, a = Math.atan2(sy - cy, sx - cx), k = Math.min((W / 2 - m) / Math.abs(Math.cos(a) || 1e-6), (H / 2 - m) / Math.abs(Math.sin(a) || 1e-6));
+    ctx.translate(cx + Math.cos(a) * k, cy + Math.sin(a) * k); ctx.fillStyle = 'rgba(255,255,255,.92)'; ctx.beginPath(); ctx.arc(0, 0, 22, 0, 7); ctx.fill(); ctx.strokeStyle = '#2f8a3c'; ctx.lineWidth = 3; ctx.stroke();
+    ctx.font = '20px sans-serif'; ctx.textBaseline = 'middle'; ctx.fillText('🎁', 0, 1); ctx.rotate(a); ctx.fillStyle = '#2f8a3c'; ctx.beginPath(); ctx.moveTo(32, 0); ctx.lineTo(22, -8); ctx.lineTo(22, 8); ctx.closePath(); ctx.fill(); }
+  ctx.restore();
+}
+// 🧦 聖誕襪：每天一份小禮物
+function openStocking() {
+  const x = xmasState(), d = today();
+  if (!xmasActive()) { toast('🧦 聖誕節（12 月）的時候，聖誕老公公會在襪子裡放禮物喔！'); return; }
+  if (x.sock === d) { toast('🧦 今天的禮物拿過了，明天再看看襪子！'); return; }
+  x.sock = d; x.sockN = (x.sockN || 0) + 1;
+  let what; if (x.sockN % 2) { G.kidFood.xmas_cookie = (G.kidFood.xmas_cookie || 0) + 2; what = '兩塊聖誕餅乾 🍪'; } else { addBells(100); what = '💰 100 元'; }
+  Sound.play('fanfare'); kidMoodUp(5); saveGame(); refreshTop();
+  try { showcase(el('div', 'magic-pic', '🧦'), '襪子裡有禮物！', `聖誕老公公在襪子裡放了${what}！`, { head: '🎄 聖誕快樂！' }); } catch (e) { toast(`🧦 襪子裡有${what}！`); }
+}
+Object.assign(ACTIVITIES, { xmas_sock: { label: '🧦 看看聖誕襪', name: '看襪子', fx: '🎁', open: () => openStocking(), lines: ['聖誕老公公來過了嗎？', '襪子裡有什麼呢？'] } });
+Object.assign(FURNITURE_ACT, { xmas_stocking: 'xmas_sock', xmas_wreath: 'artlook', reindeer_sleigh: 'toys', xmas_teddy: 'hug' });
+// 🧸 平安夜：聖誕老公公送聖誕熊（每年一次）
+function xmasEveGift() {
+  const d = new Date(), y = d.getFullYear(), md = SEASON_TODAY || [d.getMonth() + 1, d.getDate()];
+  if (!(md[0] === 12 && md[1] >= 24 && md[1] <= 26)) return false;
+  const x = xmasState(); if (x.eve === y) return false;
+  x.eve = y; addItem('xmas_teddy'); saveGame();
+  try { showcase(renderThumb(FURN_BY_ID.xmas_teddy, 150), '聖誕老公公來過了！', '昨天晚上，聖誕老公公偷偷送來一隻聖誕熊，放進「我的東西」了！', { head: '🎅 聖誕快樂！' }); } catch (e) { toast('🎅 聖誕老公公送來一隻聖誕熊！'); }
+  return true;
+}
+setTimeout(() => { try { if (G.guide === 'done') xmasEveGift(); } catch (e) {} }, 5000);
 </script>
 
 </body></html>
