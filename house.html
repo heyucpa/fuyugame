@@ -812,6 +812,7 @@ input, textarea, [contenteditable], .invite-code { -webkit-user-select: text; us
 .art-topic { text-align: center; margin: 10px 0; } .art-topic-ic { font-size: 72px; line-height: 1.1; } .art-topic-t { font-size: 24px; font-weight: 900; color: #b5651d; }
 .art-frame { display: flex; justify-content: center; margin: 4px 0 8px; } .art-frame canvas { border: 8px solid #f2c14e; border-radius: 6px; box-shadow: 0 0 0 3px #b07a1e, 0 4px 10px rgba(0,0,0,.15); }
 .ver-tag { position: fixed; right: 4px; bottom: 2px; z-index: 3; font: 10px/1 ui-monospace, Consolas, monospace; color: rgba(60,45,30,.5); background: rgba(255,250,240,.55); padding: 2px 4px; border-radius: 5px; pointer-events: none; user-select: none; }   /* 家長：版本寫在畫面右下角，一眼看得出是不是新版 */
+.tkd-moves.dim { opacity: .45; } .tkd-move.on { outline: 3px solid #ffd23f; background: #fff8dc; }   /* 🔍 破案：線索還沒找完先淡淡的；🛏️ 病房：選到的東西亮起來 */
 .idle-pause { position: fixed; inset: 0; z-index: 9500; background: rgba(40,30,20,.35); display: flex; align-items: center; justify-content: center; }
 .idle-card { background: #fffaf0; border-radius: 22px; padding: 22px 28px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,.25); max-width: 86vw; } .idle-ic { font-size: 54px; } .idle-t { font-size: 22px; font-weight: 900; color: #5a4630; } .idle-s { color: #8a7a66; margin: 4px 0 12px; }
 .lite-ask { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 9000; background: #fff8e6; border: 2px solid #ffb84d; border-radius: 16px; padding: 10px 14px; display: flex; gap: 8px; align-items: center; box-shadow: 0 6px 18px rgba(0,0,0,.18); font-weight: 700; max-width: 92vw; flex-wrap: wrap; justify-content: center; }
@@ -4146,7 +4147,16 @@ const PRIZE_CLOTHES = [
   // 🚓 警察局：通過三關抓小偷送的
   { id: 'cop_cap', slot: 'head', name: '警察帽', price: 800, style: 'policeCap', color: '#2f4f8f', band: '#1d2f55', prize: true },
   { id: 'cop_jacket', slot: 'top', name: '警察制服', price: 1200, style: 'jacket', color: '#3a5f9f', trim: '#ffd23f', prize: true },
-  { id: 'cop_pants', slot: 'bottom', name: '警察褲', price: 600, style: 'pants', color: '#24345a', prize: true }
+  { id: 'cop_pants', slot: 'bottom', name: '警察褲', price: 600, style: 'pants', color: '#24345a', prize: true },
+  // 🎖️ 警察／醫生升級送的
+  { id: 'cop_badge', slot: 'neck', name: '小警察徽章', price: 500, style: 'medalNeck', color: '#c0c6cf', prize: true },
+  { id: 'cop_cap_gold', slot: 'head', name: '警長帽', price: 1000, style: 'policeCap', color: '#24345a', band: '#c99a1a', prize: true },
+  { id: 'cop_jacket_gold', slot: 'top', name: '警察隊長制服', price: 1500, style: 'jacket', color: '#24345a', trim: '#ffd23f', prize: true },
+  { id: 'cop_chief_cap', slot: 'head', name: '警察局長帽', price: 2000, style: 'policeCap', color: '#ffffff', band: '#ffd23f', prize: true },
+  { id: 'nurse_cap', slot: 'head', name: '小護士帽', price: 500, style: 'schoolCap', color: '#ffffff', band: '#e8505b', prize: true },
+  { id: 'doc_coat', slot: 'top', name: '醫生白袍', price: 1000, style: 'jacket', color: '#fbfdff', trim: '#9fd8ff', prize: true },
+  { id: 'steth_neck', slot: 'neck', name: '聽診器項鍊', price: 1200, style: 'medalNeck', color: '#5b84c4', prize: true },
+  { id: 'doc_coat_gold', slot: 'top', name: '院長白袍', price: 2000, style: 'jacket', color: '#ffffff', trim: '#ffd23f', prize: true }
 ];
 PRIZE_CLOTHES.forEach(c => { CLOTHES_BY_ID[c.id] = c; });
 const DEFAULT_OUTFIT = { clip: 'clip_none', head: 'head_none', face: 'face_none', neck: 'neck_none', top: 'uniform', bottom: 'red_shorts', shoes: 'black_shoes' };
@@ -5754,6 +5764,9 @@ const NEWS = [
     ['🚀', '剛打開遊戲比較不會卡了：畫畫存起來小很多（存檔變成原本的一半以下），打開時的存檔紀錄改到電腦有空的時候才做'],
     ['📐', '房間和外面的地方最大改成 12×12：14×14 太大了，要走很久；該有的東西都還在'],
     ['🔄', '遊戲會自己檢查有沒有新版本，有的話自動更新（進度都在）：學校的電腦也不用再手動重新整理'],
+    ['🔍', '警察局多了「小偵探破案」：找三個線索，指出是誰偷吃蛋糕、亂畫牆壁…抓到的犯人會關進小房間！'],
+    ['🛏️', '醫院多了「病房照顧」：看病床上的朋友想要什麼，給他喝水、吃藥、抱抱、講故事、吃水果'],
+    ['🎖️', '警察、醫生可以升級了！玩警察局、醫院的遊戲拿點數，升到警察局長、醫院院長，每升一級送新衣服'],
     ['🌋', '恐龍島有危險了！躲岩漿、在隕石雨裡救出嚇壞的小恐龍、澆熄火山：三關都過，恐龍石像會活過來，變成可以騎的🦕恐龍！'],
     ['🚔', '警察局的小房間裡關了兩位動物朋友：偷吃布丁、偷打電動、偷放屁…點小房間問問他們為什麼被關！'],
     ['🚓', '大地圖多了警察局（叔叔家旁邊）：跟狗狗警官一起抓小偷，三關都過送你一台警車和警察制服！'],
@@ -6864,7 +6877,10 @@ function normalizeSave(g) {
         for (let w = 1; w <= 6; w++) if (q.clear[w + '-3'] === 1) leg[String(w)] = 1;
         q.legacy = leg; q.rev = 2;
       } else q.legacy = legOk(q.legacy); } }
-  if (out.cop != null) { if (!isObj(out.cop)) delete out.cop; else { const c = out.cop; ['lv', 'catch', 'drill', 'jailed'].forEach(k => { if (c[k] != null && !(Number.isInteger(c[k]) && c[k] >= 0 && c[k] < 1e6)) delete c[k]; }); if (c.lv != null && c.lv > 3) c.lv = 3; Object.keys(c).forEach(k => { if (!['lv', 'catch', 'drill', 'jailed'].includes(k)) delete c[k]; }); } }   // 🚓 警察局：抓小偷過到第幾關、抓到幾次
+  if (out.cop != null) { if (!isObj(out.cop)) delete out.cop; else { const c = out.cop;
+    if (c.cases != null && !(isObj(c.cases) && typeof c.cases.d === 'string' && Number.isInteger(c.cases.n) && c.cases.n >= 0 && c.cases.n < 100)) delete c.cases; else if (c.cases) c.cases = { d: c.cases.d, n: c.cases.n };
+    if (c.caught != null && !(isObj(c.caught) && typeof c.caught.d === 'string' && typeof c.caught.id === 'string' && NEIGHBOR_BY_ID[c.caught.id] && Number.isInteger(c.caught.ci) && c.caught.ci >= 0 && c.caught.ci < 50)) delete c.caught; else if (c.caught) c.caught = { d: c.caught.d, id: c.caught.id, ci: c.caught.ci };
+    ['lv', 'catch', 'drill', 'jailed', 'xp'].forEach(k => { if (c[k] != null && !(Number.isInteger(c[k]) && c[k] >= 0 && c[k] < 1e6)) delete c[k]; }); if (c.lv != null && c.lv > 3) c.lv = 3; Object.keys(c).forEach(k => { if (!['lv', 'catch', 'drill', 'jailed', 'xp', 'cases', 'caught'].includes(k)) delete c[k]; }); } }   // 🚓 警察局：抓小偷過到第幾關、抓到幾次
   if (out.jail != null && !(isObj(out.jail) && typeof out.jail.until === 'number' && isFinite(out.jail.until))) delete out.jail;
   if (out.jail) { if (out.jail.parentsAt != null && !(typeof out.jail.parentsAt === 'number' && isFinite(out.jail.parentsAt))) delete out.jail.parentsAt; Object.keys(out.jail).forEach(k => { if (k !== 'until' && k !== 'parentsAt') delete out.jail[k]; }); }   // 🚔 演習被抓：關到什麼時候
   if (out.jail && out.jail.until > Date.now() + 5 * 60000) out.jail.until = Date.now() + 180000;   // 時間亂掉：最多關 3 分鐘
@@ -6917,7 +6933,7 @@ function normalizeSave(g) {
   if (out.town != null) {   // 🏘️ 小鎮島：勇敢貼紙、每天的健康檢查
     if (!isObj(out.town)) delete out.town;
     else { const t = out.town; t.stk = isObj(t.stk) ? Object.fromEntries(Object.entries(t.stk).filter(([k, n]) => /^(lion|star|rainbow|bear|heart|amb|sun|crown)$/.test(k) && Number.isInteger(n) && n > 0 && n < 10000)) : {};
-      ['petDay', 'kidDay'].forEach(k => { if (t[k] != null && typeof t[k] !== 'string') delete t[k]; }); if (t.docN != null && !(Number.isInteger(t.docN) && t.docN >= 0 && t.docN < 1e6)) delete t.docN; if (t.allDone != null && t.allDone !== 1) delete t.allDone; if (t.meals != null && !(Number.isInteger(t.meals) && t.meals >= 0)) delete t.meals; } }
+      ['petDay', 'kidDay'].forEach(k => { if (t[k] != null && typeof t[k] !== 'string') delete t[k]; }); if (t.docN != null && !(Number.isInteger(t.docN) && t.docN >= 0 && t.docN < 1e6)) delete t.docN; ['docXp', 'wardLv'].forEach(k => { if (t[k] != null && !(Number.isInteger(t[k]) && t[k] >= 0 && t[k] < 1e6)) delete t[k]; }); if (t.wardLv > 3) t.wardLv = 3; if (t.allDone != null && t.allDone !== 1) delete t.allDone; if (t.meals != null && !(Number.isInteger(t.meals) && t.meals >= 0)) delete t.meals; } }
   if (out.isle != null) {   // 🏝️ 島主：名字、經驗、花、糖果、恐龍骨頭
     if (!isObj(out.isle)) delete out.isle;
     else Object.keys(out.isle).forEach(k => { const v = out.isle[k];
@@ -13919,8 +13935,8 @@ function hostMenuEntries() {
     list.push([`🎖️ 考腰帶（現在：${tkdBeltName()}）`, openBeltExam]);
   }
   if (host.n.id === 'restaurant') { list.push(['🍽️ 點餐吃飯', openRestaurantOrder]); list.push(['👩‍🍳 小幫手打工（做漢堡）', openChefGame]); list.push(['💰 收銀台找錢', openCashGame]); }
-  if (host.n.id === 'police') { list.push(['🚓 一起抓小偷', () => openCopChase()]); list.push(['🎭 演習：我當小偷', () => openThiefDrill()]); list.push([`📦 失物招領${thiefBag().length ? `（${thiefBag().length} 件）` : ''}`, () => openLostFound()]); }
-  if (host.n.id === 'hospital') { list.push([(G.vehicles || []).includes('ambulance') ? '🚑 救護車已經拿到了' : `🚑 救護車任務（當小醫生 ${Math.min(DOC_FOR_AMB, townState().docN || 0)} / ${DOC_FOR_AMB} 次）`, () => toast((G.vehicles || []).includes('ambulance') ? '🚑 到大地圖點「🚲 交通工具」就可以開救護車了！' : `🚑 再當 ${DOC_FOR_AMB - (townState().docN || 0)} 次小醫生，醫生就送你一台救護車！`)]); list.push(['💓 當小醫生', openDoctorGame]); list.push(['🐾 寵物健康檢查', openPetCheckup]); list.push(['👧 小可愛健康檢查', openKidCheckup]); list.push(['🏅 勇敢貼紙簿', openStickerBook]); }
+  if (host.n.id === 'police') { list.push(['🔍 小偵探破案', () => openDetective()]); list.push([`🎖️ 我的警察等級（${RANKS.cop.list[rankOf('cop', rankXp('cop'))][1]}）`, () => openRankCard('cop')]); list.push(['🚓 一起抓小偷', () => openCopChase()]); list.push(['🎭 演習：我當小偷', () => openThiefDrill()]); list.push([`📦 失物招領${thiefBag().length ? `（${thiefBag().length} 件）` : ''}`, () => openLostFound()]); }
+  if (host.n.id === 'hospital') { list.push(['🛏️ 病房照顧', () => openWard()]); list.push([`🎖️ 我的醫生等級（${RANKS.doc.list[rankOf('doc', rankXp('doc'))][1]}）`, () => openRankCard('doc')]); list.push([(G.vehicles || []).includes('ambulance') ? '🚑 救護車已經拿到了' : `🚑 救護車任務（當小醫生 ${Math.min(DOC_FOR_AMB, townState().docN || 0)} / ${DOC_FOR_AMB} 次）`, () => toast((G.vehicles || []).includes('ambulance') ? '🚑 到大地圖點「🚲 交通工具」就可以開救護車了！' : `🚑 再當 ${DOC_FOR_AMB - (townState().docN || 0)} 次小醫生，醫生就送你一台救護車！`)]); list.push(['💓 當小醫生', openDoctorGame]); list.push(['🐾 寵物健康檢查', openPetCheckup]); list.push(['👧 小可愛健康檢查', openKidCheckup]); list.push(['🏅 勇敢貼紙簿', openStickerBook]); }
   if (host.n.id === 'gym') { list.push(['🏃 跑步機（速度）', openFitRun]); list.push(['🏋️ 舉啞鈴（力量）', openFitLift]); list.push(['🚴 飛輪（耐力）', openFitBike]); list.push(['📦 跳箱（速度＋力量）', openFitBox]); list.push(['🧘 瑜珈（耐力）', openFitYoga]); list.push(['📊 我的體能', openFitStats]); }
   if (host.n.id === 'arena') { list.push(['⛹️ 籃球比賽（2 對 2）', openBball]); list.push(['🏀 投籃機', openBasket]); list.push(['🔴 躲避球', openDodge]); list.push(['🏓 桌球', openPingPong]); }
   if (host.n.id === 'track') { list.push([cupMenuLabel('run'), () => openSportsCup('run')]); list.push(['🏅 小鐵人三項（游泳→跑步→腳踏車）' + ((sportsCupState().tri || 0) ? `（拿過${CUP_MEDALS[sportsCupState().tri].split(' ')[0]}）` : ''), () => openSportsCup('tri')]); list.push(['🏁 起跑反應王', openStartGame]); list.push(['🚧 障礙賽跑', openRunGame]); list.push(['🏃 百米衝刺', openSprint]); list.push(['🏃‍♀️ 大隊接力', openRelay]); list.push(['🏖️ 跳遠', openLongJump]); if (G.away && G.away.place === 'school' && G.away.idx !== 0) list.push(['🏫 回教室', () => goPlaceRoom(0)]); }
@@ -31072,7 +31088,7 @@ function openPetCheckup() {
   const btnRow = el('div', 'invite-row'); w.stage.appendChild(btnRow);
   const show = () => {
     btnRow.innerHTML = '';
-    if (k >= 4) { t.petDay = today(); pet.mood = clampStat((pet.mood || 0) + 25); pet.clean = clampStat((pet.clean || 0) + 10); Sound.play('fanfare'); w.status.textContent = `${petName()}好健康！心情變好了！`; giveBraveSticker(`${petName()}健康檢查好勇敢！`); saveGame(); gameButtons(w, openPetCheckup); return; }
+    if (k >= 4) { try { addRankXp('doc', 1); } catch (e) {} t.petDay = today(); pet.mood = clampStat((pet.mood || 0) + 25); pet.clean = clampStat((pet.clean || 0) + 10); Sound.play('fanfare'); w.status.textContent = `${petName()}好健康！心情變好了！`; giveBraveSticker(`${petName()}健康檢查好勇敢！`); saveGame(); gameButtons(w, openPetCheckup); return; }
     const [e, nm] = steps[k]; w.status.textContent = `第 ${k + 1} / 4 步：${nm}`;
     if (k < 3) { const b = el('button', 'big', `${e} ${nm}`); b.onclick = () => { Sound.play('pickUp'); toast(steps[k][2]); k++; show(); }; btnRow.appendChild(b); }
     else { const b = el('button', 'big', '💪 按住「勇敢！」'), bar = el('div', 'fit-hold'), fill = el('div', 'fit-hold-in'); bar.appendChild(fill); btnRow.append(bar, b); let hold = 0, down = false;
@@ -31094,7 +31110,7 @@ function openKidCheckup() {
   let n = 0, right = 0, dir = 0;
   const DIRS = [['⬆️', 0], ['➡️', 90], ['⬇️', 180], ['⬅️', 270]];
   const eye = () => {
-    if (n >= 4) { t.kidDay = today(); kidMoodUp(8); Sound.play('fanfare'); view.innerHTML = ''; view.appendChild(el('div', 'tkd-big', '👍')); w.status.textContent = `視力看對 ${right} / 4 個！很健康！`; giveBraveSticker('健康檢查好棒！'); saveGame(); gameButtons(w, openKidCheckup); return; }
+    if (n >= 4) { try { addRankXp('doc', 1); } catch (e) {} t.kidDay = today(); kidMoodUp(8); Sound.play('fanfare'); view.innerHTML = ''; view.appendChild(el('div', 'tkd-big', '👍')); w.status.textContent = `視力看對 ${right} / 4 個！很健康！`; giveBraveSticker('健康檢查好棒！'); saveGame(); gameButtons(w, openKidCheckup); return; }
     dir = Math.floor(Math.random() * 4); view.innerHTML = '';
     const E = el('div', 'eye-e', 'E'); E.style.transform = `rotate(${DIRS[dir][1] - 90}deg)`;   /* E 本來開口朝右；表上 0＝朝上，所以再轉 -90 度 */ E.style.fontSize = (90 - n * 14) + 'px'; view.appendChild(E);
     const row = el('div', 'tkd-moves'); DIRS.forEach(([a], j) => { const b = el('button', 'tkd-move'); b.append(el('span', 'tkd-e', a)); b.onclick = () => { if (j === dir) { right++; Sound.play('coin'); } else Sound.play('click'); n++; eye(); }; row.appendChild(b); }); view.appendChild(row);
@@ -34441,6 +34457,7 @@ function giveVehicle(id, title, sub) {
   return true;
 }
 function ambulanceProgress(w) {
+  try { addRankXp('doc', 1); } catch (e) {}
   const t = townState(); t.docN = (t.docN || 0) + 1;
   if (t.docN >= DOC_FOR_AMB) giveVehicle('ambulance', '醫生送你一台救護車！', `當了 ${DOC_FOR_AMB} 次小醫生，好棒！到大地圖點「🚲 交通工具」就可以開救護車了！`);
   else setTimeout(() => { try { toast(`🚑 再當 ${DOC_FOR_AMB - t.docN} 次小醫生，就送你一台救護車！`); } catch (e) {} }, 1500);
@@ -34530,6 +34547,7 @@ function openCopChase(lv) {
     const first = (cs.lv || 0) < lv; cs.lv = Math.max(cs.lv || 0, lv); cs.catch = (cs.catch || 0) + plan.n;
     const bells = payReward(w, 80 + lv * 60); Sound.play('fanfare');
     w.status.textContent = `抓到了！第 ${lv} 關過關！　💰 +${fmt(bells)}`;
+    try { addRankXp('cop', 1); } catch (e) {}
     if (first && lv === COP_LEVELS) {
       ['cop_cap', 'cop_jacket', 'cop_pants'].forEach(id => { if (!G.wardrobe.includes(id)) G.wardrobe.push(id); });
       giveVehicle('police', '你是小警察了！送你一台警車！', '三關都過了！還有警察帽、警察制服、警察褲（在「換裝」）。到大地圖點「🚲 交通工具」就可以開警車！');
@@ -34586,7 +34604,7 @@ function openThiefDrill() {
   const seen = c => { const dx = me.x - c.x, dy = me.y - c.y, d = Math.hypot(dx, dy); if (d > RANGE) return false; let da = Math.atan2(dy, dx) - c.ang; while (da > Math.PI) da -= Math.PI * 2; while (da < -Math.PI) da += Math.PI * 2; return Math.abs(da) < HALF && !hidden() && !blocked(c); };
   const finish = win => {
     if (done) return; done = true; live = false; f.stop();
-    if (win) { const cs = copState(); cs.drill = (cs.drill || 0) + 1; const bells = payReward(w, 150); Sound.play('fanfare'); w.status.textContent = `演習成功！沒有被抓到！　💰 +${fmt(bells)}`;
+    if (win) { try { addRankXp('cop', 1); } catch (e) {} const cs = copState(); cs.drill = (cs.drill || 0) + 1; const bells = payReward(w, 150); Sound.play('fanfare'); w.status.textContent = `演習成功！沒有被抓到！　💰 +${fmt(bells)}`;
       setTimeout(() => { try { toast('👮 警官：好厲害！不過真的偷東西是不對的喔，下次一起當警察吧！'); } catch (e) {} }, 800);
       saveGame(); refreshTop(); gameButtons(w, () => openThiefDrill()); return; }
     Sound.play('miss'); w.status.textContent = '🚨 被手電筒照到了！'; setTimeout(() => startJail(), 900);
@@ -34767,7 +34785,7 @@ function thiefCatch() {
       for (let i = rec.x; ok && i < rec.x + fp.w; i++) for (let j = rec.y; ok && j < rec.y + fp.d; j++) if (blk[i][j]) ok = false;
       if (ok) { room.items.push({ uid: thiefAct.uid, id: rec.id, x: rec.x, y: rec.y, rot: rec.rot, ...(rec.top ? { top: rec.top } : {}) }); back = '放回原來的地方了'; } else { addItem(rec.id); if (rec.top) addItem(rec.top); back = '放進「我的東西」了'; } }
     else { addItem(rec.id); back = '放進「我的東西」了'; } }
-  const st = thiefState(); st.n = (st.n || 0) + 1; addBells(300); kidMoodUp(6);
+  const st = thiefState(); st.n = (st.n || 0) + 1; addBells(300); kidMoodUp(6); try { addRankXp('cop', 2); } catch (e) {}
   thiefAct.on = false; saveGame(); refreshTop(); requestDraw();
   Sound.play('fanfare'); try { fufuSay('抓到小偷了！', 2600); fufu.jumpT = .35; fufuBurst('⭐'); } catch (e) {}
   setTimeout(() => { try { showcase(el('div', 'magic-pic', '🐭'), '抓到小偷鼠了！', `${rec ? `東西拿回來${back}！` : '他還沒偷到東西就被抓到了！'}警官送你 💰 300！（抓到 ${st.n} 次）`, { head: '👮 好厲害！' }); } catch (e) { toast('👮 抓到小偷鼠了！'); } }, 200);
@@ -34839,14 +34857,17 @@ const PRISON_SPOTS = [[2.9, 2.0], [1.0, 2.5]];   // 4×4 的小房間：一個�
 let prisonCache = null;
 function prisonersToday() {
   const d = today();
-  if (prisonCache && prisonCache.d === d) return prisonCache.list;
+  const cgKey = (G.cop && G.cop.caught && G.cop.caught.d === d) ? G.cop.caught.id + G.cop.caught.ci : '';
+  if (prisonCache && prisonCache.d === d && prisonCache.k === cgKey) return prisonCache.list;
   let seed = 0; for (const ch of d) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
   const pool = NEIGHBORS.filter(Boolean), rnd = () => { seed = (seed * 1103515245 + 12345) >>> 0; return seed / 4294967296; };
   const a = Math.floor(rnd() * pool.length); let b = Math.floor(rnd() * pool.length); if (b === a) b = (a + 1) % pool.length;
   const c1 = Math.floor(rnd() * PRISON_CRIMES.length); let c2 = Math.floor(rnd() * PRISON_CRIMES.length); if (c2 === c1) c2 = (c1 + 1) % PRISON_CRIMES.length;
-  const list = [[pool[a], c1], [pool[b], c2]].map(([n, ci], i) => ({ n, crime: PRISON_CRIMES[ci], spot: PRISON_SPOTS[i],
+  let pairs = [[pool[a], PRISON_CRIMES[c1]], [pool[b], PRISON_CRIMES[c2]]];
+  try { const cg = G.cop && G.cop.caught; const n0 = cg && cg.d === d && NEIGHBOR_BY_ID[cg.id]; if (n0 && CASES[cg.ci]) { const cs = CASES[cg.ci]; pairs = [[n0, [cs[0], cs[2], cs[3]]], pairs[0][0] === n0 ? pairs[1] : pairs[0]]; } } catch (e) {}   // 🔍 今天破案抓到的犯人關在這裡
+  const list = pairs.map(([n, crime], i) => ({ n, crime, spot: PRISON_SPOTS[i],
     a: { x: 0, y: 0, z: 2, path: [], t: Math.random() * 5, squish: 0, squishV: 0, lean: 0, blinkAt: 0, happyUntil: 0, facing: i ? 1 : -1 }, say: '', sayUntil: 0 }));
-  prisonCache = { d, list, nextSay: performance.now() + 6000 };
+  prisonCache = { d, k: cgKey, list, nextSay: performance.now() + 6000 };
   return list;
 }
 function jailCellHere() {
@@ -34999,6 +35020,180 @@ function dinoPlay(step) {
   dinoPlay.test = { me, drops, shards, babies, SAFE, pond, volc, win: () => { if (step === 0) t = LIMIT; else if (step === 1) { got = 5; babies.forEach(bb => { bb.st = 'safe'; }); } else pours = 3; }, hurt: () => { hearts = 0; finish(false); }, state: () => ({ hearts, got, pours, water }) };
   raf = requestAnimationFrame(tick);
 }
+
+/* ===== 🎖️ 警察／醫生升級（家長 11/20：警察局、醫院第一批）=====
+   在警察局、醫院玩都會拿到點數，點數夠了就升一級，每升一級送一樣衣服或帽子（在「換裝」）。
+   🚓 警察點數：抓小偷每過一關 +1、演習成功 +1、家裡抓到小偷鼠 +2、破案 +2
+   🏥 醫生點數：當小醫生 +1、寵物健康檢查 +1、小可愛健康檢查 +1、病房照顧過關 +2
+   存在 G.cop.xp、G.town.docXp（舊存檔沒有就是 0）。 */
+const RANKS = {
+  cop: { name: '警察', icon: '🚓', list: [[0, '見習警察', null], [3, '小警察', 'cop_badge'], [8, '警長', 'cop_cap_gold'], [15, '警察隊長', 'cop_jacket_gold'], [25, '警察局長', 'cop_chief_cap']] },
+  doc: { name: '醫生', icon: '🏥', list: [[0, '實習小醫生', null], [3, '小護士', 'nurse_cap'], [8, '小醫生', 'doc_coat'], [15, '主治醫生', 'steth_neck'], [25, '醫院院長', 'doc_coat_gold']] }
+};
+function rankXp(kind) { return kind === 'cop' ? (copState().xp || 0) : (townState().docXp || 0); }
+function rankOf(kind, xp) { const L = RANKS[kind].list; let i = 0; L.forEach((r, k) => { if (xp >= r[0]) i = k; }); return i; }
+function addRankXp(kind, n) {
+  const before = rankOf(kind, rankXp(kind));
+  if (kind === 'cop') { const c = copState(); c.xp = (c.xp || 0) + n; } else { const t = townState(); t.docXp = (t.docXp || 0) + n; }
+  const after = rankOf(kind, rankXp(kind)), R = RANKS[kind];
+  for (let k = before + 1; k <= after; k++) { const [, nm, cid] = R.list[k]; if (cid && CLOTHES_BY_ID[cid] && !G.wardrobe.includes(cid)) G.wardrobe.push(cid);
+    setTimeout(() => { try { showcase(cid && CLOTHES_BY_ID[cid] ? renderGirl(previewOutfit(CLOTHES_BY_ID[cid].slot, cid), 110, 130, { hair: G.hair, now: 1 }) : el('div', 'magic-pic', '🎖️'), `升級了！你是「${nm}」了！`, cid && CLOTHES_BY_ID[cid] ? `送你「${CLOTHES_BY_ID[cid].name}」，在「換裝」可以穿！` : '好厲害！', { head: `${R.icon} ${R.name}升級` }); } catch (e) { toast(`🎖️ 升級了！你是「${nm}」了！`); } }, 1200); }
+  saveGame(); return after > before;
+}
+function openRankCard(kind) {
+  const R = RANKS[kind], xp = rankXp(kind), cur = rankOf(kind, xp), next = R.list[cur + 1];
+  const w = openGameWindow(`🎖️ 我的${R.name}等級`, kind === 'cop' ? '抓小偷、演習、破案、在家抓到小偷鼠，都會拿到警察點數。點數夠了就升級，還有新衣服！' : '當小醫生、健康檢查、病房照顧，都會拿到醫生點數。點數夠了就升級，還有新衣服！');
+  w.stage.innerHTML = '';
+  const box = el('div', 'grid');
+  R.list.forEach(([need, nm, cid], k) => { const c = el('div', 'card' + (k <= cur ? ' owned' : ''));
+    c.appendChild(el('div', 'emoji', k < cur ? '✅' : k === cur ? '⭐' : '🔒')); c.appendChild(el('div', 'nm', nm)); c.appendChild(el('div', 'pr', need ? `${need} 點` : '一開始'));
+    if (cid && CLOTHES_BY_ID[cid]) c.appendChild(el('div', 'pr', '🎁 ' + CLOTHES_BY_ID[cid].name)); box.appendChild(c); });
+  w.stage.appendChild(box); w.btns.innerHTML = ''; leaveButton(w);
+  w.status.textContent = `現在是「${R.list[cur][1]}」，${xp} 點${next ? `，再 ${next[0] - xp} 點就升「${next[1]}」` : '，已經是最高級了！'}`;
+}
+/* ===== 🔍 小偵探破案（警察局）=====
+   每個案子：發生了一件好笑的小事（誰偷吃了蛋糕？）。點現場三個 🔍 找線索：掉下來的毛是什麼顏色、
+   地上撿到的東西（圍巾、眼鏡、帽子、蝴蝶結，沒有就是腳印）、目擊者說他的耳朵長什麼樣子。
+   再從三位動物朋友裡指出是誰。三位一定至少有兩樣線索跟犯人不一樣，看線索一定猜得到。
+   抓對了：犯人說出好笑的理由，一起關進小房間（今天小房間裡的犯人就換成他）。指錯了：「不是我啦！」再看一次線索。
+   一天最多 3 件拿獎勵（之後還可以玩，只是不給錢和點數）。G.cop.cases＝{ d: 哪天, n: 破了幾件 }；G.cop.caught＝今天抓到的犯人。 */
+const CASES = [
+  ['🍰', '誰偷吃了蛋糕？', '偷吃了警察局的蛋糕', '蛋糕太香了，我忍不住…'],
+  ['🌷', '誰把花圃的花摘走了？', '偷摘公園的花', '我想送給媽媽…'],
+  ['🎈', '誰把氣球都放走了？', '把氣球都放飛了', '我想看氣球飛到天上…'],
+  ['🧦', '誰把大家的襪子藏起來了？', '把大家的襪子藏起來', '我想玩躲貓貓嘛～'],
+  ['🍪', '誰把餅乾罐吃光了？', '把餅乾罐吃光光', '一片、兩片…不小心就吃完了…'],
+  ['🎨', '誰在牆上亂畫畫？', '在牆上亂畫畫', '我想畫一隻大恐龍…'],
+  ['🔔', '誰按了門鈴就跑掉？', '按門鈴就跑掉', '我想看大家嚇一跳…'],
+  ['🍯', '誰在溜滑梯上塗了蜂蜜？', '在溜滑梯上塗蜂蜜', '我以為會滑得更快…'],
+  ['🥕', '誰把菜園的紅蘿蔔拔光了？', '偷拔菜園的紅蘿蔔', '紅蘿蔔太好吃了…']
+];
+const EAR_WORDS = { long: '長長的耳朵', pointy: '尖尖的耳朵', round: '圓圓的耳朵', tuft: '毛毛的耳朵', curl: '捲捲的角', horns: '頭上有角', none: '看不到耳朵' };
+function colorWord(hex) {
+  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i.exec(hex || ''); if (!m) return '其他顏色';
+  const [r, g, b] = [1, 2, 3].map(i => parseInt(m[i], 16) / 255), mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+  if (l > .9) return '白色'; if (l < .18) return '黑色'; if (d < .12) return l > .6 ? '白色' : '灰色';
+  let h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h = (h * 60 + 360) % 360;
+  if (h < 18 || h >= 330) return l > .7 ? '粉紅色' : '紅色'; if (h < 45) return l < .55 ? '咖啡色' : '橘色'; if (h < 70) return '黃色'; if (h < 170) return '綠色'; if (h < 260) return '藍色'; if (h < 300) return '紫色'; return '粉紅色';
+}
+function accWord(n) { const c = colorWord(n.accColor); return { scarf: `一條${c}的圍巾`, glasses: '一副眼鏡', hat: `一頂${c}的帽子`, bow: `一個${c}的蝴蝶結` }[n.acc] || '一個大大的腳印'; }
+function caseTraits(n) { return [colorWord(n.body), EAR_WORDS[n.ears] || '看不到耳朵', accWord(n)]; }
+function caseState() { const c = copState(); const d = today(); if (!c.cases || c.cases.d !== d) c.cases = { d, n: 0 }; return c.cases; }
+function caseBuild() {
+  const pool = NEIGHBORS.filter(Boolean).filter(n => n.body && n.ears);
+  for (let tries = 0; tries < 60; tries++) {
+    const culprit = pool[Math.floor(Math.random() * pool.length)], ct = caseTraits(culprit);
+    const others = pool.filter(n => n !== culprit && caseTraits(n).filter((x, i) => x !== ct[i]).length >= 2).sort(() => Math.random() - .5).slice(0, 2);
+    if (others.length < 2) continue;
+    const sus = [culprit].concat(others).sort(() => Math.random() - .5), ci = Math.floor(Math.random() * CASES.length);
+    return { culprit, sus, cs: CASES[ci], ci, traits: ct };
+  }
+  return null;
+}
+function openDetective() {
+  const k = caseBuild(); if (!k) { toast('今天沒有案子喔～'); return; }
+  const st = caseState(), paid = st.n < 3;
+  const w = openGameWindow(`🔍 小偵探破案：${k.cs[1]}`, `狗狗警官：小偵探，出事了！${k.cs[1]}點現場的三個 🔍 找線索，再指出是誰做的！${paid ? '' : '（今天的案子已經破了 3 件，這件是練習）'}`);
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const scene = el('div', 'tkd-view'); scene.appendChild(el('div', 'tkd-big', k.cs[0])); w.stage.appendChild(scene);
+  const clueRow = el('div', 'tkd-moves'), found = [false, false, false];
+  const CLUE = [['🐾', '掉下來的毛', () => `是${k.traits[0]}的毛！`], ['🧺', '地上撿到', () => `撿到${k.traits[2]}！`], ['👀', '目擊者說', () => `他有${k.traits[1]}！`]];
+  CLUE.forEach(([e, nm, say], i) => { const b = el('button', 'tkd-move'); b.append(el('span', 'tkd-e', '🔍'), el('span', '', nm));
+    b.onclick = () => { if (found[i]) return; found[i] = true; Sound.play('pickUp'); b.innerHTML = ''; b.append(el('span', 'tkd-e', e), el('span', '', say())); b.classList.add('on');
+      if (found.every(Boolean)) { w.status.textContent = '線索都找到了！是誰做的呢？點他！'; susRow.classList.remove('dim'); } else w.status.textContent = `找到 ${found.filter(Boolean).length} / 3 個線索`; };
+    clueRow.appendChild(b); });
+  w.stage.appendChild(clueRow);
+  w.stage.appendChild(el('div', 'tkd-say', '👇 是誰做的？'));
+  const susRow = el('div', 'tkd-moves dim');
+  k.sus.forEach(n => { const b = el('button', 'tkd-move'); try { b.appendChild(renderNeighborPortrait(n, 64, 58, false)); } catch (e) { b.appendChild(el('span', 'tkd-e', '🐾')); } b.appendChild(el('span', '', n.short));
+    b.onclick = () => { if (!found.every(Boolean)) { toast('先找到三個線索喔！'); Sound.play('miss'); return; }
+      if (n !== k.culprit) { Sound.play('miss'); b.disabled = true; w.status.textContent = `${n.short}：不是我啦！你看，${caseTraits(n).find((x, i) => x !== k.traits[i])}跟線索不一樣喔～`; return; }
+      solve(); };
+    susRow.appendChild(b); });
+  w.stage.appendChild(susRow);
+  const solve = () => {
+    Sound.play('fanfare'); const c = copState(); c.caught = { d: today(), id: k.culprit.id, ci: k.ci };
+    if (typeof prisonCache !== 'undefined') prisonCache = null;   // 小房間裡的犯人換成他
+    let bells = 0; if (paid) { st.n++; bells = payReward(w, 150); addRankXp('cop', 2); }
+    w.stage.innerHTML = ''; const v = el('div', 'tkd-view'); try { v.appendChild(renderNeighborPortrait(k.culprit, 110, 100, false)); } catch (e) {}
+    v.appendChild(el('div', 'tkd-say', `${k.culprit.short}：對不起…是我${k.cs[2]}。${k.cs[3]}`)); w.stage.appendChild(v);
+    w.status.textContent = `破案了！${k.culprit.short}被關進小房間了～${paid ? `　💰 +${fmt(bells)}　🎖️ 警察點數 +2` : ''}`;
+    saveGame(); refreshTop(); gameButtons(w, () => openDetective());
+  };
+  leaveButton(w);
+  w.status.textContent = '點 🔍 找線索';
+  openDetective.test = { k, clue: i => clueRow.children[i].click(), pick: n => [...susRow.children][k.sus.indexOf(n)].click() };
+}
+/* ===== 🛏️ 病房照顧（醫院）=====
+   病床上的動物朋友頭上會冒出想要的東西：💧 喝水、💊 吃藥、🧸 抱抱、📖 講故事、🍎 吃水果。
+   先在下面選東西（或按數字鍵 1～5），再點那張病床（或用左右鍵選病床、按空白鍵）給他。給對了他會開心，給錯了搖搖頭。
+   三關：3 張床照顧 6 次、4 張床 9 次、5 張床 12 次；75 秒。等太久的會哭哭，可是不會失敗，只是要快點去。 */
+const WARD_ITEMS = [['water', '💧', '喝水'], ['pill', '💊', '吃藥'], ['hug', '🧸', '抱抱'], ['book', '📖', '講故事'], ['fruit', '🍎', '吃水果']];
+const WARD_PLAN = [{ beds: 3, need: 6, every: 3.2 }, { beds: 4, need: 9, every: 2.6 }, { beds: 5, need: 12, every: 2.2 }];
+function openWard(lv) {
+  const t0s = townState(), unlocked = Math.min(3, (t0s.wardLv || 0) + 1);
+  if (lv == null) {
+    const w = openGameWindow('🛏️ 病房照顧', '小羊醫生：病房裡的朋友需要你照顧！看他們頭上想要什麼，選對的東西給他。');
+    w.stage.innerHTML = ''; const row = el('div', 'invite-row');
+    for (let i = 1; i <= 3; i++) { const b = el('button', 'big lv-btn' + (i > unlocked ? ' alt' : ''), `${i <= (t0s.wardLv || 0) ? '⭐' : i > unlocked ? '🔒' : '🛏️'} 第 ${i} 關（${WARD_PLAN[i - 1].beds} 張床）`); b.onclick = () => { if (i > unlocked) { toast('先過前一關喔！'); Sound.play('miss'); return; } Sound.play('click'); openWard(i); }; row.appendChild(b); }
+    w.stage.appendChild(row); w.btns.innerHTML = ''; leaveButton(w); return;
+  }
+  const P = WARD_PLAN[lv - 1], W = 320, H = 200;
+  const w = openGameWindow(`🛏️ 病房照顧・第 ${lv} 關`, '先在下面選東西（數字鍵 1～5），再點想要那樣東西的病床（或左右鍵選床、按空白鍵）。');
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const { c, g, pos } = gameCanvas(w.stage, W, H);
+  const pool = NEIGHBORS.filter(Boolean).slice().sort(() => Math.random() - .5);
+  const bw = W / P.beds, beds = Array.from({ length: P.beds }, (_, i) => ({ x: bw * (i + .5), n: pool[i], want: null, since: 0, happy: 0, shake: 0, a: { x: 0, y: 0, path: [], t: Math.random() * 5, squish: 0, lean: 0, blinkAt: 0, happyUntil: 0, facing: 1 } }));
+  let sel = 0, cur = 0, done = 0, t = 0, last = performance.now(), raf = 0, live = true, end = false, nextWant = 1, nurseX = W / 2;
+  const LIMIT = 75;
+  const items = el('div', 'tkd-moves'); WARD_ITEMS.forEach(([id, e, nm], i) => { const b = el('button', 'tkd-move' + (i === sel ? ' on' : '')); b.dataset.key = String(i + 1); b.append(el('span', 'tkd-e', e), el('span', '', nm)); b.onclick = () => pick(i); items.appendChild(b); }); w.stage.appendChild(items);
+  const pick = i => { sel = i; [...items.children].forEach((b, k) => b.classList.toggle('on', k === i)); Sound.play('click'); };
+  const give = bi => { if (end) return; const bd = beds[bi]; cur = bi; nurseX = bd.x;
+    if (!bd.want) { bd.shake = .5; return; }
+    if (bd.want !== WARD_ITEMS[sel][0]) { bd.shake = .6; Sound.play('miss'); w.status.textContent = `${bd.n.short}：不是這個啦～`; return; }
+    bd.want = null; bd.happy = 1.4; done++; Sound.play('coin'); w.status.textContent = `照顧了 ${done} / ${P.need} 次！`;
+    if (done >= P.need) finish(true); };
+  c.addEventListener('pointerdown', e => { e.preventDefault(); const p = pos(e); give(Math.max(0, Math.min(P.beds - 1, Math.floor(p.x / bw)))); });
+  const kd = e => { const dg = /^(?:Digit|Numpad)([1-5])$/.exec(e.code); if (dg) { e.preventDefault(); pick(+dg[1] - 1); return; }
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') { e.preventDefault(); cur = (cur + P.beds - 1) % P.beds; nurseX = beds[cur].x; } else if (e.code === 'ArrowRight' || e.code === 'KeyD') { e.preventDefault(); cur = (cur + 1) % P.beds; nurseX = beds[cur].x; }
+    else if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); if (!e.repeat) give(cur); } };
+  document.addEventListener('keydown', kd);
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); };
+  const finish = win => { if (end) return; end = true; live = false; document.removeEventListener('keydown', kd);
+    if (!win) { Sound.play('miss'); w.status.textContent = `時間到！照顧了 ${done} / ${P.need} 次，再試一次！`; gameButtons(w, () => openWard(lv)); return; }
+    const t2 = townState(), first = (t2.wardLv || 0) < lv; t2.wardLv = Math.max(t2.wardLv || 0, lv);
+    const bells = payReward(w, 100 + lv * 60); addRankXp('doc', 2); Sound.play('fanfare');
+    w.status.textContent = `大家都好多了，睡著了～過關！　💰 +${fmt(bells)}　🎖️ 醫生點數 +2`;
+    saveGame(); refreshTop(); w.btns.innerHTML = '';
+    if (lv < 3) { const nb = el('button', 'big', `🛏️ 下一關（第 ${lv + 1} 關）`); nb.onclick = () => openWard(lv + 1); w.btns.appendChild(nb); }
+    const again = el('button', 'big alt', '再玩一次'); again.onclick = () => openWard(lv); w.btns.appendChild(again); leaveButton(w); };
+  const tick = now => {
+    if (!live) return; raf = requestAnimationFrame(tick); const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+    nextWant -= dt; if (nextWant <= 0) { nextWant = P.every * (.7 + Math.random() * .6); const free = beds.filter(b => !b.want && b.happy <= 0); if (free.length) { const b = free[Math.floor(Math.random() * free.length)]; b.want = WARD_ITEMS[Math.floor(Math.random() * WARD_ITEMS.length)][0]; b.since = 0; } }
+    g.fillStyle = '#eef6fb'; g.fillRect(0, 0, W, H); g.fillStyle = '#dfe9f0'; g.fillRect(0, H - 50, W, 50);
+    beds.forEach((b, i) => { b.since += b.want ? dt : 0; b.happy = Math.max(0, b.happy - dt); b.shake = Math.max(0, b.shake - dt); b.a.t += dt;
+      const sx = b.shake > 0 ? Math.sin(t * 40) * 3 : 0, by = 120;
+      if (i === cur) { g.fillStyle = 'rgba(255,210,63,.35)'; g.beginPath(); g.roundRect(b.x - bw / 2 + 4, 40, bw - 8, 120, 10); g.fill(); }
+      g.fillStyle = '#c9ccd0'; g.fillRect(b.x - 30, by + 8, 4, 22); g.fillRect(b.x + 26, by + 8, 4, 22);
+      g.fillStyle = '#ffffff'; g.beginPath(); g.roundRect(b.x - 32, by - 4, 64, 16, 5); g.fill();
+      g.save(); g.translate(b.x + sx, by + 2); g.scale(.95, .95); try { drawNeighbor(g, b.n, { happy: b.happy > 0, blink: b.happy > 0 || Math.floor(b.a.t) % 4 === 0, fx: 0, clean: 100 }); } catch (e) {} g.restore();
+      g.fillStyle = '#9fd8ff'; g.beginPath(); g.roundRect(b.x - 32, by + 4, 64, 10, 4); g.fill();   // 被子
+      if (b.want) { const it = WARD_ITEMS.find(x => x[0] === b.want), cry = b.since > 8; g.fillStyle = '#ffffff'; g.beginPath(); g.roundRect(b.x - 18, 46, 36, 30, 9); g.fill(); g.strokeStyle = cry ? '#e8505b' : '#9fb3c8'; g.lineWidth = 2; g.stroke();
+        g.font = '20px sans-serif'; g.textAlign = 'center'; g.fillText(it[1], b.x, 69); if (cry) { g.font = '11px sans-serif'; g.fillText('😢', b.x + 20, 48); } }
+      else if (b.happy > 0) { g.font = '16px sans-serif'; g.textAlign = 'center'; g.fillText('💗', b.x, 70 - (1.4 - b.happy) * 12); } });
+    copDrawKid(g, nurseX, H - 8, .36, t, false, 1, 'joy');
+    g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.roundRect(6, 6, 150, 22, 8); g.fill(); g.fillStyle = '#3a3240'; g.font = '700 13px sans-serif'; g.textAlign = 'left'; g.fillText(`💗 ${done} / ${P.need}　⏱️ ${Math.max(0, Math.ceil(LIMIT - t))}`, 14, 22);
+    if (t >= LIMIT) finish(false);
+  };
+  w.status.textContent = `第 ${lv} 關：照顧 ${P.need} 次！`;
+  openWard.test = { beds, give, pick, win: () => { done = P.need - 1; const b = beds[0]; b.want = WARD_ITEMS[sel][0]; give(0); } };
+  raf = requestAnimationFrame(tick);
+}
+Object.assign(ACTIVITIES, {
+  cop_case: { label: '🔍 小偵探破案', name: '破案', fx: '🔍', open: () => openDetective(), lines: ['我是小偵探！', '線索在哪裡呢？'] },
+  ward_care: { label: '🛏️ 病房照顧', name: '照顧病人', fx: '💗', open: () => openWard(), lines: ['我來照顧大家！', '要喝水嗎？'] }
+});
+Object.assign(FURNITURE_ACT, { police_board: 'cop_case' });
 </script>
 
 </body></html>
