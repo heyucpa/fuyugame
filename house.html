@@ -412,6 +412,7 @@ button.pass { font: inherit; }
   background: linear-gradient(var(--sky1), var(--sky2));
 }
 #view { width: 100%; height: 100%; display: block; touch-action: none; }
+.day-tint { position: absolute; inset: 0; pointer-events: none; transition: background-color 2s; } .island-on .day-tint { display: none; }   /* 🌙 家裡的天色：蓋在房間畫布上面的一層顏色，瀏覽器自己疊，不用每一格重畫 */
 .rest-overlay { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 14px; padding: 24px; text-align: center; background: linear-gradient(#2b3a67, #4a5a8a); color: #fff; }
 .rest-overlay[hidden] { display: none; }
@@ -1179,6 +1180,7 @@ button, .card, .place-pick, .lv-btn, .dex-tile, .adv-ep, .gift-opt, .trick-cell,
 
   <section class="stage">
     <canvas id="view"></canvas>
+    <div id="dayTint" class="day-tint" hidden></div>
     <button class="zoom-btn" id="btnZoom" title="放大房間">🔍 放大</button>
     <button class="theme-btn" id="btnTheme">💡 小主題</button>
     <button class="photo-btn" id="btnPhoto" title="拍照">📷</button>
@@ -15933,6 +15935,7 @@ function draw() {
     drawRoom(ctx, room, { ghost: hold, hoverUid: hold ? null : hoverUid, showGrid: !!hold || decorMode, extras, occupants });
   }
   ctx.setTransform(view.scale * dpr, 0, 0, view.scale * dpr, view.ox * dpr, view.oy * dpr);
+  if (inSky && typeof setDayTint === 'function') setDayTint('');
   if (!inSky && typeof roomDayNight === 'function') { try { roomDayNight(ctx, room, dpr); } catch (e) {} ctx.setTransform(view.scale * dpr, 0, 0, view.scale * dpr, view.ox * dpr, view.oy * dpr); }   // 🌙 家裡跟著時間變天色
   petDrawOverlay(ctx);
   visitorDrawOverlay(ctx, performance.now());
@@ -35442,15 +35445,22 @@ function roomSkyBack(g, dpr) {
   g.fillStyle = 'rgba(255,248,200,.9)'; g.beginPath(); g.arc(W * .88, H * .12, 14, 0, 7); g.fill(); g.fillStyle = 'rgba(244,239,227,1)'; g.beginPath(); g.arc(W * .88 + 6, H * .12 - 4, 12, 0, 7); g.fill();   // 彎彎的月亮
   g.restore();
 }
+let dayTintCss = '';
+function setDayTint(css) { if (css === dayTintCss) return; dayTintCss = css; const d = document.getElementById('dayTint'); if (!d) return; d.hidden = !css; if (css) d.style.backgroundColor = css; }
+let dnGlowSprite = null;
+function dnGlow() {   // 燈的光暈：畫一次存起來，之後每格貼圖（不用每格重算漸層）
+  if (dnGlowSprite) return dnGlowSprite;
+  const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'), gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  gr.addColorStop(0, 'rgba(255,200,110,.55)'); gr.addColorStop(1, 'rgba(255,200,110,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); return (dnGlowSprite = c);
+}
 function roomDayNight(ctx, room, dpr) {
-  if (!dayNightOn()) return;
-  const h = islHour(), [r, gg, b, a] = roomTint(h); if (a <= .005) return;
-  const W = ctx.canvas.width, H = ctx.canvas.height;
-  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = `rgba(${r | 0},${gg | 0},${b | 0},${a})`; ctx.fillRect(0, 0, W, H); ctx.restore();
-  if (!(h >= 18 || h < 6.5)) return;   // 傍晚到早上：燈亮起來
-  const k = Math.min(1, a / .38), sc = view.scale * dpr;
-  ctx.save(); ctx.setTransform(sc, 0, 0, sc, view.ox * dpr, view.oy * dpr); ctx.globalCompositeOperation = 'lighter';
-  const glow = (x, y, rad) => { const gr = ctx.createRadialGradient(x, y, 0, x, y, rad); gr.addColorStop(0, `rgba(255,200,110,${.42 * k})`); gr.addColorStop(1, 'rgba(255,200,110,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, rad, 0, 7); ctx.fill(); };
+  if (!dayNightOn()) { setDayTint(''); return; }
+  const h = islHour(), [r, gg, b, a] = roomTint(h);
+  setDayTint(a > .005 ? `rgba(${r | 0},${gg | 0},${b | 0},${a.toFixed(3)})` : '');
+  if (a <= .005 || !(h >= 18 || h < 6.5)) return;   // 傍晚到早上：燈亮起來
+  const k = Math.min(1, a / .38), sc = view.scale * dpr, spr = dnGlow();
+  ctx.save(); ctx.setTransform(sc, 0, 0, sc, view.ox * dpr, view.oy * dpr); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = k;
+  const glow = (x, y, rad) => ctx.drawImage(spr, x - rad, y - rad, rad * 2, rad * 2);
   (room.items || []).forEach(it => { const def = FURN_BY_ID[it.id]; if (!def || !DN_LIGHTS.test(it.id)) return; const fp = footprint(def, it.rot || 0), p = iso(it.x + fp.w / 2, it.y + fp.d / 2, itemHeight(def) * .8); glow(p.x, p.y, 70); });
   (room.wallItems || []).forEach(wi => { const def = FURN_BY_ID[wi.id]; if (!def || !DN_LIGHTS.test(wi.id)) return; const m = wi.pos + (def.w || 1) / 2, z = (def.z || 40) + (def.h || 20) / 2, p = wi.side === 'R' ? iso(m, 0, z) : iso(0, m, z); glow(p.x, p.y, 60); });
   ctx.restore();

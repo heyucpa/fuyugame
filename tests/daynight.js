@@ -17,11 +17,13 @@ const path = require('path');
     const at = async h => { ISL_HOUR_TEST = h; roomBaseKey = ''; draw(); draw(); await w(50); draw(); return { floor: px(r.w - 2, 2), lamp: scr(L.x + 34, L.y), far: scr(F.x - 34, F.y) }; };
     const noon = await at(12), dusk = await at(18.5), night = await at(22);
     o.noonUnchanged = roomTint(12)[3] === 0;
-    o.nightDarker = night.floor < noon.floor - 40;
+    const tintAt = async h => { ISL_HOUR_TEST = h; draw(); await w(30); const d = document.getElementById('dayTint'); return d.hidden ? '' : d.style.backgroundColor; };
+    o.nightDarker = !!(await tintAt(22)) && (await tintAt(12)) === '';   // 天色是蓋在畫布上面的一層（瀏覽器自己疊，不用每格重畫）
     o.duskWarm = (() => { const t = roomTint(18.5); return t[0] > t[2] && t[3] > .05; })();
     const keep = DN_LIGHTS; DN_LIGHTS = /^$/; const noGlow = await at(22); DN_LIGHTS = keep; o.lampGlows = night.lamp - noGlow.lamp > 40;
     o.smooth = Math.abs(roomTint(19.9)[3] - roomTint(20.1)[3]) < .05 && Math.abs(roomTint(16.6)[3] - roomTint(16.4)[3]) < .05;
-    G.noDayNight = 1; const off = await at(22); o.canTurnOff = Math.abs(off.floor - noon.floor) < 6; delete G.noDayNight;
+    G.noDayNight = 1; const off = await at(22); o.canTurnOff = Math.abs(off.floor - noon.floor) < 6 && document.getElementById('dayTint').hidden; delete G.noDayNight;
+    G.away = { place: 'sky', idx: 0 }; ISL_HOUR_TEST = 22; draw(); o.skyNoTint = document.getElementById('dayTint').hidden; G.away = null;
     o.settingsBtn = (() => { openTab('save'); return [...document.querySelectorAll('#tabBody button')].some(x => /變天色/.test(x.textContent)); })();
     const n = normalizeSave(Object.assign(JSON.parse(JSON.stringify(G)), { noDayNight: 7 })); o.saveSafe = !('noDayNight' in n);
     ISL_HOUR_TEST = null; o.info = JSON.stringify({ noon, dusk, night, off });
