@@ -5943,6 +5943,14 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-22T10:00', title: '🎬 更多事件！', lines: [
+    ['🤧', '朋友來玩的時候可能會感冒：量體溫、煮熱湯、蓋被子睡一下'],
+    ['🎂', '朋友生日大家都忘了？偷偷幫他準備驚喜派對：選蛋糕、掛氣球、點蠟燭、唱生日歌'],
+    ['🌧️', '朋友淋雨淋濕了：拿毛巾、吹頭髮、泡熱可可'],
+    ['😢', '朋友跟好朋友吵架了：幫他想辦法和好'],
+    ['🌠', '晚上在大地圖上可能會看到流星雨，許一個願望會變成小禮物'],
+    ['🎈', '熱氣球降落在旁邊！坐上去從天上看整個小島']
+  ] },
   { id: '2026-11-21T22:00', title: '🎅 聖誕老公公的家開放了！', lines: [
     ['🎅', '聖誕節期間，大地圖改車店旁邊會出現聖誕老公公的家（聖誕節過了就要等明年）'],
     ['🧸', '幫小精靈照訂單做玩具、🦌 照顧麋鹿、🎁 包禮物、☕ 跟聖誕老公公喝熱可可'],
@@ -7119,7 +7127,8 @@ function normalizeSave(g) {
     t.bag = Array.isArray(t.bag) ? t.bag.filter(b => isObj(b) && typeof b.id === 'string' && FURN_BY_ID[b.id] && (b.top == null || (typeof b.top === 'string' && FURN_BY_ID[b.top]))).map(b => (b.top ? { id: b.id, top: b.top } : { id: b.id })).slice(0, 30) : []; Object.keys(t).forEach(k => { if (!['day', 'n', 'bag'].includes(k)) delete t[k]; }); } }   // 🐭 小偷：今天來過了沒、抓到幾次、失物招領（被偷走還沒領回的東西）
   if (out.noThief != null && out.noThief !== 1) delete out.noThief;
   if (out.noDayNight != null && out.noDayNight !== 1) delete out.noDayNight;
-  if (out.vev != null) { if (!isObj(out.vev)) delete out.vev; else { const v = out.vev; if (v.d != null && !(typeof v.d === 'string' && v.d.length <= 12)) delete v.d; ['n', 'done'].forEach(k => { if (v[k] != null && !(Number.isInteger(v[k]) && v[k] >= 0 && v[k] < 1e6)) delete v[k]; }); if (v.last != null && !/^(faint|stolen|lost)$/.test(v.last)) delete v.last; Object.keys(v).forEach(k => { if (!['d', 'n', 'last', 'done'].includes(k)) delete v[k]; }); } }   // 🎬 朋友來玩的事件：今天幾次、上次哪一種、一共幫了幾次
+  if (out.islEv != null && !(isObj(out.islEv) && typeof out.islEv.d === 'string' && out.islEv.d.length <= 12 && Number.isInteger(out.islEv.n) && out.islEv.n >= 0 && out.islEv.n < 100)) delete out.islEv;   // 🗺️ 大地圖事件今天發生幾次
+  if (out.vev != null) { if (!isObj(out.vev)) delete out.vev; else { const v = out.vev; if (v.d != null && !(typeof v.d === 'string' && v.d.length <= 12)) delete v.d; ['n', 'done'].forEach(k => { if (v[k] != null && !(Number.isInteger(v[k]) && v[k] >= 0 && v[k] < 1e6)) delete v[k]; }); if (v.last != null && !/^(faint|stolen|lost|sick|bday|rain|fight)$/.test(v.last)) delete v.last; Object.keys(v).forEach(k => { if (!['d', 'n', 'last', 'done'].includes(k)) delete v[k]; }); } }   // 🎬 朋友來玩的事件：今天幾次、上次哪一種、一共幫了幾次
   if (out.carLook != null) { if (!isObj(out.carLook)) delete out.carLook; else { const OKV = { c: /^(def|red|pink|purple|blue|sky|green|yellow|orange|white|black|gold)$/, st: /^(none|star|heart|flame|flower|bolt|paw|rainbow)$/, wh: /^(std|gold|star|rainbow|flower)$/, gl: /^(none|pink|blue|green|rainbow)$/ };
     Object.keys(out.carLook).forEach(id => { const l = out.carLook[id]; if (!/^(bike|suv|bus|truck|sports|robot|police|ambulance|dino|plane|sleigh)$/.test(id) || !isObj(l)) { delete out.carLook[id]; return; }
       Object.keys(l).forEach(k => { if (k === 'dirt') { if (!(typeof l.dirt === 'number' && isFinite(l.dirt) && l.dirt >= 0 && l.dirt <= 100)) delete l.dirt; } else if (!OKV[k] || typeof l[k] !== 'string' || !OKV[k].test(l[k])) delete l[k]; }); }); } }   // 🎨 改車店：每台車的樣子、髒的程度
@@ -12641,7 +12650,7 @@ function vevCanStart() {
 const vevHideSpots = room => (room.items || []).filter(it => { const d = FURN_BY_ID[it.id]; return d && d.layer !== 'floor' && d.layer !== 'wall'; });
 function vevStart(kind) {
   const n = vis.who; if (!n) return false; const room = curRoom();
-  if (!kind) { const st0 = G.vev || {}, ks = ['faint', 'stolen', 'lost'].filter(k => k !== st0.last); kind = ks[Math.floor(Math.random() * ks.length)]; }
+  if (!kind) { const st0 = G.vev || {}, ks = ['faint', 'stolen', 'lost', 'sick', 'bday', 'rain', 'fight'].filter(k => k !== st0.last); kind = ks[Math.floor(Math.random() * ks.length)]; }
   if (kind === 'lost' && vevHideSpots(room).length < 3) kind = 'faint';
   const st = vevState(); st.n++; st.last = kind; saveGame();
   try { endChat(false); } catch (e) {} vis.seat = null; vis.seatTask = null; vis.chat = null; vis.a.path = []; vis.vevAt = 0;
@@ -12649,6 +12658,7 @@ function vevStart(kind) {
   Sound.play('whoosh');
   if (kind === 'faint') { vev.lie = true; try { const f = nearestFree(room, Math.min(room.w - 1.5, fufu.x + 1.5), Math.min(room.d - 2.5, fufu.y)); if (f) { vis.a.x = f[0] + .5; vis.a.y = f[1] + .5; } } catch (e) {}   // 倒在小可愛旁邊，不要倒在房間邊邊
     vevScene(VEV_SCENE.faintIntro(n), () => { vevStepGo('water'); visSay('嗚…頭好暈…', 3000); }); }
+  else if (VEV_CHAINS[kind]) vevChainStart(kind);   // 🎬 第二批：感冒、生日、淋雨、吵架
   else if (kind === 'stolen') { vevScene(VEV_SCENE.stolenIntro(n), () => { vevMakePrints(); vevStepGo('prints'); visSay('我的書包被拿走了…嗚嗚', 3000); }); }
   else { const spots = vevHideSpots(room); vev.hide = spots[Math.floor(Math.random() * spots.length)].uid; vevScene(VEV_SCENE.lostIntro(n), () => { vevStepGo('find'); visSay('幫我找找看好不好…', 3000); }); }
   return true;
@@ -12684,6 +12694,7 @@ function vevBar() {
   b.innerHTML = ''; const S = VEV_STEPS[vev.step];
   b.appendChild(el('span', 'vev-t', S.text(vev)));
   if (S.btn) { const bt = el('button', 'vev-act' + (vev.hand ? ' vev-point' : ''), S.btn); bt.dataset.key = '空白'; bt.onclick = e => { e.stopPropagation(); Sound.play('click'); S.go(); }; b.appendChild(bt); }
+  if (S.btns) S.btns(vev).forEach(([lb, fn, good], i) => { const bt = el('button', 'vev-act' + (vev.hand && good ? ' vev-point' : ''), lb); if (i === 0) bt.dataset.key = '空白'; bt.onclick = e => { e.stopPropagation(); fn(); }; b.appendChild(bt); });
   const hb = el('button', 'vev-hint', '💡 提示'); hb.onclick = e => { e.stopPropagation(); vevHintPress(); }; b.appendChild(hb);
 }
 function vevTick(now) {
@@ -12711,6 +12722,7 @@ function vevKeyUse() {   // 空白鍵
   if (!vev || vev.step === 'scene' || vev.step === 'game') return false;
   const S = VEV_STEPS[vev.step]; if (!S) return false;
   if (S.btn) { Sound.play('click'); S.go(); return true; }
+  if (S.btns) { const L = S.btns(vev), gb = L.find(x => x[2]) || L[0]; if (gb) gb[1](); return true; }
   if (vev.step === 'water') { if (Math.hypot(vis.a.x - fufu.x, vis.a.y - fufu.y) < 3) vevWater(); else { fufuSay(`要走到${vev.n.short}旁邊才行！`, 2000); vev.hand = true; } return true; }
   if (vev.step === 'prints') { const p = vev.prints.filter(q => !q.got).sort((a, b) => Math.hypot(a.x - fufu.x, a.y - fufu.y) - Math.hypot(b.x - fufu.x, b.y - fufu.y))[0]; if (p && Math.hypot(p.x - fufu.x, p.y - fufu.y) < 2) { vevPrint(p); return true; } return false; }
   if (vev.step === 'find') { const room = curRoom(); let best = null, bd = 2.5;
@@ -12806,11 +12818,156 @@ function vevFindTap(it) {
   if (vev.tries === 4 && !vev.region) { vev.region = true; setTimeout(() => vevHint(), 2600); }
   vevBar();
 }
+/* ===== 🎬 朋友來玩的事件 第二批（家長 11/22：事件要多一些，要搭配過場圖片或動畫）=====
+   一步一步按按鈕的事件（chain）：每一步有說明、按鈕（有的可以選，選了不好的會溫柔提醒）。
+   🤧 感冒：量體溫 → 煮熱湯 → 蓋被子睡一下
+   🎂 生日：選蛋糕 → 掛氣球彩帶 → 點蠟燭 → 一起唱生日歌（驚喜派對）
+   🌧️ 淋雨：拿毛巾擦乾 → 吹乾頭髮 → 泡熱可可
+   😢 吵架：想和好的方法（選「不要理他」會被提醒）→ 打電話約他來 → 兩個人說對不起 */
+const VEV_CHAINS = {
+  sick: {
+    intro: n => [
+      { text: `${n.short}：哈…哈…哈啾！`, draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); const k = Math.min(1, t / .5); vevNb(g, n, 160, 196, 2.2, { sway: k < 1 ? -k * .15 : Math.sin(t * 20) * .04 }); g.font = '900 30px sans-serif'; g.textAlign = 'center'; g.lineWidth = 6; g.strokeStyle = '#fff'; if (t > .5) { g.strokeText('哈啾！', 90, 80); g.fillStyle = '#4a90d9'; g.fillText('哈啾！', 90, 80); g.font = '18px sans-serif'; g.fillText('💦', 120, 120); } copDrawKid(g, 285, 196, 1.05, t, false, -1, 'wow'); } },
+      { text: `${n.short}：頭好燙…好像感冒了…`, draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); vevNb(g, n, 160, 196, 2.2, { blink: true }); g.font = '26px sans-serif'; g.textAlign = 'center'; g.fillText('🤒', 205, 90 + Math.sin(t * 3) * 3); g.fillText('🌡️', 110, 100); g.fillStyle = 'rgba(255,90,90,.25)'; g.beginPath(); g.arc(160, 110, 30, 0, 7); g.fill(); copDrawKid(g, 285, 196, 1.05, t, false, -1, null); } }
+    ],
+    steps: [
+      { text: n => `🤒 ${n.short}感冒了！先幫他量體溫`, btns: [['🌡️ 量體溫', '38 度…有一點發燒，要多喝水、多睡覺喔', 'pickUp']], fx: '🌡️' },
+      { text: n => `🍲 煮一碗熱熱的湯給${n.short}喝`, btns: [['🍲 煮熱湯', '呼～呼～熱湯好好喝，身體暖起來了', 'eat']], fx: '🍲' },
+      { text: n => `🛏️ 讓${n.short}蓋被子睡一下`, btns: [['🛏️ 蓋被子睡一下', '呼…呼…', 'petHappy']], fx: '💤' }
+    ],
+    end: n => [
+      { text: `${n.short}睡了一覺……`, draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); g.fillStyle = '#9fd8ff'; g.beginPath(); g.roundRect(90, 150, 150, 30, 10); g.fill(); vevNb(g, n, 120, 168, 1.8, { lie: true, blink: true }); g.font = '18px sans-serif'; g.textAlign = 'center'; for (let i = 0; i < 3; i++) { const k = (t * .6 + i / 3) % 1; g.globalAlpha = 1 - k; g.fillText('💤', 80 + k * 20, 120 - k * 40); } g.globalAlpha = 1; } },
+      { text: `${n.short}：我好多了！謝謝你的熱湯！`, draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); vevNb(g, n, 150, 196, 2.2, { happy: true }); vevHearts(g, 150, 90, t); copDrawKid(g, 270, 196, 1.05, t, false, -1, 'joy'); } }
+    ],
+    thanks: '謝謝你照顧我，感冒都好了！'
+  },
+  bday: {
+    intro: n => [
+      { text: `${n.short}：今天是我的生日……可是大家好像都忘記了……`, draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); vevNb(g, n, 160, 196, 2.2, { blink: true, cry: true }); copDrawKid(g, 285, 196, 1.05, t, false, -1, null); } },
+      { text: `${charName()}：💡 我知道了！我們偷偷幫他準備驚喜派對吧！`, draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); copDrawKid(g, 180, 196, 1.15, t, false, 1, 'joy'); g.font = '40px sans-serif'; g.textAlign = 'center'; g.fillText('💡', 180, 70 - Math.abs(Math.sin(t * 4)) * 8); g.font = '20px sans-serif'; g.fillText('🎈', 80, 90); g.fillText('🎂', 280, 100); } }
+    ],
+    steps: [
+      { text: n => `🎂 先請${n.short}閉上眼睛……要準備哪一種蛋糕呢？`, say: '我閉上眼睛數到十喔～', btns: [['🍓 草莓蛋糕', '草莓蛋糕好漂亮！', 'pickUp', '🍓'], ['🍫 巧克力蛋糕', '巧克力蛋糕香香的！', 'pickUp', '🍫'], ['🧁 杯子蛋糕', '一個一個杯子蛋糕排好了！', 'pickUp', '🧁']], fx: '🎂' },
+      { text: n => '🎈 把房間佈置得漂漂亮亮', btns: [['🎈 掛氣球和彩帶', '氣球和彩帶掛好了，好熱鬧！', 'pickUp']], fx: '🎈' },
+      { text: n => '🕯️ 在蛋糕上點蠟燭', btns: [['🕯️ 點蠟燭', '蠟燭亮亮的，好溫暖', 'pickUp']], fx: '🕯️' },
+      { text: n => `🎵 ${n.short}可以張開眼睛了！一起唱生日歌`, btns: [['🎵 一起唱生日歌', '祝你生日快樂～祝你生日快樂～', 'fanfare']], fx: '🎵' }
+    ],
+    end: (n, v) => [
+      { text: `驚喜！${n.short}，生日快樂！`, draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); ['#e8505b', '#ffd23f', '#4a90d9', '#51cf66', '#ff8fb8'].forEach((c, i) => { g.fillStyle = c; g.beginPath(); g.moveTo(i * 76, 14); g.lineTo(i * 76 + 38, 34); g.lineTo(i * 76 + 76, 14); g.fill(); });
+        ['🎈', '🎈'].forEach((e, i) => { g.font = '30px sans-serif'; g.textAlign = 'center'; g.fillText(e, i ? 320 : 40, 90 + Math.sin(t * 2 + i) * 6); });
+        vevNb(g, n, 130, 196, 2.2, { happy: true }); g.fillStyle = '#ffffff'; g.beginPath(); g.roundRect(196, 150, 70, 30, 6); g.fill(); g.font = '34px sans-serif'; g.fillText((v && v.cake) || '🎂', 231, 160); g.fillStyle = '#ffd23f'; for (let i = 0; i < 3; i++) { g.beginPath(); g.ellipse(214 + i * 16, 130 + Math.sin(t * 12 + i) * 1.5, 3, 5, 0, 0, 7); g.fill(); }
+        for (let i = 0; i < 18; i++) { const k = (t * .4 + i / 18) % 1; g.fillStyle = ['#e8505b', '#ffd23f', '#4a90d9', '#51cf66'][i % 4]; g.fillRect((i * 53) % W, k * H, 5, 8); }
+        copDrawKid(g, 300, 196, 1.05, t, false, -1, 'joy'); } },
+      { text: `${n.short}：這是我最棒的生日！謝謝你！`, draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); vevNb(g, n, 150, 196, 2.2, { happy: true }); vevHearts(g, 150, 90, t); copDrawKid(g, 270, 196, 1.05, t, false, -1, 'joy'); } }
+    ],
+    thanks: '謝謝你幫我辦生日派對！這是我最棒的生日！'
+  },
+  rain: {
+    intro: n => [
+      { text: '嘩啦啦……外面下好大的雨！', draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); g.fillStyle = '#7a8a9a'; g.fillRect(33, 31, 64, 50); g.strokeStyle = 'rgba(200,230,255,.9)'; g.lineWidth = 1.5; for (let i = 0; i < 14; i++) { const x = 33 + (i * 13 + t * 40) % 64, y = 31 + (i * 17 + t * 140) % 50; g.beginPath(); g.moveTo(x, y); g.lineTo(x - 3, y + 8); g.stroke(); } copDrawKid(g, 220, 196, 1.05, t, false, -1, 'wow'); } },
+      { text: `叩叩！${n.short}全身濕答答地跑進來：「我被雨淋濕了…哈啾！」`, draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); vevNb(g, n, 160, 196, 2.2, { blink: true, sway: Math.sin(t * 18) * .03 }); g.font = '16px sans-serif'; g.textAlign = 'center'; for (let i = 0; i < 4; i++) g.fillText('💧', 130 + i * 20, 120 + ((t * 40 + i * 10) % 70)); g.fillStyle = 'rgba(120,180,230,.4)'; g.beginPath(); g.ellipse(160, 198, 40, 6, 0, 0, 7); g.fill(); copDrawKid(g, 285, 196, 1.05, t, false, -1, 'wow'); } }
+    ],
+    steps: [
+      { text: n => `🧺 快拿毛巾給${n.short}擦乾`, btns: [['🧺 拿毛巾來擦乾', '擦擦擦～身體乾了', 'pickUp']], fx: '🧺' },
+      { text: n => '💨 頭髮還是濕的', btns: [['💨 吹乾頭髮', '呼呼呼～頭髮蓬蓬的了！', 'whoosh']], fx: '💨' },
+      { text: n => '☕ 喝點熱熱的東西', btns: [['☕ 泡熱可可', '熱可可甜甜的，好暖和', 'eat']], fx: '☕' }
+    ],
+    end: n => [{ text: `${n.short}：暖呼呼的，謝謝你！`, draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); vevNb(g, n, 150, 196, 2.2, { happy: true }); g.font = '24px sans-serif'; g.textAlign = 'center'; g.fillText('☕', 205, 150); vevHearts(g, 150, 90, t); copDrawKid(g, 270, 196, 1.05, t, false, -1, 'joy'); } }],
+    thanks: '下雨天謝謝你收留我，熱可可好好喝！'
+  },
+  fight: {
+    intro: (n, v) => [
+      { text: `${n.short}：嗚嗚……`, draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); vevNb(g, n, 160, 196, 2.2, { blink: true, cry: true }); copDrawKid(g, 285, 196, 1.05, t, false, -1, 'wow'); } },
+      { text: `${n.short}：我跟${v.other.short}吵架了……他不小心弄倒我堆好的積木……`, draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); vevNb(g, n, 110, 196, 2, { blink: true }); g.font = '22px sans-serif'; g.textAlign = 'center'; g.fillText('😤', 140, 128); vevNb(g, v.other, 260, 196, 2, {}); g.fillText('😤', 290, 128); g.font = '900 26px sans-serif'; g.fillStyle = '#e8505b'; g.fillText('⚡', 185, 110 + Math.sin(t * 10) * 3); g.fillStyle = '#c98d5a'; [[150, 190], [170, 188], [205, 192], [222, 186]].forEach(([x, y], i) => g.fillRect(x, y, 12, 8)); } }
+    ],
+    steps: [
+      { text: n => `💭 要怎麼幫${n.short}跟好朋友和好呢？`, btns: [['💬 跟他說你的感覺', '對！跟他說「積木倒了我好難過」，他就知道了', 'pickUp'], ['🍪 一起分享點心', '一起吃點心，就會想起你們是好朋友！', 'pickUp'], ['🙈 不要理他了', '這樣你們兩個都會更難過喔……再想想看？', 'miss', null, true]], fx: '💗' },
+      { text: n => '📞 打電話約他來，一起重新堆積木', btns: [['📞 打電話約他來玩', '叮咚！他來了！', 'knock']], fx: '📞' }
+    ],
+    end: (n, v) => [
+      { text: `${v.other.short}：對不起，我不是故意的……　${n.short}：沒關係，我也對不起……`, draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); const k = Math.min(1, t / 1.2); vevNb(g, n, 120 + k * 20, 196, 2, { blink: true }); vevNb(g, v.other, 250 - k * 20, 196, 2, { blink: true }); } },
+      { text: '我們還是好朋友！一起重新堆一個更高的城堡！', draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); vevNb(g, n, 140, 196, 2, { happy: true }); vevNb(g, v.other, 220, 196, 2, { happy: true }); vevHearts(g, 180, 90, t); g.fillStyle = '#c98d5a'; for (let i = 0; i < 4; i++) g.fillRect(300, 186 - i * 12, 26, 10); g.fillStyle = '#e8505b'; g.fillRect(304, 132, 18, 10); copDrawKid(g, 50, 196, 1, t, false, 1, 'joy'); } }
+    ],
+    thanks: '謝謝你幫我們和好！我們還是好朋友！'
+  }
+};
+function vevChainStart(kind) {
+  const C = VEV_CHAINS[kind], n = vev.n;
+  if (kind === 'fight') { const pool = NEIGHBORS.filter(x => x && x !== n); vev.other = pool[Math.floor(Math.random() * pool.length)]; }
+  vev.ci = 0; vev.chain = kind;
+  vevScene(C.intro(n, vev), () => { vevStepGo('chain'); const s0 = C.steps[0]; if (s0.say) visSay(s0.say, 3000); });
+}
+function vevChainPress(i) {
+  if (!vev || vev.step !== 'chain') return; const C = VEV_CHAINS[vev.chain], S = C.steps[vev.ci], b = S.btns[i]; if (!b) return;
+  const [, line, snd, cake, bad] = b;
+  Sound.play(snd || 'click'); vev.act = performance.now(); vev.hand = false;
+  if (bad) { visSay(line, 3200); vevBar(); return; }
+  if (cake) vev.cake = cake === '🍓' ? '🍰' : cake === '🍫' ? '🎂' : '🧁';
+  visSay(line, 2800); try { fufuBurst(S.fx || '✨'); } catch (e) {}
+  vev.ci++;
+  if (vev.ci >= C.steps.length) { const n = vev.n; vev.step = 'scene'; vevBar(); setTimeout(() => { if (vev) vevScene(C.end(n, vev), () => vevEnd()); }, 900); return; }
+  vevStepGo('chain'); const nx = C.steps[vev.ci]; if (nx.say) visSay(nx.say, 3000);
+}
+VEV_STEPS.chain = {
+  text: v => VEV_CHAINS[v.chain].steps[v.ci].text(v.n),
+  btns: v => VEV_CHAINS[v.chain].steps[v.ci].btns.map((b, i) => [b[0], () => vevChainPress(i), !b[4]]),
+  hint: v => { const S = VEV_CHAINS[v.chain].steps[v.ci]; return S.btns.length > 1 ? '選一個好方法吧！' : `按「${S.btns[0][0]}」！`; }
+};
+/* ===== 🗺️ 大地圖上的事件（家長 11/22）=====
+   🌠 流星雨（晚上才有）：過場動畫，許一個願望 → 小禮物
+   🎈 熱氣球降落：過場動畫，坐熱氣球飛上天看整個小島 → 💰
+   在大地圖上待著，每 45 秒有機會發生一次；一天最多 2 次（G.islEv = {d, n}）。 */
+let islEvNext = 0;
+function islEvState() { if (!G.islEv || typeof G.islEv !== 'object') G.islEv = {}; if (G.islEv.d !== today()) { G.islEv.d = today(); G.islEv.n = 0; } return G.islEv; }
+function islEvTick() {
+  const now = performance.now(); if (!islEvNext) { islEvNext = now + 45000; return; } if (now < islEvNext) return; islEvNext = now + 45000;   // 打開地圖 45 秒以後才會有第一次
+  if (!isl || G.guide !== 'done' || copRun || dispatch || !$('#modal').hidden || document.getElementById('vevScene') || (typeof xmasRun !== 'undefined' && xmasRun)) return;
+  const st = islEvState(); if (st.n >= 2) return;
+  const night = islPhase() === 'night';
+  if (night && Math.random() < .3) islEvStart('meteor'); else if (Math.random() < .15) islEvStart('balloon');
+}
+function islEvStart(kind) {
+  const st = islEvState(); st.n++; saveGame(); isl.path = [];
+  if (kind === 'meteor') {
+    const sky = (g, W, H, t, n) => { const sk = g.createLinearGradient(0, 0, 0, H); sk.addColorStop(0, '#0b1030'); sk.addColorStop(1, '#2b3d73'); g.fillStyle = sk; g.fillRect(0, 0, W, H); g.fillStyle = 'rgba(255,255,255,.8)'; for (let i = 0; i < 40; i++) g.fillRect((i * 37) % W, (i * 23) % 150, 1.5, 1.5);
+      for (let i = 0; i < n; i++) { const k = (t * .7 + i / n) % 1, x = W + 40 - k * (W + 120) + i * 30, y = 10 + k * 120 + (i % 3) * 20; const gr = g.createLinearGradient(x, y, x + 50, y - 25); gr.addColorStop(0, 'rgba(255,255,220,1)'); gr.addColorStop(1, 'rgba(255,255,220,0)'); g.strokeStyle = gr; g.lineWidth = 3; g.beginPath(); g.moveTo(x, y); g.lineTo(x + 50, y - 25); g.stroke(); }
+      g.fillStyle = '#2f5a3a'; g.beginPath(); g.ellipse(W / 2, H + 40, W * .7, 70, 0, 0, 7); g.fill(); };
+    vevScene([
+      { text: '咦？天空亮亮的……', draw: (g, W, H, t) => { sky(g, W, H, t, 2); copDrawKid(g, 180, 196, 1.1, t, false, 1, 'wow'); } },
+      { text: '哇！是流星雨！快許一個願望！', draw: (g, W, H, t) => { sky(g, W, H, t, 7); copDrawKid(g, 180, 196, 1.1, t, false, 1, 'joy'); g.font = '24px sans-serif'; g.textAlign = 'center'; g.fillText('🙏', 205, 140); } }
+    ], () => islWishPick());
+  } else {
+    const field = (g, W, H) => { const sk = g.createLinearGradient(0, 0, 0, H); sk.addColorStop(0, '#9fd8ff'); sk.addColorStop(1, '#e7f5ff'); g.fillStyle = sk; g.fillRect(0, 0, W, H); g.fillStyle = '#a8d672'; g.fillRect(0, 170, W, H - 170); };
+    const balloon = (g, x, y, s) => { g.save(); g.translate(x, y); g.scale(s, s); g.save(); g.beginPath(); g.moveTo(-10, -26); g.bezierCurveTo(-40, -44, -36, -96, 0, -96); g.bezierCurveTo(36, -96, 40, -44, 10, -26); g.closePath(); g.clip(); ['#e8505b', '#ffd23f', '#4a90d9', '#ffd23f', '#e8505b', '#51cf66'].forEach((c, i) => { g.fillStyle = c; g.fillRect(-40 + i * 14, -100, 14, 80); }); g.restore(); g.strokeStyle = 'rgba(0,0,0,.15)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(-10, -26); g.bezierCurveTo(-40, -44, -36, -96, 0, -96); g.bezierCurveTo(36, -96, 40, -44, 10, -26); g.closePath(); g.stroke(); g.strokeStyle = '#7a5230'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(-10, -26); g.lineTo(-12, 0); g.moveTo(10, -26); g.lineTo(12, 0); g.stroke(); g.fillStyle = '#a0703e'; g.fillRect(-14, 0, 28, 18); g.fillStyle = '#7a5230'; g.fillRect(-14, 0, 28, 3); g.restore(); };
+    vevScene([
+      { text: '咦？有一個熱氣球慢慢降落在旁邊！', draw: (g, W, H, t) => { field(g, W, H); balloon(g, 230, 90 + Math.min(1, t / 2) * 75, 1.3); copDrawKid(g, 100, 196, 1.05, t, false, 1, 'wow'); } },
+      { text: '熊爺爺：「要不要坐上來，從天上看看小島？」', draw: (g, W, H, t) => { field(g, W, H); balloon(g, 230, 165, 1.3); g.font = '20px sans-serif'; g.textAlign = 'center'; g.fillText('🐻', 230, 172); copDrawKid(g, 150, 196, 1.05, t, true, 1, 'joy'); } },
+      { text: '飛好高！整個小島都看得到，房子變得好小！', draw: (g, W, H, t) => { g.fillStyle = '#5cc4ec'; g.fillRect(0, 0, W, H); g.fillStyle = '#f2d59a'; g.beginPath(); g.ellipse(W / 2, H / 2 + 10, 150, 82, 0, 0, 7); g.fill(); g.fillStyle = '#7cc46a'; g.beginPath(); g.ellipse(W / 2, H / 2 + 10, 136, 70, 0, 0, 7); g.fill();
+        [[110, 90, '#ff7b7b'], [170, 80, '#4a90d9'], [230, 100, '#ffb347'], [140, 140, '#d63b3b'], [210, 140, '#b07fd0'], [260, 130, '#51cf66']].forEach(([x, y, c]) => { g.fillStyle = '#fff8ee'; g.fillRect(x - 7, y - 4, 14, 9); g.fillStyle = c; g.beginPath(); g.moveTo(x - 9, y - 4); g.lineTo(x, y - 11); g.lineTo(x + 9, y - 4); g.fill(); });
+        for (let i = 0; i < 5; i++) drawCupCloud(g, ((i * 90 + t * 20) % (W + 80)) - 40, 30 + (i % 3) * 60, .6); balloon(g, 290, 200 - Math.sin(t) * 6, .7); } }
+    ], () => { const b = 150; addBells(b); kidMoodUp(6); Sound.play('fanfare'); saveGame(); refreshTop(); toast(`🎈 坐熱氣球看了整個小島！熊爺爺送你 💰 ${b}`); });
+  }
+}
+function islWishPick() {
+  const card = $('#modalCard'); card.innerHTML = '';
+  card.appendChild(el('h2', '', '🌠 許一個願望'));
+  const row = el('div', 'invite-row');
+  [['🧸 想要新的玩具', 'toy'], ['👗 想要漂亮的衣服', 'cloth'], ['💰 想要零用錢', 'money']].forEach(([lb, k]) => { const b = el('button', 'big', lb); b.onclick = () => { $('#modal').hidden = true; islWishGrant(k); }; row.appendChild(b); });
+  card.appendChild(row); $('#modal').hidden = false;
+}
+function islWishGrant(k) {
+  let visual = null, what = '';
+  if (k === 'cloth') { const cl = Object.values(CLOTHES_BY_ID).filter(c => c.price > 0 && c.price <= 1500 && !c.prize && !c.season && !ownsClothes(c.id)); if (cl.length) { const c = cl[Math.floor(Math.random() * cl.length)]; G.wardrobe.push(c.id); what = `「${c.name}」放進換裝了！`; try { visual = renderGirl(previewOutfit(c.slot, c.id), 110, 130, { hair: G.hair, now: 1 }); } catch (e) {} } else k = 'money'; }
+  if (k === 'toy') { const fs = FURNITURE.filter(f => f.price > 0 && f.price <= 1500 && !f.season && !f.gift && !(G.inv[f.id] > 0)); if (fs.length) { const f = fs[Math.floor(Math.random() * fs.length)]; addItem(f.id); what = `「${f.name}」放進我的東西了！`; try { visual = renderThumb(f, 150); } catch (e) {} } else k = 'money'; }
+  if (k === 'money') { addBells(300); what = '💰 300 元零用錢！'; }
+  Sound.play('fanfare'); kidMoodUp(5); saveGame(); refreshTop();
+  try { showcase(visual || el('div', 'magic-pic', '🌠'), '🌠 願望實現了！', what, { head: '流星聽到你的願望了' }); } catch (e) { toast(`🌠 願望實現了！${what}`); }
+}
 function vevEnd() {
   const v = vev; if (!v) return; vev = null; vevBar();
   const st = vevState(); st.done = Math.min(1e6, (st.done || 0) + 1);
   addBells(150); kidMoodUp(6); G.friends[v.n.id] = (G.friends[v.n.id] || 0) + 1;
-  if (vis.who === v.n) { vis.did = vis.did || {}; vis.did.vev = v.kind; vis.a.happyUntil = performance.now() + 5000; visSay(v.kind === 'faint' ? '謝謝你救了我！你是最棒的朋友！' : v.kind === 'stolen' ? '謝謝你幫我追回書包！你是小英雄！' : '謝謝你幫我找到鑰匙！', 3400); }
+  if (vis.who === v.n) { vis.did = vis.did || {}; vis.did.vev = v.kind; vis.a.happyUntil = performance.now() + 5000; visSay(VEV_CHAINS[v.kind] ? VEV_CHAINS[v.kind].thanks : v.kind === 'faint' ? '謝謝你救了我！你是最棒的朋友！' : v.kind === 'stolen' ? '謝謝你幫我追回書包！你是小英雄！' : '謝謝你幫我找到鑰匙！', 3400); }
   Sound.play('fanfare'); toast(`🦸 幫了${v.n.short}一個大忙！　💰 +150`); saveGame(); refreshTop(); try { requestDraw(); } catch (e) {}
 }
 // 🐾 腳印（貼在地板上）
@@ -12910,6 +13067,10 @@ const ANIMAL_BOOK_MSGS = {
   vev_faint: ['謝謝你救了我！我昏倒的時候好害怕，還好有你！', '謝謝{名字}幫我叫救護車，你是最棒的朋友！'],
   vev_stolen: ['謝謝你幫我追回書包！你是小英雄！🦸', '書包裡的畫還在，謝謝{名字}！'],
   vev_lost: ['謝謝你幫我找到鑰匙！不然我就回不了家了～', '{名字}找東西好厲害！🔑'],
+  vev_sick: ['謝謝你照顧我，熱湯好好喝，感冒都好了！'],
+  vev_bday: ['謝謝你幫我辦生日派對！這是我最棒的生日！🎂'],
+  vev_rain: ['下雨天謝謝你收留我，熱可可好暖和！☕'],
+  vev_fight: ['謝謝你幫我們和好！我們都是好朋友！'],
   pet:   ['{寵物}好可愛，下次還要跟牠玩！'],
   any:   ['今天跟{名字}玩得好開心！', '你的家好舒服，下次還要來！', '謝謝{名字}，我好喜歡來你家玩！', '下次換你來我家玩喔！']
 };
@@ -21812,7 +21973,7 @@ function showcase(visual, title, sub, opts) {
 }
 function showcaseNext() {
   if (!SC_QUEUE.length || document.getElementById('showcase')) return null;
-  if (showcaseBlocked() || (typeof resting !== 'undefined' && resting)) { setTimeout(showcaseNext, 700); return null; }
+  if (showcaseBlocked() || document.getElementById('vevScene') || (typeof resting !== 'undefined' && resting)) { setTimeout(showcaseNext, 700); return null; }   // 🎬 過場動畫播完再跳大圖
   const { visual, title, sub, opts } = SC_QUEUE.shift();
   // 🎊 值得慶祝的大事（徽章、破關、集滿、長大、全部完成…）自動撒彩帶（美編）
   if (opts.party || /好厲害|太棒|完成|快樂|長大了|破關|升級/.test(opts.head || '') || /破了|集滿|全部|徽章|獎盃|破關/.test(title)) try { confettiBurst(110); } catch (e) {}
@@ -23507,7 +23668,7 @@ function islPanel(on) {
   const b = document.getElementById('islMenuBtn'); if (b) b.textContent = on ? '◀ 收起選單' : '☰ 選單';
 }
 function closeIsland() {
-  try { copRun = null; } catch (e) {}   // 🚓 離開大地圖：追小偷、找車取消
+  try { copRun = null; islEvNext = 0; } catch (e) {}   // 🚓 離開大地圖：追小偷、找車取消
   if (!isl) return;
   if (typeof islTalkClose === 'function') islTalkClose();
   cancelAnimationFrame(isl.raf);
@@ -36691,6 +36852,7 @@ function dispatchStart(direct) {
 }
 function dispatchTick() {
   copRunTick();
+  try { islEvTick(); } catch (e) {}   // 🌠🎈 大地圖事件
   if (!dispatch || !isl) return;
   const v = rideNow(); if (!v || (dispatch.kind === 'police' ? v.id !== 'police' : v.id !== 'ambulance')) { dispatch = null; dispatchBtn(); return; }
   if (dispatch.carry) return;   // 載著病人：到醫院門口才算（islEnter 那裡）
