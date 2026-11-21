@@ -7124,7 +7124,7 @@ function normalizeSave(g) {
     Object.keys(out.carLook).forEach(id => { const l = out.carLook[id]; if (!/^(bike|suv|bus|truck|sports|robot|police|ambulance|dino|plane|sleigh)$/.test(id) || !isObj(l)) { delete out.carLook[id]; return; }
       Object.keys(l).forEach(k => { if (k === 'dirt') { if (!(typeof l.dirt === 'number' && isFinite(l.dirt) && l.dirt >= 0 && l.dirt <= 100)) delete l.dirt; } else if (!OKV[k] || typeof l[k] !== 'string' || !OKV[k].test(l[k])) delete l[k]; }); }); } }   // 🎨 改車店：每台車的樣子、髒的程度
   if (out.carOwn != null) { if (Array.isArray(out.carOwn)) out.carOwn = [...new Set(out.carOwn.filter(x => typeof x === 'string' && /^(c|st|wh|gl):[a-z]+$/.test(x)))].slice(0, 60); else delete out.carOwn; }   // 🎨 買過的顏色、貼紙、輪框、燈
-  if (out.trip != null) { if (!isObj(out.trip)) delete out.trip; else { const t = out.trip; t.st = isObj(t.st) ? Object.fromEntries(Object.entries(t.st).filter(([k, v]) => /^(冰雪國|沙漠國|森林國|大海國|火山國|雲朵國|糖果國|星星國)$/.test(k) && v === 1)) : {}; ['n', 'fly', 'sec', 'twr', 'meal'].forEach(k => { if (t[k] != null && !(Number.isInteger(t[k]) && t[k] >= 0 && t[k] < 1e6)) delete t[k]; }); ['fly', 'sec', 'twr', 'meal'].forEach(k => { if (t[k] > 3) t[k] = 3; }); if (t.pz != null && t.pz !== 1) delete t.pz; Object.keys(t).forEach(k => { if (!['st', 'n', 'fly', 'sec', 'twr', 'meal', 'pz'].includes(k)) delete t[k]; }); } }   // ✈️ 護照的章、搭了幾次、開飛機過到第幾關   // 家長把「家裡跟著時間變天色」關掉了
+  if (out.trip != null) { if (!isObj(out.trip)) delete out.trip; else { const t = out.trip; t.st = isObj(t.st) ? Object.fromEntries(Object.entries(t.st).filter(([k, v]) => /^(冰雪國|沙漠國|森林國|大海國|火山國|雲朵國|糖果國|星星國)$/.test(k) && v === 1)) : {}; if (t.sky != null) { if (Array.isArray(t.sky)) t.sky = [...new Set(t.sky.filter(x => /^(balloon|rainbow|eagle|ufo|whale|swan)$/.test(x)))]; else delete t.sky; } if (t.act != null) { if (isObj(t.act)) t.act = Object.fromEntries(Object.entries(t.act).filter(([k, v]) => /^(冰雪國|沙漠國|森林國|大海國|火山國|雲朵國|糖果國|星星國)$/.test(k) && v === 1)); else delete t.act; } ['n', 'fly', 'sec', 'twr', 'meal'].forEach(k => { if (t[k] != null && !(Number.isInteger(t[k]) && t[k] >= 0 && t[k] < 1e6)) delete t[k]; }); ['fly', 'sec', 'twr', 'meal'].forEach(k => { if (t[k] > 3) t[k] = 3; }); if (t.pz != null && t.pz !== 1) delete t.pz; Object.keys(t).forEach(k => { if (!['st', 'n', 'fly', 'sec', 'twr', 'meal', 'pz', 'sky', 'act'].includes(k)) delete t[k]; }); } }   // ✈️ 護照的章、搭了幾次、開飛機過到第幾關   // 家長把「家裡跟著時間變天色」關掉了
   if (out.xmas != null) { if (!isObj(out.xmas)) delete out.xmas; else { const x = out.xmas, ok = { stars: v => Number.isInteger(v) && v >= 0 && v < 1e6, n: v => Number.isInteger(v) && v >= 0 && v < 100, sockN: v => Number.isInteger(v) && v >= 0 && v < 1e6, eve: v => Number.isInteger(v) && v > 2000 && v < 3000, d: v => typeof v === 'string' && v.length <= 12, sock: v => typeof v === 'string' && v.length <= 12, got: v => Array.isArray(v), gm: v => isObj(v), gave: v => Number.isInteger(v) && v >= 0 && v < 1e6, lend: v => Number.isInteger(v) && v > 2000 && v < 3000, tl: v => Number.isInteger(v) && v >= 0 && v <= 3, sl: v => Number.isInteger(v) && v >= 0 && v <= 3 };
     Object.keys(x).forEach(k => { if (!ok[k] || !ok[k](x[k])) delete x[k]; }); if (x.got) x.got = x.got.filter(id => typeof id === 'string' && (FURN_BY_ID[id] || CLOTHES_BY_ID[id])).slice(0, 20); if (x.gm) x.gm = Object.fromEntries(Object.entries(x.gm).filter(([k, v]) => /^(ck|tr|sl|toy|deer|wrap)$/.test(k) && typeof v === 'string' && v.length <= 12)); } }   // 🎄 聖誕星星、送禮物、聖誕襪、平安夜
   if (out.dinoQ != null) { if (!(isObj(out.dinoQ) && Number.isInteger(out.dinoQ.s) && out.dinoQ.s >= 0)) delete out.dinoQ; else out.dinoQ = { s: Math.min(3, out.dinoQ.s) }; }   // 🌋 恐龍島危險解除到第幾關   // 家長把小偷關掉了
@@ -32495,7 +32495,7 @@ const WORLD_VENUES = {
   '沙漠國': { id: '沙漠國', sky: ['#ffe8cc', '#ffd8a8'], floor: '#f6d592', floor2: '#e6b325', accent: '#e67700', mark: '🐪', land: '金字塔', flag: ['#ffd43b', '#f76707', '#ffd43b'] },
   '森林國': { id: '森林國', sky: ['#d3f9d8', '#b2f2bb'], floor: '#8ce99a', floor2: '#51cf66', accent: '#2b8a3e', mark: '🌲', land: '大森林', flag: ['#2f9e44', '#fff3bf', '#2f9e44'] },
   '大海國': { id: '大海國', sky: ['#d0ebff', '#74c0fc'], floor: '#4dabf7', floor2: '#ffd43b', accent: '#1864ab', mark: '🐬', land: '燈塔', flag: ['#1971c2', '#ffffff', '#1971c2'] },
-  '火山國': { id: '火山國', sky: ['#ffe3e3', '#ffc9c9'], floor: '#868e96', floor2: '#495057', accent: '#e03131', mark: '🌋', land: '火山', flag: ['#212529', '#e03131', '#ffd43b'] },
+  '火山國': { id: '火山國', sky: ['#ffe3e3', '#ffc9c9'], floor: '#868e96', floor2: '#495057', accent: '#e03131', mark: '🌋', land: '火山', flag: ['#5c5f66', '#ff922b', '#5c5f66'] },
   '雲朵國': { id: '雲朵國', sky: ['#f8f9fa', '#dbe4ff'], floor: '#fff4e6', floor2: '#bac8ff', accent: '#5c7cfa', mark: '☁️', land: '雲城堡', flag: ['#ffffff', '#91a7ff', '#ffffff'] },
   '糖果國': { id: '糖果國', sky: ['#fff0f6', '#ffdeeb'], floor: '#ffc9c9', floor2: '#ffec99', accent: '#e64980', mark: '🍬', land: '糖果塔', flag: ['#ff6b9d', '#ffd43b', '#74c0fc'] },
   '星星國': { id: '星星國', sky: ['#1a1440', '#3a0ca3'], floor: '#5c4d7a', floor2: '#ffd43b', accent: '#ffe066', mark: '⭐', land: '星星塔', flag: ['#240046', '#ffd43b', '#240046'], dark: 1 },
@@ -32637,7 +32637,7 @@ function drawWorldArena(g, W, H, ven, label) {
   } else {
     for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? ven.floor2 : ven.floor; g.fillRect(i * (W / 8), 176, W / 8 + 1, H - 176); }
   }
-  drawCupFlag(g, 12, 174, 48, ven.flag);
+  drawCupFlag(g, 12, 174, 48, ven.flag); g.font = '10px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(ven.mark, 28, 134); g.textBaseline = 'alphabetic';   // 旗子中間畫國家的圖案（虛構的國家，不要像真的國旗）
   const text = label || ven.land;
   g.font = '900 13px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.lineWidth = 4; g.strokeStyle = ven.dark ? '#111' : '#fff'; g.strokeText(text, W / 2, 202); g.fillStyle = ven.dark ? '#ffe066' : ven.accent; g.fillText(text, W / 2, 202);
   if (!ven.moon) { g.font = '20px sans-serif'; g.fillText(ven.mark, W - 26, 164); }
@@ -35881,34 +35881,141 @@ function airBoard(w, dest) {
   show(); w.status.textContent = '先去報到櫃台拿登機證！';
   airBoard.test = { next: () => w.btns.firstChild.click() };
 }
-// 飛行：雲飄過去，可以點畫面喝果汁；幾秒後到了
+// 飛行：雲飄過去，途中隨機發生一件事（家長 11/22：每個國家都差不多、有些無聊）——
+//   🌪️ 亂流（快按繫好安全帶）、🍱 空服員送餐（選要吃什麼）、👶 小寶寶哭了（想辦法讓他笑）、👀 快看窗外（拍下熱氣球、彩虹、鯨魚…收集起來）
+const AIR_SIGHTS = [['balloon', '🎈', '熱氣球'], ['rainbow', '🌈', '彩虹'], ['eagle', '🦅', '老鷹'], ['ufo', '🛸', '幽浮'], ['whale', '🐋', '跳出海面的鯨魚'], ['swan', '🦢', '一排天鵝']];
+let airLastEv = '';
 function airFlight(w, dest, why) {
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
-  const W = 360, H = 200, { c, g } = gameCanvas(w.stage, W, H), ven = worldVenue(dest);
+  const W = 360, H = 200, { c, g } = gameCanvas(w.stage, W, H), ven = worldVenue(dest), tr = tripState();
   const clouds = Array.from({ length: 7 }, (_, k) => ({ x: Math.random() * W, y: 20 + Math.random() * 150, s: .6 + Math.random() * .8 }));
-  let t = 0, last = performance.now(), raf = 0, live = true, juice = 0;
-  const DUR = 5;
-  c.addEventListener('pointerdown', () => { if (juice <= 0) { juice = 1.2; Sound.play('pickUp'); w.status.textContent = '🥤 喝一口果汁，好好喝～'; } });
+  let t = 0, prog = 0, last = performance.now(), raf = 0, live = true, juice = 0, ev = null, msg = null;
+  const DUR = 7, EV_AT = 2.2;
+  const kinds = ['bump', 'meal', 'baby', 'sight'].filter(k => k !== airLastEv), kind = kinds[Math.floor(Math.random() * kinds.length)];
+  airLastEv = kind;
+  const say = (s, ms) => { w.status.textContent = s; msg = { s, until: performance.now() + (ms || 2000) }; };
+  const finishEv = (line, snd) => { if (!ev || ev.done) return; ev.done = true; ev.endAt = t + 1.4; w.btns.innerHTML = ''; if (snd) Sound.play(snd); say(line, 2600); };
+  const btn = (label, fn) => { const b = el('button', 'big', label); b.onclick = () => { if (!ev || ev.done) return; Sound.play('click'); fn(); }; w.btns.appendChild(b); return b; };
+  const startEv = () => {
+    ev = { kind, t0: t, done: false };
+    if (kind === 'bump') { say('⚠️ 遇到亂流了！飛機在搖！快繫好安全帶！'); btn('🔒 繫好安全帶', () => { ev.belt = true; finishEv('喀！安全帶繫好了，一點都不怕～', 'pickUp'); }); }
+    else if (kind === 'meal') { say('🍱 空服員推餐車來了：「請問要吃什麼呢？」'); [['🍛 咖哩飯', '🍛', '咖哩飯香香的，好好吃！'], ['🍝 義大利麵', '🍝', '義大利麵吸～溜～好好玩！'], ['🍙 飯糰', '🍙', '飯糰軟軟的，吃得好飽！']].forEach(([lb, e, line]) => btn(lb, () => { ev.food = e; kidMoodUp(2); finishEv(line, 'eat'); })); }
+    else if (kind === 'baby') { ev.cry = true; say('😢 後面的小寶寶在哭…要怎麼讓他開心呢？'); [['🧸 借他玩偶', '小寶寶抱著玩偶，笑了！'], ['🎵 唱歌給他聽', '你一唱歌，小寶寶就拍手笑了～'], ['🙈 玩躲貓貓', '躲貓貓～哇！小寶寶咯咯笑！']].forEach(([lb, line]) => btn(lb, () => { ev.cry = false; kidMoodUp(2); finishEv(line, 'petHappy'); })); }
+    else { const s = AIR_SIGHTS[Math.floor(Math.random() * AIR_SIGHTS.length)]; ev.sight = s; ev.sx = W + 40; say(`👀 快看窗外！有${s[2]}！`);
+      btn('📸 拍下來', () => { const have = Array.isArray(tr.sky) ? tr.sky : (tr.sky = []); const fresh = !have.includes(s[0]); if (fresh) have.push(s[0]); ev.flash = .5; saveGame();
+        finishEv(`喀嚓！拍到${s[2]}了！${fresh ? `（窗外看到的 ${have.length} / ${AIR_SIGHTS.length}，新的！）` : ''}`, 'pickUp'); }); }
+  };
+  c.addEventListener('pointerdown', () => { if (juice <= 0 && !(ev && !ev.done)) { juice = 1.2; Sound.play('pickUp'); say('🥤 喝一口果汁，好好喝～', 1500); } });
   gameCleanup = () => { live = false; cancelAnimationFrame(raf); };
   const frame = now => { if (!live) return; const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt; juice -= dt;
+    if (!ev && t >= EV_AT) startEv();
+    const waiting = ev && (!ev.done || t < ev.endAt); if (!waiting || !ev) prog += dt;
+    if (ev && !ev.done) {   // 事件時間到了沒處理：亂流灑果汁、窗外的東西飛走；送餐、小寶寶等她選
+      if (ev.kind === 'bump' && t - ev.t0 > 4.5) { ev.spill = 1.5; finishEv('哎呀！搖得太厲害，果汁灑出來了～下次要快點繫安全帶！', 'miss'); }
+      if (ev.kind === 'sight' && ev.sx < -60) finishEv(`咻～${ev.sight[2]}飛走了，下次要快點拍！`, 'miss');
+    }
     const sk = g.createLinearGradient(0, 0, 0, H); sk.addColorStop(0, ven.dark ? '#24185c' : '#7ec8f0'); sk.addColorStop(1, ven.sky[1]); g.fillStyle = sk; g.fillRect(0, 0, W, H);
     clouds.forEach(o => { o.x -= 90 * o.s * dt; if (o.x < -40) { o.x = W + 40; o.y = 20 + Math.random() * 150; } drawCupCloud(g, o.x, o.y, o.s); });
-    drawCupPlane(g, W / 2, H / 2 + Math.sin(t * 2) * 6, 1.6);
-    if (juice > 0) { g.font = '22px sans-serif'; g.textAlign = 'center'; g.fillText('🥤', W / 2 + 10, H / 2 - 28); }
-    g.fillStyle = 'rgba(255,255,255,.85)'; g.fillRect(20, H - 18, W - 40, 6); g.fillStyle = '#4a90d9'; g.fillRect(20, H - 18, (W - 40) * Math.min(1, t / DUR), 6);
-    if (t >= DUR) { gameCleanup(); airArrive(w, dest); return; }
+    if (ev && ev.kind === 'sight') { if (!ev.done || ev.flash > 0) ev.sx -= 55 * dt; const [, e] = ev.sight; g.font = '44px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      if (ev.sight[0] === 'rainbow') { ['#e8505b', '#ffb347', '#ffd23f', '#51cf66', '#4a90d9', '#9b6bd6'].forEach((cc, i) => { g.strokeStyle = cc; g.lineWidth = 5; g.beginPath(); g.arc(ev.sx, 150, 70 - i * 5, Math.PI, 0); g.stroke(); }); }
+      else g.fillText(e, ev.sx, ev.sight[0] === 'whale' ? 170 : 50 + Math.sin(t * 2) * 6); g.textBaseline = 'alphabetic'; }
+    const shake = ev && ev.kind === 'bump' && !ev.belt && (!ev.done || ev.spill > 0) ? Math.sin(t * 40) * 5 : ev && ev.kind === 'bump' && ev.belt && t < ev.endAt ? Math.sin(t * 30) * 1.5 : 0;
+    const py = H / 2 + Math.sin(t * 2) * 6 + shake;
+    drawCupPlane(g, W / 2 + shake * .6, py, 1.6);
+    g.font = '22px sans-serif'; g.textAlign = 'center';
+    if (juice > 0) g.fillText('🥤', W / 2 + 10, py - 28);
+    if (ev && ev.food && t < ev.endAt + 1) g.fillText(ev.food, W / 2 + 10, py - 30 - (t - ev.t0) % 1 * 4);
+    if (ev && ev.kind === 'baby') { g.fillStyle = '#ffffff'; g.beginPath(); g.roundRect(W / 2 - 78, py - 52, 44, 30, 10); g.fill(); g.fillStyle = '#000'; g.fillText(ev.cry ? '👶😭' : '👶😄', W / 2 - 56, py - 30); }
+    if (ev && ev.spill > 0) { ev.spill -= dt; g.fillStyle = 'rgba(255,170,60,.8)'; for (let i = 0; i < 5; i++) { g.beginPath(); g.arc(W / 2 - 10 + i * 6, py + 14 + (1.5 - ev.spill) * 30 + i * 3, 3, 0, 7); g.fill(); } }
+    if (ev && ev.kind === 'bump' && !ev.done) { g.fillStyle = '#e8505b'; g.font = '700 16px sans-serif'; g.fillText('⚠️ 亂流！', W / 2, 28); }
+    if (ev && ev.flash > 0) { ev.flash -= dt; g.fillStyle = `rgba(255,255,255,${(ev.flash * 1.6).toFixed(2)})`; g.fillRect(0, 0, W, H); }
+    g.fillStyle = 'rgba(255,255,255,.85)'; g.fillRect(20, H - 18, W - 40, 6); g.fillStyle = '#4a90d9'; g.fillRect(20, H - 18, (W - 40) * Math.min(1, prog / DUR), 6);
+    if (prog >= DUR) { gameCleanup(); airArrive(w, dest); return; }
     raf = requestAnimationFrame(frame); };
   raf = requestAnimationFrame(frame);
-  w.status.textContent = `坐${why === '看得到雲' ? '靠窗' : '走道'}的位子，${why}！點畫面可以喝果汁`;
-  airFlight.test = { skip: () => { t = DUR; } };
+  say(`坐${why === '看得到雲' ? '靠窗' : '走道'}的位子，${why}！點畫面可以喝果汁`, 2200);
+  airFlight.test = { skip: () => { if (!ev) startEv(); if (!ev.done) { ev.done = true; w.btns.innerHTML = ''; } ev.endAt = 0; prog = DUR; }, kind, get ev() { return ev; }, start: () => { if (!ev) startEv(); } };
 }
-function airArrive(w, dest) {
-  const tr = tripState(); tr.n = Math.min(999999, (tr.n || 0) + 1); saveGame();
+/* 🗺️ 每個國家自己的玩法（到了以後按「🎯」）：
+   hide：點雪堆／沙丘／樹叢，有的裡面藏東西；tap：把東西都點到；order：照 1、2、3… 的順序點星星連成星座。
+   第一次玩完送 💰；方向鍵選、空白鍵點也可以。 */
+const AIR_ACTS = {
+  '冰雪國': { name: '找躲起來的企鵝', kind: 'hide', cover: 'snow', items: ['🐧'], n: 5, total: 8, hint: '企鵝躲在雪堆後面！點雪堆找找看', done: '企鵝都找到了！牠們排排站跟你揮揮手～' },
+  '沙漠國': { name: '沙丘挖寶藏', kind: 'hide', cover: 'sand', items: ['💎', '🏺', '👑', '💍', '⭐'], n: 5, total: 8, hint: '寶藏埋在沙丘裡！點沙丘挖挖看', done: '挖到好多寶藏！駱駝都看呆了～' },
+  '森林國': { name: '找樹叢裡的小動物', kind: 'hide', cover: 'bush', items: ['🦊', '🐿️', '🦉', '🐰', '🦔'], n: 5, total: 8, hint: '小動物躲在樹叢裡！點樹叢看看', done: '小動物都出來跟你玩了！' },
+  '大海國': { name: '海灘撿貝殼', kind: 'tap', items: ['🐚', '🦀', '⭐', '🐚', '🐚', '🦀'], n: 6, hint: '海浪退了，沙灘上有好多貝殼！點一下撿起來', done: '撿到一大把貝殼，好漂亮！' },
+  '火山國': { name: '溫泉煮蛋', kind: 'tap', items: ['🥚'], n: 5, hint: '把蛋放進熱熱的溫泉裡！點一下蛋', done: '溫泉蛋煮好了，熱呼呼的，好好吃！' },
+  '雲朵國': { name: '點雲朵變彩虹', kind: 'tap', items: ['☁️'], n: 6, hint: '點一下雲朵，看看會發生什麼事！', done: '雲朵都散開了，出現一道好大的彩虹！' },
+  '糖果國': { name: '摘棒棒糖', kind: 'tap', items: ['🍭', '🍬', '🍭', '🧁', '🍭', '🍩'], n: 6, hint: '樹上長滿糖果！點一下摘下來', done: '摘了好多糖果，口袋都裝不下了！' },
+  '星星國': { name: '連星座', kind: 'order', items: ['⭐'], n: 6, hint: '照 1、2、3…的順序點星星，連成星座！', done: '連好了！變成一個閃閃發亮的星座！' }
+};
+function airActivity(w, dest) {
+  const A = AIR_ACTS[dest], tr = tripState(); if (!A) return;
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const W = 360, H = 230, ven = worldVenue(dest), { c, g, pos } = gameCanvas(w.stage, W, H);
+  const pts = [], tries = 400, minD = 46, area = A.kind === 'hide' ? [40, 150, 320, 205] : A.kind === 'order' ? [40, 30, 320, 160] : dest === '大海國' ? [30, 182, 330, 214] : [40, 40, 320, 170];
+  const total = A.kind === 'hide' ? A.total : A.n;
+  for (let k = 0; k < tries && pts.length < total; k++) { const x = area[0] + Math.random() * (area[2] - area[0]), y = area[1] + Math.random() * (area[3] - area[1]); if (pts.every(p => Math.hypot(p.x - x, p.y - y) > (dest === '大海國' ? 36 : minD))) pts.push({ x, y }); }
+  const hideIdx = A.kind === 'hide' ? [...pts.keys()].sort(() => Math.random() - .5).slice(0, A.n) : [];
+  const spots = pts.map((p, i) => ({ x: p.x, y: p.y, i, item: A.kind === 'hide' ? (hideIdx.includes(i) ? A.items[hideIdx.indexOf(i) % A.items.length] : null) : A.items[i % A.items.length], open: false, pop: 0 }));
+  if (A.kind === 'order') spots.sort((a, b) => a.x - b.x).forEach((s, i) => { s.num = i + 1; });
+  let got = 0, next = 1, sel = 0, t = 0, last = performance.now(), raf = 0, live = true, done = false, shake = 0, fx = [];
+  const need = A.n;
+  const left = () => spots.filter(s => !s.open);
+  const hit = s => { if (done || !s || s.open) return;
+    if (A.kind === 'order' && s.num !== next) { shake = .4; Sound.play('miss'); w.status.textContent = `要先點 ${next} 號星星喔！`; return; }
+    s.open = true; s.pop = .6;
+    if (A.kind === 'hide' && !s.item) { Sound.play('click'); fx.push({ x: s.x, y: s.y - 16, s: '💨 空的', t: 0 }); w.status.textContent = '這裡沒有…再找找看！'; return; }
+    got++; next++; Sound.play('pickUp'); fx.push({ x: s.x, y: s.y - 20, s: '✨', t: 0 });
+    w.status.textContent = `${A.name}：${got} / ${need}`;
+    if (got >= need) finish(); };
+  const finish = () => { done = true; Sound.play('fanfare'); kidMoodUp(4);
+    const first = !(tr.act && tr.act[dest]); if (!tr.act || typeof tr.act !== 'object') tr.act = {}; tr.act[dest] = 1;
+    const bells = first ? payReward(w, 60) : 0; saveGame();
+    w.status.textContent = `${A.done}${first ? `　💰 +${fmt(bells)}` : ''}`;
+    w.btns.innerHTML = ''; const back = el('button', 'big', '⬅️ 回去拍照、買紀念品'); back.onclick = () => { Sound.play('click'); gameCleanup(); airArrive(w, dest, true); }; w.btns.appendChild(back); };
+  c.addEventListener('pointerdown', e => { e.preventDefault(); const q = pos(e); const s = spots.filter(s => !s.open).sort((a, b) => Math.hypot(a.x - q.x, a.y - q.y) - Math.hypot(b.x - q.x, b.y - q.y))[0]; if (s && Math.hypot(s.x - q.x, s.y - q.y) < 26) hit(s); });
+  const kd = e => { const L = left(); if (!L.length || done) return;
+    if (/^(ArrowRight|ArrowDown|KeyD|KeyS)$/.test(e.code)) { e.preventDefault(); sel = (sel + 1) % L.length; } else if (/^(ArrowLeft|ArrowUp|KeyA|KeyW)$/.test(e.code)) { e.preventDefault(); sel = (sel - 1 + L.length) % L.length; }
+    else if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); if (!e.repeat) { hit(L[Math.min(sel, L.length - 1)]); sel = 0; } } };
+  document.addEventListener('keydown', kd);
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); };
+  const frame = now => { if (!live) return; raf = requestAnimationFrame(frame); const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt; shake = Math.max(0, shake - dt);
+    drawWorldArena(g, W, H, ven, ' ');
+    if (dest === '火山國') { g.fillStyle = '#9fd8ff'; g.beginPath(); g.ellipse(180, 200, 70, 16, 0, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.6)'; for (let i = 0; i < 4; i++) { const k = (t * .6 + i / 4) % 1; g.beginPath(); g.arc(150 + i * 20, 192 - k * 40, 6 + k * 6, 0, 7); g.fill(); } for (let i = 0; i < got; i++) { g.font = '16px sans-serif'; g.textAlign = 'center'; g.fillText('🥚', 140 + i * 20, 206); } }
+    if (dest === '雲朵國' && done) ['#e8505b', '#ffb347', '#ffd23f', '#51cf66', '#4a90d9', '#9b6bd6'].forEach((cc, i) => { g.strokeStyle = cc; g.lineWidth = 7; g.beginPath(); g.arc(180, 200, 150 - i * 7, Math.PI, 0); g.stroke(); });
+    if (A.kind === 'order') { const on = spots.filter(s => s.open).sort((a, b) => a.num - b.num); if (on.length > 1) { g.strokeStyle = done ? `rgba(255,230,120,${.7 + .3 * Math.sin(t * 4)})` : 'rgba(255,230,120,.8)'; g.lineWidth = 3; g.beginPath(); on.forEach((s, i) => i ? g.lineTo(s.x, s.y) : g.moveTo(s.x, s.y)); g.stroke(); } }
+    const L = left();
+    spots.forEach(s => { s.pop = Math.max(0, s.pop - dt); const bob = s.pop > 0 ? -Math.sin(s.pop / .6 * Math.PI) * 14 : 0, sx = shake > 0 && A.kind === 'order' && !s.open ? Math.sin(t * 40) * 2 : 0;
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      if (A.kind === 'hide') {
+        if (s.open && s.item) { g.font = '28px sans-serif'; g.fillText(s.item, s.x, s.y - 18 + bob); }
+        if (!s.open || !s.item) { const k = s.open ? .55 : 1; g.globalAlpha = s.open ? .5 : 1;
+          if (A.cover === 'snow') { g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(s.x, s.y, 22 * k, 14 * k, 0, Math.PI, 0); g.fill(); g.strokeStyle = '#8ec5e8'; g.lineWidth = 2; g.stroke(); g.fillStyle = '#dbeefc'; g.fillRect(s.x - 22 * k, s.y - 2, 44 * k, 3); }
+          else if (A.cover === 'sand') { g.fillStyle = '#e6b325'; g.beginPath(); g.ellipse(s.x, s.y, 22 * k, 13 * k, 0, Math.PI, 0); g.fill(); g.fillStyle = '#c99a1e'; g.fillRect(s.x - 8, s.y - 8 * k, 4, 2); }
+          else { g.fillStyle = '#2f9e44'; [[-10, -6, 12], [8, -8, 13], [0, -16, 12]].forEach(([dx, dy, r]) => { g.beginPath(); g.arc(s.x + dx, s.y + dy * k, r * k, 0, 7); g.fill(); }); }
+          g.globalAlpha = 1; } }
+      else if (!s.open) { g.font = A.kind === 'order' ? '24px sans-serif' : '28px sans-serif'; g.fillText(s.item, s.x + sx, s.y + Math.sin(t * 2 + s.i) * 2);
+        if (A.kind === 'order') { g.fillStyle = s.num === next ? '#e8505b' : '#ffffff'; g.beginPath(); g.arc(s.x + 15, s.y - 13, 8, 0, 7); g.fill(); g.font = '700 11px sans-serif'; g.fillStyle = s.num === next ? '#ffffff' : '#3a0ca3'; g.fillText(String(s.num), s.x + 15, s.y - 12); } }
+      else if (A.kind === 'order') { g.font = '26px sans-serif'; g.fillText('🌟', s.x, s.y); }
+      else if (s.pop > 0) { g.globalAlpha = s.pop / .6; g.font = '28px sans-serif'; g.fillText(s.item, s.x, s.y - 30 + bob * 2); g.globalAlpha = 1; }
+      g.textBaseline = 'alphabetic'; });
+    if (!done && L.length) { const s = L[Math.min(sel, L.length - 1)]; g.strokeStyle = 'rgba(255,255,255,.9)'; g.lineWidth = 2; g.setLineDash([3, 3]); g.beginPath(); g.arc(s.x, s.y - (A.kind === 'hide' ? 6 : 0), 22, 0, 7); g.stroke(); g.setLineDash([]); }
+    for (let i = fx.length - 1; i >= 0; i--) { const f = fx[i]; f.t += dt; g.globalAlpha = Math.max(0, 1 - f.t); g.font = '700 13px sans-serif'; g.textAlign = 'center'; g.fillStyle = ven.dark ? '#ffffff' : '#3a3240'; g.fillText(f.s, f.x, f.y - f.t * 24); g.globalAlpha = 1; if (f.t > 1) fx.splice(i, 1); }
+    copDrawKid(g, 26, 222, .7, t, false, 1, done ? 'joy' : null);
+    g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.roundRect(6, 6, 150, 22, 8); g.fill(); g.fillStyle = '#3a3240'; g.font = '700 13px sans-serif'; g.textAlign = 'left'; g.fillText(`🎯 ${got} / ${need}`, 14, 22); };
+  raf = requestAnimationFrame(frame); leaveButton(w);
+  w.status.textContent = A.hint;
+  airActivity.test = { spots, hit, get got() { return got; }, get done() { return done; } };
+}
+function airArrive(w, dest, back) {
+  const tr = tripState(); if (!back) { tr.n = Math.min(999999, (tr.n || 0) + 1); saveGame(); }
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   const W = 360, H = 230, ven = worldVenue(dest), { g } = gameCanvas(w.stage, W, H);
   const draw = photo => { drawWorldArena(g, W, H, ven, `歡迎來到${dest}！`); copDrawKid(g, 200, 176, 1.25, 0, false, 1, photo ? 'joy' : null);
     if (photo) { g.strokeStyle = '#fff'; g.lineWidth = 8; g.strokeRect(4, 4, W - 8, H - 8); g.fillStyle = 'rgba(255,255,255,.5)'; g.fillRect(0, 0, W, H); setTimeout(() => { if (g.canvas.isConnected) { drawWorldArena(g, W, H, ven, `${dest}的紀念照`); copDrawKid(g, 200, 176, 1.25, 0, false, 1, 'joy'); g.strokeStyle = '#fff'; g.lineWidth = 8; g.strokeRect(4, 4, W - 8, H - 8); } }, 160); } };
   draw(false);
+  const A = AIR_ACTS[dest], act = el('button', 'big', `🎯 ${A ? A.name : '玩一玩'}${tr.act && tr.act[dest] ? ' ✅' : ''}`); act.onclick = () => { Sound.play('click'); airActivity(w, dest); };   // 🗺️ 每個國家自己的玩法
   const photo = el('button', 'big', '📸 拍紀念照'), shop = el('button', 'big alt', `🛍️ 紀念品（💰${AIR_SOUV_PRICE}）`), home = el('button', 'big alt', '🏠 搭飛機回家');
   photo.onclick = () => { Sound.play('click'); draw(true);
     if (tr.st[dest]) { w.status.textContent = '喀嚓！又拍了一張漂亮的照片～'; return; }
@@ -35920,9 +36027,9 @@ function airArrive(w, dest) {
   shop.onclick = () => { const id = AIR_SOUV[dest], f = FURN_BY_ID[id]; if (!spend(AIR_SOUV_PRICE)) { toast('錢不夠喔～'); Sound.play('miss'); return; }
     addItem(id, 1); Sound.play('buy'); refreshTop(); saveGame(); w.status.textContent = `買了「${f.name}」！收在「我的東西」裡，可以擺在家裡`; };
   home.onclick = () => { Sound.play('click'); try { closeGameWindow(); } catch (e) {} toast('✈️ 平安回到家了！'); };
-  w.btns.append(photo, shop, home);
-  w.status.textContent = `到${dest}了！拍張紀念照、買個紀念品吧`;
-  airArrive.test = { photo: () => photo.click(), shop: () => shop.click(), home: () => home.click() };
+  w.btns.append(act, photo, shop, home);
+  w.status.textContent = back ? `還想做什麼呢？` : `到${dest}了！${A ? `這裡可以「${A.name}」，` : ''}也拍張紀念照、買個紀念品吧`;
+  airArrive.test = { photo: () => photo.click(), shop: () => shop.click(), home: () => home.click(), act: () => act.click() };
 }
 function openAirPassport() {
   const tr = tripState(), n = Object.keys(tr.st).length;
@@ -35932,6 +36039,7 @@ function openAirPassport() {
   AIR_DEST.forEach(d => { const v = worldVenue(d), b = el('button', 'tkd-move' + (tr.st[d] ? ' on' : '')); b.append(el('span', 'tkd-e', tr.st[d] ? v.mark : '❔'), el('span', '', tr.st[d] ? `${d} 🔴` : d));
     b.onclick = () => toast(tr.st[d] ? `去過${d}了，章蓋好了！` : `還沒去過${d}，搭飛機去看看吧！`); row.appendChild(b); });
   w.stage.appendChild(row);
+  const sky = Array.isArray(tr.sky) ? tr.sky : []; w.stage.appendChild(el('div', 'tkd-say', `👀 窗外看到的（${sky.length} / ${AIR_SIGHTS.length}）：${AIR_SIGHTS.map(q => sky.includes(q[0]) ? q[1] : '❔').join(' ')}`));
   w.status.textContent = `一共搭了 ${tr.n || 0} 次飛機`;
   leaveButton(w);
 }
