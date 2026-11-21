@@ -2695,6 +2695,8 @@ const PLACE_FURNITURE = [
   { id: 'checkin_desk', name: '報到櫃台', theme: 'modern', w: 2, d: 1, parts: [{ x: 0, y: .15, w: 2, d: .7, z: 0, h: 28, c: '#4a90d9' }, { x: 0, y: .15, w: 2, d: .7, z: 28, h: 3, c: '#f1f5fb' }, { x: .2, y: .3, w: .5, d: .35, z: 31, h: 14, c: '#3a3842' }, { x: .24, y: .32, w: .42, d: .31, z: 34, h: 9, c: '#9fd8ff' }, { x: 1.2, y: .35, w: .5, d: .3, z: 31, h: 5, c: '#ffd23f' }] },
   { id: 'air_seats', name: '候機椅', theme: 'modern', w: 2, d: 1, parts: [{ x: .1, y: .3, w: 1.8, d: .4, z: 0, h: 3, c: '#8a94a6' }, { x: .15, y: .3, w: .8, d: .45, z: 10, h: 4, c: '#4a90d9' }, { x: 1.05, y: .3, w: .8, d: .45, z: 10, h: 4, c: '#4a90d9' }, { x: .15, y: .25, w: .8, d: .1, z: 14, h: 14, c: '#3a78c0' }, { x: 1.05, y: .25, w: .8, d: .1, z: 14, h: 14, c: '#3a78c0' }, { x: .2, y: .4, w: .06, d: .06, z: 3, h: 7, c: '#6f7a8c' }, { x: 1.74, y: .4, w: .06, d: .06, z: 3, h: 7, c: '#6f7a8c' }] },
   { id: 'gate_sign', name: '登機門', theme: 'modern', w: 1, d: 1, parts: [{ x: .42, y: .42, w: .16, d: .16, z: 0, h: 50, c: '#6f7a8c' }, { x: .1, y: .44, w: .8, d: .12, z: 50, h: 18, c: '#ffd23f' }, { x: .3, y: .43, w: .4, d: .14, z: 55, h: 8, c: '#26232a' }] },
+  { id: 'xray_belt', name: 'X 光安檢機', theme: 'modern', w: 2, d: 1, parts: [{ x: 0, y: .3, w: 2, d: .4, z: 0, h: 12, c: '#5a6475' }, { x: 0, y: .3, w: 2, d: .4, z: 12, h: 2, c: '#26232a' }, { x: .55, y: .2, w: .9, d: .6, z: 12, h: 30, c: '#8a94a6' }, { x: .6, y: .18, w: .8, d: .05, z: 18, h: 18, c: '#1d3557' }, { x: .2, y: .38, w: .3, d: .24, z: 14, h: 9, c: '#e8505b' }] },
+  { id: 'food_cart', name: '餐車', theme: 'modern', w: 1, d: 1, parts: [{ x: .25, y: .25, w: .5, d: .5, z: 4, h: 30, c: '#c9ccd0' }, { x: .27, y: .23, w: .46, d: .04, z: 8, h: 24, c: '#4a90d9' }, { x: .3, y: .3, w: .4, d: .4, z: 34, h: 2, c: '#f1f5fb' }, { k: 'ball', x: .4, y: .5, z: 38, r: 2.5, c: '#ffb347' }, { k: 'ball', x: .58, y: .5, z: 38, r: 2.5, c: '#e8505b' }, { k: 'ball', x: .3, y: .7, z: 2, r: 2, c: '#26232a' }, { k: 'ball', x: .7, y: .7, z: 2, r: 2, c: '#26232a' }] },
   { id: 'luggage', name: '行李箱', theme: 'modern', w: 1, d: 1, parts: [{ x: .25, y: .3, w: .5, d: .35, z: 0, h: 26, c: '#e8505b' }, { x: .25, y: .3, w: .5, d: .35, z: 12, h: 2, c: '#c9384a' }, { x: .45, y: .44, w: .1, d: .08, z: 26, h: 6, c: '#3a3842' }, { k: 'ball', x: .3, y: .6, z: 2, r: 2, c: '#26232a' }, { k: 'ball', x: .7, y: .6, z: 2, r: 2, c: '#26232a' }] },
   { id: 'departure_board', name: '出發時刻表', theme: 'modern', w: 3, h: 34, z: 46, layer: 'wall', d: 1, parts: [],
     draw(ctx, W, H) { ctx.fillStyle = '#1d2433'; ctx.fillRect(0, 0, W, H); ctx.font = `bold ${Math.round(H * .2)}px sans-serif`; ctx.textBaseline = 'middle';
@@ -3635,10 +3637,10 @@ const PLACES = {
     ], wallItems: [['hosp_eye', 'R', 4]] }
   ] },
   /* ✈️ 機場（家長 11/21）：鵜鶘機長。報到櫃台＝搭飛機去旅行、登機門＝開飛機小遊戲 */
-  airport: { name: '機場', host: 'airport', emoji: '✈️', desc: '搭飛機去旅行！護照集章、買紀念品，集滿 8 個章送你一台小飛機！', rooms: [
+  airport: { name: '機場', host: 'airport', emoji: '✈️', desc: '搭飛機去旅行！護照集章、買紀念品；還可以幫忙行李安檢、塔台指揮、空服員送餐！', rooms: [
     { name: '機場', w: 12, d: 12, wall: 'wp_cream', floor: 'fl_terrazzo', items: [
       ['checkin_desk', 2, 0], ['checkin_desk', 5, 0], ['plant_l', 0, 0], ['gate_sign', 10, 2], ['luggage', 8, 1], ['luggage', 9, 1],
-      ['air_seats', 3, 5], ['air_seats', 6, 5], ['air_seats', 3, 8], ['air_seats', 6, 8], ['plant_l', 11, 11], ['plant_l', 0, 11]
+      ['air_seats', 3, 5], ['air_seats', 6, 5], ['air_seats', 3, 8], ['air_seats', 6, 8], ['plant_l', 11, 11], ['plant_l', 0, 11], ['xray_belt', 9, 5], ['food_cart', 9, 8]
     ], wallItems: [['departure_board', 'R', 1], ['plane_window', 'L', 3], ['plane_window', 'L', 7], ['wall_clock', 'R', 6]] }
   ] },
   /* 🚓 警察局（家長：多一個警察抓小偷的遊戲）：狗狗警官。辦公桌＝抓小偷遊戲、小房間＝演習當小偷、失物招領箱＝領回被偷的東西 */
@@ -5691,6 +5693,7 @@ FURN_BY_ID.reindeer_sleigh = { id: 'reindeer_sleigh', name: '麋鹿雪橇', pric
  ['souv_windmill', '糖果國的棒棒糖風車', [{ x: .46, y: .46, w: .08, d: .08, z: 0, h: 34, c: '#ffffff' }, { k: 'ball', x: .5, y: .5, z: 38, r: 8, c: '#ff6b9d' }, { k: 'ball', x: .5, y: .5, z: 38, r: 4, c: '#ffd23f' }]],
  ['souv_star', '星星國的星星夜燈', [{ x: .32, y: .32, w: .36, d: .36, z: 0, h: 5, c: '#3a0ca3' }, { k: 'ball', x: .5, y: .5, z: 16, r: 7, c: '#ffe066' }, { k: 'ball', x: .38, y: .5, z: 20, r: 3, c: '#ffe066' }, { k: 'ball', x: .62, y: .5, z: 20, r: 3, c: '#ffe066' }, { k: 'ball', x: .5, y: .5, z: 26, r: 3, c: '#ffe066' }]]
 ].forEach(([id, name, parts]) => { FURN_BY_ID[id] = { id, name, price: 0, theme: 'cute', w: 1, d: 1, gift: true, souvenir: true, parts }; });
+FURN_BY_ID.plane_model = { id: 'plane_model', name: '飛機模型', price: 0, theme: 'modern', w: 1, d: 1, gift: true, parts: [{ x: .3, y: .3, w: .4, d: .4, z: 0, h: 4, c: '#5a6475' }, { x: .47, y: .47, w: .06, d: .06, z: 4, h: 14, c: '#8a94a6' }, { x: .2, y: .44, w: .6, d: .12, z: 18, h: 6, c: '#ffffff' }, { x: .38, y: .2, w: .14, d: .6, z: 20, h: 2, c: '#4a90d9' }, { x: .22, y: .42, w: .08, d: .16, z: 24, h: 6, c: '#4a90d9' }, { k: 'ball', x: .8, y: .5, z: 21, r: 2, c: '#ffd23f' }] };   // ✈️ 機場三個工作都做到第 3 關
 FURN_BY_ID.xmas_teddy = { id: 'xmas_teddy', name: '聖誕老公公送的聖誕熊', price: 0, theme: 'cute', w: 1, d: 1, gift: true, parts: [
   { k: 'ball', x: .5, y: .5, z: 10, r: 12, c: '#c98d5a' }, { k: 'ball', x: .5, y: .5, z: 30, r: 9, c: '#c98d5a' }, { k: 'ball', x: .36, y: .5, z: 38, r: 3.6, c: '#c98d5a' }, { k: 'ball', x: .64, y: .5, z: 38, r: 3.6, c: '#c98d5a' },
   { k: 'ball', x: .5, y: .62, z: 29, r: 3, c: '#f0d9b5' }, { k: 'ball', x: .5, y: .5, z: 41, r: 6, c: '#d94a4a' }, { k: 'ball', x: .5, y: .5, z: 48, r: 2.4, c: '#ffffff' }, { k: 'ball', x: .5, y: .62, z: 14, r: 3.4, c: '#d94a4a' }] };
@@ -5856,7 +5859,9 @@ const NEWS = [
     ['✈️', '大地圖右邊、停機坪旁邊多了一個機場，鵜鶘機長在那裡等你'],
     ['🛂', '搭飛機去 8 個國家玩，拍紀念照就能在護照上蓋一個章'],
     ['🛍️', '每個國家都有不一樣的紀念品可以帶回家擺'],
-    ['🛩️', '開飛機小遊戲：飛過圈圈、閃開烏雲和小鳥；護照集滿 8 個章送你一台小飛機，可以在天上飛']
+    ['🛩️', '開飛機小遊戲：飛過圈圈、閃開烏雲和小鳥；護照集滿 8 個章送你一台小飛機，可以在天上飛'],
+    ['🧳', '機場還可以幫忙：行李安檢看 X 光、塔台指揮飛機降落起飛、當空服員推餐車送餐'],
+    ['🎖️', '三個工作都做到第 3 關，機長送你一架飛機模型']
   ] },
   { id: '2026-11-19T20:00', title: '🏆 運動大賽開始報名！', lines: [
     ['🏊', '游泳池的鴨鴨教練：報名「世界全國游泳大賽」，先換漂亮的泳裝給評審打星星，再奮力游過去'],
@@ -6993,7 +6998,7 @@ function normalizeSave(g) {
     t.bag = Array.isArray(t.bag) ? t.bag.filter(b => isObj(b) && typeof b.id === 'string' && FURN_BY_ID[b.id] && (b.top == null || (typeof b.top === 'string' && FURN_BY_ID[b.top]))).map(b => (b.top ? { id: b.id, top: b.top } : { id: b.id })).slice(0, 30) : []; Object.keys(t).forEach(k => { if (!['day', 'n', 'bag'].includes(k)) delete t[k]; }); } }   // 🐭 小偷：今天來過了沒、抓到幾次、失物招領（被偷走還沒領回的東西）
   if (out.noThief != null && out.noThief !== 1) delete out.noThief;
   if (out.noDayNight != null && out.noDayNight !== 1) delete out.noDayNight;
-  if (out.trip != null) { if (!isObj(out.trip)) delete out.trip; else { const t = out.trip; t.st = isObj(t.st) ? Object.fromEntries(Object.entries(t.st).filter(([k, v]) => /^(冰雪國|沙漠國|森林國|大海國|火山國|雲朵國|糖果國|星星國)$/.test(k) && v === 1)) : {}; ['n', 'fly'].forEach(k => { if (t[k] != null && !(Number.isInteger(t[k]) && t[k] >= 0 && t[k] < 1e6)) delete t[k]; }); if (t.fly > 3) t.fly = 3; Object.keys(t).forEach(k => { if (!['st', 'n', 'fly'].includes(k)) delete t[k]; }); } }   // ✈️ 護照的章、搭了幾次、開飛機過到第幾關   // 家長把「家裡跟著時間變天色」關掉了
+  if (out.trip != null) { if (!isObj(out.trip)) delete out.trip; else { const t = out.trip; t.st = isObj(t.st) ? Object.fromEntries(Object.entries(t.st).filter(([k, v]) => /^(冰雪國|沙漠國|森林國|大海國|火山國|雲朵國|糖果國|星星國)$/.test(k) && v === 1)) : {}; ['n', 'fly', 'sec', 'twr', 'meal'].forEach(k => { if (t[k] != null && !(Number.isInteger(t[k]) && t[k] >= 0 && t[k] < 1e6)) delete t[k]; }); ['fly', 'sec', 'twr', 'meal'].forEach(k => { if (t[k] > 3) t[k] = 3; }); if (t.pz != null && t.pz !== 1) delete t.pz; Object.keys(t).forEach(k => { if (!['st', 'n', 'fly', 'sec', 'twr', 'meal', 'pz'].includes(k)) delete t[k]; }); } }   // ✈️ 護照的章、搭了幾次、開飛機過到第幾關   // 家長把「家裡跟著時間變天色」關掉了
   if (out.xmas != null) { if (!isObj(out.xmas)) delete out.xmas; else { const x = out.xmas, ok = { stars: v => Number.isInteger(v) && v >= 0 && v < 1e6, n: v => Number.isInteger(v) && v >= 0 && v < 100, sockN: v => Number.isInteger(v) && v >= 0 && v < 1e6, eve: v => Number.isInteger(v) && v > 2000 && v < 3000, d: v => typeof v === 'string' && v.length <= 12, sock: v => typeof v === 'string' && v.length <= 12, got: v => Array.isArray(v) };
     Object.keys(x).forEach(k => { if (!ok[k] || !ok[k](x[k])) delete x[k]; }); if (x.got) x.got = x.got.filter(id => typeof id === 'string' && (FURN_BY_ID[id] || CLOTHES_BY_ID[id])).slice(0, 20); } }   // 🎄 聖誕星星、送禮物、聖誕襪、平安夜
   if (out.dinoQ != null) { if (!(isObj(out.dinoQ) && Number.isInteger(out.dinoQ.s) && out.dinoQ.s >= 0)) delete out.dinoQ; else out.dinoQ = { s: Math.min(3, out.dinoQ.s) }; }   // 🌋 恐龍島危險解除到第幾關   // 家長把小偷關掉了
@@ -14044,7 +14049,7 @@ function hostMenuEntries() {
     list.push([`🎖️ 考腰帶（現在：${tkdBeltName()}）`, openBeltExam]);
   }
   if (host.n.id === 'restaurant') { list.push(['🍽️ 點餐吃飯', openRestaurantOrder]); list.push(['👩‍🍳 小幫手打工（做漢堡）', openChefGame]); list.push(['💰 收銀台找錢', openCashGame]); }
-  if (host.n.id === 'airport') { list.push(['✈️ 搭飛機去旅行', () => openAirTravel()]); list.push([`🛂 我的護照（${Object.keys(tripState().st).length} / ${AIR_DEST.length}）`, () => openAirPassport()]); list.push(['🛩️ 開飛機', () => openPlaneGame()]); }
+  if (host.n.id === 'airport') { list.push(['✈️ 搭飛機去旅行', () => openAirTravel()]); list.push([`🛂 我的護照（${Object.keys(tripState().st).length} / ${AIR_DEST.length}）`, () => openAirPassport()]); list.push(['🛩️ 開飛機', () => openPlaneGame()]); list.push(['🧳 行李安檢', () => openSecurity()]); list.push(['🗼 塔台指揮', () => openTower()]); list.push(['🥤 空服員送餐', () => openMeal()]); }
   if (host.n.id === 'police') { list.push(['🔍 小偵探破案', () => openDetective()]); list.push([`🎖️ 我的警察等級（${RANKS.cop.list[rankOf('cop', rankXp('cop'))][1]}）`, () => openRankCard('cop')]); list.push(['🚓 一起抓小偷', () => openCopChase()]); list.push(['🎭 演習：我當小偷', () => openThiefDrill()]); list.push([`📦 失物招領${thiefBag().length ? `（${thiefBag().length} 件）` : ''}`, () => openLostFound()]); }
   if (host.n.id === 'hospital') { list.push(['🛏️ 病房照顧', () => openWard()]); list.push([`🎖️ 我的醫生等級（${RANKS.doc.list[rankOf('doc', rankXp('doc'))][1]}）`, () => openRankCard('doc')]); list.push([(G.vehicles || []).includes('ambulance') ? '🚑 救護車已經拿到了' : `🚑 救護車任務（當小醫生 ${Math.min(DOC_FOR_AMB, townState().docN || 0)} / ${DOC_FOR_AMB} 次）`, () => toast((G.vehicles || []).includes('ambulance') ? '🚑 到大地圖點「🚲 交通工具」就可以開救護車了！' : `🚑 再當 ${DOC_FOR_AMB - (townState().docN || 0)} 次小醫生，醫生就送你一台救護車！`)]); list.push(['💓 當小醫生', openDoctorGame]); list.push(['🐾 寵物健康檢查', openPetCheckup]); list.push(['👧 小可愛健康檢查', openKidCheckup]); list.push(['🏅 勇敢貼紙簿', openStickerBook]); }
   if (host.n.id === 'gym') { list.push(['🏃 跑步機（速度）', openFitRun]); list.push(['🏋️ 舉啞鈴（力量）', openFitLift]); list.push(['🚴 飛輪（耐力）', openFitBike]); list.push(['📦 跳箱（速度＋力量）', openFitBox]); list.push(['🧘 瑜珈（耐力）', openFitYoga]); list.push(['📊 我的體能', openFitStats]); }
@@ -35307,13 +35312,13 @@ function airFlight(w, dest, why) {
   const clouds = Array.from({ length: 7 }, (_, k) => ({ x: Math.random() * W, y: 20 + Math.random() * 150, s: .6 + Math.random() * .8 }));
   let t = 0, last = performance.now(), raf = 0, live = true, juice = 0;
   const DUR = 5;
-  c.addEventListener('pointerdown', () => { if (juice <= 0) { juice = 1.2; Sound.play('pickUp'); w.status.textContent = '🧃 喝一口果汁，好好喝～'; } });
+  c.addEventListener('pointerdown', () => { if (juice <= 0) { juice = 1.2; Sound.play('pickUp'); w.status.textContent = '🥤 喝一口果汁，好好喝～'; } });
   gameCleanup = () => { live = false; cancelAnimationFrame(raf); };
   const frame = now => { if (!live) return; const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt; juice -= dt;
     const sk = g.createLinearGradient(0, 0, 0, H); sk.addColorStop(0, ven.dark ? '#24185c' : '#7ec8f0'); sk.addColorStop(1, ven.sky[1]); g.fillStyle = sk; g.fillRect(0, 0, W, H);
     clouds.forEach(o => { o.x -= 90 * o.s * dt; if (o.x < -40) { o.x = W + 40; o.y = 20 + Math.random() * 150; } drawCupCloud(g, o.x, o.y, o.s); });
     drawCupPlane(g, W / 2, H / 2 + Math.sin(t * 2) * 6, 1.6);
-    if (juice > 0) { g.font = '22px sans-serif'; g.textAlign = 'center'; g.fillText('🧃', W / 2 + 10, H / 2 - 28); }
+    if (juice > 0) { g.font = '22px sans-serif'; g.textAlign = 'center'; g.fillText('🥤', W / 2 + 10, H / 2 - 28); }
     g.fillStyle = 'rgba(255,255,255,.85)'; g.fillRect(20, H - 18, W - 40, 6); g.fillStyle = '#4a90d9'; g.fillRect(20, H - 18, (W - 40) * Math.min(1, t / DUR), 6);
     if (t >= DUR) { gameCleanup(); airArrive(w, dest); return; }
     raf = requestAnimationFrame(frame); };
@@ -35398,6 +35403,183 @@ function openPlaneGame(lv) {
   w.status.textContent = `飛過 ${P.need} 個圈圈就過關！`;
   openPlaneGame.test = { me, things, get got() { return got; }, set got(v) { got = v; }, end: () => { t = LIMIT; } };
 }
+/* ===== ✈️ 機場第二批：行李安檢、塔台指揮、空服員送餐 =====
+   各有 3 關，過關記在 G.trip.sec / twr / meal；三個都過第 3 關送「飛機模型」（G.trip.pz = 1，只送一次）。 */
+function airLevelPick(key, title, intro, labels, icon, open) {
+  const tr = tripState(), have = tr[key] || 0, unlocked = Math.min(3, have + 1);
+  const w = openGameWindow(title, intro); w.stage.innerHTML = ''; const row = el('div', 'invite-row');
+  for (let i = 1; i <= 3; i++) { const b = el('button', 'big lv-btn' + (i > unlocked ? ' alt' : ''), `${i <= have ? '⭐' : i > unlocked ? '🔒' : icon} 第 ${i} 關（${labels[i - 1]}）`); b.onclick = () => { if (i > unlocked) { toast('先過前一關喔！'); Sound.play('miss'); return; } Sound.play('click'); open(i); }; row.appendChild(b); }
+  w.stage.appendChild(row); w.btns.innerHTML = ''; leaveButton(w);
+}
+function airLevelWin(w, key, lv, bells, msg, open) {
+  const tr = tripState(); if ((tr[key] || 0) < lv) tr[key] = lv;
+  const got = payReward(w, bells); Sound.play('fanfare');
+  w.status.textContent = `${msg}　💰 +${fmt(got)}`; saveGame(); refreshTop();
+  w.btns.innerHTML = '';
+  if (lv < 3) { const nb = el('button', 'big', `下一關（第 ${lv + 1} 關）`); nb.onclick = () => open(lv + 1); w.btns.appendChild(nb); }
+  const again = el('button', 'big alt', '再玩一次'); again.onclick = () => open(lv); w.btns.appendChild(again); leaveButton(w);
+  airPrizeCheck();
+}
+function airLevelLose(w, msg, lv, open) { Sound.play('miss'); w.status.textContent = msg; w.btns.innerHTML = ''; const again = el('button', 'big', '再試一次'); again.onclick = () => open(lv); w.btns.appendChild(again); leaveButton(w); }
+function airPrizeCheck() {
+  const tr = tripState(); if (tr.pz || !['sec', 'twr', 'meal'].every(k => (tr[k] || 0) >= 3)) return false;
+  tr.pz = 1; addItem('plane_model', 1); saveGame();
+  setTimeout(() => { try { const c = document.createElement('canvas'); c.width = 400; c.height = 232; c.style.width = '200px'; c.style.height = '116px'; const g = c.getContext('2d'); g.scale(2, 2); drawCupPlane(g, 100, 58, 1.6); showcase(c, '機長送你飛機模型！', '行李安檢、塔台指揮、空服員送餐都做到第 3 關了，好厲害！飛機模型收在「我的東西」裡，可以擺在家裡。', { head: '🎖️ 機場小幫手' }); } catch (e) { toast('🎖️ 拿到飛機模型了！'); } }, 1500);
+  return true;
+}
+/* 🧳 行李安檢：行李一個一個進 X 光機，看得到裡面的東西。
+   有危險的東西（剪刀、鐵鎚、煙火、一大瓶水、大扳手…還有偷偷躲進去的小貓）→ 按「🔍 打開檢查」（→ 或 2）；
+   都是可以帶的 → 按「✅ 放行」（← 或 1）。不用趕時間；錯 2 個以內就過關。 */
+const SEC_OK = [['🧸', '小熊'], ['👕', '衣服'], ['📚', '故事書'], ['🧦', '襪子'], ['🍪', '餅乾'], ['📷', '相機'], ['🎈', '氣球'], ['🕶️', '太陽眼鏡'], ['🖍️', '蠟筆'], ['🎮', '遊戲機']];
+const SEC_BAD = [['✂️', '剪刀'], ['🔨', '鐵鎚'], ['🎆', '煙火'], ['💧', '一大瓶水'], ['🔧', '大扳手'], ['🐱', '小貓']];
+const SEC_PLAN = [{ n: 6, k: 2 }, { n: 8, k: 3 }, { n: 10, k: 4 }];
+function openSecurity(lv) {
+  if (lv == null) { airLevelPick('sec', '🧳 行李安檢', '鵜鶘機長：幫忙看 X 光機！危險的東西不能帶上飛機喔。', SEC_PLAN.map(p => `${p.n} 個行李`), '🧳', openSecurity); return; }
+  const P = SEC_PLAN[lv - 1], W = 360, H = 200, MX = 200;
+  const w = openGameWindow(`🧳 行李安檢・第 ${lv} 關`, '看 X 光機裡的東西：有危險的按「🔍 打開檢查」（→ 或 2），都可以帶的按「✅ 放行」（← 或 1）。');
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const { g } = gameCanvas(w.stage, W, H);
+  const pickN = (a, n) => a.slice().sort(() => Math.random() - .5).slice(0, n);
+  const bags = Array.from({ length: P.n }, (_, i) => { const items = pickN(SEC_OK, P.k); if (i === 0 || Math.random() < .5) items[Math.floor(Math.random() * items.length)] = SEC_BAD[Math.floor(Math.random() * SEC_BAD.length)]; return { items, col: ['#e8505b', '#4a90d9', '#ffb347', '#51cf66', '#b07fd0'][i % 5] }; });
+  if (P.n > 1) { const j = 1 + Math.floor(Math.random() * (P.n - 1)); bags[j].items = pickN(SEC_OK, P.k); }   // 至少一個乾淨的、一個有危險的
+  let idx = 0, x = -60, ph = 'in', good = 0, miss = 0, t = 0, last = performance.now(), raf = 0, live = true, popT = 0, popE = '';
+  const isBad = it => SEC_BAD.includes(it);
+  const decide = open => { if (ph !== 'wait') return; const bag = bags[idx], bad = bag.items.find(isBad);
+    if (open) { if (bad) { good++; Sound.play('coin'); popE = bad[0]; popT = 1.2; w.status.textContent = bad[0] === '🐱' ? '小貓：喵～被發現了！不可以躲在行李裡啦～' : `找到了！${bad[1]}不能帶上飛機，先收起來～`; } else { miss++; Sound.play('miss'); w.status.textContent = '打開看看…裡面都是可以帶的東西喔～'; } }
+    else { if (bad) { miss++; Sound.play('miss'); popE = bad[0]; popT = 1.2; w.status.textContent = `嗶嗶！漏掉了${bad[1]}！下次看仔細一點～`; } else { good++; Sound.play('coin'); w.status.textContent = '沒問題，放行！祝你旅途愉快～'; } }
+    ph = 'out'; };
+  const row = el('div', 'tkd-moves'), bOk = el('button', 'tkd-move'), bOpen = el('button', 'tkd-move');
+  bOk.append(el('span', 'tkd-e', '✅'), el('span', '', '放行（←）')); bOpen.append(el('span', 'tkd-e', '🔍'), el('span', '', '打開檢查（→）'));
+  bOk.onclick = () => decide(false); bOpen.onclick = () => decide(true); row.append(bOk, bOpen); w.stage.appendChild(row);
+  const kd = e => { if (/^(ArrowLeft|KeyA|Digit1|Numpad1)$/.test(e.code)) { e.preventDefault(); if (!e.repeat) decide(false); } else if (/^(ArrowRight|KeyD|Digit2|Numpad2)$/.test(e.code)) { e.preventDefault(); if (!e.repeat) decide(true); } };
+  document.addEventListener('keydown', kd);
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); };
+  leaveButton(w);
+  const finish = () => { gameCleanup(); row.remove();
+    if (miss <= 2) airLevelWin(w, 'sec', lv, 60 + lv * 40 + good * 5, `安檢完成！看對 ${good} 個、錯 ${miss} 個，大家都可以安心搭飛機了！`, openSecurity);
+    else airLevelLose(w, `看對 ${good} 個、錯 ${miss} 個，錯 2 個以內就過關，再試一次！`, lv, openSecurity); };
+  const drawBag = (bx, bag, see) => {
+    if (see) { g.strokeStyle = '#9fe8ff'; g.lineWidth = 2; g.beginPath(); g.roundRect(bx - 36, 84, 72, 44, 6); g.stroke(); g.font = '17px sans-serif'; g.textAlign = 'center'; bag.items.forEach((it, i) => { const ix = bx - 36 + 72 * (i + .5) / bag.items.length; g.fillText(it[0], ix, 113); }); }
+    else { g.fillStyle = bag.col; g.beginPath(); g.roundRect(bx - 36, 84, 72, 44, 6); g.fill(); g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(bx - 36, 104, 72, 3); g.fillStyle = '#3a3842'; g.fillRect(bx - 8, 78, 16, 6); } };
+  const frame = now => { if (!live) return; raf = requestAnimationFrame(frame); const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt; popT -= dt;
+    if (ph === 'in') { x = Math.min(MX, x + 170 * dt); if (x >= MX) ph = 'wait'; }
+    else if (ph === 'out') { x += 220 * dt; if (x > W + 60) { idx++; if (idx >= P.n) { finish(); return; } x = -60; ph = 'in'; } }
+    g.fillStyle = '#e9eef5'; g.fillRect(0, 0, W, H); g.fillStyle = '#d5dde8'; g.fillRect(0, 150, W, 50);
+    g.fillStyle = '#3a3842'; g.fillRect(0, 128, W, 16); g.fillStyle = '#5a6475'; for (let i = -1; i < 17; i++) g.fillRect(((i * 24 + t * 60) % (W + 24)) - 12, 131, 12, 3);
+    g.fillStyle = '#8a94a6'; g.beginPath(); g.roundRect(MX - 56, 40, 112, 92, 10); g.fill(); g.fillStyle = '#1d3557'; g.fillRect(MX - 46, 50, 92, 80);
+    const bag = bags[idx], inside = Math.abs(x - MX) < 46 + 36;
+    if (bag) { if (inside) { g.save(); g.beginPath(); g.rect(MX - 46, 50, 92, 80); g.clip(); drawBag(x, bag, true); g.restore(); g.save(); g.beginPath(); g.rect(0, 0, MX - 46, H); g.rect(MX + 46, 0, W - MX - 46, H); g.clip(); drawBag(x, bag, false); g.restore(); } else drawBag(x, bag, false); }
+    g.fillStyle = '#ffd23f'; g.font = 'bold 11px sans-serif'; g.textAlign = 'center'; g.fillText('X 光', MX, 47);
+    if (popT > 0 && popE) { const px = Math.min(W - 30, Math.max(30, x)), py = 60 - (1.2 - popT) * 20; g.font = '26px sans-serif'; g.fillText(popE, px, py + 9); g.strokeStyle = '#e8505b'; g.lineWidth = 4; g.beginPath(); g.arc(px, py, 20, 0, 7); g.stroke(); }
+    copDrawKid(g, 300, 196, .36, t, false, -1, 'joy');
+    g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.roundRect(6, 6, 160, 22, 8); g.fill(); g.fillStyle = '#3a3240'; g.font = '700 13px sans-serif'; g.textAlign = 'left'; g.fillText(`🧳 ${Math.min(idx + 1, P.n)} / ${P.n}　✅ ${good}　❌ ${miss}`, 14, 22); };
+  raf = requestAnimationFrame(frame);
+  w.status.textContent = '行李來了！看看 X 光機裡面有什麼';
+  openSecurity.test = { bags, decide, get ph() { return ph; }, set ph(v) { ph = v; }, get idx() { return idx; }, set x(v) { x = v; }, get good() { return good; }, get miss() { return miss; }, isBad };
+}
+/* 🗼 塔台指揮：天上的飛機等著降落 🛬，地上的飛機等著起飛 🛫，跑道只有一條。
+   點一台飛機（或按空白鍵＝等最久的那台）讓它用跑道；跑道上有飛機的時候要等它走了。等太久的飛機會皺眉頭（不會失敗）。 */
+const TWR_PLAN = [{ need: 6, every: 4.2 }, { need: 9, every: 3.2 }, { need: 12, every: 2.5 }];
+function openTower(lv) {
+  if (lv == null) { airLevelPick('twr', '🗼 塔台指揮', '鵜鶘機長：你來當塔台！跑道只有一條，一次只能一台飛機用喔。', TWR_PLAN.map(p => `${p.need} 台飛機`), '🗼', openTower); return; }
+  const P = TWR_PLAN[lv - 1], W = 360, H = 220, LIMIT = 70, RY = 150, SX = [80, 190, 300];
+  const w = openGameWindow(`🗼 塔台指揮・第 ${lv} 關`, '點一台飛機讓它降落或起飛（空白鍵＝等最久的那台）。跑道上有飛機的時候，要等它走了再叫下一台！');
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const { c, g, pos } = gameCanvas(w.stage, W, H);
+  const planes = []; let t = 0, done = 0, last = performance.now(), raf = 0, live = true, end = false, nextP = .3;
+  const COLS = ['#e8505b', '#4a90d9', '#51cf66', '#ffb347', '#b07fd0'];
+  const spawn = () => { const kinds = ['land', 'up'].sort(() => Math.random() - .5);
+    for (const k of kinds) { const used = planes.filter(p => p.kind === k && p.ph === 'wait').map(p => p.slot), free = [0, 1, 2].filter(i => !used.includes(i)); if (free.length) { const slot = free[Math.floor(Math.random() * free.length)]; planes.push({ kind: k, slot, ph: 'wait', wait: 0, t: 0, x: SX[slot], y: k === 'land' ? 46 : 196, col: COLS[Math.floor(Math.random() * COLS.length)], no: 0 }); return; } } };
+  const busy = () => planes.some(p => p.ph === 'go');
+  const go = p => { if (end || !p || p.ph !== 'wait') return; if (busy()) { p.no = .6; Sound.play('miss'); w.status.textContent = '跑道上還有飛機！等它走了再叫下一台～'; return; }
+    p.ph = 'go'; p.t = 0; p.x0 = p.x; p.y0 = p.y; Sound.play('whoosh'); w.status.textContent = p.kind === 'land' ? '塔台：可以降落囉！🛬' : '塔台：可以起飛囉！🛫'; };
+  const oldest = () => planes.filter(p => p.ph === 'wait').sort((a, b) => b.wait - a.wait)[0];
+  c.addEventListener('pointerdown', e => { e.preventDefault(); const q = pos(e); const p = planes.filter(p => p.ph === 'wait').sort((a, b) => Math.hypot(a.x - q.x, a.y - q.y) - Math.hypot(b.x - q.x, b.y - q.y))[0]; if (p && Math.hypot(p.x - q.x, p.y - q.y) < 40) go(p); });
+  const kd = e => { if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); if (!e.repeat) go(oldest()); } };
+  document.addEventListener('keydown', kd);
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); };
+  const finish = win => { end = true; gameCleanup();
+    if (win) airLevelWin(w, 'twr', lv, 60 + lv * 50, `指揮了 ${done} 台飛機，一台都沒撞到，好厲害的塔台！`, openTower);
+    else airLevelLose(w, `時間到！指揮了 ${done} / ${P.need} 台，再試一次！`, lv, openTower); };
+  const frame = now => { if (!live) return; raf = requestAnimationFrame(frame); const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+    if ((nextP -= dt) <= 0) { nextP = P.every * (.8 + Math.random() * .4); spawn(); }
+    const sky = g.createLinearGradient(0, 0, 0, 130); sky.addColorStop(0, '#7ec8f0'); sky.addColorStop(1, '#e7f5ff'); g.fillStyle = sky; g.fillRect(0, 0, W, 130);
+    g.fillStyle = '#a8d672'; g.fillRect(0, 130, W, H - 130); g.fillStyle = '#5a6475'; g.fillRect(30, RY - 12, W - 40, 24); g.fillStyle = '#ffffff'; for (let i = 0; i < 9; i++) g.fillRect(44 + i * 36, RY - 1, 18, 2);
+    g.fillStyle = busy() ? '#e8505b' : '#51cf66'; g.beginPath(); g.arc(W - 14, RY - 22, 6, 0, 7); g.fill();
+    g.fillStyle = '#c9ccd0'; g.fillRect(6, 88, 14, 62); g.fillStyle = '#1d3557'; g.fillRect(0, 70, 26, 20); g.fillStyle = '#9fd8ff'; g.fillRect(3, 73, 20, 9);   // 塔台
+    for (let i = planes.length - 1; i >= 0; i--) { const p = planes[i]; p.no = Math.max(0, p.no - dt);
+      if (p.ph === 'wait') { p.wait += dt; const bob = p.kind === 'land' ? Math.sin(t * 2 + p.slot) * 4 : 0; p.y = (p.kind === 'land' ? 46 : 196) + bob; }
+      else { p.t += dt; const a = Math.min(1, p.t / .6);
+        if (p.t < .6) { p.x = p.x0 + (50 - p.x0) * a; p.y = p.y0 + (RY - p.y0) * a; }
+        else { const b = Math.min(1, (p.t - .6) / 1.2); p.x = 50 + (p.kind === 'land' ? 280 : 340) * b; p.y = p.kind === 'land' ? RY : RY - 120 * b * b; if (b >= 1) { planes.splice(i, 1); done++; Sound.play('coin'); if (done >= P.need) { finish(true); return; } continue; } } }
+      const sx = p.no > 0 ? Math.sin(t * 40) * 3 : 0;
+      g.save(); g.translate(p.x + sx, p.y); g.scale(.55, .55); drawCupPlane(g, 0, 0, 1); g.fillStyle = p.col; g.fillRect(-26, -2, 46, 3); g.restore();
+      if (p.ph === 'wait') { g.font = '13px sans-serif'; g.textAlign = 'center'; g.fillText(p.kind === 'land' ? '🛬' : '🛫', p.x - 18, p.y - 12); if (p.wait > 10) g.fillText('😟', p.x + 16, p.y - 12); } }
+    g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.roundRect(34, 6, 150, 22, 8); g.fill(); g.fillStyle = '#3a3240'; g.font = '700 13px sans-serif'; g.textAlign = 'left'; g.fillText(`✈️ ${done} / ${P.need}　⏱️ ${Math.max(0, Math.ceil(LIMIT - t))}`, 42, 22);
+    if (t >= LIMIT) finish(false); };
+  raf = requestAnimationFrame(frame);
+  w.status.textContent = `第 ${lv} 關：指揮 ${P.need} 台飛機降落、起飛！`;
+  openTower.test = { planes, go, oldest, spawn, get done() { return done; }, set done(v) { done = v; }, end: () => { t = LIMIT; } };
+}
+/* 🥤 空服員送餐：飛機上的乘客頭上會冒出想要的東西。左右鍵推餐車走到他旁邊，
+   選東西（數字鍵 1～4）再按空白鍵給他；用滑鼠點乘客，餐車會自己推過去給。第 3 關有人一次要兩樣。 */
+const MEAL_ITEMS = [['drink', '🥤', '飲料'], ['rice', '🍙', '飯糰'], ['cookie', '🍪', '餅乾'], ['music', '🎧', '耳機']];
+const MEAL_PLAN = [{ rows: 4, need: 6, every: 3, two: false }, { rows: 5, need: 9, every: 2.6, two: false }, { rows: 5, need: 10, every: 2.8, two: true }];
+function openMeal(lv) {
+  if (lv == null) { airLevelPick('meal', '🥤 空服員送餐', '鵜鶘機長：飛機上的乘客肚子餓了，推餐車去送東西吧！', MEAL_PLAN.map(p => `送 ${p.need} 位乘客`), '🥤', openMeal); return; }
+  const P = MEAL_PLAN[lv - 1], W = 360, H = 200, LIMIT = 80;
+  const w = openGameWindow(`🥤 空服員送餐・第 ${lv} 關`, '左右鍵推餐車，數字鍵 1～4 選東西，空白鍵給乘客；也可以直接點乘客。');
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const { c, g, pos } = gameCanvas(w.stage, W, H);
+  const pool = NEIGHBORS.filter(Boolean).slice().sort(() => Math.random() - .5), sw = W / P.rows;
+  const seats = Array.from({ length: P.rows }, (_, i) => ({ x: sw * (i + .5), n: pool[i % pool.length], want: [], since: 0, happy: 0, shake: 0, t: Math.random() * 5 }));
+  let sel = 0, cx = W / 2, tx = null, pend = null, done = 0, t = 0, last = performance.now(), raf = 0, live = true, end = false, nextWant = 1;
+  const keys = {};
+  const items = el('div', 'tkd-moves'); MEAL_ITEMS.forEach(([id, e, nm], i) => { const b = el('button', 'tkd-move' + (i === sel ? ' on' : '')); b.dataset.key = String(i + 1); b.append(el('span', 'tkd-e', e), el('span', '', nm)); b.onclick = () => pick(i); items.appendChild(b); }); w.stage.appendChild(items);
+  const pick = i => { sel = i; [...items.children].forEach((b, k) => b.classList.toggle('on', k === i)); Sound.play('click'); };
+  const near = () => seats.findIndex(s => Math.abs(s.x - cx) < sw * .4);
+  const give = si => { if (end) return; const s = seats[si]; if (!s) return;
+    if (Math.abs(s.x - cx) > sw * .4) { tx = s.x; pend = si; return; }
+    if (!s.want.length) { s.shake = .5; return; }
+    const id = MEAL_ITEMS[sel][0], k = s.want.indexOf(id);
+    if (k < 0) { s.shake = .6; Sound.play('miss'); w.status.textContent = `${s.n.short}：我要的不是這個啦～`; return; }
+    s.want.splice(k, 1); Sound.play('pickUp');
+    if (!s.want.length) { s.happy = 1.4; done++; Sound.play('coin'); w.status.textContent = `${s.n.short}：謝謝空服員！（${done} / ${P.need}）`; if (done >= P.need) finish(true); }
+    else w.status.textContent = `${s.n.short}：還要一樣喔！`; };
+  c.addEventListener('pointerdown', e => { e.preventDefault(); const q = pos(e); give(Math.max(0, Math.min(P.rows - 1, Math.floor(q.x / sw)))); });
+  const kd = e => { const dg = /^(?:Digit|Numpad)([1-4])$/.exec(e.code); if (dg) { e.preventDefault(); pick(+dg[1] - 1); return; }
+    if (/^(ArrowLeft|KeyA)$/.test(e.code)) { e.preventDefault(); keys.l = true; tx = null; pend = null; } else if (/^(ArrowRight|KeyD)$/.test(e.code)) { e.preventDefault(); keys.r = true; tx = null; pend = null; }
+    else if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); if (!e.repeat) { const i = near(); if (i >= 0) give(i); } } };
+  const ku = e => { if (/^(ArrowLeft|KeyA)$/.test(e.code)) keys.l = false; if (/^(ArrowRight|KeyD)$/.test(e.code)) keys.r = false; };
+  document.addEventListener('keydown', kd); document.addEventListener('keyup', ku);
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); document.removeEventListener('keyup', ku); };
+  const finish = win => { if (end) return; end = true; gameCleanup(); items.remove();
+    if (win) airLevelWin(w, 'meal', lv, 70 + lv * 50, '大家都吃飽飽，好棒的空服員！', openMeal);
+    else airLevelLose(w, `時間到！送了 ${done} / ${P.need} 位乘客，再試一次！`, lv, openMeal); };
+  const frame = now => { if (!live) return; raf = requestAnimationFrame(frame); const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+    const SP = 150; if (keys.l) cx -= SP * dt; if (keys.r) cx += SP * dt;
+    if (tx != null) { const d = tx - cx; if (Math.abs(d) < 3) { cx = tx; tx = null; if (pend != null) { const p = pend; pend = null; give(p); } } else cx += Math.sign(d) * Math.min(Math.abs(d), SP * 1.3 * dt); }
+    cx = Math.max(sw * .5, Math.min(W - sw * .5, cx));
+    if ((nextWant -= dt) <= 0) { nextWant = P.every * (.7 + Math.random() * .6); const free = seats.filter(s => !s.want.length && s.happy <= 0); if (free.length) { const s = free[Math.floor(Math.random() * free.length)]; const a = MEAL_ITEMS.map(x => x[0]).sort(() => Math.random() - .5); s.want = P.two && Math.random() < .6 ? a.slice(0, 2) : a.slice(0, 1); s.since = 0; } }
+    g.fillStyle = '#f4f1ea'; g.fillRect(0, 0, W, H); g.fillStyle = '#dcd6c8'; g.fillRect(0, 160, W, 40);
+    for (let i = 0; i < P.rows; i++) { const wx = sw * (i + .5); g.fillStyle = '#cfe8ff'; g.beginPath(); g.ellipse(wx, 26, 11, 14, 0, 0, 7); g.fill(); g.fillStyle = '#ffffff'; const cl = ((t * 30 + i * 37) % 40) - 20; g.save(); g.beginPath(); g.ellipse(wx, 26, 11, 14, 0, 0, 7); g.clip(); g.beginPath(); g.arc(wx + cl, 28, 5, 0, 7); g.fill(); g.restore(); g.strokeStyle = '#b9c2cc'; g.lineWidth = 2; g.beginPath(); g.ellipse(wx, 26, 11, 14, 0, 0, 7); g.stroke(); }
+    seats.forEach(s => { s.since += s.want.length ? dt : 0; s.happy = Math.max(0, s.happy - dt); s.shake = Math.max(0, s.shake - dt); s.t += dt;
+      const sx = s.shake > 0 ? Math.sin(t * 40) * 3 : 0, by = 132;
+      g.fillStyle = '#4a90d9'; g.beginPath(); g.roundRect(s.x - 24, by - 50, 48, 62, 8); g.fill();
+      g.save(); g.translate(s.x + sx, by + 4); g.scale(.8, .8); try { drawNeighbor(g, s.n, { happy: s.happy > 0, blink: s.happy > 0 || Math.floor(s.t) % 4 === 0, fx: 0, clean: 100 }); } catch (e) {} g.restore();
+      g.fillStyle = '#3a78c0'; g.fillRect(s.x - 26, by + 4, 52, 12);
+      if (s.want.length) { const cry = s.since > 9, bw2 = 16 + s.want.length * 20; g.fillStyle = '#ffffff'; g.beginPath(); g.roundRect(s.x - bw2 / 2, 46, bw2, 26, 9); g.fill(); g.strokeStyle = cry ? '#e8505b' : '#9fb3c8'; g.lineWidth = 2; g.stroke();
+        g.font = '16px sans-serif'; g.textAlign = 'center'; s.want.forEach((id, k) => g.fillText(MEAL_ITEMS.find(x => x[0] === id)[1], s.x + (k - (s.want.length - 1) / 2) * 20, 65)); }
+      else if (s.happy > 0) { g.font = '16px sans-serif'; g.textAlign = 'center'; g.fillText('💗', s.x, 66 - (1.4 - s.happy) * 12); } });
+    g.fillStyle = '#c9ccd0'; g.beginPath(); g.roundRect(cx + 6, 166, 26, 22, 4); g.fill(); g.fillStyle = '#4a90d9'; g.fillRect(cx + 8, 170, 22, 4); g.fillStyle = '#26232a'; g.beginPath(); g.arc(cx + 11, 190, 3, 0, 7); g.arc(cx + 27, 190, 3, 0, 7); g.fill();
+    g.font = '13px sans-serif'; g.textAlign = 'center'; g.fillText(MEAL_ITEMS[sel][1], cx + 19, 164);
+    copDrawKid(g, cx - 6, 196, .34, t, !!(keys.l || keys.r || tx != null), 1, 'joy');
+    g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.roundRect(6, 6, 150, 22, 8); g.fill(); g.fillStyle = '#3a3240'; g.font = '700 13px sans-serif'; g.textAlign = 'left'; g.fillText(`🥤 ${done} / ${P.need}　⏱️ ${Math.max(0, Math.ceil(LIMIT - t))}`, 14, 22);
+    if (t >= LIMIT) finish(false); };
+  raf = requestAnimationFrame(frame);
+  w.status.textContent = `第 ${lv} 關：送 ${P.need} 位乘客！`;
+  openMeal.test = { seats, give, pick, set cx(v) { cx = v; }, get cx() { return cx; }, get done() { return done; }, set done(v) { done = v; }, end: () => { t = LIMIT; } };
+}
 /* ===== 🛏️ 病房照顧（醫院）=====
    病床上的動物朋友頭上會冒出想要的東西：💧 喝水、💊 吃藥、🧸 抱抱、📖 講故事、🍎 吃水果。
    先在下面選東西（或按數字鍵 1～5），再點那張病床（或用左右鍵選病床、按空白鍵）給他。給對了他會開心，給錯了搖搖頭。
@@ -35472,7 +35654,12 @@ Object.assign(ACTIVITIES, {
   air_trip: { label: '✈️ 搭飛機去旅行', name: '搭飛機', fx: '✈️', open: () => openAirTravel(), lines: ['我要去旅行！', '要去哪一個國家呢？'] },
   air_fly: { label: '🛩️ 開飛機', name: '開飛機', fx: '🛩️', open: () => openPlaneGame(), lines: ['我是小機長！', '起飛囉～'] }
 });
-Object.assign(FURNITURE_ACT, { checkin_desk: 'air_trip', departure_board: 'air_trip', gate_sign: 'air_fly', air_seats: 'benchrest' });
+Object.assign(ACTIVITIES, {
+  air_sec: { label: '🧳 行李安檢', name: '行李安檢', fx: '🔍', open: () => openSecurity(), lines: ['我來看 X 光！', '危險的東西不能帶上飛機！'] },
+  air_tower: { label: '🗼 塔台指揮', name: '塔台指揮', fx: '🗼', open: () => openTower(), lines: ['我是塔台！', '可以降落囉～'] },
+  air_meal: { label: '🥤 空服員送餐', name: '送餐', fx: '🥤', open: () => openMeal(), lines: ['請問要喝什麼呢？', '餐車來囉～'] }
+});
+Object.assign(FURNITURE_ACT, { checkin_desk: 'air_trip', departure_board: 'air_tower', gate_sign: 'air_fly', air_seats: 'benchrest', xray_belt: 'air_sec', food_cart: 'air_meal' });
 
 /* ===== 🚨 出勤（第二批：警車、救護車共用一套）=====
    在大地圖開著🚓警車或🚑救護車的時候，左上角會多一顆「🚨 出勤」。按下去，島上某個地方會有人需要幫忙，
