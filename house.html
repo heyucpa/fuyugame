@@ -7899,7 +7899,7 @@ function buyKidFood(id) {
   G.kidFood[id] = (G.kidFood[id] || 0) + 1;
   return true;
 }
-function kidFoodSellBlock(id) { return G.kidFood[id] ? null : '沒有了'; }
+function kidFoodSellBlock(id) { return !G.kidFood[id] ? '沒有了' : !(KID_FOOD_BY_ID[id] || {}).price ? '送的' : null; }
 function sellKidFood(id) {
   if (kidFoodSellBlock(id)) return 0;
   G.kidFood[id]--;
@@ -7965,7 +7965,7 @@ function furnSellBlock(id) {
   if (G.inv[id] <= ((G.noSell || {})[id] || 0)) return '非賣品';
   return FURN_BY_ID[id].price || FURN_BY_ID[id].sellPrice ? null : '不能賣';
 }
-function foodSellBlock(id) { return G.food[id] ? null : '沒有了'; }
+function foodSellBlock(id) { return !G.food[id] ? '沒有了' : !(FOOD_BY_ID[id] || {}).price ? '送的' : null; }
 function clothesSellBlock(id) {
   const c = CLOTHES_BY_ID[id];
   if (c.prize) return '糖果獎品';
@@ -17165,6 +17165,7 @@ function showFoodMenu(who) {
     if (any) { const t = document.createElement('div'); t.className = 'menu-sub'; t.textContent = '🧪 藥水：'; menu.appendChild(t); }
     potions.forEach(b => menu.appendChild(b));
   }
+  if (any) { const t = document.createElement('div'); t.className = 'menu-sub'; t.textContent = '　'; menu.appendChild(t); const sb = document.createElement('button'); sb.type = 'button'; sb.textContent = '💰 買太多了？賣回商店'; sb.onclick = ev => { if (ev) { ev.preventDefault(); ev.stopPropagation(); } Sound.play('click'); openSellFood(); }; menu.appendChild(sb); }
   if (!any) {
     const b = document.createElement('button');
     b.textContent = '沒有食物了，去商店買 →';
@@ -18057,7 +18058,7 @@ function sellToggle(body, extraNote) {
 }
 
 // 賣之前一定先問一次，避免小朋友點錯
-function confirmSell(name, price, doSell) {
+function confirmSell(name, price, doSell, count) {
   const card = $('#modalCard');
   card.innerHTML = '';
   card.appendChild(el('h2', '', '💰 賣回商店'));
@@ -18068,7 +18069,7 @@ function confirmSell(name, price, doSell) {
     el('div', 'muted', `之後想買回來要　💰 ${fmt(price)}`)
   );
   card.appendChild(info);
-  const yes = el('button', 'big warnbtn', '賣掉');
+  const yes = el('button', 'big warnbtn', count > 1 ? '賣掉 1 個' : '賣掉');
   const no = el('button', 'big alt', '不要，留著');
   const close = () => { $('#modal').hidden = true; };
   yes.onclick = () => {
@@ -18078,7 +18079,13 @@ function confirmSell(name, price, doSell) {
     commit();
   };
   no.onclick = () => { close(); Sound.play('click'); };
-  card.append(yes, no);
+  card.append(yes);
+  if (count > 1) {   // 🍙 吃的東西買太多：一次全部賣掉
+    const all = el('button', 'big warnbtn', `全部賣掉（${count} 個，💰 ${fmt(sellValue(price) * count)}）`);
+    all.onclick = () => { close(); let got = 0, n = 0; for (let i = 0; i < count; i++) { const g1 = doSell(); if (!g1) break; got += g1; n++; } if (got) { Sound.play('coin'); toast(`賣掉 ${n} 個「${name}」，拿到 ${fmt(got)} 元`); } commit(); };
+    card.append(all);
+  }
+  card.append(no);
   $('#modal').hidden = false;
 }
 
@@ -18117,7 +18124,7 @@ function trophySellCard(def, id) {
   };
   return c;
 }
-function sellCard(visual, name, price, block, count, onSell) {
+function sellCard(visual, name, price, block, count, onSell, multi) {
   const c = el('button', 'card' + (block ? ' dim' : ' sellable'));
   c.appendChild(visual);
   c.appendChild(el('div', 'nm', name));
@@ -18125,15 +18132,42 @@ function sellCard(visual, name, price, block, count, onSell) {
   if (count) c.appendChild(el('span', 'ct', '×' + count));
   c.onclick = () => {
     if (block) { toast(`「${name}」${block}，不能賣`); return; }
-    confirmSell(name, price, onSell);
+    confirmSell(name, price, onSell, multi ? count : 0);
   };
   return c;
 }
 
+function sellFoodSections(body, foods) {   // 賣東西模式：小可愛的食物（包括神奇魔法藥水）、寵物食物
+  const kidFoods = Object.keys(G.kidFood).filter(id => G.kidFood[id] > 0 && KID_FOOD_BY_ID[id]);
+  const anchor = el('div', ''); anchor.id = 'sellFood'; body.appendChild(anchor);
+  if (kidFoods.length) {
+    body.appendChild(h3(`🍙 ${charName()}的食物${kidFoods.some(id => KID_FOOD_BY_ID[id].potion) ? '（神奇魔法藥水也在這裡）' : ''}`));
+    const kg = el('div', 'grid');
+    kidFoods.sort((a, b) => (KID_FOOD_BY_ID[b].potion ? 1 : 0) - (KID_FOOD_BY_ID[a].potion ? 1 : 0)).forEach(id => {
+      const f = KID_FOOD_BY_ID[id];
+      kg.appendChild(sellCard(el('div', 'emoji', f.emoji), f.name, f.price, kidFoodSellBlock(id), G.kidFood[id], () => sellKidFood(id), true));
+    });
+    body.appendChild(kg);
+  }
+  if (foods.length) {
+    body.appendChild(h3('🦴 寵物食物'));
+    const fg = el('div', 'grid');
+    foods.forEach(id => {
+      const f = FOOD_BY_ID[id];
+      fg.appendChild(sellCard(el('div', 'emoji', f.emoji), f.name, f.price, foodSellBlock(id), G.food[id], () => sellFood(id), true));
+    });
+    body.appendChild(fg);
+  }
+}
+function openSellFood() {   // 從「吃東西」選單直接跳到賣吃的東西
+  $('#foodMenu').hidden = true; openTab('inv'); sellMode = true; renderTab();
+  setTimeout(() => { const a = document.getElementById('sellFood'); if (a) a.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 60);
+}
 function tabInv(body) {
   const ids = Object.keys(G.inv).filter(id => G.inv[id] > 0);
   const foods = Object.keys(G.food).filter(id => G.food[id] > 0);
   sellToggle(body, '房間裡的家具要先收起來才能賣；正在用的壁紙地板也要先換成別的。');
+  if (sellMode) sellFoodSections(body, foods);   // 🍙 吃的東西（神奇魔法藥水）排最上面，不用一直往下滑
   if (!sellMode && !G.away && curRoom().kind !== 'balcony') {   // ✨ 不會佈置也沒關係
     const dec = el('button', 'big decor-btn', '✨ 一鍵佈置這個房間');
     dec.onclick = () => { Sound.play('click'); openDecor(); };
@@ -18165,25 +18199,6 @@ function tabInv(body) {
     body.appendChild(decoGrid('wall', WALLPAPERS, G.walls, room.wall, 'own'));
     body.appendChild(h3('🟫 地板'));
     body.appendChild(decoGrid('floor', FLOORS, G.floors, room.floor, 'own'));
-  }
-  const kidFoods = Object.keys(G.kidFood).filter(id => G.kidFood[id] > 0);
-  if (sellMode && kidFoods.length) { // 賣東西時也可以賣食物
-    body.appendChild(h3(`${charName()}的食物`));
-    const kg = el('div', 'grid');
-    kidFoods.forEach(id => {
-      const f = KID_FOOD_BY_ID[id];
-      kg.appendChild(sellCard(el('div', 'emoji', f.emoji), f.name, f.price, kidFoodSellBlock(id), G.kidFood[id], () => sellKidFood(id)));
-    });
-    body.appendChild(kg);
-  }
-  if (sellMode && foods.length) {
-    body.appendChild(h3('寵物食物'));
-    const fg = el('div', 'grid');
-    foods.forEach(id => {
-      const f = FOOD_BY_ID[id];
-      fg.appendChild(sellCard(el('div', 'emoji', f.emoji), f.name, f.price, foodSellBlock(id), G.food[id], () => sellFood(id)));
-    });
-    body.appendChild(fg);
   }
 }
 
