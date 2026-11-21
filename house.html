@@ -1508,7 +1508,10 @@ const FURNITURE = [
     parts: [
       { x: 0, y: 0, w: 2, d: .7, z: 0, h: 78, c: '#9c9588' },
       { x: .5, y: .7, w: 1, d: .02, z: 4, h: 36, c: '#2b2420' },
-      { k: 'ball', x: 1, y: .75, z: 14, r: 8, c: '#ff9a3c', fire: true },
+      { x: .62, y: .73, w: .76, d: .05, z: 4, h: 4, c: '#5a3a22' }, { x: .72, y: .75, w: .56, d: .05, z: 7, h: 3, c: '#8a5a33' },   // 木柴
+      { k: 'ball', x: .8, y: .77, z: 12, r: 5, c: '#ff5a2a', flame: 0 }, { k: 'ball', x: 1.2, y: .77, z: 12, r: 5, c: '#ff5a2a', flame: 1 },
+      { k: 'ball', x: 1, y: .78, z: 14, r: 7.5, c: '#ff7a3c', flame: 2, fire: true }, { k: 'ball', x: 1, y: .79, z: 15, r: 5, c: '#ffa53c', flame: 3 }, { k: 'ball', x: 1, y: .8, z: 16, r: 3, c: '#ffe066', flame: 4 },
+      { k: 'ball', x: .95, y: .81, z: 26, r: 1.3, c: '#ffd23f', spark: 0 }, { k: 'ball', x: 1.07, y: .81, z: 26, r: 1.1, c: '#ffb347', spark: 1 },
       { x: -.05, y: -.05, w: 2.1, d: .8, z: 78, h: 6, c: '#6d5b4a' }
     ] },
   { id: 'leaf_rug', name: '草地地毯', price: 1300, theme: 'nature', w: 2, d: 2, layer: 'floor',
@@ -4794,6 +4797,13 @@ function drawRamp(ctx, x, y, p) {
   poly(ctx, [iso(x + w, y, B - t), iso(x + w, y + d, C - t), iso(x + w, y + d, C), iso(x + w, y, B)], shade(p.c, .7), line);
   poly(ctx, [iso(x, y, A), iso(x + w, y, B), iso(x + w, y + d, C), iso(x, y + d, D)], p.c, line);
 }
+function drawFlame(ctx, x, y, z, r, color) {   // 🔥 火焰：下面圓圓、上面尖尖的水滴形
+  const p = iso(x, y, z);
+  ctx.beginPath(); ctx.moveTo(p.x, p.y - r * 2.2);
+  ctx.bezierCurveTo(p.x + r * 1.15, p.y - r * .9, p.x + r * 1.05, p.y + r * .6, p.x, p.y + r);
+  ctx.bezierCurveTo(p.x - r * 1.05, p.y + r * .6, p.x - r * 1.15, p.y - r * .9, p.x, p.y - r * 2.2);
+  ctx.fillStyle = color; ctx.fill();
+}
 function drawBall(ctx, x, y, z, r, color) {
   const p = iso(x, y, z);
   ctx.beginPath();
@@ -4896,7 +4906,8 @@ function itemHeight(def) {
 
 function drawPart(ctx, p, gx, gy) {
   ctx.globalAlpha = (ctx.__baseAlpha || 1) * (p.a || 1);
-  if (p.k === 'ball') drawBall(ctx, gx + p.x, gy + p.y, p.z, p.r, p.c);
+  if (p.flame != null) drawFlame(ctx, gx + p.x, gy + p.y, p.z, p.r, p.c);
+  else if (p.k === 'ball') drawBall(ctx, gx + p.x, gy + p.y, p.z, p.r, p.c);
   else if (p.k === 'ramp') drawRamp(ctx, gx + p.x, gy + p.y, p);
   else drawBox(ctx, gx + p.x, gy + p.y, p.w, p.d, p.z, p.h, p.c);
   ctx.globalAlpha = ctx.__baseAlpha || 1;
@@ -9750,7 +9761,7 @@ function itemLook(def, rot, it, parts) {
   const active = fufu.act && fufu.act.uid === it.uid ? fufu.act.key : null;
   if (active === 'coaster') parts = parts.filter(p => !p.car);   // 🎢 車廂跟著她跑了，車站上的那台先不畫
   const st = itemState[it.uid];
-  const alwaysMoving = def.id === 'fishtank' || def.id === 'pond' || def.id === 'float_ring'; // 池塘：魚一直游、小鴨子一直漂
+  const alwaysMoving = def.id === 'fishtank' || def.id === 'pond' || def.id === 'float_ring' || def.id === 'fireplace';   // 🔥 暖爐的火一直在燒 // 池塘：魚一直游、小鴨子一直漂
   if (def.id === 'planter') parts = parts.concat(gardenParts(it));   // 🌱 花盆：照長到哪裡畫芽、苗、花
   if (!active && !st && !alwaysMoving) return parts;
   const fire = st && st.fireUntil > now;
@@ -9759,6 +9770,8 @@ function itemLook(def, rot, it, parts) {
     if (tapK) p = Object.assign({}, p, p.k === 'ramp' ? { zHi: p.zHi + tapK, zLo: p.zLo + tapK } : { z: p.z + tapK });
     if (p.screen && active) return Object.assign({}, p, { c: SCREEN_COLORS[(Math.floor(t * 4) + i) % SCREEN_COLORS.length] });
     if (p.spin && active) return Object.assign({}, p, { c: Math.floor(t * 6) % 2 ? '#8fd3f4' : '#ffffff' });
+    if (p.flame != null) { const ph = t * 7 + p.flame * 1.7, big = fire ? 1.35 : 1; return Object.assign({}, p, { r: p.r * big * (1 + Math.sin(ph * 1.3) * .16), z: p.z + Math.sin(ph) * 1.2, x: p.x + Math.sin(ph * .8) * .02 }); }   // 🔥 火焰一直跳動，生火的時候更大
+    if (p.spark != null) { const k = (t * .9 + p.spark * .5) % 1; return Object.assign({}, p, { z: p.z + k * 24, x: p.x + Math.sin(t * 3 + p.spark * 2) * .05, a: 1 - k }); }   // ✨ 小火星往上飄
     if (p.fire && fire) return Object.assign({}, p, { r: p.r + 3 + Math.sin(t * 12) * 1.5, c: Math.sin(t * 9) > 0 ? '#ffb347' : '#ff7a3c' });
     if (p.shade && st && st.lit) return Object.assign({}, p, { c: '#fff6a0' });
     if (p.fish) return Object.assign({}, p, { x: p.x + Math.sin(t * 1.6) * .16 });
@@ -24812,6 +24825,26 @@ function islDrawHelipad(ctx, b, tt) {
   ctx.strokeStyle = '#4a4452'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(hx - 15, hy); ctx.lineTo(hx - 28, hy - 2); ctx.moveTo(hx - 8, hy + 11); ctx.lineTo(hx + 10, hy + 11); ctx.stroke();
   const bl = Math.abs(Math.cos(tt * .6)) * 20 + 4; ctx.fillStyle = '#4a4452'; ctx.fillRect(hx - bl, hy - 13, bl * 2, 2);
 }
+function santaYard(ctx, b, x, y, w, h, tt) {   // 🎄 門口的聖誕樹、🦌 麋鹿睡覺的小窩
+  try { festDrawTree(ctx, b.x + 1, b.y + b.h - 1, tt * 1000); } catch (e) {}
+  for (let i = 0; i < 6; i++) { const k = (tt * .35 + i / 6) % 1; ctx.fillStyle = `rgba(246,246,250,${(.85 * (1 - k)).toFixed(2)})`; ctx.beginPath(); ctx.arc(x + w - 15 + Math.sin(k * 5 + i) * 5 + k * 16, y - 24 - k * 52, 5 + k * 8, 0, 7); ctx.fill(); }   // 💨 煙囪一直冒煙（比一般房子濃）
+  const T = ISL.T, nx = x + w + T * .95, gy = y + h - 2;
+  ctx.fillStyle = 'rgba(40,60,30,.18)'; ctx.beginPath(); ctx.ellipse(nx, gy + 2, 30, 7, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#7a5230'; ctx.fillRect(nx - 26, gy - 36, 4, 36); ctx.fillRect(nx + 22, gy - 36, 4, 36);   // 小窩的柱子
+  ctx.fillStyle = '#a0673a'; ctx.beginPath(); ctx.moveTo(nx - 34, gy - 32); ctx.lineTo(nx, gy - 50); ctx.lineTo(nx + 34, gy - 32); ctx.lineTo(nx + 30, gy - 28); ctx.lineTo(nx, gy - 44); ctx.lineTo(nx - 30, gy - 28); ctx.closePath(); ctx.fill();   // 小屋頂
+  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(nx - 32, gy - 33); ctx.lineTo(nx, gy - 50); ctx.lineTo(nx + 32, gy - 33); ctx.stroke(); ctx.lineCap = 'butt';   // 屋頂上的雪
+  ctx.fillStyle = '#e8c46a'; ctx.beginPath(); ctx.ellipse(nx, gy - 4, 26, 8, 0, 0, 7); ctx.fill();   // 乾草窩
+  ctx.strokeStyle = '#c9a03a'; ctx.lineWidth = 1; for (let i = -3; i <= 3; i++) { ctx.beginPath(); ctx.moveTo(nx + i * 7 - 3, gy - 8); ctx.lineTo(nx + i * 7 + 3, gy - 1); ctx.stroke(); }
+  const br = Math.sin(tt * 1.6) * .8;   // 睡覺的呼吸
+  ctx.fillStyle = '#c9844a'; ctx.beginPath(); ctx.ellipse(nx + 3, gy - 11 - br * .5, 15, 8 + br * .4, 0, 0, 7); ctx.fill();   // 捲起來的身體
+  ctx.fillStyle = '#e8a06a'; ctx.beginPath(); ctx.ellipse(nx + 6, gy - 9, 8, 4, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#c9844a'; ctx.beginPath(); ctx.ellipse(nx - 13, gy - 9, 7, 5.5, -.3, 0, 7); ctx.fill();   // 頭靠著乾草
+  ctx.strokeStyle = '#8a5a33'; ctx.lineWidth = 1.6; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(nx - 12, gy - 14); ctx.lineTo(nx - 10, gy - 22); ctx.moveTo(nx - 11, gy - 19); ctx.lineTo(nx - 6, gy - 21); ctx.moveTo(nx - 15, gy - 14); ctx.lineTo(nx - 19, gy - 21); ctx.moveTo(nx - 17, gy - 18); ctx.lineTo(nx - 22, gy - 19); ctx.stroke();   // 鹿角
+  ctx.strokeStyle = '#4a3020'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(nx - 14, gy - 10, 1.8, .2, Math.PI - .2); ctx.stroke(); ctx.lineCap = 'butt';   // 閉著的眼睛
+  ctx.fillStyle = '#e8505b'; ctx.beginPath(); ctx.arc(nx - 19, gy - 8, 1.8, 0, 7); ctx.fill();   // 紅鼻子
+  ctx.font = '700 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#5b6fd1';
+  for (let i = 0; i < 3; i++) { const k = (tt * .45 + i / 3) % 1; ctx.globalAlpha = 1 - k; ctx.fillText('z', nx - 8 + k * 14 + i * 2, gy - 22 - k * 22); } ctx.globalAlpha = 1;
+}
 function islDrawBuilding(ctx, b, tt) {
   const T = ISL.T, x = b.x * T, y = b.y * T, w = b.w * T, h = b.h * T, fr = /^friend/.test(b.id);
   const sty = ISL_STYLE[fr ? 'friend' : b.id] || ISL_STYLE.home, roofC = fr ? ['#6fb7e8', '#ff8fb3', '#ffc94d', '#9be0a0'][+b.id.slice(6)] : sty[1];
@@ -24828,6 +24861,10 @@ function islDrawBuilding(ctx, b, tt) {
   } else if (b.id === 'home') {   // 🏡 我的家：照房子外觀畫（油漆、造型、會長大、季節）
     const fk = isl.fun && isl.fun.kind, ph = islPhase();
     drawHomeExterior(ctx, x, y, w, h, b.door[0] * T, homeLook(), { tt, night: ph === 'night' || ph === 'evening', glow: isl.glow, season: typeof seasonOfMonth === 'function' ? seasonOfMonth() : '', snow: fk === 'snow' || fk === 'hail', rain: fk === 'storm' || fk === 'thunder' });
+  } else if (b.id === 'santa') {   // 🎅 聖誕老公公的家：木頭小屋、屋頂積雪、煙囪一直冒煙
+    const ph = islPhase();
+    drawHomeExterior(ctx, x, y, w, h, b.door[0] * T, { style: 'log', wall: '#b07a48', roof: '#d63b3b', door: '#2f8a3c', flag: '', sign: '', decoL: 'none', decoR: 'none', tier: 0 }, { tt, night: ph === 'night' || ph === 'evening', glow: isl.glow, season: 'winter', snow: true });
+    santaYard(ctx, b, x, y, w, h, tt);
   } else if (b.id === 'amusement') {   // 遊樂園：大帳篷＋摩天輪
     const cx = x + w / 2, wr = 50, wy = y - 6;
     ctx.strokeStyle = '#8aa'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, wy, wr / 1.4, 0, 7); ctx.stroke();
@@ -24869,7 +24906,7 @@ function islDrawBuilding(ctx, b, tt) {
   }
   const dx = b.door[0] * T;
   if (b.id === 'uncle' || b.id === 'grandma') famDecor(ctx, b, x, y, w, h, tt);   // ⑧ 常去拜訪越來越漂亮
-  if (b.id === 'home' || (fr && b.hlDrawn)) { /* 門在 drawHomeExterior 畫了 */ }
+  if (b.id === 'home' || b.id === 'santa' || (fr && b.hlDrawn)) { /* 門在 drawHomeExterior 畫了 */ }
   else if (b.id === 'playground') {   // 白色球門當入口，不是木頭屋門
     ctx.fillStyle = '#ffffff'; ctx.fillRect(dx + 6, y + h - 16, 4, 16); ctx.fillRect(dx + 22, y + h - 16, 4, 16); ctx.fillRect(dx + 6, y + h - 18, 20, 4);
   } else {
