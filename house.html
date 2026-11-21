@@ -5994,7 +5994,7 @@ const NEWS = [
     ['🌋', '恐龍島有危險了！躲岩漿、在隕石雨裡救出嚇壞的小恐龍、澆熄火山：三關都過，恐龍石像會活過來，變成可以騎的🦕恐龍！'],
     ['🚔', '警察局的小房間裡關了兩位動物朋友：偷吃布丁、偷打電動、偷放屁…點小房間問問他們為什麼被關！'],
     ['🚓', '大地圖多了警察局（叔叔家旁邊）：跟狗狗警官一起抓小偷，三關都過送你一台警車和警察制服！'],
-    ['🎭', '警察局的演習：你當小偷，躲開手電筒拿寶石；被照到就到小房間待 3 分鐘，寵物們會想辦法來救你，也可以打電話叫爸爸媽媽來接'],
+    ['🎭', '警察局的演習：你當小偷，躲開手電筒拿寶石；被照到就到小房間待 2 分鐘，寵物們會想辦法來救你，也可以打電話叫爸爸媽媽來接'],
     ['🐭', '小偷鼠偶爾會溜進家裡偷小東西（一天最多一次），快點他抓住！沒抓到的東西去警察局失物招領領回來'],
     ['🚑', '醫院當小醫生 3 次，醫生送你一台救護車！'],
     ['🏫', '在學校的電腦玩不會一直跳出密碼了：沒設家長密碼的電腦，按設定直接打開'],
@@ -7107,7 +7107,7 @@ function normalizeSave(g) {
     ['lv', 'catch', 'drill', 'jailed', 'xp', 'chaseLv', 'susLv'].forEach(k => { if (c[k] != null && !(Number.isInteger(c[k]) && c[k] >= 0 && c[k] < 1e6)) delete c[k]; }); ['lv', 'chaseLv', 'susLv'].forEach(k => { if (c[k] != null && c[k] > 3) c[k] = 3; }); Object.keys(c).forEach(k => { if (!['lv', 'catch', 'drill', 'jailed', 'xp', 'cases', 'caught', 'chaseLv', 'susLv'].includes(k)) delete c[k]; }); } }   // 🚓 警察局：抓小偷過到第幾關、抓到幾次
   if (out.jail != null && !(isObj(out.jail) && typeof out.jail.until === 'number' && isFinite(out.jail.until))) delete out.jail;
   if (out.jail) { if (out.jail.parentsAt != null && !(typeof out.jail.parentsAt === 'number' && isFinite(out.jail.parentsAt))) delete out.jail.parentsAt; Object.keys(out.jail).forEach(k => { if (k !== 'until' && k !== 'parentsAt') delete out.jail[k]; }); }   // 🚔 演習被抓：關到什麼時候
-  if (out.jail && out.jail.until > Date.now() + 5 * 60000) out.jail.until = Date.now() + 180000;   // 時間亂掉：最多關 3 分鐘
+  if (out.jail && out.jail.until > Date.now() + 3 * 60000) out.jail.until = Date.now() + 120000;   // 時間亂掉（或以前關 3 分鐘的）：最多關 2 分鐘
   if (out.thief != null) { if (!isObj(out.thief)) delete out.thief; else { const t = out.thief; if (t.day != null && typeof t.day !== 'string') delete t.day; if (t.n != null && !(Number.isInteger(t.n) && t.n >= 0 && t.n < 1e6)) delete t.n;
     t.bag = Array.isArray(t.bag) ? t.bag.filter(b => isObj(b) && typeof b.id === 'string' && FURN_BY_ID[b.id] && (b.top == null || (typeof b.top === 'string' && FURN_BY_ID[b.top]))).map(b => (b.top ? { id: b.id, top: b.top } : { id: b.id })).slice(0, 30) : []; Object.keys(t).forEach(k => { if (!['day', 'n', 'bag'].includes(k)) delete t[k]; }); } }   // 🐭 小偷：今天來過了沒、抓到幾次、失物招領（被偷走還沒領回的東西）
   if (out.noThief != null && out.noThief !== 1) delete out.noThief;
@@ -35109,7 +35109,7 @@ try { const vt = document.getElementById('verTag'); if (vt) vt.textContent = '�
    ・🚓 一起抓小偷：上面往下看的小街道，用方向鍵／W A S D，或手指按住畫面往那邊走，碰到小偷就抓到。三關，越後面越會跑；
      小偷跑一陣子會累（冒汗停一下），小朋友追得到。三關都過：送警車＋警察帽、制服、褲子。
    ・🎭 演習：我當小偷：警官說「我們練習一下」。躲開警察的手電筒，拿到三顆寶石再走到出口。躲在箱子後面就看不到你。
-     被照到 → 關進「小房間」（有床、有玩具，不可怕）3 分鐘（家長 11/19：一分鐘改三分鐘）。
+     被照到 → 關進「小房間」（有床、有玩具，不可怕）2 分鐘（家長 11/19：一分鐘改三分鐘；11/22：三分鐘太久，改兩分鐘）。
      🐾 寵物們會想辦法救你：40 秒推欄杆（推不動）、80 秒挖地道（太硬）、2 分鐘找到鑰匙 → 開門出來。
      也可以「📞 打電話給爸爸媽媽」（開車過來要 30 秒），或「🐱 幫警官找小貓」做好事提早出來。
      出來時警官會說：偷東西是不對的喔！
@@ -35118,7 +35118,7 @@ try { const vt = document.getElementById('verTag'); if (vt) vt.textContent = '�
      （叔叔是浣熊，所以小偷是戴眼罩、穿條紋衣的小老鼠，不會搞混。）家長設定裡可以關掉。
    ・東西一被偷就記進存檔（G.thief.bag），關掉網頁也不會不見；抓到就拿出來放回去，沒抓到就在失物招領等著領。
    ・🚑 醫院：當小醫生做完 3 次，醫生送一台救護車。 */
-const DOC_FOR_AMB = 3, COP_LEVELS = 3, JAIL_MS = 180000, PET_TRY_MS = [40000, 80000, 120000], PARENT_DRIVE_MS = 30000;
+const DOC_FOR_AMB = 3, COP_LEVELS = 3, JAIL_MS = 120000, PET_TRY_MS = [25000, 50000, 75000], PARENT_DRIVE_MS = 30000;
 function copState() { if (!G.cop || typeof G.cop !== 'object') G.cop = {}; return G.cop; }
 function thiefState() { if (!G.thief || typeof G.thief !== 'object') G.thief = {}; if (!Array.isArray(G.thief.bag)) G.thief.bag = []; return G.thief; }
 function thiefBag() { return thiefState().bag; }
@@ -35306,7 +35306,7 @@ function openThiefDrill() {
   openThiefDrill.test = { me, gems, cops, exit, win: () => { gems.forEach(q => { q.got = true; }); me.x = exit.x; me.y = exit.y; }, caught: () => { const c = cops[0]; me.x = c.x + Math.cos(c.ang) * 30; me.y = c.y + Math.sin(c.ang) * 30; } };
   raf = requestAnimationFrame(tick);
 }
-// 🚔 小房間（演習被抓）：3 分鐘；寵物們會想辦法救你、打電話叫爸爸媽媽來接，或幫忙找小貓做好事，就可以提早出來
+// 🚔 小房間（演習被抓）：2 分鐘；寵物們會想辦法救你、打電話叫爸爸媽媽來接，或幫忙找小貓做好事，就可以提早出來
 function jailLeft() { return G.jail && typeof G.jail.until === 'number' ? Math.max(0, G.jail.until - Date.now()) : 0; }
 function startJail() {
   try { const pr = prisonersToday()[0]; setTimeout(() => { try { toast(`🚔 室友${pr.n.short}：我是${pr.crime[1]}${pr.crime[0]}被關的！你呢？`); } catch (e) {} }, 1500); } catch (e) {}
@@ -35329,7 +35329,7 @@ function jailPets() {   // 🐾 會來救你的寵物：帶著的那隻先，再
 function openJail() {
   if (jailLeft() <= 0) { if (G.jail) jailRelease('time'); return; }
   const pets = jailPets();
-  const w = openGameWindow('🚔 演習：被抓到了', `被警察的手電筒照到了！要在小房間待 3 分鐘。${pets.length ? '你的寵物們會想辦法來救你喔！' : ''}也可以打電話給爸爸媽媽來接你，或幫警官找小貓做一件好事。`);
+  const w = openGameWindow('🚔 演習：被抓到了', `被警察的手電筒照到了！要在小房間待 2 分鐘。${pets.length ? '你的寵物們會想辦法來救你喔！' : ''}也可以打電話給爸爸媽媽來接你，或幫警官找小貓做一件好事。`);
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   const W = 300, H = 170, { g } = gameCanvas(w.stage, W, H); let raf = 0, live = true, t = 0, last = performance.now();
   if (!G.jail.parentsAt && G.jail.parentsAt !== 0) delete G.jail.parentsAt;
