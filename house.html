@@ -7904,7 +7904,7 @@ function sellKidFood(id) {
   if (kidFoodSellBlock(id)) return 0;
   G.kidFood[id]--;
   if (!G.kidFood[id]) delete G.kidFood[id];
-  const v = sellValue(KID_FOOD_BY_ID[id].price);
+  const v = sellValue(KID_FOOD_BY_ID[id].price, true);
   G.bells += v;
   return v;
 }
@@ -7957,7 +7957,7 @@ function buyDeco(kind, id) {
 }
 
 // ── 賣回商店：一律原價一半（無條件捨去），要再買回就付原價 ──
-function sellValue(price) { return Math.floor(price / 2); }
+function sellValue(price, food) { return food ? Math.floor(price * .8) : Math.floor(price / 2); }   // 🍙 吃的東西（家長 11/21）打八折，其他半價
 
 // 回傳不能賣的原因；可以賣回傳 null
 function furnSellBlock(id) {
@@ -7997,7 +7997,7 @@ function sellFood(id) {
   if (foodSellBlock(id)) return 0;
   G.food[id]--;
   if (!G.food[id]) delete G.food[id];
-  const v = sellValue(FOOD_BY_ID[id].price);
+  const v = sellValue(FOOD_BY_ID[id].price, true);
   G.bells += v;
   return v;
 }
@@ -18054,18 +18054,18 @@ function sellToggle(body, extraNote) {
   const b = el('button', 'sellbtn' + (sellMode ? ' on' : ''), sellMode ? '✓ 賣完了，回到一般模式' : '💰 賣回商店（半價）');
   b.onclick = () => { sellMode = !sellMode; Sound.play('click'); renderTab(); };
   body.appendChild(b);
-  if (sellMode) body.appendChild(note(`點要賣的東西，可以拿回原價一半的錢。賣掉之後想再買，要付原價喔。${extraNote || ''}`));
+  if (sellMode) body.appendChild(note(`點要賣的東西，家具、衣服可以拿回原價一半的錢，吃的東西打八折。賣掉之後想再買，要付原價喔。${extraNote || ''}`));
 }
 
 // 賣之前一定先問一次，避免小朋友點錯
-function confirmSell(name, price, doSell, count) {
+function confirmSell(name, price, doSell, count, food) {
   const card = $('#modalCard');
   card.innerHTML = '';
   card.appendChild(el('h2', '', '💰 賣回商店'));
   card.appendChild(el('p', 'sell-q', `要把「${name}」賣掉嗎？`));
   const info = el('div', 'sell-info');
   info.append(
-    el('div', '', `可以拿到　💰 ${fmt(sellValue(price))}`),
+    el('div', '', `可以拿到　💰 ${fmt(sellValue(price, food))}${food ? '（打八折）' : ''}`),
     el('div', 'muted', `之後想買回來要　💰 ${fmt(price)}`)
   );
   card.appendChild(info);
@@ -18081,7 +18081,7 @@ function confirmSell(name, price, doSell, count) {
   no.onclick = () => { close(); Sound.play('click'); };
   card.append(yes);
   if (count > 1) {   // 🍙 吃的東西買太多：一次全部賣掉
-    const all = el('button', 'big warnbtn', `全部賣掉（${count} 個，💰 ${fmt(sellValue(price) * count)}）`);
+    const all = el('button', 'big warnbtn', `全部賣掉（${count} 個，💰 ${fmt(sellValue(price, food) * count)}）`);
     all.onclick = () => { close(); let got = 0, n = 0; for (let i = 0; i < count; i++) { const g1 = doSell(); if (!g1) break; got += g1; n++; } if (got) { Sound.play('coin'); toast(`賣掉 ${n} 個「${name}」，拿到 ${fmt(got)} 元`); } commit(); };
     card.append(all);
   }
@@ -18128,11 +18128,11 @@ function sellCard(visual, name, price, block, count, onSell, multi) {
   const c = el('button', 'card' + (block ? ' dim' : ' sellable'));
   c.appendChild(visual);
   c.appendChild(el('div', 'nm', name));
-  c.appendChild(el('div', 'pr', block || `賣 💰 ${fmt(sellValue(price))}`));
+  c.appendChild(el('div', 'pr', block || `賣 💰 ${fmt(sellValue(price, multi))}`));
   if (count) c.appendChild(el('span', 'ct', '×' + count));
   c.onclick = () => {
     if (block) { toast(`「${name}」${block}，不能賣`); return; }
-    confirmSell(name, price, onSell, multi ? count : 0);
+    confirmSell(name, price, onSell, multi ? count : 0, !!multi);
   };
   return c;
 }

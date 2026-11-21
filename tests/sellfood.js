@@ -18,10 +18,10 @@ const path = require('path');
     o.potionFirst = txt.indexOf('神奇魔法藥水') > -1 && txt.indexOf('神奇魔法藥水') < txt.indexOf('🛋️ 家具');
     const card = [...document.querySelectorAll('.card.sellable')].find(c => /神奇魔法藥水/.test(c.textContent)); card.click(); await w(100);
     const all = [...document.querySelectorAll('#modalCard button')].find(x => /全部賣掉（3 個/.test(x.textContent)); o.allBtn = !!all;
-    all.click(); await w(200); o.soldAll = !G.kidFood.shrink && G.bells === 1500;
+    all.click(); await w(200); o.soldAll = !G.kidFood.shrink && G.bells === 2400;
     const c2 = [...document.querySelectorAll('.card.sellable')].find(c => c.textContent.includes(other.name)); c2.click(); await w(100);
     o.noAllForOne = ![...document.querySelectorAll('#modalCard button')].some(x => /全部賣掉/.test(x.textContent));
-    [...document.querySelectorAll('#modalCard button')].find(x => /賣掉/.test(x.textContent)).click(); await w(100); o.soldOne = !G.kidFood[other.id] && G.bells === 1500 + Math.floor(other.price / 2);
+    [...document.querySelectorAll('#modalCard button')].find(x => /賣掉/.test(x.textContent)).click(); await w(100); o.soldOne = !G.kidFood[other.id] && G.bells === 2400 + Math.floor(other.price * .8);
     KID_FOOD_BY_ID.__free = { id: '__free', name: '送的點心', emoji: '🍬', price: 0 }; G.kidFood.__free = 2; o.freeBlocked = kidFoodSellBlock('__free') === '送的' && sellKidFood('__free') === 0 && G.kidFood.__free === 2; delete G.kidFood.__free;
     sellMode = false; $('#modal').hidden = true;
     } catch (e) { o.err = String(e.stack).slice(0, 300); }
