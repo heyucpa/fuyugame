@@ -36,6 +36,13 @@
 .vev-point::after{content:'👆';position:absolute;left:50%;bottom:-34px;transform:translateX(-50%);font-size:26px;animation:vevBob .6s ease-in-out infinite alternate;pointer-events:none}
 @keyframes vevPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,210,63,.9)}50%{box-shadow:0 0 0 8px rgba(255,210,63,0)}}
 @keyframes vevBob{from{transform:translate(-50%,0)}to{transform:translate(-50%,-8px)}}
+.pc-stage{cursor:pointer;white-space:nowrap}
+.grow-album{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:8px 0}
+.grow-cell{display:flex;flex-direction:column;align-items:center;gap:4px;background:#fffaf0;border:2px solid #f0dcb8;border-radius:14px;padding:8px}
+.grow-cell canvas{border-radius:10px}
+.grow-cell b{font-size:16px}
+.grow-cell span{font-size:13px;color:#8a7a68}
+.grow-cell.locked{opacity:.6}
 </style></head><body>
 <style>
 :root {
@@ -7186,6 +7193,9 @@ function normalizeSave(g) {
   if (out.xmasGift != null && !(isObj(out.xmasGift) && typeof out.xmasGift.d === 'string' && out.xmasGift.d.length <= 12 && Number.isInteger(out.xmasGift.n) && out.xmasGift.n >= 0 && out.xmasGift.n < 20)) delete out.xmasGift;   // 🎄 聖誕小禮物今天領過幾次
   if (out.raceDay != null && !(isObj(out.raceDay) && typeof out.raceDay.d === 'string' && Number.isInteger(out.raceDay.n) && out.raceDay.n >= 0)) delete out.raceDay;   // 🏁 賽跑猜對的獎金（一天幾次）
   if (out.kid.magic != null && !(isObj(out.kid.magic) && num(out.kid.magic.until) && magicFxList().some(m => m.id === out.kid.magic.id))) delete out.kid.magic;   // 🔮 魔法藥水的效果
+  if (out.kid.over != null && !(typeof out.kid.over === 'number' && isFinite(out.kid.over) && out.kid.over >= 0 && out.kid.over < 1000)) delete out.kid.over;   // 🎂 ⭐⭐⭐ 以後長了多少
+  if (out.kid.bday != null && !(Number.isInteger(out.kid.bday) && out.kid.bday >= 0 && out.kid.bday < 1e6)) delete out.kid.bday;   // 🎂 拿過幾次長大禮物
+  if (out.kid.stageAt != null) { if (!isObj(out.kid.stageAt)) delete out.kid.stageAt; else out.kid.stageAt = Object.fromEntries(Object.entries(out.kid.stageAt).filter(([k, v]) => /^(kinder|school|big)$/.test(k) && typeof v === 'string' && v.length <= 12)); }   // 📸 長大相簿的日期
   if (out.kid.magicDex != null) { if (Array.isArray(out.kid.magicDex)) out.kid.magicDex = out.kid.magicDex.filter(id => magicFxList().some(m => m.id === id)); else delete out.kid.magicDex; }
   if (out.kid.lastMagic != null && typeof out.kid.lastMagic !== 'string') delete out.kid.lastMagic;
   out.away = null; // 重新打開遊戲一律在自己家
@@ -7816,12 +7826,14 @@ function kidStage() { return kidStageAt(G.kid.height); }
 // 這個階段長了多少（0～1）；⭐⭐⭐ 就是滿的
 function kidGrowPct() {
   const s = kidStage(), n = KID_STAGES[KID_STAGES.indexOf(s) + 1];
+  if (s.id === 'big') return Math.max(0, Math.min(1, (G.kid.over || 0) / KID_OVER_NEED));   // 🎂 ⭐⭐⭐ 以後：往下一個長大禮物
   return n ? Math.max(0, Math.min(1, (G.kid.height - s.at) / (n.at - s.at))) : 1;
 }
 // 加成長值；跨過一個階段回傳 {from, to, newDex}
 /* 長大的速度（家長選「快」：每週玩一小時左右，大約一週長一階）＋防狂點：
    ・做一件事 +0.25；同一件事要隔 2 分鐘才再算、任兩件事之間至少隔 15 秒（一直點同一個家具沒用）
    ・一天最多長 KID_GROW_DAY_MAX（＝一階），連吃很多小安素也一樣 */
+const KID_OVER_NEED = 25;   // 🎂 ⭐⭐⭐ 以後長多少送一個長大禮物（一天最多長 10，平常大約 3～5 天一個）
 const KID_GROW_DAY_MAX = 10, KID_ACT_GROW = .25, KID_ACT_SAME_MS = 120000, KID_ACT_GAP_MS = 15000, KID_BOOK_GROW = .5;
 const kidActLast = {};
 let kidActAny = 0;
@@ -7840,9 +7852,15 @@ function kidAddGrowth(amount) {
   if (amount <= 0) return null;
   G.kidGrowDay.n = Math.round((G.kidGrowDay.n + amount) * 100) / 100;
   const from = kidStage();
+  if (from.id === 'big') {   // 🎂 ⭐⭐⭐ 以後：成長條重新長，長滿一次送一個長大禮物（家長 11/22：三顆星好像沒什麼用）
+    G.kid.over = Math.round(((G.kid.over || 0) + amount) * 100) / 100;
+    if (G.kid.over >= KID_OVER_NEED) { G.kid.over = Math.round((G.kid.over - KID_OVER_NEED) * 100) / 100; G.kid.bday = (G.kid.bday || 0) + 1; setTimeout(() => { try { kidBdayGift(); } catch (e) {} }, 600); }
+    return null;
+  }
   G.kid.height = Math.min(KID_MAX_HEIGHT, Math.round((G.kid.height + amount) * 100) / 100);
   const to = kidStage();
   if (to === from) return null;
+  if (!G.kid.stageAt || typeof G.kid.stageAt !== 'object') G.kid.stageAt = {}; G.kid.stageAt[to.id] = today();   // 📸 長大相簿：哪一天長大的
   return { from: from.id, to: to.id, newDex: growDexAdd('girl', to.id) };
 }
 function kidGainGrowth(amount) {
@@ -10596,6 +10614,38 @@ function smallTick() {
   });
 }
 // 小可愛長大了：畫面中間「原本 → 長大後」的大圖，收進成長圖鑑
+/* 🎂 長大禮物：沒有的衣服或家具，或是 💰500 */
+function kidBdayGift() {
+  const clothes = Object.values(CLOTHES_BY_ID).filter(c => c.price > 0 && !c.prize && !c.season && !ownsClothes(c.id));
+  const furn = FURNITURE.filter(f => f.price > 0 && !f.season && !f.gift && !(G.inv[f.id] > 0));
+  const r = Math.random(), n = G.kid.bday || 1; let visual, what;
+  if (clothes.length && (r < .45 || !furn.length)) { const c = clothes[Math.floor(Math.random() * clothes.length)]; G.wardrobe.push(c.id); what = `一件「${c.name}」，放進「換裝」了！`; try { visual = renderGirl(previewOutfit(c.slot, c.id), 110, 130, { hair: G.hair, now: 1 }); } catch (e) {} }
+  else if (furn.length && r < .9) { const f = furn[Math.floor(Math.random() * furn.length)]; addItem(f.id); what = `一件「${f.name}」，放進「我的東西」了！`; try { visual = renderThumb(f, 150); } catch (e) {} }
+  else { addBells(500); what = '💰 500 元零用錢！'; }
+  Sound.play('fanfare'); try { fufuSay('哇！長大禮物！', 2600); fufuBurst('🎂'); } catch (e) {}
+  saveGame(); refreshTop();
+  try { showcase(visual || el('div', 'magic-pic', '🎁'), `🎂 長大禮物（第 ${n} 個）`, `${charName()}又長大一點了！送你${what}`, { head: '⭐⭐⭐ 繼續長大' }); } catch (e) { toast(`🎂 長大禮物：${what}`); }
+}
+/* 📸 長大相簿：點名字旁邊的星星；⭐、⭐⭐、⭐⭐⭐ 每一階的樣子（穿現在的衣服），寫哪一天長大的 */
+function openGrowAlbum() {
+  const card = $('#modalCard'), at = G.kid.stageAt || {}, cur = KID_STAGES.indexOf(kidStage()); card.innerHTML = '';
+  card.appendChild(el('h2', '', `📸 ${charName()}的長大相簿`));
+  const row = el('div', 'grow-album');
+  KID_STAGES.forEach((st, i) => {
+    const cell = el('div', 'grow-cell' + (i > cur ? ' locked' : '')), W = 96, H = 128, dpr = Math.min(2, window.devicePixelRatio || 1), c = document.createElement('canvas');
+    c.width = W * dpr; c.height = H * dpr; c.style.width = W + 'px'; c.style.height = H + 'px'; const g = c.getContext('2d');
+    g.fillStyle = i > cur ? '#eee8dd' : '#fff6e6'; g.fillRect(0, 0, W * dpr, H * dpr);
+    if (i <= cur) { const sc = (H - 10) / 80 * dpr * (st.pic || 1) * .92; g.setTransform(sc, 0, 0, sc, W * dpr / 2, H * dpr - 5 * dpr); try { drawGirl(g, { t: 0, blink: false, outfit: currentOutfit(), hair: G.hair, stage: st.id, face: i === cur ? 'joy' : null }); } catch (e) {} }
+    else { g.font = `${40 * dpr}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('❔', W * dpr / 2, H * dpr / 2); }
+    cell.append(c, el('b', '', st.name), el('span', '', i > cur ? '還沒長到' : i === 0 && !at[st.id] ? '一開始' : at[st.id] ? at[st.id].replace(/^\d{4}-0?(\d+)-0?(\d+)$/, '$1 月 $2 日') + '長大的' : '很久以前'));
+    row.appendChild(cell);
+  });
+  card.appendChild(row);
+  const big = kidStage().id === 'big';
+  card.appendChild(note(big ? `⭐⭐⭐ 以後又長大了 ${G.kid.bday || 0} 次 🎂（再長 ${100 - Math.round(kidGrowPct() * 100)}% 就有 🎁 長大禮物）` : `再長 ${100 - Math.round(kidGrowPct() * 100)}% 就多一顆星星！吃東西、做事情都會慢慢長大～`));
+  const ok = el('button', 'big', '好'); ok.onclick = () => { $('#modal').hidden = true; }; card.appendChild(ok);
+  $('#modal').hidden = false;
+}
 function celebrateKidStage(up) {
   const to = KID_STAGE_BY_ID[up.to];
   fufuSay(pickLine('kidStageUp', { 階段: to.name }), 3500);
@@ -17051,14 +17101,15 @@ function updatePetCard() {
   const ks = kidStage(), sm = kidSmall();
   $('#kidStageIc').textContent = sm ? (sm.baby ? '👶' : '🧪') : '👧';   // 🌱 只留給長大進度條用（家長：名字前面又一個 🌱 會重複）
   if (sm) { const left = Math.max(0, Math.ceil((sm.until - Date.now()) / 1000)); $('#kidStageLbl').textContent = `${sm.baby ? '小寶寶' : '⭐'}　${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`; }
-  else $('#kidStageLbl').textContent = ks.name;
+  else $('#kidStageLbl').textContent = ks.name + (G.kid.bday ? `🎂${G.kid.bday}` : '');
+  $('#kidStageLbl').onclick = e => { if (e) e.stopPropagation(); if ($('#modal').hidden && !kidSmall()) { Sound.play('click'); openGrowAlbum(); } };   // 📸 點星星看長大相簿
   $('#barKidGrow').style.width = Math.round(kidGrowPct() * 100) + '%';
   $('#kidGrowRow').classList.toggle('max', ks.id === 'big');
   /* 🌙 今天長夠了（一天最多長 KID_GROW_DAY_MAX）：成長條旁邊出現月亮，
      不然停在同一格，小朋友會以為壞掉了。點一下也會說（iPad 沒有滑鼠移上去） */
-  const rested = ks.id !== 'big' && kidRestedToday();
+  const rested = kidRestedToday();
   $('#kidGrowRow').classList.toggle('rested', rested);
-  $('#kidGrowRow').title = ks.id === 'big' ? '已經 ⭐⭐⭐ 了！' : rested ? '🌙 今天長好多了，明天再繼續長'
+  $('#kidGrowRow').title = ks.id === 'big' ? (rested ? '🌙 今天長好多了，明天再繼續長' : `⭐⭐⭐ 長大以後：再長 ${100 - Math.round(kidGrowPct() * 100)}% 就有 🎁 長大禮物`) : rested ? '🌙 今天長好多了，明天再繼續長'
     : `下一顆星：${KID_STAGES[KID_STAGES.indexOf(ks) + 1].name}（${Math.round(kidGrowPct() * 100)}%）`;
   $('#kidGrowRow').onclick = () => toast($('#kidGrowRow').title);
   setBar('#barHunger', st.hunger);
