@@ -7957,7 +7957,7 @@ function buyDeco(kind, id) {
 }
 
 // ── 賣回商店：一律原價一半（無條件捨去），要再買回就付原價 ──
-function sellValue(price, food) { return food ? Math.floor(price * .8) : Math.floor(price / 2); }   // 🍙 吃的東西（家長 11/21）打八折，其他半價
+function sellValue(price, eighty) { return eighty ? Math.floor(price * .8) : Math.floor(price / 2); }   // 🍙 吃的東西、🛋️ 家具（家長 11/21）打八折；衣服、壁紙地板半價
 
 // 回傳不能賣的原因；可以賣回傳 null
 function furnSellBlock(id) {
@@ -7989,7 +7989,7 @@ function sellFurniture(id) {
   if (furnSellBlock(id)) return 0;
   G.inv[id]--;
   if (!G.inv[id]) delete G.inv[id];
-  const v = FURN_BY_ID[id].trophy ? FURN_BY_ID[id].sellPrice : sellValue(FURN_BY_ID[id].price);
+  const v = FURN_BY_ID[id].trophy ? FURN_BY_ID[id].sellPrice : sellValue(FURN_BY_ID[id].price, true);   // 🛋️ 家具也打八折（家長 11/21）
   G.bells += v;
   return v;
 }
@@ -18054,7 +18054,7 @@ function sellToggle(body, extraNote) {
   const b = el('button', 'sellbtn' + (sellMode ? ' on' : ''), sellMode ? '✓ 賣完了，回到一般模式' : '💰 賣回商店（半價）');
   b.onclick = () => { sellMode = !sellMode; Sound.play('click'); renderTab(); };
   body.appendChild(b);
-  if (sellMode) body.appendChild(note(`點要賣的東西，家具、衣服可以拿回原價一半的錢，吃的東西打八折。賣掉之後想再買，要付原價喔。${extraNote || ''}`));
+  if (sellMode) body.appendChild(note(`點要賣的東西，家具、吃的東西打八折；衣服、壁紙地板拿回原價一半。賣掉之後想再買，要付原價喔。${extraNote || ''}`));
 }
 
 // 賣之前一定先問一次，避免小朋友點錯
@@ -18182,7 +18182,7 @@ function tabInv(body) {
     ids.forEach(id => {
       const def = FURN_BY_ID[id];
       grid.appendChild(sellMode
-        ? (def.trophy ? trophySellCard(def, id) : sellCard(thumb(def), def.name, def.price, furnSellBlock(id), G.inv[id], () => sellFurniture(id)))
+        ? (def.trophy ? trophySellCard(def, id) : sellCard(thumb(def), def.name, def.price, furnSellBlock(id), G.inv[id], () => sellFurniture(id), true))
         : (() => { const c = furnCard(def, THEME_NAMES[def.theme], () => startHoldFromInv(id), G.inv[id]);
                    if ((G.noSell || {})[id]) c.appendChild(el('span', 'tag', '非賣品'));
                    return c; })());

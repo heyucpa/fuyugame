@@ -23,6 +23,7 @@ const path = require('path');
     o.noAllForOne = ![...document.querySelectorAll('#modalCard button')].some(x => /全部賣掉/.test(x.textContent));
     [...document.querySelectorAll('#modalCard button')].find(x => /賣掉/.test(x.textContent)).click(); await w(100); o.soldOne = !G.kidFood[other.id] && G.bells === 2400 + Math.floor(other.price * .8);
     KID_FOOD_BY_ID.__free = { id: '__free', name: '送的點心', emoji: '🍬', price: 0 }; G.kidFood.__free = 2; o.freeBlocked = kidFoodSellBlock('__free') === '送的' && sellKidFood('__free') === 0 && G.kidFood.__free === 2; delete G.kidFood.__free;
+    const fd = FURNITURE.find(f => f.price > 0 && !f.trophy); G.inv[fd.id] = 2; G.noSell = {}; const bf = G.bells; sellFurniture(fd.id); o.furn80 = G.bells - bf === Math.floor(fd.price * .8) && G.inv[fd.id] === 1;
     sellMode = false; $('#modal').hidden = true;
     } catch (e) { o.err = String(e.stack).slice(0, 300); }
     return o;
