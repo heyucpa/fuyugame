@@ -3768,7 +3768,7 @@ const PLACES = {
 };
 // ── 親戚的禮物（115.9.19 謝會）：每次去都會送，同一位親戚 1 小時內只送一次，避免來回跑刷禮物 ──
 const GIFT_COOLDOWN_MS = 3600000;
-// 叔叔送的小東西：可以擺在家裡，也可以拿去賣（半價）。商店買不到（gift），會收進圖鑑
+// 叔叔送的小東西：可以擺在家裡，也可以拿去賣（打八折）。商店買不到（gift），會收進圖鑑
 const GIFT_FURNITURE = [
   { id: 'comic_book', name: '漫畫書', price: 300, theme: 'modern', w: 1, d: 1, gift: true, weight: 40,
     parts: [
@@ -7956,8 +7956,8 @@ function buyDeco(kind, id) {
   return true;
 }
 
-// ── 賣回商店：一律原價一半（無條件捨去），要再買回就付原價 ──
-function sellValue(price, eighty) { return eighty ? Math.floor(price * .8) : Math.floor(price / 2); }   // 🍙 吃的東西、🛋️ 家具（家長 11/21）打八折；衣服、壁紙地板半價
+// ── 賣回商店：一律打八折（無條件捨去），要再買回就付原價 ──
+function sellValue(price) { return Math.floor(price * .8); }   // 💰 賣回商店一律打八折（家長 11/21：吃的東西、家具、衣服、壁紙地板都是）
 
 // 回傳不能賣的原因；可以賣回傳 null
 function furnSellBlock(id) {
@@ -18051,10 +18051,10 @@ function renderTab() {
 let sellMode = false; // 切換分頁時會關掉（ui.js）
 
 function sellToggle(body, extraNote) {
-  const b = el('button', 'sellbtn' + (sellMode ? ' on' : ''), sellMode ? '✓ 賣完了，回到一般模式' : '💰 賣回商店（半價）');
+  const b = el('button', 'sellbtn' + (sellMode ? ' on' : ''), sellMode ? '✓ 賣完了，回到一般模式' : '💰 賣回商店（打八折）');
   b.onclick = () => { sellMode = !sellMode; Sound.play('click'); renderTab(); };
   body.appendChild(b);
-  if (sellMode) body.appendChild(note(`點要賣的東西，家具、吃的東西打八折；衣服、壁紙地板拿回原價一半。賣掉之後想再買，要付原價喔。${extraNote || ''}`));
+  if (sellMode) body.appendChild(note(`點要賣的東西，可以拿回原價的八成（打八折）。賣掉之後想再買，要付原價喔。${extraNote || ''}`));
 }
 
 // 賣之前一定先問一次，避免小朋友點錯
@@ -18065,7 +18065,7 @@ function confirmSell(name, price, doSell, count, food) {
   card.appendChild(el('p', 'sell-q', `要把「${name}」賣掉嗎？`));
   const info = el('div', 'sell-info');
   info.append(
-    el('div', '', `可以拿到　💰 ${fmt(sellValue(price, food))}${food ? '（打八折）' : ''}`),
+    el('div', '', `可以拿到　💰 ${fmt(sellValue(price))}（打八折）`),
     el('div', 'muted', `之後想買回來要　💰 ${fmt(price)}`)
   );
   card.appendChild(info);
