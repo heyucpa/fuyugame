@@ -5893,6 +5893,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-21T16:00', title: '🚓 開警車抓小偷！', lines: [
+    ['🚨', '在大地圖開警車按「🚨 出勤」，可以選：有人需要幫忙、追小偷車、找可疑的車'],
+    ['🦝', '追小偷車：浣熊小偷開黑色小車逃跑，他的車有時候會冒煙停下來，趁機追上去碰到他就抓到了；小心他丟的香蕉皮！'],
+    ['🔍', '找可疑的車：看清楚警官給的線索（顏色、貼紙、車子種類），找到做壞事的那台車，開過去攔下來'],
+    ['🎖️', '抓到都有錢和警察點數，下次會自動到下一關']
+  ] },
   { id: '2026-11-21T15:00', title: '🔧 改車店開了！', lines: [
     ['🔧', '大地圖上家的右下方多了改車店，河狸技師在那裡等你'],
     ['🎨', '幫自己的車換顏色、貼貼紙（星星、愛心、火焰、彩虹…）、換輪框、裝會發光的底盤燈；先試看看不用錢，買過的以後換來換去都免費'],
@@ -7042,7 +7048,7 @@ function normalizeSave(g) {
   if (out.cop != null) { if (!isObj(out.cop)) delete out.cop; else { const c = out.cop;
     if (c.cases != null && !(isObj(c.cases) && typeof c.cases.d === 'string' && Number.isInteger(c.cases.n) && c.cases.n >= 0 && c.cases.n < 100)) delete c.cases; else if (c.cases) c.cases = { d: c.cases.d, n: c.cases.n };
     if (c.caught != null && !(isObj(c.caught) && typeof c.caught.d === 'string' && typeof c.caught.id === 'string' && NEIGHBOR_BY_ID[c.caught.id] && Number.isInteger(c.caught.ci) && c.caught.ci >= 0 && c.caught.ci < 50)) delete c.caught; else if (c.caught) c.caught = { d: c.caught.d, id: c.caught.id, ci: c.caught.ci };
-    ['lv', 'catch', 'drill', 'jailed', 'xp'].forEach(k => { if (c[k] != null && !(Number.isInteger(c[k]) && c[k] >= 0 && c[k] < 1e6)) delete c[k]; }); if (c.lv != null && c.lv > 3) c.lv = 3; Object.keys(c).forEach(k => { if (!['lv', 'catch', 'drill', 'jailed', 'xp', 'cases', 'caught'].includes(k)) delete c[k]; }); } }   // 🚓 警察局：抓小偷過到第幾關、抓到幾次
+    ['lv', 'catch', 'drill', 'jailed', 'xp', 'chaseLv', 'susLv'].forEach(k => { if (c[k] != null && !(Number.isInteger(c[k]) && c[k] >= 0 && c[k] < 1e6)) delete c[k]; }); ['lv', 'chaseLv', 'susLv'].forEach(k => { if (c[k] != null && c[k] > 3) c[k] = 3; }); Object.keys(c).forEach(k => { if (!['lv', 'catch', 'drill', 'jailed', 'xp', 'cases', 'caught', 'chaseLv', 'susLv'].includes(k)) delete c[k]; }); } }   // 🚓 警察局：抓小偷過到第幾關、抓到幾次
   if (out.jail != null && !(isObj(out.jail) && typeof out.jail.until === 'number' && isFinite(out.jail.until))) delete out.jail;
   if (out.jail) { if (out.jail.parentsAt != null && !(typeof out.jail.parentsAt === 'number' && isFinite(out.jail.parentsAt))) delete out.jail.parentsAt; Object.keys(out.jail).forEach(k => { if (k !== 'until' && k !== 'parentsAt') delete out.jail[k]; }); }   // 🚔 演習被抓：關到什麼時候
   if (out.jail && out.jail.until > Date.now() + 5 * 60000) out.jail.until = Date.now() + 180000;   // 時間亂掉：最多關 3 分鐘
@@ -23083,6 +23089,7 @@ function islPanel(on) {
   const b = document.getElementById('islMenuBtn'); if (b) b.textContent = on ? '◀ 收起選單' : '☰ 選單';
 }
 function closeIsland() {
+  try { copRun = null; } catch (e) {}   // 🚓 離開大地圖：追小偷、找車取消
   if (!isl) return;
   if (typeof islTalkClose === 'function') islTalkClose();
   cancelAnimationFrame(isl.raf);
@@ -23262,7 +23269,7 @@ function islStep(dt) {
   const door = m.blds.find(b => b.door[0] === tx && b.door[1] === ty);
   if (isl.skipDoor && !(door && door.id === isl.skipDoor)) isl.skipDoor = null;
   if (!isl.path.length && isl.pending) { islDoPending(); if (!isl) return false; }
-  else if (door && !isl.skipDoor && moving && !(isl.fly && isl.fly.on) && ((isl.pending && isl.pending.id === door.id) || !isl.path.length || kx || ky)) { islEnter(door.id); return false; }
+  else if (door && !isl.skipDoor && moving && !(isl.fly && isl.fly.on) && !(typeof copRun !== 'undefined' && copRun) && ((isl.pending && isl.pending.id === door.id) || !isl.path.length || kx || ky)) { islEnter(door.id); return false; }
   const last = isl.trail[isl.trail.length - 1];
   if (!last || Math.hypot(last[0] - isl.x, last[1] - isl.y) > .15) { isl.trail.push([isl.x, isl.y]); if (isl.trail.length > 30) isl.trail.shift(); }
   const tg = isl.trail[Math.max(0, isl.trail.length - 7)], pp = isl.pet, pd = Math.hypot(tg[0] - pp.x, tg[1] - pp.y);
@@ -35911,6 +35918,177 @@ Object.assign(ACTIVITIES, {
 });
 Object.assign(FURNITURE_ACT, { checkin_desk: 'air_trip', departure_board: 'air_tower', gate_sign: 'air_fly', air_seats: 'benchrest', xray_belt: 'air_sec', food_cart: 'air_meal' });
 
+/* ===== 🚓 開警車抓小偷（家長 11/21：GTA 那種開車抓小偷，小朋友版）=====
+   開警車按「🚨 出勤」→ 選：🆘 有人需要幫忙（原本的）／🚓 追小偷車／🔍 找可疑的車。
+   🚓 追小偷車：浣熊小偷開黑色小車在島上逃，開過去碰到就抓到；他會丟香蕉皮，壓到會打滑停一下。60 秒，3 關（越來越快、香蕉皮越多）。
+   🔍 找可疑的車：警官說「粉紅色、貼了火焰貼紙的跑車偷走了蛋糕！」島上有好幾台車在開，找到對的那台開過去攔下來。90 秒，3 關（線索越來越多、越像）。
+   換車、下車就取消。過關記在 G.cop.chaseLv / susLv（下次自動玩下一關）。不會扣東西。 */
+let copRun = null;
+const COP_SUS_COLORS = ['red', 'pink', 'purple', 'blue', 'green', 'yellow', 'orange', 'black', 'white'];
+const COP_SUS_STICKERS = ['star', 'heart', 'flame', 'flower', 'bolt', 'paw'];
+const COP_SUS_TYPES = [['sports', '跑車'], ['suv', '休旅車'], ['truck', '工程車']];
+const COP_SUS_CRIMES = ['偷吃了蛋糕', '拿走了公園的氣球', '把阿婆的毛線球帶走了', '偷偷摘了果園的蘋果', '把圖書館的書借走沒還'];
+function copRunMenu() {
+  const card = $('#modalCard'), c = copState(); closeGameWindow(); card.innerHTML = '';
+  card.appendChild(el('h2', '', '🚨 要出什麼任務？'));
+  const row = el('div', 'invite-row');
+  [['🆘 有人需要幫忙', '開過去幫小貓、氣球、迷路的小朋友', () => dispatchStart(true)],
+   [`🚓 追小偷車（第 ${Math.min(3, (c.chaseLv || 0) + 1)} 關）`, '浣熊小偷開車逃跑了！追上去碰到他', () => copRunStart('chase')],
+   [`🔍 找可疑的車（第 ${Math.min(3, (c.susLv || 0) + 1)} 關）`, '看清楚線索，找到做壞事的那台車', () => copRunStart('sus')]].forEach(([t, sub, fn]) => {
+    const b = el('button', 'big', t); b.title = sub; b.onclick = () => { $('#modal').hidden = true; Sound.play('click'); fn(); }; row.appendChild(b); row.appendChild(note(sub)); });
+  card.appendChild(row);
+  const ok = el('button', 'big alt', '等一下'); ok.onclick = () => { $('#modal').hidden = true; }; card.appendChild(ok);
+  $('#modal').hidden = false;
+}
+const copTileOk = (m, x, y) => x >= 6 && x <= 46 && y >= 3 && y <= 34 && islPass(m, x, y) && !m.blds.some(b => x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h);
+function copRunSpot(minD) {
+  const m = isl.m;
+  for (let k = 0; k < 500; k++) { const x = 7 + Math.floor(Math.random() * 38), y = 4 + Math.floor(Math.random() * 29); if (!copTileOk(m, x, y) || Math.hypot(x + .5 - isl.x, y + .5 - isl.y) < minD) continue; return [x, y]; }
+  return null;
+}
+function copStep(o, dt, sp, flee) {   // 車子一格一格走：到了這一格再挑下一格（逃跑的會挑離警車遠的）
+  const m = isl.m;
+  if (o.tx == null) { o.tx = Math.floor(o.x); o.ty = Math.floor(o.y); }
+  const gx = o.tx + .5, gy = o.ty + .5, d = Math.hypot(gx - o.x, gy - o.y), st = sp * dt;
+  if (d > st) { o.x += (gx - o.x) / d * st; o.y += (gy - o.y) / d * st; if (Math.abs(gx - o.x) > .01) o.f = gx > o.x ? 1 : -1; return; }
+  o.x = gx; o.y = gy;
+  const opts = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => [o.tx + dx, o.ty + dy]).filter(([x, y]) => copTileOk(m, x, y));
+  if (!opts.length) return;
+  const back = opts.filter(([x, y]) => !(x === o.px && y === o.py)), pool = back.length ? back : opts;
+  let best = pool[0], bs = -1e9;
+  pool.forEach(([x, y]) => { const near = flee && Math.hypot(o.x - isl.x, o.y - isl.y) < 13, s = (flee ? Math.hypot(x + .5 - isl.x, y + .5 - isl.y) * (near ? 3 : .15) : 0) + Math.random() * (near ? .7 : 1.6) + ((x - o.tx) === (o.tx - (o.px == null ? o.tx : o.px)) && (y - o.ty) === (o.ty - (o.py == null ? o.ty : o.py)) ? .6 : 0); if (s > bs) { bs = s; best = [x, y]; } });
+  o.px = o.tx; o.py = o.ty; o.tx = best[0]; o.ty = best[1];
+}
+function copBfs(sx, sy, tx, ty) {   // 一格一格的最短路（只走路上、草地，不穿房子、不下海）
+  const m = isl.m, W = m.W, key = (x, y) => y * W + x, prev = new Map([[key(sx, sy), -1]]), q = [[sx, sy]];
+  for (let i = 0; i < q.length && q.length < 2500; i++) { const [x, y] = q[i]; if (x === tx && y === ty) break;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy, k = key(nx, ny); if (prev.has(k) || !copTileOk(m, nx, ny)) continue; prev.set(k, key(x, y)); q.push([nx, ny]); } }
+  if (!prev.has(key(tx, ty))) return null;
+  const path = []; for (let k = key(tx, ty); k !== key(sx, sy) && k !== -1; k = prev.get(k)) path.unshift([k % W, Math.floor(k / W)]); return path;
+}
+function copThiefPlan(th) {   // 🦝 小偷挑一個離警車遠的地方，而且路上不會經過警車旁邊
+  const m = isl.m, fx = Math.floor(th.x), fy = Math.floor(th.y); let best = null, bs = -1e9;
+  for (let k = 0; k < 36; k++) { const x = 7 + Math.floor(Math.random() * 38), y = 4 + Math.floor(Math.random() * 29); if (!copTileOk(m, x, y)) continue;
+    const path = copBfs(fx, fy, x, y); if (!path || !path.length) continue;
+    const near = Math.min(...path.slice(0, 12).map(([px, py]) => Math.hypot(px + .5 - isl.x, py + .5 - isl.y)));
+    const sc = Math.hypot(x + .5 - isl.x, y + .5 - isl.y) - path.length * .15 - (near < 3 ? 30 : near < 5 ? 8 : 0); if (sc > bs) { bs = sc; best = path; } }
+  th.route = best || []; th.replan = 1.5;
+}
+function copThiefRun(th, dt, sp) {   // 🦝 小偷自由地開（可以斜斜的）：朝離警車遠的方向，前面是海或房子就轉彎
+  const m = isl.m, d = Math.hypot(th.x - isl.x, th.y - isl.y), away = Math.atan2(th.y - isl.y, th.x - isl.x);
+  if (th.h == null) th.h = away;
+  th.wig = (th.wig || 0) + dt;
+  let want = d < 22 ? away + Math.sin(th.wig * .9) * .35 : th.h + Math.sin(th.wig * .7) * .6 * dt * 4;
+  let dh = ((want - th.h + Math.PI * 3) % (Math.PI * 2)) - Math.PI; th.h += Math.max(-7 * dt, Math.min(7 * dt, dh));   // 慢慢轉向，不會一下子掉頭
+  const st = sp * dt, ok = a => { const lx = th.x + Math.cos(a) * (st + .45), ly = th.y + Math.sin(a) * (st + .45); return copTileOk(m, Math.floor(lx), Math.floor(ly)) && copTileOk(m, Math.floor(th.x + Math.cos(a) * st), Math.floor(th.y + Math.sin(a) * st)); };
+  for (const off of [0, .35, -.35, .7, -.7, 1.05, -1.05, 1.4, -1.4, 1.8, -1.8, 2.3, -2.3, 2.8, -2.8, Math.PI]) {
+    const a = th.h + off; if (!ok(a)) continue;
+    th.h = a; th.x += Math.cos(a) * st; th.y += Math.sin(a) * st; if (Math.abs(Math.cos(a)) > .15) th.f = Math.cos(a) > 0 ? 1 : -1; return; }
+}
+function copThiefStep(th, dt, sp) {
+  th.replan = (th.replan || 0) - dt;
+  if (!th.route || !th.route.length || th.replan <= 0) copThiefPlan(th);
+  let st = sp * dt;
+  while (st > 0 && th.route.length) { const [tx, ty] = th.route[0], gx = tx + .5, gy = ty + .5, d = Math.hypot(gx - th.x, gy - th.y);
+    if (Math.abs(gx - th.x) > .01) th.f = gx > th.x ? 1 : -1;
+    if (d <= st) { th.x = gx; th.y = gy; th.route.shift(); st -= d; } else { th.x += (gx - th.x) / d * st; th.y += (gy - th.y) / d * st; st = 0; } }
+}
+function copRunStart(kind) {
+  const v = rideNow(); if (!v || v.id !== 'police' || !isl) return;
+  if (dispatch) dispatch = null;
+  const c = copState(), sp0 = 3.8 * v.speed;
+  if (kind === 'chase') {
+    const lv = Math.min(3, (c.chaseLv || 0) + 1), at = copRunSpot(14) || copRunSpot(7); if (!at) return;
+    copRun = { kind, lv, t: 0, limit: 60, last: performance.now(), thief: { x: at[0] + .5, y: at[1] + .5, f: 1 }, sp: 3.8 * v.speed * [1.08, 1.16, 1.24][lv - 1], stallEvery: [5, 6.5, 8][lv - 1], stallFor: [2.4, 2, 1.6][lv - 1], nextStall: [4, 6, 7.5][lv - 1], stall: 0, peelEvery: [6, 4, 3][lv - 1], nextPeel: 3, peels: [], slip: 0 };
+    toast(`🚨 浣熊小偷開車逃跑了！跟緊他，他的車冒煙停下來的時候就是機會！（第 ${lv} 關，60 秒）`);
+  } else {
+    const lv = Math.min(3, (c.susLv || 0) + 1), n = [4, 5, 6][lv - 1], pick = a => a[Math.floor(Math.random() * a.length)];
+    const sus = { type: pick(COP_SUS_TYPES)[0], c: pick(COP_SUS_COLORS), st: pick(COP_SUS_STICKERS) }, cars = [];
+    const other = (a, not) => pick(a.filter(x => x !== not));
+    for (let i = 1; i < n; i++) {   // 假的車：第 1 關顏色都不一樣；第 2 關有的同顏色、有的同貼紙；第 3 關三樣裡有兩樣一樣
+      let d;
+      if (lv === 1) d = { type: pick(COP_SUS_TYPES)[0], c: other(COP_SUS_COLORS, sus.c), st: pick(COP_SUS_STICKERS) };
+      else if (lv === 2) d = i % 2 ? { type: pick(COP_SUS_TYPES)[0], c: sus.c, st: other(COP_SUS_STICKERS, sus.st) } : { type: pick(COP_SUS_TYPES)[0], c: other(COP_SUS_COLORS, sus.c), st: sus.st };
+      else { const k = i % 3; d = { type: k === 0 ? other(COP_SUS_TYPES.map(q => q[0]), sus.type) : sus.type, c: k === 1 ? other(COP_SUS_COLORS, sus.c) : sus.c, st: k === 2 ? other(COP_SUS_STICKERS, sus.st) : sus.st }; }
+      cars.push(d);
+    }
+    if (lv === 1) { const used = new Set([sus.c]); cars.forEach(d => { while (used.has(d.c)) d.c = pick(COP_SUS_COLORS); used.add(d.c); }); }
+    cars.splice(Math.floor(Math.random() * (cars.length + 1)), 0, Object.assign({ sus: true }, sus));
+    const pool = NEIGHBORS.filter(Boolean).slice().sort(() => Math.random() - .5);
+    const placed = []; for (const d of cars) { const at = copRunSpot(5); if (!at) continue; placed.push(Object.assign(d, { x: at[0] + .5, y: at[1] + .5, f: 1, n: pool[placed.length % pool.length] })); }
+    const cn = CAR_COLORS.find(q => q[0] === sus.c)[1], sn = CAR_STICKERS.find(q => q[0] === sus.st)[1], tn = COP_SUS_TYPES.find(q => q[0] === sus.type)[1];
+    const clue = lv === 1 ? `${cn}的車` : lv === 2 ? `${cn}、貼了${sn}貼紙的車` : `${cn}、貼了${sn}貼紙的${tn}`;
+    copRun = { kind, lv, t: 0, limit: 90, last: performance.now(), cars: placed, clue, crime: pick(COP_SUS_CRIMES), sp: sp0 * .42 };
+    toast(`🔍 狗狗警官：有一台「${clue}」${copRun.crime}！找到它，開過去攔下來！`);
+  }
+  Sound.play('whoosh'); dispatchBtn();
+}
+function copRunEnd(win) {
+  const r = copRun; copRun = null; dispatchBtn(); if (!r) return;
+  if (!win) { Sound.play('miss'); toast(r.kind === 'chase' ? '⏱️ 時間到！浣熊小偷溜走了…下次一定抓到你！' : `⏱️ 時間到！那台「${r.clue}」開走了，下次再找！`); return; }
+  const c = copState(), key = r.kind === 'chase' ? 'chaseLv' : 'susLv', bells = 120 + r.lv * 60;
+  if ((c[key] || 0) < r.lv) c[key] = r.lv; c.catch = (c.catch || 0) + 1;
+  addBells(bells); try { addRankXp('cop', 2); } catch (e) {} Sound.play('fanfare'); kidMoodUp(5);
+  if (r.kind === 'chase') { try { islAddFx('say', r.thief.x, r.thief.y - 1.6, 2200, { text: '嗚嗚，被抓到了…對不起！' }); } catch (e) {} toast(`🚓 抓到浣熊小偷了！送去警察局的小房間～　💰 +${bells}　🎖️ 警察點數 +2${r.lv < 3 ? '　下次是第 ' + (r.lv + 1) + ' 關！' : ''}`); }
+  else { const s = r.cars.find(q => q.sus); try { islAddFx('say', s.x, s.y - 1.6, 2400, { text: `對不起…是我${r.crime}` }); } catch (e) {} toast(`🔍 找到了！就是這台！${s.n ? s.n.short : ''}說對不起了　💰 +${bells}　🎖️ 警察點數 +2`); }
+  saveGame(); refreshTop();
+}
+function copRunTick() {
+  if (!copRun || !isl) return;
+  const v = rideNow(); if (!v || v.id !== 'police') { copRun = null; dispatchBtn(); return; }
+  const now = performance.now(), dt = Math.min(.2, (now - copRun.last) / 1000); copRun.last = now; copRun.t += dt;   // 省電模式一秒只畫 10 次：dt 不能壓太小，不然小偷變慢
+  if (copRun.t >= copRun.limit) { copRunEnd(false); return; }
+  if (copRun.kind === 'chase') {
+    const r = copRun, th = r.thief;
+    if (r.slip > 0) { r.slip -= dt; isl.x = r.slipAt[0]; isl.y = r.slipAt[1]; isl.path = []; }
+    if (Math.hypot(th.x - isl.x, th.y - isl.y) < .95) { copRunEnd(true); return; }   // 先看有沒有碰到，再讓小偷動
+    if (r.stall > 0) { r.stall -= dt; th.route = []; }   // 💨 小偷的車冒煙停下來：快追！
+    else { r.boostCd = (r.boostCd || 0) - dt; r.boost = Math.max(0, (r.boost || 0) - dt);
+      if (r.boostCd <= 0 && Math.hypot(th.x - isl.x, th.y - isl.y) < 2.6) { r.boost = .9; r.boostCd = [7, 5, 4][r.lv - 1]; try { islAddFx('say', th.x, th.y - 1.6, 900, { text: '加速！' }); } catch (e) {} }   // 被追到旁邊：加速溜走一下
+      copThiefRun(th, dt, r.sp * (r.boost > 0 ? 1.45 : 1)); if ((r.nextStall -= dt) <= 0) { r.nextStall = r.stallEvery; r.stall = r.stallFor; try { islAddFx('say', th.x, th.y - 1.6, 1400, { text: '糟糕！車子冒煙了！' }); } catch (e) {} } }
+    if ((r.nextPeel -= dt) <= 0) { r.nextPeel = r.peelEvery; r.peels.push({ x: th.x, y: th.y, t: 0 }); }
+    for (let i = r.peels.length - 1; i >= 0; i--) { const p = r.peels[i]; p.t += dt; if (p.t > 14) { r.peels.splice(i, 1); continue; }
+      if (r.slip <= 0 && p.t > .6 && Math.hypot(p.x - isl.x, p.y - isl.y) < .6) { r.peels.splice(i, 1); r.slip = .9; r.slipAt = [isl.x, isl.y]; Sound.play('boing'); try { islAddFx('say', isl.x, isl.y - 1.6, 1200, { text: '哇～香蕉皮！' }); } catch (e) {} } }
+    if (Math.hypot(th.x - isl.x, th.y - isl.y) < .95) copRunEnd(true);
+  } else {
+    const r = copRun;
+    r.cars.forEach(o => { if (!o.stop) copStep(o, dt, r.sp, false); });
+    const hit = r.cars.find(o => !o.checked && Math.hypot(o.x - isl.x, o.y - isl.y) < 1.2);
+    if (hit) { if (hit.sus) { hit.stop = true; copRunEnd(true); } else { hit.checked = true; Sound.play('miss'); try { islAddFx('say', hit.x, hit.y - 1.6, 1600, { text: `不是我喔～${hit.n ? '我是' + hit.n.short : ''}` }); } catch (e) {} } }
+  }
+}
+function copRunDraw(ctx, now) {
+  if (!copRun || !isl) return;
+  const cv = isl.cv, W = cv.clientWidth, H = cv.clientHeight, v = islView(), T = ISL.T, dpr = cv._dpr || 1, t = now / 1000, sc = T / 32 * v.s;
+  const scr = (x, y) => [(x * T - v.cx) * v.s + W / 2, (y * T - v.cy) * v.s + H / 2];
+  ctx.save(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const car = (o, id, look, driver) => { const [sx, sy] = scr(o.x, o.y); if (sx < -80 || sx > W + 80 || sy < -80 || sy > H + 80) return;
+    ctx.fillStyle = 'rgba(40,30,20,.22)'; ctx.beginPath(); ctx.ellipse(sx, sy, 24 * sc, 5 * sc, 0, 0, 7); ctx.fill();
+    ctx.save(); ctx.translate(sx, sy); ctx.scale(o.f || 1, 1); drawVehicle(ctx, id, sc, t, !o.stop, driver, look); ctx.restore(); };
+  const arrow = (x, y, emoji, col) => { const [gx, gy] = scr(x, y), m = 34; if (!(gx < m || gx > W - m || gy < m || gy > H - m)) return;
+    const cx = W / 2, cy = H / 2, a = Math.atan2(gy - cy, gx - cx), k = Math.min((W / 2 - m) / Math.abs(Math.cos(a) || 1e-6), (H / 2 - m) / Math.abs(Math.sin(a) || 1e-6));
+    ctx.save(); ctx.translate(cx + Math.cos(a) * k, cy + Math.sin(a) * k); ctx.fillStyle = 'rgba(255,255,255,.92)'; ctx.beginPath(); ctx.arc(0, 0, 18, 0, 7); ctx.fill(); ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.stroke();
+    ctx.font = '16px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(emoji, 0, 1); ctx.rotate(a); ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(27, 0); ctx.lineTo(19, -7); ctx.lineTo(19, 7); ctx.closePath(); ctx.fill(); ctx.restore(); };
+  let hud;
+  if (copRun.kind === 'chase') {
+    const r = copRun;
+    r.peels.forEach(p => { const [sx, sy] = scr(p.x, p.y); ctx.font = `${Math.round(18 * Math.min(1.2, v.s))}px sans-serif`; ctx.textAlign = 'center'; ctx.fillText('🍌', sx, sy + 4); });
+    car(r.thief, 'suv', { c: 'black', st: 'paw' }, (x, y, s) => { ctx.save(); ctx.translate(x, y); try { drawThiefMouse(ctx, 1.3, 1, t); } catch (e) {} ctx.restore(); });
+    if (r.stall > 0) { const [sx, sy] = scr(r.thief.x, r.thief.y); ctx.font = `${Math.round(18 * Math.min(1.2, v.s))}px sans-serif`; ctx.textAlign = 'center'; ctx.fillText('💨', sx - 20 * sc + Math.sin(t * 9) * 3, sy - 34 * sc); }
+    arrow(r.thief.x, r.thief.y, '🦝', '#3a3842');
+    if (r.slip > 0) { const [kx, ky] = scr(isl.x, isl.y); ctx.font = '18px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('💫', kx + Math.sin(t * 20) * 8, ky - 50 * sc); }
+    hud = `🚓 追浣熊小偷！（第 ${r.lv} 關）⏱️ ${Math.max(0, Math.ceil(r.limit - r.t))}`;
+  } else {
+    const r = copRun;
+    r.cars.forEach(o => { car(o, o.type, { c: o.c, st: o.st }, o.n ? (x, y, s) => { ctx.save(); ctx.translate(x, y); ctx.scale(.75, .75); try { drawNeighbor(ctx, o.n, { happy: false, blink: false, fx: 0, clean: 100 }); } catch (e) {} ctx.restore(); } : null);
+      if (o.checked) { const [sx, sy] = scr(o.x, o.y); ctx.font = '14px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('✔️', sx, sy - 48 * sc); } else arrow(o.x, o.y, '🚗', '#4a90d9'); });
+    hud = `🔍 找：${r.clue}　⏱️ ${Math.max(0, Math.ceil(r.limit - r.t))}`;
+  }
+  ctx.font = '700 15px "Microsoft JhengHei","PingFang TC",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const tw = ctx.measureText(hud).width + 28; ctx.fillStyle = 'rgba(255,255,255,.94)'; const hy = H - 96; ctx.beginPath(); ctx.roundRect(W / 2 - tw / 2, hy, tw, 30, 15); ctx.fill(); ctx.strokeStyle = '#2f5fb8'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = '#1d2433'; ctx.fillText(hud, W / 2, hy + 16);
+  ctx.restore();
+}
 /* ===== 🚨 出勤（第二批：警車、救護車共用一套）=====
    在大地圖開著🚓警車或🚑救護車的時候，左上角會多一顆「🚨 出勤」。按下去，島上某個地方會有人需要幫忙，
    頭上冒出驚嘆號，畫面邊邊有箭頭指方向（在畫面外也找得到）。
@@ -35923,9 +36101,9 @@ let dispatch = null;
 function dispatchBtn() {
   const b = document.getElementById('islSos'); if (!b) return;
   const v = typeof rideNow === 'function' ? rideNow() : null, ok = !!(v && (v.id === 'police' || v.id === 'ambulance'));
-  b.hidden = !ok; if (!ok && dispatch) dispatch = null;
-  b.textContent = dispatch ? (dispatch.carry ? '🏥 送去醫院' : `${dispatch.e} 出勤中`) : '🚨 出勤';
-  b.classList.toggle('on', !!dispatch);
+  b.hidden = !ok; if (!ok && dispatch) dispatch = null; if (!ok && copRun) copRun = null;
+  b.textContent = copRun ? (copRun.kind === 'chase' ? '🚓 追小偷中' : '🔍 找車中') : dispatch ? (dispatch.carry ? '🏥 送去醫院' : `${dispatch.e} 出勤中`) : '🚨 出勤';
+  b.classList.toggle('on', !!(dispatch || copRun));
 }
 function dispatchSpot(m) {
   for (let k = 0; k < 400; k++) {
@@ -35936,8 +36114,10 @@ function dispatchSpot(m) {
   }
   return null;
 }
-function dispatchStart() {
+function dispatchStart(direct) {
   const v = rideNow(); if (!v || !isl) return;
+  if (copRun) { toast(copRun.kind === 'chase' ? '🚓 快追浣熊小偷！跟著箭頭走' : `🔍 找：${copRun.clue}`); return; }
+  if (v.id === 'police' && !direct && !dispatch) { copRunMenu(); return; }   // 🚓 警車：先選任務
   if (dispatch) { toast(dispatch.carry ? `🚑 先把${dispatch.n.short}送到醫院！` : `${dispatch.e} ${dispatch.say}`); return; }
   const at = dispatchSpot(isl.m); if (!at) { toast('現在大家都很平安！'); return; }
   const pool = NEIGHBORS.filter(Boolean), n = pool[Math.floor(Math.random() * pool.length)];
@@ -35947,6 +36127,7 @@ function dispatchStart() {
   dispatchBtn();
 }
 function dispatchTick() {
+  copRunTick();
   if (!dispatch || !isl) return;
   const v = rideNow(); if (!v || (dispatch.kind === 'police' ? v.id !== 'police' : v.id !== 'ambulance')) { dispatch = null; dispatchBtn(); return; }
   if (dispatch.carry) return;   // 載著病人：到醫院門口才算（islEnter 那裡）
@@ -35970,6 +36151,7 @@ function dispatchDeliver() {   // 救護車到醫院門口：送進去
   return true;
 }
 function dispatchDraw(ctx, now) {
+  copRunDraw(ctx, now);
   if (!dispatch || !isl) return;
   const cv = isl.cv, W = cv.clientWidth, H = cv.clientHeight, v = islView(), T = ISL.T, dpr = cv._dpr || 1, t = now / 1000;
   const goal = dispatch.carry ? (() => { const b = isl.m.blds.find(q => q.id === 'hospital'); return b ? [b.door[0] + .5, b.door[1] + .5] : null; })() : [dispatch.x, dispatch.y];

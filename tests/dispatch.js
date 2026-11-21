@@ -12,7 +12,7 @@ const path = require('path');
     openIsland(); await w(1000); islRideBtn();
     o.hiddenOnBike = btn().hidden === true;
     G.ride = 'police'; islRideBtn(); o.shownOnPolice = btn().hidden === false && /出勤/.test(btn().textContent);
-    btn().click(); await w(200); o.started = !!dispatch && dispatch.kind === 'police' && Math.hypot(dispatch.x - isl.x, dispatch.y - isl.y) >= 8 && islPass(isl.m, Math.floor(dispatch.x), Math.floor(dispatch.y));
+    btn().click(); await w(100); o.menu = /追小偷車/.test($('#modalCard').textContent) && /找可疑的車/.test($('#modalCard').textContent); document.querySelector('#modalCard button.big').click(); await w(200); o.started = !!dispatch && dispatch.kind === 'police' && Math.hypot(dispatch.x - isl.x, dispatch.y - isl.y) >= 8 && islPass(isl.m, Math.floor(dispatch.x), Math.floor(dispatch.y));
     o.arrowDraws = (() => { try { dispatchDraw(isl.cv.getContext('2d'), performance.now()); return true; } catch (e) { return e.message; } })() === true;
     const b0 = G.bells; isl.path = []; isl.x = dispatch.x; isl.y = dispatch.y; await w(600);
     o.policeDone = !dispatch && G.bells === b0 + 150 && copState().xp === 1;
@@ -22,7 +22,7 @@ const path = require('path');
     o.delivered = !dispatch && G.bells === b1 + 200 && townState().docXp === 1;
     // 換車取消
     goHome(); await w(1500); document.querySelectorAll('#tripLayer').forEach(x => x.remove()); document.getElementById('modal').hidden = true;
-    openIsland(); await w(800); G.ride = 'police'; islRideBtn(); dispatchStart(); G.ride = 'bike'; islRideBtn(); await w(300); o.cancelOnSwitch = !dispatch && btn().hidden;
+    openIsland(); await w(800); G.ride = 'police'; islRideBtn(); dispatchStart(true); G.ride = 'bike'; islRideBtn(); await w(300); o.cancelOnSwitch = !dispatch && btn().hidden;
     closeIsland();
     return o;
   });
