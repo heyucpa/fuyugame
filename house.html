@@ -20,6 +20,22 @@
 .car-opts button .tkd-e:not([style]){font-size:18px}
 .car-opts button .tkd-e[style]{flex:none}
 .car-opts.car-cat button{font-size:15px;padding:6px 14px}
+/* 🎬 朋友來玩的事件：過場動畫、上面的提示條、愛的小手 */
+.vev-scene{position:fixed;inset:0;z-index:60;background:rgba(20,16,30,.72);display:flex;align-items:center;justify-content:center;padding:16px;animation:vevIn .3s ease}
+@keyframes vevIn{from{opacity:0}to{opacity:1}}
+.vev-card{background:#fffaf0;border-radius:22px;padding:14px;max-width:560px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.35);display:flex;flex-direction:column;align-items:center;gap:10px}
+.vev-cv{width:100%;aspect-ratio:360/220;border-radius:14px;background:#fff;cursor:pointer}
+.vev-cap{font-size:19px;font-weight:800;color:#4a3f35;text-align:center;line-height:1.5;min-height:2.6em}
+.vev-dots{color:#c9a227;letter-spacing:2px;font-size:12px}
+.vev-skip{position:absolute;top:14px;right:16px;border:0;border-radius:999px;padding:8px 14px;background:rgba(255,255,255,.9);font-weight:800;color:#4a3f35;cursor:pointer}
+.vev-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;white-space:normal;max-width:94%;top:56px}
+.vev-bar button{border:0;border-radius:999px;padding:6px 14px;font-weight:800;cursor:pointer;position:relative}
+.vev-bar .vev-act{background:#5aae7a;color:#fff}
+.vev-bar .vev-hint{background:#fff1c2;color:#6b4a1a}
+.vev-point{animation:vevPulse .9s ease-in-out infinite}
+.vev-point::after{content:'👆';position:absolute;left:50%;bottom:-34px;transform:translateX(-50%);font-size:26px;animation:vevBob .6s ease-in-out infinite alternate;pointer-events:none}
+@keyframes vevPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,210,63,.9)}50%{box-shadow:0 0 0 8px rgba(255,210,63,0)}}
+@keyframes vevBob{from{transform:translate(-50%,0)}to{transform:translate(-50%,-8px)}}
 </style></head><body>
 <style>
 :root {
@@ -5893,6 +5909,13 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-21T19:00', title: '🎬 朋友來玩的時候會發生事件！', lines: [
+    ['😵', '朋友突然昏倒了！拿水、拿毯子、打電話叫救護車，再到醫院跟羊醫生一起照顧他'],
+    ['🦝', '小偷鼠從窗戶溜進來偷走朋友的書包！跟著地上的腳印追出去，把書包拿回來'],
+    ['🔍', '朋友的鑰匙不見了！點家具翻翻看，朋友會說「好冷、溫溫的、好熱」'],
+    ['🎬', '發生事件的時候有像繪本一樣的動畫；不知道怎麼做可以按「💡 提示」，等一下愛的小手 👇 也會指給你看'],
+    ['🦸', '幫完忙朋友會在訪客簿寫謝謝你']
+  ] },
   { id: '2026-11-21T16:00', title: '🚓 開警車抓小偷！', lines: [
     ['🚨', '在大地圖開警車按「🚨 出勤」，可以選：有人需要幫忙、追小偷車、找可疑的車'],
     ['🦝', '追小偷車：浣熊小偷開黑色小車逃跑，他的車有時候會冒煙停下來，趁機追上去碰到他就抓到了；小心他丟的香蕉皮！'],
@@ -7056,6 +7079,7 @@ function normalizeSave(g) {
     t.bag = Array.isArray(t.bag) ? t.bag.filter(b => isObj(b) && typeof b.id === 'string' && FURN_BY_ID[b.id] && (b.top == null || (typeof b.top === 'string' && FURN_BY_ID[b.top]))).map(b => (b.top ? { id: b.id, top: b.top } : { id: b.id })).slice(0, 30) : []; Object.keys(t).forEach(k => { if (!['day', 'n', 'bag'].includes(k)) delete t[k]; }); } }   // 🐭 小偷：今天來過了沒、抓到幾次、失物招領（被偷走還沒領回的東西）
   if (out.noThief != null && out.noThief !== 1) delete out.noThief;
   if (out.noDayNight != null && out.noDayNight !== 1) delete out.noDayNight;
+  if (out.vev != null) { if (!isObj(out.vev)) delete out.vev; else { const v = out.vev; if (v.d != null && !(typeof v.d === 'string' && v.d.length <= 12)) delete v.d; ['n', 'done'].forEach(k => { if (v[k] != null && !(Number.isInteger(v[k]) && v[k] >= 0 && v[k] < 1e6)) delete v[k]; }); if (v.last != null && !/^(faint|stolen|lost)$/.test(v.last)) delete v.last; Object.keys(v).forEach(k => { if (!['d', 'n', 'last', 'done'].includes(k)) delete v[k]; }); } }   // 🎬 朋友來玩的事件：今天幾次、上次哪一種、一共幫了幾次
   if (out.carLook != null) { if (!isObj(out.carLook)) delete out.carLook; else { const OKV = { c: /^(def|red|pink|purple|blue|sky|green|yellow|orange|white|black|gold)$/, st: /^(none|star|heart|flame|flower|bolt|paw|rainbow)$/, wh: /^(std|gold|star|rainbow|flower)$/, gl: /^(none|pink|blue|green|rainbow)$/ };
     Object.keys(out.carLook).forEach(id => { const l = out.carLook[id]; if (!/^(bike|suv|bus|truck|sports|robot|police|ambulance|dino|plane)$/.test(id) || !isObj(l)) { delete out.carLook[id]; return; }
       Object.keys(l).forEach(k => { if (k === 'dirt') { if (!(typeof l.dirt === 'number' && isFinite(l.dirt) && l.dirt >= 0 && l.dirt <= 100)) delete l.dirt; } else if (!OKV[k] || typeof l[k] !== 'string' || !OKV[k].test(l[k])) delete l[k]; }); }); } }   // 🎨 改車店：每台車的樣子、髒的程度
@@ -10035,6 +10059,7 @@ function roomKeyStep(room, blk) {
    家具、牆上可以用的東西、包裹、訪客、主人（老師、教練、爸爸媽媽）、在場的小朋友、農場動物、朋友的寵物、自己的寵物。
    旁邊什麼都沒有：打開小可愛自己的選單（吃東西、跳舞、去睡覺…）。 */
 function roomKeyUse() {
+  if (typeof vevKeyUse === 'function' && vevKeyUse()) return true;   // 🎬 事件進行中
   const room = curRoom(), c = [], r = canvas.getBoundingClientRect();
   const at = (x, y, z) => { const p = iso(x, y, z || 0); return { clientX: r.left + p.x * view.scale + view.ox, clientY: r.top + p.y * view.scale + view.oy }; };
   const near = (x, y) => Math.hypot(x - fufu.x, y - fufu.y);
@@ -12498,6 +12523,7 @@ function visitorArrive(now) {
   // 走到小可愛附近
   const [ti, tj] = fufuTile();
   vis.a.path = findPath(room, c[0], c[1], ti, tj).slice(0, -1);
+  try { vevMaybe(now); } catch (e) {}   // 🎬 有時候會發生事件（昏倒、東西被偷、東西不見）
 }
 
 function visitorLeave(now) {
@@ -12509,6 +12535,281 @@ function visitorLeave(now) {
   animalGuestbook(vis.who, Object.assign({}, vis.did, gift ? { gift } : {}), !!vis.costume);
 }
 
+/* ===== 🎬 朋友來玩的時候發生事件（家長 11/21：不要只是單純來送禮物；昏倒要送醫、東西被偷要幫忙；要有過場動畫；解謎要有劇情提示、愛的小手）=====
+   朋友來家裡玩，大約 3 次有 1 次會發生事件（一天最多 3 次，只在自己家）：
+   😵 昏倒了：過場動畫（頭暈、星星、咚！）→ 點朋友拿水 → 拿枕頭毯子 → 打電話叫救護車（過場：救護車來了、到醫院）→ 跟羊醫生一起照顧 → 康復道謝
+   🦝 東西被偷了：過場（小偷鼠從窗戶溜進來抓走書包）→ 地上的 🐾 腳印一個一個點（或走過去踩）→ 追出去（小遊戲）→ 拿回書包道謝
+   🔍 東西不見了：過場（翻口袋、鑰匙不見了）→ 點家具翻翻看（好冷／溫溫的／好熱）→ 找到道謝
+   提示：上面一條字說現在要做什麼；💡 提示按鈕；朋友會說劇情提示；停太久沒動，👇 愛的小手會一直指著要點的東西（按鈕也會跳）。
+   空白鍵也做得到（按鈕的步驟按空白鍵就是按按鈕；走到朋友、腳印、家具旁邊按空白鍵）。
+   G.vev = { d, n（今天幾次）, last（上次哪一種）, done（一共幫了幾次）}。不會扣東西。 */
+const VEV_CHANCE = .35, VEV_DAY_MAX = 3;
+let vev = null;
+function vevState() { if (!G.vev || typeof G.vev !== 'object') G.vev = {}; if (G.vev.d !== today()) { G.vev.d = today(); G.vev.n = 0; } return G.vev; }
+function vevMaybe(now) { vis.vevAt = 0; if (G.away || G.guide !== 'done' || !vis.who || (G.friends[vis.who.id] || 0) <= 1 || vevState().n >= VEV_DAY_MAX || Math.random() > VEV_CHANCE) return; vis.vevAt = now + 9000 + Math.random() * 7000; }
+function vevCanStart() {
+  try { return !vev && vis.who && vis.state === 'visit' && !G.away && G.guide === 'done' && $('#modal').hidden && !decorMode && !resting && !hold && !(typeof isl !== 'undefined' && isl) && !(typeof thiefAct !== 'undefined' && thiefAct.on) && !(typeof findGame !== 'undefined' && findGame) && !document.getElementById('vevScene') && !document.getElementById('showcase') && vevState().n < VEV_DAY_MAX; } catch (e) { return false; }
+}
+const vevHideSpots = room => (room.items || []).filter(it => { const d = FURN_BY_ID[it.id]; return d && d.layer !== 'floor' && d.layer !== 'wall'; });
+function vevStart(kind) {
+  const n = vis.who; if (!n) return false; const room = curRoom();
+  if (!kind) { const st0 = G.vev || {}, ks = ['faint', 'stolen', 'lost'].filter(k => k !== st0.last); kind = ks[Math.floor(Math.random() * ks.length)]; }
+  if (kind === 'lost' && vevHideSpots(room).length < 3) kind = 'faint';
+  const st = vevState(); st.n++; st.last = kind; saveGame();
+  try { endChat(false); } catch (e) {} vis.seat = null; vis.seatTask = null; vis.chat = null; vis.a.path = []; vis.vevAt = 0;
+  vev = { kind, n, step: 'scene', room: roomKey(), act: performance.now(), hand: false, freeze: true, tries: 0 };
+  Sound.play('whoosh');
+  if (kind === 'faint') { vev.lie = true; try { const f = nearestFree(room, Math.min(room.w - 1.5, fufu.x + 1.5), Math.min(room.d - 2.5, fufu.y)); if (f) { vis.a.x = f[0] + .5; vis.a.y = f[1] + .5; } } catch (e) {}   // 倒在小可愛旁邊，不要倒在房間邊邊
+    vevScene(VEV_SCENE.faintIntro(n), () => { vevStepGo('water'); visSay('嗚…頭好暈…', 3000); }); }
+  else if (kind === 'stolen') { vevScene(VEV_SCENE.stolenIntro(n), () => { vevMakePrints(); vevStepGo('prints'); visSay('我的書包被拿走了…嗚嗚', 3000); }); }
+  else { const spots = vevHideSpots(room); vev.hide = spots[Math.floor(Math.random() * spots.length)].uid; vevScene(VEV_SCENE.lostIntro(n), () => { vevStepGo('find'); visSay('幫我找找看好不好…', 3000); }); }
+  return true;
+}
+function vevStepGo(s) { if (!vev) return; vev.step = s; vev.act = performance.now(); vev.hand = false; vevBar(); requestDraw(); }
+function vevCancel() { const b = document.getElementById('vevBar'); if (b) b.remove(); vev = null; try { requestDraw(); } catch (e) {} }
+function vevTarget() {   // 愛的小手要指的地方（房間裡的世界座標）
+  if (!vev) return null; const room = curRoom();
+  if (vev.step === 'water') return iso(vis.a.x, vis.a.y, 0);
+  if (vev.step === 'prints') { const p = vev.prints.filter(q => !q.got).sort((a, b) => Math.hypot(a.x - fufu.x, a.y - fufu.y) - Math.hypot(b.x - fufu.x, b.y - fufu.y))[0]; return p ? iso(p.x, p.y, 0) : null; }
+  if (vev.step === 'find') { const it = room.items.find(x => x.uid === vev.hide), def = it && FURN_BY_ID[it.id]; if (!def) return null; const fp = footprint(def, it.rot || 0); return iso(it.x + fp.w / 2, it.y + fp.d / 2, itemHeight(def)); }
+  return null;
+}
+const VEV_STEPS = {
+  water: { text: v => `😵 ${v.n.short}昏倒了！點${v.n.short}，拿水給他喝`, hint: v => `${v.n.short}：嗚…好渴…（點我一下）` },
+  blanket: { text: v => `🛏️ 地板好冰，讓${v.n.short}躺舒服一點`, btn: '🛏️ 拿枕頭和毯子', go: () => vevBlanket(), hint: v => `${v.n.short}：好冷喔…有沒有毯子…` },
+  call: { text: v => `📞 ${v.n.short}還是好暈…快打電話叫救護車！`, btn: '📞 打電話叫救護車', go: () => vevCall(), hint: v => `${v.n.short}：要…要去看醫生…` },
+  prints: { text: v => `🐾 地上有小偷鼠的腳印！點腳印跟上去（${v.prints.filter(p => p.got).length} / ${v.prints.length}）`, hint: v => `${v.n.short}：你看！地上有小小的腳印，一個一個連到門口耶！` },
+  chase: { text: v => `🏃 腳印通到門口，小偷鼠跑出去了！`, btn: '🏃 追出去！', go: () => vevChaseGo(), hint: v => `${v.n.short}：快追！他跑不遠的！` },
+  find: { text: v => `🔍 幫${v.n.short}找 🔑 鑰匙：點家具翻翻看！${v.last ? '　' + v.last : ''}`, hint: v => { const room = curRoom(), it = room.items.find(x => x.uid === v.hide); if (!it) return '再找找看！'; const p = iso(it.x + .5, it.y + .5, 0), c = iso(room.w / 2, room.d / 2, 0); return `${v.n.short}：我記得剛剛在房間的${p.y < c.y ? '後面（靠牆那邊）' : '前面'}、${p.x < c.x ? '左邊' : '右邊'}玩…`; } }
+};
+function vevHint() { if (!vev || !VEV_STEPS[vev.step]) return; const h = VEV_STEPS[vev.step].hint(vev); if (h) visSay(h.replace(/^[^：]*：/, ''), 4000); }
+function vevHintPress() {
+  if (!vev) return; Sound.play('click');
+  if (vev.step === 'find' && !vev.region) { vev.region = true; vevHint(); }
+  else { vev.hand = true; vevHint(); }
+  vevBar(); requestDraw();
+}
+function vevBar() {
+  let b = document.getElementById('vevBar');
+  if (!vev || !VEV_STEPS[vev.step]) { if (b) b.remove(); return; }
+  if (!b) { b = el('div', 'find-banner vev-bar'); b.id = 'vevBar'; $('.stage').appendChild(b); }
+  b.innerHTML = ''; const S = VEV_STEPS[vev.step];
+  b.appendChild(el('span', 'vev-t', S.text(vev)));
+  if (S.btn) { const bt = el('button', 'vev-act' + (vev.hand ? ' vev-point' : ''), S.btn); bt.dataset.key = '空白'; bt.onclick = e => { e.stopPropagation(); Sound.play('click'); S.go(); }; b.appendChild(bt); }
+  const hb = el('button', 'vev-hint', '💡 提示'); hb.onclick = e => { e.stopPropagation(); vevHintPress(); }; b.appendChild(hb);
+}
+function vevTick(now) {
+  if (!vev) { if (vis.vevAt && vis.who && vis.state === 'visit' && now > vis.vevAt) { vis.vevAt = 0; if (vevCanStart()) vevStart(); } return; }
+  if (!vis.who || vis.who !== vev.n || G.away || (typeof isl !== 'undefined' && isl) || (vev.room !== roomKey() && vev.step !== 'game' && vev.step !== 'scene')) { vevCancel(); return; }
+  vis.leaveAt = Math.max(vis.leaveAt, now + 30000); vis.nextTalkAt = Math.max(vis.nextTalkAt, now + 6000);
+  if (vev.freeze) { vis.a.path = []; vis.a.idleUntil = now + 2000; }
+  if (vev.step === 'scene' || vev.step === 'game') return;
+  if (vev.step === 'prints') vev.prints.forEach(p => { if (!p.got && Math.hypot(p.x - fufu.x, p.y - fufu.y) < .6) vevPrint(p); });
+  const idle = now - vev.act;
+  if (vev.step === 'find' && !vev.region && idle > 18000) { vev.region = true; vevHint(); vevBar(); }
+  if (!vev.hand && idle > (vev.step === 'find' ? 35000 : 12000)) { vev.hand = true; vevHint(); vevBar(); }
+  if (vev.hand || vev.lie || vev.step === 'prints') requestDraw();
+}
+// 點畫面：朋友、腳印、家具（事件進行中先給事件用）
+function vevTap(w) {
+  if (!vev || vev.step === 'scene' || vev.step === 'game') return false;
+  if (vev.step === 'water' && visitorHit(w)) { vevWater(); return true; }
+  if (vev.step === 'prints') { const p = vev.prints.find(q => { if (q.got) return false; const s = iso(q.x, q.y, 0); return Math.hypot(w.x - s.x, w.y - s.y) < 20; }); if (p) { vevPrint(p); return true; } }
+  if (visitorHit(w)) { vevHint(); return true; }
+  if (vev.step === 'find') { const it = pickItem(w); if (it) { vevFindTap(it); return true; } }
+  return false;
+}
+function vevKeyUse() {   // 空白鍵
+  if (!vev || vev.step === 'scene' || vev.step === 'game') return false;
+  const S = VEV_STEPS[vev.step]; if (!S) return false;
+  if (S.btn) { Sound.play('click'); S.go(); return true; }
+  if (vev.step === 'water') { if (Math.hypot(vis.a.x - fufu.x, vis.a.y - fufu.y) < 3) vevWater(); else { fufuSay(`要走到${vev.n.short}旁邊才行！`, 2000); vev.hand = true; } return true; }
+  if (vev.step === 'prints') { const p = vev.prints.filter(q => !q.got).sort((a, b) => Math.hypot(a.x - fufu.x, a.y - fufu.y) - Math.hypot(b.x - fufu.x, b.y - fufu.y))[0]; if (p && Math.hypot(p.x - fufu.x, p.y - fufu.y) < 2) { vevPrint(p); return true; } return false; }
+  if (vev.step === 'find') { const room = curRoom(); let best = null, bd = 2.5;
+    room.items.forEach(it => { const def = FURN_BY_ID[it.id]; if (!def || def.layer === 'floor' || def.layer === 'wall') return; const fp = footprint(def, it.rot || 0), dx = Math.max(it.x - fufu.x, 0, fufu.x - (it.x + fp.w)), dy = Math.max(it.y - fufu.y, 0, fufu.y - (it.y + fp.d)), d = Math.hypot(dx, dy); if (d < bd) { bd = d; best = it; } });
+    if (best) { vevFindTap(best); return true; } return false; }
+  return false;
+}
+// 😵 昏倒
+function vevWater() { if (!vev) return; Sound.play('pickUp'); fufuSay('來，喝點水～', 2000); visSay('咕嚕咕嚕…謝謝…可是頭還是好暈…', 3200); vevStepGo('blanket'); }
+function vevBlanket() { if (!vev) return; vev.blanket = true; Sound.play('petHappy'); fufuSay('枕頭和毯子來了！', 2000); visSay('好溫暖…謝謝你…', 2800); vevStepGo('call'); }
+function vevCall() {
+  if (!vev) return; const n = vev.n; vev.step = 'scene'; vevBar(); Sound.play('whoosh');
+  vevScene(VEV_SCENE.ambulance(n), () => { if (!vev) return; vev.lie = false; vev.blanket = false; vev.step = 'game'; vevCare(n, () => vevScene(VEV_SCENE.faintEnd(n), () => vevEnd())); });
+}
+function vevCare(n, done) {   // 🏥 跟羊醫生一起照顧：照順序按四個步驟
+  const STEPS = [['temp', '🌡️', '量體溫', '體溫有一點高喔…'], ['heart', '👂', '聽心跳', '噗通噗通，心跳很正常！'], ['pill', '💊', '吃藥', '吃了藥，等一下就會好了'], ['sleep', '💤', '好好睡一覺', '呼…呼…睡得好香']];
+  const w = openGameWindow(`🏥 幫忙照顧${n.short}`, `羊醫生：我們一起照顧${n.short}！照順序：量體溫 → 聽心跳 → 吃藥 → 好好睡一覺。`);
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const W = 320, H = 190, { g } = gameCanvas(w.stage, W, H);
+  let k = 0, t = 0, last = performance.now(), raf = 0, live = true, fx = null, idle = 0, doneOnce = false;
+  const row = el('div', 'tkd-moves'); STEPS.forEach(([id, e, nm], i) => { const b = el('button', 'tkd-move'); b.dataset.key = String(i + 1); b.append(el('span', 'tkd-e', e), el('span', '', nm)); b.onclick = () => press(i); row.appendChild(b); }); w.stage.appendChild(row);
+  const press = i => { if (k >= STEPS.length) return; idle = 0; [...row.children].forEach(b => b.classList.remove('vev-point'));
+    if (i !== k) { Sound.play('miss'); w.status.textContent = `羊醫生：先${STEPS[k][2]}喔！`; return; }
+    Sound.play('pickUp'); fx = { e: STEPS[i][1], t: 0 }; w.status.textContent = `羊醫生：${STEPS[i][3]}`; row.children[i].classList.add('on'); k++;
+    if (k >= STEPS.length) { Sound.play('fanfare'); w.status.textContent = `${n.short}睡著了，休養一下就會好起來！`; setTimeout(() => { if (doneOnce) return; doneOnce = true; gameCleanup(); closeGameWindow(); done(); }, 1600); } };
+  const kd = e => { const dg = /^(?:Digit|Numpad)([1-4])$/.exec(e.code); if (dg) { e.preventDefault(); press(+dg[1] - 1); } else if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); if (!e.repeat) press(k); } };
+  document.addEventListener('keydown', kd);
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); };
+  const frame = now => { if (!live) return; raf = requestAnimationFrame(frame); const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt; idle += dt;
+    if (idle > 6 && k < STEPS.length) row.children[k].classList.add('vev-point');
+    vevBg(g, W, H, 'hospital', t);
+    g.fillStyle = '#ffffff'; g.beginPath(); g.roundRect(70, 120, 170, 26, 8); g.fill(); g.fillStyle = '#c9ccd0'; g.fillRect(74, 146, 6, 30); g.fillRect(230, 146, 6, 30); g.fillStyle = '#ffffff'; g.beginPath(); g.roundRect(78, 108, 40, 16, 6); g.fill();
+    vevNb(g, n, 110, 136, 1.5, { lie: true, happy: k >= STEPS.length, blink: k >= STEPS.length });
+    g.fillStyle = '#9fd8ff'; g.beginPath(); g.roundRect(118, 118, 120, 22, 8); g.fill();
+    try { vevNb(g, HOSTS.hospital, 270, 176, 1.6, { happy: true }); } catch (e) {}
+    if (fx) { fx.t += dt; g.globalAlpha = Math.max(0, 1 - fx.t / 1.4); g.font = '30px sans-serif'; g.textAlign = 'center'; g.fillText(fx.e, 120, 96 - fx.t * 14); g.globalAlpha = 1; if (fx.t > 1.4) fx = null; }
+    if (k >= STEPS.length) { g.font = '18px sans-serif'; g.textAlign = 'center'; g.fillText('💤', 92 + Math.sin(t * 2) * 4, 92 - (t * 10) % 20); } };
+  raf = requestAnimationFrame(frame); leaveButton(w);
+  w.status.textContent = '先按「🌡️ 量體溫」！';
+  vevCare.test = { press };
+}
+// 🦝 被偷
+function vevMakePrints() {
+  const room = curRoom(), st = nearestFree(room, .5, .5) || [Math.floor(vis.a.x), Math.floor(vis.a.y)], fx = st[0], fy = st[1], e = nearestFree(room, room.w - .5, room.d - .5) || [room.w - 1, room.d - 1];   // 從窗戶那個角落一路到門口
+  let path = []; try { path = findPath(room, fx, fy, e[0], e[1]) || []; } catch (er) {}
+  const N = Math.min(4, Math.max(1, path.length + 1)), prints = [];
+  if (path.length) path.unshift([fx, fy]);
+  for (let k = 0; k < N; k++) { const p = path.length ? path[Math.min(path.length - 1, Math.round((k + 1) * path.length / N) - 1)] : [e[0], e[1]]; if (!prints.some(q => q.x === p[0] + .5 && q.y === p[1] + .5)) prints.push({ x: p[0] + .5, y: p[1] + .5, got: false, k }); }
+  vev.prints = prints;
+}
+function vevPrint(p) {
+  if (!vev || p.got) return; p.got = true; vev.act = performance.now(); vev.hand = false; Sound.play('starPop');
+  const left = vev.prints.filter(q => !q.got).length;
+  if (!left) { fufuSay('腳印通到門口！小偷鼠跑出去了！', 2600); vevStepGo('chase'); }
+  else { if (left === vev.prints.length - 1) fufuSay('這裡有一個腳印！', 1600); vevBar(); }
+}
+function vevChaseGo() { if (!vev) return; const n = vev.n; vev.step = 'game'; vevBar(); vevChase(n, () => vevScene(VEV_SCENE.stolenEnd(n), () => vevEnd())); }
+function vevChase(n, done) {   // 🏃 在院子裡追小偷鼠：他跑累了會停下來喘氣；40 秒還沒追到，他自己會跌倒（一定拿得回來）
+  const w = openGameWindow('🏃 追小偷鼠！', '用方向鍵（或按著畫面）追小偷鼠，碰到他就抓到了！他跑累了會停下來喘氣，那就是機會！');
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const W = 360, H = 220, f = copField(w, W, H), g = f.g;
+  const me = { x: 60, y: 130, f: 1 }, th = { x: 250, y: 120, rest: 0, run: 0, face: 1, wig: 0 };
+  let t = 0, last = performance.now(), raf = 0, live = true, end = false;
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); f.stop(); };
+  const finish = trip => { if (end) return; end = true; Sound.play('fanfare'); w.status.textContent = trip ? '小偷鼠跌倒了！抓到他了！' : '抓到小偷鼠了！書包拿回來了！'; setTimeout(() => { gameCleanup(); closeGameWindow(); done(); }, 1300); };
+  const frame = now => { if (!live) return; raf = requestAnimationFrame(frame); const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+    if (!end) { const [dx, dy] = f.dirFor(me); me.x = Math.max(16, Math.min(W - 16, me.x + dx * 130 * dt)); me.y = Math.max(70, Math.min(H - 10, me.y + dy * 130 * dt)); if (Math.abs(dx) > .1) me.f = dx > 0 ? 1 : -1;
+      if (th.rest > 0) th.rest -= dt;
+      else { th.run += dt; th.wig += dt; let ax = th.x - me.x, ay = th.y - me.y; const L = Math.hypot(ax, ay) || 1; ax /= L; ay /= L;
+        ax += Math.sin(th.wig * 1.7) * .5 + (W / 2 - th.x) / W * 1.6; ay += Math.cos(th.wig * 1.3) * .5 + (145 - th.y) / H * 1.6; const L2 = Math.hypot(ax, ay) || 1;
+        th.x = Math.max(16, Math.min(W - 16, th.x + ax / L2 * 112 * dt)); th.y = Math.max(70, Math.min(H - 10, th.y + ay / L2 * 112 * dt)); if (Math.abs(ax) > .1) th.face = ax > 0 ? 1 : -1;
+        if (th.run > 2.6) { th.run = 0; th.rest = 1.2; } }
+      if (Math.hypot(th.x - me.x, th.y - me.y) < 24) finish(false); else if (t > 40) { th.rest = 99; finish(true); } }
+    vevBg(g, W, H, 'yard', t);
+    try { g.save(); g.translate(th.x, th.y); drawThiefMouse(g, 1.1, th.face, t, { run: th.rest <= 0 && !end, tired: th.rest > 0 || end, item: end ? '' : '🎒' }); g.restore(); } catch (e) {}
+    if (th.rest > 0 && !end) { g.font = '14px sans-serif'; g.textAlign = 'center'; g.fillText('💦', th.x + 14, th.y - 34); }
+    copDrawKid(g, me.x, me.y, .55, t, !end, me.f, end ? 'joy' : null);
+    if (end) { g.font = '22px sans-serif'; g.textAlign = 'center'; g.fillText('🎒', me.x + 18, me.y - 40); }
+    g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.roundRect(6, 6, 120, 22, 8); g.fill(); g.fillStyle = '#3a3240'; g.font = '700 13px sans-serif'; g.textAlign = 'left'; g.fillText(`⏱️ ${Math.max(0, Math.ceil(40 - t))}`, 14, 22); };
+  raf = requestAnimationFrame(frame);
+  w.status.textContent = '小偷鼠拿著書包在院子裡跑！快追！';
+  vevChase.test = { th, me, end: () => { t = 41; } };
+}
+// 🔍 不見了
+function vevFindTap(it) {
+  if (!vev || vev.step !== 'find') return; const room = curRoom(), tgt = room.items.find(x => x.uid === vev.hide);
+  if (!tgt) { vevCancel(); return; }
+  vev.act = performance.now(); vev.hand = false;
+  if (it.uid === vev.hide) { Sound.play('perfect'); const nm = (FURN_BY_ID[it.id] || {}).name || '家具'; vev.step = 'scene'; vevBar(); vevScene(VEV_SCENE.lostEnd(vev.n, nm), () => vevEnd()); return; }
+  vev.tries++; const d = Math.hypot(it.x - tgt.x, it.y - tgt.y);
+  vev.last = d <= 2.2 ? '🔥 好熱！就在旁邊了！' : d <= 4.5 ? '♨️ 溫溫的，有一點近了' : '🧊 好冷～不在這附近';
+  Sound.play(d <= 2.2 ? 'starPop' : 'click'); visSay(`${(FURN_BY_ID[it.id] || {}).name || '這裡'}沒有…${vev.last}`, 2400);
+  if (vev.tries === 4 && !vev.region) { vev.region = true; setTimeout(() => vevHint(), 2600); }
+  vevBar();
+}
+function vevEnd() {
+  const v = vev; if (!v) return; vev = null; vevBar();
+  const st = vevState(); st.done = Math.min(1e6, (st.done || 0) + 1);
+  addBells(150); kidMoodUp(6); G.friends[v.n.id] = (G.friends[v.n.id] || 0) + 1;
+  if (vis.who === v.n) { vis.did = vis.did || {}; vis.did.vev = v.kind; vis.a.happyUntil = performance.now() + 5000; visSay(v.kind === 'faint' ? '謝謝你救了我！你是最棒的朋友！' : v.kind === 'stolen' ? '謝謝你幫我追回書包！你是小英雄！' : '謝謝你幫我找到鑰匙！', 3400); }
+  Sound.play('fanfare'); toast(`🦸 幫了${v.n.short}一個大忙！　💰 +150`); saveGame(); refreshTop(); try { requestDraw(); } catch (e) {}
+}
+// 🐾 腳印（貼在地板上）
+function vevDrawEntries() {
+  if (!vev || vev.step !== 'prints' || !vev.prints) return [];
+  return vev.prints.map(p => ({ x: p.x - .2, y: p.y - .2, w: .4, d: .4, z: 0, h: 1, drawFn: g => { const s = iso(p.x, p.y, 0), t = performance.now() / 1000;
+    g.save(); g.translate(s.x, s.y);
+    if (!p.got) { g.strokeStyle = `rgba(255,210,63,${.5 + .4 * Math.sin(t * 5 + p.k)})`; g.lineWidth = 2; g.beginPath(); g.ellipse(0, 0, 14, 7, 0, 0, 7); g.stroke(); }
+    g.scale(1, .55); g.fillStyle = p.got ? 'rgba(90,60,40,.18)' : 'rgba(90,60,40,.8)'; g.beginPath(); g.ellipse(0, 2, 5, 4, 0, 0, 7); g.fill(); [[-5, -4], [-2, -7], [2, -7], [5, -4]].forEach(([x, y]) => { g.beginPath(); g.arc(x, y, 1.8, 0, 7); g.fill(); });
+    g.restore(); } }));
+}
+function vevDrawOverlay(ctx, now) {
+  if (!vev) return; const t = now / 1000;
+  if (vev.lie && vis.who) { const p = iso(vis.a.x, vis.a.y, 0); ctx.font = '13px sans-serif'; ctx.textAlign = 'center'; for (let i = 0; i < 3; i++) { const a = t * 3 + i * 2.1; ctx.fillText('⭐', p.x - 26 + Math.cos(a) * 14, p.y - 20 + Math.sin(a) * 5); }
+    if (vev.blanket) { ctx.fillStyle = 'rgba(126,200,240,.9)'; ctx.beginPath(); ctx.roundRect(p.x - 34, p.y - 14, 34, 13, 5); ctx.fill(); } }
+  if (vev.hand && !['scene', 'game'].includes(vev.step)) { const p = vevTarget(); if (p) { const bob = Math.abs(Math.sin(t * 5)) * 8; ctx.font = '30px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('👇', p.x, p.y - (vev.step === 'water' ? 58 : 14) - bob); } }
+}
+/* 🎬 過場動畫：像繪本一樣一頁一頁（點一下、空白鍵換下一頁；右上角可以跳過） */
+function vevBg(g, W, H, kind, t) {
+  if (kind === 'yard' || kind === 'road') { const sk = g.createLinearGradient(0, 0, 0, H); sk.addColorStop(0, '#9fd8ff'); sk.addColorStop(1, '#e7f5ff'); g.fillStyle = sk; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#a8d672'; g.fillRect(0, 62, W, H - 62); g.fillStyle = '#c8a26b'; for (let x = 0; x < W; x += 18) { g.fillRect(x, 40, 5, 26); } g.fillRect(0, 46, W, 4); g.fillRect(0, 58, W, 4);
+    if (kind === 'road') { g.fillStyle = '#9aa0a8'; g.fillRect(0, 150, W, 50); g.fillStyle = '#ffffff'; for (let x = 10; x < W; x += 40) g.fillRect(x, 174, 20, 3); }
+    else ['🌼', '🌷', '🌼'].forEach((e, i) => { g.font = '14px sans-serif'; g.fillText(e, 40 + i * 130, 80); });
+    return; }
+  if (kind === 'hospital') { g.fillStyle = '#f4f8fb'; g.fillRect(0, 0, W, H); g.fillStyle = '#dfe9f0'; g.fillRect(0, H * .78, W, H * .22); g.fillStyle = '#e8505b'; g.fillRect(W - 60, 20, 30, 10); g.fillRect(W - 50, 10, 10, 30); return; }
+  g.fillStyle = '#f6ead8'; g.fillRect(0, 0, W, H * .66); g.fillStyle = '#d9b48a'; g.fillRect(0, H * .66, W, H * .34); g.strokeStyle = 'rgba(120,80,40,.25)'; for (let y = H * .66 + 12; y < H; y += 14) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  g.fillStyle = '#ffffff'; g.fillRect(28, 26, 74, 60); g.fillStyle = '#9fd8ff'; g.fillRect(33, 31, 64, 50); g.fillStyle = '#ffffff'; g.fillRect(63, 31, 4, 50); g.fillRect(33, 54, 64, 4);
+}
+function vevNb(g, n, x, y, k, o) {   // 畫一位動物朋友（o.lie 躺下、o.cry 哭哭、o.sway 搖搖晃晃）
+  o = o || {}; g.save(); g.translate(x, y); if (o.lie) g.rotate(-1.45); if (o.sway) g.rotate(o.sway); g.scale(k, k);
+  try { drawNeighbor(g, n, { happy: !!o.happy, blink: !!o.blink, fx: 0, clean: 100 }); } catch (e) {}
+  g.restore();
+  if (o.cry) { const tt = performance.now() / 1000; g.font = '14px sans-serif'; g.textAlign = 'center'; g.fillText('💧', x - 16 * k / 2, y - 44 * k / 2 + (tt * 30) % 16); g.fillText('💧', x + 16 * k / 2, y - 44 * k / 2 + (tt * 30 + 8) % 16); }
+}
+function vevStars(g, x, y, t) { g.font = '16px sans-serif'; g.textAlign = 'center'; for (let i = 0; i < 3; i++) { const a = t * 4 + i * 2.1; g.fillText('⭐', x + Math.cos(a) * 26, y + Math.sin(a) * 8); } }
+function vevHearts(g, x, y, t) { g.font = '16px sans-serif'; g.textAlign = 'center'; for (let i = 0; i < 3; i++) { const yy = y - ((t * 30 + i * 18) % 54); g.globalAlpha = Math.max(0, 1 - ((t * 30 + i * 18) % 54) / 54); g.fillText('💗', x + (i - 1) * 22, yy); } g.globalAlpha = 1; }
+const VEV_SCENE = {
+  faintIntro: n => [
+    { text: `${n.short}突然覺得頭好暈……`, draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); vevNb(g, n, 160, 190, 2.2, { sway: Math.sin(t * 3) * .12 }); vevStars(g, 160 + Math.sin(t * 3) * 10, 92, t); copDrawKid(g, 280, 196, 1.05, t, false, -1, null); } },
+    { text: `咚！${n.short}昏倒了！`, draw: (g, W, H, t) => { const sh = t < .4 ? Math.sin(t * 60) * 4 : 0; g.save(); g.translate(sh, 0); vevBg(g, W, H, 'room', t); vevNb(g, n, 200, 168, 2.2, { lie: true, blink: true }); vevStars(g, 120, 140, t); copDrawKid(g, 290, 196, 1.05, t, false, -1, 'wow'); g.restore();
+      g.font = '900 34px sans-serif'; g.textAlign = 'center'; g.lineWidth = 6; g.strokeStyle = '#fff'; g.strokeText('咚！', 90, 70); g.fillStyle = '#e8505b'; g.fillText('咚！', 90, 70); } },
+    { text: `${charName()}：${n.short}！你還好嗎？我來幫你！`, draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); vevNb(g, n, 170, 168, 2.2, { lie: true, blink: true }); vevStars(g, 90, 140, t); copDrawKid(g, 260 - Math.min(1, t) * 20, 196, 1.05, t, t < 1, -1, null); } }
+  ],
+  ambulance: n => [
+    { text: '嗚咿～嗚咿～救護車來了！', draw: (g, W, H, t) => { vevBg(g, W, H, 'road', t); const x = W + 90 - Math.min(1, t / 1.6) * (W + 90 - 190); g.save(); g.translate(x, 196); g.scale(-1, 1); drawVehicle(g, 'ambulance', 2.6, t, t < 1.6, null, null); g.restore(); copDrawKid(g, 60, 150, .9, t, false, 1, null); } },
+    { text: `救護車把${n.short}送到醫院，${charName()}也一起去幫忙！`, draw: (g, W, H, t) => { vevBg(g, W, H, 'hospital', t); g.fillStyle = '#ffffff'; g.beginPath(); g.roundRect(60, 150, 170, 24, 8); g.fill(); vevNb(g, n, 110, 164, 1.7, { lie: true, blink: true }); g.fillStyle = '#9fd8ff'; g.beginPath(); g.roundRect(120, 146, 110, 22, 8); g.fill(); try { vevNb(g, HOSTS.hospital, 290, 200, 2, { happy: true }); } catch (e) {} } }
+  ],
+  faintEnd: n => [{ text: `${n.short}：我好多了！謝謝你救了我！`, draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); vevNb(g, n, 150, 196, 2.2, { happy: true }); vevHearts(g, 150, 90, t); copDrawKid(g, 260, 196, 1.05, t, false, -1, 'joy'); } }],
+  stolenIntro: n => [
+    { text: `${n.short}把書包放在旁邊，跟${charName()}一起玩……`, draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); vevNb(g, n, 150, 196, 2.2, { happy: true }); g.font = '30px sans-serif'; g.textAlign = 'center'; g.fillText('🎒', 210, 192); copDrawKid(g, 280, 196, 1.05, t, false, -1, 'joy'); } },
+    { text: '咻！小偷鼠從窗戶溜進來，抓走了書包！', draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); vevNb(g, n, 150, 196, 2.2, {}); copDrawKid(g, 280, 196, 1.05, t, false, -1, 'wow'); const k = Math.min(1, t / 1.8), x = k < .3 ? 70 + k / .3 * 140 : 210 - (k - .3) / .7 * 280, y = k < .3 ? 90 + k / .3 * 100 : 190;
+      if (k < .3) { g.font = '30px sans-serif'; g.textAlign = 'center'; g.fillText('🎒', 210, 192); }
+      try { g.save(); g.translate(x, y); drawThiefMouse(g, 1.6, k < .3 ? 1 : -1, t, { run: true, item: k >= .3 ? '🎒' : '' }); g.restore(); } catch (e) {} } },
+    { text: `${n.short}：我的書包！裡面有我最喜歡的畫！嗚嗚……`, draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); vevNb(g, n, 160, 196, 2.2, { blink: true, cry: true }); copDrawKid(g, 280, 196, 1.05, t, false, -1, 'angry'); } }
+  ],
+  stolenEnd: n => [
+    { text: '抓到小偷鼠了！書包拿回來了！', draw: (g, W, H, t) => { vevBg(g, W, H, 'yard', t); try { g.save(); g.translate(240, 190); drawThiefMouse(g, 1.6, -1, t, { tired: true }); g.restore(); } catch (e) {} g.font = '14px sans-serif'; g.fillText('對不起…', 250, 120); copDrawKid(g, 130, 196, 1.05, t, false, 1, 'joy'); g.font = '30px sans-serif'; g.textAlign = 'center'; g.fillText('🎒', 160, 140 - Math.abs(Math.sin(t * 3)) * 6); } },
+    { text: `${n.short}：謝謝你！你是小英雄！`, draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); vevNb(g, n, 150, 196, 2.2, { happy: true }); g.font = '30px sans-serif'; g.textAlign = 'center'; g.fillText('🎒', 205, 192); vevHearts(g, 150, 90, t); copDrawKid(g, 270, 196, 1.05, t, false, -1, 'joy'); } }
+  ],
+  lostIntro: n => [
+    { text: `${n.short}在口袋裡翻來翻去……`, draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); vevNb(g, n, 160, 196, 2.2, { sway: Math.sin(t * 8) * .06 }); g.font = '22px sans-serif'; g.textAlign = 'center'; g.fillText('❓', 120 + Math.sin(t * 3) * 4, 90); g.fillText('❓', 205, 80 + Math.cos(t * 3) * 4); copDrawKid(g, 285, 196, 1.05, t, false, -1, null); } },
+    { text: `${n.short}：糟糕！我的🔑鑰匙不見了！沒有鑰匙不能回家……`, draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); vevNb(g, n, 160, 196, 2.2, { blink: true, cry: true }); g.font = '34px sans-serif'; g.textAlign = 'center'; g.fillText('🔑', 70, 120); g.strokeStyle = '#e8505b'; g.lineWidth = 4; g.beginPath(); g.moveTo(48, 98); g.lineTo(92, 132); g.moveTo(92, 98); g.lineTo(48, 132); g.stroke(); copDrawKid(g, 285, 196, 1.05, t, false, -1, 'wow'); } }
+  ],
+  lostEnd: (n, spot) => [
+    { text: `找到了！🔑鑰匙掉在${spot}旁邊！`, draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); copDrawKid(g, 170, 196, 1.05, t, false, 1, 'joy'); g.font = '34px sans-serif'; g.textAlign = 'center'; g.fillText('🔑', 210, 120 - Math.abs(Math.sin(t * 3)) * 10); g.fillText('✨', 245, 100); } },
+    { text: `${n.short}：太好了！謝謝你幫我找到！`, draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); vevNb(g, n, 150, 196, 2.2, { happy: true }); vevHearts(g, 150, 90, t); copDrawKid(g, 270, 196, 1.05, t, false, -1, 'joy'); } }
+  ]
+};
+function vevScene(frames, done) {
+  const old = document.getElementById('vevScene'); if (old) old.remove();
+  let i = 0, t0 = performance.now(), raf = 0, closed = false;
+  const W = 360, H = 220, dpr = Math.min(2, window.devicePixelRatio || 1);
+  const wrap = el('div', 'vev-scene'); wrap.id = 'vevScene';
+  const card = el('div', 'vev-card'), cv = document.createElement('canvas'); cv.width = W * dpr; cv.height = H * dpr; cv.className = 'vev-cv';
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const cap = el('div', 'vev-cap', ''), dots = el('div', 'vev-dots', ''), next = el('button', 'big', '▶ 下一頁'), skip = el('button', 'vev-skip', '跳過 ▶▶');
+  card.append(cv, cap, dots, next); wrap.append(card, skip); document.body.appendChild(wrap);
+  const show = () => { cap.textContent = frames[i].text; dots.textContent = frames.map((_, k) => k === i ? '●' : '○').join(' '); t0 = performance.now(); next.textContent = i === frames.length - 1 ? '好！' : '▶ 下一頁'; try { Sound.play('talk', frames[i].text); } catch (e) {} };
+  const close = () => { if (closed) return; closed = true; cancelAnimationFrame(raf); wrap.remove(); document.removeEventListener('keydown', kd, true); if (done) done(); };
+  const go = () => { if (closed) return; i++; if (i >= frames.length) { close(); return; } Sound.play('click'); show(); };
+  const frame = now => { if (closed) return; raf = requestAnimationFrame(frame); g.clearRect(0, 0, W, H); try { frames[i].draw(g, W, H, (now - t0) / 1000); } catch (e) {} };
+  const kd = e => { if (e.code === 'Space' || e.code === 'Enter' || e.code === 'ArrowRight') { e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat) go(); } };
+  next.onclick = go; cv.onclick = go; skip.onclick = () => { Sound.play('click'); close(); };
+  document.addEventListener('keydown', kd, true);
+  show(); raf = requestAnimationFrame(frame);
+  vevScene.test = { go, close, get i() { return i; }, frames };
+}
 /* 🐾 訪客簿也記動物朋友（家長：訪客簿是不是也可以有動物朋友？）
    鄰居回家的時候留一句話＋自己的小印章，看得出今天誰來過、一起做了什麼。
    跟姊妹的回禮卡分開放（G.animalBook），動物一天來好幾次才不會把姊妹的卡片擠掉：
@@ -12518,6 +12819,9 @@ const ANIMAL_BOOK_MSGS = {
   chat:  ['謝謝你請我坐下來聊天！', '跟{名字}聊天好開心，下次再聊！'],
   dance: ['一起跳舞好好玩！💃', '我們跳得好開心，腳都跳酸了！'],
   candy: ['謝謝你的糖果！🍬', '糖果好甜，萬聖節快樂！🎃'],
+  vev_faint: ['謝謝你救了我！我昏倒的時候好害怕，還好有你！', '謝謝{名字}幫我叫救護車，你是最棒的朋友！'],
+  vev_stolen: ['謝謝你幫我追回書包！你是小英雄！🦸', '書包裡的畫還在，謝謝{名字}！'],
+  vev_lost: ['謝謝你幫我找到鑰匙！不然我就回不了家了～', '{名字}找東西好厲害！🔑'],
   pet:   ['{寵物}好可愛，下次還要跟牠玩！'],
   any:   ['今天跟{名字}玩得好開心！', '你的家好舒服，下次還要來！', '謝謝{名字}，我好喜歡來你家玩！', '下次換你來我家玩喔！']
 };
@@ -12559,11 +12863,11 @@ function animalDoodle(id) {
 function animalGuestbook(n, did, costume) {
   if (!n) return null;
   did = did || {};
-  const key = did.candy ? 'candy' : did.dance ? 'dance' : did.chat ? 'chat' : Math.random() < .3 && G.pet && G.pet.stage !== 'egg' ? 'pet' : 'any';
+  const key = did.vev && ANIMAL_BOOK_MSGS['vev_' + did.vev] ? 'vev_' + did.vev : did.candy ? 'candy' : did.dance ? 'dance' : did.chat ? 'chat' : Math.random() < .3 && G.pet && G.pet.stage !== 'egg' ? 'pet' : 'any';
   const list = ANIMAL_BOOK_MSGS[key];
   let t = list[Math.floor(Math.random() * list.length)];
   Object.entries(visVars()).forEach(([k, v]) => { t = t.split(`{${k}}`).join(v); });
-  const acts = (did.chat ? '☕' : '') + (did.dance ? '💃' : '') + (did.candy ? '🍬' : '') + (costume ? '🎃' : '') + (did.gift ? '🎁' : '');
+  const acts = (did.vev ? '🦸' : '') + (did.chat ? '☕' : '') + (did.dance ? '💃' : '') + (did.candy ? '🍬' : '') + (costume ? '🎃' : '') + (did.gift ? '🎁' : '');
   const book = G.animalBook = Array.isArray(G.animalBook) ? G.animalBook : [];
   const now = Date.now(), day = new Date(now).toDateString();
   const old = book.find(e => e.id === n.id && new Date(e.at).toDateString() === day);
@@ -13326,7 +13630,10 @@ function drawNeighborActor(ctx, a, n, alpha, seated, happy, scale) {
   ctx.restore();
   ctx.globalAlpha = 1;
 }
-function drawVisitor(ctx) { drawNeighborActor(ctx, vis.a, vis.who, vis.alpha, !!vis.seat, !!vis.chat); }
+function drawVisitor(ctx) {
+  if (typeof vev !== 'undefined' && vev && vev.lie && vis.a) { const p = iso(vis.a.x, vis.a.y, 0); ctx.save(); ctx.translate(p.x, p.y - 4); ctx.rotate(-1.4); ctx.translate(-p.x, -p.y); drawNeighborActor(ctx, vis.a, vis.who, vis.alpha, false, false); ctx.restore(); return; }   // 😵 昏倒：躺下來
+  drawNeighborActor(ctx, vis.a, vis.who, vis.alpha, !!vis.seat, !!vis.chat);
+}
 // 頭上的對話框：前面加上名字，綠色邊框跟小可愛的區分
 function drawNeighborBubble(ctx, a, n, say, alpha) {
   const p = iso(a.x, a.y, a.z || 0), text = `${n.short}：${say}`;
@@ -16070,7 +16377,7 @@ function draw() {
   const sea = seasonOfMonth();
   const inSky = !!(G.away && G.away.place === 'sky');
   const room = curRoom(), nowT = performance.now();
-  const extras = [fufuDrawEntry()].concat(petDrawEntries(), visitorDrawEntries(), (typeof ghostDrawEntries === 'function' ? ghostDrawEntries() : []), hostDrawEntries(),   /* 幽靈在後面的 script：第一幀可能還沒載入 */ supplyDrawEntries(), giftDrawEntries(), phDrawEntries(), (typeof thiefDrawEntries === 'function' ? thiefDrawEntries() : []));
+  const extras = [fufuDrawEntry()].concat(petDrawEntries(), visitorDrawEntries(), (typeof vevDrawEntries === 'function' ? vevDrawEntries() : []), (typeof ghostDrawEntries === 'function' ? ghostDrawEntries() : []), hostDrawEntries(),   /* 幽靈在後面的 script：第一幀可能還沒載入 */ supplyDrawEntries(), giftDrawEntries(), phDrawEntries(), (typeof thiefDrawEntries === 'function' ? thiefDrawEntries() : []));
   const occupants = [fufuOccupant(), petOccupant(), visitorOccupant()].concat(phOccupants(), compOccupants(), (typeof prisonerOccupants === 'function' ? prisonerOccupants() : []));
   let layered = false;
   try { layered = roomLayerFrame(room, dpr, sea, inSky, nowT, extras, occupants); } catch (e) { USE_ROOM_LAYER = false; layered = false; try { console.error(e); } catch (e2) {} }
@@ -16085,6 +16392,7 @@ function draw() {
   if (!inSky && typeof roomDayNight === 'function') { try { roomDayNight(ctx, room, dpr); } catch (e) {} ctx.setTransform(view.scale * dpr, 0, 0, view.scale * dpr, view.ox * dpr, view.oy * dpr); }   // 🌙 家裡跟著時間變天色
   petDrawOverlay(ctx);
   visitorDrawOverlay(ctx, performance.now());
+  if (typeof vevDrawOverlay === 'function') try { vevDrawOverlay(ctx, performance.now()); } catch (e) {}
   if (typeof prisonersDrawOverlay === 'function') prisonersDrawOverlay(ctx);   // 🚔 小房間裡的犯人說話
   drawAmbient(ctx, performance.now());
   if (typeof huntDrawDark === 'function') huntDrawDark(ctx);   // 🔦 找幽靈：房間變暗、手電筒的光圈
@@ -16359,6 +16667,7 @@ function gameStep(dt, now) {
   giftTick(now);
   guideTick(now);
   if (typeof thiefTick === 'function') try { thiefTick(now, dt); } catch (e) {}   // 🐭 小偷鼠
+  if (typeof vevTick === 'function') try { vevTick(now); } catch (e) {}   // 🎬 朋友來玩的事件
   if (typeof prisonersTick === 'function') try { prisonersTick(now, dt); } catch (e) {}   // 🚔 小房間裡的犯人
   if (typeof checkTrophies === 'function') try { checkTrophies(now); } catch (e) {}
   if (now > nextPetTick) { nextPetTick = now + 5000; if (petTick()) saveGame(); }
@@ -17129,6 +17438,7 @@ canvas.addEventListener('pointerup', e => {
   if (giftBoxHit(w)) { (giftVisit.spec || GIFT_SPECS[0]).open(); return; }
   { const ph = phHit(w); if (ph != null) { phTap(ph, e); return; } }
   if (typeof ghostHit === 'function' && ghostHit(w)) { findGhost(); return; }   // 👻 萬聖節找小幽靈
+  if (typeof vevTap === 'function' && vevTap(w)) return;   // 🎬 事件進行中：點朋友、腳印、家具
   if (visitorHit(w)) { openMenu(visitorMenuEntries(), e); return; }
   { const fp = friendPetHit(w); if (fp) { patFriendPet(fp); return; } }
   { const cr = crowdHit(w); if (cr) { crowdTalk(cr, e); return; } }
