@@ -2714,6 +2714,12 @@ const treeParts = (leaf, leaf2, fruit) => [
 // 🎢 雲霄飛車的軌道高度（y＝0～4 每一格邊上的高度）：車站在 y＝4，出發往後先過小山坡、衝下來、爬到最高點
 const COASTER_H = [14, 70, 18, 44, 12];
 const PLACE_FURNITURE = [
+  // 🎅 聖誕老公公的家
+  { id: 'toy_bench', name: '小精靈的玩具工作台', theme: 'cute', w: 2, d: 1, parts: [{ x: .05, y: .2, w: 1.9, d: .6, z: 0, h: 22, c: '#a0703e' }, { x: .05, y: .2, w: 1.9, d: .6, z: 22, h: 2, c: '#c98d5a' }, { k: 'ball', x: .35, y: .45, z: 28, r: 4, c: '#e8505b' }, { x: .7, y: .35, w: .3, d: .25, z: 24, h: 8, c: '#4a90d9' }, { k: 'ball', x: 1.3, y: .5, z: 28, r: 4.5, c: '#c98d5a' }, { k: 'ball', x: 1.3, y: .5, z: 35, r: 3, c: '#c98d5a' }, { x: 1.6, y: .3, w: .25, d: .25, z: 24, h: 12, c: '#4fbf6a' }] },
+  { id: 'wrap_table', name: '包禮物的桌子', theme: 'cute', w: 2, d: 1, parts: [{ x: .05, y: .2, w: 1.9, d: .6, z: 0, h: 22, c: '#f1f1f4' }, { x: .05, y: .2, w: 1.9, d: .6, z: 22, h: 2, c: '#e8505b' }, { x: .3, y: .3, w: .4, d: .35, z: 24, h: 10, c: '#2f9e44' }, { x: .46, y: .3, w: .08, d: .35, z: 24, h: 10.5, c: '#ffd23f' }, { x: 1.1, y: .3, w: .5, d: .4, z: 24, h: 8, c: '#4a90d9' }, { x: 1.1, y: .46, w: .5, d: .08, z: 24, h: 8.5, c: '#ffffff' }] },
+  { id: 'reindeer_stall', name: '麋鹿小屋', theme: 'cute', w: 3, d: 2, parts: [{ x: 0, y: 0, w: 3, d: 2, z: 0, h: 2, c: '#e8d29a' }, { x: 0, y: 0, w: .12, d: 2, z: 0, h: 26, c: '#8a5a33' }, { x: 0, y: 0, w: 3, d: .12, z: 0, h: 26, c: '#8a5a33' }, { x: 0, y: 1.88, w: 1, d: .12, z: 0, h: 14, c: '#8a5a33' },
+    { k: 'ball', x: 1.2, y: 1, z: 12, r: 8, c: '#c9844a' }, { k: 'ball', x: 1.6, y: 1.1, z: 22, r: 5, c: '#c9844a' }, { k: 'ball', x: 1.8, y: 1.15, z: 22, r: 1.8, c: '#e8505b' }, { x: 1.5, y: 1.05, w: .04, d: .04, z: 26, h: 9, c: '#8a5a33' }, { x: 1.65, y: 1.05, w: .04, d: .04, z: 26, h: 9, c: '#8a5a33' },
+    { x: .9, y: .7, w: .08, d: .08, z: 0, h: 8, c: '#a0703e' }, { x: 1.4, y: .7, w: .08, d: .08, z: 0, h: 8, c: '#a0703e' }, { x: .9, y: 1.3, w: .08, d: .08, z: 0, h: 8, c: '#a0703e' }, { x: 1.4, y: 1.3, w: .08, d: .08, z: 0, h: 8, c: '#a0703e' }, { x: 2.3, y: .3, w: .5, d: .4, z: 2, h: 6, c: '#ff9a3c' }] },
   // 🔧 改車店
   { id: 'car_lift', name: '升降機（改車台）', theme: 'modern', w: 2, d: 2, parts: [{ x: .1, y: .1, w: 1.8, d: 1.8, z: 0, h: 3, c: '#8a94a6' }, { x: .1, y: .1, w: .15, d: .15, z: 0, h: 34, c: '#e8505b' }, { x: 1.75, y: 1.75, w: .15, d: .15, z: 0, h: 34, c: '#e8505b' }, { x: .2, y: .3, w: 1.6, d: 1.4, z: 16, h: 3, c: '#5a6475' }, { x: .35, y: .5, w: 1.3, d: 1, z: 19, h: 9, c: '#4a90d9' }, { x: .6, y: .65, w: .7, d: .7, z: 28, h: 7, c: '#9fd8ff' }, { k: 'ball', x: .5, y: .5, z: 21, r: 3, c: '#26232a' }, { k: 'ball', x: 1.5, y: 1.5, z: 21, r: 3, c: '#26232a' }] },
   { id: 'paint_booth', name: '烤漆房', theme: 'modern', w: 2, d: 1, parts: [{ x: .1, y: .15, w: 1.8, d: .7, z: 0, h: 40, c: '#f1f1f4' }, { x: .4, y: .13, w: 1.2, d: .04, z: 12, h: 20, c: '#9fd8ff' }, { x: .1, y: .13, w: .5, d: .03, z: 34, h: 5, c: '#e8505b' }, { x: .6, y: .13, w: .5, d: .03, z: 34, h: 5, c: '#ffd23f' }, { x: 1.1, y: .13, w: .5, d: .03, z: 34, h: 5, c: '#4a90d9' }, { k: 'ball', x: .25, y: .05, z: 3, r: 3, c: '#ff8fb8' }, { k: 'ball', x: 1.75, y: .05, z: 3, r: 3, c: '#4fbf6a' }] },
@@ -3556,6 +3562,7 @@ const HOSTS = {
   cinema: { id: 'cinema', name: '貓頭鷹放映師', short: '放映師', body: '#a07850', edge: '#7a5a3a', belly: '#f2dfc0', inner: '#7a5a3a', ears: 'tuft', acc: 'glasses', accColor: '#3a3240' },
   tkd: { id: 'tkd', name: '熊熊教練', short: '熊教練', body: '#8a5a33', edge: '#6b4428', belly: '#e8cfa9', inner: '#6b4428', ears: 'round', acc: 'scarf', accColor: '#26232a' },
   restaurant: { id: 'restaurant', name: '貓咪主廚', short: '貓主廚', body: '#ffd9a8', edge: '#d9a86a', belly: '#fff4e0', inner: '#ffb3c7', ears: 'pointy', acc: 'hat', accColor: '#ffffff' },
+  santa: { id: 'santa', name: '聖誕老公公', short: '聖誕老公公', santa: true, body: '#d94a4a', edge: '#b03636', belly: '#ffffff', inner: '#ffd9c9', ears: 'none', acc: 'none', accColor: '#d94a4a' },   // 🎅 聖誕老公公的家（聖誕節才有）
   garage: { id: 'garage', name: '河狸技師', short: '技師', body: '#a0703e', edge: '#7a5230', belly: '#e8c9a0', inner: '#c98d5a', ears: 'round', acc: 'hat', accColor: '#e8505b' },   // 🔧 改車店
   airport: { id: 'airport', name: '鵜鶘機長', short: '機長', body: '#fbfbf7', edge: '#cfcfd8', belly: '#ffffff', inner: '#ffd9a8', ears: 'none', acc: 'bill', accColor: '#ffb347' },   // ✈️ 機場
   police: { id: 'police', name: '狗狗警官', short: '警官', body: '#e0b07a', edge: '#b07f48', belly: '#fff4e2', inner: '#8a5a33', ears: 'round', acc: 'hat', accColor: '#2f4f8f' },   // 🚓 警察局
@@ -3670,6 +3677,12 @@ const PLACES = {
     { name: '醫院', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_terrazzo', items: [
       ['hosp_desk', 4, 0], ['hosp_cabinet', 9, 0], ['hosp_bed', 0, 2], ['hosp_bed', 0, 6], ['hosp_scale', 8, 4]
     ], wallItems: [['hosp_eye', 'R', 4]] }
+  ] },
+  /* 🎅 聖誕老公公的家（家長 11/21）：聖誕節期間才出現在大地圖上 */
+  santa: { name: '聖誕老公公的家', host: 'santa', emoji: '🎅', desc: '聖誕節才開放！幫小精靈做玩具、照顧麋鹿、包禮物，跟聖誕老公公喝熱可可。', rooms: [
+    { name: '聖誕老公公的家', w: 12, d: 12, wall: 'wp_log', floor: 'fl_wood', items: [
+      ['xmas_tree', 5, 0], ['fireplace', 2, 0], ['toy_bench', 0, 4], ['wrap_table', 9, 2], ['reindeer_stall', 8, 8], ['gift_pile', 6, 0], ['gift_pile', 7, 0], ['snow_buddy', 0, 10], ['air_seats', 4, 7]
+    ], wallItems: [['xmas_wreath', 'R', 4], ['xmas_stocking', 'L', 6], ['wall_clock', 'L', 2]] }
   ] },
   /* 🔧 改車店（家長 11/21）：河狸技師。升降機、烤漆房＝改裝我的車，洗車台＝洗車 */
   garage: { name: '改車店', host: 'garage', emoji: '🔧', desc: '幫自己的車換顏色、貼貼紙、換輪框、裝底盤燈！車子髒了也可以來洗車。', rooms: [
@@ -5747,6 +5760,7 @@ FURN_BY_ID.plane_model = { id: 'plane_model', name: '飛機模型', price: 0, th
 FURN_BY_ID.xmas_teddy = { id: 'xmas_teddy', name: '聖誕老公公送的聖誕熊', price: 0, theme: 'cute', w: 1, d: 1, gift: true, parts: [
   { k: 'ball', x: .5, y: .5, z: 10, r: 12, c: '#c98d5a' }, { k: 'ball', x: .5, y: .5, z: 30, r: 9, c: '#c98d5a' }, { k: 'ball', x: .36, y: .5, z: 38, r: 3.6, c: '#c98d5a' }, { k: 'ball', x: .64, y: .5, z: 38, r: 3.6, c: '#c98d5a' },
   { k: 'ball', x: .5, y: .62, z: 29, r: 3, c: '#f0d9b5' }, { k: 'ball', x: .5, y: .5, z: 41, r: 6, c: '#d94a4a' }, { k: 'ball', x: .5, y: .5, z: 48, r: 2.4, c: '#ffffff' }, { k: 'ball', x: .5, y: .62, z: 14, r: 3.4, c: '#d94a4a' }] };
+FURN_BY_ID.sleigh_model = { id: 'sleigh_model', name: '雪橇小模型', price: 0, theme: 'cute', w: 1, d: 1, gift: true, parts: [{ x: .15, y: .3, w: .7, d: .4, z: 0, h: 2, c: '#ffd23f' }, { x: .2, y: .32, w: .55, d: .36, z: 2, h: 10, c: '#d63b3b' }, { x: .2, y: .32, w: .55, d: .36, z: 12, h: 1.5, c: '#ffd23f' }, { k: 'ball', x: .35, y: .5, z: 16, r: 4, c: '#8a5a33' }, { k: 'ball', x: .85, y: .5, z: 8, r: 3.4, c: '#a0703e' }] };   // 🛷 聖誕節結束還雪橇時的紀念品
 FURN_BY_ID.xmas_village = { id: 'xmas_village', name: '聖誕小村莊', price: 0, theme: 'cute', w: 1, d: 1, gift: true, parts: [   // ⭐ 聖誕星星 22 顆的獎品
   { x: .05, y: .1, w: .9, d: .8, z: 0, h: 3, c: '#f4f6ff' }, { x: .12, y: .2, w: .26, d: .26, z: 3, h: 12, c: '#e8505b' }, { x: .1, y: .18, w: .3, d: .3, z: 15, h: 4, c: '#ffffff' },
   { x: .55, y: .18, w: .3, d: .28, z: 3, h: 16, c: '#4a90d9' }, { x: .53, y: .16, w: .34, d: .32, z: 19, h: 4, c: '#ffffff' }, { x: .3, y: .58, w: .3, d: .26, z: 3, h: 10, c: '#ffb347' }, { x: .28, y: .56, w: .34, d: .3, z: 13, h: 4, c: '#ffffff' },
@@ -5909,6 +5923,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-21T22:00', title: '🎅 聖誕老公公的家開放了！', lines: [
+    ['🎅', '聖誕節期間，大地圖改車店旁邊會出現聖誕老公公的家（聖誕節過了就要等明年）'],
+    ['🧸', '幫小精靈照訂單做玩具、🦌 照顧麋鹿、🎁 包禮物、☕ 跟聖誕老公公喝熱可可'],
+    ['🛷', '幫聖誕老公公送禮物累積 5 份，他會把雪橇借你！雪橇可以飛上天，聖誕節結束要還給他'],
+    ['⭐', '新的三個小遊戲每天第一次完成也有聖誕星星']
+  ] },
   { id: '2026-11-21T19:00', title: '🎬 朋友來玩的時候會發生事件！', lines: [
     ['😵', '朋友突然昏倒了！拿水、拿毯子、打電話叫救護車，再到醫院跟羊醫生一起照顧他'],
     ['🦝', '小偷鼠從窗戶溜進來偷走朋友的書包！跟著地上的腳印追出去，把書包拿回來'],
@@ -7081,14 +7101,14 @@ function normalizeSave(g) {
   if (out.noDayNight != null && out.noDayNight !== 1) delete out.noDayNight;
   if (out.vev != null) { if (!isObj(out.vev)) delete out.vev; else { const v = out.vev; if (v.d != null && !(typeof v.d === 'string' && v.d.length <= 12)) delete v.d; ['n', 'done'].forEach(k => { if (v[k] != null && !(Number.isInteger(v[k]) && v[k] >= 0 && v[k] < 1e6)) delete v[k]; }); if (v.last != null && !/^(faint|stolen|lost)$/.test(v.last)) delete v.last; Object.keys(v).forEach(k => { if (!['d', 'n', 'last', 'done'].includes(k)) delete v[k]; }); } }   // 🎬 朋友來玩的事件：今天幾次、上次哪一種、一共幫了幾次
   if (out.carLook != null) { if (!isObj(out.carLook)) delete out.carLook; else { const OKV = { c: /^(def|red|pink|purple|blue|sky|green|yellow|orange|white|black|gold)$/, st: /^(none|star|heart|flame|flower|bolt|paw|rainbow)$/, wh: /^(std|gold|star|rainbow|flower)$/, gl: /^(none|pink|blue|green|rainbow)$/ };
-    Object.keys(out.carLook).forEach(id => { const l = out.carLook[id]; if (!/^(bike|suv|bus|truck|sports|robot|police|ambulance|dino|plane)$/.test(id) || !isObj(l)) { delete out.carLook[id]; return; }
+    Object.keys(out.carLook).forEach(id => { const l = out.carLook[id]; if (!/^(bike|suv|bus|truck|sports|robot|police|ambulance|dino|plane|sleigh)$/.test(id) || !isObj(l)) { delete out.carLook[id]; return; }
       Object.keys(l).forEach(k => { if (k === 'dirt') { if (!(typeof l.dirt === 'number' && isFinite(l.dirt) && l.dirt >= 0 && l.dirt <= 100)) delete l.dirt; } else if (!OKV[k] || typeof l[k] !== 'string' || !OKV[k].test(l[k])) delete l[k]; }); }); } }   // 🎨 改車店：每台車的樣子、髒的程度
   if (out.carOwn != null) { if (Array.isArray(out.carOwn)) out.carOwn = [...new Set(out.carOwn.filter(x => typeof x === 'string' && /^(c|st|wh|gl):[a-z]+$/.test(x)))].slice(0, 60); else delete out.carOwn; }   // 🎨 買過的顏色、貼紙、輪框、燈
   if (out.trip != null) { if (!isObj(out.trip)) delete out.trip; else { const t = out.trip; t.st = isObj(t.st) ? Object.fromEntries(Object.entries(t.st).filter(([k, v]) => /^(冰雪國|沙漠國|森林國|大海國|火山國|雲朵國|糖果國|星星國)$/.test(k) && v === 1)) : {}; ['n', 'fly', 'sec', 'twr', 'meal'].forEach(k => { if (t[k] != null && !(Number.isInteger(t[k]) && t[k] >= 0 && t[k] < 1e6)) delete t[k]; }); ['fly', 'sec', 'twr', 'meal'].forEach(k => { if (t[k] > 3) t[k] = 3; }); if (t.pz != null && t.pz !== 1) delete t.pz; Object.keys(t).forEach(k => { if (!['st', 'n', 'fly', 'sec', 'twr', 'meal', 'pz'].includes(k)) delete t[k]; }); } }   // ✈️ 護照的章、搭了幾次、開飛機過到第幾關   // 家長把「家裡跟著時間變天色」關掉了
-  if (out.xmas != null) { if (!isObj(out.xmas)) delete out.xmas; else { const x = out.xmas, ok = { stars: v => Number.isInteger(v) && v >= 0 && v < 1e6, n: v => Number.isInteger(v) && v >= 0 && v < 100, sockN: v => Number.isInteger(v) && v >= 0 && v < 1e6, eve: v => Number.isInteger(v) && v > 2000 && v < 3000, d: v => typeof v === 'string' && v.length <= 12, sock: v => typeof v === 'string' && v.length <= 12, got: v => Array.isArray(v), gm: v => isObj(v), tl: v => Number.isInteger(v) && v >= 0 && v <= 3, sl: v => Number.isInteger(v) && v >= 0 && v <= 3 };
-    Object.keys(x).forEach(k => { if (!ok[k] || !ok[k](x[k])) delete x[k]; }); if (x.got) x.got = x.got.filter(id => typeof id === 'string' && (FURN_BY_ID[id] || CLOTHES_BY_ID[id])).slice(0, 20); if (x.gm) x.gm = Object.fromEntries(Object.entries(x.gm).filter(([k, v]) => /^(ck|tr|sl)$/.test(k) && typeof v === 'string' && v.length <= 12)); } }   // 🎄 聖誕星星、送禮物、聖誕襪、平安夜
+  if (out.xmas != null) { if (!isObj(out.xmas)) delete out.xmas; else { const x = out.xmas, ok = { stars: v => Number.isInteger(v) && v >= 0 && v < 1e6, n: v => Number.isInteger(v) && v >= 0 && v < 100, sockN: v => Number.isInteger(v) && v >= 0 && v < 1e6, eve: v => Number.isInteger(v) && v > 2000 && v < 3000, d: v => typeof v === 'string' && v.length <= 12, sock: v => typeof v === 'string' && v.length <= 12, got: v => Array.isArray(v), gm: v => isObj(v), gave: v => Number.isInteger(v) && v >= 0 && v < 1e6, lend: v => Number.isInteger(v) && v > 2000 && v < 3000, tl: v => Number.isInteger(v) && v >= 0 && v <= 3, sl: v => Number.isInteger(v) && v >= 0 && v <= 3 };
+    Object.keys(x).forEach(k => { if (!ok[k] || !ok[k](x[k])) delete x[k]; }); if (x.got) x.got = x.got.filter(id => typeof id === 'string' && (FURN_BY_ID[id] || CLOTHES_BY_ID[id])).slice(0, 20); if (x.gm) x.gm = Object.fromEntries(Object.entries(x.gm).filter(([k, v]) => /^(ck|tr|sl|toy|deer|wrap)$/.test(k) && typeof v === 'string' && v.length <= 12)); } }   // 🎄 聖誕星星、送禮物、聖誕襪、平安夜
   if (out.dinoQ != null) { if (!(isObj(out.dinoQ) && Number.isInteger(out.dinoQ.s) && out.dinoQ.s >= 0)) delete out.dinoQ; else out.dinoQ = { s: Math.min(3, out.dinoQ.s) }; }   // 🌋 恐龍島危險解除到第幾關   // 家長把小偷關掉了
-  if (out.vehicles != null) { if (Array.isArray(out.vehicles)) out.vehicles = [...new Set(out.vehicles.filter(v => /^(bike|suv|bus|truck|sports|robot|police|ambulance|dino|plane)$/.test(v)))]; else delete out.vehicles; }   // 🚗 買的交通工具
+  if (out.vehicles != null) { if (Array.isArray(out.vehicles)) out.vehicles = [...new Set(out.vehicles.filter(v => /^(bike|suv|bus|truck|sports|robot|police|ambulance|dino|plane|sleigh)$/.test(v)))]; else delete out.vehicles; }   // 🚗 買的交通工具
   if (out.ride != null && !(typeof out.ride === 'string' && (out.vehicles || []).includes(out.ride))) delete out.ride;
   if (out.islReq != null && !(isObj(out.islReq) && typeof out.islReq.d === 'string' && /^(shell|bug|fish|flower)$/.test(out.islReq.kind) && typeof out.islReq.npc === 'string')) delete out.islReq;   // 🐻 動物朋友請她幫忙
   if (out.fIsle != null && out.fIsle !== 1) delete out.fIsle;   // 🏡 朋友島的動畫播過了
@@ -13585,6 +13605,7 @@ function visitorMenuEntries() {
 
 // ── 繪圖 ──
 function drawNeighbor(ctx, n, look) {
+  if (n.santa && typeof drawSantaFig === 'function') { drawSantaFig(ctx, look); return; }   // 🎅 圓圓的聖誕老公公
   if (n.dobok) { drawDobokBody(ctx, n, n.dobok); ctx.save(); ctx.translate(0, -9); }   // 🥋 道館的同學：下面多一截穿道服的身體，頭往上移
   drawCreature(ctx, n, look);
   const fx = look.fx || 0, c = n.accColor;
@@ -14418,6 +14439,7 @@ function hostMenuEntries() {
     list.push([`🎖️ 考腰帶（現在：${tkdBeltName()}）`, openBeltExam]);
   }
   if (host.n.id === 'restaurant') { list.push(['🍽️ 點餐吃飯', openRestaurantOrder]); list.push(['👩‍🍳 小幫手打工（做漢堡）', openChefGame]); list.push(['💰 收銀台找錢', openCashGame]); }
+  if (host.n.id === 'santa') { list.push(['🧸 幫小精靈做玩具', () => openToyFactory()]); list.push(['🦌 照顧麋鹿', () => openDeerCare()]); list.push(['🎁 包禮物', () => openGiftWrap()]); list.push(['☕ 一起喝熱可可', () => santaCocoa()]); list.push([santaLent() ? '🛷 雪橇借你囉！' : `🛷 借雪橇（再送 ${santaLendLeft()} 份禮物）`, () => santaSleighInfo()]); }
   if (host.n.id === 'garage') { list.push(['🎨 改裝我的車', () => openCarShop()]); list.push(['🧽 洗車', () => openCarWash()]); }
   if (host.n.id === 'airport') { list.push(['✈️ 搭飛機去旅行', () => openAirTravel()]); list.push([`🛂 我的護照（${Object.keys(tripState().st).length} / ${AIR_DEST.length}）`, () => openAirPassport()]); list.push(['🛩️ 開飛機', () => openPlaneGame()]); list.push(['🧳 行李安檢', () => openSecurity()]); list.push(['🗼 塔台指揮', () => openTower()]); list.push(['🥤 空服員送餐', () => openMeal()]); }
   if (host.n.id === 'police') { list.push(['🔍 小偵探破案', () => openDetective()]); list.push([`🎖️ 我的警察等級（${RANKS.cop.list[rankOf('cop', rankXp('cop'))][1]}）`, () => openRankCard('cop')]); list.push(['🚓 一起抓小偷', () => openCopChase()]); list.push(['🎭 演習：我當小偷', () => openThiefDrill()]); list.push([`📦 失物招領${thiefBag().length ? `（${thiefBag().length} 件）` : ''}`, () => openLostFound()]); }
@@ -23115,6 +23137,7 @@ const ISL_BLD = [   // 房子：x, y 是左上角的格子，w×h 格；門在�
   { id: 'police', x: 16, y: 22, w: 4, h: 3 },   // 🚓 警察局：叔叔家旁邊
   { id: 'airport', x: 30, y: 8, w: 4, h: 3 },   // ✈️ 機場：停機坪旁邊
   { id: 'garage', x: 28, y: 18, w: 4, h: 3 },   // 🔧 改車店：家的右下方
+  { id: 'santa', x: 34, y: 17, w: 4, h: 3, season: 'christmas' },   // 🎅 聖誕老公公的家：聖誕節才有
 
   // 🏅 運動島（家長：游泳池那座小島擴大成運動島，走木橋過去；跆拳道館也搬過來）
   { id: 'pool', x: 43, y: 37, w: 6, h: 3, islet: true },
@@ -23167,13 +23190,13 @@ const ISL_POND = { x: 31, y: 24, w: 4, h: 3 };
 const ISL_HUB = [26, 19];
 const ISL_STYLE = {   // 牆、屋頂顏色
   dojo: ['#fff4e6', '#e0503a'], pool: ['#e8f6fb', '#3fa9f5'], track: ['#fff1e0', '#e07a4a'], arena: ['#fff6e0', '#ff7a3c'], gym: ['#f4eeff', '#8a78b0'], restaurant: ['#fff0d9', '#e8823a'], hospital: ['#ffffff', '#e8505b'], cinema: ['#3a2f4a', '#e8505b'],
-  garage: ['#f3f3f6', '#e8505b'], airport: ['#eef6ff', '#4a90d9'], police: ['#e6efff', '#2f5fb8'], home: ['#ffd9c9', '#ff7b7b'], school: ['#fff4cf', '#5b8def'], playground: ['#e7f8d4', '#e07a3a'], library: ['#e6dcff', '#7a5cc9'], park: ['#d9f0c8', '#4f9d4f'],
+  santa: ['#fff4e6', '#d63b3b'], garage: ['#f3f3f6', '#e8505b'], airport: ['#eef6ff', '#4a90d9'], police: ['#e6efff', '#2f5fb8'], home: ['#ffd9c9', '#ff7b7b'], school: ['#fff4cf', '#5b8def'], playground: ['#e7f8d4', '#e07a3a'], library: ['#e6dcff', '#7a5cc9'], park: ['#d9f0c8', '#4f9d4f'],
   uncle: ['#d7ecc8', '#7aa05a'], grandma: ['#ffe3b0', '#d68a3a'], amusement: ['#ffe0ee', '#ff6fa3'], friend: ['#fffaf0', '#6fb7e8']
 };
 let islMapCache = null;
 function islHash(x, y, s) { let h = (Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(s || 0, 1274126177)) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
 function islBuildings(n) {   // 固定的房子＋收到邀請卡的朋友家（n：朋友家數）
-  const out = ISL_BLD.map(b => Object.assign({}, b));
+  const out = ISL_BLD.filter(b => !b.season || (typeof xmasActive === 'function' && xmasActive())).map(b => Object.assign({}, b));   // 🎅 聖誕節才有的房子
   for (let i = 0; i < Math.min(n || 0, ISL_FRIEND_SPOTS.length); i++) out.push({ id: 'friend' + i, x: ISL_FRIEND_SPOTS[i][0], y: ISL_FRIEND_SPOTS[i][1], w: 3, h: 2, islet: true, fisle: true });
   out.forEach(b => { b.door = [b.x + (b.w >> 1), b.y + b.h]; });
   return out;
@@ -23181,7 +23204,8 @@ function islBuildings(n) {   // 固定的房子＋收到邀請卡的朋友家（
 function islMap(nFriends) {
   const nQ = typeof questWorldsCleared === 'function' ? questWorldsCleared() : 0;   // 🗺️ 闖關破了幾個世界＝多幾座小島
   const champ = typeof champIsleOn === 'function' && champIsleOn();
-  if (islMapCache && islMapCache.nf === nFriends && islMapCache.nQ === nQ && islMapCache.champ === champ) return islMapCache;
+  const xm = typeof xmasActive === 'function' && xmasActive();
+  if (islMapCache && islMapCache.nf === nFriends && islMapCache.nQ === nQ && islMapCache.champ === champ && islMapCache.xm === xm) return islMapCache;
   const W = ISL.W, H = ISL.H, cx = 25.5, cy = 19.5;   // 主島的中心固定（地圖往下加大了也不會跟著跑）
   const land = [], beach = [], block = [], path = [], tree = [], flower = [];
   for (let y = 0; y < H; y++) {
@@ -23287,7 +23311,7 @@ function islMap(nFriends) {
   }
   const shells = [];   // 沙灘上的貝殼（點了可以撿）
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (land[y][x] && beach[y][x] && !block[y][x] && !path[y][x] && islHash(x, y, 11) > .955) shells.push({ x, y, id: shells.length });
-  islMapCache = { nf: nFriends, nQ, champ, W, H, land, beach, block, path, tree, flower, blds, shells, bridge, isletAt, specials, docks };
+  islMapCache = { nf: nFriends, nQ, champ, xm, W, H, land, beach, block, path, tree, flower, blds, shells, bridge, isletAt, specials, docks };
   return islMapCache;
 }
 const islPass = (m, x, y) => x >= 0 && y >= 0 && x < m.W && y < m.H && m.land[y][x] && !m.block[y][x];
@@ -23528,6 +23552,7 @@ function islDoPending() {
   }
 }
 function islEnter(id) {   // 走到門口：關掉地圖、進去（家：回家；一樣的地方：留在原地）
+  if (id === 'santa' && !(typeof xmasActive === 'function' && xmasActive())) { toast('🎅 聖誕老公公回北極準備明年的禮物了，門口掛著「明年見！」'); return; }
   if (id === 'hospital' && typeof dispatchDeliver === 'function') try { dispatchDeliver(); } catch (e) {}   // 🚑 救護車載著病人到醫院
   const invites = isl.invites;
   closeIsland();
@@ -28554,7 +28579,8 @@ const VEHICLES = [
   { id: 'police', name: '警車', icon: '🚓', price: 0, speed: 2.3, verb: '開', prize: '警察局抓小偷通過三關' },   // 🚓 任務獎品，商店不賣
   { id: 'ambulance', name: '救護車', icon: '🚑', price: 0, speed: 2.2, verb: '開', prize: '醫院當小醫生 3 次' },   // 🚑 任務獎品，商店不賣
   { id: 'dino', name: '恐龍', icon: '🦕', price: 0, speed: 2.4, verb: '騎', prize: '解除恐龍島的危險' },   // 🦕 任務獎品，商店不賣
-  { id: 'plane', name: '小飛機', icon: '🛩️', price: 0, speed: 2.6, verb: '開', prize: '護照集滿 8 個章', flies: true }   // 🛩️ 機場旅行的獎品，可以飛
+  { id: 'plane', name: '小飛機', icon: '🛩️', price: 0, speed: 2.6, verb: '開', prize: '護照集滿 8 個章', flies: true },   // 🛩️ 機場旅行的獎品，可以飛
+  { id: 'sleigh', name: '聖誕雪橇', icon: '🛷', price: 0, speed: 2.7, verb: '坐', prize: '幫聖誕老公公送 5 份禮物（聖誕節借用）', flies: true }   // 🛷 聖誕節借的，聖誕節過了要還
 ];
 const VEHICLE_BY_ID = Object.fromEntries(VEHICLES.map(v => [v.id, v]));
 function rideNow() { if (isl && isl.act && isl.act.kind === 'boat') return null; const v = G.ride && VEHICLE_BY_ID[G.ride]; return v && (G.vehicles || []).includes(v.id) ? v : null; }
@@ -28570,7 +28596,7 @@ const CAR_GLOWS = [['none', '不要燈', 0], ['pink', '粉紅燈', 200], ['blue'
 const CAR_PARTS = { c: CAR_COLORS, st: CAR_STICKERS, wh: CAR_WHEELS, gl: CAR_GLOWS };
 const CAR_PRICE = (k, v) => { const row = CAR_PARTS[k].find(r => r[0] === v); return row ? row[k === 'c' ? 3 : 2] : 0; };
 // 貼紙、髒髒的位置（每台車的車身中間）：[x, y, 貼紙大小, 髒的範圍寬, 高]
-const CAR_SPOT = { bike: [2, -13, 3, 8, 4], sports: [-14, -11, 4, 24, 4], suv: [-11, -17, 4.6, 20, 8], bus: [-22, -28, 6, 32, 12], robot: [8, -22, 3.4, 12, 8], plane: [-14, 1, 3.6, 22, 4], dino: [-16, -14, 4, 12, 7], police: [-13, -20, 4, 22, 7], ambulance: [-26, -31, 4, 24, 10], truck: [20, -16, 4, 24, 9] };
+const CAR_SPOT = { sleigh: [-6, -12, 4, 14, 5], bike: [2, -13, 3, 8, 4], sports: [-14, -11, 4, 24, 4], suv: [-11, -17, 4.6, 20, 8], bus: [-22, -28, 6, 32, 12], robot: [8, -22, 3.4, 12, 8], plane: [-14, 1, 3.6, 22, 4], dino: [-16, -14, 4, 12, 7], police: [-13, -20, 4, 22, 7], ambulance: [-26, -31, 4, 24, 10], truck: [20, -16, 4, 24, 9] };
 function carLookOf(id) { return G.carLook && typeof G.carLook === 'object' && G.carLook[id] && typeof G.carLook[id] === 'object' ? G.carLook[id] : null; }
 function carLookMut(id) { if (!G.carLook || typeof G.carLook !== 'object') G.carLook = {}; if (!G.carLook[id] || typeof G.carLook[id] !== 'object') G.carLook[id] = {}; return G.carLook[id]; }
 function carShade(hex, k) { const n = parseInt(hex.slice(1), 16), f = v => Math.max(0, Math.min(255, Math.round(v * (1 + k)))); return `rgb(${f(n >> 16)},${f((n >> 8) & 255)},${f(n & 255)})`; }
@@ -28664,6 +28690,16 @@ function drawVehicle(g, id, s, t, moving, kid, lk) {
     g.fillStyle = '#e8505b'; g.fillRect(-28, -2, 50, 3);
     g.save(); g.beginPath(); g.ellipse(4, -8, 9, 8, 0, Math.PI, 0); g.clip(); g.fillStyle = '#dff0ff'; g.fillRect(-6, -18, 20, 12); if (kid) kid(4, 2, .62); g.restore();
     g.fillStyle = '#26232a'; g.fillRect(30, -1.5, 3, 3); const pr = Math.abs(Math.sin(t * 40)); g.fillStyle = 'rgba(80,80,90,.6)'; g.fillRect(32, -11 * pr, 2, 22 * pr);
+  } else if (id === 'sleigh') {   // 🛷 聖誕雪橇：兩隻麋鹿拉著，小可愛坐在雪橇上
+    g.translate(0, -bob);
+    [[36, -14], [54, -16]].forEach(([dx, dy], i) => { const leg = moving ? Math.sin(t * 12 + i) * 3 : 0; g.fillStyle = '#a0703e'; g.beginPath(); g.ellipse(dx, dy, 9, 5, 0, 0, 7); g.fill(); g.fillRect(dx - 6, dy + 3, 2, 7 + leg); g.fillRect(dx + 5, dy + 3, 2, 7 - leg); g.beginPath(); g.arc(dx + 9, dy - 6, 4, 0, 7); g.fill();
+      g.strokeStyle = '#6b4a2f'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(dx + 8, dy - 9); g.lineTo(dx + 6, dy - 15); g.moveTo(dx + 10, dy - 9); g.lineTo(dx + 13, dy - 15); g.stroke(); g.fillStyle = i ? '#26232a' : '#e8505b'; g.beginPath(); g.arc(dx + 13, dy - 5, 1.5, 0, 7); g.fill(); });
+    g.strokeStyle = '#ffd23f'; g.lineWidth = 1; g.beginPath(); g.moveTo(16, -12); g.lineTo(28, -14); g.moveTo(44, -15); g.lineTo(46, -16); g.stroke();
+    g.fillStyle = '#8a5a33'; g.beginPath(); g.ellipse(-18, -23, 7, 6, 0, 0, 7); g.fill();   // 禮物袋
+    if (kid) kid(-2, -8, .9);
+    g.fillStyle = C('#d63b3b'); g.beginPath(); g.moveTo(-24, -20); g.lineTo(12, -18); g.quadraticCurveTo(22, -6, 12, -4); g.lineTo(-20, -4); g.quadraticCurveTo(-28, -12, -24, -20); g.fill();
+    g.fillStyle = '#ffd23f'; g.fillRect(-23, -20, 34, 2);
+    g.strokeStyle = '#ffd23f'; g.lineWidth = 2; g.lineCap = 'round'; g.beginPath(); g.moveTo(-26, 0); g.lineTo(16, 0); g.quadraticCurveTo(24, 0, 22, -6); g.moveTo(-16, -4); g.lineTo(-16, 0); g.moveTo(8, -4); g.lineTo(8, 0); g.stroke();
   } else if (id === 'dino') {   // 🦕 恐龍坐騎：長脖子恐龍，小可愛坐在背上，走路時腳會動
     MV.dino(g, -6, 0, .62, C('#7bc96f'), moving ? t * 9 : t * 1.5);
     g.fillStyle = '#e8505b'; g.beginPath(); g.ellipse(-6, -24, 12, 3, 0, 0, 7); g.fill();   // 小鞍
@@ -29435,11 +29471,12 @@ const AWAY_GAMES = [
   ['🔎', '幫忙找書', 'library', () => openShelfGame()],
   ['🚓', '一起抓小偷', 'police', () => openCopChase()], ['🔍', '小偵探破案', 'police', () => openDetective()], ['🛏️', '病房照顧', 'hospital', () => openWard()],
   ['✈️', '搭飛機旅行', 'airport', () => openAirTravel()], ['🛩️', '開飛機', 'airport', () => openPlaneGame()], ['🧳', '行李安檢', 'airport', () => openSecurity()], ['🗼', '塔台指揮', 'airport', () => openTower()], ['🥤', '空服員送餐', 'airport', () => openMeal()],
-  ['🎨', '改裝我的車', 'garage', () => openCarShop()], ['🧽', '洗車', 'garage', () => openCarWash()]
+  ['🎨', '改裝我的車', 'garage', () => openCarShop()], ['🧽', '洗車', 'garage', () => openCarWash()],
+  ['🧸', '幫小精靈做玩具', 'santa', () => openToyFactory()], ['🦌', '照顧麋鹿', 'santa', () => openDeerCare()], ['🎁', '包禮物', 'santa', () => openGiftWrap()]
 ];
 function allQuickGames() {
   const home = earnGameList().map(([icon, name, fn, id]) => ({ id, icon, name, where: null, go: fn }));
-  const away = AWAY_GAMES.filter(g => PLACES[g[2]]).map(([icon, name, place, fn]) => ({ id: 'a:' + place + ':' + name, icon, name, where: place, go: fn }));
+  const away = AWAY_GAMES.filter(g => PLACES[g[2]] && (g[2] !== 'santa' || xmasActive())).map(([icon, name, place, fn]) => ({ id: 'a:' + place + ':' + name, icon, name, where: place, go: fn }));
   const xm = xmasActive() ? [{ id: 'x:ginger', icon: '🍪', name: '做薑餅人', where: null, go: () => openGingerbread() }, { id: 'x:tree', icon: '🎄', name: '裝飾聖誕樹', where: null, go: () => openXmasTree() }, { id: 'x:sleigh', icon: '🛷', name: '雪橇送禮', where: null, go: () => openSleigh() }] : [];   // 🎄 12 月才有
   return xm.concat(home, away, [{ id: 'q:quest', icon: '🗺️', name: '世界闖關', where: null, go: () => openQuestMap() }]);
 }
@@ -36522,6 +36559,7 @@ function openXmasPrizes() {
   XMAS_PRIZES.forEach(pz => { const got = x.got.includes(pz.id), cell = el('div', 'trick-cell' + (got ? ' got' : ''));
     cell.append(el('div', 'trick-e', got ? pz.icon : '❔'), el('b', '', xmasPrizeName(pz)), el('span', '', got ? '已經拿到' : `${Math.min(x.stars, pz.need)} / ${pz.need} 顆`)); grid.appendChild(cell); });
   card.appendChild(grid);
+  if (xmasActive()) card.appendChild(note(santaLent() ? '🛷 聖誕老公公的雪橇借你囉！聖誕節結束要還喔～' : `🛷 再送 ${santaLendLeft()} 份禮物，聖誕老公公就借你雪橇！`));
   if (isl && xmasActive()) { const go = el('button', 'big', xmasRun ? '🎁 繼續送禮物' : '🎅 去送禮物'); go.onclick = () => { $('#modal').hidden = true; xmasStartRun(); }; card.appendChild(go); }
   const ok = el('button', 'big alt', '好'); ok.onclick = () => { $('#modal').hidden = true; }; card.appendChild(ok);
   $('#modal').hidden = false;
@@ -36544,12 +36582,13 @@ function xmasTick() {
   if (!xmasRun || !isl) return;
   const id = xmasRun.left[0], b = isl.m.blds.find(q => q.id === id); if (!b) { xmasRun.left.shift(); return; }
   if (Math.hypot(b.door[0] + .5 - isl.x, b.door[1] + .5 - isl.y) < 1.8) {
-    xmasRun.left.shift(); xmasRun.done++; const x = xmasState(); x.n++;
+    xmasRun.left.shift(); xmasRun.done++; const x = xmasState(); x.n++; x.gave = Math.min(1e6, (x.gave || 0) + 1);
     Sound.play('coin'); try { islAddFx('say', b.door[0] + .5, b.door[1] - .6, 1800, { text: '謝謝！聖誕快樂！' }); } catch (e) {}
     xmasStar(1); addBells(80); kidMoodUp(3);
     if (xmasRun.left.length) toast(`🎁 送到${PLACES[id].name}了！⭐ +1　下一份送到${PLACES[xmasRun.left[0]].name}！`);
     else { toast(`🎅 禮物全部送完了！聖誕老公公說：謝謝你！⭐ 一共 ${x.stars} 顆`); xmasRun = null; }
     saveGame(); refreshTop(); xmasBtn();
+    try { santaSleighCheck(); } catch (e) {}   // 🛷 送到 5 份：聖誕老公公借你雪橇
   }
 }
 function xmasDraw(ctx, now) {
@@ -36566,6 +36605,171 @@ function xmasDraw(ctx, now) {
     ctx.font = '20px sans-serif'; ctx.textBaseline = 'middle'; ctx.fillText('🎁', 0, 1); ctx.rotate(a); ctx.fillStyle = '#2f8a3c'; ctx.beginPath(); ctx.moveTo(32, 0); ctx.lineTo(22, -8); ctx.lineTo(22, 8); ctx.closePath(); ctx.fill(); }
   ctx.restore();
 }
+/* ===== 🎅 聖誕老公公的家＋借雪橇（家長 11/21）=====
+   聖誕節期間（11/21～12/31）大地圖上會出現「聖誕老公公的家」，聖誕節過了就不見了，明年再來。
+   裡面：🧸 玩具工廠（照訂單做玩具）、🦌 麋鹿小屋（照麋鹿想要的餵紅蘿蔔、刷毛、摸摸頭）、🎁 包禮物（自己選包裝紙、緞帶、卡片）、☕ 跟聖誕老公公喝熱可可。
+   每個小遊戲每天第一次完成給一顆 ⭐ 聖誕星星（G.xmas.gm.toy / deer / wrap）。
+   🛷 雪橇：幫聖誕老公公送禮物累積 5 份，聖誕老公公就把雪橇借你（G.xmas.lend = 哪一年借的，G.xmas.gave = 一共送了幾份）。
+   雪橇可以飛。聖誕節一結束（下次打開遊戲），聖誕老公公會來把雪橇牽回去，送一個「雪橇小模型」當紀念；明年再送 5 份又可以借。 */
+const SANTA_LEND_NEED = 5;
+function drawSantaFig(ctx, look) {   // 圓圓的聖誕老公公（跟島上溜達的那位一樣），腳在 (0,0)
+  ctx.save(); ctx.translate(0, -19);
+  ctx.fillStyle = '#d94a4a'; ctx.beginPath(); ctx.ellipse(0, 6, 12, 13, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(0, 10, 8, 6, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#26232a'; ctx.fillRect(-12, 7, 24, 2.4); ctx.fillStyle = '#ffd23f'; ctx.fillRect(-2.5, 6.4, 5, 3.6);
+  ctx.fillStyle = '#fff6ea'; ctx.beginPath(); ctx.arc(0, -2, 8, 0, 7); ctx.fill();
+  ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.ellipse(0, 3, 7, 4.5, 0, 0, Math.PI); ctx.fill();   // 白鬍子
+  ctx.fillStyle = '#d94a4a'; ctx.beginPath(); ctx.moveTo(-8, -4); ctx.quadraticCurveTo(0, -20, 8, -4); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(6, -16, 3, 0, 7); ctx.fill(); ctx.fillRect(-9, -6, 18, 3);
+  try { festFace(ctx, 0, -2); } catch (e) {}
+  ctx.restore();
+}
+function santaLendLeft() { const x = xmasState(); return Math.max(0, SANTA_LEND_NEED - (x.gave || 0)); }
+function santaLent() { return (G.vehicles || []).includes('sleigh'); }
+function santaSleighCheck() {   // 送禮物送到 5 份：借雪橇
+  if (!xmasActive() || santaLent()) return false;
+  const x = xmasState(), y = new Date().getFullYear();
+  if ((x.gave || 0) < SANTA_LEND_NEED || x.lend === y) return false;
+  x.lend = y; G.vehicles = (G.vehicles || []).concat('sleigh'); saveGame();
+  setTimeout(() => vevScene([
+    { text: '聖誕老公公：哇！你幫我送了好多禮物，謝謝你！', draw: (g, W, H, t) => { vevBg(g, W, H, 'yard', t); g.save(); g.translate(130, 196); g.scale(2.6, 2.6); drawSantaFig(g); g.restore(); copDrawKid(g, 260, 196, 1.05, t, false, -1, 'joy'); vevHearts(g, 130, 100, t); } },
+    { text: '「這台雪橇借你坐到聖誕節結束！」到大地圖點「🚲 交通工具」選雪橇，還可以飛上天喔！', draw: (g, W, H, t) => { vevBg(g, W, H, 'yard', t); g.save(); g.translate(150, 190 - Math.abs(Math.sin(t * 2)) * 6); drawVehicle(g, 'sleigh', 2.4, t, true, null, null); g.restore(); g.font = '18px sans-serif'; g.textAlign = 'center'; for (let i = 0; i < 4; i++) g.fillText('✨', 60 + i * 80, 60 + Math.sin(t * 3 + i) * 8); } }
+  ], () => { try { toast('🛷 聖誕老公公借你雪橇了！聖誕節結束的時候要還喔～'); } catch (e) {} }), 1200);
+  return true;
+}
+function santaSleighReturn() {   // 聖誕節過了：聖誕老公公來牽回雪橇
+  if (!santaLent() || xmasActive()) return false;
+  G.vehicles = G.vehicles.filter(v => v !== 'sleigh'); if (G.ride === 'sleigh') G.ride = G.vehicles[0] || null;
+  addItem('sleigh_model'); saveGame();
+  vevScene([
+    { text: '叮叮噹～聖誕節結束了，聖誕老公公來牽雪橇回北極囉！', draw: (g, W, H, t) => { vevBg(g, W, H, 'yard', t); g.save(); g.translate(120, 196); g.scale(2.6, 2.6); drawSantaFig(g); g.restore(); g.save(); g.translate(250, 190); drawVehicle(g, 'sleigh', 1.8, t, false, null, null); g.restore(); } },
+    { text: '「謝謝你這段時間幫忙！送你一個雪橇小模型當紀念，我們明年見！」🎅', draw: (g, W, H, t) => { vevBg(g, W, H, 'yard', t); g.save(); g.translate(W / 2 + 120 - Math.min(1, t / 2) * 60, 150 - Math.min(1, t / 2) * 90); drawVehicle(g, 'sleigh', 1.4, t, true, null, null); g.restore(); copDrawKid(g, 110, 196, 1.05, t, false, 1, 'joy'); g.font = '30px sans-serif'; g.textAlign = 'center'; g.fillText('🎁', 160, 190); } }
+  ], () => { try { toast('🛷 雪橇小模型放進「我的東西」了，明年聖誕節再來借雪橇吧！'); } catch (e) {} });
+  return true;
+}
+setTimeout(() => { try { if (G.guide === 'done') santaSleighReturn(); } catch (e) {} }, 6500);
+// 🧸 玩具工廠：照訂單做玩具（3 張訂單）
+const TOY_TYPES = [['car', '🚗', '小汽車'], ['bear', '🧸', '小熊'], ['robot', '🤖', '機器人']];
+const TOY_COLORS = [['red', '#e8505b', '紅色'], ['blue', '#4a90d9', '藍色'], ['green', '#4fbf6a', '綠色'], ['yellow', '#ffd23f', '黃色']];
+function drawToy(g, type, col, t) {
+  if (type === 'car') drawVehicle(g, 'sports', 2.2, t, false, null, { c: col });
+  else if (type === 'robot') drawVehicle(g, 'robot', 1.3, t, false, null, { c: col });
+  else { const c = (TOY_COLORS.find(q => q[0] === col) || [, '#c98d5a'])[1]; g.fillStyle = c; [[0, -26, 20], [0, -64, 15], [-12, -76, 6], [12, -76, 6], [-18, -32, 7], [18, -32, 7]].forEach(([x, y, r]) => { g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); }); g.fillStyle = '#fff6ea'; g.beginPath(); g.ellipse(0, -58, 7, 5, 0, 0, 7); g.fill(); g.fillStyle = '#26232a'; [[-5, -67], [5, -67], [0, -60]].forEach(([x, y]) => { g.beginPath(); g.arc(x, y, 1.6, 0, 7); g.fill(); }); }
+}
+function openToyFactory() {
+  const w = openGameWindow('🧸 玩具工廠', '小精靈：訂單來了！照訂單選玩具和顏色，做好按「📦 做好了」。一共 3 張訂單！');
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const W = 340, H = 200, { g } = gameCanvas(w.stage, W, H);
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const orders = Array.from({ length: 3 }, () => ({ type: pick(TOY_TYPES)[0], col: pick(TOY_COLORS)[0] }));
+  let k = 0, cur = { type: null, col: null }, t = 0, last = performance.now(), raf = 0, live = true, pop = 0, done = false;
+  const rowT = el('div', 'car-opts'), rowC = el('div', 'car-opts');
+  const sync = () => { [...rowT.children].forEach((b, i) => b.classList.toggle('on', TOY_TYPES[i][0] === cur.type)); [...rowC.children].forEach((b, i) => b.classList.toggle('on', TOY_COLORS[i][0] === cur.col)); };
+  TOY_TYPES.forEach(([id, e, nm], i) => { const b = el('button', ''); b.dataset.key = String(i + 1); b.append(el('span', 'tkd-e', e), el('span', '', nm)); b.onclick = () => { cur.type = id; Sound.play('click'); sync(); }; rowT.appendChild(b); });
+  TOY_COLORS.forEach(([id, c, nm]) => { const b = el('button', ''); b.append(xmasSwatch(c, 16), el('span', '', nm)); b.onclick = () => { cur.col = id; Sound.play('click'); sync(); }; rowC.appendChild(b); });
+  w.stage.append(rowT, rowC);
+  const make = el('button', 'big', '📦 做好了！');
+  const nameOf = o => `${TOY_COLORS.find(q => q[0] === o.col)[2]}的${TOY_TYPES.find(q => q[0] === o.type)[2]}`;
+  make.onclick = () => { if (done) return; const o = orders[k];
+    if (!cur.type || !cur.col) { Sound.play('miss'); w.status.textContent = '先選玩具和顏色喔！'; return; }
+    if (cur.type !== o.type || cur.col !== o.col) { Sound.play('miss'); w.status.textContent = `小精靈：訂單是「${nameOf(o)}」喔！再看一次～`; return; }
+    Sound.play('coin'); pop = .6; k++;
+    if (k >= orders.length) { done = true; gameCleanup(); const got = payReward(w, 90), star = xmasGameStar('toy'); Sound.play('fanfare'); kidMoodUp(4); w.status.textContent = `3 個玩具都做好了！小精靈說：謝謝你！　💰 +${fmt(got)}${star ? '　⭐ 聖誕星星 +1' : ''}`; draw(); gameButtons(w, openToyFactory); return; }
+    cur = { type: null, col: null }; sync(); w.status.textContent = `做好了！下一張訂單：「${nameOf(orders[k])}」`; };
+  w.btns.appendChild(make); leaveButton(w);
+  const draw = () => {
+    g.fillStyle = '#fff4e6'; g.fillRect(0, 0, W, H); g.fillStyle = '#c98d5a'; g.fillRect(0, 160, W, 40); g.fillStyle = '#a0703e'; g.fillRect(150, 150, 180, 12);
+    const o = orders[Math.min(k, orders.length - 1)];
+    g.fillStyle = '#ffffff'; g.beginPath(); g.roundRect(12, 18, 128, 120, 10); g.fill(); g.strokeStyle = '#d63b3b'; g.lineWidth = 3; g.stroke();
+    g.fillStyle = '#d63b3b'; g.font = '700 13px sans-serif'; g.textAlign = 'center'; g.fillText(`📜 訂單 ${Math.min(k + 1, 3)} / 3`, 76, 40);
+    if (!done) { g.save(); g.translate(76, 128); g.scale(.6, .6); drawToy(g, o.type, o.col, t); g.restore(); g.fillStyle = '#3a3240'; g.font = '700 12px sans-serif'; g.fillText(nameOf(o), 76, 134 > 0 ? 58 : 58); }
+    else { g.font = '40px sans-serif'; g.fillText('✅', 76, 100); }
+    if (cur.type) { g.save(); g.translate(240, 150 - (pop > 0 ? Math.sin(pop / .6 * Math.PI) * 12 : 0)); drawToy(g, cur.type, cur.col || 'yellow', t); g.restore(); }
+    else { g.fillStyle = '#a0703e'; g.font = '700 13px sans-serif'; g.fillText('👇 選玩具和顏色', 240, 110); }
+    for (let i = 0; i < k; i++) { g.font = '20px sans-serif'; g.fillText('🎁', 170 + i * 28, 186); }
+  };
+  const kd = e => { const dg = /^(?:Digit|Numpad)([1-3])$/.exec(e.code); if (dg) { e.preventDefault(); rowT.children[+dg[1] - 1].click(); } else if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); if (!e.repeat) make.click(); } };
+  document.addEventListener('keydown', kd);
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); };
+  const frame = now => { if (!live) return; raf = requestAnimationFrame(frame); const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt; pop = Math.max(0, pop - dt); draw(); };
+  raf = requestAnimationFrame(frame);
+  w.status.textContent = `第一張訂單：「${nameOf(orders[0])}」`;
+  openToyFactory.test = { orders, set: (ty, c) => { cur.type = ty; cur.col = c; sync(); }, make: () => make.click(), get k() { return k; } };
+}
+// 🦌 麋鹿小屋：麋鹿頭上冒出想要的（🥕 紅蘿蔔、🧹 刷毛、🤚 摸摸頭），給對 8 次
+const DEER_WANTS = [['carrot', '🥕', '餵紅蘿蔔'], ['brush', '🧹', '刷刷毛'], ['pat', '🤚', '摸摸頭']];
+function openDeerCare() {
+  const w = openGameWindow('🦌 照顧麋鹿', '麋鹿頭上會冒出牠想要的：🥕 紅蘿蔔、🧹 刷毛、🤚 摸摸頭。按對的就好（數字鍵 1～3）！照顧 8 次。');
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const W = 320, H = 200, NEED = 8, { g } = gameCanvas(w.stage, W, H);
+  let want = 'carrot', got = 0, t = 0, last = performance.now(), raf = 0, live = true, happy = 0, shake = 0, fx = null, done = false, lockUntil = 0;
+  const row = el('div', 'tkd-moves'); DEER_WANTS.forEach(([id, e, nm], i) => { const b = el('button', 'tkd-move'); b.dataset.key = String(i + 1); b.append(el('span', 'tkd-e', e), el('span', '', nm)); b.onclick = () => give(id); row.appendChild(b); }); w.stage.appendChild(row);
+  const give = id => { if (done || performance.now() < lockUntil) return;
+    if (id !== want) { shake = .5; Sound.play('miss'); w.status.textContent = '麋鹿搖搖頭：不是這個啦～'; return; }
+    got++; happy = .9; lockUntil = performance.now() + 650; fx = { e: DEER_WANTS.find(q => q[0] === id)[1], t: 0 }; Sound.play('petHappy'); w.status.textContent = `麋鹿好開心！（${got} / ${NEED}）`;
+    if (got >= NEED) { done = true; setTimeout(() => { gameCleanup(); const gg = payReward(w, 80), star = xmasGameStar('deer'); Sound.play('fanfare'); kidMoodUp(4); w.status.textContent = `麋鹿吃飽飽、毛刷得亮亮的！今天晚上牠一定飛得好快！　💰 +${fmt(gg)}${star ? '　⭐ 聖誕星星 +1' : ''}`; gameButtons(w, openDeerCare); }, 700); }
+    else { const others = DEER_WANTS.map(q => q[0]); setTimeout(() => { want = others[Math.floor(Math.random() * others.length)]; }, 600); } };
+  const kd = e => { const dg = /^(?:Digit|Numpad)([1-3])$/.exec(e.code); if (dg) { e.preventDefault(); give(DEER_WANTS[+dg[1] - 1][0]); } };
+  document.addEventListener('keydown', kd);
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); };
+  const frame = now => { if (!live) return; raf = requestAnimationFrame(frame); const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt; happy = Math.max(0, happy - dt); shake = Math.max(0, shake - dt);
+    g.fillStyle = '#f6ead8'; g.fillRect(0, 0, W, H); g.fillStyle = '#c8a26b'; g.fillRect(0, 150, W, 50); g.fillStyle = '#e8d29a'; for (let i = 0; i < 12; i++) g.fillRect(10 + i * 26, 160 + (i % 3) * 8, 14, 3);
+    g.save(); g.translate(160 + (shake > 0 ? Math.sin(t * 40) * 4 : 0), 120 - (happy > 0 ? Math.sin(happy / .9 * Math.PI) * 18 : 0)); g.scale(3.4, 3.4);
+    g.strokeStyle = '#8a5a33'; g.lineWidth = 2; g.lineCap = 'round'; g.beginPath(); g.moveTo(-4, -8); g.lineTo(-8, -18); g.moveTo(-6, -14); g.lineTo(-12, -16); g.moveTo(4, -8); g.lineTo(8, -18); g.moveTo(6, -14); g.lineTo(12, -16); g.stroke();
+    g.fillStyle = '#c9844a'; g.beginPath(); g.ellipse(0, 4, 11, 12, 0, 0, 7); g.fill(); g.fillStyle = '#e8a06a'; g.beginPath(); g.ellipse(0, 8, 7, 6, 0, 0, 7); g.fill(); g.fillStyle = '#e8505b'; g.beginPath(); g.arc(0, 6, 2.2, 0, 7); g.fill();
+    try { festFace(g, 0, 0); } catch (e) {} g.restore();
+    if (!done && happy <= 0) { g.fillStyle = '#ffffff'; g.beginPath(); g.roundRect(196, 30, 46, 38, 12); g.fill(); g.strokeStyle = '#c9a227'; g.lineWidth = 2; g.stroke(); g.font = '24px sans-serif'; g.textAlign = 'center'; g.fillText(DEER_WANTS.find(q => q[0] === want)[1], 219, 58); }
+    if (fx) { fx.t += dt; g.globalAlpha = Math.max(0, 1 - fx.t); g.font = '26px sans-serif'; g.textAlign = 'center'; g.fillText(fx.e, 120, 70 - fx.t * 20); g.fillText('💗', 200, 60 - fx.t * 30); g.globalAlpha = 1; if (fx.t > 1) fx = null; }
+    g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.roundRect(6, 6, 100, 22, 8); g.fill(); g.fillStyle = '#3a3240'; g.font = '700 13px sans-serif'; g.textAlign = 'left'; g.fillText(`🦌 ${got} / ${NEED}`, 14, 22); };
+  raf = requestAnimationFrame(frame); leaveButton(w);
+  w.status.textContent = '看看麋鹿想要什麼？';
+  openDeerCare.test = { give, get want() { return want; }, get got() { return got; } };
+}
+// 🎁 包禮物：自己選包裝紙、緞帶、卡片（沒有對錯）
+const WRAP_PAPERS = [['stripe', '紅白條紋'], ['star', '綠色星星'], ['snow', '藍色雪花']];
+const WRAP_RIBBONS = [['#ffd23f', '金色'], ['#e8505b', '紅色'], ['#ffffff', '白色']];
+const WRAP_TAGS = [['🎅', '聖誕老公公'], ['⭐', '星星'], ['❄️', '雪花']];
+function drawWrapBox(g, o, t) {
+  const x = -46, y = -84, w = 92, h = 80;
+  if (o.paper === 'stripe') { g.fillStyle = '#ffffff'; g.fillRect(x, y, w, h); g.fillStyle = '#e8505b'; for (let i = -h; i < w; i += 16) { g.save(); g.beginPath(); g.rect(x, y, w, h); g.clip(); g.beginPath(); g.moveTo(x + i, y + h); g.lineTo(x + i + 8, y + h); g.lineTo(x + i + 8 + h, y); g.lineTo(x + i + h, y); g.fill(); g.restore(); } }
+  else if (o.paper === 'star') { g.fillStyle = '#2f9e44'; g.fillRect(x, y, w, h); g.fillStyle = '#ffd23f'; g.font = '12px sans-serif'; g.textAlign = 'center'; for (let i = 0; i < 9; i++) g.fillText('★', x + 14 + (i % 3) * 32, y + 20 + Math.floor(i / 3) * 24); }
+  else if (o.paper === 'snow') { g.fillStyle = '#4a90d9'; g.fillRect(x, y, w, h); g.fillStyle = '#ffffff'; g.font = '12px sans-serif'; g.textAlign = 'center'; for (let i = 0; i < 9; i++) g.fillText('❄', x + 14 + (i % 3) * 32, y + 22 + Math.floor(i / 3) * 24); }
+  else { g.fillStyle = '#c8a26b'; g.fillRect(x, y, w, h); }
+  if (o.ribbon) { g.fillStyle = o.ribbon; g.fillRect(-6, y, 12, h); g.fillRect(x, y + h / 2 - 6, w, 12); g.beginPath(); g.ellipse(-12, y - 6, 12, 8, -.4, 0, 7); g.ellipse(12, y - 6, 12, 8, .4, 0, 7); g.fill(); g.strokeStyle = 'rgba(0,0,0,.15)'; g.lineWidth = 1; g.stroke(); }
+  if (o.tag) { g.fillStyle = '#fff6e0'; g.beginPath(); g.roundRect(x + w - 30, y + h - 30, 30, 22, 4); g.fill(); g.font = '14px sans-serif'; g.textAlign = 'center'; g.fillText(o.tag, x + w - 15, y + h - 14); }
+}
+function openGiftWrap() {
+  const w = openGameWindow('🎁 包禮物', '幫聖誕老公公包禮物：選包裝紙、緞帶、卡片，包得漂漂亮亮！');
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const W = 320, H = 190, { g } = gameCanvas(w.stage, W, H), o = { paper: null, ribbon: null, tag: null };
+  let t = 0, last = performance.now(), raf = 0, live = true, pop = 0, done = false;
+  const mk = (list, key, lab) => { const row = el('div', 'car-opts'); row.appendChild(el('span', '', lab)); list.forEach(([v, nm]) => { const b = el('button', ''); if (key === 'ribbon') b.appendChild(xmasSwatch(v, 16)); else if (key === 'tag') b.appendChild(el('span', 'tkd-e', v)); b.appendChild(el('span', '', nm)); b.onclick = () => { if (done) return; o[key] = v; pop = .4; Sound.play('pickUp'); [...row.querySelectorAll('button')].forEach(x => x.classList.toggle('on', x === b)); fin.disabled = !(o.paper && o.ribbon && o.tag); }; row.appendChild(b); }); return row; };
+  w.stage.append(mk(WRAP_PAPERS, 'paper', '包裝紙：'), mk(WRAP_RIBBONS, 'ribbon', '緞帶：'), mk(WRAP_TAGS, 'tag', '卡片：'));
+  const fin = el('button', 'big', '🎁 包好了！'); fin.disabled = true;
+  fin.onclick = () => { if (done || !(o.paper && o.ribbon && o.tag)) return; done = true; pop = .8; const got = payReward(w, 70), star = xmasGameStar('wrap'); Sound.play('fanfare'); kidMoodUp(4); w.status.textContent = `好漂亮的禮物！聖誕老公公會把它送給一位小朋友～　💰 +${fmt(got)}${star ? '　⭐ 聖誕星星 +1' : ''}`; setTimeout(() => { gameCleanup(); gameButtons(w, openGiftWrap); }, 900); };
+  w.btns.appendChild(fin); leaveButton(w);
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); };
+  const frame = now => { if (!live) return; raf = requestAnimationFrame(frame); const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt; pop = Math.max(0, pop - dt);
+    g.fillStyle = '#fff4e6'; g.fillRect(0, 0, W, H); g.fillStyle = '#a0703e'; g.fillRect(0, 160, W, 30);
+    g.save(); g.translate(160, 160 - (pop > 0 ? Math.sin(pop / .8 * Math.PI) * 10 : 0)); drawWrapBox(g, o, t); g.restore();
+    if (done) { g.font = '18px sans-serif'; g.textAlign = 'center'; for (let i = 0; i < 6; i++) g.fillText('✨', 160 + Math.cos(t * 2 + i) * 80, 90 + Math.sin(t * 2 + i) * 40); } };
+  raf = requestAnimationFrame(frame);
+  w.status.textContent = '先選包裝紙！';
+  openGiftWrap.test = { o, set: (k, v) => { o[k] = v; fin.disabled = !(o.paper && o.ribbon && o.tag); }, fin: () => fin.click() };
+}
+const SANTA_TALK = ['我年輕的時候，雪橇常常卡在煙囪上面，呵呵呵！', '麋鹿最喜歡吃紅蘿蔔了，你有沒有餵過牠們？', '小精靈們做玩具做得好快，一天可以做一千個喔！', '我每年都會看小朋友寫的信，你的信我也有收到喔！', '熱可可要配棉花糖才好喝～', '平安夜我會偷偷去你家，記得早點睡覺喔！'];
+function santaCocoa() { Sound.play('petHappy'); kidMoodUp(5); try { hostSay(SANTA_TALK[Math.floor(Math.random() * SANTA_TALK.length)], 3600); } catch (e) {} setTimeout(() => { try { fufuSay('熱可可好好喝～', 2200); } catch (e) {} }, 3800); }
+function santaSleighInfo() {
+  if (santaLent()) { toast('🛷 雪橇借你坐到聖誕節結束！到大地圖點「🚲 交通工具」選雪橇，還可以飛上天喔！'); return; }
+  const left = santaLendLeft(); toast(left > 0 ? `🛷 聖誕老公公：再幫我送 ${left} 份禮物（大地圖「🎅 送禮物」），我就把雪橇借你！` : '🛷 聖誕老公公：謝謝你送了這麼多禮物！雪橇等一下就借你！');
+  santaSleighCheck();
+}
+Object.assign(ACTIVITIES, {
+  santa_toy: { label: '🧸 幫忙做玩具', name: '做玩具', fx: '🧸', open: () => openToyFactory(), lines: ['我也是小精靈！', '叮叮噹噹做玩具～'] },
+  santa_deer: { label: '🦌 照顧麋鹿', name: '照顧麋鹿', fx: '🥕', open: () => openDeerCare(), lines: ['小麋鹿乖乖～', '要吃紅蘿蔔嗎？'] },
+  santa_wrap: { label: '🎁 包禮物', name: '包禮物', fx: '🎁', open: () => openGiftWrap(), lines: ['要包得漂漂亮亮！', '緞帶綁好囉～'] }
+});
+Object.assign(FURNITURE_ACT, { toy_bench: 'santa_toy', reindeer_stall: 'santa_deer', wrap_table: 'santa_wrap' });
 // 🧦 聖誕襪：每天一份小禮物
 function openStocking() {
   const x = xmasState(), d = today();
