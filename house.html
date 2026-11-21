@@ -1752,7 +1752,8 @@ const FURNITURE_3 = [
       { x: .05, y: .05, w: .9, d: .9, z: 40, h: 2, c: '#3b4252' },
       { x: .2, y: .95, w: .6, d: .01, z: 10, h: 18, c: '#3b4252' },
       { x: .3, y: .3, w: .4, d: .4, z: 42, h: 14, c: '#e8505b' },
-      { k: 'ball', x: .5, y: .5, z: 59, r: 3, c: '#3b4252' }
+      { k: 'ball', x: .5, y: .5, z: 59, r: 3, c: '#3b4252' },
+      { k: 'ball', x: .27, y: .72, z: 43, r: 2.2, c: '#4a90d9', flame: 0, useOnly: true }, { k: 'ball', x: .5, y: .75, z: 43, r: 2.4, c: '#4a90d9', flame: 1, useOnly: true }, { k: 'ball', x: .73, y: .72, z: 43, r: 2.2, c: '#4a90d9', flame: 2, useOnly: true }, { k: 'ball', x: .5, y: .76, z: 43.5, r: 1.2, c: '#bfe6ff', flame: 3, useOnly: true }   // 🔥 煮東西才點火
     ] },
   { id: 'bar_stool', name: '吧台椅', price: 900, theme: 'modern', w: 1, d: 1,
     parts: [
@@ -2779,7 +2780,7 @@ const PLACE_FURNITURE = [
       ctx.fillStyle = '#e8505b'; ctx.font = `bold ${Math.round(H * .26)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('抓', W * .68, H * .36); ctx.fillText('小偷', W * .68, H * .7); } },
   // 🍽️ 餐廳
   { id: 'rest_counter', name: '點餐櫃台', theme: 'wood', w: 2, d: 1, parts: [{ x: 0, y: .2, w: 2, d: .6, z: 0, h: 28, c: '#c98d5a' }, { x: 0, y: .2, w: 2, d: .6, z: 28, h: 3, c: '#fff6e8' }, { x: 1.4, y: .3, w: .45, d: .35, z: 31, h: 12, c: '#3a3842' }, { k: 'ball', x: .5, y: .5, z: 36, r: 5, c: '#ffb02e' }] },
-  { id: 'rest_kitchen', name: '廚房爐台', theme: 'modern', w: 2, d: 1, parts: [{ x: 0, y: .1, w: 2, d: .8, z: 0, h: 30, c: '#c9ccd0' }, { x: .2, y: .2, w: .6, d: .6, z: 30, h: 2, c: '#3a3842' }, { k: 'ball', x: .5, y: .5, z: 38, r: 7, c: '#5a6070' }, { x: 1.2, y: .3, w: .6, d: .4, z: 30, h: 3, c: '#26232a' }, { k: 'ball', x: 1.5, y: .5, z: 36, r: 5, c: '#c98a2a' }] },
+  { id: 'rest_kitchen', name: '廚房爐台', theme: 'modern', w: 2, d: 1, parts: [{ x: 0, y: .1, w: 2, d: .8, z: 0, h: 30, c: '#c9ccd0' }, { x: .2, y: .2, w: .6, d: .6, z: 30, h: 2, c: '#3a3842' }, { k: 'ball', x: .5, y: .5, z: 38, r: 7, c: '#5a6070' }, { x: 1.2, y: .3, w: .6, d: .4, z: 30, h: 3, c: '#26232a' }, { k: 'ball', x: 1.5, y: .5, z: 36, r: 5, c: '#c98a2a' }, { k: 'ball', x: .35, y: .8, z: 32, r: 2.2, c: '#4a90d9', flame: 0 }, { k: 'ball', x: .65, y: .8, z: 32, r: 2.2, c: '#4a90d9', flame: 1 }, { k: 'ball', x: 1.38, y: .72, z: 33.5, r: 2, c: '#4a90d9', flame: 2 }, { k: 'ball', x: 1.62, y: .72, z: 33.5, r: 2, c: '#4a90d9', flame: 3 }] },
   { id: 'rest_menu', name: '菜單看板', theme: 'wood', w: 3, h: 36, z: 46, layer: 'wall', d: 1, parts: [],
     draw(ctx, W, H) { ctx.fillStyle = '#3a2f2a'; ctx.fillRect(0, 0, W, H); ctx.strokeStyle = '#c98d5a'; ctx.lineWidth = 3; ctx.strokeRect(1.5, 1.5, W - 3, H - 3); ctx.font = '12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ['🍔', '🍜', '🍛', '🥞', '🍨', '🍣'].forEach((e, i) => ctx.fillText(e, 9 + (i % 3) * (W - 18) / 2, 11 + Math.floor(i / 3) * 14)); } },
   // 🏥 醫院
@@ -5414,7 +5415,7 @@ FURNITURE.push(
     { k: 'ball', x: .5, y: .53, z: 7, r: 2, c: '#ff9ec4' }] },
   { id: 'aroma_candle', name: '香氛蠟燭', price: 400, theme: 'cute', w: 1, d: 1, parts: [
     { x: .42, y: .42, w: .16, d: .16, z: 0, h: 8, c: '#fff1c2' }, { x: .42, y: .42, w: .16, d: .16, z: 3, h: 2, c: '#ff9ec4' },
-    { x: .495, y: .495, w: .01, d: .01, z: 8, h: 2, c: '#3a3240' }, { k: 'ball', x: .5, y: .5, z: 12, r: 1.8, c: '#ffb347', fire: true }] },
+    { x: .495, y: .495, w: .01, d: .01, z: 8, h: 2, c: '#3a3240' }, { k: 'ball', x: .5, y: .5, z: 12, r: 2.3, c: '#ff9a3c', flame: 0, fire: true }, { k: 'ball', x: .5, y: .51, z: 12.5, r: 1.3, c: '#ffe066', flame: 1 }] },
   { id: 'alarm_clock', name: '小鬧鐘', price: 600, theme: 'cute', w: 1, d: 1, parts: [
     { x: .38, y: .44, w: .24, d: .12, z: 0, h: 11, c: '#e8505b' }, { x: .41, y: .555, w: .18, d: .01, z: 2, h: 7, c: '#ffffff' },
     { k: 'ball', x: .4, y: .5, z: 13, r: 2.4, c: '#ffd35c' }, { k: 'ball', x: .6, y: .5, z: 13, r: 2.4, c: '#ffd35c' }] },
@@ -5488,7 +5489,7 @@ function seasonNow() {
   return SEASONS.find(se => v >= se.from[0] * 100 + se.from[1] && v <= se.to[0] * 100 + se.to[1]) || null;
 }
 const SEASON_FURNITURE = [
-  { id: 'pumpkin_lamp', name: '南瓜燈', price: 1200, theme: 'cute', w: 1, d: 1, season: 'halloween',
+  { id: 'pumpkin_lamp', name: '南瓜燈', price: 1200, theme: 'cute', w: 1, d: 1, season: 'halloween', flicker: true,
     parts: [
       { k: 'ball', x: .5, y: .5, z: 11, r: 12, c: '#f0902f' },
       { k: 'ball', x: .38, y: .5, z: 11, r: 9, c: '#e8822a' },
@@ -5530,7 +5531,8 @@ const SEASON_FURNITURE = [
       { x: .2, y: .2, w: .6, d: .6, z: 18, h: 3, c: '#4b4458' },
       { k: 'ball', x: .45, y: .48, z: 23, r: 4, c: '#7bd389' },
       { k: 'ball', x: .6, y: .58, z: 24, r: 3, c: '#a3e0b0' },
-      { k: 'ball', x: .52, y: .62, z: 27, r: 2, c: '#c9f5d4' }
+      { k: 'ball', x: .52, y: .62, z: 27, r: 2, c: '#c9f5d4' },
+      { x: .66, y: .66, w: .26, d: .26, z: 0, h: 3, c: '#5a3a22' }, { k: 'ball', x: .72, y: .86, z: 4, r: 3.2, c: '#ff5a2a', flame: 0 }, { k: 'ball', x: .86, y: .72, z: 4, r: 3.2, c: '#ff5a2a', flame: 1 }, { k: 'ball', x: .8, y: .82, z: 5, r: 4.2, c: '#ffa53c', flame: 2 }, { k: 'ball', x: .81, y: .83, z: 5.5, r: 2.2, c: '#ffe066', flame: 3 }   // 🔥 鍋子下面的柴火
     ] },
   /* 🤡 小丑糖果管家、💀 骷髏伯爵：照補習班門口的擺設做的卡通版（家長給的照片）。
      臉都畫成圓圓、笑瞇瞇的，不嚇人。小丑點了可以要糖果，骷髏的蠟燭在提南瓜燈找幽靈時會亮。 */
@@ -5584,7 +5586,7 @@ const SEASON_FURNITURE = [
 ];
 SEASON_FURNITURE.forEach(d => { FURN_BY_ID[d.id] = d; });
 // 🎃 集糖卡集滿的獎品：商店買不到（gift），也不算在節日收藏（那本要用買的集）
-FURN_BY_ID.trick_lantern = { id: 'trick_lantern', name: '南瓜燈籠塔', price: 0, theme: 'cute', w: 1, d: 1, gift: true, trick: true,
+FURN_BY_ID.trick_lantern = { id: 'trick_lantern', name: '南瓜燈籠塔', price: 0, theme: 'cute', w: 1, d: 1, gift: true, trick: true, flicker: true,
   parts: [
     { x: .3, y: .3, w: .4, d: .4, z: 0, h: 3, c: '#5a3a22' },
     { k: 'ball', x: .5, y: .5, z: 12, r: 11, c: '#f0902f' },
@@ -9761,7 +9763,9 @@ function itemLook(def, rot, it, parts) {
   const active = fufu.act && fufu.act.uid === it.uid ? fufu.act.key : null;
   if (active === 'coaster') parts = parts.filter(p => !p.car);   // 🎢 車廂跟著她跑了，車站上的那台先不畫
   const st = itemState[it.uid];
-  const alwaysMoving = def.id === 'fishtank' || def.id === 'pond' || def.id === 'float_ring' || def.id === 'fireplace';   // 🔥 暖爐的火一直在燒 // 池塘：魚一直游、小鴨子一直漂
+  if (def._fl === undefined) def._fl = !!def.flicker || (def.parts || []).some(p => p.flame != null && !p.useOnly);   // 🔥 有一直在燒的火、會閃的燈
+  if (!active && (def.parts || []).some(p => p.useOnly)) parts = parts.filter(p => !p.useOnly);   // 瓦斯爐：沒在煮就不點火
+  const alwaysMoving = def.id === 'fishtank' || def.id === 'pond' || def.id === 'float_ring' || def._fl; // 池塘：魚一直游、小鴨子一直漂
   if (def.id === 'planter') parts = parts.concat(gardenParts(it));   // 🌱 花盆：照長到哪裡畫芽、苗、花
   if (!active && !st && !alwaysMoving) return parts;
   const fire = st && st.fireUntil > now;
@@ -9773,6 +9777,7 @@ function itemLook(def, rot, it, parts) {
     if (p.flame != null) { const ph = t * 7 + p.flame * 1.7, big = fire ? 1.35 : 1; return Object.assign({}, p, { r: p.r * big * (1 + Math.sin(ph * 1.3) * .16), z: p.z + Math.sin(ph) * 1.2, x: p.x + Math.sin(ph * .8) * .02 }); }   // 🔥 火焰一直跳動，生火的時候更大
     if (p.spark != null) { const k = (t * .9 + p.spark * .5) % 1; return Object.assign({}, p, { z: p.z + k * 24, x: p.x + Math.sin(t * 3 + p.spark * 2) * .05, a: 1 - k }); }   // ✨ 小火星往上飄
     if (p.fire && fire) return Object.assign({}, p, { r: p.r + 3 + Math.sin(t * 12) * 1.5, c: Math.sin(t * 9) > 0 ? '#ffb347' : '#ff7a3c' });
+    if (p.shade && def.flicker) { const f = Math.sin(t * 9 + p.x * 13 + p.z) * .5 + Math.sin(t * 23 + p.z) * .5; return Object.assign({}, p, { c: f > .3 ? '#fff6a0' : f > -.3 ? '#ffd23f' : '#ffb347' }); }   // 🎃 南瓜的眼睛像燭光一樣閃
     if (p.shade && st && st.lit) return Object.assign({}, p, { c: '#fff6a0' });
     if (p.fish) return Object.assign({}, p, { x: p.x + Math.sin(t * 1.6) * .16 });
     if (p.globe && active) return Object.assign({}, p, { c: Math.floor(t * 3) % 2 ? '#6bb6ff' : '#7bd389' });
