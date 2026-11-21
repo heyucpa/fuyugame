@@ -1,4 +1,4 @@
-// 🎃 夜晚訪客一整年＋萬聖節每年 10/15～10/31＋🎄 聖誕節 12/1～12/31。用 SEASON_TODAY、ISL_HOUR_TEST 假日期。
+// 🎃 夜晚訪客一整年＋萬聖節每年 10/15～10/31＋🎄 聖誕節 11/21～12/31。用 SEASON_TODAY、ISL_HOUR_TEST 假日期。
 const { chromium } = require('playwright');
 const path = require('path');
 const fs = require('fs');
@@ -19,11 +19,11 @@ const fs = require('fs');
     const bad = s => [...String(s)].some(ch => { const cp = ch.codePointAt(0); return cp >= 0x1FA70 && cp <= 0x1FAFF; });
     const hw = SEASONS.find(s => s.id === 'halloween'), xm = SEASONS.find(s => s.id === 'christmas');
     o.dates = hw.from[0] === 10 && hw.from[1] === 15 && hw.to[0] === 10 && hw.to[1] === 31
-      && xm.from[0] === 12 && xm.from[1] === 1 && xm.to[0] === 12 && xm.to[1] === 31;
+      && xm.from[0] === 11 && xm.from[1] === 21 && xm.to[0] === 12 && xm.to[1] === 31;
     o.yearly = !/getFullYear|2026|2025|2027/.test(seasonNow.toString());
     const on = md => { SEASON_TODAY = md; return seasonNow() && seasonNow().id; };
     o.span = on([10, 14]) !== 'halloween' && on([10, 15]) === 'halloween' && on([10, 31]) === 'halloween' && on([11, 1]) !== 'halloween'
-      && on([11, 30]) !== 'christmas' && on([12, 1]) === 'christmas' && on([12, 31]) === 'christmas' && on([1, 1]) !== 'christmas'
+      && on([11, 20]) !== 'christmas' && on([11, 21]) === 'christmas' && on([12, 1]) === 'christmas' && on([12, 31]) === 'christmas' && on([1, 1]) !== 'christmas'
       && on([6, 1]) == null;
     o.emoji = ![...Object.values(FEST_NIGHT_LINES), ...Object.values(FEST_PAL_LINES), ...xm.costumes, xm.name, '聖誕餅乾'].some(bad);
     // 舊存檔：沒有新欄位，已經拿到的萬聖節衣服、家具、糖果都還在

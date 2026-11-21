@@ -5635,7 +5635,7 @@ CUP_TROPHIES.forEach(([k, nm, col]) => {
    放在讀檔之前：買了、擺了、穿過的東西，活動結束後還在，舊存檔也讀得回來。
    衣服沿用已經會畫的樣式（毛衣、毛帽），不改換裝的畫法。 */
 SEASONS.push({
-  id: 'christmas', name: '聖誕節', icon: '🎄', from: [12, 1], to: [12, 31],
+  id: 'christmas', name: '聖誕節', icon: '🎄', from: [11, 21], to: [12, 31],   // 家長 11/21：聖誕節現在就開始
   clothes: ['santa_hat', 'antlers', 'xmas_sweater', 'snow_beanie'], food: 'xmas_cookie',
   costumes: ['🎅', '🦌', '🎄', '⭐']
 });
@@ -5868,7 +5868,7 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
-  { id: '2026-11-21T14:00', title: '🎄 聖誕節多了三個小遊戲（12 月開始）', lines: [
+  { id: '2026-11-21T14:00', title: '🎄 聖誕節開始了！多了三個小遊戲', lines: [
     ['🍪', '做薑餅人：自己挑糖果、糖霜、星星、愛心貼上去，放進烤箱烤好，拿到兩塊聖誕餅乾'],
     ['🎄', '裝飾聖誕樹：先記住彩球掛在哪裡、什麼顏色，再自己掛一次'],
     ['🛷', '雪橇送禮：坐雪橇飛過屋頂，禮物丟進煙囪就送到了'],
@@ -24308,7 +24308,7 @@ function openHomeLook(target) {
     }
     const kind = homeTab === 'decoL' || homeTab === 'decoR' ? 'deco' : homeTab, cur = homeTab === 'decoL' ? h.decoL : homeTab === 'decoR' ? h.decoR : h[kind];
     HOME_KINDS[kind].forEach(it => {
-      const [id, nm, val, price] = it; if (kind === 'deco' && id === 'xmas' && new Date().getMonth() !== 11 && !homeOwns('deco', 'xmas')) return;   // 🎄 聖誕燈串只有 12 月買得到
+      const [id, nm, val, price] = it; if (kind === 'deco' && id === 'xmas' && !xmasActive() && !homeOwns('deco', 'xmas')) return;   // 🎄 聖誕燈串只有聖誕節（11/21～12/31）買得到
       const own = homeOwns(kind, id), using = cur === id, b = el('button', 'card' + (using ? ' cur' : '') + (!own && price > 0 && G.bells < price ? ' dim' : ''));
       const sw = el('div', 'home-sw');
       if (kind === 'wall' || kind === 'roof' || kind === 'door') { sw.style.background = val === 'rainbow' ? 'linear-gradient(90deg,#ff6b6b,#ffb84d,#ffe066,#7bd389,#6bb6ff,#b18cff)' : val; }
@@ -35851,7 +35851,7 @@ function xmasDraw(ctx, now) {
 // 🧦 聖誕襪：每天一份小禮物
 function openStocking() {
   const x = xmasState(), d = today();
-  if (!xmasActive()) { toast('🧦 聖誕節（12 月）的時候，聖誕老公公會在襪子裡放禮物喔！'); return; }
+  if (!xmasActive()) { toast('🧦 聖誕節的時候，聖誕老公公會在襪子裡放禮物喔！'); return; }
   if (x.sock === d) { toast('🧦 今天的禮物拿過了，明天再看看襪子！'); return; }
   x.sock = d; x.sockN = (x.sockN || 0) + 1;
   let what; if (x.sockN % 2) { G.kidFood.xmas_cookie = (G.kidFood.xmas_cookie || 0) + 2; what = '兩塊聖誕餅乾 🍪'; } else { addBells(100); what = '💰 100 元'; }

@@ -9,7 +9,7 @@ const path = require('path');
   const o = await p.evaluate(async () => {
     const o = {}, w = ms => new Promise(r => setTimeout(r, ms)), close = () => { closeGameWindow(); document.getElementById('modal').hidden = true; document.querySelectorAll('#showcase').forEach(x => x.remove()); };
     document.getElementById('modal').hidden = true; G.guide = 'done'; G.xmas = { stars: 0, got: [] }; G.gameBonusDay = today(); G.kidFood.xmas_cookie = 0;
-    SEASON_TODAY = [11, 21]; o.hubNotNov = !allQuickGames().some(g => g.id === 'x:sleigh');
+    SEASON_TODAY = [11, 20]; o.hubNotNov = !allQuickGames().some(g => g.id === 'x:sleigh');
     o.hubAway = ['airport', 'police', 'hospital'].every(pl => allQuickGames().some(g => g.where === pl));
     SEASON_TODAY = [12, 5]; o.hubDec = ['x:ginger', 'x:tree', 'x:sleigh'].every(id => allQuickGames().some(g => g.id === id));
     o.music = gameMusicFor('🛷 雪橇送禮・第 1 關') === 'xmas' && !!(Sound.songs ? true : true);

@@ -3158,7 +3158,7 @@
       SEASON_TODAY = [9, 30]; if (seasonNow()) fails.push('9/30 就開始萬聖節');
       SEASON_TODAY = [12, 1]; if (!seasonNow() || seasonNow().id !== 'christmas') fails.push('12/1 不是聖誕節');
       SEASON_TODAY = [12, 31]; if (!seasonNow() || seasonNow().id !== 'christmas') fails.push('12/31 不是聖誕節');
-      SEASON_TODAY = [11, 30]; if (seasonNow()) fails.push('11/30 就開始聖誕節');
+      SEASON_TODAY = [11, 20]; if (seasonNow()) fails.push('11/20 就開始聖誕節'); SEASON_TODAY = [11, 21]; if (!seasonNow() || seasonNow().id !== 'christmas') fails.push('11/21 聖誕節沒開始');
       SEASON_TODAY = [1, 1]; if (seasonNow()) fails.push('1/1 還在聖誕節');
       // 限定家具：畫得出來、不算在一般家具圖鑑（不然家具金獎盃過了節日就拿不到）
       SEASON_FURNITURE.forEach(function(d){ if (FURNITURE.indexOf(d) >= 0) fails.push('限定家具「' + d.name + '」被算進一般家具圖鑑'); try { thumb(d); } catch (eT) { fails.push('限定家具「' + d.name + '」畫不出來：' + eT.message); } });
