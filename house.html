@@ -2752,6 +2752,13 @@ const PLACE_FURNITURE = [
   { id: 'museum_rope', name: '紅龍柱', theme: 'modern', w: 2, d: 1, parts: [{ x: .1, y: .4, w: .12, d: .12, z: 0, h: 22, c: '#e0b23a' }, { x: 1.78, y: .4, w: .12, d: .12, z: 0, h: 22, c: '#e0b23a' }, { x: .2, y: .44, w: 1.6, d: .04, z: 16, h: 3, c: '#d63b3b' }] },
   { id: 'museum_painting', name: '向日葵名畫', theme: 'modern', w: 2, h: 30, z: 48, layer: 'wall', d: 1, parts: [],
     draw(ctx, W, H) { ctx.fillStyle = '#c9a26a'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#4a90d9'; ctx.fillRect(W * .07, H * .1, W * .86, H * .8); ctx.fillStyle = '#e0a020'; ctx.fillRect(W * .4, H * .55, W * .2, H * .3); for (let i = 0; i < 3; i++) { const x = W * (.32 + i * .18), y = H * (.35 + (i % 2) * .1); ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(x, y, H * .12, 0, 7); ctx.fill(); ctx.fillStyle = '#8a5a33'; ctx.beginPath(); ctx.arc(x, y, H * .05, 0, 7); ctx.fill(); } } },
+  { id: 'ship_wheel', name: '船的舵', theme: 'wood', w: 1, d: 1, parts: [{ x: .4, y: .4, w: .2, d: .2, z: 0, h: 22, c: '#8a5a33' }, { k: 'ball', x: .5, y: .3, z: 32, r: 11, c: '#a0703e' }, { k: 'ball', x: .5, y: .3, z: 32, r: 6, c: '#c98d5a' }, { k: 'ball', x: .5, y: .3, z: 32, r: 2.5, c: '#e0b23a' }] },
+  { id: 'deck_chair', name: '甲板躺椅', theme: 'cute', w: 1, d: 2, parts: [{ x: .15, y: .1, w: .7, d: 1.8, z: 4, h: 3, c: '#ffffff' }, { x: .15, y: .1, w: .7, d: .5, z: 7, h: 12, c: '#6fb7e8' }, { x: .2, y: 1.6, w: .1, d: .1, z: 0, h: 4, c: '#c9ccd0' }, { x: .7, y: 1.6, w: .1, d: .1, z: 0, h: 4, c: '#c9ccd0' }] },
+  { id: 'buffet_table', name: '自助餐台', theme: 'modern', w: 3, d: 1, parts: [{ x: .05, y: .2, w: 2.9, d: .6, z: 0, h: 20, c: '#ffffff' }, { k: 'ball', x: .4, y: .5, z: 24, r: 5, c: '#ffb02e' }, { k: 'ball', x: 1, y: .5, z: 24, r: 5, c: '#e8505b' }, { k: 'ball', x: 1.6, y: .5, z: 24, r: 5, c: '#7bd389' }, { k: 'ball', x: 2.2, y: .5, z: 24, r: 5, c: '#ffd23f' }, { k: 'ball', x: 2.7, y: .5, z: 24, r: 5, c: '#c98a55' }] },
+  { id: 'ship_pool', name: '甲板游泳池', theme: 'modern', w: 3, d: 2, parts: [{ x: 0, y: 0, w: 3, d: 2, z: 0, h: 6, c: '#ffffff' }, { x: .15, y: .15, w: 2.7, d: 1.7, z: 6, h: 1, c: '#5cc4ec' }, { x: 2.6, y: .2, w: .08, d: .08, z: 6, h: 14, c: '#c9ccd0' }] },
+  { id: 'ship_stage', name: '劇場舞台', theme: 'modern', w: 3, d: 2, parts: [{ x: 0, y: 0, w: 3, d: 2, z: 0, h: 10, c: '#8a5a33' }, { x: 0, y: 0, w: .3, d: 2, z: 10, h: 40, c: '#c4313a' }, { x: 2.7, y: 0, w: .3, d: 2, z: 10, h: 40, c: '#c4313a' }, { x: 0, y: 0, w: 3, d: .2, z: 46, h: 6, c: '#c4313a' }, { k: 'ball', x: 1.5, y: 1, z: 18, r: 5, c: '#ffd23f', shade: true }] },
+  { id: 'porthole', name: '船的圓窗', theme: 'modern', w: 1, h: 26, z: 50, layer: 'wall', d: 1, parts: [],
+    draw(ctx, W, H) { const r = Math.min(W, H) * .45; ctx.fillStyle = '#e0b23a'; ctx.beginPath(); ctx.arc(W / 2, H / 2, r, 0, 7); ctx.fill(); ctx.fillStyle = '#6fc3ec'; ctx.beginPath(); ctx.arc(W / 2, H / 2, r * .75, 0, 7); ctx.fill(); ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(W / 2 - r * .25, H / 2 - r * .25, r * .15, 0, 7); ctx.fill(); } },
   { id: 'dept_rack', name: '衣服展示架', theme: 'cute', w: 2, d: 1, parts: [{ x: .1, y: .45, w: .06, d: .1, z: 0, h: 40, c: '#c9ccd0' }, { x: 1.84, y: .45, w: .06, d: .1, z: 0, h: 40, c: '#c9ccd0' }, { x: .1, y: .48, w: 1.8, d: .04, z: 40, h: 2, c: '#c9ccd0' }, { x: .25, y: .35, w: .3, d: .3, z: 16, h: 22, c: '#ff8fb3' }, { x: .7, y: .35, w: .3, d: .3, z: 16, h: 22, c: '#6fb7e8' }, { x: 1.15, y: .35, w: .3, d: .3, z: 16, h: 22, c: '#ffd23f' }, { x: 1.55, y: .35, w: .25, d: .3, z: 16, h: 22, c: '#7bd389' }] },
   { id: 'dept_counter', name: '百貨公司櫃台', theme: 'modern', w: 2, d: 1, parts: [{ x: .05, y: .2, w: 1.9, d: .6, z: 0, h: 24, c: '#ffffff' }, { x: .05, y: .2, w: 1.9, d: .6, z: 24, h: 3, c: '#ff8fb3' }, { x: .3, y: .3, w: .3, d: .3, z: 27, h: 8, c: '#5a6475' }] },
   { id: 'dept_gacha', name: '扭蛋機', theme: 'cute', w: 1, d: 1, parts: [{ x: .25, y: .25, w: .5, d: .5, z: 0, h: 20, c: '#e8505b' }, { k: 'ball', x: .5, y: .5, z: 30, r: 11, c: '#e8f6ff' }, { k: 'ball', x: .4, y: .5, z: 26, r: 3, c: '#ffd23f' }, { k: 'ball', x: .6, y: .45, z: 28, r: 3, c: '#7bd389' }, { k: 'ball', x: .5, y: .6, z: 32, r: 3, c: '#b18cff' }, { k: 'ball', x: .5, y: .7, z: 10, r: 2.5, c: '#ffffff' }] },
@@ -3619,6 +3626,7 @@ const HOSTS = {
   tkd: { id: 'tkd', name: '熊熊教練', short: '熊教練', body: '#8a5a33', edge: '#6b4428', belly: '#e8cfa9', inner: '#6b4428', ears: 'round', acc: 'scarf', accColor: '#26232a' },
   restaurant: { id: 'restaurant', name: '貓咪主廚', short: '貓主廚', body: '#ffd9a8', edge: '#d9a86a', belly: '#fff4e0', inner: '#ffb3c7', ears: 'pointy', acc: 'hat', accColor: '#ffffff' },
   curator: { id: 'curator', name: '貓頭鷹館長', short: '館長', body: '#b08a6a', edge: '#8a6a4a', belly: '#f3e6d4', inner: '#e8c8a0', ears: 'tuft', acc: 'glasses', accColor: '#3a3240' },   // 🏛️ 博物館
+  captain: { id: 'captain', name: '企鵝船長', short: '船長', body: '#2b2d42', edge: '#1a1c2a', belly: '#ffffff', inner: '#ffb02e', ears: 'none', acc: 'hat', accColor: '#ffffff' },   // 🛳️ 郵輪
   clerk: { id: 'clerk', name: '兔兔店員', short: '店員', body: '#fff4f8', edge: '#e0c0cc', belly: '#ffffff', inner: '#ffb3c7', ears: 'long', acc: 'scarf', accColor: '#ff6fa3' },   // 🛍️ 百貨公司
   realtor: { id: 'realtor', name: '倉鼠經紀人', short: '經紀人', body: '#f3c48a', edge: '#d09a5a', belly: '#fff6e8', inner: '#ffc4b0', ears: 'round', acc: 'glasses', accColor: '#2b2d42' },   // 🏡 小可愛不動產
   banker: { id: 'banker', name: '松鼠行員', short: '行員', body: '#d9915a', edge: '#b0703a', belly: '#fbe8d2', inner: '#f0b88a', ears: 'pointy', acc: 'scarf', accColor: '#2f8a3c' },   // 🏦 銀行
@@ -3749,6 +3757,15 @@ const PLACES = {
   /* 🏛️ 博物館、🏦 銀行（家長 11/22：新市區島，坐船過去） */
   museum: { name: '博物館', host: 'curator', emoji: '🏛️', desc: '看恐龍化石、月亮石頭、大寶石，看完回答館長的小問題！', rooms: [
     { name: '博物館', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_terrazzo', items: [['museum_dino', 1, 1], ['museum_case', 6, 1], ['museum_case', 8, 1], ['museum_rope', 1, 5], ['museum_case', 7, 6]], wallItems: [['museum_painting', 'R', 3], ['museum_painting', 'L', 5]] }
+  ] },
+  cruise: { name: '郵輪碼頭', host: 'captain', emoji: '🛳️', desc: '搭郵輪去熱帶水果島、冰山企鵝島、海盜寶藏島！', rooms: [
+    { name: '郵輪碼頭', w: 8, d: 8, wall: 'wp_stripe', floor: 'fl_deck', items: [['ship_wheel', 3, 1], ['deck_chair', 1, 4], ['deck_chair', 6, 4]], wallItems: [['porthole', 'R', 2], ['porthole', 'R', 5]] }
+  ] },
+  ship: { name: '郵輪（船上）', host: 'captain', emoji: '🚢', desc: '在郵輪上逛逛：甲板泳池、自助餐廳、劇場、我的船艙', rooms: [
+    { name: '甲板泳池', w: 10, d: 10, wall: 'wp_stripe', floor: 'fl_pooldeck', items: [['ship_pool', 3, 2], ['deck_chair', 1, 6], ['deck_chair', 3, 6], ['deck_chair', 7, 6], ['ship_wheel', 8, 1]], wallItems: [] },
+    { name: '自助餐廳', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_tile', items: [['buffet_table', 3, 1], ['dining_table', 2, 5], ['dining_table', 6, 5]], wallItems: [['porthole', 'R', 3], ['porthole', 'R', 6]] },
+    { name: '劇場', w: 10, d: 10, wall: 'wp_cinema', floor: 'fl_cinema', items: [['ship_stage', 3, 1]], wallItems: [] },
+    { name: '我的船艙', w: 6, d: 6, wall: 'wp_stripe', floor: 'fl_wood', items: [['wood_bed', 1, 1]], wallItems: [['porthole', 'R', 2]] }
   ] },
   dept: { name: '百貨公司', host: 'clerk', emoji: '🛍️', desc: '好幾層樓！百貨限定的家具、扭蛋機，週末還有週年慶打折', rooms: [
     { name: '1F 衣服飾品', w: 10, d: 10, wall: 'wp_pink', floor: 'fl_terrazzo', items: [['dept_rack', 1, 1], ['dept_rack', 5, 1], ['dept_counter', 7, 6], ['dept_rack', 1, 5]], wallItems: [] },
@@ -5917,6 +5934,13 @@ FURN_BY_ID.reindeer_sleigh = { id: 'reindeer_sleigh', name: '麋鹿雪橇', pric
   ['gacha_unicorn', '扭蛋獨角獸', 0, 1, 1, [{ k: 'ball', x: .5, y: .5, z: 10, r: 8, c: '#ffffff' }, { k: 'ball', x: .7, y: .55, z: 18, r: 5, c: '#ffffff' }, { x: .72, y: .55, w: .04, d: .04, z: 22, h: 8, c: '#ffd23f' }, { k: 'ball', x: .35, y: .45, z: 16, r: 3, c: '#ff9ccf' }, { k: 'ball', x: .3, y: .5, z: 12, r: 3, c: '#b18cff' }]],
   ['gacha_rocket', '扭蛋小火箭', 0, 1, 1, [{ x: .42, y: .42, w: .16, d: .16, z: 0, h: 26, c: '#f3f3f6' }, { k: 'ball', x: .5, y: .5, z: 28, r: 4, c: '#e8505b' }, { x: .3, y: .45, w: .12, d: .1, z: 0, h: 8, c: '#e8505b' }, { x: .58, y: .45, w: .12, d: .1, z: 0, h: 8, c: '#e8505b' }, { k: 'ball', x: .5, y: .6, z: 18, r: 2.5, c: '#4a90d9' }]]
 ].forEach(([id, name, price, w, d, parts]) => { FURN_BY_ID[id] = { id, name, price: 0, deptPrice: price, theme: 'cute', w, d, gift: true, parts }; });
+/* 🛳️ 郵輪的紀念品（港口第一次玩完送）、三個港口都去過送郵輪模型 */
+[
+  ['port_pineapple', '鳳梨擺飾', [{ k: 'ball', x: .5, y: .5, z: 10, r: 9, c: '#ffc94d' }, { x: .45, y: .45, w: .1, d: .1, z: 18, h: 12, c: '#4f9d4f' }, { x: .38, y: .5, w: .08, d: .08, z: 18, h: 8, c: '#5fae5f' }, { x: .56, y: .5, w: .08, d: .08, z: 18, h: 8, c: '#5fae5f' }]],
+  ['port_igloo', '冰屋擺飾', [{ k: 'ball', x: .5, y: .5, z: 6, r: 12, c: '#f4fbff' }, { x: .3, y: .3, w: .4, d: .4, z: 0, h: 3, c: '#dff3fb' }, { k: 'ball', x: .5, y: .8, z: 5, r: 4, c: '#5a7f99' }, { k: 'ball', x: .3, y: .8, z: 4, r: 3, c: '#2b2d42' }]],
+  ['port_chest', '海盜寶箱', [{ x: .2, y: .3, w: .6, d: .4, z: 0, h: 14, c: '#8a5a33' }, { x: .2, y: .3, w: .6, d: .4, z: 14, h: 6, c: '#a0703e' }, { x: .2, y: .3, w: .6, d: .06, z: 0, h: 20, c: '#e0b23a' }, { k: 'ball', x: .5, y: .5, z: 22, r: 3, c: '#ffd23f' }, { k: 'ball', x: .4, y: .5, z: 22, r: 2.5, c: '#4ac0e8' }]],
+  ['cruise_model', '郵輪模型', [{ x: .1, y: .35, w: .8, d: .3, z: 0, h: 6, c: '#2b3a5a' }, { x: .1, y: .35, w: .8, d: .3, z: 6, h: 2, c: '#e8505b' }, { x: .2, y: .38, w: .6, d: .24, z: 8, h: 6, c: '#ffffff' }, { x: .3, y: .4, w: .4, d: .2, z: 14, h: 5, c: '#ffffff' }, { x: .55, y: .45, w: .1, d: .1, z: 19, h: 6, c: '#e8505b' }]]
+].forEach(([id, name, parts]) => { FURN_BY_ID[id] = { id, name, price: 0, theme: 'cute', w: 1, d: 1, gift: true, parts }; });
 FURN_BY_ID.fox_mask = { id: 'fox_mask', name: '怪盜狐狸的面具', price: 0, theme: 'cute', w: 1, d: 1, gift: true, parts: [{ x: .3, y: .3, w: .4, d: .4, z: 0, h: 4, c: '#6a2a8a' }, { x: .47, y: .47, w: .06, d: .06, z: 4, h: 12, c: '#e0b23a' }, { k: 'ball', x: .38, y: .5, z: 22, r: 5, c: '#26232a' }, { k: 'ball', x: .62, y: .5, z: 22, r: 5, c: '#26232a' }, { k: 'ball', x: .38, y: .55, z: 22, r: 1.6, c: '#ffffff' }, { k: 'ball', x: .62, y: .55, z: 22, r: 1.6, c: '#ffffff' }, { k: 'ball', x: .5, y: .5, z: 28, r: 3, c: '#ff8a3d' }] };   // 🦊 怪盜狐狸事件解決的獎品
 FURN_BY_ID.pet_trophy = { id: 'pet_trophy', name: '寵物運動會獎盃', price: 0, theme: 'cute', w: 1, d: 1, gift: true, parts: [{ x: .3, y: .3, w: .4, d: .4, z: 0, h: 5, c: '#8a5a33' }, { x: .42, y: .42, w: .16, d: .16, z: 5, h: 8, c: '#e0b832' }, { k: 'ball', x: .5, y: .5, z: 20, r: 8, c: '#ffd23f' }, { k: 'ball', x: .32, y: .5, z: 21, r: 3, c: '#e0b832' }, { k: 'ball', x: .68, y: .5, z: 21, r: 3, c: '#e0b832' }, { k: 'ball', x: .5, y: .6, z: 22, r: 2.4, c: '#e8505b' }] };   // 🏅 寵物運動會第一面金牌
 FURN_BY_ID.plane_model = { id: 'plane_model', name: '飛機模型', price: 0, theme: 'modern', w: 1, d: 1, gift: true, parts: [{ x: .3, y: .3, w: .4, d: .4, z: 0, h: 4, c: '#5a6475' }, { x: .47, y: .47, w: .06, d: .06, z: 4, h: 14, c: '#8a94a6' }, { x: .2, y: .44, w: .6, d: .12, z: 18, h: 6, c: '#ffffff' }, { x: .38, y: .2, w: .14, d: .6, z: 20, h: 2, c: '#4a90d9' }, { x: .22, y: .42, w: .08, d: .16, z: 24, h: 6, c: '#4a90d9' }, { k: 'ball', x: .8, y: .5, z: 21, r: 2, c: '#ffd23f' }] };   // ✈️ 機場三個工作都做到第 3 關
@@ -6086,6 +6110,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-23T10:00', title: '🛳️ 郵輪碼頭開張！', lines: [
+    ['🛳️', '主島東邊南邊的海邊多了郵輪碼頭，企鵝船長帶你搭郵輪（船票 200）'],
+    ['🗺️', '三個港口：🍍 熱帶水果島（數水果）、🐧 冰山企鵝島（送企鵝回家）、☠️ 海盜寶藏島（挖寶藏）'],
+    ['🚢', '也可以上船逛逛：甲板泳池、自助餐廳、劇場、我的船艙'],
+    ['📒', '每個港口蓋一個章、拿紀念品，三個都去過送郵輪模型！']
+  ] },
   { id: '2026-11-23T09:00', title: '🛍️ 百貨公司開幕！', lines: [
     ['🛍️', '主島東邊多了百貨公司（兔兔店員）：1F 衣服飾品、2F 家具、3F 玩具、頂樓美食街'],
     ['✨', '百貨限定家具：水晶吊燈、豪華絨布沙發、巨大泰迪熊、室內小噴水池'],
@@ -7391,6 +7421,7 @@ function normalizeSave(g) {
         for (let w = 1; w <= 6; w++) if (q.clear[w + '-3'] === 1) leg[String(w)] = 1;
         q.legacy = leg; q.rev = 2;
       } else q.legacy = legOk(q.legacy); } }
+  if (out.cruise != null) { if (!isObj(out.cruise)) delete out.cruise; else { const c = out.cruise; c.st = isObj(c.st) ? Object.fromEntries(Object.entries(c.st).filter(([k, v]) => ['fruit', 'ice', 'pirate'].includes(k) && v === 1)) : {}; Object.keys(c).forEach(k => { if (k !== 'st') delete c[k]; }); } }   // 🛳️ 郵輪護照
   if (out.fox != null) { if (!isObj(out.fox)) delete out.fox; else { const f = out.fox; if (!(Number.isInteger(f.st) && f.st >= 0 && f.st <= 5)) f.st = 0; f.clues = Array.isArray(f.clues) ? [...new Set(f.clues.filter(k => ['library', 'museum', 'park'].includes(k)))] : []; if (f.d != null && !(typeof f.d === 'string' && f.d.length <= 12)) delete f.d; Object.keys(f).forEach(k => { if (!['st', 'clues', 'd'].includes(k)) delete f[k]; }); } }   // 🦊 怪盜狐狸事件
   if (out.bank != null) { if (!isObj(out.bank)) delete out.bank; else { const b = out.bank; if (!(Number.isInteger(b.sav) && b.sav >= 0 && b.sav < 1e9)) b.sav = 0; if (b.d != null && !(typeof b.d === 'string' && b.d.length <= 12)) delete b.d; if (b.goal != null && !(typeof b.goal === 'string' && ESTATE_BY_ID[b.goal])) delete b.goal; Object.keys(b).forEach(k => { if (!['sav', 'd', 'goal'].includes(k)) delete b[k]; }); } }   // 🐷 銀行
   if (out.museum != null) { if (!isObj(out.museum)) delete out.museum; else { const m = out.museum; if (m.d != null && !(typeof m.d === 'string' && m.d.length <= 12)) delete m.d; Object.keys(m).forEach(k => { if (k !== 'd') delete m[k]; }); } }   // 🏛️ 博物館
@@ -15416,6 +15447,10 @@ function hostMenuEntries() {
   }
   if (host.n.id === 'restaurant') { list.push(['🍽️ 點餐吃飯', openRestaurantOrder]); list.push(['👩‍🍳 小幫手打工（做漢堡）', openChefGame]); list.push(['💰 收銀台找錢', openCashGame]); }
   if (host.n.id === 'curator') { list.push(['🏛️ 參觀展覽（看完有小問答）', () => openMuseumTour()]); list.push(['🎭 演習：博物館（第 2 關）', () => openThiefDrill((copState().dlv || 0) >= 1 ? 2 : undefined)]); }
+  if (host.n.id === 'captain') { const onShip = G.away && G.away.place === 'ship';
+    list.push([onShip ? '⚓ 開往港口（下船去玩）' : '🛳️ 搭郵輪去玩', () => openCruise()]);
+    list.push(onShip ? ['🏠 下船回郵輪碼頭', () => { closeGameWindow(); travelArrive('cruise'); }] : ['🚶 上船逛逛', () => { closeGameWindow(); travelArrive('ship'); }]);
+    list.push(['📒 郵輪護照', () => { const cs = cruiseState(); toast(`📒 郵輪護照：${CRUISE_PORTS.map(p => (cs.st[p[0]] ? p[1] : '⬜') + p[2]).join('、')}`); }]); }
   if (host.n.id === 'clerk') { list.push(['🛍️ 百貨限定家具', () => openDeptStore()]); list.push(['🎰 扭蛋機', () => openDeptStore('gacha')]); }
   if (host.n.id === 'realtor') { list.push(['🏡 看房子・買房子', () => openRealty()]); }
   if (host.n.id === 'banker') { list.push(['🐷 存錢筒（每天會長利息）', () => openBank()]); list.push(['🎭 演習：金庫（第 3 關）', () => openThiefDrill((copState().dlv || 0) >= 2 ? 3 : undefined)]); }
@@ -15900,7 +15935,7 @@ function homeArrive() {
    PLACES 多加一筆就會出現在這裡，不用改選單。 */
 const PLACE_KINDS = [['family', '🏠 家和家人'], ['learn', '📚 上學和學習'], ['sport', '🏅 運動'], ['help', '🚓 幫助別人'], ['fun', '🎡 好玩的地方'], ['shop', '🛍️ 買東西和存錢'], ['other', '🌈 其他地方']];
 const PLACE_KIND_OF = { uncle: 'family', grandma: 'family', sky: 'family', school: 'learn', library: 'learn', museum: 'learn', pool: 'sport', dojo: 'sport', arena: 'sport', gym: 'sport', raceway: 'sport',
-  police: 'help', firestation: 'help', hospital: 'help', amusement: 'fun', cinema: 'fun', park: 'fun', airport: 'fun', santa: 'fun', restaurant: 'shop', garage: 'shop', bank: 'shop', realty: 'shop', dept: 'shop' };
+  police: 'help', firestation: 'help', hospital: 'help', amusement: 'fun', cinema: 'fun', park: 'fun', airport: 'fun', santa: 'fun', restaurant: 'shop', garage: 'shop', bank: 'shop', realty: 'shop', dept: 'shop', cruise: 'fun', ship: 'fun' };
 function placeKind(id) { return PLACE_KIND_OF[id] || 'other'; }
 function placeIsle(id) { if (id === 'sky') return '天空島・坐直升機'; const bd = ISL_BLD.find(b => b.id === id); return !bd ? '別的地方' : bd.city ? '新市區・坐船' : bd.town ? '小鎮島・走木橋' : bd.islet ? '運動島・走木橋' : '主島'; }
 function openTravelMenu() {
@@ -24189,6 +24224,7 @@ const ISL_BLD = [   // 房子：x, y 是左上角的格子，w×h 格；門在�
   { id: 'bank', x: 62, y: 22, w: 4, h: 3 },   // 🏦 主島東邊
   { id: 'realty', x: 68, y: 22, w: 4, h: 3 },   // 🏡 小可愛不動產
   { id: 'dept', x: 57, y: 29, w: 6, h: 3 },   // 🛍️ 百貨公司
+  { id: 'cruise', x: 71, y: 35, w: 5, h: 3 },   // 🛳️ 郵輪碼頭（旁邊海上停著大郵輪）
   { id: 'santa', x: 34, y: 17, w: 4, h: 3, season: 'christmas' },   // 🎅 聖誕老公公的家：聖誕節才有
 
   // 🏅 運動島（家長：游泳池那座小島擴大成運動島，走木橋過去；跆拳道館也搬過來）
@@ -24270,7 +24306,7 @@ const ISL_POND = { x: 31, y: 24, w: 4, h: 3 };
 const ISL_HUB = [26, 19];
 const ISL_STYLE = {   // 牆、屋頂顏色
   dojo: ['#fff4e6', '#e0503a'], pool: ['#e8f6fb', '#3fa9f5'], track: ['#fff1e0', '#e07a4a'], arena: ['#fff6e0', '#ff7a3c'], gym: ['#f4eeff', '#8a78b0'], restaurant: ['#fff0d9', '#e8823a'], hospital: ['#ffffff', '#e8505b'], cinema: ['#3a2f4a', '#e8505b'],
-  raceway: ['#f3f3f6', '#2b2d42'], firestation: ['#ffe9e4', '#d63b3b'], museum: ['#f4efe6', '#8a7f99'], bank: ['#eef6ee', '#2f8a3c'], realty: ['#fff6e0', '#e8823a'], dept: ['#fff0f6', '#ff6fa3'], santa: ['#fff4e6', '#d63b3b'], garage: ['#f3f3f6', '#e8505b'], airport: ['#eef6ff', '#4a90d9'], police: ['#e6efff', '#2f5fb8'], home: ['#ffd9c9', '#ff7b7b'], school: ['#fff4cf', '#5b8def'], playground: ['#e7f8d4', '#e07a3a'], library: ['#e6dcff', '#7a5cc9'], park: ['#d9f0c8', '#4f9d4f'],
+  raceway: ['#f3f3f6', '#2b2d42'], firestation: ['#ffe9e4', '#d63b3b'], museum: ['#f4efe6', '#8a7f99'], bank: ['#eef6ee', '#2f8a3c'], realty: ['#fff6e0', '#e8823a'], dept: ['#fff0f6', '#ff6fa3'], cruise: ['#eef6ff', '#2b3a5a'], santa: ['#fff4e6', '#d63b3b'], garage: ['#f3f3f6', '#e8505b'], airport: ['#eef6ff', '#4a90d9'], police: ['#e6efff', '#2f5fb8'], home: ['#ffd9c9', '#ff7b7b'], school: ['#fff4cf', '#5b8def'], playground: ['#e7f8d4', '#e07a3a'], library: ['#e6dcff', '#7a5cc9'], park: ['#d9f0c8', '#4f9d4f'],
   uncle: ['#d7ecc8', '#7aa05a'], grandma: ['#ffe3b0', '#d68a3a'], amusement: ['#ffe0ee', '#ff6fa3'], friend: ['#fffaf0', '#6fb7e8']
 };
 let islMapCache = null;
@@ -25957,6 +25993,9 @@ function islDrawBuilding(ctx, b, tt) {
     for (let i = 0; i < 6; i++) { const a = i / 6 * 6.283 + tt * .3, ex = cx + Math.cos(a) * wr / 1.4, ey = wy + Math.sin(a) * wr / 1.4; ctx.beginPath(); ctx.moveTo(cx, wy); ctx.lineTo(ex, ey); ctx.stroke(); ctx.fillStyle = ['#ff6fa3', '#ffd24d', '#6fb7e8'][i % 3]; ctx.beginPath(); ctx.arc(ex, ey, 6, 0, 7); ctx.fill(); }
     for (let i = 0; i < b.w; i++) { ctx.fillStyle = i % 2 ? '#fff' : '#ff6fa3'; ctx.fillRect(x + i * T, y + 18, T + 1, h - 18); }
     ctx.fillStyle = '#ff6fa3'; ctx.beginPath(); ctx.moveTo(x - 6, y + 20); ctx.lineTo(cx, y - 16); ctx.lineTo(x + w + 6, y + 20); ctx.closePath(); ctx.fill();
+  } else if (b.id === 'cruise') {   // 🛳️ 郵輪碼頭：藍白色的候船室，旁邊海上停著大郵輪
+    ctx.fillStyle = sty[0]; ctx.fillRect(x, y + 20, w, h - 20); ctx.fillStyle = '#2b3a5a'; ctx.fillRect(x - 4, y + 14, w + 8, 10); ctx.fillStyle = '#bfe6f6'; for (let i = 0; i < 4; i++) ctx.fillRect(x + 10 + i * 36, y + 34, 22, 16);
+    try { cruiseShip(ctx, x + w + 120, y + h + 70, 1.3, tt); } catch (e) {}
   } else if (b.id === 'pool') {   // 游泳池：戶外的藍色水池、白色池邊、遮陽傘
     ctx.fillStyle = '#ffffff'; ctx.fillRect(x - 2, y + 4, w + 4, h - 2);
     ctx.fillStyle = '#5cc4ec'; ctx.fillRect(x + 4, y + 10, w - 8, h - 14);
@@ -30630,7 +30669,7 @@ const AWAY_GAMES = [
   ['🔎', '幫忙找書', 'library', () => openShelfGame()],
   ['🚓', '一起抓小偷', 'police', () => openCopChase()], ['🛣️', '高速公路追小偷', 'police', () => openHighwayChase()], ['🔍', '小偵探破案', 'police', () => openDetective()], ['🛏️', '病房照顧', 'hospital', () => openWard()],
   ['✈️', '搭飛機旅行', 'airport', () => openAirTravel()], ['🛩️', '開飛機', 'airport', () => openPlaneGame()], ['🧳', '行李安檢', 'airport', () => openSecurity()], ['🗼', '塔台指揮', 'airport', () => openTower()], ['🥤', '空服員送餐', 'airport', () => openMeal()],
-  ['🏁', '賽車場比賽', 'raceway', () => openKart()], ['🚒', '滅火任務', 'firestation', () => openFireFight()], ['🏛️', '參觀博物館', 'museum', () => openMuseumTour()], ['🐷', '銀行存錢', 'bank', () => openBank()], ['🏡', '看房子・買房子', 'realty', () => openRealty()], ['🛍️', '百貨公司', 'dept', () => openDeptStore()], ['🎰', '扭蛋機', 'dept', () => openDeptStore('gacha')], ['🐱', '救援任務', 'firestation', () => openFireRescue()], ['🎨', '改裝我的車', 'garage', () => openCarShop()], ['🧽', '洗車', 'garage', () => openCarWash()],
+  ['🏁', '賽車場比賽', 'raceway', () => openKart()], ['🚒', '滅火任務', 'firestation', () => openFireFight()], ['🏛️', '參觀博物館', 'museum', () => openMuseumTour()], ['🐷', '銀行存錢', 'bank', () => openBank()], ['🏡', '看房子・買房子', 'realty', () => openRealty()], ['🛍️', '百貨公司', 'dept', () => openDeptStore()], ['🛳️', '搭郵輪', 'cruise', () => openCruise()], ['🎰', '扭蛋機', 'dept', () => openDeptStore('gacha')], ['🐱', '救援任務', 'firestation', () => openFireRescue()], ['🎨', '改裝我的車', 'garage', () => openCarShop()], ['🧽', '洗車', 'garage', () => openCarWash()],
   ['🧸', '幫小精靈做玩具', 'santa', () => openToyFactory()], ['🦌', '照顧麋鹿', 'santa', () => openDeerCare()], ['🎁', '包禮物', 'santa', () => openGiftWrap()]
 ];
 function allQuickGames() {
@@ -39917,6 +39956,111 @@ function openDeptStore(focus) {
 }
 Object.assign(ACTIVITIES, { dept_shop: { label: '🛍️ 百貨限定家具', name: '逛百貨', fx: '🛍️', open: () => openDeptStore(), lines: ['好多漂亮的東西！'] }, dept_gacha: { label: '🎰 轉扭蛋', name: '扭蛋', fx: '🎰', open: () => openDeptStore('gacha'), lines: ['會扭到什麼呢？'] } });
 Object.assign(FURNITURE_ACT, { dept_counter: 'dept_shop', dept_rack: 'dept_shop', dept_gacha: 'dept_gacha' });
+/* ===== 🛳️ 郵輪碼頭（家長 11/22：可以搭郵輪的地方）=====
+   主島東邊南邊的海邊。企鵝船長：「🛳️ 搭郵輪去玩」（船票 200）→ 選港口 → 開船的過場動畫（海豚、鯨魚）→ 到港口玩小遊戲：
+   🍍 熱帶水果島：猴子老闆要幾個水果，就拿幾個（數數）；🐧 冰山企鵝島：企鵝送回同樣顏色的冰屋；☠️ 海盜寶藏島：挖沙，箭頭告訴你寶藏在哪邊。
+   也可以「上船逛逛」：甲板泳池、自助餐廳、劇場、我的船艙。每個港口第一次玩完蓋章＋紀念品，三個都蓋到送郵輪模型。G.cruise = { st: { fruit: 1, ice: 1, pirate: 1 } } */
+const CRUISE_PORTS = [['fruit', '🍍', '熱帶水果島', '#7bd389', 'port_pineapple'], ['ice', '🐧', '冰山企鵝島', '#bfe6f6', 'port_igloo'], ['pirate', '☠️', '海盜寶藏島', '#f3d9a0', 'port_chest']];
+const CRUISE_TICKET = 200;
+function cruiseState() { if (!G.cruise || typeof G.cruise !== 'object') G.cruise = {}; if (!G.cruise.st || typeof G.cruise.st !== 'object') G.cruise.st = {}; return G.cruise; }
+function cruiseShip(g, x, y, k, t) {   // 側面的大郵輪
+  g.save(); g.translate(x, y); g.scale(k, k);
+  g.fillStyle = '#2b3a5a'; g.beginPath(); g.moveTo(-80, 0); g.lineTo(80, 0); g.lineTo(66, 22); g.lineTo(-70, 22); g.closePath(); g.fill();
+  g.fillStyle = '#e8505b'; g.fillRect(-78, 0, 156, 5);
+  g.fillStyle = '#ffffff'; g.fillRect(-60, -18, 120, 18); g.fillRect(-46, -32, 90, 14); g.fillRect(-30, -44, 56, 12);
+  g.fillStyle = '#4a90d9'; for (let i = 0; i < 9; i++) { g.beginPath(); g.arc(-52 + i * 13, -9, 3, 0, 7); g.fill(); } for (let i = 0; i < 6; i++) g.fillRect(-38 + i * 13, -28, 8, 6);
+  g.fillStyle = '#e8505b'; g.fillRect(30, -60, 12, 18); g.fillStyle = '#2b3a5a'; g.fillRect(30, -62, 12, 4);
+  for (let i = 0; i < 3; i++) { const kk = ((t || 0) * .5 + i / 3) % 1; g.fillStyle = `rgba(220,220,230,${.6 * (1 - kk)})`; g.beginPath(); g.arc(36 + kk * 14, -66 - kk * 26, 5 + kk * 8, 0, 7); g.fill(); }
+  g.restore();
+}
+function openCruise() {
+  const cs = cruiseState(), card = $('#modalCard'); closeGameWindow(); card.innerHTML = '';
+  const x = el('button', 'modal-x', '✕'); x.onclick = () => { $('#modal').hidden = true; }; card.appendChild(x);
+  card.appendChild(el('h2', '', '🛳️ 搭郵輪去玩'));
+  card.appendChild(note(`企鵝船長：要去哪一個港口呢？船票 💰 ${CRUISE_TICKET}。　📒 郵輪護照：${CRUISE_PORTS.map(p => cs.st[p[0]] ? p[1] : '⬜').join(' ')}`));
+  CRUISE_PORTS.forEach(([id, ic, nm]) => { const b = el('button', 'big', `${ic} ${nm}${cs.st[id] ? '　✅ 蓋過章' : ''}`); b.onclick = () => { if (!spend(CRUISE_TICKET)) { Sound.play('miss'); toast('船票不夠錢喔～'); return; } refreshTop(); $('#modal').hidden = true; cruiseSail(id); }; card.appendChild(b); });
+  const walk = el('button', 'big alt', '🚶 先上船逛逛（不用船票）'); walk.onclick = () => { $('#modal').hidden = true; travelArrive('ship'); }; card.appendChild(walk);
+  $('#modal').hidden = false;
+}
+function cruiseSail(id) {
+  const P = CRUISE_PORTS.find(p => p[0] === id); Sound.play('whoosh');
+  const sea = (g, W, H, t) => { const sk = g.createLinearGradient(0, 0, 0, H); sk.addColorStop(0, '#9fd8ff'); sk.addColorStop(1, '#e7f5ff'); g.fillStyle = sk; g.fillRect(0, 0, W, H); g.fillStyle = '#3f9fd8'; g.fillRect(0, 130, W, H - 130); g.strokeStyle = 'rgba(255,255,255,.5)'; g.lineWidth = 2; for (let i = 0; i < 12; i++) { const x = ((i * 47 - t * 40) % (W + 40) + W + 40) % (W + 40) - 20, y = 145 + (i * 23) % 70; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + 8, y - 5, x + 16, y); g.stroke(); } };
+  vevScene([
+    { text: '企鵝船長：歡迎上船！郵輪要出發囉～　嗚～～（汽笛聲）', draw: (g, W, H, t) => { sea(g, W, H, t); g.fillStyle = '#c9a26a'; g.fillRect(0, 120, 110, 20); cruiseShip(g, 210 - Math.min(t, 3) * 10, 150, 1.1, t); vevNb(g, HOSTS.captain, 60, 120, 1.6, { happy: true }); } },
+    { text: '在大海上！海豚跳出來打招呼，遠遠的還有鯨魚在噴水～', draw: (g, W, H, t) => { sea(g, W, H, t); cruiseShip(g, 120, 150, .9, t); const j = Math.abs(Math.sin(t * 2.2)); g.font = '30px sans-serif'; g.textAlign = 'center'; g.fillText('🐬', 260, 150 - j * 40); g.fillText('🐋', 320, 150); g.fillStyle = 'rgba(255,255,255,.8)'; g.beginPath(); g.arc(318, 120 - (t * 30) % 20, 5, 0, 7); g.fill(); } },
+    { text: `看到了！是 ${P[1]} ${P[2]}！下船去玩吧！`, draw: (g, W, H, t) => { sea(g, W, H, t); g.fillStyle = P[3]; g.beginPath(); g.ellipse(270, 140, 90, 30, 0, Math.PI, 0); g.fill(); g.font = '40px sans-serif'; g.textAlign = 'center'; g.fillText(P[1], 270, 112); cruiseShip(g, 100, 155, .8, t); } }
+  ], () => { if (id === 'fruit') openPortFruit(); else if (id === 'ice') openPortPenguin(); else openPortTreasure(); });
+}
+function cruisePortDone(w, id) {
+  const cs = cruiseState(), P = CRUISE_PORTS.find(p => p[0] === id), first = !cs.st[id]; cs.st[id] = 1;
+  const got = payReward(w, 100); kidMoodUp(5); Sound.play('fanfare');
+  let extra = ''; if (first) { addItem(P[4], 1); extra = `　📒 蓋了章！紀念品「${FURN_BY_ID[P[4]].name}」放進我的東西了`; }
+  if (first && CRUISE_PORTS.every(p => cs.st[p[0]])) { addItem('cruise_model', 1); extra += '　🛳️ 三個港口都去過了！送你「郵輪模型」！'; }
+  saveGame(); refreshTop();
+  w.status.textContent = `🎉 ${P[2]}玩完了！　💰 +${fmt(got)}${extra}`;
+  w.btns.innerHTML = ''; const ship = el('button', 'big', '🛳️ 回到船上逛逛'); ship.onclick = () => { closeGameWindow(); travelArrive('ship'); }; const port = el('button', 'big alt', '🏠 回郵輪碼頭'); port.onclick = () => { closeGameWindow(); travelArrive('cruise'); }; w.btns.append(ship, port);
+}
+// 🍍 熱帶水果島：猴子老闆說要幾個，就點幾個水果放進籃子，按「給你！」
+function openPortFruit() {
+  const w = openGameWindow('🍍 熱帶水果島', '猴子老闆：歡迎！我要幾個水果，你就點幾個放進籃子，再按「🧺 給你！」。拿錯了可以按「↩️ 拿出來」。五個客人就完成囉！');
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const FR = [['🍌', '香蕉'], ['🍍', '鳳梨'], ['🥥', '椰子'], ['🥭', '芒果'], ['🍉', '西瓜']];
+  const ask = el('div', ''); ask.style.cssText = 'font-size:22px;font-weight:800;text-align:center;margin:10px;color:#4a3b2a'; const basket = el('div', ''); basket.style.cssText = 'font-size:32px;text-align:center;min-height:46px;margin:6px';
+  const row = el('div', 'tkd-moves'); w.stage.append(ask, basket, row);
+  let n = 0, want = null, have = [];
+  const next = () => { if (n >= 5) { cruisePortDone(w, 'fruit'); return; } const f = FR[Math.floor(Math.random() * FR.length)]; want = { f, k: 1 + Math.floor(Math.random() * 5) }; have = []; ask.textContent = `🐒 第 ${n + 1} 位：我要 ${want.k} 個${f[1]} ${f[0]}！`; basket.textContent = '🧺'; try { speak(`我要 ${want.k} 個${f[1]}`); } catch (e) {} };
+  FR.forEach(([ic, nm], i) => { const b = el('button', 'tkd-move'); b.dataset.key = String(i + 1); b.append(el('span', '', `${ic} ${nm}`)); b.style.fontSize = '18px'; b.onclick = () => { if (have.length >= 9) return; have.push(ic); Sound.play('pickUp'); basket.textContent = '🧺 ' + have.join(''); }; row.appendChild(b); });
+  const give = el('button', 'big', '🧺 給你！'), undo = el('button', 'big alt', '↩️ 拿出來');
+  give.onclick = () => { const ok = have.length === want.k && have.every(x => x === want.f[0]);
+    if (ok) { n++; Sound.play('coin'); w.status.textContent = `🐒 謝謝！剛好 ${want.k} 個！`; next(); }
+    else { Sound.play('miss'); w.status.textContent = have.some(x => x !== want.f[0]) ? `🐒 我要的是${want.f[1]} ${want.f[0]} 喔～` : have.length < want.k ? `🐒 還不夠喔，再數數看（現在 ${have.length} 個）` : `🐒 太多了喔，我只要 ${want.k} 個～`; } };
+  undo.onclick = () => { have.pop(); Sound.play('click'); basket.textContent = '🧺 ' + have.join(''); };
+  w.btns.append(give, undo); leaveButton(w); next();
+  openPortFruit.test = { get want() { return want; }, pick: ic => { have.push(ic); }, give: () => give.click(), get n() { return n; } };
+}
+// 🐧 冰山企鵝島：點一隻企鵝，再點同樣顏色的冰屋，送牠回家
+function openPortPenguin() {
+  const w = openGameWindow('🐧 冰山企鵝島', '企鵝寶寶迷路了！先點一隻企鵝（看牠的圍巾顏色），再點同樣顏色的冰屋，送牠回家。六隻都回家就完成！');
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const W = 340, H = 220, { c, g, pos } = gameCanvas(w.stage, W, H);
+  const COLS = ['#e8505b', '#ffd23f', '#4a90d9'], igloos = COLS.map((col, i) => ({ x: 60 + i * 110, y: 70, col }));
+  const pens = []; for (let i = 0; i < 6; i++) pens.push({ x: 40 + i * 52, y: 175, col: COLS[i % 3], home: false, hx: 0 });
+  pens.sort(() => Math.random() - .5).forEach((p, i) => { p.x = 40 + i * 52; });
+  let sel = null, t = 0, raf = 0, last = performance.now(), done = false;
+  const tap = (x, y) => { if (done) return; const p = pens.find(q => !q.home && Math.hypot(q.x - x, q.y - 10 - y) < 24); if (p) { sel = p; Sound.play('pickUp'); w.status.textContent = '再點同樣顏色的冰屋！'; return; }
+    const ig = igloos.find(q => Math.hypot(q.x - x, q.y - y) < 40); if (ig && sel) { if (ig.col === sel.col) { sel.home = true; sel.hx = ig.x + (pens.filter(q => q.home && q.col === ig.col).length - 1.5) * 14; Sound.play('coin'); sel = null; w.status.textContent = '回家了！'; if (pens.every(q => q.home)) { done = true; setTimeout(() => cruisePortDone(w, 'ice'), 600); } } else { Sound.play('miss'); w.status.textContent = '不是這個顏色的冰屋喔～看看圍巾的顏色！'; } } };
+  c.addEventListener('pointerdown', e => { e.preventDefault(); const q = pos(e); tap(q.x, q.y); });
+  gameCleanup = () => { cancelAnimationFrame(raf); };
+  const frame = now => { raf = requestAnimationFrame(frame); const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+    g.fillStyle = '#dff3fb'; g.fillRect(0, 0, W, H); g.fillStyle = '#ffffff'; g.fillRect(0, 110, W, 110);
+    igloos.forEach(ig => { g.fillStyle = '#f4fbff'; g.beginPath(); g.arc(ig.x, ig.y + 20, 36, Math.PI, 0); g.fill(); g.strokeStyle = '#b8d8ea'; g.lineWidth = 2; g.stroke(); g.fillStyle = ig.col; g.fillRect(ig.x - 36, ig.y + 18, 72, 6); g.fillStyle = '#5a7f99'; g.beginPath(); g.arc(ig.x, ig.y + 20, 10, Math.PI, 0); g.fill(); });
+    pens.forEach(p => { const px = p.home ? p.hx : p.x, py = p.home ? 112 : p.y, hop = p === sel ? Math.abs(Math.sin(t * 8)) * 6 : 0;
+      g.fillStyle = '#2b2d42'; g.beginPath(); g.ellipse(px, py - 12 - hop, 11, 15, 0, 0, 7); g.fill(); g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(px, py - 9 - hop, 7, 11, 0, 0, 7); g.fill();
+      g.fillStyle = '#ffb02e'; g.beginPath(); g.moveTo(px - 3, py - 20 - hop); g.lineTo(px + 3, py - 20 - hop); g.lineTo(px, py - 16 - hop); g.fill(); g.fillStyle = '#000'; g.fillRect(px - 4, py - 24 - hop, 2, 2); g.fillRect(px + 2, py - 24 - hop, 2, 2);
+      g.fillStyle = p.col; g.fillRect(px - 9, py - 18 - hop, 18, 4); });
+  };
+  raf = requestAnimationFrame(frame); w.status.textContent = '先點一隻企鵝！';
+  openPortPenguin.test = { pens, igloos, tap };
+}
+// ☠️ 海盜寶藏島：沙灘 5×4 格，點一格挖下去；沒挖到的話會出現箭頭告訴你寶藏在哪個方向
+function openPortTreasure() {
+  const w = openGameWindow('☠️ 海盜寶藏島', '海盜鸚鵡：寶藏埋在沙灘的某一格！點一格挖挖看，沒挖到的話，箭頭會告訴你寶藏在哪邊～');
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const W = 340, H = 240, C = 5, R = 4, cw = 60, ch = 48, ox = 20, oy = 34, { c, g, pos } = gameCanvas(w.stage, W, H);
+  const tr = { x: Math.floor(Math.random() * C), y: Math.floor(Math.random() * R) }, dug = {}; let found = false, digs = 0;
+  const arrow = (x, y) => { const dx = Math.sign(tr.x - x), dy = Math.sign(tr.y - y); return { '-1,-1': '↖', '0,-1': '⬆', '1,-1': '↗', '-1,0': '⬅', '1,0': '➡', '-1,1': '↙', '0,1': '⬇', '1,1': '↘' }[dx + ',' + dy] || ''; };
+  const draw = () => { g.fillStyle = '#9fd8ff'; g.fillRect(0, 0, W, H); g.fillStyle = '#f3d9a0'; g.fillRect(0, 26, W, H - 26); g.font = '700 13px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#4a3b2a'; g.fillText(found ? '🎉 挖到寶藏了！' : `🦜 挖了 ${digs} 次`, W / 2, 18);
+    for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) { const px = ox + x * cw, py = oy + y * ch, d = dug[x + ',' + y];
+      g.fillStyle = d ? '#d9b878' : '#ecd29a'; g.fillRect(px + 2, py + 2, cw - 4, ch - 4); g.font = '900 26px sans-serif'; g.fillStyle = '#7a3a1a';   // 箭頭用深色（本來跟沙子同色看不到）
+      if (d === 'gold') g.fillText('💰', px + cw / 2, py + ch / 2 + 8); else if (d) g.fillText(d, px + cw / 2, py + ch / 2 + 8); } };
+  const dig = (x, y) => { if (found || x < 0 || y < 0 || x >= C || y >= R || dug[x + ',' + y]) return; digs++;
+    if (x === tr.x && y === tr.y) { found = true; dug[x + ',' + y] = 'gold'; draw(); setTimeout(() => cruisePortDone(w, 'pirate'), 600); } else { dug[x + ',' + y] = arrow(x, y); Sound.play('click'); draw(); } };
+  c.addEventListener('pointerdown', e => { e.preventDefault(); const q = pos(e); dig(Math.floor((q.x - ox) / cw), Math.floor((q.y - oy) / ch)); });
+  draw(); w.status.textContent = '點一格沙子挖挖看！';
+  openPortTreasure.test = { tr, dig, get found() { return found; } };
+}
+Object.assign(ACTIVITIES, { cruise_go: { label: '🛳️ 搭郵輪去玩', name: '搭郵輪', fx: '🛳️', open: () => openCruise(), lines: ['要去哪個港口呢？'] } });
+Object.assign(FURNITURE_ACT, { ship_wheel: 'cruise_go' });
 /* 🎄 裝飾聖誕樹（記憶力） */
 const TREE_SLOTS = [[150, 72], [134, 102], [166, 102], [120, 134], [150, 130], [180, 134], [104, 168], [134, 166], [166, 168], [196, 166]];
 const TREE_COLS = [['red', '#e8505b', '紅色'], ['gold', '#ffd23f', '金色'], ['blue', '#4a90d9', '藍色']];
