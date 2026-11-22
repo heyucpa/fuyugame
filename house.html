@@ -2752,6 +2752,10 @@ const PLACE_FURNITURE = [
   { id: 'museum_rope', name: '紅龍柱', theme: 'modern', w: 2, d: 1, parts: [{ x: .1, y: .4, w: .12, d: .12, z: 0, h: 22, c: '#e0b23a' }, { x: 1.78, y: .4, w: .12, d: .12, z: 0, h: 22, c: '#e0b23a' }, { x: .2, y: .44, w: 1.6, d: .04, z: 16, h: 3, c: '#d63b3b' }] },
   { id: 'museum_painting', name: '向日葵名畫', theme: 'modern', w: 2, h: 30, z: 48, layer: 'wall', d: 1, parts: [],
     draw(ctx, W, H) { ctx.fillStyle = '#c9a26a'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#4a90d9'; ctx.fillRect(W * .07, H * .1, W * .86, H * .8); ctx.fillStyle = '#e0a020'; ctx.fillRect(W * .4, H * .55, W * .2, H * .3); for (let i = 0; i < 3; i++) { const x = W * (.32 + i * .18), y = H * (.35 + (i % 2) * .1); ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(x, y, H * .12, 0, 7); ctx.fill(); ctx.fillStyle = '#8a5a33'; ctx.beginPath(); ctx.arc(x, y, H * .05, 0, 7); ctx.fill(); } } },
+  { id: 'realty_desk', name: '看房子的桌子', theme: 'modern', w: 2, d: 1, parts: [{ x: .05, y: .2, w: 1.9, d: .6, z: 0, h: 22, c: '#c98d5a' }, { x: .05, y: .2, w: 1.9, d: .6, z: 22, h: 2, c: '#e0bd84' }, { x: .3, y: .3, w: .5, d: .35, z: 24, h: 1, c: '#ffffff' }, { x: 1.1, y: .3, w: .5, d: .35, z: 24, h: 1, c: '#ffffff' }] },
+  { id: 'realty_model', name: '房子模型', theme: 'cute', w: 1, d: 1, parts: [{ x: .2, y: .2, w: .6, d: .6, z: 0, h: 18, c: '#e0bd84' }, { x: .3, y: .3, w: .4, d: .4, z: 18, h: 12, c: '#fff6e0' }, { x: .25, y: .25, w: .5, d: .5, z: 30, h: 8, c: '#e8505b' }] },
+  { id: 'realty_board', name: '房子看板', theme: 'modern', w: 3, h: 32, z: 44, layer: 'wall', d: 1, parts: [],
+    draw(ctx, W, H) { ctx.fillStyle = '#fff6e0'; ctx.fillRect(0, 0, W, H); ctx.strokeStyle = '#c98d5a'; ctx.lineWidth = Math.max(2, H * .05); ctx.strokeRect(1, 1, W - 2, H - 2); ['#4a90d9', '#4f9d4f', '#5a6475', '#ff8fb3'].forEach((c, i) => { const x = W * (.07 + i * .23), bw = W * .17; ctx.fillStyle = '#fffaf0'; ctx.fillRect(x, H * .4, bw, H * .4); ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(x - 2, H * .42); ctx.lineTo(x + bw / 2, H * .15); ctx.lineTo(x + bw + 2, H * .42); ctx.closePath(); ctx.fill(); ctx.fillStyle = '#e8505b'; ctx.fillRect(x, H * .82, bw, H * .1); }); } },
   { id: 'bank_counter', name: '銀行櫃台', theme: 'modern', w: 3, d: 1, parts: [{ x: .05, y: .3, w: 2.9, d: .6, z: 0, h: 26, c: '#8a6a4a' }, { x: .05, y: .3, w: 2.9, d: .6, z: 26, h: 3, c: '#e0bd84' }, { x: .1, y: .32, w: 2.8, d: .06, z: 29, h: 16, c: '#cfeaf7' }] },
   { id: 'bank_piggy', name: '大存錢筒', theme: 'cute', w: 1, d: 1, parts: [{ k: 'ball', x: .5, y: .5, z: 12, r: 11, c: '#ff9ec4' }, { k: 'ball', x: .8, y: .55, z: 13, r: 4, c: '#ff8fb3' }, { x: .44, y: .44, w: .12, d: .12, z: 22, h: 2, c: '#3a3240' }, { k: 'ball', x: .35, y: .3, z: 20, r: 3, c: '#ff9ec4' }] },
   { id: 'bank_vault', name: '金庫大門', theme: 'modern', w: 2, h: 40, z: 6, layer: 'wall', d: 1, parts: [],
@@ -3612,6 +3616,7 @@ const HOSTS = {
   tkd: { id: 'tkd', name: '熊熊教練', short: '熊教練', body: '#8a5a33', edge: '#6b4428', belly: '#e8cfa9', inner: '#6b4428', ears: 'round', acc: 'scarf', accColor: '#26232a' },
   restaurant: { id: 'restaurant', name: '貓咪主廚', short: '貓主廚', body: '#ffd9a8', edge: '#d9a86a', belly: '#fff4e0', inner: '#ffb3c7', ears: 'pointy', acc: 'hat', accColor: '#ffffff' },
   curator: { id: 'curator', name: '貓頭鷹館長', short: '館長', body: '#b08a6a', edge: '#8a6a4a', belly: '#f3e6d4', inner: '#e8c8a0', ears: 'tuft', acc: 'glasses', accColor: '#3a3240' },   // 🏛️ 博物館
+  realtor: { id: 'realtor', name: '倉鼠經紀人', short: '經紀人', body: '#f3c48a', edge: '#d09a5a', belly: '#fff6e8', inner: '#ffc4b0', ears: 'round', acc: 'glasses', accColor: '#2b2d42' },   // 🏡 小可愛不動產
   banker: { id: 'banker', name: '松鼠行員', short: '行員', body: '#d9915a', edge: '#b0703a', belly: '#fbe8d2', inner: '#f0b88a', ears: 'pointy', acc: 'scarf', accColor: '#2f8a3c' },   // 🏦 銀行
   fireman: { id: 'fireman', name: '熊熊消防員', short: '消防員', body: '#c98a55', edge: '#a06a3a', belly: '#f3dcc0', inner: '#e8a87a', ears: 'round', acc: 'hat', accColor: '#d63b3b' },   // 🚒 消防局
   racer: { id: 'racer', name: '狐狸賽車手', short: '賽車手', body: '#ff9a3c', edge: '#d97a20', belly: '#ffffff', inner: '#ffd9b0', ears: 'pointy', acc: 'hat', accColor: '#2b2d42' },   // 🏁 賽車場
@@ -3740,6 +3745,9 @@ const PLACES = {
   /* 🏛️ 博物館、🏦 銀行（家長 11/22：新市區島，坐船過去） */
   museum: { name: '博物館', host: 'curator', emoji: '🏛️', desc: '看恐龍化石、月亮石頭、大寶石，看完回答館長的小問題！', rooms: [
     { name: '博物館', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_terrazzo', items: [['museum_dino', 1, 1], ['museum_case', 6, 1], ['museum_case', 8, 1], ['museum_rope', 1, 5], ['museum_case', 7, 6]], wallItems: [['museum_painting', 'R', 3], ['museum_painting', 'L', 5]] }
+  ] },
+  realty: { name: '小可愛不動產', host: 'realtor', emoji: '🏡', desc: '買新房子！海邊小木屋、森林樹屋、城市公寓、夢幻城堡', rooms: [
+    { name: '小可愛不動產', w: 8, d: 8, wall: 'wp_cream', floor: 'fl_wood', items: [['realty_desk', 3, 1], ['realty_model', 1, 4], ['realty_model', 6, 4]], wallItems: [['realty_board', 'R', 3]] }
   ] },
   bank: { name: '銀行', host: 'banker', emoji: '🏦', desc: '把錢存進銀行，每天會多一點點利息！', rooms: [
     { name: '銀行', w: 10, d: 8, wall: 'wp_cream', floor: 'fl_terrazzo', items: [['bank_counter', 3, 1], ['bank_piggy', 1, 5], ['bank_piggy', 8, 5]], wallItems: [['bank_vault', 'R', 6]] }
@@ -6058,6 +6066,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-23T08:00', title: '🏡 小可愛不動產開張！', lines: [
+    ['🏡', '主島東邊的「小可愛不動產」可以買房子：海邊小木屋、森林樹屋、城市公寓、夢幻城堡'],
+    ['🏷️', '主島東邊有「出售」牌子的空地，買了房子就會蓋起來，走到門口就進去；可以自己擺家具、換壁紙地板'],
+    ['🎯', '把想要的房子設成存錢目標，銀行會顯示還差多少；錢不夠時，銀行存的錢也會一起拿來付']
+  ] },
   { id: '2026-11-23T07:00', title: '🏝️ 主島變好大！', lines: [
     ['🏝️', '主島往東邊長出一大塊新的土地，有一條大馬路通過去（原本的地方都沒有動）'],
     ['🏛️', '博物館、銀行搬到主島東邊了，不用坐船，走路就到'],
@@ -7178,6 +7191,17 @@ function sanitizeWorldRun(wv) {
     if (bad) delete wv.run;
   } catch (e) { try { delete wv.run; } catch (e2) {} }
 }
+/* ===== 🏡 小可愛不動產的房子（家長 11/22：買房子的地方）=====
+   放在讀檔之前（存檔檢查要認得）。買了以後，房子的房間加進「家裡的房間」（G.rooms，房間多一個 est 標記），
+   擺家具、換壁紙地板、存檔都跟家裡一樣。房子蓋在主島東邊的空地上（plot：左上角格子，size：幾×幾格）。
+   有沒有買：看 G.rooms 裡有沒有那間房子的房間。 */
+const ESTATES = [
+  { id: 'cabin', name: '海邊小木屋', icon: '🏖️', price: 20000, plot: [86, 29], size: [4, 3], look: { style: 'log', wall: '#c98d5a', roof: '#4a90d9' }, desc: '在海邊，可以聽到海浪的聲音', rooms: [{ name: '🏖️ 海邊小木屋', w: 6, d: 6, wall: 'wp_log', floor: 'fl_wood' }] },
+  { id: 'tree', name: '森林樹屋', icon: '🌳', price: 35000, plot: [52, 29], size: [4, 3], look: { style: 'tree', wall: '#a0703e', roof: '#4f9d4f' }, desc: '蓋在大樹上，旁邊都是花和蝴蝶', rooms: [{ name: '🌳 森林樹屋', w: 6, d: 6, wall: 'wp_forest', floor: 'fl_grass' }] },
+  { id: 'apt', name: '城市公寓', icon: '🏢', price: 50000, plot: [74, 22], size: [4, 3], look: { style: 'cottage', wall: '#e6efff', roof: '#5a6475' }, desc: '兩間房：大客廳和臥室', rooms: [{ name: '🏢 公寓客廳', w: 8, d: 8, wall: 'wp_stripe', floor: 'fl_tile' }, { name: '🏢 公寓臥室', w: 6, d: 6, wall: 'wp_lilac', floor: 'fl_wood' }] },
+  { id: 'castle', name: '夢幻城堡', icon: '🏰', price: 120000, plot: [80, 21], size: [5, 4], look: { style: 'castle', wall: '#fff0f6', roof: '#ff8fb3' }, desc: '三間房：城堡大廳、公主房、塔樓', rooms: [{ name: '🏰 城堡大廳', w: 10, d: 10, wall: 'wp_pink', floor: 'fl_check' }, { name: '🏰 公主房', w: 8, d: 8, wall: 'wp_candy', floor: 'fl_mint' }, { name: '🏰 塔樓', w: 6, d: 6, wall: 'wp_brick', floor: 'fl_stone' }] }
+];
+const ESTATE_BY_ID = Object.fromEntries(ESTATES.map(E => [E.id, E]));
 function normalizeSave(g) {
   if (!g || typeof g !== 'object' || !Array.isArray(g.rooms) || !g.rooms.length) return null;
   /* 舊版少欄位可以補；「型態不對」是壞掉的資料，不能當成舊版收下來
@@ -7197,6 +7221,7 @@ function normalizeSave(g) {
   g.rooms.forEach((r, ri) => {
     // 名字被存成數字、物件：後面到處都會 .trim()，一個就會當掉。不是字串（或空白）就用預設名稱
     if (typeof r.name !== 'string' || !r.name.trim()) r.name = ROOM_NAMES[ri] || '房間';
+    if (r.est != null && !(typeof r.est === 'string' && ESTATE_BY_ID[r.est])) delete r.est;   // 🏡 買來的房子的房間
     r.wallItems = r.wallItems || []; // 舊存檔沒有掛飾欄位
     r.items = r.items || [];
     /* 桌上那樣東西：舊存檔沒有這個欄位；放了不存在的東西（改版拿掉了）
@@ -7341,7 +7366,7 @@ function normalizeSave(g) {
         q.legacy = leg; q.rev = 2;
       } else q.legacy = legOk(q.legacy); } }
   if (out.fox != null) { if (!isObj(out.fox)) delete out.fox; else { const f = out.fox; if (!(Number.isInteger(f.st) && f.st >= 0 && f.st <= 5)) f.st = 0; f.clues = Array.isArray(f.clues) ? [...new Set(f.clues.filter(k => ['library', 'museum', 'park'].includes(k)))] : []; if (f.d != null && !(typeof f.d === 'string' && f.d.length <= 12)) delete f.d; Object.keys(f).forEach(k => { if (!['st', 'clues', 'd'].includes(k)) delete f[k]; }); } }   // 🦊 怪盜狐狸事件
-  if (out.bank != null) { if (!isObj(out.bank)) delete out.bank; else { const b = out.bank; if (!(Number.isInteger(b.sav) && b.sav >= 0 && b.sav < 1e9)) b.sav = 0; if (b.d != null && !(typeof b.d === 'string' && b.d.length <= 12)) delete b.d; Object.keys(b).forEach(k => { if (!['sav', 'd'].includes(k)) delete b[k]; }); } }   // 🐷 銀行
+  if (out.bank != null) { if (!isObj(out.bank)) delete out.bank; else { const b = out.bank; if (!(Number.isInteger(b.sav) && b.sav >= 0 && b.sav < 1e9)) b.sav = 0; if (b.d != null && !(typeof b.d === 'string' && b.d.length <= 12)) delete b.d; if (b.goal != null && !(typeof b.goal === 'string' && ESTATE_BY_ID[b.goal])) delete b.goal; Object.keys(b).forEach(k => { if (!['sav', 'd', 'goal'].includes(k)) delete b[k]; }); } }   // 🐷 銀行
   if (out.museum != null) { if (!isObj(out.museum)) delete out.museum; else { const m = out.museum; if (m.d != null && !(typeof m.d === 'string' && m.d.length <= 12)) delete m.d; Object.keys(m).forEach(k => { if (k !== 'd') delete m[k]; }); } }   // 🏛️ 博物館
   if (out.fire != null) { if (!isObj(out.fire)) delete out.fire; else { const f = out.fire; Object.keys(f).forEach(k => { if (!['lv', 'res'].includes(k) || !Number.isInteger(f[k]) || f[k] < 0 || f[k] > (k === 'lv' ? 3 : 1e6)) delete f[k]; }); } }   // 🚒 消防局
   if (out.cop != null) { if (!isObj(out.cop)) delete out.cop; else { const c = out.cop;
@@ -8293,7 +8318,7 @@ function expandRoom() {
   return true;
 }
 // 一般房間的數量（🌿 陽台另外算，不佔客廳、臥室、餐廳、閣樓的名額）
-const normalRooms = () => G.rooms.filter(r => r.kind !== 'balcony').length;
+const normalRooms = () => G.rooms.filter(r => r.kind !== 'balcony' && !r.est).length;   // 🏡 買來的房子不算
 function newRoomCost() { return NEW_ROOM_COST[normalRooms() - 1]; }
 function canAddRoom() { return normalRooms() < ROOM_NAMES.length && G.rooms[0].w >= 6; }
 const BALCONY_COST = 8000;
@@ -15365,6 +15390,7 @@ function hostMenuEntries() {
   }
   if (host.n.id === 'restaurant') { list.push(['🍽️ 點餐吃飯', openRestaurantOrder]); list.push(['👩‍🍳 小幫手打工（做漢堡）', openChefGame]); list.push(['💰 收銀台找錢', openCashGame]); }
   if (host.n.id === 'curator') { list.push(['🏛️ 參觀展覽（看完有小問答）', () => openMuseumTour()]); list.push(['🎭 演習：博物館（第 2 關）', () => openThiefDrill((copState().dlv || 0) >= 1 ? 2 : undefined)]); }
+  if (host.n.id === 'realtor') { list.push(['🏡 看房子・買房子', () => openRealty()]); }
   if (host.n.id === 'banker') { list.push(['🐷 存錢筒（每天會長利息）', () => openBank()]); list.push(['🎭 演習：金庫（第 3 關）', () => openThiefDrill((copState().dlv || 0) >= 2 ? 3 : undefined)]); }
   if (host.n.id === 'fireman') { list.push(['🚒 滅火任務（拿水管噴水）' + (fireState().lv ? `（過了 ${fireState().lv} 關）` : ''), () => openFireFight()]); list.push(['🐱 救援任務（雲梯救小動物）', () => openFireRescue()]); }
   if (host.n.id === 'racer') { list.push(['🏎️ 賽車（開我的車）', () => openKart()]); list.push(['🎨 去改車店改裝我的車', () => { closeGameWindow(); travelTo('garage'); }]); }
@@ -15847,7 +15873,7 @@ function homeArrive() {
    PLACES 多加一筆就會出現在這裡，不用改選單。 */
 const PLACE_KINDS = [['family', '🏠 家和家人'], ['learn', '📚 上學和學習'], ['sport', '🏅 運動'], ['help', '🚓 幫助別人'], ['fun', '🎡 好玩的地方'], ['shop', '🛍️ 買東西和存錢'], ['other', '🌈 其他地方']];
 const PLACE_KIND_OF = { uncle: 'family', grandma: 'family', sky: 'family', school: 'learn', library: 'learn', museum: 'learn', pool: 'sport', dojo: 'sport', arena: 'sport', gym: 'sport', raceway: 'sport',
-  police: 'help', firestation: 'help', hospital: 'help', amusement: 'fun', cinema: 'fun', park: 'fun', airport: 'fun', santa: 'fun', restaurant: 'shop', garage: 'shop', bank: 'shop' };
+  police: 'help', firestation: 'help', hospital: 'help', amusement: 'fun', cinema: 'fun', park: 'fun', airport: 'fun', santa: 'fun', restaurant: 'shop', garage: 'shop', bank: 'shop', realty: 'shop' };
 function placeKind(id) { return PLACE_KIND_OF[id] || 'other'; }
 function placeIsle(id) { if (id === 'sky') return '天空島・坐直升機'; const bd = ISL_BLD.find(b => b.id === id); return !bd ? '別的地方' : bd.city ? '新市區・坐船' : bd.town ? '小鎮島・走木橋' : bd.islet ? '運動島・走木橋' : '主島'; }
 function openTravelMenu() {
@@ -24134,6 +24160,7 @@ const ISL_BLD = [   // 房子：x, y 是左上角的格子，w×h 格；門在�
   { id: 'firestation', x: 17, y: 26, w: 4, h: 3 },   // 🚒 消防局：警察局下面
   { id: 'museum', x: 55, y: 22, w: 5, h: 3 },   // 🏛️ 主島東邊（新長出來的那一塊）
   { id: 'bank', x: 62, y: 22, w: 4, h: 3 },   // 🏦 主島東邊
+  { id: 'realty', x: 68, y: 22, w: 4, h: 3 },   // 🏡 小可愛不動產
   { id: 'santa', x: 34, y: 17, w: 4, h: 3, season: 'christmas' },   // 🎅 聖誕老公公的家：聖誕節才有
 
   // 🏅 運動島（家長：游泳池那座小島擴大成運動島，走木橋過去；跆拳道館也搬過來）
@@ -24147,6 +24174,7 @@ const ISL_BLD = [   // 房子：x, y 是左上角的格子，w×h 格；門在�
   { id: 'hospital', x: 88, y: 7, w: 3, h: 3, islet: true, town: true }
 ];
 /* 🏡 朋友島（家長：主島快滿了，姊姊、妹妹、朋友的家搬到另外一座島）：主島南邊的海上，坐船過去。收到第一張邀請卡才會出現（有動畫） */
+ESTATES.forEach(E => ISL_BLD.push({ id: 'estate_' + E.id, x: E.plot[0], y: E.plot[1], w: E.size[0], h: E.size[1], estate: E.id }));   // 🏡 房子的空地（買了才蓋起來）
 const ISL_FRIEND_ISLE = { cx: 26, cy: 46.5, r: 7.2 };
 const ISL_FRIEND_SPOTS = [[22, 42], [28, 42], [21, 47], [28, 47]];   // 朋友的家（最多 4 棟），3×2，都在朋友島上
 const ISL_PUMPKINS = [[22, 17], [30, 20], [20, 22], [31, 16], [26, 24]];   // 萬聖節才有的南瓜燈（點了有小驚喜）
@@ -24214,7 +24242,7 @@ const ISL_POND = { x: 31, y: 24, w: 4, h: 3 };
 const ISL_HUB = [26, 19];
 const ISL_STYLE = {   // 牆、屋頂顏色
   dojo: ['#fff4e6', '#e0503a'], pool: ['#e8f6fb', '#3fa9f5'], track: ['#fff1e0', '#e07a4a'], arena: ['#fff6e0', '#ff7a3c'], gym: ['#f4eeff', '#8a78b0'], restaurant: ['#fff0d9', '#e8823a'], hospital: ['#ffffff', '#e8505b'], cinema: ['#3a2f4a', '#e8505b'],
-  raceway: ['#f3f3f6', '#2b2d42'], firestation: ['#ffe9e4', '#d63b3b'], museum: ['#f4efe6', '#8a7f99'], bank: ['#eef6ee', '#2f8a3c'], santa: ['#fff4e6', '#d63b3b'], garage: ['#f3f3f6', '#e8505b'], airport: ['#eef6ff', '#4a90d9'], police: ['#e6efff', '#2f5fb8'], home: ['#ffd9c9', '#ff7b7b'], school: ['#fff4cf', '#5b8def'], playground: ['#e7f8d4', '#e07a3a'], library: ['#e6dcff', '#7a5cc9'], park: ['#d9f0c8', '#4f9d4f'],
+  raceway: ['#f3f3f6', '#2b2d42'], firestation: ['#ffe9e4', '#d63b3b'], museum: ['#f4efe6', '#8a7f99'], bank: ['#eef6ee', '#2f8a3c'], realty: ['#fff6e0', '#e8823a'], santa: ['#fff4e6', '#d63b3b'], garage: ['#f3f3f6', '#e8505b'], airport: ['#eef6ff', '#4a90d9'], police: ['#e6efff', '#2f5fb8'], home: ['#ffd9c9', '#ff7b7b'], school: ['#fff4cf', '#5b8def'], playground: ['#e7f8d4', '#e07a3a'], library: ['#e6dcff', '#7a5cc9'], park: ['#d9f0c8', '#4f9d4f'],
   uncle: ['#d7ecc8', '#7aa05a'], grandma: ['#ffe3b0', '#d68a3a'], amusement: ['#ffe0ee', '#ff6fa3'], friend: ['#fffaf0', '#6fb7e8']
 };
 let islMapCache = null;
@@ -24593,6 +24621,7 @@ function islEnter(id) {   // 走到門口：關掉地圖、進去（家：回家
   const invites = isl.invites;
   closeIsland();
   if (id === 'home') { if (G.away) { if (fufu.pose) fufuStandUp(false); homeArrive(); } return; }
+  { const em = /^estate_(\w+)$/.exec(id); if (em) { estateEnter(em[1]); return; } }   // 🏡 買來的房子：進去（還沒買：打開不動產）
   const fm = /^friend(\d)$/.exec(id);
   if (fm) { const inv = invites[+fm[1]]; if (inv) visitFriend(inv, true); return; }
   // 🏟️ 操場跟學校是同一棟地方的兩間：操場進 idx 1，學校大門進教室 idx 0（人已經在學校就直接換房間）
@@ -25566,7 +25595,7 @@ function homeLook(target) {
   const h = target === 'par' ? homeParState() : homeState(), c = (k, id, d) => { const it = homeItem(k, id); return it ? it[2] : d; };
   return { style: h.style, wall: c('wall', h.wall, '#ffd9c9'), roof: c('roof', h.roof, '#ff7b7b'), door: c('door', h.door, '#7a4a2a'), flag: h.flag !== 'none' ? (homeItem('flag', h.flag) || [])[2] || '' : '', sign: target === 'par' ? '爸爸媽媽的家' : (typeof h.sign === 'string' && h.sign.trim()) || '', decoL: h.decoL, decoR: h.decoR, tier: target === 'par' ? 1 : homeTier(), wallAuto: h.wallPicked !== 1 };
 }
-function homeTier() { const n = G && Array.isArray(G.rooms) ? G.rooms.length : 1; return n >= 5 ? 2 : n >= 3 ? 1 : 0; }   // ④ 房子會長大
+function homeTier() { const n = G && Array.isArray(G.rooms) ? G.rooms.filter(r => !r.est).length : 1; return n >= 5 ? 2 : n >= 3 ? 1 : 0; }   // ④ 房子會長大
 function homeRoofFill(ctx, c, x, y, w, h) {
   if (c !== 'rainbow') return c;
   const gr = ctx.createLinearGradient(x, y, x + w, y + h); ['#ff6b6b', '#ffb84d', '#ffe066', '#7bd389', '#6bb6ff', '#b18cff'].forEach((k, i) => gr.addColorStop(i / 5, k)); return gr;
@@ -25872,8 +25901,10 @@ function santaYard(ctx, b, x, y, w, h, tt) {   // 🎄 門口的聖誕樹、🦌
 function islDrawBuilding(ctx, b, tt) {
   const T = ISL.T, x = b.x * T, y = b.y * T, w = b.w * T, h = b.h * T, fr = /^friend/.test(b.id);
   const sty = ISL_STYLE[fr ? 'friend' : b.id] || ISL_STYLE.home, roofC = fr ? ['#6fb7e8', '#ff8fb3', '#ffc94d', '#9be0a0'][+b.id.slice(6)] : sty[1];
-  const pl = fr ? null : PLACES[b.id], icon = b.id === 'playground' ? '🏟️' : fr ? '🏡' : b.id === 'home' ? '🏠' : (pl ? pl.emoji : '🏠');
+  const pl = fr ? null : PLACES[b.id], icon = b.estate ? (ESTATE_BY_ID[b.estate] || {}).icon || '🏡' : b.id === 'playground' ? '🏟️' : fr ? '🏡' : b.id === 'home' ? '🏠' : (pl ? pl.emoji : '🏠');
   let label = b.id === 'playground' ? '操場' : fr ? '' : b.id === 'home' ? (homeLook().sign || '我的家') : (pl ? pl.name : '');
+  const EB = b.estate && ESTATE_BY_ID[b.estate], eOwn = EB && estateOwned(EB.id);   // 🏡 買來的房子／出售中的空地
+  if (EB) label = eOwn ? `${charName()}的${EB.name}` : '';
   if (fr) { const inv = isl.invites[+b.id.slice(6)]; label = inv ? inviteWho(inv) + '的家' : '朋友的家'; }
   ctx.fillStyle = 'rgba(40,60,30,.18)'; ctx.fillRect(x + 4, y + h - 4, w, 8);
   if (b.id === 'helipad') { islDrawHelipad(ctx, b, tt); const bx0 = x + w / 2, by0 = y - 16; ctx.font = '700 13px "Microsoft JhengHei","PingFang TC",sans-serif'; const lb = '🚁 停機坪（去爸爸媽媽家）'; const tw = ctx.measureText(lb).width + 14; ctx.fillStyle = 'rgba(255,255,255,.92)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(bx0 - tw / 2, by0 - 10, tw, 18, 9) : ctx.rect(bx0 - tw / 2, by0 - 10, tw, 18); ctx.fill(); ctx.fillStyle = '#4a3b2a'; ctx.textAlign = 'center'; ctx.fillText(lb, bx0, by0 + 4); return; }
@@ -25882,6 +25913,9 @@ function islDrawBuilding(ctx, b, tt) {
     const L0 = frInv.hl, c = (k, id, d) => { const it = homeItem(k, id); return it ? it[2] : d; };
     drawHomeExterior(ctx, x, y, w, h, b.door[0] * T, { style: L0.st, wall: c('wall', L0.wa, '#fffaf0'), roof: c('roof', L0.ro, roofC), door: c('door', L0.dr, '#7a4a2a'), flag: L0.fl ? (homeItem('flag', L0.fl) || [])[2] || '' : '', sign: '', decoL: L0.dl || 'none', decoR: L0.dr2 || 'none', tier: Math.min(1, L0.ti || 0) }, { tt, night: islPhase() === 'night' || islPhase() === 'evening', glow: isl.glow });
     b.hlDrawn = true;
+  } else if (EB) {   // 🏡 買來的房子：照那間房子的樣子畫；還沒買：空地＋出售牌子
+    if (eOwn) { const ph = islPhase(); drawHomeExterior(ctx, x, y, w, h, b.door[0] * T, { style: EB.look.style, wall: EB.look.wall, roof: EB.look.roof, door: '#7a4a2a', flag: '', sign: '', decoL: 'none', decoR: 'none', tier: 0 }, { tt, night: ph === 'night' || ph === 'evening', glow: isl.glow, season: '', snow: false, rain: false }); }
+    else islDrawLot(ctx, b, EB);
   } else if (b.id === 'home') {   // 🏡 我的家：照房子外觀畫（油漆、造型、會長大、季節）
     const fk = isl.fun && isl.fun.kind, ph = islPhase();
     drawHomeExterior(ctx, x, y, w, h, b.door[0] * T, homeLook(), { tt, night: ph === 'night' || ph === 'evening', glow: isl.glow, season: typeof seasonOfMonth === 'function' ? seasonOfMonth() : '', snow: fk === 'snow' || fk === 'hail', rain: fk === 'storm' || fk === 'thunder' });
@@ -25930,7 +25964,7 @@ function islDrawBuilding(ctx, b, tt) {
   }
   const dx = b.door[0] * T;
   if (b.id === 'uncle' || b.id === 'grandma') famDecor(ctx, b, x, y, w, h, tt);   // ⑧ 常去拜訪越來越漂亮
-  if (b.id === 'home' || b.id === 'santa' || (fr && b.hlDrawn)) { /* 門在 drawHomeExterior 畫了 */ }
+  if (b.id === 'home' || b.id === 'santa' || (fr && b.hlDrawn) || EB) { /* 門在 drawHomeExterior 畫了（空地沒有門） */ }
   else if (b.id === 'playground') {   // 白色球門當入口，不是木頭屋門
     ctx.fillStyle = '#ffffff'; ctx.fillRect(dx + 6, y + h - 16, 4, 16); ctx.fillRect(dx + 22, y + h - 16, 4, 16); ctx.fillRect(dx + 6, y + h - 18, 20, 4);
   } else {
@@ -25940,6 +25974,7 @@ function islDrawBuilding(ctx, b, tt) {
   // 屋頂上的小圖示＋名字
   const hl = b.id === 'home' ? homeLook() : null, up = hl ? hl.tier * 16 + ({ castle: 46, rainbowCastle: 46, tree: 46, mushroom: 6, log: 8 }[hl.style] || 0) + (hl.flag && !/castle|tree/i.test(hl.style) ? 24 : 0) : 0;   // 房子變高、城堡有塔、插了旗子：圖示跟名字往上（不要蓋住旗子）
   const bx = x + w / 2, by = y - 14 - up + Math.sin(tt * 2 + b.x) * 1.2;
+  if (EB && !eOwn) return;   // 空地：牌子上已經寫了，不畫圓圓的圖示
   ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.beginPath(); ctx.arc(bx, by, 15, 0, 7); ctx.fill(); ctx.strokeStyle = roofC; ctx.lineWidth = 2; ctx.stroke();
   ctx.font = '19px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#000'; ctx.fillText(icon, bx, by + 1);
   if (label) { ctx.font = '700 13px "Microsoft JhengHei","PingFang TC",sans-serif'; const tw = ctx.measureText(label).width + 14; ctx.fillStyle = 'rgba(255,255,255,.92)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(bx - tw / 2, by - 36, tw, 18, 9) : ctx.rect(bx - tw / 2, by - 36, tw, 18); ctx.fill(); ctx.fillStyle = '#5a4630'; ctx.fillText(label, bx, by - 27); }
@@ -30567,7 +30602,7 @@ const AWAY_GAMES = [
   ['🔎', '幫忙找書', 'library', () => openShelfGame()],
   ['🚓', '一起抓小偷', 'police', () => openCopChase()], ['🛣️', '高速公路追小偷', 'police', () => openHighwayChase()], ['🔍', '小偵探破案', 'police', () => openDetective()], ['🛏️', '病房照顧', 'hospital', () => openWard()],
   ['✈️', '搭飛機旅行', 'airport', () => openAirTravel()], ['🛩️', '開飛機', 'airport', () => openPlaneGame()], ['🧳', '行李安檢', 'airport', () => openSecurity()], ['🗼', '塔台指揮', 'airport', () => openTower()], ['🥤', '空服員送餐', 'airport', () => openMeal()],
-  ['🏁', '賽車場比賽', 'raceway', () => openKart()], ['🚒', '滅火任務', 'firestation', () => openFireFight()], ['🏛️', '參觀博物館', 'museum', () => openMuseumTour()], ['🐷', '銀行存錢', 'bank', () => openBank()], ['🐱', '救援任務', 'firestation', () => openFireRescue()], ['🎨', '改裝我的車', 'garage', () => openCarShop()], ['🧽', '洗車', 'garage', () => openCarWash()],
+  ['🏁', '賽車場比賽', 'raceway', () => openKart()], ['🚒', '滅火任務', 'firestation', () => openFireFight()], ['🏛️', '參觀博物館', 'museum', () => openMuseumTour()], ['🐷', '銀行存錢', 'bank', () => openBank()], ['🏡', '看房子・買房子', 'realty', () => openRealty()], ['🐱', '救援任務', 'firestation', () => openFireRescue()], ['🎨', '改裝我的車', 'garage', () => openCarShop()], ['🧽', '洗車', 'garage', () => openCarWash()],
   ['🧸', '幫小精靈做玩具', 'santa', () => openToyFactory()], ['🦌', '照顧麋鹿', 'santa', () => openDeerCare()], ['🎁', '包禮物', 'santa', () => openGiftWrap()]
 ];
 function allQuickGames() {
@@ -39590,6 +39625,10 @@ function openBank() {
   const row = el('div', 'invite-row'); w.stage.appendChild(row);
   const upd = () => { const nx = b.sav ? Math.min(200, Math.max(1, Math.floor(b.sav * .02))) : 0; info.innerHTML = '';
     info.append(el('div', '', `🐷 存在銀行：💰 ${fmt(b.sav)} 元`), el('div', '', `👛 身上的錢：💰 ${fmt(G.bells)} 元`), el('div', '', b.sav ? `明天會多 ${fmt(nx)} 元利息！` : '存一點錢進去，明天就會長利息喔！'));
+    const GE = b.goal && ESTATE_BY_ID[b.goal];   // 🎯 存錢目標（在小可愛不動產設定）
+    if (GE && !estateOwned(GE.id)) { const have = G.bells + b.sav, k = Math.min(1, have / GE.price), gb = el('div', ''); gb.style.cssText = 'margin:8px auto 0;max-width:360px;font-size:16px';
+      const bar = el('div', ''); bar.style.cssText = 'height:16px;border-radius:8px;background:#eee;overflow:hidden;margin-top:4px'; const fill = el('div', ''); fill.style.cssText = `height:100%;width:${Math.round(k * 100)}%;background:#ffb02e`; bar.appendChild(fill);
+      gb.append(el('div', '', `🎯 存錢目標：${GE.icon} ${GE.name}（${fmt(GE.price)} 元）　${k >= 1 ? '✅ 夠了！可以去買了！' : `還差 ${fmt(GE.price - have)} 元`}`), bar); info.appendChild(gb); }
     refreshTop(); };
   const dep = n => { const v = n === 'all' ? G.bells : Math.min(n, G.bells); if (v <= 0) { toast('身上沒有錢可以存喔～'); Sound.play('miss'); return; } if (!spend(v)) return; b.sav += v; Sound.play('coin'); saveGame(); upd(); w.status.textContent = `存了 ${fmt(v)} 元！`; };
   const wd = () => { if (!b.sav) { toast('銀行裡還沒有錢喔～'); return; } const v = b.sav; b.sav = 0; addBells(v); Sound.play('coin'); saveGame(); upd(); w.status.textContent = `領出 ${fmt(v)} 元，放回錢包了！`; };
@@ -39735,6 +39774,80 @@ setInterval(() => { try {
   foxLetter();
 } catch (e) {} }, 15000);
 setTimeout(() => { try { foxChip(); } catch (e) {} }, 3200);
+/* ===== 🏡 小可愛不動產（家長 11/22）=====
+   倉鼠經紀人帶你看房子：海邊小木屋、森林樹屋、城市公寓、夢幻城堡。錢不夠的時候，銀行存的錢也會一起拿來付。
+   可以把想要的房子設成銀行的「🎯 存錢目標」。主島東邊的空地上有「🏷️ 出售」牌子，買了房子就會蓋起來，
+   走到門口就進去（房間跟家裡的房間放在一起，上面的房間分頁也看得到）。 */
+function estateOwned(id) { return G.rooms.some(r => r.est === id); }
+function estateMoney() { const b = bankState(); return { wallet: G.bells, bank: b.sav, all: G.bells + b.sav }; }
+function estateBuy(id) {
+  const E = ESTATE_BY_ID[id]; if (!E || estateOwned(id)) return false;
+  const m = estateMoney(); if (m.all < E.price) return false;
+  const b = bankState(), fromBank = Math.max(0, E.price - G.bells); b.sav -= fromBank; G.bells += fromBank;
+  if (!spend(E.price)) { G.bells -= fromBank; b.sav += fromBank; return false; }
+  E.rooms.forEach(R => G.rooms.push({ name: R.name, w: R.w, d: R.d, wall: R.wall, floor: R.floor, items: [], wallItems: [], est: E.id }));
+  if (b.goal === id) delete b.goal;
+  saveGame(); refreshTop(); Sound.play('fanfare'); kidMoodUp(10);
+  return { fromBank };
+}
+function estateEnter(id) {
+  const E = ESTATE_BY_ID[id], idx = G.rooms.findIndex(r => r.est === id);
+  if (!E) return;
+  if (idx < 0) { openRealty(id); return; }
+  if (typeof fufu !== 'undefined' && fufu.pose) fufuStandUp(false);
+  G.cur = idx; G.away = null;
+  try { fufuSay(`歡迎來到我的${E.name}！`, 2800); } catch (e) {}
+  toast(`${E.icon} 到了${E.name}`); commit();
+}
+function estateThumb(E, W, H) {
+  const dpr = Math.min(2, window.devicePixelRatio || 1), c = document.createElement('canvas'); c.width = W * dpr; c.height = H * dpr; c.style.width = W + 'px'; c.style.height = H + 'px';
+  const g = c.getContext('2d'), T = ISL.T, bw = E.size[0] * T, bh = E.size[1] * T, k = Math.min((W - 10) / (bw + 20), (H - 6) / (bh + 46));
+  g.setTransform(dpr * k, 0, 0, dpr * k, dpr * (W - bw * k) / 2, dpr * (H - bh * k - 6));
+  g.fillStyle = '#9fd17a'; g.fillRect(-20, bh - 6, bw + 40, 16);
+  try { drawHomeExterior(g, 0, 0, bw, bh, Math.floor(E.size[0] / 2) * T, { style: E.look.style, wall: E.look.wall, roof: E.look.roof, door: '#7a4a2a', flag: '', sign: '', decoL: 'none', decoR: 'none', tier: 0 }, { tt: 0, night: false, glow: null, season: '', snow: false, rain: false }); } catch (e) {}
+  return c;
+}
+function openRealty(focus) {
+  closeGameWindow(); const card = $('#modalCard'); card.innerHTML = '';
+  const x = el('button', 'modal-x', '✕'); x.onclick = () => { $('#modal').hidden = true; }; card.appendChild(x);
+  card.appendChild(el('h2', '', '🏡 小可愛不動產'));
+  const m = estateMoney();
+  card.appendChild(note(`倉鼠經紀人：想要一間自己的新房子嗎？買了以後可以自己擺家具、換壁紙地板喔！\n👛 身上 ${fmt(m.wallet)} 元　🐷 銀行 ${fmt(m.bank)} 元（不夠的時候，銀行的錢也會一起拿來付）`));
+  ESTATES.forEach(E => {
+    const box = el('div', 'help-letter' + (focus === E.id ? ' on' : '')); box.style.cssText = 'display:flex;gap:10px;align-items:center;' + (focus === E.id ? 'outline:3px solid #ffd23f;' : '');
+    box.appendChild(estateThumb(E, 120, 96));
+    const txt = el('div', ''); txt.style.flex = '1';
+    txt.append(el('div', 'help-l-t', `${E.icon} ${E.name}　💰 ${fmt(E.price)}`), el('div', 'help-l-s', `${E.desc}（${E.rooms.length} 間房）`));
+    const row = el('div', 'invite-row');
+    if (estateOwned(E.id)) { const go = el('button', 'big', `✅ 是你的了！🚶 去看看`); go.onclick = () => { $('#modal').hidden = true; estateEnter(E.id); }; row.appendChild(go); }
+    else {
+      const buy = el('button', 'big' + (m.all >= E.price ? '' : ' alt'), m.all >= E.price ? '🏡 買這間！' : `還差 ${fmt(E.price - m.all)} 元`);
+      let sure = false;
+      buy.onclick = () => { if (m.all < E.price) { Sound.play('miss'); toast(`還差 ${fmt(E.price - m.all)} 元，可以設成存錢目標慢慢存喔！`); return; }
+        if (!sure) { sure = true; buy.textContent = '✅ 確定要買嗎？再按一次'; Sound.play('click'); return; }
+        const r = estateBuy(E.id); if (!r) return; $('#modal').hidden = true;
+        try { showcase(estateThumb(E, 200, 150), `買到${E.name}了！`, `${r.fromBank ? `（用了銀行的 ${fmt(r.fromBank)} 元）` : ''}房子蓋在主島東邊，走到門口就進得去；上面的房間分頁也看得到「${E.rooms[0].name}」`, { head: '🏡 新房子' }); } catch (e) { toast(`🏡 買到${E.name}了！`); } };
+      row.appendChild(buy);
+      const b = bankState(), goal = el('button', 'big alt', b.goal === E.id ? '🎯 是存錢目標了' : '🎯 設成存錢目標');
+      goal.onclick = () => { bankState().goal = E.id; saveGame(); Sound.play('pickUp'); toast(`🎯 存錢目標：${E.name}（${fmt(E.price)} 元）！去銀行看進度`); openRealty(E.id); };
+      row.appendChild(goal);
+    }
+    txt.appendChild(row); box.appendChild(txt); card.appendChild(box);
+  });
+  const ok = el('button', 'big alt', '好'); ok.onclick = () => { $('#modal').hidden = true; }; card.appendChild(ok);
+  $('#modal').hidden = false;
+}
+// 主島上沒賣出去的空地：圍籬＋「🏷️ 出售」牌子
+function islDrawLot(ctx, b, E) {
+  const T = ISL.T, x = b.x * T, y = b.y * T, w = b.w * T, h = b.h * T;
+  ctx.fillStyle = 'rgba(200,170,120,.45)'; ctx.fillRect(x, y + 10, w, h - 10);
+  ctx.strokeStyle = '#a0703e'; ctx.lineWidth = 3; ctx.setLineDash([8, 6]); ctx.strokeRect(x + 2, y + 12, w - 4, h - 14); ctx.setLineDash([]);
+  const sx = x + w / 2, sy = y + h / 2; ctx.fillStyle = '#7a5230'; ctx.fillRect(sx - 2, sy - 6, 4, 26);
+  ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.roundRect(sx - 44, sy - 30, 88, 28, 6); ctx.fill(); ctx.strokeStyle = '#e8505b'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = '#e8505b'; ctx.font = '700 11px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🏷️ 出售', sx, sy - 22); ctx.fillStyle = '#4a3020'; ctx.fillText(`${E.icon} ${fmt(E.price)} 元`, sx, sy - 10); ctx.textBaseline = 'alphabetic';
+}
+Object.assign(ACTIVITIES, { realty_look: { label: '🏡 看房子・買房子', name: '看房子', fx: '🏡', open: () => openRealty(), lines: ['好想要一間城堡！', '要存好多錢喔！'] } });
+Object.assign(FURNITURE_ACT, { realty_desk: 'realty_look', realty_model: 'realty_look' });
 /* 🎄 裝飾聖誕樹（記憶力） */
 const TREE_SLOTS = [[150, 72], [134, 102], [166, 102], [120, 134], [150, 130], [180, 134], [104, 168], [134, 166], [166, 168], [196, 166]];
 const TREE_COLS = [['red', '#e8505b', '紅色'], ['gold', '#ffd23f', '金色'], ['blue', '#4a90d9', '藍色']];
