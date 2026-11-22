@@ -20277,8 +20277,8 @@ function tabBackup(body) {
       body.appendChild(fb);
     }
   }
-  versionUpdateSection(body);   // 🔄 強制更新放最上面（不用家長密碼）
-  snapSection(body);   // 本機的存檔紀錄（預設就是這個，自動存、可以手動再存一份）
+  snapSection(body);   // 本機的存檔紀錄放最上面（第一顆按鈕要是「手動存一份」）
+  versionUpdateSection(body);   // 🔄 強制更新接在存檔紀錄下面（不用家長密碼）
   body.appendChild(h3('📦 備份到別的地方（想要的話）'));
   const share = el('button', 'big alt', '📤 傳到 LINE（備份到手機）');
   share.onclick = () => { Sound.play('click'); shareBackup().then(ok => { if (ok) renderTab(); }); };
