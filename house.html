@@ -5943,6 +5943,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-22T12:00', title: '📜 聖誕老公公的任務', lines: [
+    ['📜', '聖誕老公公每天有一個任務要拜託你（聖誕老公公的家、大地圖「🎅」都可以接）'],
+    ['🔔', '找雪橇的鈴鐺、撿回小朋友的信、找麋鹿的紅蘿蔔、找走失的小麋鹿、收集雪球堆雪人'],
+    ['⭐', '完成任務有 2 顆聖誕星星和零用錢，也算借雪橇的進度']
+  ] },
   { id: '2026-11-22T11:00', title: '🐾 寵物也有事件了！', lines: [
     ['🤒', '寵物肚子痛：摸摸肚子、喝溫水、帶去給羊醫生看'],
     ['🦋', '寵物追蝴蝶跑不見了：叫名字、搖零食罐，猜猜牠躲在哪裡'],
@@ -7141,7 +7146,7 @@ function normalizeSave(g) {
       Object.keys(l).forEach(k => { if (k === 'dirt') { if (!(typeof l.dirt === 'number' && isFinite(l.dirt) && l.dirt >= 0 && l.dirt <= 100)) delete l.dirt; } else if (!OKV[k] || typeof l[k] !== 'string' || !OKV[k].test(l[k])) delete l[k]; }); }); } }   // 🎨 改車店：每台車的樣子、髒的程度
   if (out.carOwn != null) { if (Array.isArray(out.carOwn)) out.carOwn = [...new Set(out.carOwn.filter(x => typeof x === 'string' && /^(c|st|wh|gl):[a-z]+$/.test(x)))].slice(0, 60); else delete out.carOwn; }   // 🎨 買過的顏色、貼紙、輪框、燈
   if (out.trip != null) { if (!isObj(out.trip)) delete out.trip; else { const t = out.trip; t.st = isObj(t.st) ? Object.fromEntries(Object.entries(t.st).filter(([k, v]) => /^(冰雪國|沙漠國|森林國|大海國|火山國|雲朵國|糖果國|星星國)$/.test(k) && v === 1)) : {}; if (t.sky != null) { if (Array.isArray(t.sky)) t.sky = [...new Set(t.sky.filter(x => /^(balloon|rainbow|eagle|ufo|whale|swan)$/.test(x)))]; else delete t.sky; } if (t.act != null) { if (isObj(t.act)) t.act = Object.fromEntries(Object.entries(t.act).filter(([k, v]) => /^(冰雪國|沙漠國|森林國|大海國|火山國|雲朵國|糖果國|星星國)$/.test(k) && v === 1)); else delete t.act; } ['n', 'fly', 'sec', 'twr', 'meal'].forEach(k => { if (t[k] != null && !(Number.isInteger(t[k]) && t[k] >= 0 && t[k] < 1e6)) delete t[k]; }); ['fly', 'sec', 'twr', 'meal'].forEach(k => { if (t[k] > 3) t[k] = 3; }); if (t.pz != null && t.pz !== 1) delete t.pz; Object.keys(t).forEach(k => { if (!['st', 'n', 'fly', 'sec', 'twr', 'meal', 'pz', 'sky', 'act'].includes(k)) delete t[k]; }); } }   // ✈️ 護照的章、搭了幾次、開飛機過到第幾關   // 家長把「家裡跟著時間變天色」關掉了
-  if (out.xmas != null) { if (!isObj(out.xmas)) delete out.xmas; else { const x = out.xmas, ok = { stars: v => Number.isInteger(v) && v >= 0 && v < 1e6, n: v => Number.isInteger(v) && v >= 0 && v < 100, sockN: v => Number.isInteger(v) && v >= 0 && v < 1e6, eve: v => Number.isInteger(v) && v > 2000 && v < 3000, d: v => typeof v === 'string' && v.length <= 12, sock: v => typeof v === 'string' && v.length <= 12, got: v => Array.isArray(v), gm: v => isObj(v), gave: v => Number.isInteger(v) && v >= 0 && v < 1e6, lend: v => Number.isInteger(v) && v > 2000 && v < 3000, tl: v => Number.isInteger(v) && v >= 0 && v <= 3, sl: v => Number.isInteger(v) && v >= 0 && v <= 3 };
+  if (out.xmas != null) { if (!isObj(out.xmas)) delete out.xmas; else { const x = out.xmas, ok = { stars: v => Number.isInteger(v) && v >= 0 && v < 1e6, n: v => Number.isInteger(v) && v >= 0 && v < 100, sockN: v => Number.isInteger(v) && v >= 0 && v < 1e6, eve: v => Number.isInteger(v) && v > 2000 && v < 3000, d: v => typeof v === 'string' && v.length <= 12, sock: v => typeof v === 'string' && v.length <= 12, got: v => Array.isArray(v), mis: v => isObj(v) && typeof v.d === 'string' && v.d.length <= 12 && (v.kind == null || /^(bells|letters|carrot|deer|snow)$/.test(v.kind)) && (v.done === 0 || v.done === 1), misLast: v => typeof v === 'string' && /^(bells|letters|carrot|deer|snow)$/.test(v), gm: v => isObj(v), gave: v => Number.isInteger(v) && v >= 0 && v < 1e6, lend: v => Number.isInteger(v) && v > 2000 && v < 3000, tl: v => Number.isInteger(v) && v >= 0 && v <= 3, sl: v => Number.isInteger(v) && v >= 0 && v <= 3 };
     Object.keys(x).forEach(k => { if (!ok[k] || !ok[k](x[k])) delete x[k]; }); if (x.got) x.got = x.got.filter(id => typeof id === 'string' && (FURN_BY_ID[id] || CLOTHES_BY_ID[id])).slice(0, 20); if (x.gm) x.gm = Object.fromEntries(Object.entries(x.gm).filter(([k, v]) => /^(ck|tr|sl|toy|deer|wrap)$/.test(k) && typeof v === 'string' && v.length <= 12)); } }   // 🎄 聖誕星星、送禮物、聖誕襪、平安夜
   if (out.dinoQ != null) { if (!(isObj(out.dinoQ) && Number.isInteger(out.dinoQ.s) && out.dinoQ.s >= 0)) delete out.dinoQ; else out.dinoQ = { s: Math.min(3, out.dinoQ.s) }; }   // 🌋 恐龍島危險解除到第幾關   // 家長把小偷關掉了
   if (out.vehicles != null) { if (Array.isArray(out.vehicles)) out.vehicles = [...new Set(out.vehicles.filter(v => /^(bike|suv|bus|truck|sports|robot|police|ambulance|dino|plane|sleigh)$/.test(v)))]; else delete out.vehicles; }   // 🚗 買的交通工具
@@ -13020,7 +13025,7 @@ let islEvNext = 0;
 function islEvState() { if (!G.islEv || typeof G.islEv !== 'object') G.islEv = {}; if (G.islEv.d !== today()) { G.islEv.d = today(); G.islEv.n = 0; } return G.islEv; }
 function islEvTick() {
   const now = performance.now(); if (!islEvNext) { islEvNext = now + 45000; return; } if (now < islEvNext) return; islEvNext = now + 45000;   // 打開地圖 45 秒以後才會有第一次
-  if (!isl || G.guide !== 'done' || copRun || dispatch || !$('#modal').hidden || document.getElementById('vevScene') || (typeof xmasRun !== 'undefined' && xmasRun)) return;
+  if (!isl || G.guide !== 'done' || copRun || dispatch || (typeof smis !== 'undefined' && smis) || !$('#modal').hidden || document.getElementById('vevScene') || (typeof xmasRun !== 'undefined' && xmasRun)) return;
   const st = islEvState(); if (st.n >= 2) return;
   const night = islPhase() === 'night';
   if (night && Math.random() < .3) islEvStart('meteor'); else if (Math.random() < .15) islEvStart('balloon');
@@ -14773,7 +14778,7 @@ function hostMenuEntries() {
     list.push([`🎖️ 考腰帶（現在：${tkdBeltName()}）`, openBeltExam]);
   }
   if (host.n.id === 'restaurant') { list.push(['🍽️ 點餐吃飯', openRestaurantOrder]); list.push(['👩‍🍳 小幫手打工（做漢堡）', openChefGame]); list.push(['💰 收銀台找錢', openCashGame]); }
-  if (host.n.id === 'santa') { list.push(['🧸 幫小精靈做玩具', () => openToyFactory()]); list.push(['🦌 照顧麋鹿', () => openDeerCare()]); list.push(['🎁 包禮物', () => openGiftWrap()]); list.push(['☕ 一起喝熱可可', () => santaCocoa()]); list.push([santaLent() ? '🛷 雪橇借你囉！' : `🛷 借雪橇（再送 ${santaLendLeft()} 份禮物）`, () => santaSleighInfo()]); }
+  if (host.n.id === 'santa') { list.push([santaMisLabel(), () => santaMisOpen()]); list.push(['🧸 幫小精靈做玩具', () => openToyFactory()]); list.push(['🦌 照顧麋鹿', () => openDeerCare()]); list.push(['🎁 包禮物', () => openGiftWrap()]); list.push(['☕ 一起喝熱可可', () => santaCocoa()]); list.push([santaLent() ? '🛷 雪橇借你囉！' : `🛷 借雪橇（再送 ${santaLendLeft()} 份禮物）`, () => santaSleighInfo()]); }
   if (host.n.id === 'garage') { list.push(['🎨 改裝我的車', () => openCarShop()]); list.push(['🧽 洗車', () => openCarWash()]); }
   if (host.n.id === 'airport') { list.push(['✈️ 搭飛機去旅行', () => openAirTravel()]); list.push([`🛂 我的護照（${Object.keys(tripState().st).length} / ${AIR_DEST.length}）`, () => openAirPassport()]); list.push(['🛩️ 開飛機', () => openPlaneGame()]); list.push(['🧳 行李安檢', () => openSecurity()]); list.push(['🗼 塔台指揮', () => openTower()]); list.push(['🥤 空服員送餐', () => openMeal()]); }
   if (host.n.id === 'police') { list.push(['🔍 小偵探破案', () => openDetective()]); list.push([`🎖️ 我的警察等級（${RANKS.cop.list[rankOf('cop', rankXp('cop'))][1]}）`, () => openRankCard('cop')]); list.push(['🚓 一起抓小偷', () => openCopChase()]); list.push(['🎭 演習：我當小偷', () => openThiefDrill()]); list.push([`📦 失物招領${thiefBag().length ? `（${thiefBag().length} 件）` : ''}`, () => openLostFound()]); }
@@ -23904,6 +23909,7 @@ function islDoPending() {
 }
 function islEnter(id) {   // 走到門口：關掉地圖、進去（家：回家；一樣的地方：留在原地）
   if (id === 'santa' && !(typeof xmasActive === 'function' && xmasActive())) { toast('🎅 聖誕老公公回北極準備明年的禮物了，門口掛著「明年見！」'); return; }
+  if (id === 'santa' && typeof santaMisFinish === 'function') try { santaMisFinish(); } catch (e) {}   // 📜 任務找齊了，回到聖誕老公公家門口
   if (id === 'hospital' && typeof dispatchDeliver === 'function') try { dispatchDeliver(); } catch (e) {}   // 🚑 救護車載著病人到醫院
   const invites = isl.invites;
   closeIsland();
@@ -36959,6 +36965,7 @@ function dispatchStart(direct) {
 function dispatchTick() {
   copRunTick();
   try { islEvTick(); } catch (e) {}   // 🌠🎈 大地圖事件
+  try { santaMisTick(); } catch (e) {}   // 📜 聖誕老公公的任務
   if (!dispatch || !isl) return;
   const v = rideNow(); if (!v || (dispatch.kind === 'police' ? v.id !== 'police' : v.id !== 'ambulance')) { dispatch = null; dispatchBtn(); return; }
   if (dispatch.carry) return;   // 載著病人：到醫院門口才算（islEnter 那裡）
@@ -36983,6 +36990,7 @@ function dispatchDeliver() {   // 救護車到醫院門口：送進去
 }
 function dispatchDraw(ctx, now) {
   copRunDraw(ctx, now);
+  try { santaMisDraw(ctx, now); } catch (e) {}
   if (!dispatch || !isl) return;
   const cv = isl.cv, W = cv.clientWidth, H = cv.clientHeight, v = islView(), T = ISL.T, dpr = cv._dpr || 1, t = now / 1000;
   const goal = dispatch.carry ? (() => { const b = isl.m.blds.find(q => q.id === 'hospital'); return b ? [b.door[0] + .5, b.door[1] + .5] : null; })() : [dispatch.x, dispatch.y];
@@ -37036,6 +37044,7 @@ function openXmasPrizes() {
   const card = $('#modalCard'), x = xmasState(); closeGameWindow(); card.innerHTML = '';
   card.appendChild(el('h2', '', `⭐ 聖誕星星 ${x.stars} 顆`));
   card.appendChild(note(`幫聖誕老公公送禮物，每送一份拿一顆星星（一天最多 ${XMAS_GIFT_DAY} 份，今天還可以送 ${Math.max(0, XMAS_GIFT_DAY - x.n)} 份）。下面三個聖誕小遊戲，每個每天第一次完成也有一顆星星。累積到了就有獎品！`));
+  if (xmasActive()) { const mb = el('button', 'big', santaMisLabel()); mb.onclick = () => { $('#modal').hidden = true; santaMisOpen(); }; card.appendChild(mb); }   // 📜 聖誕老公公的任務
   if (xmasActive()) { const gm = x.gm || {}, row = el('div', 'tkd-moves');
     [['🍪', '做薑餅人', 'ck', () => openGingerbread()], ['🎄', '裝飾聖誕樹', 'tr', () => openXmasTree()], ['🛷', '雪橇送禮', 'sl', () => openSleigh()]].forEach(([e, nm, k, fn]) => { const b = el('button', 'tkd-move' + (gm[k] === today() ? ' on' : '')); b.append(el('span', 'tkd-e', e), el('span', '', nm + (gm[k] === today() ? ' ✅' : ' ⭐'))); b.onclick = () => { Sound.play('click'); fn(); }; row.appendChild(b); });
     card.appendChild(row); }
@@ -37254,6 +37263,90 @@ Object.assign(ACTIVITIES, {
   santa_wrap: { label: '🎁 包禮物', name: '包禮物', fx: '🎁', open: () => openGiftWrap(), lines: ['要包得漂漂亮亮！', '緞帶綁好囉～'] }
 });
 Object.assign(FURNITURE_ACT, { toy_bench: 'santa_toy', reindeer_stall: 'santa_deer', wrap_table: 'santa_wrap' });
+/* ===== 📜 聖誕老公公的任務（家長 11/22：聖誕老人給女兒的任務可以多一些）=====
+   每天一個任務（聖誕老公公的家選單、大地圖「🎅」的星星卡接）：過場動畫 → 到大地圖找東西（箭頭指方向）→ 回聖誕老公公的家（進門）→ 完成動畫。
+   🔔 雪橇的鈴鐺 ×5、✉️ 小朋友的信 ×4、🥕 麋鹿的紅蘿蔔 ×5、🦌 走失的小麋鹿（找到會跟著你）、⛄ 雪球 ×3（回去堆雪人）
+   完成：⭐ 聖誕星星 2 顆＋💰150，也算一份「送禮物」（借雪橇的進度）。G.xmas.mis = { d, kind, done }。 */
+const SANTA_MIS = {
+  bells: { icon: '🔔', name: '找雪橇的鈴鐺', n: 5, say: '糟糕！雪橇上的鈴鐺掉了，叮叮噹噹滾到島上各個地方……可以幫我找回 5 個嗎？', got: '叮噹！找到鈴鐺了！', done: '鈴鐺都找回來了！今天晚上雪橇又可以叮叮噹噹了！' },
+  letters: { icon: '✉️', name: '撿回小朋友的信', n: 4, say: '一陣大風把小朋友寄給我的信吹走了！每一封我都要好好讀，拜託幫我撿回 4 封！', got: '撿到一封信！', done: '信都撿回來了！謝謝你，我會好好讀每一封信的！' },
+  carrot: { icon: '🥕', name: '找麋鹿的紅蘿蔔', n: 5, say: '麋鹿的紅蘿蔔被調皮的兔子搬走了！麋鹿肚子餓就飛不動，幫我找回 5 根好嗎？', got: '找到一根紅蘿蔔！', done: '麋鹿吃得飽飽的，今天晚上一定飛得好快！' },
+  deer: { icon: '🦌', name: '找走失的小麋鹿', n: 1, say: '最小的那隻麋鹿貪玩，跑出去迷路了……牠在島上亂跑，找到牠之後帶牠回家好嗎？', got: '找到小麋鹿了！牠會跟著你走，帶牠回聖誕老公公的家！', done: '小麋鹿回家了！謝謝你，小麋鹿說牠最喜歡你了！' },
+  snow: { icon: '❄️', name: '收集雪球堆雪人', n: 3, say: '我想在門口堆一個大雪人，可以幫我在島上找 3 顆圓滾滾的雪球嗎？', got: '找到一顆雪球！', done: '雪人堆好了！戴上紅帽子、紅蘿蔔鼻子，好可愛！' }
+};
+let smis = null;   // 進行中：{ kind, items: [{x, y, got}], deer: {x, y, follow}, back: 回家中 }
+function santaMisState() { const x = xmasState(); if (!x.mis || typeof x.mis !== 'object' || x.mis.d !== today()) x.mis = { d: today(), kind: null, done: 0 }; return x.mis; }
+function santaMisKindToday() { const m = santaMisState(); if (!m.kind) { const ks = Object.keys(SANTA_MIS), last = (G.xmas && G.xmas.misLast) || ''; const pool = ks.filter(k => k !== last); m.kind = pool[Math.floor(Math.random() * pool.length)]; G.xmas.misLast = m.kind; saveGame(); } return m.kind; }
+function santaMisLabel() { if (!xmasActive()) return ''; const m = santaMisState(); if (m.done) return '📜 今天的任務 ✅'; return smis ? `📜 任務進行中（${SANTA_MIS[smis.kind].name}）` : '📜 聖誕老公公的任務'; }
+function santaMisOpen() {
+  if (!xmasActive()) return; const m = santaMisState();
+  if (m.done) { toast('🎅 聖誕老公公：今天的任務完成了，謝謝你！明天再來幫我喔～'); return; }
+  if (smis) { toast(`📜 ${SANTA_MIS[smis.kind].name}：${smis.back ? '找齊了，回聖誕老公公的家吧！' : '到大地圖上找找看，跟著箭頭走！'}`); return; }
+  const kind = santaMisKindToday(), M = SANTA_MIS[kind];
+  try { $('#modal').hidden = true; closeGameWindow(); } catch (e) {}
+  vevScene([
+    { text: `聖誕老公公：${M.say}`, draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); g.save(); g.translate(120, 196); g.scale(2.6, 2.6); drawSantaFig(g); g.restore(); g.font = '34px sans-serif'; g.textAlign = 'center'; for (let i = 0; i < Math.min(5, M.n); i++) g.fillText(M.icon, 210 + i * 26, 80 + Math.sin(t * 3 + i) * 8); copDrawKid(g, 300, 196, 1.05, t, false, -1, 'wow'); } },
+    { text: `📜 任務：${M.name}！到大地圖上找找看，畫面邊邊有箭頭會指方向喔！`, draw: (g, W, H, t) => { vevBg(g, W, H, 'yard', t); copDrawKid(g, 180, 196, 1.15, t, false, 1, 'joy'); g.font = '40px sans-serif'; g.textAlign = 'center'; g.fillText('📜', 180, 80 - Math.abs(Math.sin(t * 3)) * 8); } }
+  ], () => { smis = { kind, items: [], back: false }; if (isl) santaMisSpawn(); else toast(`📜 出門到大地圖去${M.name}吧！`); });
+}
+function santaMisSpawn() {
+  if (!smis || !isl || smis.items.length || smis.deer) return;
+  const M = SANTA_MIS[smis.kind];
+  if (smis.kind === 'deer') { const at = dispatchSpot(isl.m); if (at) smis.deer = { x: at[0], y: at[1], follow: false, f: 1 }; return; }
+  for (let i = 0; i < M.n; i++) { const at = dispatchSpot(isl.m); if (at && !smis.items.some(q => Math.hypot(q.x - at[0], q.y - at[1]) < 4)) smis.items.push({ x: at[0], y: at[1], got: false }); else i--; if (smis.items.length >= M.n || i > 40) break; }
+}
+function santaMisTick() {
+  if (!smis || !isl) return; if (!xmasActive()) { smis = null; return; }
+  if (!smis.items.length && !smis.deer) santaMisSpawn();
+  const M = SANTA_MIS[smis.kind], now = performance.now(), dt = Math.min(.2, (now - (smis.last || now)) / 1000); smis.last = now;
+  if (smis.deer) { const d = smis.deer;
+    if (!d.follow) { d.wig = (d.wig || 0) + dt; const nx = d.x + Math.cos(d.wig * .7) * dt * 1.2, ny = d.y + Math.sin(d.wig * .9) * dt * 1.2; if (copTileOk(isl.m, Math.floor(nx), Math.floor(ny))) { if (Math.abs(nx - d.x) > .001) d.f = nx > d.x ? 1 : -1; d.x = nx; d.y = ny; }
+      if (Math.hypot(d.x - isl.x, d.y - isl.y) < 1.2) { d.follow = true; smis.back = true; Sound.play('petHappy'); toast(`🦌 ${M.got}`); try { islAddFx('say', d.x, d.y - 1.4, 1600, { text: '呦呦～' }); } catch (e) {} } }
+    else { const dx = isl.x - d.x, dy = isl.y - d.y, L = Math.hypot(dx, dy); if (L > 1.1) { const sp = Math.min(L - 1, dt * 9); d.x += dx / L * sp; d.y += dy / L * sp; if (Math.abs(dx) > .05) d.f = dx > 0 ? 1 : -1; } }
+    return; }
+  smis.items.forEach(it => { if (!it.got && Math.hypot(it.x - isl.x, it.y - isl.y) < 1.1) { it.got = true; Sound.play('pickUp'); try { islAddFx('say', it.x, it.y - 1.2, 1200, { text: M.got }); } catch (e) {}
+    const left = smis.items.filter(q => !q.got).length; if (!left) { smis.back = true; Sound.play('fanfare'); toast(`📜 ${M.name}：全部找到了！回聖誕老公公的家吧！`); } } });
+}
+function santaMisDraw(ctx, now) {
+  if (!smis || !isl) return;
+  const cv = isl.cv, W = cv.clientWidth, H = cv.clientHeight, v = islView(), T = ISL.T, dpr = cv._dpr || 1, t = now / 1000, M = SANTA_MIS[smis.kind];
+  const scr = (x, y) => [(x * T - v.cx) * v.s + W / 2, (y * T - v.cy) * v.s + H / 2];
+  const arrow = (x, y, emoji) => { const [gx, gy] = scr(x, y), m = 34; if (!(gx < m || gx > W - m || gy < m || gy > H - m)) return;
+    const cx = W / 2, cy = H / 2, a = Math.atan2(gy - cy, gx - cx), k = Math.min((W / 2 - m) / Math.abs(Math.cos(a) || 1e-6), (H / 2 - m) / Math.abs(Math.sin(a) || 1e-6));
+    ctx.save(); ctx.translate(cx + Math.cos(a) * k, cy + Math.sin(a) * k); ctx.fillStyle = 'rgba(255,255,255,.92)'; ctx.beginPath(); ctx.arc(0, 0, 18, 0, 7); ctx.fill(); ctx.strokeStyle = '#d63b3b'; ctx.lineWidth = 3; ctx.stroke();
+    ctx.font = '16px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(emoji, 0, 1); ctx.rotate(a); ctx.fillStyle = '#d63b3b'; ctx.beginPath(); ctx.moveTo(27, 0); ctx.lineTo(19, -7); ctx.lineTo(19, 7); ctx.closePath(); ctx.fill(); ctx.restore(); };
+  ctx.save(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  smis.items.forEach(it => { if (it.got) return; const [sx, sy] = scr(it.x, it.y); const bob = Math.abs(Math.sin(t * 3 + it.x)) * 6;
+    ctx.fillStyle = 'rgba(255,240,150,.45)'; ctx.beginPath(); ctx.ellipse(sx, sy + 6, 16, 6, 0, 0, 7); ctx.fill();
+    if (smis.kind === 'snow') { ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(sx, sy - 6 - bob, 11, 0, 7); ctx.fill(); ctx.strokeStyle = '#9fc9e0'; ctx.lineWidth = 2; ctx.stroke(); }
+    else { ctx.font = `${Math.round(22 * Math.min(1.2, v.s))}px sans-serif`; ctx.fillText(M.icon, sx, sy - 6 - bob); } });
+  if (smis.deer) { const d = smis.deer, [sx, sy] = scr(d.x, d.y), sc = Math.min(1.2, v.s); ctx.save(); ctx.translate(sx, sy - 14 * sc); ctx.scale((d.f || 1) * .8 * sc, .8 * sc);
+    ctx.strokeStyle = '#8a5a33'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-4, -8); ctx.lineTo(-7, -16); ctx.moveTo(4, -8); ctx.lineTo(7, -16); ctx.stroke();
+    ctx.fillStyle = '#c9844a'; ctx.beginPath(); ctx.ellipse(0, 4, 10, 11, 0, 0, 7); ctx.fill(); ctx.fillStyle = '#e8a06a'; ctx.beginPath(); ctx.ellipse(0, 8, 6, 5, 0, 0, 7); ctx.fill(); ctx.fillStyle = '#e8505b'; ctx.beginPath(); ctx.arc(0, 6, 2, 0, 7); ctx.fill(); try { festFace(ctx, 0, 0); } catch (e) {} ctx.restore();
+    if (!d.follow) arrow(d.x, d.y, '🦌'); }
+  if (smis.back) { const b = isl.m.blds.find(q => q.id === 'santa'); if (b) { arrow(b.door[0] + .5, b.door[1] + .5, '🎅'); const [sx, sy] = scr(b.door[0] + .5, b.door[1] + .5); ctx.strokeStyle = `rgba(214,59,59,${.5 + .3 * Math.sin(t * 6)})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(sx, sy + 4, 24, 9, 0, 0, 7); ctx.stroke(); } }
+  else { const left = smis.items.filter(q => !q.got).sort((a, b) => Math.hypot(a.x - isl.x, a.y - isl.y) - Math.hypot(b.x - isl.x, b.y - isl.y)); if (left[0]) arrow(left[0].x, left[0].y, M.icon); }
+  const got = smis.kind === 'deer' ? (smis.back ? 1 : 0) : smis.items.filter(q => q.got).length;
+  const hud = smis.back ? `📜 ${M.name}：回聖誕老公公的家！🎅` : `📜 ${M.name}：${got} / ${M.n}`;
+  ctx.font = '700 15px "Microsoft JhengHei","PingFang TC",sans-serif'; const tw = ctx.measureText(hud).width + 28, hy = H - 132;
+  ctx.fillStyle = 'rgba(255,255,255,.94)'; ctx.beginPath(); ctx.roundRect(W / 2 - tw / 2, hy, tw, 30, 15); ctx.fill(); ctx.strokeStyle = '#d63b3b'; ctx.lineWidth = 2; ctx.stroke(); ctx.fillStyle = '#1d2433'; ctx.fillText(hud, W / 2, hy + 16);
+  ctx.restore();
+}
+function santaMisFinish() {   // 走到聖誕老公公家門口：完成
+  if (!smis || !smis.back) return false;
+  const kind = smis.kind, M = SANTA_MIS[kind]; smis = null;
+  const m = santaMisState(); m.done = 1; const x = xmasState(); x.gave = Math.min(1e6, (x.gave || 0) + 1);
+  addBells(150); xmasStar(2); kidMoodUp(6); saveGame(); refreshTop();
+  setTimeout(() => vevScene([
+    { text: `聖誕老公公：${M.done}`, draw: (g, W, H, t) => { vevBg(g, W, H, kind === 'snow' ? 'yard' : 'room', t); g.save(); g.translate(110, 196); g.scale(2.6, 2.6); drawSantaFig(g); g.restore();
+      if (kind === 'snow') { g.fillStyle = '#ffffff'; [[230, 180, 26], [230, 138, 20], [230, 106, 14]].forEach(([x, y, r]) => { g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); g.strokeStyle = '#c9dff0'; g.lineWidth = 2; g.stroke(); }); g.fillStyle = '#26232a'; [[224, 102], [236, 102]].forEach(([x, y]) => { g.beginPath(); g.arc(x, y, 2, 0, 7); g.fill(); }); g.fillStyle = '#ff8c2a'; g.beginPath(); g.moveTo(230, 107); g.lineTo(244, 110); g.lineTo(230, 112); g.fill(); g.fillStyle = '#d63b3b'; g.beginPath(); g.moveTo(216, 94); g.lineTo(230, 70); g.lineTo(244, 94); g.fill(); }
+      else if (kind === 'deer') { g.save(); g.translate(230, 170 - Math.abs(Math.sin(t * 5)) * 10); g.scale(2.4, 2.4); g.strokeStyle = '#8a5a33'; g.lineWidth = 2; g.lineCap = 'round'; g.beginPath(); g.moveTo(-4, -8); g.lineTo(-7, -16); g.moveTo(4, -8); g.lineTo(7, -16); g.stroke(); g.fillStyle = '#c9844a'; g.beginPath(); g.ellipse(0, 4, 10, 11, 0, 0, 7); g.fill(); g.fillStyle = '#e8505b'; g.beginPath(); g.arc(0, 6, 2, 0, 7); g.fill(); try { festFace(g, 0, 0); } catch (e) {} g.restore(); }
+      else { g.font = '30px sans-serif'; g.textAlign = 'center'; for (let i = 0; i < M.n; i++) g.fillText(M.icon, 200 + (i % 3) * 30, 150 - Math.floor(i / 3) * 30 - Math.abs(Math.sin(t * 3 + i)) * 4); }
+      copDrawKid(g, 305, 196, 1.05, t, false, -1, 'joy'); vevHearts(g, 110, 90, t); } },
+    { text: '任務完成！⭐ 聖誕星星 +2　💰 +150', draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); copDrawKid(g, 180, 196, 1.15, t, false, 1, 'joy'); g.font = '30px sans-serif'; g.textAlign = 'center'; for (let i = 0; i < 2; i++) g.fillText('⭐', 150 + i * 60, 80 - Math.abs(Math.sin(t * 4 + i)) * 10); g.fillText('🎅', 260, 120); } }
+  ], () => { try { santaSleighCheck(); } catch (e) {} }), 300);
+  return true;
+}
 // 🧦 聖誕襪：每天一份小禮物
 function openStocking() {
   const x = xmasState(), d = today();
