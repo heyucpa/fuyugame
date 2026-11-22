@@ -6058,6 +6058,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-23T07:00', title: '🏝️ 主島變好大！', lines: [
+    ['🏝️', '主島往東邊長出一大塊新的土地，有一條大馬路通過去（原本的地方都沒有動）'],
+    ['🏛️', '博物館、銀行搬到主島東邊了，不用坐船，走路就到'],
+    ['🌉', '運動島、小鎮島往外搬了一點，一樣走木橋過去'],
+    ['🌳', '東邊還有很多空地，之後會蓋百貨公司、郵輪碼頭、小可愛不動產！']
+  ] },
   { id: '2026-11-23T06:00', title: '🧭 找地方更容易了', lines: [
     ['🚗', '「快速出門」改成按「做什麼」分：家和家人、上學和學習、運動、幫助別人、好玩的地方、買東西和存錢（後面寫在哪座島）'],
     ['🧭', '島上多了牌子：主島廣場有箭頭路標，木橋和碼頭旁邊有島的名字']
@@ -6069,7 +6075,7 @@ const NEWS = [
     ['🦊', '畫面上的「🦊」按鈕會告訴你下一步要去哪裡']
   ] },
   { id: '2026-11-23T04:00', title: '🏙️ 大地圖變大了！新市區島', lines: [
-    ['⛵', '主島東邊多了一座新市區島，走到碼頭坐船過去（在島上直接點對面的房子，也會自動坐船）'],
+    ['⛵', '主島東邊多了一座新市區島（後來改成主島變大，直接走過去）'],
     ['🏛️', '博物館：貓頭鷹館長帶你看恐龍化石、月亮石頭、大寶石，看完回答小問題'],
     ['🐷', '銀行：把錢存進去，每天會多一點點利息！'],
     ['🚗', '「快速出門」分成主島、運動島、小鎮島、新市區，比較好找']
@@ -24109,8 +24115,8 @@ function decorGo(theme, redo) {
    ・寵物跟在後面走。收到邀請卡的朋友家也是島上的小房子
    ・右上「🚗 快速出門」還是可以用清單直接去；「🔙 回去」不出門
    ・只是新的一個畫面：沒有改存檔，也沒有新的存檔欄位（每次都從家門口、或現在這個地方的門口出發）*/
-const ISL = { W: 84, H: 55, T: 32 };   // 家長 11/22：大地圖變大 → 右邊再多 20 格海，放新市區島
-const ISL_CITY = { cx: 73.5, cy: 26, rx: 8.5, ry: 8.5, hub: [73, 28] };   // 🏙️ 新市區島（坐船）   // 右邊多一塊海，放運動島   // 下面多一塊海，放朋友島
+const ISL = { W: 110, H: 70, T: 32 };   // 家長 11/22：主島變大（不要另外的新市區島）→ 主島往東長出一大塊，運動島、小鎮島往外搬
+const ISL_EAST = { cx: 70, cy: 27, rx: 23, ry: 15, neck: [46, 24, 8, 9] };   // 🏙️ 主島東邊新長出來的那一大塊（neck：接到原本主島的那一段）   // 右邊多一塊海，放運動島   // 下面多一塊海，放朋友島
 const ISL_BLD = [   // 房子：x, y 是左上角的格子，w×h 格；門在正下方一格
   { id: 'home', x: 24, y: 11, w: 4, h: 3 },
   { id: 'helipad', x: 27, y: 5, w: 3, h: 2 },   // 🚁 停機坪：坐直升機上天空島（爸爸媽媽家）
@@ -24126,19 +24132,19 @@ const ISL_BLD = [   // 房子：x, y 是左上角的格子，w×h 格；門在�
   { id: 'garage', x: 28, y: 18, w: 4, h: 3 },   // 🔧 改車店：家的右下方
   { id: 'raceway', x: 33, y: 27, w: 4, h: 3 },   // 🏁 賽車場
   { id: 'firestation', x: 17, y: 26, w: 4, h: 3 },   // 🚒 消防局：警察局下面
-  { id: 'museum', x: 67, y: 21, w: 5, h: 3, city: true },   // 🏛️ 新市區島
-  { id: 'bank', x: 75, y: 21, w: 4, h: 3, city: true },   // 🏦 新市區島
+  { id: 'museum', x: 55, y: 22, w: 5, h: 3 },   // 🏛️ 主島東邊（新長出來的那一塊）
+  { id: 'bank', x: 62, y: 22, w: 4, h: 3 },   // 🏦 主島東邊
   { id: 'santa', x: 34, y: 17, w: 4, h: 3, season: 'christmas' },   // 🎅 聖誕老公公的家：聖誕節才有
 
   // 🏅 運動島（家長：游泳池那座小島擴大成運動島，走木橋過去；跆拳道館也搬過來）
-  { id: 'pool', x: 43, y: 37, w: 6, h: 3, islet: true },
-  { id: 'dojo', x: 50, y: 37, w: 4, h: 3, islet: true },
-  { id: 'arena', x: 46, y: 44, w: 5, h: 3, islet: true },
-  { id: 'gym', x: 56, y: 37, w: 5, h: 3, islet: true },
+  { id: 'pool', x: 61, y: 50, w: 6, h: 3, islet: true },
+  { id: 'dojo', x: 68, y: 50, w: 4, h: 3, islet: true },
+  { id: 'arena', x: 64, y: 57, w: 5, h: 3, islet: true },
+  { id: 'gym', x: 74, y: 50, w: 5, h: 3, islet: true },
   { id: 'cinema', x: 40, y: 17, w: 3, h: 2 },
   // 🏘️ 小鎮島（家長：餐廳、醫院）：主島東北邊的海上，一樣走木橋過去
-  { id: 'restaurant', x: 53, y: 8, w: 3, h: 3, islet: true, town: true },
-  { id: 'hospital', x: 58, y: 8, w: 3, h: 3, islet: true, town: true }
+  { id: 'restaurant', x: 83, y: 7, w: 3, h: 3, islet: true, town: true },
+  { id: 'hospital', x: 88, y: 7, w: 3, h: 3, islet: true, town: true }
 ];
 /* 🏡 朋友島（家長：主島快滿了，姊姊、妹妹、朋友的家搬到另外一座島）：主島南邊的海上，坐船過去。收到第一張邀請卡才會出現（有動畫） */
 const ISL_FRIEND_ISLE = { cx: 26, cy: 46.5, r: 7.2 };
@@ -24153,7 +24159,7 @@ const ISL_PUMPKIN_CANDY_MAX = 3;   // 南瓜每天最多吐 3 顆糖（不然一
    海岸、草地的邊都磨圓了 */
 var ISL_HOUR_TEST = null;   // 測試用：指定現在幾點（0～24）
 const ISL_COIN_MAX = 5, ISL_COIN_BELLS = [20, 30, 40, 50];
-const ISL_LAMPS = [[23, 17], [29, 17], [23, 22], [29, 22], [26, 14], [14, 17], [36, 17], [26, 30], [12, 26], [40, 26]];   // 路燈的位置
+const ISL_LAMPS = [[23, 17], [29, 17], [23, 22], [29, 22], [26, 14], [14, 17], [36, 17], [26, 30], [12, 26], [40, 26], [52, 18], [62, 18], [72, 18], [82, 18]];   // 路燈的位置
 /* ===== 🧰 道具（家長：釣竿、網子、鏟子；搖樹可能有蜜蜂）=====
    左下角三顆道具：點了就拿在手上。小孩不用先選也行——點水就自動拿釣竿、點蝴蝶自動拿網子；鏟子要自己拿出來再點草地。
    🎣 釣竿：點海邊或池塘 → 走到水邊甩竿 → 浮標「❗」的時候點一下就釣到（跟「賺錢」的釣魚同一批魚、同一本圖鑑；海裡比較容易釣到大魚）
@@ -24202,8 +24208,8 @@ function islCoinSpots(m) {   // 今天的金幣在哪（同一天打開幾次都
   }
   return out.slice(0, Math.max(0, ISL_COIN_MAX - st.n));
 }
-const ISL_TOWN = { cx: 57.5, cy: 9.5, rx: 6.5, ry: 7.5, from: [53, 13], to: [45, 15], hub: [57, 13] };   // 🏘️ 小鎮島：島心、大小、木橋從哪裡接到主島的哪裡、島上的小廣場
-const ISL_ISLET = { cx: 52, cy: 41, rx: 11, ry: 9, r: 9, to: [39, 29], hub: [52, 41] };   // 🏅 運動島：中心、大小、木橋接到主島的哪裡、島上的小廣場
+const ISL_TOWN = { cx: 88, cy: 7, rx: 6.5, ry: 5.5, from: [86, 12], to: [86, 18], hub: [88, 11] };   // 🏘️ 小鎮島：島心、大小、木橋從哪裡接到主島的哪裡、島上的小廣場
+const ISL_ISLET = { cx: 70, cy: 54, rx: 11, ry: 9, r: 9, to: [64, 40], hub: [70, 54] };   // 🏅 運動島：中心、大小、木橋接到主島的哪裡、島上的小廣場
 const ISL_POND = { x: 31, y: 24, w: 4, h: 3 };
 const ISL_HUB = [26, 19];
 const ISL_STYLE = {   // 牆、屋頂顏色
@@ -24231,7 +24237,9 @@ function islMap(nFriends) {
     for (let x = 0; x < W; x++) {
       const dx = (x - cx) / 21, dy = (y - cy) / 16, a = Math.atan2(dy, dx);
       const wob = 1 + .07 * Math.sin(3 * a + 1) + .05 * Math.sin(5 * a + 2) + .03 * Math.sin(9 * a);
-      land[y].push(Math.hypot(dx, dy) / wob < 1);
+      const E = ISL_EAST, ex = (x - E.cx) / E.rx, ey = (y - E.cy) / E.ry, ea = Math.atan2(ey, ex), ewob = 1 + .05 * Math.sin(4 * ea + 2) + .04 * Math.sin(7 * ea + 1);
+      const nk = Math.hypot((x - E.neck[0]) / E.neck[2], (y - E.neck[1]) / E.neck[3]) < 1;
+      land[y].push(Math.hypot(dx, dy) / wob < 1 || Math.hypot(ex, ey) / ewob < 1 || nk);   // 原本的主島＋東邊新長出來的一大塊
       beach[y].push(false); block[y].push(false); path[y].push(false); tree[y].push(false); flower[y].push(false);
     }
   }
@@ -24264,14 +24272,8 @@ function islMap(nFriends) {
     let fd = null, fb = 1e9; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (isletAt[y][x] === 'friend') { const d = Math.hypot(x - md[0], y - md[1]); if (d < fb) { fb = d; fd = [x, y]; } }
     if (md && fd) { docks.push({ id: 'friend', side: 'main', x: md[0], y: md[1], to: fd }); docks.push({ id: 'friend', side: 'islet', x: fd[0], y: fd[1], to: md }); }
   }
-  let cityDock = null;
-  {   // 🏙️ 新市區島：主島東邊的海上，坐船過去
-    const C = ISL_CITY;
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (Math.hypot((x - C.cx) / C.rx, (y - C.cy) / C.ry) <= 1 && !land[y][x]) { isletAt[y][x] = 'city'; land[y][x] = true; }
-    let md = null, mb = 1e9; for (let y = 0; y < 30; y++) for (let x = 0; x < 44; x++) if (land[y][x] && !isletAt[y][x] && !bridge[y][x]) { const d = Math.hypot(x - C.cx, y - C.cy); if (d < mb) { mb = d; md = [x, y]; } }
-    let fd = null, fb = 1e9; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (isletAt[y][x] === 'city') { const d = Math.hypot(x - (md ? md[0] : 0), y - (md ? md[1] : 0)); if (d < fb) { fb = d; fd = [x, y]; } }
-    if (md && fd) { docks.push({ id: 'city', side: 'main', x: md[0], y: md[1], to: fd }); docks.push({ id: 'city', side: 'islet', x: fd[0], y: fd[1], to: md }); cityDock = fd; }
-  }   // 斜的地方多補一格，橋才走得過去（只能上下左右走）
+  let cityDock = null;   // （以前的新市區島，家長 11/22 改成主島變大，不要另外的島）
+  // 斜的地方多補一格，橋才走得過去（只能上下左右走）
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     if (!land[y][x]) continue;
     for (let j = -2; j <= 2 && !beach[y][x]; j++) for (let i = -2; i <= 2; i++) { const xx = x + i, yy = y + j; if (xx < 0 || yy < 0 || xx >= W || yy >= H || !land[yy][xx]) { beach[y][x] = true; break; } }
@@ -24304,7 +24306,7 @@ function islMap(nFriends) {
       return;
     }
     if (b.islet) {   // 運動島：門口 → 島上的小廣場；小廣場 → 木橋；主島那頭接到廣場那條路
-      const [x1, y1] = ISL_ISLET.to; for (let x = x1; x >= 26; x--) mark(x, y1);
+      const [x1, y1] = ISL_ISLET.to; for (let y = y1; y >= 20; y--) mark(x1, y);   // 木橋頭往上接到東西向的大馬路
       const [hx, hy] = ISL_ISLET.hub, [dx0, dy0] = b.door;
       for (let y = Math.min(dy0, hy); y <= Math.max(dy0, hy); y++) mark(dx0, y);
       for (let x = Math.min(dx0, hx); x <= Math.max(dx0, hx); x++) mark(x, hy);
@@ -28095,7 +28097,7 @@ PH_EXTRA.fetch = {
 /* 🏝️ 闖關解鎖的小島：位置、名字、島上的大東西（每天點一次有禮物） */
 /* 🏆 冠軍球場島（家長：世界躲避球大賽冠軍送一座島）：主島東邊的海上，坐船過去。
    島上一座小球場、冠軍獎盃、看台和旗子；點獎盃就可以直接打躲避球。拿過冠軍（G.dbcup.gold > 0）才會出現。 */
-const CHAMP_ISLE = { id: 'champ', name: '冠軍球場島', icon: '🏆', desc: '世界躲避球冠軍的球場！點獎盃就可以打躲避球。', cx: 57, cy: 23, r: 3.9, to: [48, 22], sx: 57, sy: 23 };
+const CHAMP_ISLE = { id: 'champ', name: '冠軍球場島', icon: '🏆', desc: '世界躲避球冠軍的球場！點獎盃就可以打躲避球。', cx: 100, cy: 30, r: 3.9, to: [92, 28], sx: 100, sy: 30 };
 function champIsleOn() { return !!(G && G.dbcup && G.dbcup.gold > 0); }
 function anyIsle(id) { return id === 'champ' ? CHAMP_ISLE : (typeof QUEST_ISLETS !== 'undefined' ? QUEST_ISLETS.find(q => q.id === id) : null); }
 const QUEST_ISLETS = [
@@ -29899,7 +29901,8 @@ function islSigns(m) {
   const ok = (x, y) => m.land[y] && m.land[y][x] && !m.path[y][x] && !m.block[y][x] && !(m.bridge && m.bridge[y][x]) && !(m.tree && m.tree[y][x]) && !(m.docks || []).some(d => d.x === x && d.y === y);
   const near = (ax, ay) => { for (let r = 1; r <= 3; r++) for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) { const x = Math.round(ax) + i, y = Math.round(ay) + j; if (ok(x, y)) return [x, y]; } return null; };
   const out = [], put = (ax, ay, lines) => { const p = near(ax, ay); if (p && !out.some(o => Math.abs(o.x - p[0]) < 2 && Math.abs(o.y - p[1]) < 2)) out.push({ x: p[0], y: p[1], lines }); };
-  put(ISL_HUB[0], ISL_HUB[1], ['⬆ 我的家・公園', '⬅ 學校・操場', '➡ 圖書館・改車店', '⬇ 遊樂園・消防局']);
+  put(ISL_HUB[0], ISL_HUB[1], ['⬆ 我的家・公園', '⬅ 學校・操場', '➡ 圖書館・博物館・銀行', '⬇ 遊樂園・消防局']);
+  put(48, 20, ['⬅ 我的家', '➡ 博物館・銀行・小鎮島', '⬇ 運動島']);
   put(ISL_ISLET.to[0], ISL_ISLET.to[1], ['🏅 運動島 ➡']); put(ISL_ISLET.cx - 6, ISL_ISLET.cy - 6, ['🏅 運動島']);
   put(ISL_TOWN.to[0], ISL_TOWN.to[1], ['🏘️ 小鎮島 ➡']); put(ISL_TOWN.from[0], ISL_TOWN.from[1], ['🏘️ 小鎮島']);
   (m.docks || []).forEach(d => { if (d.id === 'city') put(d.x, d.y, [d.side === 'main' ? '⛵ 新市區' : '🏙️ 新市區']); else if (d.id === 'friend' && d.side === 'main') put(d.x, d.y, ['⛵ 朋友島']); });

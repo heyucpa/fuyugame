@@ -11,7 +11,7 @@ const path = require('path');
     const o = {}, wait = ms => new Promise(r => setTimeout(r, ms)); G.guide = 'done'; $('#modal').hidden = true;
     const clear = () => { document.querySelectorAll('#showcase').forEach(x => x.remove()); if (typeof SC_QUEUE !== 'undefined') SC_QUEUE.length = 0; };
     G.dbcup = { best: 0, gold: 0 }; islMapCache = null; let m = islMap(0); o.noIsle = !m.specials.some(s => s.id === 'champ');
-    G.dbcup.gold = 1; m = islMap(0); o.isle = m.specials.some(s => s.id === 'champ') && m.docks.filter(d => d.id === 'champ').length === 2 && m.isletAt[23][57] === 'champ';
+    G.dbcup.gold = 1; m = islMap(0); o.isle = m.specials.some(s => s.id === 'champ') && m.docks.filter(d => d.id === 'champ').length === 2 && m.isletAt[Math.round(CHAMP_ISLE.cy)][Math.round(CHAMP_ISLE.cx)] === 'champ';
     o.species = PET_SPECIES_BY_ID.balllion && PET_SPECIES_BY_ID.balllion.story && PET_SPECIES_BY_ID.balllion.weight === 0;
     // 以前拿過冠軍：回家補送球球獅
     G.pets = G.pets.filter(x => x.species !== 'balllion'); clear(); await wait(4600); o.retro = G.pets.filter(x => x.species === 'balllion').length === 1; clear();
