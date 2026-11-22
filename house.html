@@ -2752,6 +2752,9 @@ const PLACE_FURNITURE = [
   { id: 'museum_rope', name: '紅龍柱', theme: 'modern', w: 2, d: 1, parts: [{ x: .1, y: .4, w: .12, d: .12, z: 0, h: 22, c: '#e0b23a' }, { x: 1.78, y: .4, w: .12, d: .12, z: 0, h: 22, c: '#e0b23a' }, { x: .2, y: .44, w: 1.6, d: .04, z: 16, h: 3, c: '#d63b3b' }] },
   { id: 'museum_painting', name: '向日葵名畫', theme: 'modern', w: 2, h: 30, z: 48, layer: 'wall', d: 1, parts: [],
     draw(ctx, W, H) { ctx.fillStyle = '#c9a26a'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#4a90d9'; ctx.fillRect(W * .07, H * .1, W * .86, H * .8); ctx.fillStyle = '#e0a020'; ctx.fillRect(W * .4, H * .55, W * .2, H * .3); for (let i = 0; i < 3; i++) { const x = W * (.32 + i * .18), y = H * (.35 + (i % 2) * .1); ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(x, y, H * .12, 0, 7); ctx.fill(); ctx.fillStyle = '#8a5a33'; ctx.beginPath(); ctx.arc(x, y, H * .05, 0, 7); ctx.fill(); } } },
+  { id: 'dept_rack', name: '衣服展示架', theme: 'cute', w: 2, d: 1, parts: [{ x: .1, y: .45, w: .06, d: .1, z: 0, h: 40, c: '#c9ccd0' }, { x: 1.84, y: .45, w: .06, d: .1, z: 0, h: 40, c: '#c9ccd0' }, { x: .1, y: .48, w: 1.8, d: .04, z: 40, h: 2, c: '#c9ccd0' }, { x: .25, y: .35, w: .3, d: .3, z: 16, h: 22, c: '#ff8fb3' }, { x: .7, y: .35, w: .3, d: .3, z: 16, h: 22, c: '#6fb7e8' }, { x: 1.15, y: .35, w: .3, d: .3, z: 16, h: 22, c: '#ffd23f' }, { x: 1.55, y: .35, w: .25, d: .3, z: 16, h: 22, c: '#7bd389' }] },
+  { id: 'dept_counter', name: '百貨公司櫃台', theme: 'modern', w: 2, d: 1, parts: [{ x: .05, y: .2, w: 1.9, d: .6, z: 0, h: 24, c: '#ffffff' }, { x: .05, y: .2, w: 1.9, d: .6, z: 24, h: 3, c: '#ff8fb3' }, { x: .3, y: .3, w: .3, d: .3, z: 27, h: 8, c: '#5a6475' }] },
+  { id: 'dept_gacha', name: '扭蛋機', theme: 'cute', w: 1, d: 1, parts: [{ x: .25, y: .25, w: .5, d: .5, z: 0, h: 20, c: '#e8505b' }, { k: 'ball', x: .5, y: .5, z: 30, r: 11, c: '#e8f6ff' }, { k: 'ball', x: .4, y: .5, z: 26, r: 3, c: '#ffd23f' }, { k: 'ball', x: .6, y: .45, z: 28, r: 3, c: '#7bd389' }, { k: 'ball', x: .5, y: .6, z: 32, r: 3, c: '#b18cff' }, { k: 'ball', x: .5, y: .7, z: 10, r: 2.5, c: '#ffffff' }] },
   { id: 'realty_desk', name: '看房子的桌子', theme: 'modern', w: 2, d: 1, parts: [{ x: .05, y: .2, w: 1.9, d: .6, z: 0, h: 22, c: '#c98d5a' }, { x: .05, y: .2, w: 1.9, d: .6, z: 22, h: 2, c: '#e0bd84' }, { x: .3, y: .3, w: .5, d: .35, z: 24, h: 1, c: '#ffffff' }, { x: 1.1, y: .3, w: .5, d: .35, z: 24, h: 1, c: '#ffffff' }] },
   { id: 'realty_model', name: '房子模型', theme: 'cute', w: 1, d: 1, parts: [{ x: .2, y: .2, w: .6, d: .6, z: 0, h: 18, c: '#e0bd84' }, { x: .3, y: .3, w: .4, d: .4, z: 18, h: 12, c: '#fff6e0' }, { x: .25, y: .25, w: .5, d: .5, z: 30, h: 8, c: '#e8505b' }] },
   { id: 'realty_board', name: '房子看板', theme: 'modern', w: 3, h: 32, z: 44, layer: 'wall', d: 1, parts: [],
@@ -3616,6 +3619,7 @@ const HOSTS = {
   tkd: { id: 'tkd', name: '熊熊教練', short: '熊教練', body: '#8a5a33', edge: '#6b4428', belly: '#e8cfa9', inner: '#6b4428', ears: 'round', acc: 'scarf', accColor: '#26232a' },
   restaurant: { id: 'restaurant', name: '貓咪主廚', short: '貓主廚', body: '#ffd9a8', edge: '#d9a86a', belly: '#fff4e0', inner: '#ffb3c7', ears: 'pointy', acc: 'hat', accColor: '#ffffff' },
   curator: { id: 'curator', name: '貓頭鷹館長', short: '館長', body: '#b08a6a', edge: '#8a6a4a', belly: '#f3e6d4', inner: '#e8c8a0', ears: 'tuft', acc: 'glasses', accColor: '#3a3240' },   // 🏛️ 博物館
+  clerk: { id: 'clerk', name: '兔兔店員', short: '店員', body: '#fff4f8', edge: '#e0c0cc', belly: '#ffffff', inner: '#ffb3c7', ears: 'long', acc: 'scarf', accColor: '#ff6fa3' },   // 🛍️ 百貨公司
   realtor: { id: 'realtor', name: '倉鼠經紀人', short: '經紀人', body: '#f3c48a', edge: '#d09a5a', belly: '#fff6e8', inner: '#ffc4b0', ears: 'round', acc: 'glasses', accColor: '#2b2d42' },   // 🏡 小可愛不動產
   banker: { id: 'banker', name: '松鼠行員', short: '行員', body: '#d9915a', edge: '#b0703a', belly: '#fbe8d2', inner: '#f0b88a', ears: 'pointy', acc: 'scarf', accColor: '#2f8a3c' },   // 🏦 銀行
   fireman: { id: 'fireman', name: '熊熊消防員', short: '消防員', body: '#c98a55', edge: '#a06a3a', belly: '#f3dcc0', inner: '#e8a87a', ears: 'round', acc: 'hat', accColor: '#d63b3b' },   // 🚒 消防局
@@ -3745,6 +3749,12 @@ const PLACES = {
   /* 🏛️ 博物館、🏦 銀行（家長 11/22：新市區島，坐船過去） */
   museum: { name: '博物館', host: 'curator', emoji: '🏛️', desc: '看恐龍化石、月亮石頭、大寶石，看完回答館長的小問題！', rooms: [
     { name: '博物館', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_terrazzo', items: [['museum_dino', 1, 1], ['museum_case', 6, 1], ['museum_case', 8, 1], ['museum_rope', 1, 5], ['museum_case', 7, 6]], wallItems: [['museum_painting', 'R', 3], ['museum_painting', 'L', 5]] }
+  ] },
+  dept: { name: '百貨公司', host: 'clerk', emoji: '🛍️', desc: '好幾層樓！百貨限定的家具、扭蛋機，週末還有週年慶打折', rooms: [
+    { name: '1F 衣服飾品', w: 10, d: 10, wall: 'wp_pink', floor: 'fl_terrazzo', items: [['dept_rack', 1, 1], ['dept_rack', 5, 1], ['dept_counter', 7, 6], ['dept_rack', 1, 5]], wallItems: [] },
+    { name: '2F 家具', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_wood', items: [['dept_sofa', 1, 1], ['dept_chandelier', 5, 1], ['dept_fountain', 6, 5], ['dept_counter', 1, 7]], wallItems: [] },
+    { name: '3F 玩具', w: 10, d: 10, wall: 'wp_candy', floor: 'fl_check', items: [['dept_teddy', 2, 2], ['dept_teddy', 6, 2], ['dept_gacha', 4, 6], ['dept_gacha', 6, 6]], wallItems: [] },
+    { name: '頂樓 美食街', w: 10, d: 10, wall: 'wp_stripe', floor: 'fl_tile', items: [['dining_table', 2, 2], ['dining_table', 6, 2], ['dining_table', 2, 6], ['dept_gacha', 7, 7]], wallItems: [] }
   ] },
   realty: { name: '小可愛不動產', host: 'realtor', emoji: '🏡', desc: '買新房子！海邊小木屋、森林樹屋、城市公寓、夢幻城堡', rooms: [
     { name: '小可愛不動產', w: 8, d: 8, wall: 'wp_cream', floor: 'fl_wood', items: [['realty_desk', 3, 1], ['realty_model', 1, 4], ['realty_model', 6, 4]], wallItems: [['realty_board', 'R', 3]] }
@@ -5897,6 +5907,16 @@ FURN_BY_ID.reindeer_sleigh = { id: 'reindeer_sleigh', name: '麋鹿雪橇', pric
  ['souv_windmill', '糖果國的棒棒糖風車', [{ x: .46, y: .46, w: .08, d: .08, z: 0, h: 34, c: '#ffffff' }, { k: 'ball', x: .5, y: .5, z: 38, r: 8, c: '#ff6b9d' }, { k: 'ball', x: .5, y: .5, z: 38, r: 4, c: '#ffd23f' }]],
  ['souv_star', '星星國的星星夜燈', [{ x: .32, y: .32, w: .36, d: .36, z: 0, h: 5, c: '#3a0ca3' }, { k: 'ball', x: .5, y: .5, z: 16, r: 7, c: '#ffe066' }, { k: 'ball', x: .38, y: .5, z: 20, r: 3, c: '#ffe066' }, { k: 'ball', x: .62, y: .5, z: 20, r: 3, c: '#ffe066' }, { k: 'ball', x: .5, y: .5, z: 26, r: 3, c: '#ffe066' }]]
 ].forEach(([id, name, parts]) => { FURN_BY_ID[id] = { id, name, price: 0, theme: 'cute', w: 1, d: 1, gift: true, souvenir: true, parts }; });
+/* 🛍️ 百貨公司限定家具、🎰 扭蛋才有的稀有小東西（不在一般商店賣，買了／扭到了放進我的東西） */
+[
+  ['dept_chandelier', '水晶吊燈', 6000, 1, 1, [{ x: .4, y: .4, w: .2, d: .2, z: 0, h: 3, c: '#e0b23a' }, { x: .47, y: .47, w: .06, d: .06, z: 3, h: 50, c: '#e0b23a' }, { k: 'ball', x: .5, y: .5, z: 56, r: 9, c: '#e8f6ff', shade: true }, { k: 'ball', x: .3, y: .5, z: 50, r: 4, c: '#cfeaf7' }, { k: 'ball', x: .7, y: .5, z: 50, r: 4, c: '#cfeaf7' }, { k: 'ball', x: .5, y: .3, z: 50, r: 4, c: '#cfeaf7' }, { k: 'ball', x: .5, y: .7, z: 50, r: 4, c: '#cfeaf7' }]],
+  ['dept_sofa', '豪華絨布沙發', 5000, 2, 1, [{ x: .05, y: .2, w: 1.9, d: .7, z: 0, h: 12, c: '#b0306a' }, { x: .05, y: .1, w: 1.9, d: .2, z: 12, h: 18, c: '#c23f7a' }, { x: .05, y: .2, w: .2, d: .7, z: 12, h: 8, c: '#c23f7a' }, { x: 1.75, y: .2, w: .2, d: .7, z: 12, h: 8, c: '#c23f7a' }, { k: 'ball', x: .6, y: .5, z: 16, r: 4, c: '#ffd23f' }, { k: 'ball', x: 1.4, y: .5, z: 16, r: 4, c: '#ffd23f' }]],
+  ['dept_teddy', '巨大泰迪熊', 4000, 1, 1, [{ k: 'ball', x: .5, y: .5, z: 12, r: 13, c: '#c98a55' }, { k: 'ball', x: .5, y: .5, z: 32, r: 10, c: '#c98a55' }, { k: 'ball', x: .3, y: .5, z: 40, r: 4, c: '#a0703e' }, { k: 'ball', x: .7, y: .5, z: 40, r: 4, c: '#a0703e' }, { k: 'ball', x: .6, y: .7, z: 30, r: 3.5, c: '#f3dcc0' }, { k: 'ball', x: .5, y: .55, z: 22, r: 3, c: '#e8505b' }]],
+  ['dept_fountain', '室內小噴水池', 8000, 2, 2, [{ x: .1, y: .1, w: 1.8, d: 1.8, z: 0, h: 8, c: '#d9d4cc' }, { x: .2, y: .2, w: 1.6, d: 1.6, z: 8, h: 1, c: '#6fc3ec' }, { x: .9, y: .9, w: .2, d: .2, z: 8, h: 18, c: '#d9d4cc' }, { k: 'ball', x: 1, y: 1, z: 30, r: 6, c: '#bfe6f6', shade: true }]],
+  ['gacha_robot', '扭蛋小機器人', 0, 1, 1, [{ x: .35, y: .35, w: .3, d: .3, z: 0, h: 14, c: '#9cc4e8' }, { x: .38, y: .38, w: .24, d: .24, z: 14, h: 10, c: '#c9d8ea' }, { k: 'ball', x: .45, y: .6, z: 20, r: 1.5, c: '#ff6b6b' }, { k: 'ball', x: .55, y: .6, z: 20, r: 1.5, c: '#ff6b6b' }, { x: .48, y: .48, w: .04, d: .04, z: 24, h: 6, c: '#5a6475' }]],
+  ['gacha_unicorn', '扭蛋獨角獸', 0, 1, 1, [{ k: 'ball', x: .5, y: .5, z: 10, r: 8, c: '#ffffff' }, { k: 'ball', x: .7, y: .55, z: 18, r: 5, c: '#ffffff' }, { x: .72, y: .55, w: .04, d: .04, z: 22, h: 8, c: '#ffd23f' }, { k: 'ball', x: .35, y: .45, z: 16, r: 3, c: '#ff9ccf' }, { k: 'ball', x: .3, y: .5, z: 12, r: 3, c: '#b18cff' }]],
+  ['gacha_rocket', '扭蛋小火箭', 0, 1, 1, [{ x: .42, y: .42, w: .16, d: .16, z: 0, h: 26, c: '#f3f3f6' }, { k: 'ball', x: .5, y: .5, z: 28, r: 4, c: '#e8505b' }, { x: .3, y: .45, w: .12, d: .1, z: 0, h: 8, c: '#e8505b' }, { x: .58, y: .45, w: .12, d: .1, z: 0, h: 8, c: '#e8505b' }, { k: 'ball', x: .5, y: .6, z: 18, r: 2.5, c: '#4a90d9' }]]
+].forEach(([id, name, price, w, d, parts]) => { FURN_BY_ID[id] = { id, name, price: 0, deptPrice: price, theme: 'cute', w, d, gift: true, parts }; });
 FURN_BY_ID.fox_mask = { id: 'fox_mask', name: '怪盜狐狸的面具', price: 0, theme: 'cute', w: 1, d: 1, gift: true, parts: [{ x: .3, y: .3, w: .4, d: .4, z: 0, h: 4, c: '#6a2a8a' }, { x: .47, y: .47, w: .06, d: .06, z: 4, h: 12, c: '#e0b23a' }, { k: 'ball', x: .38, y: .5, z: 22, r: 5, c: '#26232a' }, { k: 'ball', x: .62, y: .5, z: 22, r: 5, c: '#26232a' }, { k: 'ball', x: .38, y: .55, z: 22, r: 1.6, c: '#ffffff' }, { k: 'ball', x: .62, y: .55, z: 22, r: 1.6, c: '#ffffff' }, { k: 'ball', x: .5, y: .5, z: 28, r: 3, c: '#ff8a3d' }] };   // 🦊 怪盜狐狸事件解決的獎品
 FURN_BY_ID.pet_trophy = { id: 'pet_trophy', name: '寵物運動會獎盃', price: 0, theme: 'cute', w: 1, d: 1, gift: true, parts: [{ x: .3, y: .3, w: .4, d: .4, z: 0, h: 5, c: '#8a5a33' }, { x: .42, y: .42, w: .16, d: .16, z: 5, h: 8, c: '#e0b832' }, { k: 'ball', x: .5, y: .5, z: 20, r: 8, c: '#ffd23f' }, { k: 'ball', x: .32, y: .5, z: 21, r: 3, c: '#e0b832' }, { k: 'ball', x: .68, y: .5, z: 21, r: 3, c: '#e0b832' }, { k: 'ball', x: .5, y: .6, z: 22, r: 2.4, c: '#e8505b' }] };   // 🏅 寵物運動會第一面金牌
 FURN_BY_ID.plane_model = { id: 'plane_model', name: '飛機模型', price: 0, theme: 'modern', w: 1, d: 1, gift: true, parts: [{ x: .3, y: .3, w: .4, d: .4, z: 0, h: 4, c: '#5a6475' }, { x: .47, y: .47, w: .06, d: .06, z: 4, h: 14, c: '#8a94a6' }, { x: .2, y: .44, w: .6, d: .12, z: 18, h: 6, c: '#ffffff' }, { x: .38, y: .2, w: .14, d: .6, z: 20, h: 2, c: '#4a90d9' }, { x: .22, y: .42, w: .08, d: .16, z: 24, h: 6, c: '#4a90d9' }, { k: 'ball', x: .8, y: .5, z: 21, r: 2, c: '#ffd23f' }] };   // ✈️ 機場三個工作都做到第 3 關
@@ -6066,6 +6086,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-23T09:00', title: '🛍️ 百貨公司開幕！', lines: [
+    ['🛍️', '主島東邊多了百貨公司（兔兔店員）：1F 衣服飾品、2F 家具、3F 玩具、頂樓美食街'],
+    ['✨', '百貨限定家具：水晶吊燈、豪華絨布沙發、巨大泰迪熊、室內小噴水池'],
+    ['🎰', '扭蛋機一次 300 元，偶爾扭到只有扭蛋才有的稀有小東西！'],
+    ['🎉', '每個週末是週年慶：限定家具 8 折、扭蛋 240 元']
+  ] },
   { id: '2026-11-23T08:00', title: '🏡 小可愛不動產開張！', lines: [
     ['🏡', '主島東邊的「小可愛不動產」可以買房子：海邊小木屋、森林樹屋、城市公寓、夢幻城堡'],
     ['🏷️', '主島東邊有「出售」牌子的空地，買了房子就會蓋起來，走到門口就進去；可以自己擺家具、換壁紙地板'],
@@ -15390,6 +15416,7 @@ function hostMenuEntries() {
   }
   if (host.n.id === 'restaurant') { list.push(['🍽️ 點餐吃飯', openRestaurantOrder]); list.push(['👩‍🍳 小幫手打工（做漢堡）', openChefGame]); list.push(['💰 收銀台找錢', openCashGame]); }
   if (host.n.id === 'curator') { list.push(['🏛️ 參觀展覽（看完有小問答）', () => openMuseumTour()]); list.push(['🎭 演習：博物館（第 2 關）', () => openThiefDrill((copState().dlv || 0) >= 1 ? 2 : undefined)]); }
+  if (host.n.id === 'clerk') { list.push(['🛍️ 百貨限定家具', () => openDeptStore()]); list.push(['🎰 扭蛋機', () => openDeptStore('gacha')]); }
   if (host.n.id === 'realtor') { list.push(['🏡 看房子・買房子', () => openRealty()]); }
   if (host.n.id === 'banker') { list.push(['🐷 存錢筒（每天會長利息）', () => openBank()]); list.push(['🎭 演習：金庫（第 3 關）', () => openThiefDrill((copState().dlv || 0) >= 2 ? 3 : undefined)]); }
   if (host.n.id === 'fireman') { list.push(['🚒 滅火任務（拿水管噴水）' + (fireState().lv ? `（過了 ${fireState().lv} 關）` : ''), () => openFireFight()]); list.push(['🐱 救援任務（雲梯救小動物）', () => openFireRescue()]); }
@@ -15873,7 +15900,7 @@ function homeArrive() {
    PLACES 多加一筆就會出現在這裡，不用改選單。 */
 const PLACE_KINDS = [['family', '🏠 家和家人'], ['learn', '📚 上學和學習'], ['sport', '🏅 運動'], ['help', '🚓 幫助別人'], ['fun', '🎡 好玩的地方'], ['shop', '🛍️ 買東西和存錢'], ['other', '🌈 其他地方']];
 const PLACE_KIND_OF = { uncle: 'family', grandma: 'family', sky: 'family', school: 'learn', library: 'learn', museum: 'learn', pool: 'sport', dojo: 'sport', arena: 'sport', gym: 'sport', raceway: 'sport',
-  police: 'help', firestation: 'help', hospital: 'help', amusement: 'fun', cinema: 'fun', park: 'fun', airport: 'fun', santa: 'fun', restaurant: 'shop', garage: 'shop', bank: 'shop', realty: 'shop' };
+  police: 'help', firestation: 'help', hospital: 'help', amusement: 'fun', cinema: 'fun', park: 'fun', airport: 'fun', santa: 'fun', restaurant: 'shop', garage: 'shop', bank: 'shop', realty: 'shop', dept: 'shop' };
 function placeKind(id) { return PLACE_KIND_OF[id] || 'other'; }
 function placeIsle(id) { if (id === 'sky') return '天空島・坐直升機'; const bd = ISL_BLD.find(b => b.id === id); return !bd ? '別的地方' : bd.city ? '新市區・坐船' : bd.town ? '小鎮島・走木橋' : bd.islet ? '運動島・走木橋' : '主島'; }
 function openTravelMenu() {
@@ -24161,6 +24188,7 @@ const ISL_BLD = [   // 房子：x, y 是左上角的格子，w×h 格；門在�
   { id: 'museum', x: 55, y: 22, w: 5, h: 3 },   // 🏛️ 主島東邊（新長出來的那一塊）
   { id: 'bank', x: 62, y: 22, w: 4, h: 3 },   // 🏦 主島東邊
   { id: 'realty', x: 68, y: 22, w: 4, h: 3 },   // 🏡 小可愛不動產
+  { id: 'dept', x: 57, y: 29, w: 6, h: 3 },   // 🛍️ 百貨公司
   { id: 'santa', x: 34, y: 17, w: 4, h: 3, season: 'christmas' },   // 🎅 聖誕老公公的家：聖誕節才有
 
   // 🏅 運動島（家長：游泳池那座小島擴大成運動島，走木橋過去；跆拳道館也搬過來）
@@ -24242,7 +24270,7 @@ const ISL_POND = { x: 31, y: 24, w: 4, h: 3 };
 const ISL_HUB = [26, 19];
 const ISL_STYLE = {   // 牆、屋頂顏色
   dojo: ['#fff4e6', '#e0503a'], pool: ['#e8f6fb', '#3fa9f5'], track: ['#fff1e0', '#e07a4a'], arena: ['#fff6e0', '#ff7a3c'], gym: ['#f4eeff', '#8a78b0'], restaurant: ['#fff0d9', '#e8823a'], hospital: ['#ffffff', '#e8505b'], cinema: ['#3a2f4a', '#e8505b'],
-  raceway: ['#f3f3f6', '#2b2d42'], firestation: ['#ffe9e4', '#d63b3b'], museum: ['#f4efe6', '#8a7f99'], bank: ['#eef6ee', '#2f8a3c'], realty: ['#fff6e0', '#e8823a'], santa: ['#fff4e6', '#d63b3b'], garage: ['#f3f3f6', '#e8505b'], airport: ['#eef6ff', '#4a90d9'], police: ['#e6efff', '#2f5fb8'], home: ['#ffd9c9', '#ff7b7b'], school: ['#fff4cf', '#5b8def'], playground: ['#e7f8d4', '#e07a3a'], library: ['#e6dcff', '#7a5cc9'], park: ['#d9f0c8', '#4f9d4f'],
+  raceway: ['#f3f3f6', '#2b2d42'], firestation: ['#ffe9e4', '#d63b3b'], museum: ['#f4efe6', '#8a7f99'], bank: ['#eef6ee', '#2f8a3c'], realty: ['#fff6e0', '#e8823a'], dept: ['#fff0f6', '#ff6fa3'], santa: ['#fff4e6', '#d63b3b'], garage: ['#f3f3f6', '#e8505b'], airport: ['#eef6ff', '#4a90d9'], police: ['#e6efff', '#2f5fb8'], home: ['#ffd9c9', '#ff7b7b'], school: ['#fff4cf', '#5b8def'], playground: ['#e7f8d4', '#e07a3a'], library: ['#e6dcff', '#7a5cc9'], park: ['#d9f0c8', '#4f9d4f'],
   uncle: ['#d7ecc8', '#7aa05a'], grandma: ['#ffe3b0', '#d68a3a'], amusement: ['#ffe0ee', '#ff6fa3'], friend: ['#fffaf0', '#6fb7e8']
 };
 let islMapCache = null;
@@ -30602,7 +30630,7 @@ const AWAY_GAMES = [
   ['🔎', '幫忙找書', 'library', () => openShelfGame()],
   ['🚓', '一起抓小偷', 'police', () => openCopChase()], ['🛣️', '高速公路追小偷', 'police', () => openHighwayChase()], ['🔍', '小偵探破案', 'police', () => openDetective()], ['🛏️', '病房照顧', 'hospital', () => openWard()],
   ['✈️', '搭飛機旅行', 'airport', () => openAirTravel()], ['🛩️', '開飛機', 'airport', () => openPlaneGame()], ['🧳', '行李安檢', 'airport', () => openSecurity()], ['🗼', '塔台指揮', 'airport', () => openTower()], ['🥤', '空服員送餐', 'airport', () => openMeal()],
-  ['🏁', '賽車場比賽', 'raceway', () => openKart()], ['🚒', '滅火任務', 'firestation', () => openFireFight()], ['🏛️', '參觀博物館', 'museum', () => openMuseumTour()], ['🐷', '銀行存錢', 'bank', () => openBank()], ['🏡', '看房子・買房子', 'realty', () => openRealty()], ['🐱', '救援任務', 'firestation', () => openFireRescue()], ['🎨', '改裝我的車', 'garage', () => openCarShop()], ['🧽', '洗車', 'garage', () => openCarWash()],
+  ['🏁', '賽車場比賽', 'raceway', () => openKart()], ['🚒', '滅火任務', 'firestation', () => openFireFight()], ['🏛️', '參觀博物館', 'museum', () => openMuseumTour()], ['🐷', '銀行存錢', 'bank', () => openBank()], ['🏡', '看房子・買房子', 'realty', () => openRealty()], ['🛍️', '百貨公司', 'dept', () => openDeptStore()], ['🎰', '扭蛋機', 'dept', () => openDeptStore('gacha')], ['🐱', '救援任務', 'firestation', () => openFireRescue()], ['🎨', '改裝我的車', 'garage', () => openCarShop()], ['🧽', '洗車', 'garage', () => openCarWash()],
   ['🧸', '幫小精靈做玩具', 'santa', () => openToyFactory()], ['🦌', '照顧麋鹿', 'santa', () => openDeerCare()], ['🎁', '包禮物', 'santa', () => openGiftWrap()]
 ];
 function allQuickGames() {
@@ -39848,6 +39876,47 @@ function islDrawLot(ctx, b, E) {
 }
 Object.assign(ACTIVITIES, { realty_look: { label: '🏡 看房子・買房子', name: '看房子', fx: '🏡', open: () => openRealty(), lines: ['好想要一間城堡！', '要存好多錢喔！'] } });
 Object.assign(FURNITURE_ACT, { realty_desk: 'realty_look', realty_model: 'realty_look' });
+/* ===== 🛍️ 百貨公司（家長 11/22）=====
+   四層樓：1F 衣服飾品、2F 家具、3F 玩具、頂樓美食街（在百貨公司裡面可以換樓層）。
+   🛍️ 百貨限定家具（一般商店買不到）；🎰 扭蛋機一次 300 元：大多是小擺飾，偶爾扭到只有扭蛋才有的稀有小東西；
+   🎉 週末（六、日）是週年慶：限定家具 8 折、扭蛋 240 元。不用新的存檔欄位（東西都放進我的東西）。 */
+const DEPT_ITEMS = ['dept_chandelier', 'dept_sofa', 'dept_teddy', 'dept_fountain'];
+const GACHA_RARE = ['gacha_robot', 'gacha_unicorn', 'gacha_rocket'];
+const GACHA_COMMON = ['comic_book', 'mini_figure', 'flower_vase', 'photo_frame', 'aroma_candle', 'small_cake', 'book_stack', 'pencil_cup'];
+function deptSale() { const d = new Date().getDay(); return d === 0 || d === 6; }
+function deptPrice(id) { const p = (FURN_BY_ID[id] || {}).deptPrice || 0; return deptSale() ? Math.round(p * .8) : p; }
+function gachaPrice() { return deptSale() ? 240 : 300; }
+function gachaRoll() {
+  if (!spend(gachaPrice())) return null;
+  const rare = Math.random() < .2, pool = rare ? GACHA_RARE : GACHA_COMMON.filter(id => FURN_BY_ID[id]);
+  const fresh = rare ? pool.filter(id => !(G.inv[id] > 0)) : pool, id = (fresh.length ? fresh : pool)[Math.floor(Math.random() * (fresh.length ? fresh : pool).length)];
+  addItem(id, 1); saveGame(); refreshTop(); return { id, rare };
+}
+function openDeptStore(focus) {
+  closeGameWindow(); const card = $('#modalCard'); card.innerHTML = '';
+  const x = el('button', 'modal-x', '✕'); x.onclick = () => { $('#modal').hidden = true; }; card.appendChild(x);
+  card.appendChild(el('h2', '', '🛍️ 百貨公司'));
+  if (deptSale()) card.appendChild(el('div', 'qg-bonus', '🎉 週末週年慶！限定家具 8 折、扭蛋 240 元'));
+  card.appendChild(note(`兔兔店員：歡迎光臨～這裡的東西一般商店買不到喔！　👛 身上 ${fmt(G.bells)} 元`));
+  // 🎰 扭蛋機
+  const gbox = el('div', 'help-letter' + (focus === 'gacha' ? ' on' : '')); if (focus === 'gacha') gbox.style.outline = '3px solid #ffd23f';
+  gbox.append(el('div', 'help-l-t', `🎰 扭蛋機　💰 ${gachaPrice()} 一次`), el('div', 'help-l-s', `大多是可愛的小擺飾，偶爾會扭到只有扭蛋才有的稀有東西（${GACHA_RARE.filter(id => G.inv[id] > 0).length} / ${GACHA_RARE.length}）！`));
+  const roll = el('button', 'big', '🎰 轉一次！');
+  roll.onclick = () => { if (G.bells < gachaPrice()) { Sound.play('miss'); toast('錢不夠喔～'); return; } const r = gachaRoll(); if (!r) return; Sound.play(r.rare ? 'fanfare' : 'coin'); $('#modal').hidden = true;
+    const def = FURN_BY_ID[r.id]; try { showcase(renderThumb(def, 150), r.rare ? `✨ 稀有！${def.name}！` : `扭到了：${def.name}`, r.rare ? '只有扭蛋才有的稀有東西！放進我的東西了' : '放進我的東西了', { head: '🎰 扭蛋機' }); } catch (e) { toast(`🎰 扭到了 ${def.name}！`); } };
+  gbox.appendChild(roll); card.appendChild(gbox);
+  // 🛍️ 限定家具
+  card.appendChild(el('div', 'qg-h', '🛍️ 百貨限定家具'));
+  const grid = el('div', 'grid');
+  DEPT_ITEMS.forEach(id => { const def = FURN_BY_ID[id], pr = deptPrice(id);
+    const c = furnCard(def, `💰 ${fmt(pr)}${deptSale() ? '（8 折）' : ''}`, () => { if (!spend(pr)) { Sound.play('miss'); toast('錢不夠喔～'); return; } addItem(id, 1); Sound.play('coin'); saveGame(); refreshTop(); toast(`🛍️ 買了「${def.name}」，放進我的東西了！`); openDeptStore(); }, G.inv[id]);
+    if (G.bells < pr) c.classList.add('dim'); grid.appendChild(c); });
+  card.appendChild(grid);
+  const ok = el('button', 'big alt', '好'); ok.onclick = () => { $('#modal').hidden = true; }; card.appendChild(ok);
+  $('#modal').hidden = false;
+}
+Object.assign(ACTIVITIES, { dept_shop: { label: '🛍️ 百貨限定家具', name: '逛百貨', fx: '🛍️', open: () => openDeptStore(), lines: ['好多漂亮的東西！'] }, dept_gacha: { label: '🎰 轉扭蛋', name: '扭蛋', fx: '🎰', open: () => openDeptStore('gacha'), lines: ['會扭到什麼呢？'] } });
+Object.assign(FURNITURE_ACT, { dept_counter: 'dept_shop', dept_rack: 'dept_shop', dept_gacha: 'dept_gacha' });
 /* 🎄 裝飾聖誕樹（記憶力） */
 const TREE_SLOTS = [[150, 72], [134, 102], [166, 102], [120, 134], [150, 130], [180, 134], [104, 168], [134, 166], [166, 168], [196, 166]];
 const TREE_COLS = [['red', '#e8505b', '紅色'], ['gold', '#ffd23f', '金色'], ['blue', '#4a90d9', '藍色']];
