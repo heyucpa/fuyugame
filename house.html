@@ -5968,6 +5968,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-22T19:00', title: '🐻 跟北極熊比賽抓魚、🛣️ 高速公路追小偷', lines: [
+    ['🐻', '幫冰雪國的企鵝跟北極熊和好以後，到冰雪國可以跟北極熊比賽抓魚：魚跳出來那一下快按！'],
+    ['🛣️', '警察局多了「高速公路追小偷」：換車道閃開三角錐和慢車，追到小偷的黑車後面就抓到了'],
+    ['🛩️', '開飛機的時候，機長的小飛機會跟在後面一起飛，撿你漏掉的圈圈，看誰飛過得多'],
+    ['⭐', '雪橇送禮的時候天上會飄來星星，點一下（或按 ↑）時間多 5 秒']
+  ] },
   { id: '2026-11-22T18:00', title: '🏁 賽車場開幕！❄️ 冬天可以打雪仗！', lines: [
     ['🏁', '大地圖右下方多了賽車場，狐狸賽車手在那裡等你；開自己的車去比賽，改車店改過的顏色、貼紙、底盤燈都會出現在賽道上'],
     ['❄️', '冬天（12～2 月）「🎮 遊戲」裡多了打雪仗：跟躲避球一樣，在雪地裡丟雪球'],
@@ -13349,6 +13355,91 @@ function openHelpBox() {
   $('#modal').hidden = false;
 }
 setTimeout(() => { try { helpChip(); } catch (e) {} }, 3000);
+/* ===== 🐻 跟北極熊比賽抓魚（家長 11/22：用對打的「看準時機」玩法）=====
+   冰雪國的企鵝求救信幫完以後，到冰雪國就可以跟北極熊比賽：冰洞裡的魚跳出來的那一下，按「🎣 抓！」（空白鍵、點畫面）。
+   北極熊也會抓（有一點點慢）。沒魚的時候亂按，手會凍到停一下。先抓到 7 條的贏；輸了也沒關係，北極熊會請你一起烤魚。 */
+function openBearFish() {
+  const W = 360, H = 220, NEED = 7, w = openGameWindow('🐻 跟北極熊比賽抓魚', '冰洞裡的魚跳出來的時候，快按「🎣 抓！」（空白鍵、點畫面）！沒魚的時候亂按，手會凍到停一下喔。先抓到 7 條的贏！');
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const { c, g } = gameCanvas(w.stage, W, H);
+  let t = 0, last = performance.now(), raf = 0, live = true, end = false, me = 0, bear = 0, fish = null, next = 1.2, frozen = 0, flying = [], say = '';
+  const grab = () => { if (end) return; if (frozen > 0) return;
+    if (fish && fish.up > 0 && !fish.taken) { fish.taken = 'me'; me++; Sound.play('pickUp'); flying.push({ x: 180, y: 130, tx: 70, ty: 150, t: 0 }); w.status.textContent = `抓到了！你 ${me} 條、北極熊 ${bear} 條`; if (me >= NEED) finish(true); }
+    else { frozen = .6; Sound.play('miss'); w.status.textContent = '噗通！沒有魚～手凍住了，等一下下'; } };
+  const btn = el('button', 'big', '🎣 抓！'); btn.dataset.key = '空白'; btn.onclick = grab; w.btns.appendChild(btn); leaveButton(w);
+  c.addEventListener('pointerdown', e => { e.preventDefault(); grab(); });
+  const kd = e => { if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); if (!e.repeat) grab(); } };
+  document.addEventListener('keydown', kd);
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); };
+  const finish = win => { end = true; btn.remove();
+    const got = payReward(w, win ? 120 : 40); Sound.play(win ? 'fanfare' : 'petHappy');
+    say = win ? '你好厲害！我們一起烤魚吃吧！' : '耶～我贏了！不過一個人吃好無聊，一起烤魚吧！';
+    w.status.textContent = `${win ? '你贏了！' : '北極熊贏了！'}你 ${me} 條、北極熊 ${bear} 條　💰 +${fmt(got)}`;
+    setTimeout(() => { gameCleanup(); w.btns.innerHTML = ''; const again = el('button', 'big', '🐻 再比一次'); again.onclick = () => openBearFish(); w.btns.appendChild(again); leaveButton(w); }, 1200); };
+  const frame = now => { if (!live) return; raf = requestAnimationFrame(frame); const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt; frozen = Math.max(0, frozen - dt);
+    if (!end) {
+      if (!fish) { next -= dt; if (next <= 0) { fish = { up: .9, t: 0, bearAt: .38 + Math.random() * .5, taken: null }; Sound.play('whoosh'); } }
+      else { fish.t += dt; fish.up -= dt;
+        if (!fish.taken && fish.t >= fish.bearAt) { fish.taken = 'bear'; bear++; Sound.play('boing'); flying.push({ x: 180, y: 130, tx: 290, ty: 150, t: 0 }); w.status.textContent = `北極熊抓到了！你 ${me} 條、北極熊 ${bear} 條`; if (bear >= NEED) finish(false); }
+        if (fish.up <= 0) { fish = null; next = .9 + Math.random() * 1.3; } } }
+    const sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#c5ebff'); sky.addColorStop(1, '#e7f5ff'); g.fillStyle = sky; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(0, 90); g.lineTo(80, 40); g.lineTo(150, 80); g.lineTo(230, 30); g.lineTo(360, 85); g.lineTo(360, 110); g.lineTo(0, 110); g.fill();
+    g.fillStyle = '#f4f9ff'; g.fillRect(0, 110, W, H - 110);
+    g.fillStyle = '#2b6c9e'; g.beginPath(); g.ellipse(180, 160, 46, 14, 0, 0, 7); g.fill(); g.strokeStyle = '#bfe0f5'; g.lineWidth = 3; g.stroke();
+    if (fish && fish.up > 0 && !fish.taken) { const k = Math.min(1, fish.t / .25), y = 160 - k * 38 + Math.sin(fish.t * 20) * 2; g.font = '30px sans-serif'; g.textAlign = 'center'; g.fillText('🐟', 180, y); g.fillStyle = 'rgba(255,255,255,.7)'; g.beginPath(); g.arc(165, 158, 4, 0, 7); g.arc(196, 156, 3, 0, 7); g.fill(); }
+    for (let i = flying.length - 1; i >= 0; i--) { const f = flying[i]; f.t += dt * 2.2; const k = Math.min(1, f.t); g.font = '20px sans-serif'; g.textAlign = 'center'; g.fillText('🐟', f.x + (f.tx - f.x) * k, f.y + (f.ty - f.y) * k - Math.sin(k * Math.PI) * 40); if (f.t >= 1) flying.splice(i, 1); }
+    copDrawKid(g, 70, 200, .95, t, false, 1, end ? 'joy' : frozen > 0 ? 'wow' : null);
+    if (frozen > 0) { g.font = '16px sans-serif'; g.textAlign = 'center'; g.fillText('🧊', 95, 140); }
+    drawPolarBear(g, 300, 202, .9, true);
+    g.font = '18px sans-serif'; g.textAlign = 'center'; g.fillText('🧺', 40, 205); g.fillText('🧺', 330, 205);
+    g.fillStyle = 'rgba(255,255,255,.92)'; g.beginPath(); g.roundRect(W / 2 - 80, 6, 160, 24, 10); g.fill(); g.fillStyle = '#1d2433'; g.font = '700 14px sans-serif'; g.textAlign = 'center'; g.fillText(`🧒 ${me}　：　${bear} 🐻`, W / 2, 23);
+    if (say) { g.fillStyle = '#ffffff'; g.beginPath(); g.roundRect(150, 40, 200, 26, 10); g.fill(); g.fillStyle = '#3a3240'; g.font = '700 11.5px sans-serif'; g.fillText(say, 250, 57); } };
+  raf = requestAnimationFrame(frame);
+  w.status.textContent = '魚跳出來就快按「🎣 抓！」';
+  openBearFish.test = { grab, get me() { return me; }, get bear() { return bear; }, get end() { return end; }, fishUp: () => { fish = { up: .9, t: 0, bearAt: 9, taken: null }; } };
+}
+/* ===== 🛣️ 高速公路追小偷（家長 11/22：賽車的玩法拿來追小偷）=====
+   三條車道，警車在左邊，上下鍵（或點畫面上半／下半）換車道；小偷的黑車在前面，會換車道。
+   一直往前開就會慢慢追近；撞到 🚧 三角錐或慢慢開的車，會被拉開一點。追到跟小偷同一條車道、貼在他後面就抓到了！45 秒。 */
+function openHighwayChase() {
+  const W = 360, H = 220, LANES = [86, 136, 186], LIMIT = 45, w = openGameWindow('🛣️ 高速公路追小偷', '上下鍵（或點畫面上半、下半）換車道！閃開三角錐和慢車，追到小偷的黑車後面就抓到了！');
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const { c, g, pos } = gameCanvas(w.stage, W, H);
+  const me = { lane: 1, y: LANES[1], wob: 0 }, th = { lane: 0, y: LANES[0], swap: 2 }, obs = [];
+  let gap = 210, t = 0, last = performance.now(), raf = 0, live = true, end = false, road = 0, nextOb = 1.2;
+  const move = d => { if (end) return; const nl = Math.max(0, Math.min(2, me.lane + d)); if (nl !== me.lane) { me.lane = nl; Sound.play('click'); } };
+  c.addEventListener('pointerdown', e => { e.preventDefault(); const p = pos(e); move(p.y < me.y ? -1 : 1); });
+  const kd = e => { if (/^(ArrowUp|KeyW)$/.test(e.code)) { e.preventDefault(); if (!e.repeat) move(-1); } else if (/^(ArrowDown|KeyS)$/.test(e.code)) { e.preventDefault(); if (!e.repeat) move(1); } };
+  document.addEventListener('keydown', kd);
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); };
+  const finish = win => { end = true; gameCleanup();
+    if (win) { const got = payReward(w, 150); try { addRankXp('cop', 2); } catch (e) {} Sound.play('fanfare'); w.status.textContent = `抓到浣熊小偷了！他乖乖說對不起～　💰 +${fmt(got)}　🎖️ 警察點數 +2`; }
+    else { Sound.play('miss'); w.status.textContent = '小偷下交流道溜走了……再試一次！'; }
+    w.btns.innerHTML = ''; const again = el('button', 'big', '🛣️ 再追一次'); again.onclick = () => openHighwayChase(); w.btns.appendChild(again); leaveButton(w); draw(); };
+  const draw = () => {
+    g.fillStyle = '#7cc46a'; g.fillRect(0, 0, W, H); g.fillStyle = '#5a6475'; g.fillRect(0, 60, W, 150);
+    g.fillStyle = '#ffffff'; for (let i = 0; i < 14; i++) { const x = ((i * 40 - road) % (W + 40) + W + 40) % (W + 40) - 20; g.fillRect(x, 110, 22, 3); g.fillRect(x, 160, 22, 3); }
+    g.fillStyle = '#ffd23f'; g.fillRect(0, 62, W, 3); g.fillRect(0, 205, W, 3);
+    [[30, 30], [140, 24], [250, 34], [330, 28]].forEach(([x, y], i) => { const xx = ((x - road * .3) % (W + 60) + W + 60) % (W + 60) - 30; g.fillStyle = '#8a5a33'; g.fillRect(xx - 2, y + 8, 4, 14); g.fillStyle = '#2f8a4e'; g.beginPath(); g.arc(xx, y + 4, 12, 0, 7); g.fill(); });
+    obs.forEach(o => { if (o.k === 'cone') { g.font = '22px sans-serif'; g.textAlign = 'center'; g.fillText('🚧', o.x, LANES[o.lane] + 6); } else { g.save(); g.translate(o.x, LANES[o.lane] + 12); drawVehicle(g, 'suv', .7, t, true, null, { c: o.c }); g.restore(); } });
+    const tx = 70 + Math.max(36, gap); g.save(); g.translate(tx, th.y + 12); drawVehicle(g, 'sports', .8, t, true, (x, y, s) => { g.save(); g.translate(x, y); try { drawThiefMouse(g, .6, 1, t, {}); } catch (e) {} g.restore(); }, { c: 'black', st: 'paw' }); g.restore();
+    g.save(); g.translate(70, me.y + 12 + (me.wob > 0 ? Math.sin(t * 40) * 3 : 0)); drawVehicle(g, 'police', .8, t, true, null); g.restore();
+    const pct = Math.max(0, Math.min(1, 1 - (gap - 30) / 180)); g.fillStyle = 'rgba(255,255,255,.92)'; g.beginPath(); g.roundRect(8, 8, 200, 22, 8); g.fill(); g.fillStyle = '#3a3240'; g.font = '700 12px sans-serif'; g.textAlign = 'left'; g.fillText(`🚓`, 14, 24); g.fillStyle = '#dfe6ee'; g.fillRect(36, 16, 120, 6); g.fillStyle = '#e8505b'; g.fillRect(36, 16, 120 * pct, 6); g.fillStyle = '#3a3240'; g.fillText(`🦝　⏱️ ${Math.max(0, Math.ceil(LIMIT - t))}`, 160, 24);
+  };
+  const frame = now => { if (!live) return; raf = requestAnimationFrame(frame); const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt; me.wob = Math.max(0, me.wob - dt);
+    const sp = me.wob > 0 ? 90 : 170; road += sp * dt;
+    me.y += (LANES[me.lane] - me.y) * Math.min(1, dt * 12); th.y += (LANES[th.lane] - th.y) * Math.min(1, dt * 6);
+    gap = Math.max(30, gap - (me.wob > 0 ? -4 : 7) * dt * 2);
+    th.swap -= dt; if (th.swap <= 0) { th.swap = 1.4 + Math.random() * 1.6; const opts = [0, 1, 2].filter(l => l !== th.lane); th.lane = opts[Math.floor(Math.random() * opts.length)]; }
+    if ((nextOb -= dt) <= 0) { nextOb = .9 + Math.random() * .9; const lane = Math.floor(Math.random() * 3); obs.push({ x: W + 30, lane, k: Math.random() < .5 ? 'cone' : 'car', c: ['red', 'blue', 'yellow', 'green'][Math.floor(Math.random() * 4)], hit: false }); }
+    for (let i = obs.length - 1; i >= 0; i--) { const o = obs[i]; o.x -= (o.k === 'car' ? sp - 60 : sp) * dt; if (!o.hit && o.lane === me.lane && Math.abs(o.x - 70) < 26) { o.hit = true; me.wob = .8; gap = Math.min(220, gap + 40); Sound.play('boing'); w.status.textContent = o.k === 'cone' ? '撞到三角錐了！小偷拉開距離～' : '前面有慢車！換車道閃開它！'; } if (o.x < -40) obs.splice(i, 1); }
+    if (gap <= 32 && th.lane === me.lane && Math.abs(th.y - me.y) < 10) { draw(); finish(true); return; }
+    draw();
+    if (t >= LIMIT) finish(false); };
+  raf = requestAnimationFrame(frame);
+  w.status.textContent = '追上去！跟小偷同一條車道，貼在他後面就抓到了';
+  openHighwayChase.test = { move, me, th, get gap() { return gap; }, set gap(v) { gap = v; }, end: () => { t = LIMIT; }, obs };
+}
 let islEvNext = 0;
 function islEvState() { if (!G.islEv || typeof G.islEv !== 'object') G.islEv = {}; if (G.islEv.d !== today()) { G.islEv.d = today(); G.islEv.n = 0; } return G.islEv; }
 function islEvTick() {
@@ -15112,7 +15203,7 @@ function hostMenuEntries() {
   if (host.n.id === 'santa') { list.push([santaMisLabel(), () => santaMisOpen()]); list.push(['🧸 幫小精靈做玩具', () => openToyFactory()]); list.push(['🦌 照顧麋鹿', () => openDeerCare()]); list.push(['🎁 包禮物', () => openGiftWrap()]); list.push(['☕ 一起喝熱可可', () => santaCocoa()]); list.push([santaLent() ? '🛷 雪橇借你囉！' : `🛷 借雪橇（再送 ${santaLendLeft()} 份禮物）`, () => santaSleighInfo()]); }
   if (host.n.id === 'garage') { list.push(['🎨 改裝我的車', () => openCarShop()]); list.push(['🧽 洗車', () => openCarWash()]); }
   if (host.n.id === 'airport') { list.push(['✈️ 搭飛機去旅行', () => openAirTravel()]); list.push([`🛂 我的護照（${Object.keys(tripState().st).length} / ${AIR_DEST.length}）`, () => openAirPassport()]); list.push(['🛩️ 開飛機', () => openPlaneGame()]); list.push(['🧳 行李安檢', () => openSecurity()]); list.push(['🗼 塔台指揮', () => openTower()]); list.push(['🥤 空服員送餐', () => openMeal()]); }
-  if (host.n.id === 'police') { list.push(['🔍 小偵探破案', () => openDetective()]); list.push([`🎖️ 我的警察等級（${RANKS.cop.list[rankOf('cop', rankXp('cop'))][1]}）`, () => openRankCard('cop')]); list.push(['🚓 一起抓小偷', () => openCopChase()]); list.push(['🎭 演習：我當小偷', () => openThiefDrill()]); list.push([`📦 失物招領${thiefBag().length ? `（${thiefBag().length} 件）` : ''}`, () => openLostFound()]); }
+  if (host.n.id === 'police') { list.push(['🛣️ 高速公路追小偷', () => openHighwayChase()]); list.push(['🔍 小偵探破案', () => openDetective()]); list.push([`🎖️ 我的警察等級（${RANKS.cop.list[rankOf('cop', rankXp('cop'))][1]}）`, () => openRankCard('cop')]); list.push(['🚓 一起抓小偷', () => openCopChase()]); list.push(['🎭 演習：我當小偷', () => openThiefDrill()]); list.push([`📦 失物招領${thiefBag().length ? `（${thiefBag().length} 件）` : ''}`, () => openLostFound()]); }
   if (host.n.id === 'hospital') { list.push(['🛏️ 病房照顧', () => openWard()]); list.push([`🎖️ 我的醫生等級（${RANKS.doc.list[rankOf('doc', rankXp('doc'))][1]}）`, () => openRankCard('doc')]); list.push([(G.vehicles || []).includes('ambulance') ? '🚑 救護車已經拿到了' : `🚑 救護車任務（當小醫生 ${Math.min(DOC_FOR_AMB, townState().docN || 0)} / ${DOC_FOR_AMB} 次）`, () => toast((G.vehicles || []).includes('ambulance') ? '🚑 到大地圖點「🚲 交通工具」就可以開救護車了！' : `🚑 再當 ${DOC_FOR_AMB - (townState().docN || 0)} 次小醫生，醫生就送你一台救護車！`)]); list.push(['💓 當小醫生', openDoctorGame]); list.push(['🐾 寵物健康檢查', openPetCheckup]); list.push(['👧 小可愛健康檢查', openKidCheckup]); list.push(['🏅 勇敢貼紙簿', openStickerBook]); }
   if (host.n.id === 'gym') { list.push(['🏃 跑步機（速度）', openFitRun]); list.push(['🏋️ 舉啞鈴（力量）', openFitLift]); list.push(['🚴 飛輪（耐力）', openFitBike]); list.push(['📦 跳箱（速度＋力量）', openFitBox]); list.push(['🧘 瑜珈（耐力）', openFitYoga]); list.push(['📊 我的體能', openFitStats]); }
   if (host.n.id === 'arena') { list.push(['⛹️ 籃球比賽（2 對 2）', openBball]); list.push(['🏀 投籃機', openBasket]); list.push(['🔴 躲避球', openDodge]); list.push(['🏓 桌球', openPingPong]); }
@@ -30189,7 +30280,7 @@ const AWAY_GAMES = [
   ['📝', '小考', 'school', () => openQuizGame()], ['🔤', '注音小遊戲', 'school', () => openZhuyinGame()], ['🏃', '跑步大會', 'school', () => openRunMeet()],
   ['🎣', '釣魚', 'park', () => openFishing()], ['📷', '拍蝴蝶', 'park', () => openButterflyGame()],
   ['🔎', '幫忙找書', 'library', () => openShelfGame()],
-  ['🚓', '一起抓小偷', 'police', () => openCopChase()], ['🔍', '小偵探破案', 'police', () => openDetective()], ['🛏️', '病房照顧', 'hospital', () => openWard()],
+  ['🚓', '一起抓小偷', 'police', () => openCopChase()], ['🛣️', '高速公路追小偷', 'police', () => openHighwayChase()], ['🔍', '小偵探破案', 'police', () => openDetective()], ['🛏️', '病房照顧', 'hospital', () => openWard()],
   ['✈️', '搭飛機旅行', 'airport', () => openAirTravel()], ['🛩️', '開飛機', 'airport', () => openPlaneGame()], ['🧳', '行李安檢', 'airport', () => openSecurity()], ['🗼', '塔台指揮', 'airport', () => openTower()], ['🥤', '空服員送餐', 'airport', () => openMeal()],
   ['🏁', '賽車場比賽', 'raceway', () => openKart()], ['🎨', '改裝我的車', 'garage', () => openCarShop()], ['🧽', '洗車', 'garage', () => openCarWash()],
   ['🧸', '幫小精靈做玩具', 'santa', () => openToyFactory()], ['🦌', '照顧麋鹿', 'santa', () => openDeerCare()], ['🎁', '包禮物', 'santa', () => openGiftWrap()]
@@ -36677,6 +36768,7 @@ function airArrive(w, dest, back) {
     addItem(id, 1); Sound.play('buy'); refreshTop(); saveGame(); w.status.textContent = `買了「${f.name}」！收在「我的東西」裡，可以擺在家裡`; };
   home.onclick = () => { Sound.play('click'); try { closeGameWindow(); } catch (e) {} toast('✈️ 平安回到家了！'); };
   w.btns.append(act, photo, shop, home);
+  if (dest === '冰雪國' && helpState().done.ice) { const bf = el('button', 'big', '🐻 跟北極熊比賽抓魚'); bf.onclick = () => { Sound.play('click'); openBearFish(); }; w.btns.insertBefore(bf, photo); }   // 🐻 北極熊變成好朋友以後
   { const hid = helpState().list.find(k => HELP_REQS[k] && HELP_REQS[k].dest === dest); if (hid) { const R = HELP_REQS[hid], hb = el('button', 'big', `🆘 幫${R.who}的忙`); hb.onclick = () => { Sound.play('click'); helpRun(hid, w); }; w.btns.prepend(hb); setTimeout(() => { try { w.status.textContent = `${R.icon} ${R.who}在等你幫忙！按「🆘 幫${R.who}的忙」`; } catch (e) {} }, 50); } }   // 📬 求救信
   w.status.textContent = back ? `還想做什麼呢？` : `到${dest}了！${A ? `這裡可以「${A.name}」，` : ''}也拍張紀念照、買個紀念品吧`;
   airArrive.test = { photo: () => photo.click(), shop: () => shop.click(), home: () => home.click(), act: () => act.click() };
@@ -36709,11 +36801,11 @@ function openPlaneGame(lv) {
   const w = openGameWindow(`🛩️ 開飛機・第 ${lv} 關`, '上下鍵（或 W / S）上下飛，手指按著畫面也可以。飛過圈圈，閃開烏雲和小鳥！');
   w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
   const f = copField(w, W, H), g = f.g;
-  const me = { x: 70, y: H / 2, wob: 0 }, things = [], clouds = Array.from({ length: 5 }, () => ({ x: Math.random() * W, y: Math.random() * H, s: .5 + Math.random() * .5 }));
+  const me = { x: 70, y: H / 2, wob: 0 }, rv = { x: 34, y: H / 2 - 40, got: 0 }, things = [], clouds = Array.from({ length: 5 }, () => ({ x: Math.random() * W, y: Math.random() * H, s: .5 + Math.random() * .5 }));   // 🛩️ 機長的小飛機在後面一起飛
   let t = 0, got = 0, last = performance.now(), raf = 0, live = true, end = false, nextRing = .8, nextBad = 1.5;
   gameCleanup = () => { live = false; cancelAnimationFrame(raf); f.stop(); };
   const finish = () => { end = true; gameCleanup(); const ok = got >= P.need;
-    if (ok) { airLevelWin(w, 'fly', lv, 60 + got * 10, `降落成功！飛過 ${got} 個圈圈${lv < 3 ? '，下一關開了！' : '，你是小機長了！'}`, openPlaneGame); return; }
+    if (ok) { airLevelWin(w, 'fly', lv, 60 + got * 10, `降落成功！你飛過 ${got} 個圈圈、機長 ${rv.got} 個${got > rv.got ? '，你贏機長了！' : ''}${lv < 3 ? '　下一關開了！' : '　你是小機長了！'}`, openPlaneGame); return; }
     const bells = payReward(w, 10 + got * 5); saveGame(); airLevelLose(w, `飛過 ${got} 個圈圈，差一點點！再試一次吧　💰 +${fmt(bells)}`, lv, openPlaneGame); };
   const frame = now => { if (!live) return; const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
     let [, dy] = f.dirFor(me); if (f.ptr.on && !f.keys.u && !f.keys.d) { const d = f.ptr.y - me.y; dy = Math.abs(d) < 4 ? 0 : Math.max(-1, Math.min(1, d / 30)); }
@@ -36729,13 +36821,16 @@ function openPlaneGame(lv) {
       const near = Math.abs(o.x - me.x) < 18 && Math.abs(o.y - me.y) < (o.k === 'ring' ? 18 : 16);
       if (near && !o.hit && !end) { o.hit = true; if (o.k === 'ring') { got++; Sound.play('pickUp'); } else { me.wob = 1; Sound.play('miss'); w.status.textContent = o.k === 'bird' ? '小鳥：啾！小心一點啦～' : '轟隆！穿過烏雲好晃～'; } }
       if (o.x < -40) things.splice(i, 1); }
+    { const tgt = things.filter(o => o.k === 'ring' && !o.hit && !o.rv && o.x > rv.x - 4).sort((a, b) => a.x - b.x)[0]; const ty = tgt ? tgt.y : H / 2 + Math.sin(t) * 40; rv.y += Math.max(-1, Math.min(1, (ty - rv.y) / 30)) * 95 * dt;
+      things.forEach(o => { if (o.k === 'ring' && !o.hit && !o.rv && Math.abs(o.x - rv.x) < 14 && Math.abs(o.y - rv.y) < 20) { o.rv = true; rv.got++; } });
+      g.save(); g.translate(rv.x, rv.y); g.globalAlpha = .9; drawCupPlane(g, 0, 0, .55); g.globalAlpha = 1; g.font = '9px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#4a90d9'; g.fillText('機長', 0, -14); g.restore(); }   // 🛩️ 機長撿你漏掉的圈圈
     g.save(); g.translate(me.x, me.y); if (me.wob > 0) g.rotate(Math.sin(t * 30) * .25 * me.wob); drawCupPlane(g, 0, 0, .8); g.restore();
-    g.font = 'bold 14px sans-serif'; g.textAlign = 'left'; g.fillStyle = '#1d2433'; g.fillText(`⭕ ${got} / ${P.need}　⏱️ ${Math.max(0, Math.ceil(LIMIT - t))}`, 10, 18);
+    g.font = 'bold 14px sans-serif'; g.textAlign = 'left'; g.fillStyle = '#1d2433'; g.fillText(`⭕ ${got} / ${P.need}　⏱️ ${Math.max(0, Math.ceil(LIMIT - t))}　🛩️ 機長 ${rv.got}`, 10, 18);
     if (t >= LIMIT) { finish(); return; }
     raf = requestAnimationFrame(frame); };
   raf = requestAnimationFrame(frame);
   w.status.textContent = `飛過 ${P.need} 個圈圈就過關！`;
-  openPlaneGame.test = { me, things, get got() { return got; }, set got(v) { got = v; }, end: () => { t = LIMIT; } };
+  openPlaneGame.test = { me, things, rv, get got() { return got; }, set got(v) { got = v; }, end: () => { t = LIMIT; } };
 }
 /* ===== ✈️ 機場第二批：行李安檢、塔台指揮、空服員送餐 =====
    各有 3 關，過關記在 G.trip.sec / twr / meal；三個都過第 3 關送「飛機模型」（G.trip.pz = 1，只送一次）。 */
@@ -37987,14 +38082,15 @@ function openSleigh(lv) {
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   const { c, g } = gameCanvas(w.stage, W, H);
   const houses = [], gifts = [], fx = [], snow = Array.from({ length: 30 }, () => ({ x: Math.random() * W, y: Math.random() * H, s: .5 + Math.random() }));
-  let t = 0, got = 0, last = performance.now(), raf = 0, live = true, end = false, cool = 0;
+  let t = 0, got = 0, last = performance.now(), raf = 0, live = true, end = false, cool = 0, LIMIT2 = LIMIT, nextStar = 4, stars = [], starGot = 0;
   const COLS = ['#e8505b', '#4a90d9', '#ffb347', '#b07fd0', '#51cf66'];
+  const takeStar = s => { if (!s || s.got) return false; s.got = true; starGot++; LIMIT2 += 5; Sound.play('perfect'); fx.push({ x: s.x, y: s.y - 10, t: 0, s: '⏱️ +5 秒！' }); w.status.textContent = '⭐ 抓到星星！時間多 5 秒！'; return true; };
   const addHouse = x => { const hw = 64 + Math.random() * 24, roof = 120 + Math.random() * 40; houses.push({ x, w: hw, roof, cx: hw * (.3 + Math.random() * .4), col: COLS[Math.floor(Math.random() * COLS.length)], hit: false }); };
   for (let x = 220; x < W + 200;) { addHouse(x); x += houses[houses.length - 1].w + 50 + Math.random() * 70; }
   const drop = () => { if (end || cool > 0) return; cool = .35; gifts.push({ x: SX + 6, y: 70, vy: 0, py: 70, col: COLS[gifts.length % COLS.length] }); Sound.play('click'); };
   const btn = el('button', 'big', '🎁 丟禮物'); btn.dataset.key = '空白'; btn.onclick = drop; w.btns.appendChild(btn); leaveButton(w);
-  c.addEventListener('pointerdown', e => { e.preventDefault(); drop(); });
-  const kd = e => { if (e.code === 'Space' || e.code === 'Enter' || e.code === 'ArrowDown') { e.preventDefault(); if (!e.repeat) drop(); } };
+  c.addEventListener('pointerdown', e => { e.preventDefault(); const r = c.getBoundingClientRect(), px = (e.clientX - r.left) / r.width * W, py = (e.clientY - r.top) / r.height * H; const s = stars.find(q => !q.got && Math.hypot(q.x - px, q.y - py) < 26); if (s) takeStar(s); else drop(); });
+  const kd = e => { if (e.code === 'Space' || e.code === 'Enter' || e.code === 'ArrowDown') { e.preventDefault(); if (!e.repeat) drop(); } else if (e.code === 'ArrowUp' || e.code === 'KeyW') { e.preventDefault(); if (!e.repeat) takeStar(stars.filter(q => !q.got && q.x > 0 && q.x < W).sort((a, b) => a.x - b.x)[0]); } };
   document.addEventListener('keydown', kd);
   gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); };
   const finish = win => { end = true; gameCleanup(); btn.remove();
@@ -38027,12 +38123,14 @@ function openSleigh(lv) {
     g.fillStyle = '#d63b3b'; g.beginPath(); g.moveTo(-18, -6); g.lineTo(22, -6); g.quadraticCurveTo(26, 8, 16, 10); g.lineTo(-14, 10); g.quadraticCurveTo(-22, 4, -18, -6); g.fill();
     g.strokeStyle = '#ffd23f'; g.lineWidth = 2; g.beginPath(); g.moveTo(-20, 14); g.lineTo(22, 14); g.quadraticCurveTo(30, 14, 28, 8); g.stroke();
     g.restore();
+    if ((nextStar -= dt) <= 0) { nextStar = 5 + Math.random() * 4; stars.push({ x: W + 20, y: 20 + Math.random() * 40, got: false }); }   // ⭐ 加速星星：點一下（或按 ↑）時間 +5 秒
+    for (let i = stars.length - 1; i >= 0; i--) { const s = stars[i]; s.x -= 70 * dt; if (s.x < -20 || s.got) { stars.splice(i, 1); continue; } g.save(); g.translate(s.x, s.y + Math.sin(t * 4 + s.x) * 3); g.rotate(t * 2); g.fillStyle = '#ffe066'; g.beginPath(); for (let k = 0; k < 10; k++) { const r = k % 2 ? 4.5 : 10, a = k * Math.PI / 5; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); } g.closePath(); g.fill(); g.restore(); g.fillStyle = 'rgba(255,230,120,.25)'; g.beginPath(); g.arc(s.x, s.y, 16, 0, 7); g.fill(); }
     for (let i = fx.length - 1; i >= 0; i--) { const f = fx[i]; f.t += dt; g.globalAlpha = Math.max(0, 1 - f.t); g.font = '700 12px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#ffffff'; g.fillText(f.s, f.x, f.y - f.t * 24); g.globalAlpha = 1; if (f.t > 1) fx.splice(i, 1); }
-    g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.roundRect(6, 6, 150, 22, 8); g.fill(); g.fillStyle = '#3a3240'; g.font = '700 13px sans-serif'; g.textAlign = 'left'; g.fillText(`🎁 ${got} / ${P.need}　⏱️ ${Math.max(0, Math.ceil(LIMIT - t))}`, 14, 22);
-    if (t >= LIMIT) finish(false); };
+    g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.roundRect(6, 6, 150, 22, 8); g.fill(); g.fillStyle = '#3a3240'; g.font = '700 13px sans-serif'; g.textAlign = 'left'; g.fillText(`🎁 ${got} / ${P.need}　⏱️ ${Math.max(0, Math.ceil(LIMIT2 - t))}`, 14, 22);
+    if (t >= LIMIT2) finish(false); };
   raf = requestAnimationFrame(frame);
-  w.status.textContent = `第 ${lv} 關：送 ${P.need} 份禮物進煙囪！`;
-  openSleigh.test = { houses, gifts, drop, get got() { return got; }, set got(v) { got = v; }, end: () => { t = LIMIT; } };
+  w.status.textContent = `第 ${lv} 關：送 ${P.need} 份禮物進煙囪！天上飄來 ⭐ 點一下（或按 ↑）時間多 5 秒`;
+  openSleigh.test = { houses, gifts, drop, stars, takeStar, get starGot() { return starGot; }, get limit() { return LIMIT2; }, get got() { return got; }, set got(v) { got = v; }, end: () => { t = LIMIT2; } };
 }
 Object.assign(ACTIVITIES, {
   xmas_treegame: { label: '🎄 裝飾聖誕樹', name: '裝飾聖誕樹', fx: '✨', open: () => openXmasTree(), lines: ['彩球要掛哪裡呢？', '好漂亮的聖誕樹！'] },
