@@ -35419,7 +35419,20 @@ function openPuzzleGame() {
     // 打亂；排到不是已經完成的為止
     let order = [];
     for (let i = 0; i < n * n; i++) order.push(i);
-    const solved = () => order.every((v, i) => v === i);
+    /* 家長 11/22：明明拼好了卻沒過關——上面幾片都是空白底色，兩片空白互換位置，畫面一模一樣，
+       但本來是比「編號」，所以永遠不算完成。改成比「看起來一不一樣」：長得一樣的兩片放哪邊都算對。 */
+    const same = (() => {
+      const N = n * n, px = [], m = [];
+      try {
+        const cw = Math.floor(src.width / n);
+        for (let i = 0; i < N; i++) px.push(sg.getImageData((i % n) * cw, Math.floor(i / n) * cw, cw, cw).data);
+        for (let a = 0; a < N; a++) { m.push([]); for (let b = 0; b < N; b++) { if (a === b) { m[a].push(true); continue; } if (b < a) { m[a].push(m[b][a]); continue; }
+          const A = px[a], B = px[b]; let d = 0; for (let k = 0; k < A.length; k += 4) d += Math.abs(A[k] - B[k]) + Math.abs(A[k + 1] - B[k + 1]) + Math.abs(A[k + 2] - B[k + 2]);
+          m[a].push(d / (A.length / 4 * 3) < 1.5); } }   // 平均每個顏色差不到 1.5（滿分 255）＝看起來一樣
+      } catch (e) { return null; }
+      return m;
+    })();
+    const solved = () => order.every((v, i) => v === i || !!(same && same[v][i]));
     let guard = 0;
     do {
       for (let i = order.length - 1; i > 0; i--) {
@@ -35441,7 +35454,7 @@ function openPuzzleGame() {
     }
     w.stage.appendChild(board);
     openPuzzleGame.test = { n: n, order: () => order.slice(), tap: tap,
-                            solved: () => solved() };
+                            solved: () => solved(), same: () => same, setOrder: a => { order.splice(0, order.length, ...a); } };
     paint();
     w.status.textContent = `${L.name}　移動 0 次`;
     gameButtons(w, () => pickLevel());
