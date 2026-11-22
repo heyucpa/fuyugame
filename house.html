@@ -5968,6 +5968,10 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-22T20:00', title: '🎈 會躲的氣球、🤝 把小偷抓穩', lines: [
+    ['🎈', '彈弓丟蘋果第 2、3 關有會飄的氣球，還有一顆淘氣氣球會「咻」地躲開一次'],
+    ['🤝', '抓小偷碰到小偷鼠時，他會扭來扭去：小圓點跑到綠色的時候按空白鍵（或點畫面）把他抓穩！']
+  ] },
   { id: '2026-11-22T19:00', title: '🐻 跟北極熊比賽抓魚、🛣️ 高速公路追小偷', lines: [
     ['🐻', '幫冰雪國的企鵝跟北極熊和好以後，到冰雪國可以跟北極熊比賽抓魚：魚跳出來那一下快按！'],
     ['🛣️', '警察局多了「高速公路追小偷」：換車道閃開三角錐和慢車，追到小偷的黑車後面就抓到了'],
@@ -35394,10 +35398,10 @@ function openSlingGame() {
       balloons: [[271, 306], [271, 352]] },
     { boxes: [[225, 360, 22, 22], [225, 338, 22, 22], [225, 316, 22, 22], [305, 360, 22, 22], [305, 338, 22, 22], [305, 316, 22, 22],
       [221, 304, 110, 12], [255, 292, 22, 22], [283, 292, 22, 22], [251, 280, 58, 12]],
-      balloons: [[276, 262], [265, 350], [205, 352]] },
+      balloons: [[276, 262], [265, 350], [180, 215, { my: 34, sp: 1.3 }]] },
     { boxes: [[210, 360, 22, 22], [210, 338, 22, 22], [262, 360, 22, 22], [262, 338, 22, 22], [314, 360, 22, 22], [314, 338, 22, 22],
       [206, 326, 78, 12], [258, 326, 78, 12], [230, 314, 22, 22], [292, 314, 22, 22], [226, 302, 100, 12]],
-      balloons: [[276, 284], [236, 352], [288, 352], [320, 306]] }
+      balloons: [[276, 284], [236, 352], [288, 352], [200, 190, { mx: 40, my: 16, sp: 1.1, dodge: 1 }]] }
   ];
   let level = 0, shots = 3, score = 0, boxes = [], balloons = [], apple = null, aim = null, raf = 0, ended = false, timers = [];
   let last = performance.now(), msg = '', msgUntil = 0;
@@ -35406,9 +35410,13 @@ function openSlingGame() {
   function loadLevel() {
     const L = LEVELS[level];
     boxes = L.boxes.map(([x, y, bw, bh]) => ({ x, y, w: bw, h: bh, vy: 0, dead: false }));
-    balloons = L.balloons.map(([x, y]) => ({ x, y, r: 11, popped: false, t: Math.random() * 6 }));
+    /* 🎈 會動的氣球（家長 11/22：像躲避球那樣對手會動、會躲）：第 2 關有一顆上下飄，
+       第 3 關有一顆「淘氣氣球」會左右飄，蘋果第一次飛過來時還會「咻」地躲開一次，第二次就躲不掉了。 */
+    balloons = L.balloons.map(([x, y, m]) => ({ x, y, r: 11, popped: false, t: Math.random() * 6, mx: m && m.mx || 0, my: m && m.my || 0, sp: m && m.sp || 1, dodge: m && m.dodge || 0, ox: 0, oy: 0, cx: x, cy: y }));
     shots = 3; apple = null; aim = null;
     w.status.textContent = `第 ${level + 1} 關：還有 ${shots} 顆蘋果`;
+    if (balloons.some(b => b.dodge)) { msg = '淘氣氣球會躲喔！'; msgUntil = performance.now() + 1800; }
+    else if (balloons.some(b => b.mx || b.my)) { msg = '有氣球會動！看準再放'; msgUntil = performance.now() + 1800; }
   }
   loadLevel();
 
@@ -35489,14 +35497,14 @@ function openSlingGame() {
       if (level >= LEVELS.length - 1) return finish(true);
       level++;
       msg = '過關！'; msgUntil = performance.now() + 1100;
-      timers.push(setTimeout(() => { loadLevel(); msg = ''; }, 900));
+      timers.push(setTimeout(() => { msg = ''; loadLevel(); }, 900));
       return;
     }
     if (shots <= 0) { // 沒蘋果了
       if (level >= LEVELS.length - 1) return finish(false);
       msg = '蘋果用完了，換下一關！'; msgUntil = performance.now() + 1400;
       level++;
-      timers.push(setTimeout(() => { loadLevel(); msg = ''; }, 1200));
+      timers.push(setTimeout(() => { msg = ''; loadLevel(); }, 1200));
     }
   }
   function finish(cleared) {
@@ -35508,7 +35516,8 @@ function openSlingGame() {
 
   function frame(now) {
     const dt = Math.max(0, Math.min(.03, (now - last) / 1000)); last = now;
-    balloons.forEach(b => { b.t += dt; });
+    balloons.forEach(b => { b.t += dt; b.ox *= Math.max(0, 1 - dt * .6); b.oy *= Math.max(0, 1 - dt * .6);
+      b.cx = b.x + (b.mx ? Math.sin(b.t * b.sp) * b.mx : Math.sin(b.t * 1.5) * 2) + b.ox; b.cy = b.y + (b.my ? Math.sin(b.t * b.sp * 1.4) * b.my : 0) + b.oy; });
     if (msg && now > msgUntil) msg = ''; // 字樣顯示一下就消失
     if (!ended) {
       dropBoxes(dt);
@@ -35516,7 +35525,10 @@ function openSlingGame() {
         apple.vy += GRAV * dt;
         apple.x += apple.vx * dt; apple.y += apple.vy * dt;
         boxes.filter(b => !b.dead).forEach(b => hitBox(apple, b));
-        balloons.filter(b => !b.popped).forEach(b => { if (Math.hypot(apple.x - b.x, apple.y - b.y) < R + b.r) pop(b); });
+        balloons.filter(b => !b.popped).forEach(b => {
+          const d = Math.hypot(apple.x - b.cx, apple.y - b.cy);
+          if (b.dodge > 0 && d < 46 && apple.vx > 0) { b.dodge--; b.oy = apple.y > b.cy ? -30 : 30; b.ox = 6; msg = '咻～躲開了！再一次！'; msgUntil = performance.now() + 1300; Sound.play('whoosh'); return; }
+          if (d < R + b.r) pop(b); });
         if (apple.y + R > GY) { apple.y = GY - R; apple.vy *= -.35; apple.vx *= .7; } // 地上彈一下
         /* 幾乎不動就算停下來——不管是在地上還是停在木箱上面（家長回報：蘋果掉在箱子上面，遊戲卡住不換下一顆）。
            停在箱子上會一直被重力壓著、小小地彈，所以速度門檻放寬一點；另外一顆最多飛 8 秒，當作保險。 */
@@ -35551,12 +35563,17 @@ function openSlingGame() {
     });
     // 氣球
     balloons.filter(b => !b.popped).forEach(b => {
-      const bx = b.x + Math.sin(b.t * 1.5) * 2;
+      const bx = b.cx, by = b.cy, moving = b.mx || b.my;
       g.strokeStyle = 'rgba(80,60,40,.5)'; g.lineWidth = 1;
-      g.beginPath(); g.moveTo(bx, b.y + b.r); g.lineTo(bx, b.y + b.r + 10); g.stroke();
-      g.fillStyle = ['#ff6b6b', '#6bb6ff', '#ffd35c', '#b18cff'][(b.x | 0) % 4];
-      g.beginPath(); g.ellipse(bx, b.y, b.r, b.r * 1.2, 0, 0, Math.PI * 2); g.fill();
-      g.fillStyle = 'rgba(255,255,255,.55)'; g.beginPath(); g.ellipse(bx - 3.5, b.y - 4, 2.6, 3.4, -.4, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.moveTo(bx, by + b.r); g.lineTo(bx + (moving ? Math.sin(b.t * 3) * 3 : 0), by + b.r + 10); g.stroke();
+      g.fillStyle = b.dodge || (moving && b.mx) ? '#ff8fc8' : ['#ff6b6b', '#6bb6ff', '#ffd35c', '#b18cff'][(b.x | 0) % 4];
+      g.beginPath(); g.ellipse(bx, by, b.r, b.r * 1.2, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = 'rgba(255,255,255,.55)'; g.beginPath(); g.ellipse(bx - 3.5, by - 4, 2.6, 3.4, -.4, 0, Math.PI * 2); g.fill();
+      if (moving) {   // 會動的氣球有表情，淘氣的那顆在吐舌頭
+        g.fillStyle = '#3a3240'; g.beginPath(); g.arc(bx - 3, by - 1, 1.4, 0, Math.PI * 2); g.arc(bx + 3, by - 1, 1.4, 0, Math.PI * 2); g.fill();
+        g.strokeStyle = '#3a3240'; g.lineWidth = 1.2; g.beginPath(); g.arc(bx, by + 2.5, 2.6, .2, Math.PI - .2); g.stroke();
+        if (b.dodge) { g.fillStyle = '#e8505b'; g.beginPath(); g.ellipse(bx, by + 5.6, 1.6, 2, 0, 0, Math.PI * 2); g.fill(); }
+      }
     });
     // 瞄準：橡皮筋和預測路線
     if (aim) {
@@ -35585,7 +35602,7 @@ function openSlingGame() {
     raf = requestAnimationFrame(frame);
   }
   // 給走查看的：把蘋果放在某個位置、直接跑物理（不畫）
-  openSlingGame.test = { boxes: () => boxes, shots: () => shots, apple: () => apple, level: () => level,
+  openSlingGame.test = { balloons: () => balloons, boxes: () => boxes, shots: () => shots, apple: () => apple, level: () => level,
     place: (x, y, vx, vy) => { apple = { x, y, vx: vx || 0, vy: vy || 0, rest: 0, air: 0 }; shots = Math.max(0, shots - 1); },
     step: dt => { const saveRaf = window.requestAnimationFrame; window.requestAnimationFrame = () => 0; try { last = performance.now() - dt * 1000; frame(performance.now()); } finally { window.requestAnimationFrame = saveRaf; } } };
   function drawApple(x, y) {
@@ -35997,15 +36014,35 @@ function openCopChase(lv) {
     return;
   }
   const plan = COP_PLAN[lv - 1], W = 320, H = 240;
-  const w = openGameWindow(`🚓 抓小偷・第 ${lv} 關`, '用方向鍵（或 W A S D），或手指按住畫面往那邊走。碰到小偷就抓到了！小偷跑累了會停下來喘氣，趁機抓住他！');
+  const w = openGameWindow(`🚓 抓小偷・第 ${lv} 關`, '用方向鍵（或 W A S D），或手指按住畫面往那邊走。碰到小偷鼠，他會扭來扭去——小圓點跑到綠色的時候按空白鍵（或點畫面）把他抓穩！小偷跑累了會停下來喘氣，趁機追上去！');
   w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
   const f = copField(w, W, H), g = f.g, walls = plan.walls.map(([x, y, ww, hh]) => ({ x, y, w: ww, h: hh }));
   const me = { x: W / 2, y: H - 30, face: 1 }, ME_SP = 96, LIMIT = 45;
   const thieves = []; for (let i = 0; i < plan.n; i++) { let x, y; do { x = 30 + Math.random() * (W - 60); y = 20 + Math.random() * 90; } while (copHit(walls, x, y, 10)); thieves.push({ x, y, vx: 0, vy: 0, run: 0, rest: 0, caught: false, face: 1, wan: Math.random() * 6 }); }
   let t = 0, last = performance.now(), raf = 0, live = true, done = false;
-  gameCleanup = () => { live = false; cancelAnimationFrame(raf); f.stop(); };
+  /* 🤝 抓穩（家長 11/22）：碰到小偷鼠不是馬上抓到，他會扭來扭去想溜走——
+     小圓點在條子上來回跑，跑到綠色那段時按空白鍵（或點畫面、按「🤝 抓穩！」）才算抓穩。
+     沒按準：小偷鼠溜走一小段，再追就好；沒按準越多次，綠色那段越寬。抓穩的時候時間暫停。 */
+  let grab = null, misses = 0, grabBtn = null;
+  const startGrab = q => {
+    const zw = Math.min(.62, (lv === 1 ? .4 : lv === 2 ? .34 : .3) + misses * .08), z0 = .12 + Math.random() * (.76 - zw);
+    grab = { q, p: 0, dir: 1, z0, z1: z0 + zw, sp: .9 + lv * .22, at: t }; Sound.play('pickUp');
+    grabBtn = el('button', 'big', '🤝 抓穩！'); grabBtn.onclick = () => tryGrab(); w.btns.insertBefore(grabBtn, w.btns.firstChild);
+  };
+  const endGrab = () => { grab = null; if (grabBtn) { grabBtn.remove(); grabBtn = null; } };
+  const tryGrab = () => {
+    if (!grab || done) return; const q = grab.q;
+    if (grab.p >= grab.z0 && grab.p <= grab.z1) { q.caught = true; Sound.play('coin'); toast('👮 抓穩了！'); }
+    else { misses++; Sound.play('miss'); toast('🐭 小偷鼠扭一扭溜走了！再追！');
+      const ax = q.x - me.x, ay = q.y - me.y, d = Math.hypot(ax, ay) || 1; copMove(q, ax / d, ay / d, 1, 30, walls, W, H, 9); q.slip = 1.1; q.rest = 0; q.run = 0; }
+    endGrab();
+  };
+  const grabKey = e => { if (grab && (e.code === 'Space' || e.code === 'Enter')) { e.preventDefault(); tryGrab(); } };
+  document.addEventListener('keydown', grabKey);
+  f.c.addEventListener('pointerdown', () => { if (grab) { f.ptr.on = false; tryGrab(); } });
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); f.stop(); document.removeEventListener('keydown', grabKey); };
   const finish = win => {
-    if (done) return; done = true; live = false; f.stop();
+    if (done) return; done = true; live = false; f.stop(); document.removeEventListener('keydown', grabKey); endGrab();
     if (!win) { Sound.play('miss'); w.status.textContent = '時間到！小偷跑掉了～再試一次！'; gameButtons(w, () => openCopChase(lv)); return; }
     const first = (cs.lv || 0) < lv; cs.lv = Math.max(cs.lv || 0, lv); cs.catch = (cs.catch || 0) + plan.n;
     const bells = payReward(w, 80 + lv * 60); Sound.play('fanfare');
@@ -36022,10 +36059,14 @@ function openCopChase(lv) {
   };
   const tick = now => {
     if (!live) return; raf = requestAnimationFrame(tick);
-    const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
-    const [dx, dy] = f.dirFor(me); if (dx) me.face = dx > 0 ? 1 : -1; copMove(me, dx, dy, ME_SP, dt, walls, W, H, 9);
+    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    if (grab) { grab.p += grab.dir * grab.sp * dt; if (grab.p > 1) { grab.p = 1; grab.dir = -1; } if (grab.p < 0) { grab.p = 0; grab.dir = 1; } }
+    else t += dt;
+    const [dx, dy] = grab ? [0, 0] : f.dirFor(me); if (dx) me.face = dx > 0 ? 1 : -1; copMove(me, dx, dy, ME_SP, dt, walls, W, H, 9);
     thieves.forEach(q => {
       if (q.caught) return;
+      if (grab) return;   // 抓穩的時候大家都停住
+      if (q.slip > 0) q.slip -= dt;
       if (q.rest > 0) q.rest -= dt;
       else { q.run += dt; if (q.run > plan.tired) { q.run = 0; q.rest = 1.1; }
         let ax = q.x - me.x, ay = q.y - me.y; const d = Math.hypot(ax, ay) || 1; const scared = d < 110;
@@ -36034,18 +36075,31 @@ function openCopChase(lv) {
         if (q.x < 30) wx += 1; if (q.x > W - 30) wx -= 1; if (q.y < 30) wy += 1; if (q.y > H - 30) wy -= 1;   // 不要黏在牆角
         const L = Math.hypot(wx, wy) || 1; q.vx += (wx / L - q.vx) * Math.min(1, dt * 4); q.vy += (wy / L - q.vy) * Math.min(1, dt * 4);
         const sp = plan.sp * (scared ? 1 : .55); if (q.vx) q.face = q.vx > 0 ? 1 : -1; copMove(q, q.vx, q.vy, sp, dt, walls, W, H, 9); }
-      if (Math.hypot(q.x - me.x, q.y - me.y) < 20) { q.caught = true; Sound.play('coin'); toast('👮 抓到了！'); }
+      if (!grab && !(q.slip > 0) && Math.hypot(q.x - me.x, q.y - me.y) < 20) startGrab(q);
     });
     copDrawStreet(g, W, H, walls, t);
-    const all = thieves.map(q => ({ y: q.y, d: () => { g.save(); g.translate(q.x, q.y); drawThiefMouse(g, .9, q.face, t, { run: !q.rest && !q.caught, tired: q.rest > 0, caught: q.caught }); g.restore(); } }))
-      .concat([{ y: me.y, d: () => copDrawKid(g, me.x, me.y, .42, t, !!(dx || dy), me.face, thieves.every(q => q.caught) ? 'joy' : 'angry') }]);
+    const gq = grab && grab.q, kx = gq ? gq.x + (me.x <= gq.x ? -13 : 13) : me.x, ky = gq ? gq.y + .5 : me.y;   // 抓穩的時候小朋友站在小偷鼠旁邊抓著他
+    if (gq) me.face = kx < gq.x ? 1 : -1;
+    const all = thieves.map(q => ({ y: q.y, d: () => { g.save(); g.translate(q.x + (q === gq ? Math.sin(now / 45) * 2.5 : 0), q.y); drawThiefMouse(g, .9, q.face, t, { run: q === gq || (!q.rest && !q.caught), tired: q.rest > 0, caught: q.caught }); g.restore(); } }))
+      .concat([{ y: ky, d: () => copDrawKid(g, kx, ky, .42, t, !!(dx || dy), me.face, thieves.every(q => q.caught) ? 'joy' : gq ? 'wow' : 'angry') }]);
     all.sort((a, b) => a.y - b.y).forEach(o => o.d());
     const left = Math.max(0, Math.ceil(LIMIT - t)), got = thieves.filter(q => q.caught).length;
     g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.roundRect(6, 6, 150, 22, 8); g.fill(); g.fillStyle = '#3a3240'; g.font = '700 13px sans-serif'; g.textAlign = 'left'; g.fillText(`⏱️ ${left}　🐭 ${got} / ${plan.n}`, 14, 22);
+    if (grab) {   // 🤝 抓穩的條子
+      const bx = 40, bw = W - 80, by = H - 46, wig = Math.sin(t * 40 + now / 40) * 2;
+      g.fillStyle = 'rgba(30,25,40,.28)'; g.fillRect(0, 0, W, H);
+      g.fillStyle = '#fff'; g.beginPath(); g.roundRect(bx - 14, by - 40, bw + 28, 66, 12); g.fill();
+      g.fillStyle = '#3a3240'; g.font = '900 13px sans-serif'; g.textAlign = 'center'; g.fillText('🐭 扭來扭去！綠色時按空白鍵抓穩！', W / 2 + wig, by - 20);
+      g.fillStyle = '#eee4d6'; g.beginPath(); g.roundRect(bx, by - 6, bw, 16, 8); g.fill();
+      g.fillStyle = '#6cc070'; g.beginPath(); g.roundRect(bx + bw * grab.z0, by - 6, bw * (grab.z1 - grab.z0), 16, 8); g.fill();
+      const px = bx + bw * grab.p; g.fillStyle = '#e8505b'; g.beginPath(); g.arc(px, by + 2, 10, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = '#fff'; g.lineWidth = 3; g.stroke();
+      if (t - grab.at < 20 && misses >= 1) { g.font = '20px sans-serif'; g.fillText('👆', px, by + 30); }
+    }
     if (got === plan.n) finish(true); else if (t >= LIMIT) finish(false);
   };
   w.status.textContent = `第 ${lv} 關：抓到 ${plan.n} 隻小偷鼠！`;
-  openCopChase.test = { me, thieves, win: () => { thieves.forEach(q => { q.caught = true; }); }, lose: () => { t = LIMIT; } };
+  openCopChase.test = { me, thieves, win: () => { thieves.forEach(q => { q.caught = true; }); }, lose: () => { t = LIMIT; }, grab: () => grab, press: () => tryGrab(), setP: v => { if (grab) grab.p = v; }, time: () => t };
   raf = requestAnimationFrame(tick);
 }
 // 🎭 演習：我當小偷

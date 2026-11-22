@@ -28,7 +28,7 @@ const path = require('path');
     openCopChase(); o.levelPick = document.querySelectorAll('#modalCard .lv-btn').length === 3;
     openCopChase(1); await w(500); const t0 = openCopChase.test; const x0 = t0.thieves[0].x, y0 = t0.thieves[0].y; await w(800); o.thiefMoves = Math.hypot(t0.thieves[0].x - x0, t0.thieves[0].y - y0) > 3;
     // 真的追得到：小可愛直直往小偷走，45 秒內要抓到（模擬按住方向）
-    { let caughtAt = 0; const st = performance.now(); const me = t0.me; const iv = setInterval(() => { const q = t0.thieves[0]; if (q.caught) { caughtAt = performance.now() - st; clearInterval(iv); return; } const dx = q.x - me.x, dy = q.y - me.y, L = Math.hypot(dx, dy) || 1; me.x += dx / L * 96 * .05; me.y += dy / L * 96 * .05; }, 50);
+    { let caughtAt = 0; const st = performance.now(); const me = t0.me; const iv = setInterval(() => { const q = t0.thieves[0]; if (q.caught) { caughtAt = performance.now() - st; clearInterval(iv); return; } const gr = t0.grab && t0.grab(); if (gr) { t0.setP((gr.z0 + gr.z1) / 2); t0.press(); return; } const dx = q.x - me.x, dy = q.y - me.y, L = Math.hypot(dx, dy) || 1; me.x += dx / L * 96 * .05; me.y += dy / L * 96 * .05; }, 50);
       for (let k = 0; k < 300 && !caughtAt; k++) await w(100); clearInterval(iv); o.catchable = caughtAt > 0 && caughtAt < 30000; o.info = Math.round(caughtAt) + 'ms'; }
     await w(300); o.lv1 = copState().lv >= 1;
     openCopChase(2); await w(200); openCopChase.test.win(); await w(300);
