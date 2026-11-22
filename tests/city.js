@@ -20,7 +20,7 @@ const path = require('path');
     o.boatToCity = cityBoatTo(isl.m.blds.find(b => b.id === 'museum')) === true;
     o.noBoatSameIsle = cityBoatTo(isl.m.blds.find(b => b.id === 'school')) === false || true;
     closeIsland(); await w(300);
-    openTravelMenu(); const tx = document.getElementById('modalCard').textContent; o.areas = /主島/.test(tx) && /運動島/.test(tx) && /小鎮島/.test(tx) && /新市區/.test(tx) && tx.indexOf('博物館') > tx.indexOf('新市區'); document.getElementById('modal').hidden = true;
+    openTravelMenu(); const tx = document.getElementById('modalCard').textContent; o.areas = ['家和家人', '上學和學習', '運動', '幫助別人', '好玩的地方', '買東西和存錢'].every(k => tx.includes(k)) && tx.indexOf('博物館') > tx.indexOf('上學和學習') && tx.indexOf('博物館') < tx.indexOf('🏅 運動') && /新市區・坐船/.test(tx) && /運動島・走木橋/.test(tx); o.signs = islSigns(islMap(0)).length >= 6; document.getElementById('modal').hidden = true;
     // 參觀展覽
     G.museum = {}; const b0 = G.bells; openMuseumTour(); await w(100); const T = openMuseumTour.test; for (let k = 0; k < 6; k++) T.next(); o.quiz = T.phase === 'quiz' && T.qs.length === 3;
     for (let k = 0; k < 3; k++) T.answerRight(); await w(200); o.tourDone = T.phase === 'end' && G.bells > b0 && G.museum.d === today(); close();

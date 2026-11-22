@@ -6058,6 +6058,10 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-23T06:00', title: '🧭 找地方更容易了', lines: [
+    ['🚗', '「快速出門」改成按「做什麼」分：家和家人、上學和學習、運動、幫助別人、好玩的地方、買東西和存錢（後面寫在哪座島）'],
+    ['🧭', '島上多了牌子：主島廣場有箭頭路標，木橋和碼頭旁邊有島的名字']
+  ] },
   { id: '2026-11-23T05:00', title: '🦊 怪盜狐狸事件', lines: [
     ['✉️', '在家玩一陣子，怪盜狐狸會丟進一封預告信：他要偷走圖書館的金色故事書！'],
     ['🔍', '去圖書館、博物館、公園找三個線索，再去警察局跟狗狗警官設陷阱'],
@@ -15835,6 +15839,11 @@ function homeArrive() {
    現在在的那一家標「你在這裡」、不能點。
    之後的學校、公園、圖書館沒有主人，就用大大的圖示代替小圖——
    PLACES 多加一筆就會出現在這裡，不用改選單。 */
+const PLACE_KINDS = [['family', '🏠 家和家人'], ['learn', '📚 上學和學習'], ['sport', '🏅 運動'], ['help', '🚓 幫助別人'], ['fun', '🎡 好玩的地方'], ['shop', '🛍️ 買東西和存錢'], ['other', '🌈 其他地方']];
+const PLACE_KIND_OF = { uncle: 'family', grandma: 'family', sky: 'family', school: 'learn', library: 'learn', museum: 'learn', pool: 'sport', dojo: 'sport', arena: 'sport', gym: 'sport', raceway: 'sport',
+  police: 'help', firestation: 'help', hospital: 'help', amusement: 'fun', cinema: 'fun', park: 'fun', airport: 'fun', santa: 'fun', restaurant: 'shop', garage: 'shop', bank: 'shop' };
+function placeKind(id) { return PLACE_KIND_OF[id] || 'other'; }
+function placeIsle(id) { if (id === 'sky') return '天空島・坐直升機'; const bd = ISL_BLD.find(b => b.id === id); return !bd ? '別的地方' : bd.city ? '新市區・坐船' : bd.town ? '小鎮島・走木橋' : bd.islet ? '運動島・走木橋' : '主島'; }
 function openTravelMenu() {
   const card = $('#modalCard');
   card.innerHTML = '';
@@ -15850,15 +15859,13 @@ function openTravelMenu() {
     card.appendChild(b);
   };
   if (G.away) pick(el('div', 'place-emoji', '🏠'), '🏠 回家', '回到自己的小屋', goHome, false);
-  /* 家長 11/22：地點越來越多 → 分區：主島、運動島、小鎮島、新市區、其他 */
-  const AREAS = [['main', '🏝️ 主島'], ['sport', '🏅 運動島（走木橋）'], ['town', '🏘️ 小鎮島（走木橋）'], ['city', '🏙️ 新市區（坐船）'], ['other', '🌈 其他地方']];
-  const areaOf = id => { const bd = ISL_BLD.find(b => b.id === id); return !bd ? 'other' : bd.city ? 'city' : bd.town ? 'town' : bd.islet ? 'sport' : 'main'; };
+  /* 家長 11/22：地點越來越多 → 按「做什麼」分類（不搬房子），後面小小寫在哪座島 */
   const places = Object.entries(PLACES).filter(([, pl]) => !pl.inHouse && !pl.invite);
-  AREAS.forEach(([ak, at]) => { const list = places.filter(([id]) => areaOf(id) === ak); if (!list.length) return; card.appendChild(el('div', 'qg-h', at));
+  PLACE_KINDS.forEach(([kk, kt]) => { const list = places.filter(([id]) => placeKind(id) === kk); if (!list.length) return; card.appendChild(el('div', 'qg-h', kt));
     list.forEach(([id, pl]) => {
       const here = !!(G.away && G.away.place === id);
       const icon = pl.host && HOSTS[pl.host] ? renderNeighborPortrait(HOSTS[pl.host], 64, 58, false) : el('div', 'place-emoji', pl.emoji);
-      pick(icon, `${pl.emoji} ${pl.name}${here ? '（你在這裡）' : ''}`, pl.desc, () => travelTo(id), here);
+      pick(icon, `${pl.emoji} ${pl.name}${here ? '（你在這裡）' : ''}`, `${pl.desc}（${placeIsle(id)}）`, () => travelTo(id), here);
     }); });
   // 🏡 收到邀請卡的家（姊姊／妹妹的家）
   loadInvites().forEach((inv, ii) => {
@@ -24985,6 +24992,7 @@ function islDraw(now) {
   (m.specials || []).forEach(sp => items.push({ y: (sp.y + 1) * T, draw: () => islDrawSpecial(ctx, sp, now) }));
   items.push({ y: -999, draw: () => islDrawSkyIsle(ctx, now) });   // ☁️ 天空島（在雲裡，坐直升機才上得去）
   (m.docks || []).forEach(d => items.push({ y: (d.y + .2) * T, draw: () => islDrawDock(ctx, d, now) }));
+  islSigns(m).forEach(sg => items.push({ y: (sg.y + .9) * T, draw: () => islDrawSign(ctx, sg) }));   // 島名和路口的牌子
   isl.coins.forEach(c => items.push({ y: (c.y + .6) * T, draw: () => islDrawCoin(ctx, c, tt) }));
   isl.glow = [];
   items.sort((a, b) => a.y - b.y).forEach(it => it.draw());
@@ -29884,6 +29892,27 @@ function shopVehicles(body, only) {
   body.appendChild(grid);
 }
 // ⛵ 碼頭：點了坐船到對面
+/* 牌子（家長 11/22：島要不要按功能分 → 不搬房子，加島名牌子和路口的箭頭牌子）
+   木橋、碼頭的兩頭立島名；主島中間的廣場立一根有箭頭的路標。只是畫出來，不擋路。 */
+function islSigns(m) {
+  if (m.signs) return m.signs;
+  const ok = (x, y) => m.land[y] && m.land[y][x] && !m.path[y][x] && !m.block[y][x] && !(m.bridge && m.bridge[y][x]) && !(m.tree && m.tree[y][x]) && !(m.docks || []).some(d => d.x === x && d.y === y);
+  const near = (ax, ay) => { for (let r = 1; r <= 3; r++) for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) { const x = Math.round(ax) + i, y = Math.round(ay) + j; if (ok(x, y)) return [x, y]; } return null; };
+  const out = [], put = (ax, ay, lines) => { const p = near(ax, ay); if (p && !out.some(o => Math.abs(o.x - p[0]) < 2 && Math.abs(o.y - p[1]) < 2)) out.push({ x: p[0], y: p[1], lines }); };
+  put(ISL_HUB[0], ISL_HUB[1], ['⬆ 我的家・公園', '⬅ 學校・操場', '➡ 圖書館・改車店', '⬇ 遊樂園・消防局']);
+  put(ISL_ISLET.to[0], ISL_ISLET.to[1], ['🏅 運動島 ➡']); put(ISL_ISLET.cx - 6, ISL_ISLET.cy - 6, ['🏅 運動島']);
+  put(ISL_TOWN.to[0], ISL_TOWN.to[1], ['🏘️ 小鎮島 ➡']); put(ISL_TOWN.from[0], ISL_TOWN.from[1], ['🏘️ 小鎮島']);
+  (m.docks || []).forEach(d => { if (d.id === 'city') put(d.x, d.y, [d.side === 'main' ? '⛵ 新市區' : '🏙️ 新市區']); else if (d.id === 'friend' && d.side === 'main') put(d.x, d.y, ['⛵ 朋友島']); });
+  return (m.signs = out);
+}
+function islDrawSign(ctx, sg) {
+  const T = ISL.T, px = (sg.x + .5) * T, by = (sg.y + .92) * T, n = sg.lines.length;
+  ctx.font = '700 10px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#7a5230'; ctx.fillRect(px - 2, by - 18 - n * 13, 4, 18 + n * 13);
+  sg.lines.forEach((ln, i) => { const w = ctx.measureText(ln).width + 10, y = by - 20 - (n - i) * 13;
+    ctx.fillStyle = '#e8c48a'; ctx.beginPath(); ctx.roundRect(px - w / 2, y, w, 12, 3); ctx.fill(); ctx.strokeStyle = '#8a5a33'; ctx.lineWidth = 1; ctx.stroke(); ctx.fillStyle = '#4a3020'; ctx.fillText(ln, px, y + 6.5); });
+  ctx.textBaseline = 'alphabetic';
+}
 function islDrawDock(ctx, d, now) {
   const T = ISL.T, x = d.x * T, y = d.y * T;
   ctx.fillStyle = '#b5814f'; ctx.fillRect(x + 2, y + 6, T - 4, T - 10); ctx.strokeStyle = '#8a5a33'; ctx.lineWidth = 1; for (let i = 1; i < 4; i++) { ctx.beginPath(); ctx.moveTo(x + 2, y + 6 + i * (T - 10) / 4); ctx.lineTo(x + T - 2, y + 6 + i * (T - 10) / 4); ctx.stroke(); }
