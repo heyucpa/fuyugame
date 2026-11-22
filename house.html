@@ -6037,6 +6037,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-23T02:00', title: '❄️ 雪一陣一陣、🐭 小偷鼠常來', lines: [
+    ['❄️', '聖誕節小島上的雪改成一陣一陣的：下一會兒、停一會兒'],
+    ['🔫', '噴水的遊戲不再畫手臂，噴水槍、水管也變小了，比較看得到要噴的東西'],
+    ['🐭', '小偷鼠一天最多會來 3 次（以前只來 1 次），要隨時注意喔！']
+  ] },
   { id: '2026-11-23T01:00', title: '🚒 消防局開張！🔫 泳池水槍大戰', lines: [
     ['🚒', '大地圖警察局下面多了消防局，熊熊消防員等你：拿水管把房子的火澆熄（三關都過送消防車！）'],
     ['🐱', '救援任務：按住讓雲梯伸長，剛好碰到困住的小貓、小狗、小雞時放開，消防員就爬上去救牠'],
@@ -7294,8 +7299,8 @@ function normalizeSave(g) {
   if (out.jail != null && !(isObj(out.jail) && typeof out.jail.until === 'number' && isFinite(out.jail.until))) delete out.jail;
   if (out.jail) { if (out.jail.parentsAt != null && !(typeof out.jail.parentsAt === 'number' && isFinite(out.jail.parentsAt))) delete out.jail.parentsAt; Object.keys(out.jail).forEach(k => { if (k !== 'until' && k !== 'parentsAt') delete out.jail[k]; }); }   // 🚔 演習被抓：關到什麼時候
   if (out.jail && out.jail.until > Date.now() + 3 * 60000) out.jail.until = Date.now() + 120000;   // 時間亂掉（或以前關 3 分鐘的）：最多關 2 分鐘
-  if (out.thief != null) { if (!isObj(out.thief)) delete out.thief; else { const t = out.thief; if (t.day != null && typeof t.day !== 'string') delete t.day; if (t.n != null && !(Number.isInteger(t.n) && t.n >= 0 && t.n < 1e6)) delete t.n;
-    t.bag = Array.isArray(t.bag) ? t.bag.filter(b => isObj(b) && typeof b.id === 'string' && FURN_BY_ID[b.id] && (b.top == null || (typeof b.top === 'string' && FURN_BY_ID[b.top]))).map(b => (b.top ? { id: b.id, top: b.top } : { id: b.id })).slice(0, 30) : []; Object.keys(t).forEach(k => { if (!['day', 'n', 'bag'].includes(k)) delete t[k]; }); } }   // 🐭 小偷：今天來過了沒、抓到幾次、失物招領（被偷走還沒領回的東西）
+  if (out.thief != null) { if (!isObj(out.thief)) delete out.thief; else { const t = out.thief; if (t.day != null && typeof t.day !== 'string') delete t.day; if (t.n != null && !(Number.isInteger(t.n) && t.n >= 0 && t.n < 1e6)) delete t.n; if (t.cnt != null && !(Number.isInteger(t.cnt) && t.cnt >= 0 && t.cnt < 100)) delete t.cnt;
+    t.bag = Array.isArray(t.bag) ? t.bag.filter(b => isObj(b) && typeof b.id === 'string' && FURN_BY_ID[b.id] && (b.top == null || (typeof b.top === 'string' && FURN_BY_ID[b.top]))).map(b => (b.top ? { id: b.id, top: b.top } : { id: b.id })).slice(0, 30) : []; Object.keys(t).forEach(k => { if (!['day', 'n', 'bag', 'cnt'].includes(k)) delete t[k]; }); } }   // 🐭 小偷：今天來過了沒（cnt：今天來了幾次）、抓到幾次、失物招領（被偷走還沒領回的東西）
   if (out.noThief != null && out.noThief !== 1) delete out.noThief;
   if (out.noDayNight != null && out.noDayNight !== 1) delete out.noDayNight;
   if (out.realClock != null && out.realClock !== 1) delete out.realClock;
@@ -21714,7 +21719,7 @@ function openBubbleGame() {
       g.globalAlpha = 1;
     });
     // 🔫 水槍（右下角自己的手）、水柱、水花、瞄準圈
-    { const gx = W * .62 + (aim.x - W / 2) * .2, gy = H - 34, ga = Math.atan2(aim.y - gy, aim.x - gx), mx = gx + Math.cos(ga) * 78, my = gy + Math.sin(ga) * 78;
+    { const { mx, my } = fpGunPos(W, H, aim.x, aim.y);
       if (shots.length) fpStream(g, mx, my, aim.x, aim.y, tt);
       fpSplashStep(g, splash, dt);
       g.textBaseline = 'alphabetic'; fpGunAt(g, W, H, aim.x, aim.y, '#ff8fb3');
@@ -36048,13 +36053,15 @@ function festDrawPile(ctx, x, y) {
   ctx.beginPath(); ctx.ellipse(px, py, 11, 5, 0, 0, 7); ctx.fill();
   ctx.beginPath(); ctx.ellipse(px - 2, py - 3, 7, 4, 0, 0, 7); ctx.fill();
 }
+/* 家長 11/22：外面一直下雪 → 改成一陣一陣：每 5 分鐘下 1 分 40 秒，開始和停的時候慢慢變多、慢慢變少 */
+function festSnowAmount(ms) { const c = ((ms || Date.now()) / 1000) % 300; return c < 100 ? Math.max(0, Math.min(1, c / 8, (100 - c) / 8)) : 0; }
 function festDrawSnow(ctx, now) {
-  const T = ISL.T;
+  const T = ISL.T, amt = festSnowAmount(); if (amt <= 0) return;
   ctx.fillStyle = '#fff';
   for (let i = 0; i < 48; i++) {
     const sx = (isl.cam.x - 7 + (i * 1.37) % 14) * T + Math.sin(now / 420 + i) * 10;
     const sy = (isl.cam.y - 6 + ((now / 28 + i * 19) % 13)) * T;
-    ctx.globalAlpha = .9; ctx.beginPath(); ctx.arc(sx, sy, 2.1 + (i % 3) * .7, 0, 7); ctx.fill();
+    if (i / 48 > amt) continue; ctx.globalAlpha = .9; ctx.beginPath(); ctx.arc(sx, sy, 2.1 + (i % 3) * .7, 0, 7); ctx.fill();
   }
   ctx.globalAlpha = 1;
 }
@@ -36442,7 +36449,9 @@ function openLostFound() {
 function claimLostFound() { const st = thiefState(), bag = st.bag.splice(0); bag.forEach(b => { if (FURN_BY_ID[b.id]) addItem(b.id); if (b.top && FURN_BY_ID[b.top]) addItem(b.top); }); saveGame(); refreshTop(); return bag.length; }
 /* ── 🐭 小偷鼠來家裡 ── */
 const thiefAct = { on: false };
-var THIEF_MIN_PLAY_MS = 3 * 60000, THIEF_CHANCE = .12;   // 在家玩 3 分鐘以後，每 30 秒有 12% 會來（平均再等 4 分鐘左右）；一天最多一次
+var THIEF_MIN_PLAY_MS = 2 * 60000, THIEF_CHANCE = .2, THIEF_PER_DAY = 3, THIEF_GAP_MS = 5 * 60000;   // 家長 11/22：小偷鼠多來幾次 → 在家玩 2 分鐘以後，每 30 秒有 20% 會來；一天最多 3 次、兩次之間至少隔 5 分鐘
+let thiefLastAt = -1e9;
+function thiefDayLeft() { const st = thiefState(); return st.day !== today() ? THIEF_PER_DAY : Math.max(0, THIEF_PER_DAY - (st.cnt || 1)); }
 let thiefNextCheck = 0; const thiefPageStart = performance.now();
 function thiefCandidates(room) {
   const out = [];
@@ -36453,7 +36462,7 @@ function thiefCandidates(room) {
   return out;
 }
 function thiefCanCome(now) {
-  return !G.noThief && G.guide === 'done' && !G.away && !(typeof isl !== 'undefined' && isl) && $('#modal').hidden && !resting && !hold && !decorMode && !thiefAct.on && thiefState().day !== today() && now - thiefPageStart > THIEF_MIN_PLAY_MS;
+  return !G.noThief && G.guide === 'done' && !G.away && !(typeof isl !== 'undefined' && isl) && $('#modal').hidden && !resting && !hold && !decorMode && !thiefAct.on && thiefDayLeft() > 0 && now - thiefLastAt > THIEF_GAP_MS && now - thiefPageStart > THIEF_MIN_PLAY_MS;
 }
 function thiefTick(now, dt) {
   if (thiefAct.on) { thiefUpdate(now, dt); return; }
@@ -36469,7 +36478,7 @@ function thiefStart(force) {
   let goal = null; for (let r = 1; r < 3 && !goal; r++) for (let i = pick.it.x - r; i < pick.it.x + fp.w + r && !goal; i++) for (let j = pick.it.y - r; j < pick.it.y + fp.d + r && !goal; j++) if (free(i, j)) goal = [i, j];
   if (!goal) return false;
   Object.assign(thiefAct, { on: true, state: 'sneak', x: start[0] + .5, y: start[1] + .5, path: findPath(room, start[0], start[1], goal[0], goal[1]), uid: pick.it.uid, top: pick.top, item: null, t0: performance.now(), face: -1, rest: 0, run: 0, room: roomKey(), emoji: '' });
-  thiefState().day = today(); saveGame();
+  { const st = thiefState(); if (st.day !== today()) { st.day = today(); st.cnt = 0; } st.cnt = (st.cnt || 0) + 1; } thiefLastAt = performance.now(); saveGame();
   Sound.play('whoosh'); toast('🐭 咦？有一隻小偷鼠偷偷溜進來了！快抓住他！');
   try { fufuSay('有小偷！', 2200); } catch (e) {}
   return true;
@@ -37375,7 +37384,7 @@ function openCarWash(vid) {
        噴水槍在畫面最下面（離我們最近），水柱從近處粗粗的往車子越來越細，水珠沿著水柱飛過去，
        打到車子的地方濺出水花、冒一團水霧。 */
     const spraying = step === 2 && !done && (down || kx || ky);
-    const gx = W * .62 + (cur.x - W / 2) * .2, gy = H - 34, ga = Math.atan2(cur.y - gy, cur.x - gx), nx = gx + Math.cos(ga) * 78, ny = gy + Math.sin(ga) * 78, dx = cur.x - nx, dy = cur.y - ny, L = Math.hypot(dx, dy) || 1, px = -dy / L, py = dx / L;   // 槍口
+    const { gx, gy, ga } = fpGunPos(W, H, cur.x, cur.y), nx = gx + Math.cos(ga) * 78 * FP_GUN_S, ny = gy + Math.sin(ga) * 78 * FP_GUN_S, dx = cur.x - nx, dy = cur.y - ny, L = Math.hypot(dx, dy) || 1, px = -dy / L, py = dx / L;   // 槍口
     if (spraying) { for (let i = 0; i < 3; i++) spray.push({ k: Math.random() * .15, j: Math.random() - .5 }); }
     for (let i = spray.length - 1; i >= 0; i--) { const d = spray[i]; d.k += dt * 3.6; if (d.k >= 1) { spray.splice(i, 1); for (let n = 0; n < 2; n++) splash.push({ x: cur.x, y: cur.y, vx: (Math.random() - .5) * 160, vy: -40 - Math.random() * 90, t: 0 }); } }
     if (spray.length > 90) spray.splice(0, spray.length - 90);
@@ -37395,9 +37404,9 @@ function openCarWash(vid) {
     /* 🖐️ 第一人稱（家長 11/22：像自己拿著噴水槍噴車子）：右下角伸出自己的手臂，
        抹泡泡拿泡泡瓶、刷刷拿海綿（會來回刷）、沖水握著大大的噴水槍。 */
     const mv = Math.hypot(cur.x - lastCur.x, cur.y - lastCur.y); lastCur = { x: cur.x, y: cur.y }; scrub = Math.max(0, Math.min(1, scrub + ((down || kx || ky) && mv > .5 ? dt * 6 : -dt * 4)));
-    const arm = (hx, hy) => { const sx = W + 30, sy = H + 50; g.strokeStyle = fpSleeve(); g.lineWidth = 40; g.lineCap = 'round'; g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + (hx - sx) * .55, sy + (hy - sy) * .55); g.stroke();   // 袖子
+    const arm = (hx, hy) => { if (!FP_HAND) return; const sx = W + 30, sy = H + 50; g.strokeStyle = fpSleeve(); g.lineWidth = 40; g.lineCap = 'round'; g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + (hx - sx) * .55, sy + (hy - sy) * .55); g.stroke();   // 袖子
       g.strokeStyle = '#f6cfae'; g.lineWidth = 26; g.beginPath(); g.moveTo(sx + (hx - sx) * .5, sy + (hy - sy) * .5); g.lineTo(hx, hy); g.stroke(); g.lineCap = 'butt'; };
-    const fist = (hx, hy) => { g.fillStyle = '#f6cfae'; g.beginPath(); g.arc(hx, hy, 15, 0, 7); g.fill(); g.strokeStyle = 'rgba(190,130,100,.55)'; g.lineWidth = 1.5; for (let k = -1; k <= 1; k++) { g.beginPath(); g.moveTo(hx - 8, hy + k * 5); g.lineTo(hx + 4, hy + k * 5 - 2); g.stroke(); } };
+    const fist = (hx, hy) => { if (!FP_HAND) return; g.fillStyle = '#f6cfae'; g.beginPath(); g.arc(hx, hy, 15, 0, 7); g.fill(); g.strokeStyle = 'rgba(190,130,100,.55)'; g.lineWidth = 1.5; for (let k = -1; k <= 1; k++) { g.beginPath(); g.moveTo(hx - 8, hy + k * 5); g.lineTo(hx + 4, hy + k * 5 - 2); g.stroke(); } };
     if (!done && step < 2) {
       const wig = scrub * Math.sin(t * 34) * (step === 1 ? 9 : 4), hx = cur.x + wig + 16, hy = cur.y + 18;
       arm(hx, hy);
@@ -37413,7 +37422,7 @@ function openCarWash(vid) {
     if (step === 2 && !done) {   // 💦 噴水槍：右下角自己的手握著，槍口對著車子
       const hgx = gx - Math.sin(ga) * 30, hgy = gy + Math.cos(ga) * 30;   // 握把的位置（手握在這裡）
       arm(hgx, hgy);
-      g.save(); g.translate(gx, gy); g.rotate(ga);
+      g.save(); g.translate(gx, gy); g.rotate(ga); g.scale(FP_GUN_S, FP_GUN_S);
       g.fillStyle = '#2f6fb0'; g.beginPath(); g.roundRect(-12, 6, 22, 44, 8); g.fill();   // 握把（往下）
       g.fillStyle = '#3a8fd9'; g.beginPath(); g.roundRect(-34, -20, 62, 32, 12); g.fill();   // 槍身
       g.fillStyle = '#ffd23f'; g.beginPath(); g.roundRect(26, -14, 42, 22, 7); g.fill();   // 噴頭
@@ -38882,8 +38891,11 @@ function openPetSports() {
 }
 /* ===== 🖐️ 第一人稱共用畫法（家長 11/22：噴水槍那種「自己拿著」的玩法，洗澡、射泡泡、澆花、滅火都用）=====
    右下角伸出自己的手臂（袖子是現在穿的上衣顏色），手裡拿東西；水柱近粗遠細，打到的地方冒水霧、濺水花。 */
+/* 家長 11/22：噴水的手不用出現、噴水槍小一點 → FP_HAND 關掉手臂和拳頭；FP_GUN_S 是槍的大小 */
+var FP_HAND = false, FP_GUN_S = .68;
 function fpSleeve() { try { const c = CLOTHES_BY_ID[G.outfit.top]; return (c && c.color) || '#ff9ec4'; } catch (e) { return '#ff9ec4'; } }
 function fpArm(g, W, H, hx, hy) {
+  if (!FP_HAND) return;
   const sx = W + 30, sy = H + 50;
   g.save(); g.lineCap = 'round';
   g.strokeStyle = fpSleeve(); g.lineWidth = 40; g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + (hx - sx) * .55, sy + (hy - sy) * .55); g.stroke();
@@ -38891,6 +38903,7 @@ function fpArm(g, W, H, hx, hy) {
   g.restore();
 }
 function fpFist(g, hx, hy) {
+  if (!FP_HAND) return;
   g.fillStyle = '#f6cfae'; g.beginPath(); g.arc(hx, hy, 15, 0, 7); g.fill();
   g.strokeStyle = 'rgba(190,130,100,.55)'; g.lineWidth = 1.5; for (let k = -1; k <= 1; k++) { g.beginPath(); g.moveTo(hx - 8, hy + k * 5); g.lineTo(hx + 4, hy + k * 5 - 2); g.stroke(); }
 }
@@ -38907,7 +38920,7 @@ function fpSplashAdd(list, x, y, n, c) { for (let i = 0; i < n; i++) list.push({
 function fpSplashStep(g, list, dt) { for (let i = list.length - 1; i >= 0; i--) { const d = list[i]; d.t += dt; d.vy += 420 * dt; d.x += d.vx * dt; d.y += d.vy * dt; if (d.t > .55) { list.splice(i, 1); continue; } g.globalAlpha = 1 - d.t / .55; g.fillStyle = d.c || '#96cdf5'; g.beginPath(); g.arc(d.x, d.y, 2.3, 0, 7); g.fill(); g.globalAlpha = 1; } }
 // 噴水槍：握把中心 (gx,gy)、朝 ga 的方向；回傳槍口位置和手握的位置
 function fpGun(g, gx, gy, ga, col) {
-  g.save(); g.translate(gx, gy); g.rotate(ga);
+  g.save(); g.translate(gx, gy); g.rotate(ga); g.scale(FP_GUN_S, FP_GUN_S);
   g.fillStyle = '#2f6fb0'; g.beginPath(); g.roundRect(-12, 6, 22, 44, 8); g.fill();
   g.fillStyle = col || '#3a8fd9'; g.beginPath(); g.roundRect(-34, -20, 62, 32, 12); g.fill();
   g.fillStyle = '#ffd23f'; g.beginPath(); g.roundRect(26, -14, 42, 22, 7); g.fill();
@@ -38915,11 +38928,13 @@ function fpGun(g, gx, gy, ga, col) {
   g.fillStyle = 'rgba(255,255,255,.5)'; g.fillRect(-28, -15, 46, 5); g.fillRect(30, -10, 32, 3);
   g.fillStyle = '#e8505b'; g.beginPath(); g.roundRect(4, 8, 8, 14, 3); g.fill();
   g.restore();
-  return { mx: gx + Math.cos(ga) * 78, my: gy + Math.sin(ga) * 78, hx: gx - Math.sin(ga) * 30, hy: gy + Math.cos(ga) * 30 };
+  return { mx: gx + Math.cos(ga) * 78 * FP_GUN_S, my: gy + Math.sin(ga) * 78 * FP_GUN_S, hx: gx - Math.sin(ga) * 30 * FP_GUN_S, hy: gy + Math.cos(ga) * 30 * FP_GUN_S };
 }
+// 槍放在哪、槍口在哪（畫水柱要先知道槍口）
+function fpGunPos(W, H, tx, ty) { const gx = W * .66 + (tx - W / 2) * .15, gy = H - 22, ga = Math.atan2(ty - gy, tx - gx); return { gx, gy, ga, mx: gx + Math.cos(ga) * 78 * FP_GUN_S, my: gy + Math.sin(ga) * 78 * FP_GUN_S }; }
 // 把「拿著東西的手」整組畫好：噴水槍在右下角、對著 (tx,ty)
 function fpGunAt(g, W, H, tx, ty, col) {
-  const gx = W * .62 + (tx - W / 2) * .2, gy = H - 34, ga = Math.atan2(ty - gy, tx - gx);
+  const { gx, gy, ga } = fpGunPos(W, H, tx, ty);
   const hand = { hx: gx - Math.sin(ga) * 30, hy: gy + Math.cos(ga) * 30 };
   fpArm(g, W, H, hand.hx, hand.hy); const r = fpGun(g, gx, gy, ga, col); fpFist(g, r.hx, r.hy); return r;
 }
@@ -39108,17 +39123,18 @@ function drawBigFlame(g, x, y, s, t, seed) {   // 一團會晃的火：外橘、
   f(0, '#ff6a2b', 1); f(1, '#ffb02e', .7); f(2, '#fff1a8', .38);
 }
 // 消防水管（右下角自己的手拿著黃銅噴嘴，後面拖著紅色水管）
+function fpHosePos(W, H, tx, ty) { const gx = W * .66 + (tx - W / 2) * .15, gy = H - 20, ga = Math.atan2(ty - gy, tx - gx), k = .8; return { gx, gy, ga, k, mx: gx + Math.cos(ga) * 56 * k, my: gy + Math.sin(ga) * 56 * k }; }
 function fpHoseAt(g, W, H, tx, ty) {
-  const gx = W * .62 + (tx - W / 2) * .2, gy = H - 30, ga = Math.atan2(ty - gy, tx - gx);
+  const { gx, gy, ga, k } = fpHosePos(W, H, tx, ty);
   g.strokeStyle = '#b8282f'; g.lineWidth = 14; g.lineCap = 'round'; g.beginPath(); g.moveTo(W + 20, H + 10); g.quadraticCurveTo(W - 10, H - 4, gx - Math.cos(ga) * 20, gy - Math.sin(ga) * 20); g.stroke(); g.lineCap = 'butt';
   const hx = gx + Math.cos(ga) * 8 - Math.sin(ga) * 4, hy = gy + Math.sin(ga) * 8 + Math.cos(ga) * 4;
   fpArm(g, W, H, hx, hy);
-  g.save(); g.translate(gx, gy); g.rotate(ga);
+  g.save(); g.translate(gx, gy); g.rotate(ga); g.scale(k, k);
   g.fillStyle = '#d63b3b'; g.beginPath(); g.roundRect(-22, -9, 30, 18, 6); g.fill();
   g.fillStyle = '#d9a43a'; g.beginPath(); g.moveTo(6, -10); g.lineTo(52, -5); g.lineTo(52, 5); g.lineTo(6, 10); g.closePath(); g.fill();
   g.fillStyle = '#f0c860'; g.fillRect(10, -6, 36, 3); g.fillStyle = '#9a7020'; g.fillRect(50, -6, 6, 12);
   g.restore(); fpFist(g, hx, hy);
-  return { mx: gx + Math.cos(ga) * 56, my: gy + Math.sin(ga) * 56 };
+  return { mx: gx + Math.cos(ga) * 56 * k, my: gy + Math.sin(ga) * 56 * k };
 }
 function openFireFight(lv) {
   const fs = fireState(), unlocked = Math.min(3, fs.lv + 1);
@@ -39178,8 +39194,8 @@ function openFireFight(lv) {
       drawBigFlame(g, f.x, f.y, .6 + f.hp * .5, t, f.seed); });
     for (let i = smoke.length - 1; i >= 0; i--) { const s2 = smoke[i]; s2.t += dt; if (s2.t > 1.2) { smoke.splice(i, 1); continue; } g.fillStyle = `rgba(140,140,150,${.45 * (1 - s2.t / 1.2)})`; g.beginPath(); g.arc(s2.x, s2.y - s2.t * 40, 6 + s2.t * 10, 0, 7); g.fill(); }
     if (smoke.length > 120) smoke.splice(0, smoke.length - 120);
-    const gx = W * .62 + (aim.x - W / 2) * .2, gy = H - 30, ga = Math.atan2(aim.y - gy, aim.x - gx);
-    if (spraying && !done) { fpStream(g, gx + Math.cos(ga) * 56, gy + Math.sin(ga) * 56, aim.x, aim.y, t, { w0: 11, w1: 4 }); if (Math.random() < .7) fpSplashAdd(splash, aim.x, aim.y, 2); }
+    const hp = fpHosePos(W, H, aim.x, aim.y);
+    if (spraying && !done) { fpStream(g, hp.mx, hp.my, aim.x, aim.y, t, { w0: 9, w1: 4 }); if (Math.random() < .7) fpSplashAdd(splash, aim.x, aim.y, 2); }
     fpSplashStep(g, splash, dt);
     fpHoseAt(g, W, H, aim.x, aim.y);
     if (!spraying) { g.strokeStyle = 'rgba(58,143,217,.85)'; g.lineWidth = 2; g.setLineDash([4, 3]); g.beginPath(); g.arc(aim.x, aim.y, 13, 0, 7); g.stroke(); g.setLineDash([]); }
@@ -39303,8 +39319,8 @@ function openWaterFight() {
       g.fillStyle = ['#ff8fb3', '#ffd23f', '#7bd389', '#ff9a3c', '#b18cff'][k]; g.beginPath(); g.ellipse(x, y + 4, 30, 11, 0, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.85)'; for (let q = 0; q < 4; q++) { g.beginPath(); g.ellipse(x + Math.cos(q * 1.57) * 22, y + 4 + Math.sin(q * 1.57) * 8, 5, 4, 0, 0, 7); g.fill(); }
       g.fillStyle = '#2a8fd0'; g.beginPath(); g.ellipse(x, y + 2, 14, 5, 0, 0, 7); g.fill(); });
     // 水槍、水柱、水花
-    const gx = W * .62 + (aim.x - W / 2) * .2, gy = H - 34, ga = Math.atan2(aim.y - gy, aim.x - gx);
-    if (shots.length) fpStream(g, gx + Math.cos(ga) * 78, gy + Math.sin(ga) * 78, aim.x, aim.y, t);
+    const gp = fpGunPos(W, H, aim.x, aim.y);
+    if (shots.length) fpStream(g, gp.mx, gp.my, aim.x, aim.y, t);
     fpSplashStep(g, splash, dt);
     fpGunAt(g, W, H, aim.x, aim.y, '#7bd389');
     if (!done) { g.strokeStyle = 'rgba(232,80,91,.85)'; g.lineWidth = 2; g.beginPath(); g.arc(aim.x, aim.y, 12, 0, 7); g.stroke(); }
