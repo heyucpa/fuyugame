@@ -1644,7 +1644,7 @@ const WALL_DECOR = [
     } },
   { id: 'window', name: '窗戶', price: 3000, theme: 'modern', w: 2, h: 44, z: 40,
     draw(ctx, W, H) { // 窗外依時間變化：白天、黃昏、晚上
-      const hr = new Date().getHours();
+      const hr = Math.floor(islHour());   // 🕐 跟遊戲時間
       const sky = hr >= 7 && hr < 17 ? '#9fd4f2' : hr >= 17 && hr < 19 ? '#f4b27a' : hr >= 5 && hr < 7 ? '#f9d3a5' : '#2b3a67';
       frameRect(ctx, W, H, '#ffffff');
       ctx.fillStyle = sky; ctx.fillRect(3, 3, W - 6, H - 6);
@@ -5242,7 +5242,7 @@ function roomShellOf(room, hoverUid) {
   let rk = '';
   try { rk = typeof roomKey === 'function' ? roomKey() : ''; } catch (e) {}
   const clock = new Date();
-  const key = rk + '|' + room.wall + '|' + room.floor + '|' + room.w + 'x' + room.d + '|' + walls + '|' + hov + '|' + clock.getHours() + ':' + clock.getDate() + '@' + furnScale;
+  const key = rk + '|' + room.wall + '|' + room.floor + '|' + room.w + 'x' + room.d + '|' + walls + '|' + hov + '|' + clock.getHours() + ':' + clock.getDate() + ':' + Math.floor(islHour()) + '@' + furnScale;
   if (roomShell && roomShell.key === key) return roomShell;
   const pad = 48;
   const minX = iso(0, room.d).x - pad, maxX = iso(room.w, 0).x + pad;
@@ -6022,6 +6022,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-22T23:00', title: '🕐 一開始是白天，玩半小時變晚上', lines: [
+    ['☀️', '天色改成跟著「玩了多久」：打開遊戲是早上，玩 25 分鐘傍晚、30 分鐘晚上，再 10 分鐘又天亮'],
+    ['🌙', '晚上也調亮了，看得出是晚上，但東西都看得清楚'],
+    ['⚙️', '想跟著真實時間的話，設定裡可以切換']
+  ] },
   { id: '2026-11-22T22:00', title: '🏅 寵物運動會', lines: [
     ['🏅', '「🎮 遊戲」多了寵物運動會：帶自己的寵物跑障礙賽，跟別人家的寵物比賽'],
     ['🦘', '障礙前面亮起來的時候：🦘 跳欄、🐛 鑽山洞、🤸 走平衡木，按對了就順順過去'],
@@ -7267,6 +7272,8 @@ function normalizeSave(g) {
     t.bag = Array.isArray(t.bag) ? t.bag.filter(b => isObj(b) && typeof b.id === 'string' && FURN_BY_ID[b.id] && (b.top == null || (typeof b.top === 'string' && FURN_BY_ID[b.top]))).map(b => (b.top ? { id: b.id, top: b.top } : { id: b.id })).slice(0, 30) : []; Object.keys(t).forEach(k => { if (!['day', 'n', 'bag'].includes(k)) delete t[k]; }); } }   // 🐭 小偷：今天來過了沒、抓到幾次、失物招領（被偷走還沒領回的東西）
   if (out.noThief != null && out.noThief !== 1) delete out.noThief;
   if (out.noDayNight != null && out.noDayNight !== 1) delete out.noDayNight;
+  if (out.realClock != null && out.realClock !== 1) delete out.realClock;
+  if (out.playClock != null) { const pc = out.playClock; if (!isObj(pc) || !Number.isFinite(pc.m) || pc.m < 0 || pc.m > 1e6 || !Number.isFinite(pc.at)) delete out.playClock; else out.playClock = { m: pc.m, at: pc.at }; }   // 🕐 玩了多久
   if (out.help != null) { if (!isObj(out.help)) delete out.help; else { const h = out.help, ok = k => /^(ice|forest|sea|desert|duck|lamb|game|books|jump|film|busy|shot|tools|siren|dumbbell|balls|ring|carousel|garden|dinoegg|cloud|ants|fallstar)$/.test(k); h.list = Array.isArray(h.list) ? [...new Set(h.list.filter(ok))].slice(0, 6) : []; h.done = isObj(h.done) ? Object.fromEntries(Object.entries(h.done).filter(([k, v]) => ok(k) && Number.isInteger(v) && v >= 0 && v < 1e6)) : {}; if (h.d != null && !(typeof h.d === 'string' && h.d.length <= 12)) delete h.d; Object.keys(h).forEach(k => { if (!['list', 'done', 'd'].includes(k)) delete h[k]; }); } }   // 📬 求救信箱
   if (out.visitAt != null) { if (!isObj(out.visitAt)) delete out.visitAt; else out.visitAt = Object.fromEntries(Object.entries(out.visitAt).filter(([k, v]) => typeof k === 'string' && k.length <= 12 && typeof v === 'string' && v.length <= 12).slice(0, 60)); }   // 🗺️ 每個地方最後一次去的日子
   if (out.fw != null) { if (!isObj(out.fw)) delete out.fw; else { ['ny', 'cny'].forEach(k => { if (out.fw[k] != null && !(Number.isInteger(out.fw[k]) && out.fw[k] > 2000 && out.fw[k] < 3000)) delete out.fw[k]; }); Object.keys(out.fw).forEach(k => { if (!['ny', 'cny'].includes(k)) delete out.fw[k]; }); } }   // 🎆 跨年、春節的過場動畫看過哪一年
@@ -20428,6 +20435,7 @@ function tabSave(body) {
   sfx.onclick = () => { G.seasonFx = G.seasonFx === 1 ? undefined : 1; saveGame(); renderTab(); };
   body.appendChild(sfx); }
   { const dn = el('button', 'mini', G.noDayNight ? '🌙 讓家裡跟著時間變天色（現在：關）' : '🌙 家裡不要跟著時間變天色（現在：開，晚上會變暗、燈會亮）'); dn.onclick = () => { G.noDayNight = G.noDayNight ? undefined : 1; saveGame(); requestDraw(); renderTab(); }; body.appendChild(dn); }
+  { const rc = el('button', 'mini', G.realClock ? '🕐 天色現在跟著真實時間（點一下改成：一開始是白天，玩 30 分鐘變晚上）' : '🕐 天色現在跟著玩的時間：一開始是白天，玩 30 分鐘變晚上（點一下改成跟著真實時間）'); rc.onclick = () => { G.realClock = G.realClock ? undefined : 1; saveGame(); requestDraw(); renderTab(); }; body.appendChild(rc); }
   { const tb = el('button', 'mini', G.noThief ? '🐭 讓小偷鼠偶爾來家裡（現在：關）' : '🐭 不要讓小偷鼠來家裡（現在：開，一天最多一次）'); tb.onclick = () => { G.noThief = G.noThief ? undefined : 1; saveGame(); renderTab(); }; body.appendChild(tb); }
   const rp = el('button', 'mini', '↩️ 小卡、📷、💡 位置歸位');
   rp.title = '小卡和按鈕可以拖到喜歡的地方；拖亂了按這裡放回原位';
@@ -20917,7 +20925,7 @@ function drawIntroInside(g, t, outfit) {
 const WELCOME_ANIM_MS = 3600;
 var WELCOME_HOUR = null;   // 測試用：指定現在幾點
 function welcomeInfo() {
-  const h = WELCOME_HOUR != null ? WELCOME_HOUR : new Date().getHours();
+  const h = WELCOME_HOUR != null ? WELCOME_HOUR : Math.floor(islHour());
   const tod = h >= 5 && h < 10 ? 'morning' : h >= 10 && h < 16 ? 'day' : h >= 16 && h < 19 ? 'evening' : 'night';
   const se = seasonNow();
   const bloom = Object.values(G.garden || {}).some(x => x && x.s >= 4);
@@ -24029,7 +24037,34 @@ const ISL_LAMPS = [[23, 17], [29, 17], [23, 22], [29, 22], [26, 14], [14, 17], [
 const ISL_DIG_MAX = 6;
 function islDigState() { const d = today(); if (!G.islDig || G.islDig.d !== d) G.islDig = { d, n: 0 }; return G.islDig; }
 const ISL_TOOLS = [['rod', '🎣 釣竿', '點海邊或池塘，看到「❗」就點一下'], ['net', '🦋 網子', '點蝴蝶就會走過去抓'], ['shovel', '⛏️ 鏟子', '點草地就會挖一個洞']];
-function islHour() { return ISL_HOUR_TEST != null ? ISL_HOUR_TEST : new Date().getHours() + new Date().getMinutes() / 60; }
+function islHour() { if (ISL_HOUR_TEST != null) return ISL_HOUR_TEST; const g = gNow(); return g && g.realClock ? realHour() : playHour(playClockMin()); }
+function gNow() { try { return G || null; } catch (e) { return null; } }   // 讀檔前（G 還沒好）也能安全呼叫
+function realHour() { const d = new Date(); return d.getHours() + d.getMinutes() / 60; }
+/* 🕐 遊戲裡的時間跟著「玩了多久」走（家長 11/22：一開始是白天，玩半小時後變晚上）
+   本來跟著真實時間，晚上才玩的話一打開就是黑的。改成：
+   0～25 分鐘 早上→白天、25～30 分鐘 傍晚、30～40 分鐘 晚上、40 分鐘天亮再一輪。
+   只算畫面開著的時間；關掉（或切走）超過 20 分鐘，下次打開重新從早上開始；只是重新整理就接著算。
+   G.playClock = { m: 玩了幾分鐘, at: 上次記的時間 }；設定裡可以切回真實時間（G.realClock = 1）。 */
+var PLAY_RESET_MS = 20 * 60e3;
+function playHour(m) {
+  const c = ((m % 40) + 40) % 40;
+  const h = c < 25 ? 7 + c * 10 / 25 : c < 30 ? 17 + (c - 25) * 3 / 5 : 20 + (c - 30) * 11 / 10;
+  return h % 24;
+}
+function playClockMin() {
+  if (!gNow()) return 0;
+  const now = Date.now(); let pc = G.playClock;
+  if (!pc || typeof pc !== 'object' || !Number.isFinite(pc.m) || !Number.isFinite(pc.at) || now - pc.at > PLAY_RESET_MS || now < pc.at - 60e3) pc = G.playClock = { m: 0, at: now };
+  return pc.m;
+}
+function playClockTick() {   // 每 15 秒記一次；畫面看不到的時候不算
+  if (!gNow()) return;
+  playClockMin(); const pc = G.playClock, now = Date.now();
+  if (!document.hidden) pc.m = Math.min(1e6, pc.m + Math.min(60e3, Math.max(0, now - pc.at)) / 60e3);
+  pc.at = now;
+}
+setInterval(playClockTick, 15e3);
+document.addEventListener('visibilitychange', () => { try { if (!document.hidden) playClockMin(); playClockTick(); } catch (e) {} });
 function islPhase() { const h = islHour(); return h < 6 || h >= 19 ? 'night' : h < 8 ? 'morning' : h >= 17 ? 'evening' : 'day'; }
 function islCoinState() { const d = today(); if (!G.islCoin || G.islCoin.d !== d) G.islCoin = { d, n: 0, got: [] }; return G.islCoin; }
 function islCoinSpots(m) {   // 今天的金幣在哪（同一天打開幾次都一樣，撿過的就不在）
@@ -27984,7 +28019,7 @@ function islDrawSpecial(ctx, sp, now) {
 const isleSayMem = {};
 function isleOwnerPool(id) {
   const nm = typeof charName === 'function' ? charName() : '你';
-  const h = new Date().getHours();
+  const h = Math.floor(islHour());
   const phase = typeof islPhase === 'function' ? islPhase() : 'day';
   const hello = h < 11 ? `${nm}早安！` : h < 17 ? `${nm}午安～` : `${nm}晚上好！`;
   const lines = [hello, `嗨，島主${nm}！`, `${nm}來啦，好開心！`, '今天想做什麼呢？'];
@@ -29832,7 +29867,7 @@ const ISL_REQS = { shell: ['🐚', '貝殼', '沙灘上撿'], bug: ['🦋', '蝴
 const ISL_REQ_PRIZE = 80, ISL_REQ_DAY = 3;
 const nowMs = () => performance.now();
 function islGreet() {
-  const h = new Date().getHours(), nm = charName(), v = typeof rideNow === 'function' && rideNow();
+  const h = Math.floor(islHour()), nm = charName(), v = typeof rideNow === 'function' && rideNow();
   const phase = typeof islPhase === 'function' ? islPhase() : 'day';
   const lines = [h < 11 ? `${nm}，早安！` : h < 17 ? `${nm}，午安～` : `${nm}，晚上好！`, `嗨～${nm}！`, '今天天氣真好！', '你來找我玩呀？', '我們一起在島上走走吧！', phase === 'night' ? '晚上的星星好亮。' : phase === 'evening' ? '天空變成橘色了。' : '風吹過來涼涼的。'];
   if (v) lines.push(`哇！你的${v.name}好酷！`, `${v.name}可以載我嗎？`);
@@ -29950,7 +29985,7 @@ function islTalkOpen(q) {
   };
   isl.talk.stop = () => clearInterval(typer);
   const chatLines = () => {
-    const nm = charName(), h = new Date().getHours(), f = G.friends[n.id] || 0;
+    const nm = charName(), h = Math.floor(islHour()), f = G.friends[n.id] || 0;
     const L = [islGreet(), '我最喜歡這座小島了！', '你知道嗎？池塘裡有好大的魚喔！', '今天想做什麼呢？', '我剛剛看到一隻漂亮的蝴蝶！', '要不要一起去海邊散步？', '我剛才在草地上跑步。', '樹蔭下面涼涼的。', '你午餐吃了什麼？', '我帶了一顆蘋果。', '貝殼可以在沙灘上撿。', '想釣魚要先拿釣竿喔。', '小島的路燈晚上會亮。', '我們可以一起看雲。', '你今天開心嗎？', '慢慢走，不會迷路的。'];
     if (h < 11) L.push('早起的空氣好新鮮！', '太陽剛剛爬上來。');
     if (h >= 18 || h < 6) L.push('晚上的星星好漂亮～', '路燈亮起來了耶！', '天黑了要記得回家。');
