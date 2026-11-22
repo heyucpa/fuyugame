@@ -5949,6 +5949,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-22T14:00', title: '📜 老師、館員、教練也有任務了', lines: [
+    ['🦉', '貓頭鷹老師：找溜出籠子的小倉鼠、幫忙發作業本'],
+    ['🐱', '貓咪館員：找被藏起來的故事書、把書放回對的書架'],
+    ['🐻', '熊熊教練：找不見的黑帶、幫忙準備比賽'],
+    ['📜', '點老師、館員、教練就看得到「📜 任務」，每個地方一天一個']
+  ] },
   { id: '2026-11-22T12:00', title: '📜 聖誕老公公的任務', lines: [
     ['📜', '聖誕老公公每天有一個任務要拜託你（聖誕老公公的家、大地圖「🎅」都可以接）'],
     ['🔔', '找雪橇的鈴鐺、撿回小朋友的信、找麋鹿的紅蘿蔔、找走失的小麋鹿、收集雪球堆雪人'],
@@ -7144,6 +7150,7 @@ function normalizeSave(g) {
     t.bag = Array.isArray(t.bag) ? t.bag.filter(b => isObj(b) && typeof b.id === 'string' && FURN_BY_ID[b.id] && (b.top == null || (typeof b.top === 'string' && FURN_BY_ID[b.top]))).map(b => (b.top ? { id: b.id, top: b.top } : { id: b.id })).slice(0, 30) : []; Object.keys(t).forEach(k => { if (!['day', 'n', 'bag'].includes(k)) delete t[k]; }); } }   // 🐭 小偷：今天來過了沒、抓到幾次、失物招領（被偷走還沒領回的東西）
   if (out.noThief != null && out.noThief !== 1) delete out.noThief;
   if (out.noDayNight != null && out.noDayNight !== 1) delete out.noDayNight;
+  if (out.hmis != null) { if (!isObj(out.hmis)) delete out.hmis; else { const h = out.hmis, okId = v => typeof v === 'string' && /^[a-z]{2,12}$/.test(v); if (h.d != null && !(typeof h.d === 'string' && h.d.length <= 12)) delete h.d; ['done', 'last', 'pick'].forEach(k => { if (h[k] == null) return; if (!isObj(h[k])) { delete h[k]; return; } h[k] = Object.fromEntries(Object.entries(h[k]).filter(([a, b]) => /^(teacher|librarian|tkd|d)$/.test(a) && (k === 'done' ? b === 1 : a === 'd' ? typeof b === 'string' && b.length <= 12 : okId(b)))); }); Object.keys(h).forEach(k => { if (!['d', 'done', 'last', 'pick'].includes(k)) delete h[k]; }); } }   // 📜 老師、館員、教練的任務
   if (out.pev != null) { if (!isObj(out.pev)) delete out.pev; else { const v = out.pev; if (v.d != null && !(typeof v.d === 'string' && v.d.length <= 12)) delete v.d; ['n', 'done'].forEach(k => { if (v[k] != null && !(Number.isInteger(v[k]) && v[k] >= 0 && v[k] < 1e6)) delete v[k]; }); if (v.last != null && !/^(petsick|petlost|pettrick|petmud)$/.test(v.last)) delete v.last; Object.keys(v).forEach(k => { if (!['d', 'n', 'last', 'done'].includes(k)) delete v[k]; }); } }   // 🐾 寵物事件今天幾次
   if (out.islEv != null && !(isObj(out.islEv) && typeof out.islEv.d === 'string' && out.islEv.d.length <= 12 && Number.isInteger(out.islEv.n) && out.islEv.n >= 0 && out.islEv.n < 100)) delete out.islEv;   // 🗺️ 大地圖事件今天發生幾次
   if (out.vev != null) { if (!isObj(out.vev)) delete out.vev; else { const v = out.vev; if (v.d != null && !(typeof v.d === 'string' && v.d.length <= 12)) delete v.d; ['n', 'done'].forEach(k => { if (v[k] != null && !(Number.isInteger(v[k]) && v[k] >= 0 && v[k] < 1e6)) delete v[k]; }); if (v.last != null && !/^(faint|stolen|lost|sick|bday|rain|fight)$/.test(v.last)) delete v.last; Object.keys(v).forEach(k => { if (!['d', 'n', 'last', 'done'].includes(k)) delete v[k]; }); } }   // 🎬 朋友來玩的事件：今天幾次、上次哪一種、一共幫了幾次
@@ -12696,9 +12703,9 @@ const VEV_STEPS = {
   call: { text: v => `📞 ${v.n.short}還是好暈…快打電話叫救護車！`, btn: '📞 打電話叫救護車', go: () => vevCall(), hint: v => `${v.n.short}：要…要去看醫生…` },
   prints: { text: v => `🐾 地上有小偷鼠的腳印！點腳印跟上去（${v.prints.filter(p => p.got).length} / ${v.prints.length}）`, hint: v => `${v.n.short}：你看！地上有小小的腳印，一個一個連到門口耶！` },
   chase: { text: v => `🏃 腳印通到門口，小偷鼠跑出去了！`, btn: '🏃 追出去！', go: () => vevChaseGo(), hint: v => `${v.n.short}：快追！他跑不遠的！` },
-  find: { text: v => `🔍 幫${v.n.short}找 🔑 鑰匙：點家具翻翻看！${v.last ? '　' + v.last : ''}`, hint: v => { const room = curRoom(), it = room.items.find(x => x.uid === v.hide); if (!it) return '再找找看！'; const p = iso(it.x + .5, it.y + .5, 0), c = iso(room.w / 2, room.d / 2, 0); return `${v.n.short}：我記得剛剛在房間的${p.y < c.y ? '後面（靠牆那邊）' : '前面'}、${p.x < c.x ? '左邊' : '右邊'}玩…`; } }
+  find: { text: v => `🔍 幫${v.n.short}找 ${v.findIcon || '🔑'} ${v.findName || '鑰匙'}：點家具翻翻看！${v.last ? '　' + v.last : ''}`, hint: v => { const room = curRoom(), it = room.items.find(x => x.uid === v.hide); if (!it) return '再找找看！'; const p = iso(it.x + .5, it.y + .5, 0), c = iso(room.w / 2, room.d / 2, 0); return `${v.n.short}：我記得剛剛在房間的${p.y < c.y ? '後面（靠牆那邊）' : '前面'}、${p.x < c.x ? '左邊' : '右邊'}玩…`; } }
 };
-function vevHint() { if (!vev || !VEV_STEPS[vev.step]) return; const h = VEV_STEPS[vev.step].hint(vev); if (h) (vev.subj ? fufuSay : visSay)(h.replace(/^[^：]*：/, ''), 4000); }
+function vevHint() { if (!vev || !VEV_STEPS[vev.step]) return; const h = VEV_STEPS[vev.step].hint(vev); if (h) (vev.subj === 'host' ? hostSay : vev.subj ? fufuSay : visSay)(h.replace(/^[^：]*：/, ''), 4000); }
 function vevHintPress() {
   if (!vev) return; Sound.play('click');
   if (vev.step === 'find' && !vev.region) { vev.region = true; vevHint(); }
@@ -12717,7 +12724,7 @@ function vevBar() {
 }
 function vevTick(now) {
   if (!vev) { if (vis.vevAt && vis.who && vis.state === 'visit' && now > vis.vevAt) { vis.vevAt = 0; if (vevCanStart()) vevStart(); } return; }
-  if ((!vev.subj && (!vis.who || vis.who !== vev.n)) || (vev.subj === 'pet' && (!G.pet || G.pet.stage === 'egg')) || G.away || (typeof isl !== 'undefined' && isl) || (vev.room !== roomKey() && vev.step !== 'game' && vev.step !== 'scene')) { vevCancel(); return; }
+  if ((!vev.subj && (!vis.who || vis.who !== vev.n)) || (vev.subj === 'pet' && (!G.pet || G.pet.stage === 'egg')) || (vev.subj !== 'host' && G.away) || (vev.subj === 'host' && !G.away) || (typeof isl !== 'undefined' && isl) || (vev.room !== roomKey() && vev.step !== 'game' && vev.step !== 'scene')) { vevCancel(); return; }
   if (!vev.subj) { vis.leaveAt = Math.max(vis.leaveAt, now + 30000); vis.nextTalkAt = Math.max(vis.nextTalkAt, now + 6000); }
   if (vev.freeze) { vis.a.path = []; vis.a.idleUntil = now + 2000; }
   if (vev.step === 'scene' || vev.step === 'game') return;
@@ -12829,10 +12836,10 @@ function vevFindTap(it) {
   if (!vev || vev.step !== 'find') return; const room = curRoom(), tgt = room.items.find(x => x.uid === vev.hide);
   if (!tgt) { vevCancel(); return; }
   vev.act = performance.now(); vev.hand = false;
-  if (it.uid === vev.hide) { Sound.play('perfect'); const nm = (FURN_BY_ID[it.id] || {}).name || '家具'; vev.step = 'scene'; vevBar(); vevScene(VEV_SCENE.lostEnd(vev.n, nm), () => vevEnd()); return; }
+  if (it.uid === vev.hide) { Sound.play('perfect'); const nm = (FURN_BY_ID[it.id] || {}).name || '家具'; vev.step = 'scene'; vevBar(); vevScene(vev.mis ? hmisEndScene(vev) : VEV_SCENE.lostEnd(vev.n, nm), () => vevEnd()); return; }
   vev.tries++; const d = Math.hypot(it.x - tgt.x, it.y - tgt.y);
   vev.last = d <= 2.2 ? '🔥 好熱！就在旁邊了！' : d <= 4.5 ? '♨️ 溫溫的，有一點近了' : '🧊 好冷～不在這附近';
-  Sound.play(d <= 2.2 ? 'starPop' : 'click'); visSay(`${(FURN_BY_ID[it.id] || {}).name || '這裡'}沒有…${vev.last}`, 2400);
+  Sound.play(d <= 2.2 ? 'starPop' : 'click'); (vev.subj === 'host' ? hostSay : visSay)(`${(FURN_BY_ID[it.id] || {}).name || '這裡'}沒有…${vev.last}`, 2400);
   if (vev.tries === 4 && !vev.region) { vev.region = true; setTimeout(() => vevHint(), 2600); }
   vevBar();
 }
@@ -12919,7 +12926,7 @@ function vevChainPress(i) {
   if (!vev || vev.step !== 'chain') return; const C = VEV_CHAINS[vev.chain], S = C.steps[vev.ci], b = S.btns[i]; if (!b) return;
   const [, line, snd, cake, bad] = b;
   Sound.play(snd || 'click'); vev.act = performance.now(); vev.hand = false;
-  const say = vev.subj ? fufuSay : visSay;   // 🐾 寵物的事件：小可愛說話
+  const say = vev.subj === 'host' ? hostSay : vev.subj ? fufuSay : visSay;   // 🐾 寵物的事件：小可愛說話；主人的任務：主人說話
   if (bad) { say(line, 3200); vevBar(); return; }
   if (cake) vev.cake = cake === '🍓' ? '🍰' : cake === '🍫' ? '🎂' : '🧁';
   say(line, 2800); try { fufuBurst(S.fx || '✨'); } catch (e) {}
@@ -13027,6 +13034,75 @@ function petEvStart(kind) {
   vev = { kind, subj: 'pet', n: petN(), step: 'scene', room: roomKey(), act: performance.now(), hand: false, freeze: false, tries: 0 };
   Sound.play('whoosh'); vevChainStart(kind); return true;
 }
+/* ===== 📜 主人的任務（家長 11/22：老師、館員、教練也給任務）=====
+   到學校、圖書館、道館，點主人 →「📜 ○○的任務」：每個地方兩個任務輪流，一天一個（G.hmis = {d, done: {teacher: 1…}, last: {…}}）。
+   用朋友事件那一套（過場動畫、上方提示條、💡、愛的小手、空白鍵）：
+   🔍 找東西（點家具翻翻看，好冷／溫溫的／好熱）：小倉鼠、故事書、黑帶
+   📋 一步一步（有的要選對，選錯會被溫柔提醒）：發作業本、把書放回書架、準備比賽
+   完成 💰120。 */
+const HOST_MIS = {
+  teacher: [
+    { id: 'hamster', kind: 'find', icon: '🐹', thing: '班上的小倉鼠', name: '找班上的小倉鼠',
+      intro: '糟糕！班上的小倉鼠「豆豆」從籠子裡溜出來了！牠一定躲在教室的某個地方……', end: '豆豆找到了！牠躲在這裡偷吃瓜子呢～謝謝你！' },
+    { id: 'homework', kind: 'chain', name: '幫老師發作業本',
+      intro: '老師改好大家的作業本了，可是好多本喔……可以幫老師發給大家嗎？',
+      steps: [['📚 把作業本抱過來', '哇，好重！一大疊作業本', 'pickUp'], ['🔤 照名字排整齊', '排好了，整整齊齊的！', 'pickUp'], ['🙋 一本一本發給大家', '大家都拿到自己的作業本了！', 'fanfare']],
+      end: '謝謝你，你是老師的好幫手！' }
+  ],
+  librarian: [
+    { id: 'storybook', kind: 'find', icon: '📕', thing: '最受歡迎的故事書', name: '找被藏起來的故事書',
+      intro: '有小朋友太喜歡這本故事書，把它藏起來不想讓別人借……可以幫我找出來嗎？', end: '找到了！這本書大家輪流看，大家都可以看到喔～' },
+    { id: 'shelf', kind: 'chain', name: '把書放回書架',
+      intro: '還書箱裡有好多書，要放回對的書架，大家才找得到！',
+      steps: [{ q: '🦕 這本是「恐龍大百科」，要放哪一區？', opts: [['🦕 動物區', '對了！恐龍是動物，放動物區！', 'pickUp'], ['🍳 料理區', '恐龍不是食物啦～再想想？', 'miss', true], ['🚀 太空區', '恐龍不住在太空喔～再想想？', 'miss', true]] },
+              { q: '🚀 這本是「去月亮旅行」，要放哪一區？', opts: [['🍳 料理區', '月亮不能吃喔～再想想？', 'miss', true], ['🚀 太空區', '對了！月亮在太空！', 'pickUp'], ['🦕 動物區', '月亮不是動物喔～再想想？', 'miss', true]] },
+              { q: '🍰 這本是「做蛋糕好好玩」，要放哪一區？', opts: [['🚀 太空區', '蛋糕不在太空喔～再想想？', 'miss', true], ['🦕 動物區', '蛋糕不是動物啦～再想想？', 'miss', true], ['🍳 料理區', '對了！做蛋糕是料理！', 'fanfare']] }],
+      end: '書都回家了！你好會分類，可以當小館員了！' }
+  ],
+  tkd: [
+    { id: 'belt', kind: 'find', icon: '🥋', thing: '教練的黑帶', name: '找教練的黑帶',
+      intro: '明天要比賽了，可是教練的黑帶不見了！沒有黑帶好奇怪喔……幫我找找看！', end: '找到黑帶了！綁上去，教練又帥氣了！' },
+    { id: 'match', kind: 'chain', name: '幫忙準備比賽',
+      intro: '明天道館要辦比賽，好多東西要準備……一起來幫忙吧！',
+      steps: [['🟦 鋪好軟墊', '軟墊鋪好了，跌倒也不會痛', 'pickUp'], ['💧 每個位子擺一瓶水', '水擺好了，大家才不會口渴', 'pickUp'], ['🎏 掛上加油彩帶', '彩帶掛好了，好熱鬧！', 'fanfare']],
+      end: '比賽場地準備好了！明天大家一定會很開心！' }
+  ]
+};
+function hmisState() { if (!G.hmis || typeof G.hmis !== 'object') G.hmis = {}; const h = G.hmis; if (h.d !== today()) { h.d = today(); h.done = {}; } if (!h.done || typeof h.done !== 'object') h.done = {}; if (!h.last || typeof h.last !== 'object') h.last = {}; return h; }
+function hmisPick(hid) { const h = hmisState(), L = HOST_MIS[hid]; if (!L) return null; if (!h.pick || typeof h.pick !== 'object' || h.pick.d !== today()) h.pick = { d: today() }; if (!h.pick[hid]) { const pool = L.filter(m => m.id !== h.last[hid]); h.pick[hid] = (pool[Math.floor(Math.random() * pool.length)] || L[0]).id; h.last[hid] = h.pick[hid]; saveGame(); } return L.find(m => m.id === h.pick[hid]) || L[0]; }
+function hmisLabel(hid) { const M = hmisPick(hid); if (!M) return ''; return hmisState().done[hid] ? `📜 ${HOSTS[hid].short}的任務 ✅` : `📜 ${HOSTS[hid].short}的任務：${M.name}`; }
+function hmisStart(hid) {
+  const H = HOSTS[hid], M = hmisPick(hid); if (!H || !M) return false;
+  if (hmisState().done[hid]) { try { hostSay('今天已經幫我很多了，謝謝你！明天再來喔～', 2600); } catch (e) {} return false; }
+  if (vev) { toast('📜 先把現在的事情做完喔！'); return false; }
+  const room = curRoom();
+  if (M.kind === 'find' && vevHideSpots(room).length < 3) { toast('這裡的東西太少了，找不到地方躲～'); return false; }
+  try { $('#modal').hidden = true; closeGameWindow(); hideItemMenu(); } catch (e) {}
+  vev = { kind: 'host_' + M.id, subj: 'host', hid, mis: M, n: H, step: 'scene', room: roomKey(), act: performance.now(), hand: false, freeze: false, tries: 0 };
+  if (M.kind === 'find') { vev.findIcon = M.icon; vev.findName = M.thing; const spots = vevHideSpots(room); vev.hide = spots[Math.floor(Math.random() * spots.length)].uid; }
+  Sound.play('whoosh');
+  const intro = [
+    { text: `${H.name}：${M.intro}`, draw: (g, W, H2, t) => { vevBg(g, W, H2, 'room', t); vevNb(g, H, 140, 196, 2.2, { sway: Math.sin(t * 3) * .05 }); g.font = '34px sans-serif'; g.textAlign = 'center'; g.fillText(M.kind === 'find' ? M.icon : '📋', 230, 90 + Math.sin(t * 3) * 6); if (M.kind === 'find') { g.font = '900 26px sans-serif'; g.fillStyle = '#e8505b'; g.fillText('？', 262, 72); } copDrawKid(g, 295, 196, 1.05, t, false, -1, 'wow'); } },
+    { text: `📜 任務：${M.name}！${M.kind === 'find' ? '點家具翻翻看，會告訴你「好冷、溫溫的、好熱」' : '照著上面的提示一步一步做'}`, draw: (g, W, H2, t) => { vevBg(g, W, H2, 'room', t); copDrawKid(g, 180, 196, 1.15, t, false, 1, 'joy'); g.font = '40px sans-serif'; g.textAlign = 'center'; g.fillText('📜', 180, 80 - Math.abs(Math.sin(t * 3)) * 8); } }
+  ];
+  if (M.kind === 'find') vevScene(intro, () => { vevStepGo('find'); });
+  else { vev.chain = 'hostchain'; vev.ci = 0; vevScene(intro, () => vevStepGo('chain')); }
+  return true;
+}
+// 一步一步的任務：用「hostchain」接在 VEV_CHAINS 那一套上（每一步可以是一個按鈕，或一個問題＋好幾個選項）
+VEV_CHAINS.hostchain = {
+  get steps() { const M = vev && vev.mis; if (!M) return []; return M.steps.map(st => Array.isArray(st) ? { text: () => `📋 ${M.name}`, btns: [[st[0], st[1], st[2]]], fx: '✨' } : { text: () => st.q, btns: st.opts.map(o => [o[0], o[1], o[2], null, !!o[3]]), fx: '📚' }); },
+  intro: () => [], end: (n, v) => hmisEndScene(v), thanks: ''
+};
+function hmisEndScene(v) {
+  const M = v.mis, H = v.n;
+  return [{ text: `${H.name}：${M.end}`, draw: (g, W, H2, t) => { vevBg(g, W, H2, 'room', t); vevNb(g, H, 140, 196, 2.2, { happy: true }); vevHearts(g, 140, 90, t); if (M.kind === 'find') { g.font = '34px sans-serif'; g.textAlign = 'center'; g.fillText(M.icon, 220, 140 - Math.abs(Math.sin(t * 4)) * 10); } copDrawKid(g, 290, 196, 1.05, t, false, -1, 'joy'); } }];
+}
+function hmisFinish(v) {
+  const h = hmisState(); h.done[v.hid] = 1; addBells(120); kidMoodUp(5);
+  try { hostSay('謝謝你！你幫了我好大的忙！', 3000); } catch (e) {}
+  Sound.play('fanfare'); toast(`📜 任務完成：${v.mis.name}　💰 +120`); saveGame(); refreshTop(); try { requestDraw(); } catch (e) {}
+}
 let islEvNext = 0;
 function islEvState() { if (!G.islEv || typeof G.islEv !== 'object') G.islEv = {}; if (G.islEv.d !== today()) { G.islEv.d = today(); G.islEv.n = 0; } return G.islEv; }
 function islEvTick() {
@@ -13075,6 +13151,7 @@ function islWishGrant(k) {
 }
 function vevEnd() {
   const v = vev; if (!v) return; vev = null; vevBar();
+  if (v.subj === 'host') { hmisFinish(v); return; }   // 📜 主人的任務
   if (v.subj === 'pet') {   // 🐾 寵物的事件結束：寵物好開心
     const C = VEV_CHAINS[v.kind], ps = pevState(), r = (C && C.reward) || 100; ps.done = Math.min(1e6, (ps.done || 0) + 1);
     addBells(r); kidMoodUp(6); try { if (G.pet) { if (typeof G.pet.mood === 'number') G.pet.mood = 100; if (v.kind === 'petmud' && typeof G.pet.clean === 'number') G.pet.clean = 100; if (v.kind === 'petsick' && typeof G.pet.hunger === 'number') G.pet.hunger = Math.max(G.pet.hunger, 70); } pet.happyUntil = performance.now() + 5000; } catch (e) {}
@@ -14773,6 +14850,7 @@ function hostMenuEntries() {
   }
   if (host.n.id === 'cinema') list.push(['🎬 看電影', () => openMoviePicker()]);
   if (host.n.id === 'mom' || host.n.id === 'dad') parMenu(list, host.n.id);   // 👨👩 天空島的爸爸媽媽
+  if (HOST_MIS[host.n.id]) list.push([hmisLabel(host.n.id), () => hmisStart(host.n.id)]);   // 📜 老師、館員、教練的任務
   if (host.n.id === 'tkd') {
     list.push(['🦵 踢板（看準時機）', openKickGame]);
     list.push(['👊 跟著做動作', openFormsGame]);
