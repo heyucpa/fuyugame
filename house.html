@@ -5954,6 +5954,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-22T17:00', title: '📬 求救信變多了！', lines: [
+    ['📬', '求救信從 6 封變成 23 封：叔叔家、圖書館、道館、電影院、餐廳、醫院、改車店、警察局、健身房、體育館、游泳池、遊樂園、學校都會寄信'],
+    ['🌋', '火山國的恐龍蛋、雲朵國的小雲朵、糖果國的螞蟻、星星國掉下來的小星星也需要幫忙'],
+    ['🗺️', '很久沒去的地方、還沒去過的國家，比較常寄信來喔']
+  ] },
   { id: '2026-11-22T16:00', title: '📬 求救信', lines: [
     ['📬', '偶爾會收到動物朋友的求救信！可以「現在就去」，也可以「等一下再去」，信會收進求救信箱'],
     ['🐧', '冰雪國的企鵝被北極熊欺負、森林國松鼠的橡果被吹散、大海國的海龜被塑膠袋纏住、沙漠國的小花快枯掉'],
@@ -7167,7 +7172,8 @@ function normalizeSave(g) {
     t.bag = Array.isArray(t.bag) ? t.bag.filter(b => isObj(b) && typeof b.id === 'string' && FURN_BY_ID[b.id] && (b.top == null || (typeof b.top === 'string' && FURN_BY_ID[b.top]))).map(b => (b.top ? { id: b.id, top: b.top } : { id: b.id })).slice(0, 30) : []; Object.keys(t).forEach(k => { if (!['day', 'n', 'bag'].includes(k)) delete t[k]; }); } }   // 🐭 小偷：今天來過了沒、抓到幾次、失物招領（被偷走還沒領回的東西）
   if (out.noThief != null && out.noThief !== 1) delete out.noThief;
   if (out.noDayNight != null && out.noDayNight !== 1) delete out.noDayNight;
-  if (out.help != null) { if (!isObj(out.help)) delete out.help; else { const h = out.help, ok = k => /^(ice|forest|sea|desert|duck|lamb)$/.test(k); h.list = Array.isArray(h.list) ? [...new Set(h.list.filter(ok))].slice(0, 6) : []; h.done = isObj(h.done) ? Object.fromEntries(Object.entries(h.done).filter(([k, v]) => ok(k) && Number.isInteger(v) && v >= 0 && v < 1e6)) : {}; if (h.d != null && !(typeof h.d === 'string' && h.d.length <= 12)) delete h.d; Object.keys(h).forEach(k => { if (!['list', 'done', 'd'].includes(k)) delete h[k]; }); } }   // 📬 求救信箱
+  if (out.help != null) { if (!isObj(out.help)) delete out.help; else { const h = out.help, ok = k => /^(ice|forest|sea|desert|duck|lamb|game|books|jump|film|busy|shot|tools|siren|dumbbell|balls|ring|carousel|garden|dinoegg|cloud|ants|fallstar)$/.test(k); h.list = Array.isArray(h.list) ? [...new Set(h.list.filter(ok))].slice(0, 6) : []; h.done = isObj(h.done) ? Object.fromEntries(Object.entries(h.done).filter(([k, v]) => ok(k) && Number.isInteger(v) && v >= 0 && v < 1e6)) : {}; if (h.d != null && !(typeof h.d === 'string' && h.d.length <= 12)) delete h.d; Object.keys(h).forEach(k => { if (!['list', 'done', 'd'].includes(k)) delete h[k]; }); } }   // 📬 求救信箱
+  if (out.visitAt != null) { if (!isObj(out.visitAt)) delete out.visitAt; else out.visitAt = Object.fromEntries(Object.entries(out.visitAt).filter(([k, v]) => typeof k === 'string' && k.length <= 12 && typeof v === 'string' && v.length <= 12).slice(0, 60)); }   // 🗺️ 每個地方最後一次去的日子
   if (out.fw != null) { if (!isObj(out.fw)) delete out.fw; else { ['ny', 'cny'].forEach(k => { if (out.fw[k] != null && !(Number.isInteger(out.fw[k]) && out.fw[k] > 2000 && out.fw[k] < 3000)) delete out.fw[k]; }); Object.keys(out.fw).forEach(k => { if (!['ny', 'cny'].includes(k)) delete out.fw[k]; }); } }   // 🎆 跨年、春節的過場動畫看過哪一年
   if (out.hmis != null) { if (!isObj(out.hmis)) delete out.hmis; else { const h = out.hmis, okId = v => typeof v === 'string' && /^[a-z]{2,12}$/.test(v); if (h.d != null && !(typeof h.d === 'string' && h.d.length <= 12)) delete h.d; ['done', 'last', 'pick'].forEach(k => { if (h[k] == null) return; if (!isObj(h[k])) { delete h[k]; return; } h[k] = Object.fromEntries(Object.entries(h[k]).filter(([a, b]) => /^(teacher|librarian|tkd|d)$/.test(a) && (k === 'done' ? b === 1 : a === 'd' ? typeof b === 'string' && b.length <= 12 : okId(b)))); }); Object.keys(h).forEach(k => { if (!['d', 'done', 'last', 'pick'].includes(k)) delete h[k]; }); } }   // 📜 老師、館員、教練的任務
   if (out.pev != null) { if (!isObj(out.pev)) delete out.pev; else { const v = out.pev; if (v.d != null && !(typeof v.d === 'string' && v.d.length <= 12)) delete v.d; ['n', 'done'].forEach(k => { if (v[k] != null && !(Number.isInteger(v[k]) && v[k] >= 0 && v[k] < 1e6)) delete v[k]; }); if (v.last != null && !/^(petsick|petlost|pettrick|petmud)$/.test(v.last)) delete v.last; Object.keys(v).forEach(k => { if (!['d', 'n', 'last', 'done'].includes(k)) delete v[k]; }); } }   // 🐾 寵物事件今天幾次
@@ -13152,7 +13158,59 @@ const HELP_REQS = {
   lamb: { who: '小羊', icon: '🐑', place: 'grandma', title: '小羊跑出柵欄了', letter: '阿婆的小羊從柵欄的破洞跑出去了，在外面咩咩叫，阿婆追不上……',
     steps: [{ q: '小羊在外面跑來跑去！', opts: [['🥬 拿青草引牠回來', '小羊聞到青草，乖乖跟著走回來了！'], ['📣 大聲吼牠', '小羊被嚇到，跑得更遠了……輕聲一點，再想想？', 1]] },
             { q: '小羊回來了，可是柵欄還有洞……', opts: [['🔨 把柵欄修好', '叩叩叩，柵欄修好了！']] }],
-    end: '小羊回家了！阿婆說：真是幫了阿婆大忙，乖孩子！' }
+    end: '小羊回家了！阿婆說：真是幫了阿婆大忙，乖孩子！' },
+  // ── 第二批（家長 11/22：可以讓女兒去不常去的地點）──
+  game: { who: '浣熊叔叔', icon: '🎮', place: 'uncle', title: '叔叔的遊戲機壞了', letter: '我的遊戲機突然不能玩了，畫面黑黑的……你可以來幫我看看嗎？',
+    steps: [{ q: '遊戲機黑黑的，先檢查什麼？', opts: [['🔨 用力敲一敲', '敲會壞得更嚴重喔……再想想？', 1], ['🔌 看看插頭有沒有插好', '插頭鬆掉了！插好了！']] }, { q: '還有好多灰塵……', opts: [['🧹 用小刷子清乾淨', '亮晶晶的！']] }],
+    end: '遊戲機又能玩了！叔叔說：一起來玩一局吧！' },
+  books: { who: '貓咪館員', icon: '📚', place: 'library', title: '書被風吹得到處都是', letter: '大風把圖書館的窗戶吹開了，書被吹得到處都是……',
+    steps: [{ q: '先做什麼？', opts: [['🔒 先把窗戶關好', '窗戶關好了，風進不來了！']] }, { q: '地上好多書！', opts: [['📚 一本一本撿起來', '撿好了！']] }, { q: '要放回書架', opts: [['🔢 照書背的號碼排好', '整整齊齊的！'], ['🎲 隨便塞進去', '這樣大家會找不到書喔……再想想？', 1]] }],
+    end: '圖書館又整整齊齊的了！館員說：謝謝你，小館員！' },
+  jump: { who: '熊熊教練', icon: '🥋', place: 'dojo', title: '小朋友不敢跳', letter: '道館裡的小朋友都不敢跳過跳箱，一直說「我不行」……可以來幫我鼓勵他們嗎？',
+    steps: [{ q: '小朋友說：我不敢……', opts: [['😆 笑他膽小', '被笑會更難過、更不敢喔……再想想？', 1], ['💬 說「慢慢來，你可以的！」', '小朋友的眼睛亮起來了！']] }, { q: '還是有一點怕……', opts: [['🦵 先示範一次給他看', '你跳過去了！小朋友說：我也要試試看！']] }],
+    end: '小朋友都跳過去了！大家一起歡呼：我們做到了！' },
+  film: { who: '貓頭鷹放映師', icon: '🎬', place: 'cinema', title: '電影的膠捲纏住了', letter: '放映機的膠捲纏成一團，大家都在等著看電影……怎麼辦！',
+    steps: [{ q: '大家等得好著急……', opts: [['🍿 先發爆米花給大家', '大家吃著爆米花，願意再等一下！']] }, { q: '膠捲纏住了', opts: [['✂️ 剪掉', '剪掉電影就不完整了……再想想？', 1], ['🎞️ 慢慢、輕輕地捲回去', '捲好了！']] }],
+    end: '電影開始了！大家一邊吃爆米花一邊看，好開心！' },
+  busy: { who: '貓咪主廚', icon: '🍳', place: 'restaurant', title: '餐廳客人好多', letter: '今天餐廳的客人好多好多，我一個人忙不過來了……',
+    steps: [{ q: '先幫什麼忙？', opts: [['🍽️ 幫忙送餐給客人', '咖哩飯、蛋包飯，一桌一桌送到了！']] }, { q: '碗盤堆得好高……', opts: [['🧽 幫忙洗碗盤', '刷刷刷，亮晶晶！']] }],
+    end: '主廚說：多虧有你！請你吃一份特製鬆餅！' },
+  shot: { who: '小羊醫生', icon: '💉', place: 'hospital', title: '小兔子怕打針', letter: '有一隻小兔子要打預防針，可是牠好害怕，一直哭……',
+    steps: [{ q: '小兔子一直哭……', opts: [['😠 叫牠不要哭', '這樣小兔子會更害怕喔……再想想？', 1], ['🧸 給牠抱玩偶', '小兔子抱著玩偶，比較不怕了']] }, { q: '要打針了！', opts: [['💬 陪牠一起數 1、2、3', '1…2…3……好了！一點都不痛！']] }],
+    end: '小兔子打完針了！醫生送牠一張勇敢貼紙，也送你一張！' },
+  tools: { who: '河狸技師', icon: '🔧', place: 'garage', title: '工具都不見了', letter: '改車店的工具全部不見了！客人的車子在等著修……',
+    steps: [{ q: '工具會在哪裡呢？', opts: [['🔍 找找工具車下面', '找到扳手和螺絲起子了！']] }, { q: '找到了！', opts: [['🧰 照大小整理好放回去', '這樣下次就不會找不到了！']] }],
+    end: '技師說：工具排得好整齊！車子馬上修好了！' },
+  siren: { who: '狗狗警官', icon: '🚨', place: 'police', title: '警車的警笛不響了', letter: '警車的警笛壞了，叫不出聲音，這樣要出勤很危險……',
+    steps: [{ q: '警笛怎麼了？', opts: [['🔧 把鬆掉的螺絲鎖緊', '嗚咿——嗚咿——修好了！']] }, { q: '最後……', opts: [['🚓 一起開出去試試看', '大家都讓路了！警笛好響亮！']] }],
+    end: '警官說：謝謝你，小警察！今天可以安心出勤了！' },
+  dumbbell: { who: '河馬教練', icon: '🏋️', place: 'gym', title: '啞鈴滾得到處都是', letter: '健身房的啞鈴滾得到處都是，大家走路會踢到受傷……',
+    steps: [{ q: '先做什麼？', opts: [['🏋️ 把小啞鈴放回架子上', '一個一個排好！']] }, { q: '大的啞鈴好重……', opts: [['💪 自己硬搬', '太重會受傷喔，要找大人幫忙……再想想？', 1], ['🦛 請教練一起搬', '一、二、三，搬好了！']] }],
+    end: '健身房乾淨又安全！教練說：你是最棒的小幫手！' },
+  balls: { who: '猴子教練', icon: '🏀', place: 'arena', title: '球都沒氣了', letter: '比賽快開始了，可是體育館的球全部都沒氣了！',
+    steps: [{ q: '球扁扁的……', opts: [['🦶 用腳用力踩', '踩會把球踩破喔……再想想？', 1], ['🎈 用打氣筒打氣', '噗噗噗，球鼓起來了！']] }, { q: '打好了！', opts: [['🏀 拍拍看彈不彈', '咚咚咚，彈得好高！']] }],
+    end: '比賽可以開始了！猴子教練請你當開球嘉賓！' },
+  ring: { who: '鴨鴨教練', icon: '🏊', place: 'pool', title: '游泳圈飄走了', letter: '有小朋友的游泳圈飄到泳池中間，他在池邊哭……',
+    steps: [{ q: '游泳圈在泳池中間……', opts: [['🤿 自己跳下去撿', '不可以自己跳下水，要找大人喔！再想想？', 1], ['📣 請救生員幫忙', '救生員來了！']] }, { q: '救生員拿來長長的網子', opts: [['🎣 一起用網子勾回來', '勾到了！游泳圈回來了！']] }],
+    end: '小朋友拿回游泳圈了！你記得「要找大人幫忙」，好棒！' },
+  carousel: { who: '兔兔姊姊', icon: '🎠', place: 'amusement', title: '旋轉木馬的音樂停了', letter: '旋轉木馬的音樂突然停了，坐在上面的小朋友好失望……',
+    steps: [{ q: '音樂停了，大家好失望', opts: [['🎵 一起唱歌給大家聽', '大家跟著唱起來了！']] }, { q: '要修好音樂盒', opts: [['🔧 去請技師來修', '技師修好了，音樂又響起來了！']] }],
+    end: '旋轉木馬又轉起來了！兔兔姊姊請你免費坐一次！' },
+  garden: { who: '貓頭鷹老師', icon: '🌻', place: 'school', title: '學校的花圃快枯了', letter: '放假的時候沒人照顧，學校的小花圃快要枯掉了……',
+    steps: [{ q: '先做什麼？', opts: [['🌱 把雜草拔掉', '雜草拔光了！']] }, { q: '土好乾……', opts: [['💧 慢慢澆水', '小花喝飽水了！']] }],
+    end: '花圃開滿向日葵！老師說：謝謝你照顧大家的花園！' },
+  dinoegg: { who: '恐龍媽媽', icon: '🦖', dest: '火山國', title: '恐龍蛋要搬家', letter: '火山好像要噴發了，我的恐龍蛋還放在山腳下……拜託幫我搬到安全的地方！',
+    steps: [{ q: '恐龍蛋好大一顆', opts: [['🥚 輕輕地抱起來', '抱好了，小心小心～'], ['⚽ 用滾的比較快', '滾會把蛋撞破喔……再想想？', 1]] }, { q: '要放去哪裡？', opts: [['⛰️ 放進安全的山洞裡', '放好了！']] }],
+    end: '恐龍寶寶在山洞裡破殼了！恐龍媽媽說：謝謝你保護我的寶寶！' },
+  cloud: { who: '小雲朵', icon: '☁️', dest: '雲朵國', title: '小雲朵一直哭', letter: '雲朵國的小雲朵一直哭一直哭，雨下了好幾天都停不下來……',
+    steps: [{ q: '小雲朵在哭……', opts: [['💬 問它為什麼難過', '小雲朵說：大家都在玩，沒有人找我玩……']] }, { q: '原來它很寂寞', opts: [['🌈 一起用雨滴畫彩虹', '雨停了，天空出現一道大彩虹！']] }],
+    end: '小雲朵笑了！它說：以後下雨的時候，我都會畫彩虹給大家看！' },
+  ants: { who: '糖果國王', icon: '🍬', dest: '糖果國', title: '螞蟻搬走了糖果', letter: '好多螞蟻把糖果城堡的糖果一顆一顆搬走了！',
+    steps: [{ q: '螞蟻一直搬糖果……', opts: [['😠 把螞蟻踩死', '螞蟻也是想吃東西喔……有更好的辦法，再想想？', 1], ['💬 跟螞蟻好好商量', '螞蟻說：冬天快到了，我們的家沒有食物……']] }, { q: '螞蟻也需要食物', opts: [['🍭 分一些糖果給螞蟻', '螞蟻開心地搬回家，也不再搬城堡的糖果了！']] }],
+    end: '糖果城堡保住了，螞蟻也有食物過冬！大家都開心！' },
+  fallstar: { who: '小星星', icon: '⭐', dest: '星星國', title: '小星星掉下來了', letter: '我從天上掉下來了，回不了天空……晚上會有一個地方暗暗的……',
+    steps: [{ q: '小星星在哪裡？', opts: [['🔭 用望遠鏡找一找', '找到了！小星星掉在草叢裡，一閃一閃的！']] }, { q: '要怎麼回到天空？', opts: [['🎈 綁在氣球上送它回去', '氣球帶著小星星，慢慢飛回天上了！']] }],
+    end: '天空又亮晶晶了！小星星眨眨眼睛說：謝謝你！' }
 };
 function helpState() { if (!G.help || typeof G.help !== 'object') G.help = {}; const h = G.help; if (!Array.isArray(h.list)) h.list = []; if (!h.done || typeof h.done !== 'object') h.done = {}; return h; }
 function helpWhere(R) { return R.dest ? R.dest : PLACES[R.place] ? PLACES[R.place].name : ''; }
@@ -13165,7 +13223,10 @@ function helpTick(now) {
   helpNew();
 }
 function helpNew(id) {
-  const h = helpState(); if (!id) { const pool = Object.keys(HELP_REQS).filter(k => !h.list.includes(k) && (!HELP_REQS[k].place || PLACES[HELP_REQS[k].place])); if (!pool.length) return false; const fresh = pool.filter(k => !h.done[k]); const L = fresh.length ? fresh : pool; id = L[Math.floor(Math.random() * L.length)]; }
+  const h = helpState(); if (!id) { const pool = Object.keys(HELP_REQS).filter(k => !h.list.includes(k) && (!HELP_REQS[k].place || PLACES[HELP_REQS[k].place]) && !h.list.some(j => helpWhere(HELP_REQS[j]) === helpWhere(HELP_REQS[k]))); if (!pool.length) return false;
+    // 🗺️ 優先寄「很久沒去」的地方（沒去過的最優先），再來是還沒幫過的信
+    const stale = k => { const R = HELP_REQS[k], at = (G.visitAt || {})[R.place || R.dest]; return (at ? Math.min(60, Math.round((Date.parse(today()) - Date.parse(at)) / 864e5)) : 99) + (h.done[k] ? 0 : 20) + Math.random() * 6; };
+    const L = pool.sort((a, b) => stale(b) - stale(a)).slice(0, 4); id = L[Math.floor(Math.random() * L.length)]; }
   const R = HELP_REQS[id]; h.d = today(); saveGame();
   Sound.play('knock');
   vevScene([
@@ -15478,7 +15539,7 @@ function travelArrive(place, roomIdx) {
   toast(`🚗 出發去${PLACES[place].name}！`);
   Sound.play('jump');
   commit();
-  try { helpOnArrive(place); } catch (e) {}   // 📬 這裡有人寄了求救信
+  try { if (!G.visitAt || typeof G.visitAt !== 'object') G.visitAt = {}; G.visitAt[place] = today(); helpOnArrive(place); } catch (e) {}   // 📬 這裡有人寄了求救信；記住最後一次去哪天
 }
 function goPlaceRoom(i) {
   if (!G.away) return;
@@ -36538,6 +36599,7 @@ function airActivity(w, dest) {
   airActivity.test = { spots, hit, get got() { return got; }, get done() { return done; } };
 }
 function airArrive(w, dest, back) {
+  try { if (!G.visitAt || typeof G.visitAt !== 'object') G.visitAt = {}; G.visitAt[dest] = today(); } catch (e) {}   // 🗺️ 記住最後一次去哪天（求救信優先寄很久沒去的地方）
   const tr = tripState(); if (!back) { tr.n = Math.min(999999, (tr.n || 0) + 1); saveGame(); }
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   const W = 360, H = 230, ven = worldVenue(dest), { g } = gameCanvas(w.stage, W, H);
