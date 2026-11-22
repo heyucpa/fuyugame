@@ -43,6 +43,11 @@
 .grow-cell b{font-size:16px}
 .grow-cell span{font-size:13px;color:#8a7a68}
 .grow-cell.locked{opacity:.6}
+.help-chip{position:absolute;top:54px;left:50%;transform:translateX(-50%);z-index:5;font:inherit;font-size:14px;font-weight:800;border:2px solid #e8505b;background:#fff0f0;color:#b03636;border-radius:999px;padding:5px 14px;box-shadow:0 3px 10px rgba(0,0,0,.12);cursor:pointer;animation:helpBob 1.6s ease-in-out infinite}
+@keyframes helpBob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-3px)}}
+.help-letter{background:#fffaf0;border:2px solid #f0dcb8;border-radius:14px;padding:10px 12px;margin:8px 0;display:flex;flex-direction:column;gap:6px}
+.help-l-t{font-weight:800;font-size:16px}.help-l-s{font-size:14px;color:#6b5a48;line-height:1.5}
+@media (max-width: 760px), (orientation: portrait) and (max-width: 1100px) { .help-chip { top: 128px; left: auto; right: 10px; transform: none; animation: none; font-size: 13px; padding: 4px 10px; } }
 </style></head><body>
 <style>
 :root {
@@ -5949,6 +5954,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-22T16:00', title: '📬 求救信', lines: [
+    ['📬', '偶爾會收到動物朋友的求救信！可以「現在就去」，也可以「等一下再去」，信會收進求救信箱'],
+    ['🐧', '冰雪國的企鵝被北極熊欺負、森林國松鼠的橡果被吹散、大海國的海龜被塑膠袋纏住、沙漠國的小花快枯掉'],
+    ['🦆', '公園的小鴨找不到媽媽、阿婆家的小羊跑出柵欄'],
+    ['✈️', '國家的求救信：搭飛機到那裡就能幫忙；公園、阿婆家：走進去就會問你']
+  ] },
   { id: '2026-11-22T15:00', title: '🎆 節日有煙火了！', lines: [
     ['🎄', '平安夜、聖誕節（12/24、12/25）、跨年（12/31、1/1）、春節（初一～初五）會放煙火'],
     ['🎆', '那幾天「🎮 遊戲」裡有「放煙火」：點夜空放煙火，可以選圓圓、愛心、星星、笑臉'],
@@ -7156,6 +7167,7 @@ function normalizeSave(g) {
     t.bag = Array.isArray(t.bag) ? t.bag.filter(b => isObj(b) && typeof b.id === 'string' && FURN_BY_ID[b.id] && (b.top == null || (typeof b.top === 'string' && FURN_BY_ID[b.top]))).map(b => (b.top ? { id: b.id, top: b.top } : { id: b.id })).slice(0, 30) : []; Object.keys(t).forEach(k => { if (!['day', 'n', 'bag'].includes(k)) delete t[k]; }); } }   // 🐭 小偷：今天來過了沒、抓到幾次、失物招領（被偷走還沒領回的東西）
   if (out.noThief != null && out.noThief !== 1) delete out.noThief;
   if (out.noDayNight != null && out.noDayNight !== 1) delete out.noDayNight;
+  if (out.help != null) { if (!isObj(out.help)) delete out.help; else { const h = out.help, ok = k => /^(ice|forest|sea|desert|duck|lamb)$/.test(k); h.list = Array.isArray(h.list) ? [...new Set(h.list.filter(ok))].slice(0, 6) : []; h.done = isObj(h.done) ? Object.fromEntries(Object.entries(h.done).filter(([k, v]) => ok(k) && Number.isInteger(v) && v >= 0 && v < 1e6)) : {}; if (h.d != null && !(typeof h.d === 'string' && h.d.length <= 12)) delete h.d; Object.keys(h).forEach(k => { if (!['list', 'done', 'd'].includes(k)) delete h[k]; }); } }   // 📬 求救信箱
   if (out.fw != null) { if (!isObj(out.fw)) delete out.fw; else { ['ny', 'cny'].forEach(k => { if (out.fw[k] != null && !(Number.isInteger(out.fw[k]) && out.fw[k] > 2000 && out.fw[k] < 3000)) delete out.fw[k]; }); Object.keys(out.fw).forEach(k => { if (!['ny', 'cny'].includes(k)) delete out.fw[k]; }); } }   // 🎆 跨年、春節的過場動畫看過哪一年
   if (out.hmis != null) { if (!isObj(out.hmis)) delete out.hmis; else { const h = out.hmis, okId = v => typeof v === 'string' && /^[a-z]{2,12}$/.test(v); if (h.d != null && !(typeof h.d === 'string' && h.d.length <= 12)) delete h.d; ['done', 'last', 'pick'].forEach(k => { if (h[k] == null) return; if (!isObj(h[k])) { delete h[k]; return; } h[k] = Object.fromEntries(Object.entries(h[k]).filter(([a, b]) => /^(teacher|librarian|tkd|d)$/.test(a) && (k === 'done' ? b === 1 : a === 'd' ? typeof b === 'string' && b.length <= 12 : okId(b)))); }); Object.keys(h).forEach(k => { if (!['d', 'done', 'last', 'pick'].includes(k)) delete h[k]; }); } }   // 📜 老師、館員、教練的任務
   if (out.pev != null) { if (!isObj(out.pev)) delete out.pev; else { const v = out.pev; if (v.d != null && !(typeof v.d === 'string' && v.d.length <= 12)) delete v.d; ['n', 'done'].forEach(k => { if (v[k] != null && !(Number.isInteger(v[k]) && v[k] >= 0 && v[k] < 1e6)) delete v[k]; }); if (v.last != null && !/^(petsick|petlost|pettrick|petmud)$/.test(v.last)) delete v.last; Object.keys(v).forEach(k => { if (!['d', 'n', 'last', 'done'].includes(k)) delete v[k]; }); } }   // 🐾 寵物事件今天幾次
@@ -13110,6 +13122,152 @@ function hmisFinish(v) {
   try { hostSay('謝謝你！你幫了我好大的忙！', 3000); } catch (e) {}
   Sound.play('fanfare'); toast(`📜 任務完成：${v.mis.name}　💰 +120`); saveGame(); refreshTop(); try { requestDraw(); } catch (e) {}
 }
+/* ===== 📬 求救信（家長 11/22：偶爾有事件請女兒去幫忙，可以決定現在要不要做，不要的話之後過去再做）=====
+   在家玩的時候偶爾（一天最多一封、信箱最多 3 封）收到求救信：過場動畫 →「🦸 現在就去」或「📬 等一下再去」。
+   等一下再去：收進信箱（畫面上「📬 N」小按鈕）。之後：
+     國家的（冰雪國…）：搭飛機到那裡，抵達畫面多一顆「🆘 去幫忙」；或從信箱按「現在就去」（機長免費載）。
+     地方的（公園、阿婆家）：走進去就會再問一次；或從信箱按「現在就去」（直接走過去）。
+   幫忙：一步一步選怎麼做（選了不好的會被溫柔提醒）→ 結局動畫 → 💰150。G.help = { list: [id…], d: 最後收到信的日子, done: {id: 次數} }。 */
+const HELP_REQS = {
+  ice: { who: '企鵝', icon: '🐧', dest: '冰雪國', title: '企鵝被北極熊欺負了', letter: '救命！冰雪國有一隻大北極熊，每天都來搶我們抓的魚……我們好害怕！',
+    steps: [{ q: '北極熊又來搶魚了！要怎麼辦？', opts: [['😠 把北極熊趕走', '這樣北極熊會更生氣，以後還是會來喔……再想想？', 1], ['💬 問北極熊為什麼要搶魚', '北極熊小小聲說：「我…我只是不會抓魚，又好想跟大家一起玩……」']] },
+            { q: '原來北極熊不會抓魚，也想交朋友！', opts: [['🎣 教北極熊自己抓魚', '北極熊學會抓魚了！牠好開心～'], ['🐟 大家一起分享魚', '大家圍在一起吃魚，北極熊笑得好開心～']] },
+            { q: '最後……', opts: [['🤝 請北極熊跟企鵝做朋友', '北極熊說：「對不起，以前搶你們的魚……我們可以做朋友嗎？」企鵝：「好呀！」']] }],
+    end: '北極熊和企鵝變成好朋友了！牠們一起溜冰、一起抓魚！' },
+  forest: { who: '松鼠', icon: '🐿️', dest: '森林國', title: '松鼠的橡果被吹散了', letter: '昨天晚上的大風把我存了好久的橡果全部吹散了……冬天快到了，沒有橡果我會餓肚子的！',
+    steps: [{ q: '橡果散落在森林裡，先去哪裡找？', opts: [['🌳 大樹下面', '大樹下面找到好多顆橡果！']] }, { q: '還有一些……', opts: [['🍂 落葉堆裡', '翻開落葉，橡果躲在裡面！']] }, { q: '最後幾顆！', opts: [['⛰️ 大石頭旁邊', '找到最後幾顆了！'], ['🌊 跳進河裡找', '河水好冰又好急，太危險了，不可以喔……再想想？', 1]] }],
+    end: '橡果都找回來了！松鼠說：今年冬天可以吃得飽飽的！分你一顆！' },
+  sea: { who: '海龜', icon: '🐢', dest: '大海國', title: '海龜被塑膠袋纏住了', letter: '我的腳被海裡漂來的塑膠袋纏住了，游不動……好難過……',
+    steps: [{ q: '海龜被纏得好緊！', opts: [['✂️ 慢慢、輕輕地解開', '解開了！海龜的腳可以動了！'], ['💪 用力拉扯', '這樣海龜會痛喔……要輕輕的，再想想？', 1]] },
+            { q: '海灘上還有好多垃圾，會再纏住別的動物……', opts: [['🗑️ 把海灘的垃圾撿起來', '撿了一大袋垃圾，海灘變乾淨了！']] },
+            { q: '撿起來的垃圾要怎麼辦？', opts: [['♻️ 拿去分類回收', '寶特瓶、塑膠袋分好類，拿去回收！'], ['🌊 丟回海裡', '丟回海裡又會纏住海龜喔！再想想？', 1]] }],
+    end: '海龜游回大海了！牠回頭跟你揮揮手：謝謝你保護大海！' },
+  desert: { who: '駱駝', icon: '🐪', dest: '沙漠國', title: '綠洲的小花快枯掉了', letter: '沙漠好熱好熱，綠洲的小花快要枯掉了……可以來幫幫我們嗎？',
+    steps: [{ q: '小花垂下頭了，先做什麼？', opts: [['💧 用水桶去井邊打水', '打了滿滿一桶水！']] }, { q: '有水了！', opts: [['🌱 慢慢幫小花澆水', '小花喝到水，慢慢抬起頭了！']] }, { q: '太陽還是好大……', opts: [['⛱️ 蓋一個遮陽棚', '有了遮陽棚，小花不怕曬了！']] }],
+    end: '綠洲的小花都開了！駱駝說：沙漠裡也有好漂亮的花園！' },
+  duck: { who: '小鴨', icon: '🦆', place: 'park', title: '小鴨找不到媽媽', letter: '嗚嗚……我在公園玩，一轉頭就找不到媽媽了……',
+    steps: [{ q: '小鴨的媽媽在哪裡呢？', opts: [['🏃 帶著小鴨到處亂跑', '亂跑會更找不到，小鴨也會累喔……再想想？', 1], ['👂 停下來聽聽哪裡有呱呱聲', '聽到了！池塘那邊有「呱——呱——」']] },
+            { q: '呱呱聲從池塘那邊傳來！', opts: [['🦆 帶小鴨去池塘邊', '鴨媽媽在那裡！']] }],
+    end: '小鴨找到媽媽了！鴨媽媽說：謝謝你，下次牠會乖乖跟緊我！' },
+  lamb: { who: '小羊', icon: '🐑', place: 'grandma', title: '小羊跑出柵欄了', letter: '阿婆的小羊從柵欄的破洞跑出去了，在外面咩咩叫，阿婆追不上……',
+    steps: [{ q: '小羊在外面跑來跑去！', opts: [['🥬 拿青草引牠回來', '小羊聞到青草，乖乖跟著走回來了！'], ['📣 大聲吼牠', '小羊被嚇到，跑得更遠了……輕聲一點，再想想？', 1]] },
+            { q: '小羊回來了，可是柵欄還有洞……', opts: [['🔨 把柵欄修好', '叩叩叩，柵欄修好了！']] }],
+    end: '小羊回家了！阿婆說：真是幫了阿婆大忙，乖孩子！' }
+};
+function helpState() { if (!G.help || typeof G.help !== 'object') G.help = {}; const h = G.help; if (!Array.isArray(h.list)) h.list = []; if (!h.done || typeof h.done !== 'object') h.done = {}; return h; }
+function helpWhere(R) { return R.dest ? R.dest : PLACES[R.place] ? PLACES[R.place].name : ''; }
+let helpNext = 0;
+function helpTick(now) {
+  if (!helpNext) { helpNext = now + 240000; return; }   // 打開遊戲 4 分鐘以後
+  if (now < helpNext) return; helpNext = now + 90000;
+  try { if (G.away || G.guide !== 'done' || !$('#modal').hidden || vev || vis.who || document.getElementById('vevScene') || document.getElementById('showcase') || resting || hold || decorMode || (typeof isl !== 'undefined' && isl)) return; } catch (e) { return; }
+  const h = helpState(); if (h.d === today() || h.list.length >= 3 || Math.random() > .2) return;
+  helpNew();
+}
+function helpNew(id) {
+  const h = helpState(); if (!id) { const pool = Object.keys(HELP_REQS).filter(k => !h.list.includes(k) && (!HELP_REQS[k].place || PLACES[HELP_REQS[k].place])); if (!pool.length) return false; const fresh = pool.filter(k => !h.done[k]); const L = fresh.length ? fresh : pool; id = L[Math.floor(Math.random() * L.length)]; }
+  const R = HELP_REQS[id]; h.d = today(); saveGame();
+  Sound.play('knock');
+  vevScene([
+    { text: '📬 咻～一封信飛進來了！', draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); const k = Math.min(1, t / 1.2); g.font = '44px sans-serif'; g.textAlign = 'center'; g.fillText('✉️', 60 + k * 120, 70 + Math.sin(k * Math.PI) * -30 + k * 40); copDrawKid(g, 280, 196, 1.05, t, false, -1, 'wow'); } },
+    { text: `${R.icon} ${helpWhere(R)}的${R.who}：「${R.letter}」`, draw: (g, W, H, t) => helpDraw(g, W, H, t, R, 'sad') }
+  ], () => helpAsk(id));
+  return true;
+}
+function helpDraw(g, W, H, t, R, mood) {   // 求救的場景：國家的背景／地方的背景＋大大的動物
+  if (R.dest) { try { drawWorldArena(g, W, H, worldVenue(R.dest), ' '); } catch (e) { vevBg(g, W, H, 'yard', t); } } else vevBg(g, W, H, 'yard', t);
+  const bob = mood === 'happy' ? Math.abs(Math.sin(t * 5)) * 10 : Math.sin(t * 2) * 2;
+  if (R === HELP_REQS.ice) { drawPolarBear(g, 260, 196, 1.2, mood === 'happy'); }
+  g.font = '64px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.fillText(R.icon, R === HELP_REQS.ice ? 150 : 180, 190 - bob);
+  if (mood === 'sad') { g.font = '22px sans-serif'; g.fillText('💧', R === HELP_REQS.ice ? 185 : 215, 130 + (t * 30) % 20); g.fillText('🆘', 60, 60 + Math.sin(t * 4) * 4); }
+  else if (mood === 'happy') vevHearts(g, 180, 100, t);
+  copDrawKid(g, 40, H - 4, .8, t, false, 1, mood === 'happy' ? 'joy' : null);
+}
+function drawPolarBear(g, x, y, s, happy) {   // 🐻 北極熊（自己畫的，白白胖胖）
+  g.save(); g.translate(x, y); g.scale(s, s);
+  g.fillStyle = '#f4f6fa'; g.strokeStyle = '#c9d3e0'; g.lineWidth = 2;
+  g.beginPath(); g.ellipse(0, -26, 34, 26, 0, 0, 7); g.fill(); g.stroke();
+  g.beginPath(); g.arc(-20, -58, 20, 0, 7); g.fill(); g.stroke();
+  [[-34, -72], [-8, -74]].forEach(([ex, ey]) => { g.beginPath(); g.arc(ex, ey, 7, 0, 7); g.fill(); g.stroke(); });
+  g.fillStyle = '#26232a'; g.beginPath(); g.arc(-27, -60, 2.4, 0, 7); g.arc(-14, -60, 2.4, 0, 7); g.fill(); g.beginPath(); g.ellipse(-20, -50, 4, 3, 0, 0, 7); g.fill();
+  g.strokeStyle = '#26232a'; g.lineWidth = 1.6; g.beginPath(); if (happy) g.arc(-20, -47, 5, .2, Math.PI - .2); else g.arc(-20, -42, 5, Math.PI + .3, -.3); g.stroke();
+  g.fillStyle = '#ffb3c7'; if (happy) { g.beginPath(); g.arc(-32, -52, 3, 0, 7); g.arc(-8, -52, 3, 0, 7); g.fill(); }
+  g.restore();
+}
+function helpAsk(id) {
+  const R = HELP_REQS[id], card = $('#modalCard'); card.innerHTML = '';
+  card.appendChild(el('h2', '', `${R.icon} ${R.title}`));
+  card.appendChild(note(`在${helpWhere(R)}。要現在去幫忙嗎？等一下再去也可以，信會收進「📬 求救信箱」。`));
+  const go = el('button', 'big', '🦸 現在就去！'), later = el('button', 'big alt', '📬 等一下再去');
+  go.onclick = () => { $('#modal').hidden = true; Sound.play('click'); helpGo(id); };
+  later.onclick = () => { $('#modal').hidden = true; Sound.play('click'); const h = helpState(); if (!h.list.includes(id)) h.list.push(id); saveGame(); helpChip(); toast(`📬 收進求救信箱了！${R.dest ? `之後搭飛機去${R.dest}` : `之後去${helpWhere(R)}`}就可以幫忙`); };
+  card.append(go, later); $('#modal').hidden = false;
+}
+function helpGo(id) {   // 現在就去
+  const R = HELP_REQS[id], h = helpState(); if (!h.list.includes(id)) h.list.push(id); saveGame(); helpChip();
+  if (R.dest) { const w = openGameWindow(`✈️ 機長載你去${R.dest}`, `鵜鶘機長：聽說${R.dest}有朋友需要幫忙？這一趟我免費載你！`); airBoard(w, R.dest); return; }
+  if (G.away && G.away.place === R.place) { helpRun(id); return; }
+  helpPending = id; travelTo(R.place);
+}
+let helpPending = null;
+function helpOnArrive(place) {   // 走進某個地方：信箱裡有這裡的求救信 → 再問一次
+  const h = helpState(), id = h.list.find(k => HELP_REQS[k] && HELP_REQS[k].place === place); if (!id) return;
+  const direct = helpPending === id; helpPending = null;
+  setTimeout(() => { if (!G.away || G.away.place !== place || !$('#modal').hidden) return; if (direct) helpRun(id); else { const R = HELP_REQS[id]; vevScene([{ text: `${R.icon} ${R.who}：「你來了！${R.letter}」`, draw: (g, W, H, t) => helpDraw(g, W, H, t, R, 'sad') }], () => helpAsk2(id)); } }, 1800);
+}
+function helpAsk2(id) {   // 已經在現場：現在幫忙／下次
+  const R = HELP_REQS[id], card = $('#modalCard'); card.innerHTML = '';
+  card.appendChild(el('h2', '', `${R.icon} ${R.title}`));
+  const go = el('button', 'big', '🦸 現在幫忙！'), later = el('button', 'big alt', '等一下');
+  go.onclick = () => { $('#modal').hidden = true; helpRun(id); }; later.onclick = () => { $('#modal').hidden = true; toast('📬 信還在信箱裡，想幫忙的時候再來！'); };
+  card.append(go, later); $('#modal').hidden = false;
+}
+function helpRun(id, w0) {   // 一步一步幫忙
+  const R = HELP_REQS[id]; if (!R) return;
+  const w = w0 || openGameWindow(`🆘 ${R.title}`, `在${helpWhere(R)}幫${R.who}的忙！選一個好方法。`);
+  if (w0) { w.stage.innerHTML = ''; w.btns.innerHTML = ''; }
+  const W = 340, H = 200, { g } = gameCanvas(w.stage, W, H);
+  let k = 0, t = 0, last = performance.now(), raf = 0, live = true, pop = 0;
+  const q = el('div', 'tkd-say', ''), row = el('div', 'invite-row'); w.stage.append(q, row);
+  const show = () => { const S = R.steps[k]; q.textContent = S.q; row.innerHTML = '';
+    const gi = S.opts.findIndex(o => !o[2]); S.opts.forEach(([lb, line, bad], i) => { const b = el('button', 'big' + (bad ? ' alt' : '')); b.textContent = lb; if (i === gi) b.dataset.key = '空白'; b.onclick = () => pick(lb, line, bad); row.appendChild(b); }); };
+  const pick = (lb, line, bad) => { if (bad) { Sound.play('miss'); w.status.textContent = line; return; }
+    Sound.play('pickUp'); pop = .6; w.status.textContent = line; k++;
+    if (k >= R.steps.length) { live = false; cancelAnimationFrame(raf); setTimeout(() => { closeGameWindow(); helpEnd(id); }, 1400); row.innerHTML = ''; return; }
+    setTimeout(show, 900); };
+  const kd = e => { if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); const bs = [...row.querySelectorAll('button')]; const good = bs.find(b => !b.classList.contains('alt')); if (good && !e.repeat) good.click(); } };
+  document.addEventListener('keydown', kd);
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); };
+  const frame = now => { if (!live) return; raf = requestAnimationFrame(frame); const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt; pop = Math.max(0, pop - dt);
+    helpDraw(g, W, H, t, R, k >= R.steps.length ? 'happy' : k > 0 ? '' : 'sad');
+    for (let i = 0; i < R.steps.length; i++) { g.fillStyle = i < k ? '#51cf66' : 'rgba(255,255,255,.8)'; g.beginPath(); g.arc(W - 20 - (R.steps.length - 1 - i) * 18, 18, 6, 0, 7); g.fill(); }
+    if (pop > 0) { g.font = '26px sans-serif'; g.textAlign = 'center'; g.globalAlpha = pop / .6; g.fillText('✨', 180, 80 - (.6 - pop) * 40); g.globalAlpha = 1; } };
+  raf = requestAnimationFrame(frame); show(); leaveButton(w);
+  helpRun.test = { pick: (i) => { const S = R.steps[k]; const o = S.opts[i]; pick(o[0], o[1], o[2]); }, get k() { return k; } };
+}
+function helpEnd(id) {
+  const R = HELP_REQS[id], h = helpState(); h.list = h.list.filter(x => x !== id); h.done[id] = (h.done[id] || 0) + 1;
+  addBells(150); kidMoodUp(6); saveGame(); refreshTop(); helpChip();
+  vevScene([{ text: R.end, draw: (g, W, H, t) => helpDraw(g, W, H, t, R, 'happy') }, { text: `🦸 幫了${R.who}一個大忙！　💰 +150`, draw: (g, W, H, t) => { vevBg(g, W, H, 'yard', t); copDrawKid(g, 180, 196, 1.2, t, false, 1, 'joy'); g.font = '40px sans-serif'; g.textAlign = 'center'; g.fillText('🦸', 180, 70 - Math.abs(Math.sin(t * 3)) * 8); } }], () => { Sound.play('fanfare'); });
+}
+function helpChip() {   // 📬 信箱小按鈕（有信的時候才出現）
+  let b = document.getElementById('helpChip'); const n = (G.help && Array.isArray(G.help.list)) ? G.help.list.length : 0;
+  if (!n) { if (b) b.remove(); return; }
+  if (!b) { b = el('button', 'help-chip'); b.id = 'helpChip'; b.onclick = e => { e.stopPropagation(); Sound.play('click'); openHelpBox(); }; const st = $('.stage'); if (!st) return; st.appendChild(b); }
+  b.textContent = `📬 ${n}`; b.title = '求救信箱';
+}
+function openHelpBox() {
+  const h = helpState(), card = $('#modalCard'); closeGameWindow(); card.innerHTML = '';
+  card.appendChild(el('h2', '', `📬 求救信箱（${h.list.length} 封）`));
+  if (!h.list.length) card.appendChild(note('現在沒有人需要幫忙，大家都很好！'));
+  h.list.forEach(id => { const R = HELP_REQS[id]; if (!R) return; const box = el('div', 'help-letter');
+    box.append(el('div', 'help-l-t', `${R.icon} ${R.title}（${helpWhere(R)}）`), el('div', 'help-l-s', `「${R.letter}」`));
+    const go = el('button', 'big', R.dest ? `✈️ 現在搭飛機去${R.dest}` : `🚶 現在去${helpWhere(R)}`); go.onclick = () => { $('#modal').hidden = true; Sound.play('click'); helpGo(id); };
+    box.appendChild(go); card.appendChild(box); });
+  const ok = el('button', 'big alt', '好'); ok.onclick = () => { $('#modal').hidden = true; }; card.appendChild(ok);
+  $('#modal').hidden = false;
+}
+setTimeout(() => { try { helpChip(); } catch (e) {} }, 3000);
 let islEvNext = 0;
 function islEvState() { if (!G.islEv || typeof G.islEv !== 'object') G.islEv = {}; if (G.islEv.d !== today()) { G.islEv.d = today(); G.islEv.n = 0; } return G.islEv; }
 function islEvTick() {
@@ -15320,6 +15478,7 @@ function travelArrive(place, roomIdx) {
   toast(`🚗 出發去${PLACES[place].name}！`);
   Sound.play('jump');
   commit();
+  try { helpOnArrive(place); } catch (e) {}   // 📬 這裡有人寄了求救信
 }
 function goPlaceRoom(i) {
   if (!G.away) return;
@@ -17125,6 +17284,7 @@ function gameStep(dt, now) {
   if (typeof thiefTick === 'function') try { thiefTick(now, dt); } catch (e) {}   // 🐭 小偷鼠
   if (typeof vevTick === 'function') try { vevTick(now); } catch (e) {}   // 🎬 朋友來玩的事件
   if (typeof petEvTick === 'function') try { petEvTick(now); } catch (e) {}   // 🐾 寵物的事件
+  if (typeof helpTick === 'function') try { helpTick(now); } catch (e) {}   // 📬 求救信
   if (typeof prisonersTick === 'function') try { prisonersTick(now, dt); } catch (e) {}   // 🚔 小房間裡的犯人
   if (typeof checkTrophies === 'function') try { checkTrophies(now); } catch (e) {}
   if (now > nextPetTick) { nextPetTick = now + 5000; if (petTick()) saveGame(); }
@@ -36397,6 +36557,7 @@ function airArrive(w, dest, back) {
     addItem(id, 1); Sound.play('buy'); refreshTop(); saveGame(); w.status.textContent = `買了「${f.name}」！收在「我的東西」裡，可以擺在家裡`; };
   home.onclick = () => { Sound.play('click'); try { closeGameWindow(); } catch (e) {} toast('✈️ 平安回到家了！'); };
   w.btns.append(act, photo, shop, home);
+  { const hid = helpState().list.find(k => HELP_REQS[k] && HELP_REQS[k].dest === dest); if (hid) { const R = HELP_REQS[hid], hb = el('button', 'big', `🆘 幫${R.who}的忙`); hb.onclick = () => { Sound.play('click'); helpRun(hid, w); }; w.btns.prepend(hb); setTimeout(() => { try { w.status.textContent = `${R.icon} ${R.who}在等你幫忙！按「🆘 幫${R.who}的忙」`; } catch (e) {} }, 50); } }   // 📬 求救信
   w.status.textContent = back ? `還想做什麼呢？` : `到${dest}了！${A ? `這裡可以「${A.name}」，` : ''}也拍張紀念照、買個紀念品吧`;
   airArrive.test = { photo: () => photo.click(), shop: () => shop.click(), home: () => home.click(), act: () => act.click() };
 }
