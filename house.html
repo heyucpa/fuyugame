@@ -43,11 +43,12 @@
 .grow-cell b{font-size:16px}
 .grow-cell span{font-size:13px;color:#8a7a68}
 .grow-cell.locked{opacity:.6}
+.fox-chip{top:92px !important;border-color:#ff8a3d !important;background:#fff4e6 !important;color:#c0601a !important}
 .help-chip{position:absolute;top:54px;left:50%;transform:translateX(-50%);z-index:5;font:inherit;font-size:14px;font-weight:800;border:2px solid #e8505b;background:#fff0f0;color:#b03636;border-radius:999px;padding:5px 14px;box-shadow:0 3px 10px rgba(0,0,0,.12);cursor:pointer;animation:helpBob 1.6s ease-in-out infinite}
 @keyframes helpBob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-3px)}}
 .help-letter{background:#fffaf0;border:2px solid #f0dcb8;border-radius:14px;padding:10px 12px;margin:8px 0;display:flex;flex-direction:column;gap:6px}
 .help-l-t{font-weight:800;font-size:16px}.help-l-s{font-size:14px;color:#6b5a48;line-height:1.5}
-@media (max-width: 760px), (orientation: portrait) and (max-width: 1100px) { .help-chip { top: 128px; left: auto; right: 10px; transform: none; animation: none; font-size: 13px; padding: 4px 10px; } }
+@media (max-width: 760px), (orientation: portrait) and (max-width: 1100px) { .fox-chip { top: 164px !important; } .help-chip { top: 128px; left: auto; right: 10px; transform: none; animation: none; font-size: 13px; padding: 4px 10px; } }
 </style></head><body>
 <style>
 :root {
@@ -5888,6 +5889,7 @@ FURN_BY_ID.reindeer_sleigh = { id: 'reindeer_sleigh', name: '麋鹿雪橇', pric
  ['souv_windmill', '糖果國的棒棒糖風車', [{ x: .46, y: .46, w: .08, d: .08, z: 0, h: 34, c: '#ffffff' }, { k: 'ball', x: .5, y: .5, z: 38, r: 8, c: '#ff6b9d' }, { k: 'ball', x: .5, y: .5, z: 38, r: 4, c: '#ffd23f' }]],
  ['souv_star', '星星國的星星夜燈', [{ x: .32, y: .32, w: .36, d: .36, z: 0, h: 5, c: '#3a0ca3' }, { k: 'ball', x: .5, y: .5, z: 16, r: 7, c: '#ffe066' }, { k: 'ball', x: .38, y: .5, z: 20, r: 3, c: '#ffe066' }, { k: 'ball', x: .62, y: .5, z: 20, r: 3, c: '#ffe066' }, { k: 'ball', x: .5, y: .5, z: 26, r: 3, c: '#ffe066' }]]
 ].forEach(([id, name, parts]) => { FURN_BY_ID[id] = { id, name, price: 0, theme: 'cute', w: 1, d: 1, gift: true, souvenir: true, parts }; });
+FURN_BY_ID.fox_mask = { id: 'fox_mask', name: '怪盜狐狸的面具', price: 0, theme: 'cute', w: 1, d: 1, gift: true, parts: [{ x: .3, y: .3, w: .4, d: .4, z: 0, h: 4, c: '#6a2a8a' }, { x: .47, y: .47, w: .06, d: .06, z: 4, h: 12, c: '#e0b23a' }, { k: 'ball', x: .38, y: .5, z: 22, r: 5, c: '#26232a' }, { k: 'ball', x: .62, y: .5, z: 22, r: 5, c: '#26232a' }, { k: 'ball', x: .38, y: .55, z: 22, r: 1.6, c: '#ffffff' }, { k: 'ball', x: .62, y: .55, z: 22, r: 1.6, c: '#ffffff' }, { k: 'ball', x: .5, y: .5, z: 28, r: 3, c: '#ff8a3d' }] };   // 🦊 怪盜狐狸事件解決的獎品
 FURN_BY_ID.pet_trophy = { id: 'pet_trophy', name: '寵物運動會獎盃', price: 0, theme: 'cute', w: 1, d: 1, gift: true, parts: [{ x: .3, y: .3, w: .4, d: .4, z: 0, h: 5, c: '#8a5a33' }, { x: .42, y: .42, w: .16, d: .16, z: 5, h: 8, c: '#e0b832' }, { k: 'ball', x: .5, y: .5, z: 20, r: 8, c: '#ffd23f' }, { k: 'ball', x: .32, y: .5, z: 21, r: 3, c: '#e0b832' }, { k: 'ball', x: .68, y: .5, z: 21, r: 3, c: '#e0b832' }, { k: 'ball', x: .5, y: .6, z: 22, r: 2.4, c: '#e8505b' }] };   // 🏅 寵物運動會第一面金牌
 FURN_BY_ID.plane_model = { id: 'plane_model', name: '飛機模型', price: 0, theme: 'modern', w: 1, d: 1, gift: true, parts: [{ x: .3, y: .3, w: .4, d: .4, z: 0, h: 4, c: '#5a6475' }, { x: .47, y: .47, w: .06, d: .06, z: 4, h: 14, c: '#8a94a6' }, { x: .2, y: .44, w: .6, d: .12, z: 18, h: 6, c: '#ffffff' }, { x: .38, y: .2, w: .14, d: .6, z: 20, h: 2, c: '#4a90d9' }, { x: .22, y: .42, w: .08, d: .16, z: 24, h: 6, c: '#4a90d9' }, { k: 'ball', x: .8, y: .5, z: 21, r: 2, c: '#ffd23f' }] };   // ✈️ 機場三個工作都做到第 3 關
 FURN_BY_ID.xmas_teddy = { id: 'xmas_teddy', name: '聖誕老公公送的聖誕熊', price: 0, theme: 'cute', w: 1, d: 1, gift: true, parts: [
@@ -6056,6 +6058,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-23T05:00', title: '🦊 怪盜狐狸事件', lines: [
+    ['✉️', '在家玩一陣子，怪盜狐狸會丟進一封預告信：他要偷走圖書館的金色故事書！'],
+    ['🔍', '去圖書館、博物館、公園找三個線索，再去警察局跟狗狗警官設陷阱'],
+    ['🕸️', '到圖書館等他：狐狸走到網子下面的時候「放網子」！抓到以後……原來他只是想看書'],
+    ['🦊', '畫面上的「🦊」按鈕會告訴你下一步要去哪裡']
+  ] },
   { id: '2026-11-23T04:00', title: '🏙️ 大地圖變大了！新市區島', lines: [
     ['⛵', '主島東邊多了一座新市區島，走到碼頭坐船過去（在島上直接點對面的房子，也會自動坐船）'],
     ['🏛️', '博物館：貓頭鷹館長帶你看恐龍化石、月亮石頭、大寶石，看完回答小問題'],
@@ -7322,6 +7330,7 @@ function normalizeSave(g) {
         for (let w = 1; w <= 6; w++) if (q.clear[w + '-3'] === 1) leg[String(w)] = 1;
         q.legacy = leg; q.rev = 2;
       } else q.legacy = legOk(q.legacy); } }
+  if (out.fox != null) { if (!isObj(out.fox)) delete out.fox; else { const f = out.fox; if (!(Number.isInteger(f.st) && f.st >= 0 && f.st <= 5)) f.st = 0; f.clues = Array.isArray(f.clues) ? [...new Set(f.clues.filter(k => ['library', 'museum', 'park'].includes(k)))] : []; if (f.d != null && !(typeof f.d === 'string' && f.d.length <= 12)) delete f.d; Object.keys(f).forEach(k => { if (!['st', 'clues', 'd'].includes(k)) delete f[k]; }); } }   // 🦊 怪盜狐狸事件
   if (out.bank != null) { if (!isObj(out.bank)) delete out.bank; else { const b = out.bank; if (!(Number.isInteger(b.sav) && b.sav >= 0 && b.sav < 1e9)) b.sav = 0; if (b.d != null && !(typeof b.d === 'string' && b.d.length <= 12)) delete b.d; Object.keys(b).forEach(k => { if (!['sav', 'd'].includes(k)) delete b[k]; }); } }   // 🐷 銀行
   if (out.museum != null) { if (!isObj(out.museum)) delete out.museum; else { const m = out.museum; if (m.d != null && !(typeof m.d === 'string' && m.d.length <= 12)) delete m.d; Object.keys(m).forEach(k => { if (k !== 'd') delete m[k]; }); } }   // 🏛️ 博物館
   if (out.fire != null) { if (!isObj(out.fire)) delete out.fire; else { const f = out.fire; Object.keys(f).forEach(k => { if (!['lv', 'res'].includes(k) || !Number.isInteger(f[k]) || f[k] < 0 || f[k] > (k === 'lv' ? 3 : 1e6)) delete f[k]; }); } }   // 🚒 消防局
@@ -15801,7 +15810,7 @@ function travelArrive(place, roomIdx) {
   toast(`🚗 出發去${PLACES[place].name}！`);
   Sound.play('jump');
   commit();
-  try { if (!G.visitAt || typeof G.visitAt !== 'object') G.visitAt = {}; G.visitAt[place] = today(); helpOnArrive(place); } catch (e) {}   // 📬 這裡有人寄了求救信；記住最後一次去哪天
+  try { if (!G.visitAt || typeof G.visitAt !== 'object') G.visitAt = {}; G.visitAt[place] = today(); helpOnArrive(place); } catch (e) {} try { foxOnArrive(place); } catch (e) {}   // 📬 這裡有人寄了求救信；記住最後一次去哪天
 }
 function goPlaceRoom(i) {
   if (!G.away) return;
@@ -39562,6 +39571,138 @@ Object.assign(ACTIVITIES, {
   bank_save: { label: '🐷 存錢', name: '存錢', fx: '💰', open: () => openBank(), lines: ['存錢會長利息喔！'] }
 });
 Object.assign(FURNITURE_ACT, { museum_dino: 'museum_tour', museum_case: 'museum_tour', bank_counter: 'bank_save', bank_piggy: 'bank_save' });
+/* ===== 🦊 怪盜狐狸事件（家長 11/22：多一些壞人的劇情；壞人是搗蛋鬼，最後道歉變朋友）=====
+   G.fox = { st, clues, d }：
+   st 0 還沒開始 → 在家玩一陣子，怪盜狐狸丟進一封預告信（過場動畫）→ st 1
+   st 1 找三個線索：📚 圖書館（腳印）、🏛️ 博物館（橘色的毛）、🌳 公園（掉的地圖）。走進那個地方就會發現（過場動畫）
+   st 2 三個都找到 → 去 🚓 警察局，狗狗警官一起想辦法設陷阱 → st 3
+   st 3 去 📚 圖書館抓他：狐狸偷偷走向金色故事書，走到網子下面的時候按「放網子」（沒抓到他會嚇跑，再回來時走得更慢，不會失敗）
+   st 4 抓到了 → 原來他只是想看故事書、沒有借書證 → 幫他辦借書證，變成好朋友，送「怪盜狐狸的面具」＋ 💰300 → st 5 結束
+   畫面上有一顆「🦊」小按鈕，點了看現在要做什麼、可以直接出發。 */
+const FOX = { id: 'phantomfox', name: '怪盜狐狸', short: '狐狸', body: '#ff8a3d', edge: '#d0652a', belly: '#fff4e2', inner: '#ffd0b0', ears: 'pointy', acc: 'hat', accColor: '#2b2d42' };
+const FOX_CLUES = { library: ['🐾', '書架下面有小小的狐狸腳印！', '館員：昨天晚上關門以後，好像有誰在書架旁邊走來走去……'],
+  museum: ['🧡', '展示櫃旁邊掉了一根橘色的毛！', '館長：這根毛是狐狸的！他一定來看過我們的大寶石……可是寶石還在。'],
+  park: ['🗺️', '長椅底下有一張掉了的地圖！', '地圖上畫著圖書館，還寫著：「今晚，金色故事書是我的！」'] };
+const FOX_PLACE_NAME = { library: '圖書館', museum: '博物館', park: '公園', police: '警察局' };
+function foxState() { if (!G.fox || typeof G.fox !== 'object') G.fox = {}; const f = G.fox; if (!Number.isInteger(f.st)) f.st = 0; if (!Array.isArray(f.clues)) f.clues = []; return f; }
+function foxNext() {   // 現在要去哪裡、做什麼
+  const f = foxState();
+  if (f.st === 1) { const left = Object.keys(FOX_CLUES).filter(k => !f.clues.includes(k)); return { place: left[0], text: `找線索（${f.clues.length} / 3）：去${left.map(k => FOX_PLACE_NAME[k]).join('、')}看看` }; }
+  if (f.st === 2) return { place: 'police', text: '三個線索都找到了！去警察局找狗狗警官' };
+  if (f.st === 3) return { place: 'library', text: '設好陷阱了！去圖書館抓怪盜狐狸' };
+  return null;
+}
+function foxMask(g, x, y, k) { g.save(); g.translate(x, y); g.scale(k, k); g.fillStyle = '#26232a'; g.beginPath(); g.ellipse(-4.5, -17.5, 4.4, 2.6, -.15, 0, 7); g.ellipse(4.5, -17.5, 4.4, 2.6, .15, 0, 7); g.fill(); g.fillStyle = '#ffffff'; g.beginPath(); g.arc(-4, -17.5, 1.1, 0, 7); g.arc(5, -17.5, 1.1, 0, 7); g.fill(); g.restore(); }
+function foxDraw(g, x, y, k, o) { o = o || {}; if (o.cape !== false) { g.fillStyle = '#6a2a8a'; g.beginPath(); g.moveTo(x - 7 * k, y - 18 * k); g.lineTo(x + 7 * k, y - 18 * k); g.lineTo(x + 12 * k + Math.sin((o.t || 0) * 4) * 2 * k, y - 1 * k); g.lineTo(x - 12 * k, y - 1 * k); g.closePath(); g.fill(); }
+  vevNb(g, FOX, x, y, k, { happy: !!o.happy, sway: o.sway }); if (!o.noMask) foxMask(g, x, y, k); }
+function foxBg(g, W, H, kind, t) {
+  if (kind === 'night') { g.fillStyle = '#1f2a48'; g.fillRect(0, 0, W, H); g.fillStyle = '#fff4c2'; g.beginPath(); g.arc(300, 44, 22, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.8)'; for (let i = 0; i < 24; i++) g.fillRect((i * 53) % W, (i * 31) % 120, 2, 2); g.fillStyle = '#2b3a5a'; g.fillRect(0, 170, W, 50); return; }
+  if (kind === 'library') { g.fillStyle = '#f3e6d0'; g.fillRect(0, 0, W, H); for (let s = 0; s < 3; s++) { const x = 20 + s * 115; g.fillStyle = '#8a5a33'; g.fillRect(x, 30, 90, 140); for (let r = 0; r < 4; r++) for (let b = 0; b < 8; b++) { g.fillStyle = ['#e8505b', '#4a90d9', '#51cf66', '#ffd23f', '#b18cff'][(b + r + s) % 5]; g.fillRect(x + 6 + b * 10, 38 + r * 34, 8, 26); } } g.fillStyle = '#d9b88a'; g.fillRect(0, 178, W, 42); return; }
+  if (kind === 'museum') { g.fillStyle = '#3a3048'; g.fillRect(0, 0, W, H); g.fillStyle = 'rgba(255,245,200,.25)'; g.beginPath(); g.moveTo(160, 0); g.lineTo(200, 0); g.lineTo(280, 180); g.lineTo(80, 180); g.closePath(); g.fill(); g.fillStyle = '#c9a26a'; g.fillRect(140, 120, 80, 60); g.font = '40px sans-serif'; g.textAlign = 'center'; g.fillText('💎', 180, 116); g.fillStyle = '#5a5068'; g.fillRect(0, 180, W, 40); return; }
+  if (kind === 'park') { g.fillStyle = '#bfe6f2'; g.fillRect(0, 0, W, H); g.fillStyle = '#8cc47a'; g.fillRect(0, 120, W, 100); [[50, 100], [300, 96]].forEach(([x, y]) => { g.fillStyle = '#8a5a33'; g.fillRect(x - 5, y, 10, 30); g.fillStyle = '#4f9d4f'; g.beginPath(); g.arc(x, y - 6, 26, 0, 7); g.fill(); }); g.fillStyle = '#a0703e'; g.fillRect(140, 150, 80, 8); g.fillRect(146, 158, 6, 20); g.fillRect(208, 158, 6, 20); return; }
+  if (kind === 'police') { g.fillStyle = '#e6efff'; g.fillRect(0, 0, W, H); g.fillStyle = '#2f5fb8'; g.fillRect(0, 0, W, 16); g.fillStyle = '#c9ccd0'; g.fillRect(0, 180, W, 40); g.fillStyle = '#8a6a4a'; g.fillRect(200, 130, 120, 50); g.fillStyle = '#ffffff'; g.fillRect(40, 40, 70, 50); g.fillStyle = '#e8505b'; g.font = '700 10px sans-serif'; g.fillText('WANTED', 52, 56); return; }
+  vevBg(g, W, H, kind, t);
+}
+const foxKid = (g, x, y, k, t, face) => copDrawKid(g, x, y, k, t, false, -1, face || 'wow');
+function foxLetter() {
+  const f = foxState(); if (f.st !== 0) return false; f.st = 1; f.d = today(); saveGame(); foxChip();
+  try { Sound.play('whoosh'); } catch (e) {}
+  vevScene([
+    { text: '晚上，窗戶外面「咻～」的一聲，有一封信飛了進來！', draw: (g, W, H, t) => { foxBg(g, W, H, 'night', t); const x = 40 + Math.min(1, t / 1.2) * 150, y = 60 + Math.sin(t * 4) * 8 + Math.min(1, t / 1.2) * 60; g.font = '34px sans-serif'; g.textAlign = 'center'; g.fillText('✉️', x, y); foxDraw(g, 320 - Math.min(t, 2) * 10, 170, 2, { t }); } },
+    { text: '「親愛的小偵探：今天晚上，我要偷走圖書館的金色故事書！——怪盜狐狸 🦊」', draw: (g, W, H, t) => { g.fillStyle = '#fff6e0'; g.fillRect(0, 0, W, H); g.fillStyle = '#ffffff'; g.fillRect(60, 20, 240, 180); g.strokeStyle = '#e0bd84'; g.lineWidth = 4; g.strokeRect(60, 20, 240, 180); g.fillStyle = '#3a3240'; g.font = '700 15px sans-serif'; g.textAlign = 'center'; ['預 告 信', '', '今天晚上，', '我要偷走圖書館的', '金色故事書！'].forEach((s, i) => g.fillText(s, 180, 52 + i * 26)); foxDraw(g, 255, 196, 1.2, { t }); g.font = '26px sans-serif'; g.fillText('📖', 110, 180 + Math.sin(t * 3) * 3); } },
+    { text: '怪盜狐狸要偷東西！我們要先找到他的線索：去圖書館、博物館、公園看看！（畫面上的 🦊 按鈕會告訴你下一步）', draw: (g, W, H, t) => { foxBg(g, W, H, 'library', t); foxKid(g, 180, 200, 1.4, t, 'angry'); g.font = '30px sans-serif'; g.textAlign = 'center'; g.fillText('🔍', 230, 120 + Math.sin(t * 4) * 6); } }
+  ], () => { try { toast('🦊 怪盜狐狸事件開始了！點畫面上的 🦊 看要去哪裡'); } catch (e) {} });
+  return true;
+}
+function foxOnArrive(place) {
+  const f = foxState(); if (!f.st || f.st >= 5) return;
+  const run = (fn) => setTimeout(() => { if (!G.away || G.away.place !== place) return; if (!$('#modal').hidden || document.getElementById('vevScene')) { setTimeout(() => { if ($('#modal').hidden && !document.getElementById('vevScene') && G.away && G.away.place === place) fn(); }, 2500); return; } fn(); }, 1300);
+  if (f.st === 1 && FOX_CLUES[place] && !f.clues.includes(place)) run(() => {
+    const C = FOX_CLUES[place]; f.clues.push(place); if (f.clues.length >= 3) f.st = 2; saveGame(); foxChip(); Sound.play('pickUp');
+    vevScene([
+      { text: `🔍 ${C[1]}`, draw: (g, W, H, t) => { foxBg(g, W, H, place === 'museum' ? 'museum' : place === 'park' ? 'park' : 'library', t); foxKid(g, 110, 200, 1.3, t, 'wow'); g.font = `${30 + Math.sin(t * 5) * 3}px sans-serif`; g.textAlign = 'center'; g.fillText(C[0], 220, 190); g.fillText('❗', 120, 110); } },
+      { text: C[2] + (f.st === 2 ? '　三個線索都找到了！快去警察局告訴狗狗警官！' : `　（線索 ${f.clues.length} / 3）`), draw: (g, W, H, t) => { foxBg(g, W, H, place === 'museum' ? 'museum' : place === 'park' ? 'park' : 'library', t); foxKid(g, 110, 200, 1.3, t, 'angry'); g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.roundRect(170, 40, 170, 60, 12); g.fill(); g.font = '28px sans-serif'; g.textAlign = 'center'; Object.keys(FOX_CLUES).forEach((k, i) => { g.globalAlpha = f.clues.includes(k) ? 1 : .25; g.fillText(FOX_CLUES[k][0], 205 + i * 50, 82); }); g.globalAlpha = 1; } }
+    ]);
+  });
+  else if (f.st === 2 && place === 'police') run(() => {
+    f.st = 3; saveGame(); foxChip(); Sound.play('fanfare');
+    vevScene([
+      { text: '狗狗警官：腳印、橘色的毛、地圖……一定是怪盜狐狸！他今晚會去圖書館偷金色故事書。', draw: (g, W, H, t) => { foxBg(g, W, H, 'police', t); vevNb(g, HOSTS.police, 120, 200, 2.2, {}); foxKid(g, 260, 200, 1.3, t, 'wow'); } },
+      { text: '狗狗警官：我們在書上面掛一張網子！等他走到網子下面，你就「放網子」把他抓住！去圖書館吧！', draw: (g, W, H, t) => { foxBg(g, W, H, 'library', t); g.strokeStyle = '#8a5a33'; g.lineWidth = 2; g.beginPath(); g.moveTo(180, 0); g.lineTo(180, 40); g.stroke(); g.strokeStyle = '#5a6475'; for (let i = -3; i <= 3; i++) { g.beginPath(); g.moveTo(150 + i * 10 + 30, 40); g.lineTo(150 + i * 12 + 30, 90); g.stroke(); } g.font = '30px sans-serif'; g.textAlign = 'center'; g.fillText('📖', 180, 170 + Math.sin(t * 3) * 2); foxKid(g, 280, 200, 1.3, t, 'joy'); } }
+    ]);
+  });
+  else if (f.st === 3 && place === 'library') run(() => openFoxTrap());
+}
+// 🕸️ 抓怪盜狐狸：網子掛在金色故事書上面，狐狸走到網子下面（地上黃色那塊）的時候按「放網子」
+function openFoxTrap() {
+  const W = 340, H = 220, BOOK = 170, ZONE = 16;
+  const w = openGameWindow('🕸️ 抓住怪盜狐狸！', '怪盜狐狸偷偷走向金色故事書了！等他走到網子下面（地上黃色那塊）的時候，按空白鍵（或點畫面、按「🕸️ 放網子！」）！');
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const { c, g } = gameCanvas(w.stage, W, H);
+  let fx = W + 30, sp = 34, state = 'sneak', pause = 0, net = 0, t = 0, last = performance.now(), raf = 0, live = true, tries = 0, msg = '', msgT = 0, caught = false;
+  const drop = () => { if (!live || net > 0 || caught) return; net = .01; Sound.play('whoosh'); };
+  const kd = e => { if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); if (!e.repeat) drop(); } };
+  document.addEventListener('keydown', kd); c.addEventListener('pointerdown', e => { e.preventDefault(); drop(); });
+  const btn = el('button', 'big', '🕸️ 放網子！'); btn.onclick = drop; w.btns.appendChild(btn); leaveButton(w);
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); };
+  const win = () => { caught = true; btn.remove(); Sound.play('fanfare'); const f = foxState(); f.st = 4; saveGame();
+    setTimeout(() => { if (!live) return; closeGameWindow(); foxEnding(); }, 1600); };
+  const tick = now => { if (!live) return; raf = requestAnimationFrame(tick);
+    const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt; if (msgT > 0) msgT -= dt;
+    if (net > 0 && net < 1) { net = Math.min(1, net + dt * 3.2); if (net >= 1) { if (Math.abs(fx - BOOK) < ZONE && state !== 'run') win(); else { tries++; state = 'run'; Sound.play('miss'); msg = tries >= 2 ? '差一點點！等他走到黃色那塊再按～' : '哎呀，太早（或太晚）了！他嚇跑了，等他回來！'; msgT = 2; } } }
+    if (net >= 1 && !caught && state !== 'run') net = 0;
+    if (state === 'sneak' && !caught) { if (pause > 0) pause -= dt; else { fx -= sp * dt; if (Math.random() < dt * .6) pause = .6 + Math.random() * .8; } if (fx < BOOK - 30) { state = 'run'; msg = '他走過頭了！他會再回來的～'; msgT = 1.6; } }
+    if (state === 'run' && !caught) { fx += 120 * dt; if (fx > W + 40) { state = 'sneak'; sp = Math.max(18, sp * .8); net = 0; } }
+    foxBg(g, W, H, 'library', t);
+    g.fillStyle = 'rgba(255,210,63,.45)'; g.fillRect(BOOK - ZONE - 6, 182, (ZONE + 6) * 2, 10);
+    g.fillStyle = '#c9a26a'; g.fillRect(BOOK - 30, 150, 60, 30); g.font = '26px sans-serif'; g.textAlign = 'center';
+    g.fillStyle = 'rgba(255,210,63,.6)'; g.beginPath(); g.arc(BOOK, 136, 18 + Math.sin(t * 4) * 2, 0, 7); g.fill(); if (!caught) g.fillText('📖', BOOK, 146 + Math.sin(t * 3) * 2);
+    foxDraw(g, fx, 196, 1.5, { t, sway: state === 'run' ? Math.sin(t * 20) * .1 : 0, happy: false });
+    if (pause > 0 && state === 'sneak') { g.font = '16px sans-serif'; g.fillText('👀', fx, 140); }
+    const ny = 10 + net * 150; g.strokeStyle = '#8a5a33'; g.lineWidth = 2; g.beginPath(); g.moveTo(BOOK, 0); g.lineTo(BOOK, ny); g.stroke();
+    g.strokeStyle = 'rgba(90,100,117,.9)'; g.lineWidth = 1.6; for (let i = -4; i <= 4; i++) { g.beginPath(); g.moveTo(BOOK + i * 6, ny); g.lineTo(BOOK + i * 9, ny + 46); g.stroke(); } for (let j = 0; j < 4; j++) { const yy = ny + 8 + j * 12, ww = 26 + j * 5; g.beginPath(); g.moveTo(BOOK - ww, yy); g.lineTo(BOOK + ww, yy); g.stroke(); }
+    if (caught) { g.fillStyle = '#2f8a3c'; g.font = '900 18px sans-serif'; g.fillText('抓到了！', W / 2, 30); }
+    if (msgT > 0) { g.font = '900 13px sans-serif'; const mw = g.measureText(msg).width + 20; g.fillStyle = 'rgba(255,255,255,.92)'; g.beginPath(); g.roundRect(W / 2 - mw / 2, 6, mw, 24, 10); g.fill(); g.fillStyle = '#c4313a'; g.fillText(msg, W / 2, 23); }
+  };
+  raf = requestAnimationFrame(tick);
+  w.status.textContent = '狐狸走到黃色那塊的時候按「放網子」！';
+  openFoxTrap.test = { get fx() { return fx; }, setFx: v => { fx = v; state = 'sneak'; pause = 9; }, drop, get caught() { return caught; }, get tries() { return tries; } };
+}
+function foxEnding() {
+  vevScene([
+    { text: '怪盜狐狸：哎呀，被抓到了！放我出來啦～', draw: (g, W, H, t) => { foxBg(g, W, H, 'library', t); foxDraw(g, 170, 196, 1.8, { t, sway: Math.sin(t * 12) * .08 }); g.strokeStyle = 'rgba(90,100,117,.9)'; g.lineWidth = 1.6; for (let i = -5; i <= 5; i++) { g.beginPath(); g.moveTo(170 + i * 6, 110); g.lineTo(170 + i * 10, 200); g.stroke(); } foxKid(g, 290, 200, 1.3, t, 'angry'); } },
+    { text: '怪盜狐狸：對不起……我只是好想看金色故事書，可是我沒有借書證，館員不借我……', draw: (g, W, H, t) => { foxBg(g, W, H, 'library', t); foxDraw(g, 150, 196, 1.8, { t, noMask: true, cape: true }); g.font = '18px sans-serif'; g.textAlign = 'center'; g.fillText('💧', 170, 120 + (t * 20) % 20); foxKid(g, 280, 200, 1.3, t, 'wow'); } },
+    { text: '那我們一起去辦借書證吧！以後想看書，就可以光明正大地借！', draw: (g, W, H, t) => { foxBg(g, W, H, 'library', t); foxDraw(g, 130, 196, 1.8, { t, noMask: true, happy: true }); foxKid(g, 240, 200, 1.3, t, 'joy'); g.font = '30px sans-serif'; g.textAlign = 'center'; g.fillText('📇', 190, 110 + Math.sin(t * 3) * 4); } },
+    { text: '怪盜狐狸：謝謝你！我以後再也不偷東西了！這個面具送給你，我們是好朋友了！🦊💗', draw: (g, W, H, t) => { foxBg(g, W, H, 'library', t); foxDraw(g, 130, 196, 1.8, { t, noMask: true, happy: true }); foxKid(g, 240, 200, 1.3, t, 'joy'); vevHearts(g, 185, 90, t); } }
+  ], () => {
+    const f = foxState(); f.st = 5; addItem('fox_mask', 1); addBells(300); kidMoodUp(8); saveGame(); refreshTop(); foxChip(); Sound.play('fanfare');
+    try { showcase(renderThumb(FURN_BY_ID.fox_mask, 150), '怪盜狐狸變成好朋友了！', '拿到「怪盜狐狸的面具」（放進我的東西了）　💰 +300', { head: '🦊 事件解決' }); } catch (e) { toast('🦊 事件解決！拿到怪盜狐狸的面具　💰 +300'); }
+  });
+}
+function foxChip() {
+  let b = document.getElementById('foxChip'); const nx = foxNext();
+  if (!nx) { if (b) b.remove(); return; }
+  if (!b) { b = el('button', 'help-chip fox-chip'); b.id = 'foxChip'; b.onclick = e => { e.stopPropagation(); Sound.play('click'); openFoxBox(); }; const st = $('.stage'); if (!st) return; st.appendChild(b); }
+  b.textContent = '🦊 怪盜狐狸'; b.title = nx.text;
+}
+function openFoxBox() {
+  const nx = foxNext(), card = $('#modalCard'); closeGameWindow(); card.innerHTML = '';
+  card.appendChild(el('h2', '', '🦊 怪盜狐狸事件'));
+  if (!nx) { card.appendChild(note('事件已經解決了，怪盜狐狸變成好朋友了！')); }
+  else { const f = foxState(); card.appendChild(note(nx.text));
+    if (f.st === 1) { const row = el('div', 'invite-row'); Object.keys(FOX_CLUES).forEach(k => { const got = f.clues.includes(k); const bt = el('button', 'big' + (got ? ' alt' : ''), `${got ? FOX_CLUES[k][0] + ' ✅' : '🔍'} ${FOX_PLACE_NAME[k]}`); bt.onclick = () => { if (got) { toast('這裡的線索找到了！'); return; } $('#modal').hidden = true; travelTo(k); }; row.appendChild(bt); }); card.appendChild(row); }
+    else { const go = el('button', 'big', `🚶 現在去${FOX_PLACE_NAME[nx.place]}`); go.onclick = () => { $('#modal').hidden = true; if (G.away && G.away.place === nx.place) foxOnArrive(nx.place); else travelTo(nx.place); }; card.appendChild(go); } }
+  const ok = el('button', 'big alt', '好'); ok.onclick = () => { $('#modal').hidden = true; }; card.appendChild(ok);
+  $('#modal').hidden = false;
+}
+// 什麼時候寄預告信：在家玩超過 1 分鐘、畫面空著的時候（只寄一次）
+let foxPageStart = performance.now();
+setInterval(() => { try {
+  if (navigator.webdriver && !window.FOX_AUTO) return;   // 自動測試的時候不要自己跳出來（會擋住別的測試），測試要用 foxLetter()
+  if (foxState().st !== 0 || G.guide !== 'done' || G.away || (typeof isl !== 'undefined' && isl) || !$('#modal').hidden || document.getElementById('vevScene') || (typeof vev !== 'undefined' && vev) || performance.now() - foxPageStart < 60000) return;
+  foxLetter();
+} catch (e) {} }, 15000);
+setTimeout(() => { try { foxChip(); } catch (e) {} }, 3200);
 /* 🎄 裝飾聖誕樹（記憶力） */
 const TREE_SLOTS = [[150, 72], [134, 102], [166, 102], [120, 134], [150, 130], [180, 134], [104, 168], [134, 166], [166, 168], [196, 166]];
 const TREE_COLS = [['red', '#e8505b', '紅色'], ['gold', '#ffd23f', '金色'], ['blue', '#4a90d9', '藍色']];
