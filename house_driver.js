@@ -2703,6 +2703,9 @@
       // 澆花這件事（走點擊流程）會讓花盆長大
       G.garden = {}; fufu.act = null;
       fufuStartAct('water', performance.now(), pl, false);
+      // 💧 11/22 起澆花會先開「第一人稱倒水」的小遊戲，倒滿才長大：這裡直接倒滿
+      if (typeof openWaterFlower === 'function' && openWaterFlower.test && !$('#modal').hidden) openWaterFlower.test.finishNow(); else fails.push('小可愛去花盆澆花，沒有開倒水的小遊戲');
+      if (!$('#modal').hidden) fails.push('澆完花，倒水的視窗沒有關');
       if (gardenOf(pl.uid).s !== 1) fails.push('小可愛去花盆澆花，花盆沒有長大');
       fufu.act = null;
       // 圖鑑有花朵

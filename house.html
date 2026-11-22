@@ -6023,6 +6023,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-23T00:00', title: '🖐️ 自己動手：洗澡、射泡泡、澆花', lines: [
+    ['🛁', '寵物卡的「洗澡」變成自己動手洗：抹沐浴乳、搓一搓、拿蓮蓬頭沖水，洗好會甩甩身體（趕時間可以按「⚡ 快快洗好」）'],
+    ['💦', '「戳泡泡」變成「水槍射泡泡」：拿著水槍瞄準泡泡噴水，按住會一直噴'],
+    ['💧', '在花盆澆花：手拿澆水壺，按住倒水、對準花盆的土，水量滿了小花就長大']
+  ] },
   { id: '2026-11-22T23:00', title: '🕐 一開始是白天，玩半小時變晚上', lines: [
     ['☀️', '天色改成跟著「玩了多久」：打開遊戲是早上，玩 25 分鐘傍晚、30 分鐘晚上，再 10 分鐘又天亮'],
     ['🌙', '晚上也調亮了，看得出是晚上，但東西都看得清楚'],
@@ -10066,10 +10071,15 @@ function fufuStartAct(key, now, it, auto) {
   } else fufuSay(pickLine('act_' + key, { 時間: timeText(), 日期: `${new Date().getMonth() + 1} 月 ${new Date().getDate()} 日，星期${'日一二三四五六'[new Date().getDay()]}` }), 3000);
   if (key === 'fruit') G.kid.hunger = clampStat(G.kid.hunger + 15); // 阿婆的水果免費吃
   if (key === 'water' && it.id === 'planter') { // 🌱 花盆澆水：長大一階（要隔一下才會再長）
+    const g0 = gardenOf(it.uid), canGrow = g0.s < 4 && !(g0.w && Date.now() - g0.w < GARDEN_WAIT_MS);
+    if (canGrow && !auto && typeof openWaterFlower === 'function') {   // 💧 家長 11/22：第一人稱拿澆水壺倒水，倒滿了才長大
+      openWaterFlower(it, () => { const r2 = gardenWater(it), gs2 = gardenOf(it.uid).s; if (r2 === 'grow') fufuSay(`${GARDEN_STAGE_NAMES[gs2]}！快快長大～`, 2600); saveGame(); try { requestDraw(); } catch (e) {} });
+    } else {
     const r = gardenWater(it), gs = gardenOf(it.uid).s;
     if (r === 'grow') setTimeout(() => { fufuSay(`${GARDEN_STAGE_NAMES[gs]}！快快長大～`, 2600); }, 1200);
     else if (r === 'wait') setTimeout(() => { fufuSay('剛剛澆過水了，等一下再來澆～', 2600); }, 1200);
     else if (r === 'full') setTimeout(() => { fufuSay('花開得好漂亮！可以剪下來插花喔', 2600); }, 1200);
+    }
   }
   if (!auto) { // 做過的事記下來（不再提示）；也記進今天的成果
     G.usedActs = G.usedActs || {};
@@ -18007,7 +18017,7 @@ $('#btnFeed').onclick = () => { if (G.pet.stage === 'egg') eggNotYet(); else sho
 $('#btnKidEat').onclick = () => showFoodMenu('kid');
 $('#btnRun').onclick = () => { setRun(!runOn()); Sound.play('click'); fufuSay(runOn() ? '我要用跑的！' : '慢慢走～', 1800); };
 refreshRunBtn();
-$('#btnBath').onclick = () => { $('#foodMenu').hidden = true; petBath(); updatePetCard(); };
+$('#btnBath').onclick = () => { $('#foodMenu').hidden = true; if (typeof openPetBathGame === 'function' && !isEgg()) openPetBathGame(); else { petBath(); updatePetCard(); } };   // 🛁 家長 11/22：改成第一人稱幫寵物洗澡（裡面有「⚡ 快快洗好」）
 $('#btnCall').onclick = () => { $('#foodMenu').hidden = true; petCallOver(); };
 $('#btnTrick').onclick = () => { $('#foodMenu').hidden = true; petTrick(); };
 /* ✋ 小卡、📷、💡 都可以拖（家長：這個可以自由拖拉嗎）。
@@ -19314,7 +19324,7 @@ function tabBuild(body) {
 
 /* 家裡就能玩的小遊戲（「💰 賺錢」分頁和「🎮 遊戲」快速選單共用）：[圖示, 名字, 打開, 代號] */
 function earnGameList() {
-  return [['🃏', '翻牌配對', openMemoryGame], ['🧺', `${petName()}接水果`, openCatchGame], ['💦', '戳泡泡', openBubbleGame],
+  return [['🃏', '翻牌配對', openMemoryGame], ['🧺', `${petName()}接水果`, openCatchGame], ['💦', '水槍射泡泡', openBubbleGame],
     ['🥤', '杯子躲貓貓', openCupGame], ['🥞', '疊疊鬆餅', openStackGame], ['👗', '換裝走秀', openFashionShow],
     ['🎯', '彈弓丟蘋果', openSlingGame],
     ['🧩', '拼圖', openPuzzleGame],
@@ -21604,29 +21614,42 @@ function openCatchGame() {
 
 // ── 3. 戳泡泡 ──
 function openBubbleGame() {
-  const w = openGameWindow('💦 戳泡泡', '30 秒內點破越多泡泡越好！裡面有💰的泡泡分數比較多。');
+  const w = openGameWindow('💦 水槍射泡泡', '拿著水槍，點泡泡（或用方向鍵瞄準、空白鍵射）就噴水把它射破！30 秒內射破越多越好，裡面有💰的分數比較多。按住會一直噴。');
   const W = 360, H = 420, { c, g, pos } = gameCanvas(w.stage, W, H);
+  /* 🔫 家長 11/22：戳泡泡改成第一人稱拿水槍射泡泡。點哪裡就往哪裡噴（按住每 0.25 秒噴一下），水柱打到的泡泡破掉。 */
+  let aim = { x: W / 2, y: H / 2 }, shots = [], splash = [], down = false, lastShot = 0, tt = 0;
+  const keys = {};
   const COLORS = ['#ffb3c7', '#b3e0ff', '#c9f2b8', '#ffe39a', '#dcc8ff'];
   let bubbles = [], pops = [], score = 0, raf = 0, ended = false;
   const start = performance.now(), DURATION = 30000;
   let nextSpawn = start, last = start;
-  gameCleanup = () => cancelAnimationFrame(raf);
-
-  c.addEventListener('pointerdown', e => {
-    if (ended) return;
-    const p = pos(e);
+  const shoot = () => {
+    if (ended) return; lastShot = performance.now(); shots.push({ x: aim.x, y: aim.y, age: 0 });
+    let hit = false;
     for (let i = bubbles.length - 1; i >= 0; i--) {
       const b = bubbles[i];
-      // 泡泡會左右飄，用畫面上實際的位置判斷有沒有點到
-      if (Math.hypot(p.x - (b.drawX ?? b.x), p.y - b.y) < b.r + 6) {
+      // 泡泡會左右飄，用畫面上實際的位置判斷有沒有射到（水柱粗一點，比手指好射）
+      if (Math.hypot(aim.x - (b.drawX ?? b.x), aim.y - b.y) < b.r + 10) {
         score += b.coin ? 20 : 5;
-        pops.push({ x: b.x, y: b.y, r: b.r, age: 0, text: b.coin ? '+20' : '+5' });
-        bubbles.splice(i, 1);
+        pops.push({ x: b.drawX ?? b.x, y: b.y, r: b.r, age: 0, text: b.coin ? '+20' : '+5' });
+        fpSplashAdd(splash, b.drawX ?? b.x, b.y, 6, '#9fd4f5');
+        bubbles.splice(i, 1); hit = true;
         Sound.play(b.coin ? 'coin' : 'pickUp');
         break;
       }
     }
-  });
+    if (!hit) { fpSplashAdd(splash, aim.x, aim.y, 3, '#9fd4f5'); Sound.play('click'); }
+  };
+  const KMAP = { ArrowLeft: 'l', ArrowRight: 'r', ArrowUp: 'u', ArrowDown: 'd', KeyA: 'l', KeyD: 'r', KeyW: 'u', KeyS: 'd' };
+  const kd = e => { const k = KMAP[e.code]; if (k) { e.preventDefault(); keys[k] = true; } if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) { keys.sp = true; shoot(); } } };
+  const ku = e => { const k = KMAP[e.code]; if (k) keys[k] = false; if (e.code === 'Space') keys.sp = false; };
+  document.addEventListener('keydown', kd); document.addEventListener('keyup', ku);
+  gameCleanup = () => { cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); document.removeEventListener('keyup', ku); };
+
+  c.addEventListener('pointerdown', e => { e.preventDefault(); if (ended) return; aim = pos(e); down = true; try { c.setPointerCapture(e.pointerId); } catch (er) {} shoot(); });
+  c.addEventListener('pointermove', e => { aim = pos(e); });
+  ['pointerup', 'pointercancel'].forEach(k => c.addEventListener(k, () => { down = false; }));
+  openBubbleGame.test = { shoot, get bubbles() { return bubbles; }, get score() { return score; }, setAim: (x, y) => { aim = { x, y }; } };
 
   function frame(now) {
     const dt = Math.max(0, Math.min(.05, (now - last) / 1000)); last = now;
@@ -21641,6 +21664,10 @@ function openBubbleGame() {
     bubbles = bubbles.filter(b => b.y > -b.r);
     pops.forEach(p => { p.age += dt; });
     pops = pops.filter(p => p.age < .5);
+    tt += dt;
+    { const kx = (keys.r ? 1 : 0) - (keys.l ? 1 : 0), ky = (keys.d ? 1 : 0) - (keys.u ? 1 : 0); if (kx || ky) aim = { x: Math.max(10, Math.min(W - 10, aim.x + kx * 240 * dt)), y: Math.max(30, Math.min(H - 80, aim.y + ky * 240 * dt)) }; }
+    if ((down || keys.sp) && now - lastShot > 250 && left > 0) shoot();
+    shots.forEach(s2 => { s2.age += dt; }); shots = shots.filter(s2 => s2.age < .16);
 
     g.clearRect(0, 0, W, H);
     const bg = g.createLinearGradient(0, 0, 0, H);
@@ -21664,6 +21691,12 @@ function openBubbleGame() {
       g.fillText(p.text, p.x, p.y - p.age * 40);
       g.globalAlpha = 1;
     });
+    // 🔫 水槍（右下角自己的手）、水柱、水花、瞄準圈
+    { const gx = W * .62 + (aim.x - W / 2) * .2, gy = H - 34, ga = Math.atan2(aim.y - gy, aim.x - gx), mx = gx + Math.cos(ga) * 78, my = gy + Math.sin(ga) * 78;
+      if (shots.length) fpStream(g, mx, my, aim.x, aim.y, tt);
+      fpSplashStep(g, splash, dt);
+      g.textBaseline = 'alphabetic'; fpGunAt(g, W, H, aim.x, aim.y, '#ff8fb3');
+      if (!ended) { g.strokeStyle = 'rgba(232,80,91,.85)'; g.lineWidth = 2; g.beginPath(); g.arc(aim.x, aim.y, 12, 0, 7); g.moveTo(aim.x - 17, aim.y); g.lineTo(aim.x - 7, aim.y); g.moveTo(aim.x + 7, aim.y); g.lineTo(aim.x + 17, aim.y); g.moveTo(aim.x, aim.y - 17); g.lineTo(aim.x, aim.y - 7); g.moveTo(aim.x, aim.y + 7); g.lineTo(aim.x, aim.y + 17); g.stroke(); } }
     g.fillStyle = '#4a3b2a'; g.font = 'bold 18px "Noto Sans TC", "Microsoft JhengHei", sans-serif'; g.textBaseline = 'middle';
     g.textAlign = 'left'; g.fillText(`分數 ${score}`, 12, 22);
     g.textAlign = 'right'; g.fillText(`⏱ ${Math.ceil(left / 1000)}`, W - 12, 22);
@@ -37329,7 +37362,7 @@ function openCarWash(vid) {
     /* 🖐️ 第一人稱（家長 11/22：像自己拿著噴水槍噴車子）：右下角伸出自己的手臂，
        抹泡泡拿泡泡瓶、刷刷拿海綿（會來回刷）、沖水握著大大的噴水槍。 */
     const mv = Math.hypot(cur.x - lastCur.x, cur.y - lastCur.y); lastCur = { x: cur.x, y: cur.y }; scrub = Math.max(0, Math.min(1, scrub + ((down || kx || ky) && mv > .5 ? dt * 6 : -dt * 4)));
-    const arm = (hx, hy) => { const sx = W + 30, sy = H + 50; g.strokeStyle = '#ff9ec4'; g.lineWidth = 40; g.lineCap = 'round'; g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + (hx - sx) * .55, sy + (hy - sy) * .55); g.stroke();   // 袖子
+    const arm = (hx, hy) => { const sx = W + 30, sy = H + 50; g.strokeStyle = fpSleeve(); g.lineWidth = 40; g.lineCap = 'round'; g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + (hx - sx) * .55, sy + (hy - sy) * .55); g.stroke();   // 袖子
       g.strokeStyle = '#f6cfae'; g.lineWidth = 26; g.beginPath(); g.moveTo(sx + (hx - sx) * .5, sy + (hy - sy) * .5); g.lineTo(hx, hy); g.stroke(); g.lineCap = 'butt'; };
     const fist = (hx, hy) => { g.fillStyle = '#f6cfae'; g.beginPath(); g.arc(hx, hy, 15, 0, 7); g.fill(); g.strokeStyle = 'rgba(190,130,100,.55)'; g.lineWidth = 1.5; for (let k = -1; k <= 1; k++) { g.beginPath(); g.moveTo(hx - 8, hy + k * 5); g.lineTo(hx + 4, hy + k * 5 - 2); g.stroke(); } };
     if (!done && step < 2) {
@@ -38813,6 +38846,222 @@ function openPetSports() {
   raf = requestAnimationFrame(tick);
   w.status.textContent = `${nm}照顧星星：${'⭐'.repeat(stars)}　障礙亮起來的時候按對的動作！`;
   openPetSports.test = { me, rivals, obs, doAct, tapAct, setT: v => { t = v; }, get done() { return done; }, stars, mult, get stumbles() { return stumbles; } };
+}
+/* ===== 🖐️ 第一人稱共用畫法（家長 11/22：噴水槍那種「自己拿著」的玩法，洗澡、射泡泡、澆花、滅火都用）=====
+   右下角伸出自己的手臂（袖子是現在穿的上衣顏色），手裡拿東西；水柱近粗遠細，打到的地方冒水霧、濺水花。 */
+function fpSleeve() { try { const c = CLOTHES_BY_ID[G.outfit.top]; return (c && c.color) || '#ff9ec4'; } catch (e) { return '#ff9ec4'; } }
+function fpArm(g, W, H, hx, hy) {
+  const sx = W + 30, sy = H + 50;
+  g.save(); g.lineCap = 'round';
+  g.strokeStyle = fpSleeve(); g.lineWidth = 40; g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + (hx - sx) * .55, sy + (hy - sy) * .55); g.stroke();
+  g.strokeStyle = '#f6cfae'; g.lineWidth = 26; g.beginPath(); g.moveTo(sx + (hx - sx) * .5, sy + (hy - sy) * .5); g.lineTo(hx, hy); g.stroke();
+  g.restore();
+}
+function fpFist(g, hx, hy) {
+  g.fillStyle = '#f6cfae'; g.beginPath(); g.arc(hx, hy, 15, 0, 7); g.fill();
+  g.strokeStyle = 'rgba(190,130,100,.55)'; g.lineWidth = 1.5; for (let k = -1; k <= 1; k++) { g.beginPath(); g.moveTo(hx - 8, hy + k * 5); g.lineTo(hx + 4, hy + k * 5 - 2); g.stroke(); }
+}
+// 水柱：從 (nx,ny) 粗粗的到 (tx,ty) 細細的；mist：打到的地方一團水霧
+function fpStream(g, nx, ny, tx, ty, t, o) {
+  o = o || {}; const dx = tx - nx, dy = ty - ny, L = Math.hypot(dx, dy) || 1, px = -dy / L, py = dx / L, w0 = o.w0 || 9, w1 = o.w1 || 2.5;
+  const gr = g.createLinearGradient(nx, ny, tx, ty); gr.addColorStop(0, o.c0 || 'rgba(170,220,255,.8)'); gr.addColorStop(1, o.c1 || 'rgba(220,242,255,.9)');
+  g.fillStyle = gr; g.beginPath(); g.moveTo(nx + px * w0, ny + py * w0); g.lineTo(tx + px * w1, ty + py * w1); g.lineTo(tx - px * w1, ty - py * w1); g.lineTo(nx - px * w0, ny - py * w0); g.closePath(); g.fill();
+  g.strokeStyle = `rgba(255,255,255,${.6 + .3 * Math.sin(t * 40)})`; g.lineWidth = 2; g.beginPath(); g.moveTo(nx + px * 2, ny + py * 2); g.lineTo(tx, ty); g.stroke();
+  if (o.mist !== false) { g.fillStyle = 'rgba(255,255,255,.42)'; g.beginPath(); g.arc(tx, ty, 12 + Math.sin(t * 25) * 3, 0, 7); g.fill(); }
+}
+// 濺起來的水花：list 裡放 {x,y,vx,vy,t}；c 是顏色
+function fpSplashAdd(list, x, y, n, c) { for (let i = 0; i < n; i++) list.push({ x, y, vx: (Math.random() - .5) * 160, vy: -40 - Math.random() * 90, t: 0, c }); if (list.length > 160) list.splice(0, list.length - 160); }
+function fpSplashStep(g, list, dt) { for (let i = list.length - 1; i >= 0; i--) { const d = list[i]; d.t += dt; d.vy += 420 * dt; d.x += d.vx * dt; d.y += d.vy * dt; if (d.t > .55) { list.splice(i, 1); continue; } g.globalAlpha = 1 - d.t / .55; g.fillStyle = d.c || '#96cdf5'; g.beginPath(); g.arc(d.x, d.y, 2.3, 0, 7); g.fill(); g.globalAlpha = 1; } }
+// 噴水槍：握把中心 (gx,gy)、朝 ga 的方向；回傳槍口位置和手握的位置
+function fpGun(g, gx, gy, ga, col) {
+  g.save(); g.translate(gx, gy); g.rotate(ga);
+  g.fillStyle = '#2f6fb0'; g.beginPath(); g.roundRect(-12, 6, 22, 44, 8); g.fill();
+  g.fillStyle = col || '#3a8fd9'; g.beginPath(); g.roundRect(-34, -20, 62, 32, 12); g.fill();
+  g.fillStyle = '#ffd23f'; g.beginPath(); g.roundRect(26, -14, 42, 22, 7); g.fill();
+  g.fillStyle = '#5a6475'; g.beginPath(); g.roundRect(64, -9, 14, 12, 3); g.fill();
+  g.fillStyle = 'rgba(255,255,255,.5)'; g.fillRect(-28, -15, 46, 5); g.fillRect(30, -10, 32, 3);
+  g.fillStyle = '#e8505b'; g.beginPath(); g.roundRect(4, 8, 8, 14, 3); g.fill();
+  g.restore();
+  return { mx: gx + Math.cos(ga) * 78, my: gy + Math.sin(ga) * 78, hx: gx - Math.sin(ga) * 30, hy: gy + Math.cos(ga) * 30 };
+}
+// 把「拿著東西的手」整組畫好：噴水槍在右下角、對著 (tx,ty)
+function fpGunAt(g, W, H, tx, ty, col) {
+  const gx = W * .62 + (tx - W / 2) * .2, gy = H - 34, ga = Math.atan2(ty - gy, tx - gx);
+  const hand = { hx: gx - Math.sin(ga) * 30, hy: gy + Math.cos(ga) * 30 };
+  fpArm(g, W, H, hand.hx, hand.hy); const r = fpGun(g, gx, gy, ga, col); fpFist(g, r.hx, r.hy); return r;
+}
+
+/* ===== 🛁 幫寵物洗澡（家長 11/22：第一人稱）=====
+   本來按「🛁 洗澡」一下就洗好。改成：🧴 抹沐浴乳 → 🧽 搓一搓（髒的地方泡泡是咖啡色，搓過變白）→ 🚿 拿蓮蓬頭沖水，
+   洗好了寵物會甩甩身體、噴出水花，開心地跳起來。照顧的效果跟原本一樣（petBath）。趕時間可以按「⚡ 快快洗好」。 */
+function openPetBathGame() {
+  if (isEgg()) { eggNotYet(); return; }
+  const p = G.pet, sp = PET_SPECIES_BY_ID[p.species]; if (!sp) { petBath(); updatePetCard(); return; }
+  const nm = petName(), W = 340, H = 240, TUB = 206;
+  const w = openGameWindow(`🛁 幫${nm}洗澡`, `在${nm}身上抹來抹去（也可以用方向鍵）：先 🧴 抹沐浴乳、再 🧽 搓一搓，最後拿 🚿 蓮蓬頭按住沖水！`);
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const { c, g, pos } = gameCanvas(w.stage, W, H), dpr = c._dpr || 1;
+  const petC = document.createElement('canvas'); petC.width = W * dpr; petC.height = H * dpr; const pg = petC.getContext('2d'); pg.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const stg = lookStage(p), PX = 170, PY = TUB + 14;
+  // 先量一下這隻寵物畫出來有多高，再放大到身體大部分露在浴缸上面（每種寵物、每個階段大小都不一樣）
+  const SC = (() => { try { const mc = document.createElement('canvas'); mc.width = mc.height = 160; const mg = mc.getContext('2d'); mg.translate(80, 140); drawCreature(mg, sp, { happy: true, clean: 100, adult: stg === 'adult', baby: stg === 'baby' });
+    const d = mg.getImageData(0, 0, 160, 160).data; let top = 140; for (let y = 0; y < 140; y++) { let hit = false; for (let x = 0; x < 160; x++) if (d[(y * 160 + x) * 4 + 3] > 20) { hit = true; break; } if (hit) { top = y; break; } }
+    return Math.max(2.4, Math.min(5.5, 150 / Math.max(10, 140 - top))); } catch (e) { return 3.6; } })();
+  const drawPet = (gg, look) => { gg.save(); gg.translate(PX, PY); gg.scale(SC, SC); try { drawCreature(gg, sp, Object.assign({ happy: true, clean: 100, adult: stg === 'adult', baby: stg === 'baby' }, look || {})); } catch (e) {} gg.restore(); };
+  drawPet(pg);
+  const CELL = 14, cells = [];
+  try { const data = pg.getImageData(0, 0, petC.width, petC.height).data;
+    for (let y = CELL / 2; y < TUB; y += CELL) for (let x = CELL / 2; x < W; x += CELL) { const ix = Math.floor(x * dpr), iy = Math.floor(y * dpr); if (data[(iy * petC.width + ix) * 4 + 3] > 40) cells.push({ x, y, mud: 0, foam: 0 }); } } catch (e) {}
+  if (!cells.length) for (let x = 130; x < 210; x += CELL) for (let y = 110; y < 190; y += CELL) cells.push({ x, y, mud: 0, foam: 0 });
+  const frac = Math.min(.85, .25 + (100 - (Number(p.clean) || 0)) / 100 * .6);
+  cells.forEach(cl => { cl.mud = Math.random() < frac ? 1 : 0; cl.r = 4 + Math.random() * 3; cl.ox = (Math.random() - .5) * 5; cl.oy = (Math.random() - .5) * 5; });
+  if (!cells.some(cl => cl.mud)) cells[Math.floor(cells.length / 2)].mud = 1;
+  const muddy = cells.filter(cl => cl.mud);
+  const TOOLS = [['soap', '🧴', '抹沐浴乳'], ['scrub', '🧽', '搓一搓'], ['rinse', '🚿', '蓮蓬頭沖水']];
+  let step = 0, cur = { x: PX, y: 150 }, down = false, t = 0, last = performance.now(), raf = 0, live = true, done = false, shake = 0, jump = 0, lastCur = { x: PX, y: 150 }, scrub = 0;
+  const keys = {}, splash = [], bits = [], shower = [];
+  const toolRow = el('div', 'tkd-moves'); TOOLS.forEach(([k, e, n], i) => { const b = el('button', 'tkd-move' + (i === 0 ? ' on' : '')); b.append(el('span', 'tkd-e', e), el('span', '', n)); b.disabled = true; toolRow.appendChild(b); }); w.stage.appendChild(toolRow);
+  const quick = el('button', 'big alt', '⚡ 快快洗好'); quick.onclick = () => { if (done) return; closeGameWindow(); petBath(); updatePetCard(); }; w.btns.appendChild(quick); leaveButton(w);
+  const progress = () => step === 0 ? cells.filter(cl => cl.foam).length / cells.length : step === 1 ? muddy.filter(cl => !cl.mud).length / muddy.length : 1 - cells.filter(cl => cl.foam).length / Math.max(1, cells.length);
+  const rub = (x, y) => { if (done) return; let hit = false;
+    cells.forEach(cl => { if (Math.hypot(cl.x - x, cl.y - y) > 24) return;
+      if (step === 0 && !cl.foam) { cl.foam = 1; hit = true; }
+      else if (step === 1 && cl.mud && cl.foam) { cl.mud = 0; cl.glint = .6; hit = true; for (let n = 0; n < 2; n++) bits.push({ x: cl.x, y: cl.y, vx: (Math.random() - .5) * 120, vy: -40 - Math.random() * 70, t: 0 }); }
+      else if (step === 2 && cl.foam) { cl.foam = 0; hit = true; } });
+    if (hit && Math.random() < .25) Sound.play(step === 2 ? 'whoosh' : 'pickUp');
+    if (progress() >= .92) next(); };
+  const next = () => { if (step === 0) cells.forEach(cl => { cl.foam = 1; }); else if (step === 1) muddy.forEach(cl => { cl.mud = 0; }); else cells.forEach(cl => { cl.foam = 0; });
+    step++; [...toolRow.children].forEach((b, i) => b.classList.toggle('on', i === step));
+    if (step >= 3) return finish();
+    Sound.play('coin'); w.status.textContent = step === 1 ? `泡泡抹好了！換 🧽 搓一搓，咖啡色的地方要搓乾淨～` : `好乾淨！最後拿 🚿 蓮蓬頭，按住把泡泡沖掉～`; };
+  const finish = () => { done = true; shake = 1.3; quick.remove(); Sound.play('bath');
+    setTimeout(() => { if (!live) return; jump = 1; try { petBath(); updatePetCard(); } catch (e) {} kidMoodUp(3);
+      w.status.textContent = `${nm}洗得香香的！好舒服喔～`; w.btns.innerHTML = ''; leaveButton(w); }, 1300); };
+  c.addEventListener('pointerdown', e => { e.preventDefault(); down = true; const q = pos(e); cur = q; rub(q.x, q.y); try { c.setPointerCapture(e.pointerId); } catch (er) {} });
+  c.addEventListener('pointermove', e => { const q = pos(e); cur = q; if (down) rub(q.x, q.y); });
+  ['pointerup', 'pointercancel'].forEach(k => c.addEventListener(k, () => { down = false; }));
+  const KM = { ArrowLeft: 'l', ArrowRight: 'r', ArrowUp: 'u', ArrowDown: 'd', KeyA: 'l', KeyD: 'r', KeyW: 'u', KeyS: 'd' };
+  const kd = e => { const k = KM[e.code]; if (k) { e.preventDefault(); keys[k] = true; } }, ku = e => { const k = KM[e.code]; if (k) keys[k] = false; };
+  document.addEventListener('keydown', kd); document.addEventListener('keyup', ku);
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); document.removeEventListener('keyup', ku); };
+  const fx = document.createElement('canvas'); fx.width = W * dpr; fx.height = H * dpr; const fg = fx.getContext('2d'); fg.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const frame = now => { if (!live) return; raf = requestAnimationFrame(frame); const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+    const kx = (keys.r ? 1 : 0) - (keys.l ? 1 : 0), ky = (keys.d ? 1 : 0) - (keys.u ? 1 : 0);
+    if (kx || ky) { cur = { x: Math.max(20, Math.min(W - 20, cur.x + kx * 170 * dt)), y: Math.max(30, Math.min(TUB, cur.y + ky * 170 * dt)) }; rub(cur.x, cur.y); }
+    const mv = Math.hypot(cur.x - lastCur.x, cur.y - lastCur.y); lastCur = { x: cur.x, y: cur.y }; scrub = Math.max(0, Math.min(1, scrub + ((down || kx || ky) && mv > .5 ? dt * 6 : -dt * 4)));
+    // 浴室
+    g.fillStyle = '#e6f4fb'; g.fillRect(0, 0, W, H); g.strokeStyle = 'rgba(150,190,215,.45)'; g.lineWidth = 1;
+    for (let x = 0; x <= W; x += 24) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, TUB); g.stroke(); } for (let y = 0; y <= TUB; y += 24) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+    // 寵物（甩身體、跳）
+    const sh = shake > 0 ? Math.sin(t * 50) * .12 * Math.min(1, shake) : 0; if (shake > 0) { shake -= dt; if (Math.random() < .6) fpSplashAdd(splash, PX + (Math.random() - .5) * 90, 120 + Math.random() * 60, 1); }
+    if (jump > 0) jump = Math.max(0, jump - dt * 1.2); const jy = jump > 0 ? -Math.abs(Math.sin(jump * Math.PI * 2)) * 24 : 0;
+    g.save(); g.translate(PX, PY + jy); g.rotate(sh); g.translate(-PX, -PY); g.drawImage(petC, 0, 0, W, H);
+    fg.clearRect(0, 0, W, H);
+    cells.forEach(cl => { if (cl.mud && !cl.foam) { fg.fillStyle = 'rgba(120,84,48,.8)'; fg.beginPath(); fg.arc(cl.x + cl.ox, cl.y + cl.oy, cl.r, 0, 7); fg.fill(); }
+      if (cl.foam) { fg.fillStyle = cl.mud ? 'rgba(176,132,88,.9)' : 'rgba(255,255,255,.82)'; fg.beginPath(); fg.arc(cl.x - 3, cl.y - 2, 4.2, 0, 7); fg.arc(cl.x + 4, cl.y + 2, 3.4, 0, 7); fg.fill(); fg.strokeStyle = 'rgba(160,200,230,.7)'; fg.lineWidth = 1; fg.stroke(); } });   // 泡泡小一點、淡一點，看得到寵物的臉
+    fg.globalCompositeOperation = 'destination-in'; fg.drawImage(petC, 0, 0, W, H); fg.globalCompositeOperation = 'source-over';
+    g.drawImage(fx, 0, 0, W, H); g.restore();
+    // 浴缸（擋在前面）
+    g.fillStyle = '#ffffff'; g.beginPath(); g.roundRect(20, TUB, W - 40, H - TUB + 20, 18); g.fill(); g.fillStyle = '#d6ecf7'; g.fillRect(20, TUB, W - 40, 6);
+    for (let i = 0; i < 6; i++) { const bx = 50 + i * 48, by = TUB - 4 - Math.abs(Math.sin(t * 2 + i)) * 4; g.fillStyle = 'rgba(255,255,255,.95)'; g.beginPath(); g.arc(bx, by, 8, 0, 7); g.arc(bx + 9, by + 2, 6, 0, 7); g.fill(); }
+    // 搓出來的泥點、泡泡；閃閃
+    for (let i = bits.length - 1; i >= 0; i--) { const d = bits[i]; d.t += dt; d.vy += 380 * dt; d.x += d.vx * dt; d.y += d.vy * dt; if (d.t > .6) { bits.splice(i, 1); continue; } g.globalAlpha = 1 - d.t / .6; g.fillStyle = i % 2 ? '#8a5a33' : '#ffffff'; g.beginPath(); g.arc(d.x, d.y, 2.6, 0, 7); g.fill(); g.globalAlpha = 1; }
+    if (bits.length > 150) bits.splice(0, bits.length - 150);
+    cells.forEach(cl => { if (cl.glint > 0) { cl.glint -= dt; g.globalAlpha = Math.min(1, cl.glint * 2); g.font = '12px sans-serif'; g.textAlign = 'center'; g.fillText('✨', cl.x, cl.y - 6 - (.6 - cl.glint) * 14); g.globalAlpha = 1; } });
+    // 🚿 蓮蓬頭的水：好幾條細細的水，從蓮蓬頭灑向手指的地方
+    const spraying = step === 2 && !done && (down || kx || ky);
+    if (step === 2 && !done) {
+      const hx = W - 60 + (cur.x - W / 2) * .15, hy = H - 40, ang = Math.atan2(cur.y - hy, cur.x - hx), shx = hx + Math.cos(ang) * 58, shy = hy + Math.sin(ang) * 58;
+      if (spraying) { for (let k = -3; k <= 3; k++) { const tx = cur.x + k * 5, ty = cur.y + Math.abs(k) * 2; g.strokeStyle = 'rgba(160,215,255,.85)'; g.lineWidth = 2; g.beginPath(); g.moveTo(shx + k * 2.5, shy); g.lineTo(tx, ty); g.stroke(); }
+        if (Math.random() < .8) fpSplashAdd(splash, cur.x, cur.y, 2); g.fillStyle = 'rgba(255,255,255,.4)'; g.beginPath(); g.arc(cur.x, cur.y, 14, 0, 7); g.fill(); }
+      fpArm(g, W, H, hx, hy);
+      g.save(); g.translate(hx, hy); g.rotate(ang); g.fillStyle = '#c9ccd0'; g.beginPath(); g.roundRect(-6, -6, 52, 12, 6); g.fill(); g.fillStyle = '#e4e7ea'; g.beginPath(); g.ellipse(58, 0, 8, 15, 0, 0, 7); g.fill(); g.fillStyle = '#9aa0a8'; for (let k = -2; k <= 2; k++) { g.beginPath(); g.arc(64, k * 5, 1.4, 0, 7); g.fill(); } g.restore();
+      fpFist(g, hx, hy);
+      if (!spraying) { g.strokeStyle = 'rgba(58,143,217,.8)'; g.lineWidth = 2; g.setLineDash([4, 3]); g.beginPath(); g.arc(cur.x, cur.y, 12, 0, 7); g.stroke(); g.setLineDash([]); }
+    }
+    fpSplashStep(g, splash, dt);
+    if (!done && step < 2) {
+      const wig = scrub * Math.sin(t * 34) * (step === 1 ? 9 : 4), hx = cur.x + wig + 16, hy = cur.y + 18;
+      fpArm(g, W, H, hx, hy);
+      if (step === 1) { g.save(); g.translate(cur.x + wig, cur.y); g.rotate(scrub * Math.sin(t * 34) * .25 - .15); g.fillStyle = '#ffb347'; g.beginPath(); g.roundRect(-20, -13, 40, 26, 8); g.fill(); g.fillStyle = '#7bd389'; g.beginPath(); g.roundRect(-20, 5, 40, 8, 4); g.fill(); g.restore(); }
+      else { g.font = '30px sans-serif'; g.textAlign = 'center'; g.fillText('🧴', cur.x + 4, cur.y + 8); }
+      fpFist(g, hx, hy);
+    }
+    if (done) { g.font = '900 18px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#2f8a3c'; g.fillText(shake > 0 ? '甩甩甩～' : '✨ 香香的！✨', W / 2, 40); }
+    g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.roundRect(6, 6, 170, 22, 8); g.fill(); g.fillStyle = '#3a3240'; g.font = '700 13px sans-serif'; g.textAlign = 'left';
+    g.fillText(done ? '🛁 洗好了！' : `${TOOLS[step][1]} ${TOOLS[step][2]}　${Math.round(progress() * 100)}%`, 14, 22); };
+  raf = requestAnimationFrame(frame);
+  w.status.textContent = `先 🧴 抹沐浴乳！在${nm}身上抹來抹去～`;
+  openPetBathGame.test = { cells, rub, get step() { return step; }, get done() { return done; }, all: () => { while (!done) { const s0 = step; cells.forEach(cl => rub(cl.x, cl.y)); if (step === s0 && !done) next(); } } };
+}
+
+/* ===== 💧 澆花（家長 11/22：第一人稱）=====
+   在花盆旁邊「澆花」：手拿著澆水壺，按住就把壺斜斜的倒水，水珠一顆一顆掉下來。
+   要倒在花盆的土上（左右移動壺），水量條滿了花就長大一階（跟原本一樣用 gardenWater）。倒歪了水會灑到地上。 */
+function openWaterFlower(it, done) {
+  const W = 300, H = 220, POT = { x: 110, w: 80, top: 150 }, gs = gardenOf(it.uid).s;
+  const w = openGameWindow('💧 澆花', '按住（或按住空白鍵）讓澆水壺倒水；左右移動，把水倒在花盆的土上！水量滿了小花就會長大～');
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const { c, g, pos } = gameCanvas(w.stage, W, H);
+  let cx = 230, down = false, t = 0, last = performance.now(), raf = 0, live = true, fill = 0, tilt = 0, fin = false, grow = 0;
+  const drops = [], splash = [], keys = {};
+  c.addEventListener('pointerdown', e => { e.preventDefault(); down = true; cx = pos(e).x; try { c.setPointerCapture(e.pointerId); } catch (er) {} });
+  c.addEventListener('pointermove', e => { const q = pos(e); if (down || e.pointerType === 'mouse') cx = q.x; });
+  ['pointerup', 'pointercancel'].forEach(k => c.addEventListener(k, () => { down = false; }));
+  const kd = e => { if (e.code === 'Space') { e.preventDefault(); keys.sp = true; } if (e.code === 'ArrowLeft' || e.code === 'KeyA') { e.preventDefault(); keys.l = true; } if (e.code === 'ArrowRight' || e.code === 'KeyD') { e.preventDefault(); keys.r = true; } };
+  const ku = e => { if (e.code === 'Space') keys.sp = false; if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.l = false; if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.r = false; };
+  document.addEventListener('keydown', kd); document.addEventListener('keyup', ku);
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); document.removeEventListener('keyup', ku); };
+  const finish = () => { fin = true; grow = 1; Sound.play('fanfare'); setTimeout(() => { if (!live) return; closeGameWindow(); try { done && done(); } catch (e) {} }, 1400); };
+  const plant = (s, k) => {   // 依照長到哪裡畫
+    const bx = 150, by = POT.top; g.strokeStyle = '#4f9d4f'; g.lineWidth = 3; g.lineCap = 'round';
+    const hgt = [0, 14, 30, 44, 50][s] * (1 + k * .15); if (s >= 1) { g.beginPath(); g.moveTo(bx, by); g.lineTo(bx, by - hgt); g.stroke(); }
+    g.fillStyle = '#6cc070'; if (s >= 1) { g.beginPath(); g.ellipse(bx - 7, by - hgt * .5, 7, 3.5, -.5, 0, 7); g.fill(); g.beginPath(); g.ellipse(bx + 7, by - hgt * .6, 7, 3.5, .5, 0, 7); g.fill(); }
+    if (s === 3) { g.fillStyle = '#ff9ccf'; g.beginPath(); g.ellipse(bx, by - hgt - 4, 5, 7, 0, 0, 7); g.fill(); }
+    if (s >= 4) { g.fillStyle = '#ff9ccf'; for (let i = 0; i < 5; i++) { const a = i * Math.PI * 2 / 5; g.beginPath(); g.arc(bx + Math.cos(a) * 6, by - hgt + Math.sin(a) * 6, 5, 0, 7); g.fill(); } g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(bx, by - hgt, 4, 0, 7); g.fill(); }
+    g.lineCap = 'butt';
+  };
+  const frame = now => { if (!live) return; raf = requestAnimationFrame(frame); const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+    if (keys.l) cx -= 140 * dt; if (keys.r) cx += 140 * dt; cx = Math.max(60, Math.min(W - 30, cx));
+    const pour = !fin && (down || keys.sp); tilt += ((pour ? 1 : 0) - tilt) * Math.min(1, dt * 8);
+    const cy = 70, spx = cx - 44 - tilt * 6, spy = cy - 6 + tilt * 22;   // 壺嘴
+    if (pour && tilt > .5 && Math.random() < .9) drops.push({ x: spx, y: spy, vx: -30 - Math.random() * 25, vy: 10 + Math.random() * 20 });
+    for (let i = drops.length - 1; i >= 0; i--) { const d = drops[i]; d.vy += 520 * dt; d.x += d.vx * dt; d.y += d.vy * dt;
+      if (d.y >= POT.top && d.x > POT.x && d.x < POT.x + POT.w) { drops.splice(i, 1); fill = Math.min(1, fill + .012); if (Math.random() < .3) fpSplashAdd(splash, d.x, POT.top, 1, '#7ab8e8'); continue; }
+      if (d.y >= 200) { drops.splice(i, 1); if (Math.random() < .4) fpSplashAdd(splash, d.x, 200, 1, '#7ab8e8'); } }
+    if (!fin && fill >= 1) finish();
+    if (grow > 0) grow = Math.max(0, grow - dt);
+    // 陽台
+    g.fillStyle = '#cfeaf7'; g.fillRect(0, 0, W, H); g.fillStyle = '#f3e2c6'; g.fillRect(0, 200, W, 20);
+    g.strokeStyle = '#ffffff'; g.lineWidth = 4; g.beginPath(); g.moveTo(0, 120); g.lineTo(W, 120); g.stroke(); for (let x = 10; x < W; x += 24) { g.beginPath(); g.moveTo(x, 120); g.lineTo(x, 200); g.stroke(); }
+    // 花盆＋花
+    plant(fin ? Math.min(4, gs + 1) : gs, grow);
+    g.fillStyle = `rgb(${120 - fill * 50},${80 - fill * 30},${50 - fill * 20})`; g.fillRect(POT.x + 4, POT.top, POT.w - 8, 8);   // 土（越澆越深色）
+    g.fillStyle = '#d0703a'; g.beginPath(); g.moveTo(POT.x, POT.top + 6); g.lineTo(POT.x + POT.w, POT.top + 6); g.lineTo(POT.x + POT.w - 10, 200); g.lineTo(POT.x + 10, 200); g.closePath(); g.fill();
+    g.fillStyle = '#e08a52'; g.fillRect(POT.x - 4, POT.top + 2, POT.w + 8, 9);
+    if (grow > 0) { g.font = '16px sans-serif'; g.textAlign = 'center'; for (let i = 0; i < 6; i++) { const a = i + t * 3; g.fillText('✨', 150 + Math.cos(a) * 40, 110 + Math.sin(a) * 30); } }
+    // 水珠
+    g.fillStyle = 'rgba(110,180,235,.9)'; drops.forEach(d => { g.beginPath(); g.ellipse(d.x, d.y, 2.4, 3.4, 0, 0, 7); g.fill(); });
+    fpSplashStep(g, splash, dt);
+    // 澆水壺（手拿著）
+    fpArm(g, W, H, cx + 26, cy + 30);
+    g.save(); g.translate(cx, cy); g.rotate(-tilt * .6);
+    g.fillStyle = '#4fb3a9'; g.beginPath(); g.roundRect(-22, -18, 44, 36, 10); g.fill();
+    g.strokeStyle = '#4fb3a9'; g.lineWidth = 6; g.beginPath(); g.moveTo(-18, 6); g.lineTo(-46, -8); g.stroke();   // 壺嘴
+    g.fillStyle = '#3e9890'; g.beginPath(); g.ellipse(-48, -9, 5, 7, -.5, 0, 7); g.fill();
+    g.strokeStyle = '#3e9890'; g.lineWidth = 5; g.beginPath(); g.arc(14, -6, 16, -1.6, 1.2); g.stroke();   // 把手
+    g.fillStyle = 'rgba(255,255,255,.4)'; g.fillRect(-16, -12, 22, 5);
+    g.restore();
+    fpFist(g, cx + 26, cy + 30);
+    // 水量條
+    g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.roundRect(8, 8, 170, 22, 8); g.fill(); g.fillStyle = '#dff0fb'; g.fillRect(76, 15, 94, 8); g.fillStyle = '#4a90d9'; g.fillRect(76, 15, 94 * fill, 8);
+    g.fillStyle = '#3a3240'; g.font = '700 12px sans-serif'; g.textAlign = 'left'; g.fillText('💧 水量', 14, 24);
+    if (fin) { g.fillStyle = '#2f8a3c'; g.font = '900 16px sans-serif'; g.textAlign = 'center'; g.fillText('🌱 喝飽了！長大了！', W / 2, 54); }
+    else if (!pour && fill === 0) { g.fillStyle = '#3a3240'; g.font = '700 13px sans-serif'; g.textAlign = 'center'; g.fillText('按住倒水，對準花盆的土～', W / 2, 54); }
+  };
+  raf = requestAnimationFrame(frame);
+  w.status.textContent = '按住倒水，左右移動對準花盆！';
+  openWaterFlower.test = { get fill() { return fill; }, setFill: v => { fill = v; }, get fin() { return fin; }, set cx(v) { cx = v; }, press: v => { down = v; }, finishNow: () => { if (!live) return; fin = true; closeGameWindow(); try { done && done(); } catch (e) {} } };
 }
 /* 🎄 裝飾聖誕樹（記憶力） */
 const TREE_SLOTS = [[150, 72], [134, 102], [166, 102], [120, 134], [150, 130], [180, 134], [104, 168], [134, 166], [166, 168], [196, 166]];
