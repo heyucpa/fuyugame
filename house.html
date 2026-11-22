@@ -2745,6 +2745,16 @@ const PLACE_FURNITURE = [
   { id: 'race_board', name: '名次看板', theme: 'modern', w: 3, h: 34, z: 46, layer: 'wall', d: 1, parts: [],
     draw(ctx, W, H) { ctx.fillStyle = '#1d2433'; ctx.fillRect(0, 0, W, H); const sq = H / 6; for (let i = 0; i < W / sq; i++) { ctx.fillStyle = i % 2 ? '#fff' : '#26232a'; ctx.fillRect(i * sq, 0, sq, sq); ctx.fillStyle = i % 2 ? '#26232a' : '#fff'; ctx.fillRect(i * sq, H - sq, sq, sq); }
       ctx.font = `bold ${Math.round(H * .22)}px sans-serif`; ctx.textBaseline = 'middle'; ctx.fillStyle = '#ffd23f'; ctx.fillText('🏁 1st 2nd 3rd', W * .08, H / 2); } },
+  // 🏛️ 博物館、🏦 銀行（新市區島）
+  { id: 'museum_dino', name: '恐龍化石', theme: 'modern', w: 2, d: 1, parts: [{ x: .1, y: .3, w: 1.8, d: .4, z: 0, h: 4, c: '#8a7f99' }, { x: .5, y: .45, w: .06, d: .1, z: 4, h: 20, c: '#f3ead8' }, { x: 1.4, y: .45, w: .06, d: .1, z: 4, h: 20, c: '#f3ead8' }, { x: .3, y: .45, w: 1.5, d: .1, z: 24, h: 4, c: '#f3ead8' }, { x: .6, y: .45, w: .04, d: .1, z: 28, h: 8, c: '#f3ead8' }, { x: .9, y: .45, w: .04, d: .1, z: 28, h: 10, c: '#f3ead8' }, { x: 1.2, y: .45, w: .04, d: .1, z: 28, h: 8, c: '#f3ead8' }, { k: 'ball', x: 1.85, y: .5, z: 32, r: 6, c: '#f3ead8' }, { x: 1.7, y: .45, w: .15, d: .1, z: 24, h: 10, c: '#f3ead8' }] },
+  { id: 'museum_case', name: '寶石展示櫃', theme: 'modern', w: 1, d: 1, parts: [{ x: .2, y: .2, w: .6, d: .6, z: 0, h: 22, c: '#e0bd84' }, { x: .22, y: .22, w: .56, d: .56, z: 22, h: 18, c: '#cfeaf7' }, { k: 'ball', x: .5, y: .5, z: 30, r: 4, c: '#4ac0e8', shade: true }] },
+  { id: 'museum_rope', name: '紅龍柱', theme: 'modern', w: 2, d: 1, parts: [{ x: .1, y: .4, w: .12, d: .12, z: 0, h: 22, c: '#e0b23a' }, { x: 1.78, y: .4, w: .12, d: .12, z: 0, h: 22, c: '#e0b23a' }, { x: .2, y: .44, w: 1.6, d: .04, z: 16, h: 3, c: '#d63b3b' }] },
+  { id: 'museum_painting', name: '向日葵名畫', theme: 'modern', w: 2, h: 30, z: 48, layer: 'wall', d: 1, parts: [],
+    draw(ctx, W, H) { ctx.fillStyle = '#c9a26a'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#4a90d9'; ctx.fillRect(W * .07, H * .1, W * .86, H * .8); ctx.fillStyle = '#e0a020'; ctx.fillRect(W * .4, H * .55, W * .2, H * .3); for (let i = 0; i < 3; i++) { const x = W * (.32 + i * .18), y = H * (.35 + (i % 2) * .1); ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(x, y, H * .12, 0, 7); ctx.fill(); ctx.fillStyle = '#8a5a33'; ctx.beginPath(); ctx.arc(x, y, H * .05, 0, 7); ctx.fill(); } } },
+  { id: 'bank_counter', name: '銀行櫃台', theme: 'modern', w: 3, d: 1, parts: [{ x: .05, y: .3, w: 2.9, d: .6, z: 0, h: 26, c: '#8a6a4a' }, { x: .05, y: .3, w: 2.9, d: .6, z: 26, h: 3, c: '#e0bd84' }, { x: .1, y: .32, w: 2.8, d: .06, z: 29, h: 16, c: '#cfeaf7' }] },
+  { id: 'bank_piggy', name: '大存錢筒', theme: 'cute', w: 1, d: 1, parts: [{ k: 'ball', x: .5, y: .5, z: 12, r: 11, c: '#ff9ec4' }, { k: 'ball', x: .8, y: .55, z: 13, r: 4, c: '#ff8fb3' }, { x: .44, y: .44, w: .12, d: .12, z: 22, h: 2, c: '#3a3240' }, { k: 'ball', x: .35, y: .3, z: 20, r: 3, c: '#ff9ec4' }] },
+  { id: 'bank_vault', name: '金庫大門', theme: 'modern', w: 2, h: 40, z: 6, layer: 'wall', d: 1, parts: [],
+    draw(ctx, W, H) { ctx.fillStyle = '#9aa7b4'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#c9ccd0'; ctx.beginPath(); ctx.arc(W / 2, H / 2, Math.min(W, H) * .4, 0, 7); ctx.fill(); ctx.strokeStyle = '#5a6475'; ctx.lineWidth = Math.max(2, H * .04); ctx.stroke(); ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(W / 2, H / 2, H * .08, 0, 7); ctx.fill(); for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2; ctx.beginPath(); ctx.moveTo(W / 2, H / 2); ctx.lineTo(W / 2 + Math.cos(a) * H * .22, H / 2 + Math.sin(a) * H * .22); ctx.stroke(); } } },
   // 🚒 消防局
   { id: 'fire_engine', name: '消防車', theme: 'modern', w: 3, d: 2, parts: [{ x: .1, y: .4, w: 2.2, d: 1.2, z: 6, h: 22, c: '#d63b3b' }, { x: 2.2, y: .4, w: .7, d: 1.2, z: 6, h: 30, c: '#d63b3b' }, { x: 2.3, y: .5, w: .5, d: 1, z: 22, h: 10, c: '#bfe6f2' }, { x: .1, y: .4, w: 2.8, d: 1.2, z: 14, h: 3, c: '#ffffff' }, { x: .2, y: .6, w: 2, d: .2, z: 28, h: 3, c: '#c9ccd0' }, { x: .2, y: 1.2, w: 2, d: .2, z: 28, h: 3, c: '#c9ccd0' }, { k: 'ball', x: .5, y: .4, z: 6, r: 6, c: '#26232a' }, { k: 'ball', x: 2.4, y: .4, z: 6, r: 6, c: '#26232a' }, { k: 'ball', x: 2.5, y: .8, z: 38, r: 3, c: '#ff3b3b', shade: true }] },
   { id: 'fire_hose_reel', name: '消防水管捲', theme: 'modern', w: 1, d: 1, parts: [{ x: .3, y: .3, w: .4, d: .4, z: 0, h: 6, c: '#5a6475' }, { k: 'ball', x: .5, y: .5, z: 18, r: 11, c: '#ffd23f' }, { k: 'ball', x: .5, y: .5, z: 18, r: 8, c: '#b8282f' }, { k: 'ball', x: .5, y: .5, z: 18, r: 3, c: '#e0a020' }] },
@@ -3600,6 +3610,8 @@ const HOSTS = {
   cinema: { id: 'cinema', name: '貓頭鷹放映師', short: '放映師', body: '#a07850', edge: '#7a5a3a', belly: '#f2dfc0', inner: '#7a5a3a', ears: 'tuft', acc: 'glasses', accColor: '#3a3240' },
   tkd: { id: 'tkd', name: '熊熊教練', short: '熊教練', body: '#8a5a33', edge: '#6b4428', belly: '#e8cfa9', inner: '#6b4428', ears: 'round', acc: 'scarf', accColor: '#26232a' },
   restaurant: { id: 'restaurant', name: '貓咪主廚', short: '貓主廚', body: '#ffd9a8', edge: '#d9a86a', belly: '#fff4e0', inner: '#ffb3c7', ears: 'pointy', acc: 'hat', accColor: '#ffffff' },
+  curator: { id: 'curator', name: '貓頭鷹館長', short: '館長', body: '#b08a6a', edge: '#8a6a4a', belly: '#f3e6d4', inner: '#e8c8a0', ears: 'tuft', acc: 'glasses', accColor: '#3a3240' },   // 🏛️ 博物館
+  banker: { id: 'banker', name: '松鼠行員', short: '行員', body: '#d9915a', edge: '#b0703a', belly: '#fbe8d2', inner: '#f0b88a', ears: 'pointy', acc: 'scarf', accColor: '#2f8a3c' },   // 🏦 銀行
   fireman: { id: 'fireman', name: '熊熊消防員', short: '消防員', body: '#c98a55', edge: '#a06a3a', belly: '#f3dcc0', inner: '#e8a87a', ears: 'round', acc: 'hat', accColor: '#d63b3b' },   // 🚒 消防局
   racer: { id: 'racer', name: '狐狸賽車手', short: '賽車手', body: '#ff9a3c', edge: '#d97a20', belly: '#ffffff', inner: '#ffd9b0', ears: 'pointy', acc: 'hat', accColor: '#2b2d42' },   // 🏁 賽車場
   santa: { id: 'santa', name: '聖誕老公公', short: '聖誕老公公', santa: true, body: '#d94a4a', edge: '#b03636', belly: '#ffffff', inner: '#ffd9c9', ears: 'none', acc: 'none', accColor: '#d94a4a' },   // 🎅 聖誕老公公的家（聖誕節才有）
@@ -3723,6 +3735,13 @@ const PLACES = {
     { name: '賽車場', w: 12, d: 12, wall: 'wp_concrete', floor: 'fl_track', items: [
       ['race_kart', 2, 2], ['race_kart', 6, 2], ['race_podium', 4, 8], ['race_flag', 10, 1], ['race_flag', 0, 6], ['tire_stack', 10, 9], ['tire_stack', 11, 9], ['tire_stack', 0, 0]
     ], wallItems: [['race_board', 'R', 3], ['tool_wall', 'L', 4]] }
+  ] },
+  /* 🏛️ 博物館、🏦 銀行（家長 11/22：新市區島，坐船過去） */
+  museum: { name: '博物館', host: 'curator', emoji: '🏛️', desc: '看恐龍化石、月亮石頭、大寶石，看完回答館長的小問題！', rooms: [
+    { name: '博物館', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_terrazzo', items: [['museum_dino', 1, 1], ['museum_case', 6, 1], ['museum_case', 8, 1], ['museum_rope', 1, 5], ['museum_case', 7, 6]], wallItems: [['museum_painting', 'R', 3], ['museum_painting', 'L', 5]] }
+  ] },
+  bank: { name: '銀行', host: 'banker', emoji: '🏦', desc: '把錢存進銀行，每天會多一點點利息！', rooms: [
+    { name: '銀行', w: 10, d: 8, wall: 'wp_cream', floor: 'fl_terrazzo', items: [['bank_counter', 3, 1], ['bank_piggy', 1, 5], ['bank_piggy', 8, 5]], wallItems: [['bank_vault', 'R', 6]] }
   ] },
   /* 🚒 消防局（家長 11/22）：熊熊消防員。第一人稱拿水管滅火、雲梯救援，三關都過送消防車 */
   firestation: { name: '消防局', host: 'fireman', emoji: '🚒', desc: '當小小消防員！拿水管把火澆熄、用雲梯救困住的小動物！', rooms: [
@@ -6037,6 +6056,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-23T04:00', title: '🏙️ 大地圖變大了！新市區島', lines: [
+    ['⛵', '主島東邊多了一座新市區島，走到碼頭坐船過去（在島上直接點對面的房子，也會自動坐船）'],
+    ['🏛️', '博物館：貓頭鷹館長帶你看恐龍化石、月亮石頭、大寶石，看完回答小問題'],
+    ['🐷', '銀行：把錢存進去，每天會多一點點利息！'],
+    ['🚗', '「快速出門」分成主島、運動島、小鎮島、新市區，比較好找']
+  ] },
   { id: '2026-11-23T03:00', title: '🎭 當小偷演習變成三關！🐾 寵物一起來', lines: [
     ['🔦', '第 1 關倉庫：原本的躲手電筒'],
     ['💎', '第 2 關博物館：紅色雷射一閃一閃，關掉的時候才能走過去拿大寶石'],
@@ -7297,6 +7322,8 @@ function normalizeSave(g) {
         for (let w = 1; w <= 6; w++) if (q.clear[w + '-3'] === 1) leg[String(w)] = 1;
         q.legacy = leg; q.rev = 2;
       } else q.legacy = legOk(q.legacy); } }
+  if (out.bank != null) { if (!isObj(out.bank)) delete out.bank; else { const b = out.bank; if (!(Number.isInteger(b.sav) && b.sav >= 0 && b.sav < 1e9)) b.sav = 0; if (b.d != null && !(typeof b.d === 'string' && b.d.length <= 12)) delete b.d; Object.keys(b).forEach(k => { if (!['sav', 'd'].includes(k)) delete b[k]; }); } }   // 🐷 銀行
+  if (out.museum != null) { if (!isObj(out.museum)) delete out.museum; else { const m = out.museum; if (m.d != null && !(typeof m.d === 'string' && m.d.length <= 12)) delete m.d; Object.keys(m).forEach(k => { if (k !== 'd') delete m[k]; }); } }   // 🏛️ 博物館
   if (out.fire != null) { if (!isObj(out.fire)) delete out.fire; else { const f = out.fire; Object.keys(f).forEach(k => { if (!['lv', 'res'].includes(k) || !Number.isInteger(f[k]) || f[k] < 0 || f[k] > (k === 'lv' ? 3 : 1e6)) delete f[k]; }); } }   // 🚒 消防局
   if (out.cop != null) { if (!isObj(out.cop)) delete out.cop; else { const c = out.cop;
     if (c.cases != null && !(isObj(c.cases) && typeof c.cases.d === 'string' && Number.isInteger(c.cases.n) && c.cases.n >= 0 && c.cases.n < 100)) delete c.cases; else if (c.cases) c.cases = { d: c.cases.d, n: c.cases.n };
@@ -13008,7 +13035,7 @@ function vevFindTap(it) {
   vev.act = performance.now(); vev.hand = false;
   if (it.uid === vev.hide) { Sound.play('perfect'); const nm = (FURN_BY_ID[it.id] || {}).name || '家具'; vev.step = 'scene'; vevBar(); vevScene(vev.mis ? hmisEndScene(vev) : VEV_SCENE.lostEnd(vev.n, nm), () => vevEnd()); return; }
   vev.tries++; const d = Math.hypot(it.x - tgt.x, it.y - tgt.y);
-  vev.last = d <= 2.2 ? '🔥 好熱！就在旁邊了！' : d <= 4.5 ? '♨️ 溫溫的，有一點近了' : '🧊 好冷～不在這附近';
+  vev.last = d <= 2.2 ? '🔥 好熱！就在旁邊了！' : d <= 4.5 ? '♨️ 溫溫的，有一點近了' : '❄️ 好冷～不在這附近';
   Sound.play(d <= 2.2 ? 'starPop' : 'click'); (vev.subj === 'host' ? hostSay : visSay)(`${(FURN_BY_ID[it.id] || {}).name || '這裡'}沒有…${vev.last}`, 2400);
   if (vev.tries === 4 && !vev.region) { vev.region = true; setTimeout(() => vevHint(), 2600); }
   vevBar();
@@ -13508,7 +13535,7 @@ function openBearFish() {
     if (fish && fish.up > 0 && !fish.taken) { const k = Math.min(1, fish.t / .25), y = 160 - k * 38 + Math.sin(fish.t * 20) * 2; g.font = '30px sans-serif'; g.textAlign = 'center'; g.fillText('🐟', 180, y); g.fillStyle = 'rgba(255,255,255,.7)'; g.beginPath(); g.arc(165, 158, 4, 0, 7); g.arc(196, 156, 3, 0, 7); g.fill(); }
     for (let i = flying.length - 1; i >= 0; i--) { const f = flying[i]; f.t += dt * 2.2; const k = Math.min(1, f.t); g.font = '20px sans-serif'; g.textAlign = 'center'; g.fillText('🐟', f.x + (f.tx - f.x) * k, f.y + (f.ty - f.y) * k - Math.sin(k * Math.PI) * 40); if (f.t >= 1) flying.splice(i, 1); }
     copDrawKid(g, 70, 200, .95, t, false, 1, end ? 'joy' : frozen > 0 ? 'wow' : null);
-    if (frozen > 0) { g.font = '16px sans-serif'; g.textAlign = 'center'; g.fillText('🧊', 95, 140); }
+    if (frozen > 0) { g.font = '16px sans-serif'; g.textAlign = 'center'; g.fillText('❄️', 95, 140); }
     drawPolarBear(g, 300, 202, .9, true);
     g.font = '18px sans-serif'; g.textAlign = 'center'; g.fillText('🧺', 40, 205); g.fillText('🧺', 330, 205);
     g.fillStyle = 'rgba(255,255,255,.92)'; g.beginPath(); g.roundRect(W / 2 - 80, 6, 160, 24, 10); g.fill(); g.fillStyle = '#1d2433'; g.font = '700 14px sans-serif'; g.textAlign = 'center'; g.fillText(`🧒 ${me}　：　${bear} 🐻`, W / 2, 23);
@@ -15194,7 +15221,7 @@ function findTap(it) {
     return;
   }
   g0.tries++; const d = Math.hypot(it.x - tgt.x, it.y - tgt.y);
-  const hint = d <= 2.2 ? '🔥 好熱！就在旁邊了！' : d <= 4.5 ? '♨️ 溫溫的，有一點近了' : '🧊 好冷～不在這附近';
+  const hint = d <= 2.2 ? '🔥 好熱！就在旁邊了！' : d <= 4.5 ? '♨️ 溫溫的，有一點近了' : '❄️ 好冷～不在這附近';
   Sound.play(d <= 2.2 ? 'starPop' : 'click'); hostSay(hint, 1800);
   findBanner(`🔎 找 ${cur.emoji} ${cur.name}：${hint}（${g0.i + 1} / 3）`);
 }
@@ -15318,6 +15345,8 @@ function hostMenuEntries() {
     list.push([`🎖️ 考腰帶（現在：${tkdBeltName()}）`, openBeltExam]);
   }
   if (host.n.id === 'restaurant') { list.push(['🍽️ 點餐吃飯', openRestaurantOrder]); list.push(['👩‍🍳 小幫手打工（做漢堡）', openChefGame]); list.push(['💰 收銀台找錢', openCashGame]); }
+  if (host.n.id === 'curator') { list.push(['🏛️ 參觀展覽（看完有小問答）', () => openMuseumTour()]); list.push(['🎭 演習：博物館（第 2 關）', () => openThiefDrill((copState().dlv || 0) >= 1 ? 2 : undefined)]); }
+  if (host.n.id === 'banker') { list.push(['🐷 存錢筒（每天會長利息）', () => openBank()]); list.push(['🎭 演習：金庫（第 3 關）', () => openThiefDrill((copState().dlv || 0) >= 2 ? 3 : undefined)]); }
   if (host.n.id === 'fireman') { list.push(['🚒 滅火任務（拿水管噴水）' + (fireState().lv ? `（過了 ${fireState().lv} 關）` : ''), () => openFireFight()]); list.push(['🐱 救援任務（雲梯救小動物）', () => openFireRescue()]); }
   if (host.n.id === 'racer') { list.push(['🏎️ 賽車（開我的車）', () => openKart()]); list.push(['🎨 去改車店改裝我的車', () => { closeGameWindow(); travelTo('garage'); }]); }
   if (host.n.id === 'santa') { list.push([santaMisLabel(), () => santaMisOpen()]); list.push(['🧸 幫小精靈做玩具', () => openToyFactory()]); list.push(['🦌 照顧麋鹿', () => openDeerCare()]); list.push(['🎁 包禮物', () => openGiftWrap()]); list.push(['☕ 一起喝熱可可', () => santaCocoa()]); list.push([santaLent() ? '🛷 雪橇借你囉！' : `🛷 借雪橇（再送 ${santaLendLeft()} 份禮物）`, () => santaSleighInfo()]); }
@@ -15812,11 +15841,16 @@ function openTravelMenu() {
     card.appendChild(b);
   };
   if (G.away) pick(el('div', 'place-emoji', '🏠'), '🏠 回家', '回到自己的小屋', goHome, false);
-  Object.entries(PLACES).filter(([, pl]) => !pl.inHouse && !pl.invite).forEach(([id, pl]) => {
-    const here = !!(G.away && G.away.place === id);
-    const icon = pl.host && HOSTS[pl.host] ? renderNeighborPortrait(HOSTS[pl.host], 64, 58, false) : el('div', 'place-emoji', pl.emoji);
-    pick(icon, `${pl.emoji} ${pl.name}${here ? '（你在這裡）' : ''}`, pl.desc, () => travelTo(id), here);
-  });
+  /* 家長 11/22：地點越來越多 → 分區：主島、運動島、小鎮島、新市區、其他 */
+  const AREAS = [['main', '🏝️ 主島'], ['sport', '🏅 運動島（走木橋）'], ['town', '🏘️ 小鎮島（走木橋）'], ['city', '🏙️ 新市區（坐船）'], ['other', '🌈 其他地方']];
+  const areaOf = id => { const bd = ISL_BLD.find(b => b.id === id); return !bd ? 'other' : bd.city ? 'city' : bd.town ? 'town' : bd.islet ? 'sport' : 'main'; };
+  const places = Object.entries(PLACES).filter(([, pl]) => !pl.inHouse && !pl.invite);
+  AREAS.forEach(([ak, at]) => { const list = places.filter(([id]) => areaOf(id) === ak); if (!list.length) return; card.appendChild(el('div', 'qg-h', at));
+    list.forEach(([id, pl]) => {
+      const here = !!(G.away && G.away.place === id);
+      const icon = pl.host && HOSTS[pl.host] ? renderNeighborPortrait(HOSTS[pl.host], 64, 58, false) : el('div', 'place-emoji', pl.emoji);
+      pick(icon, `${pl.emoji} ${pl.name}${here ? '（你在這裡）' : ''}`, pl.desc, () => travelTo(id), here);
+    }); });
   // 🏡 收到邀請卡的家（姊姊／妹妹的家）
   loadInvites().forEach((inv, ii) => {
     const here = !!(G.away && G.away.place === 'friend' && PLACES.friend && PLACES.friend.inviteAt === inv.at && PLACES.friend.inviteName === inv.n);
@@ -24059,7 +24093,8 @@ function decorGo(theme, redo) {
    ・寵物跟在後面走。收到邀請卡的朋友家也是島上的小房子
    ・右上「🚗 快速出門」還是可以用清單直接去；「🔙 回去」不出門
    ・只是新的一個畫面：沒有改存檔，也沒有新的存檔欄位（每次都從家門口、或現在這個地方的門口出發）*/
-const ISL = { W: 64, H: 55, T: 32 };   // 右邊多一塊海，放運動島   // 下面多一塊海，放朋友島
+const ISL = { W: 84, H: 55, T: 32 };   // 家長 11/22：大地圖變大 → 右邊再多 20 格海，放新市區島
+const ISL_CITY = { cx: 73.5, cy: 26, rx: 8.5, ry: 8.5, hub: [73, 28] };   // 🏙️ 新市區島（坐船）   // 右邊多一塊海，放運動島   // 下面多一塊海，放朋友島
 const ISL_BLD = [   // 房子：x, y 是左上角的格子，w×h 格；門在正下方一格
   { id: 'home', x: 24, y: 11, w: 4, h: 3 },
   { id: 'helipad', x: 27, y: 5, w: 3, h: 2 },   // 🚁 停機坪：坐直升機上天空島（爸爸媽媽家）
@@ -24075,6 +24110,8 @@ const ISL_BLD = [   // 房子：x, y 是左上角的格子，w×h 格；門在�
   { id: 'garage', x: 28, y: 18, w: 4, h: 3 },   // 🔧 改車店：家的右下方
   { id: 'raceway', x: 33, y: 27, w: 4, h: 3 },   // 🏁 賽車場
   { id: 'firestation', x: 17, y: 26, w: 4, h: 3 },   // 🚒 消防局：警察局下面
+  { id: 'museum', x: 67, y: 21, w: 5, h: 3, city: true },   // 🏛️ 新市區島
+  { id: 'bank', x: 75, y: 21, w: 4, h: 3, city: true },   // 🏦 新市區島
   { id: 'santa', x: 34, y: 17, w: 4, h: 3, season: 'christmas' },   // 🎅 聖誕老公公的家：聖誕節才有
 
   // 🏅 運動島（家長：游泳池那座小島擴大成運動島，走木橋過去；跆拳道館也搬過來）
@@ -24155,7 +24192,7 @@ const ISL_POND = { x: 31, y: 24, w: 4, h: 3 };
 const ISL_HUB = [26, 19];
 const ISL_STYLE = {   // 牆、屋頂顏色
   dojo: ['#fff4e6', '#e0503a'], pool: ['#e8f6fb', '#3fa9f5'], track: ['#fff1e0', '#e07a4a'], arena: ['#fff6e0', '#ff7a3c'], gym: ['#f4eeff', '#8a78b0'], restaurant: ['#fff0d9', '#e8823a'], hospital: ['#ffffff', '#e8505b'], cinema: ['#3a2f4a', '#e8505b'],
-  raceway: ['#f3f3f6', '#2b2d42'], firestation: ['#ffe9e4', '#d63b3b'], santa: ['#fff4e6', '#d63b3b'], garage: ['#f3f3f6', '#e8505b'], airport: ['#eef6ff', '#4a90d9'], police: ['#e6efff', '#2f5fb8'], home: ['#ffd9c9', '#ff7b7b'], school: ['#fff4cf', '#5b8def'], playground: ['#e7f8d4', '#e07a3a'], library: ['#e6dcff', '#7a5cc9'], park: ['#d9f0c8', '#4f9d4f'],
+  raceway: ['#f3f3f6', '#2b2d42'], firestation: ['#ffe9e4', '#d63b3b'], museum: ['#f4efe6', '#8a7f99'], bank: ['#eef6ee', '#2f8a3c'], santa: ['#fff4e6', '#d63b3b'], garage: ['#f3f3f6', '#e8505b'], airport: ['#eef6ff', '#4a90d9'], police: ['#e6efff', '#2f5fb8'], home: ['#ffd9c9', '#ff7b7b'], school: ['#fff4cf', '#5b8def'], playground: ['#e7f8d4', '#e07a3a'], library: ['#e6dcff', '#7a5cc9'], park: ['#d9f0c8', '#4f9d4f'],
   uncle: ['#d7ecc8', '#7aa05a'], grandma: ['#ffe3b0', '#d68a3a'], amusement: ['#ffe0ee', '#ff6fa3'], friend: ['#fffaf0', '#6fb7e8']
 };
 let islMapCache = null;
@@ -24210,6 +24247,14 @@ function islMap(nFriends) {
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (Math.hypot((x - F.cx) / 1.25, y - F.cy) <= F.r && !land[y][x]) { isletAt[y][x] = 'friend'; land[y][x] = true; }
     let fd = null, fb = 1e9; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (isletAt[y][x] === 'friend') { const d = Math.hypot(x - md[0], y - md[1]); if (d < fb) { fb = d; fd = [x, y]; } }
     if (md && fd) { docks.push({ id: 'friend', side: 'main', x: md[0], y: md[1], to: fd }); docks.push({ id: 'friend', side: 'islet', x: fd[0], y: fd[1], to: md }); }
+  }
+  let cityDock = null;
+  {   // 🏙️ 新市區島：主島東邊的海上，坐船過去
+    const C = ISL_CITY;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (Math.hypot((x - C.cx) / C.rx, (y - C.cy) / C.ry) <= 1 && !land[y][x]) { isletAt[y][x] = 'city'; land[y][x] = true; }
+    let md = null, mb = 1e9; for (let y = 0; y < 30; y++) for (let x = 0; x < 44; x++) if (land[y][x] && !isletAt[y][x] && !bridge[y][x]) { const d = Math.hypot(x - C.cx, y - C.cy); if (d < mb) { mb = d; md = [x, y]; } }
+    let fd = null, fb = 1e9; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (isletAt[y][x] === 'city') { const d = Math.hypot(x - (md ? md[0] : 0), y - (md ? md[1] : 0)); if (d < fb) { fb = d; fd = [x, y]; } }
+    if (md && fd) { docks.push({ id: 'city', side: 'main', x: md[0], y: md[1], to: fd }); docks.push({ id: 'city', side: 'islet', x: fd[0], y: fd[1], to: md }); cityDock = fd; }
   }   // 斜的地方多補一格，橋才走得過去（只能上下左右走）
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     if (!land[y][x]) continue;
@@ -24221,6 +24266,13 @@ function islMap(nFriends) {
   specials.forEach(sp => { block[sp.y][sp.x] = true; });   // 小島上的大東西（向日葵、棒棒糖、恐龍石像）擋住那一格
   const mark = (x, y) => { if (y >= 0 && y < H && x >= 0 && x < W) path[y][x] = true; };
   blds.forEach(b => {   // 從門口走到廣場：先上下、再左右（小島上的：沿著木橋接到主島，再接到遊樂園門口那條路）
+    if (b.city) {   // 🏙️ 新市區島：門口 → 小廣場 → 碼頭
+      const [hx, hy] = ISL_CITY.hub, [dx0, dy0] = b.door;
+      for (let y = Math.min(dy0, hy); y <= Math.max(dy0, hy); y++) mark(dx0, y);
+      for (let x = Math.min(dx0, hx); x <= Math.max(dx0, hx); x++) mark(x, hy);
+      if (cityDock) { for (let x = Math.min(cityDock[0], hx); x <= Math.max(cityDock[0], hx); x++) mark(x, hy); for (let y = Math.min(cityDock[1], hy); y <= Math.max(cityDock[1], hy); y++) mark(cityDock[0], y); }
+      return;
+    }
     if (b.fisle) {   // 朋友島：門口往中間那一條路、再接到島中間
       const F = ISL_FRIEND_ISLE, [dx0, dy0] = b.door, my = Math.round(F.cy) - 1;
       for (let y = Math.min(dy0, my); y <= Math.max(dy0, my); y++) mark(dx0, y);
@@ -24453,7 +24505,7 @@ function islTap(e, hold) {
       return;
     }
     const b = m.blds.find(b => t.x >= b.x && t.x < b.x + b.w && t.y >= b.y && t.y < b.y + b.h);
-    if (b) { isl.pending = { type: 'enter', id: b.id }; isl.skipDoor = null; if (!islWalkTo((x, y) => x === b.door[0] && y === b.door[1])) isl.pending = null; Sound.play('click'); return; }
+    if (b) { isl.pending = { type: 'enter', id: b.id }; isl.skipDoor = null; if (!islWalkTo((x, y) => x === b.door[0] && y === b.door[1])) { isl.pending = null; if (typeof cityBoatTo === 'function') cityBoatTo(b); } Sound.play('click'); return; }   // 🏙️ 走不過去（在別的島）：坐船
     if (t.x >= 0 && t.y >= 0 && t.x < m.W && t.y < m.H && m.tree[t.y][t.x]) {
       isl.pending = { type: 'tree', x: t.x, y: t.y };
       if (Math.abs(Math.floor(isl.x) - t.x) + Math.abs(Math.floor(isl.y) - t.y) === 1 || !islWalkTo((x, y) => Math.abs(x - t.x) + Math.abs(y - t.y) === 1)) { isl.path = []; if (Math.hypot(isl.x - t.x - .5, isl.y - t.y - .5) < 2.2) islDoPending(); else isl.pending = null; }
@@ -29208,7 +29260,7 @@ function playQuest(id, opt) {
     if (bump) y -= Math.sin((.16 - bump.t) / .16 * Math.PI) * 5;
     const bevel = (face, edge) => { g.fillStyle = edge; g.fillRect(x + 2, y + 2, QT, QT); g.fillStyle = face; g.fillRect(x, y, QT - 2, QT - 2); g.fillStyle = 'rgba(255,255,255,.32)'; g.fillRect(x, y, QT - 2, 3); g.fillStyle = 'rgba(255,255,255,.16)'; g.fillRect(x, y, 3, QT - 2); g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(x + QT - 5, y + 3, 3, QT - 5); };
     if (ch === '#' && L.deep && ty >= 14) { /* 海底的沙畫在背景上，不要再蓋一層沙磚 */ }
-    else if (ch === '#' && L.deep && wd.ice) {   // 🧊 冰海的冰柱：半透明的冰，最下面那格是尖尖的
+    else if (ch === '#' && L.deep && wd.ice) {   // ❄️ 冰海的冰柱：半透明的冰，最下面那格是尖尖的
       const tip = tileAt(tx, ty + 1) !== '#', leftEdge = tileAt(tx - 1, ty) !== '#';
       g.fillStyle = 'rgba(200,236,255,.88)';
       if (tip) { g.beginPath(); g.moveTo(x, y); g.lineTo(x + QT, y); g.lineTo(x + (leftEdge ? QT : 0), y + QT); g.closePath(); g.fill(); }
@@ -30474,7 +30526,7 @@ const AWAY_GAMES = [
   ['🔎', '幫忙找書', 'library', () => openShelfGame()],
   ['🚓', '一起抓小偷', 'police', () => openCopChase()], ['🛣️', '高速公路追小偷', 'police', () => openHighwayChase()], ['🔍', '小偵探破案', 'police', () => openDetective()], ['🛏️', '病房照顧', 'hospital', () => openWard()],
   ['✈️', '搭飛機旅行', 'airport', () => openAirTravel()], ['🛩️', '開飛機', 'airport', () => openPlaneGame()], ['🧳', '行李安檢', 'airport', () => openSecurity()], ['🗼', '塔台指揮', 'airport', () => openTower()], ['🥤', '空服員送餐', 'airport', () => openMeal()],
-  ['🏁', '賽車場比賽', 'raceway', () => openKart()], ['🚒', '滅火任務', 'firestation', () => openFireFight()], ['🐱', '救援任務', 'firestation', () => openFireRescue()], ['🎨', '改裝我的車', 'garage', () => openCarShop()], ['🧽', '洗車', 'garage', () => openCarWash()],
+  ['🏁', '賽車場比賽', 'raceway', () => openKart()], ['🚒', '滅火任務', 'firestation', () => openFireFight()], ['🏛️', '參觀博物館', 'museum', () => openMuseumTour()], ['🐷', '銀行存錢', 'bank', () => openBank()], ['🐱', '救援任務', 'firestation', () => openFireRescue()], ['🎨', '改裝我的車', 'garage', () => openCarShop()], ['🧽', '洗車', 'garage', () => openCarWash()],
   ['🧸', '幫小精靈做玩具', 'santa', () => openToyFactory()], ['🦌', '照顧麋鹿', 'santa', () => openDeerCare()], ['🎁', '包禮物', 'santa', () => openGiftWrap()]
 ];
 function allQuickGames() {
@@ -39419,6 +39471,97 @@ Object.assign(ACTIVITIES, {
   fire_rescue: { label: '🐱 救援任務', name: '救援', fx: '🚒', open: () => openFireRescue(), lines: ['小動物不怕，我來救你！'] }
 });
 Object.assign(FURNITURE_ACT, { fire_hose_reel: 'fire_fight', fire_engine: 'fire_rescue' });
+/* ===== 🏙️ 新市區島（家長 11/22：大地圖變大 → 主島東邊多一座島，坐船過去）=====
+   🏛️ 博物館（貓頭鷹館長）：參觀展覽，看完有小問答；也可以在這裡玩「演習第 2 關」。
+   🏦 銀行（松鼠行員）：存錢筒，錢存著每天會多一點點利息（學存錢）；也可以玩「演習第 3 關：金庫」。
+   在島上點對面島的房子：自動走到碼頭坐船過去。 */
+function cityBoatTo(b) {
+  if (!isl || !b) return false; const m = isl.m, here = m.isletAt[Math.floor(isl.y)] && m.isletAt[Math.floor(isl.y)][Math.floor(isl.x)], onCity = here === 'city';
+  if (!!b.city === onCity) return false;
+  const dock = (m.docks || []).find(d => d.id === 'city' && d.side === (onCity ? 'islet' : 'main')); if (!dock) return false;
+  isl.x = dock.x + .5; isl.y = dock.y + .5; isl.cam.x = isl.x; isl.cam.y = isl.y; isl.path = []; isl.pending = null; isl.skipDoor = null; isl.pan = null;
+  isl.afterBoat = () => { isl.pending = { type: 'enter', id: b.id }; if (!islWalkTo((x, y) => x === b.door[0] && y === b.door[1])) isl.pending = null; };
+  try { toast(onCity ? '⛵ 坐船回主島～' : '⛵ 坐船去新市區～'); } catch (e) {}
+  islBoatRide(dock); return true;
+}
+// 🏛️ 參觀展覽：六樣展品，一樣一樣看；看完三題小問答（每天第一次答完有獎金）
+const MUSEUM_EXHIBITS = [
+  ['🦕', '恐龍化石', '暴龍的牙齒跟一根香蕉差不多大！恐龍生活在很久很久以前。'],
+  ['🌙', '月亮的石頭', '月亮上沒有風，所以太空人的腳印可以留好久好久。'],
+  ['🏺', '很久以前的碗', '以前的人用泥土捏出碗，再放進火裡燒，就變得硬硬的。'],
+  ['🌻', '向日葵的畫', '畫家用好多種黃色，畫出一大瓶向日葵。'],
+  ['💎', '大寶石', '寶石是在地底下慢慢長大的，要好多好多年才長得出來。'],
+  ['🐋', '鯨魚的骨頭', '藍鯨是世界上最大的動物，比一台公車還要長！']
+];
+const MUSEUM_QUIZ = [
+  ['世界上最大的動物是誰？', ['🐋 藍鯨', '🐘 大象', '🦒 長頸鹿'], 0],
+  ['月亮上的腳印為什麼可以留很久？', ['🌬️ 月亮上沒有風', '👮 有人看著', '❄️ 月亮很冷'], 0],
+  ['很久以前的碗是用什麼做的？', ['🏺 泥土', '❄️ 冰塊', '🍞 麵包'], 0],
+  ['寶石要多久才長得出來？', ['⏳ 好多好多年', '☀️ 一天', '📅 一個禮拜'], 0],
+  ['暴龍的牙齒跟什麼差不多大？', ['🍌 香蕉', '🍚 米粒', '🍉 西瓜'], 0]
+];
+function openMuseumTour() {
+  const W = 320, H = 200;
+  const w = openGameWindow('🏛️ 參觀博物館', '貓頭鷹館長：歡迎來博物館！按「下一個 ▶」一樣一樣看展品，看完我會問你幾個小問題喔！');
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const { g } = gameCanvas(w.stage, W, H);
+  const txt = el('div', ''); txt.style.cssText = 'font-size:18px;font-weight:700;line-height:1.5;text-align:center;margin:8px 4px;color:#4a3b2a'; w.stage.appendChild(txt);
+  const opts = el('div', 'tkd-moves'); w.stage.appendChild(opts);
+  let i = 0, t = 0, raf = 0, last = performance.now(), qs = [], qi = 0, right = 0, phase = 'look';
+  const draw = now => { const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+    g.fillStyle = '#3a3048'; g.fillRect(0, 0, W, H); const sp = g.createRadialGradient(W / 2, 40, 10, W / 2, 120, 150); sp.addColorStop(0, 'rgba(255,245,200,.55)'); sp.addColorStop(1, 'rgba(255,245,200,0)'); g.fillStyle = sp; g.beginPath(); g.moveTo(W / 2 - 20, 0); g.lineTo(W / 2 + 20, 0); g.lineTo(W / 2 + 110, H); g.lineTo(W / 2 - 110, H); g.closePath(); g.fill();
+    g.fillStyle = '#c9a26a'; g.fillRect(W / 2 - 50, 140, 100, 60); g.fillStyle = '#e0bd84'; g.fillRect(W / 2 - 56, 134, 112, 10);
+    g.strokeStyle = '#d63b3b'; g.lineWidth = 4; g.beginPath(); g.moveTo(20, 170); g.quadraticCurveTo(W / 2, 190, W - 20, 170); g.stroke(); g.fillStyle = '#e0b23a'; [20, W - 20].forEach(x => g.fillRect(x - 4, 150, 8, 50));
+    const ex = MUSEUM_EXHIBITS[Math.min(i, MUSEUM_EXHIBITS.length - 1)];
+    g.font = '64px sans-serif'; g.textAlign = 'center'; g.fillText(phase === 'look' ? ex[0] : '🦉', W / 2, 118 + Math.sin(t * 2) * 3);
+    g.fillStyle = '#ffe7a0'; g.font = '700 14px sans-serif'; g.fillText(phase === 'look' ? `${i + 1} / ${MUSEUM_EXHIBITS.length}　${ex[1]}` : phase === 'quiz' ? `小問答 ${qi + 1} / ${qs.length}` : '', W / 2, 24);
+    raf = requestAnimationFrame(draw); };
+  gameCleanup = () => { cancelAnimationFrame(raf); };
+  const nextBtn = el('button', 'big', '下一個 ▶');
+  const showEx = () => { const ex = MUSEUM_EXHIBITS[i]; txt.textContent = `${ex[0]} ${ex[1]}：${ex[2]}`; try { speak(ex[2]); } catch (e) {} };
+  nextBtn.onclick = () => { Sound.play('click'); if (i < MUSEUM_EXHIBITS.length - 1) { i++; showEx(); } else startQuiz(); };
+  const startQuiz = () => { phase = 'quiz'; nextBtn.remove(); qs = MUSEUM_QUIZ.slice().sort(() => Math.random() - .5).slice(0, 3); qi = 0; showQ(); };
+  const showQ = () => { const q = qs[qi]; txt.textContent = `🦉 館長：${q[0]}`; try { speak(q[0]); } catch (e) {} opts.innerHTML = '';
+    q[1].map((o, k) => [o, k]).sort(() => Math.random() - .5).forEach(([o, k], n) => { const b = el('button', 'tkd-move'); b.dataset.key = String(n + 1); b.append(el('span', '', o)); b.style.fontSize = '17px'; b.onclick = () => answer(k, b); opts.appendChild(b); }); };
+  const answer = (k, b) => { const q = qs[qi]; if (k === q[2]) { right++; Sound.play('coin'); qi++; if (qi >= qs.length) return done(); showQ(); } else { Sound.play('miss'); b.disabled = true; b.style.opacity = '.35'; w.status.textContent = '再想想看～剛剛的展品有說喔！'; } };
+  const done = () => { phase = 'end'; opts.innerHTML = ''; const ms = museumState(), first = ms.d !== today(); ms.d = today();
+    const got = first ? payReward(w, 80) : 0; kidMoodUp(4); Sound.play('fanfare'); saveGame(); refreshTop();
+    txt.textContent = '🦉 館長：全部答對了！你是小小博物館專家！'; w.status.textContent = first ? `🎉 參觀完了！　💰 +${fmt(got)}` : '🎉 參觀完了！（今天已經拿過獎金囉）'; gameButtons(w, openMuseumTour); };
+  w.btns.appendChild(nextBtn); leaveButton(w); showEx(); raf = requestAnimationFrame(draw);
+  w.status.textContent = '一樣一樣看展品～';
+  openMuseumTour.test = { next: () => nextBtn.click(), get phase() { return phase; }, get qs() { return qs; }, get qi() { return qi; }, answerRight: () => { const q = qs[qi]; answer(q[2], null); } };
+}
+function museumState() { if (!G.museum || typeof G.museum !== 'object') G.museum = {}; return G.museum; }
+// 🐷 銀行存錢筒：存進去的錢每天多 2%（最少 1 元、一天最多 200 元，最多算 7 天）
+function bankState() { if (!G.bank || typeof G.bank !== 'object') G.bank = {}; const b = G.bank; if (!(Number.isInteger(b.sav) && b.sav >= 0)) b.sav = 0; return b; }
+function bankDayNum(d) { const m = /^(\d+)-(\d+)-(\d+)$/.exec(d || ''); return m ? Math.floor(Date.UTC(+m[1], +m[2] - 1, +m[3]) / 864e5) : null; }
+function bankInterest() {   // 打開銀行的時候結算利息；回傳這次多了多少
+  const b = bankState(), now = bankDayNum(today()), was = bankDayNum(b.d); b.d = today();
+  if (was == null || !b.sav || now <= was) return 0;
+  let add = 0; for (let k = 0; k < Math.min(7, now - was); k++) { const r = Math.min(200, Math.max(1, Math.floor((b.sav + add) * .02))); add += r; }
+  b.sav += add; return add;
+}
+function openBank() {
+  const b = bankState(), got = bankInterest(); saveGame();
+  const w = openGameWindow('🐷 銀行存錢筒', '松鼠行員：錢存在銀行裡，每天都會多一點點，這叫做「利息」！想用的時候隨時可以領出來喔。');
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const info = el('div', ''); info.style.cssText = 'font-size:20px;font-weight:800;text-align:center;margin:14px 4px;line-height:1.7;color:#4a3b2a'; w.stage.appendChild(info);
+  const row = el('div', 'invite-row'); w.stage.appendChild(row);
+  const upd = () => { const nx = b.sav ? Math.min(200, Math.max(1, Math.floor(b.sav * .02))) : 0; info.innerHTML = '';
+    info.append(el('div', '', `🐷 存在銀行：💰 ${fmt(b.sav)} 元`), el('div', '', `👛 身上的錢：💰 ${fmt(G.bells)} 元`), el('div', '', b.sav ? `明天會多 ${fmt(nx)} 元利息！` : '存一點錢進去，明天就會長利息喔！'));
+    refreshTop(); };
+  const dep = n => { const v = n === 'all' ? G.bells : Math.min(n, G.bells); if (v <= 0) { toast('身上沒有錢可以存喔～'); Sound.play('miss'); return; } if (!spend(v)) return; b.sav += v; Sound.play('coin'); saveGame(); upd(); w.status.textContent = `存了 ${fmt(v)} 元！`; };
+  const wd = () => { if (!b.sav) { toast('銀行裡還沒有錢喔～'); return; } const v = b.sav; b.sav = 0; addBells(v); Sound.play('coin'); saveGame(); upd(); w.status.textContent = `領出 ${fmt(v)} 元，放回錢包了！`; };
+  [['存 100 元', () => dep(100)], ['存 500 元', () => dep(500)], ['全部存進去', () => dep('all')], ['全部領出來', wd]].forEach(([n, fn], k) => { const bt = el('button', 'big' + (k === 3 ? ' alt' : '')); bt.textContent = n; bt.onclick = fn; row.appendChild(bt); });
+  leaveButton(w); upd();
+  w.status.textContent = got ? `🎉 你的錢長利息了！多了 ${fmt(got)} 元` : '要存多少呢？';
+  openBank.test = { dep, wd };
+}
+Object.assign(ACTIVITIES, {
+  museum_tour: { label: '🏛️ 參觀展覽', name: '參觀', fx: '🦕', open: () => openMuseumTour(), lines: ['哇，好大的恐龍！', '博物館好好玩！'] },
+  bank_save: { label: '🐷 存錢', name: '存錢', fx: '💰', open: () => openBank(), lines: ['存錢會長利息喔！'] }
+});
+Object.assign(FURNITURE_ACT, { museum_dino: 'museum_tour', museum_case: 'museum_tour', bank_counter: 'bank_save', bank_piggy: 'bank_save' });
 /* 🎄 裝飾聖誕樹（記憶力） */
 const TREE_SLOTS = [[150, 72], [134, 102], [166, 102], [120, 134], [150, 130], [180, 134], [104, 168], [134, 166], [166, 168], [196, 166]];
 const TREE_COLS = [['red', '#e8505b', '紅色'], ['gold', '#ffd23f', '金色'], ['blue', '#4a90d9', '藍色']];
