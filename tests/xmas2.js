@@ -16,7 +16,7 @@ const path = require('path');
     o.treeAct = FURNITURE_ACT.xmas_tree === 'xmas_treegame';
     // 薑餅人
     openGingerbread(); let T = openGingerbread.test; T.place(10, 10); o.gOutside = T.dec.length === 0;
-    T.place(150, 60); T.pick(3); T.place(160, 100); o.gOven = document.querySelector('.game-card button.big:not(.alt)').disabled === true;
+    T.place(150, 60); T.pick(3); T.place(160, 100); { const ob = document.querySelector('.game-card button.big.dim'); o.gOven = !!ob && /烤箱/.test(ob.textContent); ob.click(); o.gOven = o.gOven && !T.done && /還要再貼/.test(document.querySelector('.game-status').textContent); }   // 家長 11/22：烤箱不再是按了沒反應的灰按鈕，按了會說還差幾個
     T.place(160, 120); T.undo(); T.place(165, 125); o.gThree = T.dec.length === 3 && T.dec[1].k === 'star';
     T.oven(); T.skipBake(); await w(200); o.gDone = T.done && G.kidFood.xmas_cookie === 2 && G.xmas.stars === 1 && G.xmas.gm.ck === today(); close();
     openGingerbread(); T = openGingerbread.test; T.place(150, 60); T.place(150, 90); T.place(150, 100); T.oven(); T.skipBake(); await w(200); o.gOncePerDay = G.xmas.stars === 1 && G.kidFood.xmas_cookie === 4; close();

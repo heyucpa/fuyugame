@@ -144,6 +144,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .card:hover { border-color: var(--accent); }
 .card.dim { opacity: .5; }
+.game-btns .big.dim { opacity: .55; }   /* 還不能按的按鈕：淡淡的，但按了會說要先做什麼 */
 .card .nm { font-size: 12px; line-height: 1.3; }
 .card .pr { font-size: 11px; color: var(--muted); }
 .card .ct {
@@ -38204,7 +38205,7 @@ function openGingerbread() {
   const w = openGameWindow('🍪 做薑餅人', '選一種裝飾（數字鍵 1～5），點薑餅人身上就貼上去（也可以用方向鍵移動、空白鍵貼）。眼睛、嘴巴、鈕扣都自己決定！貼好按「🔥 放進烤箱」。');
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   const { c, g, pos } = gameCanvas(w.stage, W, H);
-  const dec = []; let sel = 0, cur = { x: 160, y: 62 }, baking = false, bakeT = 0, raf = 0, last = 0, done = false;
+  const dec = []; let sel = 0, cur = { x: 160, y: 62 }, baking = false, bakeT = 0, raf = 0, last = 0, done = false, hintT = 0, hintRaf = 0;
   const CX = 160, inside = (x, y) => Math.hypot(x - CX, y - 58) < 31 || (x > 130 && x < 190 && y > 82 && y < 158) || (x > 96 && x < 224 && y > 92 && y < 116) || (x > 128 && x < 152 && y > 140 && y < 204) || (x > 168 && x < 192 && y > 140 && y < 204);
   const drawDecor = d => { const col = GINGER_DECOR.find(q => q[0] === d.k)[1]; g.fillStyle = col;
     if (d.k === 'star') { g.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? 3 : 7, a = -Math.PI / 2 + i * Math.PI / 5; g.lineTo(d.x + Math.cos(a) * r, d.y + Math.sin(a) * r); } g.closePath(); g.fill(); }
@@ -38220,15 +38221,21 @@ function openGingerbread() {
     if (!baking && !done) { g.strokeStyle = 'rgba(58,50,64,.55)'; g.lineWidth = 2; g.setLineDash([3, 3]); g.beginPath(); g.arc(cur.x, cur.y, 9, 0, 7); g.stroke(); g.setLineDash([]); }
     if (baking && !done) { g.fillStyle = `rgba(255,140,40,${.18 + .12 * Math.sin(bakeT * 8)})`; g.fillRect(0, 0, W, H); g.font = '700 16px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#b5431e'; g.fillText('🔥 烤烤烤…好香喔！', CX, 22); }
     if (done) { g.font = '700 16px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#2f8a3c'; g.fillText('✨ 烤好了！ ✨', CX, 22); }
+    if (hintT > 0 && !baking && !done) { const by = Math.abs(Math.sin(performance.now() / 160)) * 8; g.font = '30px sans-serif'; g.textAlign = 'center'; g.fillText('👇', CX, 92 - by); g.font = '700 13px sans-serif'; g.fillStyle = '#b5431e'; g.fillText('點這裡貼上去！', CX, 22); }
   };
-  const place = (x, y) => { if (baking || done) return; if (!inside(x, y)) { Sound.play('miss'); w.status.textContent = '要貼在薑餅人身上喔！'; return; } if (dec.length >= 40) { toast('貼滿了！可以放進烤箱囉'); return; }
-    dec.push({ k: GINGER_DECOR[sel][0], x, y }); Sound.play('pickUp'); w.status.textContent = `貼了 ${dec.length} 個裝飾${dec.length >= 3 ? '，可以放進烤箱了！' : ''}`; oven.disabled = dec.length < 3; draw(); };
+  /* 家長 11/22：薑餅人按了沒反應——選了裝飾不知道要點薑餅人、烤箱灰灰的按了沒反應、點在邊邊一點點不算。
+     → 選裝飾、按太早的烤箱都會跳出 👇「點這裡貼上去！」；烤箱一直可以按，不夠 3 個會說還差幾個；
+       點在薑餅人旁邊 26 以內，自動貼到最近的身上。 */
+  const hint = sec => { hintT = sec; cancelAnimationFrame(hintRaf); let lt = performance.now(); const loop = now => { hintT -= (now - lt) / 1000; lt = now; draw(); if (hintT > 0 && !baking && !done) hintRaf = requestAnimationFrame(loop); else { hintT = 0; draw(); } }; hintRaf = requestAnimationFrame(loop); };
+  const snapIn = (x, y) => { if (inside(x, y)) return { x, y }; for (let r = 4; r <= 26; r += 4) for (let a = 0; a < 16; a++) { const px = x + Math.cos(a / 8 * Math.PI) * r, py = y + Math.sin(a / 8 * Math.PI) * r; if (inside(px, py)) return { x: px, y: py }; } return null; };
+  const place = (x, y) => { if (baking || done) return; const q = snapIn(x, y); if (!q) { Sound.play('miss'); w.status.textContent = '要點在咖啡色的薑餅人身上喔！'; draw(); hint(2); return; } x = q.x; y = q.y; cur = { x, y }; if (dec.length >= 40) { toast('貼滿了！可以放進烤箱囉'); return; }
+    hintT = 0; dec.push({ k: GINGER_DECOR[sel][0], x, y }); Sound.play('pickUp'); w.status.textContent = dec.length >= 3 ? `貼了 ${dec.length} 個裝飾，可以按「🔥 放進烤箱」了！` : `貼了 ${dec.length} 個裝飾，再貼 ${3 - dec.length} 個就可以烤了！`; oven.classList.toggle('dim', dec.length < 3); draw(); };
   const items = el('div', 'tkd-moves'); GINGER_DECOR.forEach(([k, col, nm], i) => { const b = el('button', 'tkd-move' + (i === sel ? ' on' : '')); b.dataset.key = String(i + 1); b.append(xmasSwatch(col), el('span', '', nm)); b.onclick = () => pick(i); items.appendChild(b); }); w.stage.appendChild(items);
-  const pick = i => { sel = i; [...items.children].forEach((b, k) => b.classList.toggle('on', k === i)); Sound.play('click'); };
+  const pick = i => { sel = i; [...items.children].forEach((b, k) => b.classList.toggle('on', k === i)); Sound.play('click'); if (!baking && !done) { w.status.textContent = `選了「${GINGER_DECOR[i][2]}」！點薑餅人身上貼上去～`; hint(1.6); } };
   c.addEventListener('pointerdown', e => { e.preventDefault(); const p = pos(e); cur = { x: p.x, y: p.y }; place(p.x, p.y); });
-  const undo = el('button', 'big alt', '↩️ 拿掉一個'), oven = el('button', 'big', '🔥 放進烤箱'); oven.disabled = true;
-  undo.onclick = () => { if (baking || done || !dec.length) return; dec.pop(); oven.disabled = dec.length < 3; Sound.play('click'); draw(); };
-  oven.onclick = () => { if (baking || done || dec.length < 3) return; baking = true; bakeT = 0; items.remove(); undo.remove(); oven.remove(); Sound.play('whoosh'); w.status.textContent = '放進烤箱囉，等一下下…';
+  const undo = el('button', 'big alt', '↩️ 拿掉一個'), oven = el('button', 'big dim', '🔥 放進烤箱');
+  undo.onclick = () => { if (baking || done || !dec.length) return; dec.pop(); oven.classList.toggle('dim', dec.length < 3); Sound.play('click'); draw(); };
+  oven.onclick = () => { if (baking || done) return; if (dec.length < 3) { Sound.play('miss'); w.status.textContent = `還要再貼 ${3 - dec.length} 個裝飾才能烤喔！先選一種，再點薑餅人身上～`; hint(2.2); return; } baking = true; bakeT = 0; items.remove(); undo.remove(); oven.remove(); Sound.play('whoosh'); w.status.textContent = '放進烤箱囉，等一下下…';
     last = performance.now(); const step = now => { if (done) return; bakeT += Math.min(.05, (now - last) / 1000); last = now; draw(); if (bakeT >= 2) { finish(); return; } raf = requestAnimationFrame(step); }; raf = requestAnimationFrame(step); };
   w.btns.append(undo, oven); leaveButton(w);
   const finish = () => { done = true; gameCleanup(); draw();
@@ -38241,8 +38248,8 @@ function openGingerbread() {
     if (mv) { e.preventDefault(); cur = { x: Math.max(90, Math.min(230, cur.x + mv[0])), y: Math.max(24, Math.min(206, cur.y + mv[1])) }; draw(); }
     else if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); if (!e.repeat) place(cur.x, cur.y); } };
   document.addEventListener('keydown', kd);
-  gameCleanup = () => { cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); };
-  draw(); w.status.textContent = '先選一種裝飾，再點薑餅人身上！';
+  gameCleanup = () => { cancelAnimationFrame(raf); cancelAnimationFrame(hintRaf); document.removeEventListener('keydown', kd); };
+  draw(); w.status.textContent = '先選一種裝飾，再點薑餅人身上！'; hint(2.5);
   openGingerbread.test = { place, pick, dec, oven: () => oven.click(), undo: () => undo.click(), get done() { return done; }, skipBake: () => { bakeT = 2; } };
 }
 /* ===== 🏮 農曆節日的小遊戲（家長 11/22）=====
