@@ -5961,7 +5961,7 @@ const NEWS = [
     ['✈️', '國家的求救信：搭飛機到那裡就能幫忙；公園、阿婆家：走進去就會問你']
   ] },
   { id: '2026-11-22T15:00', title: '🎆 節日有煙火了！', lines: [
-    ['🎄', '平安夜、聖誕節（12/24、12/25）、跨年（12/31、1/1）、春節（初一～初五）會放煙火'],
+    ['🎄', '聖誕節（12/20～12/26）、跨年（12/27～1/2）、春節（初一～初七）都會放一個禮拜的煙火'],
     ['🎆', '那幾天「🎮 遊戲」裡有「放煙火」：點夜空放煙火，可以選圓圓、愛心、星星、笑臉'],
     ['🌃', '那幾天傍晚、晚上，大地圖的天空也會自己放煙火'],
     ['🎉', '跨年那天一起倒數 10、9、8…新年快樂！春節還有爸爸媽媽給的紅包 🧧']
@@ -37606,7 +37606,7 @@ function santaMisFinish() {   // 走到聖誕老公公家門口：完成
   return true;
 }
 /* ===== 🎆 煙火（家長 11/22：聖誕節、跨年之類的節日會不會有煙火）=====
-   放煙火的日子（fwDay）：🎄 平安夜、聖誕節（12/24、12/25）、🎉 跨年（12/31、1/1）、🧧 春節（初一～初五）。
+   放煙火的日子（fwDay，各一個禮拜）：🎄 聖誕節 12/20～12/26、🎉 跨年 12/27～1/2、🧧 春節 初一～初七。
    ・🎆 放煙火小遊戲：點夜空，煙火飛上去炸開；可以選 圓圓、愛心、星星、笑臉。「🎮 遊戲」選單在放煙火的日子才有。
    ・🌃 大地圖：放煙火的日子傍晚、晚上，小島天空自己放煙火。
    ・🎉 跨年倒數、🧧 春節：那幾天第一次打開遊戲有過場動畫（每年一次，G.fw = { ny: 哪一年, cny: 哪一年 }）；春節給紅包。 */
@@ -37615,9 +37615,9 @@ const FW_COLS = ['#ff5c8a', '#ffd23f', '#5cc8ff', '#7bd389', '#b18cff', '#ff9a3c
 function fwToday() { const d = new Date(); return { y: d.getFullYear(), m: (SEASON_TODAY || [d.getMonth() + 1, d.getDate()])[0], d: (SEASON_TODAY || [d.getMonth() + 1, d.getDate()])[1] }; }
 function fwDay() {
   const { y, m, d } = fwToday();
-  if (m === 12 && (d === 24 || d === 25)) return { id: 'xmas', name: '聖誕節', icon: '🎄' };
-  if ((m === 12 && d === 31) || (m === 1 && d === 1)) return { id: 'ny', name: '跨年', icon: '🎉' };
-  const c = CNY_DATES[y]; if (c) { const a = new Date(y, c[0] - 1, c[1]), b = new Date(y, m - 1, d), k = Math.round((b - a) / 864e5); if (k >= 0 && k <= 4) return { id: 'cny', name: '春節', icon: '🧧' }; }
+  if (m === 12 && d >= 20 && d <= 26) return { id: 'xmas', name: '聖誕節', icon: '🎄' };   // 家長 11/22：各放一個禮拜
+  if ((m === 12 && d >= 27) || (m === 1 && d <= 2)) return { id: 'ny', name: '跨年', icon: '🎉' };
+  const c = CNY_DATES[y]; if (c) { const a = new Date(y, c[0] - 1, c[1]), b = new Date(y, m - 1, d), k = Math.round((b - a) / 864e5); if (k >= 0 && k <= 6) return { id: 'cny', name: '春節', icon: '🧧' }; }   // 春節：初一～初七
   return null;
 }
 function fwBurst(ps, x, y, col, shape, big) {
@@ -37666,7 +37666,7 @@ function openFireworks() {
   gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); };
   const frame = now => { if (!live) return; raf = requestAnimationFrame(frame); const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
     fwSky(g, W, H, t, cny); fwStep(g, ps, rk, dt);
-    if (day.name) { g.font = '900 18px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillStyle = 'rgba(255,255,255,.85)'; g.fillText(day.id === 'ny' ? '🎉 新年快樂！' : cny ? '🧧 新年快樂！' : '🎄 聖誕快樂！', W / 2, 26); }
+    if (day.name) { g.font = '900 18px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillStyle = 'rgba(255,255,255,.85)'; g.fillText(day.id === 'ny' ? (fwToday().m === 12 && fwToday().d < 31 ? '🎉 快要跨年囉！' : '🎉 新年快樂！') : cny ? '🧧 新年快樂！' : '🎄 聖誕快樂！', W / 2, 26); }
     copDrawKid(g, 40, H - 4, .7, t, false, 1, 'joy'); };
   raf = requestAnimationFrame(frame);
   fwLaunch(rk, 120, 70, H - 40, 'round'); fwLaunch(rk, 240, 90, H - 40, 'heart');
@@ -37689,6 +37689,7 @@ function fwFestScene() {
   const ps = [], rk = []; let last = 0;
   const show = (g, W, H, t, cny) => { const now = t; const dt = Math.min(.05, Math.max(0, now - last)); last = now; fwSky(g, W, H, t, cny); if (rk.length < 3 && Math.random() < dt * 2.5) fwLaunch(rk, 40 + Math.random() * 280, 40 + Math.random() * 70, H - 40, ['round', 'heart', 'star', 'round'][Math.floor(Math.random() * 4)]); fwStep(g, ps, rk, dt); };
   if (day.id === 'ny') {
+    const td = fwToday(); if (td.m === 12 && td.d < 31) return false;   // 倒數的過場：12/31 以後才播
     if (G.fw.ny === yr) return false; G.fw.ny = yr; saveGame();
     vevScene([
       { text: '大家一起倒數！10、9、8、7……', draw: (g, W, H, t) => { last = 0; fwSky(g, W, H, t); const k = Math.max(1, 10 - Math.floor(t * 1.6)); g.font = '900 80px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#ffd23f'; g.globalAlpha = 1 - (t * 1.6 % 1) * .5; g.fillText(String(k), W / 2, H / 2 - 20); g.globalAlpha = 1; g.textBaseline = 'alphabetic'; copDrawKid(g, 60, H - 4, .8, t, false, 1, 'wow'); } },

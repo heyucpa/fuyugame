@@ -12,7 +12,9 @@ const path = require('path');
     document.getElementById('modal').hidden = true; G.guide = 'done'; G.fw = {}; G.gameBonusDay = today();
     const on = md => { SEASON_TODAY = md; const d = fwDay(); return d && d.id; };
     const y = new Date().getFullYear(), c = CNY_DATES[y + 1] || CNY_DATES[2027];
-    o.days = on([12, 23]) == null && on([12, 24]) === 'xmas' && on([12, 25]) === 'xmas' && on([12, 26]) == null && on([12, 31]) === 'ny' && on([1, 1]) === 'ny' && on([1, 2]) == null && on([7, 4]) == null;
+    o.days = on([12, 19]) == null && on([12, 20]) === 'xmas' && on([12, 26]) === 'xmas' && on([12, 27]) === 'ny' && on([12, 31]) === 'ny' && on([1, 2]) === 'ny' && on([1, 3]) == null && on([7, 4]) == null;
+    SEASON_TODAY = [12, 28]; G.fw = {}; o.noEarlyCount = fwFestScene() === false; G.fw = {};
+    { const cc0 = CNY_DATES[y]; if (cc0) { const dd = new Date(y, cc0[0] - 1, cc0[1] + 6), d7 = new Date(y, cc0[0] - 1, cc0[1] + 7); o.cny7 = on([dd.getMonth() + 1, dd.getDate()]) === 'cny' && on([d7.getMonth() + 1, d7.getDate()]) == null; } else o.cny7 = true; }
     SEASON_TODAY = [11, 22]; o.hubOff = !allQuickGames().some(g => g.id === 'x:fw');
     SEASON_TODAY = [12, 31]; o.hubOn = allQuickGames()[0].id === 'x:fw';
     openFireworks(); const F = openFireworks.test; await w(100); const b0 = G.bells;
