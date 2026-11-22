@@ -29592,7 +29592,8 @@ function drawVehicle(g, id, s, t, moving, kid, lk) {
   } else if (id === 'robot') {   // 🤖 大機器人：兩隻腳一步一步走、手前後擺，小可愛坐在頭上的玻璃罩裡，天線燈一閃一閃
     const step = moving ? Math.sin(t * 9) : 0, lift = v => Math.max(0, v) * 4, body = moving ? Math.abs(Math.cos(t * 9)) * 1.5 : 0;
     [[-8, step], [8, -step]].forEach(([lx, ph]) => {   // 腳
-      g.save(); g.translate(lx + ph * 3, -lift(ph)); g.fillStyle = '#6f8fae'; g.fillRect(-3.5, -17, 7, 13); g.fillStyle = '#3d4f63'; g.beginPath(); g.roundRect(-6, -5, 13, 5, 2); g.fill(); g.restore(); });
+      g.save(); g.translate(lx + ph * 3, -lift(ph)); g.fillStyle = '#6f8fae'; g.fillRect(-3.5, -17, 7, 13); g.fillStyle = '#3d4f63'; g.beginPath(); g.roundRect(-6, -5, 13, 5, 2); g.fill();
+        g.translate(0, -10); g.rotate(moving ? t * 6 : 0); g.fillStyle = '#3d4f63'; g.beginPath(); g.arc(0, 0, 5, 0, Math.PI * 2); g.fill(); carRim(g, 5, lk && lk.wh); g.restore(); });   // 膝蓋的關節輪（家長 11/22：機器人換輪框看不出來 → 輪框畫在關節上）
     g.translate(0, -body);
     [[-17, step], [17, -step]].forEach(([ax, ph]) => {   // 手
       g.save(); g.translate(ax, -36); g.rotate(ph * .5); g.fillStyle = '#6f8fae'; g.fillRect(-2.5, 0, 5, 13); g.fillStyle = '#ffb81c'; g.beginPath(); g.arc(0, 15, 4, 0, Math.PI * 2); g.fill(); g.restore(); });
@@ -29600,6 +29601,7 @@ function drawVehicle(g, id, s, t, moving, kid, lk) {
     g.fillStyle = '#dff0ff'; g.beginPath(); g.roundRect(-10, -35, 20, 12, 3); g.fill();
     ['#ff6b6b', '#ffd23f', '#7bd389'].forEach((c, i) => { g.fillStyle = (Math.floor(t * 4) + i) % 3 === 0 ? '#ffffff' : c; g.beginPath(); g.arc(-5 + i * 5, -29, 2, 0, Math.PI * 2); g.fill(); });
     g.strokeStyle = '#3d4f63'; g.lineWidth = 1.2; g.beginPath(); g.arc(0, -21, 3, .2, Math.PI - .2); g.stroke();   // 笑笑的嘴
+    [-16, 16].forEach(sx => { g.save(); g.translate(sx, -35); g.rotate(moving ? t * 6 : 0); g.fillStyle = '#3d4f63'; g.beginPath(); g.arc(0, 0, 5.5, 0, Math.PI * 2); g.fill(); carRim(g, 5.5, lk && lk.wh); g.restore(); });   // 肩膀的關節輪
     g.fillStyle = '#6f8fae'; g.fillRect(-12, -42, 24, 3);   // 脖子
     g.save(); g.beginPath(); g.arc(0, -52, 12, 0, Math.PI * 2); g.clip(); g.fillStyle = '#e6f4ff'; g.fillRect(-12, -64, 24, 24); if (kid) kid(0, -34, .9); g.restore();   // 玻璃罩裡的小可愛
     g.fillStyle = 'rgba(170,215,245,.3)'; g.beginPath(); g.arc(0, -52, 12, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#6f8fae'; g.lineWidth = 2; g.stroke();
@@ -29608,6 +29610,7 @@ function drawVehicle(g, id, s, t, moving, kid, lk) {
     g.fillStyle = Math.floor(t * 3) % 2 ? '#ff3b3b' : '#ffd0d0'; g.beginPath(); g.arc(0, -71, 2.5, 0, Math.PI * 2); g.fill();
   } else if (id === 'plane') {   // 🛩️ 小飛機：螺旋槳會轉，小可愛坐在駕駛座
     g.translate(0, -18 - bob);
+    g.strokeStyle = '#5a6475'; g.lineWidth = 2; [[-10, 0], [14, 0]].forEach(([wx]) => { g.beginPath(); g.moveTo(wx, 6); g.lineTo(wx, 13); g.stroke(); g.save(); g.translate(wx, 14); g.rotate(moving ? t * 10 : 0); g.fillStyle = '#2a2a30'; g.beginPath(); g.arc(0, 0, 4.5, 0, Math.PI * 2); g.fill(); carRim(g, 4.5, lk && lk.wh); g.restore(); });   // 起落架小輪子（輪框看得到）
     g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(0, 0, 30, 10, 0, 0, 7); g.fill(); g.strokeStyle = C('#4a90d9'); g.lineWidth = 2; g.stroke();
     g.fillStyle = C('#4a90d9'); g.beginPath(); g.moveTo(-6, 2); g.lineTo(8, 16); g.lineTo(12, 2); g.closePath(); g.fill(); g.beginPath(); g.moveTo(-24, -2); g.lineTo(-32, -16); g.lineTo(-18, -4); g.closePath(); g.fill();
     g.fillStyle = '#e8505b'; g.fillRect(-28, -2, 50, 3);
@@ -37207,7 +37210,7 @@ function openCarShop(vid) {
   const owned = k => { const id = `${k}:${draft[k]}`; return CAR_PRICE(k, draft[k]) === 0 || (G.carOwn || []).includes(id); };
   const cost = () => Object.keys(CAR_PARTS).reduce((n, k) => n + (owned(k) ? 0 : CAR_PRICE(k, draft[k])), 0);
   const tabs = el('div', 'car-opts car-cat'), opts = el('div', 'car-opts');
-  const CATS = [['c', '🎨', '顏色'], ['st', '⭐', '貼紙'], ['wh', '⚙️', '輪框'], ['gl', '✨', '底盤燈']];
+  const CATS = [['c', '🎨', '顏色'], ['st', '⭐', '貼紙'], ['wh', '⚙️', '輪框'], ['gl', '✨', '底盤燈']].filter(q => !(q[0] === 'wh' && (vid === 'sleigh' || vid === 'dino')));   // 雪橇、恐龍沒有輪子：不賣輪框
   const showOpts = () => { opts.innerHTML = ''; [...tabs.children].forEach((b, i) => b.classList.toggle('on', CATS[i][0] === cat));
     CAR_PARTS[cat].forEach(row => { const k = row[0], price = CAR_PRICE(cat, k), have = price === 0 || (G.carOwn || []).includes(`${cat}:${k}`), b = el('button', draft[cat] === k ? 'on' : '');
       if (cat === 'c') b.appendChild(xmasSwatch(row[2] || '#d9d4cc', 16)); else b.appendChild(el('span', 'tkd-e', cat === 'st' ? ({ none: '➖', star: '⭐', heart: '💗', flame: '🔥', flower: '🌸', bolt: '⚡', paw: '🐾', rainbow: '🌈' })[k] : cat === 'wh' ? ({ std: '⚙️', gold: '🥇', star: '⭐', rainbow: '🌈', flower: '🌸' })[k] : ({ none: '➖', pink: '💗', blue: '💙', green: '💚', rainbow: '🌈' })[k]));
