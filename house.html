@@ -2736,6 +2736,13 @@ const treeParts = (leaf, leaf2, fruit) => [
 // 🎢 雲霄飛車的軌道高度（y＝0～4 每一格邊上的高度）：車站在 y＝4，出發往後先過小山坡、衝下來、爬到最高點
 const COASTER_H = [14, 70, 18, 44, 12];
 const PLACE_FURNITURE = [
+  // 🏁 賽車場
+  { id: 'race_kart', name: '賽車', theme: 'modern', w: 2, d: 1, parts: [{ x: .1, y: .25, w: 1.8, d: .5, z: 4, h: 8, c: '#e8505b' }, { x: .7, y: .3, w: .6, d: .4, z: 12, h: 8, c: '#2b2d42' }, { x: 1.6, y: .2, w: .3, d: .6, z: 10, h: 3, c: '#2b2d42' }, { k: 'ball', x: .35, y: .2, z: 5, r: 5, c: '#26232a' }, { k: 'ball', x: .35, y: .8, z: 5, r: 5, c: '#26232a' }, { k: 'ball', x: 1.6, y: .2, z: 5, r: 5, c: '#26232a' }, { k: 'ball', x: 1.6, y: .8, z: 5, r: 5, c: '#26232a' }] },
+  { id: 'race_podium', name: '頒獎台', theme: 'modern', w: 3, d: 1, parts: [{ x: 1, y: .2, w: 1, d: .6, z: 0, h: 26, c: '#ffd23f' }, { x: 0, y: .2, w: 1, d: .6, z: 0, h: 18, c: '#c9ccd0' }, { x: 2, y: .2, w: 1, d: .6, z: 0, h: 12, c: '#d9a066' }, { k: 'ball', x: 1.5, y: .5, z: 34, r: 5, c: '#ffd23f' }] },
+  { id: 'race_flag', name: '終點旗', theme: 'modern', w: 1, d: 1, parts: [{ x: .46, y: .46, w: .08, d: .08, z: 0, h: 60, c: '#5a6475' }, { x: .54, y: .48, w: .4, d: .04, z: 46, h: 14, c: '#26232a' }, { x: .54, y: .47, w: .1, d: .05, z: 53, h: 7, c: '#ffffff' }, { x: .74, y: .47, w: .1, d: .05, z: 53, h: 7, c: '#ffffff' }, { x: .64, y: .47, w: .1, d: .05, z: 46, h: 7, c: '#ffffff' }, { x: .84, y: .47, w: .1, d: .05, z: 46, h: 7, c: '#ffffff' }] },
+  { id: 'race_board', name: '名次看板', theme: 'modern', w: 3, h: 34, z: 46, layer: 'wall', d: 1, parts: [],
+    draw(ctx, W, H) { ctx.fillStyle = '#1d2433'; ctx.fillRect(0, 0, W, H); const sq = H / 6; for (let i = 0; i < W / sq; i++) { ctx.fillStyle = i % 2 ? '#fff' : '#26232a'; ctx.fillRect(i * sq, 0, sq, sq); ctx.fillStyle = i % 2 ? '#26232a' : '#fff'; ctx.fillRect(i * sq, H - sq, sq, sq); }
+      ctx.font = `bold ${Math.round(H * .22)}px sans-serif`; ctx.textBaseline = 'middle'; ctx.fillStyle = '#ffd23f'; ctx.fillText('🏁 1st 2nd 3rd', W * .08, H / 2); } },
   // 🎅 聖誕老公公的家
   { id: 'toy_bench', name: '小精靈的玩具工作台', theme: 'cute', w: 2, d: 1, parts: [{ x: .05, y: .2, w: 1.9, d: .6, z: 0, h: 22, c: '#a0703e' }, { x: .05, y: .2, w: 1.9, d: .6, z: 22, h: 2, c: '#c98d5a' }, { k: 'ball', x: .35, y: .45, z: 28, r: 4, c: '#e8505b' }, { x: .7, y: .35, w: .3, d: .25, z: 24, h: 8, c: '#4a90d9' }, { k: 'ball', x: 1.3, y: .5, z: 28, r: 4.5, c: '#c98d5a' }, { k: 'ball', x: 1.3, y: .5, z: 35, r: 3, c: '#c98d5a' }, { x: 1.6, y: .3, w: .25, d: .25, z: 24, h: 12, c: '#4fbf6a' }] },
   { id: 'wrap_table', name: '包禮物的桌子', theme: 'cute', w: 2, d: 1, parts: [{ x: .05, y: .2, w: 1.9, d: .6, z: 0, h: 22, c: '#f1f1f4' }, { x: .05, y: .2, w: 1.9, d: .6, z: 22, h: 2, c: '#e8505b' }, { x: .3, y: .3, w: .4, d: .35, z: 24, h: 10, c: '#2f9e44' }, { x: .46, y: .3, w: .08, d: .35, z: 24, h: 10.5, c: '#ffd23f' }, { x: 1.1, y: .3, w: .5, d: .4, z: 24, h: 8, c: '#4a90d9' }, { x: 1.1, y: .46, w: .5, d: .08, z: 24, h: 8.5, c: '#ffffff' }] },
@@ -3546,7 +3553,7 @@ Object.assign(ACTIVITIES, {
   slide: { label: '🎢 溜滑梯', name: '溜滑梯', fx: '✨', lines: ['咻～', '再溜一次！', '好好玩喔！'] },
   climb: { label: '🧗 爬攀爬架', name: '爬攀爬架', fx: '✨', lines: ['手要抓好～', '爬到最上面了！', '我是攀爬高手！'] },
   swing: { label: '🌀 盪鞦韆', name: '盪鞦韆', fx: '✨', lines: ['盪好高喔！', '風吹得好舒服～', '推我一下～'] },
-  run: { label: '🏃 賽跑', name: '賽跑', fx: '💨', open: () => openRaceChoice(), lines: ['預備——跑！', '我要跑第一名！', '加油加油！'] },
+  run: { label: '🏃 跑步大會', name: '賽跑', fx: '💨', open: () => openRunMeet(), lines: ['預備——跑！', '我要跑第一名！', '加油加油！'] },
   flag: { label: '🚩 看升旗', name: '看升旗', fx: '🚩', lines: ['旗子好高喔', '立正站好！', '風吹得旗子飄飄的'] }
 });
 Object.assign(FURNITURE_ACT, {
@@ -3584,6 +3591,7 @@ const HOSTS = {
   cinema: { id: 'cinema', name: '貓頭鷹放映師', short: '放映師', body: '#a07850', edge: '#7a5a3a', belly: '#f2dfc0', inner: '#7a5a3a', ears: 'tuft', acc: 'glasses', accColor: '#3a3240' },
   tkd: { id: 'tkd', name: '熊熊教練', short: '熊教練', body: '#8a5a33', edge: '#6b4428', belly: '#e8cfa9', inner: '#6b4428', ears: 'round', acc: 'scarf', accColor: '#26232a' },
   restaurant: { id: 'restaurant', name: '貓咪主廚', short: '貓主廚', body: '#ffd9a8', edge: '#d9a86a', belly: '#fff4e0', inner: '#ffb3c7', ears: 'pointy', acc: 'hat', accColor: '#ffffff' },
+  racer: { id: 'racer', name: '狐狸賽車手', short: '賽車手', body: '#ff9a3c', edge: '#d97a20', belly: '#ffffff', inner: '#ffd9b0', ears: 'pointy', acc: 'hat', accColor: '#2b2d42' },   // 🏁 賽車場
   santa: { id: 'santa', name: '聖誕老公公', short: '聖誕老公公', santa: true, body: '#d94a4a', edge: '#b03636', belly: '#ffffff', inner: '#ffd9c9', ears: 'none', acc: 'none', accColor: '#d94a4a' },   // 🎅 聖誕老公公的家（聖誕節才有）
   garage: { id: 'garage', name: '河狸技師', short: '技師', body: '#a0703e', edge: '#7a5230', belly: '#e8c9a0', inner: '#c98d5a', ears: 'round', acc: 'hat', accColor: '#e8505b' },   // 🔧 改車店
   airport: { id: 'airport', name: '鵜鶘機長', short: '機長', body: '#fbfbf7', edge: '#cfcfd8', belly: '#ffffff', inner: '#ffd9a8', ears: 'none', acc: 'bill', accColor: '#ffb347' },   // ✈️ 機場
@@ -3699,6 +3707,12 @@ const PLACES = {
     { name: '醫院', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_terrazzo', items: [
       ['hosp_desk', 4, 0], ['hosp_cabinet', 9, 0], ['hosp_bed', 0, 2], ['hosp_bed', 0, 6], ['hosp_scale', 8, 4]
     ], wallItems: [['hosp_eye', 'R', 4]] }
+  ] },
+  /* 🏁 賽車場（家長 11/22）：狐狸賽車手。賽車＝開自己的車（改車店改過的樣子也會出現在賽道上） */
+  raceway: { name: '賽車場', host: 'racer', emoji: '🏁', desc: '開自己的車來比賽！改車店改過的顏色、貼紙都會出現在賽道上喔！', rooms: [
+    { name: '賽車場', w: 12, d: 12, wall: 'wp_concrete', floor: 'fl_track', items: [
+      ['race_kart', 2, 2], ['race_kart', 6, 2], ['race_podium', 4, 8], ['race_flag', 10, 1], ['race_flag', 0, 6], ['tire_stack', 10, 9], ['tire_stack', 11, 9], ['tire_stack', 0, 0]
+    ], wallItems: [['race_board', 'R', 3], ['tool_wall', 'L', 4]] }
   ] },
   /* 🎅 聖誕老公公的家（家長 11/21）：聖誕節期間才出現在大地圖上 */
   santa: { name: '聖誕老公公的家', host: 'santa', emoji: '🎅', desc: '聖誕節才開放！幫小精靈做玩具、照顧麋鹿、包禮物，跟聖誕老公公喝熱可可。', rooms: [
@@ -5954,6 +5968,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-22T18:00', title: '🏁 賽車場開幕！❄️ 冬天可以打雪仗！', lines: [
+    ['🏁', '大地圖右下方多了賽車場，狐狸賽車手在那裡等你；開自己的車去比賽，改車店改過的顏色、貼紙、底盤燈都會出現在賽道上'],
+    ['❄️', '冬天（12～2 月）「🎮 遊戲」裡多了打雪仗：跟躲避球一樣，在雪地裡丟雪球'],
+    ['⚔️', '道館的「對練」和「對決」合在一起變成「對打」：先練習、再比賽'],
+    ['🏃', '學校的跑步遊戲合在一起變成「跑步大會」：起跑反應、百米衝刺、障礙賽跑、大隊接力、跳遠']
+  ] },
   { id: '2026-11-22T17:00', title: '📬 求救信變多了！', lines: [
     ['📬', '求救信從 6 封變成 23 封：叔叔家、圖書館、道館、電影院、餐廳、醫院、改車店、警察局、健身房、體育館、游泳池、遊樂園、學校都會寄信'],
     ['🌋', '火山國的恐龍蛋、雲朵國的小雲朵、糖果國的螞蟻、星星國掉下來的小星星也需要幫忙'],
@@ -15088,6 +15108,7 @@ function hostMenuEntries() {
     list.push([`🎖️ 考腰帶（現在：${tkdBeltName()}）`, openBeltExam]);
   }
   if (host.n.id === 'restaurant') { list.push(['🍽️ 點餐吃飯', openRestaurantOrder]); list.push(['👩‍🍳 小幫手打工（做漢堡）', openChefGame]); list.push(['💰 收銀台找錢', openCashGame]); }
+  if (host.n.id === 'racer') { list.push(['🏎️ 賽車（開我的車）', () => openKart()]); list.push(['🎨 去改車店改裝我的車', () => { closeGameWindow(); travelTo('garage'); }]); }
   if (host.n.id === 'santa') { list.push([santaMisLabel(), () => santaMisOpen()]); list.push(['🧸 幫小精靈做玩具', () => openToyFactory()]); list.push(['🦌 照顧麋鹿', () => openDeerCare()]); list.push(['🎁 包禮物', () => openGiftWrap()]); list.push(['☕ 一起喝熱可可', () => santaCocoa()]); list.push([santaLent() ? '🛷 雪橇借你囉！' : `🛷 借雪橇（再送 ${santaLendLeft()} 份禮物）`, () => santaSleighInfo()]); }
   if (host.n.id === 'garage') { list.push(['🎨 改裝我的車', () => openCarShop()]); list.push(['🧽 洗車', () => openCarWash()]); }
   if (host.n.id === 'airport') { list.push(['✈️ 搭飛機去旅行', () => openAirTravel()]); list.push([`🛂 我的護照（${Object.keys(tripState().st).length} / ${AIR_DEST.length}）`, () => openAirPassport()]); list.push(['🛩️ 開飛機', () => openPlaneGame()]); list.push(['🧳 行李安檢', () => openSecurity()]); list.push(['🗼 塔台指揮', () => openTower()]); list.push(['🥤 空服員送餐', () => openMeal()]); }
@@ -21167,6 +21188,7 @@ function fitGameDomSoon() { clearTimeout(gameDomFitT); gameDomFitT = setTimeout(
    （只拿掉不設 0 的話，要等很久才回收；開場動畫那張全螢幕的畫布就有 15MB）。 */
 function freeCanvases(root) { try { if (!root) return; (root.tagName === 'CANVAS' ? [root] : root.querySelectorAll('canvas')).forEach(c => { c.width = 0; c.height = 0; }); } catch (e) {} }
 function closeGameWindow() {
+  try { dbSnowOn = false; } catch (e) {}
   crashCrumb('關小遊戲'); EXAM = null; if (typeof CUPRUN !== 'undefined') CUPRUN = null;
   if (gameCleanup) { gameCleanup(); gameCleanup = null; }
   try { Sound.duck(false); } catch (e) {}   // 關掉小遊戲一定把背景音樂還原
@@ -23809,6 +23831,7 @@ const ISL_BLD = [   // 房子：x, y 是左上角的格子，w×h 格；門在�
   { id: 'police', x: 16, y: 22, w: 4, h: 3 },   // 🚓 警察局：叔叔家旁邊
   { id: 'airport', x: 30, y: 8, w: 4, h: 3 },   // ✈️ 機場：停機坪旁邊
   { id: 'garage', x: 28, y: 18, w: 4, h: 3 },   // 🔧 改車店：家的右下方
+  { id: 'raceway', x: 33, y: 27, w: 4, h: 3 },   // 🏁 賽車場
   { id: 'santa', x: 34, y: 17, w: 4, h: 3, season: 'christmas' },   // 🎅 聖誕老公公的家：聖誕節才有
 
   // 🏅 運動島（家長：游泳池那座小島擴大成運動島，走木橋過去；跆拳道館也搬過來）
@@ -23862,7 +23885,7 @@ const ISL_POND = { x: 31, y: 24, w: 4, h: 3 };
 const ISL_HUB = [26, 19];
 const ISL_STYLE = {   // 牆、屋頂顏色
   dojo: ['#fff4e6', '#e0503a'], pool: ['#e8f6fb', '#3fa9f5'], track: ['#fff1e0', '#e07a4a'], arena: ['#fff6e0', '#ff7a3c'], gym: ['#f4eeff', '#8a78b0'], restaurant: ['#fff0d9', '#e8823a'], hospital: ['#ffffff', '#e8505b'], cinema: ['#3a2f4a', '#e8505b'],
-  santa: ['#fff4e6', '#d63b3b'], garage: ['#f3f3f6', '#e8505b'], airport: ['#eef6ff', '#4a90d9'], police: ['#e6efff', '#2f5fb8'], home: ['#ffd9c9', '#ff7b7b'], school: ['#fff4cf', '#5b8def'], playground: ['#e7f8d4', '#e07a3a'], library: ['#e6dcff', '#7a5cc9'], park: ['#d9f0c8', '#4f9d4f'],
+  raceway: ['#f3f3f6', '#2b2d42'], santa: ['#fff4e6', '#d63b3b'], garage: ['#f3f3f6', '#e8505b'], airport: ['#eef6ff', '#4a90d9'], police: ['#e6efff', '#2f5fb8'], home: ['#ffd9c9', '#ff7b7b'], school: ['#fff4cf', '#5b8def'], playground: ['#e7f8d4', '#e07a3a'], library: ['#e6dcff', '#7a5cc9'], park: ['#d9f0c8', '#4f9d4f'],
   uncle: ['#d7ecc8', '#7aa05a'], grandma: ['#ffe3b0', '#d68a3a'], amusement: ['#ffe0ee', '#ff6fa3'], friend: ['#fffaf0', '#6fb7e8']
 };
 let islMapCache = null;
@@ -30158,25 +30181,26 @@ function openSimGame() {
    最上面一排「🎮 遊戲」：全部的小遊戲用大圖示排好，最上面是「最近玩過」。
    🏠 家裡的：點了直接開始。🗺️ 外面地方的：點了會走過去（要門票的付門票、要坐船的坐船）再開始，出門的感覺不會被跳過。 */
 const AWAY_GAMES = [
-  ['🦵', '踢板', 'dojo', () => openKickGame()], ['👊', '跟著做動作', 'dojo', () => openFormsGame()], ['🎵', '節奏跆拳道', 'dojo', () => openRhythmGame()], ['🥋', '對練', 'dojo', () => openSparGame()],
+  ['🦵', '踢板', 'dojo', () => openKickGame()], ['👊', '跟著做動作', 'dojo', () => openFormsGame()], ['🎵', '節奏跆拳道', 'dojo', () => openRhythmGame()], ['⚔️', '對打（練習／比賽）', 'dojo', () => openFightChoice()],
   ['🏊', '打水比賽', 'pool', () => openSwimRace()], ['🤿', '潛水撿寶', 'pool', () => openDiveGame()], ['🌊', '跳水', 'pool', () => openJumpDive()],
   ['🎬', '看電影', 'cinema', () => openMoviePicker()],
   ['🕹️', '打地鼠', 'uncle', () => openMoleGame()], ['🏎️', '賽車', 'uncle', () => openKart()], ['🖥️', '打磚塊', 'uncle', () => openBrickGame()],
   ['🐮', '照顧小牛小羊', 'grandma', () => openFarmGame()],
-  ['📝', '小考', 'school', () => openQuizGame()], ['🔤', '注音小遊戲', 'school', () => openZhuyinGame()], ['🏃', '賽跑', 'school', () => openRunGame()],
+  ['📝', '小考', 'school', () => openQuizGame()], ['🔤', '注音小遊戲', 'school', () => openZhuyinGame()], ['🏃', '跑步大會', 'school', () => openRunMeet()],
   ['🎣', '釣魚', 'park', () => openFishing()], ['📷', '拍蝴蝶', 'park', () => openButterflyGame()],
   ['🔎', '幫忙找書', 'library', () => openShelfGame()],
   ['🚓', '一起抓小偷', 'police', () => openCopChase()], ['🔍', '小偵探破案', 'police', () => openDetective()], ['🛏️', '病房照顧', 'hospital', () => openWard()],
   ['✈️', '搭飛機旅行', 'airport', () => openAirTravel()], ['🛩️', '開飛機', 'airport', () => openPlaneGame()], ['🧳', '行李安檢', 'airport', () => openSecurity()], ['🗼', '塔台指揮', 'airport', () => openTower()], ['🥤', '空服員送餐', 'airport', () => openMeal()],
-  ['🎨', '改裝我的車', 'garage', () => openCarShop()], ['🧽', '洗車', 'garage', () => openCarWash()],
+  ['🏁', '賽車場比賽', 'raceway', () => openKart()], ['🎨', '改裝我的車', 'garage', () => openCarShop()], ['🧽', '洗車', 'garage', () => openCarWash()],
   ['🧸', '幫小精靈做玩具', 'santa', () => openToyFactory()], ['🦌', '照顧麋鹿', 'santa', () => openDeerCare()], ['🎁', '包禮物', 'santa', () => openGiftWrap()]
 ];
 function allQuickGames() {
   const home = earnGameList().map(([icon, name, fn, id]) => ({ id, icon, name, where: null, go: fn }));
   const away = AWAY_GAMES.filter(g => PLACES[g[2]] && (g[2] !== 'santa' || xmasActive())).map(([icon, name, place, fn]) => ({ id: 'a:' + place + ':' + name, icon, name, where: place, go: fn }));
   const xm = xmasActive() ? [{ id: 'x:ginger', icon: '🍪', name: '做薑餅人', where: null, go: () => openGingerbread() }, { id: 'x:tree', icon: '🎄', name: '裝飾聖誕樹', where: null, go: () => openXmasTree() }, { id: 'x:sleigh', icon: '🛷', name: '雪橇送禮', where: null, go: () => openSleigh() }] : [];   // 🎄 12 月才有
+  const snw = typeof snowSeason === 'function' && snowSeason() ? [{ id: 'x:snowball', icon: '❄️', name: '打雪仗', where: null, go: () => openSnowball() }] : [];   // ❄️ 冬天才有
   const fwg = typeof fwDay === 'function' && fwDay() ? [{ id: 'x:fw', icon: '🎆', name: '放煙火', where: null, go: () => openFireworks() }] : [];   // 🎆 放煙火的日子才有
-  return fwg.concat(xm, home, away, [{ id: 'q:quest', icon: '🗺️', name: '世界闖關', where: null, go: () => openQuestMap() }]);
+  return fwg.concat(xm, snw, home, away, [{ id: 'q:quest', icon: '🗺️', name: '世界闖關', where: null, go: () => openQuestMap() }]);
 }
 function gameRecord(id) { if (!id) return; const r = (Array.isArray(G.recentGames) ? G.recentGames : []).filter(x => x !== id); r.unshift(id); G.recentGames = r.slice(0, 8); }
 function quickPlay(g) {
@@ -30483,7 +30507,7 @@ Object.assign(ACTIVITIES, {
 });
 Object.assign(FURNITURE_ACT, { tr_blocks: 'crouch', tr_podium: 'podium', tr_sand: 'sandjump', tr_water: 'drinkwater', tr_finish: 'finishline' });
 ['crouch', 'podium', 'sandjump', 'drinkwater', 'finishline'].forEach(k => { const a = ACTIVITIES[k]; if (!LINE_TYPES.some(t => t.key === 'act_' + k)) LINE_TYPES.push({ key: 'act_' + k, label: '做事：' + a.name, hint: '', lines: a.lines }); });
-AWAY_GAMES.push(['🏃', '百米衝刺', 'school', () => openSprint()], ['🏃‍♀️', '大隊接力', 'school', () => openRelay()], ['🏖️', '跳遠', 'school', () => openLongJump()]);
+/* 🏃 百米衝刺、大隊接力、跳遠收進「跑步大會」 */
 var CUPRUN = null;   // 🏆 運動大賽正在比的那一關：{ kind, cb }（小遊戲結束時 examHook 交成績）
 /* ===== 🏆 運動大賽（妹妹想要的）：
    ① 🏊 世界全國游泳大賽（鴨鴨教練）：先換漂亮泳裝（三位評審打星星），再奮力游過去
@@ -30893,8 +30917,16 @@ function playStartGame(w, L) {
   setup(); raf = requestAnimationFrame(tick);
   playStartGame.test = { go, st: () => ({ ph, n, wins, best, falses, goAt, react, fakeKind }) };
 }
-AWAY_GAMES.push(['🏁', '起跑反應王', 'school', () => openStartGame()]);
+/* 🏁 起跑反應王收進「跑步大會」 */
 // 🏃 終點旗：兩種賽跑選一種
+function gamePicker(title, sub, items) {   // 一個選單收好幾個遊戲（家長 11/22：選單清爽一點）
+  const w = openGameWindow(title, sub); w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w); w.status.textContent = '選一個玩';
+  const row = el('div', 'lv-row');
+  items.forEach(([n, d, fn], i) => { const b = el('button', 'lv-btn'); b.dataset.key = String(i + 1); b.append(el('span', 'lv-n', n), el('span', 'lv-p', d)); b.onclick = () => { Sound.play('click'); closeGameWindow(); fn(); }; row.appendChild(b); });
+  w.stage.appendChild(row);
+}
+function openFightChoice() { gamePicker('⚔️ 對打', '先練習，再比賽！', [['🥋 練習', '跟教練練習，不會輸', () => openSparGame()], ['⚔️ 比賽', '跟朋友對決，贏了升段', () => openDuelGame()]]); }
+function openRunMeet() { gamePicker('🏃 跑步大會', '想比哪一項？', [['🏁 起跑反應', '聽槍聲，最快起跑', () => openStartGame()], ['🏃 百米衝刺', '左右腳快快跑', () => openSprint()], ['🚧 障礙賽跑', '跳欄架、吃星星', () => openRunGame()], ['🏃‍♀️ 大隊接力', '跟同學一起跑', () => openRelay()], ['🏖️ 跳遠', '助跑——跳！', () => openLongJump()]]); }
 function openRaceChoice() {
   const w = openGameWindow('🏃 賽跑', '想跑哪一種？');
   w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w); w.status.textContent = '選一種賽跑';
@@ -30925,7 +30957,28 @@ function arenaFloor(g, W, H, top) {
   g.fillStyle = '#f3ead8'; g.fillRect(0, 0, W, top); g.fillStyle = '#e3d4b8'; for (let i = 0; i < W; i += 60) g.fillRect(i, 0, 4, top);
   g.fillStyle = '#d9a066'; g.fillRect(0, top, W, H - top); g.strokeStyle = 'rgba(160,110,60,.35)'; g.lineWidth = 1; for (let y = top + 12; y < H; y += 12) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
 }
-function arenaBall(g, x, y, r, c, shadowY) { if (shadowY != null) { g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(x, shadowY, r * 1.1, r * .4, 0, 0, 7); g.fill(); } MV.ball(g, x, y, r, c); g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 1; g.beginPath(); g.arc(x, y, r, 0, 7); g.moveTo(x - r, y); g.lineTo(x + r, y); g.stroke(); }
+var dbSnowOn = false;   // ❄️ 打雪仗進行中：球畫成雪球
+function dbSnowBg(c, g, W, H, TOP) {
+  const sky = g.createLinearGradient(0, 0, 0, TOP); sky.addColorStop(0, '#b9cbe0'); sky.addColorStop(1, '#eef4fb'); g.fillStyle = sky; g.fillRect(0, 0, W, TOP);
+  g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(0, 60); for (let x = 0; x <= W; x += 40) g.quadraticCurveTo(x + 20, 38 + (x % 80 ? 8 : -6), x + 40, 58); g.lineTo(W, TOP); g.lineTo(0, TOP); g.fill();
+  [[24, 52], [110, 48], [380, 50], [458, 54]].forEach(([x, y]) => { g.fillStyle = '#7a5230'; g.fillRect(x - 2, y, 4, 12); g.fillStyle = '#2f8a4e'; g.beginPath(); g.moveTo(x, y - 22); g.lineTo(x - 12, y + 2); g.lineTo(x + 12, y + 2); g.fill(); g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(x, y - 22); g.lineTo(x - 6, y - 10); g.lineTo(x + 6, y - 10); g.fill(); });
+  [[60, 70], [W - 70, 72]].forEach(([x, y]) => { g.fillStyle = '#ffffff'; [[0, 0, 12], [0, -16, 9]].forEach(([dx, dy, r]) => { g.beginPath(); g.arc(x + dx, y + dy, r, 0, 7); g.fill(); }); g.fillStyle = '#ff8c2a'; g.beginPath(); g.moveTo(x, y - 16); g.lineTo(x + 9, y - 14); g.lineTo(x, y - 12); g.fill(); g.fillStyle = '#26232a'; g.fillRect(x - 4, y - 19, 2, 2); g.fillRect(x + 2, y - 19, 2, 2); });   // ⛄ 雪人
+  const snow = g.createLinearGradient(0, TOP, 0, H); snow.addColorStop(0, '#f7fbff'); snow.addColorStop(1, '#dfeaf5'); g.fillStyle = snow; g.fillRect(0, TOP, W, H - TOP);
+  g.fillStyle = 'rgba(47,111,209,.08)'; g.fillRect(16, TOP + 6, W / 2 - 16, H - TOP - 8); g.fillStyle = 'rgba(232,80,91,.08)'; g.fillRect(W / 2, TOP + 6, W / 2 - 16, H - TOP - 8);
+  g.strokeStyle = 'rgba(120,170,220,.6)'; g.lineWidth = 3; g.strokeRect(20, TOP + 10, W - 40, H - TOP - 16); g.beginPath(); g.moveTo(W / 2, TOP + 10); g.lineTo(W / 2, H - 6); g.stroke();
+  [[W / 2 - 60, TOP + 40], [W / 2 + 60, H - 40]].forEach(([x, y]) => { g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(x, y, 26, 10, 0, Math.PI, 0); g.fill(); g.strokeStyle = '#c9dff0'; g.lineWidth = 2; g.stroke(); });   // 雪堡
+  g.fillStyle = 'rgba(255,255,255,.9)'; for (let i = 0; i < 60; i++) g.fillRect((i * 73) % W, (i * 37) % H, 2, 2);
+  g.strokeStyle = '#7a5230'; g.lineWidth = 3; g.beginPath(); g.moveTo(W / 2 - 14, TOP + 14); g.lineTo(W / 2 - 9, TOP - 18); g.moveTo(W / 2 + 14, TOP + 14); g.lineTo(W / 2 + 9, TOP - 18); g.moveTo(W / 2 - 12, TOP); g.lineTo(W / 2 + 12, TOP); g.stroke();
+  return c;
+}
+function snowSeason() { const d = new Date(), m = (typeof SEASON_TODAY !== 'undefined' && SEASON_TODAY ? SEASON_TODAY[0] : d.getMonth() + 1); return m === 12 || m === 1 || m === 2 || (typeof xmasActive === 'function' && xmasActive()); }
+function openSnowball() {
+  const w = openGameWindow('❄️ 打雪仗', '跟躲避球一樣：點對面的人丟雪球（或按「🎯 丟！」）！雪球飛過來按「🙌 閃！」（空白鍵），最後一刻按還能接住！集滿能量放「💥 必殺技」！');
+  pickLevelRow(w, DB_LEVELS, L => `贏了 💰 ${DB_PRIZE[0] * L.mul}`, L => { dbSnowOn = true; playDodge(w, L, { venue: '__snow' }); const g0 = gameCleanup; gameCleanup = () => { dbSnowOn = false; if (g0) g0(); }; });
+}
+function arenaBall(g, x, y, r, c, shadowY) {
+  if (dbSnowOn) { if (shadowY != null) { g.fillStyle = 'rgba(0,0,0,.14)'; g.beginPath(); g.ellipse(x, shadowY, r * 1.1, r * .4, 0, 0, 7); g.fill(); } g.fillStyle = '#ffffff'; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); g.strokeStyle = '#a9cbe8'; g.lineWidth = 1.5; g.stroke(); g.fillStyle = 'rgba(169,203,232,.6)'; g.beginPath(); g.arc(x + r * .3, y + r * .3, r * .35, 0, 7); g.fill(); return; }
+  if (shadowY != null) { g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(x, shadowY, r * 1.1, r * .4, 0, 0, 7); g.fill(); } MV.ball(g, x, y, r, c); g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 1; g.beginPath(); g.arc(x, y, r, 0, 7); g.moveTo(x - r, y); g.lineTo(x + r, y); g.stroke(); }
 
 /* 🏀 投籃機（家長：投籃改成投籃機那種玩法；玩法有點弱 → 加強）
    像真的投籃機一樣分三關：每關有時間和「目標分數」，到了才能進下一關，沒到就 GAME OVER。
@@ -31218,7 +31271,7 @@ function playBball(w, L) {
 // 🔴 躲避球
 const DB_LEVELS = [{ name: '簡單', move: 26, dodge: .1, spd: 260, win: .7, catchW: .22, mateDodge: .6, mul: 1, hp: 3 }, { name: '一般', move: 50, dodge: .2, spd: 330, win: .5, catchW: .15, mateDodge: .45, mul: 2, hp: 4 }, { name: '高手！', move: 75, dodge: .3, spd: 400, win: .38, catchW: .1, mateDodge: .35, mul: 3, hp: 5 }];   // hp：對手每人幾顆愛心（家長：一下子就贏了，沒機會用必殺技）
 const DB_PRIZE = [170, 50];
-function openDodge() { const w = openGameWindow('🔴 熱血躲避球', '點對面的人把球丟過去（或按「🎯 丟！」）！球飛過來時按「🙌 閃！」（空白鍵），最後一刻按還能接住！打中、閃過、接住會集能量，滿了按「💥 必殺技」（S 鍵）！'); pickLevelRow(w, DB_LEVELS, L => `贏了 💰 ${DB_PRIZE[0] * L.mul}`, L => playDodge(w, L)); }
+function openDodge() { dbSnowOn = false; const w = openGameWindow('🔴 熱血躲避球', '點對面的人把球丟過去（或按「🎯 丟！」）！球飛過來時按「🙌 閃！」（空白鍵），最後一刻按還能接住！打中、閃過、接住會集能量，滿了按「💥 必殺技」（S 鍵）！'); pickLevelRow(w, DB_LEVELS, L => `贏了 💰 ${DB_PRIZE[0] * L.mul}`, L => playDodge(w, L)); }
 /* 🔴 熱血躲避球（家長：要更像熱血躲避球、可以發動絕招）
    ・打中、閃過、接住球都會集「必殺」能量，滿了「💥 必殺技！」會亮：
      🔥 火焰球（又快又燙，一定打中，對手被打飛）、⚡ 閃電球（Z 字形飛過去，一定打中）、🌀 分身球（變三顆球，一次打好幾個人）
@@ -31236,6 +31289,7 @@ function dbSpecialPool() { return DB_SPECIALS.concat(DB_NEW_SPECIALS.slice(0, ty
 function dbBuildBg(W, H, TOP, venue) {
   const dpr = Math.min(2, window.devicePixelRatio || 1), c = document.createElement('canvas'); c.width = W * dpr; c.height = H * dpr;
   const g = c.getContext('2d'); g.scale(dpr, dpr);
+  if (venue === '__snow') return dbSnowBg(c, g, W, H, TOP);   // ❄️ 打雪仗：雪地
   const V = venue && typeof worldVenue === 'function' ? worldVenue(venue) : null;   // 🌏 世界大賽：每個國家的天空不一樣
   const sky = g.createLinearGradient(0, 0, 0, TOP); sky.addColorStop(0, V ? V.sky[0] : '#8fd0ff'); sky.addColorStop(1, V ? V.sky[1] : '#dff3ff'); g.fillStyle = sky; g.fillRect(0, 0, W, TOP);
   g.fillStyle = 'rgba(255,255,255,.9)'; [[70, 22, 1], [300, 16, .8], [420, 30, .7]].forEach(([x, y, k]) => { g.beginPath(); g.arc(x, y, 12 * k, 0, 7); g.arc(x + 14 * k, y + 3, 9 * k, 0, 7); g.arc(x - 12 * k, y + 4, 8 * k, 0, 7); g.fill(); });
@@ -31689,10 +31743,11 @@ function openKart() {
   const w = openGameWindow('🏎️ 小可愛賽車', '車子會自己往前開！按 ◀ ▶（或點畫面左右邊、鍵盤 ← →）轉彎。撞到 🎁 拿道具、按「🎁」用；轉彎時按住「🌀 甩尾」再放開可以加速！跑 3 圈，看誰第一名！');
   pickLevelRow(w, KART_LEVELS, L => `第一名 💰 ${KART_PRIZE[0] * L.mul}`, L => {
     const own = KART_CARS.filter(c => c.free || (G.vehicles || []).includes(c.id));
+    own.forEach((c0, i) => { const lk = typeof carLookOf === 'function' ? carLookOf(c0.id) : null; if (lk) { const cc = lk.c && lk.c !== 'def' && CAR_COLORS.find(q => q[0] === lk.c); own[i] = Object.assign({}, c0, cc ? { c: cc[2] } : {}, { st: lk.st && lk.st !== 'none' ? lk.st : null, gl: lk.gl && lk.gl !== 'none' ? lk.gl : null, mod: !!(cc || (lk.st && lk.st !== 'none')) }); } });   // 🎨 改車店改過的樣子
     if (own.length < 2) return playKart(w, L, own[0]);
     w.stage.innerHTML = ''; w.status.textContent = '要開哪一台？';
     const row = el('div', 'lv-row');
-    own.forEach((car, i) => { const b = el('button', 'lv-btn'); b.append(el('span', 'lv-n', `${car.icon} ${car.name}`), el('span', 'lv-p', car.heavy ? '很重，香蕉滑不倒' : car.sp > 1 ? '最快！' : car.sp < .95 ? '慢慢開' : '普通')); b.onclick = () => { Sound.play('click'); playKart(w, L, car); }; row.appendChild(b); });
+    own.forEach((car, i) => { const b = el('button', 'lv-btn'); b.append(el('span', 'lv-n', `${car.icon} ${car.name}${car.mod ? ' 🎨' : ''}`), el('span', 'lv-p', car.heavy ? '很重，香蕉滑不倒' : car.sp > 1 ? '最快！' : car.sp < .95 ? '慢慢開' : '普通')); b.onclick = () => { Sound.play('click'); playKart(w, L, car); }; row.appendChild(b); });
     w.stage.appendChild(row);
   });
 }
@@ -31855,7 +31910,10 @@ function playKart(w, L, car) {
     if (boost > 0) { g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 2; for (let k = 0; k < 10; k++) { const a = (k / 10) * Math.PI * 2 + t * 3, r1 = 150 + ((t * 600 + k * 53) % 120); g.beginPath(); g.moveTo(W / 2 + Math.cos(a) * r1, H / 2 + Math.sin(a) * r1 * .6); g.lineTo(W / 2 + Math.cos(a) * (r1 + 60), H / 2 + Math.sin(a) * (r1 + 60) * .6); g.stroke(); } }   // 衝刺的速度線
     if (star > 0) { g.fillStyle = `hsla(${(now / 2) % 360},90%,60%,.45)`; g.beginPath(); g.ellipse(W / 2, H - 40, 50, 36, 0, 0, 7); g.fill(); }
     if (boost > 0) { g.fillStyle = 'rgba(255,140,40,.8)'; g.beginPath(); g.moveTo(W / 2 - 14, H - 14); g.lineTo(W / 2, H + 10 + Math.random() * 10); g.lineTo(W / 2 + 14, H - 14); g.fill(); }
-    drawKartRear(g, W / 2 + (drift ? driftDir * 6 : 0), H - 14 + bounce - Math.sin(Math.min(1, hop / .22) * Math.PI) * 14, 1.35, car.c, 'kid', drift ? steer + driftDir * 2.6 : steer, t, spin > 0 ? spin * 14 : 0);
+    { const kx = W / 2 + (drift ? driftDir * 6 : 0), ky = H - 14 + bounce - Math.sin(Math.min(1, hop / .22) * Math.PI) * 14;
+      if (car.gl) { g.save(); g.translate(kx, ky); g.scale(1.35, 1.35); try { drawCarGlow(g, car.gl, t, 40); } catch (e) {} g.restore(); }   // ✨ 底盤燈
+      drawKartRear(g, kx, ky, 1.35, car.c, 'kid', drift ? steer + driftDir * 2.6 : steer, t, spin > 0 ? spin * 14 : 0);
+      if (car.st && !(spin > 0)) { g.save(); g.translate(kx, ky); g.scale(1.35, 1.35); g.rotate((drift ? steer + driftDir * 2.6 : steer) * .12); try { drawCarSticker(g, car.st, -14, -16, 4.5); drawCarSticker(g, car.st, 14, -16, 4.5); } catch (e) {} g.restore(); } }   // ⭐ 貼紙
     // 介面
     g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(8, 8, 128, 46); g.fillStyle = '#fff'; g.font = '900 16px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'left';
     g.fillText(`第 ${Math.min(LAPS, lap + 1)} / ${LAPS} 圈`, 16, 28); g.fillStyle = '#ffd23f'; g.fillText(`第 ${place || 4} 名`, 16, 48); g.fillStyle = '#fff'; g.font = '700 12px sans-serif'; g.fillText(`● ${coins}`, 92, 48);
@@ -33030,7 +33088,7 @@ function playDuel(w, who, opt) {
   raf = requestAnimationFrame(tick);
   playDuel.test = { S, act, newIntent, finish, foe, opt, fSp, faceOf };
 }
-AWAY_GAMES.push(['⚔️', '對決', 'dojo', () => openDuelGame()]);
+/* ⚔️ 對決已經收進「對打（練習／比賽）」（家長 11/22：合併重複的遊戲） */
 
 /* 👑 挑戰熊熊教練（家長：升上黑帶後可以跟教練挑戰）：黑帶才打得到。教練 16 滴血、每 4 回合放必殺技「熊熊大地震」（擋住只痛 2 點，沒擋 4 點）。
    第一次打贏：「道館冠軍」獎盃＋💰 3,000；之後每次贏 💰 300。G.tkd.coach = 打贏教練幾次。 */
