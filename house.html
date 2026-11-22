@@ -43,6 +43,9 @@
 .grow-cell b{font-size:16px}
 .grow-cell span{font-size:13px;color:#8a7a68}
 .grow-cell.locked{opacity:.6}
+.isl-tour{position:fixed;left:50%;top:64px;transform:translateX(-50%);z-index:9000;display:flex;align-items:center;gap:10px;max-width:92%;background:rgba(255,255,255,.95);border:3px solid #ffd23f;border-radius:16px;padding:8px 12px;box-shadow:0 4px 14px rgba(0,0,0,.18);pointer-events:auto}
+.isl-tour-t{font-size:18px;font-weight:800;color:#4a3b2a}
+.isl-tour-skip{font:inherit;font-size:13px;font-weight:700;border:2px solid #d8c8b0;background:#fff8ec;border-radius:999px;padding:4px 10px;cursor:pointer;white-space:nowrap}
 .fox-chip{top:92px !important;border-color:#ff8a3d !important;background:#fff4e6 !important;color:#c0601a !important}
 .help-chip{position:absolute;top:54px;left:50%;transform:translateX(-50%);z-index:5;font:inherit;font-size:14px;font-weight:800;border:2px solid #e8505b;background:#fff0f0;color:#b03636;border-radius:999px;padding:5px 14px;box-shadow:0 3px 10px rgba(0,0,0,.12);cursor:pointer;animation:helpBob 1.6s ease-in-out infinite}
 @keyframes helpBob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-3px)}}
@@ -6110,6 +6113,9 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-23T11:00', title: '🎬 主島變大的介紹', lines: [
+    ['🎬', '第一次打開大地圖，鏡頭會帶你看一次新的地方（設定裡可以再看一次）']
+  ] },
   { id: '2026-11-23T10:00', title: '🛳️ 郵輪碼頭開張！', lines: [
     ['🛳️', '主島東邊南邊的海邊多了郵輪碼頭，企鵝船長帶你搭郵輪（船票 200）'],
     ['🗺️', '三個港口：🍍 熱帶水果島（數水果）、🐧 冰山企鵝島（送企鵝回家）、☠️ 海盜寶藏島（挖寶藏）'],
@@ -7421,6 +7427,7 @@ function normalizeSave(g) {
         for (let w = 1; w <= 6; w++) if (q.clear[w + '-3'] === 1) leg[String(w)] = 1;
         q.legacy = leg; q.rev = 2;
       } else q.legacy = legOk(q.legacy); } }
+  if (out.introBig != null && out.introBig !== 1) delete out.introBig;   // 🎬 看過主島變大的介紹
   if (out.cruise != null) { if (!isObj(out.cruise)) delete out.cruise; else { const c = out.cruise; c.st = isObj(c.st) ? Object.fromEntries(Object.entries(c.st).filter(([k, v]) => ['fruit', 'ice', 'pirate'].includes(k) && v === 1)) : {}; Object.keys(c).forEach(k => { if (k !== 'st') delete c[k]; }); } }   // 🛳️ 郵輪護照
   if (out.fox != null) { if (!isObj(out.fox)) delete out.fox; else { const f = out.fox; if (!(Number.isInteger(f.st) && f.st >= 0 && f.st <= 5)) f.st = 0; f.clues = Array.isArray(f.clues) ? [...new Set(f.clues.filter(k => ['library', 'museum', 'park'].includes(k)))] : []; if (f.d != null && !(typeof f.d === 'string' && f.d.length <= 12)) delete f.d; Object.keys(f).forEach(k => { if (!['st', 'clues', 'd'].includes(k)) delete f[k]; }); } }   // 🦊 怪盜狐狸事件
   if (out.bank != null) { if (!isObj(out.bank)) delete out.bank; else { const b = out.bank; if (!(Number.isInteger(b.sav) && b.sav >= 0 && b.sav < 1e9)) b.sav = 0; if (b.d != null && !(typeof b.d === 'string' && b.d.length <= 12)) delete b.d; if (b.goal != null && !(typeof b.goal === 'string' && ESTATE_BY_ID[b.goal])) delete b.goal; Object.keys(b).forEach(k => { if (!['sav', 'd', 'goal'].includes(k)) delete b[k]; }); } }   // 🐷 銀行
@@ -20628,6 +20635,7 @@ function tabSave(body) {
   sfx.onclick = () => { G.seasonFx = G.seasonFx === 1 ? undefined : 1; saveGame(); renderTab(); };
   body.appendChild(sfx); }
   { const dn = el('button', 'mini', G.noDayNight ? '🌙 讓家裡跟著時間變天色（現在：關）' : '🌙 家裡不要跟著時間變天色（現在：開，晚上會變暗、燈會亮）'); dn.onclick = () => { G.noDayNight = G.noDayNight ? undefined : 1; saveGame(); requestDraw(); renderTab(); }; body.appendChild(dn); }
+  { const tb = el('button', 'mini', '🎬 再看一次「主島變大了」的介紹'); tb.onclick = () => { Sound.play('click'); if (G.away) goHome(); openIsland(); setTimeout(() => { if (isl) islBigTour(); }, 600); }; body.appendChild(tb); }
   { const rc = el('button', 'mini', G.realClock ? '🕐 天色現在跟著真實時間（點一下改成：一開始是白天，玩 30 分鐘變晚上）' : '🕐 天色現在跟著玩的時間：一開始是白天，玩 30 分鐘變晚上（點一下改成跟著真實時間）'); rc.onclick = () => { G.realClock = G.realClock ? undefined : 1; saveGame(); requestDraw(); renderTab(); }; body.appendChild(rc); }
   { const tb = el('button', 'mini', G.noThief ? '🐭 讓小偷鼠偶爾來家裡（現在：關）' : '🐭 不要讓小偷鼠來家裡（現在：開，一天最多一次）'); tb.onclick = () => { G.noThief = G.noThief ? undefined : 1; saveGame(); renderTab(); }; body.appendChild(tb); }
   const rp = el('button', 'mini', '↩️ 小卡、📷、💡 位置歸位');
@@ -24477,6 +24485,7 @@ function islStartTile(m) {
   return { id: b.id, x: b.door[0], y: b.door[1] };
 }
 function openIsland() {
+  setTimeout(() => { try { if (isl && !G.introBig && G.guide === 'done' && !(navigator.webdriver && !window.TOUR_AUTO) && $('#modal').hidden) islBigTour(); } catch (e) {} }, 1400);   // 🎬 主島變大的介紹（只播一次；自動測試的時候不自己播）
   crashCrumb('去小島');
   if (isl) return;
   if (G.away && G.away.place === 'sky' && !heliTrip.landing && G.guide === 'done') { heliTrip('down', () => { heliTrip.landing = true; try { openIsland(); } finally { heliTrip.landing = false; } }); return; }   // 🚁 從天空島下來：先坐直升機降落
@@ -40061,6 +40070,46 @@ function openPortTreasure() {
 }
 Object.assign(ACTIVITIES, { cruise_go: { label: '🛳️ 搭郵輪去玩', name: '搭郵輪', fx: '🛳️', open: () => openCruise(), lines: ['要去哪個港口呢？'] } });
 Object.assign(FURNITURE_ACT, { ship_wheel: 'cruise_go' });
+/* ===== 🎬 主島變大的介紹（家長 11/22：主島擴大要做一段開場動畫告知）=====
+   更新後第一次打開大地圖播一次（G.introBig = 1），可以跳過；設定裡可以「再看一次」。
+   用真的大地圖：鏡頭從家門口出發，沿著大馬路往東，一站一站停在新地方（冒星星＋一句話），最後回到家門口，
+   問「帶我去新的地方」或「我自己逛」。之後再加新地方，也可以照這個樣子加一站。 */
+function islBigTour() {
+  if (!isl) return false;
+  G.introBig = 1; saveGame();
+  const m = isl.m, bd = id => { const b = m.blds.find(q => q.id === id); return b ? [b.x + b.w / 2, b.y + b.h / 2] : null; }, home = bd('home') || [26, 12];
+  const stops = [
+    [home, '🏝️ 哇！小島變大了！跟著鏡頭去看看～', 2600],
+    [[48, 20], '🛣️ 東邊長出一大塊新的土地，還有一條大馬路！', 2800],
+    [bd('museum'), '🏛️ 博物館和 🏦 銀行搬到這裡了，走路就到！', 3000],
+    [bd('realty'), '🏡 小可愛不動產：可以買自己的新房子！旁邊有「出售」的空地', 3400],
+    [bd('dept'), '🛍️ 百貨公司：有扭蛋機喔！', 2800],
+    [bd('cruise'), '🛳️ 郵輪碼頭：搭郵輪去冒險！嗚～～', 3000],
+    [bd('pool'), '🏅 運動島搬到這裡，一樣走木橋過去', 2800],
+    [bd('hospital'), '🏘️ 小鎮島（餐廳、醫院）搬到這裡了', 2800],
+    [home, '🏠 回到家門口了！', 1600]
+  ].filter(st => st[0]);
+  const old = document.getElementById('islTour'); if (old) old.remove();
+  const cap = el('div', 'isl-tour'); cap.id = 'islTour'; const txt = el('div', 'isl-tour-t', ''), skip = el('button', 'isl-tour-skip', '跳過 ▶▶'); cap.append(txt, skip);
+  document.body.appendChild(cap);   // 放在最外層（大地圖的畫面會蓋住 .stage 裡面的東西）
+  let i = 0, timer = 0, done = false;
+  const end = (ask) => { if (done) return; done = true; clearTimeout(timer); cap.remove(); if (isl) isl.pan = null; if (ask) islTourAsk(); };
+  const step = () => { if (done || !isl) return end(false); if (i >= stops.length) return end(true);
+    const [[x, y], t, dur] = stops[i++]; isl.pan = { x, y, until: performance.now() + dur + 400 }; txt.textContent = t; Sound.play(i === 1 ? 'fanfare' : 'pickUp');
+    for (let k = 0; k < 5; k++) setTimeout(() => { if (isl && !done) islAddFx('spark', x + (Math.random() - .5) * 4, y + (Math.random() - .5) * 2, 900); }, 500 + k * 250);
+    timer = setTimeout(step, dur); };
+  skip.onclick = e => { e.stopPropagation(); Sound.play('click'); end(true); };
+  islBigTour.test = { end, get i() { return i; }, stops };
+  step(); return true;
+}
+function islTourAsk() {
+  const card = $('#modalCard'); card.innerHTML = '';
+  card.appendChild(el('h2', '', '🏝️ 要去哪裡看看？'));
+  card.appendChild(note('主島變大了，有好多新地方！要我帶你走過去嗎？'));
+  [['dept', '🛍️ 帶我去百貨公司'], ['realty', '🏡 帶我去小可愛不動產'], ['cruise', '🛳️ 帶我去郵輪碼頭']].forEach(([id, t]) => { const b = el('button', 'big', t); b.onclick = () => { $('#modal').hidden = true; if (!isl) return; const bb = isl.m.blds.find(q => q.id === id); if (!bb) return; isl.pending = { type: 'enter', id }; isl.skipDoor = null; if (!islWalkTo((x, y) => x === bb.door[0] && y === bb.door[1])) isl.pending = null; Sound.play('click'); }; card.appendChild(b); });
+  const ok = el('button', 'big alt', '好，我自己逛'); ok.onclick = () => { $('#modal').hidden = true; }; card.appendChild(ok);
+  $('#modal').hidden = false;
+}
 /* 🎄 裝飾聖誕樹（記憶力） */
 const TREE_SLOTS = [[150, 72], [134, 102], [166, 102], [120, 134], [150, 130], [180, 134], [104, 168], [134, 166], [166, 168], [196, 166]];
 const TREE_COLS = [['red', '#e8505b', '紅色'], ['gold', '#ffd23f', '金色'], ['blue', '#4a90d9', '藍色']];
