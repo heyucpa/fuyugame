@@ -5949,6 +5949,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-22T15:00', title: '🎆 節日有煙火了！', lines: [
+    ['🎄', '平安夜、聖誕節（12/24、12/25）、跨年（12/31、1/1）、春節（初一～初五）會放煙火'],
+    ['🎆', '那幾天「🎮 遊戲」裡有「放煙火」：點夜空放煙火，可以選圓圓、愛心、星星、笑臉'],
+    ['🌃', '那幾天傍晚、晚上，大地圖的天空也會自己放煙火'],
+    ['🎉', '跨年那天一起倒數 10、9、8…新年快樂！春節還有爸爸媽媽給的紅包 🧧']
+  ] },
   { id: '2026-11-22T14:00', title: '📜 老師、館員、教練也有任務了', lines: [
     ['🦉', '貓頭鷹老師：找溜出籠子的小倉鼠、幫忙發作業本'],
     ['🐱', '貓咪館員：找被藏起來的故事書、把書放回對的書架'],
@@ -7150,6 +7156,7 @@ function normalizeSave(g) {
     t.bag = Array.isArray(t.bag) ? t.bag.filter(b => isObj(b) && typeof b.id === 'string' && FURN_BY_ID[b.id] && (b.top == null || (typeof b.top === 'string' && FURN_BY_ID[b.top]))).map(b => (b.top ? { id: b.id, top: b.top } : { id: b.id })).slice(0, 30) : []; Object.keys(t).forEach(k => { if (!['day', 'n', 'bag'].includes(k)) delete t[k]; }); } }   // 🐭 小偷：今天來過了沒、抓到幾次、失物招領（被偷走還沒領回的東西）
   if (out.noThief != null && out.noThief !== 1) delete out.noThief;
   if (out.noDayNight != null && out.noDayNight !== 1) delete out.noDayNight;
+  if (out.fw != null) { if (!isObj(out.fw)) delete out.fw; else { ['ny', 'cny'].forEach(k => { if (out.fw[k] != null && !(Number.isInteger(out.fw[k]) && out.fw[k] > 2000 && out.fw[k] < 3000)) delete out.fw[k]; }); Object.keys(out.fw).forEach(k => { if (!['ny', 'cny'].includes(k)) delete out.fw[k]; }); } }   // 🎆 跨年、春節的過場動畫看過哪一年
   if (out.hmis != null) { if (!isObj(out.hmis)) delete out.hmis; else { const h = out.hmis, okId = v => typeof v === 'string' && /^[a-z]{2,12}$/.test(v); if (h.d != null && !(typeof h.d === 'string' && h.d.length <= 12)) delete h.d; ['done', 'last', 'pick'].forEach(k => { if (h[k] == null) return; if (!isObj(h[k])) { delete h[k]; return; } h[k] = Object.fromEntries(Object.entries(h[k]).filter(([a, b]) => /^(teacher|librarian|tkd|d)$/.test(a) && (k === 'done' ? b === 1 : a === 'd' ? typeof b === 'string' && b.length <= 12 : okId(b)))); }); Object.keys(h).forEach(k => { if (!['d', 'done', 'last', 'pick'].includes(k)) delete h[k]; }); } }   // 📜 老師、館員、教練的任務
   if (out.pev != null) { if (!isObj(out.pev)) delete out.pev; else { const v = out.pev; if (v.d != null && !(typeof v.d === 'string' && v.d.length <= 12)) delete v.d; ['n', 'done'].forEach(k => { if (v[k] != null && !(Number.isInteger(v[k]) && v[k] >= 0 && v[k] < 1e6)) delete v[k]; }); if (v.last != null && !/^(petsick|petlost|pettrick|petmud)$/.test(v.last)) delete v.last; Object.keys(v).forEach(k => { if (!['d', 'n', 'last', 'done'].includes(k)) delete v[k]; }); } }   // 🐾 寵物事件今天幾次
   if (out.islEv != null && !(isObj(out.islEv) && typeof out.islEv.d === 'string' && out.islEv.d.length <= 12 && Number.isInteger(out.islEv.n) && out.islEv.n >= 0 && out.islEv.n < 100)) delete out.islEv;   // 🗺️ 大地圖事件今天發生幾次
@@ -29947,7 +29954,8 @@ function allQuickGames() {
   const home = earnGameList().map(([icon, name, fn, id]) => ({ id, icon, name, where: null, go: fn }));
   const away = AWAY_GAMES.filter(g => PLACES[g[2]] && (g[2] !== 'santa' || xmasActive())).map(([icon, name, place, fn]) => ({ id: 'a:' + place + ':' + name, icon, name, where: place, go: fn }));
   const xm = xmasActive() ? [{ id: 'x:ginger', icon: '🍪', name: '做薑餅人', where: null, go: () => openGingerbread() }, { id: 'x:tree', icon: '🎄', name: '裝飾聖誕樹', where: null, go: () => openXmasTree() }, { id: 'x:sleigh', icon: '🛷', name: '雪橇送禮', where: null, go: () => openSleigh() }] : [];   // 🎄 12 月才有
-  return xm.concat(home, away, [{ id: 'q:quest', icon: '🗺️', name: '世界闖關', where: null, go: () => openQuestMap() }]);
+  const fwg = typeof fwDay === 'function' && fwDay() ? [{ id: 'x:fw', icon: '🎆', name: '放煙火', where: null, go: () => openFireworks() }] : [];   // 🎆 放煙火的日子才有
+  return fwg.concat(xm, home, away, [{ id: 'q:quest', icon: '🗺️', name: '世界闖關', where: null, go: () => openQuestMap() }]);
 }
 function gameRecord(id) { if (!id) return; const r = (Array.isArray(G.recentGames) ? G.recentGames : []).filter(x => x !== id); r.unshift(id); G.recentGames = r.slice(0, 8); }
 function quickPlay(g) {
@@ -37079,6 +37087,7 @@ function dispatchDeliver() {   // 救護車到醫院門口：送進去
 function dispatchDraw(ctx, now) {
   copRunDraw(ctx, now);
   try { santaMisDraw(ctx, now); } catch (e) {}
+  try { islFwDraw(ctx, now); } catch (e) {}   // 🎆 節日的夜空煙火
   if (!dispatch || !isl) return;
   const cv = isl.cv, W = cv.clientWidth, H = cv.clientHeight, v = islView(), T = ISL.T, dpr = cv._dpr || 1, t = now / 1000;
   const goal = dispatch.carry ? (() => { const b = isl.m.blds.find(q => q.id === 'hospital'); return b ? [b.door[0] + .5, b.door[1] + .5] : null; })() : [dispatch.x, dispatch.y];
@@ -37435,6 +37444,108 @@ function santaMisFinish() {   // 走到聖誕老公公家門口：完成
   ], () => { try { santaSleighCheck(); } catch (e) {} }), 300);
   return true;
 }
+/* ===== 🎆 煙火（家長 11/22：聖誕節、跨年之類的節日會不會有煙火）=====
+   放煙火的日子（fwDay）：🎄 平安夜、聖誕節（12/24、12/25）、🎉 跨年（12/31、1/1）、🧧 春節（初一～初五）。
+   ・🎆 放煙火小遊戲：點夜空，煙火飛上去炸開；可以選 圓圓、愛心、星星、笑臉。「🎮 遊戲」選單在放煙火的日子才有。
+   ・🌃 大地圖：放煙火的日子傍晚、晚上，小島天空自己放煙火。
+   ・🎉 跨年倒數、🧧 春節：那幾天第一次打開遊戲有過場動畫（每年一次，G.fw = { ny: 哪一年, cny: 哪一年 }）；春節給紅包。 */
+const CNY_DATES = { 2026: [2, 17], 2027: [2, 6], 2028: [1, 26], 2029: [2, 13], 2030: [2, 3], 2031: [1, 23], 2032: [2, 11], 2033: [1, 31], 2034: [2, 19], 2035: [2, 8] };   // 農曆初一（國曆）
+const FW_COLS = ['#ff5c8a', '#ffd23f', '#5cc8ff', '#7bd389', '#b18cff', '#ff9a3c', '#ffffff'];
+function fwToday() { const d = new Date(); return { y: d.getFullYear(), m: (SEASON_TODAY || [d.getMonth() + 1, d.getDate()])[0], d: (SEASON_TODAY || [d.getMonth() + 1, d.getDate()])[1] }; }
+function fwDay() {
+  const { y, m, d } = fwToday();
+  if (m === 12 && (d === 24 || d === 25)) return { id: 'xmas', name: '聖誕節', icon: '🎄' };
+  if ((m === 12 && d === 31) || (m === 1 && d === 1)) return { id: 'ny', name: '跨年', icon: '🎉' };
+  const c = CNY_DATES[y]; if (c) { const a = new Date(y, c[0] - 1, c[1]), b = new Date(y, m - 1, d), k = Math.round((b - a) / 864e5); if (k >= 0 && k <= 4) return { id: 'cny', name: '春節', icon: '🧧' }; }
+  return null;
+}
+function fwBurst(ps, x, y, col, shape, big) {
+  const n = shape === 'round' ? 46 : 40, R = (big ? 1.3 : 1) * 70;
+  for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; let dx, dy;
+    if (shape === 'heart') { const t = a; dx = 16 * Math.pow(Math.sin(t), 3) / 16; dy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) / 16; }
+    else if (shape === 'star') { const u = i / n * 10, seg = Math.floor(u), f = u - seg, P = j => { const a2 = -Math.PI / 2 + j * Math.PI / 5, r = j % 2 ? .42 : 1; return [Math.cos(a2) * r, Math.sin(a2) * r]; }, p0 = P(seg), p1 = P(seg + 1); dx = p0[0] + (p1[0] - p0[0]) * f; dy = p0[1] + (p1[1] - p0[1]) * f; }
+    else if (shape === 'smile') { if (i < 26) { const t = Math.PI * .15 + i / 25 * Math.PI * .7; dx = Math.cos(t) * .7; dy = Math.sin(t) * .6; } else if (i < 33) { dx = -.35 + (i % 2) * .04; dy = -.35 - (i - 26) * .02; } else { dx = .35 + (i % 2) * .04; dy = -.35 - (i - 33) * .02; } }
+    else { dx = Math.cos(a) * (.7 + Math.random() * .3); dy = Math.sin(a) * (.7 + Math.random() * .3); }
+    ps.push({ x, y, vx: dx * R, vy: dy * R, life: 1.4 + Math.random() * .4, t: 0, col: shape === 'round' && i % 3 === 0 ? FW_COLS[(FW_COLS.indexOf(col) + 2) % FW_COLS.length] : col }); }
+  ps.push({ flash: true, x, y, t: 0, life: .18 });
+}
+function fwStep(g, ps, rk, dt) {   // 畫火箭和火花（加亮的混色，看起來會發光）
+  for (let i = rk.length - 1; i >= 0; i--) { const r = rk[i]; r.t += dt; r.y -= r.v * dt; r.x += r.vx * dt;
+    g.fillStyle = 'rgba(255,240,200,.9)'; g.beginPath(); g.arc(r.x, r.y, 2.4, 0, 7); g.fill(); g.fillStyle = 'rgba(255,200,120,.4)'; g.fillRect(r.x - 1, r.y + 2, 2, 12);
+    if (r.y <= r.ty) { fwBurst(ps, r.x, r.y, r.col, r.shape, r.big); rk.splice(i, 1); try { Sound.play('boing'); } catch (e) {} } }
+  g.save(); g.globalCompositeOperation = 'lighter';
+  for (let i = ps.length - 1; i >= 0; i--) { const p = ps[i]; p.t += dt; if (p.t > p.life) { ps.splice(i, 1); continue; }
+    if (p.flash) { const k = 1 - p.t / p.life, gr = g.createRadialGradient(p.x, p.y, 0, p.x, p.y, 26); gr.addColorStop(0, `rgba(255,255,230,${(k * .55).toFixed(2)})`); gr.addColorStop(1, 'rgba(255,255,230,0)'); g.fillStyle = gr; g.beginPath(); g.arc(p.x, p.y, 26, 0, 7); g.fill(); continue; }   // 炸開那一下的閃光（中間亮、外面淡）
+    p.vx *= Math.pow(.25, dt); p.vy = p.vy * Math.pow(.25, dt) + 40 * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+    const k = 1 - p.t / p.life; g.globalAlpha = k; g.fillStyle = p.col; g.beginPath(); g.arc(p.x, p.y, 1.2 + k * 1.6, 0, 7); g.fill(); }
+  g.restore(); g.globalAlpha = 1;
+}
+function fwLaunch(rk, x, ty, H, shape, col, big) { rk.push({ x, y: H, ty, v: 260 + Math.random() * 60, vx: (Math.random() - .5) * 20, t: 0, shape: shape || 'round', col: col || FW_COLS[Math.floor(Math.random() * FW_COLS.length)], big }); try { Sound.play('whoosh'); } catch (e) {} }
+function fwSky(g, W, H, t, cny) {
+  const sk = g.createLinearGradient(0, 0, 0, H); sk.addColorStop(0, '#0b1030'); sk.addColorStop(1, cny ? '#4a1a3a' : '#2b3d73'); g.fillStyle = sk; g.fillRect(0, 0, W, H);
+  g.fillStyle = 'rgba(255,255,255,.7)'; for (let i = 0; i < 30; i++) g.fillRect((i * 53) % W, (i * 29) % (H * .6), 1.5, 1.5);
+  g.fillStyle = '#1a1a2e'; [[0, 40, 30], [36, 60, 44], [86, 36, 26], [118, 70, 40], [166, 46, 34], [206, 80, 46], [258, 50, 30], [294, 64, 38], [338, 40, 30]].forEach(([x, h, w]) => g.fillRect(x, H - h, w, h));
+  g.fillStyle = '#ffe39a'; for (let i = 0; i < 24; i++) { const x = (i * 37) % 360, y = H - 10 - (i * 13) % 50; if ((i + Math.floor(t)) % 7) g.fillRect(x, y, 4, 4); }
+  if (cny) [[50, 30], [310, 30]].forEach(([x, y]) => { g.strokeStyle = '#7a3a1a'; g.lineWidth = 1; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, y - 10); g.stroke(); g.fillStyle = '#e03131'; g.beginPath(); g.ellipse(x, y + Math.sin(t * 2 + x) * 2, 13, 11, 0, 0, 7); g.fill(); g.fillStyle = '#ffd23f'; g.fillRect(x - 6, y - 12, 12, 3); g.fillRect(x - 6, y + 10, 12, 3); g.fillRect(x - 1, y + 13, 2, 7); });
+}
+function openFireworks() {
+  const day = fwDay() || { id: 'any', name: '', icon: '🎆' }, cny = day.id === 'cny';
+  const w = openGameWindow(`🎆 放煙火${day.name ? '（' + day.name + '）' : ''}`, '點夜空，煙火就會飛上去炸開！下面可以選煙火的形狀（數字鍵 1～4，空白鍵在中間放）。');
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const W = 360, H = 240, { c, g, pos } = gameCanvas(w.stage, W, H), ps = [], rk = [];
+  let shape = 'round', t = 0, last = performance.now(), raf = 0, live = true, n = 0, paid = false;
+  const SH = [['round', '🎆', '圓圓'], ['heart', '💗', '愛心'], ['star', '⭐', '星星'], ['smile', '😊', '笑臉']];
+  const row = el('div', 'car-opts'); SH.forEach(([k, e, nm], i) => { const b = el('button', i ? '' : 'on'); b.dataset.key = String(i + 1); b.append(el('span', 'tkd-e', e), el('span', '', nm)); b.onclick = () => pick(i); row.appendChild(b); }); w.stage.appendChild(row);
+  const pick = i => { shape = SH[i][0]; [...row.children].forEach((b, k) => b.classList.toggle('on', k === i)); Sound.play('click'); };
+  const fire = (x, y) => { fwLaunch(rk, x, Math.max(30, Math.min(H - 80, y)), H - 40, shape); n++;
+    if (n === 10 && !paid) { paid = true; const got = payReward(w, 60); w.status.textContent = `好漂亮的煙火秀！　💰 +${fmt(got)}`; } else if (!paid) w.status.textContent = `放了 ${n} 發煙火！`; };
+  c.addEventListener('pointerdown', e => { e.preventDefault(); const p = pos(e); fire(p.x, p.y); });
+  const kd = e => { const dg = /^(?:Digit|Numpad)([1-4])$/.exec(e.code); if (dg) { e.preventDefault(); pick(+dg[1] - 1); } else if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); if (!e.repeat) fire(60 + Math.random() * 240, 50 + Math.random() * 80); } };
+  document.addEventListener('keydown', kd);
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); };
+  const frame = now => { if (!live) return; raf = requestAnimationFrame(frame); const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+    fwSky(g, W, H, t, cny); fwStep(g, ps, rk, dt);
+    if (day.name) { g.font = '900 18px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillStyle = 'rgba(255,255,255,.85)'; g.fillText(day.id === 'ny' ? '🎉 新年快樂！' : cny ? '🧧 新年快樂！' : '🎄 聖誕快樂！', W / 2, 26); }
+    copDrawKid(g, 40, H - 4, .7, t, false, 1, 'joy'); };
+  raf = requestAnimationFrame(frame);
+  fwLaunch(rk, 120, 70, H - 40, 'round'); fwLaunch(rk, 240, 90, H - 40, 'heart');
+  leaveButton(w); w.status.textContent = '點夜空放煙火！';
+  openFireworks.test = { fire, pick, ps, rk, get n() { return n; } };
+}
+// 🌃 大地圖：放煙火的日子傍晚、晚上，天空自己放煙火
+const islFw = { ps: [], rk: [], next: 0, last: 0 };
+function islFwDraw(ctx, now) {
+  if (!isl || !fwDay()) { islFw.ps.length = 0; islFw.rk.length = 0; return; }
+  const ph = islPhase(); if (ph !== 'night' && ph !== 'evening') return;
+  const cv = isl.cv, W = cv.clientWidth, H = cv.clientHeight, dpr = cv._dpr || 1, dt = Math.min(.05, (now - (islFw.last || now)) / 1000); islFw.last = now;
+  if (now > islFw.next && islFw.rk.length < 3) { islFw.next = now + 900 + Math.random() * 1400; fwLaunch(islFw.rk, 40 + Math.random() * (W - 80), 50 + Math.random() * H * .3, H * .55, ['round', 'round', 'heart', 'star'][Math.floor(Math.random() * 4)], null, true); }
+  ctx.save(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); fwStep(ctx, islFw.ps, islFw.rk, dt); ctx.restore();
+}
+// 🎉 跨年倒數、🧧 春節：那幾天第一次打開遊戲（每年一次）
+function fwFestScene() {
+  const day = fwDay(); if (!day || G.guide !== 'done' || document.getElementById('vevScene')) return false;
+  if (!G.fw || typeof G.fw !== 'object') G.fw = {}; const y = fwToday().y, yr = day.id === 'ny' && fwToday().m === 12 ? y + 1 : y;
+  const ps = [], rk = []; let last = 0;
+  const show = (g, W, H, t, cny) => { const now = t; const dt = Math.min(.05, Math.max(0, now - last)); last = now; fwSky(g, W, H, t, cny); if (rk.length < 3 && Math.random() < dt * 2.5) fwLaunch(rk, 40 + Math.random() * 280, 40 + Math.random() * 70, H - 40, ['round', 'heart', 'star', 'round'][Math.floor(Math.random() * 4)]); fwStep(g, ps, rk, dt); };
+  if (day.id === 'ny') {
+    if (G.fw.ny === yr) return false; G.fw.ny = yr; saveGame();
+    vevScene([
+      { text: '大家一起倒數！10、9、8、7……', draw: (g, W, H, t) => { last = 0; fwSky(g, W, H, t); const k = Math.max(1, 10 - Math.floor(t * 1.6)); g.font = '900 80px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#ffd23f'; g.globalAlpha = 1 - (t * 1.6 % 1) * .5; g.fillText(String(k), W / 2, H / 2 - 20); g.globalAlpha = 1; g.textBaseline = 'alphabetic'; copDrawKid(g, 60, H - 4, .8, t, false, 1, 'wow'); } },
+      { text: `🎆 新年快樂！${yr} 年也要開開心心的喔！`, draw: (g, W, H, t) => { show(g, W, H, t); g.font = '900 24px "Microsoft JhengHei","PingFang TC",sans-serif'; g.textAlign = 'center'; g.fillStyle = '#ffd23f'; g.fillText(`🎉 ${yr} 新年快樂！`, W / 2, 34); copDrawKid(g, 60, H - 4, .8, t, false, 1, 'joy'); } }
+    ], () => { try { toast('🎆 新年快樂！到「🎮 遊戲」可以自己放煙火喔！'); } catch (e) {} });
+    return true;
+  }
+  if (day.id === 'cny') {
+    if (G.fw.cny === y) return false; G.fw.cny = y; addBells(200); saveGame(); refreshTop();
+    vevScene([
+      { text: '🧨 劈哩啪啦！過年囉！', draw: (g, W, H, t) => { show(g, W, H, t, true); g.font = '20px sans-serif'; g.textAlign = 'center'; for (let i = 0; i < 6; i++) g.fillText('🧨', 30 + i * 60, H - 70 + Math.sin(t * 20 + i) * 3); copDrawKid(g, 180, H - 4, .9, t, false, 1, 'joy'); } },
+      { text: '爸爸媽媽：恭喜發財！這是給你的紅包～　🧧 💰 +200', draw: (g, W, H, t) => { show(g, W, H, t, true); g.font = '44px sans-serif'; g.textAlign = 'center'; g.fillText('🧧', W / 2, 110 - Math.abs(Math.sin(t * 3)) * 10); g.font = '900 22px "Microsoft JhengHei","PingFang TC",sans-serif'; g.fillStyle = '#ffd23f'; g.fillText('新年快樂　恭喜發財', W / 2, 40); copDrawKid(g, 80, H - 4, .9, t, false, 1, 'joy'); } }
+    ], () => { try { toast('🧧 拿到紅包 💰200！到「🎮 遊戲」可以自己放煙火喔！'); } catch (e) {} });
+    return true;
+  }
+  return false;
+}
+setTimeout(() => { try { fwFestScene(); } catch (e) {} }, 7000);
 // 🧦 聖誕襪：每天一份小禮物
 function openStocking() {
   const x = xmasState(), d = today();
