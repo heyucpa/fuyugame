@@ -5854,6 +5854,7 @@ FURN_BY_ID.reindeer_sleigh = { id: 'reindeer_sleigh', name: '麋鹿雪橇', pric
  ['souv_windmill', '糖果國的棒棒糖風車', [{ x: .46, y: .46, w: .08, d: .08, z: 0, h: 34, c: '#ffffff' }, { k: 'ball', x: .5, y: .5, z: 38, r: 8, c: '#ff6b9d' }, { k: 'ball', x: .5, y: .5, z: 38, r: 4, c: '#ffd23f' }]],
  ['souv_star', '星星國的星星夜燈', [{ x: .32, y: .32, w: .36, d: .36, z: 0, h: 5, c: '#3a0ca3' }, { k: 'ball', x: .5, y: .5, z: 16, r: 7, c: '#ffe066' }, { k: 'ball', x: .38, y: .5, z: 20, r: 3, c: '#ffe066' }, { k: 'ball', x: .62, y: .5, z: 20, r: 3, c: '#ffe066' }, { k: 'ball', x: .5, y: .5, z: 26, r: 3, c: '#ffe066' }]]
 ].forEach(([id, name, parts]) => { FURN_BY_ID[id] = { id, name, price: 0, theme: 'cute', w: 1, d: 1, gift: true, souvenir: true, parts }; });
+FURN_BY_ID.pet_trophy = { id: 'pet_trophy', name: '寵物運動會獎盃', price: 0, theme: 'cute', w: 1, d: 1, gift: true, parts: [{ x: .3, y: .3, w: .4, d: .4, z: 0, h: 5, c: '#8a5a33' }, { x: .42, y: .42, w: .16, d: .16, z: 5, h: 8, c: '#e0b832' }, { k: 'ball', x: .5, y: .5, z: 20, r: 8, c: '#ffd23f' }, { k: 'ball', x: .32, y: .5, z: 21, r: 3, c: '#e0b832' }, { k: 'ball', x: .68, y: .5, z: 21, r: 3, c: '#e0b832' }, { k: 'ball', x: .5, y: .6, z: 22, r: 2.4, c: '#e8505b' }] };   // 🏅 寵物運動會第一面金牌
 FURN_BY_ID.plane_model = { id: 'plane_model', name: '飛機模型', price: 0, theme: 'modern', w: 1, d: 1, gift: true, parts: [{ x: .3, y: .3, w: .4, d: .4, z: 0, h: 4, c: '#5a6475' }, { x: .47, y: .47, w: .06, d: .06, z: 4, h: 14, c: '#8a94a6' }, { x: .2, y: .44, w: .6, d: .12, z: 18, h: 6, c: '#ffffff' }, { x: .38, y: .2, w: .14, d: .6, z: 20, h: 2, c: '#4a90d9' }, { x: .22, y: .42, w: .08, d: .16, z: 24, h: 6, c: '#4a90d9' }, { k: 'ball', x: .8, y: .5, z: 21, r: 2, c: '#ffd23f' }] };   // ✈️ 機場三個工作都做到第 3 關
 FURN_BY_ID.xmas_teddy = { id: 'xmas_teddy', name: '聖誕老公公送的聖誕熊', price: 0, theme: 'cute', w: 1, d: 1, gift: true, parts: [
   { k: 'ball', x: .5, y: .5, z: 10, r: 12, c: '#c98d5a' }, { k: 'ball', x: .5, y: .5, z: 30, r: 9, c: '#c98d5a' }, { k: 'ball', x: .36, y: .5, z: 38, r: 3.6, c: '#c98d5a' }, { k: 'ball', x: .64, y: .5, z: 38, r: 3.6, c: '#c98d5a' },
@@ -6021,6 +6022,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-22T22:00', title: '🏅 寵物運動會', lines: [
+    ['🏅', '「🎮 遊戲」多了寵物運動會：帶自己的寵物跑障礙賽，跟別人家的寵物比賽'],
+    ['🦘', '障礙前面亮起來的時候：🦘 跳欄、🐛 鑽山洞、🤸 走平衡木，按對了就順順過去'],
+    ['⭐', '照顧得越好（吃飽、洗澡、心情好）跑得越快；第一次拿金牌送「寵物運動會獎盃」']
+  ] },
   { id: '2026-11-22T21:00', title: '🏮 端午、中秋、元宵節活動', lines: [
     ['🐉', '端午節：划龍舟（跟著鼓聲一起划，跟青蛙隊比賽）、包粽子'],
     ['🥮', '中秋節：中秋烤肉（熟了趕快夾，不要烤焦）、跟月亮上的玉兔搗麻糬'],
@@ -7264,6 +7270,7 @@ function normalizeSave(g) {
   if (out.help != null) { if (!isObj(out.help)) delete out.help; else { const h = out.help, ok = k => /^(ice|forest|sea|desert|duck|lamb|game|books|jump|film|busy|shot|tools|siren|dumbbell|balls|ring|carousel|garden|dinoegg|cloud|ants|fallstar)$/.test(k); h.list = Array.isArray(h.list) ? [...new Set(h.list.filter(ok))].slice(0, 6) : []; h.done = isObj(h.done) ? Object.fromEntries(Object.entries(h.done).filter(([k, v]) => ok(k) && Number.isInteger(v) && v >= 0 && v < 1e6)) : {}; if (h.d != null && !(typeof h.d === 'string' && h.d.length <= 12)) delete h.d; Object.keys(h).forEach(k => { if (!['list', 'done', 'd'].includes(k)) delete h[k]; }); } }   // 📬 求救信箱
   if (out.visitAt != null) { if (!isObj(out.visitAt)) delete out.visitAt; else out.visitAt = Object.fromEntries(Object.entries(out.visitAt).filter(([k, v]) => typeof k === 'string' && k.length <= 12 && typeof v === 'string' && v.length <= 12).slice(0, 60)); }   // 🗺️ 每個地方最後一次去的日子
   if (out.fw != null) { if (!isObj(out.fw)) delete out.fw; else { ['ny', 'cny'].forEach(k => { if (out.fw[k] != null && !(Number.isInteger(out.fw[k]) && out.fw[k] > 2000 && out.fw[k] < 3000)) delete out.fw[k]; }); Object.keys(out.fw).forEach(k => { if (!['ny', 'cny'].includes(k)) delete out.fw[k]; }); } }   // 🎆 跨年、春節的過場動畫看過哪一年
+  if (out.petSports != null) { if (!isObj(out.petSports)) delete out.petSports; else { const ps = out.petSports; Object.keys(ps).forEach(k => { if (!['races', 'gold'].includes(k) || !(Number.isFinite(ps[k]) && ps[k] >= 0 && ps[k] < 1e7)) delete ps[k]; else ps[k] = Math.floor(ps[k]); }); } }   // 🏅 寵物運動會
   if (out.hmis != null) { if (!isObj(out.hmis)) delete out.hmis; else { const h = out.hmis, okId = v => typeof v === 'string' && /^[a-z]{2,12}$/.test(v); if (h.d != null && !(typeof h.d === 'string' && h.d.length <= 12)) delete h.d; ['done', 'last', 'pick'].forEach(k => { if (h[k] == null) return; if (!isObj(h[k])) { delete h[k]; return; } h[k] = Object.fromEntries(Object.entries(h[k]).filter(([a, b]) => /^(teacher|librarian|tkd|d)$/.test(a) && (k === 'done' ? b === 1 : a === 'd' ? typeof b === 'string' && b.length <= 12 : okId(b)))); }); Object.keys(h).forEach(k => { if (!['d', 'done', 'last', 'pick'].includes(k)) delete h[k]; }); } }   // 📜 老師、館員、教練的任務
   if (out.pev != null) { if (!isObj(out.pev)) delete out.pev; else { const v = out.pev; if (v.d != null && !(typeof v.d === 'string' && v.d.length <= 12)) delete v.d; ['n', 'done'].forEach(k => { if (v[k] != null && !(Number.isInteger(v[k]) && v[k] >= 0 && v[k] < 1e6)) delete v[k]; }); if (v.last != null && !/^(petsick|petlost|pettrick|petmud)$/.test(v.last)) delete v.last; Object.keys(v).forEach(k => { if (!['d', 'n', 'last', 'done'].includes(k)) delete v[k]; }); } }   // 🐾 寵物事件今天幾次
   if (out.islEv != null && !(isObj(out.islEv) && typeof out.islEv.d === 'string' && out.islEv.d.length <= 12 && Number.isInteger(out.islEv.n) && out.islEv.n >= 0 && out.islEv.n < 100)) delete out.islEv;   // 🗺️ 大地圖事件今天發生幾次
@@ -19304,6 +19311,7 @@ function earnGameList() {
     ['🎯', '彈弓丟蘋果', openSlingGame],
     ['🧩', '拼圖', openPuzzleGame],
     ['🐾', '寵物收集模擬器', openSimGame],
+    ['🏅', '寵物運動會', openPetSports],
     ['⚪', '彈珠台', openMarbleGame],
     ['🐠', '撈金魚', openScoopGame],
     ['🍪', '烤餅乾', openBakeGame],
@@ -38570,6 +38578,125 @@ function openTangyuan() {
   raf = requestAnimationFrame(tick);
   w.status.textContent = '一直按，把麵團搓圓！';
   openTangyuan.test = { roll, get made() { return made; }, get done() { return done; }, skip: () => { cook = 2; } };
+}
+/* ===== 🏅 寵物運動會（家長 11/22）=====
+   帶自己的寵物跑障礙賽，跟兩隻別人家的寵物比：
+   🦘 跳欄（空白鍵／↑）、🐛 鑽山洞（↓）、🤸 走平衡木（→）；手機按下面三顆按鈕，或直接點畫面（點畫面＝做下一關要的動作）。
+   障礙前面亮起來的時候按對的動作就順順過去；沒按或來不及，寵物「哎呀」停一下再過，不會失敗。
+   照顧得越好跑得越快：吃飽、乾淨、心情好（hunger／clean／mood 平均）→ 速度 ×0.8～×1.15，開跑前會顯示 ⭐。
+   G.petSports = { races, gold }；第一次拿金牌送「寵物運動會獎盃」。 */
+const PS_OBS = { hurdle: ['🦘', '跳欄', 'jump'], tunnel: ['🐛', '鑽山洞', 'crawl'], beam: ['🤸', '走平衡木', 'balance'] };
+function petSportsState() { if (!G.petSports || typeof G.petSports !== 'object') G.petSports = {}; const s = G.petSports; ['races', 'gold'].forEach(k => { if (!(Number.isFinite(s[k]) && s[k] >= 0)) s[k] = 0; }); return s; }
+function petCare(p) { const v = k => Math.max(0, Math.min(100, Number(p && p[k]) || 0)); return (v('hunger') + v('clean') + v('mood')) / 300; }
+function openPetSports() {
+  const p = G.pet;
+  if (!p || p.stage === 'egg' || !PET_SPECIES_BY_ID[p.species]) { toast('🥚 寵物孵出來以後才能參加運動會喔！'); Sound.play('miss'); return; }
+  const W = 340, H = 230, LEN = 1900, GX = 90;
+  const sp = PET_SPECIES_BY_ID[p.species], care = petCare(p), stars = care >= .8 ? 3 : care >= .5 ? 2 : 1, mult = .8 + .35 * care;
+  const nm = petNameOf(p);
+  const w = openGameWindow('🏅 寵物運動會', `${nm}要參加障礙賽！障礙前面亮起來的時候：🦘 跳欄（空白鍵或 ↑）、🐛 鑽山洞（↓）、🤸 走平衡木（→）。也可以直接點畫面。照顧得越好，跑得越快喔！`);
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const { c, g } = gameCanvas(w.stage, W, H);
+  const kinds = Object.keys(PS_OBS), obs = [];
+  for (let i = 0, x = 320; i < 7; i++, x += 220 + Math.random() * 40) obs.push({ x, k: i < 3 ? kinds[i] : kinds[Math.floor(Math.random() * 3)] });
+  const pool = PET_SPECIES.filter(s => !s.rare && !s.story && s.id !== p.species).sort(() => Math.random() - .5);
+  const mk = (s, base, lane, me) => ({ s, x: 0, base, lane, me, stun: 0, act: null, actT: 0, done: false, at: 0, next: 0, ok: {} });
+  const me = mk(sp, 130 * mult, 2, true), rivals = [mk(pool[0] || sp, 132, 0, false), mk(pool[1] || sp, 118, 1, false)], all = [me].concat(rivals);
+  const LANE_Y = [112, 150, 208], LANE_S = [.58, .7, 1];
+  let t = -2.4, last = performance.now(), raf = 0, done = false, msg = '', msgT = 0, place = 0, stumbles = 0;
+  const passed = (r, o) => { const v = r.ok[obs.indexOf(o)]; return v === 'good' || v === 'slow'; };
+  const nextOb = r => obs.find(o => o.x + (o.k === 'beam' ? 120 : 24) > r.x && !passed(r, o));
+  const inZone = (r, o) => o && r.x > o.x - 80 && r.x < o.x + 4;
+  const doAct = a => {
+    if (done || t < 0 || me.done) return; const o = nextOb(me);
+    if (!o || !inZone(me, o)) { msg = '還沒到，等障礙亮起來再按～'; msgT = .8; return; }
+    if (PS_OBS[o.k][2] !== a) { msg = `這個要按 ${PS_OBS[o.k][0]} ${PS_OBS[o.k][1]}！`; msgT = 1; Sound.play('miss'); return; }
+    me.ok[obs.indexOf(o)] = 'good'; Sound.play('pickUp'); msg = ['好棒！', '漂亮！', '太厲害了！'][Math.floor(Math.random() * 3)]; msgT = .6;
+  };
+  const tapAct = () => { const o = nextOb(me); if (o && inZone(me, o)) doAct(PS_OBS[o.k][2]); else doAct('none'); };
+  const kd = e => { const a = { Space: 'jump', ArrowUp: 'jump', KeyW: 'jump', ArrowDown: 'crawl', KeyS: 'crawl', ArrowRight: 'balance', KeyD: 'balance' }[e.code]; if (a) { e.preventDefault(); if (!e.repeat) doAct(a); } };
+  document.addEventListener('keydown', kd);
+  c.addEventListener('pointerdown', e => { e.preventDefault(); tapAct(); });
+  const bar = el('div', 'tkd-moves'); w.stage.appendChild(bar);
+  const btnOf = {};
+  Object.values(PS_OBS).forEach(([ic, name, a]) => { const b = el('button', 'tkd-move'); b.append(el('span', '', `${ic} ${name}`)); b.onclick = () => doAct(a); btnOf[a] = b; bar.appendChild(b); });
+  leaveButton(w);
+  gameCleanup = () => { cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); };
+  const finish = () => {
+    done = true; gameCleanup(); bar.remove();
+    const rank = 1 + rivals.filter(r => r.done && r.at < me.at).length, S = petSportsState(); S.races++;
+    const medal = ['🥇', '🥈', '🥉'][rank - 1];
+    let extra = '';
+    if (rank === 1) { S.gold++; if (S.gold === 1) { addItem('pet_trophy', 1); extra = '　🏆 第一面金牌！送你「寵物運動會獎盃」，放進「我的東西」了'; } }
+    try { p.mood = Math.min(100, (Number(p.mood) || 0) + (rank === 1 ? 15 : 8)); p.happyUntil = Date.now() + 8000; } catch (e) {}
+    const got = payReward(w, [160, 90, 60][rank - 1]); Sound.play(rank === 1 ? 'fanfare' : 'coin'); kidMoodUp(4);
+    festEnd(w, `${medal} ${nm}跑了第 ${rank} 名！${rank === 1 ? '好厲害！' : stars < 3 ? '多照顧牠（餵飽、洗澡、陪牠玩），下次會跑更快！' : '下次在障礙前面按準一點，一定可以第一！'}　💰 +${fmt(got)}${extra}`, openPetSports);
+  };
+  const runner = (r, dt) => {
+    if (r.done) return;
+    if (r.stun > 0) { r.stun -= dt; return; }
+    const o = nextOb(r);
+    if (!r.me && o && inZone(r, o) && r.ok[obs.indexOf(o)] == null && r.x > o.x - 40) r.ok[obs.indexOf(o)] = Math.random() < .72 ? 'good' : 'miss';   // 別人家的寵物大部分會過
+    if (o && r.x >= o.x - 2 && !passed(r, o)) {   // 撞到了：停一下，然後自己慢慢過
+      r.ok[obs.indexOf(o)] = 'slow'; r.stun = .9; if (r.me) { stumbles++; msg = '哎呀！沒關係，再加油！'; msgT = 1; Sound.play('miss'); } return;
+    }
+    r.x += r.base * dt;
+    if (r.x >= LEN) { r.x = LEN; r.done = true; r.at = t; if (r.me) finish(); }
+  };
+  const drawOb = (o, sx, y, s) => {
+    g.save(); g.translate(sx, y); g.scale(s, s);
+    if (o.k === 'hurdle') { g.fillStyle = '#fff'; g.fillRect(-2, -30, 4, 30); g.fillRect(22, -30, 4, 30); for (let i = 0; i < 4; i++) { g.fillStyle = i % 2 ? '#fff' : '#e8505b'; g.fillRect(-2 + i * 7, -32, 7, 6); } }
+    else if (o.k === 'tunnel') { g.fillStyle = '#6fb7e8'; g.beginPath(); g.arc(12, 0, 24, Math.PI, 0); g.fill(); g.fillStyle = '#3a6e96'; g.beginPath(); g.arc(12, 0, 14, Math.PI, 0); g.fill(); g.strokeStyle = 'rgba(255,255,255,.5)'; g.lineWidth = 2; g.beginPath(); g.arc(12, 0, 19, Math.PI, 0); g.stroke(); }
+    else { g.fillStyle = '#8a5a33'; g.fillRect(4, -14, 4, 14); g.fillRect(112, -14, 4, 14); g.fillStyle = '#d9a86a'; g.fillRect(0, -18, 120, 6); }
+    g.restore();
+  };
+  const drawRunner = (r, sx, y, s) => {
+    const o = obs.find(q => r.x > q.x - 10 && r.x < q.x + (q.k === 'beam' ? 122 : 30)), state = o ? r.ok[obs.indexOf(o)] : null;
+    let dy = 0, sy = 1, rot = 0;
+    const bob = r.done || r.stun > 0 || t < 0 ? 0 : Math.abs(Math.sin(t * 12 + r.lane)) * 4;
+    if (o && state === 'good') { const k = (r.x - (o.x - 10)) / ((o.k === 'beam' ? 132 : 40));
+      if (o.k === 'hurdle') dy = -Math.sin(Math.min(1, k) * Math.PI) * 30 * s; else if (o.k === 'tunnel') sy = .62; else { dy = -18 * s; rot = Math.sin(t * 8) * .12; } }
+    if (r.stun > 0) rot = Math.sin(t * 30) * .2;
+    g.save(); g.translate(sx, y + dy - bob); g.scale(s * 1.05, s * 1.05 * sy); g.rotate(rot);
+    try { drawCreature(g, r.s, { happy: true, clean: 100, adult: r.me ? lookStage(p) === 'adult' : true, baby: r.me && lookStage(p) === 'baby' }); } catch (e) {}
+    g.restore();
+    if (r.stun > 0) { g.font = '16px sans-serif'; g.textAlign = 'center'; g.fillText('💫', sx, y - 52 * s); }
+  };
+  const tick = now => {
+    if (done) return; raf = requestAnimationFrame(tick);
+    const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt; if (msgT > 0) msgT -= dt;
+    if (t >= 0) all.forEach(r => runner(r, dt));
+    const cam = me.x, SX = x => GX + (x - cam);
+    // 場地
+    g.fillStyle = '#bfe6f2'; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#e8d3b0'; g.fillRect(0, 50, W, 30);   // 看台
+    for (let i = 0; i < 26; i++) { const x = ((i * 23 - cam * .3) % (W + 40) + W + 40) % (W + 40) - 20; g.fillStyle = ['#e8505b', '#4a90d9', '#ffd23f', '#7bd389', '#b18cff'][i % 5]; g.beginPath(); g.arc(x, 62 + (i % 2) * 8, 5, 0, 7); g.fill(); }
+    for (let i = 0; i < 12; i++) { const x = ((i * 40 - cam * .3) % (W + 40) + W + 40) % (W + 40) - 20; g.fillStyle = ['#e8505b', '#ffd23f', '#4a90d9'][i % 3]; g.beginPath(); g.moveTo(x, 40); g.lineTo(x + 10, 40); g.lineTo(x + 5, 50); g.fill(); }
+    g.fillStyle = '#7ab567'; g.fillRect(0, 80, W, H - 80);
+    [0, 1, 2].forEach(l => { g.fillStyle = l % 2 ? '#d98b5f' : '#e09a6e'; g.fillRect(0, LANE_Y[l] - 22 * LANE_S[l], W, 26 * LANE_S[l]); g.fillStyle = 'rgba(255,255,255,.7)'; g.fillRect(0, LANE_Y[l] + 4 * LANE_S[l], W, 2); });
+    const fx = SX(LEN) + 10; if (fx < W + 30) { for (let yy = 84; yy < H; yy += 8) { g.fillStyle = (yy / 8) % 2 ? '#222' : '#fff'; g.fillRect(fx, yy, 6, 8); } }
+    // 障礙（每條跑道都有）＋自己跑道上的提示
+    obs.forEach((o, i) => { const sx = SX(o.x); if (sx < -140 || sx > W + 20) return; [0, 1, 2].forEach(l => drawOb(o, sx, LANE_Y[l], LANE_S[l]));
+      if (!passed(me, o) && !me.done) { const zone = inZone(me, o), [ic] = PS_OBS[o.k], bx = sx + (o.k === 'beam' ? 20 : 12), by = LANE_Y[2] - 74, r = zone ? 17 + Math.sin(t * 10) * 2 : 13;   // 自己跑道的提示泡泡：亮起來＝現在按
+        g.globalAlpha = zone ? 1 : .7; g.fillStyle = zone ? '#ffd23f' : '#ffffff'; g.beginPath(); g.arc(bx, by, r, 0, 7); g.fill(); g.beginPath(); g.moveTo(bx - 5, by + r - 2); g.lineTo(bx + 5, by + r - 2); g.lineTo(bx, by + r + 7); g.fill();
+        g.font = `${Math.round(r * 1.2)}px sans-serif`; g.textAlign = 'center'; g.fillText(ic, bx, by + r * .42); g.globalAlpha = 1; } });
+    all.slice().sort((a, b) => a.lane - b.lane).forEach(r => drawRunner(r, SX(r.x), LANE_Y[r.lane], LANE_S[r.lane]));
+    g.font = '700 10px sans-serif'; g.textAlign = 'left'; g.fillStyle = '#fff'; rivals.forEach(r => { const sx = SX(r.x); if (sx > -20 && sx < W) g.fillText(r.s.name, sx - 14, LANE_Y[r.lane] + 14); });
+    // 按鈕亮起來
+    const o = nextOb(me), need = o && inZone(me, o) ? PS_OBS[o.k][2] : null;
+    Object.entries(btnOf).forEach(([a, b]) => b.classList.toggle('on', a === need));
+    // 上面
+    g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.roundRect(8, 6, W - 16, 26, 8); g.fill();
+    g.fillStyle = '#eee'; g.fillRect(110, 17, W - 140, 4);
+    all.forEach(r => { g.fillStyle = r.me ? '#e8505b' : '#999'; g.beginPath(); g.arc(110 + (W - 140) * Math.min(1, r.x / LEN), 19, r.me ? 6 : 4, 0, 7); g.fill(); });
+    g.fillStyle = '#3a3240'; g.font = '700 12px sans-serif'; g.textAlign = 'left'; g.fillText(`${nm} ${'⭐'.repeat(stars)}`, 14, 24);
+    if (t < 0) { g.fillStyle = '#c4313a'; g.font = '900 28px sans-serif'; g.textAlign = 'center'; g.fillText(t < -1.6 ? '3' : t < -.8 ? '2' : '1', W / 2, 110); g.font = '700 12px sans-serif'; g.fillStyle = '#3a3240'; g.fillText(stars === 3 ? `${nm}今天精神超好！` : stars === 2 ? `${nm}精神還不錯` : `${nm}有點累……照顧好會跑更快喔`, W / 2, 130); }
+    else if (t < .6) { g.fillStyle = '#c4313a'; g.font = '900 28px sans-serif'; g.textAlign = 'center'; g.fillText('開始！', W / 2, 110); }
+    if (msgT > 0) { g.fillStyle = '#c4313a'; g.font = '900 15px sans-serif'; g.textAlign = 'center'; g.fillText(msg, W / 2, 100); }
+  };
+  raf = requestAnimationFrame(tick);
+  w.status.textContent = `${nm}照顧星星：${'⭐'.repeat(stars)}　障礙亮起來的時候按對的動作！`;
+  openPetSports.test = { me, rivals, obs, doAct, tapAct, setT: v => { t = v; }, get done() { return done; }, stars, mult, get stumbles() { return stumbles; } };
 }
 /* 🎄 裝飾聖誕樹（記憶力） */
 const TREE_SLOTS = [[150, 72], [134, 102], [166, 102], [120, 134], [150, 130], [180, 134], [104, 168], [134, 166], [166, 168], [196, 166]];
