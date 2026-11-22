@@ -6037,6 +6037,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-23T03:00', title: '🎭 當小偷演習變成三關！🐾 寵物一起來', lines: [
+    ['🔦', '第 1 關倉庫：原本的躲手電筒'],
+    ['💎', '第 2 關博物館：紅色雷射一閃一閃，關掉的時候才能走過去拿大寶石'],
+    ['🏦', '第 3 關金庫：先找到寫密碼的紙條，再照顏色順序按；警衛換班的時候最安全'],
+    ['🐾', '每關可以叫寵物出動一次：引開警衛、咬斷雷射的電線！照顧得越好，幫忙越久']
+  ] },
   { id: '2026-11-23T02:00', title: '❄️ 雪一陣一陣、🐭 小偷鼠常來', lines: [
     ['❄️', '聖誕節小島上的雪改成一陣一陣的：下一會兒、停一會兒'],
     ['🔫', '噴水的遊戲不再畫手臂，噴水槍、水管也變小了，比較看得到要噴的東西'],
@@ -7295,7 +7301,7 @@ function normalizeSave(g) {
   if (out.cop != null) { if (!isObj(out.cop)) delete out.cop; else { const c = out.cop;
     if (c.cases != null && !(isObj(c.cases) && typeof c.cases.d === 'string' && Number.isInteger(c.cases.n) && c.cases.n >= 0 && c.cases.n < 100)) delete c.cases; else if (c.cases) c.cases = { d: c.cases.d, n: c.cases.n };
     if (c.caught != null && !(isObj(c.caught) && typeof c.caught.d === 'string' && typeof c.caught.id === 'string' && NEIGHBOR_BY_ID[c.caught.id] && Number.isInteger(c.caught.ci) && c.caught.ci >= 0 && c.caught.ci < 50)) delete c.caught; else if (c.caught) c.caught = { d: c.caught.d, id: c.caught.id, ci: c.caught.ci };
-    ['lv', 'catch', 'drill', 'jailed', 'xp', 'chaseLv', 'susLv'].forEach(k => { if (c[k] != null && !(Number.isInteger(c[k]) && c[k] >= 0 && c[k] < 1e6)) delete c[k]; }); ['lv', 'chaseLv', 'susLv'].forEach(k => { if (c[k] != null && c[k] > 3) c[k] = 3; }); Object.keys(c).forEach(k => { if (!['lv', 'catch', 'drill', 'jailed', 'xp', 'cases', 'caught', 'chaseLv', 'susLv'].includes(k)) delete c[k]; }); } }   // 🚓 警察局：抓小偷過到第幾關、抓到幾次
+    ['lv', 'catch', 'drill', 'jailed', 'xp', 'chaseLv', 'susLv', 'dlv'].forEach(k => { if (c[k] != null && !(Number.isInteger(c[k]) && c[k] >= 0 && c[k] < 1e6)) delete c[k]; }); ['lv', 'chaseLv', 'susLv', 'dlv'].forEach(k => { if (c[k] != null && c[k] > 3) c[k] = 3; }); Object.keys(c).forEach(k => { if (!['lv', 'catch', 'drill', 'jailed', 'xp', 'cases', 'caught', 'chaseLv', 'susLv', 'dlv'].includes(k)) delete c[k]; }); } }   // 🚓 警察局：抓小偷過到第幾關、抓到幾次
   if (out.jail != null && !(isObj(out.jail) && typeof out.jail.until === 'number' && isFinite(out.jail.until))) delete out.jail;
   if (out.jail) { if (out.jail.parentsAt != null && !(typeof out.jail.parentsAt === 'number' && isFinite(out.jail.parentsAt))) delete out.jail.parentsAt; Object.keys(out.jail).forEach(k => { if (k !== 'until' && k !== 'parentsAt') delete out.jail[k]; }); }   // 🚔 演習被抓：關到什麼時候
   if (out.jail && out.jail.until > Date.now() + 3 * 60000) out.jail.until = Date.now() + 120000;   // 時間亂掉（或以前關 3 分鐘的）：最多關 2 分鐘
@@ -36302,55 +36308,129 @@ function openCopChase(lv) {
   openCopChase.test = { me, thieves, win: () => { thieves.forEach(q => { q.caught = true; }); }, lose: () => { t = LIMIT; }, grab: () => grab, press: () => tryGrab(), setP: v => { if (grab) grab.p = v; }, time: () => t };
   raf = requestAnimationFrame(tick);
 }
-// 🎭 演習：我當小偷
-function openThiefDrill() {
+// 🎭 演習：我當小偷（家長 11/22：關卡和玩法多一點、寵物也一起來）
+/* 三關，用同一套：走路（方向鍵、手指按住）、被手電筒照到或碰到雷射＝被抓（關小房間，跟原本一樣可以打電話、寵物救）。
+   第 1 關 🔦 倉庫：原本的躲手電筒，拿三顆 💎 走到 🚪。
+   第 2 關 💎 博物館：四道紅色雷射一閃一閃，關掉的時候才能過（快亮之前會先閃一下），拿到大寶石再走到出口。
+   第 3 關 🏦 金庫：先找到寫著密碼的紙條 📝，走到金庫門口照順序按顏色；警衛每隔一陣子會去「換班」（不見幾秒），那時候最安全。
+   🐾 每關可以叫寵物出動一次：第 1、3 關跑去裝可愛把警衛的注意力引開；第 2 關去咬斷電線讓雷射關掉。照顧得越好，幫忙越久（2.5～6 秒）。
+   G.cop.dlv：演習過到第幾關。 */
+const DRILL_PLAN = [
+  { name: '🔦 倉庫', pay: 150, walls: [[70, 40, 30, 30], [220, 40, 30, 30], [140, 100, 40, 30], [60, 160, 30, 30], [230, 160, 30, 30]], gems: [[40, 30], [290, 30], [160, 210]], exit: [300, 215], start: [20, 215],
+    cops: [{ pts: [[110, 85], [210, 85]] }, { pts: [[110, 145], [110, 200], [200, 200], [200, 145]] }],
+    tip: '拿到三顆 💎，再走到 🚪。躲在箱子旁邊，警察就看不到你！' },
+  { name: '💎 博物館', pay: 200, walls: [[118, 30, 14, 40], [118, 170, 14, 40], [238, 30, 14, 40], [238, 170, 14, 40]], gems: [[180, 120]], exit: [306, 120], start: [16, 120], cops: [],
+    lasers: [[70, 2.6, 0], [110, 2.4, .9], [210, 2.6, 1.7], [270, 2.2, .4]], bg: '#f3ecf7',
+    tip: '紅色雷射亮著的時候不能碰！看它關掉（快亮之前會閃一下）再走過去，拿到大寶石 💎 走到出口。' },
+  { name: '🏦 金庫', pay: 260, walls: [[0, 0, 130, 20], [190, 0, 130, 20], [30, 150, 70, 14], [220, 150, 70, 14], [60, 64, 20, 20], [240, 64, 20, 20]], gems: [], exit: [304, 222], start: [18, 222],
+    cops: [{ pts: [[40, 118], [280, 118]] }, { pts: [[110, 52], [210, 52]] }], note: [290, 190], vault: [160, 34], shift: [9, 4], bg: '#eef2f7',
+    tip: '先找到寫著密碼的紙條 📝，再到金庫門口照順序按顏色！警衛「☕ 換班」的時候會離開一下下，那時候最安全。' }
+];
+const DRILL_COLS = [['red', '#e8505b', '紅'], ['yellow', '#ffd23f', '黃'], ['green', '#51cf66', '綠'], ['blue', '#4a90d9', '藍']];
+function openThiefDrill(lv) {
   if (jailLeft() > 0) { openJail(); return; }
-  const W = 320, H = 240;
-  const w = openGameWindow('🎭 演習：我當小偷', '狗狗警官：我們來練習！你當小偷，拿到三顆 💎 再走到出口 🚪。警察的手電筒照到你就會被抓喔！躲在箱子旁邊，警察就看不到你。');
-  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const cs0 = copState(), unlocked = Math.min(3, (cs0.dlv || 0) + 1);
+  if (lv == null) {
+    const w = openGameWindow('🎭 演習：我當小偷', '狗狗警官：我們來練習！你當小偷，看看能不能不被抓到。被抓到會關進小房間喔！每一關都可以叫寵物出動幫忙一次。');
+    w.stage.innerHTML = ''; w.btns.innerHTML = ''; const row = el('div', 'invite-row');
+    DRILL_PLAN.forEach((P, k) => { const i = k + 1, b = el('button', 'big lv-btn' + (i > unlocked ? ' alt' : ''), `${i <= (cs0.dlv || 0) ? '⭐' : i > unlocked ? '🔒' : '🎭'} 第 ${i} 關 ${P.name}`); b.onclick = () => { if (i > unlocked) { toast('先過前一關喔！'); Sound.play('miss'); return; } Sound.play('click'); openThiefDrill(i); }; row.appendChild(b); });
+    w.stage.appendChild(row); leaveButton(w); w.status.textContent = `過了 ${cs0.dlv || 0} / 3 關`; return;
+  }
+  const P = DRILL_PLAN[lv - 1], W = 320, H = 240;
+  const w = openGameWindow(`🎭 演習第 ${lv} 關：${P.name}`, `狗狗警官：${P.tip}（方向鍵或手指按住畫面走路）`);
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
   const f = copField(w, W, H), g = f.g;
-  const walls = [[70, 40, 30, 30], [220, 40, 30, 30], [140, 100, 40, 30], [60, 160, 30, 30], [230, 160, 30, 30]].map(([x, y, ww, hh]) => ({ x, y, w: ww, h: hh, kind: 'box' }));
-  const gems = [[40, 30], [290, 30], [160, 210]].map(([x, y]) => ({ x, y, got: false }));
-  const exit = { x: 300, y: 215 }, me = { x: 20, y: 215, face: 1 }, ME_SP = 80;
-  const cops = [{ pts: [[110, 85], [210, 85]], i: 0, x: 110, y: 85, ang: 0 }, { pts: [[110, 145], [110, 200], [200, 200], [200, 145]], i: 0, x: 110, y: 145, ang: 0 }];
-  let t = 0, last = performance.now(), raf = 0, live = true, done = false;
+  const walls = P.walls.map(([x, y, ww, hh]) => ({ x, y, w: ww, h: hh, kind: 'box' }));
+  const gems = P.gems.map(([x, y]) => ({ x, y, got: false }));
+  const exit = { x: P.exit[0], y: P.exit[1] }, me = { x: P.start[0], y: P.start[1], face: 1 }, ME_SP = 80;
+  const cops = P.cops.map(c => ({ pts: c.pts, i: 0, x: c.pts[0][0], y: c.pts[0][1], ang: 0 }));
+  const lasers = (P.lasers || []).map(([x, per, ph]) => ({ x, per, ph }));
+  let t = 0, last = performance.now(), raf = 0, live = true, done = false, note = !P.note, vaultOpen = !P.vault, gold = !P.vault, coding = false, code = [], typed = [], msg = '', msgT = 0;
+  if (P.vault) { const cols = DRILL_COLS.slice().sort(() => Math.random() - .5); code = cols.slice(0, 3).map(c => c[0]); }
+  // 🐾 寵物出動
+  const p = G.pet, psp = p && p.stage !== 'egg' && PET_SPECIES_BY_ID[p.species], care = petCare(p), helpDur = 2.5 + 3.5 * care;
+  let petUsed = false, petT = 0, pet = null;   // pet：{ x, y, tx, ty }
+  const helping = () => petT > 0;
+  const petBtn = el('button', 'big', psp ? `🐾 ${petName()}出動！` : '🐾 （還沒有寵物）'); petBtn.disabled = !psp;
+  petBtn.onclick = () => { if (petUsed || done || !psp) return; petUsed = true; petBtn.disabled = true; petBtn.textContent = `🐾 ${petName()}幫忙中…`; petT = helpDur;
+    const tgt = P.lasers ? { x: 160, y: 228 } : cops.reduce((b, c) => (!b || Math.hypot(c.x - me.x, c.y - me.y) < Math.hypot(b.x - me.x, b.y - me.y) ? c : b), null) || { x: me.x, y: me.y };
+    pet = { x: me.x, y: me.y, tx: tgt.x + 14, ty: tgt.y + 10 }; Sound.play('petHappy');
+    msg = P.lasers ? `${petName()}去咬電線，雷射關掉了！快走！` : `${petName()}跑去裝可愛，警衛都在看牠！`; msgT = 2; };
+  w.btns.appendChild(petBtn); leaveButton(w);
+  // 🔢 金庫的密碼盤（在下面出現，按的時候警衛會停住）
+  const pad = el('div', 'tkd-moves'); pad.hidden = true; w.stage.appendChild(pad);
+  DRILL_COLS.forEach(([k, col, nm]) => { const b = el('button', 'tkd-move'); b.append(xmasSwatch(col), el('span', '', nm)); b.onclick = () => press(k); pad.appendChild(b); });
+  const press = k => { if (!coding || done) return; typed.push(k); Sound.play('click');
+    if (typed[typed.length - 1] !== code[typed.length - 1]) { typed = []; Sound.play('miss'); msg = '嗶嗶！密碼不對，再按一次（看紙條上的顏色順序）'; msgT = 1.8; return; }
+    if (typed.length === code.length) { vaultOpen = true; coding = false; pad.hidden = true; Sound.play('fanfare'); msg = '金庫打開了！拿了金幣袋快去出口！'; msgT = 2; } };
   gameCleanup = () => { live = false; cancelAnimationFrame(raf); f.stop(); };
   const hidden = () => walls.some(b => me.x > b.x - 14 && me.x < b.x + b.w + 14 && me.y > b.y - 14 && me.y < b.y + b.h + 14);
-  const blocked = (c) => walls.some(b => { for (let k = 1; k < 12; k++) { const x = c.x + (me.x - c.x) * k / 12, y = c.y + (me.y - c.y) * k / 12; if (x > b.x && x < b.x + b.w && y > b.y && y < b.y + b.h) return true; } return false; });
+  const blocked = c => walls.some(b => { for (let k = 1; k < 12; k++) { const x = c.x + (me.x - c.x) * k / 12, y = c.y + (me.y - c.y) * k / 12; if (x > b.x && x < b.x + b.w && y > b.y && y < b.y + b.h) return true; } return false; });
   const RANGE = 54, HALF = .38;   // 手電筒照得不遠，小朋友躲得掉
-  const seen = c => { const dx = me.x - c.x, dy = me.y - c.y, d = Math.hypot(dx, dy); if (d > RANGE) return false; let da = Math.atan2(dy, dx) - c.ang; while (da > Math.PI) da -= Math.PI * 2; while (da < -Math.PI) da += Math.PI * 2; return Math.abs(da) < HALF && !hidden() && !blocked(c); };
+  const onShift = () => P.shift && (t % P.shift[0]) > P.shift[0] - P.shift[1];   // ☕ 換班中：警衛不在
+  const seen = c => { if (helping() || onShift()) return false; const dx = me.x - c.x, dy = me.y - c.y, d = Math.hypot(dx, dy); if (d > RANGE) return false; let da = Math.atan2(dy, dx) - c.ang; while (da > Math.PI) da -= Math.PI * 2; while (da < -Math.PI) da += Math.PI * 2; return Math.abs(da) < HALF && !hidden() && !blocked(c); };
+  const laserOn = (L, tt) => !helping() && ((tt + L.ph) % L.per) < L.per * .55;
+  const zapped = () => lasers.some(L => laserOn(L, t) && Math.abs(me.x - L.x) < 7);
   const finish = win => {
-    if (done) return; done = true; live = false; f.stop();
-    if (win) { try { addRankXp('cop', 1); } catch (e) {} const cs = copState(); cs.drill = (cs.drill || 0) + 1; const bells = payReward(w, 150); Sound.play('fanfare'); w.status.textContent = `演習成功！沒有被抓到！　💰 +${fmt(bells)}`;
+    if (done) return; done = true; live = false; f.stop(); pad.hidden = true; petBtn.remove();
+    if (win) { try { addRankXp('cop', 1); } catch (e) {} const cs = copState(); cs.drill = (cs.drill || 0) + 1; cs.dlv = Math.max(cs.dlv || 0, lv); const bells = payReward(w, P.pay); Sound.play('fanfare');
+      w.status.textContent = `演習成功！第 ${lv} 關沒有被抓到！　💰 +${fmt(bells)}`;
       setTimeout(() => { try { toast('👮 警官：好厲害！不過真的偷東西是不對的喔，下次一起當警察吧！'); } catch (e) {} }, 800);
-      saveGame(); refreshTop(); gameButtons(w, () => openThiefDrill()); return; }
-    Sound.play('miss'); w.status.textContent = '🚨 被手電筒照到了！'; setTimeout(() => startJail(), 900);
+      saveGame(); refreshTop(); w.btns.innerHTML = '';
+      if (lv < 3) { const nb = el('button', 'big', `🎭 下一關（第 ${lv + 1} 關）`); nb.onclick = () => openThiefDrill(lv + 1); w.btns.appendChild(nb); }
+      const again = el('button', 'big alt', '再玩一次'); again.onclick = () => openThiefDrill(lv); w.btns.appendChild(again); leaveButton(w); return; }
+    Sound.play('miss'); w.status.textContent = lasers.length ? '🚨 碰到雷射，警鈴響了！' : '🚨 被手電筒照到了！'; setTimeout(() => startJail(), 900);
   };
   const tick = now => {
     if (!live) return; raf = requestAnimationFrame(tick);
-    const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+    const dt = Math.min(.05, (now - last) / 1000); last = now; if (msgT > 0) msgT -= dt;
+    if (coding) { draw(0, 0); return; }   // 按密碼的時候大家停住
+    t += dt; if (petT > 0) petT -= dt;
     const [dx, dy] = f.dirFor(me); if (dx) me.face = dx > 0 ? 1 : -1; copMove(me, dx, dy, ME_SP, dt, walls, W, H, 8);
     gems.forEach(q => { if (!q.got && Math.hypot(q.x - me.x, q.y - me.y) < 16) { q.got = true; Sound.play('coin'); } });
-    cops.forEach(c => { const [tx, ty] = c.pts[c.i], ex = tx - c.x, ey = ty - c.y, d = Math.hypot(ex, ey); if (d < 2) { c.i = (c.i + 1) % c.pts.length; } else { const sp = 30 * dt; c.x += ex / d * Math.min(sp, d); c.y += ey / d * Math.min(sp, d); const want = Math.atan2(ey, ex); let da = want - c.ang; while (da > Math.PI) da -= Math.PI * 2; while (da < -Math.PI) da += Math.PI * 2; c.ang += da * Math.min(1, dt * 5); } });
-    // 畫
-    g.fillStyle = '#efe6d8'; g.fillRect(0, 0, W, H); g.strokeStyle = 'rgba(160,140,110,.25)'; g.lineWidth = 1; for (let x = 0; x < W; x += 20) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); } for (let y = 0; y < H; y += 20) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+    if (P.note && !note && Math.hypot(P.note[0] - me.x, P.note[1] - me.y) < 18) { note = true; Sound.play('pickUp'); msg = '找到紙條了！密碼的顏色在上面，快去金庫門口！'; msgT = 2.2; }
+    if (P.vault && !vaultOpen && Math.hypot(P.vault[0] - me.x, P.vault[1] + 10 - me.y) < 20) { if (note) { coding = true; typed = []; pad.hidden = false; msg = '照紙條上的顏色順序按！'; msgT = 1.6; } else if (msgT <= 0) { msg = '要先找到寫著密碼的紙條 📝'; msgT = 1.6; } }
+    if (P.vault && vaultOpen && !gold && Math.hypot(P.vault[0] - me.x, P.vault[1] - me.y) < 22) { gold = true; Sound.play('coin'); }
+    if (pet) { const ex = pet.tx - pet.x, ey = pet.ty - pet.y, d = Math.hypot(ex, ey); if (petT > 0 && d > 2) { pet.x += ex / d * Math.min(d, 140 * dt); pet.y += ey / d * Math.min(d, 140 * dt); } if (petT <= 0) { pet = null; petBtn.textContent = `🐾 ${petName()}幫完忙了`; } }
+    const shift = onShift();
+    cops.forEach(c => { if (helping() && pet) { c.ang = Math.atan2(pet.y - c.y, pet.x - c.x); return; } if (shift) return;
+      const [tx, ty] = c.pts[c.i], ex = tx - c.x, ey = ty - c.y, d = Math.hypot(ex, ey); if (d < 2) { c.i = (c.i + 1) % c.pts.length; } else { const sp = 30 * dt; c.x += ex / d * Math.min(sp, d); c.y += ey / d * Math.min(sp, d); const want = Math.atan2(ey, ex); let da = want - c.ang; while (da > Math.PI) da -= Math.PI * 2; while (da < -Math.PI) da += Math.PI * 2; c.ang += da * Math.min(1, dt * 5); } });
+    draw(dx, dy);
+    const got = gems.filter(q => q.got).length;
+    if (t > .8 && (cops.some(seen) || zapped())) finish(false);
+    else if (got === gems.length && gold && Math.hypot(exit.x - me.x, exit.y - me.y) < 18) finish(true);
+  };
+  const draw = (dx, dy) => {
+    g.fillStyle = P.bg || '#efe6d8'; g.fillRect(0, 0, W, H); g.strokeStyle = 'rgba(160,140,110,.22)'; g.lineWidth = 1; for (let x = 0; x < W; x += 20) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); } for (let y = 0; y < H; y += 20) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+    if (P.lasers) { [[30, 6], [160, 6], [250, 6]].forEach(([x, y]) => { g.fillStyle = '#c9a26a'; g.fillRect(x, y, 34, 22); g.fillStyle = ['#7bb8e8', '#f4b27a', '#9ad08a'][x % 3]; g.fillRect(x + 3, y + 3, 28, 16); }); g.fillStyle = '#8a7f99'; g.fillRect(150, 226, 20, 10); }   // 博物館的畫、雷射的開關箱
     g.font = '20px sans-serif'; g.textAlign = 'center'; g.fillText('🚪', exit.x, exit.y + 7);
-    cops.forEach(c => { g.fillStyle = 'rgba(255,240,140,.45)'; g.beginPath(); g.moveTo(c.x, c.y); g.arc(c.x, c.y, RANGE, c.ang - HALF, c.ang + HALF); g.closePath(); g.fill(); });
-    copDrawStreet.walls = walls; walls.forEach(b => { g.fillStyle = '#c98d5a'; g.fillRect(b.x, b.y, b.w, b.h); g.strokeStyle = '#8a5a33'; g.lineWidth = 1.5; g.strokeRect(b.x + 1, b.y + 1, b.w - 2, b.h - 2); g.beginPath(); g.moveTo(b.x, b.y); g.lineTo(b.x + b.w, b.y + b.h); g.stroke(); });
-    gems.forEach(q => { if (!q.got) { g.font = '16px sans-serif'; g.fillText('💎', q.x, q.y + 6 + Math.sin(t * 3 + q.x) * 2); } });
-    const items = cops.map(c => ({ y: c.y, d: () => { g.save(); g.translate(c.x, c.y); g.scale(Math.cos(c.ang) < 0 ? -1 : 1, 1); g.scale(.55, .55); try { drawNeighbor(g, HOSTS.police, { happy: false, blink: false, fx: 0, clean: 100 }); } catch (e) {} g.restore(); } }))
+    cops.forEach(c => { if (onShift()) return; g.fillStyle = helping() ? 'rgba(255,240,140,.18)' : 'rgba(255,240,140,.45)'; g.beginPath(); g.moveTo(c.x, c.y); g.arc(c.x, c.y, RANGE, c.ang - HALF, c.ang + HALF); g.closePath(); g.fill(); });
+    walls.forEach(b => { g.fillStyle = P.vault ? '#9aa7b4' : P.lasers ? '#e6dcc8' : '#c98d5a'; g.fillRect(b.x, b.y, b.w, b.h); g.strokeStyle = P.vault ? '#5a6475' : '#8a5a33'; g.lineWidth = 1.5; g.strokeRect(b.x + 1, b.y + 1, b.w - 2, b.h - 2); if (!P.vault && !P.lasers) { g.beginPath(); g.moveTo(b.x, b.y); g.lineTo(b.x + b.w, b.y + b.h); g.stroke(); } });
+    lasers.forEach(L => { const on = laserOn(L, t), soon = !on && !helping() && laserOn(L, t + .45);
+      if (on) { g.strokeStyle = 'rgba(255,40,60,.9)'; g.lineWidth = 3; g.shadowColor = '#ff2840'; g.shadowBlur = 8; } else { g.strokeStyle = soon && Math.sin(t * 40) > 0 ? 'rgba(255,60,80,.6)' : 'rgba(255,60,80,.18)'; g.lineWidth = 1.5; g.shadowBlur = 0; g.setLineDash([4, 5]); }
+      g.beginPath(); g.moveTo(L.x, 14); g.lineTo(L.x, H - 14); g.stroke(); g.setLineDash([]); g.shadowBlur = 0; g.fillStyle = '#5a6475'; g.fillRect(L.x - 4, 6, 8, 8); g.fillRect(L.x - 4, H - 14, 8, 8); });
+    if (P.vault) { const [vx, vy] = P.vault; g.fillStyle = vaultOpen ? '#2b2d42' : '#c9ccd0'; g.beginPath(); g.arc(vx, vy - 12, 26, 0, Math.PI); g.fill(); g.fillStyle = '#5a6475'; g.beginPath(); g.arc(vx, vy - 12, 26, 0, Math.PI); g.lineWidth = 3; g.strokeStyle = '#5a6475'; g.stroke();
+      if (!vaultOpen) { g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(vx, vy - 2, 6, 0, 7); g.fill(); } else if (!gold) { g.font = '20px sans-serif'; g.fillText('💰', vx, vy + 2); }
+      if (P.note && !note) { g.font = '18px sans-serif'; g.fillText('📝', P.note[0], P.note[1] + 6 + Math.sin(t * 3) * 2); }
+      if (note && !vaultOpen) { g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.roundRect(W - 92, 6, 86, 22, 8); g.fill(); code.forEach((k, i) => { g.fillStyle = DRILL_COLS.find(c => c[0] === k)[1]; g.beginPath(); g.arc(W - 74 + i * 24, 17, 7, 0, 7); g.fill(); }); }
+      const left = P.shift[0] - (t % P.shift[0]); g.fillStyle = 'rgba(255,255,255,.88)'; g.beginPath(); g.roundRect(W / 2 - 60, H - 22, 120, 18, 8); g.fill(); g.fillStyle = onShift() ? '#2f8a3c' : '#3a3240'; g.font = '700 11px sans-serif'; g.textAlign = 'center';
+      g.fillText(onShift() ? `☕ 換班中！快！ ${Math.ceil(left)}` : `下次換班：${Math.ceil(left - P.shift[1])} 秒`, W / 2, H - 9); }
+    gems.forEach(q => { if (!q.got) { if (P.lasers) { g.fillStyle = '#c9a26a'; g.fillRect(q.x - 12, q.y + 6, 24, 10); } g.font = P.lasers ? '22px sans-serif' : '16px sans-serif'; g.textAlign = 'center'; g.fillText('💎', q.x, q.y + 6 + Math.sin(t * 3 + q.x) * 2); } });
+    const items = cops.filter(() => !onShift()).map(c => ({ y: c.y, d: () => { g.save(); g.translate(c.x, c.y); g.scale(Math.cos(c.ang) < 0 ? -1 : 1, 1); g.scale(.55, .55); try { drawNeighbor(g, HOSTS.police, { happy: helping(), blink: false, fx: 0, clean: 100 }); } catch (e) {} g.restore(); if (helping()) { g.font = '12px sans-serif'; g.textAlign = 'center'; g.fillText('😍', c.x, c.y - 22); } } }))
       .concat([{ y: me.y, d: () => { g.save(); if (hidden()) g.globalAlpha = .55; copDrawKid(g, me.x, me.y, .36, t, !!(dx || dy), me.face, 'worried'); g.restore(); } }]);
+    if (pet && psp) items.push({ y: pet.y, d: () => { g.save(); g.translate(pet.x, pet.y + 4); g.scale(.45, .45); try { drawCreature(g, psp, { happy: true, clean: 100, adult: lookStage(p) === 'adult', baby: lookStage(p) === 'baby' }); } catch (e) {} g.restore(); g.font = '11px sans-serif'; g.textAlign = 'center'; g.fillText(P.lasers ? '✂️' : '💗', pet.x, pet.y - 18); } });
     items.sort((a, b) => a.y - b.y).forEach(o => o.d());
     const got = gems.filter(q => q.got).length;
-    g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.roundRect(6, 6, 130, 22, 8); g.fill(); g.fillStyle = '#3a3240'; g.font = '700 13px sans-serif'; g.textAlign = 'left'; g.fillText(`💎 ${got} / 3${hidden() ? '　🙈 躲好了' : ''}`, 14, 22);
-    if (t > .8 && cops.some(seen)) finish(false);
-    else if (got === 3 && Math.hypot(exit.x - me.x, exit.y - me.y) < 18) finish(true);
+    g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.roundRect(6, 6, 150, 22, 8); g.fill(); g.fillStyle = '#3a3240'; g.font = '700 13px sans-serif'; g.textAlign = 'left';
+    g.fillText(P.vault ? `${note ? '📝 ✅' : '📝 找紙條'}　${gold ? '💰 ✅' : '💰'}` : `💎 ${got} / ${gems.length}${hidden() ? '　🙈 躲好了' : ''}`, 14, 22);
+    if (petT > 0) { g.fillStyle = '#ff8fb3'; g.fillRect(6, 30, 150 * petT / helpDur, 4); }
+    if (msgT > 0) { g.font = '900 13px sans-serif'; const mw = g.measureText(msg).width + 20; g.fillStyle = 'rgba(255,255,255,.92)'; g.beginPath(); g.roundRect(W / 2 - mw / 2, H / 2 - 14, mw, 24, 10); g.fill(); g.fillStyle = '#c4313a'; g.textAlign = 'center'; g.fillText(msg, W / 2, H / 2 + 3); }   // 提示放中間、白底，看得清楚
   };
-  w.status.textContent = '拿到三顆 💎，再走到 🚪';
-  openThiefDrill.test = { me, gems, cops, exit, win: () => { gems.forEach(q => { q.got = true; }); me.x = exit.x; me.y = exit.y; }, caught: () => { const c = cops[0]; me.x = c.x + Math.cos(c.ang) * 30; me.y = c.y + Math.sin(c.ang) * 30; } };
+  w.status.textContent = P.tip;
+  openThiefDrill.test = { me, gems, cops, exit, lasers, get t() { return t; }, setT: v => { t = v; }, petGo: () => petBtn.click(), get petT() { return petT; }, helpDur, get coding() { return coding; }, code, press, get vaultOpen() { return vaultOpen; }, get note() { return note; }, onShift, laserOn: L => laserOn(L, t),
+    win: () => { gems.forEach(q => { q.got = true; }); note = true; vaultOpen = true; gold = true; me.x = exit.x; me.y = exit.y; }, caught: () => { const c = cops[0]; me.x = c.x + Math.cos(c.ang) * 30; me.y = c.y + Math.sin(c.ang) * 30; } };
   raf = requestAnimationFrame(tick);
 }
-// 🚔 小房間（演習被抓）：2 分鐘；寵物們會想辦法救你、打電話叫爸爸媽媽來接，或幫忙找小貓做好事，就可以提早出來
 function jailLeft() { return G.jail && typeof G.jail.until === 'number' ? Math.max(0, G.jail.until - Date.now()) : 0; }
 function startJail() {
   try { const pr = prisonersToday()[0]; setTimeout(() => { try { toast(`🚔 室友${pr.n.short}：我是${pr.crime[1]}${pr.crime[0]}被關的！你呢？`); } catch (e) {} }, 1500); } catch (e) {}

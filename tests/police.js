@@ -38,8 +38,8 @@ const path = require('path');
     o.carDraws = (() => { try { vehicleCanvas('police', 120, 70); vehicleCanvas('ambulance', 120, 70); return true; } catch (e) { return false; } })();
     closeGameWindow();
     // 演習：拿到寶石走到出口＝成功；被照到＝關起來
-    openThiefDrill(); await w(400); openThiefDrill.test.win(); await w(400); o.drillWin = (copState().drill || 0) >= 1 && !G.jail;
-    openThiefDrill(); await w(1200); openThiefDrill.test.caught(); await w(1600);
+    openThiefDrill(1); await w(400); openThiefDrill.test.win(); await w(400); o.drillWin = (copState().drill || 0) >= 1 && !G.jail;
+    openThiefDrill(1); await w(1200); openThiefDrill.test.caught(); await w(1600);
     o.jailed = !!G.jail && jailLeft() > 110000 && jailLeft() <= 120000 && /被抓到/.test(document.querySelector('#modalCard h2').textContent);
     openJail.test.call(); await w(1500); o.parentsDrive = !!G.jail && !!G.jail.parentsAt;   // 爸爸媽媽開車要 30 秒
     G.jail.parentsAt = Date.now() - 31000; for (let k = 0; k < 80 && G.jail; k++) await w(100); o.parentsFree = !G.jail;
