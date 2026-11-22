@@ -12,7 +12,7 @@ const path = require('path');
     o.floors = PLACES.dept.rooms.length === 4;
     o.notInShop = !shopCatalog().some(([k]) => /dept_|gacha_/.test(k));
     const base = FURN_BY_ID.dept_sofa.deptPrice; o.salePrice = deptPrice('dept_sofa') === (deptSale() ? Math.round(base * .8) : base) && gachaPrice() === (deptSale() ? 240 : 300);
-    G.bells = 50000; const inv0 = G.inv.dept_sofa || 0; openDeptStore(); await w(100);
+    G.bells = 50000; const inv0 = G.inv.dept_sofa || 0; openDeptCounter('furn'); await w(100);
     const card = [...document.querySelectorAll('#modalCard .card')].find(c => /豪華絨布沙發/.test(c.textContent)); card.click(); await w(150);
     o.bought = (G.inv.dept_sofa || 0) === inv0 + 1 && G.bells === 50000 - deptPrice('dept_sofa'); document.getElementById('modal').hidden = true;
     const b1 = G.bells, n1 = Object.values(G.inv).reduce((a, n) => a + (n || 0), 0); const r = gachaRoll();
