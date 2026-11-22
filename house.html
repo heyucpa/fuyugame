@@ -2745,6 +2745,13 @@ const PLACE_FURNITURE = [
   { id: 'race_board', name: '名次看板', theme: 'modern', w: 3, h: 34, z: 46, layer: 'wall', d: 1, parts: [],
     draw(ctx, W, H) { ctx.fillStyle = '#1d2433'; ctx.fillRect(0, 0, W, H); const sq = H / 6; for (let i = 0; i < W / sq; i++) { ctx.fillStyle = i % 2 ? '#fff' : '#26232a'; ctx.fillRect(i * sq, 0, sq, sq); ctx.fillStyle = i % 2 ? '#26232a' : '#fff'; ctx.fillRect(i * sq, H - sq, sq, sq); }
       ctx.font = `bold ${Math.round(H * .22)}px sans-serif`; ctx.textBaseline = 'middle'; ctx.fillStyle = '#ffd23f'; ctx.fillText('🏁 1st 2nd 3rd', W * .08, H / 2); } },
+  // 🚒 消防局
+  { id: 'fire_engine', name: '消防車', theme: 'modern', w: 3, d: 2, parts: [{ x: .1, y: .4, w: 2.2, d: 1.2, z: 6, h: 22, c: '#d63b3b' }, { x: 2.2, y: .4, w: .7, d: 1.2, z: 6, h: 30, c: '#d63b3b' }, { x: 2.3, y: .5, w: .5, d: 1, z: 22, h: 10, c: '#bfe6f2' }, { x: .1, y: .4, w: 2.8, d: 1.2, z: 14, h: 3, c: '#ffffff' }, { x: .2, y: .6, w: 2, d: .2, z: 28, h: 3, c: '#c9ccd0' }, { x: .2, y: 1.2, w: 2, d: .2, z: 28, h: 3, c: '#c9ccd0' }, { k: 'ball', x: .5, y: .4, z: 6, r: 6, c: '#26232a' }, { k: 'ball', x: 2.4, y: .4, z: 6, r: 6, c: '#26232a' }, { k: 'ball', x: 2.5, y: .8, z: 38, r: 3, c: '#ff3b3b', shade: true }] },
+  { id: 'fire_hose_reel', name: '消防水管捲', theme: 'modern', w: 1, d: 1, parts: [{ x: .3, y: .3, w: .4, d: .4, z: 0, h: 6, c: '#5a6475' }, { k: 'ball', x: .5, y: .5, z: 18, r: 11, c: '#ffd23f' }, { k: 'ball', x: .5, y: .5, z: 18, r: 8, c: '#b8282f' }, { k: 'ball', x: .5, y: .5, z: 18, r: 3, c: '#e0a020' }] },
+  { id: 'fire_pole', name: '消防滑竿', theme: 'modern', w: 1, d: 1, parts: [{ x: .3, y: .3, w: .4, d: .4, z: 0, h: 3, c: '#2b2d42' }, { x: .46, y: .46, w: .08, d: .08, z: 3, h: 90, c: '#e0b23a' }] },
+  { id: 'fire_boots', name: '消防靴和頭盔', theme: 'modern', w: 1, d: 1, parts: [{ x: .2, y: .3, w: .22, d: .4, z: 0, h: 14, c: '#2b2d42' }, { x: .55, y: .3, w: .22, d: .4, z: 0, h: 14, c: '#2b2d42' }, { x: .2, y: .3, w: .57, d: .4, z: 10, h: 2, c: '#ffd23f' }, { k: 'ball', x: .5, y: .5, z: 22, r: 7, c: '#d63b3b' }] },
+  { id: 'fire_helmet_rack', name: '頭盔架', theme: 'modern', w: 3, h: 30, z: 46, layer: 'wall', d: 1, parts: [],
+    draw(ctx, W, H) { ctx.fillStyle = '#8a5a33'; ctx.fillRect(0, H * .55, W, H * .12); for (let i = 0; i < 3; i++) { const x = W * (.18 + i * .32); ctx.fillStyle = ['#d63b3b', '#ffd23f', '#d63b3b'][i]; ctx.beginPath(); ctx.ellipse(x, H * .5, W * .11, H * .3, 0, Math.PI, 0); ctx.fill(); ctx.fillRect(x - W * .13, H * .48, W * .26, H * .06); ctx.fillStyle = '#ffffff'; ctx.fillRect(x - W * .02, H * .26, W * .04, H * .14); } } },
   // 🎅 聖誕老公公的家
   { id: 'toy_bench', name: '小精靈的玩具工作台', theme: 'cute', w: 2, d: 1, parts: [{ x: .05, y: .2, w: 1.9, d: .6, z: 0, h: 22, c: '#a0703e' }, { x: .05, y: .2, w: 1.9, d: .6, z: 22, h: 2, c: '#c98d5a' }, { k: 'ball', x: .35, y: .45, z: 28, r: 4, c: '#e8505b' }, { x: .7, y: .35, w: .3, d: .25, z: 24, h: 8, c: '#4a90d9' }, { k: 'ball', x: 1.3, y: .5, z: 28, r: 4.5, c: '#c98d5a' }, { k: 'ball', x: 1.3, y: .5, z: 35, r: 3, c: '#c98d5a' }, { x: 1.6, y: .3, w: .25, d: .25, z: 24, h: 12, c: '#4fbf6a' }] },
   { id: 'wrap_table', name: '包禮物的桌子', theme: 'cute', w: 2, d: 1, parts: [{ x: .05, y: .2, w: 1.9, d: .6, z: 0, h: 22, c: '#f1f1f4' }, { x: .05, y: .2, w: 1.9, d: .6, z: 22, h: 2, c: '#e8505b' }, { x: .3, y: .3, w: .4, d: .35, z: 24, h: 10, c: '#2f9e44' }, { x: .46, y: .3, w: .08, d: .35, z: 24, h: 10.5, c: '#ffd23f' }, { x: 1.1, y: .3, w: .5, d: .4, z: 24, h: 8, c: '#4a90d9' }, { x: 1.1, y: .46, w: .5, d: .08, z: 24, h: 8.5, c: '#ffffff' }] },
@@ -3593,6 +3600,7 @@ const HOSTS = {
   cinema: { id: 'cinema', name: '貓頭鷹放映師', short: '放映師', body: '#a07850', edge: '#7a5a3a', belly: '#f2dfc0', inner: '#7a5a3a', ears: 'tuft', acc: 'glasses', accColor: '#3a3240' },
   tkd: { id: 'tkd', name: '熊熊教練', short: '熊教練', body: '#8a5a33', edge: '#6b4428', belly: '#e8cfa9', inner: '#6b4428', ears: 'round', acc: 'scarf', accColor: '#26232a' },
   restaurant: { id: 'restaurant', name: '貓咪主廚', short: '貓主廚', body: '#ffd9a8', edge: '#d9a86a', belly: '#fff4e0', inner: '#ffb3c7', ears: 'pointy', acc: 'hat', accColor: '#ffffff' },
+  fireman: { id: 'fireman', name: '熊熊消防員', short: '消防員', body: '#c98a55', edge: '#a06a3a', belly: '#f3dcc0', inner: '#e8a87a', ears: 'round', acc: 'hat', accColor: '#d63b3b' },   // 🚒 消防局
   racer: { id: 'racer', name: '狐狸賽車手', short: '賽車手', body: '#ff9a3c', edge: '#d97a20', belly: '#ffffff', inner: '#ffd9b0', ears: 'pointy', acc: 'hat', accColor: '#2b2d42' },   // 🏁 賽車場
   santa: { id: 'santa', name: '聖誕老公公', short: '聖誕老公公', santa: true, body: '#d94a4a', edge: '#b03636', belly: '#ffffff', inner: '#ffd9c9', ears: 'none', acc: 'none', accColor: '#d94a4a' },   // 🎅 聖誕老公公的家（聖誕節才有）
   garage: { id: 'garage', name: '河狸技師', short: '技師', body: '#a0703e', edge: '#7a5230', belly: '#e8c9a0', inner: '#c98d5a', ears: 'round', acc: 'hat', accColor: '#e8505b' },   // 🔧 改車店
@@ -3715,6 +3723,12 @@ const PLACES = {
     { name: '賽車場', w: 12, d: 12, wall: 'wp_concrete', floor: 'fl_track', items: [
       ['race_kart', 2, 2], ['race_kart', 6, 2], ['race_podium', 4, 8], ['race_flag', 10, 1], ['race_flag', 0, 6], ['tire_stack', 10, 9], ['tire_stack', 11, 9], ['tire_stack', 0, 0]
     ], wallItems: [['race_board', 'R', 3], ['tool_wall', 'L', 4]] }
+  ] },
+  /* 🚒 消防局（家長 11/22）：熊熊消防員。第一人稱拿水管滅火、雲梯救援，三關都過送消防車 */
+  firestation: { name: '消防局', host: 'fireman', emoji: '🚒', desc: '當小小消防員！拿水管把火澆熄、用雲梯救困住的小動物！', rooms: [
+    { name: '消防局', w: 10, d: 10, wall: 'wp_concrete', floor: 'fl_terrazzo', items: [
+      ['fire_engine', 1, 1], ['fire_hose_reel', 7, 1], ['fire_pole', 5, 6], ['fire_boots', 8, 7], ['fire_boots', 1, 8]
+    ], wallItems: [['fire_helmet_rack', 'R', 3]] }
   ] },
   /* 🎅 聖誕老公公的家（家長 11/21）：聖誕節期間才出現在大地圖上 */
   santa: { name: '聖誕老公公的家', host: 'santa', emoji: '🎅', desc: '聖誕節才開放！幫小精靈做玩具、照顧麋鹿、包禮物，跟聖誕老公公喝熱可可。', rooms: [
@@ -6023,6 +6037,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-23T01:00', title: '🚒 消防局開張！🔫 泳池水槍大戰', lines: [
+    ['🚒', '大地圖警察局下面多了消防局，熊熊消防員等你：拿水管把房子的火澆熄（三關都過送消防車！）'],
+    ['🐱', '救援任務：按住讓雲梯伸長，剛好碰到困住的小貓、小狗、小雞時放開，消防員就爬上去救牠'],
+    ['🔫', '游泳池多了水槍大戰：動物朋友從游泳圈後面冒出來，在他噴你之前先噴回去！（打水比賽在鴨鴨教練那邊還玩得到）']
+  ] },
   { id: '2026-11-23T00:00', title: '🖐️ 自己動手：洗澡、射泡泡、澆花', lines: [
     ['🛁', '寵物卡的「洗澡」變成自己動手洗：抹沐浴乳、搓一搓、拿蓮蓬頭沖水，洗好會甩甩身體（趕時間可以按「⚡ 快快洗好」）'],
     ['💦', '「戳泡泡」變成「水槍射泡泡」：拿著水槍瞄準泡泡噴水，按住會一直噴'],
@@ -7267,6 +7286,7 @@ function normalizeSave(g) {
         for (let w = 1; w <= 6; w++) if (q.clear[w + '-3'] === 1) leg[String(w)] = 1;
         q.legacy = leg; q.rev = 2;
       } else q.legacy = legOk(q.legacy); } }
+  if (out.fire != null) { if (!isObj(out.fire)) delete out.fire; else { const f = out.fire; Object.keys(f).forEach(k => { if (!['lv', 'res'].includes(k) || !Number.isInteger(f[k]) || f[k] < 0 || f[k] > (k === 'lv' ? 3 : 1e6)) delete f[k]; }); } }   // 🚒 消防局
   if (out.cop != null) { if (!isObj(out.cop)) delete out.cop; else { const c = out.cop;
     if (c.cases != null && !(isObj(c.cases) && typeof c.cases.d === 'string' && Number.isInteger(c.cases.n) && c.cases.n >= 0 && c.cases.n < 100)) delete c.cases; else if (c.cases) c.cases = { d: c.cases.d, n: c.cases.n };
     if (c.caught != null && !(isObj(c.caught) && typeof c.caught.d === 'string' && typeof c.caught.id === 'string' && NEIGHBOR_BY_ID[c.caught.id] && Number.isInteger(c.caught.ci) && c.caught.ci >= 0 && c.caught.ci < 50)) delete c.caught; else if (c.caught) c.caught = { d: c.caught.d, id: c.caught.id, ci: c.caught.ci };
@@ -15287,6 +15307,7 @@ function hostMenuEntries() {
     list.push([`🎖️ 考腰帶（現在：${tkdBeltName()}）`, openBeltExam]);
   }
   if (host.n.id === 'restaurant') { list.push(['🍽️ 點餐吃飯', openRestaurantOrder]); list.push(['👩‍🍳 小幫手打工（做漢堡）', openChefGame]); list.push(['💰 收銀台找錢', openCashGame]); }
+  if (host.n.id === 'fireman') { list.push(['🚒 滅火任務（拿水管噴水）' + (fireState().lv ? `（過了 ${fireState().lv} 關）` : ''), () => openFireFight()]); list.push(['🐱 救援任務（雲梯救小動物）', () => openFireRescue()]); }
   if (host.n.id === 'racer') { list.push(['🏎️ 賽車（開我的車）', () => openKart()]); list.push(['🎨 去改車店改裝我的車', () => { closeGameWindow(); travelTo('garage'); }]); }
   if (host.n.id === 'santa') { list.push([santaMisLabel(), () => santaMisOpen()]); list.push(['🧸 幫小精靈做玩具', () => openToyFactory()]); list.push(['🦌 照顧麋鹿', () => openDeerCare()]); list.push(['🎁 包禮物', () => openGiftWrap()]); list.push(['☕ 一起喝熱可可', () => santaCocoa()]); list.push([santaLent() ? '🛷 雪橇借你囉！' : `🛷 借雪橇（再送 ${santaLendLeft()} 份禮物）`, () => santaSleighInfo()]); }
   if (host.n.id === 'garage') { list.push(['🎨 改裝我的車', () => openCarShop()]); list.push(['🧽 洗車', () => openCarWash()]); }
@@ -15301,6 +15322,7 @@ function hostMenuEntries() {
   if (host.n.id === 'swim') {
     list.push([cupMenuLabel('swim'), () => openSportsCup('swim')]);   // 🏆 妹妹想要的運動大賽
     list.push(['🏅 小鐵人三項（游泳→跑步→腳踏車）' + ((sportsCupState().tri || 0) ? `（拿過${CUP_MEDALS[sportsCupState().tri].split(' ')[0]}）` : ''), () => openSportsCup('tri')]);
+    list.push(['🔫 水槍大戰', openWaterFight]);   // 家長 11/22：第一人稱水槍
     list.push(['🏊 打水比賽', openSwimRace]);
     list.push(['🤿 潛水撿寶', openDiveGame]);
     list.push(['🌊 跳水', openJumpDive]);
@@ -24041,6 +24063,7 @@ const ISL_BLD = [   // 房子：x, y 是左上角的格子，w×h 格；門在�
   { id: 'airport', x: 30, y: 8, w: 4, h: 3 },   // ✈️ 機場：停機坪旁邊
   { id: 'garage', x: 28, y: 18, w: 4, h: 3 },   // 🔧 改車店：家的右下方
   { id: 'raceway', x: 33, y: 27, w: 4, h: 3 },   // 🏁 賽車場
+  { id: 'firestation', x: 17, y: 26, w: 4, h: 3 },   // 🚒 消防局：警察局下面
   { id: 'santa', x: 34, y: 17, w: 4, h: 3, season: 'christmas' },   // 🎅 聖誕老公公的家：聖誕節才有
 
   // 🏅 運動島（家長：游泳池那座小島擴大成運動島，走木橋過去；跆拳道館也搬過來）
@@ -24121,7 +24144,7 @@ const ISL_POND = { x: 31, y: 24, w: 4, h: 3 };
 const ISL_HUB = [26, 19];
 const ISL_STYLE = {   // 牆、屋頂顏色
   dojo: ['#fff4e6', '#e0503a'], pool: ['#e8f6fb', '#3fa9f5'], track: ['#fff1e0', '#e07a4a'], arena: ['#fff6e0', '#ff7a3c'], gym: ['#f4eeff', '#8a78b0'], restaurant: ['#fff0d9', '#e8823a'], hospital: ['#ffffff', '#e8505b'], cinema: ['#3a2f4a', '#e8505b'],
-  raceway: ['#f3f3f6', '#2b2d42'], santa: ['#fff4e6', '#d63b3b'], garage: ['#f3f3f6', '#e8505b'], airport: ['#eef6ff', '#4a90d9'], police: ['#e6efff', '#2f5fb8'], home: ['#ffd9c9', '#ff7b7b'], school: ['#fff4cf', '#5b8def'], playground: ['#e7f8d4', '#e07a3a'], library: ['#e6dcff', '#7a5cc9'], park: ['#d9f0c8', '#4f9d4f'],
+  raceway: ['#f3f3f6', '#2b2d42'], firestation: ['#ffe9e4', '#d63b3b'], santa: ['#fff4e6', '#d63b3b'], garage: ['#f3f3f6', '#e8505b'], airport: ['#eef6ff', '#4a90d9'], police: ['#e6efff', '#2f5fb8'], home: ['#ffd9c9', '#ff7b7b'], school: ['#fff4cf', '#5b8def'], playground: ['#e7f8d4', '#e07a3a'], library: ['#e6dcff', '#7a5cc9'], park: ['#d9f0c8', '#4f9d4f'],
   uncle: ['#d7ecc8', '#7aa05a'], grandma: ['#ffe3b0', '#d68a3a'], amusement: ['#ffe0ee', '#ff6fa3'], friend: ['#fffaf0', '#6fb7e8']
 };
 let islMapCache = null;
@@ -29536,6 +29559,7 @@ const VEHICLES = [
   { id: 'ambulance', name: '救護車', icon: '🚑', price: 0, speed: 2.2, verb: '開', prize: '醫院當小醫生 3 次' },   // 🚑 任務獎品，商店不賣
   { id: 'dino', name: '恐龍', icon: '🦕', price: 0, speed: 2.4, verb: '騎', prize: '解除恐龍島的危險' },   // 🦕 任務獎品，商店不賣
   { id: 'plane', name: '小飛機', icon: '🛩️', price: 0, speed: 2.6, verb: '開', prize: '護照集滿 8 個章', flies: true },   // 🛩️ 機場旅行的獎品，可以飛
+  { id: 'firetruck', name: '消防車', icon: '🚒', price: 0, speed: 2.3, verb: '開', prize: '消防局滅火任務通過三關' },   // 🚒 任務獎品，商店不賣
   { id: 'sleigh', name: '聖誕雪橇', icon: '🛷', price: 0, speed: 2.7, verb: '坐', prize: '幫聖誕老公公送 5 份禮物（聖誕節借用）', flies: true }   // 🛷 聖誕節借的，聖誕節過了要還
 ];
 const VEHICLE_BY_ID = Object.fromEntries(VEHICLES.map(v => [v.id, v]));
@@ -29552,7 +29576,7 @@ const CAR_GLOWS = [['none', '不要燈', 0], ['pink', '粉紅燈', 200], ['blue'
 const CAR_PARTS = { c: CAR_COLORS, st: CAR_STICKERS, wh: CAR_WHEELS, gl: CAR_GLOWS };
 const CAR_PRICE = (k, v) => { const row = CAR_PARTS[k].find(r => r[0] === v); return row ? row[k === 'c' ? 3 : 2] : 0; };
 // 貼紙、髒髒的位置（每台車的車身中間）：[x, y, 貼紙大小, 髒的範圍寬, 高]
-const CAR_SPOT = { sleigh: [-6, -12, 4, 14, 5], bike: [2, -13, 3, 8, 4], sports: [-14, -11, 4, 24, 4], suv: [-11, -17, 4.6, 20, 8], bus: [-22, -28, 6, 32, 12], robot: [8, -22, 3.4, 12, 8], plane: [-14, 1, 3.6, 22, 4], dino: [-16, -14, 4, 12, 7], police: [-13, -20, 4, 22, 7], ambulance: [-26, -31, 4, 24, 10], truck: [20, -16, 4, 24, 9] };
+const CAR_SPOT = { sleigh: [-6, -12, 4, 14, 5], bike: [2, -13, 3, 8, 4], sports: [-14, -11, 4, 24, 4], suv: [-11, -17, 4.6, 20, 8], bus: [-22, -28, 6, 32, 12], robot: [8, -22, 3.4, 12, 8], plane: [-14, 1, 3.6, 22, 4], dino: [-16, -14, 4, 12, 7], police: [-13, -20, 4, 22, 7], firetruck: [-12, -24, 4, 22, 7], ambulance: [-26, -31, 4, 24, 10], truck: [20, -16, 4, 24, 9] };
 function carLookOf(id) { return G.carLook && typeof G.carLook === 'object' && G.carLook[id] && typeof G.carLook[id] === 'object' ? G.carLook[id] : null; }
 function carLookMut(id) { if (!G.carLook || typeof G.carLook !== 'object') G.carLook = {}; if (!G.carLook[id] || typeof G.carLook[id] !== 'object') G.carLook[id] = {}; return G.carLook[id]; }
 function carShade(hex, k) { const n = parseInt(hex.slice(1), 16), f = v => Math.max(0, Math.min(255, Math.round(v * (1 + k)))); return `rgb(${f(n >> 16)},${f((n >> 8) & 255)},${f(n & 255)})`; }
@@ -29676,6 +29700,15 @@ function drawVehicle(g, id, s, t, moving, kid, lk) {
       win(15, -28, 13, 10, 21, -10, .62); glass(15, -28, 13, 10);
       g.fillStyle = Math.floor(t * 5) % 2 ? '#ff3b3b' : '#ffd0d0'; g.fillRect(-6, -42, 8, 4);
       wheel(-20, -6, 7); wheel(20, -6, 7); }
+  } else if (id === 'firetruck') {   // 🚒 消防車：紅色車身、白色線條、車頂的雲梯、水管捲、紅燈
+    g.translate(0, -bob);
+    g.fillStyle = C('#d63b3b'); g.beginPath(); g.roundRect(-34, -30, 48, 24, 4); g.fill(); g.beginPath(); g.roundRect(12, -36, 22, 30, 4); g.fill();
+    win(15, -34, 15, 12, 22, -12, .66); glass(15, -34, 15, 12);
+    g.fillStyle = '#ffffff'; g.fillRect(-34, -16, 68, 3);
+    g.fillStyle = '#c9ccd0'; g.fillRect(-32, -35, 40, 2.5); g.fillRect(-32, -40, 40, 2.5); for (let i = 0; i < 7; i++) g.fillRect(-30 + i * 6, -40, 1.5, 7.5);
+    g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(-22, -22, 5, 0, Math.PI * 2); g.fill(); g.fillStyle = '#e0a020'; g.beginPath(); g.arc(-22, -22, 2, 0, Math.PI * 2); g.fill();
+    g.fillStyle = Math.floor(t * 6) % 2 ? '#ff3b3b' : '#ffd0d0'; g.fillRect(17, -40, 9, 4);
+    wheel(-20, -6, 7); wheel(20, -6, 7);
   } else if (id === 'truck') {   // 工程車：黃色砂石車，後面的斗會一上一下
     g.translate(0, -bob);
     g.fillStyle = C('#ffb81c'); g.beginPath(); g.roundRect(8, -38, 24, 30, 4); g.fill(); win(13, -36, 16, 14, 21, -13, .66); glass(13, -36, 16, 14);
@@ -30421,7 +30454,7 @@ function openSimGame() {
    🏠 家裡的：點了直接開始。🗺️ 外面地方的：點了會走過去（要門票的付門票、要坐船的坐船）再開始，出門的感覺不會被跳過。 */
 const AWAY_GAMES = [
   ['🦵', '踢板', 'dojo', () => openKickGame()], ['👊', '跟著做動作', 'dojo', () => openFormsGame()], ['🎵', '節奏跆拳道', 'dojo', () => openRhythmGame()], ['⚔️', '對打（練習／比賽）', 'dojo', () => openFightChoice()],
-  ['🏊', '打水比賽', 'pool', () => openSwimRace()], ['🤿', '潛水撿寶', 'pool', () => openDiveGame()], ['🌊', '跳水', 'pool', () => openJumpDive()],
+  ['🔫', '水槍大戰', 'pool', () => openWaterFight()],   // 家長 11/22：選單上取代「打水比賽」（打水比賽在鴨鴨教練那邊還在） ['🤿', '潛水撿寶', 'pool', () => openDiveGame()], ['🌊', '跳水', 'pool', () => openJumpDive()],
   ['🎬', '看電影', 'cinema', () => openMoviePicker()],
   ['🕹️', '打地鼠', 'uncle', () => openMoleGame()], ['🏎️', '賽車', 'uncle', () => openKart()], ['🖥️', '打磚塊', 'uncle', () => openBrickGame()],
   ['🐮', '照顧小牛小羊', 'grandma', () => openFarmGame()],
@@ -30430,7 +30463,7 @@ const AWAY_GAMES = [
   ['🔎', '幫忙找書', 'library', () => openShelfGame()],
   ['🚓', '一起抓小偷', 'police', () => openCopChase()], ['🛣️', '高速公路追小偷', 'police', () => openHighwayChase()], ['🔍', '小偵探破案', 'police', () => openDetective()], ['🛏️', '病房照顧', 'hospital', () => openWard()],
   ['✈️', '搭飛機旅行', 'airport', () => openAirTravel()], ['🛩️', '開飛機', 'airport', () => openPlaneGame()], ['🧳', '行李安檢', 'airport', () => openSecurity()], ['🗼', '塔台指揮', 'airport', () => openTower()], ['🥤', '空服員送餐', 'airport', () => openMeal()],
-  ['🏁', '賽車場比賽', 'raceway', () => openKart()], ['🎨', '改裝我的車', 'garage', () => openCarShop()], ['🧽', '洗車', 'garage', () => openCarWash()],
+  ['🏁', '賽車場比賽', 'raceway', () => openKart()], ['🚒', '滅火任務', 'firestation', () => openFireFight()], ['🐱', '救援任務', 'firestation', () => openFireRescue()], ['🎨', '改裝我的車', 'garage', () => openCarShop()], ['🧽', '洗車', 'garage', () => openCarWash()],
   ['🧸', '幫小精靈做玩具', 'santa', () => openToyFactory()], ['🦌', '照顧麋鹿', 'santa', () => openDeerCare()], ['🎁', '包禮物', 'santa', () => openGiftWrap()]
 ];
 function allQuickGames() {
@@ -32254,7 +32287,7 @@ function openFitLift() {
     fitBg(g, W, H);
     const up = lift > 0 ? Math.sin((.7 - lift) / .7 * Math.PI) : fill * .25, kx = 220, ky = 196;
     fitKid(g, kx, ky, 1.9, t, {});
-    const hy = ky - 40 - up * 95;   // 平常在腰邊，舉起來到頭上 g.strokeStyle = '#c9ccd0'; g.lineWidth = 4; g.beginPath(); g.moveTo(kx - 34, hy); g.lineTo(kx + 34, hy); g.stroke();
+    const hy = ky - 40 - up * 95; g.strokeStyle = '#c9ccd0'; g.lineWidth = 4; g.beginPath(); g.moveTo(kx - 34, hy); g.lineTo(kx + 34, hy); g.stroke();   // 平常在腰邊，舉起來到頭上（槓子：以前被註解吃掉沒畫出來）
     [-1, 1].forEach(sd => { g.fillStyle = sd < 0 ? '#e8505b' : '#3f8fd1'; g.fillRect(kx + sd * 34 - 7, hy - 12, 14, 24); });
     g.strokeStyle = GIRL.skin; g.lineWidth = 6; g.lineCap = 'round'; [-1, 1].forEach(sd => { g.beginPath(); g.moveTo(kx + sd * 14, ky - 60); g.lineTo(kx + sd * 30, hy); g.stroke(); });
     g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(360, 60, 30, 140); g.fillStyle = '#ffb02e'; g.fillRect(364, 196 - fill * 132, 22, fill * 132);
@@ -39063,6 +39096,233 @@ function openWaterFlower(it, done) {
   w.status.textContent = '按住倒水，左右移動對準花盆！';
   openWaterFlower.test = { get fill() { return fill; }, setFill: v => { fill = v; }, get fin() { return fin; }, set cx(v) { cx = v; }, press: v => { down = v; }, finishNow: () => { if (!live) return; fin = true; closeGameWindow(); try { done && done(); } catch (e) {} } };
 }
+/* ===== 🚒 消防局（家長 11/22：第一人稱拿水管滅火、救援任務、送消防車）=====
+   熊熊消防員。🔥 滅火任務三關：房子的窗戶、屋頂著火，按住噴水把火澆熄（火會越燒越大，第 2、3 關還會延燒）；
+   三關都過送 🚒 消防車。🐱 救援任務：按住讓雲梯伸長，剛好碰到困住的小動物時放開，消防員爬上去救下來。
+   G.fire = { lv: 過了幾關, res: 救了幾隻 } */
+function fireState() { if (!G.fire || typeof G.fire !== 'object') G.fire = {}; const f = G.fire; ['lv', 'res'].forEach(k => { if (!(Number.isInteger(f[k]) && f[k] >= 0)) f[k] = 0; }); return f; }
+const FIRE_PLAN = [{ n: 3, spread: 0, grow: .05 }, { n: 5, spread: 7, grow: .07 }, { n: 7, spread: 5, grow: .09 }];
+function drawBigFlame(g, x, y, s, t, seed) {   // 一團會晃的火：外橘、中黃、內白
+  const f = (k, col, sc) => { const w = Math.sin(t * 9 + seed + k) * 2 * s; g.fillStyle = col; g.beginPath(); g.moveTo(x + w, y - 30 * s * sc);
+    g.bezierCurveTo(x + 16 * s * sc, y - 12 * s * sc, x + 14 * s * sc, y + 8 * s * sc, x, y + 9 * s * sc); g.bezierCurveTo(x - 14 * s * sc, y + 8 * s * sc, x - 16 * s * sc, y - 12 * s * sc, x + w, y - 30 * s * sc); g.fill(); };
+  f(0, '#ff6a2b', 1); f(1, '#ffb02e', .7); f(2, '#fff1a8', .38);
+}
+// 消防水管（右下角自己的手拿著黃銅噴嘴，後面拖著紅色水管）
+function fpHoseAt(g, W, H, tx, ty) {
+  const gx = W * .62 + (tx - W / 2) * .2, gy = H - 30, ga = Math.atan2(ty - gy, tx - gx);
+  g.strokeStyle = '#b8282f'; g.lineWidth = 14; g.lineCap = 'round'; g.beginPath(); g.moveTo(W + 20, H + 10); g.quadraticCurveTo(W - 10, H - 4, gx - Math.cos(ga) * 20, gy - Math.sin(ga) * 20); g.stroke(); g.lineCap = 'butt';
+  const hx = gx + Math.cos(ga) * 8 - Math.sin(ga) * 4, hy = gy + Math.sin(ga) * 8 + Math.cos(ga) * 4;
+  fpArm(g, W, H, hx, hy);
+  g.save(); g.translate(gx, gy); g.rotate(ga);
+  g.fillStyle = '#d63b3b'; g.beginPath(); g.roundRect(-22, -9, 30, 18, 6); g.fill();
+  g.fillStyle = '#d9a43a'; g.beginPath(); g.moveTo(6, -10); g.lineTo(52, -5); g.lineTo(52, 5); g.lineTo(6, 10); g.closePath(); g.fill();
+  g.fillStyle = '#f0c860'; g.fillRect(10, -6, 36, 3); g.fillStyle = '#9a7020'; g.fillRect(50, -6, 6, 12);
+  g.restore(); fpFist(g, hx, hy);
+  return { mx: gx + Math.cos(ga) * 56, my: gy + Math.sin(ga) * 56 };
+}
+function openFireFight(lv) {
+  const fs = fireState(), unlocked = Math.min(3, fs.lv + 1);
+  if (lv == null) {
+    const w = openGameWindow('🚒 滅火任務', `熊熊消防員：房子著火了！拿著水管，按住往火噴水，把火全部澆熄！${(G.vehicles || []).includes('firetruck') ? '' : '（三關都過，送你一台消防車！）'}`);
+    w.stage.innerHTML = ''; w.btns.innerHTML = ''; const row = el('div', 'invite-row');
+    for (let i = 1; i <= 3; i++) { const b = el('button', 'big lv-btn' + (i > unlocked ? ' alt' : ''), `${i <= fs.lv ? '⭐' : i > unlocked ? '🔒' : '🔥'} 第 ${i} 關（${FIRE_PLAN[i - 1].n} 團火）`); b.onclick = () => { if (i > unlocked) { toast('先過前一關喔！'); Sound.play('miss'); return; } Sound.play('click'); openFireFight(i); }; row.appendChild(b); }
+    w.stage.appendChild(row); leaveButton(w); w.status.textContent = `過了 ${fs.lv} / 3 關`; return;
+  }
+  const P = FIRE_PLAN[lv - 1], W = 360, H = 240, LIMIT = 45;
+  const w = openGameWindow(`🚒 滅火・第 ${lv} 關`, '按住畫面（或方向鍵瞄準、按住空白鍵）往火噴水！火會越燒越大，快把它們澆熄！');
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const { c, g, pos } = gameCanvas(w.stage, W, H);
+  const SPOTS = [[96, 92], [150, 92], [204, 92], [258, 92], [96, 146], [258, 146], [150, 40], [204, 40], [123, 146]];   // 窗戶、屋頂
+  const fires = [], splash = [], smoke = [];
+  const free = () => SPOTS.filter(s => !fires.some(f => f.x === s[0] && f.y === s[1] && f.hp > 0));
+  const ignite = () => { const fr = free(); if (!fr.length) return; const s = fr[Math.floor(Math.random() * fr.length)]; fires.push({ x: s[0], y: s[1], hp: .7, seed: Math.random() * 6 }); };
+  for (let i = 0; i < P.n; i++) ignite();
+  let aim = { x: W / 2, y: H / 2 }, down = false, t = 0, last = performance.now(), raf = 0, live = true, done = false, out = 0, spreadT = 0, spreadLeft = lv === 1 ? 0 : lv;
+  const keys = {};
+  c.addEventListener('pointerdown', e => { e.preventDefault(); down = true; aim = pos(e); try { c.setPointerCapture(e.pointerId); } catch (er) {} });
+  c.addEventListener('pointermove', e => { aim = pos(e); });
+  ['pointerup', 'pointercancel'].forEach(k => c.addEventListener(k, () => { down = false; }));
+  const KM = { ArrowLeft: 'l', ArrowRight: 'r', ArrowUp: 'u', ArrowDown: 'd', KeyA: 'l', KeyD: 'r', KeyW: 'u', KeyS: 'd', Space: 'sp' };
+  const kd = e => { const k = KM[e.code]; if (k) { e.preventDefault(); keys[k] = true; } }, ku = e => { const k = KM[e.code]; if (k) keys[k] = false; };
+  document.addEventListener('keydown', kd); document.addEventListener('keyup', ku);
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); document.removeEventListener('keyup', ku); };
+  const finish = win => {
+    done = true; live = false; gameCleanup();
+    if (!win) { Sound.play('miss'); w.status.textContent = '時間到！火還沒全部熄滅～再試一次！'; gameButtons(w, () => openFireFight(lv)); return; }
+    const first = fs.lv < lv; fs.lv = Math.max(fs.lv, lv);
+    const got = payReward(w, 80 + lv * 50); Sound.play('fanfare'); kidMoodUp(5);
+    w.status.textContent = `🎉 火全部熄滅了！第 ${lv} 關過關！　💰 +${fmt(got)}`;
+    if (fs.lv >= 3) giveVehicle('firetruck', '熊熊消防員送你一台消防車！', '三關的火都澆熄了，你是小小消防員！到大地圖點「🚲 交通工具」就可以開消防車。');
+    saveGame(); w.btns.innerHTML = '';
+    if (lv < 3) { const nb = el('button', 'big', `🚒 下一關（第 ${lv + 1} 關）`); nb.onclick = () => openFireFight(lv + 1); w.btns.appendChild(nb); }
+    const again = el('button', 'big alt', '再玩一次'); again.onclick = () => openFireFight(lv); w.btns.appendChild(again); leaveButton(w);
+    void first;
+  };
+  const tick = now => {
+    if (!live) return; raf = requestAnimationFrame(tick);
+    const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+    const kx = (keys.r ? 1 : 0) - (keys.l ? 1 : 0), ky = (keys.d ? 1 : 0) - (keys.u ? 1 : 0);
+    if (kx || ky) aim = { x: Math.max(10, Math.min(W - 10, aim.x + kx * 220 * dt)), y: Math.max(10, Math.min(H - 60, aim.y + ky * 220 * dt)) };
+    const spraying = down || keys.sp;
+    fires.forEach(f => { if (f.hp <= 0) return; f.hp = Math.min(1.6, f.hp + P.grow * dt);
+      if (spraying && Math.hypot(aim.x - f.x, aim.y - (f.y - 10)) < 26 + f.hp * 6) { f.hp -= dt * 1.5; if (Math.random() < .3) smoke.push({ x: f.x + (Math.random() - .5) * 16, y: f.y - 16, t: 0 }); if (f.hp <= 0) { out++; Sound.play('coin'); for (let i = 0; i < 6; i++) smoke.push({ x: f.x + (Math.random() - .5) * 20, y: f.y - 10, t: 0 }); } } });
+    if (P.spread && spreadLeft > 0) { spreadT += dt; if (spreadT > P.spread) { spreadT = 0; spreadLeft--; ignite(); Sound.play('whoosh'); } }
+    const alive = fires.filter(f => f.hp > 0).length;
+    // 畫面：天空、房子、火
+    g.fillStyle = '#ffd9b8'; g.fillRect(0, 0, W, H); g.fillStyle = '#8cc47a'; g.fillRect(0, 186, W, H - 186);
+    g.fillStyle = '#e9d5b6'; g.fillRect(70, 60, 220, 128); g.fillStyle = '#b5574a'; g.beginPath(); g.moveTo(56, 64); g.lineTo(180, 10); g.lineTo(304, 64); g.closePath(); g.fill();
+    SPOTS.slice(0, 6).forEach(([x, y]) => { g.fillStyle = '#6a7fa0'; g.fillRect(x - 16, y - 16, 32, 26); g.strokeStyle = '#ffffff'; g.lineWidth = 3; g.strokeRect(x - 16, y - 16, 32, 26); });
+    g.fillStyle = '#8a5a33'; g.fillRect(166, 140, 28, 48);
+    fires.forEach(f => { if (f.hp <= 0) { g.fillStyle = 'rgba(60,60,60,.35)'; g.beginPath(); g.ellipse(f.x, f.y, 14, 6, 0, 0, 7); g.fill(); return; }
+      const glow = g.createRadialGradient(f.x, f.y - 8, 2, f.x, f.y - 8, 40 * f.hp); glow.addColorStop(0, 'rgba(255,160,60,.45)'); glow.addColorStop(1, 'rgba(255,160,60,0)'); g.fillStyle = glow; g.beginPath(); g.arc(f.x, f.y - 8, 40 * f.hp, 0, 7); g.fill();
+      drawBigFlame(g, f.x, f.y, .6 + f.hp * .5, t, f.seed); });
+    for (let i = smoke.length - 1; i >= 0; i--) { const s2 = smoke[i]; s2.t += dt; if (s2.t > 1.2) { smoke.splice(i, 1); continue; } g.fillStyle = `rgba(140,140,150,${.45 * (1 - s2.t / 1.2)})`; g.beginPath(); g.arc(s2.x, s2.y - s2.t * 40, 6 + s2.t * 10, 0, 7); g.fill(); }
+    if (smoke.length > 120) smoke.splice(0, smoke.length - 120);
+    const gx = W * .62 + (aim.x - W / 2) * .2, gy = H - 30, ga = Math.atan2(aim.y - gy, aim.x - gx);
+    if (spraying && !done) { fpStream(g, gx + Math.cos(ga) * 56, gy + Math.sin(ga) * 56, aim.x, aim.y, t, { w0: 11, w1: 4 }); if (Math.random() < .7) fpSplashAdd(splash, aim.x, aim.y, 2); }
+    fpSplashStep(g, splash, dt);
+    fpHoseAt(g, W, H, aim.x, aim.y);
+    if (!spraying) { g.strokeStyle = 'rgba(58,143,217,.85)'; g.lineWidth = 2; g.setLineDash([4, 3]); g.beginPath(); g.arc(aim.x, aim.y, 13, 0, 7); g.stroke(); g.setLineDash([]); }
+    const left = Math.max(0, Math.ceil(LIMIT - t));
+    g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.roundRect(6, 6, 170, 22, 8); g.fill(); g.fillStyle = '#3a3240'; g.font = '700 13px sans-serif'; g.textAlign = 'left'; g.fillText(`⏱️ ${left}　🔥 還有 ${alive} 團`, 14, 22);
+    if (alive === 0 && spreadLeft <= 0) finish(true); else if (t >= LIMIT) finish(false);
+  };
+  raf = requestAnimationFrame(tick);
+  w.status.textContent = `第 ${lv} 關：把 ${P.n} 團火全部澆熄！`;
+  openFireFight.test = { fires, setAim: (x, y) => { aim = { x, y }; }, press: v => { down = v; }, win: () => { spreadLeft = 0; fires.forEach(f => { f.hp = 0; }); }, lose: () => { t = LIMIT; }, get done() { return done; } };
+}
+/* 🐱 救援任務：按住讓雲梯伸長，剛好到小動物那裡時放開。太短可以再按住繼續伸；太長會縮回去重來。三隻都救下來就完成。 */
+const RESCUE_LIST = [['🐱', '小貓', '困在樹上下不來', 'tree'], ['🐶', '小狗', '跑到屋頂上下不來', 'roof'], ['🐥', '小雞', '停在電線桿上下不來', 'pole']];
+function openFireRescue() {
+  const W = 320, H = 240, BASE = 196;
+  const w = openGameWindow('🐱 救援任務', '按住畫面（或空白鍵）讓雲梯往上伸，伸到剛好碰到小動物的時候放開！太短可以再按住，太長會縮回去重來。');
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const { c, g } = gameCanvas(w.stage, W, H);
+  let i = 0, len = 0, holding = false, state = 'aim', st = 0, t = 0, last = performance.now(), raf = 0, live = true, saved = 0, msg = '', msgT = 0;
+  let target = 0; const newTarget = () => { target = 70 + Math.random() * 60; len = 0; state = 'aim'; };   // 最高不要碰到上面的字
+  newTarget();
+  const down = () => { if (state === 'aim') holding = true; }, up = () => { if (!holding) return; holding = false; judge(); };
+  const judge = () => { const d = len - target;
+    if (Math.abs(d) <= 12) { state = 'climb'; st = 0; Sound.play('pickUp'); msg = '剛剛好！消防員爬上去了！'; msgT = 1.4; }
+    else if (d < 0) { msg = '還差一點點，再按住伸長一點～'; msgT = 1.4; Sound.play('click'); }
+    else { state = 'back'; msg = '太長了！縮回去重來～'; msgT = 1.4; Sound.play('miss'); } };
+  c.addEventListener('pointerdown', e => { e.preventDefault(); down(); });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(k => c.addEventListener(k, up));
+  const kd = e => { if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) down(); } }, ku = e => { if (e.code === 'Space') up(); };
+  document.addEventListener('keydown', kd); document.addEventListener('keyup', ku);
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); document.removeEventListener('keyup', ku); };
+  const finishAll = () => { live = false; gameCleanup(); const f = fireState(); f.res += saved; const got = payReward(w, 120); Sound.play('fanfare'); kidMoodUp(5); saveGame();
+    w.status.textContent = `🎉 三隻小動物都救下來了！大家都謝謝你！　💰 +${fmt(got)}`; gameButtons(w, openFireRescue); };
+  const tick = now => {
+    if (!live) return; raf = requestAnimationFrame(tick);
+    const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt; if (msgT > 0) msgT -= dt;
+    if (state === 'aim' && holding) len = Math.min(190, len + 70 * dt);
+    if (state === 'back') { len = Math.max(0, len - 160 * dt); if (len <= 0) state = 'aim'; }
+    if (state === 'climb') { st += dt; if (st > 2.6) { saved++; i++; Sound.play('fanfare'); if (i >= RESCUE_LIST.length) { finishAll(); return; } newTarget(); msg = `救到了！下一個：${RESCUE_LIST[i][0]} ${RESCUE_LIST[i][1]}`; msgT = 1.6; } }
+    const R = RESCUE_LIST[Math.min(i, RESCUE_LIST.length - 1)], ty = BASE - 34 - target + 6, LX = 120;   // ty：樹枝／屋頂／電線的高度；梯子頂端剛好到 ty-6 就是對了
+    g.fillStyle = '#bfe6f2'; g.fillRect(0, 0, W, H); g.fillStyle = '#8cc47a'; g.fillRect(0, BASE, W, H - BASE);
+    // 困住的地方
+    if (R[3] === 'tree') { g.fillStyle = '#8a5a33'; g.fillRect(200, ty - 10, 16, BASE - ty + 10); g.fillRect(140, ty, 70, 7); g.fillStyle = '#4f9d4f'; [[210, ty - 30, 40], [170, ty - 18, 28], [245, ty - 6, 26]].forEach(([x, y, r]) => { g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); }); }
+    else if (R[3] === 'roof') { g.fillStyle = '#e9d5b6'; g.fillRect(150, ty + 6, 140, BASE - ty - 6); g.fillStyle = '#b5574a'; g.beginPath(); g.moveTo(136, ty + 8); g.lineTo(220, ty - 30); g.lineTo(304, ty + 8); g.closePath(); g.fill(); g.fillRect(136, ty, 40, 8); }
+    else { g.fillStyle = '#7a7f88'; g.fillRect(206, ty - 4, 8, BASE - ty + 4); g.fillRect(140, ty, 90, 5); g.strokeStyle = '#3a3240'; g.lineWidth = 1; g.beginPath(); g.moveTo(230, ty + 2); g.quadraticCurveTo(280, ty + 20, 320, ty + 4); g.stroke(); }
+    const ax = LX + 34, ay = state === 'climb' && st > 1.4 ? BASE - 34 - Math.max(0, target - (st - 1.4) * 140) : ty - 2;   // 小動物（被抱下來）
+    if (state !== 'climb' || st < 2.4) { g.font = '24px sans-serif'; g.textAlign = 'center'; g.fillText(R[0], state === 'climb' && st > 1.4 ? LX + 8 : ax + Math.sin(t * 6) * (state === 'aim' ? 1.5 : 0), ay); }
+    if (state === 'aim' && Math.sin(t * 6) > 0) { g.fillStyle = '#ffffff'; g.font = '700 11px sans-serif'; g.fillText('救命～', ax, ay - 22); }
+    // 消防車和雲梯
+    g.fillStyle = '#d63b3b'; g.beginPath(); g.roundRect(20, BASE - 34, 110, 30, 6); g.fill(); g.beginPath(); g.roundRect(90, BASE - 46, 40, 20, 5); g.fill(); g.fillStyle = '#bfe6f2'; g.fillRect(98, BASE - 42, 24, 12);
+    g.fillStyle = '#26232a'; [44, 110].forEach(x => { g.beginPath(); g.arc(x, BASE - 4, 10, 0, 7); g.fill(); });
+    const topY = BASE - 34 - len; g.strokeStyle = '#c9ccd0'; g.lineWidth = 4; g.beginPath(); g.moveTo(LX - 8, BASE - 34); g.lineTo(LX - 8, topY); g.moveTo(LX + 8, BASE - 34); g.lineTo(LX + 8, topY); g.stroke();
+    g.lineWidth = 3; for (let yy = BASE - 40; yy > topY; yy -= 10) { g.beginPath(); g.moveTo(LX - 8, yy); g.lineTo(LX + 8, yy); g.stroke(); }
+    // 目標線（提示）
+    if (state === 'aim') { g.strokeStyle = 'rgba(255,255,255,.75)'; g.setLineDash([4, 4]); g.lineWidth = 2; g.beginPath(); g.moveTo(LX - 20, ty - 6); g.lineTo(LX + 50, ty - 6); g.stroke(); g.setLineDash([]); }
+    // 消防員（爬梯子）
+    const fy = state === 'climb' ? (st < 1.4 ? BASE - 20 - (len) * (st / 1.4) : BASE - 20 - Math.max(0, len - (st - 1.4) * 140)) : BASE - 20;
+    g.save(); g.translate(state === 'climb' ? LX : 60, fy); g.scale(.42, .42); try { drawNeighbor(g, HOSTS.fireman, { happy: true, blink: false, fx: 0, clean: 100 }); } catch (e) {} g.restore();
+    g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.roundRect(6, 6, 200, 22, 8); g.fill(); g.fillStyle = '#3a3240'; g.font = '700 13px sans-serif'; g.textAlign = 'left'; g.fillText(`${R[0]} ${R[1]}${R[2]}　（${saved}/3）`, 14, 22);
+    if (msgT > 0) { g.fillStyle = '#c4313a'; g.font = '900 15px sans-serif'; g.textAlign = 'center'; g.fillText(msg, W / 2, 50); }
+  };
+  raf = requestAnimationFrame(tick);
+  w.status.textContent = `${RESCUE_LIST[0][0]} ${RESCUE_LIST[0][1]}${RESCUE_LIST[0][2]}！按住讓雲梯伸長～`;
+  openFireRescue.test = { get target() { return target; }, setLen: v => { len = v; }, judge: () => judge(), get state() { return state; }, skipClimb: () => { st = 3; }, get saved() { return saved; } };
+}
+
+/* ===== 🔫 泳池水槍大戰（家長 11/22：取代選單上的「打水比賽」，原本的打水比賽在鴨鴨教練那邊還玩得到）=====
+   動物朋友會從游泳圈後面冒出來，冒出來一下下就會噴你（頭上出現「💦！」）。在他噴你之前先噴中他就得一分；
+   被噴到畫面會濺滿水滴，他得一分。40 秒，比誰分數多。 */
+function openWaterFight() {
+  const W = 360, H = 240, LIMIT = 40, SPOTS = [[60, 118], [140, 104], [220, 104], [300, 118], [180, 150]];
+  const w = openGameWindow('🔫 泳池水槍大戰', '動物朋友會從游泳圈後面冒出來！在他噴你之前，點他（或方向鍵瞄準、空白鍵射）用水槍噴回去！頭上出現「💦！」就是要噴你了，快！');
+  w.stage.innerHTML = ''; w.btns.innerHTML = ''; leaveButton(w);
+  const { c, g, pos } = gameCanvas(w.stage, W, H);
+  const pool = NEIGHBORS.filter(Boolean).slice().sort(() => Math.random() - .5).slice(0, 5);
+  const ups = [], shots = [], splash = [], lens = [];
+  let aim = { x: W / 2, y: 120 }, me = 0, them = 0, t = 0, last = performance.now(), raf = 0, live = true, done = false, nextUp = .8, down = false, lastShot = 0;
+  const keys = {};
+  const shoot = () => {
+    if (done) return; lastShot = performance.now(); shots.push({ age: 0 }); let hit = false;
+    ups.forEach(u => { if (u.out || u.hit) return; const hx = SPOTS[u.s][0], hy = SPOTS[u.s][1] - 34 * u.k; if (Math.hypot(aim.x - hx, aim.y - hy) < 34) { u.hit = .7; me++; hit = true; Sound.play('coin'); fpSplashAdd(splash, hx, hy, 8, '#9fd4f5'); } });
+    if (!hit) { fpSplashAdd(splash, aim.x, aim.y, 3, '#9fd4f5'); Sound.play('click'); }
+  };
+  c.addEventListener('pointerdown', e => { e.preventDefault(); aim = pos(e); down = true; shoot(); });
+  c.addEventListener('pointermove', e => { aim = pos(e); });
+  ['pointerup', 'pointercancel'].forEach(k => c.addEventListener(k, () => { down = false; }));
+  const KM = { ArrowLeft: 'l', ArrowRight: 'r', ArrowUp: 'u', ArrowDown: 'd', KeyA: 'l', KeyD: 'r', KeyW: 'u', KeyS: 'd' };
+  const kd = e => { const k = KM[e.code]; if (k) { e.preventDefault(); keys[k] = true; } if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) { keys.sp = true; shoot(); } } };
+  const ku = e => { const k = KM[e.code]; if (k) keys[k] = false; if (e.code === 'Space') keys.sp = false; };
+  document.addEventListener('keydown', kd); document.addEventListener('keyup', ku);
+  gameCleanup = () => { live = false; cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); document.removeEventListener('keyup', ku); };
+  const finish = () => { done = true; live = false; gameCleanup(); const win = me > them, tie = me === them;
+    const got = payReward(w, win ? 140 : tie ? 80 : 50); Sound.play(win ? 'fanfare' : 'coin'); kidMoodUp(4);
+    w.status.textContent = `${win ? '🏆 你贏了！' : tie ? '🤝 平手！' : '動物朋友贏了，下次再比！'}（你 ${me} : ${them} 朋友）　💰 +${fmt(got)}`; gameButtons(w, openWaterFight); };
+  const tick = now => {
+    if (!live) return; raf = requestAnimationFrame(tick);
+    const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+    const kx = (keys.r ? 1 : 0) - (keys.l ? 1 : 0), ky = (keys.d ? 1 : 0) - (keys.u ? 1 : 0);
+    if (kx || ky) aim = { x: Math.max(10, Math.min(W - 10, aim.x + kx * 230 * dt)), y: Math.max(20, Math.min(H - 60, aim.y + ky * 230 * dt)) };
+    if ((down || keys.sp) && now - lastShot > 260) shoot();
+    nextUp -= dt;
+    if (nextUp <= 0 && t < LIMIT - 1.5) { const busy = ups.filter(u => !u.gone).map(u => u.s), free = SPOTS.map((_, k) => k).filter(k => !busy.includes(k));
+      if (free.length) ups.push({ s: free[Math.floor(Math.random() * free.length)], n: pool[Math.floor(Math.random() * pool.length)], age: 0, k: 0, life: Math.max(1.4, 2.2 - t / 40), hit: 0, out: false, gone: false });
+      nextUp = Math.max(.5, 1.3 - t / 50) * (.7 + Math.random() * .6); }
+    ups.forEach(u => { u.age += dt;
+      if (u.hit) { u.hit -= dt; u.k = Math.max(0, u.k - dt * 3); if (u.hit <= 0) u.gone = true; return; }
+      if (!u.out) { u.k = Math.min(1, u.k + dt * 4); if (u.age >= u.life) { u.out = true; them++; Sound.play('whoosh'); for (let i = 0; i < 9; i++) lens.push({ x: 30 + Math.random() * (W - 60), y: 30 + Math.random() * (H - 80), r: 8 + Math.random() * 16, t: 0 }); } }
+      else { u.k = Math.max(0, u.k - dt * 3); if (u.k <= 0) u.gone = true; } });
+    for (let i = ups.length - 1; i >= 0; i--) if (ups[i].gone) ups.splice(i, 1);
+    shots.forEach(s2 => { s2.age += dt; }); for (let i = shots.length - 1; i >= 0; i--) if (shots[i].age > .16) shots.splice(i, 1);
+    // 泳池
+    g.fillStyle = '#bfe6f2'; g.fillRect(0, 0, W, 70); g.fillStyle = '#f3e2c6'; g.fillRect(0, 60, W, 14);
+    const wg = g.createLinearGradient(0, 74, 0, H); wg.addColorStop(0, '#4fb3e8'); wg.addColorStop(1, '#2a8fd0'); g.fillStyle = wg; g.fillRect(0, 74, W, H - 74);
+    g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 2; for (let i = 0; i < 10; i++) { const y = 90 + i * 16, o = Math.sin(t * 2 + i) * 8; g.beginPath(); g.moveTo(0, y); g.quadraticCurveTo(W / 2 + o, y + 6, W, y); g.stroke(); }
+    // 朋友（從游泳圈後面冒出來）
+    SPOTS.forEach(([x, y], k) => {
+      const u = ups.find(q => q.s === k);
+      if (u && u.k > 0) { g.save(); g.beginPath(); g.rect(x - 46, y - 100, 92, 102); g.clip(); g.translate(x, y + 62 - 62 * u.k); g.scale(2, 2); try { drawNeighbor(g, u.n, { happy: !!u.hit || !u.out, blink: !!u.hit, fx: 0, clean: 100 }); } catch (e) {} g.restore();   // 朋友畫出來 29 高（腳在原點），放大 2 倍
+        if (!u.hit && !u.out && u.age > u.life - .7) { g.fillStyle = '#e8505b'; g.font = '900 16px sans-serif'; g.textAlign = 'center'; g.fillText('💦！', x, y - 66 * u.k - 8 + Math.sin(t * 20) * 2); }
+        if (u.hit) { g.fillStyle = '#ffffff'; g.font = '700 12px sans-serif'; g.textAlign = 'center'; g.fillText('哎呀～', x, y - 70); } }
+      g.fillStyle = ['#ff8fb3', '#ffd23f', '#7bd389', '#ff9a3c', '#b18cff'][k]; g.beginPath(); g.ellipse(x, y + 4, 30, 11, 0, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.85)'; for (let q = 0; q < 4; q++) { g.beginPath(); g.ellipse(x + Math.cos(q * 1.57) * 22, y + 4 + Math.sin(q * 1.57) * 8, 5, 4, 0, 0, 7); g.fill(); }
+      g.fillStyle = '#2a8fd0'; g.beginPath(); g.ellipse(x, y + 2, 14, 5, 0, 0, 7); g.fill(); });
+    // 水槍、水柱、水花
+    const gx = W * .62 + (aim.x - W / 2) * .2, gy = H - 34, ga = Math.atan2(aim.y - gy, aim.x - gx);
+    if (shots.length) fpStream(g, gx + Math.cos(ga) * 78, gy + Math.sin(ga) * 78, aim.x, aim.y, t);
+    fpSplashStep(g, splash, dt);
+    fpGunAt(g, W, H, aim.x, aim.y, '#7bd389');
+    if (!done) { g.strokeStyle = 'rgba(232,80,91,.85)'; g.lineWidth = 2; g.beginPath(); g.arc(aim.x, aim.y, 12, 0, 7); g.stroke(); }
+    // 被噴到：鏡頭上的水滴
+    for (let i = lens.length - 1; i >= 0; i--) { const d = lens[i]; d.t += dt; if (d.t > 1.4) { lens.splice(i, 1); continue; } g.fillStyle = `rgba(200,235,255,${.55 * (1 - d.t / 1.4)})`; g.beginPath(); g.arc(d.x, d.y + d.t * 10, d.r, 0, 7); g.fill(); g.strokeStyle = `rgba(255,255,255,${.7 * (1 - d.t / 1.4)})`; g.lineWidth = 1.5; g.stroke(); }
+    const left = Math.max(0, Math.ceil(LIMIT - t));
+    g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.roundRect(6, 6, 210, 22, 8); g.fill(); g.fillStyle = '#3a3240'; g.font = '700 13px sans-serif'; g.textAlign = 'left'; g.fillText(`⏱️ ${left}　🔫 你 ${me} : ${them} 朋友`, 14, 22);
+    if (t >= LIMIT) finish();
+  };
+  raf = requestAnimationFrame(tick);
+  w.status.textContent = '朋友冒出來就快噴他！';
+  openWaterFight.test = { ups, shoot, setAim: (x, y) => { aim = { x, y }; }, SPOTS, get me() { return me; }, get them() { return them; }, end: () => { t = LIMIT; }, get done() { return done; } };
+}
+Object.assign(ACTIVITIES, {
+  fire_fight: { label: '🚒 滅火任務', name: '滅火', fx: '💦', open: () => openFireFight(), lines: ['火好大！快拿水管！', '我是小小消防員！'] },
+  fire_rescue: { label: '🐱 救援任務', name: '救援', fx: '🚒', open: () => openFireRescue(), lines: ['小動物不怕，我來救你！'] }
+});
+Object.assign(FURNITURE_ACT, { fire_hose_reel: 'fire_fight', fire_engine: 'fire_rescue' });
 /* 🎄 裝飾聖誕樹（記憶力） */
 const TREE_SLOTS = [[150, 72], [134, 102], [166, 102], [120, 134], [150, 130], [180, 134], [104, 168], [134, 166], [166, 168], [196, 166]];
 const TREE_COLS = [['red', '#e8505b', '紅色'], ['gold', '#ffd23f', '金色'], ['blue', '#4a90d9', '藍色']];
