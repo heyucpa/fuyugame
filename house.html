@@ -20252,6 +20252,17 @@ function refreshBackupDot() {
   const b = document.querySelector('#tabs button[data-tab="backup"]');
   if (b) b.classList.toggle('dot', backupDue());
 }
+/* ℹ️ 版本與強制更新：設定頁和備份頁都有（家長 11/22：放在備份那區，不用輸入密碼就能更新；強制更新不會動到進度） */
+function versionUpdateSection(body) {
+  body.appendChild(h3('ℹ️ 版本與更新'));
+  const lm = new Date(document.lastModified), p2 = n => String(n).padStart(2, '0');
+  const lmText = isNaN(lm) ? document.lastModified : `${lm.getFullYear()}/${p2(lm.getMonth() + 1)}/${p2(lm.getDate())} ${p2(lm.getHours())}:${p2(lm.getMinutes())}`;
+  body.appendChild(note('這一份的日期：' + lmText + '\n如果爸爸媽媽說更新了、你卻看不到新東西，按下面那顆。'));
+  const upd = el('button', 'big alt', '🔄 強制更新（清掉快取重新下載）');
+  upd.onclick = () => { upd.disabled = true; upd.textContent = '更新中…'; forceUpdate(); };
+  body.appendChild(upd);
+  body.appendChild(note('按了不會動到任何進度，只是把遊戲本身重新下載。'));
+}
 function tabBackup(body) {
   const code = makeBackup();
   if (SAVE_LOCKED != null) {
@@ -20266,7 +20277,8 @@ function tabBackup(body) {
       body.appendChild(fb);
     }
   }
-  snapSection(body);   // 本機的存檔紀錄放最上面（預設就是這個，自動存、可以手動再存一份）
+  versionUpdateSection(body);   // 🔄 強制更新放最上面（不用家長密碼）
+  snapSection(body);   // 本機的存檔紀錄（預設就是這個，自動存、可以手動再存一份）
   body.appendChild(h3('📦 備份到別的地方（想要的話）'));
   const share = el('button', 'big alt', '📤 傳到 LINE（備份到手機）');
   share.onclick = () => { Sound.play('click'); shareBackup().then(ok => { if (ok) renderTab(); }); };
@@ -20412,14 +20424,7 @@ function tabSave(body) {
      檔案早就更新了，她那台還在用舊的。
      所以把版本顯示出來（用 document.lastModified，不需要任何建置步驟），
      再給一顆真的清得掉快取的按鈕。 */
-  body.appendChild(h3('ℹ️ 版本與更新'));
-  const lm = new Date(document.lastModified), p2 = n => String(n).padStart(2, '0');
-  const lmText = isNaN(lm) ? document.lastModified : `${lm.getFullYear()}/${p2(lm.getMonth() + 1)}/${p2(lm.getDate())} ${p2(lm.getHours())}:${p2(lm.getMinutes())}`;
-  body.appendChild(note('這一份的日期：' + lmText + '\n如果爸爸媽媽說更新了、你卻看不到新東西，按下面那顆。'));
-  const upd = el('button', 'big alt', '🔄 強制更新（清掉快取重新下載）');
-  upd.onclick = () => { upd.disabled = true; upd.textContent = '更新中…'; forceUpdate(); };
-  body.appendChild(upd);
-  body.appendChild(note('按了不會動到任何進度，只是把遊戲本身重新下載。'));
+  versionUpdateSection(body);
   body.appendChild(h3('💻 順暢模式'));
   body.appendChild(note('預設開著：畫面一秒少畫幾格、不放開場動畫（解析度不變）。只影響這台機器，不會動到進度。'));
   { const pc = el('button', 'mini', '📊 效能檢查（量量看這台電腦順不順）'); pc.onclick = () => openPerfCheck(); body.appendChild(pc); }
