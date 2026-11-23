@@ -548,6 +548,7 @@ button.pass { font: inherit; }
 .sc-bit { position: absolute; left: 50%; top: 45%; font-size: 22px; pointer-events: none; animation: scBurst 1.4s ease-out forwards; }
 .sc-egg { font-size: 96px; line-height: 1.15; display: inline-block; animation: scWobble .3s ease-in-out infinite; }
 .sc-egg.crack { animation: scCrack .25s ease-in forwards; }
+.sc-capsule { width: 96px; height: 96px; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 4px 12px rgba(0,0,0,.18); background: linear-gradient(180deg, var(--capc, #ff8fb3) 0 48%, #8a7f99 48% 52%, #ffffff 52%); margin: 8px auto; }   /* 🎰 扭蛋殼：上半彩色、下半白色 */
 @keyframes scFade { from { opacity: 0; } }
 @keyframes scGone { to { opacity: 0; } }
 @keyframes scSpin { to { transform: rotate(360deg); } }
@@ -6139,6 +6140,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-23T15:00', title: '🎁 拿到禮物看得到圖片了', lines: [
+    ['🎰', '扭蛋：先出現一顆扭蛋殼搖一搖，喀啦打開才看到扭到什麼'],
+    ['🎫', '集點卡集滿換的禮物，會跳出大大的圖片'],
+    ['🎡', '大轉盤抽到的旋轉木馬、稀有小東西、免費扭蛋，也會畫出來給你看']
+  ] },
   { id: '2026-11-23T14:00', title: '🛍️ 百貨公司熱鬧起來了', lines: [
     ['💁', '每層樓都有自己的店員：1F 兔兔、2F 綿羊、3F 小熊、頂樓狗狗廚師'],
     ['🛍️', '有好多提著購物袋的客人在逛街，走過去可以聊天'],
@@ -7981,12 +7987,13 @@ function storeRoomItem(it) {
   if (it.top) addItem(it.top);   // 桌上放的東西一起收回來（以前會不見）
   if (isNoSellItem(it)) { G.noSell = G.noSell || {}; G.noSell[it.id] = (G.noSell[it.id] || 0) + 1; }
 }
+let addItemQuiet = false;   // 🎰 扭蛋自己會開大圖（扭蛋殼打開），這時候圖鑑的「新的！」先不要搶著跳
 function addItem(id, n) {
   const isNew = !G.seen[id];
   G.inv[id] = (G.inv[id] || 0) + (n || 1);
   G.seen[id] = true;
   // 第一次拿到這件家具：收進家具圖鑑（只算圖鑑裡有的；親戚家專用的不算）
-  if (isNew && FURNITURE.some(f => f.id === id) && typeof showcase === 'function') {
+  if (isNew && !addItemQuiet && FURNITURE.some(f => f.id === id) && typeof showcase === 'function') {
     try {
       const def = FURN_BY_ID[id], nF = FURNITURE.filter(f => G.seen[f.id]).length;
       showcase(renderThumb(def, 150), def.name, `🛋️ 家具圖鑑 ${nF} / ${FURNITURE.length}`, { n: nF, all: FURNITURE.length });
@@ -22880,7 +22887,7 @@ function showcaseNext() {
   const card = el('div', 'sc-card');
   const pic = typeof visual === 'string' ? el('div', 'sc-emoji', visual) : visual;
   if (typeof visual !== 'string') pic.classList.add('sc-pic');   // 原本的 class 留著（長大的圖是一組「原本 → 長大」）
-  const head = el('div', 'sc-new', opts.hatch ? '🥚 要孵出來了…' : (opts.head || '✨ 新的！'));
+  const head = el('div', 'sc-new', opts.hatch ? (opts.capsule ? '🎰 喀啦喀啦…會是什麼呢？' : '🥚 要孵出來了…') : (opts.head || '✨ 新的！'));
   const tl = el('div', 'sc-title', title), sb = el('div', 'sc-sub', sub || '');
   let bar = null;
   if (opts.all) {
@@ -22901,13 +22908,14 @@ function showcaseNext() {
   };
   let ms = SC_MS;
   if (opts.hatch) { // 先搖蛋，喀啦裂開，再換成寵物
-    const egg = el('div', 'sc-egg', '🥚');
+    const egg = opts.capsule ? el('div', 'sc-egg sc-capsule', '') : el('div', 'sc-egg', '🥚');
+    if (opts.capsule) egg.style.setProperty('--capc', opts.capsule);
     card.append(head, egg);
     Sound.play('shake');
     setTimeout(() => { egg.classList.add('crack'); Sound.play('crack'); }, SC_HATCH_MS - 250);
     const reveal = () => {
       if (!egg.parentNode) return;
-      head.textContent = '🎉 孵出來了！';
+      head.textContent = opts.capsule ? (opts.head || '🎉 打開了！') : '🎉 孵出來了！';
       egg.replaceWith(pic);
       card.append(tl, sb); if (bar) card.appendChild(bar);
       burst();
@@ -40170,7 +40178,8 @@ function openDeptStore(focus) {
   // 🎫 集點卡
   const pc = el('div', 'help-letter'); pc.append(el('div', 'help-l-t', '🎫 百貨公司集點卡'), el('div', 'help-l-s', `在百貨公司每花 1,000 元蓋一格（還差 ${fmt(1000 - d.carry)} 元蓋下一格）`));
   const row = el('div', ''); row.style.cssText = 'font-size:24px;letter-spacing:2px;margin:6px 0'; row.textContent = Array.from({ length: 10 }, (_, i) => i < d.stamps ? '🌸' : '⚪').join(''); pc.appendChild(row);
-  if (d.stamps >= 10) { const cl = el('button', 'big', '🎁 集滿了！換禮物'); cl.onclick = () => { d.stamps = 0; if (!d.gift1) { d.gift1 = 1; addItem('dept_balloon', 1); } else addBells(1500); saveGame(); refreshTop(); Sound.play('fanfare'); $('#modal').hidden = true; toast(d.gift1 === 1 && G.inv.dept_balloon ? '🎁 換到「百貨公司熊熊氣球」！放進我的東西了' : '🎁 換到 1,500 元！'); }; pc.appendChild(cl); }
+  if (d.stamps >= 10) { const cl = el('button', 'big', '🎁 集滿了！換禮物'); cl.onclick = () => { d.stamps = 0; const first = !d.gift1; if (first) { d.gift1 = 1; addItem('dept_balloon', 1); } else addBells(1500); saveGame(); refreshTop(); $('#modal').hidden = true;
+      try { if (first) showcase(renderThumb(FURN_BY_ID.dept_balloon, 150), '百貨公司熊熊氣球', '集點卡集滿的禮物！放進我的東西了', { head: '🎁 集滿了！換到禮物' }); else showcase('💰', '1,500 元', '集點卡集滿的禮物！（熊熊氣球已經有了，改送錢）', { head: '🎁 集滿了！換到禮物' }); } catch (e) { toast(first ? '🎁 換到「百貨公司熊熊氣球」！' : '🎁 換到 1,500 元！'); } }; pc.appendChild(cl); }
   card.appendChild(pc);
   // 🎡 抽獎
   const lw = el('div', 'help-letter'); lw.append(el('div', 'help-l-t', `🎡 週年慶抽獎　抽獎券 ${d.tix} 張`), el('div', 'help-l-s', `一天在百貨公司買滿 2,000 元送一張（今天買了 ${fmt(d.day)} 元）。頭獎是水晶旋轉木馬！`));
@@ -40182,8 +40191,9 @@ function openDeptStore(focus) {
   const ok = el('button', 'big alt', '好'); ok.onclick = () => { $('#modal').hidden = true; }; card.appendChild(ok);
   $('#modal').hidden = false;
 }
-function deptGacha() { if (G.bells < gachaPrice()) { Sound.play('miss'); toast('錢不夠喔～'); return; } const pr = gachaPrice(), r = gachaRoll(); if (!r) return; deptSpend(pr); Sound.play(r.rare ? 'fanfare' : 'coin'); $('#modal').hidden = true;
-  const def = FURN_BY_ID[r.id]; try { showcase(renderThumb(def, 150), r.rare ? `✨ 稀有！${def.name}！` : `扭到了：${def.name}`, r.rare ? '只有扭蛋才有的稀有東西！放進我的東西了' : '放進我的東西了', { head: '🎰 扭蛋機' }); } catch (e) { toast(`🎰 扭到了 ${def.name}！`); } }
+function deptGacha() { if (G.bells < gachaPrice()) { Sound.play('miss'); toast('錢不夠喔～'); return; } const pr = gachaPrice(), wasNew = id => FURNITURE.some(f => f.id === id); addItemQuiet = true; let r = null; const seen0 = Object.assign({}, G.seen); try { r = gachaRoll(); } finally { addItemQuiet = false; } if (!r) return;
+  const isNew = !seen0[r.id] && wasNew(r.id), nF = FURNITURE.filter(f => G.seen[f.id]).length; deptSpend(pr); Sound.play(r.rare ? 'fanfare' : 'coin'); $('#modal').hidden = true;
+  const def = FURN_BY_ID[r.id]; try { showcase(renderThumb(def, 150), r.rare ? `✨ 稀有！${def.name}！` : `扭到了：${def.name}`, (r.rare ? '只有扭蛋才有的稀有東西！放進我的東西了' : '放進我的東西了') + (isNew ? `（新的！🛋️ 家具圖鑑 ${nF} / ${FURNITURE.length}）` : ''), { head: r.rare ? '✨ 稀有的！' : '🎰 扭到了！', hatch: true, capsule: r.rare ? '#ffd23f' : ['#ff8fb3', '#6fb7e8', '#7bd389', '#b18cff'][Math.floor(Math.random() * 4)] }); } catch (e) { toast(`🎰 扭到了 ${def.name}！`); } }
 // 🛋️ 2F 家具、🧸 3F 玩具
 function openDeptCounter(kind) {
   closeGameWindow(); const card = $('#modalCard'); card.innerHTML = '';
@@ -40281,13 +40291,19 @@ function openLuckyWheel() {
   const W = 300, H = 240, { g } = gameCanvas(w.stage, W, H), N = WHEEL.length, seg = Math.PI * 2 / N;
   let ang = 0, vel = 0, spinning = false, raf = 0, last = performance.now(), result = -1;
   const pick = () => { const tot = WHEEL.reduce((a, q) => a + q[2], 0); let r = Math.random() * tot; for (let i = 0; i < N; i++) { r -= WHEEL[i][2]; if (r <= 0) return i; } return N - 1; };
-  const give = i => { const [nm, what] = WHEEL[i]; let txt = nm;
-    if (what === 'carousel') { if (G.inv.dept_carousel) { addBells(1000); txt = '🎠 頭獎！（已經有旋轉木馬了，改送 1,000 元）'; } else { addItem('dept_carousel', 1); txt = '🎠 頭獎！水晶旋轉木馬！放進我的東西了'; } }
-    else if (what === 'rare') { const fr = GACHA_RARE.filter(id => !(G.inv[id] > 0)), id = (fr.length ? fr : GACHA_RARE)[Math.floor(Math.random() * (fr.length || GACHA_RARE.length))]; addItem(id, 1); txt = `✨ 拿到「${FURN_BY_ID[id].name}」！`; }
-    else if (what === 'gacha') { const r = { id: GACHA_COMMON.filter(id => FURN_BY_ID[id])[Math.floor(Math.random() * GACHA_COMMON.length) % GACHA_COMMON.filter(id => FURN_BY_ID[id]).length] }; addItem(r.id, 1); txt = `🎰 免費扭蛋：拿到「${FURN_BY_ID[r.id].name}」！`; }
+  const give = i => { const [nm, what] = WHEEL[i]; let txt = nm, gotId = null;
+    if (what === 'carousel') { if (G.inv.dept_carousel) { addBells(1000); txt = '🎠 頭獎！（已經有旋轉木馬了，改送 1,000 元）'; } else { addItem('dept_carousel', 1); gotId = 'dept_carousel'; txt = '🎠 頭獎！水晶旋轉木馬！放進我的東西了'; } }
+    else if (what === 'rare') { const fr = GACHA_RARE.filter(id => !(G.inv[id] > 0)), id = (fr.length ? fr : GACHA_RARE)[Math.floor(Math.random() * (fr.length || GACHA_RARE.length))]; addItem(id, 1); gotId = id; txt = `✨ 拿到「${FURN_BY_ID[id].name}」！`; }
+    else if (what === 'gacha') { const r = { id: GACHA_COMMON.filter(id => FURN_BY_ID[id])[Math.floor(Math.random() * GACHA_COMMON.length) % GACHA_COMMON.filter(id => FURN_BY_ID[id]).length] }; addItem(r.id, 1); gotId = r.id; txt = `🎰 免費扭蛋：拿到「${FURN_BY_ID[r.id].name}」！`; }
     else { addBells(what); txt = `💰 拿到 ${what} 元！`; }
     saveGame(); refreshTop(); Sound.play(what === 'carousel' || what === 'rare' ? 'fanfare' : 'coin'); w.status.textContent = `🎉 ${txt}`;
-    w.btns.innerHTML = ''; if (deptState().tix) { const again = el('button', 'big', `🎡 再轉一次（還有 ${deptState().tix} 張）`); again.onclick = openLuckyWheel; w.btns.appendChild(again); } leaveButton(w); };
+    w.btns.innerHTML = '';
+    // 🎁 拿到的東西畫出來（不是只有一行字）
+    const prize = el('div', 'wheel-prize'); prize.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:4px;width:100%;padding:8px;background:#fff8e6;border-radius:14px;border:3px solid #ffd23f;animation:scPop .35s';
+    try { if (gotId) prize.appendChild(renderThumb(FURN_BY_ID[gotId], 120)); else prize.appendChild(el('div', '', '💰')).style.fontSize = '64px'; } catch (e) {}
+    prize.appendChild(el('div', '', gotId ? FURN_BY_ID[gotId].name : txt.replace(/^💰 /, ''))).style.cssText = 'font-weight:800;font-size:18px';
+    w.btns.appendChild(prize); try { confettiBurst(60); } catch (e) {}
+    if (deptState().tix) { const again = el('button', 'big', `🎡 再轉一次（還有 ${deptState().tix} 張）`); again.onclick = openLuckyWheel; w.btns.appendChild(again); } leaveButton(w); };
   const spin = () => { if (spinning) return; const dd = deptState(); if (!dd.tix) return; dd.tix--; saveGame(); spinning = true; result = pick(); btn.remove();
     const target = -Math.PI / 2 - (result + .5) * seg, cur = ang % (Math.PI * 2), turns = Math.PI * 2 * 4; ang = cur; const dest = cur + turns + ((target - cur) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
     const t0 = performance.now(), dur = 2600, a0 = ang; Sound.play('whoosh');
