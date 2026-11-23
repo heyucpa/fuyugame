@@ -2793,6 +2793,15 @@ const PLACE_FURNITURE = [
     draw(ctx, W, H) { ctx.fillStyle = '#1d2433'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#ff5a4e'; ctx.font = `bold ${Math.round(H * .55)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('0 2 3', W / 2, H * .55); ctx.fillStyle = '#7bd389'; ctx.beginPath(); ctx.arc(W * .08, H * .5, H * .1, 0, 7); ctx.fill(); } },
   { id: 'bank_poster', name: '存錢海報', theme: 'cute', w: 2, h: 28, z: 46, layer: 'wall', d: 1, parts: [],
     draw(ctx, W, H) { ctx.fillStyle = '#fff6e0'; ctx.fillRect(0, 0, W, H); ctx.strokeStyle = '#2f8a3c'; ctx.lineWidth = Math.max(2, H * .06); ctx.strokeRect(1, 1, W - 2, H - 2); ctx.fillStyle = '#ff9ec4'; ctx.beginPath(); ctx.ellipse(W * .3, H * .55, W * .16, H * .26, 0, 0, 7); ctx.fill(); ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(W * .3, H * .2, H * .1, 0, 7); ctx.fill(); ctx.fillStyle = '#2f8a3c'; ctx.font = `bold ${Math.round(H * .3)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('+2%', W * .7, H * .52); } },
+  // 🛳️ 郵輪船上（家長：甲板泳池、自助餐廳、劇場、我的船艙好像沒什麼東西）
+  { id: 'ship_bar', name: '果汁吧', theme: 'cute', w: 2, d: 1, parts: [{ x: .05, y: .3, w: 1.9, d: .6, z: 0, h: 22, c: '#6fb7e8' }, { x: .05, y: .3, w: 1.9, d: .6, z: 22, h: 3, c: '#ffffff' }, { x: .2, y: .4, w: .2, d: .2, z: 25, h: 10, c: '#ff9f43' }, { x: .6, y: .4, w: .2, d: .2, z: 25, h: 10, c: '#7bd389' }, { x: 1, y: .4, w: .2, d: .2, z: 25, h: 10, c: '#ff6b9a' }, { x: .1, y: .1, w: .06, d: .06, z: 0, h: 52, c: '#c9ccd0' }, { x: 1.84, y: .1, w: .06, d: .06, z: 0, h: 52, c: '#c9ccd0' }, { x: .05, y: .05, w: 1.9, d: .5, z: 52, h: 3, c: '#ffd23f' }] },
+  { id: 'ship_gangway', name: '下船的舷梯', theme: 'modern', w: 1, d: 1, parts: [{ x: .1, y: .15, w: .8, d: .7, z: 0, h: 3, c: '#c9a26a' }, { x: .1, y: .15, w: .06, d: .7, z: 0, h: 18, c: '#c9ccd0' }, { x: .84, y: .15, w: .06, d: .7, z: 0, h: 18, c: '#c9ccd0' }, { x: .1, y: .15, w: .8, d: .06, z: 16, h: 2, c: '#e8505b' }, { k: 'ball', x: .5, y: .5, z: 26, r: 4, c: '#7bd389' }] },
+  { id: 'ship_cake', name: '甜點台', theme: 'cute', w: 2, d: 1, parts: [{ x: .05, y: .2, w: 1.9, d: .6, z: 0, h: 20, c: '#ffe3ee' }, { x: .3, y: .35, w: .4, d: .3, z: 20, h: 8, c: '#ffffff' }, { x: .32, y: .37, w: .36, d: .26, z: 28, h: 4, c: '#ff8fb3' }, { k: 'ball', x: .5, y: .5, z: 35, r: 2, c: '#e8505b' }, { x: 1.2, y: .35, w: .5, d: .3, z: 20, h: 6, c: '#c98d5a' }, { k: 'ball', x: 1.35, y: .5, z: 28, r: 2.5, c: '#ffd23f' }, { k: 'ball', x: 1.55, y: .5, z: 28, r: 2.5, c: '#7bd389' }] },
+  { id: 'stage_light', name: '舞台燈', theme: 'modern', w: 1, d: 1, parts: [{ x: .4, y: .4, w: .2, d: .2, z: 0, h: 44, c: '#2b2d42' }, { x: .3, y: .3, w: .4, d: .4, z: 44, h: 10, c: '#5a6475' }, { k: 'ball', x: .5, y: .72, z: 49, r: 3.5, c: '#fff6a8' }] },
+  { id: 'ship_lifebuoy', name: '救生圈', theme: 'modern', w: 1, h: 24, z: 36, layer: 'wall', d: 1, parts: [],
+    draw(ctx, W, H) { const r = Math.min(W, H) * .42, cx = W / 2, cy = H / 2; for (let i = 0; i < 4; i++) { ctx.fillStyle = i % 2 ? '#ffffff' : '#e8505b'; ctx.beginPath(); ctx.arc(cx, cy, r, i * Math.PI / 2, (i + 1) * Math.PI / 2); ctx.arc(cx, cy, r * .55, (i + 1) * Math.PI / 2, i * Math.PI / 2, true); ctx.closePath(); ctx.fill(); } ctx.strokeStyle = '#c9a26a'; ctx.lineWidth = Math.max(1, r * .08); ctx.beginPath(); ctx.arc(cx, cy, r * .78, 0, 7); ctx.stroke(); } },
+  { id: 'stage_curtain', name: '舞台布幕', theme: 'modern', w: 4, h: 60, z: 8, layer: 'wall', d: 1, parts: [],
+    draw(ctx, W, H) { ctx.fillStyle = '#ffd23f'; ctx.fillRect(0, 0, W, H * .1); for (let i = 0; i < 12; i++) { ctx.fillStyle = i % 2 ? '#b8233a' : '#d63b4f'; ctx.fillRect(i * W / 12, H * .1, W / 12 + 1, H * .9); } ctx.fillStyle = 'rgba(255,240,200,.25)'; ctx.beginPath(); ctx.ellipse(W / 2, H * .7, W * .22, H * .2, 0, 0, 7); ctx.fill(); } },
   // 🚒 消防局
   { id: 'fire_engine', name: '消防車', theme: 'modern', w: 3, d: 2, parts: [{ x: .1, y: .4, w: 2.2, d: 1.2, z: 6, h: 22, c: '#d63b3b' }, { x: 2.2, y: .4, w: .7, d: 1.2, z: 6, h: 30, c: '#d63b3b' }, { x: 2.3, y: .5, w: .5, d: 1, z: 22, h: 10, c: '#bfe6f2' }, { x: .1, y: .4, w: 2.8, d: 1.2, z: 14, h: 3, c: '#ffffff' }, { x: .2, y: .6, w: 2, d: .2, z: 28, h: 3, c: '#c9ccd0' }, { x: .2, y: 1.2, w: 2, d: .2, z: 28, h: 3, c: '#c9ccd0' }, { k: 'ball', x: .5, y: .4, z: 6, r: 6, c: '#26232a' }, { k: 'ball', x: 2.4, y: .4, z: 6, r: 6, c: '#26232a' }, { k: 'ball', x: 2.5, y: .8, z: 38, r: 3, c: '#ff3b3b', shade: true }] },
   { id: 'fire_hose_reel', name: '消防水管捲', theme: 'modern', w: 1, d: 1, parts: [{ x: .3, y: .3, w: .4, d: .4, z: 0, h: 6, c: '#5a6475' }, { k: 'ball', x: .5, y: .5, z: 18, r: 11, c: '#ffd23f' }, { k: 'ball', x: .5, y: .5, z: 18, r: 8, c: '#b8282f' }, { k: 'ball', x: .5, y: .5, z: 18, r: 3, c: '#e0a020' }] },
@@ -3655,6 +3664,8 @@ const HOSTS = {
   chef_food: { id: 'chef_food', name: '狗狗廚師', short: '廚師', body: '#f3d9a0', edge: '#d0a860', belly: '#fff6e0', inner: '#e8a87a', ears: 'round', acc: 'hat', accColor: '#ffffff' },   // 🍜 百貨公司頂樓
   clerk: { id: 'clerk', name: '兔兔店員', short: '店員', body: '#fff4f8', edge: '#e0c0cc', belly: '#ffffff', inner: '#ffb3c7', ears: 'long', acc: 'scarf', accColor: '#ff6fa3' },   // 🛍️ 百貨公司
   realtor: { id: 'realtor', name: '倉鼠經紀人', short: '經紀人', body: '#f3c48a', edge: '#d09a5a', belly: '#fff6e8', inner: '#ffc4b0', ears: 'round', acc: 'glasses', accColor: '#2b2d42' },   // 🏡 小可愛不動產
+  ship_chef: { id: 'ship_chef', name: '海豹廚師', short: '廚師', body: '#9fb3c8', edge: '#6f849a', belly: '#e6eef5', inner: '#6f849a', ears: 'none', acc: 'hat', accColor: '#ffffff' },   // 🛳️ 郵輪自助餐廳
+  ship_mc: { id: 'ship_mc', name: '鸚鵡主持人', short: '主持人', body: '#e8505b', edge: '#b8323c', belly: '#ffd23f', inner: '#6fb7e8', ears: 'tuft', beak: '#ffd23f', beakBig: true, wings: '#6fb7e8', acc: 'bow', accColor: '#2b2d42' },   // 🛳️ 郵輪劇場
   bank_guard: { id: 'bank_guard', name: '河馬警衛', short: '警衛', body: '#b9a6c9', edge: '#8f7aa3', belly: '#e6dcef', inner: '#f0b8c8', ears: 'round', acc: 'hat', accColor: '#2b3a67' },   // 🏦 銀行金庫
   banker: { id: 'banker', name: '松鼠行員', short: '行員', body: '#d9915a', edge: '#b0703a', belly: '#fbe8d2', inner: '#f0b88a', ears: 'pointy', acc: 'scarf', accColor: '#2f8a3c' },   // 🏦 銀行
   fireman: { id: 'fireman', name: '熊熊消防員', short: '消防員', body: '#c98a55', edge: '#a06a3a', belly: '#f3dcc0', inner: '#e8a87a', ears: 'round', acc: 'hat', accColor: '#d63b3b' },   // 🚒 消防局
@@ -3789,10 +3800,10 @@ const PLACES = {
     { name: '郵輪碼頭', w: 8, d: 8, wall: 'wp_stripe', floor: 'fl_deck', items: [['ship_wheel', 3, 1], ['deck_chair', 1, 4], ['deck_chair', 6, 4]], wallItems: [['porthole', 'R', 2], ['porthole', 'R', 5]] }
   ] },
   ship: { name: '郵輪（船上）', host: 'captain', emoji: '🚢', desc: '在郵輪上逛逛：甲板泳池、自助餐廳、劇場、我的船艙', rooms: [
-    { name: '甲板泳池', w: 10, d: 10, wall: 'wp_stripe', floor: 'fl_pooldeck', items: [['ship_pool', 1, 1], ['deck_chair', 1, 6], ['deck_chair', 4, 6], ['deck_chair', 7, 6], ['ship_wheel', 8, 1]], wallItems: [] },
-    { name: '自助餐廳', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_tile', items: [['buffet_table', 3, 1], ['dining_table', 2, 5], ['dining_table', 6, 5]], wallItems: [['porthole', 'R', 3], ['porthole', 'R', 6]] },
-    { name: '劇場', w: 10, d: 10, wall: 'wp_cinema', floor: 'fl_cinema', items: [['ship_stage', 3, 1]], wallItems: [] },
-    { name: '我的船艙', w: 6, d: 6, wall: 'wp_stripe', floor: 'fl_wood', items: [['wood_bed', 1, 1]], wallItems: [['porthole', 'R', 2]] }
+    { name: '甲板泳池', w: 10, d: 10, wall: 'wp_stripe', floor: 'fl_pooldeck', items: [['ship_pool', 1, 1], ['ship_wheel', 8, 1], ['beach_umbrella', 8, 4], ['deck_chair', 1, 6], ['deck_chair', 4, 6], ['deck_chair', 7, 6], ['float_ring', 9, 6], ['ship_bar', 4, 9], ['ship_gangway', 9, 9]], wallItems: [['ship_lifebuoy', 'R', 7], ['ship_lifebuoy', 'L', 6], ['pennant', 'L', 2]] },
+    { name: '自助餐廳', host: 'ship_chef', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_tile', items: [['buffet_table', 3, 1], ['ship_cake', 7, 1], ['wood_chair', 2, 4], ['wood_chair', 3, 4], ['wood_chair', 6, 4], ['wood_chair', 7, 4], ['dining_table', 2, 5], ['dining_table', 6, 5], ['plant_l', 0, 9]], wallItems: [['porthole', 'R', 1], ['porthole', 'L', 3], ['porthole', 'L', 6]] },
+    { name: '劇場', host: 'ship_mc', w: 10, d: 10, wall: 'wp_cinema', floor: 'fl_cinema', items: [['stage_light', 1, 1], ['ship_stage', 3, 1], ['stage_light', 7, 1], ['cinema_seat', 2, 5], ['cinema_seat', 3, 5], ['cinema_seat', 4, 5], ['cinema_seat', 5, 5], ['cinema_seat', 6, 5], ['cinema_seat', 2, 7], ['cinema_seat', 3, 7], ['cinema_seat', 4, 7], ['cinema_seat', 5, 7], ['cinema_seat', 6, 7]], wallItems: [['stage_curtain', 'R', 2]] },
+    { name: '我的船艙', noCrowd: true, w: 6, d: 6, wall: 'wp_stripe', floor: 'fl_wood', items: [['wood_bed', 1, 1], ['nightstand', 3, 1], ['wardrobe', 4, 1], ['cute_rug', 2, 4], ['lamp', 0, 5], ['plant_s', 5, 5]], wallItems: [['porthole', 'R', 2], ['ship_lifebuoy', 'L', 4]] }
   ] },
   dept: { name: '百貨公司', host: 'clerk', emoji: '🛍️', desc: '好幾層樓！百貨限定的家具、扭蛋機，週末還有週年慶打折', rooms: [
     { name: '1F 服飾・試衣間', w: 10, d: 10, wall: 'wp_pink', floor: 'fl_terrazzo', items: [['dept_rack', 1, 1], ['dept_rack', 5, 1], ['dept_mirror', 8, 1], ['dept_mirror', 8, 3], ['dept_rack', 1, 5], ['dept_elevator', 8, 7], ['dept_escalator', 4, 7]], wallItems: [] },
@@ -6155,6 +6166,13 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-23T19:00', title: '🛳️ 郵輪上變熱鬧了', lines: [
+    ['🚶', '上船、下船會看到走過舷梯的動畫；甲板上有「下船的舷梯」，點了就下船'],
+    ['🏊', '甲板泳池：遮陽傘、游泳圈、果汁吧、救生圈，還有其他乘客在逛'],
+    ['🍰', '自助餐廳：海豹廚師，自助餐和甜點台免費吃到飽，一口一口吃會變飽'],
+    ['🎪', '劇場：鸚鵡主持人、舞台燈、紅色布幕、觀眾座位，可以看動物朋友表演魔術和跳舞'],
+    ['🛏️', '我的船艙：床頭櫃、衣櫃、地毯、檯燈、小盆栽']
+  ] },
   { id: '2026-11-23T18:00', title: '🐢 新朋友：烏龜、小鳥、老鷹、飛龍', lines: [
     ['🐢', '四位新的動物朋友：烏龜慢慢、小鳥啾啾、老鷹阿翔、飛龍噗噗，會來家裡玩，也會在外面逛'],
     ['👋', '各地方的主人第一次見面會自我介紹，像「我是企鵝船長，負責開這艘大郵輪！」'],
@@ -15583,13 +15601,15 @@ function hostMenuEntries() {
   if (host.n.id === 'curator') { list.push(['🏛️ 參觀展覽（看完有小問答）', () => openMuseumTour()]); list.push(['🎭 演習：博物館（第 2 關）', () => openThiefDrill((copState().dlv || 0) >= 1 ? 2 : undefined)]); }
   if (host.n.id === 'captain') { const onShip = G.away && G.away.place === 'ship';
     list.push([onShip ? '⚓ 開往港口（下船去玩）' : '🛳️ 搭郵輪去玩', () => openCruise()]);
-    list.push(onShip ? ['🏠 下船回郵輪碼頭', () => { closeGameWindow(); travelArrive('cruise'); }] : ['🚶 上船逛逛', () => { closeGameWindow(); travelArrive('ship'); }]);
+    list.push(onShip ? ['🏠 下船回郵輪碼頭', () => shipLeave()] : ['🚶 上船逛逛', () => shipBoard()]);
     list.push(['📒 郵輪護照', () => { const cs = cruiseState(); toast(`📒 郵輪護照：${CRUISE_PORTS.map(p => (cs.st[p[0]] ? p[1] : '⬜') + p[2]).join('、')}`); }]); }
   if (host.n.id === 'clerk_furn') { list.push(['🛋️ 看百貨限定家具', () => openDeptCounter('furn')]); list.push(['🏬 樓層介紹・集點卡・抽獎', () => openDeptStore()]); list.push(['⬆️⬇️ 搭電梯', () => openDeptLift('lift')]); }
   if (host.n.id === 'clerk_toy') { list.push(['🧸 看玩具', () => openDeptCounter('toys')]); list.push(['🏬 樓層介紹・集點卡・抽獎', () => openDeptStore()]); list.push(['⬆️⬇️ 搭電梯', () => openDeptLift('lift')]); }
   if (host.n.id === 'chef_food') { list.push(['🍜 點東西吃', () => openFoodCourt()]); list.push(['🚂 坐小火車（50 元）', () => openKidTrain()]); list.push(['🎰 扭蛋機', () => deptGacha()]); list.push(['🏬 樓層介紹・集點卡・抽獎', () => openDeptStore()]); list.push(['⬆️⬇️ 搭電梯', () => openDeptLift('lift')]); }
   if (host.n.id === 'clerk') { list.push(['🏬 樓層介紹・集點卡・抽獎', () => openDeptStore()]); list.push(['👗 1F 試衣間', () => openBoutique()]); list.push(['🛋️ 2F 家具', () => openDeptCounter('furn')]); list.push(['🧸 3F 玩具', () => openDeptCounter('toys')]); list.push(['🍜 頂樓美食街', () => openFoodCourt()]); list.push(['🚂 坐小火車（50 元）', () => openKidTrain()]); list.push(['🎰 扭蛋機', () => deptGacha()]); }
   if (host.n.id === 'realtor') { list.push(['🏡 看房子・買房子', () => openRealty()]); }
+  if (host.n.id === 'ship_chef') { list.push(['🍽️ 吃自助餐（免費吃到飽）', () => openFoodCourt('ship')]); list.push(['🚶 下船回碼頭', () => shipLeave()]); }
+  if (host.n.id === 'ship_mc') { list.push(['🎪 看舞台表演', () => shipShow()]); list.push(['🚶 下船回碼頭', () => shipLeave()]); }
   if (host.n.id === 'bank_guard') { list.push(['💰 看看金條', () => bankGoldTalk()]); list.push(['🎭 演習：金庫（第 3 關）', () => openThiefDrill((copState().dlv || 0) >= 2 ? 3 : undefined)]); list.push(['🐷 回大廳存錢', () => openBank()]); }
   if (host.n.id === 'banker') { list.push(['🐷 存錢筒（每天會長利息）', () => openBank()]); list.push(['🎭 演習：金庫（第 3 關）', () => openThiefDrill((copState().dlv || 0) >= 2 ? 3 : undefined)]); }
   if (host.n.id === 'fireman') { list.push(['🚒 滅火任務（拿水管噴水）' + (fireState().lv ? `（過了 ${fireState().lv} 關）` : ''), () => openFireFight()]); list.push(['🐱 救援任務（雲梯救小動物）', () => openFireRescue()]); }
@@ -17023,6 +17043,7 @@ const CROWD_PLACES = {
   pool: { n: 2, swim: true, lines: ['我游了好幾趟了！', '水好涼喔～', '你會游自由式嗎？', '我們來比賽游到對面！', '要記得換氣喔！', '鴨教練說要先暖身～'] },
   dojo: { n: 2, dobok: true, lines: ['喝！哈！我在練踢腿', '我下次要考黃帶！', '教練說要先敬禮喔', '一起加油！', '我的腳可以踢好高！', '練完好累，可是好開心～'] },
   // 🛍️ 百貨公司：三位提著購物袋在逛的客人（家長 11/22：百貨公司有些冷清）
+  ship: { n: 3, lines: ['船上好好玩！', '我剛剛去游泳了～', '自助餐的蛋糕好好吃！', '晚上劇場有表演喔！', '海風好舒服～', '你看，有海豚！', '我的船艙好可愛', '嗚～船要開囉！'] },
   bank: { n: 3, bag: true, bagC: ['#e0b23a', '#7bd389', '#e0b23a'], lines: ['我來存壓歲錢！', '我抽到 25 號了～', '存錢會長利息耶！', '我要存錢買腳踏車！', '提款機好方便', '請問櫃台在哪裡？', '金庫裡面有好多金條！', '排隊排隊～'] },
   dept: { n: 3, bag: true, lines: ['這件好可愛！', '我要買這個送媽媽～', '週末有打折耶！', '頂樓的聖代好好吃！', '你也來逛街嗎？', '我剛剛扭到小火箭了！', '電梯在那邊喔～', '集點卡快集滿了！'] },
   school: { n: 3, lines: ['下課要不要一起玩？', '老師今天好溫柔喔！', '你功課寫完了嗎？', '等一下一起去操場！', '我們來比賽跑步！', '我帶了點心，分你一半～'] }
@@ -18738,7 +18759,7 @@ $('#btnCancel').onclick = cancelHold;
 
 // ── 上方列 ──
 /* 房間按鈕前面加圖示（家長：還不識字的妹妹看不懂「客廳」「臥室」）：先看名字，名字看不出來就看房間裡擺了什麼，再不然照第幾間 */
-const ROOM_ICON_WORDS = [[/金庫/, '💰'], [/銀行/, '🏦'], [/操場|跑道|田徑/, '🏟️'], [/客廳|起居/, '🛋️'], [/臥室|睡|寢|房間|主臥|小孩房|兒童房/, '🛏️'], [/餐廳|廚房|吃飯/, '🍽️'], [/浴室|廁所|洗澡|浴/, '🛁'], [/陽台|花園|庭院/, '🌷'],
+const ROOM_ICON_WORDS = [[/甲板|泳池/, '🏊'], [/劇場|舞台/, '🎭'], [/船艙/, '🛏️'], [/自助/, '🍰'], [/金庫/, '💰'], [/銀行/, '🏦'], [/操場|跑道|田徑/, '🏟️'], [/客廳|起居/, '🛋️'], [/臥室|睡|寢|房間|主臥|小孩房|兒童房/, '🛏️'], [/餐廳|廚房|吃飯/, '🍽️'], [/浴室|廁所|洗澡|浴/, '🛁'], [/陽台|花園|庭院/, '🌷'],
   [/書房|讀書|圖書|功課/, '📚'], [/遊戲|玩具|遊樂/, '🧸'], [/閣樓/, '🏠'], [/衣帽|更衣/, '👗'], [/音樂|琴/, '🎹']];
 function roomIcon(r, i) {
   const nm = r.name || '', hit = ROOM_ICON_WORDS.find(([re]) => re.test(nm)); if (hit) return hit[1];
@@ -40124,7 +40145,7 @@ function openCruise() {
   card.appendChild(el('h2', '', '🛳️ 搭郵輪去玩'));
   card.appendChild(note(`企鵝船長：要去哪一個港口呢？船票 💰 ${CRUISE_TICKET}。　📒 郵輪護照：${CRUISE_PORTS.map(p => cs.st[p[0]] ? p[1] : '⬜').join(' ')}`));
   CRUISE_PORTS.forEach(([id, ic, nm]) => { const b = el('button', 'big', `${ic} ${nm}${cs.st[id] ? '　✅ 蓋過章' : ''}`); b.onclick = () => { if (!spend(CRUISE_TICKET)) { Sound.play('miss'); toast('船票不夠錢喔～'); return; } refreshTop(); $('#modal').hidden = true; cruiseSail(id); }; card.appendChild(b); });
-  const walk = el('button', 'big alt', '🚶 先上船逛逛（不用船票）'); walk.onclick = () => { $('#modal').hidden = true; travelArrive('ship'); }; card.appendChild(walk);
+  const walk = el('button', 'big alt', '🚶 先上船逛逛（不用船票）'); walk.onclick = () => { $('#modal').hidden = true; shipBoard(); }; card.appendChild(walk);
   $('#modal').hidden = false;
 }
 function cruiseSail(id) {
@@ -40136,6 +40157,41 @@ function cruiseSail(id) {
     { text: `看到了！是 ${P[1]} ${P[2]}！下船去玩吧！`, draw: (g, W, H, t) => { sea(g, W, H, t); g.fillStyle = P[3]; g.beginPath(); g.ellipse(270, 140, 90, 30, 0, Math.PI, 0); g.fill(); g.font = '40px sans-serif'; g.textAlign = 'center'; g.fillText(P[1], 270, 112); cruiseShip(g, 100, 155, .8, t); } }
   ], () => { if (id === 'fruit') openPortFruit(); else if (id === 'ice') openPortPenguin(); else openPortTreasure(); });
 }
+/* 🚶 上船、下船看得出來（家長：上下船也不明顯）：走過舷梯的小動畫，到了再跳一句話 */
+function shipDock(g, W, H, t) { const sk = g.createLinearGradient(0, 0, 0, H); sk.addColorStop(0, '#9fd8ff'); sk.addColorStop(1, '#e7f5ff'); g.fillStyle = sk; g.fillRect(0, 0, W, H); g.fillStyle = '#3f9fd8'; g.fillRect(0, 150, W, H - 150); g.strokeStyle = 'rgba(255,255,255,.5)'; g.lineWidth = 2; for (let i = 0; i < 6; i++) { const x = (i * 70 + t * 30) % (W + 40) - 20; g.beginPath(); g.moveTo(x, 172); g.quadraticCurveTo(x + 10, 166, x + 20, 172); g.stroke(); } g.fillStyle = '#c9a26a'; g.fillRect(0, 150, 120, 14); g.fillStyle = '#8a6a4a'; for (let i = 0; i < 4; i++) g.fillRect(10 + i * 30, 164, 6, 40); cruiseShip(g, 250, 160, 1.15, t); g.strokeStyle = '#c9ccd0'; g.lineWidth = 3; g.beginPath(); g.moveTo(112, 150); g.lineTo(178, 128); g.stroke(); g.fillStyle = '#c9a26a'; g.beginPath(); g.moveTo(110, 152); g.lineTo(180, 130); g.lineTo(180, 136); g.lineTo(110, 158); g.closePath(); g.fill(); }
+function shipBoard() {
+  closeGameWindow(); $('#modal').hidden = true; Sound.play('whoosh');
+  vevScene([
+    { text: '走上舷梯，一步一步……要上郵輪囉！', draw: (g, W, H, t) => { shipDock(g, W, H, t); const k = Math.min(1, t / 2.2); copDrawKid(g, 70 + k * 105, 160 - k * 22, .8, t, k < 1, 1, 'joy'); vevNb(g, HOSTS.captain, 215, 118, 1.2, { happy: true }); } },
+    { text: '企鵝船長：歡迎上船！嗚～～（汽笛聲）甲板泳池、自助餐廳、劇場、你的船艙都可以逛喔！', draw: (g, W, H, t) => { shipDock(g, W, H, t); copDrawKid(g, 190, 136, .8, t, false, 1, 'joy'); vevNb(g, HOSTS.captain, 225, 118, 1.2, { happy: true }); g.font = '24px sans-serif'; g.textAlign = 'center'; g.fillText('🎵', 300 + Math.sin(t * 3) * 6, 60 - (t * 10) % 20); } }
+  ], () => { travelArrive('ship'); setTimeout(() => { try { toast('🛳️ 上船了！現在在郵輪上～點「🚶 下船的舷梯」或船長就可以下船'); } catch (e) {} }, 600); });
+}
+function shipLeave() {
+  closeGameWindow(); $('#modal').hidden = true; Sound.play('whoosh');
+  vevScene([
+    { text: '走下舷梯……下船囉！回到郵輪碼頭了～', draw: (g, W, H, t) => { shipDock(g, W, H, t); const k = Math.min(1, t / 2.2); copDrawKid(g, 175 - k * 105, 138 + k * 22, .8, t, k < 1, -1, 'joy'); vevNb(g, HOSTS.captain, 225, 118, 1.2, { happy: true, wave: true }); } }
+  ], () => { travelArrive('cruise'); setTimeout(() => { try { toast('⚓ 下船了！回到郵輪碼頭'); } catch (e) {} }, 600); });
+}
+function shipShow() {   // 🎪 劇場表演：動物朋友輪流上台
+  closeGameWindow(); $('#modal').hidden = true; const ns = NEIGHBORS.slice().sort(() => Math.random() - .5).slice(0, 3);
+  const stage = (g, W, H, t) => { g.fillStyle = '#2b1d2e'; g.fillRect(0, 0, W, H); for (let i = 0; i < 12; i++) { g.fillStyle = i % 2 ? '#b8233a' : '#d63b4f'; g.fillRect(i * 30, 0, 31, 40); } g.fillStyle = '#8a5a33'; g.fillRect(0, 170, W, 50); g.fillStyle = 'rgba(255,246,168,.25)'; g.beginPath(); g.moveTo(170, 0); g.lineTo(110, 175); g.lineTo(250, 175); g.closePath(); g.fill(); };
+  vevScene([
+    { text: '鸚鵡主持人：各位觀眾！郵輪劇場的表演要開始囉！', draw: (g, W, H, t) => { stage(g, W, H, t); vevNb(g, HOSTS.ship_mc, 180, 172, 2, { happy: true }); } },
+    { text: `第一個表演：${ns[0].name}的魔術！變～出一隻小白鴿！`, draw: (g, W, H, t) => { stage(g, W, H, t); vevNb(g, ns[0], 180, 172, 2, { happy: true }); g.font = '30px sans-serif'; g.textAlign = 'center'; if (t > 1) g.fillText('🕊️', 230 + (t - 1) * 30, 90 - (t - 1) * 20); g.fillText('🎩', 230, 140); } },
+    { text: `第二個表演：${ns[1].name}和${ns[2].name}一起跳舞！`, draw: (g, W, H, t) => { stage(g, W, H, t); vevNb(g, ns[1], 130, 172 - Math.abs(Math.sin(t * 5)) * 14, 1.8, { happy: true }); vevNb(g, ns[2], 230, 172 - Math.abs(Math.cos(t * 5)) * 14, 1.8, { happy: true }); g.font = '22px sans-serif'; g.textAlign = 'center'; g.fillText('🎵', 180, 70 + Math.sin(t * 4) * 8); } },
+    { text: '表演結束！大家一起拍拍手～', draw: (g, W, H, t) => { stage(g, W, H, t); vevNb(g, HOSTS.ship_mc, 180, 172, 2, { happy: true }); g.font = '26px sans-serif'; g.textAlign = 'center'; for (let i = 0; i < 5; i++) g.fillText('👏', 40 + i * 70, 205 + Math.sin(t * 8 + i) * 3); } }
+  ], () => { kidMoodUp(4); saveGame(); });
+}
+Object.assign(ACTIVITIES, {
+  ship_juice: { label: '🧃 喝果汁', name: '喝果汁', fx: '🧃', lines: ['冰冰涼涼的果汁！', '我要柳橙汁～', '吸管咕嚕咕嚕', '在船上喝果汁好棒！'] },
+  ship_off: { label: '🚶 走下船', name: '下船', fx: '⚓', open: () => shipLeave(), lines: ['要下船囉！'] },
+  ship_buffet: { label: '🍽️ 吃自助餐（免費）', name: '吃自助餐', fx: '😋', open: () => openFoodCourt('ship'), lines: ['好多好吃的！'] },
+  ship_show: { label: '🎪 看舞台表演', name: '看表演', fx: '🎪', open: () => shipShow(), lines: ['表演要開始了！'] },
+  stage_light_look: { label: '💡 看舞台燈', name: '看燈', fx: '💡', lines: ['燈光照在舞台上', '好亮好亮！', '燈光變顏色了！'] },
+  lifebuoy: { label: '⭕ 看救生圈', name: '看救生圈', fx: '⭕', lines: ['掉到海裡要抓住救生圈喔', '紅白紅白的好漂亮', '船上一定要有救生圈'] }
+});
+Object.assign(FURNITURE_ACT, { ship_bar: 'ship_juice', ship_gangway: 'ship_off', buffet_table: 'ship_buffet', ship_cake: 'ship_buffet', ship_stage: 'ship_show', stage_light: 'stage_light_look' });
+Object.assign(WALL_ACT, { ship_lifebuoy: 'lifebuoy', stage_curtain: 'stage' });
 function cruisePortDone(w, id) {
   const cs = cruiseState(), P = CRUISE_PORTS.find(p => p[0] === id), first = !cs.st[id]; cs.st[id] = 1;
   const got = payReward(w, 100); kidMoodUp(5); Sound.play('fanfare');
@@ -40143,7 +40199,7 @@ function cruisePortDone(w, id) {
   if (first && CRUISE_PORTS.every(p => cs.st[p[0]])) { addItem('cruise_model', 1); extra += '　🛳️ 三個港口都去過了！送你「郵輪模型」！'; }
   saveGame(); refreshTop();
   w.status.textContent = `🎉 ${P[2]}玩完了！　💰 +${fmt(got)}${extra}`;
-  w.btns.innerHTML = ''; const ship = el('button', 'big', '🛳️ 回到船上逛逛'); ship.onclick = () => { closeGameWindow(); travelArrive('ship'); }; const port = el('button', 'big alt', '🏠 回郵輪碼頭'); port.onclick = () => { closeGameWindow(); travelArrive('cruise'); }; w.btns.append(ship, port);
+  w.btns.innerHTML = ''; const ship = el('button', 'big', '🛳️ 回到船上逛逛'); ship.onclick = () => { closeGameWindow(); shipBoard(); }; const port = el('button', 'big alt', '🏠 回郵輪碼頭'); port.onclick = () => { closeGameWindow(); shipLeave(); }; w.btns.append(ship, port);
 }
 // 🍍 熱帶水果島：猴子老闆說要幾個，就點幾個水果放進籃子，按「給你！」
 function openPortFruit() {
@@ -40331,11 +40387,13 @@ function openBoutique(tryId) {
   $('#modal').hidden = false;
 }
 // 🍜 頂樓美食街：點一樣，坐下來一口一口吃（按空白鍵或點畫面吃一口）
-function openFoodCourt() {
-  const w = openGameWindow('🍜 頂樓美食街', '想吃什麼呢？點好以後，按空白鍵（或點畫面）一口一口吃掉！吃飽了會很開心～');
+const SHIP_FOOD = [['cake', '🍰', '草莓蛋糕', 0, 15], ['sushi', '🍣', '壽司', 0, 25], ['spaghetti', '🍝', '義大利麵', 0, 30], ['shrimp', '🍤', '炸蝦', 0, 22], ['juice', '🧃', '果汁', 0, 8]];
+function openFoodCourt(mode) {
+  const ship = mode === 'ship';   // 🛳️ 郵輪自助餐：免費吃到飽，一樣一口一口吃
+  const w = ship ? openGameWindow('🍽️ 郵輪自助餐', '海豹廚師：船上的自助餐免費吃到飽！選一樣，按空白鍵（或點畫面）一口一口吃掉～') : openGameWindow('🍜 頂樓美食街', '想吃什麼呢？點好以後，按空白鍵（或點畫面）一口一口吃掉！吃飽了會很開心～');
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   const menu = el('div', 'invite-row'); w.stage.appendChild(menu);
-  DEPT_FOOD.forEach(([id, ic, nm, pr, full]) => { const b = el('button', 'big', `${ic} ${nm}　💰${pr}`); b.onclick = () => { if (!deptBuy(pr)) return; Sound.play('coin'); menu.remove(); eat(ic, nm, full); }; menu.appendChild(b); });
+  (ship ? SHIP_FOOD : DEPT_FOOD).forEach(([id, ic, nm, pr, full]) => { const b = el('button', 'big', ship ? `${ic} ${nm}` : `${ic} ${nm}　💰${pr}`); b.onclick = () => { if (!ship && !deptBuy(pr)) return; Sound.play('coin'); menu.remove(); eat(ic, nm, full); }; menu.appendChild(b); });
   leaveButton(w);
   const eat = (ic, nm, full) => {
     const W = 300, H = 200, { c, g } = gameCanvas(w.stage, W, H); let left = 5, t = 0, raf = 0, last = performance.now(), chew = 0, done = false;
@@ -40343,7 +40401,7 @@ function openFoodCourt() {
     const kd = e => { if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); if (!e.repeat) bite(); } };
     document.addEventListener('keydown', kd); c.addEventListener('pointerdown', e => { e.preventDefault(); bite(); });
     gameCleanup = () => { cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); };
-    const finish = () => { gameCleanup(); G.kid.hunger = clampStat((G.kid.hunger || 0) + full); kidMoodUp(4); saveGame(); refreshTop(); Sound.play('fanfare'); w.status.textContent = `好好吃！${nm}吃光光了，肚子飽飽的～`; w.btns.innerHTML = ''; const again = el('button', 'big', '🍽️ 再點一份'); again.onclick = openFoodCourt; w.btns.appendChild(again); leaveButton(w); };
+    const finish = () => { gameCleanup(); G.kid.hunger = clampStat((G.kid.hunger || 0) + full); kidMoodUp(4); saveGame(); refreshTop(); Sound.play('fanfare'); w.status.textContent = `好好吃！${nm}吃光光了，肚子飽飽的～`; w.btns.innerHTML = ''; const again = el('button', 'big', '🍽️ 再點一份'); again.onclick = () => openFoodCourt(mode); w.btns.appendChild(again); leaveButton(w); };
     const frame = now => { raf = requestAnimationFrame(frame); const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt; if (chew > 0) chew -= dt;
       g.fillStyle = '#fff3e0'; g.fillRect(0, 0, W, H); g.fillStyle = '#c98d5a'; g.fillRect(0, 140, W, 60); g.fillStyle = '#e0bd84'; g.fillRect(40, 132, 220, 12);
       copDrawKid(g, 110, 150, 1.1, t, false, 1, 'joy');
@@ -40531,7 +40589,7 @@ Object.assign(ACTIVITIES, {
   snow_hug: { label: '⛄ 抱抱小雪人', name: '抱雪人', fx: '⛄', lines: ['小雪人冰冰的！', '幫你戴好帽子', '你不要融化喔～'] },
   look_any: { label: '👀 看一看', name: '看一看', fx: '👀', lines: ['這是什麼呢？', '好特別喔！', '看起來好好玩～'] }
 });
-Object.assign(FURNITURE_ACT, { race_kart: 'kart_go', race_podium: 'podium', race_flag: 'wave_flag', tire_stack: 'tires', fire_pole: 'fire_slide', fire_boots: 'fire_suit', ship_pool: 'splash', swim_pool: 'pool_fight', buffet_table: 'buffet', ship_stage: 'stage', fence: 'fence_look', display_board: 'sign_look', bunny_sign: 'sign_look', cubby_lockers: 'lockers', museum_rope: 'no_touch', traffic_cone: 'cones', cinema_counter: 'movie_ticket', gift_pile: 'peek_gift', snow_buddy: 'snow_hug' });
+Object.assign(FURNITURE_ACT, { race_kart: 'kart_go', race_podium: 'podium', race_flag: 'wave_flag', tire_stack: 'tires', fire_pole: 'fire_slide', fire_boots: 'fire_suit', ship_pool: 'splash', swim_pool: 'pool_fight', buffet_table: 'ship_buffet', ship_stage: 'ship_show', fence: 'fence_look', display_board: 'sign_look', bunny_sign: 'sign_look', cubby_lockers: 'lockers', museum_rope: 'no_touch', traffic_cone: 'cones', cinema_counter: 'movie_ticket', gift_pile: 'peek_gift', snow_buddy: 'snow_hug' });
 FURNITURE_USE.deck_chair = { use: 'sit', seats: [{ x: .5, y: 1.1, z: 9 }], front: [0, 1] };
 Object.assign(ACTIVITIES, { dept_look: { label: '👀 看看展示品', name: '看展示品', fx: '✨', open: () => openDeptItem(), lines: ['哇，好漂亮！', '好想要喔～'] } });
 Object.assign(FURNITURE_ACT, { dept_chandelier: 'dept_look', dept_fountain: 'dept_look', dept_teddy: 'dept_look', toy_robotdog: 'dept_look', toy_dollhouse: 'dept_look', toy_trainset: 'dept_look' });
