@@ -1367,12 +1367,12 @@
     /* 62 來家裡玩的只有小動物（家長：不要讓孩子覺得隨便一個大人都可以來家裡）；好朋友變 12 個 */
     if (NEIGHBORS.length < 12) fails.push('好朋友不到 12 個（' + NEIGHBORS.length + '）');
     if (new Set(NEIGHBORS.map(function(n){ return n.id; })).size !== NEIGHBORS.length) fails.push('好朋友有重複的 id');
-    var ANIMAL_WORDS = /熊|兔|狐|松鼠|羊|狗|貓|企鵝|豬|刺蝟|無尾熊|鹿/;
+    var ANIMAL_WORDS = /熊|兔|狐|松鼠|羊|狗|貓|企鵝|豬|刺蝟|無尾熊|鹿|烏龜|鳥|鷹|龍/;
     NEIGHBORS.forEach(function(n){ if (!ANIMAL_WORDS.test(n.name)) fails.push('來家裡玩的「' + n.name + '」不是小動物'); });
     Object.keys(HOSTS).forEach(function(k){ if (NEIGHBORS.some(function(n){ return n.id === HOSTS[k].id; })) fails.push(HOSTS[k].name + ' 會來家裡玩（主人只待在自己的地方）'); });
     // 先來沒見過的朋友
-    var keepF = G.friends; G.friends = {}; NEIGHBORS.slice(0, 11).forEach(function(n){ G.friends[n.id] = 1; });
-    var lastN = NEIGHBORS[11], seenNew = 0;
+    var keepF = G.friends; G.friends = {}; NEIGHBORS.slice(0, NEIGHBORS.length - 1).forEach(function(n){ G.friends[n.id] = 1; });
+    var lastN = NEIGHBORS[NEIGHBORS.length - 1], seenNew = 0;
     for (var vv = 0; vv < 10; vv++) {
       var pick7 = NEIGHBORS.filter(function(n){ return !G.friends[n.id]; });
       if (pick7.length === 1 && pick7[0] === lastN) seenNew++;

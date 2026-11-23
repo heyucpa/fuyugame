@@ -2703,6 +2703,11 @@ const NEIGHBORS = [
   { id: 'nunu', name: '小豬嚕嚕', short: '嚕嚕', body: '#ffc4cf', edge: '#e597a6', belly: '#ffe3e8', inner: '#ff9fb2', ears: 'pointy', snout: true, acc: 'hat', accColor: '#7bd389' },
   { id: 'cici', name: '刺蝟刺刺', short: '刺刺', body: '#c9a27a', edge: '#8a6a4a', belly: '#f3e2c8', inner: '#8a6a4a', ears: 'round', spikes: true, acc: 'glasses', accColor: '#3a3240' },
   { id: 'baobao', name: '無尾熊抱抱', short: '抱抱', body: '#a9adb5', edge: '#7d828a', belly: '#e3e5ea', inner: '#f0c8d0', ears: 'round', acc: 'bow', accColor: '#b18cff' },
+  /* 家長 11/24：怎麼都沒看到兔子、烏龜、貓咪、小鳥、老鷹、飛龍？（兔兔米米、貓咪喵喵本來就有）→ 多四位 */
+  { id: 'manman', name: '烏龜慢慢', short: '慢慢', body: '#9fd98a', edge: '#5e9e4a', belly: '#f0fadc', inner: '#5e9e4a', ears: 'none', shell: '#c08a50', shellEdge: '#7a5230', acc: 'scarf', accColor: '#ffd23f' },
+  { id: 'jiujiu', name: '小鳥啾啾', short: '啾啾', body: '#7cc4f0', edge: '#4f96c4', belly: '#fff6d6', inner: '#4f96c4', ears: 'tuft', beak: '#ffb02e', wings: '#5fa8dc', acc: 'bow', accColor: '#ff6b9a' },
+  { id: 'axiang', name: '老鷹阿翔', short: '阿翔', body: '#8a5a33', edge: '#5e3a1e', belly: '#fff8ea', inner: '#5e3a1e', face: '#ffffff', ears: 'none', beak: '#ffc21a', bigBeak: true, wings: '#6e4526', acc: 'none' },
+  { id: 'pupu', name: '飛龍噗噗', short: '噗噗', body: '#7bd389', edge: '#4fa860', belly: '#eaffd9', inner: '#ffe27a', ears: 'horns', spikes: true, wings: '#b18cff', acc: 'none' },
   { id: 'diandian', name: '小鹿點點', short: '點點', body: '#d29a62', edge: '#a8743f', belly: '#fff1dd', inner: '#fff1dd', ears: 'horns', starMark: true, acc: 'scarf', accColor: '#ffd35c' }
 ];
 const NEIGHBOR_BY_ID = Object.fromEntries(NEIGHBORS.map(n => [n.id, n]));
@@ -2759,7 +2764,7 @@ const PLACE_FURNITURE = [
   { id: 'ship_wheel', name: '船的舵', theme: 'wood', w: 1, d: 1, parts: [{ x: .4, y: .4, w: .2, d: .2, z: 0, h: 22, c: '#8a5a33' }, { k: 'ball', x: .5, y: .3, z: 32, r: 11, c: '#a0703e' }, { k: 'ball', x: .5, y: .3, z: 32, r: 6, c: '#c98d5a' }, { k: 'ball', x: .5, y: .3, z: 32, r: 2.5, c: '#e0b23a' }] },
   { id: 'deck_chair', name: '甲板躺椅', theme: 'cute', w: 1, d: 2, parts: [{ x: .15, y: .1, w: .7, d: 1.8, z: 4, h: 3, c: '#ffffff' }, { x: .15, y: .1, w: .7, d: .5, z: 7, h: 12, c: '#6fb7e8' }, { x: .2, y: 1.6, w: .1, d: .1, z: 0, h: 4, c: '#c9ccd0' }, { x: .7, y: 1.6, w: .1, d: .1, z: 0, h: 4, c: '#c9ccd0' }] },
   { id: 'buffet_table', name: '自助餐台', theme: 'modern', w: 3, d: 1, parts: [{ x: .05, y: .2, w: 2.9, d: .6, z: 0, h: 20, c: '#ffffff' }, { k: 'ball', x: .4, y: .5, z: 24, r: 5, c: '#ffb02e' }, { k: 'ball', x: 1, y: .5, z: 24, r: 5, c: '#e8505b' }, { k: 'ball', x: 1.6, y: .5, z: 24, r: 5, c: '#7bd389' }, { k: 'ball', x: 2.2, y: .5, z: 24, r: 5, c: '#ffd23f' }, { k: 'ball', x: 2.7, y: .5, z: 24, r: 5, c: '#c98a55' }] },
-  { id: 'ship_pool', name: '甲板游泳池', theme: 'modern', w: 3, d: 2, parts: [{ x: 0, y: 0, w: 3, d: 2, z: 0, h: 6, c: '#ffffff' }, { x: .15, y: .15, w: 2.7, d: 1.7, z: 6, h: 1, c: '#5cc4ec' }, { x: 2.6, y: .2, w: .08, d: .08, z: 6, h: 14, c: '#c9ccd0' }] },
+  { id: 'ship_pool', name: '甲板游泳池', theme: 'modern', w: 6, d: 4, parts: [{ x: 0, y: 0, w: 6, d: 4, z: 0, h: 6, c: '#ffffff' }, { x: .2, y: .2, w: 5.6, d: 3.6, z: 6, h: 1, c: '#5cc4ec' }, { x: .6, y: 1.2, w: 2.2, d: .1, z: 7, h: .5, c: '#9fe0f7' }, { x: 3.2, y: 2.6, w: 2, d: .1, z: 7, h: .5, c: '#9fe0f7' }, { x: 5.5, y: .3, w: .08, d: .08, z: 6, h: 16, c: '#c9ccd0' }, { x: 5.5, y: .7, w: .08, d: .08, z: 6, h: 16, c: '#c9ccd0' }, { k: 'ball', x: 1.5, y: 2.6, z: 9, r: 5, c: '#ff8fb3' }, { k: 'ball', x: 4.2, y: 1.2, z: 9, r: 4, c: '#ffd23f' }] },   // 家長：甲板游泳池太小 → 6×4，有游泳圈和水波
   { id: 'ship_stage', name: '劇場舞台', theme: 'modern', w: 3, d: 2, parts: [{ x: 0, y: 0, w: 3, d: 2, z: 0, h: 10, c: '#8a5a33' }, { x: 0, y: 0, w: .3, d: 2, z: 10, h: 40, c: '#c4313a' }, { x: 2.7, y: 0, w: .3, d: 2, z: 10, h: 40, c: '#c4313a' }, { x: 0, y: 0, w: 3, d: .2, z: 46, h: 6, c: '#c4313a' }, { k: 'ball', x: 1.5, y: 1, z: 18, r: 5, c: '#ffd23f', shade: true }] },
   { id: 'porthole', name: '船的圓窗', theme: 'modern', w: 1, h: 26, z: 50, layer: 'wall', d: 1, parts: [],
     draw(ctx, W, H) { const r = Math.min(W, H) * .45; ctx.fillStyle = '#e0b23a'; ctx.beginPath(); ctx.arc(W / 2, H / 2, r, 0, 7); ctx.fill(); ctx.fillStyle = '#6fc3ec'; ctx.beginPath(); ctx.arc(W / 2, H / 2, r * .75, 0, 7); ctx.fill(); ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(W / 2 - r * .25, H / 2 - r * .25, r * .15, 0, 7); ctx.fill(); } },
@@ -3643,8 +3648,8 @@ const HOSTS = {
   cinema: { id: 'cinema', name: '貓頭鷹放映師', short: '放映師', body: '#a07850', edge: '#7a5a3a', belly: '#f2dfc0', inner: '#7a5a3a', ears: 'tuft', acc: 'glasses', accColor: '#3a3240' },
   tkd: { id: 'tkd', name: '熊熊教練', short: '熊教練', body: '#8a5a33', edge: '#6b4428', belly: '#e8cfa9', inner: '#6b4428', ears: 'round', acc: 'scarf', accColor: '#26232a' },
   restaurant: { id: 'restaurant', name: '貓咪主廚', short: '貓主廚', body: '#ffd9a8', edge: '#d9a86a', belly: '#fff4e0', inner: '#ffb3c7', ears: 'pointy', acc: 'hat', accColor: '#ffffff' },
-  curator: { id: 'curator', name: '貓頭鷹館長', short: '館長', body: '#b08a6a', edge: '#8a6a4a', belly: '#f3e6d4', inner: '#e8c8a0', ears: 'tuft', acc: 'glasses', accColor: '#3a3240' },   // 🏛️ 博物館
-  captain: { id: 'captain', name: '企鵝船長', short: '船長', body: '#2b2d42', edge: '#1a1c2a', belly: '#ffffff', inner: '#ffb02e', ears: 'none', acc: 'hat', accColor: '#ffffff' },   // 🛳️ 郵輪
+  curator: { id: 'curator', name: '貓頭鷹館長', short: '館長', body: '#b08a6a', edge: '#8a6a4a', belly: '#f3e6d4', inner: '#e8c8a0', ears: 'tuft', beak: '#f5a623', face: '#f3e6d4', wings: '#9a7454', acc: 'glasses', accColor: '#3a3240' },   // 🏛️ 博物館（貓頭鷹：嘴喙、淺色臉、翅膀）
+  captain: { id: 'captain', name: '企鵝船長', short: '船長', body: '#2b2d42', edge: '#1a1c2a', belly: '#ffffff', inner: '#ffb02e', ears: 'none', beak: '#ffb02e', beakBig: true, bigBelly: true, wings: '#2b2d42', acc: 'hat', accColor: '#ffffff' },   // 🛳️ 郵輪（企鵝：嘴喙、白肚子、小翅膀）
   clerk_furn: { id: 'clerk_furn', name: '綿羊店員', short: '綿羊店員', body: '#fffaf0', edge: '#d9d0c0', belly: '#ffffff', inner: '#ffd0d8', ears: 'curl', acc: 'scarf', accColor: '#6fb7e8' },   // 🛋️ 百貨公司 2F
   clerk_toy: { id: 'clerk_toy', name: '小熊店員', short: '小熊店員', body: '#c98a55', edge: '#a06a3a', belly: '#f3dcc0', inner: '#e8a87a', ears: 'round', acc: 'hat', accColor: '#ffd23f' },   // 🧸 百貨公司 3F
   chef_food: { id: 'chef_food', name: '狗狗廚師', short: '廚師', body: '#f3d9a0', edge: '#d0a860', belly: '#fff6e0', inner: '#e8a87a', ears: 'round', acc: 'hat', accColor: '#ffffff' },   // 🍜 百貨公司頂樓
@@ -3784,7 +3789,7 @@ const PLACES = {
     { name: '郵輪碼頭', w: 8, d: 8, wall: 'wp_stripe', floor: 'fl_deck', items: [['ship_wheel', 3, 1], ['deck_chair', 1, 4], ['deck_chair', 6, 4]], wallItems: [['porthole', 'R', 2], ['porthole', 'R', 5]] }
   ] },
   ship: { name: '郵輪（船上）', host: 'captain', emoji: '🚢', desc: '在郵輪上逛逛：甲板泳池、自助餐廳、劇場、我的船艙', rooms: [
-    { name: '甲板泳池', w: 10, d: 10, wall: 'wp_stripe', floor: 'fl_pooldeck', items: [['ship_pool', 3, 2], ['deck_chair', 1, 6], ['deck_chair', 3, 6], ['deck_chair', 7, 6], ['ship_wheel', 8, 1]], wallItems: [] },
+    { name: '甲板泳池', w: 10, d: 10, wall: 'wp_stripe', floor: 'fl_pooldeck', items: [['ship_pool', 1, 1], ['deck_chair', 1, 6], ['deck_chair', 4, 6], ['deck_chair', 7, 6], ['ship_wheel', 8, 1]], wallItems: [] },
     { name: '自助餐廳', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_tile', items: [['buffet_table', 3, 1], ['dining_table', 2, 5], ['dining_table', 6, 5]], wallItems: [['porthole', 'R', 3], ['porthole', 'R', 6]] },
     { name: '劇場', w: 10, d: 10, wall: 'wp_cinema', floor: 'fl_cinema', items: [['ship_stage', 3, 1]], wallItems: [] },
     { name: '我的船艙', w: 6, d: 6, wall: 'wp_stripe', floor: 'fl_wood', items: [['wood_bed', 1, 1]], wallItems: [['porthole', 'R', 2]] }
@@ -6150,6 +6155,13 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-23T18:00', title: '🐢 新朋友：烏龜、小鳥、老鷹、飛龍', lines: [
+    ['🐢', '四位新的動物朋友：烏龜慢慢、小鳥啾啾、老鷹阿翔、飛龍噗噗，會來家裡玩，也會在外面逛'],
+    ['👋', '各地方的主人第一次見面會自我介紹，像「我是企鵝船長，負責開這艘大郵輪！」'],
+    ['🐧', '企鵝船長有嘴巴和小翅膀、貓頭鷹館長有嘴巴和翅膀，一看就知道是什麼動物'],
+    ['🏊', '郵輪的甲板泳池變成兩倍大'],
+    ['🖼️', '外面地方牆上的海報、看板、黑板、視力表、電影海報…點了都有反應']
+  ] },
   { id: '2026-11-23T17:00', title: '🏦 銀行熱鬧起來了', lines: [
     ['🎫', '大廳有號碼牌機：抽一張號碼，等一下叮咚叫到你就去櫃台存錢'],
     ['🏧', '提款機也可以存錢、領錢；沙發可以坐著等'],
@@ -12608,6 +12620,12 @@ function drawCreature(ctx, sp, look) {
     });
   }
 
+  if (sp.shell) {   // 🐢 烏龜：背後一個大大的殼，從頭的兩邊和上面露出來，上面有一格一格的花紋
+    ctx.fillStyle = sp.shell; ctx.strokeStyle = sp.shellEdge || '#7a5230'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.ellipse(0, -10, 18.5, 14.5, 0, Math.PI, 0); ctx.lineTo(18.5, -3); ctx.quadraticCurveTo(0, 2, -18.5, -3); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = sp.shellSpot || 'rgba(255,240,200,.45)';
+    [[-13, -11], [13, -11], [-8, -21], [8, -21], [0, -24]].forEach(([x, y]) => { ctx.beginPath(); for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; ctx.lineTo(x + Math.cos(a) * 3.2, y + Math.sin(a) * 2.6); } ctx.closePath(); ctx.fill(); ctx.stroke(); });
+  }
   // 身體
   ctx.beginPath();
   ctx.moveTo(-14, -4);
@@ -12747,9 +12765,13 @@ function drawCreature(ctx, sp, look) {
     ctx.beginPath(); ctx.ellipse(fx, ey + 4.5, 3.4, 2.4, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#b5566e';
     [-1.2, 1.2].forEach(nx => { ctx.beginPath(); ctx.ellipse(fx + nx, ey + 4.5, .6, .9, 0, 0, Math.PI * 2); ctx.fill(); });
+  } else if (sp.beak && sp.bigBeak) { // 🦅 老鷹：大大的、尖端彎下來的嘴喙
+    ctx.beginPath(); ctx.moveTo(fx - 4, ey + 2); ctx.quadraticCurveTo(fx + 1, ey - .5, fx + 5, ey + 2.5); ctx.quadraticCurveTo(fx + 5.5, ey + 7, fx + 2, ey + 8); ctx.quadraticCurveTo(fx + 2.5, ey + 5.2, fx - 4, ey + 4.8); ctx.closePath();
+    ctx.fillStyle = typeof sp.beak === 'string' ? sp.beak : '#ffc21a'; ctx.fill(); ctx.strokeStyle = 'rgba(150,90,0,.6)'; ctx.lineWidth = .8; ctx.stroke();
   } else if (sp.beak) { // 鳥類：小嘴喙
-    ctx.beginPath(); ctx.moveTo(fx - 2.4, ey + 3); ctx.lineTo(fx + 2.4, ey + 3); ctx.lineTo(fx, ey + 6); ctx.closePath();
-    ctx.fillStyle = '#f5a623'; ctx.fill();
+    const bk = sp.beakBig ? 1.6 : 1;
+    ctx.beginPath(); ctx.moveTo(fx - 2.4 * bk, ey + 3); ctx.lineTo(fx + 2.4 * bk, ey + 3); ctx.lineTo(fx, ey + 3 + 3 * bk); ctx.closePath();
+    ctx.fillStyle = typeof sp.beak === 'string' ? sp.beak : '#f5a623'; ctx.fill();
   } else {
     ctx.beginPath();
     if (look.hurt === 'pain' || look.hurt === 'tears') { ctx.arc(fx, ey + 6.2, 2.3, 1.15 * Math.PI, 1.85 * Math.PI); ctx.stroke(); }
@@ -13915,7 +13937,7 @@ function vevScene(frames, done) {
    鄰居回家的時候留一句話＋自己的小印章，看得出今天誰來過、一起做了什麼。
    跟姊妹的回禮卡分開放（G.animalBook），動物一天來好幾次才不會把姊妹的卡片擠掉：
    同一位朋友同一天只留一筆，再來就把次數 +1、留言換成最新的。 */
-const ANIMAL_STAMPS = { abu: '🍯', mimi: '🥕', lulu: '📚', qiqi: '🌰', meme: '☁️', wangwang: '🦴', miaomiao: '🐟', bobo: '❄️', nunu: '🍎', cici: '🍄', baobao: '🍃', diandian: '⭐' };
+const ANIMAL_STAMPS = { abu: '🍯', mimi: '🥕', lulu: '📚', qiqi: '🌰', meme: '☁️', wangwang: '🦴', miaomiao: '🐟', bobo: '❄️', nunu: '🍎', cici: '🍄', baobao: '🍃', diandian: '⭐', manman: '🍓', jiujiu: '🎵', axiang: '☁️', pupu: '🔥' };
 const ANIMAL_BOOK_MSGS = {
   chat:  ['謝謝你請我坐下來聊天！', '跟{名字}聊天好開心，下次再聊！'],
   dance: ['一起跳舞好好玩！💃', '我們跳得好開心，腳都跳酸了！'],
@@ -15132,7 +15154,20 @@ const HOST_OWN_LINES = {
   airport: ['{名字}，要搭飛機去哪裡呢？', '記得帶護照喔！', '繫好安全帶，準備起飛～', '飛機上可以看到雲喔！'],
   police: ['{名字}，要當小警察嗎？', '遇到困難可以找警察幫忙喔', '過馬路要看紅綠燈！', '抓小偷要靠你幫忙了！']
 };
-function hostChatLine() { const own = host.n && HOST_OWN_LINES[host.n.id]; if (own && !HOST_LINE_KEYS[host.n.id]) return own[Math.floor(Math.random() * own.length)].split('{名字}').join(charName()); return pickLine(hostLineKey(), { 名字: charName() }); }
+/* 家長：船長、館長看不出是什麼動物 → 主人第一次說話先自我介紹，之後偶爾也會說「我是誰、在做什麼」 */
+const HOST_INTRO = {
+  curator: '我是貓頭鷹館長，負責照顧博物館的展品！', captain: '我是企鵝船長，負責開這艘大郵輪！', clerk: '我是兔兔店員，歡迎來百貨公司！',
+  clerk_furn: '我是綿羊店員，這層樓賣漂亮的家具喔！', clerk_toy: '我是小熊店員，這層樓都是好玩的玩具！', chef_food: '我是狗狗廚師，美食街的東西都是我做的！',
+  realtor: '我是倉鼠經紀人，可以幫你找房子喔！', banker: '我是松鼠行員，幫大家把錢存好好的！', bank_guard: '我是河馬警衛，負責看守金庫！',
+  fireman: '我是熊熊消防員，哪裡失火我就去哪裡！', racer: '我是狐狸賽車手，開車最快的就是我！', santa: '呵呵呵，我是聖誕老公公！',
+  garage: '我是河狸技師，車子壞了都找我修！', airport: '我是鵜鶘機長，我的嘴巴可以裝好多東西喔！', police: '我是狗狗警官，負責保護大家的安全！',
+  hospital: '我是小羊醫生，哪裡不舒服要告訴我喔！', gym: '我是河馬教練，一起來運動吧！', arena: '我是猴子教練，我最會跳了！', track: '我是花豹教練，我跑得超快！',
+  swim: '我是鴨鴨教練，教你游泳喔！', librarian: '我是貓咪館員，圖書館的書我都看過！', ranger: '我是柴犬園長，公園是我在照顧的！', amuse: '我是兔兔姊姊，遊樂園好好玩喔！',
+  teacher: '我是貓頭鷹老師，今天要學什麼呢？', cinema: '我是貓頭鷹放映師，電影要開始囉！', tkd: '我是熊熊教練，一起練跆拳道！', restaurant: '我是貓咪主廚，今天想吃什麼？'
+};
+function hostChatLine() {
+  const hid = host.n && host.n.id, intro = hid && HOST_INTRO[hid];
+  if (intro && (host.introduced !== hid || Math.random() < .2)) { host.introduced = hid; return intro; } const own = host.n && HOST_OWN_LINES[host.n.id]; if (own && !HOST_LINE_KEYS[host.n.id]) return own[Math.floor(Math.random() * own.length)].split('{名字}').join(charName()); return pickLine(hostLineKey(), { 名字: charName() }); }
 function hostSay(text, ms) {
   if (!text) return;
   host.say = text; host.sayUntil = performance.now() + (ms || 3400);
@@ -15149,6 +15184,7 @@ function hostTick(dt, now) {
     host.a = { room: roomKey(), x: c[0] + .5, y: c[1] + .5, z: 0, path: [], t: 0, facing: -1, idleUntil: now + 3000, blinkAt: 0,
       squish: 0, squishV: -6, lean: 0, leanV: 0, press: null, happyUntil: now + 2500, particles: [] };
     host.nextTalkAt = now + 2500;
+    host.say = null; host.sayUntil = 0;   // 換了主人：上一位還沒說完的話不要掛在新主人頭上（園長說「我是企鵝船長」）
     host.memSaid = false;
     // 朋友家：對方的寵物也在家裡走來走去
     // 🎡 遊樂園、🌳 公園、🏫 學校：還有幾位動物朋友在逛（家長：只有她一個人會覺得空空的）
@@ -27416,6 +27452,10 @@ const SIG_MOVES = {
   cici: { name: '刺球滾滾彈', fx: '🌰', anim: 'roll', c: '#a07850', c2: '#f2d6b0' },
   baobao: { name: '無尾熊超級抱', fx: '🐨', anim: 'hug', c: '#ff8fb3', c2: '#ffe3ee' },
   diandian: { name: '森林葉子雨', fx: '🍃', anim: 'rain', c: '#5fcf6f', c2: '#e6fcf5' },
+  manman: { name: '烏龜殼滾滾', fx: '🐢', anim: 'roll', c: '#c08a50', c2: '#f0fadc' },
+  jiujiu: { name: '啾啾羽毛風', fx: '🎵', anim: 'wave', c: '#7cc4f0', c2: '#e7f5ff' },
+  axiang: { name: '老鷹俯衝', fx: '🦅', anim: 'rush', c: '#8a5a33', c2: '#fff8ea' },
+  pupu: { name: '小飛龍噴火', fx: '🔥', anim: 'whirl', c: '#ff8a3d', c2: '#eaffd9' },
   tkd: null   // 熊熊教練：熊熊大地震（下面 COACH_SP 定好以後補上）
 };
 const sigOwner = id => id === 'tkd' ? '熊熊教練' : ((NEIGHBORS.find(n => n && n.id === id) || {}).name || '朋友');
@@ -33733,7 +33773,7 @@ const WORLD_MEDAL = ['🎗️ 參加獎', '🎫 十六強', '🎖️ 八強', '�
 const WORLD_SP = { name: '世界旋風斬', fx: '🌪️', c: '#4fb0ff', c2: '#e7f5ff' };
 const WORLD_SP_LITE = { name: '小小旋風', fx: '💨', c: '#74c0fc', c2: '#e7f5ff' };
 const WORLD_DAY_MAX = 3;
-const WORLD_EMO = { abu: '🐻', mimi: '🐰', lulu: '🦊', qiqi: '🐿️', meme: '🐑', wangwang: '🐶', miaomiao: '🐱', bobo: '🐧', nunu: '🐷', cici: '🦔', baobao: '🐨', diandian: '🦌' };
+const WORLD_EMO = { abu: '🐻', mimi: '🐰', lulu: '🦊', qiqi: '🐿️', meme: '🐑', wangwang: '🐶', miaomiao: '🐱', bobo: '🐧', nunu: '🐷', cici: '🦔', baobao: '🐨', diandian: '🦌', manman: '🐢', jiujiu: '🐦', axiang: '🦅', pupu: '🐉' };
 const WORLD_VENUES = {
   '冰雪國': { id: '冰雪國', sky: ['#c5ebff', '#e7f5ff'], floor: '#f8f9fa', floor2: '#b6dff7', accent: '#1971c2', mark: '❄️', land: '雪山', flag: ['#ffffff', '#4dabf7', '#ffffff'] },
   '沙漠國': { id: '沙漠國', sky: ['#ffe8cc', '#ffd8a8'], floor: '#f6d592', floor2: '#e6b325', accent: '#e67700', mark: '🐪', land: '金字塔', flag: ['#ffd43b', '#f76707', '#ffd43b'] },
@@ -40440,6 +40480,29 @@ function openDeptLift(kind) {
 }
 Object.assign(ACTIVITIES, { dept_lift: { label: '⬆️⬇️ 搭電梯', name: '搭電梯', fx: '⬆️', open: () => openDeptLift('lift'), lines: ['要去幾樓呢？'] }, dept_esc: { label: '↗️ 搭電扶梯', name: '搭電扶梯', fx: '↗️', open: () => openDeptLift('esc'), lines: ['抓好扶手喔！'] } });
 Object.assign(FURNITURE_ACT, { dept_elevator: 'dept_lift', dept_escalator: 'dept_esc' });
+/* 🖼️ 出門的地方牆上的東西也要能點（家長：按了一堆東西都沒反應） */
+Object.assign(ACTIVITIES, {
+  quiet: { label: '🤫 看標語', name: '看標語', fx: '🤫', lines: ['噓～圖書館要小聲喔', '小小聲說話', '安安靜靜看書'] },
+  tkd_read: { label: '🥋 看道館標語', name: '看標語', fx: '🥋', lines: ['禮貌、忍耐、勇敢！', '要有禮貌，先敬禮！', '每天練習會越來越厲害！'] },
+  belt_exam: { label: '🥋 去考腰帶', name: '考腰帶', fx: '🥋', open: () => openBeltExam(), lines: ['我要考下一條腰帶！'] },
+  movie_pick: { label: '🎬 看電影', name: '看電影', fx: '🎬', open: () => openMoviePicker(), lines: ['這部好像很好看！'] },
+  rest_order: { label: '📋 看菜單點餐', name: '點餐', fx: '🍽️', open: () => openRestaurantOrder(), lines: ['我要點這個！'] },
+  eye_test: { label: '👁️ 看視力表', name: '看視力表', fx: '👀', lines: ['上！下！左！右！', '最下面那排好小喔', '我看得很清楚！'] },
+  tools: { label: '🔧 看工具', name: '看工具', fx: '🔧', lines: ['好多扳手和螺絲起子', '這些工具可以修車喔', '工具要放回原位！'] },
+  bank_poster_look: { label: '🐷 看存錢海報', name: '看海報', fx: '🐷', lines: ['存錢每天會多 2% 耶！', '小豬存錢筒好可愛', '我也要存錢！'] },
+  vault_door: { label: '🔐 看金庫大門', name: '看金庫', fx: '🔐', lines: ['金庫大門好厚喔！', '要轉這個大輪子才打得開', '裡面有好多金條！'] },
+  plane_watch: { label: '✈️ 看飛機起飛', name: '看飛機', fx: '✈️', lines: ['飛機起飛了！', '那架飛機要去哪裡呢？', '轟——好大聲！', '我也想坐飛機！'] },
+  score_look: { label: '📊 看看板', name: '看看板', fx: '📊', lines: ['我的分數在上面嗎？', '加油加油！', '第一名是誰呢？'] },
+  pennant_look: { label: '🚩 看三角旗', name: '看旗子', fx: '🚩', lines: ['好多顏色的旗子！', '旗子在風中飄～', '遊樂園好熱鬧！'] },
+  quiz_go: { label: '📝 黑板上的問題', name: '回答問題', fx: '📝', open: () => openQuizGame(), lines: ['老師出題目了！'] },
+  zhuyin_go: { label: 'ㄅ 練習注音', name: '練習注音', fx: '🔤', open: () => openZhuyinGame(), lines: ['ㄅㄆㄇㄈ！'] }
+});
+Object.assign(FURNITURE_ACT, { comic_book: 'read', mini_figure: 'toys', game_cart: 'toys', robot_toy: 'toys' });   // 🎰 扭蛋小東西擺在家裡也可以玩
+Object.assign(WALL_ACT, { anime_poster: 'poster', game_poster: 'poster', library_mural: 'artlook', quiet_sign: 'quiet', tkd_mirror: 'mirror', tkd_banner: 'tkd_read', tkd_banner2: 'tkd_read', tkd_belts: 'belt_exam',
+  cinema_screen: 'movie_pick', movie_poster_pet: 'movie_pick', movie_poster_space: 'movie_pick', movie_poster_dino: 'movie_pick', movie_poster_sea: 'movie_pick', movie_poster_funny: 'movie_pick',
+  rest_menu: 'rest_order', hosp_eye: 'eye_test', race_board: 'kart_go', tool_wall: 'tools', museum_painting: 'artlook', porthole: 'window', realty_board: 'realty_look',
+  bank_numboard: 'bank_ticket', bank_poster: 'bank_poster_look', bank_vault: 'vault_door', fire_helmet_rack: 'fire_suit', plane_window: 'plane_watch',
+  gym_board: 'score_look', ar_board: 'score_look', pennant: 'pennant_look', art_board: 'artlook', blackboard: 'quiz_go', zhuyin_board: 'zhuyin_go', class_window: 'window' });
 /* 👆 出門的地方：每一樣東西點了都要有反應（家長：賽車場、消防局很多東西按了沒反應）。
    會開小遊戲的直接開；其他的走過去做一個動作、說一句話。
    大樹、路燈故意不加：它們點了要「穿過去」點到後面的東西（公園的花圃、愛心）；地毯、行李箱被前面的東西蓋住，點不到。 */

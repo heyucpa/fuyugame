@@ -32,7 +32,7 @@ const path = require('path');
     // 教練
     tkdState().belt = 5; openCoachChallenge(); await wait(1400); D = playDuel.test; D.S.foe = 1; D.S.intent = 'rest'; D.act('hit'); await wait(3200); o.coach = G.moves.tkd === 1; clear(); closeGameWindow();
     // 圖鑑
-    openTab('book'); await wait(200); o.book = !!document.getElementById('dexMoves') && /招式收集 9 \/ 19/.test(document.getElementById('tabBody').textContent); openTab('inv');
+    openTab('book'); await wait(200); o.book = !!document.getElementById('dexMoves') && /招式收集 9 \/ 23/.test(document.getElementById('tabBody').textContent); openTab('inv');
     saveGame(); const raw = JSON.parse(localStorage.getItem(SAVE_KEY)); o.saved = raw.moves.mimi === 1 && raw.moves.bobo === 1 && raw.moves.tkd === 1;
     const bad = normalizeSave(Object.assign({}, raw, { moves: { mimi: 1, '<x>': 1, bobo: 2 } })); o.bad = Object.keys(bad.moves).join() === 'mimi' && normalizeSave(Object.assign({}, raw, { moves: 'x' })).moves == null;
     return o;
