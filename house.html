@@ -2780,6 +2780,14 @@ const PLACE_FURNITURE = [
   { id: 'bank_piggy', name: '大存錢筒', theme: 'cute', w: 1, d: 1, parts: [{ k: 'ball', x: .5, y: .5, z: 12, r: 11, c: '#ff9ec4' }, { k: 'ball', x: .8, y: .55, z: 13, r: 4, c: '#ff8fb3' }, { x: .44, y: .44, w: .12, d: .12, z: 22, h: 2, c: '#3a3240' }, { k: 'ball', x: .35, y: .3, z: 20, r: 3, c: '#ff9ec4' }] },
   { id: 'bank_vault', name: '金庫大門', theme: 'modern', w: 2, h: 40, z: 6, layer: 'wall', d: 1, parts: [],
     draw(ctx, W, H) { ctx.fillStyle = '#9aa7b4'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#c9ccd0'; ctx.beginPath(); ctx.arc(W / 2, H / 2, Math.min(W, H) * .4, 0, 7); ctx.fill(); ctx.strokeStyle = '#5a6475'; ctx.lineWidth = Math.max(2, H * .04); ctx.stroke(); ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(W / 2, H / 2, H * .08, 0, 7); ctx.fill(); for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2; ctx.beginPath(); ctx.moveTo(W / 2, H / 2); ctx.lineTo(W / 2 + Math.cos(a) * H * .22, H / 2 + Math.sin(a) * H * .22); ctx.stroke(); } } },
+  { id: 'bank_atm', name: '提款機', theme: 'modern', w: 1, d: 1, parts: [{ x: .15, y: .25, w: .7, d: .55, z: 0, h: 46, c: '#5a6475' }, { x: .2, y: .78, w: .6, d: .04, z: 26, h: 14, c: '#6fb7e8' }, { x: .25, y: .8, w: .5, d: .06, z: 18, h: 4, c: '#c9ccd0' }, { x: .3, y: .8, w: .4, d: .05, z: 12, h: 2, c: '#2b2d42' }, { x: .15, y: .25, w: .7, d: .55, z: 46, h: 4, c: '#2f8a3c' }] },
+  { id: 'bank_ticket', name: '號碼牌機', theme: 'modern', w: 1, d: 1, parts: [{ x: .4, y: .4, w: .2, d: .2, z: 0, h: 22, c: '#9aa7b4' }, { x: .25, y: .3, w: .5, d: .4, z: 22, h: 16, c: '#e8505b' }, { x: .3, y: .7, w: .4, d: .02, z: 28, h: 6, c: '#ffffff' }, { k: 'ball', x: .5, y: .72, z: 25, r: 2, c: '#ffd23f' }] },
+  { id: 'bank_gold', name: '金條堆', theme: 'modern', w: 1, d: 1, parts: [{ x: .15, y: .2, w: .7, d: .6, z: 0, h: 4, c: '#8a6a4a' }, { x: .2, y: .25, w: .28, d: .22, z: 4, h: 5, c: '#ffd23f' }, { x: .52, y: .25, w: .28, d: .22, z: 4, h: 5, c: '#ffd23f' }, { x: .2, y: .53, w: .28, d: .22, z: 4, h: 5, c: '#f2c230' }, { x: .52, y: .53, w: .28, d: .22, z: 4, h: 5, c: '#ffd23f' }, { x: .36, y: .38, w: .28, d: .22, z: 9, h: 5, c: '#ffe27a' }] },
+  { id: 'bank_boxes', name: '保管箱', theme: 'modern', w: 2, d: 1, parts: [{ x: .05, y: .3, w: 1.9, d: .6, z: 0, h: 44, c: '#c9ccd0' }, { x: .1, y: .88, w: .5, d: .04, z: 4, h: 10, c: '#9aa7b4' }, { x: .75, y: .88, w: .5, d: .04, z: 4, h: 10, c: '#9aa7b4' }, { x: 1.4, y: .88, w: .5, d: .04, z: 4, h: 10, c: '#9aa7b4' }, { x: .1, y: .88, w: .5, d: .04, z: 18, h: 10, c: '#9aa7b4' }, { x: .75, y: .88, w: .5, d: .04, z: 18, h: 10, c: '#9aa7b4' }, { x: 1.4, y: .88, w: .5, d: .04, z: 18, h: 10, c: '#9aa7b4' }, { x: .1, y: .88, w: .5, d: .04, z: 32, h: 10, c: '#9aa7b4' }, { x: .75, y: .88, w: .5, d: .04, z: 32, h: 10, c: '#9aa7b4' }, { x: 1.4, y: .88, w: .5, d: .04, z: 32, h: 10, c: '#9aa7b4' }] },
+  { id: 'bank_numboard', name: '叫號燈', theme: 'modern', w: 2, h: 22, z: 52, layer: 'wall', d: 1, parts: [],
+    draw(ctx, W, H) { ctx.fillStyle = '#1d2433'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#ff5a4e'; ctx.font = `bold ${Math.round(H * .55)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('0 2 3', W / 2, H * .55); ctx.fillStyle = '#7bd389'; ctx.beginPath(); ctx.arc(W * .08, H * .5, H * .1, 0, 7); ctx.fill(); } },
+  { id: 'bank_poster', name: '存錢海報', theme: 'cute', w: 2, h: 28, z: 46, layer: 'wall', d: 1, parts: [],
+    draw(ctx, W, H) { ctx.fillStyle = '#fff6e0'; ctx.fillRect(0, 0, W, H); ctx.strokeStyle = '#2f8a3c'; ctx.lineWidth = Math.max(2, H * .06); ctx.strokeRect(1, 1, W - 2, H - 2); ctx.fillStyle = '#ff9ec4'; ctx.beginPath(); ctx.ellipse(W * .3, H * .55, W * .16, H * .26, 0, 0, 7); ctx.fill(); ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(W * .3, H * .2, H * .1, 0, 7); ctx.fill(); ctx.fillStyle = '#2f8a3c'; ctx.font = `bold ${Math.round(H * .3)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('+2%', W * .7, H * .52); } },
   // 🚒 消防局
   { id: 'fire_engine', name: '消防車', theme: 'modern', w: 3, d: 2, parts: [{ x: .1, y: .4, w: 2.2, d: 1.2, z: 6, h: 22, c: '#d63b3b' }, { x: 2.2, y: .4, w: .7, d: 1.2, z: 6, h: 30, c: '#d63b3b' }, { x: 2.3, y: .5, w: .5, d: 1, z: 22, h: 10, c: '#bfe6f2' }, { x: .1, y: .4, w: 2.8, d: 1.2, z: 14, h: 3, c: '#ffffff' }, { x: .2, y: .6, w: 2, d: .2, z: 28, h: 3, c: '#c9ccd0' }, { x: .2, y: 1.2, w: 2, d: .2, z: 28, h: 3, c: '#c9ccd0' }, { k: 'ball', x: .5, y: .4, z: 6, r: 6, c: '#26232a' }, { k: 'ball', x: 2.4, y: .4, z: 6, r: 6, c: '#26232a' }, { k: 'ball', x: 2.5, y: .8, z: 38, r: 3, c: '#ff3b3b', shade: true }] },
   { id: 'fire_hose_reel', name: '消防水管捲', theme: 'modern', w: 1, d: 1, parts: [{ x: .3, y: .3, w: .4, d: .4, z: 0, h: 6, c: '#5a6475' }, { k: 'ball', x: .5, y: .5, z: 18, r: 11, c: '#ffd23f' }, { k: 'ball', x: .5, y: .5, z: 18, r: 8, c: '#b8282f' }, { k: 'ball', x: .5, y: .5, z: 18, r: 3, c: '#e0a020' }] },
@@ -3642,6 +3650,7 @@ const HOSTS = {
   chef_food: { id: 'chef_food', name: '狗狗廚師', short: '廚師', body: '#f3d9a0', edge: '#d0a860', belly: '#fff6e0', inner: '#e8a87a', ears: 'round', acc: 'hat', accColor: '#ffffff' },   // 🍜 百貨公司頂樓
   clerk: { id: 'clerk', name: '兔兔店員', short: '店員', body: '#fff4f8', edge: '#e0c0cc', belly: '#ffffff', inner: '#ffb3c7', ears: 'long', acc: 'scarf', accColor: '#ff6fa3' },   // 🛍️ 百貨公司
   realtor: { id: 'realtor', name: '倉鼠經紀人', short: '經紀人', body: '#f3c48a', edge: '#d09a5a', belly: '#fff6e8', inner: '#ffc4b0', ears: 'round', acc: 'glasses', accColor: '#2b2d42' },   // 🏡 小可愛不動產
+  bank_guard: { id: 'bank_guard', name: '河馬警衛', short: '警衛', body: '#b9a6c9', edge: '#8f7aa3', belly: '#e6dcef', inner: '#f0b8c8', ears: 'round', acc: 'hat', accColor: '#2b3a67' },   // 🏦 銀行金庫
   banker: { id: 'banker', name: '松鼠行員', short: '行員', body: '#d9915a', edge: '#b0703a', belly: '#fbe8d2', inner: '#f0b88a', ears: 'pointy', acc: 'scarf', accColor: '#2f8a3c' },   // 🏦 銀行
   fireman: { id: 'fireman', name: '熊熊消防員', short: '消防員', body: '#c98a55', edge: '#a06a3a', belly: '#f3dcc0', inner: '#e8a87a', ears: 'round', acc: 'hat', accColor: '#d63b3b' },   // 🚒 消防局
   racer: { id: 'racer', name: '狐狸賽車手', short: '賽車手', body: '#ff9a3c', edge: '#d97a20', belly: '#ffffff', inner: '#ffd9b0', ears: 'pointy', acc: 'hat', accColor: '#2b2d42' },   // 🏁 賽車場
@@ -3790,7 +3799,8 @@ const PLACES = {
     { name: '小可愛不動產', w: 8, d: 8, wall: 'wp_cream', floor: 'fl_wood', items: [['realty_desk', 3, 1], ['realty_model', 1, 4], ['realty_model', 6, 4]], wallItems: [['realty_board', 'R', 3]] }
   ] },
   bank: { name: '銀行', host: 'banker', emoji: '🏦', desc: '把錢存進銀行，每天會多一點點利息！', rooms: [
-    { name: '銀行', w: 10, d: 8, wall: 'wp_cream', floor: 'fl_terrazzo', items: [['bank_counter', 3, 1], ['bank_piggy', 1, 5], ['bank_piggy', 8, 5]], wallItems: [['bank_vault', 'R', 6]] }
+    { name: '銀行大廳', w: 10, d: 8, wall: 'wp_cream', floor: 'fl_terrazzo', items: [['plant_l', 0, 0], ['bank_counter', 3, 1], ['bank_atm', 8, 1], ['bank_ticket', 1, 2], ['sofa', 4, 5], ['bank_piggy', 1, 5], ['bank_piggy', 8, 5]], wallItems: [['bank_numboard', 'L', 4], ['bank_poster', 'R', 2], ['bank_vault', 'R', 6]] },
+    { name: '金庫', host: 'bank_guard', noCrowd: true, w: 8, d: 7, wall: 'wp_concrete', floor: 'fl_tile', items: [['bank_boxes', 1, 1], ['bank_boxes', 4, 1], ['bank_gold', 2, 4], ['bank_gold', 5, 4], ['bank_piggy', 7, 1]], wallItems: [['bank_vault', 'R', 3]] }
   ] },
   /* 🚒 消防局（家長 11/22）：熊熊消防員。第一人稱拿水管滅火、雲梯救援，三關都過送消防車 */
   firestation: { name: '消防局', host: 'fireman', emoji: '🚒', desc: '當小小消防員！拿水管把火澆熄、用雲梯救困住的小動物！', rooms: [
@@ -6140,6 +6150,13 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-23T17:00', title: '🏦 銀行熱鬧起來了', lines: [
+    ['🎫', '大廳有號碼牌機：抽一張號碼，等一下叮咚叫到你就去櫃台存錢'],
+    ['🏧', '提款機也可以存錢、領錢；沙發可以坐著等'],
+    ['🧑', '有好多客人來存錢，走過去可以聊天'],
+    ['💰', '新的「金庫」房間：河馬警衛看守，可以看金條、保管箱'],
+    ['💬', '銀行、消防局、百貨公司、賽車場、機場、警察局…的主人都會說自己的話了（以前會說阿婆的話）']
+  ] },
   { id: '2026-11-23T16:00', title: '👆 出門的地方，東西點了都有反應', lines: [
     ['🏎️', '賽車場：坐上賽車比一場、站上頒獎台、揮終點旗、數輪胎'],
     ['🚒', '消防局：溜消防滑竿、穿上消防靴和頭盔去滅火'],
@@ -15097,6 +15114,25 @@ function hostMemoryLine(id) {
 const host = { n: null, a: null, say: null, sayUntil: 0, nextTalkAt: 0, danceUntil: 0, nextHop: 0 };
 const HOST_LINE_KEYS = { mom: 'hostMom', dad: 'hostDad', restaurant: 'hostRestaurant', hospital: 'hostHospital', gym: 'hostGym', arena: 'hostArena', track: 'hostTrack', cinema: 'hostCinema', tkd: 'hostTkd', swim: 'hostSwim', amuse: 'hostAmuse', friend: 'hostFriend', uncle: 'hostUncle', grandma: 'hostGrandma', teacher: 'hostTeacher', ranger: 'hostRanger', librarian: 'hostLibrarian' };
 const hostLineKey = () => HOST_LINE_KEYS[host.n.id] || 'hostGrandma';
+/* 後來加的地方主人有自己的話（以前沒有對應，全部會說阿婆的「快來吃水果～」） */
+const HOST_OWN_LINES = {
+  curator: ['{名字}，歡迎來博物館！', '恐龍化石好大對不對？', '展品只能看，不能摸喔～', '每一樣東西都有好長的故事'],
+  captain: ['{名字}，要搭郵輪出海嗎？', '今天風平浪靜，好適合出航！', '嗚——船要開囉！', '甲板上的泳池好好玩喔'],
+  clerk: ['{名字}，歡迎光臨百貨公司！', '1F 有漂亮的衣服可以試穿喔', '搭電梯可以上樓逛逛～', '集點卡集滿有禮物喔！'],
+  clerk_furn: ['歡迎光臨家具樓層～', '沙發可以坐坐看喔！', '這盞水晶吊燈是限定的！', '{名字}，喜歡哪一件呢？'],
+  clerk_toy: ['歡迎來玩具樓層！', '泰迪熊好軟喔，摸摸看～', '小火車會嘟嘟叫喔！', '{名字}，想要哪個玩具呢？'],
+  chef_food: ['{名字}，肚子餓了嗎？', '今天的聖代特別好吃喔！', '吃飽了可以坐小火車～', '扭蛋機在那邊喔！'],
+  realtor: ['{名字}，想看什麼房子呢？', '城堡好大好漂亮喔！', '存夠錢就可以買房子囉', '買了房子可以自己佈置喔！'],
+  banker: ['{名字}，要來存錢嗎？', '存在銀行每天都會長利息喔！', '先抽號碼牌，等叫號就可以到櫃台～', '存錢的好習慣，好棒！'],
+  bank_guard: ['我是金庫警衛，安全第一！', '金庫裡有好多金條喔～', '{名字}，大家的錢我都會好好看守！', '保管箱要用鑰匙才能打開'],
+  fireman: ['{名字}，要當小小消防員嗎？', '發生火災要打 119 喔！', '消防滑竿溜下來好快！', '出任務前要穿好裝備'],
+  racer: ['{名字}，要來比賽嗎？', '引擎轟轟轟！', '開車要繫好安全帶喔', '站上頒獎台的感覺最棒了！'],
+  santa: ['呵呵呵！{名字}，聖誕快樂！', '今年有當乖小孩嗎？', '麋鹿在後面吃草喔', '禮物堆得好高呢！'],
+  garage: ['{名字}，要改裝車子嗎？', '換個顏色好不好？', '洗車也可以喔，噴得亮晶晶！', '輪胎要常常檢查喔'],
+  airport: ['{名字}，要搭飛機去哪裡呢？', '記得帶護照喔！', '繫好安全帶，準備起飛～', '飛機上可以看到雲喔！'],
+  police: ['{名字}，要當小警察嗎？', '遇到困難可以找警察幫忙喔', '過馬路要看紅綠燈！', '抓小偷要靠你幫忙了！']
+};
+function hostChatLine() { const own = host.n && HOST_OWN_LINES[host.n.id]; if (own && !HOST_LINE_KEYS[host.n.id]) return own[Math.floor(Math.random() * own.length)].split('{名字}').join(charName()); return pickLine(hostLineKey(), { 名字: charName() }); }
 function hostSay(text, ms) {
   if (!text) return;
   host.say = text; host.sayUntil = performance.now() + (ms || 3400);
@@ -15116,10 +15152,10 @@ function hostTick(dt, now) {
     host.memSaid = false;
     // 朋友家：對方的寵物也在家裡走來走去
     // 🎡 遊樂園、🌳 公園、🏫 學校：還有幾位動物朋友在逛（家長：只有她一個人會覺得空空的）
-    const cfg = CROWD_PLACES[G.away.place];
+    const cfg = rm0 && rm0.noCrowd ? null : CROWD_PLACES[G.away.place];   // 🏦 金庫這種房間不會有客人
     host.crowd = cfg ? NEIGHBORS.slice().sort(() => Math.random() - .5).slice(0, cfg.n).map((n, i) => {
       const c3 = nearestFree(room, 2 + i * 3, 6 + (i % 2) * 2) || c;
-      return { swim: cfg.swim ? { lane: i, cap: ['#ff6b9a', '#ffd23f', '#7bd389'][i], dir: i ? -1 : 1, rest: 0 } : null, n: cfg.dobok ? Object.assign({}, n, { dobok: TKD_BELTS[Math.floor(Math.random() * 4)][1] }) : n, lines: cfg.lines, still: !!cfg.still, book: cfg.book ? ['#e8505b', '#6bb6ff', '#7bd389'][i] : null, bag: cfg.bag ? ['#ff8fb3', '#ffd23f', '#6fb7e8'][i] : null, balloon: cfg.balloon ? ['#ff6b6b', '#6bb6ff', '#ffd35c'][i] : null, a: { room: roomKey(), x: c3[0] + .5, y: c3[1] + .5, z: 0, path: [], t: Math.random() * 5, facing: 1,
+      return { swim: cfg.swim ? { lane: i, cap: ['#ff6b9a', '#ffd23f', '#7bd389'][i], dir: i ? -1 : 1, rest: 0 } : null, n: cfg.dobok ? Object.assign({}, n, { dobok: TKD_BELTS[Math.floor(Math.random() * 4)][1] }) : n, lines: cfg.lines, still: !!cfg.still, book: cfg.book ? ['#e8505b', '#6bb6ff', '#7bd389'][i] : null, bag: cfg.bag ? (cfg.bagC || ['#ff8fb3', '#ffd23f', '#6fb7e8'])[i] : null, balloon: cfg.balloon ? ['#ff6b6b', '#6bb6ff', '#ffd35c'][i] : null, a: { room: roomKey(), x: c3[0] + .5, y: c3[1] + .5, z: 0, path: [], t: Math.random() * 5, facing: 1,
         idleUntil: now + 1000 + Math.random() * 3000, blinkAt: 0, squish: 0, squishV: 0, lean: 0, leanV: 0, press: null, happyUntil: 0, particles: [] } };
     }) : [];
     host.pets = (want.pets || []).map(([species, stage, name], i) => {
@@ -15153,7 +15189,7 @@ function hostTick(dt, now) {
     // 第一句先說「上次」的事：有人記得我，比隨機問候更像真的朋友
     const memLine = !host.memSaid ? hostMemoryLine(host.n.id) : null;
     host.memSaid = true;
-    hostSay(kidStateLine(host.n.id) || memLine || pickLine(hostLineKey(), { 名字: charName() }));
+    hostSay(kidStateLine(host.n.id) || memLine || hostChatLine());
     if (Math.random() < .5) setTimeout(() => { if (host.n) fufuSay(pickLine('kidReply'), 2600); }, 3000);
   }
   actorWalk(a, dt, now, room, blockedGrid(room), .5);
@@ -15481,7 +15517,7 @@ function hostMenuEntries() {
   const list = [
     [`💬 跟${s}聊天`, () => {
       host.a.happyUntil = now() + 1500; host.a.squishV = -5; host.nextTalkAt = now() + 12000;
-      hostSay(kidStateLine(host.n.id) || pickLine(hostLineKey(), { 名字: charName() }));
+      hostSay(kidStateLine(host.n.id) || hostChatLine());
       setTimeout(() => { if (host.n) fufuSay(pickLine('kidReply'), 2600); }, 3000);
     }],
     ['💃 一起跳舞', () => { fufuDance(); host.danceUntil = now() + 6000; }]
@@ -15518,6 +15554,7 @@ function hostMenuEntries() {
   if (host.n.id === 'chef_food') { list.push(['🍜 點東西吃', () => openFoodCourt()]); list.push(['🚂 坐小火車（50 元）', () => openKidTrain()]); list.push(['🎰 扭蛋機', () => deptGacha()]); list.push(['🏬 樓層介紹・集點卡・抽獎', () => openDeptStore()]); list.push(['⬆️⬇️ 搭電梯', () => openDeptLift('lift')]); }
   if (host.n.id === 'clerk') { list.push(['🏬 樓層介紹・集點卡・抽獎', () => openDeptStore()]); list.push(['👗 1F 試衣間', () => openBoutique()]); list.push(['🛋️ 2F 家具', () => openDeptCounter('furn')]); list.push(['🧸 3F 玩具', () => openDeptCounter('toys')]); list.push(['🍜 頂樓美食街', () => openFoodCourt()]); list.push(['🚂 坐小火車（50 元）', () => openKidTrain()]); list.push(['🎰 扭蛋機', () => deptGacha()]); }
   if (host.n.id === 'realtor') { list.push(['🏡 看房子・買房子', () => openRealty()]); }
+  if (host.n.id === 'bank_guard') { list.push(['💰 看看金條', () => bankGoldTalk()]); list.push(['🎭 演習：金庫（第 3 關）', () => openThiefDrill((copState().dlv || 0) >= 2 ? 3 : undefined)]); list.push(['🐷 回大廳存錢', () => openBank()]); }
   if (host.n.id === 'banker') { list.push(['🐷 存錢筒（每天會長利息）', () => openBank()]); list.push(['🎭 演習：金庫（第 3 關）', () => openThiefDrill((copState().dlv || 0) >= 2 ? 3 : undefined)]); }
   if (host.n.id === 'fireman') { list.push(['🚒 滅火任務（拿水管噴水）' + (fireState().lv ? `（過了 ${fireState().lv} 關）` : ''), () => openFireFight()]); list.push(['🐱 救援任務（雲梯救小動物）', () => openFireRescue()]); }
   if (host.n.id === 'racer') { list.push(['🏎️ 賽車（開我的車）', () => openKart()]); list.push(['🎨 去改車店改裝我的車', () => { closeGameWindow(); travelTo('garage'); }]); }
@@ -16950,6 +16987,7 @@ const CROWD_PLACES = {
   pool: { n: 2, swim: true, lines: ['我游了好幾趟了！', '水好涼喔～', '你會游自由式嗎？', '我們來比賽游到對面！', '要記得換氣喔！', '鴨教練說要先暖身～'] },
   dojo: { n: 2, dobok: true, lines: ['喝！哈！我在練踢腿', '我下次要考黃帶！', '教練說要先敬禮喔', '一起加油！', '我的腳可以踢好高！', '練完好累，可是好開心～'] },
   // 🛍️ 百貨公司：三位提著購物袋在逛的客人（家長 11/22：百貨公司有些冷清）
+  bank: { n: 3, bag: true, bagC: ['#e0b23a', '#7bd389', '#e0b23a'], lines: ['我來存壓歲錢！', '我抽到 25 號了～', '存錢會長利息耶！', '我要存錢買腳踏車！', '提款機好方便', '請問櫃台在哪裡？', '金庫裡面有好多金條！', '排隊排隊～'] },
   dept: { n: 3, bag: true, lines: ['這件好可愛！', '我要買這個送媽媽～', '週末有打折耶！', '頂樓的聖代好好吃！', '你也來逛街嗎？', '我剛剛扭到小火箭了！', '電梯在那邊喔～', '集點卡快集滿了！'] },
   school: { n: 3, lines: ['下課要不要一起玩？', '老師今天好溫柔喔！', '你功課寫完了嗎？', '等一下一起去操場！', '我們來比賽跑步！', '我帶了點心，分你一半～'] }
 };
@@ -18664,7 +18702,7 @@ $('#btnCancel').onclick = cancelHold;
 
 // ── 上方列 ──
 /* 房間按鈕前面加圖示（家長：還不識字的妹妹看不懂「客廳」「臥室」）：先看名字，名字看不出來就看房間裡擺了什麼，再不然照第幾間 */
-const ROOM_ICON_WORDS = [[/操場|跑道|田徑/, '🏟️'], [/客廳|起居/, '🛋️'], [/臥室|睡|寢|房間|主臥|小孩房|兒童房/, '🛏️'], [/餐廳|廚房|吃飯/, '🍽️'], [/浴室|廁所|洗澡|浴/, '🛁'], [/陽台|花園|庭院/, '🌷'],
+const ROOM_ICON_WORDS = [[/金庫/, '💰'], [/銀行/, '🏦'], [/操場|跑道|田徑/, '🏟️'], [/客廳|起居/, '🛋️'], [/臥室|睡|寢|房間|主臥|小孩房|兒童房/, '🛏️'], [/餐廳|廚房|吃飯/, '🍽️'], [/浴室|廁所|洗澡|浴/, '🛁'], [/陽台|花園|庭院/, '🌷'],
   [/書房|讀書|圖書|功課/, '📚'], [/遊戲|玩具|遊樂/, '🧸'], [/閣樓/, '🏠'], [/衣帽|更衣/, '👗'], [/音樂|琴/, '🎹']];
 function roomIcon(r, i) {
   const nm = r.name || '', hit = ROOM_ICON_WORDS.find(([re]) => re.test(nm)); if (hit) return hit[1];
@@ -39787,6 +39825,20 @@ Object.assign(ACTIVITIES, {
   bank_save: { label: '🐷 存錢', name: '存錢', fx: '💰', open: () => openBank(), lines: ['存錢會長利息喔！'] }
 });
 Object.assign(FURNITURE_ACT, { museum_dino: 'museum_tour', museum_case: 'museum_tour', bank_counter: 'bank_save', bank_piggy: 'bank_save' });
+/* 🏦 銀行熱鬧一點（家長：銀行裡面看起來很冷清）：抽號碼牌等叫號、提款機、等候沙發、來存錢的客人、金庫裡看金條和保管箱 */
+let bankNum = 20 + Math.floor(Math.random() * 10);
+function bankTicket() {
+  const n = ++bankNum; Sound.play('click'); fufuSay(`我抽到 ${n} 號！`, 2600);
+  setTimeout(() => { if (!G.away || G.away.place !== 'bank') return; Sound.play('coin'); toast(`🔔 叮咚！請 ${n} 號到櫃台`); fufuSay('輪到我了！', 2000); setTimeout(() => { if (G.away && G.away.place === 'bank') openBank(); }, 1200); }, 3200);
+}
+function bankGoldTalk() { const b = bankState(); fufuSay(b.sav ? `我的 ${fmt(b.sav)} 元也放在銀行裡！` : '金條金光閃閃的！', 3000); toast('🦛 警衛：金庫裡放著大家存的錢，我每天都會好好看守喔！'); }
+Object.assign(ACTIVITIES, {
+  bank_ticket: { label: '🎫 抽號碼牌', name: '抽號碼牌', fx: '🎫', open: () => bankTicket(), lines: ['等一下就會叫到我！'] },
+  bank_atm: { label: '🏧 用提款機', name: '提款機', fx: '💳', open: () => openBank(), lines: ['嗶嗶嗶～'] },
+  bank_gold: { label: '💰 看金條', name: '看金條', fx: '✨', lines: ['金光閃閃！', '好多金條喔！', '好重的樣子～', '只能看，不能拿喔'] },
+  bank_boxes: { label: '🔐 看保管箱', name: '看保管箱', fx: '🔐', lines: ['這是大家放寶貝的地方', '每一格都要用鑰匙開', '裡面放了什麼呢？'] }
+});
+Object.assign(FURNITURE_ACT, { bank_ticket: 'bank_ticket', bank_atm: 'bank_atm', bank_gold: 'bank_gold', bank_boxes: 'bank_boxes' });
 /* ===== 🦊 怪盜狐狸事件（家長 11/22：多一些壞人的劇情；壞人是搗蛋鬼，最後道歉變朋友）=====
    G.fox = { st, clues, d }：
    st 0 還沒開始 → 在家玩一陣子，怪盜狐狸丟進一封預告信（過場動畫）→ st 1
