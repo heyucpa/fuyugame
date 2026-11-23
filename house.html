@@ -6140,6 +6140,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-23T16:00', title: '👆 出門的地方，東西點了都有反應', lines: [
+    ['🏎️', '賽車場：坐上賽車比一場、站上頒獎台、揮終點旗、數輪胎'],
+    ['🚒', '消防局：溜消防滑竿、穿上消防靴和頭盔去滅火'],
+    ['🛳️', '郵輪：躺椅可以躺著曬太陽、泳池玩水、自助餐拿點心、劇場上台表演'],
+    ['👀', '泳池、圖書館、學校、博物館、電影院、警察局、外婆家…原本點了沒反應的東西，現在都可以做點什麼']
+  ] },
   { id: '2026-11-23T15:00', title: '🎁 拿到禮物看得到圖片了', lines: [
     ['🎰', '扭蛋：先出現一顆扭蛋殼搖一搖，喀啦打開才看到扭到什麼'],
     ['🎫', '集點卡集滿換的禮物，會跳出大大的圖片'],
@@ -18527,7 +18533,7 @@ function showItemMenu(it, e) {
     if (isEgg()) { toast('蛋還不會走路喔～'); return; }
     petGoNap(it, false);
   });
-  if (G.away && !inPetHouse()) { openMenu(entries, e); return; } // 親戚家只能用，不能搬、不能收（寵物屋跟家裡一樣）
+  if (G.away && !inPetHouse()) { if (!entries.length) add('👀 走過去看一看', () => fufuGoUse(it, false, 'look_any')); openMenu(entries, e); return; } // 親戚家只能用，不能搬、不能收（寵物屋跟家裡一樣）
   /* 桌上放一樣小東西。一張桌子只放一樣——不然會疊在一起、會穿過桌面。
      收納裡沒有可以放的東西時就不顯示這一項，免得點了跳出空選單。 */
   // 桌上的小東西：平常只能玩（音樂盒、雪花球）；拿起來、收起來、放東西上去都在「🛠️ 佈置」裡
@@ -40382,6 +40388,36 @@ function openDeptLift(kind) {
 }
 Object.assign(ACTIVITIES, { dept_lift: { label: '⬆️⬇️ 搭電梯', name: '搭電梯', fx: '⬆️', open: () => openDeptLift('lift'), lines: ['要去幾樓呢？'] }, dept_esc: { label: '↗️ 搭電扶梯', name: '搭電扶梯', fx: '↗️', open: () => openDeptLift('esc'), lines: ['抓好扶手喔！'] } });
 Object.assign(FURNITURE_ACT, { dept_elevator: 'dept_lift', dept_escalator: 'dept_esc' });
+/* 👆 出門的地方：每一樣東西點了都要有反應（家長：賽車場、消防局很多東西按了沒反應）。
+   會開小遊戲的直接開；其他的走過去做一個動作、說一句話。
+   大樹、路燈故意不加：它們點了要「穿過去」點到後面的東西（公園的花圃、愛心）；地毯、行李箱被前面的東西蓋住，點不到。 */
+Object.assign(ACTIVITIES, {
+  kart_go: { label: '🏎️ 坐上賽車比一場', name: '賽車', fx: '🏁', open: () => openKart(), lines: ['引擎轟轟轟！', '我要拿第一名！'] },
+  podium: { label: '🏆 站上頒獎台', name: '站頒獎台', fx: '🏆', lines: ['我是第一名！', '謝謝大家！', '耶～拿到獎盃了！', '舉高高給大家看！'] },
+  wave_flag: { label: '🏁 揮終點旗', name: '揮旗子', fx: '🏁', lines: ['衝過終點囉！', '揮揮揮～', '比賽結束！', '下一場要開始囉！'] },
+  tires: { label: '🔧 數數看有幾個輪胎', name: '數輪胎', fx: '🔧', lines: ['一、二、三、四…好多輪胎！', '輪胎黑黑圓圓的', '這是賽車要換的輪胎', '疊得好高喔！'] },
+  fire_slide: { label: '💨 溜消防滑竿', name: '溜滑竿', fx: '💨', lines: ['咻——溜下來！', '消防員都是這樣下樓的！', '抓緊緊，不要怕！', '再溜一次！'] },
+  fire_suit: { label: '🔥 穿上消防裝去滅火', name: '穿消防裝', fx: '🔥', open: () => openFireFight(), lines: ['靴子穿好、頭盔戴好！', '出發滅火囉！'] },
+  sunbathe: { label: '😎 躺著曬太陽', name: '曬太陽', fx: '😎', lines: ['太陽暖暖的～', '海風好舒服', '躺一下下就好', '看海鷗飛過去'] },
+  pool_fight: { label: '🔫 泳池水槍大戰', name: '水槍大戰', fx: '💦', open: () => openWaterFight(), lines: ['看我的水槍！', '噴噴噴～'] },
+  splash: { label: '💦 玩水', name: '玩水', fx: '💦', lines: ['水好涼喔！', '潑水囉～', '踢踢腳，水花好大！', '我會打水了！'] },
+  buffet: { label: '🍰 拿點心吃', name: '吃自助餐', fx: '😋', lines: ['好多好吃的！', '我要拿蛋糕～', '還有水果耶！', '一盤裝滿滿'] },
+  stage: { label: '💃 上台表演', name: '上台表演', fx: '🎵', lines: ['大家好，我要唱歌囉！', '啦啦啦～', '轉一圈！', '謝謝大家拍手！'] },
+  tree_rest: { label: '🌳 在大樹下乘涼', name: '乘涼', fx: '🍃', lines: ['樹下好涼快～', '有小鳥在唱歌', '葉子沙沙沙', '大樹好高喔！'] },
+  lamp_look: { label: '💡 看看路燈', name: '看路燈', fx: '💡', lines: ['晚上路燈會亮起來', '路燈好高喔', '有它就不怕黑了'] },
+  fence_look: { label: '🌼 趴在圍籬看風景', name: '看風景', fx: '🌼', lines: ['外婆家好漂亮～', '小雞跑來跑去', '風吹過來好舒服'] },
+  sign_look: { label: '👀 看看上面寫什麼', name: '看一看', fx: '👀', lines: ['上面寫了什麼呢？', '好可愛的圖案！', '我認得這幾個字！'] },
+  lockers: { label: '🎒 放書包', name: '放書包', fx: '🎒', lines: ['書包放好了！', '這格是我的～', '鉛筆盒也放進去'] },
+  no_touch: { label: '🚫 看展品（不能摸喔）', name: '看展品', fx: '👀', lines: ['紅龍柱後面不能進去喔', '只能用眼睛看～', '好特別的東西！'] },
+  cones: { label: '🚧 排排三角錐', name: '排三角錐', fx: '🚧', lines: ['排好了！車子要繞過去', '三角錐是橘色的', '小心慢行喔！'] },
+  luggage: { label: '🧳 整理行李', name: '整理行李', fx: '🧳', lines: ['牙刷帶了嗎？', '衣服摺好放進去', '行李箱好重喔！', '要去哪裡玩呢？'] },
+  movie_ticket: { label: '🎟️ 買票看電影', name: '買電影票', fx: '🎟️', open: () => openMoviePicker(), lines: ['要看哪一部呢？'] },
+  peek_gift: { label: '🎁 偷看禮物', name: '看禮物', fx: '🎁', lines: ['好多禮物！', '這個是給誰的呢？', '聖誕節才可以拆喔～', '搖一搖，叮叮噹噹'] },
+  snow_hug: { label: '⛄ 抱抱小雪人', name: '抱雪人', fx: '⛄', lines: ['小雪人冰冰的！', '幫你戴好帽子', '你不要融化喔～'] },
+  look_any: { label: '👀 看一看', name: '看一看', fx: '👀', lines: ['這是什麼呢？', '好特別喔！', '看起來好好玩～'] }
+});
+Object.assign(FURNITURE_ACT, { race_kart: 'kart_go', race_podium: 'podium', race_flag: 'wave_flag', tire_stack: 'tires', fire_pole: 'fire_slide', fire_boots: 'fire_suit', ship_pool: 'splash', swim_pool: 'pool_fight', buffet_table: 'buffet', ship_stage: 'stage', fence: 'fence_look', display_board: 'sign_look', bunny_sign: 'sign_look', cubby_lockers: 'lockers', museum_rope: 'no_touch', traffic_cone: 'cones', cinema_counter: 'movie_ticket', gift_pile: 'peek_gift', snow_buddy: 'snow_hug' });
+FURNITURE_USE.deck_chair = { use: 'sit', seats: [{ x: .5, y: 1.1, z: 9 }], front: [0, 1] };
 Object.assign(ACTIVITIES, { dept_look: { label: '👀 看看展示品', name: '看展示品', fx: '✨', open: () => openDeptItem(), lines: ['哇，好漂亮！', '好想要喔～'] } });
 Object.assign(FURNITURE_ACT, { dept_chandelier: 'dept_look', dept_fountain: 'dept_look', dept_teddy: 'dept_look', toy_robotdog: 'dept_look', toy_dollhouse: 'dept_look', toy_trainset: 'dept_look' });
 /* 🎄 裝飾聖誕樹（記憶力） */
