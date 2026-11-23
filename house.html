@@ -6166,6 +6166,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-23T20:00', title: '🌊 在郵輪上看得到大海了', lines: [
+    ['🛳️', '在船上：房間坐在大郵輪的船身上，深藍色船殼、紅白線、一排圓窗，船邊有白色浪花'],
+    ['🌊', '外面是藍天大海：海浪一直往後流、雲飄過去、遠遠的小島慢慢經過、海鷗飛來飛去'],
+    ['〰️', '海平面會輕輕斜來斜去，像船在海上搖'],
+    ['⚓', '郵輪碼頭：房間底下是木頭碼頭，旁邊就是海']
+  ] },
   { id: '2026-11-23T19:00', title: '🛳️ 郵輪上變熱鬧了', lines: [
     ['🚶', '上船、下船會看到走過舷梯的動畫；甲板上有「下船的舷梯」，點了就下船'],
     ['🏊', '甲板泳池：遮陽傘、游泳圈、果汁吧、救生圈，還有其他乘客在逛'],
@@ -17464,8 +17470,49 @@ function computeView() {
   };
 }
 
+/* 🛳️ 搭船的感覺（家長：沒什麼搭船的感覺）：郵輪上，房間外面是藍天大海、浪花往後流、雲飄過去、遠遠的小島和海鷗；
+   房間坐在郵輪的船身上（深藍船殼、紅白線、一排圓窗、船邊的白浪）；後面的海平面輕輕左右斜（像船在搖，點東西不受影響）。碼頭也看得到海、房間底下是木頭碼頭。 */
+function seaPlace() { const p = G.away && G.away.place; return p === 'ship' ? 'ship' : p === 'cruise' ? 'dock' : null; }
+function seaBackdrop(ctx, cw, ch, now, moving) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  const t = now / 1000, hz = ch * .42, s = Math.max(.6, Math.min(cw, ch) / 600);
+  if (moving) { ctx.fillStyle = '#7cc6ff'; ctx.fillRect(0, 0, cw, ch); const a = Math.sin(t * .8) * .022; ctx.translate(cw / 2, hz); ctx.rotate(a); ctx.translate(-cw / 2, -hz); ctx.translate(-cw * .1, 0); cw *= 1.2; }   // 海平面輕輕斜來斜去：多畫寬一點，轉的時候邊邊不會露白
+  const sk = ctx.createLinearGradient(0, 0, 0, hz); sk.addColorStop(0, '#7cc6ff'); sk.addColorStop(1, '#dff3ff'); ctx.fillStyle = sk; ctx.fillRect(0, 0, cw, hz + 1);
+  const sp = moving ? 1 : .15;
+  for (let i = 0; i < 6; i++) { const y = hz * (.15 + (i % 3) * .22), r = (22 + (i % 3) * 8) * s, x = cw - (((i * 331 + t * (14 + i % 3 * 6) * s * sp) % (cw + 260 * s)) - 130 * s);
+    ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.arc(x + r, y + r * .2, r * .75, 0, 7); ctx.arc(x - r * .9, y + r * .25, r * .65, 0, 7); ctx.fill(); }
+  if (moving) { const ix = cw - ((t * 9 * s) % (cw + 400 * s)) + 200 * s;   // 遠遠的小島慢慢往後退
+    ctx.fillStyle = '#5fb36a'; ctx.beginPath(); ctx.ellipse(ix, hz, 90 * s, 22 * s, 0, Math.PI, 0); ctx.fill(); ctx.fillStyle = '#e8d6a6'; ctx.fillRect(ix - 92 * s, hz - 3 * s, 184 * s, 3 * s);
+    ctx.fillStyle = '#4f9a58'; ctx.beginPath(); ctx.arc(ix - 20 * s, hz - 22 * s, 12 * s, 0, 7); ctx.fill(); ctx.strokeStyle = '#8a5a33'; ctx.lineWidth = 3 * s; ctx.beginPath(); ctx.moveTo(ix + 30 * s, hz - 6 * s); ctx.lineTo(ix + 34 * s, hz - 34 * s); ctx.stroke(); ctx.fillStyle = '#5fb36a'; ctx.beginPath(); ctx.ellipse(ix + 34 * s, hz - 36 * s, 14 * s, 5 * s, 0, 0, 7); ctx.fill(); }
+  const sea = ctx.createLinearGradient(0, hz, 0, ch); sea.addColorStop(0, '#3fa4dc'); sea.addColorStop(1, '#1f6fae'); ctx.fillStyle = sea; ctx.fillRect(0, hz, cw, ch - hz + 80);
+  ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineCap = 'round';
+  for (let row = 0; row < 9; row++) { const k = row / 8, y = hz + 8 * s + k * k * (ch - hz), ww = (10 + k * 30) * s, gap = (60 + k * 110) * s; ctx.lineWidth = (1 + k * 2.4) * s;
+    const off = (t * (20 + k * 90) * s * sp + row * 37) % gap;
+    for (let x = cw + gap - off; x > -gap; x -= gap) { const yy = y + Math.sin(t * 2 + x * .02 + row) * 2 * s; ctx.beginPath(); ctx.moveTo(x - ww, yy); ctx.quadraticCurveTo(x, yy - ww * .35, x + ww, yy); ctx.stroke(); } }
+  for (let i = 0; i < 3; i++) { const gx = ((i * 230 + t * 30 * s) % (cw + 120)) - 60, gy = hz * (.3 + i * .18) + Math.sin(t * 2 + i) * 8 * s, f = Math.sin(t * 8 + i) * 4 * s;   // 🕊️ 海鷗
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2.2 * s; ctx.beginPath(); ctx.moveTo(gx - 9 * s, gy - f); ctx.quadraticCurveTo(gx - 4 * s, gy - 5 * s, gx, gy); ctx.quadraticCurveTo(gx + 4 * s, gy - 5 * s, gx + 9 * s, gy - f); ctx.stroke(); }
+}
+function seaRoomBase(g, room, kind, now) {
+  const L = iso(0, room.d), R = iso(room.w, 0), B = iso(room.w, room.d), t = now / 1000;
+  if (kind === 'dock') {   // 碼頭：房間底下是木頭棧橋和柱子
+    g.fillStyle = '#a8794a'; g.beginPath(); g.moveTo(L.x - 10, L.y); g.lineTo(B.x, B.y + 12); g.lineTo(R.x + 10, R.y); g.lineTo(R.x + 10, R.y + 16); g.lineTo(B.x, B.y + 28); g.lineTo(L.x - 10, L.y + 16); g.closePath(); g.fill();
+    g.fillStyle = '#7a5230'; for (let i = 0; i <= 4; i++) { const a = i / 4, x = L.x + (B.x - L.x) * a, y = L.y + (B.y - L.y) * a; g.fillRect(x - 3, y + 14, 6, 34); const x2 = B.x + (R.x - B.x) * a, y2 = B.y + (R.y - B.y) * a; g.fillRect(x2 - 3, y2 + 14, 6, 34); }
+    return;
+  }
+  const H = 46 + room.w * 1.5;   // 船殼的高度
+  const hull = (a, b, col) => { g.fillStyle = col; g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.lineTo(b.x - (b.x - a.x) * .04, b.y + H); g.lineTo(a.x + (b.x - a.x) * .04, a.y + H); g.closePath(); g.fill(); };
+  const L2 = { x: L.x - 14, y: L.y + 2 }, R2 = { x: R.x + 14, y: R.y + 2 }, B2 = { x: B.x, y: B.y + 10 };
+  hull(L2, B2, '#2b3a5a'); hull(B2, R2, '#22304c');
+  const stripe = (a, b, off, col, w) => { g.strokeStyle = col; g.lineWidth = w; g.beginPath(); g.moveTo(a.x, a.y + off); g.lineTo(b.x, b.y + off); g.stroke(); };
+  stripe(L2, B2, 5, '#e8505b', 5); stripe(B2, R2, 5, '#e8505b', 5); stripe(L2, B2, 11, '#ffffff', 3); stripe(B2, R2, 11, '#ffffff', 3);
+  g.fillStyle = '#ffd23f'; [[L2, B2], [B2, R2]].forEach(([a, b]) => { for (let i = 1; i < 7; i++) { const k = i / 7; g.beginPath(); g.arc(a.x + (b.x - a.x) * k, a.y + (b.y - a.y) * k + 22, 3.2, 0, 7); g.fill(); } });
+  g.fillStyle = 'rgba(255,255,255,.85)';   // 船邊的白浪
+  [[L2, B2], [B2, R2]].forEach(([a, b]) => { for (let i = 0; i <= 10; i++) { const k = i / 10, x = a.x + (b.x - a.x) * k, y = a.y + (b.y - a.y) * k + H - 4 + Math.sin(t * 3 + i) * 2; g.beginPath(); g.arc(x, y, 5 + (i % 3) * 2, 0, 7); g.fill(); } });
+}
 /* 房間後面：天空或四季、底下那一圈影子。畫完之後 ctx 是房間的座標。 */
 function drawRoomBack(g, room, dpr, sea, inSky, now) {
+  const seaK = seaPlace();
+  if (seaK) { try { seaBackdrop(g, g.canvas.width, g.canvas.height, now, seaK === 'ship'); } catch (e) {} g.setTransform(view.scale * dpr, 0, 0, view.scale * dpr, view.ox * dpr, view.oy * dpr); try { seaRoomBase(g, room, seaK, now); } catch (e) {} return; }
   if (!inSky && typeof roomSkyBack === 'function') try { roomSkyBack(g, dpr); } catch (e) {}   // 🌙 早上、白天、傍晚、晚上的天色和星星
   if (inSky) { try { skyRoomBackdrop(g, g.canvas.width, g.canvas.height, now); } catch (e) {} }   // ☁️ 爸爸媽媽家：藍天白雲
   else if (!LITE) try { drawSeasonBack(g, dpr, sea, now); } catch (e) {}   // 🍂 四季：房間後面飄花瓣／泡泡／落葉／雪
@@ -17546,7 +17593,7 @@ function roomLayerFrame(room, dpr, sea, inSky, now, extras, occupants) {
   if (roomSigs.size > 600) roomSigs.clear();
   const wallItems = room.wallItems || [], twinkle = wallItems.some(w => w.id === 'star_lights');
   const baseKey = [viewKey, dpr, room.w, room.d, room.wall, room.floor, hoverUid || '', sea, LITE ? 1 : 0, Math.floor(Date.now() / 60000),
-    inSky ? Math.floor(now / 1500) : 0, twinkle ? Math.floor(now / 400) : 0, wallItems.map(w => w.uid + ':' + w.id + ':' + w.side + ':' + w.pos).join('|'), flatSig].join(';');
+    inSky ? Math.floor(now / 1500) : 0, seaPlace() ? Math.floor(now / 90) : 0, twinkle ? Math.floor(now / 400) : 0, wallItems.map(w => w.uid + ':' + w.id + ':' + w.side + ':' + w.pos).join('|'), flatSig].join(';');
   if (baseKey !== roomBaseKey || now - roomBaseAt > 5000) {
     if (viewKey !== roomSeenKey) { roomSeenKey = viewKey; roomBaseKey = ''; roomLayerStats.full++; return false; }   // 畫面還在變（剛換房間、鏡頭在動）：這一格照舊整張畫，穩了再存
     if (!roomBase) roomBase = document.createElement('canvas');
