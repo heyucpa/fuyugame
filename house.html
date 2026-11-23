@@ -2762,6 +2762,8 @@ const PLACE_FURNITURE = [
   { id: 'ship_stage', name: '劇場舞台', theme: 'modern', w: 3, d: 2, parts: [{ x: 0, y: 0, w: 3, d: 2, z: 0, h: 10, c: '#8a5a33' }, { x: 0, y: 0, w: .3, d: 2, z: 10, h: 40, c: '#c4313a' }, { x: 2.7, y: 0, w: .3, d: 2, z: 10, h: 40, c: '#c4313a' }, { x: 0, y: 0, w: 3, d: .2, z: 46, h: 6, c: '#c4313a' }, { k: 'ball', x: 1.5, y: 1, z: 18, r: 5, c: '#ffd23f', shade: true }] },
   { id: 'porthole', name: '船的圓窗', theme: 'modern', w: 1, h: 26, z: 50, layer: 'wall', d: 1, parts: [],
     draw(ctx, W, H) { const r = Math.min(W, H) * .45; ctx.fillStyle = '#e0b23a'; ctx.beginPath(); ctx.arc(W / 2, H / 2, r, 0, 7); ctx.fill(); ctx.fillStyle = '#6fc3ec'; ctx.beginPath(); ctx.arc(W / 2, H / 2, r * .75, 0, 7); ctx.fill(); ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(W / 2 - r * .25, H / 2 - r * .25, r * .15, 0, 7); ctx.fill(); } },
+  { id: 'dept_elevator', name: '電梯', theme: 'modern', w: 2, d: 1, parts: [{ x: .05, y: .1, w: 1.9, d: .8, z: 0, h: 56, c: '#9aa7b4' }, { x: .2, y: .88, w: .78, d: .04, z: 2, h: 46, c: '#dfe4ea' }, { x: 1.02, y: .88, w: .78, d: .04, z: 2, h: 46, c: '#dfe4ea' }, { x: .7, y: .88, w: .6, d: .04, z: 50, h: 5, c: '#2b2d42' }, { k: 'ball', x: 1.88, y: .92, z: 28, r: 2.5, c: '#ffd23f' }] },
+  { id: 'dept_escalator', name: '電扶梯', theme: 'modern', w: 2, d: 2, parts: [{ x: .1, y: .1, w: .7, d: 1.8, z: 0, h: 6, c: '#5a6475' }, { x: .1, y: .1, w: .7, d: .6, z: 6, h: 22, c: '#5a6475' }, { x: .1, y: .7, w: .7, d: .6, z: 6, h: 12, c: '#6a7485' }, { x: 1.0, y: .1, w: .7, d: 1.8, z: 0, h: 6, c: '#5a6475' }, { x: 1.0, y: 1.3, w: .7, d: .6, z: 6, h: 22, c: '#5a6475' }, { x: 1.0, y: .7, w: .7, d: .6, z: 6, h: 12, c: '#6a7485' }, { x: .05, y: .1, w: .06, d: 1.8, z: 6, h: 26, c: '#2b2d42' }, { x: 1.68, y: .1, w: .06, d: 1.8, z: 6, h: 26, c: '#2b2d42' }] },
   { id: 'dept_mirror', name: '試衣間鏡子', theme: 'cute', w: 1, d: 1, parts: [{ x: .3, y: .4, w: .4, d: .2, z: 0, h: 4, c: '#e0b23a' }, { x: .32, y: .45, w: .36, d: .06, z: 4, h: 44, c: '#e0b23a' }, { x: .36, y: .44, w: .28, d: .04, z: 8, h: 36, c: '#dff3fb' }] },
   { id: 'dept_toyshelf', name: '玩具櫃', theme: 'cute', w: 2, d: 1, parts: [{ x: .05, y: .2, w: 1.9, d: .6, z: 0, h: 36, c: '#ffd9e6' }, { k: 'ball', x: .4, y: .5, z: 40, r: 5, c: '#c98a55' }, { x: .8, y: .35, w: .3, d: .3, z: 36, h: 10, c: '#e8505b' }, { k: 'ball', x: 1.5, y: .5, z: 40, r: 5, c: '#6fb7e8' }] },
   { id: 'food_stall', name: '美食街攤位', theme: 'modern', w: 3, d: 1, parts: [{ x: .05, y: .3, w: 2.9, d: .6, z: 0, h: 22, c: '#ffb02e' }, { x: .05, y: .3, w: 2.9, d: .6, z: 22, h: 2, c: '#ffffff' }, { x: 0, y: .1, w: 3, d: .2, z: 44, h: 8, c: '#e8505b' }, { x: .1, y: .15, w: .06, d: .06, z: 0, h: 44, c: '#c9ccd0' }, { x: 2.84, y: .15, w: .06, d: .06, z: 0, h: 44, c: '#c9ccd0' }, { k: 'ball', x: .6, y: .6, z: 28, r: 5, c: '#ffffff' }, { k: 'ball', x: 1.5, y: .6, z: 28, r: 5, c: '#fff4c2' }, { k: 'ball', x: 2.4, y: .6, z: 28, r: 5, c: '#ff8fb3' }] },
@@ -3775,10 +3777,10 @@ const PLACES = {
     { name: '我的船艙', w: 6, d: 6, wall: 'wp_stripe', floor: 'fl_wood', items: [['wood_bed', 1, 1]], wallItems: [['porthole', 'R', 2]] }
   ] },
   dept: { name: '百貨公司', host: 'clerk', emoji: '🛍️', desc: '好幾層樓！百貨限定的家具、扭蛋機，週末還有週年慶打折', rooms: [
-    { name: '1F 服飾・試衣間', w: 10, d: 10, wall: 'wp_pink', floor: 'fl_terrazzo', items: [['dept_rack', 1, 1], ['dept_rack', 5, 1], ['dept_mirror', 8, 1], ['dept_mirror', 8, 3], ['dept_rack', 1, 5]], wallItems: [] },
-    { name: '2F 家具', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_wood', items: [['dept_sofa', 1, 1], ['dept_chandelier', 5, 1], ['dept_fountain', 6, 5], ['dept_counter', 1, 7]], wallItems: [] },
-    { name: '3F 玩具', w: 10, d: 10, wall: 'wp_candy', floor: 'fl_check', items: [['dept_toyshelf', 1, 1], ['dept_toyshelf', 5, 1], ['dept_teddy', 2, 5], ['toy_robotdog', 6, 6]], wallItems: [] },
-    { name: '頂樓 美食街', w: 10, d: 10, wall: 'wp_stripe', floor: 'fl_tile', items: [['food_stall', 1, 1], ['dept_gacha', 8, 1], ['dining_table', 1, 4], ['dining_table', 4, 4], ['kid_train', 6, 7]], wallItems: [] }
+    { name: '1F 服飾・試衣間', w: 10, d: 10, wall: 'wp_pink', floor: 'fl_terrazzo', items: [['dept_rack', 1, 1], ['dept_rack', 5, 1], ['dept_mirror', 8, 1], ['dept_mirror', 8, 3], ['dept_rack', 1, 5], ['dept_elevator', 8, 7], ['dept_escalator', 4, 7]], wallItems: [] },
+    { name: '2F 家具', w: 10, d: 10, wall: 'wp_cream', floor: 'fl_wood', items: [['dept_sofa', 1, 1], ['dept_chandelier', 5, 1], ['dept_fountain', 6, 5], ['dept_counter', 1, 7], ['dept_elevator', 8, 8], ['dept_escalator', 4, 8]], wallItems: [] },
+    { name: '3F 玩具', w: 10, d: 10, wall: 'wp_candy', floor: 'fl_check', items: [['dept_toyshelf', 1, 1], ['dept_toyshelf', 5, 1], ['dept_teddy', 2, 5], ['toy_robotdog', 6, 6], ['dept_elevator', 8, 8], ['dept_escalator', 3, 8]], wallItems: [] },
+    { name: '頂樓 美食街', w: 10, d: 10, wall: 'wp_stripe', floor: 'fl_tile', items: [['food_stall', 1, 1], ['dept_gacha', 8, 1], ['dining_table', 1, 4], ['dining_table', 4, 4], ['kid_train', 6, 7], ['dept_elevator', 1, 8], ['dept_escalator', 3, 8]], wallItems: [] }
   ] },
   realty: { name: '小可愛不動產', host: 'realtor', emoji: '🏡', desc: '買新房子！海邊小木屋、森林樹屋、城市公寓、夢幻城堡', rooms: [
     { name: '小可愛不動產', w: 8, d: 8, wall: 'wp_cream', floor: 'fl_wood', items: [['realty_desk', 3, 1], ['realty_model', 1, 4], ['realty_model', 6, 4]], wallItems: [['realty_board', 'R', 3]] }
@@ -6134,6 +6136,10 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-23T13:00', title: '⬆️⬇️ 百貨公司有電梯和電扶梯了', lines: [
+    ['⬆️', '每層樓都有電梯：選幾樓，門關起來、數字一層一層跳、叮！就到了'],
+    ['↗️', '電扶梯：上樓、下樓一層，看小可愛站在電扶梯上慢慢上去']
+  ] },
   { id: '2026-11-23T12:00', title: '🛍️ 百貨公司變好逛了！', lines: [
     ['🏬', '每層樓走到櫃台點了才看得到：1F 服飾、2F 家具、3F 玩具、頂樓美食街'],
     ['👗', '1F 試衣間：名牌禮服、亮片外套、鑽石皇冠……先在鏡子前試穿，喜歡再買'],
@@ -40131,7 +40137,7 @@ function deptSpend(n) {   // 在百貨公司花的錢：蓋集點卡、送抽獎
   setTimeout(() => { try { if (tix) toast(`🎡 今天在百貨公司買滿 ${fmt(2000 * d.got)} 元，送你一張抽獎券！`); else if (stamp) toast(`🎫 集點卡蓋了 ${stamp} 格（${d.stamps} / 10）`); } catch (e) {} }, 400);
 }
 function deptBuy(price) { if (!spend(price)) { Sound.play('miss'); toast('錢不夠喔～'); return false; } deptSpend(price); refreshTop(); return true; }
-function deptGoFloor(i) { $('#modal').hidden = true; closeGameWindow(); if (G.away && G.away.place === 'dept') goPlaceRoom(i); else travelArrive('dept', i); setTimeout(() => { try { toast('🛍️ 走到櫃台點一下，就可以看這層的東西～'); } catch (e) {} }, 1200); }
+function deptGoFloor(i) { $('#modal').hidden = true; closeGameWindow(); if (G.away && G.away.place === 'dept') goPlaceRoom(i); else travelArrive('dept', i); setTimeout(() => { try { toast('🛍️ 走到櫃台點一下就可以看這層的東西；搭電梯、電扶梯可以上下樓～'); } catch (e) {} }, 1200); }
 function openDeptStore(focus) {
   closeGameWindow(); const d = deptState(), card = $('#modalCard'); card.innerHTML = '';
   const x = el('button', 'modal-x', '✕'); x.onclick = () => { $('#modal').hidden = true; }; card.appendChild(x);
@@ -40284,6 +40290,49 @@ Object.assign(ACTIVITIES, {
   dept_train: { label: '🚂 坐小火車（50 元）', name: '坐小火車', fx: '🚂', open: () => openKidTrain(), lines: ['嘟嘟～出發！'] }
 });
 Object.assign(FURNITURE_ACT, { dept_rack: 'dept_fashion', dept_mirror: 'dept_fashion', dept_counter: 'dept_shop', dept_toyshelf: 'dept_toys', food_stall: 'dept_food', dept_gacha: 'dept_gacha', kid_train: 'dept_train' });
+/* 🛗 百貨公司的電梯和電扶梯（家長 11/22：這樣就知道上樓下樓）
+   電梯：選幾樓 → 門關起來、上面的數字一層一層跳、叮！門打開 → 到那一層。
+   電扶梯：上樓／下樓一層，小可愛站在電扶梯上斜斜地上去（下來）。頂樓只能往下。 */
+const DEPT_FLOORS = ['1F', '2F', '3F', '頂樓'];
+function openDeptLift(kind) {
+  if (!G.away || G.away.place !== 'dept') { toast('要在百貨公司裡面才能搭喔～'); return; }
+  const cur = G.away.idx, names = PLACES.dept.rooms.map(r => r.name);
+  const w = openGameWindow(kind === 'esc' ? '↗️ 電扶梯' : '⬆️⬇️ 電梯', kind === 'esc' ? '要上樓還是下樓呢？' : `現在在 ${DEPT_FLOORS[cur]}。要去幾樓？`);
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  const W = 300, H = 200, { g } = gameCanvas(w.stage, W, H); let raf = 0, t = 0, last = performance.now(), anim = null;
+  const row = el('div', 'invite-row'); w.stage.appendChild(row);
+  const go = to => { if (anim) return; row.remove(); anim = { to, t: 0, dur: kind === 'esc' ? 2.2 : 1.2 + Math.abs(to - cur) * .7 }; Sound.play('click'); };
+  if (kind === 'esc') { if (cur < 3) { const b = el('button', 'big', `⬆️ 上樓（到 ${names[cur + 1]}）`); b.onclick = () => go(cur + 1); row.appendChild(b); } if (cur > 0) { const b = el('button', 'big', `⬇️ 下樓（到 ${names[cur - 1]}）`); b.onclick = () => go(cur - 1); row.appendChild(b); } }
+  else names.forEach((nm, i) => { const b = el('button', 'big' + (i === cur ? ' alt' : ''), `${DEPT_FLOORS[i]}　${nm.replace(/^(1F|2F|3F|頂樓)\s*/, '')}${i === cur ? '（現在在這裡）' : ''}`); b.onclick = () => { if (i === cur) { toast('就在這一層喔～'); return; } go(i); }; row.appendChild(b); });
+  leaveButton(w);
+  gameCleanup = () => { cancelAnimationFrame(raf); };
+  const arrive = to => { cancelAnimationFrame(raf); closeGameWindow(); goPlaceRoom(to); Sound.play('fanfare'); toast(`🛍️ 到了 ${names[to]}！`); };
+  const frame = now => { raf = requestAnimationFrame(frame); const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+    if (kind === 'esc') {   // 電扶梯：斜斜的樓梯，小可愛站著往上（往下）
+      g.fillStyle = '#fff6fa'; g.fillRect(0, 0, W, H); const up = !anim || anim.to > cur, k = anim ? Math.min(1, anim.t / anim.dur) : 0;
+      g.fillStyle = '#5a6475'; g.beginPath(); g.moveTo(20, 180); g.lineTo(280, 40); g.lineTo(280, 60); g.lineTo(20, 200); g.closePath(); g.fill();
+      g.strokeStyle = '#c9ccd0'; g.lineWidth = 2; for (let i = 0; i < 14; i++) { const q = ((i / 14) + (anim ? t * (up ? .3 : -.3) : 0) % (1 / 14) + 1) % 1, x = 20 + q * 260, y = 180 - q * 140; g.beginPath(); g.moveTo(x, y); g.lineTo(x + 14, y); g.stroke(); }
+      g.strokeStyle = '#2b2d42'; g.lineWidth = 4; g.beginPath(); g.moveTo(20, 150); g.lineTo(280, 10); g.stroke();
+      const q = up ? k : 1 - k, kx = 40 + q * 220, ky = 176 - q * 118; copDrawKid(g, kx, ky, .7, t, false, up ? 1 : -1, 'joy');
+      g.fillStyle = '#3a3240'; g.font = '700 14px sans-serif'; g.textAlign = 'center'; g.fillText(anim ? (up ? '⬆️ 上樓中～' : '⬇️ 下樓中～') : '電扶梯', W / 2, 24);
+    } else {   // 電梯：門關起來、數字一層一層跳、叮！門打開
+      const k = anim ? anim.t / anim.dur : 0, close = anim ? Math.min(1, k * 4, (1 - k) * 4) : 0;
+      const shown = anim ? Math.round(cur + (anim.to - cur) * Math.max(0, Math.min(1, (k - .2) / .6))) : cur;
+      g.fillStyle = '#e6e9ee'; g.fillRect(0, 0, W, H); g.fillStyle = '#9aa7b4'; g.fillRect(70, 40, 160, 150);
+      g.fillStyle = ['#ffd9e6', '#fff6e0', '#ffe9f4', '#e6f4ff'][anim && k > .8 ? anim.to : cur]; g.fillRect(78, 48, 144, 142);
+      copDrawKid(g, 150, 182, .9, t, false, 1, 'wow');
+      const dw = 72 * close; g.fillStyle = '#dfe4ea'; g.fillRect(78, 48, dw, 142); g.fillRect(222 - dw, 48, dw, 142); g.strokeStyle = '#b8c0ca'; g.lineWidth = 2; if (close > .05) { g.beginPath(); g.moveTo(150, 48); g.lineTo(150, 190); g.stroke(); }
+      g.fillStyle = '#2b2d42'; g.fillRect(110, 10, 80, 26); g.fillStyle = '#ffb02e'; g.font = '900 18px sans-serif'; g.textAlign = 'center'; g.fillText(`${anim && anim.to > cur ? '▲' : anim ? '▼' : ''} ${DEPT_FLOORS[shown]}`, 150, 30);
+      if (anim && shown !== anim.shown) { anim.shown = shown; if (k > .2) Sound.play('click'); }
+    }
+    if (anim) { anim.t += dt; if (anim.t >= anim.dur) { const to = anim.to; anim = { to, t: -1e9, dur: 1 }; if (kind !== 'esc') Sound.play('coin'); setTimeout(() => arrive(to), kind === 'esc' ? 100 : 350); } }
+  };
+  raf = requestAnimationFrame(frame);
+  w.status.textContent = kind === 'esc' ? '選上樓或下樓' : '選要去幾樓';
+  openDeptLift.test = { go };
+}
+Object.assign(ACTIVITIES, { dept_lift: { label: '⬆️⬇️ 搭電梯', name: '搭電梯', fx: '⬆️', open: () => openDeptLift('lift'), lines: ['要去幾樓呢？'] }, dept_esc: { label: '↗️ 搭電扶梯', name: '搭電扶梯', fx: '↗️', open: () => openDeptLift('esc'), lines: ['抓好扶手喔！'] } });
+Object.assign(FURNITURE_ACT, { dept_elevator: 'dept_lift', dept_escalator: 'dept_esc' });
 /* 🎄 裝飾聖誕樹（記憶力） */
 const TREE_SLOTS = [[150, 72], [134, 102], [166, 102], [120, 134], [150, 130], [180, 134], [104, 168], [134, 166], [166, 168], [196, 166]];
 const TREE_COLS = [['red', '#e8505b', '紅色'], ['gold', '#ffd23f', '金色'], ['blue', '#4a90d9', '藍色']];
