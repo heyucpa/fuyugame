@@ -1,4 +1,4 @@
-// 出門的地方每一樣東西點了都有反應（大樹、路燈要穿過去點後面的；地毯、行李箱被擋住，不算）：賽車場、消防局、郵輪等原本沒反應的東西有動作或小遊戲；萬一還有漏的，至少有「走過去看一看」
+// 出門的地方每一樣東西點了都有反應（大樹、路燈要穿過去點後面的；地毯、行李箱被擋住，不算）：賽車場、消防局、郵輪等原本沒反應的東西有動作或小遊戲；萬一還有漏的，至少有「走過去看一看」（躺椅改成躺下）
 const { chromium } = require('playwright');
 const path = require('path');
 (async () => {
@@ -28,7 +28,7 @@ const path = require('path');
       fufuStartAct('fire_slide', performance.now(), pole, false); o.pole = fufu.act && fufu.act.key === 'fire_slide';
       travelArrive('ship', 0); await w(800);
       const ch = curRoom().items.find(q => q.id === 'deck_chair'); fufuGoUse(ch, false); await w(4000);
-      o.deckSit = !!(fufu.pose && fufu.pose.type === 'sit');
+      o.deckLie = !!(fufu.pose && fufu.pose.type === 'lie') && FURNITURE_USE.deck_chair.label === '😎 躺著曬太陽';
       o.opensExist = [openKart, openFireFight, openWaterFight, openMoviePicker].every(f => typeof f === 'function');
       o.fallback = !!ACTIVITIES.look_any;
       close();

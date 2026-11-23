@@ -6166,6 +6166,9 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-23T21:00', title: '😎 躺椅可以真的躺下來', lines: [
+    ['😎', '郵輪和碼頭的甲板躺椅：點了會「躺著曬太陽」，真的躺上去，不會再站在椅子上']
+  ] },
   { id: '2026-11-23T20:00', title: '🌊 在郵輪上看得到大海了', lines: [
     ['🛳️', '在船上：房間坐在大郵輪的船身上，深藍色船殼、紅白線、一排圓窗，船邊有白色浪花'],
     ['🌊', '外面是藍天大海：海浪一直往後流、雲飄過去、遠遠的小島慢慢經過、海鷗飛來飛去'],
@@ -18658,7 +18661,7 @@ function showItemMenu(it, e) {
   const def = FURN_BY_ID[it.id], use = FURNITURE_USE[it.id], act = FURNITURE_ACT[it.id];
   const entries = [];
   const add = (label, fn) => entries.push([label, fn]);
-  if (use) add(use.use === 'lie' ? (use.bath ? '🛁 泡澡' : '😴 躺下睡覺') : '💺 坐下', () => fufuGoUse(it));
+  if (use) add(use.label || (use.use === 'lie' ? (use.bath ? '🛁 泡澡' : '😴 躺下睡覺') : '💺 坐下'), () => fufuGoUse(it));
   if (act) add(ACTIVITIES[act].label, () => fufuGoUse(it, false, act));
   if (it.id === 'clown_butler') { add('🍬 跟小丑要糖果', () => clownCandy(it)); add('🤫 偷摸一下牠的碗', () => clownPeek(it)); }   // 🤡 萬聖節
   if (it.id === 'skeleton_count') add('🕯️ 跟骷髏伯爵打招呼', () => skeletonHi(it));
@@ -40637,7 +40640,7 @@ Object.assign(ACTIVITIES, {
   look_any: { label: '👀 看一看', name: '看一看', fx: '👀', lines: ['這是什麼呢？', '好特別喔！', '看起來好好玩～'] }
 });
 Object.assign(FURNITURE_ACT, { race_kart: 'kart_go', race_podium: 'podium', race_flag: 'wave_flag', tire_stack: 'tires', fire_pole: 'fire_slide', fire_boots: 'fire_suit', ship_pool: 'splash', swim_pool: 'pool_fight', buffet_table: 'ship_buffet', ship_stage: 'ship_show', fence: 'fence_look', display_board: 'sign_look', bunny_sign: 'sign_look', cubby_lockers: 'lockers', museum_rope: 'no_touch', traffic_cone: 'cones', cinema_counter: 'movie_ticket', gift_pile: 'peek_gift', snow_buddy: 'snow_hug' });
-FURNITURE_USE.deck_chair = { use: 'sit', seats: [{ x: .5, y: 1.1, z: 9 }], front: [0, 1] };
+FURNITURE_USE.deck_chair = { use: 'lie', pillow: { x: .5, y: .45, z: 14 }, label: '😎 躺著曬太陽' };   // 家長：按坐下還是站著（躺椅太低，坐的樣子跟站一樣）→ 真的躺上去
 Object.assign(ACTIVITIES, { dept_look: { label: '👀 看看展示品', name: '看展示品', fx: '✨', open: () => openDeptItem(), lines: ['哇，好漂亮！', '好想要喔～'] } });
 Object.assign(FURNITURE_ACT, { dept_chandelier: 'dept_look', dept_fountain: 'dept_look', dept_teddy: 'dept_look', toy_robotdog: 'dept_look', toy_dollhouse: 'dept_look', toy_trainset: 'dept_look' });
 /* 🎄 裝飾聖誕樹（記憶力） */
