@@ -2486,7 +2486,7 @@ const ACTIVITIES = {
   study: { label: '✏️ 念書', name: '念書', fx: '✏️', lines: ['認真寫功課！', '這題我會！', '寫完功課再去玩～', '九九乘法我背起來了！', '今天學了新的字', '專心，專心～', '寫好了！檢查一下'] },
   paint: { label: '🎨 畫畫', name: '畫畫', fx: '🎨', lines: ['畫一朵花～', '我要畫全家人！', '塗上彩虹的顏色', '這是我們家的房子', '畫一隻大大的貓咪', '顏色好漂亮！'] },
   cook: { label: '🍳 煮東西', name: '煮東西', fx: '🍳', lines: ['今天煮什麼好呢？', '好香喔～', '小心燙喔！', '煎一顆荷包蛋', '加一點點鹽巴', '開飯囉！'] },
-  snack: { label: '🧃 找點心', name: '找點心', fx: '🧃', lines: ['有什麼好吃的呢？', '冰冰涼涼的～', '只拿一個就好', '冰箱裡有好多東西', '先喝一口果汁'] },
+  snack: { label: '🧃 找點心', name: '找點心', fx: '🧃', start: () => fridgeSnack(), lines: ['有什麼好吃的呢？', '冰冰涼涼的～', '只拿一個就好', '冰箱裡有好多東西', '先喝一口果汁'] },
   dishes: { label: '🍽️ 擺碗筷', name: '擺碗筷', fx: '🍽️', lines: ['幫忙擺碗筷～', '準備吃飯囉！', '一人一副碗筷', '我是小幫手！'] },
   mirror: { label: '💖 照鏡子', name: '照鏡子', fx: '💖', lines: ['今天也很可愛！', '頭髮整理好了～', '笑一個！', '這樣穿好看嗎？'] },
   dress: { label: '👗 換衣服', name: '換衣服', fx: '👗', tab: 'dress', lines: ['要穿哪一件呢？', '來挑衣服囉～', '今天想穿漂亮一點'] },
@@ -6173,6 +6173,13 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-24T13:30', title: '👧 背影看得到脖子了', lines: [
+    ['👧', '小可愛背對畫面（開冰箱、看書架…）的時候，頭髮下面露出一小截脖子，髮尾一撮一撮的，不會像頭不見了']
+  ] },
+  { id: '2026-11-24T13:00', title: '🧃 找點心真的會吃了', lines: [
+    ['🧃', '冰箱「找點心」會拿出一樣小點心（蘋果、布丁、鮮奶、餅乾…）吃掉，肚子會變飽'],
+    ['⏰', '冰箱的免費點心吃完要等 10 分鐘才會補；還沒補好的時候，會打開「吃東西」選單吃自己買的食物']
+  ] },
   { id: '2026-11-24T12:00', title: '💬 大家說的話變多、變有個性了', lines: [
     ['🐘', '每位主人都有自己的個性：大象消防員用鼻子噴水、鸚鵡主持人會一直重複說話、倉鼠經紀人把鑰匙塞在臉頰裡'],
     ['🦁', '獅子警衛看起來很兇，其實最怕蟲蟲；老虎園長最喜歡聞花香'],
@@ -7568,6 +7575,7 @@ function normalizeSave(g) {
         q.legacy = leg; q.rev = 2;
       } else q.legacy = legOk(q.legacy); } }
   if (out.introBig != null && out.introBig !== 1) delete out.introBig;   // 🎬 看過主島變大的介紹
+  if (out.fridgeAt != null && !(Number.isFinite(out.fridgeAt) && out.fridgeAt >= 0 && out.fridgeAt < 1e14)) delete out.fridgeAt;   // 🧃 冰箱免費點心上次吃的時間
   if (out.dept != null) { if (!isObj(out.dept)) delete out.dept; else { const d = out.dept; ['carry', 'stamps', 'day', 'got', 'tix'].forEach(k => { if (d[k] != null && !(Number.isInteger(d[k]) && d[k] >= 0 && d[k] < 1e7)) delete d[k]; }); if (d.stamps > 10) d.stamps = 10; if (d.got > 3) d.got = 3; if (d.tix > 99) d.tix = 99; if (d.d != null && !(typeof d.d === 'string' && d.d.length <= 12)) delete d.d; if (d.gift1 != null && d.gift1 !== 1) delete d.gift1; Object.keys(d).forEach(k => { if (!['carry', 'stamps', 'd', 'day', 'got', 'tix', 'gift1'].includes(k)) delete d[k]; }); } }   // 🛍️ 百貨公司集點卡、抽獎券
   if (out.cruise != null) { if (!isObj(out.cruise)) delete out.cruise; else { const c = out.cruise; c.st = isObj(c.st) ? Object.fromEntries(Object.entries(c.st).filter(([k, v]) => ['fruit', 'ice', 'pirate'].includes(k) && v === 1)) : {}; Object.keys(c).forEach(k => { if (k !== 'st') delete c[k]; }); } }   // 🛳️ 郵輪護照
   if (out.fox != null) { if (!isObj(out.fox)) delete out.fox; else { const f = out.fox; if (!(Number.isInteger(f.st) && f.st >= 0 && f.st <= 5)) f.st = 0; f.clues = Array.isArray(f.clues) ? [...new Set(f.clues.filter(k => ['library', 'museum', 'park'].includes(k)))] : []; if (f.d != null && !(typeof f.d === 'string' && f.d.length <= 12)) delete f.d; Object.keys(f).forEach(k => { if (!['st', 'clues', 'd'].includes(k)) delete f[k]; }); } }   // 🦊 怪盜狐狸事件
@@ -9430,7 +9438,15 @@ function drawGirlHead(ctx, o) {
     ctx.beginPath(); ctx.ellipse(0, hy + 1, 12.5, 13, 0, 0, Math.PI * 2);
     ctx.fillStyle = GIRL.skin; ctx.fill();
   }
-  if (!noBob) {
+  if (!noBob && o.back && !short && !pixie && !quiff && !spike && !buns && st !== 'long') {   // 長髮的背影本來就蓋住脖子
+    /* 背影（家長：頭怎麼消失在脖子的位置）：以前後髮底邊平平地貼在衣領上，看起來像頭被切掉。
+       現在先畫一小截脖子，後髮的底邊是幾撮圓圓的髮尾（中間短一點），脖子從中間露出來。 */
+    ctx.fillStyle = GIRL.skin; ctx.fillRect(-3.6, hb - 7, 7.2, 8);
+    ctx.fillStyle = 'rgba(120,70,50,.18)'; ctx.fillRect(-3.6, hb - 7, 7.2, 2.2);
+    ctx.beginPath(); ctx.moveTo(-16, hb - 3); ctx.lineTo(-16, hy - 2); ctx.arc(0, hy - 2, 16, Math.PI, 0); ctx.lineTo(16, hb - 3);
+    [[16, 9, 1.5], [9, 3.4, -2.5], [3.4, -3.4, -5.5], [-3.4, -9, -2.5], [-9, -16, 1.5]].forEach(([x0, x1, dy]) => ctx.quadraticCurveTo((x0 + x1) / 2, hb + dy, x1, hb - 3 + (x1 === -16 ? 0 : (Math.abs(x1) < 4 ? -2.5 : -1))));
+    ctx.closePath(); ctx.fillStyle = hair.c; ctx.fill();
+  } else if (!noBob) {
     // 後髮（妹妹頭輪廓）
     ctx.beginPath();
     ctx.moveTo(-16, hb - 2);
@@ -10477,6 +10493,25 @@ function fufuGoFind(kind) {
   fufuGoUse(it, false, kind === 'study' ? FURNITURE_ACT[it.id] : undefined);
 }
 
+/* 🧃 找點心真的會吃東西（家長：點找點心時，是不是可以吃東西？）：
+   冰箱裡有一份免費的小點心，拿出來吃掉會變飽；吃完要等 10 分鐘冰箱才會再補（G.fridgeAt）。
+   冰箱空了就打開「吃東西」選單，吃自己買的食物。只在自己家（叔叔家的冰箱本來就有自己的點心）。 */
+const FRIDGE_SNACKS = [['🍎', '蘋果'], ['🍮', '布丁'], ['🥛', '鮮奶'], ['🍪', '餅乾'], ['🍓', '草莓'], ['🧃', '果汁']];
+const FRIDGE_WAIT_MS = 10 * 60e3;
+function fridgeSnack() {
+  if (G.away || (kidBaby && kidBaby())) return;   // 自己家才有；叔叔家的冰箱本來就有自己的點心（relativePerk）
+  const now = Date.now();
+  if (G.fridgeAt && now - G.fridgeAt < FRIDGE_WAIT_MS) {
+    const m = Math.ceil((FRIDGE_WAIT_MS - (now - G.fridgeAt)) / 60e3);
+    fufuSay(`冰箱的點心吃完了，${m} 分鐘後會再補～`, 2600);
+    setTimeout(() => { try { if ($('#foodMenu').hidden) showFoodMenu('kid'); } catch (e) {} }, 900);   // 改吃自己買的食物
+    return;
+  }
+  const [ic, nm] = FRIDGE_SNACKS[Math.floor(Math.random() * FRIDGE_SNACKS.length)];
+  G.fridgeAt = now; G.kid.hunger = clampStat((G.kid.hunger || 0) + 15);
+  setTimeout(() => { try { Sound.play('eat'); fufuBurst(ic); fufuSay(`找到${nm}了！${ic} 好好吃～`, 2800); refreshTop(); } catch (e) {} }, 1200);
+  saveGame();
+}
 function fufuBurst(emoji) {
   const { p, h } = fufuAnchor();
   fufu.fx.push({ emoji, x: p.x + (Math.random() - .5) * 24, y: p.y - h * .8, vy: -22 - Math.random() * 10, age: 0, life: 1.4 });
