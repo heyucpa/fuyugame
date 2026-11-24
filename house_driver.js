@@ -4233,7 +4233,9 @@
       if (bkTab.classList.contains('dot')) fails.push('家長說備份存本機就好：不該再掛紅點');
       openTab('backup');
       if (!/還沒有傳到別的地方/.test($('#tabBody .backup-state').textContent) || $('#tabBody .backup-state').classList.contains('due')) fails.push('沒傳過別的地方，備份頁的狀態不對（不該是紅色提醒）');
-      var firstBtn = $('#tabBody button'); if (!/手動存一份/.test([].map.call(document.querySelectorAll('#tabBody button.big'), function(b){ return b.textContent; })[0] || '')) fails.push('備份頁第一顆應該是本機的「手動存一份」，不是傳到 LINE');
+      var bigs = [].map.call(document.querySelectorAll('#tabBody button.big'), function(b){ return b.textContent; });
+      if (!/強制更新/.test(bigs[0] || '')) fails.push('家長 11/24：備份頁最上面應該是「強制更新」');
+      if (!/手動存一份/.test(bigs.filter(function(t){ return !/強制更新/.test(t); })[0] || '')) fails.push('備份頁強制更新之後的第一顆應該是本機的「手動存一份」，不是傳到 LINE');
       lsSet(firstSeenKey(), String(Date.now() - 2 * 864e5)); refreshBackupDot();
       if (bkTab.classList.contains('dot')) fails.push('才 2 天就掛紅點');
       lsSet(firstSeenKey(), String(Date.now() - 8 * 864e5)); refreshBackupDot();

@@ -6173,6 +6173,11 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-24T15:00', title: '👨‍🏫 爸爸來學校兼課了', lines: [
+    ['👨‍🏫', '爸爸是會計師，也在學校兼課：每個禮拜五、六、日，教室的老師會換成爸爸（穿西裝外套）'],
+    ['📝', '上課、小考、注音、國字、英文、畫畫大賽一樣都可以玩；其他天還是貓頭鷹老師'],
+    ['🔄', '「強制更新」移到備份分頁的最上面，一點進去就看到']
+  ] },
   { id: '2026-11-24T14:00', title: '👩 銀行的行員是媽媽！', lines: [
     ['👩', '媽媽平常就在銀行上班！銀行櫃台的行員換成媽媽了，穿著上班的深藍色套裝'],
     ['🐷', '一樣可以存錢、領錢、看利息；媽媽會教你「需要」和「想要」的差別']
@@ -14214,7 +14219,9 @@ const PARENT_CLOTHES = {
   dad_black_tee:    { id: 'dad_black_tee', slot: 'top', style: 'tee', color: '#26262b' },
   dad_cargo_shorts: { id: 'dad_cargo_shorts', slot: 'bottom', style: 'shorts', color: '#6e6a58' },
   ol_blazer: { id: 'ol_blazer', slot: 'top', style: 'jacket', color: '#2f3b5c', trim: '#ffffff' },   // 👩 銀行上班的媽媽：深藍色套裝外套
-  ol_skirt: { id: 'ol_skirt', slot: 'bottom', style: 'skirt', color: '#2f3b5c' }
+  ol_skirt: { id: 'ol_skirt', slot: 'bottom', style: 'skirt', color: '#2f3b5c' },
+  dad_blazer: { id: 'dad_blazer', slot: 'top', style: 'jacket', color: '#3d4a63', trim: '#ffffff' },   // 👨 去學校兼課的爸爸：西裝外套、長褲
+  dad_slacks: { id: 'dad_slacks', slot: 'bottom', style: 'pants', color: '#33343c' }
 };
 const PARENTS = [
   { id: 'mom', short: '媽媽',
@@ -14338,6 +14345,12 @@ function supplyGone() {
 // 畫：沿用小可愛那一套，換衣服、換髮型、放大一點，所以不用新畫一個大人
 function drawSupplyActor(ctx) { drawParentActor(ctx, sup.a, sup.who, sup.alpha, sup.state === 'in'); }
 /* 🏦 銀行櫃台的媽媽（家長：媽媽平常在銀行上班，在銀行要穿 OL 套裝）：跟天空島的媽媽同一個人，換上班的衣服 */
+/* 👨‍🏫 爸爸是會計師，也在學校兼課（家長 11/24）：每個禮拜五、六、日，教室的老師換成爸爸（穿西裝外套）；
+   其他天還是貓頭鷹老師。用的是同一套老師的功能（上課、小考、注音…），id 一樣是 teacher，記得的貼紙也一樣。 */
+function dadTeachDay(d) { const w = (d || new Date()).getDay(); return w === 5 || w === 6 || w === 0; }   // 家長：小孩都在週五、週日玩（週六偶爾）→ 週五、六、日爸爸來上課
+const DAD_TEACHER = { id: 'teacher', name: '爸爸老師', short: '爸爸', parentOf: 1, dadTeach: true, body: '#e8c4a8', edge: '#c49a78', belly: '#fff4ec', inner: '#c49a78', ears: 'round' };
+const DAD_TEACH_LINES = ['{名字}，在學校要叫我「老師」喔！', '爸爸平常是會計師，每個禮拜五、六、日來學校教課', '會計師每天都在跟數字做朋友', '數學學好，以後算帳就不怕了', '上課要專心，爸爸會點名喔', '一加一等於二，那十加十呢？', '寫字要一筆一筆慢慢寫', '下課了！去操場玩一下再回來', '收據上的數字要對清楚，考卷也是', '有不會的地方，回家爸爸再教你', '上課的時候爸爸是老師，回家就是爸爸', '今天表現很好，回家跟媽媽說！'];
+function dadTeacherWho() { return Object.assign({}, PARENTS[1], { outfit: Object.assign({}, PARENTS[1].outfit, { top: 'dad_blazer', bottom: 'dad_slacks', shoes: 'black_shoes' }) }); }
 function bankMom() { return Object.assign({}, PARENTS[0], { outfit: Object.assign({}, PARENTS[0].outfit, { top: 'ol_blazer', bottom: 'ol_skirt', shoes: 'black_shoes' }) }); }
 function drawParentActor(ctx, a, who, alpha, carrying) {
   if (!a || !who) return;
@@ -15319,6 +15332,7 @@ function hostTimeLine(hid) {
   return L ? personaFill(L[Math.floor(Math.random() * L.length)]) : null;
 }
 function hostChatLine() {
+  if (host.n && host.n.dadTeach) { if (host.introduced !== 'dadTeach') { host.introduced = 'dadTeach'; return personaFill('{名字}！今天是爸爸來學校兼課的日子，在學校要叫我老師喔！'); } return personaFill(DAD_TEACH_LINES[Math.floor(Math.random() * DAD_TEACH_LINES.length)]); }
   const hid = host.n && host.n.id, intro = hid && HOST_INTRO[hid];
   if (intro && (host.introduced !== hid || Math.random() < .2)) { host.introduced = hid; return personaFill(intro); }
   if (hid && Math.random() < .15) { const tl = hostTimeLine(hid); if (tl) return tl; }   // 🕐 跟著遊戲裡的時間說話
@@ -15331,7 +15345,8 @@ function hostSay(text, ms) {
 function hostTick(dt, now) {
   const pl0 = G.away && PLACES[G.away.place], rm0 = pl0 && pl0.rooms[G.away.idx];
   if (pl0 && !pl0._doors) try { ensurePlaceDoors(G.away.place); } catch (e) { pl0._doors = true; }
-  const want = pl0 && HOSTS[(rm0 && rm0.host) || pl0.host];   // 房間可以有自己的主人（學校操場是花豹體育老師）
+  let want = pl0 && HOSTS[(rm0 && rm0.host) || pl0.host];   // 房間可以有自己的主人（學校操場是花豹體育老師）
+  if (want === HOSTS.teacher && dadTeachDay()) want = DAD_TEACHER;   // 👨‍🏫 禮拜五、六、日爸爸來兼課
   if (!want) { host.n = null; host.a = null; host.pets = null; host.crowd = null; return; }
   const room = curRoom();
   if (host.n !== want) { // 剛到：親戚在門口附近迎接
@@ -15868,7 +15883,7 @@ function openTrickCard() {
 function hostDrawEntries() {
   if (!host.n) return [];
   const list = [host.n.parentOf != null
-    ? { x: host.a.x - .2, y: host.a.y - .2, w: .4, d: .4, z: 0, h: 80, drawFn: ctx => drawParentActor(ctx, host.a, host.n.id === 'banker' ? bankMom() : PARENTS[host.n.parentOf], 1, false) }   // 👨👩 爸爸媽媽
+    ? { x: host.a.x - .2, y: host.a.y - .2, w: .4, d: .4, z: 0, h: 80, drawFn: ctx => drawParentActor(ctx, host.a, host.n.id === 'banker' ? bankMom() : host.n.dadTeach ? dadTeacherWho() : PARENTS[host.n.parentOf], 1, false) }   // 👨👩 爸爸媽媽
     : host.n.girl
     ? { x: host.a.x - .2, y: host.a.y - .2, w: .4, d: .4, z: 0, h: 64, drawFn: ctx => drawFriendGirl(ctx, host.a, host.n) }
     : { x: host.a.x - .2, y: host.a.y - .2, w: .4, d: .4, z: 0, h: 30 * VISITOR_K, drawFn: ctx => drawNeighborActor(ctx, host.a, host.n, 1, false, false) }];
@@ -20876,8 +20891,8 @@ function tabBackup(body) {
       body.appendChild(fb);
     }
   }
-  snapSection(body);   // 本機的存檔紀錄放最上面（第一顆按鈕要是「手動存一份」）
-  versionUpdateSection(body);   // 🔄 強制更新接在存檔紀錄下面（不用家長密碼）
+  versionUpdateSection(body);   // 🔄 家長 11/24：強制更新移到備份區最上面，一點進來就看到（不用家長密碼）
+  snapSection(body);   // 本機的存檔紀錄接在下面（強制更新之後的第一顆按鈕是「手動存一份」，排在傳 LINE 前面）
   body.appendChild(h3('📦 備份到別的地方（想要的話）'));
   const share = el('button', 'big alt', '📤 傳到 LINE（備份到手機）');
   share.onclick = () => { Sound.play('click'); shareBackup().then(ok => { if (ok) renderTab(); }); };
