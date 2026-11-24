@@ -6183,7 +6183,8 @@ const NEWS = [
     ['🐷', '一樣可以存錢、領錢、看利息；媽媽會教你「需要」和「想要」的差別']
   ] },
   { id: '2026-11-24T13:30', title: '👧 背影看得到脖子了', lines: [
-    ['👧', '小可愛背對畫面（開冰箱、看書架…）的時候，頭髮下面露出一小截脖子，髮尾一撮一撮的，不會像頭不見了']
+    ['👧', '小可愛背對畫面（開冰箱、看書架…）的時候，頭髮下面露出一小截脖子，髮尾一撮一撮的，不會像頭不見了'],
+    ['🙆', '背影再調整：頭髮下緣是圓圓的頭型，脖子畫得更明顯，人物小小的時候也看得出來']
   ] },
   { id: '2026-11-24T13:00', title: '🧃 找點心真的會吃了', lines: [
     ['🧃', '冰箱「找點心」會拿出一樣小點心（蘋果、布丁、鮮奶、餅乾…）吃掉，肚子會變飽'],
@@ -9450,10 +9451,16 @@ function drawGirlHead(ctx, o) {
   if (!noBob && o.back && !short && !pixie && !quiff && !spike && !buns && st !== 'long') {   // 長髮的背影本來就蓋住脖子
     /* 背影（家長：頭怎麼消失在脖子的位置）：以前後髮底邊平平地貼在衣領上，看起來像頭被切掉。
        現在先畫一小截脖子，後髮的底邊是幾撮圓圓的髮尾（中間短一點），脖子從中間露出來。 */
-    ctx.fillStyle = GIRL.skin; ctx.fillRect(-3.6, hb - 7, 7.2, 8);
-    ctx.fillStyle = 'rgba(120,70,50,.18)'; ctx.fillRect(-3.6, hb - 7, 7.2, 2.2);
-    ctx.beginPath(); ctx.moveTo(-16, hb - 3); ctx.lineTo(-16, hy - 2); ctx.arc(0, hy - 2, 16, Math.PI, 0); ctx.lineTo(16, hb - 3);
-    [[16, 9, 1.5], [9, 3.4, -2.5], [3.4, -3.4, -5.5], [-3.4, -9, -2.5], [-9, -16, 1.5]].forEach(([x0, x1, dy]) => ctx.quadraticCurveTo((x0 + x1) / 2, hb + dy, x1, hb - 3 + (x1 === -16 ? 0 : (Math.abs(x1) < 4 ? -2.5 : -1))));
+    /* 遊戲裡人物很小：脖子要夠寬夠長才看得到；頭髮下緣往內收成圓圓的頭型（家長：後腦的問題還在） */
+    ctx.fillStyle = GIRL.skin; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-4.6, hb - 10, 9.2, 12, 2) : ctx.rect(-4.6, hb - 10, 9.2, 12); ctx.fill();
+    ctx.fillStyle = 'rgba(120,70,50,.22)'; ctx.fillRect(-4.6, hb - 10, 9.2, 3);
+    ctx.beginPath(); ctx.moveTo(-15.5, hb - 6); ctx.lineTo(-16, hy - 2); ctx.arc(0, hy - 2, 16, Math.PI, 0); ctx.lineTo(15.5, hb - 6);
+    ctx.quadraticCurveTo(15, hb - 1, 11, hb - 1.5);   // 右邊的髮尾往內收
+    ctx.quadraticCurveTo(8.5, hb + .5, 6, hb - 4);
+    ctx.quadraticCurveTo(3, hb - 10.5, 0, hb - 9);    // 中間短，露出脖子
+    ctx.quadraticCurveTo(-3, hb - 10.5, -6, hb - 4);
+    ctx.quadraticCurveTo(-8.5, hb + .5, -11, hb - 1.5);
+    ctx.quadraticCurveTo(-15, hb - 1, -15.5, hb - 6);
     ctx.closePath(); ctx.fillStyle = hair.c; ctx.fill();
   } else if (!noBob) {
     // 後髮（妹妹頭輪廓）
