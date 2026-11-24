@@ -6166,6 +6166,10 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-24T10:00', title: '🏠 自己家也有門了', lines: [
+    ['🚪', '家裡的房間牆上也有門，牌子寫著通到哪一間，點了走過去就進到隔壁'],
+    ['🖼️', '門會自己找牆上空的地方；佈置的時候門拿不起來，也不會佔掉家具']
+  ] },
   { id: '2026-11-24T09:00', title: '🚪 門點得進去了', lines: [
     ['🚪', '房間牆上的門點了會走過去、開門進到隔壁（之前點了沒反應）'],
     ['🖼️', '外面地方牆上的海報、黑板、視力表、電影海報也都點得到了']
@@ -10131,7 +10135,7 @@ function fufuArrive(now) {
   if (task.pet) { fufu.task = null; fufuStartPlayPet(now); return; }
   if (task.wall) {   // 🖼️ 牆上的東西：面對那面牆做
     fufu.task = null;
-    const wi = (curRoom().wallItems || []).find(x => x.uid === task.wall);
+    const wi = roomWalls(curRoom()).find(x => x.uid === task.wall);
     if (wi) { const def = FURN_BY_ID[wi.id]; fufuStartAct(task.act, now, { uid: wi.uid, id: wi.id, rot: 0, x: wi.side === 'R' ? wi.pos : -1, y: wi.side === 'R' ? -1 : wi.pos, wall: true }, false); if (fufu.act) fufu.back = true; }
     return;
   }
@@ -10462,7 +10466,7 @@ function fufuBurst(emoji) {
 
 function fufuUpdateAct(now) {
   const a = fufu.act;
-  if (a.uid && !curRoom().items.some(x => x.uid === a.uid) && !(curRoom().wallItems || []).some(x => x.uid === a.uid)) { fufu.ride = null; fufu.act = null; return; } // 家具被收走了（牆上的東西也算）
+  if (a.uid && !curRoom().items.some(x => x.uid === a.uid) && !roomWalls(curRoom()).some(x => x.uid === a.uid)) { fufu.ride = null; fufu.act = null; return; } // 家具被收走了（牆上的東西也算；家裡的門不在存檔裡，也算）
   if (now > a.until) { endRide(); fufu.act = null; fufu.back = false; fufu.idleUntil = now + 2500; return; }
   if (now < a.nextFx) return;
   a.nextFx = now + a.fxEvery;
@@ -16093,16 +16097,18 @@ function travelArrive(place, roomIdx) {
 let fufuEnterAt = null;
 function placeDoorDef(pid, to) {
   const id = `pdoor_${pid}_${to}`; if (FURN_BY_ID[id]) return id;
-  const rm = PLACES[pid].rooms[to], label = `${roomIcon(rm, to)} ${rm.name}`;
-  FURN_BY_ID[id] = { id, name: `往${rm.name}的門`, theme: 'modern', w: 2, h: 66, z: 0, layer: 'wall', d: 1, parts: [], place: true,
-    draw(ctx, W, H) { const fx = W * .2, fw = W * .6, ft = H * .3;
+  const rm = pid === '__home' ? { name: '' } : PLACES[pid].rooms[to], label = pid === '__home' ? '' : `${roomIcon(rm, to)} ${rm.name}`;
+  FURN_BY_ID[id] = { id, name: `往${rm.name}的門`, theme: 'modern', w: 2, h: 66, z: 0, layer: 'wall', d: 1, parts: [], place: true, draw: doorDrawer(label) };
+  WALL_ACT[id] = 'pdoor_go';
+  return id;
+}
+function doorDrawer(label) {
+  return function (ctx, W, H) { const fx = W * .2, fw = W * .6, ft = H * .3;
       ctx.fillStyle = '#8a5a33'; ctx.fillRect(fx - W * .05, ft - H * .04, fw + W * .1, H - ft + H * .04);
       ctx.fillStyle = '#c98d5a'; ctx.fillRect(fx, ft, fw, H - ft); ctx.fillStyle = '#b07a48'; ctx.fillRect(fx + fw * .1, ft + H * .08, fw * .35, H * .25); ctx.fillRect(fx + fw * .55, ft + H * .08, fw * .35, H * .25);
       ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(fx + fw * .82, ft + (H - ft) * .55, Math.max(1.5, W * .03), 0, 7); ctx.fill();
       ctx.fillStyle = '#fffaf0'; ctx.strokeStyle = '#2f8a3c'; ctx.lineWidth = Math.max(1, H * .02); ctx.fillRect(W * .02, H * .02, W * .96, H * .22); ctx.strokeRect(W * .02, H * .02, W * .96, H * .22);
-      ctx.fillStyle = '#2f5a3a'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; let fs = Math.round(H * .13); ctx.font = `bold ${fs}px sans-serif`; while (fs > 6 && ctx.measureText(label).width > W * .9) { fs--; ctx.font = `bold ${fs}px sans-serif`; } ctx.fillText(label, W / 2, H * .135); } };
-  WALL_ACT[id] = 'pdoor_go';
-  return id;
+      ctx.fillStyle = '#2f5a3a'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; let fs = Math.round(H * .13); ctx.font = `bold ${fs}px sans-serif`; while (fs > 6 && ctx.measureText(label).width > W * .9) { fs--; ctx.font = `bold ${fs}px sans-serif`; } ctx.fillText(label, W / 2, H * .135); };
 }
 function placeDoorSlot(room, side, blk) {
   const len = side === 'R' ? room.w : room.d, used = (room.wallItems || []).filter(w => w.side === side).map(w => [w.pos, w.pos + ((FURN_BY_ID[w.id] || {}).w || 1)]);
@@ -16118,8 +16124,30 @@ function ensurePlaceDoors(pid) {
       let sd = side, p = placeDoorSlot(rm, sd, blk); if (p < 0) { sd = side === 'L' ? 'R' : 'L'; p = placeDoorSlot(rm, sd, blk); } if (p < 0) return;
       rm.wallItems = (rm.wallItems || []).concat([{ uid: placeUid--, id: placeDoorDef(pid, to), side: sd, pos: p, to, door: true }]); }); });
 }
+/* 🏠 自己家也有門（家長：自己家裡是不是也要有門？）。自己家的房間是自己蓋、自己佈置的，所以門「不存進存檔」：
+   每次畫畫面時照現在的房間自動算出來（牆上空的、門前沒被家具擋住的位置），掛了畫門就換個地方；佈置模式拿不起來、不算家具。 */
+let homeDoorCache = { key: '', doors: [] };
+function homeDoors(room) {
+  if (G.away || !G.rooms || G.rooms.length < 2 || room !== G.rooms[G.cur]) return [];
+  const i = G.cur, key = [i, G.rooms.length, G.rooms.map(r => r.name).join('|'), room.w, room.d, (room.wallItems || []).map(w => w.id + w.side + w.pos).join(','), room.items.map(it => it.id + ':' + it.x + ':' + it.y + ':' + (it.rot || 0)).join(',')].join(';');
+  if (homeDoorCache.key === key) return homeDoorCache.doors;
+  const doors = [], blk = blockedGrid(room), tmp = { w: room.w, d: room.d, wallItems: (room.wallItems || []).slice() };
+  [[i - 1, 'L'], [i + 1, 'R']].forEach(([to, side]) => { if (to < 0 || to >= G.rooms.length) return;
+    let sd = side, p = placeDoorSlot(tmp, sd, blk); if (p < 0) { sd = side === 'L' ? 'R' : 'L'; p = placeDoorSlot(tmp, sd, blk); } if (p < 0) return;
+    const rm = G.rooms[to], label = `${roomIcon(rm, to)} ${rm.name}`, id = 'hdoor_' + to + '_' + Math.abs(roomSigHash(label));
+    if (!FURN_BY_ID[id]) { FURN_BY_ID[id] = Object.assign({}, FURN_BY_ID[placeDoorDef('__home', 0) ] || {}, { id, name: `往${rm.name}的門` }); FURN_BY_ID[id].draw = doorDrawer(label); WALL_ACT[id] = 'pdoor_go'; }
+    const d = { uid: -900000 - to, id, side: sd, pos: p, to, door: true, home: true }; doors.push(d); tmp.wallItems.push(d); });
+  homeDoorCache = { key, doors }; return doors;
+}
+function roomWalls(room) { const w = room.wallItems || []; const hd = homeDoors(room); return hd.length ? w.concat(hd) : w; }
 function placeDoorGo() {
-  const room = curRoom(), uid = fufu.act && fufu.act.uid, wi = (room.wallItems || []).find(w => w.uid === uid && w.door); if (!wi || !G.away) return;
+  const room = curRoom(), uid = fufu.act && fufu.act.uid, wi = roomWalls(room).find(w => w.uid === uid && w.door); if (!wi) return;
+  if (wi.home) {   // 🏠 自己家：換到那一間，站在回來的門前面
+    if (G.away) return; const from = G.cur; Sound.play('click'); roomDoors(G.rooms[wi.to].name); G.cur = wi.to; homeDoorCache.key = '';
+    const back = homeDoors(G.rooms[wi.to]).find(w => w.to === from);
+    fufuEnterAt = back ? (back.side === 'R' ? [Math.floor(back.pos + 1) + .5, .5] : [.5, Math.floor(back.pos + 1) + .5]) : null; commit(); return;
+  }
+  if (!G.away) return;
   const from = G.away.idx, back = (PLACES[G.away.place].rooms[wi.to].wallItems || []).find(w => w.door && w.to === from);
   fufuEnterAt = back ? (back.side === 'R' ? [Math.floor(back.pos + 1) + .5, .5] : [.5, Math.floor(back.pos + 1) + .5]) : null;
   Sound.play('click'); goPlaceRoom(wi.to);
@@ -17697,7 +17725,7 @@ function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const sea = seasonOfMonth();
   const inSky = !!(G.away && G.away.place === 'sky');
-  const room = curRoom(), nowT = performance.now();
+  const room0 = curRoom(), hd0 = G.away ? [] : homeDoors(room0), room = hd0.length ? Object.assign({}, room0, { wallItems: (room0.wallItems || []).concat(hd0) }) : room0, nowT = performance.now();   // 🏠 家裡的門只畫在畫面上，不放進存檔
   const extras = [fufuDrawEntry()].concat(petDrawEntries(), visitorDrawEntries(), (typeof vevDrawEntries === 'function' ? vevDrawEntries() : []), (typeof ghostDrawEntries === 'function' ? ghostDrawEntries() : []), hostDrawEntries(),   /* 幽靈在後面的 script：第一幀可能還沒載入 */ supplyDrawEntries(), giftDrawEntries(), phDrawEntries(), (typeof thiefDrawEntries === 'function' ? thiefDrawEntries() : []));
   const occupants = [fufuOccupant(), petOccupant(), visitorOccupant()].concat(phOccupants(), compOccupants(), (typeof prisonerOccupants === 'function' ? prisonerOccupants() : []));
   let layered = false;
@@ -18087,7 +18115,7 @@ function wallSpot(w, def) {
 const WALL_TAP = { zhuyin_board: () => openZhuyinGame() };
 function pickWallItem(w) {
   const room = curRoom();
-  return room.wallItems.slice().reverse().find(it => {
+  return roomWalls(room).slice().reverse().find(it => {
     const def = FURN_BY_ID[it.id];
     const u = it.side === 'R' ? w.x : -w.x;
     if (u < 0) return false;
@@ -18775,7 +18803,7 @@ canvas.addEventListener('pointerup', e => {
   if (it && findGame) { findTap(it); return; }   // 🔎 幫媽媽找東西：點家具找
   if (it) { if (decorMode && (!G.away || inPetHouse())) showDecorMenu(it, e); else if (canUse(it) || (it.top && (!G.away || inPetHouse()))) showItemMenu(it, e); else if (!G.away || inPetHouse()) { decorHintOnce(); const c = nearestFree(curRoom(), it.x + .5, it.y + .5); if (c) { fufu.pendingSay = null; fufuWalkTo(c[0], c[1]); } } return; }   // 🛠️ 平常不會一點就拿起來   // 桌上有東西：點了先問要做什麼（以前一點就把整張桌子拿起來，桌上的東西收不掉）
   /* 出門的地方：牆上「能用的東西」也要點得到（家長：點門沒辦法進去——以前出門就完全不看牆上的東西，門、海報、黑板都點不到） */
-  const wi0 = pickWallItem(w), wi = G.away && !inPetHouse() ? (wi0 && wallActOf(wi0.id) ? wi0 : null) : wi0;
+  const wi1 = pickWallItem(w), wi0 = wi1 && wi1.home && decorMode ? null : wi1, wi = G.away && !inPetHouse() ? (wi0 && wallActOf(wi0.id) ? wi0 : null) : wi0;   // 🏠 家裡的門：佈置模式拿不起來
   if (wi && decorMode) { startHoldWall(wi); return; }
   if (wi && wallActOf(wi.id)) { Sound.play('click'); fufuGoWall(wi); return; }   // 🖼️ 牆上的東西可以用（看畫、看時間、照鏡子…）
   if (wi) decorHintOnce();   // 平常點牆上的東西不會拿下來
