@@ -4380,6 +4380,13 @@ const PRIZE_CLOTHES = [
   { id: 'cop_cap', slot: 'head', name: '警察帽', price: 800, style: 'policeCap', color: '#2f4f8f', band: '#1d2f55', prize: true },
   { id: 'cop_jacket', slot: 'top', name: '警察制服', price: 1200, style: 'jacket', color: '#3a5f9f', trim: '#ffd23f', prize: true },
   { id: 'cop_pants', slot: 'bottom', name: '警察褲', price: 600, style: 'pants', color: '#24345a', prize: true },
+  // 🎭 故事扮演第一次成功送的
+  { id: 'hero_crown', slot: 'head', name: '勇者金冠', price: 1500, style: 'crown', color: '#c9ccd6', prize: true },
+  { id: 'hero_armor', slot: 'top', name: '勇者盔甲', price: 2000, style: 'jacket', color: '#9aa7b4', trim: '#ffd23f', prize: true },
+  { id: 'redhood_hood', slot: 'head', name: '小紅帽', price: 1000, style: 'beanie', color: '#d63b3b', pom: '#d63b3b', prize: true },
+  { id: 'redhood_dress', slot: 'top', name: '小紅帽洋裝', price: 1800, style: 'dress', color: '#e8505b', trim: '#ffffff', dress: true, prize: true },
+  { id: 'snow_dress', slot: 'top', name: '白雪公主洋裝', price: 2500, style: 'dress', color: '#3f6fd1', trim: '#ffd23f', dress: true, prize: true },
+  { id: 'snow_bow', slot: 'clip', name: '公主紅蝴蝶結', price: 600, style: 'ribbon', color: '#e8505b', prize: true },
   // 🎖️ 警察／醫生升級送的
   { id: 'cop_badge', slot: 'neck', name: '小警察徽章', price: 500, style: 'medalNeck', color: '#c0c6cf', prize: true },
   { id: 'cop_cap_gold', slot: 'head', name: '警長帽', price: 1000, style: 'policeCap', color: '#24345a', band: '#c99a1a', prize: true },
@@ -6173,6 +6180,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-24T17:00', title: '🎭 故事扮演：當故事的主角！', lines: [
+    ['⚔️', '勇者打魔王、小紅帽對大野狼、公主對壞巫婆：回合制對打，選招式卡（攻擊、防禦、找幫手、必殺技）'],
+    ['⚠️', '壞蛋「蓄力」的時候按防禦，就是完美防禦，不痛還多拿力氣！'],
+    ['🎁', '第一次打贏送角色的衣服：勇者金冠和盔甲、小紅帽和洋裝、白雪公主洋裝和蝴蝶結'],
+    ['🎬', '電影院的斑馬放映師、圖書館的童話書架、看完童話電影都可以開始扮演']
+  ] },
   { id: '2026-11-24T16:00', title: '🎬 新電影、新書會定期上映了！', lines: [
     ['🧺', '今天上映：電影「小紅帽」（你是主角！）；新書「龜兔賽跑」上架'],
     ['📅', '之後每個禮拜五、禮拜日都有新電影或新書：三隻小豬、白雪公主、神燈、勇者打魔王、醜小鴨、傑克與魔豆…'],
@@ -7591,7 +7604,7 @@ function normalizeSave(g) {
         q.legacy = leg; q.rev = 2;
       } else q.legacy = legOk(q.legacy); } }
   if (out.introBig != null && out.introBig !== 1) delete out.introBig;   // 🎬 看過主島變大的介紹
-  ['mediaNote', 'fairyRead'].forEach(k => { if (out[k] == null) return; if (!isObj(out[k])) { delete out[k]; return; } Object.keys(out[k]).forEach(id => { const v = out[k][id]; if (id.length > 40 || !(Number.isInteger(v) && v >= 0 && v < 1e4)) delete out[k][id]; }); });   // 🎬📚 新電影、新書通知過了沒／童話書看過幾次
+  ['mediaNote', 'fairyRead', 'storyPlay'].forEach(k => { if (out[k] == null) return; if (!isObj(out[k])) { delete out[k]; return; } Object.keys(out[k]).forEach(id => { const v = out[k][id]; if (id.length > 40 || !(Number.isInteger(v) && v >= 0 && v < 1e4)) delete out[k][id]; }); });   // 🎬📚 新電影、新書通知過了沒／童話書看過幾次
   if (out.fridgeAt != null && !(Number.isFinite(out.fridgeAt) && out.fridgeAt >= 0 && out.fridgeAt < 1e14)) delete out.fridgeAt;   // 🧃 冰箱免費點心上次吃的時間
   if (out.dept != null) { if (!isObj(out.dept)) delete out.dept; else { const d = out.dept; ['carry', 'stamps', 'day', 'got', 'tix'].forEach(k => { if (d[k] != null && !(Number.isInteger(d[k]) && d[k] >= 0 && d[k] < 1e7)) delete d[k]; }); if (d.stamps > 10) d.stamps = 10; if (d.got > 3) d.got = 3; if (d.tix > 99) d.tix = 99; if (d.d != null && !(typeof d.d === 'string' && d.d.length <= 12)) delete d.d; if (d.gift1 != null && d.gift1 !== 1) delete d.gift1; Object.keys(d).forEach(k => { if (!['carry', 'stamps', 'd', 'day', 'got', 'tix', 'gift1'].includes(k)) delete d[k]; }); } }   // 🛍️ 百貨公司集點卡、抽獎券
   if (out.cruise != null) { if (!isObj(out.cruise)) delete out.cruise; else { const c = out.cruise; c.st = isObj(c.st) ? Object.fromEntries(Object.entries(c.st).filter(([k, v]) => ['fruit', 'ice', 'pirate'].includes(k) && v === 1)) : {}; Object.keys(c).forEach(k => { if (k !== 'st') delete c[k]; }); } }   // 🛳️ 郵輪護照
@@ -15751,7 +15764,7 @@ function hostMenuEntries() {
     list.push(['🏎️ 一起玩賽車', openKart]);
     list.push(['🖥️ 一起打磚塊', openBrickGame]);
   }
-  if (host.n.id === 'cinema') list.push(['🎬 看電影', () => openMoviePicker()]);
+  if (host.n.id === 'cinema') { list.push(['🎬 看電影', () => openMoviePicker()]); list.push(['🎭 故事扮演（當故事主角）', () => openStoryPlayMenu()]); }
   if (host.n.id === 'mom' || host.n.id === 'dad') parMenu(list, host.n.id);   // 👨👩 天空島的爸爸媽媽
   if (HOST_MIS[host.n.id]) list.push([hmisLabel(host.n.id), () => hmisStart(host.n.id)]);   // 📜 老師、館員、教練的任務
   if (host.n.id === 'tkd') {
@@ -28502,6 +28515,106 @@ function playMovie(w, m, popcorn) {
   };
   raf = requestAnimationFrame(frame);
 }
+/* 🎭 故事扮演（家長 11/24：可以假扮書裡或電影的角色，例如假扮勇者打敗魔王，來個對打畫面；戰鬥像回合制招式卡那樣）
+   回合制：上面有血條、力氣條、第幾回合；下面四張招式卡（攻擊、防禦、找幫手、必殺技）。
+   敵人每隔幾回合會「蓄力」，先說出來——下一回合按防禦就是完美防禦（不痛還多拿力氣）。輸了只會說再試一次，不扣任何東西。
+   第一次打贏送那個角色的衣服（放進換裝）。G.storyPlay = { 故事 id: 打贏幾次 } */
+const SB_W = 360, SB_H = 230;
+const STORY_PLAYS = {
+  hero: { movie: 'hero', title: '勇者打魔王', icon: '⚔️', kind: 'battle', me: { head: 'hero_crown', top: 'hero_armor' }, prop: 'sword', foe: () => FT_KING, foeName: '魔王', foeHp: 120,
+    bg(g, t) { MV.sky(g, '#2a2240', '#5a4a7a'); MV.stars(g, t, 25); MV.ground(g, 190, '#3a3050'); g.fillStyle = '#4a3a6a'; g.beginPath(); g.moveTo(230, 190); g.lineTo(270, 110); g.lineTo(310, 190); g.fill(); },
+    cards: [{ k: 'atk', icon: '⚔️', name: '揮劍', min: 11, max: 16 }, { k: 'def', icon: '🛡️', name: '盾牌防禦' }, { k: 'help', icon: '🐾', name: '{寵物}助攻' }, { k: 'ult', icon: '🌟', name: '勇者光之劍' }],
+    foeAtk: '魔王揮出黑色的爪子！', foeCharge: '魔王在蓄力……黑色的火球越來越大！快防禦！', foeBig: '魔王丟出大火球！', win: '魔王：「我、我認輸了……其實我只是想要朋友……」', reward: ['hero_crown', 'hero_armor'] },
+  redhood: { movie: 'redhood', title: '小紅帽對大野狼', icon: '🧺', kind: 'battle', me: { head: 'redhood_hood', top: 'redhood_dress' }, prop: 'basket', foe: () => FT_WOLF, foeName: '大野狼', foeHp: 100,
+    bg(g, t) { MV.sky(g, '#bfe3f5', '#eef8fb'); MV.ground(g, 190, '#86b972'); MV.tree(g, 30, 195, 1.2); MV.tree(g, 335, 195, 1.1); [[150, '#ff8fb3'], [180, '#ffd23f'], [210, '#b18cff']].forEach(([x, c]) => MV.flower(g, x, 205, c)); },
+    cards: [{ k: 'atk', icon: '🍎', name: '丟蘋果', min: 10, max: 15 }, { k: 'def', icon: '🌳', name: '躲到樹後' }, { k: 'help', icon: '📣', name: '大聲喊阿婆' }, { k: 'ult', icon: '🐯', name: '老虎園長來了' }],
+    foeAtk: '大野狼撲過來！', foeCharge: '大野狼深呼吸……要大吼了！快躲起來！', foeBig: '大野狼：「嗷嗚——！」', win: '大野狼：「好啦好啦，我不搗蛋了，我們做朋友吧……」', reward: ['redhood_hood', 'redhood_dress'] },
+  snow: { movie: 'snow', title: '公主對壞巫婆', icon: '🍎', kind: 'battle', me: { top: 'snow_dress', clip: 'snow_bow' }, prop: 'none', foe: () => FT_WITCH, foeName: '壞巫婆', foeHp: 110,
+    bg(g, t) { MV.sky(g, '#cfeaf7', '#eef8fb'); MV.ground(g, 190, '#86b972'); MV.castle(g, 180, 190, .7); },
+    cards: [{ k: 'atk', icon: '🎵', name: '大聲唱歌', min: 10, max: 15 }, { k: 'def', icon: '🙅', name: '我不吃！' }, { k: 'help', icon: '🐰', name: '小動物幫忙' }, { k: 'ult', icon: '💖', name: '友情的力量' }],
+    foeAtk: '壞巫婆丟出瞌睡蘋果！', foeCharge: '壞巫婆在念咒語……要變出一大堆毒蘋果了！快拒絕！', foeBig: '毒蘋果雨！', win: '壞巫婆：「你們這麼要好……我也好想要朋友……」', reward: ['snow_dress', 'snow_bow'] }
+};
+const SB_LV = [{ name: '簡單', hp: .75, dmg: .7, pay: 80 }, { name: '普通', hp: 1, dmg: 1, pay: 120 }, { name: '困難', hp: 1.35, dmg: 1.3, pay: 180 }];
+function storyState() { if (!G.storyPlay || typeof G.storyPlay !== 'object') G.storyPlay = {}; return G.storyPlay; }
+function openStoryPlay(id) { const S = STORY_PLAYS[id]; if (!S) return; if (S.kind === 'battle') openStoryBattle(id); else if (S.open) S.open(); }
+function openStoryBattle(id, lvPick) {
+  const S = STORY_PLAYS[id];
+  const w = openGameWindow(`🎭 ${S.title}`, `你是故事裡的主角！選招式卡跟${S.foeName}對打：⚔️ 攻擊、🛡️ 防禦（${S.foeName}蓄力的時候防禦最有用）、找幫手補血、力氣集滿放必殺技！（電腦可以按 1～4）`);
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  if (lvPick == null) {
+    const row = el('div', 'invite-row'); SB_LV.forEach((L, i) => { const b = el('button', 'big' + (i ? ' alt' : ''), `${['🌱', '⭐', '🔥'][i]} ${L.name}`); b.className = 'big lv-btn'; b.onclick = () => openStoryBattle(id, i); row.appendChild(b); });
+    w.stage.appendChild(posterCanvas(S.movie, 110, 150)); w.stage.appendChild(row); leaveButton(w);
+    w.status.textContent = storyState()[id] ? `打贏過 ${storyState()[id]} 次！` : `第一次打贏送你「${S.reward.map(r => (CLOTHES_BY_ID[r] || {}).name).join('、')}」！`;
+    openStoryBattle.test = { pickLevel: i => openStoryBattle(id, i) }; return;
+  }
+  const L = SB_LV[lvPick], { c, g } = gameCanvas(w.stage, SB_W, SB_H);
+  const me = { hp: 100, max: 100, en: 0, block: false, helpCd: 0, lunge: 0, hurt: 0 }, foe = { hp: Math.round(S.foeHp * L.hp), max: Math.round(S.foeHp * L.hp), charging: false, lunge: 0, hurt: 0, turns: 0 };
+  let round = 1, busy = false, over = false, raf = 0, t = 0, last = performance.now(); const pops = [], fxs = [];
+  const look = MV.look(S.me), foeSp = S.foe();
+  const pop = (x, y, txt, col) => pops.push({ x, y, txt, col: col || '#ffffff', a: 0 });
+  const say = txt => { w.status.textContent = movieText(txt); };
+  const cardsRow = el('div', 'tkd-moves'); w.stage.appendChild(cardsRow);
+  const btns = S.cards.map((cd, i) => { const b = el('button', 'tkd-move'); b.dataset.key = String(i + 1); b.append(el('span', '', `${cd.icon} ${movieText(cd.name)}`)); b.style.fontSize = '16px'; b.onclick = () => act(i); cardsRow.appendChild(b); return b; });
+  const refresh = () => btns.forEach((b, i) => { const cd = S.cards[i]; b.disabled = busy || over || (cd.k === 'ult' && me.en < 100) || (cd.k === 'help' && me.helpCd > 0);
+    if (cd.k === 'ult') b.querySelector('span').textContent = `${cd.icon} ${movieText(cd.name)}${me.en < 100 ? `（力氣 ${me.en}%）` : '！'}`; if (cd.k === 'help') b.querySelector('span').textContent = `${cd.icon} ${movieText(cd.name)}${me.helpCd > 0 ? `（再 ${me.helpCd} 回合）` : ''}`; });
+  const hitFoe = (d, txt) => { foe.hp = Math.max(0, foe.hp - d); foe.hurt = .5; pop(265, 90, `-${d}`, '#ffd23f'); if (txt) pop(265, 70, txt, '#ffffff'); Sound.play('hit'); };
+  const hitMe = d => { me.hp = Math.max(0, me.hp - d); me.hurt = .5; pop(95, 100, d ? `-${d}` : '擋住了！', d ? '#ff6b6b' : '#7bd389'); Sound.play(d ? 'miss' : 'coin'); };
+  const act = i => { if (busy || over) return; const cd = S.cards[i]; if ((cd.k === 'ult' && me.en < 100) || (cd.k === 'help' && me.helpCd > 0)) return;
+    busy = true; me.block = false; refresh();
+    if (cd.k === 'atk') { me.lunge = 1; setTimeout(() => { const d = cd.min + Math.floor(Math.random() * (cd.max - cd.min + 1)); hitFoe(d); me.en = Math.min(100, me.en + 25); say(`${cd.icon} ${movieText(cd.name)}！打中${S.foeName}！`); after(); }, 350); }
+    else if (cd.k === 'def') { me.block = true; me.en = Math.min(100, me.en + 15); pop(95, 80, '防禦！', '#6fb7e8'); Sound.play('click'); say(`${cd.icon} ${movieText(cd.name)}！準備好了！`); setTimeout(after, 350); }
+    else if (cd.k === 'help') { me.helpCd = 3; fxs.push({ k: 'help', a: 0 }); setTimeout(() => { hitFoe(8, '幫手來了！'); me.hp = Math.min(me.max, me.hp + 15); pop(95, 80, '+15', '#7bd389'); me.en = Math.min(100, me.en + 10); say(`${cd.icon} ${movieText(cd.name)}！打了一下，還補了血！`); after(); }, 500); }
+    else { me.en = 0; fxs.push({ k: 'ult', a: 0 }); Sound.play('fanfare'); setTimeout(() => { hitFoe(40, '必殺技！'); say(`${cd.icon} ${movieText(cd.name)}！！！`); after(); }, 900); }
+  };
+  const after = () => { if (foe.hp <= 0) return win(); setTimeout(foeTurn, 650); };
+  const foeTurn = () => { if (over) return; foe.turns++;
+    if (foe.charging) { foe.charging = false; foe.lunge = 1; setTimeout(() => { if (me.block) { hitMe(0); me.en = Math.min(100, me.en + 40); say(`${S.foeBig}……完美防禦！一點都不痛，力氣 +40！`); } else { hitMe(Math.round(26 * L.dmg)); say(`${S.foeBig}好痛！下次看到蓄力要記得防禦喔！`); } endRound(); }, 400); return; }
+    if (foe.turns % 3 === 0) { foe.charging = true; say(S.foeCharge); Sound.play('whoosh'); endRound(); return; }
+    foe.lunge = 1; setTimeout(() => { const d = Math.round((9 + Math.floor(Math.random() * 5)) * L.dmg); const dd = me.block ? Math.round(d * .2) : d; hitMe(dd); say(`${S.foeAtk}${me.block ? '擋住了大部分！' : ''}`); endRound(); }, 400); };
+  const endRound = () => { if (me.hp <= 0) return lose(); round++; me.block = false; if (me.helpCd > 0) me.helpCd--; busy = false; refresh(); };
+  const win = () => { over = true; refresh(); const ss = storyState(), first = !ss[id]; ss[id] = Math.min(9999, (ss[id] || 0) + 1);
+    let extra = ''; if (first) { S.reward.forEach(r => { if (!G.wardrobe.includes(r)) G.wardrobe.push(r); }); extra = `　🎁 得到「${S.reward.map(r => (CLOTHES_BY_ID[r] || {}).name).join('、')}」，去換裝穿穿看！`; }
+    const got = payReward(w, first ? L.pay + 100 : L.pay); kidMoodUp(6); Sound.play('fanfare'); saveGame(); refreshTop();
+    say(`🎉 打贏了！${S.win}　💰 +${fmt(got)}${extra}`); cardsRow.remove(); gameButtons(w, () => openStoryBattle(id));
+    if (first) setTimeout(() => { try { const cv = document.createElement('canvas'); cv.width = 150; cv.height = 170; const gg = cv.getContext('2d'); gg.translate(75, 160); gg.scale(2.2, 2.2); drawGirl(gg, { t: 0, walking: false, blink: false, outfit: look, face: 'joy', stage: kidLookStage() }); showcase(cv, `${S.title}的衣服`, '放進換裝了，換上去當故事主角吧！', { head: '🎭 扮演成功！', party: true }); } catch (e) {} }, 900); };
+  const lose = () => { over = true; refresh(); Sound.play('miss'); say(`${S.foeName}好強……沒關係，再試一次！（看到「蓄力」記得按防禦喔）`); cardsRow.remove(); gameButtons(w, () => openStoryBattle(id, lvPick)); };
+  const bar = (x, y, wd, v, max, col, label, right) => { g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(x, y, wd, 10); g.fillStyle = col; const fw = wd * Math.max(0, v) / max; g.fillRect(right ? x + wd - fw : x, y, fw, 10); g.strokeStyle = '#ffffff'; g.lineWidth = 1; g.strokeRect(x, y, wd, 10); g.font = '700 11px "Microsoft JhengHei",sans-serif'; g.textAlign = right ? 'right' : 'left'; g.strokeStyle = 'rgba(40,30,50,.85)'; g.lineWidth = 3; g.strokeText(label, right ? x + wd : x, y - 3); g.fillStyle = '#ffffff'; g.fillText(label, right ? x + wd : x, y - 3); };
+  const draw = now => { raf = requestAnimationFrame(draw); const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+    S.bg(g, t);
+    me.lunge = Math.max(0, me.lunge - dt * 2.5); foe.lunge = Math.max(0, foe.lunge - dt * 2.5); me.hurt = Math.max(0, me.hurt - dt); foe.hurt = Math.max(0, foe.hurt - dt);
+    const mx = 95 + Math.sin(me.lunge * Math.PI) * 70 + (me.hurt ? Math.sin(t * 60) * 3 : 0), fx = 265 - Math.sin(foe.lunge * Math.PI) * 70 + (foe.hurt ? Math.sin(t * 60) * 3 : 0);
+    if (foe.charging) { const r = 46 + Math.sin(t * 8) * 6; const gr = g.createRadialGradient(fx, 150, 5, fx, 150, r); gr.addColorStop(0, 'rgba(255,90,60,.55)'); gr.addColorStop(1, 'rgba(255,90,60,0)'); g.fillStyle = gr; g.beginPath(); g.arc(fx, 150, r, 0, 7); g.fill(); }
+    g.save(); if (foe.hurt) g.globalAlpha = .6 + Math.sin(t * 40) * .3; MV.nb(g, foeSp, fx, 196, 2.6, { flip: true, happy: over && foe.hp <= 0 }); g.restore();
+    g.save(); if (me.hurt) g.globalAlpha = .6 + Math.sin(t * 40) * .3; MV.kid(g, mx, 198, 1.2, { t, outfit: look, joy: over && foe.hp <= 0 }); g.restore();
+    if (S.prop === 'sword') { MV.sword(g, mx + 23, 167, me.lunge ? .9 : -.3); if (me.block) MV.shield(g, mx - 18, 167); }
+    else if (S.prop === 'basket') MV.basket(g, mx + 21, 176);
+    if (me.block && S.prop !== 'sword') { g.strokeStyle = 'rgba(111,183,232,.9)'; g.lineWidth = 3; g.beginPath(); g.arc(mx, 160, 40, -1.2, 1.2); g.stroke(); }
+    fxs.forEach(f => { f.a += dt; if (f.k === 'ult') { MV.boom(g, 265, 140, f.a * 1.5); g.fillStyle = `rgba(255,240,150,${Math.max(0, .5 - f.a * .4)})`; g.fillRect(0, 0, SB_W, SB_H); } else { try { MV.pet(g, 40 + f.a * 150, 200, 1, {}); } catch (e) {} } });
+    for (let i = fxs.length - 1; i >= 0; i--) if (fxs[i].a > 1.4) fxs.splice(i, 1);
+    bar(12, 22, 130, me.hp, me.max, '#7bd389', `${charName()} ${me.hp}/${me.max}`); bar(12, 40, 130, me.en, 100, '#ffd23f', `力氣 ${me.en}%`);
+    bar(SB_W - 142, 22, 130, foe.hp, foe.max, '#e8505b', `${S.foeName} ${foe.hp}/${foe.max}`, true);
+    if (foe.charging) { g.fillStyle = '#ffd23f'; g.font = '900 13px "Microsoft JhengHei",sans-serif'; g.textAlign = 'right'; g.fillText('⚠️ 蓄力中！', SB_W - 12, 52); }
+    g.font = '900 15px "Microsoft JhengHei",sans-serif'; g.textAlign = 'center'; { const rt = over ? (foe.hp <= 0 ? '勝利！' : '') : `第 ${round} 回合`; g.strokeStyle = 'rgba(40,30,50,.85)'; g.lineWidth = 3.5; g.strokeText(rt, SB_W / 2, 20); g.fillStyle = '#ffffff'; g.fillText(rt, SB_W / 2, 20); }
+    pops.forEach(p => { p.a += dt; g.globalAlpha = Math.max(0, 1 - p.a / 1.2); g.fillStyle = p.col; g.font = '900 18px sans-serif'; g.textAlign = 'center'; g.fillText(p.txt, p.x, p.y - p.a * 30); g.globalAlpha = 1; });
+    for (let i = pops.length - 1; i >= 0; i--) if (pops[i].a > 1.2) pops.splice(i, 1);
+  };
+  const kd = e => { const n = +e.key; if (n >= 1 && n <= 4) { e.preventDefault(); act(n - 1); } };
+  document.addEventListener('keydown', kd);
+  gameCleanup = () => { cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); };
+  raf = requestAnimationFrame(draw); refresh(); leaveButton(w); say(`第 1 回合！選一張招式卡吧！（${L.name}）`);
+  openStoryBattle.test = { act, me, foe, get round() { return round; }, get over() { return over; }, get busy() { return busy; }, win, finish: () => { foe.hp = 1; } };
+}
+function openStoryPlayMenu() {
+  closeGameWindow(); const card = $('#modalCard'); card.innerHTML = '';
+  const x = el('button', 'modal-x', '✕'); x.onclick = () => { $('#modal').hidden = true; }; card.appendChild(x);
+  card.appendChild(el('h2', '', '🎭 故事扮演'));
+  card.appendChild(note('換上故事主角的衣服，跟壞蛋對打、完成故事裡的任務！第一次成功送那個角色的衣服。'));
+  const ss = storyState(), list = el('div', 'invite-row');
+  Object.entries(STORY_PLAYS).forEach(([id, S]) => { const b = el('button', 'big' + (ss[id] ? '' : ' alt'), `${S.icon} ${S.title}${ss[id] ? `（成功 ${ss[id]} 次）` : ''}`); b.onclick = () => { $('#modal').hidden = true; openStoryPlay(id); }; list.appendChild(b); });
+  card.appendChild(list);
+  const ok = el('button', 'big', '好'); ok.onclick = () => { $('#modal').hidden = true; }; card.appendChild(ok);
+  $('#modal').hidden = false;
+}
 function movieDone(w, m, popcorn) {
   gameCleanup && gameCleanup(); gameCleanup = null;
   const seen = moviesSeen(), first = !seen[m.id];
@@ -28521,6 +28634,7 @@ function movieDone(w, m, popcorn) {
   try { hostSay(first ? '好看嗎？下次再來看別的喔！' : '這部真的很好看對不對？', 2600); fufuSay(pickLine('kidReply'), 2400); } catch (e) {}
   saveGame(); refreshTop();
   const again = el('button', 'big', '🎬 再看一部'); again.onclick = () => openMoviePicker(); w.btns.appendChild(again);
+  const sp = Object.keys(STORY_PLAYS).find(k => STORY_PLAYS[k].movie === m.id); if (sp) { const rp = el('button', 'big', `🎭 扮演這個故事`); rp.onclick = () => openStoryPlay(sp); w.btns.appendChild(rp); }
   leaveButton(w);
 }
 Object.assign(WALL_TAP, { cinema_screen: () => openMoviePicker() });
@@ -31202,6 +31316,7 @@ function openSimGame() {
    最上面一排「🎮 遊戲」：全部的小遊戲用大圖示排好，最上面是「最近玩過」。
    🏠 家裡的：點了直接開始。🗺️ 外面地方的：點了會走過去（要門票的付門票、要坐船的坐船）再開始，出門的感覺不會被跳過。 */
 const AWAY_GAMES = [
+  ['🎭', '故事扮演', 'cinema', () => openStoryPlayMenu()],
   ['🦵', '踢板', 'dojo', () => openKickGame()], ['👊', '跟著做動作', 'dojo', () => openFormsGame()], ['🎵', '節奏跆拳道', 'dojo', () => openRhythmGame()], ['⚔️', '對打（練習／比賽）', 'dojo', () => openFightChoice()],
   ['🔫', '水槍大戰', 'pool', () => openWaterFight()],   // 家長 11/22：選單上取代「打水比賽」（打水比賽在鴨鴨教練那邊還在） ['🤿', '潛水撿寶', 'pool', () => openDiveGame()], ['🌊', '跳水', 'pool', () => openJumpDive()],
   ['🎬', '看電影', 'cinema', () => openMoviePicker()],
@@ -35136,6 +35251,7 @@ function openFairyShelf() {
   card.appendChild(grid);
   const next = FAIRY_BOOKS.find(b => !relOk(b.rel));
   card.appendChild(note(next ? `📅 下一本新書「${next.title}」${relLabel(next.rel)}上架，記得來看喔！` : '童話書都上架了！'));
+  const sp = el('button', 'big alt', '🎭 故事扮演（當故事主角）'); sp.onclick = () => openStoryPlayMenu(); card.appendChild(sp);
   const ok = el('button', 'big', '好'); ok.onclick = () => { $('#modal').hidden = true; }; card.appendChild(ok);
   $('#modal').hidden = false;
 }
