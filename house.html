@@ -6166,6 +6166,10 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-24T09:00', title: '🚪 門點得進去了', lines: [
+    ['🚪', '房間牆上的門點了會走過去、開門進到隔壁（之前點了沒反應）'],
+    ['🖼️', '外面地方牆上的海報、黑板、視力表、電影海報也都點得到了']
+  ] },
   { id: '2026-11-23T22:00', title: '🚪 房間之間有門了', lines: [
     ['🚪', '同一個地方有好幾間的（郵輪、百貨公司、銀行、學校…），房間牆上有門，門上的牌子寫著通到哪一間'],
     ['👆', '點門，小可愛會走過去開門，進到隔壁那一間；上面的房間按鈕也還是可以用']
@@ -18770,7 +18774,8 @@ canvas.addEventListener('pointerup', e => {
   const it = pickItem(w);
   if (it && findGame) { findTap(it); return; }   // 🔎 幫媽媽找東西：點家具找
   if (it) { if (decorMode && (!G.away || inPetHouse())) showDecorMenu(it, e); else if (canUse(it) || (it.top && (!G.away || inPetHouse()))) showItemMenu(it, e); else if (!G.away || inPetHouse()) { decorHintOnce(); const c = nearestFree(curRoom(), it.x + .5, it.y + .5); if (c) { fufu.pendingSay = null; fufuWalkTo(c[0], c[1]); } } return; }   // 🛠️ 平常不會一點就拿起來   // 桌上有東西：點了先問要做什麼（以前一點就把整張桌子拿起來，桌上的東西收不掉）
-  const wi = G.away && !inPetHouse() ? null : pickWallItem(w);
+  /* 出門的地方：牆上「能用的東西」也要點得到（家長：點門沒辦法進去——以前出門就完全不看牆上的東西，門、海報、黑板都點不到） */
+  const wi0 = pickWallItem(w), wi = G.away && !inPetHouse() ? (wi0 && wallActOf(wi0.id) ? wi0 : null) : wi0;
   if (wi && decorMode) { startHoldWall(wi); return; }
   if (wi && wallActOf(wi.id)) { Sound.play('click'); fufuGoWall(wi); return; }   // 🖼️ 牆上的東西可以用（看畫、看時間、照鏡子…）
   if (wi) decorHintOnce();   // 平常點牆上的東西不會拿下來
