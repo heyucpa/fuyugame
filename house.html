@@ -4387,6 +4387,9 @@ const PRIZE_CLOTHES = [
   { id: 'redhood_dress', slot: 'top', name: '小紅帽洋裝', price: 1800, style: 'dress', color: '#e8505b', trim: '#ffffff', dress: true, prize: true },
   { id: 'snow_dress', slot: 'top', name: '白雪公主洋裝', price: 2500, style: 'dress', color: '#3f6fd1', trim: '#ffd23f', dress: true, prize: true },
   { id: 'snow_bow', slot: 'clip', name: '公主紅蝴蝶結', price: 600, style: 'ribbon', color: '#e8505b', prize: true },
+  { id: 'pig_cap', slot: 'head', name: '小豬帽', price: 800, style: 'beanie', color: '#ffc4cf', pom: '#ff9fb2', prize: true },
+  { id: 'genie_turban', slot: 'head', name: '神燈頭巾', price: 1200, style: 'beanie', color: '#8a5ad6', pom: '#ffd23f', prize: true },
+  { id: 'genie_vest', slot: 'top', name: '神燈背心', price: 1800, style: 'jacket', color: '#8a5ad6', trim: '#ffd23f', prize: true },
   // 🎖️ 警察／醫生升級送的
   { id: 'cop_badge', slot: 'neck', name: '小警察徽章', price: 500, style: 'medalNeck', color: '#c0c6cf', prize: true },
   { id: 'cop_cap_gold', slot: 'head', name: '警長帽', price: 1000, style: 'policeCap', color: '#24345a', band: '#c99a1a', prize: true },
@@ -6184,7 +6187,9 @@ const NEWS = [
     ['⚔️', '勇者打魔王、小紅帽對大野狼、公主對壞巫婆：回合制對打，選招式卡（攻擊、防禦、找幫手、必殺技）'],
     ['⚠️', '壞蛋「蓄力」的時候按防禦，就是完美防禦，不痛還多拿力氣！'],
     ['🎁', '第一次打贏送角色的衣服：勇者金冠和盔甲、小紅帽和洋裝、白雪公主洋裝和蝴蝶結'],
-    ['🎬', '電影院的斑馬放映師、圖書館的童話書架、看完童話電影都可以開始扮演']
+    ['🎬', '電影院的斑馬放映師、圖書館的童話書架、看完童話電影都可以開始扮演'],
+    ['🐷', '三隻小豬：只點磚頭蓋房子，大野狼吹不倒！神燈：坐魔毯撿願望星星、躲沙塵暴'],
+    ['🎁', '三隻小豬送「小豬帽」、神燈送「神燈頭巾」和「神燈背心」']
   ] },
   { id: '2026-11-24T16:00', title: '🎬 新電影、新書會定期上映了！', lines: [
     ['🧺', '今天上映：電影「小紅帽」（你是主角！）；新書「龜兔賽跑」上架'],
@@ -28532,7 +28537,9 @@ const STORY_PLAYS = {
   snow: { movie: 'snow', title: '公主對壞巫婆', icon: '🍎', kind: 'battle', me: { top: 'snow_dress', clip: 'snow_bow' }, prop: 'none', foe: () => FT_WITCH, foeName: '壞巫婆', foeHp: 110,
     bg(g, t) { MV.sky(g, '#cfeaf7', '#eef8fb'); MV.ground(g, 190, '#86b972'); MV.castle(g, 180, 190, .7); },
     cards: [{ k: 'atk', icon: '🎵', name: '大聲唱歌', min: 10, max: 15 }, { k: 'def', icon: '🙅', name: '我不吃！' }, { k: 'help', icon: '🐰', name: '小動物幫忙' }, { k: 'ult', icon: '💖', name: '友情的力量' }],
-    foeAtk: '壞巫婆丟出瞌睡蘋果！', foeCharge: '壞巫婆在念咒語……要變出一大堆毒蘋果了！快拒絕！', foeBig: '毒蘋果雨！', win: '壞巫婆：「你們這麼要好……我也好想要朋友……」', reward: ['snow_dress', 'snow_bow'] }
+    foeAtk: '壞巫婆丟出瞌睡蘋果！', foeCharge: '壞巫婆在念咒語……要變出一大堆毒蘋果了！快拒絕！', foeBig: '毒蘋果雨！', win: '壞巫婆：「你們這麼要好……我也好想要朋友……」', reward: ['snow_dress', 'snow_bow'] },
+  pigs: { movie: 'pigs', title: '三隻小豬蓋磚頭屋', icon: '🐷', kind: 'mini', me: { head: 'pig_cap' }, open: () => openPigsGame(), reward: ['pig_cap'] },
+  lamp: { movie: 'lamp', title: '神燈魔毯飛行', icon: '✨', kind: 'mini', me: { head: 'genie_turban', top: 'genie_vest' }, open: () => openLampGame(), reward: ['genie_turban', 'genie_vest'] }
 };
 const SB_LV = [{ name: '簡單', hp: .75, dmg: .7, pay: 80 }, { name: '普通', hp: 1, dmg: 1, pay: 120 }, { name: '困難', hp: 1.35, dmg: 1.3, pay: 180 }];
 function storyState() { if (!G.storyPlay || typeof G.storyPlay !== 'object') G.storyPlay = {}; return G.storyPlay; }
@@ -28603,6 +28610,83 @@ function openStoryBattle(id, lvPick) {
   gameCleanup = () => { cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); };
   raf = requestAnimationFrame(draw); refresh(); leaveButton(w); say(`第 1 回合！選一張招式卡吧！（${L.name}）`);
   openStoryBattle.test = { act, me, foe, get round() { return round; }, get over() { return over; }, get busy() { return busy; }, win, finish: () => { foe.hp = 1; } };
+}
+/* 🎭 故事扮演的小遊戲（不是每個都對打）：三隻小豬「蓋磚頭屋」、神燈「魔毯飛行」 */
+function storyMiniWin(id, w, pay) {
+  const S = STORY_PLAYS[id], ss = storyState(), first = !ss[id]; ss[id] = Math.min(9999, (ss[id] || 0) + 1);
+  let extra = ''; if (first) { S.reward.forEach(r => { if (!G.wardrobe.includes(r)) G.wardrobe.push(r); }); extra = `　🎁 得到「${S.reward.map(r => (CLOTHES_BY_ID[r] || {}).name).join('、')}」，去換裝穿穿看！`; }
+  const got = payReward(w, first ? pay + 100 : pay); kidMoodUp(6); Sound.play('fanfare'); saveGame(); refreshTop();
+  if (first) setTimeout(() => { try { const cv = document.createElement('canvas'); cv.width = 150; cv.height = 170; const gg = cv.getContext('2d'); gg.translate(75, 160); gg.scale(2.2, 2.2); drawGirl(gg, { t: 0, walking: false, blink: false, outfit: MV.look(S.me), face: 'joy', stage: kidLookStage() }); showcase(cv, `${S.title}的衣服`, '放進換裝了！', { head: '🎭 扮演成功！', party: true }); } catch (e) {} }, 900);
+  return `💰 +${fmt(got)}${extra}`;
+}
+function openPigsGame(lvPick) {
+  const id = 'pigs', S = STORY_PLAYS[id];
+  const w = openGameWindow('🎭 三隻小豬：蓋磚頭屋', '輸送帶上會跑來稻草、木頭和磚頭——只點🧱磚頭來蓋房子！點到稻草或木頭，大野狼會吹掉一塊。蓋滿 12 塊，大野狼就吹不倒了！');
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  if (lvPick == null) { const row = el('div', 'invite-row'); SB_LV.forEach((L, i) => { const b = el('button', 'big lv-btn', `${['🌱', '⭐', '🔥'][i]} ${L.name}`); b.onclick = () => openPigsGame(i); row.appendChild(b); }); w.stage.appendChild(posterCanvas('pigs', 110, 150)); w.stage.appendChild(row); leaveButton(w); w.status.textContent = storyState()[id] ? `成功過 ${storyState()[id]} 次！` : '第一次成功送你「小豬帽」！'; return; }
+  const W = 360, H = 230, NEED = 12, sp = [55, 75, 100][lvPick], TIME = [60, 50, 45][lvPick];
+  const { c, g } = gameCanvas(w.stage, W, H);
+  let items = [], bricks = 0, t = 0, left = TIME, raf = 0, last = performance.now(), spawn = 0, done = false, gust = 0, nextGust = 7, msg = '', msgT = 0, finale = -1;
+  const say = (s2) => { msg = s2; msgT = 1.6; };
+  const tap = (x, y) => { if (done) return; const it = items.find(q => !q.gone && Math.hypot(q.x - x, q.y - y) < 22); if (!it) return; it.gone = true;
+    if (it.k === 'brick') { bricks++; Sound.play('coin'); say('🧱 好堅固！'); if (bricks >= NEED) { done = true; finale = 0; Sound.play('whoosh'); } }
+    else { bricks = Math.max(0, bricks - 1); Sound.play('miss'); say(it.k === 'straw' ? '稻草不夠堅固！大野狼吹掉一塊！' : '木頭也會被吹倒！大野狼吹掉一塊！'); } };
+  c.addEventListener('pointerdown', e => { const r = c.getBoundingClientRect(); tap((e.clientX - r.left) * W / r.width, (e.clientY - r.top) * H / r.height); });
+  const draw = now => { raf = requestAnimationFrame(draw); const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+    MV.sky(g, '#bfe3f5', '#eef8fb'); MV.ground(g, 150, '#8fc27a');
+    if (!done) { left -= dt; spawn -= dt; nextGust -= dt; if (nextGust <= 0) { gust = 2; nextGust = 8; say('大野狼：「呼——」輸送帶變快了！'); } gust = Math.max(0, gust - dt);
+      if (spawn <= 0) { const r = Math.random(), k = r < .55 ? 'brick' : r < .78 ? 'straw' : 'wood'; items.push({ k, x: W + 20, y: 176 }); spawn = .9 + Math.random() * .5; }
+      items.forEach(q => { q.x -= sp * (gust ? 1.7 : 1) * dt; }); items = items.filter(q => q.x > -30 && !q.gone);
+      if (left <= 0) { done = true; Sound.play('miss'); w.status.textContent = `時間到！蓋了 ${bricks} / ${NEED} 塊。再試一次！`; gameButtons(w, () => openPigsGame(lvPick)); } }
+    // 輸送帶
+    g.fillStyle = '#5a6475'; g.fillRect(0, 186, W, 10); for (let i = 0; i < 20; i++) { g.fillStyle = '#8a93a3'; g.fillRect(((i * 24 - t * sp) % W + W) % W, 188, 12, 6); }
+    items.forEach(q => { g.save(); g.translate(q.x, q.y); if (q.k === 'brick') { g.fillStyle = '#c0504d'; g.fillRect(-14, -8, 28, 14); g.strokeStyle = '#f2d6c0'; g.strokeRect(-14, -8, 28, 14); g.beginPath(); g.moveTo(0, -8); g.lineTo(0, 6); g.stroke(); }
+      else if (q.k === 'straw') { g.strokeStyle = '#e0b23a'; g.lineWidth = 2; for (let i = -6; i <= 6; i += 3) { g.beginPath(); g.moveTo(i, 6); g.lineTo(i + 3, -10); g.stroke(); } g.fillStyle = '#c99a2e'; g.fillRect(-8, -2, 16, 3); }
+      else { g.fillStyle = '#b07a48'; g.fillRect(-15, -6, 30, 10); g.fillStyle = '#8a5a33'; g.beginPath(); g.arc(-15, -1, 5, 0, 7); g.fill(); }
+      g.restore(); });
+    // 房子（左邊），一塊一塊疊起來
+    const hx = 20, hy = 148; g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(hx, hy - 72, 84, 72);
+    for (let i = 0; i < bricks; i++) { const row = Math.floor(i / 3), col = i % 3; g.fillStyle = '#c0504d'; g.fillRect(hx + col * 28 + (row % 2) * 4, hy - 18 - row * 18, 26, 16); g.strokeStyle = '#f2d6c0'; g.strokeRect(hx + col * 28 + (row % 2) * 4, hy - 18 - row * 18, 26, 16); }
+    if (bricks >= NEED) { g.fillStyle = '#5a6475'; g.beginPath(); g.moveTo(hx - 8, hy - 72); g.lineTo(hx + 42, hy - 104); g.lineTo(hx + 92, hy - 72); g.fill(); }
+    [['#ffd23f', 125], ['#7bd389', 148], ['#e8505b', 171]].forEach(([cc, x], i) => MV.nb(g, FT_PIG(cc), x, 150 - Math.abs(Math.sin(t * 4 + i)) * (gust ? 0 : 4), 1.1));
+    MV.kid(g, 210, 152, .8, { t, joy: bricks > 0, outfit: MV.look(S.me) });
+    MV.nb(g, FT_WOLF, 315, 140, 1.6, { flip: true, happy: finale < 0 });
+    if (gust || finale >= 0) { g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 2; for (let i = 0; i < 4; i++) { const yy = 110 + i * 12, xx = 280 - ((t * 200 + i * 40) % 160); g.beginPath(); g.moveTo(xx, yy); g.lineTo(xx - 24, yy); g.stroke(); } }
+    if (finale >= 0) { finale += dt; if (finale > 3 && !w._won) { w._won = 1; w.status.textContent = `🎉 大野狼吹到沒力氣了，磚頭屋好好的！三隻小豬好開心！${storyMiniWin(id, w, SB_LV[lvPick].pay)}`; gameButtons(w, () => openPigsGame()); } if (finale < 3 && finale % 1 < .6) MV.say(g, 290, 95, '呼——呼——'); }
+    g.font = '900 14px "Microsoft JhengHei",sans-serif'; g.textAlign = 'left'; g.strokeStyle = 'rgba(40,30,50,.8)'; g.lineWidth = 3; const hud = `🧱 ${bricks} / ${NEED}　⏰ ${Math.max(0, Math.ceil(left))}`; g.strokeText(hud, 10, 20); g.fillStyle = '#ffffff'; g.fillText(hud, 10, 20);
+    if (msgT > 0) { msgT -= dt; MV.say(g, W / 2, 52, msg); }
+  };
+  gameCleanup = () => cancelAnimationFrame(raf); raf = requestAnimationFrame(draw); leaveButton(w);
+  w.status.textContent = '只點🧱磚頭！';
+  openPigsGame.test = { tap: k => { const it = items.find(q => q.k === k && !q.gone) || (items.push({ k, x: 200, y: 176 }), items[items.length - 1]); tap(it.x, it.y); }, get bricks() { return bricks; }, get done() { return done; }, finishNow: () => { left = 0; }, skipFinale: () => { finale = 3.1; } };
+}
+function openLampGame(lvPick) {
+  const id = 'lamp', S = STORY_PLAYS[id];
+  const w = openGameWindow('🎭 神燈：魔毯飛行', '按住畫面（或按↑、空白鍵）魔毯就往上飛，放開就慢慢往下。撿⭐願望星星，躲開沙塵暴！撿滿 15 顆，燈神就會出來！');
+  w.stage.innerHTML = ''; w.btns.innerHTML = '';
+  if (lvPick == null) { const row = el('div', 'invite-row'); SB_LV.forEach((L, i) => { const b = el('button', 'big lv-btn', `${['🌱', '⭐', '🔥'][i]} ${L.name}`); b.onclick = () => openLampGame(i); row.appendChild(b); }); w.stage.appendChild(posterCanvas('lamp', 110, 150)); w.stage.appendChild(row); leaveButton(w); w.status.textContent = storyState()[id] ? `成功過 ${storyState()[id]} 次！` : '第一次成功送你「神燈頭巾」和「神燈背心」！'; return; }
+  const W = 360, H = 230, NEED = 15, sp = [70, 95, 120][lvPick], TIME = [60, 50, 45][lvPick];
+  const { c, g } = gameCanvas(w.stage, W, H);
+  let y = 110, vy = 0, up = false, objs = [], got = 0, t = 0, left = TIME, raf = 0, last = performance.now(), spawn = 0, done = false, hurt = 0, finale = -1;
+  const press = v => { up = v; };
+  const pu = () => press(false); c.addEventListener('pointerdown', e => { e.preventDefault(); press(true); }); window.addEventListener('pointerup', pu);
+  const kd = e => { if (e.code === 'ArrowUp' || e.code === 'Space') { e.preventDefault(); press(true); } }, ku = e => { if (e.code === 'ArrowUp' || e.code === 'Space') press(false); };
+  document.addEventListener('keydown', kd); document.addEventListener('keyup', ku);
+  const draw = now => { raf = requestAnimationFrame(draw); const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+    MV.sky(g, '#7cc6ff', '#ffd9a0'); g.fillStyle = '#e8c98a'; g.fillRect(0, 200, W, 30); g.fillStyle = '#d9b46a'; for (let i = 0; i < 4; i++) { const x = ((i * 120 - t * sp * .4) % (W + 120) + W + 120) % (W + 120) - 60; g.beginPath(); g.ellipse(x, 202, 70, 14, 0, Math.PI, 0); g.fill(); }
+    if (!done) { left -= dt; spawn -= dt; vy += (up ? -260 : 160) * dt; vy = Math.max(-140, Math.min(140, vy)); y = Math.max(78, Math.min(190, y + vy * dt));
+      if (spawn <= 0) { objs.push({ k: Math.random() < .68 ? 'star' : 'dust', x: W + 20, y: 55 + Math.random() * 120 }); spawn = .55 + Math.random() * .45; }
+      objs.forEach(o => { o.x -= sp * dt; if (!o.gone && Math.abs(o.x - 80) < 22 && Math.abs(o.y - (y - 18)) < 24) { o.gone = true; if (o.k === 'star') { got++; Sound.play('coin'); if (got >= NEED) { done = true; finale = 0; } } else { got = Math.max(0, got - 1); hurt = .8; Sound.play('miss'); } } });
+      objs = objs.filter(o => o.x > -30 && !o.gone);
+      if (left <= 0 && !done) { done = true; Sound.play('miss'); w.status.textContent = `時間到！撿了 ${got} / ${NEED} 顆星星。再試一次！`; gameButtons(w, () => openLampGame(lvPick)); } }
+    objs.forEach(o => { if (o.k === 'star') star(g, o.x, o.y, 9, '#ffd23f'); else { g.fillStyle = 'rgba(190,150,100,.75)'; [[0, 0, 14], [12, 4, 10], [-12, 5, 10]].forEach(([dx, dy, r]) => { g.beginPath(); g.arc(o.x + dx + Math.sin(t * 6) * 2, o.y + dy, r, 0, 7); g.fill(); }); } });
+    hurt = Math.max(0, hurt - dt); g.save(); if (hurt) g.globalAlpha = .5 + Math.sin(t * 40) * .3; MV.carpet(g, 80, y, t); MV.kid(g, 80, y - 2, .8, { t, sit: true, joy: true, outfit: MV.look(S.me) }); g.restore();
+    if (finale >= 0) { finale += dt; MV.nb(g, FT_GENIE, 250, 150 - Math.min(1, finale) * 30, 1 + Math.min(1, finale) * 1.2); if (finale > 1) MV.say(g, 250, 50, '願望星星集滿了！'); if (finale > 2.5 && !w._won) { w._won = 1; w.status.textContent = `🎉 燈神：「謝謝你！我實現你的願望：讓沙漠開滿花！」${storyMiniWin(id, w, SB_LV[lvPick].pay)}`; gameButtons(w, () => openLampGame()); } }
+    g.font = '900 14px "Microsoft JhengHei",sans-serif'; g.textAlign = 'left'; g.strokeStyle = 'rgba(40,30,50,.8)'; g.lineWidth = 3; const hud = `⭐ ${got} / ${NEED}　⏰ ${Math.max(0, Math.ceil(left))}`; g.strokeText(hud, 10, 20); g.fillStyle = '#ffffff'; g.fillText(hud, 10, 20);
+  };
+  gameCleanup = () => { cancelAnimationFrame(raf); document.removeEventListener('keydown', kd); document.removeEventListener('keyup', ku); window.removeEventListener('pointerup', pu); };
+  raf = requestAnimationFrame(draw); leaveButton(w); w.status.textContent = '按住往上飛，放開往下！';
+  openLampGame.test = { addStar: () => { objs.push({ k: 'star', x: 82, y: y - 18 }); }, addDust: () => { objs.push({ k: 'dust', x: 82, y: y - 18 }); }, get got() { return got; }, get done() { return done; }, get y() { return y; }, press, skipFinale: () => { finale = 2.6; } };
 }
 function openStoryPlayMenu() {
   closeGameWindow(); const card = $('#modalCard'); card.innerHTML = '';
