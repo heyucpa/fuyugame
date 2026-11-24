@@ -6173,6 +6173,12 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-24T16:00', title: '🎬 新電影、新書會定期上映了！', lines: [
+    ['🧺', '今天上映：電影「小紅帽」（你是主角！）；新書「龜兔賽跑」上架'],
+    ['📅', '之後每個禮拜五、禮拜日都有新電影或新書：三隻小豬、白雪公主、神燈、勇者打魔王、醜小鴨、傑克與魔豆…'],
+    ['🔔', '新電影上映、新書上架那天，打開遊戲會通知你'],
+    ['🧚', '圖書館多了「童話書架」，鴨嘴獸館員那邊點得到']
+  ] },
   { id: '2026-11-24T15:00', title: '👨‍🏫 爸爸來學校兼課了', lines: [
     ['👨‍🏫', '爸爸是會計師，也在學校兼課：每個禮拜五、六、日，教室的老師會換成爸爸（穿西裝外套）'],
     ['📝', '上課、小考、注音、國字、英文、畫畫大賽一樣都可以玩；其他天還是貓頭鷹老師'],
@@ -7585,6 +7591,7 @@ function normalizeSave(g) {
         q.legacy = leg; q.rev = 2;
       } else q.legacy = legOk(q.legacy); } }
   if (out.introBig != null && out.introBig !== 1) delete out.introBig;   // 🎬 看過主島變大的介紹
+  ['mediaNote', 'fairyRead'].forEach(k => { if (out[k] == null) return; if (!isObj(out[k])) { delete out[k]; return; } Object.keys(out[k]).forEach(id => { const v = out[k][id]; if (id.length > 40 || !(Number.isInteger(v) && v >= 0 && v < 1e4)) delete out[k][id]; }); });   // 🎬📚 新電影、新書通知過了沒／童話書看過幾次
   if (out.fridgeAt != null && !(Number.isFinite(out.fridgeAt) && out.fridgeAt >= 0 && out.fridgeAt < 1e14)) delete out.fridgeAt;   // 🧃 冰箱免費點心上次吃的時間
   if (out.dept != null) { if (!isObj(out.dept)) delete out.dept; else { const d = out.dept; ['carry', 'stamps', 'day', 'got', 'tix'].forEach(k => { if (d[k] != null && !(Number.isInteger(d[k]) && d[k] >= 0 && d[k] < 1e7)) delete d[k]; }); if (d.stamps > 10) d.stamps = 10; if (d.got > 3) d.got = 3; if (d.tix > 99) d.tix = 99; if (d.d != null && !(typeof d.d === 'string' && d.d.length <= 12)) delete d.d; if (d.gift1 != null && d.gift1 !== 1) delete d.gift1; Object.keys(d).forEach(k => { if (!['carry', 'stamps', 'd', 'day', 'got', 'tix', 'gift1'].includes(k)) delete d[k]; }); } }   // 🛍️ 百貨公司集點卡、抽獎券
   if (out.cruise != null) { if (!isObj(out.cruise)) delete out.cruise; else { const c = out.cruise; c.st = isObj(c.st) ? Object.fromEntries(Object.entries(c.st).filter(([k, v]) => ['fruit', 'ice', 'pirate'].includes(k) && v === 1)) : {}; Object.keys(c).forEach(k => { if (k !== 'st') delete c[k]; }); } }   // 🛳️ 郵輪護照
@@ -15796,6 +15803,7 @@ function hostMenuEntries() {
     list.push(['📖 一起看繪本', openNextStorybook]);
     list.push(['👂 請館員說故事', () => openNextStorybook({ aloud: true })]);
     list.push(['📗 閱讀護照', openPassport]);
+    list.push(['🧚 童話書架' + (fairyBooksNow().some(b => !fairyReadState()[b.id]) ? '（有新書！）' : ''), openFairyShelf]);
     list.push(['🔎 幫忙找書', openShelfGame]);
   }
   if (host.n.id === 'ranger') {
@@ -28231,8 +28239,80 @@ function askEntryFee(id, go, back) {
   try { speak(enough ? `${pl.name}要付${fee}元喔` : '錢不夠喔，去賺錢吧！'); } catch (e) {}
 }
 let entryTicketPending = false;   // 快速出門會先走一段路才到：到了再把票給她
+/* 🎬 童話電影（家長 11/24：電影、書要新增，不定期有新電影上映，通知小朋友去看）
+   自己改寫的童話：小紅帽、三隻小豬、白雪公主、神燈、勇者打魔王。主角都是小可愛；故事裡放一點安全觀念（不跟陌生人走、不吃陌生人給的東西）。
+   rel：上映日期（週五、週日，配合小朋友玩的時間）；fairy：不算進原本 6 部的集章。 */
+Object.assign(MV, {
+  look(ids) { const o = Object.assign({}, currentOutfit()); Object.entries(ids || {}).forEach(([k, id]) => { if (CLOTHES_BY_ID[id]) o[k] = CLOTHES_BY_ID[id]; }); return o; },
+  nb(g, sp, x, y, s, o) { o = o || {}; g.save(); g.translate(x, y); g.scale((o.flip ? -1 : 1) * s, s); drawNeighbor(g, sp, { happy: o.happy !== false, sad: !!o.sad, blink: !!o.blink, fx: 1.5, clean: 100 }); g.restore(); },
+  hood(g, x, y, s) { g.save(); g.translate(x, y); g.scale(s, s); g.fillStyle = '#d63b3b'; g.beginPath(); g.arc(0, -47, 17.5, Math.PI * 1.05, Math.PI * 1.95); g.lineTo(13, -36); g.quadraticCurveTo(0, -60, -13, -36); g.closePath(); g.fill(); g.beginPath(); g.moveTo(-12, -32); g.lineTo(-17, -10); g.lineTo(-9, -12); g.closePath(); g.moveTo(12, -32); g.lineTo(17, -10); g.lineTo(9, -12); g.closePath(); g.fill(); g.restore(); },
+  basket(g, x, y) { g.fillStyle = '#c98d5a'; g.fillRect(x - 9, y - 6, 18, 10); g.strokeStyle = '#8a5a33'; g.lineWidth = 2; g.beginPath(); g.arc(x, y - 6, 8, Math.PI, 0); g.stroke(); MV.ball(g, x - 4, y - 7, 3, '#e8505b'); MV.ball(g, x + 3, y - 8, 3, '#ffd23f'); },
+  flower(g, x, y, c) { g.strokeStyle = '#4f9a58'; g.lineWidth = 2; g.beginPath(); g.moveTo(x, y); g.lineTo(x, y - 12); g.stroke(); for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; MV.ball(g, x + Math.cos(a) * 3.5, y - 14 + Math.sin(a) * 3.5, 2.6, c || '#ff8fb3'); } MV.ball(g, x, y - 14, 2, '#ffd23f'); },
+  bed(g, x, y) { g.fillStyle = '#8a5a33'; g.fillRect(x - 50, y - 30, 8, 30); g.fillStyle = '#ffffff'; g.fillRect(x - 44, y - 22, 90, 14); g.fillStyle = '#7bb6e8'; g.fillRect(x - 20, y - 26, 66, 16); g.fillStyle = '#8a5a33'; g.fillRect(x - 46, y - 8, 96, 6); },
+  straw(g, x, y) { g.fillStyle = '#f2d16b'; g.fillRect(x, y - 40, 56, 40); g.beginPath(); g.moveTo(x - 6, y - 40); g.lineTo(x + 28, y - 66); g.lineTo(x + 62, y - 40); g.fill(); g.strokeStyle = '#c9a23a'; g.lineWidth = 1; for (let i = 0; i < 8; i++) { g.beginPath(); g.moveTo(x + 4 + i * 7, y - 38); g.lineTo(x + 6 + i * 7, y - 4); g.stroke(); } g.fillStyle = '#8a5a33'; g.fillRect(x + 22, y - 20, 12, 20); },
+  woody(g, x, y) { g.fillStyle = '#b07a48'; g.fillRect(x, y - 42, 58, 42); g.fillStyle = '#8a5a33'; g.beginPath(); g.moveTo(x - 6, y - 42); g.lineTo(x + 29, y - 66); g.lineTo(x + 64, y - 42); g.fill(); g.strokeStyle = '#7a5230'; for (let i = 1; i < 5; i++) { g.beginPath(); g.moveTo(x, y - 42 + i * 8.4); g.lineTo(x + 58, y - 42 + i * 8.4); g.stroke(); } g.fillStyle = '#5a3a22'; g.fillRect(x + 23, y - 20, 12, 20); },
+  brick(g, x, y) { g.fillStyle = '#c0504d'; g.fillRect(x, y - 46, 62, 46); g.strokeStyle = '#f2d6c0'; g.lineWidth = 1; for (let r = 0; r < 6; r++) { g.beginPath(); g.moveTo(x, y - 46 + r * 7.7); g.lineTo(x + 62, y - 46 + r * 7.7); g.stroke(); for (let c = 0; c < 5; c++) { const bx = x + (c + (r % 2) * .5) * 13; g.beginPath(); g.moveTo(bx, y - 46 + r * 7.7); g.lineTo(bx, y - 46 + (r + 1) * 7.7); g.stroke(); } } g.fillStyle = '#5a6475'; g.beginPath(); g.moveTo(x - 6, y - 46); g.lineTo(x + 31, y - 72); g.lineTo(x + 68, y - 46); g.fill(); g.fillStyle = '#8a5a33'; g.fillRect(x + 25, y - 22, 13, 22); },
+  castle(g, x, y, s) { g.save(); g.translate(x, y); g.scale(s, s); g.fillStyle = '#f3eefc'; g.fillRect(-40, -60, 80, 60); [-40, 28].forEach(tx => { g.fillRect(tx, -80, 12, 80); g.fillStyle = '#b18cff'; g.beginPath(); g.moveTo(tx - 3, -80); g.lineTo(tx + 6, -96); g.lineTo(tx + 15, -80); g.fill(); g.fillStyle = '#f3eefc'; }); g.fillStyle = '#ff8fb3'; g.beginPath(); g.moveTo(-14, -60); g.lineTo(0, -82); g.lineTo(14, -60); g.fill(); g.fillStyle = '#8a5a33'; g.beginPath(); g.arc(0, -14, 10, Math.PI, 0); g.fillRect(-10, -14, 20, 14); g.fill(); g.restore(); },
+  apple(g, x, y, r) { MV.ball(g, x, y, r, '#e8505b'); g.fillStyle = 'rgba(255,255,255,.5)'; g.beginPath(); g.arc(x - r * .35, y - r * .35, r * .3, 0, 7); g.fill(); g.strokeStyle = '#6a4a2a'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x, y - r); g.lineTo(x + 1, y - r - 4); g.stroke(); g.fillStyle = '#5fae6f'; g.beginPath(); g.ellipse(x + 4, y - r - 3, 3.5, 1.8, -.4, 0, 7); g.fill(); },
+  lamp(g, x, y, s) { g.save(); g.translate(x, y); g.scale(s, s); g.fillStyle = '#e0b23a'; g.beginPath(); g.ellipse(0, -6, 14, 7, 0, 0, 7); g.fill(); g.beginPath(); g.moveTo(10, -8); g.quadraticCurveTo(22, -12, 24, -18); g.lineTo(20, -16); g.quadraticCurveTo(16, -10, 8, -4); g.fill(); g.fillRect(-4, -16, 8, 5); g.beginPath(); g.arc(0, -17, 3, 0, 7); g.fill(); g.strokeStyle = '#c99a2e'; g.lineWidth = 2; g.beginPath(); g.arc(-15, -7, 5, Math.PI * .5, Math.PI * 1.5); g.stroke(); g.fillStyle = '#9a7420'; g.fillRect(-8, -1, 16, 3); g.restore(); },
+  carpet(g, x, y, t) { g.save(); g.translate(x, y); for (let i = 0; i < 12; i++) { const xx = -36 + i * 6, yy = Math.sin(t * 5 + i * .7) * 2.5; g.fillStyle = i % 2 ? '#b8233a' : '#d63b4f'; g.fillRect(xx, yy, 6.5, 8); g.fillStyle = '#ffd23f'; g.fillRect(xx, yy + 3, 6.5, 1.6); } g.restore(); },
+  sword(g, x, y, r) { g.save(); g.translate(x, y); g.rotate(r || 0); g.fillStyle = '#c9a26a'; g.fillRect(-1.5, -2, 3, 10); g.fillStyle = '#8a5a33'; g.fillRect(-6, -3, 12, 3); g.fillStyle = '#e6e6ee'; g.beginPath(); g.moveTo(-2.5, -3); g.lineTo(2.5, -3); g.lineTo(2.5, -26); g.lineTo(0, -30); g.lineTo(-2.5, -26); g.closePath(); g.fill(); g.restore(); },
+  shield(g, x, y) { g.fillStyle = '#3f8ee0'; g.beginPath(); g.moveTo(x - 9, y - 12); g.lineTo(x + 9, y - 12); g.lineTo(x + 9, y); g.quadraticCurveTo(x, y + 10, x - 9, y); g.closePath(); g.fill(); g.strokeStyle = '#ffd23f'; g.lineWidth = 2; g.stroke(); star(g, x, y - 4, 4, '#ffd23f'); },
+  sand(g) { MV.sky(g, '#ffd9a0', '#fff1d6'); MV.ground(g, 150, '#e8c98a'); g.fillStyle = '#d9b46a'; g.beginPath(); g.ellipse(80, 152, 90, 14, 0, Math.PI, 0); g.fill(); g.beginPath(); g.ellipse(300, 152, 80, 10, 0, Math.PI, 0); g.fill(); },
+  boom(g, x, y, k) { for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2, d = 10 + k * 30; g.globalAlpha = Math.max(0, 1 - k / 1.4); star(g, x + Math.cos(a) * d, y + Math.sin(a) * d, 5, '#ffd23f'); } g.globalAlpha = 1; }
+});
+const FT_WOLF = { id: 'ft_wolf', body: '#8f96a3', edge: '#666d78', belly: '#e3e6ea', inner: '#d9a0a8', ears: 'pointy', acc: 'none' };
+const FT_WOLF_GRAN = Object.assign({}, FT_WOLF, { acc: 'hat', accColor: '#ffffff' });
+const FT_PIG = c => ({ id: 'ft_pig', body: '#ffc4cf', edge: '#e597a6', belly: '#ffe3e8', inner: '#ff9fb2', ears: 'pointy', snout: true, acc: 'scarf', accColor: c });
+const FT_WITCH = { id: 'ft_witch', body: '#c9b6e6', edge: '#8f7aa3', belly: '#ece4f6', inner: '#8f7aa3', ears: 'none', acc: 'hat', accColor: '#4a2f6a' };
+const FT_GENIE = { id: 'ft_genie', body: '#6fb7e8', edge: '#3f86c0', belly: '#cfe9fb', inner: '#3f86c0', ears: 'none', sparkle: true, acc: 'none' };
+const FT_KING = { id: 'ft_king', body: '#7a5aa8', edge: '#4f3a75', belly: '#c9b6e6', inner: '#ffd23f', ears: 'horns', spikes: true, wings: '#4f3a75', acc: 'none' };
+const FT_PRINCESS = { top: 'princess_dress', head: 'crown' };
+const FT_FOREST = (g, t) => { MV.sky(g, '#cfeaf7', '#eef8fb'); MV.ground(g, 150, '#86b972'); MV.tree(g, 40, 155, 1.1); MV.tree(g, 330, 155, 1.2); MV.tree(g, 290, 150, .8); };
+MOVIES.push(
+  { id: 'redhood', fairy: true, rel: '2026-11-24', title: '{名字}小紅帽', genre: '童話電影', icon: '🧺', color: '#e8505b', scenes: [
+    { d: 7, say: '{名字}戴上紅色的小帽子，要帶一籃水果去看阿婆。', draw(g, t) { MV.sky(g, '#bfe3f5', '#eef8fb'); MV.house(g, 30, 150); MV.ground(g, 150, '#8fc27a'); MV.tree(g, 300, 155, 1); MV.kid(g, 170 + Math.min(t, 3) * 12, 175, 1.15, { t, walk: t < 3 }); MV.hood(g, 170 + Math.min(t, 3) * 12, 175, 1.15); MV.basket(g, 190 + Math.min(t, 3) * 12, 150); } },
+    { d: 7, say: '森林裡好多漂亮的花，{名字}停下來摘花。', tap: { at: 1.5, hint: '👆 點一下，摘一朵花！', x: 230, y: 150 }, tapFx(g, k) { MV.hearts(g, 230, 130, k); if (k < 2) MV.say(g, 230, 112, '好香喔！'); }, draw(g, t, st) { FT_FOREST(g, t); [[200, '#ff8fb3'], [230, '#ffd23f'], [255, '#b18cff'], [280, '#ff6b6b']].forEach(([x, c]) => MV.flower(g, x, 165, c)); MV.kid(g, 140, 175, 1.15, { t, joy: !!st.tapped }); MV.hood(g, 140, 175, 1.15); } },
+    { d: 7, say: '大野狼從樹後面探出頭：「小妹妹，你要去哪裡呀？」', react: ['wow', 2], draw(g, t) { FT_FOREST(g, t); MV.kid(g, 130, 175, 1.15, { t }); MV.hood(g, 130, 175, 1.15); MV.nb(g, FT_WOLF, 290 - Math.min(t, 1.5) * 20, 165, 2.2, { flip: true }); } },
+    { d: 8, say: '{名字}想起媽媽說的話：「不可以跟陌生人說話！」轉身跑去阿婆家。', react: ['clap', 3], draw(g, t) { FT_FOREST(g, t); const x = 130 - t * 22; MV.kid(g, x, 175, 1.15, { t, walk: true, flip: true }); MV.hood(g, x, 175, 1.15); MV.nb(g, FT_WOLF, 260, 165, 2.2, { flip: true, happy: false }); if (t > 2) MV.say(g, 260, 105, '咦？跑掉了？'); } },
+    { d: 8, say: '大野狼偷偷跑到阿婆家，假扮成阿婆躺在床上……', tap: { at: 2, hint: '👆 點一下，拉開被子！', x: 220, y: 130 }, tapFx(g, k) { if (k < 2.5) MV.say(g, 230, 90, '被、被發現了！'); }, react: ['laugh', 2.5], draw(g, t, st) { MV.sky(g, '#ffe9d0', '#fff6ea'); MV.ground(g, 160, '#d9b48a'); MV.bed(g, 220, 160); MV.nb(g, st.tapped ? FT_WOLF : FT_WOLF_GRAN, 200, 150 - (st.tapped ? Math.min(1, st.tt) * 18 : 0), 1.6, { happy: !st.tapped }); MV.kid(g, 80, 182, 1.1, { t }); MV.hood(g, 80, 182, 1.1); } },
+    { d: 8, say: '老虎園長趕來了，大野狼嚇得逃走！阿婆從衣櫃出來，大家一起吃水果。', tap: { at: 2, hint: '👆 點一下，跟阿婆抱抱！', x: 210, y: 140 }, tapFx(g, k) { MV.hearts(g, 210, 120, k * 1.5); if (k < 2) MV.say(g, 210, 95, '乖孫，謝謝你！'); }, draw(g, t) { MV.sky(g, '#ffe9d0', '#fff6ea'); MV.ground(g, 160, '#d9b48a'); MV.friend(g, HOSTS.grandma, 210, 175, 2); MV.friend(g, HOSTS.ranger, 300, 175, 2); MV.kid(g, 120, 182, 1.15, { t, joy: true }); MV.hood(g, 120, 182, 1.15); MV.basket(g, 160, 168); MV.hearts(g, 170, 110, t); } }
+  ] },
+  { id: 'pigs', fairy: true, rel: '2026-11-27', title: '三隻小豬和{名字}', genre: '童話電影', icon: '🐷', color: '#ff9ec4', scenes: [
+    { d: 7, say: '三隻小豬要蓋自己的房子，{名字}來幫忙！', tap: { at: 1.5, hint: '👆 點一下，跟小豬打招呼！', x: 220, y: 150 }, tapFx(g, k) { MV.hearts(g, 220, 130, k); if (k < 2) MV.say(g, 220, 110, '齁齁！你好！'); }, draw(g, t) { MV.sky(g, '#bfe3f5', '#eef8fb'); MV.ground(g, 150, '#8fc27a'); [['#ffd23f', 160], ['#7bd389', 220], ['#e8505b', 280]].forEach(([c, x], i) => MV.nb(g, FT_PIG(c), x, 168 - Math.abs(Math.sin(t * 3 + i)) * 6, 1.6)); MV.kid(g, 80, 178, 1.15, { t, joy: true }); } },
+    { d: 7, say: '大哥用稻草蓋，二哥用木頭蓋，小弟用磚頭慢慢蓋。', draw(g, t) { MV.sky(g, '#bfe3f5', '#eef8fb'); MV.ground(g, 150, '#8fc27a'); MV.straw(g, 30, 155); MV.woody(g, 150, 155); MV.brick(g, 270, 155); } },
+    { d: 7, say: '大野狼來了！呼——一吹，稻草屋飛走了！', tap: { at: 1.5, hint: '👆 點一下，幫小豬快逃！', x: 70, y: 150 }, tapFx(g, k) { MV.nb(g, FT_PIG('#ffd23f'), 70 + k * 120, 168, 1.4); }, react: ['wow', 2], draw(g, t) { MV.sky(g, '#bfe3f5', '#eef8fb'); MV.ground(g, 150, '#8fc27a'); for (let i = 0; i < 16; i++) { const k = Math.min(1, Math.max(0, t - 1 + i * .02)); g.fillStyle = '#f2d16b'; g.fillRect(40 + i * 3 + k * 260, 120 - i * 2 - k * 80 + i, 6, 2); } if (t < 1) MV.straw(g, 30, 155); MV.nb(g, FT_WOLF, 300, 165, 2); if (t % 1 < .6) MV.say(g, 250, 110, '呼——'); } },
+    { d: 7, say: '再吹——木頭屋也倒了！大家都跑進磚頭屋。', react: ['wow', 1.5], draw(g, t) { MV.sky(g, '#bfe3f5', '#eef8fb'); MV.ground(g, 150, '#8fc27a'); if (t < 1.5) MV.woody(g, 120, 155); else { g.fillStyle = '#b07a48'; for (let i = 0; i < 6; i++) g.fillRect(110 + i * 12, 148 - (i % 2) * 4, 14, 5); } MV.brick(g, 270, 155); MV.nb(g, FT_WOLF, 60, 165, 2, { flip: true }); } },
+    { d: 8, say: '大野狼吹到臉都紅了，磚頭屋還是好好的！', tap: { at: 1.5, hint: '👆 點一下，把門關緊！', x: 300, y: 140 }, tapFx(g, k) { if (k < 2) MV.say(g, 300, 90, '關好了！'); }, react: ['laugh', 3], draw(g, t) { MV.sky(g, '#bfe3f5', '#eef8fb'); MV.ground(g, 150, '#8fc27a'); MV.brick(g, 270, 155); g.save(); g.filter = 'none'; MV.nb(g, Object.assign({}, FT_WOLF, { body: t > 2 ? '#d98a8a' : FT_WOLF.body }), 140, 165, 2.1, { flip: true }); g.restore(); if (t % 1 < .6) MV.say(g, 190, 110, '呼——呼——'); } },
+    { d: 8, say: '大野狼累得坐在地上。{名字}說：「不要再搗蛋了，一起來蓋房子吧！」', draw(g, t) { MV.sky(g, '#ffd9a0', '#fff1d6'); MV.ground(g, 150, '#8fc27a'); MV.brick(g, 270, 155); MV.nb(g, FT_WOLF, 120, 170, 1.8, { happy: true }); MV.kid(g, 200, 178, 1.15, { t, joy: true }); [['#ffd23f', 40], ['#7bd389', 70]].forEach(([c, x]) => MV.nb(g, FT_PIG(c), x, 170, 1.3)); MV.hearts(g, 160, 110, t); } }
+  ] },
+  { id: 'snow', fairy: true, rel: '2026-11-29', title: '{名字}公主和七個好朋友', genre: '童話電影', icon: '🍎', color: '#6fb7e8', scenes: [
+    { d: 7, say: '{名字}公主住在森林旁邊的城堡裡，最喜歡唱歌。', draw(g, t) { MV.sky(g, '#cfeaf7', '#eef8fb'); MV.ground(g, 150, '#86b972'); MV.castle(g, 270, 152, 1); MV.kid(g, 140, 178, 1.2, { t, joy: true, outfit: MV.look(FT_PRINCESS) }); g.font = '16px sans-serif'; g.fillText('🎵', 170 + Math.sin(t * 3) * 6, 100 - (t * 12) % 30); } },
+    { d: 8, say: '森林裡住著七個小動物朋友，每天一起玩。', tap: { at: 1.5, hint: '👆 點一下，跟小動物揮揮手！', x: 180, y: 160 }, tapFx(g, k) { MV.hearts(g, 180, 140, k); if (k < 2) MV.say(g, 180, 100, '公主好！'); }, react: ['laugh', 3], draw(g, t) { FT_FOREST(g, t); NEIGHBORS.slice(0, 7).forEach((n, i) => MV.friend(g, n, 50 + i * 42, 175 - Math.abs(Math.sin(t * 3 + i)) * 8, 1.05)); MV.kid(g, 190, 150, .9, { t, outfit: MV.look(FT_PRINCESS) }); } },
+    { d: 7, say: '一個奇怪的婆婆走過來：「小公主，請你吃一顆紅紅的蘋果～」', draw(g, t) { FT_FOREST(g, t); MV.kid(g, 120, 178, 1.2, { t, outfit: MV.look(FT_PRINCESS) }); MV.nb(g, FT_WITCH, 250, 170, 2.1, { flip: true }); MV.apple(g, 215, 140, 7); } },
+    { d: 8, say: '{名字}想起來：「不認識的人給的東西不能吃！」', tap: { at: 1.5, hint: '👆 點一下，把蘋果放下！', x: 200, y: 140 }, tapFx(g, k) { MV.apple(g, 200, 140 + Math.min(1, k) * 30, 7); if (k < 2) MV.say(g, 130, 100, '我不要，謝謝！'); }, react: ['clap', 2.5], draw(g, t, st) { FT_FOREST(g, t); MV.kid(g, 130, 178, 1.2, { t, outfit: MV.look(FT_PRINCESS) }); MV.nb(g, FT_WITCH, 260, 170, 2.1, { flip: true, happy: false }); if (!st.tapped) MV.apple(g, 200, 140, 7); } },
+    { d: 7, say: '原來蘋果裡有瞌睡藥！小動物朋友們一起把壞巫婆趕走了！', react: ['clap', 2], draw(g, t) { FT_FOREST(g, t); MV.nb(g, FT_WITCH, 280 + t * 30, 170, 2, { flip: true, happy: false }); NEIGHBORS.slice(0, 7).forEach((n, i) => MV.friend(g, n, 60 + i * 30 + t * 12, 178, .95)); } },
+    { d: 8, say: '大家在城堡開了一個派對，好熱鬧！', tap: { at: 1.5, hint: '👆 點一下，一起跳舞！', x: 160, y: 150 }, tapFx(g, k) { g.font = '18px sans-serif'; g.textAlign = 'center'; g.fillText('🎵', 160 + Math.sin(k * 6) * 20, 100 - k * 10); g.fillText('🎶', 200, 110 - k * 12); }, draw(g, t) { MV.sky(g, '#ffd9e8', '#fff2f7'); MV.ground(g, 150, '#86b972'); MV.castle(g, 290, 152, .9); MV.kid(g, 160, 178, 1.2, { t, joy: true, outfit: MV.look(FT_PRINCESS) }); NEIGHBORS.slice(0, 4).forEach((n, i) => MV.friend(g, n, 40 + i * 30, 178 - Math.abs(Math.sin(t * 4 + i)) * 10, 1)); MV.hearts(g, 160, 110, t); } }
+  ] },
+  { id: 'lamp', fairy: true, rel: '2026-12-04', title: '{名字}和神燈', genre: '童話電影', icon: '✨', color: '#ffb02e', scenes: [
+    { d: 7, say: '{名字}在沙漠的市集裡，撿到一盞舊舊的油燈。', draw(g, t) { MV.sand(g); g.fillStyle = '#e8505b'; g.fillRect(250, 100, 80, 8); g.fillStyle = '#c98d5a'; g.fillRect(255, 108, 4, 44); g.fillRect(321, 108, 4, 44); MV.kid(g, 150, 178, 1.15, { t }); MV.lamp(g, 190, 168, 1); } },
+    { d: 7, say: '擦一擦——咻！一個藍色的燈神跑出來了！', tap: { at: 1.5, hint: '👆 擦一擦油燈！', x: 190, y: 160 }, tapFx(g, k) { MV.nb(g, FT_GENIE, 210, 150 - Math.min(1, k) * 40, 1 + Math.min(1, k) * 1.3); }, react: ['wow', 2.5], draw(g, t) { MV.sand(g); MV.kid(g, 130, 178, 1.15, { t }); MV.lamp(g, 190, 168, 1.1); } },
+    { d: 7, say: '燈神說：「謝謝你救我出來！我可以實現你三個願望！」', draw(g, t) { MV.sand(g); MV.kid(g, 110, 178, 1.15, { t, joy: true }); MV.lamp(g, 210, 172, 1); MV.nb(g, FT_GENIE, 230, 115 + Math.sin(t * 2) * 4, 2.3); g.font = '18px sans-serif'; g.fillText('1️⃣2️⃣3️⃣', 200, 50); } },
+    { d: 8, say: '第一個願望：坐魔毯飛上天！', tap: { at: 1.5, hint: '👆 點一下，讓魔毯飛高一點！', x: 180, y: 100 }, tapFx(g, k) { if (k < 2) MV.say(g, 180, 50, '哇——好高喔！'); }, react: ['wow', 1.5], draw(g, t) { MV.sky(g, '#7cc6ff', '#ffd9a0'); g.fillStyle = '#e8c98a'; g.fillRect(0, 175, MOVIE_W, 30); const x = 60 + (t * 30) % 260, y = 110 + Math.sin(t * 2) * 10; MV.carpet(g, x, y + 4, t); MV.kid(g, x, y, .9, { t, sit: true, joy: true }); MV.cloud && MV.cloud(g, 260, 50, 1); } },
+    { d: 8, say: '第二個願望：給沙漠的小動物一個綠洲！', tap: { at: 1.5, hint: '👆 點一下，變出綠洲！', x: 200, y: 160 }, tapFx(g, k) { const r = Math.min(1, k) ; g.fillStyle = '#3fa9f5'; g.beginPath(); g.ellipse(200, 168, 60 * r, 10 * r, 0, 0, 7); g.fill(); MV.tree(g, 150, 162, .8 * r); MV.tree(g, 255, 162, .7 * r); if (k > 1) MV.hearts(g, 200, 130, k); }, react: ['clap', 3], draw(g, t) { MV.sand(g); MV.friend(g, NEIGHBOR_BY_ID.dudu || NEIGHBORS[0], 70, 178, 1.2, { happy: false }); MV.friend(g, NEIGHBOR_BY_ID.gaogao || NEIGHBORS[1], 320, 178, 1.2, { happy: false }); MV.nb(g, FT_GENIE, 200, 90, 1.6); } },
+    { d: 8, say: '第三個願望：{名字}說：「讓燈神自由吧！」燈神開心得變成好朋友！', draw(g, t) { MV.sky(g, '#ffb36b', '#ffe6c9'); MV.ground(g, 160, '#e8c98a'); MV.kid(g, 140, 182, 1.15, { t, joy: true }); MV.nb(g, FT_GENIE, 230, 170, 1.7); MV.hearts(g, 190, 110, t); } }
+  ] },
+  { id: 'hero', fairy: true, rel: '2026-12-06', title: '勇者{名字}', genre: '童話電影', icon: '⚔️', color: '#7a5aa8', scenes: [
+    { d: 7, say: '魔王把村子裡的糖果全部搶走了！大家好傷心。', draw(g, t) { MV.sky(g, '#9aa3c8', '#d6daf0'); MV.ground(g, 150, '#7aa86a'); MV.house(g, 30, 150); MV.house(g, 260, 150); NEIGHBORS.slice(0, 3).forEach((n, i) => MV.friend(g, n, 140 + i * 40, 178, 1.1, { happy: false })); MV.nb(g, FT_KING, 300 + t * 10, 70, 1.2); } },
+    { d: 7, say: '{名字}拿起木劍和盾牌：「我去把糖果拿回來！」', tap: { at: 1.5, hint: '👆 點一下，舉起木劍！', x: 205, y: 135 }, tapFx(g, k) { MV.boom(g, 205, 120, k * .6); if (k < 2) MV.say(g, 180, 90, '出發！'); }, react: ['clap', 2.5], draw(g, t) { MV.sky(g, '#bfe3f5', '#eef8fb'); MV.ground(g, 150, '#8fc27a'); MV.kid(g, 180, 178, 1.25, { t, joy: true }); MV.sword(g, 205, 150, -.5 + Math.sin(t * 2) * .1); MV.shield(g, 160, 150); } },
+    { d: 7, say: '走過黑黑的森林，{寵物}也一起來幫忙！', draw(g, t) { MV.sky(g, '#3a3f5a', '#5a6080'); MV.ground(g, 150, '#3f5a3f'); MV.tree(g, 40, 155, 1.1); MV.tree(g, 320, 155, 1.2); const x = 90 + (t * 20) % 140; MV.kid(g, x, 178, 1.15, { t, walk: true }); MV.sword(g, x + 22, 152, -.4); MV.pet(g, x - 40, 172, 1.1); } },
+    { d: 8, say: '魔王出現了！吼——！', tap: { at: 1.8, hint: '👆 點一下，舉起盾牌！', x: 140, y: 145 }, tapFx(g, k) { MV.shield(g, 140, 140); if (k < 2) MV.say(g, 140, 100, '擋住了！'); }, react: ['wow', 1.2], draw(g, t) { MV.sky(g, '#2a2240', '#4a3a6a'); MV.ground(g, 160, '#3a3050'); MV.nb(g, FT_KING, 270, 168, 2.8 + Math.sin(t * 2) * .05); MV.kid(g, 110, 182, 1.15, { t }); MV.sword(g, 135, 156, -.4); MV.pet(g, 70, 178, 1); } },
+    { d: 8, say: '{名字}和{寵物}一起使出必殺技！', tap: { at: 1.5, hint: '👆 點一下，發動必殺技！', x: 270, y: 120 }, tapFx(g, k) { MV.boom(g, 270, 120, k); if (k > .8 && k < 2.5) MV.say(g, 270, 60, '哇啊——頭好暈～'); }, react: ['clap', 3], draw(g, t) { MV.sky(g, '#2a2240', '#4a3a6a'); MV.ground(g, 160, '#3a3050'); MV.nb(g, FT_KING, 270, 168, 2.6); MV.kid(g, 120, 182, 1.15, { t, joy: true }); MV.sword(g, 145, 150, -1 + Math.sin(t * 6) * .4); MV.pet(g, 80, 178, 1); } },
+    { d: 9, say: '魔王哭了：「我只是想要朋友一起吃糖果……」大家把糖果分一分，變成好朋友！', draw(g, t) { MV.sky(g, '#ffd9a0', '#fff1d6'); MV.ground(g, 150, '#8fc27a'); MV.nb(g, FT_KING, 260, 172, 1.8); MV.kid(g, 160, 178, 1.15, { t, joy: true }); NEIGHBORS.slice(0, 2).forEach((n, i) => MV.friend(g, n, 50 + i * 40, 178, 1.1)); g.font = '16px sans-serif'; g.textAlign = 'center'; ['🍬', '🍭', '🍫'].forEach((c, i) => g.fillText(c, 200 + i * 18, 120 + Math.sin(t * 3 + i) * 5)); MV.hearts(g, 210, 100, t); } }
+  ] }
+);
 const MOVIE_BY_ID = Object.fromEntries(MOVIES.map(m => [m.id, m]));
-const MOVIE_REGULAR = MOVIES.filter(m => !m.season).map(m => m.id);
+const MOVIE_REGULAR = MOVIES.filter(m => !m.season && !m.fairy).map(m => m.id);   // 童話電影不算進原本 6 部的集章
 /* 🔤 電影念英文（家長：電影換成英文發音）：每一句的英文。名字、寵物名字是中文，英文聲音念不出來，所以用 you、your pet。字幕英文在上、中文在下。 */
 const MOVIE_EN = {
   "{名字}和{寵物}在院子裡玩球，好開心！": "{You} and {pet} play ball in the yard. So much fun!",
@@ -28273,6 +28353,8 @@ const MOVIE_EN = {
   "萬聖節快樂！明年再來找小幽靈玩吧！": "Happy Halloween! Come and play with the little ghost again next year!"
 };
 const MOVIE_TITLE_EN = {"{寵物}去哪裡了？": "Where Is My Pet?", "{名字}上月球": "Trip to the Moon", "恐龍寶寶": "Baby Dinosaur", "海底大冒險": "Under the Sea", "蛋糕大作戰": "The Big Cake", "南瓜燈小幽靈": "The Little Ghost"};
+Object.assign(MOVIE_EN, {"{名字}戴上紅色的小帽子，要帶一籃水果去看阿婆。": "{You} put on a little red hood and take a basket of fruit to Grandma.", "森林裡好多漂亮的花，{名字}停下來摘花。": "So many pretty flowers in the forest! {You} stop to pick some.", "大野狼從樹後面探出頭：「小妹妹，你要去哪裡呀？」": "A big wolf peeks out from a tree: \"Little girl, where are you going?\"", "{名字}想起媽媽說的話：「不可以跟陌生人說話！」轉身跑去阿婆家。": "{You} remember what Mom said: \"Don't talk to strangers!\" and run to Grandma's house.", "大野狼偷偷跑到阿婆家，假扮成阿婆躺在床上……": "The wolf sneaks into Grandma's house and pretends to be Grandma in bed...", "老虎園長趕來了，大野狼嚇得逃走！阿婆從衣櫃出來，大家一起吃水果。": "The tiger ranger comes and the wolf runs away! Grandma comes out of the closet, and everyone eats fruit together.", "三隻小豬要蓋自己的房子，{名字}來幫忙！": "Three little pigs want to build their own houses. {You} come to help!", "大哥用稻草蓋，二哥用木頭蓋，小弟用磚頭慢慢蓋。": "The first pig uses straw, the second uses wood, and the youngest slowly builds with bricks.", "大野狼來了！呼——一吹，稻草屋飛走了！": "Here comes the wolf! Whoosh — the straw house blows away!", "再吹——木頭屋也倒了！大家都跑進磚頭屋。": "Another blow — the wooden house falls down too! Everyone runs into the brick house.", "大野狼吹到臉都紅了，磚頭屋還是好好的！": "The wolf blows until his face turns red, but the brick house is still fine!", "大野狼累得坐在地上。{名字}說：「不要再搗蛋了，一起來蓋房子吧！」": "The tired wolf sits down. {You} say: \"No more trouble. Let's build a house together!\"", "{名字}公主住在森林旁邊的城堡裡，最喜歡唱歌。": "Princess {You} lives in a castle by the forest and loves to sing.", "森林裡住著七個小動物朋友，每天一起玩。": "Seven little animal friends live in the forest. They play together every day.", "一個奇怪的婆婆走過來：「小公主，請你吃一顆紅紅的蘋果～」": "A strange old lady comes over: \"Little princess, have a nice red apple~\"", "{名字}想起來：「不認識的人給的東西不能吃！」": "{You} remember: \"Never eat things from strangers!\"", "原來蘋果裡有瞌睡藥！小動物朋友們一起把壞巫婆趕走了！": "The apple had sleepy medicine in it! The animal friends chase the bad witch away!", "大家在城堡開了一個派對，好熱鬧！": "Everyone has a big party at the castle!", "{名字}在沙漠的市集裡，撿到一盞舊舊的油燈。": "{You} find an old oil lamp at the desert market.", "擦一擦——咻！一個藍色的燈神跑出來了！": "Rub, rub — whoosh! A blue genie pops out!", "燈神說：「謝謝你救我出來！我可以實現你三個願望！」": "The genie says: \"Thank you for letting me out! I can grant you three wishes!\"", "第一個願望：坐魔毯飛上天！": "Wish number one: fly on a magic carpet!", "第二個願望：給沙漠的小動物一個綠洲！": "Wish number two: an oasis for the desert animals!", "第三個願望：{名字}說：「讓燈神自由吧！」燈神開心得變成好朋友！": "Wish number three: {You} say, \"Set the genie free!\" The happy genie becomes a good friend!", "魔王把村子裡的糖果全部搶走了！大家好傷心。": "The Demon King took all the candy from the village! Everyone is sad.", "{名字}拿起木劍和盾牌：「我去把糖果拿回來！」": "{You} pick up a wooden sword and shield: \"I'll get the candy back!\"", "走過黑黑的森林，{寵物}也一起來幫忙！": "Through the dark forest — {pet} comes along to help!", "魔王出現了！吼——！": "The Demon King appears! ROAR!", "{名字}和{寵物}一起使出必殺技！": "{You} and {pet} use a super move together!", "魔王哭了：「我只是想要朋友一起吃糖果……」大家把糖果分一分，變成好朋友！": "The Demon King cries: \"I just wanted friends to share candy with...\" Everyone shares the candy and becomes friends!"});
+Object.assign(MOVIE_TITLE_EN, {"{名字}小紅帽": "Little Red Riding Hood", "三隻小豬和{名字}": "The Three Little Pigs", "{名字}公主和七個好朋友": "The Princess and Seven Friends", "{名字}和神燈": "The Magic Lamp", "勇者{名字}": "The Little Hero"});
 const MOVIE_LANG_KEY = 'myHouse_movieLang';
 function movieLang() { try { return localStorage.getItem(MOVIE_LANG_KEY) === 'zh' ? 'zh' : 'en'; } catch (e) { return 'en'; } }
 function movieEn(s) {
@@ -28280,7 +28362,20 @@ function movieEn(s) {
   return t.split('{You}').join('You').split('{you}').join('you').split('{Pet}').join('Your pet').split('{pet}').join('your pet');
 }
 function movieText(s) { return String(s).split('{名字}').join(charName()).split('{寵物}').join(G.pet ? petName() : '小寵物'); }
-function moviesNow() { return MOVIES.filter(m => !m.season || (m.season === 'halloween' && typeof halloweenActive === 'function' && halloweenActive())); }
+/* 🔔 新電影上映、新書上架：那天打開遊戲會跳通知（每一部只通知一次，記在 G.mediaNote） */
+function mediaNotify() {
+  if (!G || G.guide !== 'done' || (typeof navigator !== 'undefined' && navigator.webdriver && !window.__mediaTest)) return 0;
+  if (!G.mediaNote || typeof G.mediaNote !== 'object') G.mediaNote = {};
+  let n = 0;
+  MOVIES.filter(m => m.rel && relOk(m.rel) && !G.mediaNote['m:' + m.id]).forEach(m => { G.mediaNote['m:' + m.id] = 1; n++; try { showcase(m.icon, `新電影上映：${movieText(m.title)}`, '快去電影院看！（大地圖 → 電影院）', { head: '🎬 新電影上映！' }); } catch (e) {} });
+  FAIRY_BOOKS.filter(b => relOk(b.rel) && !G.mediaNote['b:' + b.id]).forEach(b => { G.mediaNote['b:' + b.id] = 1; n++; try { showcase(b.cover, `新書上架：${b.title}`, '圖書館的童話書架有新書囉！', { head: '📚 新書到館！' }); } catch (e) {} });
+  if (n) saveGame();
+  return n;
+}
+setTimeout(() => { try { mediaNotify(); } catch (e) {} }, 6000);
+setInterval(() => { try { mediaNotify(); } catch (e) {} }, 120000);
+function relOk(rel, now) { return !rel || (now || Date.now()) >= new Date(rel + 'T00:00:00').getTime(); }   // 🎬 上映日期到了沒
+function moviesNow() { return MOVIES.filter(m => relOk(m.rel) && (!m.season || (m.season === 'halloween' && typeof halloweenActive === 'function' && halloweenActive()))); }
 function moviesSeen() { return G.movies && typeof G.movies === 'object' ? G.movies : (G.movies = {}); }
 function drawMoviePoster(g, W, H, id) {   // 海報：顏色＋大圖示＋片名（太小的只畫圖示）
   const m = MOVIE_BY_ID[id]; if (!m) return;
@@ -28302,6 +28397,7 @@ function openMoviePicker(preId) {
     lb.onclick = () => { try { localStorage.setItem(MOVIE_LANG_KEY, en ? 'zh' : 'en'); } catch (e) {} Sound.play('click'); openMoviePicker(); }; w.stage.appendChild(lb); }
   const n = MOVIE_REGULAR.filter(id => seen[id]).length;
   w.status.textContent = `🎟️ 集章 ${n} / ${MOVIE_REGULAR.length}${n >= MOVIE_REGULAR.length ? '（全部看過了！）' : `（全部看過送一張電影海報）`}`;
+  { const nx = MOVIES.find(m => m.rel && !relOk(m.rel)); if (nx) w.stage.appendChild(el('div', 'tkd-say', `📅 下一部新電影「${movieText(nx.title)}」${relLabel(nx.rel)}上映！`)); }
   leaveButton(w);
   if (preId && MOVIE_BY_ID[preId] && moviesNow().includes(MOVIE_BY_ID[preId])) moviePopcorn(w, MOVIE_BY_ID[preId]);
 }
@@ -35026,8 +35122,25 @@ const STORYBOOKS = [
   { id: 'night',  title: '睡不著',     cover: '⭐', pages: [['🌃', '晚上，我睡不著。'], ['⭐', '我數星星：一顆、兩顆……'], ['🐑', '數到第十隻小羊……'], ['😴', '呼——呼——晚安。']] },
   { id: 'share',  title: '一顆蘋果',   cover: '🍎', pages: [['🍎', '小熊撿到一顆蘋果。'], ['🐰🐿️', '朋友們也好想吃。'], ['🍽️', '小熊請爸爸幫忙，把蘋果切成好幾片。'], ['😋', '大家一起吃，更好吃！']] }
 ];
+/* 📚 童話書架（家長 11/24：新書不定期上架）：不算進閱讀護照（護照還是原本 8 本，蓋滿的獎狀不受影響）；讀過記在 G.fairyRead */
+const FAIRY_BOOKS = [{"id": "tortoise", "title": "龜兔賽跑", "cover": "🐢", "rel": "2026-11-24", "fairy": true, "pages": [["🐢🐇", "烏龜和兔子要比賽跑步。"], ["🐇💨", "兔子一下子就跑好遠。"], ["😴", "兔子說：「烏龜好慢，我先睡一下。」"], ["🐢", "烏龜一步一步，一直往前走。"], ["🏁", "烏龜先到終點了！"], ["😊", "慢慢來沒關係，不放棄最厲害！"]]}, {"id": "pigs3", "title": "三隻小豬", "cover": "🐷", "rel": "2026-11-27", "fairy": true, "pages": [["🐷🐷🐷", "三隻小豬要蓋自己的房子。"], ["🌾", "大哥用稻草，一下子就蓋好了。"], ["🌲", "二哥用木頭，也很快蓋好。"], ["🧱", "小弟用磚頭，蓋得好辛苦。"], ["🐺💨", "大野狼來吹，稻草屋和木頭屋都倒了！"], ["🏠", "只有磚頭屋吹不倒。認真做事最安全！"]]}, {"id": "duckling", "title": "醜小鴨", "cover": "🦢", "rel": "2026-11-29", "fairy": true, "pages": [["🥚", "鴨媽媽的蛋孵出一隻灰灰的小鴨。"], ["🦆🦆", "大家說牠長得不一樣。"], ["😢", "小鴨好難過，自己躲起來。"], ["❄️", "冬天過去了，春天來了。"], ["🦢", "小鴨長大了，原來是一隻漂亮的天鵝！"], ["💖", "每個人都有自己的美麗。"]]}, {"id": "beanstalk", "title": "傑克與魔豆", "cover": "🌱", "rel": "2026-12-04", "fairy": true, "pages": [["🐄", "傑克用牛換了一把豆子。"], ["🌱", "豆子一晚上長得好高好高！"], ["☁️", "傑克爬上去，雲上面有一座城堡。"], ["🥚", "城堡裡有一隻會生金蛋的鵝。"], ["👣", "巨人回來了！傑克趕快爬下來。"], ["🏡", "原來最好的寶物，是家人在一起。"]]}, {"id": "herobook", "title": "小勇者", "cover": "⚔️", "rel": "2026-12-06", "fairy": true, "pages": [["🏘️", "村子的糖果被魔王搶走了。"], ["🗡️", "小勇者拿起木劍出發。"], ["🌲", "走過黑黑的森林，一點都不怕。"], ["👹", "魔王好大好兇！"], ["🍬", "原來魔王只是沒有朋友。"], ["🤝", "大家把糖果分給魔王，變成好朋友！"]]}, {"id": "redhoodbook", "title": "小紅帽", "cover": "🧺", "rel": "2026-12-11", "fairy": true, "pages": [["👧", "小紅帽要去看外婆。"], ["🌼", "森林裡的花好漂亮。"], ["🐺", "大野狼問：「你要去哪裡？」"], ["🙅", "小紅帽記得：不跟陌生人說話！"], ["🏠", "大野狼假扮外婆，被發現了！"], ["🍎", "大家平平安安，一起吃水果。"]]}, {"id": "snowbook", "title": "白雪公主", "cover": "🍎", "rel": "2026-12-13", "fairy": true, "pages": [["👸", "公主住在森林旁邊。"], ["🐰🐿️", "七個小動物朋友陪她玩。"], ["🧙", "一個奇怪的婆婆送來蘋果。"], ["🙅", "公主說：「不認識的人的東西我不吃。」"], ["🏃", "小動物把壞巫婆趕跑了。"], ["🎉", "大家開了一個開心的派對！"]]}, {"id": "lampbook", "title": "神燈", "cover": "✨", "rel": "2026-12-18", "fairy": true, "pages": [["🏜️", "在沙漠裡撿到一盞油燈。"], ["🧞", "擦一擦，燈神跑出來了！"], ["3️⃣", "燈神說：「可以實現三個願望。」"], ["🌴", "變出綠洲給小動物喝水。"], ["🕊️", "最後一個願望：讓燈神自由。"], ["😊", "燈神好開心，變成好朋友！"]]}];
+function fairyBooksNow() { return FAIRY_BOOKS.filter(b => relOk(b.rel)); }
+function fairyReadState() { if (!G.fairyRead || typeof G.fairyRead !== 'object') G.fairyRead = {}; return G.fairyRead; }
+function relLabel(rel) { const d = new Date(rel + 'T00:00:00'); return `${d.getMonth() + 1}/${d.getDate()}（${'日一二三四五六'[d.getDay()]}）`; }
+function openFairyShelf() {
+  closeGameWindow(); const card = $('#modalCard'); card.innerHTML = ''; const rd = fairyReadState();
+  const x = el('button', 'modal-x', '✕'); x.onclick = () => { $('#modal').hidden = true; }; card.appendChild(x);
+  card.appendChild(el('h2', '', '🧚 童話書架'));
+  const grid = el('div', 'pass-grid');
+  fairyBooksNow().forEach(b => { const cell = el('button', 'pass' + (rd[b.id] ? ' done' : '')); cell.append(el('div', 'pass-cover', b.cover), el('span', '', b.title)); if (!rd[b.id]) cell.appendChild(el('div', 'pass-stamp', '新')); else cell.appendChild(el('div', 'pass-stamp', '讀')); cell.onclick = () => { Sound.play('click'); openStorybook(b.id); }; grid.appendChild(cell); });
+  card.appendChild(grid);
+  const next = FAIRY_BOOKS.find(b => !relOk(b.rel));
+  card.appendChild(note(next ? `📅 下一本新書「${next.title}」${relLabel(next.rel)}上架，記得來看喔！` : '童話書都上架了！'));
+  const ok = el('button', 'big', '好'); ok.onclick = () => { $('#modal').hidden = true; }; card.appendChild(ok);
+  $('#modal').hidden = false;
+}
 function openStorybook(id, aloud) {
-  const book = STORYBOOKS.find(b => b.id === id) || STORYBOOKS[Math.floor(Math.random() * STORYBOOKS.length)];
+  const book = STORYBOOKS.find(b => b.id === id) || FAIRY_BOOKS.find(b => b.id === id) || STORYBOOKS[Math.floor(Math.random() * STORYBOOKS.length)];
   let page = -1, readAloud = !!aloud; // -1 是封面
   const card = $('#modalCard');
   function show() {
@@ -35170,6 +35283,14 @@ function speak(text, voiceOverride, asked) {
 }
 // 看完最後一頁才蓋章（翻一半就關掉不算）
 function finishBook(book, opts) {
+  if (book.fairy) {   // 📚 童話書：不蓋閱讀護照的章，記在童話書架
+    const rd = fairyReadState(), isNew = !rd[book.id]; rd[book.id] = Math.min(999, (rd[book.id] || 0) + 1);
+    try { dailyHit('book'); } catch (e) {}
+    if (isNew) kidGainGrowth(KID_BOOK_GROW); else kidActGrowth('book');
+    rememberFor('librarian', 'book', book.title);
+    toast(isNew ? `🧚 看完「${book.title}」了！` : '🧚 這本看過了，再看一次也很好看'); Sound.play('coin'); saveGame();
+    openFairyShelf(); return;
+  }
   const pass = G.passport = G.passport || {};
   const isNew = !pass[book.id];
   pass[book.id] = (pass[book.id] || 0) + 1;
