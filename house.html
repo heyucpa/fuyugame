@@ -6183,6 +6183,13 @@ const OPEN_GIFT_BELLS = 100000;
    妹妹看不懂字，所以每一行前面都有大圖示，字也盡量短。
    newItems：這次新進商店的家具 id，兩個禮拜內在商店會掛「新」，買過就不掛。 */
 const NEWS = [
+  { id: '2026-11-24T18:00', title: '📬 舊地方發生事件了！', lines: [
+    ['🐺', '阿婆家：大野狼假扮阿婆！先看清楚，再跟大野狼對決；還有烏鴉來偷吃果園'],
+    ['🚨', '叔叔家：戴面罩的強盜闖進來！記得先打 110 報警，再一起擋住強盜'],
+    ['🧺', '公園：松鼠的松果被烏鴉搶走、野餐大會邀請你參加'],
+    ['🎡', '遊樂園：摩天輪突然停住了，去幫忙！'],
+    ['📬', '求救信一天最多寄兩封，比較少去的地方會優先寄']
+  ] },
   { id: '2026-11-24T17:00', title: '🎭 故事扮演：當故事的主角！', lines: [
     ['⚔️', '勇者打魔王、小紅帽對大野狼、公主對壞巫婆：回合制對打，選招式卡（攻擊、防禦、找幫手、必殺技）'],
     ['⚠️', '壞蛋「蓄力」的時候按防禦，就是完美防禦，不痛還多拿力氣！'],
@@ -7630,7 +7637,7 @@ function normalizeSave(g) {
   if (out.noDayNight != null && out.noDayNight !== 1) delete out.noDayNight;
   if (out.realClock != null && out.realClock !== 1) delete out.realClock;
   if (out.playClock != null) { const pc = out.playClock; if (!isObj(pc) || !Number.isFinite(pc.m) || pc.m < 0 || pc.m > 1e6 || !Number.isFinite(pc.at)) delete out.playClock; else out.playClock = { m: pc.m, at: pc.at }; }   // 🕐 玩了多久
-  if (out.help != null) { if (!isObj(out.help)) delete out.help; else { const h = out.help, ok = k => /^(ice|forest|sea|desert|duck|lamb|game|books|jump|film|busy|shot|tools|siren|dumbbell|balls|ring|carousel|garden|dinoegg|cloud|ants|fallstar)$/.test(k); h.list = Array.isArray(h.list) ? [...new Set(h.list.filter(ok))].slice(0, 6) : []; h.done = isObj(h.done) ? Object.fromEntries(Object.entries(h.done).filter(([k, v]) => ok(k) && Number.isInteger(v) && v >= 0 && v < 1e6)) : {}; if (h.d != null && !(typeof h.d === 'string' && h.d.length <= 12)) delete h.d; Object.keys(h).forEach(k => { if (!['list', 'done', 'd'].includes(k)) delete h[k]; }); } }   // 📬 求救信箱
+  if (out.help != null) { if (!isObj(out.help)) delete out.help; else { const h = out.help, ok = k => /^(ice|forest|sea|desert|duck|lamb|game|books|jump|film|busy|shot|tools|siren|dumbbell|balls|ring|carousel|garden|dinoegg|cloud|ants|fallstar|wolfgran|crow|robber|acorn|picnic|ferris)$/.test(k); h.list = Array.isArray(h.list) ? [...new Set(h.list.filter(ok))].slice(0, 6) : []; h.done = isObj(h.done) ? Object.fromEntries(Object.entries(h.done).filter(([k, v]) => ok(k) && Number.isInteger(v) && v >= 0 && v < 1e6)) : {}; if (h.d != null && !(typeof h.d === 'string' && h.d.length <= 12)) delete h.d; if (h.dn != null && !(Number.isInteger(h.dn) && h.dn >= 0 && h.dn < 10)) delete h.dn; Object.keys(h).forEach(k => { if (!['list', 'done', 'd', 'dn'].includes(k)) delete h[k]; }); } }   // 📬 求救信箱（dn：今天寄了幾封）
   if (out.visitAt != null) { if (!isObj(out.visitAt)) delete out.visitAt; else out.visitAt = Object.fromEntries(Object.entries(out.visitAt).filter(([k, v]) => typeof k === 'string' && k.length <= 12 && typeof v === 'string' && v.length <= 12).slice(0, 60)); }   // 🗺️ 每個地方最後一次去的日子
   if (out.fw != null) { if (!isObj(out.fw)) delete out.fw; else { ['ny', 'cny'].forEach(k => { if (out.fw[k] != null && !(Number.isInteger(out.fw[k]) && out.fw[k] > 2000 && out.fw[k] < 3000)) delete out.fw[k]; }); Object.keys(out.fw).forEach(k => { if (!['ny', 'cny'].includes(k)) delete out.fw[k]; }); } }   // 🎆 跨年、春節的過場動畫看過哪一年
   if (out.petSports != null) { if (!isObj(out.petSports)) delete out.petSports; else { const ps = out.petSports; Object.keys(ps).forEach(k => { if (!['races', 'gold'].includes(k) || !(Number.isFinite(ps[k]) && ps[k] >= 0 && ps[k] < 1e7)) delete ps[k]; else ps[k] = Math.floor(ps[k]); }); } }   // 🏅 寵物運動會
@@ -13750,7 +13757,33 @@ const HELP_REQS = {
     end: '糖果城堡保住了，螞蟻也有食物過冬！大家都開心！' },
   fallstar: { who: '小星星', icon: '⭐', dest: '星星國', title: '小星星掉下來了', letter: '我從天上掉下來了，回不了天空……晚上會有一個地方暗暗的……',
     steps: [{ q: '小星星在哪裡？', opts: [['🔭 用望遠鏡找一找', '找到了！小星星掉在草叢裡，一閃一閃的！']] }, { q: '要怎麼回到天空？', opts: [['🎈 綁在氣球上送它回去', '氣球帶著小星星，慢慢飛回天上了！']] }],
-    end: '天空又亮晶晶了！小星星眨眨眼睛說：謝謝你！' }
+    end: '天空又亮晶晶了！小星星眨眨眼睛說：謝謝你！' },
+  // ── 第三批（家長 11/24：公園、叔叔家、阿婆家這些早期的地點，用小偷、強盜、活動、突發狀況把小朋友帶過去）──
+  wolfgran: { who: '山羊阿婆', icon: '🐺', place: 'grandma', title: '阿婆家怪怪的', letter: '阿婆說要請你吃水果……可是電話裡阿婆的聲音好奇怪，好像大野狼的聲音！', battle: 'wolfgran',
+    steps: [{ q: '床上的「阿婆」耳朵好大、牙齒好尖……', opts: [['🍎 直接把水果拿過去', '等等！那不是阿婆……先不要靠近，再想想？', 1], ['🔍 先看清楚', '是大野狼假扮的！真正的阿婆躲在衣櫃裡！']] },
+            { q: '大野狼跳下床了！', opts: [['🛡️ 擋在阿婆前面，準備對決！', '拿起枕頭當盾牌！']] }],
+    end: '大野狼被打跑了！阿婆從衣櫃出來抱抱你：「乖孫，好勇敢！」' },
+  crow: { who: '山羊阿婆', icon: '🍎', place: 'grandma', title: '烏鴉來偷吃果園', letter: '好多烏鴉飛來果園偷吃蘋果，阿婆種了一整年的水果快被吃光了！',
+    steps: [{ q: '烏鴉在樹上吃蘋果！', opts: [['✊ 丟石頭趕牠們', '丟石頭會讓烏鴉受傷喔……再想想？', 1], ['🌾 幫阿婆做一個稻草人', '稻草人站好了，烏鴉不敢靠近！']] },
+            { q: '還有幾顆蘋果掉在地上……', opts: [['🧺 撿起來放進籃子', '撿了滿滿一籃！']] }],
+    end: '果園保住了！阿婆說：今年的蘋果分你一大籃！' },
+  robber: { who: '浣熊叔叔', icon: '🚨', place: 'uncle', title: '叔叔家來了強盜', letter: '救命！一個戴面罩的強盜闖進叔叔家，要搶叔叔的遊戲機！', battle: 'robber',
+    steps: [{ q: '強盜在翻叔叔的東西！先做什麼？', opts: [['😠 自己衝上去', '太危險了！要先找大人、先報警……再想想？', 1], ['📞 先打 110 報警', '警察說：馬上到！']] },
+            { q: '警察還沒到，強盜要跑了！', opts: [['🚪 跟叔叔一起擋住門口', '強盜被擋住了，只好跟你們對決！']] }],
+    end: '強盜被狗狗警官抓走了！叔叔說：還好你記得先報警！' },
+  acorn: { who: '松鼠', icon: '🐿️', place: 'park', title: '松鼠的松果被搶走了', letter: '公園有一隻搗蛋的大烏鴉，把我存了好久的松果全部叼走了！',
+    steps: [{ q: '烏鴉把松果藏在哪裡？', opts: [['🌳 看看大樹上的鳥巢', '鳥巢裡有好多松果！']] },
+            { q: '烏鴉回來了，生氣地叫！', opts: [['✊ 丟石頭', '丟石頭會讓烏鴉受傷喔……再想想？', 1], ['🍞 拿麵包跟烏鴉交換', '烏鴉吃了麵包，把松果還給松鼠了！']] }],
+    end: '松鼠拿回松果了！烏鴉也說對不起，以後一起玩！' },
+  picnic: { who: '老虎園長', icon: '🧺', place: 'park', title: '公園野餐大會（活動）', letter: '今天公園舉辦野餐大會！大家都會帶好吃的來，你也一起來吧！',
+    steps: [{ q: '要帶什麼去野餐？', opts: [['🥪 三明治', '三明治做好了！'], ['🍙 飯糰', '飯糰捏好了！']] },
+            { q: '大家坐在草地上……', opts: [['🤝 跟大家分享食物', '大家交換食物，好多好吃的！']] },
+            { q: '吃飽了！', opts: [['🗑️ 把垃圾收乾淨', '草地又乾乾淨淨了！']] }],
+    end: '野餐大會好開心！園長說：下次也要來喔！' },
+  ferris: { who: '兔兔姊姊', icon: '🎡', place: 'amusement', title: '摩天輪突然停住了', letter: '摩天輪突然停住了，上面的小朋友好害怕，一直在哭……',
+    steps: [{ q: '上面的小朋友好害怕！', opts: [['📣 叫他們跳下來', '太危險了！要乖乖坐好等大人……再想想？', 1], ['💬 大聲說：「不要怕，大人在修！」', '小朋友安心多了！']] },
+            { q: '要找誰來修？', opts: [['🔧 請河狸技師來修', '叩叩叩，修好了！']] }],
+    end: '摩天輪又轉起來了！大家都平安下來了！' }
 };
 function helpState() { if (!G.help || typeof G.help !== 'object') G.help = {}; const h = G.help; if (!Array.isArray(h.list)) h.list = []; if (!h.done || typeof h.done !== 'object') h.done = {}; return h; }
 function helpWhere(R) { return R.dest ? R.dest : PLACES[R.place] ? PLACES[R.place].name : ''; }
@@ -13759,7 +13792,7 @@ function helpTick(now) {
   if (!helpNext) { helpNext = now + 240000; return; }   // 打開遊戲 4 分鐘以後
   if (now < helpNext) return; helpNext = now + 90000;
   try { if (G.away || G.guide !== 'done' || !$('#modal').hidden || vev || vis.who || document.getElementById('vevScene') || document.getElementById('showcase') || resting || hold || decorMode || (typeof isl !== 'undefined' && isl)) return; } catch (e) { return; }
-  const h = helpState(); if (h.d === today() || h.list.length >= 3 || Math.random() > .2) return;
+  const h = helpState(); if ((h.d === today() && (h.dn || 0) >= 2) || h.list.length >= 3 || Math.random() > .3) return;   // 家長 11/24：多一點事件帶小朋友去舊地方 → 一天最多兩封
   helpNew();
 }
 function helpNew(id) {
@@ -13767,7 +13800,7 @@ function helpNew(id) {
     // 🗺️ 優先寄「很久沒去」的地方（沒去過的最優先），再來是還沒幫過的信
     const stale = k => { const R = HELP_REQS[k], at = (G.visitAt || {})[R.place || R.dest]; return (at ? Math.min(60, Math.round((Date.parse(today()) - Date.parse(at)) / 864e5)) : 99) + (h.done[k] ? 0 : 20) + Math.random() * 6; };
     const L = pool.sort((a, b) => stale(b) - stale(a)).slice(0, 4); id = L[Math.floor(Math.random() * L.length)]; }
-  const R = HELP_REQS[id]; h.d = today(); saveGame();
+  const R = HELP_REQS[id]; h.dn = h.d === today() ? (h.dn || 0) + 1 : 1; h.d = today(); saveGame();
   Sound.play('knock');
   vevScene([
     { text: '📬 咻～一封信飛進來了！', draw: (g, W, H, t) => { vevBg(g, W, H, 'room', t); const k = Math.min(1, t / 1.2); g.font = '44px sans-serif'; g.textAlign = 'center'; g.fillText('✉️', 60 + k * 120, 70 + Math.sin(k * Math.PI) * -30 + k * 40); copDrawKid(g, 280, 196, 1.05, t, false, -1, 'wow'); } },
@@ -13834,7 +13867,7 @@ function helpRun(id, w0) {   // 一步一步幫忙
     const gi = S.opts.findIndex(o => !o[2]); S.opts.forEach(([lb, line, bad], i) => { const b = el('button', 'big' + (bad ? ' alt' : '')); b.textContent = lb; if (i === gi) b.dataset.key = '空白'; b.onclick = () => pick(lb, line, bad); row.appendChild(b); }); };
   const pick = (lb, line, bad) => { if (bad) { Sound.play('miss'); w.status.textContent = line; return; }
     Sound.play('pickUp'); pop = .6; w.status.textContent = line; k++;
-    if (k >= R.steps.length) { live = false; cancelAnimationFrame(raf); setTimeout(() => { closeGameWindow(); helpEnd(id); }, 1400); row.innerHTML = ''; return; }
+    if (k >= R.steps.length) { live = false; cancelAnimationFrame(raf); setTimeout(() => { closeGameWindow(); if (R.battle && EVENT_BATTLES[R.battle]) openStoryBattle(R.battle, 0, () => helpEnd(id)); else helpEnd(id); }, 1400); row.innerHTML = ''; return; }   // 🎭 有壞蛋的事件：接回合制對打，打贏才到結局
     setTimeout(show, 900); };
   const kd = e => { if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); const bs = [...row.querySelectorAll('button')]; const good = bs.find(b => !b.classList.contains('alt')); if (good && !e.repeat) good.click(); } };
   document.addEventListener('keydown', kd);
@@ -28544,13 +28577,24 @@ const STORY_PLAYS = {
 const SB_LV = [{ name: '簡單', hp: .75, dmg: .7, pay: 80 }, { name: '普通', hp: 1, dmg: 1, pay: 120 }, { name: '困難', hp: 1.35, dmg: 1.3, pay: 180 }];
 function storyState() { if (!G.storyPlay || typeof G.storyPlay !== 'object') G.storyPlay = {}; return G.storyPlay; }
 function openStoryPlay(id) { const S = STORY_PLAYS[id]; if (!S) return; if (S.kind === 'battle') openStoryBattle(id); else if (S.open) S.open(); }
-function openStoryBattle(id, lvPick) {
-  const S = STORY_PLAYS[id];
+const FT_ROBBER = { id: 'ft_robber', body: '#6b6f7c', edge: '#4a4d58', belly: '#c9ccd6', inner: '#c9ccd6', ears: 'pointy', acc: 'glasses', accColor: '#26232a' };   // 戴黑色眼罩的強盜
+const EVENT_BATTLES = {
+  wolfgran: { title: '大野狼假扮阿婆', icon: '🐺', kind: 'battle', me: {}, prop: 'none', foe: () => FT_WOLF_GRAN, foeName: '假阿婆', foeHp: 90,
+    bg(g, t) { MV.sky(g, '#ffe9d0', '#fff6ea'); MV.ground(g, 190, '#d9b48a'); MV.bed(g, 300, 190); g.fillStyle = '#8a5a33'; g.fillRect(20, 70, 50, 120); g.fillStyle = '#b07a48'; g.fillRect(24, 74, 42, 112); },
+    cards: [{ k: 'atk', icon: '🛏️', name: '丟枕頭', min: 10, max: 15 }, { k: 'def', icon: '🚪', name: '躲到門後' }, { k: 'help', icon: '🐐', name: '真正的阿婆幫忙' }, { k: 'ult', icon: '🐯', name: '老虎園長來了' }],
+    foeAtk: '假阿婆撲過來！', foeCharge: '假阿婆張大嘴巴……要大吼了！快躲！', foeBig: '「嗷嗚——！」', win: '大野狼：「對不起嘛，我只是肚子餓……」阿婆請牠吃水果。', reward: [] },
+  robber: { title: '抓強盜', icon: '🚨', kind: 'battle', me: {}, prop: 'none', foe: () => FT_ROBBER, foeName: '強盜', foeHp: 100,
+    bg(g, t) { MV.sky(g, '#e6dcff', '#fff6e6'); MV.ground(g, 190, '#c9a27a'); g.fillStyle = '#5a6475'; g.fillRect(240, 120, 70, 50); g.fillStyle = '#6fb7e8'; g.fillRect(246, 126, 58, 36); },
+    cards: [{ k: 'atk', icon: '📚', name: '丟漫畫書', min: 10, max: 15 }, { k: 'def', icon: '🛋️', name: '躲到沙發後' }, { k: 'help', icon: '🦝', name: '叔叔幫忙' }, { k: 'ult', icon: '🚓', name: '狗狗警官來了' }],
+    foeAtk: '強盜揮舞袋子！', foeCharge: '強盜要衝過來搶遊戲機了！快擋住！', foeBig: '強盜衝過來！', win: '強盜：「我錯了……」狗狗警官把強盜帶走了！', reward: [] }
+};
+function openStoryBattle(id, lvPick, onWin) {
+  const S = STORY_PLAYS[id] || EVENT_BATTLES[id];
   const w = openGameWindow(`🎭 ${S.title}`, `你是故事裡的主角！選招式卡跟${S.foeName}對打：⚔️ 攻擊、🛡️ 防禦（${S.foeName}蓄力的時候防禦最有用）、找幫手補血、力氣集滿放必殺技！（電腦可以按 1～4）`);
   w.stage.innerHTML = ''; w.btns.innerHTML = '';
   if (lvPick == null) {
     const row = el('div', 'invite-row'); SB_LV.forEach((L, i) => { const b = el('button', 'big' + (i ? ' alt' : ''), `${['🌱', '⭐', '🔥'][i]} ${L.name}`); b.className = 'big lv-btn'; b.onclick = () => openStoryBattle(id, i); row.appendChild(b); });
-    w.stage.appendChild(posterCanvas(S.movie, 110, 150)); w.stage.appendChild(row); leaveButton(w);
+    if (S.movie) w.stage.appendChild(posterCanvas(S.movie, 110, 150)); w.stage.appendChild(row); leaveButton(w);
     w.status.textContent = storyState()[id] ? `打贏過 ${storyState()[id]} 次！` : `第一次打贏送你「${S.reward.map(r => (CLOTHES_BY_ID[r] || {}).name).join('、')}」！`;
     openStoryBattle.test = { pickLevel: i => openStoryBattle(id, i) }; return;
   }
@@ -28580,11 +28624,12 @@ function openStoryBattle(id, lvPick) {
     foe.lunge = 1; setTimeout(() => { const d = Math.round((9 + Math.floor(Math.random() * 5)) * L.dmg); const dd = me.block ? Math.round(d * .2) : d; hitMe(dd); say(`${S.foeAtk}${me.block ? '擋住了大部分！' : ''}`); endRound(); }, 400); };
   const endRound = () => { if (me.hp <= 0) return lose(); round++; me.block = false; if (me.helpCd > 0) me.helpCd--; busy = false; refresh(); };
   const win = () => { over = true; refresh(); const ss = storyState(), first = !ss[id]; ss[id] = Math.min(9999, (ss[id] || 0) + 1);
-    let extra = ''; if (first) { S.reward.forEach(r => { if (!G.wardrobe.includes(r)) G.wardrobe.push(r); }); extra = `　🎁 得到「${S.reward.map(r => (CLOTHES_BY_ID[r] || {}).name).join('、')}」，去換裝穿穿看！`; }
+    if (onWin) { kidMoodUp(6); Sound.play('fanfare'); saveGame(); say(`🎉 打贏了！${S.win}`); cardsRow.remove(); w.btns.innerHTML = ''; const go = el('button', 'big', '▶ 繼續'); go.onclick = () => { closeGameWindow(); onWin(); }; w.btns.appendChild(go); return; }   // 📬 事件裡的對打：打贏回到事件的結局（獎金在結局發）
+    let extra = ''; if (first && S.reward.length) { S.reward.forEach(r => { if (!G.wardrobe.includes(r)) G.wardrobe.push(r); }); extra = `　🎁 得到「${S.reward.map(r => (CLOTHES_BY_ID[r] || {}).name).join('、')}」，去換裝穿穿看！`; }
     const got = payReward(w, first ? L.pay + 100 : L.pay); kidMoodUp(6); Sound.play('fanfare'); saveGame(); refreshTop();
     say(`🎉 打贏了！${S.win}　💰 +${fmt(got)}${extra}`); cardsRow.remove(); gameButtons(w, () => openStoryBattle(id));
-    if (first) setTimeout(() => { try { const cv = document.createElement('canvas'); cv.width = 150; cv.height = 170; const gg = cv.getContext('2d'); gg.translate(75, 160); gg.scale(2.2, 2.2); drawGirl(gg, { t: 0, walking: false, blink: false, outfit: look, face: 'joy', stage: kidLookStage() }); showcase(cv, `${S.title}的衣服`, '放進換裝了，換上去當故事主角吧！', { head: '🎭 扮演成功！', party: true }); } catch (e) {} }, 900); };
-  const lose = () => { over = true; refresh(); Sound.play('miss'); say(`${S.foeName}好強……沒關係，再試一次！（看到「蓄力」記得按防禦喔）`); cardsRow.remove(); gameButtons(w, () => openStoryBattle(id, lvPick)); };
+    if (first && S.reward.length) setTimeout(() => { try { const cv = document.createElement('canvas'); cv.width = 150; cv.height = 170; const gg = cv.getContext('2d'); gg.translate(75, 160); gg.scale(2.2, 2.2); drawGirl(gg, { t: 0, walking: false, blink: false, outfit: look, face: 'joy', stage: kidLookStage() }); showcase(cv, `${S.title}的衣服`, '放進換裝了，換上去當故事主角吧！', { head: '🎭 扮演成功！', party: true }); } catch (e) {} }, 900); };
+  const lose = () => { over = true; refresh(); Sound.play('miss'); say(`${S.foeName}好強……沒關係，再試一次！（看到「蓄力」記得按防禦喔）`); cardsRow.remove(); gameButtons(w, () => openStoryBattle(id, lvPick, onWin)); };
   const bar = (x, y, wd, v, max, col, label, right) => { g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(x, y, wd, 10); g.fillStyle = col; const fw = wd * Math.max(0, v) / max; g.fillRect(right ? x + wd - fw : x, y, fw, 10); g.strokeStyle = '#ffffff'; g.lineWidth = 1; g.strokeRect(x, y, wd, 10); g.font = '700 11px "Microsoft JhengHei",sans-serif'; g.textAlign = right ? 'right' : 'left'; g.strokeStyle = 'rgba(40,30,50,.85)'; g.lineWidth = 3; g.strokeText(label, right ? x + wd : x, y - 3); g.fillStyle = '#ffffff'; g.fillText(label, right ? x + wd : x, y - 3); };
   const draw = now => { raf = requestAnimationFrame(draw); const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
     S.bg(g, t);

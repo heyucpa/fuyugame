@@ -10,11 +10,12 @@ const path = require('path');
     const o = {}, w = ms => new Promise(r => setTimeout(r, ms)), sc = () => { const s = document.getElementById('vevScene'); if (s) vevScene.test.close(); };
     try {
     document.getElementById('modal').hidden = true; G.guide = 'done'; G.help = { list: [], done: {} };
-    const ids = Object.keys(HELP_REQS); o.count = ids.length === 23;
+    const ids = Object.keys(HELP_REQS); o.count = ids.length === 29;   // 11/24 第三批多了 6 封（阿婆家、叔叔家、公園、遊樂園）
     o.places = ids.every(k => { const R = HELP_REQS[k]; return R.dest ? !!WORLD_VENUES[R.dest] : !!PLACES[R.place]; });
     o.allRun = true;
     for (const id of ids) { const R = HELP_REQS[id]; G.help.list = [id]; const d0 = G.help.done[id] || 0;
       helpRun(id); for (let s = 0; s < R.steps.length; s++) { const gi = R.steps[s].opts.findIndex(op => !op[2]); helpRun.test.pick(gi); await w(s < R.steps.length - 1 ? 950 : 1500); }
+      if (R.battle) { const T = openStoryBattle.test; T.foe.hp = 1; T.act(0); for (let i = 0; i < 20 && !T.over; i++) await w(150); const cb = [...document.querySelectorAll('button')].find(b => /繼續/.test(b.textContent)); cb && cb.click(); await w(400); }   // 有壞蛋的事件：中間要對打
       const endOk = !!document.getElementById('vevScene'); sc(); sc(); await w(30);
       if (!endOk || (G.help.done[id] || 0) !== d0 + 1 || G.help.list.includes(id)) { o.allRun = false; o['fail_' + id] = true; } }
     // 優先很久沒去的地方
